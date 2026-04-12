@@ -50,7 +50,20 @@ This is intentionally minimal. It is a confidence spike, not the final audio eng
 
 ## Local Observation
 
-Observed in the current environment after running:
+Two different execution contexts mattered here.
+
+### Sandbox result
+
+Inside the restricted execution environment, the earlier probe path could not reach the live user audio session cleanly and produced a failed default-device/config result.
+
+Interpretation:
+
+- this was an environment constraint
+- it was not sufficient evidence against `cpal`
+
+### Real session result
+
+Observed on the same machine, outside the sandbox, after running:
 
 ```bash
 cargo run -p riotbox-audio --bin cpal_spike
@@ -61,22 +74,24 @@ Result:
 ```text
 host: Alsa
 default_output_device: default
-default_output_config: <none>
-supported_output_configs: <unknown>
-callback_count: 0
-max_callback_gap_micros: <none>
-stream_result: Failed { reason: "default_output_config failed: The requested device is no longer available. For example, it has been unplugged." }
+default_output_config: F32, channels=2, sample_rate=44100, buffer_size=Range { min: 1, max: 4194304 }
+supported_output_configs: 160
+callback_count: 18
+max_callback_gap_micros: 21329
+stream_result: Ok
 ```
 
 Interpretation:
 
-- the host layer is reachable
-- the current environment exposes an ALSA default output path
-- the default output device is not actually usable here for a real stream
+- `cpal` can open and run a stream on this machine
+- the Linux host exposed by `cpal` here is `Alsa`
+- the ALSA `default` path on this system is compatible with the live PipeWire-based desktop audio setup
 
-This is not a rejection of `cpal`.
+This means the correct reading is:
 
-It means this development environment is not sufficient for meaningful latency measurement, so real callback timing and buffer behavior must be validated on an actual target machine with a working audio device.
+- `cpal` remains a viable low-level direction
+- the earlier failure was caused by the restricted execution environment
+- meaningful latency work should still be validated on target machines, but the basic stream-open path is confirmed here
 
 ---
 
