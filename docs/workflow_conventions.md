@@ -39,13 +39,14 @@ For a normal implementation or docs slice:
 2. create a dedicated branch for that issue
 3. make one coherent slice of changes
 4. run the relevant local verification
-5. open a PR
-6. move the Linear issue to `In Review`
-7. add a human-readable issue update
-8. add a project-level update in the `Riotbox Project Updates` Linear document
-9. wait for merge / approval boundary before continuing to the next ticket
-10. after merge, sync local `main`
-11. move the issue to `Done`
+5. do a self-review on the branch diff
+6. open a PR
+7. move the Linear issue to `In Review`
+8. add a human-readable issue update
+9. add a project-level update in the `Riotbox Project Updates` Linear document
+10. wait for merge / approval boundary before continuing to the next ticket
+11. after merge, sync local `main`
+12. move the issue to `Done`
 
 This is the default unless the user explicitly asks for something else.
 
@@ -119,6 +120,19 @@ Once a PR is open for a ticket:
 - do not silently bundle the next unrelated slice into the same PR
 
 This keeps review history and Linear issue history aligned.
+
+## 7.1 Self-Review Before PR
+
+Before opening a PR, do a branch-local code review first.
+
+The minimum self-review pass should check:
+
+- correctness and failure paths
+- drift against the active specs in `docs/`
+- whether new behavior is adequately covered by tests
+- whether docs or workflow notes need to move with the code
+
+If that self-review finds a real issue, fix it before opening the PR when feasible instead of pushing known defects into review.
 
 ---
 
