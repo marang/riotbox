@@ -10,13 +10,14 @@ Should Riotbox adopt MemPalace soon as a local memory/search layer for project h
 
 ## Short Answer
 
-Not yet for default workflow adoption.
+Yes for real evaluation value, but not yet as a mandatory default workflow dependency.
 
 Recommendation:
 
-- do not adopt it as a standing Riotbox dependency right now
-- keep it as a later optional experiment once we can test it on a supported Python runtime
-- treat it as a possible external dev tool, never as a replacement for repo docs, Linear, or Riotbox core state
+- keep it explicitly out of Riotbox product core
+- keep repo docs, Linear, and Git history as the canonical sources of truth
+- treat MemPalace as a promising optional dev-memory layer, with the currently recommended setup being rootless Podman plus pinned `python:3.12`
+- revisit whether it should become part of the normal team workflow after a broader retrieval bakeoff, not after one host-only failure
 
 ## Why
 
@@ -27,13 +28,13 @@ MemPalace is directionally aligned with the kind of project-memory problem we ha
 - MCP-facing workflow
 - explicit support for agent-assist usage
 
-But for Riotbox right now, it has three practical problems:
+But for Riotbox right now, it still has three practical constraints:
 
-1. It is still operationally noisy.
+1. The raw host install path is not a safe default on this machine baseline.
 2. It introduces another system to maintain beside repo docs and Linear.
-3. Our first real local trial did not reach successful indexing on this machine baseline.
+3. We have one successful containerized trial so far, not a broader proof that it beats the current workflow across daily work.
 
-That makes it interesting, but not yet worth standardizing.
+That makes it promising, but not yet something I would force into the default workflow for every contributor.
 
 ## What Was Reviewed
 
@@ -72,7 +73,7 @@ Key observed themes from upstream:
 
 Those remain Riotbox-native contracts and should not move into a third-party memory tool.
 
-## Real Trial
+## Host Trial
 
 ### Trial goal
 
@@ -120,7 +121,7 @@ For Riotbox, MemPalace is not currently a low-friction tool we can assume will w
 
 That matters because a dev-memory helper only earns its keep if setup is boring.
 
-## Rootless Podman Follow-up
+## Rootless Podman Evaluation
 
 ### Follow-up question
 
@@ -140,36 +141,79 @@ Follow-up container trial:
 
 - image: `python:3.12-slim`
 - runtime: rootless Podman
-- mounted a small writable Riotbox corpus
-- mounted a writable palace directory
+- mounted repo-local persistent directories under `.mempalace-eval/`
 - installed `mempalace==3.1.0` inside the container
 - ran `mempalace init --yes`
-- started `mempalace mine`
+- completed `mempalace mine`
+- ran real search queries against Riotbox data
+
+### Repo-local persistent storage
+
+The container was configured so data persisted in the repo, not only inside the container filesystem:
+
+- `.mempalace-eval/palace/` stores the persistent Chroma database
+- `.mempalace-eval/cache/` stores downloaded model/cache data
+- `.mempalace-eval/results/` stores captured run outputs
+- `.mempalace-eval/corpus/` stores the copied Riotbox evaluation corpus
+
+This keeps the evaluation repeatable without depending on container-local state.
 
 ### What worked in the container
 
 - the exact host-side `Python 3.14` compatibility failure did not occur
 - `mempalace init --yes` completed successfully
-- `mempalace mine` started successfully inside the container
-- Chroma began downloading its embedding model during the mine step, which means the runtime got materially further than the host trial
+- `mempalace mine` completed successfully
+- `mempalace status` reported a populated palace
+- real search queries returned relevant Riotbox documents
 
-### What was not completed in this follow-up
+Observed result:
 
-At the time of writing, the rootless container follow-up had not yet completed the full download-and-index cycle through to a finished search result. The remaining wait was model download time, not the earlier runtime compatibility crash.
+- `487` indexed drawers
+- room split:
+  - `plan`: `279`
+  - `documentation`: `207`
+  - `general`: `1`
+
+Result files:
+
+- `.mempalace-eval/results/init.txt`
+- `.mempalace-eval/results/mine.txt`
+- `.mempalace-eval/results/status.txt`
+- `.mempalace-eval/results/search_rust.txt`
+- `.mempalace-eval/results/search_feral.txt`
+- `.mempalace-eval/results/search_source_graph.txt`
+
+### Query quality snapshot
+
+Three real queries were tested against Riotbox data:
+
+1. `Why Rust for the main core`
+2. `feral_rebuild profile`
+3. `source graph session action`
+
+Observed quality:
+
+- query 1 returned strong hits immediately, including `rust_engineering_guidelines.md`, `research_decision_log.md`, and `technology_stack_spec.md`
+- query 2 returned useful hits around the feral profile, especially `preset_style_spec.md` and the active/planned feral addenda
+- query 3 returned relevant but somewhat noisier hits, with `session_file_spec.md` and `source_graph_spec.md` near the top
+
+This is good enough to prove real utility. It is not yet enough to prove that MemPalace should become a mandatory default workflow layer.
 
 ### Updated conclusion
 
-Rootless Podman looks like a viable mitigation for the host runtime problem.
+Rootless Podman is not just a mitigation idea. It is a viable working setup for Riotbox on this machine.
 
-That changes the evaluation slightly:
+That changes the evaluation materially:
 
-- MemPalace is still not recommended as a default Riotbox workflow dependency right now
-- but a containerized retry path is clearly more promising than the raw host install path
+- MemPalace is now proven usable for Riotbox dev-memory in a containerized setup
+- the earlier host failure should be treated as a host-runtime problem, not a tool-wide rejection
+- the remaining question is no longer basic operability, but workflow value versus maintenance cost
 
 So the refined recommendation is:
 
-- park it for now as a standard workflow tool
-- if we revisit it, use a pinned containerized environment first
+- do not make MemPalace a required default dependency for every contributor yet
+- do treat it as a credible optional dev-memory tool now
+- if we operationalize it, use a pinned rootless-container workflow first
 
 ## Operational Risks
 
@@ -199,38 +243,40 @@ If Riotbox ever uses it, it should only index and retrieve from existing sources
 
 ### 4. Hook and integration bias
 
-A lot of MemPalace’s workflow framing is Claude Code-centric. Riotbox work here is happening in Codex plus Linear plus GitHub. That does not make MemPalace unusable, but it reduces immediate plug-and-play value.
+A lot of MemPalace’s workflow framing is Claude Code-centric. Riotbox work here is happening in Codex plus Linear plus GitHub. That does not make MemPalace unusable, but it still means we should adopt it deliberately rather than assume upstream defaults fit our workflow unchanged.
 
 ## Recommendation
 
-Status: park for now, revisit later.
+Status: validated as a working optional tool; do not require it by default yet.
 
 Concrete recommendation:
 
-- do not adopt MemPalace as part of the normal Riotbox workflow yet
-- do not add it to the repo tooling baseline
+- do not adopt MemPalace as a required baseline dependency for all contributors yet
+- do not add it to the Riotbox product/runtime tooling baseline
 - do not route any product state through it
-- keep the ticket outcome as: interesting external dev-memory candidate, but not ready for standard use on our current machine/runtime baseline
+- keep using repo docs, Linear, and Git history as canonical sources
+- keep the currently recommended MemPalace setup as: rootless Podman, pinned `python:3.12`, repo-local persistent storage under `.mempalace-eval/`
+- treat the ticket outcome as: usable optional dev-memory candidate, worth further evaluation against real day-to-day retrieval tasks
 
 ## Revisit Triggers
 
-Re-evaluate MemPalace later if at least one of these becomes true:
+Broader adoption should be reconsidered if at least one of these becomes true:
 
-- we have a supported Python runtime available locally for a clean second trial
-- upstream explicitly supports newer Python versions we actually use
-- we feel repeated pain from missing long-term project memory that repo docs + Linear + issue comments are not solving
-- we want a dedicated optional agent-assist retrieval helper and are willing to isolate it in its own environment
+- it proves clearly faster or better than `rg` plus repo docs plus Linear across repeated real tasks
+- we add a small wrapper script so the container path becomes boring to run
+- multiple developers want the same shared local retrieval helper
+- upstream improves compatibility enough that the host-install path becomes low-friction again
 
 ## If We Test Again
 
-The next trial should be stricter and smaller:
+The next trial should be broader and comparative:
 
-1. use a supported Python runtime, ideally `3.11` or `3.12`
-2. keep a tiny Riotbox corpus
-3. validate three exact tasks:
-   - retrieve a prior architecture decision
-   - retrieve a prior roadmap or phase decision
-   - retrieve a past implementation rationale across files
-4. compare that result against plain `rg` plus repo docs plus Linear history
+1. keep using the pinned rootless-container setup
+2. run at least ten real retrieval tasks from active Riotbox work
+3. compare task speed and answer quality against plain `rg` plus repo docs plus Linear history
+4. decide whether it becomes:
+   - optional helper only
+   - recommended dev tool
+   - or still not worth the maintenance cost
 
 Only if it clearly beats the current workflow should we consider operationalizing it.

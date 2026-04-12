@@ -1,2 +1,6 @@
 target/
-
+.mempalace-eval/cache/
+.mempalace-eval/palace/
+.mempalace-eval/results/
+.mempalace-eval/corpus/
+!.mempalace-eval/README.md
