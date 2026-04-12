@@ -6,21 +6,21 @@ use std::{
 };
 
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
 use riotbox_app::{
     jam_app::{JamAppError, JamAppState},
-    ui::render_jam_shell,
+    ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
 const DEFAULT_GRAPH_PATH: &str = "data/sessions/source-graph.json";
 const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 enum LaunchMode {
     Load {
         session_path: PathBuf,
@@ -37,8 +37,8 @@ enum LaunchMode {
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mode = parse_args(env::args().skip(1))?;
-    let state = load_state(mode)?;
-    run_terminal_ui(state)?;
+    let state = load_state(mode.clone())?;
+    run_terminal_ui(JamShellState::new(state, mode.shell_launch_mode()), mode)?;
     Ok(())
 }
 
@@ -64,7 +64,10 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
     }
 }
 
-fn run_terminal_ui(state: JamAppState) -> Result<(), Box<dyn std::error::Error>> {
+fn run_terminal_ui(
+    shell: JamShellState,
+    mode: LaunchMode,
+) -> Result<(), Box<dyn std::error::Error>> {
     enable_raw_mode()?;
     let mut stdout = stdout();
     execute!(stdout, EnterAlternateScreen)?;
@@ -72,7 +75,7 @@ fn run_terminal_ui(state: JamAppState) -> Result<(), Box<dyn std::error::Error>>
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    let result = run_event_loop(&mut terminal, state);
+    let result = run_event_loop(&mut terminal, shell, mode);
 
     disable_raw_mode()?;
     execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
@@ -83,16 +86,23 @@ fn run_terminal_ui(state: JamAppState) -> Result<(), Box<dyn std::error::Error>>
 
 fn run_event_loop(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
-    state: JamAppState,
+    mut shell: JamShellState,
+    mode: LaunchMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        terminal.draw(|frame| render_jam_shell(frame, &state))?;
+        terminal.draw(|frame| render_jam_shell(frame, &shell))?;
 
         if event::poll(Duration::from_millis(200))?
             && let Event::Key(key) = event::read()?
-            && matches!(key.code, KeyCode::Char('q') | KeyCode::Esc)
         {
-            return Ok(());
+            match shell.handle_key_code(key.code) {
+                ShellKeyOutcome::Quit => return Ok(()),
+                ShellKeyOutcome::Continue => {}
+                ShellKeyOutcome::RequestRefresh => match load_state(mode.clone()) {
+                    Ok(state) => shell.replace_app_state(state),
+                    Err(error) => shell.set_error_status(format!("refresh failed: {error}")),
+                },
+            }
         }
     }
 }
@@ -174,6 +184,15 @@ fn help_text() -> String {
         "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>]\n  riotbox-app --session <session.json> --graph <source-graph.json>\n\nDefaults:\n  --session {}\n  --graph {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_GRAPH_PATH, DEFAULT_SIDECAR_PATH
     )
+}
+
+impl LaunchMode {
+    fn shell_launch_mode(&self) -> ShellLaunchMode {
+        match self {
+            Self::Load { .. } => ShellLaunchMode::Load,
+            Self::Ingest { .. } => ShellLaunchMode::Ingest,
+        }
+    }
 }
 
 #[cfg(test)]
