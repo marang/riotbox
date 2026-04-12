@@ -29,6 +29,7 @@ pub enum JamAppError {
     Persistence(PersistenceError),
     Serialization(serde_json::Error),
     Sidecar(SidecarClientError),
+    InvalidSession(String),
 }
 
 impl Display for JamAppError {
@@ -38,6 +39,7 @@ impl Display for JamAppError {
             Self::Persistence(error) => write!(f, "persistence error: {error}"),
             Self::Serialization(error) => write!(f, "serialization error: {error}"),
             Self::Sidecar(error) => write!(f, "sidecar error: {error}"),
+            Self::InvalidSession(message) => write!(f, "invalid session: {message}"),
         }
     }
 }
@@ -49,6 +51,7 @@ impl Error for JamAppError {
             Self::Persistence(error) => Some(error),
             Self::Serialization(error) => Some(error),
             Self::Sidecar(error) => Some(error),
+            Self::InvalidSession(_) => None,
         }
     }
 }
@@ -80,7 +83,7 @@ impl From<SidecarClientError> for JamAppError {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JamFileSet {
     pub session_path: PathBuf,
-    pub source_graph_path: PathBuf,
+    pub source_graph_path: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -200,7 +203,7 @@ impl JamAppState {
         queue.reserve_action_ids_after(max_action_id(&session));
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime = AppRuntimeState {
-            transport: transport_clock_from_session(&session),
+            transport: transport_clock_from_state(&session, source_graph.as_ref()),
             ..AppRuntimeState::default()
         };
         let runtime_view = JamRuntimeView::build(&runtime);
@@ -218,17 +221,17 @@ impl JamAppState {
 
     pub fn from_json_files(
         session_path: impl AsRef<Path>,
-        source_graph_path: impl AsRef<Path>,
+        source_graph_path: Option<impl AsRef<Path>>,
     ) -> Result<Self, JamAppError> {
         let session_path = session_path.as_ref().to_path_buf();
-        let source_graph_path = source_graph_path.as_ref().to_path_buf();
         let session = load_session_json(&session_path)?;
-        let source_graph = load_source_graph_json(&source_graph_path)?;
+        let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
+        let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
-        let jam_view = JamViewModel::build(&session, &queue, Some(&source_graph));
+        let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime = AppRuntimeState {
-            transport: transport_clock_from_session(&session),
+            transport: transport_clock_from_state(&session, source_graph.as_ref()),
             ..AppRuntimeState::default()
         };
         let runtime_view = JamRuntimeView::build(&runtime);
@@ -236,10 +239,10 @@ impl JamAppState {
         Ok(Self {
             files: Some(JamFileSet {
                 session_path,
-                source_graph_path,
+                source_graph_path: explicit_source_graph_path,
             }),
             session,
-            source_graph: Some(source_graph),
+            source_graph,
             queue,
             runtime,
             jam_view,
@@ -266,7 +269,7 @@ impl JamAppState {
         save_source_graph_json(&source_graph_path, &graph)?;
         save_session_json(&session_path, &session)?;
 
-        let mut state = Self::from_json_files(&session_path, &source_graph_path)?;
+        let mut state = Self::from_json_files(&session_path, Some(&source_graph_path))?;
         state.set_sidecar_state(SidecarState::Ready {
             version: Some(pong.sidecar_version),
             transport: "stdio-ndjson".into(),
@@ -320,10 +323,21 @@ impl JamAppState {
 
     pub fn save(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
-            save_session_json(&files.session_path, &self.session)?;
+            let mut session_to_save = self.session.clone();
+            sync_graph_refs_with_state(
+                &mut session_to_save,
+                self.source_graph.as_ref(),
+                files.source_graph_path.as_deref(),
+            );
+            save_session_json(&files.session_path, &session_to_save)?;
 
-            if let Some(source_graph) = &self.source_graph {
-                save_source_graph_json(&files.source_graph_path, source_graph)?;
+            if let Some(source_graph) = &self.source_graph
+                && let Some(source_graph_path) = resolve_external_graph_path(
+                    &session_to_save,
+                    files.source_graph_path.as_deref(),
+                )
+            {
+                save_source_graph_json(source_graph_path, source_graph)?;
             }
         }
 
@@ -389,15 +403,109 @@ fn timestamp_now() -> String {
     format!("unix_ms:{millis}")
 }
 
-fn transport_clock_from_session(session: &SessionFile) -> TransportClockState {
+fn transport_clock_from_state(
+    session: &SessionFile,
+    source_graph: Option<&SourceGraph>,
+) -> TransportClockState {
+    let beat_index = session.runtime_state.transport.position_beats.floor() as u64;
+    let beats_per_bar = source_graph
+        .and_then(|graph| {
+            graph
+                .timing
+                .meter_hint
+                .as_ref()
+                .map(|meter| u64::from(meter.beats_per_bar))
+        })
+        .filter(|beats| *beats > 0)
+        .unwrap_or(4);
+    let bar_index = ((beat_index.saturating_sub(1)) / beats_per_bar).saturating_add(1);
+    let phrase_index = source_graph
+        .and_then(|graph| {
+            graph
+                .timing
+                .phrase_grid
+                .iter()
+                .find(|phrase| {
+                    let start_beat = (u64::from(phrase.start_bar).saturating_sub(1)
+                        * beats_per_bar)
+                        .saturating_add(1);
+                    let end_beat = u64::from(phrase.end_bar) * beats_per_bar;
+                    beat_index >= start_beat && beat_index <= end_beat
+                })
+                .map(|phrase| u64::from(phrase.phrase_index))
+        })
+        .unwrap_or_else(|| ((bar_index.saturating_sub(1)) / 8).saturating_add(1));
+
     TransportClockState {
         is_playing: session.runtime_state.transport.is_playing,
         position_beats: session.runtime_state.transport.position_beats,
-        beat_index: session.runtime_state.transport.position_beats.floor() as u64,
-        bar_index: 0,
-        phrase_index: 0,
+        beat_index,
+        bar_index,
+        phrase_index,
         current_scene: session.runtime_state.transport.current_scene.clone(),
     }
+}
+
+fn resolve_source_graph(
+    session: &SessionFile,
+    explicit_source_graph_path: Option<&Path>,
+) -> Result<Option<SourceGraph>, JamAppError> {
+    if let Some(path) = explicit_source_graph_path {
+        return Ok(Some(load_source_graph_json(path)?));
+    }
+
+    let Some(graph_ref) = session.source_graph_refs.first() else {
+        return Ok(None);
+    };
+
+    match graph_ref.storage_mode {
+        GraphStorageMode::Embedded => graph_ref.embedded_graph.clone().map(Some).ok_or_else(|| {
+            JamAppError::InvalidSession(
+                "source graph ref is embedded but embedded_graph is missing".into(),
+            )
+        }),
+        GraphStorageMode::External => match graph_ref.external_path.as_deref() {
+            Some(path) => Ok(Some(load_source_graph_json(path)?)),
+            None => Err(JamAppError::InvalidSession(
+                "source graph ref is external but external_path is missing".into(),
+            )),
+        },
+    }
+}
+
+fn sync_graph_refs_with_state(
+    session: &mut SessionFile,
+    source_graph: Option<&SourceGraph>,
+    explicit_source_graph_path: Option<&Path>,
+) {
+    for graph_ref in &mut session.source_graph_refs {
+        match graph_ref.storage_mode {
+            GraphStorageMode::Embedded => {
+                graph_ref.embedded_graph = source_graph.cloned();
+            }
+            GraphStorageMode::External => {
+                if let Some(path) = explicit_source_graph_path {
+                    graph_ref.external_path = Some(path.to_string_lossy().into_owned());
+                }
+            }
+        }
+    }
+}
+
+fn resolve_external_graph_path<'a>(
+    session: &'a SessionFile,
+    explicit_source_graph_path: Option<&'a Path>,
+) -> Option<&'a Path> {
+    if let Some(path) = explicit_source_graph_path {
+        return Some(path);
+    }
+
+    session
+        .source_graph_refs
+        .iter()
+        .find(|graph_ref| graph_ref.storage_mode == GraphStorageMode::External)
+        .and_then(|graph_ref| graph_ref.external_path.as_deref())
+        .map(Path::new)
 }
 
 fn max_action_id(session: &SessionFile) -> Option<riotbox_core::ids::ActionId> {
@@ -698,7 +806,7 @@ mod tests {
         save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
 
         let mut state =
-            JamAppState::from_json_files(&session_path, &graph_path).expect("load app state");
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
         assert!(state.jam_view.transport.is_playing);
         assert_eq!(state.jam_view.source.section_count, 1);
 
@@ -710,6 +818,49 @@ mod tests {
         let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
 
         assert_eq!(persisted_session.notes.as_deref(), Some("updated"));
+        assert_eq!(persisted_graph, graph);
+    }
+
+    #[test]
+    fn loads_embedded_graph_session_without_separate_graph_file() {
+        let dir = tempdir().expect("create temp dir");
+        let session_path = dir.path().join("sessions").join("session.json");
+
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        save_session_json(&session_path, &session).expect("save embedded session fixture");
+
+        let state =
+            JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
+
+        assert_eq!(state.source_graph, Some(graph));
+        assert_eq!(state.jam_view.source.section_count, 1);
+    }
+
+    #[test]
+    fn save_persists_embedded_graph_into_session_file() {
+        let dir = tempdir().expect("create temp dir");
+        let session_path = dir.path().join("sessions").join("session.json");
+
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        save_session_json(&session_path, &session).expect("save embedded session fixture");
+
+        let mut state =
+            JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
+        state.session.notes = Some("updated embedded session".into());
+        state.save().expect("save app state");
+
+        let persisted_session = load_session_json(&session_path).expect("reload session");
+        let persisted_graph = persisted_session.source_graph_refs[0]
+            .embedded_graph
+            .clone()
+            .expect("embedded graph should persist");
+
+        assert_eq!(
+            persisted_session.notes.as_deref(),
+            Some("updated embedded session")
+        );
         assert_eq!(persisted_graph, graph);
     }
 
@@ -811,6 +962,17 @@ mod tests {
             state.jam_view.scene.active_scene.as_deref(),
             Some("scene-2")
         );
+    }
+
+    #[test]
+    fn reconstructs_bar_and_phrase_indices_from_loaded_state() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(state.runtime.transport.beat_index, 32);
+        assert_eq!(state.runtime.transport.bar_index, 8);
+        assert_eq!(state.runtime.transport.phrase_index, 1);
     }
 
     #[test]

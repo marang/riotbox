@@ -24,7 +24,7 @@ const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
 enum LaunchMode {
     Load {
         session_path: PathBuf,
-        source_graph_path: PathBuf,
+        source_graph_path: Option<PathBuf>,
     },
     Ingest {
         source_path: PathBuf,
@@ -68,20 +68,49 @@ fn run_terminal_ui(
     shell: JamShellState,
     mode: LaunchMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    enable_raw_mode()?;
-    let mut stdout = stdout();
-    execute!(stdout, EnterAlternateScreen)?;
+    let mut terminal = ManagedTerminal::enter()?;
+    run_event_loop(terminal.terminal_mut(), shell, mode)
+}
 
-    let backend = CrosstermBackend::new(stdout);
-    let mut terminal = Terminal::new(backend)?;
+struct ManagedTerminal {
+    terminal: Terminal<CrosstermBackend<io::Stdout>>,
+}
 
-    let result = run_event_loop(&mut terminal, shell, mode);
+impl ManagedTerminal {
+    fn enter() -> Result<Self, Box<dyn std::error::Error>> {
+        enable_raw_mode()?;
+        let mut stdout = stdout();
 
-    disable_raw_mode()?;
-    execute!(terminal.backend_mut(), LeaveAlternateScreen)?;
-    terminal.show_cursor()?;
+        if let Err(error) = execute!(stdout, EnterAlternateScreen) {
+            let _ = disable_raw_mode();
+            return Err(Box::new(error));
+        }
 
-    result
+        let backend = CrosstermBackend::new(stdout);
+        let terminal = match Terminal::new(backend) {
+            Ok(terminal) => terminal,
+            Err(error) => {
+                let _ = disable_raw_mode();
+                let mut cleanup_stdout = io::stdout();
+                let _ = execute!(cleanup_stdout, LeaveAlternateScreen);
+                return Err(Box::new(error));
+            }
+        };
+
+        Ok(Self { terminal })
+    }
+
+    fn terminal_mut(&mut self) -> &mut Terminal<CrosstermBackend<io::Stdout>> {
+        &mut self.terminal
+    }
+}
+
+impl Drop for ManagedTerminal {
+    fn drop(&mut self) {
+        let _ = disable_raw_mode();
+        let _ = execute!(self.terminal.backend_mut(), LeaveAlternateScreen);
+        let _ = self.terminal.show_cursor();
+    }
 }
 
 fn run_event_loop(
@@ -115,7 +144,6 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<LaunchMode, Stri
     let mut sidecar_script_path = Some(PathBuf::from(DEFAULT_SIDECAR_PATH));
     let mut analysis_seed = 19_u64;
     let mut saw_session_flag = false;
-    let mut saw_graph_flag = false;
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
@@ -125,7 +153,6 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<LaunchMode, Stri
                 session_path = Some(next_path(&mut args, "--session")?);
             }
             "--graph" => {
-                saw_graph_flag = true;
                 source_graph_path = Some(next_path(&mut args, "--graph")?);
             }
             "--sidecar" => sidecar_script_path = Some(next_path(&mut args, "--sidecar")?),
@@ -143,26 +170,19 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<LaunchMode, Stri
     }
 
     let session_path = session_path.unwrap_or_else(|| PathBuf::from(DEFAULT_SESSION_PATH));
-    let source_graph_path = source_graph_path.unwrap_or_else(|| PathBuf::from(DEFAULT_GRAPH_PATH));
-
     match source_path {
         Some(source_path) => Ok(LaunchMode::Ingest {
             source_path,
             session_path,
-            source_graph_path,
+            source_graph_path: source_graph_path
+                .unwrap_or_else(|| PathBuf::from(DEFAULT_GRAPH_PATH)),
             sidecar_script_path: sidecar_script_path
                 .unwrap_or_else(|| PathBuf::from(DEFAULT_SIDECAR_PATH)),
             analysis_seed,
         }),
         None => {
-            if !saw_session_flag && !saw_graph_flag {
+            if !saw_session_flag {
                 return Err(help_text());
-            }
-            if saw_session_flag != saw_graph_flag {
-                return Err(format!(
-                    "load mode requires both --session and --graph\n\n{}",
-                    help_text()
-                ));
             }
 
             Ok(LaunchMode::Load {
@@ -181,7 +201,7 @@ fn next_path(args: &mut impl Iterator<Item = String>, flag: &str) -> Result<Path
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>]\n  riotbox-app --session <session.json> --graph <source-graph.json>\n\nDefaults:\n  --session {}\n  --graph {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>]\n\nDefaults:\n  --session {}\n  --graph {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_GRAPH_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -244,17 +264,26 @@ mod tests {
                 source_graph_path,
             } => {
                 assert_eq!(session_path, PathBuf::from("session.json"));
-                assert_eq!(source_graph_path, PathBuf::from("graph.json"));
+                assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
         }
     }
 
     #[test]
-    fn parse_args_rejects_missing_paths_for_load_mode() {
-        let error = parse_args(["--session".into(), "session.json".into()])
-            .expect_err("missing graph should fail");
+    fn parse_args_allows_session_only_for_load_mode() {
+        let mode =
+            parse_args(["--session".into(), "session.json".into()]).expect("session-only load");
 
-        assert!(error.contains("requires both --session and --graph"));
+        match mode {
+            LaunchMode::Load {
+                session_path,
+                source_graph_path,
+            } => {
+                assert_eq!(session_path, PathBuf::from("session.json"));
+                assert_eq!(source_graph_path, None);
+            }
+            LaunchMode::Ingest { .. } => panic!("expected load mode"),
+        }
     }
 }
