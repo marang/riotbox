@@ -199,6 +199,66 @@ Observed quality:
 
 This is good enough to prove real utility. It is not yet enough to prove that MemPalace should become a mandatory default workflow layer.
 
+## Broader Bakeoff Against `rg`
+
+To answer the more important question, a broader bakeoff was run after expanding the corpus to include:
+
+- `docs/`
+- `plan/`
+- `crates/`
+- `AGENTS.md`
+
+The same class of retrieval tasks was then tried with:
+
+- MemPalace search in the rootless Podman setup
+- plain `rg` against the Riotbox repo
+
+After re-mining the expanded corpus, MemPalace status reported `720` indexed drawers:
+
+- `plan`: `306`
+- `documentation`: `207`
+- `general`: `207`
+
+### Timing snapshot
+
+Observed query times on this machine:
+
+- MemPalace search: roughly `1.5` to `1.7` seconds per query after indexing
+- `rg`: roughly `5` to `11` milliseconds per query
+
+This matters: MemPalace is not a speed replacement for `rg`.
+
+### Task table
+
+| Task | MemPalace | `rg` | Winner |
+| --- | --- | --- | --- |
+| Why Rust for the main core | strong semantic hit, top result was `rust_engineering_guidelines.md` | fast but noisy, many literal matches across docs and plan | MemPalace |
+| `feral_rebuild` as profile, not second architecture | strong top hits in `preset_style_spec.md` and decision log | also strong and explicit | tie |
+| replay truth / snapshots / action log | strong top hit in `replay_model_spec.md` | relevant but noisier output across many files | MemPalace |
+| difference between Source Graph and SessionFile | partially useful, but weighted too heavily toward `session_file_spec.md` | broad and noisy, requires more manual filtering | slight MemPalace edge, still imperfect |
+| sidecar transport stance | strong top hit in the dedicated transport spike | also strong and exact | tie |
+| why `cpal` was chosen | strong top hit in decision log plus spike | also strong and exact | tie |
+| canonical `docs/` vs `plan/` split | strong top hit in decision log | also strong and exact | tie |
+| what was implemented in the Jam runtime slice | weak, did not surface the code slice cleanly | strong exact hits in `jam_app.rs` and decision log | `rg` |
+
+### Bakeoff reading
+
+Observed pattern:
+
+- MemPalace is better for question-shaped, semantic, cross-document retrieval
+- `rg` is better for exact symbol lookup, exact code lookup, and near-zero-latency navigation
+- MemPalace can reduce context rebuild for architectural questions
+- `rg` remains the right primary tool for code navigation and precise local inspection
+
+### Bakeoff conclusion
+
+The broader bakeoff changes the recommendation again, but only slightly:
+
+- MemPalace is now clearly useful enough to justify keeping as an optional Riotbox dev-memory tool
+- it should be treated as a complement to `rg`, not as a replacement
+- it is strongest when the user asks a semantic question rather than a literal file/symbol lookup
+- it still should not be made a mandatory default dependency for every contributor until the containerized workflow is wrapped in something more boring
+
 ### Updated conclusion
 
 Rootless Podman is not just a mitigation idea. It is a viable working setup for Riotbox on this machine.
@@ -256,7 +316,7 @@ Concrete recommendation:
 - do not route any product state through it
 - keep using repo docs, Linear, and Git history as canonical sources
 - keep the currently recommended MemPalace setup as: rootless Podman, pinned `python:3.12`, repo-local persistent storage under `.mempalace-eval/`
-- treat the ticket outcome as: usable optional dev-memory candidate, worth further evaluation against real day-to-day retrieval tasks
+- treat the ticket outcome as: usable optional dev-memory tool that complements `rg`, with broader default adoption still gated on workflow polish
 
 ## Revisit Triggers
 
@@ -272,7 +332,7 @@ Broader adoption should be reconsidered if at least one of these becomes true:
 The next trial should be broader and comparative:
 
 1. keep using the pinned rootless-container setup
-2. run at least ten real retrieval tasks from active Riotbox work
+2. run at least ten more real retrieval tasks from active Riotbox work
 3. compare task speed and answer quality against plain `rg` plus repo docs plus Linear history
 4. decide whether it becomes:
    - optional helper only
