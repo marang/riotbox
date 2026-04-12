@@ -159,6 +159,18 @@ Evidence: the `RIOTBOX-13` slice extends `JamAppState` with audio and sidecar ru
 Consequences: future TUI work should consume app-layer runtime summaries, while core contracts stay focused on replay-safe domain state.  
 Status: accepted
 
+### RBX-011
+
+Date: 2026-04-12  
+Topic: scheduler-facing transport boundary model  
+Phase: Core Skeleton  
+Question: how should Riotbox represent quantized commit timing before the full scheduler exists?  
+Decision: add an explicit `TransportClockState` and `CommitBoundaryState` in `riotbox-core`, and let the action queue commit against that boundary state instead of a bare enum alone. Return stable per-boundary commit order from the queue for scheduler-facing use.  
+Why: replay and scheduler work need a concrete musical boundary model instead of relying on hidden timing assumptions or incidental queue vector order. The queue should know which musical window it is committing against, not just that it saw a generic `Bar` or `Phrase`.  
+Evidence: the `RIOTBOX-14` slice adds transport and boundary types, queue commits against explicit boundary state, and tests stable commit ordering and boundary identity without changing persistence yet.  
+Consequences: future scheduler and replay work should build on this explicit boundary model, and persistence can decide later how much of that runtime boundary metadata becomes durable session history.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

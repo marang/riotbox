@@ -4,6 +4,7 @@ pub mod persistence;
 pub mod queue;
 pub mod session;
 pub mod source_graph;
+pub mod transport;
 pub mod view;
 
 pub type TimestampMs = u64;
