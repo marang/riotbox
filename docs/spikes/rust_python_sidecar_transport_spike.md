@@ -50,6 +50,11 @@ Why this is the right v1 spike target:
 - no daemon, socket setup, or background service lifecycle required
 - good fit for request/response analysis jobs where the sidecar may restart without taking audio down
 
+Important clarification:
+
+- this is the first transport contract, not the promised final production transport
+- the current `Python` sidecar choice is also pragmatic rather than permanent
+
 ---
 
 ## What This Spike Validates
@@ -71,6 +76,17 @@ Why this is the right v1 spike target:
 - target analysis latency
 - socket-based reconnect behavior
 - final production RPC schema
+
+## Revisit Triggers
+
+The current `Python` plus `NDJSON over stdio` choice should be revisited when any of the following become true:
+
+- the sidecar protocol grows beyond a small set of synchronous request/response messages
+- progress updates or streaming events become necessary
+- multiple concurrent analysis jobs need clearer multiplexing
+- the sidecar must survive independently from the Rust parent process
+- schema/versioning pressure makes a stricter transport such as `Protobuf` worth the extra tooling
+- parts of the analysis path need to move out of `Python` for performance, determinism, or maintenance reasons
 
 ---
 
