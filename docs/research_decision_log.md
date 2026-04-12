@@ -147,6 +147,18 @@ Evidence: the new runtime shell compiles cleanly, reuses the existing probe path
 Consequences: future runtime work should build transport, scheduler, and app-facing health state on top of this shell rather than creating a second audio runtime abstraction.  
 Status: accepted
 
+### RBX-010
+
+Date: 2026-04-12  
+Topic: app-layer runtime health state  
+Phase: Core Skeleton  
+Question: where should Riotbox represent audio and sidecar runtime health before a full TUI exists?  
+Decision: keep runtime-facing health state in `riotbox-app`, not in `riotbox-core`. Reuse typed audio health from `riotbox-audio`, model sidecar availability in the app layer, and derive a Jam-facing runtime summary view there.  
+Why: runtime health belongs to orchestration and presentation, not to the stable core domain contracts. Keeping it in the app layer avoids pulling service/runtime concerns into `SourceGraph`, `SessionFile`, or core Jam models too early.  
+Evidence: the `RIOTBOX-13` slice extends `JamAppState` with audio and sidecar runtime state, derives a separate runtime summary view, and passes tests covering ready, degraded, and faulted states without changing `riotbox-core`.  
+Consequences: future TUI work should consume app-layer runtime summaries, while core contracts stay focused on replay-safe domain state.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

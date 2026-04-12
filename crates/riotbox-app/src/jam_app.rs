@@ -4,6 +4,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
@@ -48,13 +49,107 @@ pub struct JamFileSet {
     pub source_graph_path: PathBuf,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct AppRuntimeState {
+    pub audio: Option<AudioRuntimeHealth>,
+    pub sidecar: SidecarState,
+}
+
+impl Default for AppRuntimeState {
+    fn default() -> Self {
+        Self {
+            audio: None,
+            sidecar: SidecarState::Unknown,
+        }
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SidecarState {
+    Unknown,
+    Ready {
+        version: Option<String>,
+        transport: String,
+    },
+    Unavailable {
+        reason: String,
+    },
+    Degraded {
+        reason: String,
+    },
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct JamRuntimeView {
+    pub audio_status: String,
+    pub audio_callback_count: u64,
+    pub audio_last_error: Option<String>,
+    pub sidecar_status: String,
+    pub sidecar_version: Option<String>,
+    pub runtime_warnings: Vec<String>,
+}
+
+impl JamRuntimeView {
+    #[must_use]
+    pub fn build(runtime: &AppRuntimeState) -> Self {
+        let (audio_status, audio_callback_count, audio_last_error) = match &runtime.audio {
+            Some(health) => (
+                match health.lifecycle {
+                    AudioRuntimeLifecycle::Idle => "idle".into(),
+                    AudioRuntimeLifecycle::Running => "running".into(),
+                    AudioRuntimeLifecycle::Stopped => "stopped".into(),
+                    AudioRuntimeLifecycle::Faulted => "faulted".into(),
+                },
+                health.callback_count,
+                health.last_stream_error.clone(),
+            ),
+            None => ("unknown".into(), 0, None),
+        };
+
+        let (sidecar_status, sidecar_version) = match &runtime.sidecar {
+            SidecarState::Unknown => ("unknown".into(), None),
+            SidecarState::Ready { version, .. } => ("ready".into(), version.clone()),
+            SidecarState::Unavailable { .. } => ("unavailable".into(), None),
+            SidecarState::Degraded { .. } => ("degraded".into(), None),
+        };
+
+        let mut runtime_warnings = Vec::new();
+        if matches!(
+            runtime.audio.as_ref().map(|health| health.lifecycle),
+            Some(AudioRuntimeLifecycle::Faulted)
+        ) {
+            runtime_warnings.push("audio runtime faulted".into());
+        }
+        match &runtime.sidecar {
+            SidecarState::Unavailable { reason } => {
+                runtime_warnings.push(format!("sidecar unavailable: {reason}"));
+            }
+            SidecarState::Degraded { reason } => {
+                runtime_warnings.push(format!("sidecar degraded: {reason}"));
+            }
+            SidecarState::Unknown | SidecarState::Ready { .. } => {}
+        }
+
+        Self {
+            audio_status,
+            audio_callback_count,
+            audio_last_error,
+            sidecar_status,
+            sidecar_version,
+            runtime_warnings,
+        }
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct JamAppState {
     pub files: Option<JamFileSet>,
     pub session: SessionFile,
     pub source_graph: Option<SourceGraph>,
     pub queue: ActionQueue,
+    pub runtime: AppRuntimeState,
     pub jam_view: JamViewModel,
+    pub runtime_view: JamRuntimeView,
 }
 
 impl JamAppState {
@@ -65,13 +160,17 @@ impl JamAppState {
         queue: ActionQueue,
     ) -> Self {
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
+        let runtime = AppRuntimeState::default();
+        let runtime_view = JamRuntimeView::build(&runtime);
 
         Self {
             files: None,
             session,
             source_graph,
             queue,
+            runtime,
             jam_view,
+            runtime_view,
         }
     }
 
@@ -85,6 +184,8 @@ impl JamAppState {
         let source_graph = load_source_graph_json(&source_graph_path)?;
         let queue = ActionQueue::new();
         let jam_view = JamViewModel::build(&session, &queue, Some(&source_graph));
+        let runtime = AppRuntimeState::default();
+        let runtime_view = JamRuntimeView::build(&runtime);
 
         Ok(Self {
             files: Some(JamFileSet {
@@ -94,12 +195,25 @@ impl JamAppState {
             session,
             source_graph: Some(source_graph),
             queue,
+            runtime,
             jam_view,
+            runtime_view,
         })
     }
 
     pub fn refresh_view(&mut self) {
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
+        self.runtime_view = JamRuntimeView::build(&self.runtime);
+    }
+
+    pub fn set_audio_health(&mut self, health: AudioRuntimeHealth) {
+        self.runtime.audio = Some(health);
+        self.runtime_view = JamRuntimeView::build(&self.runtime);
+    }
+
+    pub fn set_sidecar_state(&mut self, state: SidecarState) {
+        self.runtime.sidecar = state;
+        self.runtime_view = JamRuntimeView::build(&self.runtime);
     }
 
     pub fn save(&self) -> Result<(), JamAppError> {
@@ -119,6 +233,7 @@ impl JamAppState {
 mod tests {
     use tempfile::tempdir;
 
+    use riotbox_audio::runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle};
     use riotbox_core::{
         action::{
             Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget,
@@ -144,6 +259,26 @@ mod tests {
     };
 
     use super::*;
+
+    fn sample_audio_health(lifecycle: AudioRuntimeLifecycle) -> AudioRuntimeHealth {
+        AudioRuntimeHealth {
+            lifecycle,
+            output: Some(AudioOutputInfo {
+                host_name: "Alsa".into(),
+                device_name: "default".into(),
+                sample_format: "F32".into(),
+                sample_rate: 44_100,
+                channel_count: 2,
+                buffer_size: "Default".into(),
+                supported_output_config_count: Some(160),
+            }),
+            callback_count: 18,
+            max_callback_gap_micros: Some(21_330),
+            stream_error_count: u64::from(matches!(lifecycle, AudioRuntimeLifecycle::Faulted)),
+            last_stream_error: matches!(lifecycle, AudioRuntimeLifecycle::Faulted)
+                .then(|| "stream stalled".into()),
+        }
+    }
 
     fn sample_graph() -> SourceGraph {
         let mut graph = SourceGraph::new(
@@ -315,6 +450,8 @@ mod tests {
         assert!(state.jam_view.transport.is_playing);
         assert_eq!(state.jam_view.scene.scene_count, 1);
         assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
+        assert_eq!(state.runtime_view.audio_status, "unknown");
+        assert_eq!(state.runtime_view.sidecar_status, "unknown");
     }
 
     #[test]
@@ -342,5 +479,57 @@ mod tests {
 
         assert_eq!(persisted_session.notes.as_deref(), Some("updated"));
         assert_eq!(persisted_graph, graph);
+    }
+
+    #[test]
+    fn runtime_view_updates_from_audio_and_sidecar_state() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.set_audio_health(sample_audio_health(AudioRuntimeLifecycle::Running));
+        state.set_sidecar_state(SidecarState::Ready {
+            version: Some("0.1.0".into()),
+            transport: "stdio-ndjson".into(),
+        });
+
+        assert_eq!(state.runtime_view.audio_status, "running");
+        assert_eq!(state.runtime_view.audio_callback_count, 18);
+        assert_eq!(state.runtime_view.sidecar_status, "ready");
+        assert_eq!(state.runtime_view.sidecar_version.as_deref(), Some("0.1.0"));
+        assert!(state.runtime_view.runtime_warnings.is_empty());
+    }
+
+    #[test]
+    fn runtime_view_surfaces_faulted_and_degraded_states() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.set_audio_health(sample_audio_health(AudioRuntimeLifecycle::Faulted));
+        state.set_sidecar_state(SidecarState::Degraded {
+            reason: "worker restart pending".into(),
+        });
+
+        assert_eq!(state.runtime_view.audio_status, "faulted");
+        assert_eq!(
+            state.runtime_view.audio_last_error.as_deref(),
+            Some("stream stalled")
+        );
+        assert_eq!(state.runtime_view.sidecar_status, "degraded");
+        assert!(
+            state
+                .runtime_view
+                .runtime_warnings
+                .iter()
+                .any(|warning| warning == "audio runtime faulted")
+        );
+        assert!(
+            state
+                .runtime_view
+                .runtime_warnings
+                .iter()
+                .any(|warning| warning.contains("sidecar degraded"))
+        );
     }
 }
