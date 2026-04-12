@@ -135,6 +135,18 @@ Evidence: the current workspace already uses `cargo` and a matching `just ci` co
 Consequences: contributors should treat those three commands as the local pre-PR baseline, and future CI growth should add replay, benchmark, or screenshot checks only when those contracts become stable enough to enforce.  
 Status: accepted
 
+### RBX-009
+
+Date: 2026-04-12  
+Topic: audio runtime shell baseline  
+Phase: Core Skeleton  
+Question: what is the smallest reusable audio runtime boundary Riotbox should introduce after the completed CPAL spike?  
+Decision: add a minimal `AudioRuntimeShell` above `cpal` inside `crates/riotbox-audio`, with explicit lifecycle state, typed output metadata, typed health snapshots, and typed startup errors. Keep the shell limited to stream lifecycle and telemetry for now.  
+Why: the project needs a real runtime-facing boundary before scheduler, app-level runtime state, or TUI health surfaces can be added. The smallest useful step is a shell that owns the stream and publishes measurable health without overbuilding the engine.  
+Evidence: the new runtime shell compiles cleanly, reuses the existing probe path, and passes unit tests for telemetry accounting, faulted health snapshots, and lifecycle transitions.  
+Consequences: future runtime work should build transport, scheduler, and app-facing health state on top of this shell rather than creating a second audio runtime abstraction.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics
