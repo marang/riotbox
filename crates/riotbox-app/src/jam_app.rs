@@ -1,32 +1,43 @@
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
+    io,
     path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
     TimestampMs,
+    ids::SourceId,
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
     },
     queue::{ActionQueue, CommittedActionRef},
-    session::SessionFile,
-    source_graph::SourceGraph,
+    session::{GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
+    source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
 };
+use riotbox_sidecar::client::{ClientError as SidecarClientError, StdioSidecarClient};
+use sha2::{Digest, Sha256};
 
 #[derive(Debug)]
 pub enum JamAppError {
+    Io(io::Error),
     Persistence(PersistenceError),
+    Serialization(serde_json::Error),
+    Sidecar(SidecarClientError),
 }
 
 impl Display for JamAppError {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
         match self {
+            Self::Io(error) => write!(f, "I/O error: {error}"),
             Self::Persistence(error) => write!(f, "persistence error: {error}"),
+            Self::Serialization(error) => write!(f, "serialization error: {error}"),
+            Self::Sidecar(error) => write!(f, "sidecar error: {error}"),
         }
     }
 }
@@ -34,14 +45,35 @@ impl Display for JamAppError {
 impl Error for JamAppError {
     fn source(&self) -> Option<&(dyn Error + 'static)> {
         match self {
+            Self::Io(error) => Some(error),
             Self::Persistence(error) => Some(error),
+            Self::Serialization(error) => Some(error),
+            Self::Sidecar(error) => Some(error),
         }
+    }
+}
+
+impl From<io::Error> for JamAppError {
+    fn from(value: io::Error) -> Self {
+        Self::Io(value)
     }
 }
 
 impl From<PersistenceError> for JamAppError {
     fn from(value: PersistenceError) -> Self {
         Self::Persistence(value)
+    }
+}
+
+impl From<serde_json::Error> for JamAppError {
+    fn from(value: serde_json::Error) -> Self {
+        Self::Serialization(value)
+    }
+}
+
+impl From<SidecarClientError> for JamAppError {
+    fn from(value: SidecarClientError) -> Self {
+        Self::Sidecar(value)
     }
 }
 
@@ -215,6 +247,33 @@ impl JamAppState {
         })
     }
 
+    pub fn analyze_source_file_to_json(
+        source_path: impl AsRef<Path>,
+        session_path: impl AsRef<Path>,
+        source_graph_path: impl AsRef<Path>,
+        sidecar_script_path: impl AsRef<Path>,
+        analysis_seed: u64,
+    ) -> Result<Self, JamAppError> {
+        let source_path = source_path.as_ref().canonicalize()?;
+        let session_path = session_path.as_ref().to_path_buf();
+        let source_graph_path = source_graph_path.as_ref().to_path_buf();
+
+        let mut client = StdioSidecarClient::spawn_python(sidecar_script_path)?;
+        let pong = client.ping()?;
+        let graph = client.analyze_source_file(&source_path, analysis_seed)?;
+
+        let session = session_from_ingested_graph(&graph, &source_path, &source_graph_path)?;
+        save_source_graph_json(&source_graph_path, &graph)?;
+        save_session_json(&session_path, &session)?;
+
+        let mut state = Self::from_json_files(&session_path, &source_graph_path)?;
+        state.set_sidecar_state(SidecarState::Ready {
+            version: Some(pong.sidecar_version),
+            transport: "stdio-ndjson".into(),
+        });
+        Ok(state)
+    }
+
     pub fn refresh_view(&mut self) {
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
         self.runtime_view = JamRuntimeView::build(&self.runtime);
@@ -272,6 +331,64 @@ impl JamAppState {
     }
 }
 
+fn session_from_ingested_graph(
+    graph: &SourceGraph,
+    source_path: &Path,
+    source_graph_path: &Path,
+) -> Result<SessionFile, JamAppError> {
+    let timestamp = timestamp_now();
+    let source_id = SourceId::from(graph.source.source_id.as_str());
+    let graph_hash = source_graph_hash(graph)?;
+
+    let mut session = SessionFile::new(
+        format!("session-{}", graph.source.source_id.as_str()),
+        env!("CARGO_PKG_VERSION"),
+        timestamp.clone(),
+    );
+    session.updated_at = timestamp;
+    session.source_refs.push(SourceRef {
+        source_id: source_id.clone(),
+        path_hint: source_path.to_string_lossy().into_owned(),
+        content_hash: graph.source.content_hash.clone(),
+        duration_seconds: graph.source.duration_seconds,
+        decode_profile: decode_profile_label(&graph.source.decode_profile),
+    });
+    session.source_graph_refs.push(SourceGraphRef {
+        source_id,
+        graph_version: graph.graph_version,
+        graph_hash,
+        storage_mode: GraphStorageMode::External,
+        embedded_graph: None,
+        external_path: Some(source_graph_path.to_string_lossy().into_owned()),
+        provenance: graph.provenance.clone(),
+    });
+    session.notes = Some("session created from analysis ingest slice".into());
+
+    Ok(session)
+}
+
+fn source_graph_hash(graph: &SourceGraph) -> Result<String, JamAppError> {
+    let encoded = serde_json::to_vec(graph)?;
+    Ok(format!("sha256:{:x}", Sha256::digest(encoded)))
+}
+
+fn decode_profile_label(profile: &DecodeProfile) -> String {
+    match profile {
+        DecodeProfile::Native => "native".into(),
+        DecodeProfile::NormalizedStereo => "normalized_stereo".into(),
+        DecodeProfile::NormalizedMono => "normalized_mono".into(),
+        DecodeProfile::Custom(value) => value.clone(),
+    }
+}
+
+fn timestamp_now() -> String {
+    let millis = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis();
+    format!("unix_ms:{millis}")
+}
+
 fn transport_clock_from_session(session: &SessionFile) -> TransportClockState {
     TransportClockState {
         is_playing: session.runtime_state.transport.is_playing,
@@ -294,6 +411,8 @@ fn max_action_id(session: &SessionFile) -> Option<riotbox_core::ids::ActionId> {
 
 #[cfg(test)]
 mod tests {
+    use std::{fs, io, path::PathBuf};
+
     use tempfile::tempdir;
 
     use riotbox_audio::runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle};
@@ -322,6 +441,7 @@ mod tests {
         },
         transport::TransportClockState,
     };
+    use riotbox_sidecar::client::ClientError as SidecarClientError;
 
     use super::*;
 
@@ -504,6 +624,13 @@ mod tests {
         };
         session.notes = Some("keeper session".into());
         session
+    }
+
+    fn sidecar_script_path() -> PathBuf {
+        PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+            .join("../../python/sidecar/json_stdio_sidecar.py")
+            .canonicalize()
+            .expect("resolve sidecar script path")
     }
 
     #[test]
@@ -710,5 +837,80 @@ mod tests {
         assert_eq!(state.jam_view.pending_actions.len(), 0);
         assert_eq!(state.jam_view.recent_actions[0].id, second.to_string());
         assert_eq!(state.jam_view.recent_actions[1].id, first.to_string());
+    }
+
+    #[test]
+    fn ingests_source_file_through_sidecar_and_persists_state() {
+        let dir = tempdir().expect("create temp dir");
+        let source_path = dir.path().join("input.wav");
+        let session_path = dir.path().join("sessions").join("session.json");
+        let graph_path = dir.path().join("graphs").join("source-graph.json");
+
+        fs::write(&source_path, vec![1_u8; 16_384]).expect("write source file");
+
+        let state = JamAppState::analyze_source_file_to_json(
+            &source_path,
+            &session_path,
+            &graph_path,
+            sidecar_script_path(),
+            29,
+        )
+        .expect("ingest source file");
+
+        assert_eq!(state.runtime_view.sidecar_status, "ready");
+        assert_eq!(state.runtime_view.sidecar_version.as_deref(), Some("0.1.0"));
+        assert_eq!(
+            state
+                .source_graph
+                .as_ref()
+                .map(|graph| graph.source.path.clone()),
+            Some(source_path.to_string_lossy().into_owned())
+        );
+        assert_eq!(state.session.source_refs.len(), 1);
+        assert_eq!(state.session.source_graph_refs.len(), 1);
+        assert_eq!(
+            state.session.source_graph_refs[0].storage_mode,
+            GraphStorageMode::External
+        );
+        assert_eq!(
+            state.session.source_graph_refs[0].external_path.as_deref(),
+            Some(graph_path.to_string_lossy().as_ref())
+        );
+        assert!(session_path.exists());
+        assert!(graph_path.exists());
+
+        let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
+        assert_eq!(
+            persisted_graph.provenance.provider_set,
+            vec!["stub.file_ingest"]
+        );
+        assert_eq!(persisted_graph.provenance.analysis_seed, 29);
+    }
+
+    #[test]
+    fn ingest_surfaces_missing_source_file_as_sidecar_error() {
+        let dir = tempdir().expect("create temp dir");
+        let source_path = dir.path().join("missing.wav");
+        let session_path = dir.path().join("sessions").join("session.json");
+        let graph_path = dir.path().join("graphs").join("source-graph.json");
+
+        let error = JamAppState::analyze_source_file_to_json(
+            &source_path,
+            &session_path,
+            &graph_path,
+            sidecar_script_path(),
+            29,
+        )
+        .expect_err("missing source should fail");
+
+        match error {
+            JamAppError::Io(io_error) => {
+                assert_eq!(io_error.kind(), io::ErrorKind::NotFound);
+            }
+            JamAppError::Sidecar(SidecarClientError::Sidecar(payload)) => {
+                assert_eq!(payload.code, "source_missing");
+            }
+            other => panic!("unexpected error: {other}"),
+        }
     }
 }

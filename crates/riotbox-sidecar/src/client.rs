@@ -1,6 +1,6 @@
 use crate::protocol::{
-    BuildSourceGraphStubPayload, PingPayload, PongPayload, SidecarErrorPayload, SidecarRequest,
-    SidecarResponse, decode_json_line, encode_json_line,
+    AnalyzeSourceFilePayload, BuildSourceGraphStubPayload, PingPayload, PongPayload,
+    SidecarErrorPayload, SidecarRequest, SidecarResponse, decode_json_line, encode_json_line,
 };
 use riotbox_core::source_graph::{SourceDescriptor, SourceGraph};
 use std::{
@@ -128,6 +128,27 @@ impl StdioSidecarClient {
         }
     }
 
+    pub fn analyze_source_file(
+        &mut self,
+        source_path: impl AsRef<Path>,
+        analysis_seed: u64,
+    ) -> Result<SourceGraph, ClientError> {
+        let request_id = self.next_request_id();
+        let request = SidecarRequest::AnalyzeSourceFile(AnalyzeSourceFilePayload {
+            request_id,
+            source_path: source_path.as_ref().to_string_lossy().into_owned(),
+            analysis_seed,
+        });
+
+        self.write_request(&request)?;
+
+        match self.read_response()? {
+            SidecarResponse::SourceGraphBuilt(payload) => Ok(payload.graph),
+            SidecarResponse::Error(error) => Err(ClientError::Sidecar(error)),
+            SidecarResponse::Pong(_) => Err(ClientError::UnexpectedResponse("pong")),
+        }
+    }
+
     fn next_request_id(&mut self) -> String {
         let request_id = format!("req-{}", self.next_request_id);
         self.next_request_id += 1;
@@ -207,5 +228,24 @@ mod tests {
         assert_eq!(graph.provenance.analysis_seed, 17);
         assert_eq!(graph.loop_candidate_count(), 1);
         assert_eq!(graph.provenance.provider_set, vec!["stub.transport"]);
+    }
+
+    #[test]
+    fn stdio_sidecar_can_analyze_a_real_source_file_path() {
+        let temp_dir = tempfile::tempdir().expect("create temp dir");
+        let source_path = temp_dir.path().join("input.wav");
+        std::fs::write(&source_path, vec![0_u8; 8_192]).expect("write source fixture");
+
+        let mut client =
+            StdioSidecarClient::spawn_python(sidecar_script_path()).expect("spawn python sidecar");
+
+        let graph = client
+            .analyze_source_file(&source_path, 23)
+            .expect("analyze source file");
+
+        assert_eq!(graph.source.path, source_path.to_string_lossy());
+        assert_eq!(graph.provenance.analysis_seed, 23);
+        assert_eq!(graph.provenance.provider_set, vec!["stub.file_ingest"]);
+        assert!(graph.loop_candidate_count() >= 1);
     }
 }
