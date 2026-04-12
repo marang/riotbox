@@ -9,14 +9,14 @@ Notes:
 ┌Jam───────────────────────────────────────────────────────────────────────────┐
 │Riotbox Jam                                                                 │
 │Mode ingest | Source src-1 | 126.0 BPM | trust usable                       │
-│Now idle at beat 32.0 in scene-a | Next ghost mutate_scene @ next_bar       │
+│Now idle at beat 32.0 in scene-a | Next ghost mutate.scene @ next_bar       │
 └──────────────────────────────────────────────────────────────────────────────┘
 ┌Now───────────────┐┌Next──────────────┐┌Trust─────────────┐┌Lanes────────────┐
 │Transport: idle   ││queued ghost      ││overall 0.74      ││MC-202: leader   │
 │Beat 32.0 |       ││mutate_scene @    ││warnings 1        ││W-30: bank-a     │
 │scene scene-a     ││next_bar          ││timing medium |   ││TR-909 slam: on  │
 │Ghost: assist     ││recent user       ││sections high     ││                 │
-│(clear)           ││capture_now       ││loops 1 | hooks 0 ││                 │
+│(clear)           ││capture.now       ││loops 1 | hooks 0 ││                 │
 │                  ││[committed]       ││                  ││                 │
 └──────────────────┘└──────────────────┘└──────────────────┘└─────────────────┘
 ┌Source─────────────────────────────────────┐┌Sections─────────────────────────┐
