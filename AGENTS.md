@@ -164,6 +164,16 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Do not revert unrelated user changes
 - Keep commits scoped to one coherent slice where possible
 
+### Review gate
+
+- Before opening a PR, run a self-review on the branch diff
+- The self-review should explicitly check for:
+  - correctness bugs
+  - architecture drift against `docs/` contracts
+  - missing tests for new behavior
+  - workflow/documentation gaps introduced by the slice
+- If the self-review finds a real issue, fix it on the branch before creating the PR when feasible
+
 ### PR descriptions
 
 - Every PR description should include a short `Why This Matters` section.
