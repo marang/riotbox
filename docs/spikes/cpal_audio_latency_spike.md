@@ -93,6 +93,11 @@ This means the correct reading is:
 - the earlier failure was caused by the restricted execution environment
 - meaningful latency work should still be validated on target machines, but the basic stream-open path is confirmed here
 
+General rule from this spike:
+
+- every future audio observation should be tagged as either `sandbox` or `real session`
+- sandbox-only failures must not be treated as device or backend conclusions without real-session confirmation
+
 ---
 
 ## What This Spike Does Not Yet Validate

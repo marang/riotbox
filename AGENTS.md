@@ -181,6 +181,33 @@ Add new commands here when the repo grows enough that agents need a stable short
 
 ---
 
+## Sandboxed Audio
+
+Audio and device probing require extra care in this environment.
+
+Rules:
+
+- Do not assume a failed audio probe inside the sandbox means the machine audio stack is broken.
+- Distinguish clearly between:
+  - sandboxed execution
+  - real user-session execution
+- For Linux audio validation, record whether a result came from:
+  - restricted sandbox context
+  - escalated command against the live user session
+- Treat sandbox-only audio failures as inconclusive until verified against the real session.
+
+Current known behavior from Riotbox work:
+
+- sandboxed audio and session-bus access can fail even when the machine audio setup is healthy
+- on this machine, the real session uses PipeWire, while `cpal` can still report and use the Linux `Alsa` host successfully
+
+Practical consequence:
+
+- use real-session verification for audio spikes, device enumeration, and latency checks
+- write down which context produced the observation
+
+---
+
 ## When In Doubt
 
 - Prefer the smaller, more explicit model
