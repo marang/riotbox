@@ -6,13 +6,15 @@ use std::{
 
 use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
+    TimestampMs,
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
     },
-    queue::ActionQueue,
+    queue::{ActionQueue, CommittedActionRef},
     session::SessionFile,
     source_graph::SourceGraph,
+    transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
 };
 
@@ -49,10 +51,12 @@ pub struct JamFileSet {
     pub source_graph_path: PathBuf,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct AppRuntimeState {
     pub audio: Option<AudioRuntimeHealth>,
     pub sidecar: SidecarState,
+    pub transport: TransportClockState,
+    pub last_commit_boundary: Option<CommitBoundaryState>,
 }
 
 impl Default for AppRuntimeState {
@@ -60,6 +64,8 @@ impl Default for AppRuntimeState {
         Self {
             audio: None,
             sidecar: SidecarState::Unknown,
+            transport: TransportClockState::default(),
+            last_commit_boundary: None,
         }
     }
 }
@@ -157,10 +163,14 @@ impl JamAppState {
     pub fn from_parts(
         session: SessionFile,
         source_graph: Option<SourceGraph>,
-        queue: ActionQueue,
+        mut queue: ActionQueue,
     ) -> Self {
+        queue.reserve_action_ids_after(max_action_id(&session));
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
-        let runtime = AppRuntimeState::default();
+        let runtime = AppRuntimeState {
+            transport: transport_clock_from_session(&session),
+            ..AppRuntimeState::default()
+        };
         let runtime_view = JamRuntimeView::build(&runtime);
 
         Self {
@@ -182,9 +192,13 @@ impl JamAppState {
         let source_graph_path = source_graph_path.as_ref().to_path_buf();
         let session = load_session_json(&session_path)?;
         let source_graph = load_source_graph_json(&source_graph_path)?;
-        let queue = ActionQueue::new();
+        let mut queue = ActionQueue::new();
+        queue.reserve_action_ids_after(max_action_id(&session));
         let jam_view = JamViewModel::build(&session, &queue, Some(&source_graph));
-        let runtime = AppRuntimeState::default();
+        let runtime = AppRuntimeState {
+            transport: transport_clock_from_session(&session),
+            ..AppRuntimeState::default()
+        };
         let runtime_view = JamRuntimeView::build(&runtime);
 
         Ok(Self {
@@ -216,6 +230,35 @@ impl JamAppState {
         self.runtime_view = JamRuntimeView::build(&self.runtime);
     }
 
+    pub fn update_transport_clock(&mut self, clock: TransportClockState) {
+        self.runtime.transport = clock.clone();
+        self.session.runtime_state.transport.is_playing = clock.is_playing;
+        self.session.runtime_state.transport.position_beats = clock.position_beats;
+        self.session.runtime_state.transport.current_scene = clock.current_scene.clone();
+        self.session.runtime_state.scene_state.active_scene = clock.current_scene;
+        self.refresh_view();
+    }
+
+    pub fn commit_ready_actions(
+        &mut self,
+        boundary: CommitBoundaryState,
+        committed_at: TimestampMs,
+    ) -> Vec<CommittedActionRef> {
+        let committed = self
+            .queue
+            .commit_ready_for_transport(boundary.clone(), committed_at);
+
+        for committed_ref in &committed {
+            if let Some(action) = self.queue.history_action(committed_ref.action_id) {
+                self.session.action_log.actions.push(action.clone());
+            }
+        }
+
+        self.runtime.last_commit_boundary = Some(boundary);
+        self.refresh_view();
+        committed
+    }
+
     pub fn save(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
             save_session_json(&files.session_path, &self.session)?;
@@ -229,6 +272,26 @@ impl JamAppState {
     }
 }
 
+fn transport_clock_from_session(session: &SessionFile) -> TransportClockState {
+    TransportClockState {
+        is_playing: session.runtime_state.transport.is_playing,
+        position_beats: session.runtime_state.transport.position_beats,
+        beat_index: session.runtime_state.transport.position_beats.floor() as u64,
+        bar_index: 0,
+        phrase_index: 0,
+        current_scene: session.runtime_state.transport.current_scene.clone(),
+    }
+}
+
+fn max_action_id(session: &SessionFile) -> Option<riotbox_core::ids::ActionId> {
+    session
+        .action_log
+        .actions
+        .iter()
+        .map(|action| action.id)
+        .max()
+}
+
 #[cfg(test)]
 mod tests {
     use tempfile::tempdir;
@@ -236,8 +299,9 @@ mod tests {
     use riotbox_audio::runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle};
     use riotbox_core::{
         action::{
-            Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget,
-            ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
+            Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
+            ActionTarget, ActorType, CommitBoundary, GhostMode, Quantization, TargetScope,
+            UndoPolicy,
         },
         ids::{
             ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SnapshotId, SourceId,
@@ -256,6 +320,7 @@ mod tests {
             RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
             SourceGraphVersion,
         },
+        transport::TransportClockState,
     };
 
     use super::*;
@@ -531,5 +596,119 @@ mod tests {
                 .iter()
                 .any(|warning| warning.contains("sidecar degraded"))
         );
+    }
+
+    #[test]
+    fn updates_transport_clock_and_refreshes_jam_state() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        let clock = TransportClockState {
+            is_playing: false,
+            position_beats: 48.5,
+            beat_index: 48,
+            bar_index: 13,
+            phrase_index: 4,
+            current_scene: Some(SceneId::from("scene-2")),
+        };
+
+        state.update_transport_clock(clock.clone());
+
+        assert_eq!(state.runtime.transport, clock);
+        assert!(!state.session.runtime_state.transport.is_playing);
+        assert_eq!(state.session.runtime_state.transport.position_beats, 48.5);
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .transport
+                .current_scene
+                .as_ref()
+                .map(ToString::to_string),
+            Some("scene-2".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .scene_state
+                .active_scene
+                .as_ref()
+                .map(ToString::to_string),
+            Some("scene-2".into())
+        );
+        assert!(!state.jam_view.transport.is_playing);
+        assert_eq!(state.jam_view.transport.position_beats, 48.5);
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-2")
+        );
+    }
+
+    #[test]
+    fn commits_ready_actions_into_session_log_in_stable_order() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        let first = state.queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::CaptureNow,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneW30),
+                    ..Default::default()
+                },
+            ),
+            300,
+        );
+        let second = state.queue.enqueue(
+            ActionDraft::new(
+                ActorType::Ghost,
+                ActionCommand::MutateScene,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::Scene),
+                    ..Default::default()
+                },
+            ),
+            301,
+        );
+
+        let boundary = CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 64,
+            bar_index: 17,
+            phrase_index: 4,
+            scene_id: Some(SceneId::from("scene-1")),
+        };
+
+        let committed = state.commit_ready_actions(boundary.clone(), 400);
+
+        assert_eq!(committed.len(), 2);
+        assert_eq!(committed[0].action_id, first);
+        assert_eq!(committed[0].commit_sequence, 1);
+        assert_eq!(committed[1].action_id, second);
+        assert_eq!(committed[1].commit_sequence, 2);
+        assert_eq!(state.runtime.last_commit_boundary, Some(boundary));
+        assert_eq!(state.queue.pending_actions().len(), 0);
+        assert_eq!(state.session.action_log.actions.len(), 3);
+        assert_eq!(state.session.action_log.actions[1].id, first);
+        assert_eq!(state.session.action_log.actions[2].id, second);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .iter()
+                .map(|action| action.id)
+                .collect::<Vec<_>>(),
+            vec![ActionId(1), first, second]
+        );
+        assert_eq!(state.jam_view.pending_actions.len(), 0);
+        assert_eq!(state.jam_view.recent_actions[0].id, second.to_string());
+        assert_eq!(state.jam_view.recent_actions[1].id, first.to_string());
     }
 }

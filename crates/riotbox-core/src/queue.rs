@@ -64,6 +64,17 @@ impl ActionQueue {
         &self.history
     }
 
+    pub fn reserve_action_ids_after(&mut self, last_action_id: Option<ActionId>) {
+        if let Some(last_action_id) = last_action_id {
+            self.next_id = self.next_id.max(last_action_id.0.saturating_add(1));
+        }
+    }
+
+    #[must_use]
+    pub fn history_action(&self, action_id: ActionId) -> Option<&Action> {
+        self.history.iter().find(|action| action.id == action_id)
+    }
+
     pub fn commit_ready(
         &mut self,
         boundary: CommitBoundary,
@@ -308,5 +319,26 @@ mod tests {
         assert_eq!(committed[0].commit_sequence, 1);
         assert_eq!(committed[1].action_id, second);
         assert_eq!(committed[1].commit_sequence, 2);
+    }
+
+    #[test]
+    fn reserves_action_ids_after_existing_history() {
+        let mut queue = ActionQueue::new();
+        queue.reserve_action_ids_after(Some(ActionId(9)));
+
+        let action_id = queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::CaptureNow,
+                Quantization::Immediate,
+                crate::action::ActionTarget {
+                    scope: Some(TargetScope::LaneW30),
+                    ..Default::default()
+                },
+            ),
+            100,
+        );
+
+        assert_eq!(action_id, ActionId(10));
     }
 }
