@@ -55,6 +55,7 @@ docs/
   research_decision_log.md
   spikes/
     cpal_audio_latency_spike.md
+    mempalace_evaluation.md
     rust_python_sidecar_transport_spike.md
   specs/
     source_graph_spec.md
@@ -90,5 +91,6 @@ docs/
 - `phase_definition_of_done.md`: draft started
 - `research_decision_log.md`: draft started
 - `spikes/cpal_audio_latency_spike.md`: draft started
+- `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
 - all other specs: not started

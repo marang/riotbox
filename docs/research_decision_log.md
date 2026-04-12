@@ -183,6 +183,18 @@ Evidence: the `RIOTBOX-17` slice adds app-level transport and commit methods, co
 Consequences: future scheduler/TUI work should build on `JamAppState` orchestration entry points, while persistence and replay continue to rely on the explicit session action log rather than queue internals alone.  
 Status: accepted
 
+### RBX-013
+
+Date: 2026-04-12  
+Topic: MemPalace as Riotbox dev-memory tooling  
+Phase: Core Skeleton  
+Question: should Riotbox adopt MemPalace now as a standard internal project-memory and agent-assist retrieval tool?  
+Decision: do not adopt it yet as a standing workflow dependency. Keep it parked as an optional later experiment once it can be retested on a supported Python runtime and shown to beat the current repo-docs-plus-Linear workflow.  
+Why: the tool is conceptually relevant, but the first real local trial failed on the current machine baseline (`Python 3.14`) before a full mine/search cycle could complete. For Riotbox, an external dev-memory helper is only worth standardizing if setup is boring and it clearly improves retrieval over existing project artifacts.  
+Evidence: upstream documentation shows active progress and honest correction of earlier overstated claims, but also ongoing backend and stability work; the local trial installed `mempalace 3.1.0` successfully yet failed during runtime import through the `chromadb` / `pydantic.v1` path on Python 3.14.  
+Consequences: Riotbox should continue treating repo docs, the decision log, and Linear as the canonical memory layer. MemPalace can be revisited later in an isolated environment, but it should never become product-core state or a second hidden source of truth.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics
