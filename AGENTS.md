@@ -181,6 +181,22 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Archive completed issues once they are truly finished so the workspace stays under the free-tier issue cap.
 - Follow the repo workflow note in `docs/workflow_conventions.md` for branch / PR / merge / Linear conventions.
 
+### Next-ticket heuristic
+
+- Derive the next ticket from:
+  - `docs/execution_roadmap.md`
+  - `docs/phase_definition_of_done.md`
+  - the active feature spec for the area being worked on
+  - the actual current repo state
+- Prefer the smallest coherent slice that closes the most immediate product-path or architecture-path gap.
+- Do not define many future tickets in detail before the current slice lands.
+- Validate each proposed next ticket against four questions:
+  - does it fit the current phase?
+  - does it create visible product progress or remove a real blocker?
+  - does it preserve the current architecture instead of creating a shadow path?
+  - is it small enough to review as one coherent slice?
+- If multiple candidates are possible, prefer the one that keeps Riotbox moving along the product spine already defined in the roadmap instead of opening a new side path.
+
 ---
 
 ## Commands

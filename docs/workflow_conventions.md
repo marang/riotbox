@@ -240,7 +240,34 @@ Current known practical exceptions:
 
 ---
 
-## 14. Short Version
+## 14. Choosing The Next Ticket
+
+The next ticket should not be chosen ad hoc.
+
+Default decision inputs:
+
+- `docs/execution_roadmap.md`
+- `docs/phase_definition_of_done.md`
+- the most relevant active feature spec
+- the real current repo state after the most recent merge
+
+Decision rule:
+
+- prefer the smallest coherent slice that closes the nearest real gap in the current product path
+- do not define a long chain of future tickets in full detail while the current slice is still unresolved
+- avoid choosing tickets that open a second architecture, second UI path, or speculative side branch unless the roadmap explicitly calls for a spike
+
+Useful check questions:
+
+1. what phase are we in?
+2. what is the sharpest missing capability or blocker right now?
+3. what is the smallest slice that moves that capability forward?
+4. does this ticket keep Riotbox on the documented product spine?
+5. will the result be easy to review as one coherent PR?
+
+---
+
+## 15. Short Version
 
 If unsure, do this:
 
