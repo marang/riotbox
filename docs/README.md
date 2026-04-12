@@ -60,6 +60,7 @@ docs/
     rust_python_sidecar_transport_spike.md
   screenshots/
     jam_shell_baseline.txt
+    jam_shell_trust_action_baseline.txt
   specs/
     source_graph_spec.md
     session_file_spec.md
@@ -98,4 +99,5 @@ docs/
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
 - `screenshots/jam_shell_baseline.txt`: baseline captured
+- `screenshots/jam_shell_trust_action_baseline.txt`: baseline captured
 - all other specs: not started
