@@ -87,6 +87,17 @@ Why: this is the best fit for realtime control, deterministic state, terminal-na
 Consequences: the first code slice starts as a Rust workspace, while transport and audio choices get validated by bounded spikes rather than more abstract debate.  
 Status: accepted
 
+### RBX-005
+
+Date: 2026-04-12  
+Topic: deterministic replay model  
+Phase: Core Skeleton  
+Question: what should Riotbox treat as replay truth, and how should snapshots relate to action replay?  
+Decision: replay truth is the combination of frozen source references, frozen Source Graph references, durable committed action history, and optional snapshots that accelerate restore without replacing the action log. `requested_at` is diagnostic, while commit order and musical commit boundary are replay-relevant.  
+Why: replay must not depend on rerunning unstable analysis, re-asking Ghost, or reconstructing captured artifacts from ambient state.  
+Consequences: future runtime work should add explicit replay-order metadata, make snapshot anchors more concrete, and preserve musical boundary identity for committed actions.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

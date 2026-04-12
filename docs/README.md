@@ -27,14 +27,15 @@ This directory holds implementation-facing specifications derived from the strat
 5. [Source Graph Spec](./specs/source_graph_spec.md)
 6. [Session File Spec](./specs/session_file_spec.md)
 7. [Action Lexicon Spec](./specs/action_lexicon_spec.md)
-8. [Audio Core Spec](./specs/audio_core_spec.md)
-9. [TUI Screen Spec](./specs/tui_screen_spec.md)
-10. [Ghost API Spec](./specs/ghost_api_spec.md)
-11. [Preset & Style Spec](./specs/preset_style_spec.md)
-12. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
-13. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
-14. [Phase Definition of Done](./phase_definition_of_done.md)
-15. [Research / Decision Log](./research_decision_log.md)
+8. [Replay Model Spec](./specs/replay_model_spec.md)
+9. [Audio Core Spec](./specs/audio_core_spec.md)
+10. [TUI Screen Spec](./specs/tui_screen_spec.md)
+11. [Ghost API Spec](./specs/ghost_api_spec.md)
+12. [Preset & Style Spec](./specs/preset_style_spec.md)
+13. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
+14. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
+15. [Phase Definition of Done](./phase_definition_of_done.md)
+16. [Research / Decision Log](./research_decision_log.md)
 
 ## Why This Order
 
@@ -56,6 +57,7 @@ docs/
     source_graph_spec.md
     session_file_spec.md
     action_lexicon_spec.md
+    replay_model_spec.md
     technology_stack_spec.md
     rust_engineering_guidelines.md
     audio_core_spec.md
@@ -75,6 +77,7 @@ docs/
 - `specs/source_graph_spec.md`: draft started
 - `specs/session_file_spec.md`: draft started
 - `specs/action_lexicon_spec.md`: draft started
+- `specs/replay_model_spec.md`: draft started
 - `specs/audio_core_spec.md`: draft started
 - `specs/tui_screen_spec.md`: draft started
 - `specs/ghost_api_spec.md`: draft started
