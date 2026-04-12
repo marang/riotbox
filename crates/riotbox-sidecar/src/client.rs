@@ -183,7 +183,7 @@ impl Drop for StdioSidecarClient {
 
 #[cfg(test)]
 mod tests {
-    use std::path::PathBuf;
+    use std::{f32::consts::PI, fs, path::Path, path::PathBuf};
 
     use riotbox_core::{
         ids::SourceId,
@@ -211,6 +211,46 @@ mod tests {
             .expect("resolve sidecar script path")
     }
 
+    fn write_pcm16_wave(
+        path: impl AsRef<Path>,
+        sample_rate: u32,
+        channel_count: u16,
+        duration_seconds: f32,
+    ) {
+        let path = path.as_ref();
+        let frame_count = (sample_rate as f32 * duration_seconds) as u32;
+        let bits_per_sample = 16_u16;
+        let bytes_per_sample = (bits_per_sample / 8) as u32;
+        let byte_rate = sample_rate * channel_count as u32 * bytes_per_sample;
+        let block_align = channel_count * (bits_per_sample / 8);
+        let data_len = frame_count * channel_count as u32 * bytes_per_sample;
+
+        let mut bytes = Vec::with_capacity((44 + data_len) as usize);
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&(36 + data_len).to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16_u32.to_le_bytes());
+        bytes.extend_from_slice(&1_u16.to_le_bytes());
+        bytes.extend_from_slice(&channel_count.to_le_bytes());
+        bytes.extend_from_slice(&sample_rate.to_le_bytes());
+        bytes.extend_from_slice(&byte_rate.to_le_bytes());
+        bytes.extend_from_slice(&block_align.to_le_bytes());
+        bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_len.to_le_bytes());
+
+        for frame_index in 0..frame_count {
+            let phase = (frame_index as f32 / sample_rate as f32) * 220.0 * 2.0 * PI;
+            let sample = (phase.sin() * i16::MAX as f32 * 0.25) as i16;
+            for _ in 0..channel_count {
+                bytes.extend_from_slice(&sample.to_le_bytes());
+            }
+        }
+
+        fs::write(path, bytes).expect("write PCM wave fixture");
+    }
+
     #[test]
     fn stdio_sidecar_ping_and_graph_build_work() {
         let mut client =
@@ -234,7 +274,7 @@ mod tests {
     fn stdio_sidecar_can_analyze_a_real_source_file_path() {
         let temp_dir = tempfile::tempdir().expect("create temp dir");
         let source_path = temp_dir.path().join("input.wav");
-        std::fs::write(&source_path, vec![0_u8; 8_192]).expect("write source fixture");
+        write_pcm16_wave(&source_path, 44_100, 2, 2.0);
 
         let mut client =
             StdioSidecarClient::spawn_python(sidecar_script_path()).expect("spawn python sidecar");
@@ -244,8 +284,31 @@ mod tests {
             .expect("analyze source file");
 
         assert_eq!(graph.source.path, source_path.to_string_lossy());
+        assert_eq!(graph.source.sample_rate, 44_100);
+        assert_eq!(graph.source.channel_count, 2);
+        assert!(graph.source.duration_seconds >= 1.9);
         assert_eq!(graph.provenance.analysis_seed, 23);
-        assert_eq!(graph.provenance.provider_set, vec!["stub.file_ingest"]);
+        assert_eq!(graph.provenance.provider_set, vec!["decoded.wav_baseline"]);
         assert!(graph.loop_candidate_count() >= 1);
+        assert!(graph.timing.bpm_estimate.is_some());
+    }
+
+    #[test]
+    fn stdio_sidecar_rejects_unsupported_source_files() {
+        let temp_dir = tempfile::tempdir().expect("create temp dir");
+        let source_path = temp_dir.path().join("input.txt");
+        fs::write(&source_path, b"not a wav file").expect("write unsupported fixture");
+
+        let mut client =
+            StdioSidecarClient::spawn_python(sidecar_script_path()).expect("spawn python sidecar");
+
+        let error = client
+            .analyze_source_file(&source_path, 23)
+            .expect_err("unsupported source should fail");
+
+        match error {
+            ClientError::Sidecar(payload) => assert_eq!(payload.code, "source_unsupported"),
+            other => panic!("unexpected error: {other}"),
+        }
     }
 }

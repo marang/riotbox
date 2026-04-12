@@ -411,7 +411,7 @@ fn max_action_id(session: &SessionFile) -> Option<riotbox_core::ids::ActionId> {
 
 #[cfg(test)]
 mod tests {
-    use std::{fs, io, path::PathBuf};
+    use std::{f32::consts::PI, fs, io, path::Path, path::PathBuf};
 
     use tempfile::tempdir;
 
@@ -633,6 +633,46 @@ mod tests {
             .expect("resolve sidecar script path")
     }
 
+    fn write_pcm16_wave(
+        path: impl AsRef<Path>,
+        sample_rate: u32,
+        channel_count: u16,
+        duration_seconds: f32,
+    ) {
+        let path = path.as_ref();
+        let frame_count = (sample_rate as f32 * duration_seconds) as u32;
+        let bits_per_sample = 16_u16;
+        let bytes_per_sample = (bits_per_sample / 8) as u32;
+        let byte_rate = sample_rate * channel_count as u32 * bytes_per_sample;
+        let block_align = channel_count * (bits_per_sample / 8);
+        let data_len = frame_count * channel_count as u32 * bytes_per_sample;
+
+        let mut bytes = Vec::with_capacity((44 + data_len) as usize);
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&(36 + data_len).to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16_u32.to_le_bytes());
+        bytes.extend_from_slice(&1_u16.to_le_bytes());
+        bytes.extend_from_slice(&channel_count.to_le_bytes());
+        bytes.extend_from_slice(&sample_rate.to_le_bytes());
+        bytes.extend_from_slice(&byte_rate.to_le_bytes());
+        bytes.extend_from_slice(&block_align.to_le_bytes());
+        bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_len.to_le_bytes());
+
+        for frame_index in 0..frame_count {
+            let phase = (frame_index as f32 / sample_rate as f32) * 220.0 * 2.0 * PI;
+            let sample = (phase.sin() * i16::MAX as f32 * 0.25) as i16;
+            for _ in 0..channel_count {
+                bytes.extend_from_slice(&sample.to_le_bytes());
+            }
+        }
+
+        fs::write(path, bytes).expect("write PCM wave fixture");
+    }
+
     #[test]
     fn builds_jam_app_state_from_parts() {
         let graph = sample_graph();
@@ -846,7 +886,7 @@ mod tests {
         let session_path = dir.path().join("sessions").join("session.json");
         let graph_path = dir.path().join("graphs").join("source-graph.json");
 
-        fs::write(&source_path, vec![1_u8; 16_384]).expect("write source file");
+        write_pcm16_wave(&source_path, 44_100, 2, 2.0);
 
         let state = JamAppState::analyze_source_file_to_json(
             &source_path,
@@ -882,9 +922,13 @@ mod tests {
         let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
         assert_eq!(
             persisted_graph.provenance.provider_set,
-            vec!["stub.file_ingest"]
+            vec!["decoded.wav_baseline"]
         );
         assert_eq!(persisted_graph.provenance.analysis_seed, 29);
+        assert_eq!(persisted_graph.source.sample_rate, 44_100);
+        assert_eq!(persisted_graph.source.channel_count, 2);
+        assert!(persisted_graph.source.duration_seconds >= 1.9);
+        assert!(persisted_graph.timing.bpm_estimate.is_some());
     }
 
     #[test]
