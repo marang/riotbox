@@ -63,6 +63,11 @@ Why:
 - broad ecosystem for analysis experiments and provider bakeoffs
 - easy process boundary from the core
 
+Clarification:
+
+- this is the current recommended implementation language for the sidecar, not an irreversible architecture commitment
+- the sidecar boundary should remain language-neutral enough that later implementations can move parts of the sidecar to `Rust` or another language if the contract remains stable
+
 ### 3.3 Core repository shape
 
 - Rust workspace at repo root
@@ -80,6 +85,11 @@ Why:
 
 - easy inspection while contracts are still settling
 - simple debugging and migration visibility
+
+Clarification:
+
+- this applies to persisted artifacts in v1, not to a permanently frozen RPC or sidecar transport choice
+- sidecar transport encoding should be revisited once the request/response contract becomes more stable
 
 ### 3.5 TUI direction
 
@@ -123,7 +133,9 @@ Why:
 These are intentionally **not** frozen yet:
 
 - final Python analysis library set
+- final long-term sidecar implementation language
 - final RPC transport format
+- final sidecar wire encoding
 - exact audio backend wrapper architecture
 - exact persistence crate stack
 - final CLI shape
@@ -131,6 +143,15 @@ These are intentionally **not** frozen yet:
 - plugin architecture
 
 Those should be decided by spikes, not by speculation.
+
+Revisit triggers for the sidecar stack:
+
+- more message types than the current narrow request/response spike
+- progress events or streaming responses
+- concurrent analysis jobs
+- reconnect or external sidecar lifecycle requirements
+- schema/versioning pressure strong enough to justify `Protobuf` or another stricter format
+- evidence that parts of the sidecar should move out of `Python` for performance, determinism, or maintenance reasons
 
 ---
 
