@@ -219,6 +219,18 @@ Evidence: the earlier MemPalace evaluation already proved the rootless Podman pa
 Consequences: contributors can use MemPalace through stable project commands, while the tool remains optional and subordinate to repo docs, Linear, Git history, and `rg` for exact lookup.  
 Status: accepted
 
+### RBX-016
+
+Date: 2026-04-12  
+Topic: first analysis ingest slice shape  
+Phase: Analysis Vertical Slice  
+Question: what is the smallest real analysis-facing path Riotbox should add after the transport spike and core skeleton groundwork?  
+Decision: add one app-facing `analyze_source_file` ingest path that sends a source file path through the existing stdio sidecar boundary, receives a `SourceGraph`, persists both graph and session JSON, and returns a ready `JamAppState`. Keep the current Python sidecar implementation deliberately bounded to file-based stub analysis rather than full decode quality.  
+Why: the project needs a real path from source file to persisted graph without waiting for full MIR quality or reopening the transport contract. This proves the integration seam through app layer, sidecar transport, persistence, and Jam state assembly in one bounded slice.  
+Evidence: `riotbox-sidecar` now supports a real file-path request in addition to the older transport stub request, `riotbox-app` can ingest a real source file through that sidecar path and persist JSON artifacts, and tests cover both the happy path and a missing-file failure path.  
+Consequences: the next analysis work should improve the actual analysis quality behind the same ingest path rather than inventing a second graph-loading flow. Persistence and Jam assembly can now assume a real sidecar-produced graph path exists, even though the analysis content is still intentionally simple.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

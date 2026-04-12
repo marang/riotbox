@@ -26,6 +26,13 @@ pub struct BuildSourceGraphStubPayload {
     pub analysis_seed: u64,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct AnalyzeSourceFilePayload {
+    pub request_id: String,
+    pub source_path: String,
+    pub analysis_seed: u64,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct SourceGraphBuiltPayload {
     pub request_id: String,
@@ -45,6 +52,7 @@ pub struct SidecarErrorPayload {
 pub enum SidecarRequest {
     Ping(PingPayload),
     BuildSourceGraphStub(BuildSourceGraphStubPayload),
+    AnalyzeSourceFile(AnalyzeSourceFilePayload),
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -169,6 +177,22 @@ mod tests {
         let encoded = encode_json_line(&request).expect("encode request");
         let decoded: SidecarRequest =
             decode_json_line(&encoded).expect("decode build source graph request");
+
+        assert_eq!(decoded, request);
+        assert!(encoded.ends_with('\n'));
+    }
+
+    #[test]
+    fn analyze_source_file_request_roundtrips_through_ndjson() {
+        let request = SidecarRequest::AnalyzeSourceFile(AnalyzeSourceFilePayload {
+            request_id: "req-2".into(),
+            source_path: "/tmp/input.wav".into(),
+            analysis_seed: 13,
+        });
+
+        let encoded = encode_json_line(&request).expect("encode analyze source file request");
+        let decoded: SidecarRequest =
+            decode_json_line(&encoded).expect("decode analyze source file request");
 
         assert_eq!(decoded, request);
         assert!(encoded.ends_with('\n'));

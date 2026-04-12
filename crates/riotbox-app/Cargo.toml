@@ -7,6 +7,9 @@ license.workspace = true
 [dependencies]
 riotbox-audio = { path = "../riotbox-audio" }
 riotbox-core = { path = "../riotbox-core" }
+riotbox-sidecar = { path = "../riotbox-sidecar" }
+serde_json = "1"
+sha2 = "0.10"
 
 [dev-dependencies]
 tempfile = "3"
