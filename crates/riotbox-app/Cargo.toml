@@ -5,6 +5,7 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
+riotbox-audio = { path = "../riotbox-audio" }
 riotbox-core = { path = "../riotbox-core" }
 
 [dev-dependencies]
