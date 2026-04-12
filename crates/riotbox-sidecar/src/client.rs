@@ -21,6 +21,10 @@ pub enum ClientError {
     UnexpectedEof,
     Sidecar(SidecarErrorPayload),
     UnexpectedResponse(&'static str),
+    RequestIdMismatch {
+        expected: String,
+        received: Option<String>,
+    },
 }
 
 impl Display for ClientError {
@@ -34,6 +38,11 @@ impl Display for ClientError {
             Self::UnexpectedEof => write!(f, "sidecar closed stdout before replying"),
             Self::Sidecar(error) => write!(f, "sidecar returned {}: {}", error.code, error.message),
             Self::UnexpectedResponse(kind) => write!(f, "unexpected sidecar response: {kind}"),
+            Self::RequestIdMismatch { expected, received } => write!(
+                f,
+                "sidecar response request_id mismatch: expected {expected}, got {}",
+                received.as_deref().unwrap_or("<none>")
+            ),
         }
     }
 }
@@ -47,7 +56,8 @@ impl Error for ClientError {
             | Self::MissingStdout
             | Self::UnexpectedEof
             | Self::Sidecar(_)
-            | Self::UnexpectedResponse(_) => None,
+            | Self::UnexpectedResponse(_)
+            | Self::RequestIdMismatch { .. } => None,
         }
     }
 }
@@ -94,13 +104,21 @@ impl StdioSidecarClient {
 
     pub fn ping(&mut self) -> Result<PongPayload, ClientError> {
         let request_id = self.next_request_id();
-        let request = SidecarRequest::Ping(PingPayload { request_id });
+        let request = SidecarRequest::Ping(PingPayload {
+            request_id: request_id.clone(),
+        });
 
         self.write_request(&request)?;
 
         match self.read_response()? {
-            SidecarResponse::Pong(pong) => Ok(pong),
-            SidecarResponse::Error(error) => Err(ClientError::Sidecar(error)),
+            SidecarResponse::Pong(pong) => {
+                validate_request_id(&request_id, Some(&pong.request_id))?;
+                Ok(pong)
+            }
+            SidecarResponse::Error(error) => {
+                validate_request_id(&request_id, error.request_id.as_deref())?;
+                Err(ClientError::Sidecar(error))
+            }
             SidecarResponse::SourceGraphBuilt(_) => {
                 Err(ClientError::UnexpectedResponse("source_graph_built"))
             }
@@ -114,7 +132,7 @@ impl StdioSidecarClient {
     ) -> Result<SourceGraph, ClientError> {
         let request_id = self.next_request_id();
         let request = SidecarRequest::BuildSourceGraphStub(BuildSourceGraphStubPayload {
-            request_id,
+            request_id: request_id.clone(),
             source,
             analysis_seed,
         });
@@ -122,8 +140,14 @@ impl StdioSidecarClient {
         self.write_request(&request)?;
 
         match self.read_response()? {
-            SidecarResponse::SourceGraphBuilt(payload) => Ok(payload.graph),
-            SidecarResponse::Error(error) => Err(ClientError::Sidecar(error)),
+            SidecarResponse::SourceGraphBuilt(payload) => {
+                validate_request_id(&request_id, Some(&payload.request_id))?;
+                Ok(payload.graph)
+            }
+            SidecarResponse::Error(error) => {
+                validate_request_id(&request_id, error.request_id.as_deref())?;
+                Err(ClientError::Sidecar(error))
+            }
             SidecarResponse::Pong(_) => Err(ClientError::UnexpectedResponse("pong")),
         }
     }
@@ -135,7 +159,7 @@ impl StdioSidecarClient {
     ) -> Result<SourceGraph, ClientError> {
         let request_id = self.next_request_id();
         let request = SidecarRequest::AnalyzeSourceFile(AnalyzeSourceFilePayload {
-            request_id,
+            request_id: request_id.clone(),
             source_path: source_path.as_ref().to_string_lossy().into_owned(),
             analysis_seed,
         });
@@ -143,8 +167,14 @@ impl StdioSidecarClient {
         self.write_request(&request)?;
 
         match self.read_response()? {
-            SidecarResponse::SourceGraphBuilt(payload) => Ok(payload.graph),
-            SidecarResponse::Error(error) => Err(ClientError::Sidecar(error)),
+            SidecarResponse::SourceGraphBuilt(payload) => {
+                validate_request_id(&request_id, Some(&payload.request_id))?;
+                Ok(payload.graph)
+            }
+            SidecarResponse::Error(error) => {
+                validate_request_id(&request_id, error.request_id.as_deref())?;
+                Err(ClientError::Sidecar(error))
+            }
             SidecarResponse::Pong(_) => Err(ClientError::UnexpectedResponse("pong")),
         }
     }
@@ -171,6 +201,17 @@ impl StdioSidecarClient {
         }
 
         Ok(decode_json_line(&line)?)
+    }
+}
+
+fn validate_request_id(expected: &str, received: Option<&str>) -> Result<(), ClientError> {
+    if received == Some(expected) {
+        Ok(())
+    } else {
+        Err(ClientError::RequestIdMismatch {
+            expected: expected.to_string(),
+            received: received.map(ToOwned::to_owned),
+        })
     }
 }
 
@@ -308,6 +349,20 @@ mod tests {
 
         match error {
             ClientError::Sidecar(payload) => assert_eq!(payload.code, "source_unsupported"),
+            other => panic!("unexpected error: {other}"),
+        }
+    }
+
+    #[test]
+    fn rejects_response_with_mismatched_request_id() {
+        let error = validate_request_id("req-1", Some("req-2"))
+            .expect_err("mismatched request id should fail");
+
+        match error {
+            ClientError::RequestIdMismatch { expected, received } => {
+                assert_eq!(expected, "req-1");
+                assert_eq!(received.as_deref(), Some("req-2"));
+            }
             other => panic!("unexpected error: {other}"),
         }
     }
