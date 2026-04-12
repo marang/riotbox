@@ -182,6 +182,8 @@ cargo test
 just ci
 just check
 just clippy
+just mem-status
+just mem-search "replay truth"
 ```
 
 Add new commands here when the repo grows enough that agents need a stable shortlist.
@@ -193,6 +195,37 @@ Current CI baseline:
   - `cargo test`
   - `cargo clippy --all-targets --all-features -- -D warnings`
 - Before opening or updating a PR, prefer running `just ci` locally.
+
+## MemPalace Dev Memory
+
+MemPalace is available as an optional dev-memory helper.
+
+Rules:
+
+- it is not product core
+- it is not a source of truth
+- canonical project truth still lives in `docs/`, `plan/`, Linear, and Git history
+- use it to complement `rg`, not replace it
+
+Repo-local layout:
+
+- `.mempalace/palace/`
+  persistent Chroma database
+- `.mempalace/cache/`
+  model and package cache
+- `.mempalace/results/`
+  captured evaluation outputs
+- `.mempalace/corpus/`
+  copied project corpus for mining
+
+Operational path:
+
+- use `just mem-init` for the first setup
+- use `just mem-status` and `just mem-search "..."` for normal use
+- the wrapper script uses rootless Podman with pinned `python:3.12`
+- the wrapper automatically re-mines when `docs/`, `plan/`, `crates/`, or `AGENTS.md` changed
+
+Do not store new canonical decisions only in MemPalace. If something matters, it still needs to be written into repo docs or Linear.
 
 ---
 

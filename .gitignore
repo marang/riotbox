@@ -1,2 +1,8 @@
 target/
-
+.mempalace/cache/
+.mempalace/palace/
+.mempalace/palace-backup*/
+.mempalace/results/
+.mempalace/corpus/
+.mempalace/*.sha256
+!.mempalace/README.md
