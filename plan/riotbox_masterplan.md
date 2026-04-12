@@ -1,300 +1,319 @@
-# Riotbox — Masterplan
+# Riotbox - Masterplan
 **A feral terminal audio instrument**
 
 Version: 0.1  
-Status: Strategischer und technischer Implementierungsplan  
-Sprache: Deutsch
+Status: strategic and technical implementation plan  
+Language: English
 
 ---
 
-## Inhaltsverzeichnis
+## Table of Contents
 
-- [1. Zielbild](#1-zielbild)
-- [2. Produktdefinition](#2-produktdefinition)
-- [3. Leitprinzipien](#3-leitprinzipien)
-- [4. Soundidentität: die drei Geräte-Persönlichkeiten](#4-soundidentität-die-drei-geräte-persönlichkeiten)
-- [5. Betriebsmodi](#5-betriebsmodi)
-- [6. Zielgruppen und Kern-Use-Cases](#6-zielgruppen-und-kern-use-cases)
-- [7. Funktionsumfang auf Produktebene](#7-funktionsumfang-auf-produktebene)
-- [8. Systemarchitektur](#8-systemarchitektur)
-- [9. Technologie-Stack](#9-technologie-stack)
-- [10. Audiodatenfluss](#10-audiodatenfluss)
-- [11. Analyse-Pipeline](#11-analyse-pipeline)
-- [12. Interne musikalische Repräsentationen](#12-interne-musikalische-repräsentationen)
-- [13. Geräte-Engine-Design](#13-geräte-engine-design)
-- [14. Arrangement und Kompositionslogik](#14-arrangement-und-kompositionslogik)
-- [15. Scoring und Auswahl](#15-scoring-und-auswahl)
-- [16. Live-Mutation und Performance-Steuerung](#16-live-mutation-und-performance-steuerung)
-- [17. KI-Agent / Ghost-System](#17-ki-agent--ghost-system)
-- [18. UX-Strategie](#18-ux-strategie)
-- [19. TUI-Konzept](#19-tui-konzept)
-- [20. Controller- und Hardware-Integration](#20-controller--und-hardware-integration)
-- [21. Sessionmodell](#21-sessionmodell)
-- [22. Datenmodell](#22-datenmodell-vereinfachte-skizze)
-- [23. Capture und Looping als Herzstück](#23-capture-und-looping-als-herzstück)
-- [24. Resample-Lab](#24-resample-lab)
-- [25. FX- und Mixer-Strategie](#25-fx--und-mixer-strategie)
-- [26. Export und Interoperabilität](#26-export-und-interoperabilität)
-- [27. Qualitätssicherung und Profi-Härtung](#27-qualitätssicherung-und-profi-härtung)
-- [28. Provider-Architektur](#28-provider-architektur)
-- [29. Recht, Lizenzen, Originalität](#29-recht-lizenzen-originalität)
-- [30. Repository-Struktur](#30-repository-struktur)
-- [31. MVP-Definition](#31-mvp-definition)
-- [32. Umsetzungsphasen](#32-umsetzungsphasen)
-- [33. Detaillierter Backlog nach Modulen](#33-detaillierter-backlog-nach-modulen)
-- [34. Nichtfunktionale Anforderungen](#34-nichtfunktionale-anforderungen)
-- [35. Preset- und Style-System](#35-preset--und-style-system)
-- [36. Preset-Makros](#36-preset-makros)
-- [37. Explainability und Vertrauen](#37-explainability-und-vertrauen)
-- [38. Risikoanalyse](#38-risikoanalyse)
-- [39. Team- und Rollenempfehlung](#39-team--und-rollenempfehlung)
-- [40. Erste Meilensteine in Wochenlogik](#40-erste-meilensteine-in-wochenlogik)
-- [41. Entscheidungsregeln für die Entwicklung](#41-entscheidungsregeln-für-die-entwicklung)
-- [42. Schlussbild](#42-schlussbild)
-- [43. Nächste konkrete Dokumente](#43-nächste-konkrete-dokumente)
-- [44. Ein-Satz-Version](#44-ein-satz-version)
-
----
-
-
-## 1. Zielbild
-
-**Riotbox** ist ein terminal-natives Audioinstrument für Live-Performance, Sound-Mutation und kontrollierte Re-Komposition.  
-Der Benutzer lädt ein Audiofile (z. B. MP3), Riotbox analysiert dessen musikalische Struktur und übersetzt es in ein spielbares Live-Objekt. Dieses Objekt wird anschließend durch drei klar definierte Geräte-Persönlichkeiten neu aufgebaut:
-
-- **MC-202** als monophone Sequenz- und Synth-Nervenzentrale
-- **W-30** als Sampler-, Slice- und Resampling-Maschine
-- **TR-909** als Drum- und Groove-Motor
-
-Das Ergebnis ist **kein Black-Box-Audio-zu-Audio-Zaubertrick**, sondern ein **kontrollierbares Instrument**, das:
-
-- das Eingangsmaterial analysiert,
-- musikalische Repräsentationen erzeugt,
-- daraus live variierbare Szenen, Loops und Phrasen baut,
-- spontan mutiert werden kann,
-- von einem lokalen KI-Agenten assistiert oder performt werden kann,
-- reproduzierbar speicherbar und exportierbar bleibt.
+- [1. Vision](#1-vision)
+- [2. Product Definition](#2-product-definition)
+- [3. Guiding Principles](#3-guiding-principles)
+- [4. Sound Identity: the three device personalities](#4-sound-identity-the-three-device-personalities)
+- [5. Operating Modes](#5-operating-modes)
+- [6. Target Users and Core Use Cases](#6-target-users-and-core-use-cases)
+- [7. Product-Level Feature Scope](#7-product-level-feature-scope)
+- [8. System Architecture](#8-system-architecture)
+- [9. Technology Stack](#9-technology-stack)
+- [10. Audio Data Flow](#10-audio-data-flow)
+- [11. Analysis Pipeline](#11-analysis-pipeline)
+- [12. Internal Musical Representations](#12-internal-musical-representations)
+- [13. Device Engine Design](#13-device-engine-design)
+- [14. Arrangement and Composition Logic](#14-arrangement-and-composition-logic)
+- [15. Scoring and Selection](#15-scoring-and-selection)
+- [16. Live Mutation and Performance Control](#16-live-mutation-and-performance-control)
+- [17. AI Agent / Ghost System](#17-ai-agent--ghost-system)
+- [18. UX Strategy](#18-ux-strategy)
+- [19. TUI Concept](#19-tui-concept)
+- [20. Controller and Hardware Integration](#20-controller-and-hardware-integration)
+- [21. Session Model](#21-session-model)
+- [22. Data Model](#22-data-model-simplified-sketch)
+- [23. Capture and Looping as the Core](#23-capture-and-looping-as-the-core)
+- [24. Resample Lab](#24-resample-lab)
+- [25. FX and Mixer Strategy](#25-fx-and-mixer-strategy)
+- [26. Export and Interoperability](#26-export-and-interoperability)
+- [27. Quality Assurance and Pro Hardening](#27-quality-assurance-and-pro-hardening)
+- [28. Provider Architecture](#28-provider-architecture)
+- [29. Legal, Licensing, Originality](#29-legal-licensing-originality)
+- [30. Repository Structure](#30-repository-structure)
+- [31. MVP Definition](#31-mvp-definition)
+- [32. Implementation Phases](#32-implementation-phases)
+- [33. Detailed Module Backlog](#33-detailed-module-backlog)
+- [34. Non-Functional Requirements](#34-non-functional-requirements)
+- [35. Preset and Style System](#35-preset-and-style-system)
+- [36. Preset Macros](#36-preset-macros)
+- [37. Explainability and Trust](#37-explainability-and-trust)
+- [38. Risk Analysis](#38-risk-analysis)
+- [39. Team and Role Recommendations](#39-team-and-role-recommendations)
+- [40. Early Milestones in Weekly Logic](#40-early-milestones-in-weekly-logic)
+- [41. Development Decision Rules](#41-development-decision-rules)
+- [42. Final Product Image](#42-final-product-image)
+- [43. Next Concrete Documents](#43-next-concrete-documents)
+- [44. One-Sentence Version](#44-one-sentence-version)
 
 ---
 
-## 2. Produktdefinition
+## 1. Vision
 
-### 2.1 Was Riotbox ist
-Riotbox ist ein **professionelles Sound-Tool** mit drei Gesichtern:
+**Riotbox** is a terminal-native audio instrument for live performance, sound mutation, and controlled recomposition.  
+The user loads an audio file, Riotbox analyzes its musical structure, and translates it into a playable live object. That object is then rebuilt through three clearly defined device personalities:
 
-1. **Live-Remix-Instrument**  
-   Audio rein, Analyse, Rebuild, Performance.
+- **MC-202** as the monophonic sequencing and synth nerve center
+- **W-30** as the sampler, slicing, and resampling machine
+- **TR-909** as the drum and groove motor
 
-2. **Sound-Design-Maschine**  
-   Slices, Resampling, Phrase-Capture, Layering, Mutation.
+The result is **not** a black-box audio-to-audio trick. It is a controllable instrument that:
 
-3. **Autonomer Mitspieler**  
-   Ein lokaler KI-Agent kann Vorschläge machen oder das Instrument live bedienen.
-
-### 2.2 Was Riotbox nicht ist
-Riotbox ist **nicht**:
-
-- eine Text-prompt-basierte “mach mir einen Song”-Spielerei,
-- ein undurchschaubares End-to-End-Audio-Transfer-Modell,
-- ein klassisches DAW-Ersatzsystem,
-- ein Tool, das nur bestehendes Material 1:1 imitiert,
-- ein System, das einen Expertenabschluss verlangt, um musikalisch Spaß zu machen.
-
-### 2.3 Kernsatz
-> Riotbox verwandelt Audio in ein lebendiges Performance-Objekt und erlaubt es, dieses Objekt in Echtzeit mit Geräte-Charakter, Szenenlogik, Capture und KI-Co-Performance zu formen.
+- analyzes input material
+- creates musical representations
+- generates live-playable scenes, loops, and phrases
+- can mutate on demand
+- can be assisted or performed by a local AI agent
+- remains reproducible, saveable, and exportable
 
 ---
 
-## 3. Leitprinzipien
+## 2. Product Definition
 
-### 3.1 Instrument statt Black Box
-Alle wichtigen musikalischen Entscheidungen müssen über **sichtbare Zustände, Aktionen und Makros** erreichbar sein.
+### 2.1 What Riotbox is
+
+Riotbox is a professional sound tool with three faces:
+
+1. **Live remix instrument**  
+   Audio in, analysis, rebuild, performance.
+
+2. **Sound design machine**  
+   Slices, resampling, phrase capture, layering, mutation.
+
+3. **Autonomous collaborator**  
+   A local agent can propose or perform musically bounded actions.
+
+### 2.2 What Riotbox is not
+
+Riotbox is not:
+
+- a prompt-only "make me a song" toy
+- an opaque end-to-end style transfer system
+- a full DAW replacement
+- a tool that simply imitates source material 1:1
+- a system that requires expert-level knowledge before it becomes fun
+
+### 2.3 Core product line
+
+> Riotbox turns audio into a living performance object and lets the player shape that object in real time through device character, scene logic, capture, and AI co-performance.
+
+---
+
+## 3. Guiding Principles
+
+### 3.1 Instrument, not black box
+
+Important musical decisions must be reachable through visible states, actions, and macros.
 
 ### 3.2 Realtime first
-Die Audio-Engine muss auch dann stabil bleiben, wenn Analyse, KI oder Dateiverarbeitung versagen.
 
-### 3.3 Progressive Tiefe
-Die Bedienung muss in Schichten funktionieren:
+The audio engine must remain stable even when analysis, AI, or file processing fails.
 
-- **Jam**: sofort spielen
-- **Sculpt**: gezielt formen
-- **Lab**: tief analysieren und debuggen
+### 3.3 Progressive depth
 
-### 3.4 Wiederholbarkeit
-Jede Session ist deterministisch speicherbar:
+The interaction model must work in layers:
 
-- globale Seeds
-- lokale Seeds
-- Aktionslog
-- Analyse-Cache
-- Szenen- und Capture-Historie
+- **Jam**: play immediately
+- **Sculpt**: shape deliberately
+- **Lab**: inspect and debug deeply
 
-### 3.5 Musikalische Brauchbarkeit vor akademischer Vollständigkeit
-Das System muss **gut klingen, schnell reagieren und Spaß machen**. Wissenschaftlich perfekte Analyse ist zweitrangig, wenn musikalisch gute Entscheidungen bereits möglich sind.
+### 3.4 Repeatability
 
-### 3.6 Originalität mit Strukturbezug
-Riotbox soll Material **inspiriert von Struktur**, nicht blind **kopierend nach Oberfläche** erzeugen. Dafür gibt es klare Betriebsmodi und eine spätere Similarity-Firewall.
+Every session must be deterministically reproducible through:
 
----
+- global seeds
+- local seeds
+- action log
+- analysis cache
+- scene and capture history
 
-## 4. Soundidentität: die drei Geräte-Persönlichkeiten
+### 3.5 Musical usefulness over academic completeness
 
-### 4.1 MC-202-Rolle
-Die MC-202-Schicht ist der **Mono-Nerv** des Systems.  
-Sie übernimmt:
+The system must sound good, react quickly, and feel enjoyable. Perfect analysis matters less than musically useful decisions.
 
-- Basslines
-- kurze Leads
-- Antwortphrasen
-- Akzentuierung
-- Slides/Glides
-- monotone, bedrohliche Repetitionen
-- harmoniestützende oder gegenläufige Figuren
+### 3.6 Originality with structural reference
 
-**Leitbild:** wenige Noten, hohe Aussagekraft.
-
-### Klangcharakter
-- monophon
-- prägnante Sequenzierung
-- portamento/glide
-- accent-gesteuerte Energie
-- filtergetragene Spannung
-- leicht nervöse, treibende Präsenz
-
-### Bedienphilosophie
-Die 202-Engine darf nie zu busy werden. Sie soll **Rückgrat und Biss** liefern, nicht den kompletten Mix überfahren.
-
-### 4.2 W-30-Rolle
-Die W-30-Schicht ist die **Sampler-Seele**.
-
-Sie übernimmt:
-
-- Slice-Erzeugung
-- Loop-Erkennung
-- Pad-Bänke
-- Resampling
-- Re-Pitching
-- Reverse
-- Bit-/Rate-Charakter
-- Phrase-Capture
-- Self-sampling interner Klangerzeuger
-
-**Leitbild:** alles, was musikalisch interessant ist, muss eingefroren, neu belegbar und wiederverwendbar werden können.
-
-### 4.3 TR-909-Rolle
-Die TR-909-Schicht ist der **Drum-Motor**.
-
-Sie übernimmt:
-
-- Drum-Reinforcement
-- Kick-/Snare-Layering
-- Pattern-Rebuild
-- Accent-Mapping
-- Hi-Hat-Verdichtung
-- Fills
-- Drop-Vorbereitung
-- Drum-Bus-Energie
-
-**Leitbild:** Punch, Präzision, Groove-Spannung und kontrollierte Aggression.
+Riotbox should generate material inspired by structure, not surface-level copying. Operating modes and a later similarity firewall support this.
 
 ---
 
-## 5. Betriebsmodi
+## 4. Sound Identity: the three device personalities
 
-### 5.1 Derivative Mode
-Der Eingang bleibt hörbar erhalten. Riotbox arbeitet mit echtem Material aus dem Input.
+### 4.1 MC-202 role
 
-Verwendet:
-- reale Loops
-- reale Slices
-- reale Texturen
-- reale Vox-Fragmente
-- echtes Timing-Material
+The MC-202 layer is the system's **mono nerve**. It handles:
 
-**Einsatz:** Live-Edit, Mutation, Re-Cut, DJ-nahe Performance.
+- basslines
+- short leads
+- answer phrases
+- accent behavior
+- slides and glides
+- nervous repetition
+- supportive or opposing harmonic figures
 
-### 5.2 De Novo Mode
-Der Input liefert nur Struktur, nicht zwingend direktes Audiomaterial.
+Guiding image: few notes, high consequence.
 
-Verwendet:
-- BPM / Grid
-- Tonart / Akkorde
-- Melodiekonturen
-- Energieverläufe
-- Abschnittslogik
-- Embeddings / Stilvektoren
+### Sound character
 
-Erzeugt:
-- neue Drum-Patterns
-- neue 202-Phrasen
-- neue Hook-Samples
-- neue interne Loops und Szenen
+- monophonic
+- clear sequencing logic
+- portamento / glide
+- accent-driven energy
+- filter-led tension
+- slightly anxious forward motion
 
-**Einsatz:** inspirierter Neuaufbau, stilistisch nahe, materiell eigenständiger.
+### Operating philosophy
 
-### 5.3 Hybrid Mode
-Kombiniert beide Welten:
-- Originaldrums ersetzen, aber Vocals behalten
-- Original-Hook slicen, aber mit neuer Bassline
-- internes Resampling auf Basis extrahierter Phrasen
+The 202 engine must never become too busy. It should provide spine and bite, not swallow the mix.
 
-**Das ist voraussichtlich der wichtigste Live-Modus.**
+### 4.2 W-30 role
 
----
+The W-30 layer is the **sampler soul**. It handles:
 
-## 6. Zielgruppen und Kern-Use-Cases
+- slice creation
+- loop detection
+- pad banks
+- resampling
+- repitching
+- reverse
+- bit and rate character
+- phrase capture
+- self-sampling of internal sound sources
 
-### 6.1 Live-Performer
-- lädt Track
-- startet Riotbox
-- lässt ein Rebuild erzeugen
-- steuert Energie, Loops, Szenen und Mutationen live
-- captured gelungene Momente
+Guiding image: everything musically interesting must be freezable, replayable, and reusable.
 
-### 6.2 Produzent
-- extrahiert gute Loops und Phrasen
-- baut daraus neue Hook-Bänke
-- exportiert Stems und MIDI
-- nutzt Ghost/AI als Co-Sound-Designer
+### 4.3 TR-909 role
 
-### 6.3 Explorateur / Zuhörer
-- lädt Material
-- schaltet `ghost=perform`
-- beobachtet das Instrument
-- hört, wie der lokale Agent musikalische Entscheidungen trifft
+The TR-909 layer is the **drum motor**. It handles:
 
-### 6.4 Sound-Designer
-- zerlegt eigenes Material
-- nutzt W-30-Capture und Resample Lab
-- erstellt charaktervolle Sample-Banken
+- drum reinforcement
+- kick and snare layering
+- pattern rebuild
+- accent mapping
+- hi-hat density shaping
+- fills
+- drop preparation
+- drum bus energy
+
+Guiding image: punch, precision, groove tension, and controlled aggression.
 
 ---
 
-## 7. Funktionsumfang auf Produktebene
+## 5. Operating Modes
 
-Riotbox muss in seiner finalen Form mindestens Folgendes beherrschen:
+### 5.1 Derivative mode
 
-- Audiofile laden
-- Analyse-Cache erzeugen
-- Taktgitter bestimmen
-- Tonart/Akkorde schätzen
-- Stems oder Teilkomponenten isolieren
-- Slice- und Loop-Kandidaten finden
-- interne Geräte-Engines speisen
-- Live-Szenen generieren
-- Loops extrahieren und einfrieren
-- sofortige Live-Mutation
-- Undo / Revert / Snapshot
-- KI-Vorschläge und KI-Performance
-- MIDI/HID-Steuerung
-- Session-Speicherung
-- Stereo- und Stem-Export
-- deterministische Wiederherstellung
-- Performance-Logging und Diagnose
+The source remains audibly present. Riotbox works with real source material.
+
+Uses:
+
+- real loops
+- real slices
+- real textures
+- real vocal fragments
+- real timing material
+
+Use case: live edit, mutation, recut, DJ-adjacent performance.
+
+### 5.2 De Novo mode
+
+The input contributes structure, not necessarily direct audio material.
+
+Uses:
+
+- BPM / grid
+- key / chords
+- melodic contours
+- energy curves
+- section logic
+- embeddings / style vectors
+
+Generates:
+
+- new drum patterns
+- new 202 phrases
+- new hook samples
+- new internal loops and scenes
+
+Use case: structure-inspired, materially distinct rebuilds.
+
+### 5.3 Hybrid mode
+
+Combines both worlds:
+
+- replace original drums but keep vocals
+- slice the original hook but add a new bassline
+- resample from extracted phrases into new playable material
+
+This will likely be the most important live mode.
 
 ---
 
-## 8. Systemarchitektur
+## 6. Target Users and Core Use Cases
+
+### 6.1 Live performer
+
+- loads a track
+- starts Riotbox
+- generates a rebuild
+- controls energy, loops, scenes, and mutation live
+- captures good moments on the fly
+
+### 6.2 Producer
+
+- extracts strong loops and phrases
+- builds new hook banks
+- exports stems and MIDI
+- uses Ghost / AI as a co-sound-designer
+
+### 6.3 Explorer / listener
+
+- loads material
+- switches `ghost=perform`
+- watches the instrument behave
+- hears how the local agent makes musical decisions
+
+### 6.4 Sound designer
+
+- tears down original material
+- uses W-30 capture and the resample lab
+- builds characterful sample banks
+
+---
+
+## 7. Product-Level Feature Scope
+
+In final form, Riotbox should support at least:
+
+- loading audio files
+- creating an analysis cache
+- determining beat grid and bars
+- estimating key and chords
+- isolating stems or partial components
+- finding slice and loop candidates
+- feeding internal device engines
+- generating live scenes
+- extracting and freezing loops
+- immediate live mutation
+- undo / revert / snapshots
+- AI suggestions and AI performance
+- MIDI / HID control
+- session persistence
+- stereo and stem export
+- deterministic reconstruction
+- performance logging and diagnostics
+
+---
+
+## 8. System Architecture
 
 ```text
                   +-----------------------------+
@@ -332,90 +351,103 @@ Riotbox muss in seiner finalen Form mindestens Folgendes beherrschen:
                 +------------------------------------+
 ```
 
-### 8.1 Prozessgrenzen
-Riotbox wird in mindestens zwei Hauptprozesse getrennt:
+### 8.1 Process boundaries
 
-### Realtime Core
-Verantwortlich für:
-- Audio-Thread
-- Scheduler
-- Mixer
-- Gerätelogik
-- Terminal UI
-- Controller Input
-- Session State
-- Undo/Snapshots
+Riotbox should be split into at least two major processes.
 
-### Analysis + AI Sidecar
-Verantwortlich für:
-- Dekodierung vorbereiteter Dateien
-- Stem Separation
-- Beat-/Bar-Erkennung
-- Chord-/Key-Erkennung
-- Loop-Mining
-- Embeddings
-- Kandidatenscoring
-- lokaler KI-Agent
-- Offline/Background-Analyse
+### Realtime core
 
-**Regel:** Der Sidecar darf sterben, die Audio-Engine nicht.
+Responsible for:
 
-### 8.2 Architekturprinzip
-- **Realtime und nicht-realtime strikt trennen**
-- **Mutationen nur an sicheren Quantisierungsgrenzen committen**
-- **Keine Heap-Allokationen im Audio-Callback**
-- **Alle schweren Modelle, Decoder und Analysen out-of-process**
+- audio thread
+- scheduler
+- mixer
+- device logic
+- terminal UI
+- controller input
+- session state
+- undo / snapshots
+
+### Analysis + AI sidecar
+
+Responsible for:
+
+- decode and preprocessing
+- stem separation
+- beat / bar detection
+- chord / key estimation
+- loop mining
+- embeddings
+- candidate scoring
+- local AI agent
+- background and offline analysis
+
+Rule: the sidecar may crash, the audio engine may not.
+
+### 8.2 Architecture rules
+
+- strictly separate realtime and non-realtime work
+- only commit mutations on safe quantized boundaries
+- no heap allocation in the audio callback
+- keep heavy models, decoders, and analysis out of process
 
 ---
 
-## 9. Technologie-Stack
+## 9. Technology Stack
 
-### 9.1 Realtime Core
-Empfohlen: **Rust**
+### 9.1 Realtime core
 
-Gründe:
-- gute Kontrolle über Speicher und Realtime-Verhalten
-- native Performance
-- sichere Concurrency
-- gute TUI- und Audio-Bibliotheken
+Recommended: **Rust**
 
-### Kernkomponenten
-- Audio I/O
+Reasons:
+
+- strong control over memory and realtime behavior
+- native performance
+- safer concurrency
+- good TUI and audio tooling
+
+Core components:
+
+- audio I/O
 - TUI
-- MIDI/HID
-- Scheduler
+- MIDI / HID
+- scheduler
 - DSP
-- Session Serialization
-- Export-Subsystem
+- session serialization
+- export subsystem
 
 ### 9.2 Analysis + AI
-Empfohlen: **Python-Sidecar**
 
-Gründe:
-- MIR-Ökosystem
-- Modellausführung
-- schnellere Iteration
-- leichtere Forschung und Prototyping
+Recommended: **Python sidecar**
 
-### Kernkomponenten
-- Audio-Vorverarbeitung
-- Modellprovider
-- Feature-Extraktion
-- RPC-Server
-- lokaler Agent
-- Kandidaten- und Bewertungslogik
+Reasons:
 
-### 9.3 Kommunikation
-Zwischen Rust-Core und Python-Sidecar:
+- MIR ecosystem
+- easy model execution
+- faster iteration
+- easier research and prototyping
 
-- lokale Unix-Sockets oder TCP auf localhost
+Core components:
+
+- audio preprocessing
+- model providers
+- feature extraction
+- RPC server
+- local agent
+- candidate and scoring logic
+
+### 9.3 Communication
+
+Between Rust core and Python sidecar:
+
+- local Unix sockets or localhost TCP
 - MessagePack / Protobuf / JSON-RPC
-- asynchrones Action-Protokoll
-- Versionsnummern in allen Nachrichten
+- asynchronous action protocol
+- version numbers in all messages
 
 ---
 
-## 10. Audiodatenfluss
+## 10. Audio Data Flow
 
 ```text
 Input Audio
@@ -438,459 +470,323 @@ Input Audio
 
 ---
 
-## 11. Analyse-Pipeline
+## 11. Analysis Pipeline
 
-### 11.1 Decode & Normalize
-### Aufgaben
-- MP3/WAV/AIFF/FLAC einlesen
-- in interne Samplerate wandeln
-- Kanäle normalisieren
-- Loudness für Analyse stabilisieren
+### 11.1 Decode and normalize
 
-### Ziele
-- konsistente Eingangsdaten
-- keine Überraschungen in späterer Feature-Extraktion
+Tasks:
 
-### 11.2 Stem Separation
-### Ziel
-Trennung in:
+- read MP3 / WAV / AIFF / FLAC
+- convert to internal sample rate
+- normalize channels
+- stabilize loudness for analysis
+
+Goals:
+
+- consistent input data
+- fewer surprises in later feature extraction
+
+### 11.2 Stem separation
+
+Target output:
+
 - drums
 - bass
 - vocals
-- harmonic/rest
-- optional FX/noise
+- harmonic / rest
+- optional FX / noise
 
-### Nutzen
-- saubere Drum-Detektion
-- bessere Tonhöhenanalyse
-- gezielte Geräte-Zuweisung
+Benefits:
 
-### 11.3 Beat, Downbeat, Bars
-### Output
-- BPM-Kandidat(en)
-- Beat-Frames
-- Downbeats
-- Bar-Grenzen
-- Confidence-Werte
-- alternative Grid-Hypothesen
+- cleaner drum detection
+- better pitch analysis
+- clearer device assignment
 
-### Wichtig
-Bar-Grid ist zentrale Wahrheit für:
-- Szenenwechsel
-- Loop-Capture
-- quantisierte Mutationen
-- Ghost-Actions
+### 11.3 Beat, downbeat, bars
 
-### 11.4 Harmonieanalyse
-### Output
-- Tonart
-- Modus
-- Akkordfenster pro Bar/Halbbart
-- Bass-Zentren
-- funktionale Spannung
+Output:
 
-### Nutzung
-- MC-202-Follower
-- Hook-Resynthese
-- De Novo Rebuild
+- BPM candidate(s)
+- beat frames
+- downbeats
+- bar boundaries
+- confidence values
+- alternative grid hypotheses
 
-### 11.5 Melodie- und Konturextraktion
-### Output
-- Lead-/Hook-Konturen
-- Basskonturen
-- Phrasenanker
-- intervallische Muster
+The bar grid is central truth for:
 
-### Nutzung
-- 202-Phrasen
-- Motivantworten
-- similarity-aware Mutation
+- scene changes
+- loop capture
+- quantized mutations
+- Ghost actions
 
-### 11.6 Struktursegmentierung
-### Output
-- Intro / Build / Drop / Breakdown / Outro-Kandidaten
-- Energieverlauf
-- Wiederholungsblöcke
-- Übergangsstellen
+### 11.4 Harmony analysis
 
-### Nutzung
+Output:
+
+- key
+- mode
+- chord windows per bar / half-bar
+- bass centers
+- functional tension
+
+Used by:
+
+- MC-202 follower
+- hook resynthesis
+- de novo rebuild
+
+### 11.5 Melody and contour extraction
+
+Output:
+
+- lead / hook contours
+- bass contours
+- phrase anchors
+- interval patterns
+
+Used by:
+
+- 202 phrases
+- motif answers
+- similarity-aware mutation
+
+### 11.6 Structural segmentation
+
+Output:
+
+- intro / build / drop / breakdown / outro candidates
+- energy curve
+- repeating blocks
+- transition points
+
+Used by:
+
 - Scene Graph
-- Ghost-Vorschläge
-- Auto-Arrangement
+- Ghost suggestions
+- auto-arrangement
 
-### 11.7 Slice- und Loop-Mining
-### Output
-- transientbasierte Slices
-- musikalische 1/2/4/8-Bar-Loops
-- Pad-Kandidaten
-- One-Shot-Kandidaten
-- Qualitätsscores
+### 11.7 Loop and slice mining
 
-### Qualitätskriterien
-- rhythmische Schlüssigkeit
-- geringer Artefaktgrad
-- harmonische Eindeutigkeit
-- Wiederverwendbarkeit
-- Live-Nützlichkeit
+Output:
 
-### 11.8 Embeddings und Stilvektoren
-### Output
-- dichte Repräsentationen für Abschnitte
-- Similarity-Mapping innerhalb des Tracks
-- Charakter- und Energieverläufe
-- Cluster ähnlicher Passagen
+- transient slices
+- loop windows
+- onset clusters
+- repeatability hints
+- confidence per candidate
 
-### Nutzung
-- intelligente Abschnittssprünge
-- Ähnlichkeitsvermeidung
-- KI-Argumentationsbasis
+Used by:
+
+- W-30 pad forge
+- capture-first workflows
+- loop freezing and recuts
 
 ---
 
-## 12. Interne musikalische Repräsentationen
+## 12. Internal Musical Representations
 
-### 12.1 Source Graph
-Zentrale Repräsentation des Eingangsmaterials.
+Riotbox should operate on explicit musical representations rather than a single opaque model state.
 
-### Enthält
-- BarGrid
-- Stems
-- ChordTimeline
-- BassTimeline
-- MelodyContours
-- Sections
-- LoopCandidates
-- SlicePools
-- EmbeddingWindows
-- ConfidenceMap
+Core representations:
 
-### Aufgabe
-Der Source Graph trennt das System vom Roh-Audio.  
-Ab diesem Punkt arbeitet Riotbox primär mit **musikalischen Zuständen**, nicht mit einer undurchsichtigen Datei.
+- **Source Graph** for analyzed source structure
+- **Scene Graph** for performance structure
+- **Action Log** for deterministic replay
+- **Bank State** for W-30 pads and captures
+- **Phrase Objects** for MC-202 and hook behavior
+- **Pattern Objects** for 909 and hybrid drum logic
 
-### 12.2 Scene Graph
-Beschreibt die aktuell performbaren Szenen.
-
-### Beispiel
-- `intro`
-- `reveal`
-- `build`
-- `strip`
-- `slam`
-- `breakdown`
-- `fake_drop`
-- `real_drop`
-- `switchup`
-- `exit`
-
-Jede Szene definiert:
-- welche Quellen aktiv sind
-- welche Geräte dominieren
-- was geloopt ist
-- welche Mutationsbudgets gelten
-- ob Ghost-Aktionen erlaubt sind
-
-### 12.3 Phrase Model
-Phrasen werden als semantische Bausteine gespeichert.
-
-### Eine Phrase enthält
-- Taktlänge
-- Startposition
-- Trigger-/Note-/Slice-Ereignisse
-- Kontur
-- Dichte
-- Harmoniebezug
-- Energielevel
-- Herkunft (input / generated / resampled)
-
-### 12.4 Pad Object
-Für W-30-artige Sample-Pads.
-
-### Eigenschaften
-- audio source
-- start/end/loop points
-- root note
-- pitch mode
-- reverse
-- grit profile
-- envelope
-- bank slot
-- tags
-- provenance
-
-### 12.5 Action Log
-Jede relevante Operation wird protokolliert.
-
-### Beispiele
-- `capture_loop(L7 -> bank B, pad 3)`
-- `generate_202_phrase(scene=build, key=Em)`
-- `replace_kick(mode=layered)`
-- `ghost_strip_hats(duration=1 bar)`
-- `resample_pad(C4 -> D1)`
-
-Das Action Log ist Basis für:
-- Undo/Redo
-- Replay
-- Debugging
-- AI-Erklärbarkeit
+The system should prefer inspectable intermediate states over hidden transformations.
 
 ---
 
-## 13. Geräte-Engine-Design
+## 13. Device Engine Design
 
-### 13.1 MC-202 Engine
+### 13.1 MC-202 engine
 
-### Aufgaben
-- monophone Basslines erzeugen
-- kurze Leads und Antwortphrasen spielen
-- Glide/Accent musikalisch einsetzen
-- harmonisch folgen oder provozieren
-- Sequenzzellen mutieren
+Responsibilities:
 
-### Kernmodule
-- Mono Synth Voice
-- Phrase Generator
-- Step/Cell Sequencer
-- Accent/Slide Logic
-- Follower/Instigator Logic
-- Modulation + FX
+- mono lane
+- follower / answer / instigator phrases
+- accent and slide behavior
+- controlled repetition
+- pressure without overplaying
 
-### Phrase-Objekt
-```text
-Step {
-  pitch
-  gate
-  accent
-  slide
-  octave_flag
-  rest
-  tie
-}
-```
+Core modules:
 
-### Modi
-#### Follower
-- folgt Basszentren
-- stützt Harmonie
-- arbeitet defensiv
+- mono synth voice
+- phrase generator
+- accent model
+- slide model
+- phrase scoring
+- macro and page controls
 
-#### Instigator
-- erzeugt Gegenbewegungen
-- übernimmt Führungsrolle
-- provoziert Szenenwechsel
+### 13.2 W-30 engine
 
-### Master-Makro
-`202_touch`
+Responsibilities:
 
-Steuert:
-- Lautheit/Präsenz
-- Accent-Dichte
-- Glide-Häufigkeit
-- Filter-Drive
-- Melodische Eigenständigkeit
-- Szenen-Dominanz
+- slice pool
+- loop miner interface
+- pad forge
+- resample lab
+- bank management
+- pitch / rate treatment
+- grit / color handling
+- loop freezing
 
-### Klangparameter
-- cutoff
-- resonance
-- env amount
-- accent amount
-- slide time
-- pwm depth
-- drive
-- mono spread (subtil)
-- instability / battery drift
+Core principle:
 
-### Designregel
-Immer **prägnant vor komplex**.  
-Die 202 darf nicht alles spielen, sondern das Richtige.
+**Capture is a primary action.**  
+Every strong moment should be:
 
----
+- stored as a pad
+- marked as a loop
+- promoted to a scene
+- or resampled for immediate reuse
 
-### 13.2 W-30 Engine
+### 13.3 TR-909 engine
 
-### Aufgaben
-- Slices und Loops in spielbare Bänke überführen
-- resamplen
-- internen Output zurückführen
-- Pad-basiertes Live-Spiel ermöglichen
-- spontane Capture-Momente konservieren
+Responsibilities:
 
-### Kernmodule
-- Slice Pool
-- Loop Miner
-- Pad Forge
-- Resample Lab
-- Bank Manager
-- Pitch/Rate Engine
-- Grit/Color Engine
-- Loop Freezer
+- reinforce or replace drums
+- generate pattern variants from analyzed groove
+- place hats, claps, accents, and fills
+- prepare drops
 
-### Hauptprinzip
-**Capture ist Primäraktion.**  
-Jeder gute Moment muss sofort:
-- als Pad speicherbar,
-- als Loop markierbar,
-- als Szene promotbar,
-- oder als Resample erneut nutzbar sein.
+Core modules:
 
-### Wichtige Operationen
-- slice
-- auto-pad-map
-- trim
-- reverse
-- repitch
-- timestretch (optional, vorsichtig)
-- resample internal bus
-- granularize (später)
-- freeze
-- destruct
-- bank swap
+- pattern generator
+- drum reinforcement
+- accent engine
+- fill brain
+- groove quantizer
+- slam bus
 
-### Wichtige Makros
-- `w30_grit`
-- `loop_freeze`
-- `resample_now`
-- `slice_density`
-- `bank_morph`
+Modes:
 
----
-
-### 13.3 TR-909 Engine
-
-### Aufgaben
-- Drums verstärken oder ersetzen
-- Pattern auf Basis des analysierten Grooves neu schreiben
-- Hats, Claps, Accents und Fills sinnvoll platzieren
-- Drops vorbereiten
-
-### Kernmodule
-- Pattern Generator
-- Drum Reinforcement
-- Accent Engine
-- Fill Brain
-- Groove Quantizer
-- Slam Bus
-
-### Arbeitsweise
-Die 909-Engine sollte:
-- Kick und Snare aus dem Input lesen
-- den Groove nicht zerstören
-- aber gezielt Punch hinzufügen
-- bei Bedarf komplett neu übernehmen
-
-### Modi
 - `reinforce`
 - `replace`
 - `hybrid`
 - `skeleton_only`
 
-### Makros
-- `909_slam`
-- `hat_density`
-- `fill_intensity`
-- `accent_push`
-- `room_amount`
-
 ---
 
-## 14. Arrangement und Kompositionslogik
+## 14. Arrangement and Composition Logic
 
-### 14.1 Hierarchischer Aufbau
-Riotbox erzeugt Musik nicht auf Pattern-Ebene allein, sondern in drei Schichten:
+Riotbox should not only build patterns. It should compose across three layers:
 
-1. **Section Grammar**
-2. **Phrase Generation**
-3. **Micro Variation**
+1. **Section grammar**
+2. **Phrase generation**
+3. **Micro variation**
 
-### 14.2 Section Grammar
-Grundformen:
+### 14.1 Section grammar
+
+Base forms:
 
 ```text
 intro -> reveal -> build -> strip -> slam -> breakdown -> switchup -> final -> exit
 ```
 
-Nicht jede Session nutzt alle Zustände.  
-Das Arrangement-System verwaltet:
+Not every session uses every state. The arrangement system manages:
 
-- Energie
-- Kontrast
-- Wiederholung
-- Überraschung
-- Mutationsbudget
-- Originalmaterial-Anteil
+- energy
+- contrast
+- repetition
+- surprise
+- mutation budget
+- source-material ratio
 
-### 14.3 Phrase-Generatoren
-Jede Lane schreibt Phrasen im Kontext der aktuellen Szene.
+### 14.2 Phrase generators
 
-### Lanes
+Every lane writes phrases in the context of the current scene:
+
 - MC-202
-- W-30 pads/loops
+- W-30 pads / loops
 - TR-909 drums
-- FX/transitions
+- FX / transitions
 - optional vocal fragments
 
-### 14.4 Micro Variation
-Alle paar Takte kleine Mutationen:
-- einzelne Slice-Swaps
-- Accent-Verschiebung
-- Filteröffnung
-- halbe Bar Stille
-- Ghost Notes
-- kurzer Reverse-Call
-- Snare Fill
-- Pattern-Kompression
+### 14.3 Micro variation
 
-**Regel:** Wiedererkennung plus Bewegung.
+Every few bars, add small changes:
+
+- slice swaps
+- accent shifts
+- filter opening
+- half-bar silence
+- ghost notes
+- short reverse calls
+- snare fills
+- pattern compression
+
+Rule: recognition plus movement.
 
 ---
 
-## 15. Scoring und Auswahl
+## 15. Scoring and Selection
 
-Riotbox generiert nicht blind einen Kandidaten, sondern nutzt **Generate → Score → Select → Mutate**.
+Riotbox should not choose blindly. It should use:
+
+**Generate -> Score -> Select -> Mutate**
 
 ### 15.1 Groove Score
-Misst:
-- Backbeat-Klarheit
-- Syncopation-Fitness
-- Microtiming-Verträglichkeit
-- Tanzbarkeit im Kontext
+
+Measures:
+
+- backbeat clarity
+- syncopation fitness
+- microtiming compatibility
+- danceability in context
 
 ### 15.2 Identity Score
-Misst:
-- Erinnerbarkeit
-- Konturschärfe
-- prägnante Reibung
-- rhythmische Signatur
+
+Measures:
+
+- memorability
+- contour sharpness
+- useful friction
+- rhythmic signature
 
 ### 15.3 Impact Score
-Misst:
-- Drop-Tauglichkeit
-- Build-Spannung
-- Strip-Wirkung
-- Abschnittskompatibilität
+
+Measures:
+
+- drop usefulness
+- build tension
+- strip effectiveness
+- section compatibility
 
 ### 15.4 Novelty Score
-Misst:
-- Abstand zu den letzten Takten
-- Abstand zu konkurrierenden Kandidaten
-- internen Similarity-Abstand
+
+Measures:
+
+- distance from recent bars
+- distance from competing candidates
+- internal similarity distance
 
 ### 15.5 Restraint Score
-Misst:
-- Mix-Überladung
-- Frequenzkonflikte
-- zu hohe Ornamentik
-- Überaktivität des Moments
+
+Measures:
+
+- mix overload
+- frequency conflicts
+- too much ornament
+- overactivity in the moment
 
 ---
 
-## 16. Live-Mutation und Performance-Steuerung
+## 16. Live Mutation and Performance Control
 
-### 16.1 Grundidee
-Riotbox ist live dann stark, wenn Mutationen **hörbar**, **quantisiert**, **verständlich** und **reversibel** sind.
+Riotbox becomes strong on stage when mutations are:
 
-### 16.2 Mutationsarten
+- audible
+- quantized
+- understandable
+- reversible
+
+Mutation types include:
+
 - regenerate current scene
 - mutate selected lane
 - capture current bar group
@@ -903,66 +799,75 @@ Riotbox ist live dann stark, wenn Mutationen **hörbar**, **quantisiert**, **ver
 - fake drop
 - restore source
 
-### 16.3 Quantisierung
-Mutationen dürfen nur committen auf:
-- nächster Beat
-- nächste halbe Bar
-- nächste Bar
-- nächste Phrase
-- nächste Szene
+Quantization boundaries:
 
-Die Standard-Einstellung für sichere Bühne:
-- kreative Änderungen: nächste Bar
-- harte Rebuilds: nächste Phrase
+- next beat
+- next half-bar
+- next bar
+- next phrase
+- next scene
 
-### 16.4 Undo/Redo
-Pflichtfunktionen:
-- letzter Commit rückgängig
-- Snapshot laden
-- Szene wiederherstellen
-- Ghost-Aktion revidieren
-- Bank-Zustand zurückholen
+Safe defaults:
+
+- creative changes on next bar
+- hard rebuilds on next phrase
+
+Undo / redo must support:
+
+- revert last commit
+- load snapshot
+- restore scene
+- revert Ghost action
+- recover previous bank state
 
 ---
 
-## 17. KI-Agent / Ghost-System
+## 17. AI Agent / Ghost System
 
-### 17.1 Rolle der KI
-Die KI ist **kein direkter Audio-Generator**, sondern ein **Werkzeug-benutzender musikalischer Agent**.
+### 17.1 Role of the AI
 
-Sie sieht:
-- Tempo
-- Grid
-- Tonart / Akkorde
-- aktuelle Szene
-- aktive Loops
-- verfügbare Pads
-- Analysekonfidenz
-- Mutationsbudget
-- Sperren / Locks
-- Verlauf der letzten Aktionen
+The AI is **not** a direct audio generator. It is a tool-using musical agent.
 
-Sie darf:
-- Aktionen planen
-- Werkzeuge auslösen
-- Vorschläge begründen
-- als Ghost performen
+It sees:
 
-### 17.2 Modi
-### Watch
-- kommentiert nur
-- schlägt Chancen vor
+- tempo
+- grid
+- key / chords
+- current scene
+- active loops
+- available pads
+- analysis confidence
+- mutation budget
+- locks
+- recent action history
 
-### Assist
-- schlägt vor
-- wartet auf Bestätigung
+It may:
 
-### Perform
-- führt quantisierte Aktionen selbst aus
-- respektiert Grenzen und Budgets
+- plan actions
+- trigger tools
+- justify suggestions
+- perform as Ghost
 
-### 17.3 Ghost-Protokoll
-Beispiel:
+### 17.2 Modes
+
+**Watch**
+
+- comments only
+- points out opportunities
+
+**Assist**
+
+- proposes actions
+- waits for confirmation
+
+**Perform**
+
+- executes quantized actions on its own
+- respects budgets and guard rails
+
+### 17.3 Ghost log
+
+Example:
 
 ```text
 [bar 17] ghost: detected strong 2-bar loop candidate from harmonic stem
@@ -971,94 +876,41 @@ Beispiel:
 [bar 29] ghost: promoted resampled phrase to W-30 bank B, pad 4
 ```
 
-### 17.4 Sicherheitsgrenzen
-Ghost darf niemals:
-- Audio-Thread blockieren
-- unquantisierte harte Änderungen auslösen
-- gelockte Elemente zerstören
-- ohne Undo-Möglichkeit agieren
-- unendliche Action-Loops erzeugen
+### 17.4 Safety limits
 
-### 17.5 Lokales Modell
-Die KI wird lokal betrieben. Architektur:
+Ghost must never:
 
-- lokales LLM oder reasoning model für Planung
-- nicht-LLM MIR-Modelle für musikalisches Verständnis
-- Tool-Calling API
-- klar definierter Systemzustand
-- kurze, deterministische Tool-Antworten
-
-### 17.6 Warum kein “ein Modell kann alles”
-Musikalisches Verstehen entsteht aus:
-- Beat-Analyse
-- Harmonie
-- Struktur
-- Slice-Qualität
-- Energie
-- Kontext
-
-Ein LLM allein ist dafür nicht die beste Quelle.  
-Deshalb trennt Riotbox:
-- **MIR und Audioanalyse**
-- **Agentisches Entscheiden**
-- **Realtime-Ausführung**
+- block the audio thread
+- trigger hard unquantized changes
+- destroy locked elements
+- act without undo support
+- create infinite action loops
 
 ---
 
-## 18. UX-Strategie
+## 18. UX Strategy
 
-### 18.1 Drei Bedienringe
+UX should feel like an instrument, not a research dashboard.
 
-### Ring 1: Jam
-Ziel: sofort musikalisch sein.
+Principles:
 
-Zeigt nur die wichtigsten Makros:
-- source ↔ rebuild
-- `202_touch`
-- `w30_grit`
-- `909_slam`
-- mutation
-- density
-- energy
-- ghost mode
+- **Jam-first** entry point
+- visible confidence and state
+- layered depth instead of parameter explosion
+- fast route from hearing something good to capturing it
+- strong defaults and presets
+- logs that build trust instead of noise
 
-### Ring 2: Sculpt
-Ziel: gezielt bearbeiten.
+Primary UX promise:
 
-Seiten:
-- MC-202
-- W-30 Banks
-- Slices
-- Loops
-- TR-909
-- Arrangement
-- Mixer
-
-### Ring 3: Lab
-Ziel: Analyse und Tiefenkontrolle.
-
-Seiten:
-- confidence
-- chords
-- sections
-- embeddings
-- providers
-- logs
-- performance diagnostics
-
-### 18.2 UX-Regeln
-- Standard-Screen darf niemals erschlagen
-- Tiefe Funktionen nur bei Bedarf
-- jeder Makro-Dreh muss hörbar sein
-- Logs müssen konkret sein
-- Captures müssen sofort auffindbar sein
-- Ghost-Aktionen müssen sichtbar bleiben
+within minutes, a user should be able to load a track, hear a rebuild, shape it, and capture something worth keeping.
 
 ---
 
-## 19. TUI-Konzept
+## 19. TUI Concept
 
-### 19.1 Hauptseiten
+### 19.1 Main pages
+
 - Jam
 - Arrange
 - MC202
@@ -1069,7 +921,8 @@ Seiten:
 - Export
 - Diagnostics
 
-### 19.2 Beispiel-Jam-Screen
+### 19.2 Example Jam screen
+
 ```text
 Riotbox -- file breaksource.mp3 -- mode hybrid -- seed 90317
 
@@ -1088,79 +941,87 @@ LOG
 [bar 28] stripped kick for half-bar pre-drop
 ```
 
-### 19.3 Tastatur-Shortcuts
-- `space` play/pause
-- `tab` page cycle
+### 19.3 Keyboard shortcuts
+
+- `space` play / pause
+- `tab` cycle pages
 - `1..8` scene launch / pad bank quick select
 - `m` mutate selected lane
 - `c` capture
 - `l` lock selected object
 - `u` undo
-- `r` redo / reseed (context-abhängig)
+- `r` redo / reseed depending on context
 - `g` ghost mode toggle
 - `f` fill next bar
 - `d` drop next phrase
 - `x` destruct selected object
-- `s` snapshot save
+- `s` save snapshot
 - `e` export
 - `?` help overlay
 
 ---
 
-## 20. Controller- und Hardware-Integration
+## 20. Controller and Hardware Integration
 
-### 20.1 Mindestumfang
-- MIDI CC Learn
-- Note/Pad Trigger
-- Transport
-- Bank Selection
-- Scene Launch
-- Crossfader-artige Makros
-- Parameter Feedback, wenn möglich
+Minimum support:
 
-### 20.2 Primäre Live-Mappings
-- source ↔ rebuild
+- MIDI CC learn
+- note / pad trigger
+- transport
+- bank selection
+- scene launch
+- crossfader-like macros
+- feedback where feasible
+
+Primary live mappings:
+
+- source <-> rebuild
 - `202_touch`
 - `w30_grit`
 - `909_slam`
-- mutation
-- density
-- energy
-- ghost aggression
+- `mutation`
+- `density`
+- `energy`
+- `ghost aggression`
 
-### 20.3 Performance-Philosophie
-Ein generisches 8-Knob-Controller-Setup muss bereits musikalisch nutzbar sein.
+Performance rule:
+
+a generic 8-knob controller setup should already be musically useful.
 
 ---
 
-## 21. Sessionmodell
+## 21. Session Model
 
-### 21.1 Session enthält
-- Projektmetadaten
-- Input-Referenzen
-- Analyse-Cache-IDs
-- globale Seeds
-- Lane-Seeds
-- Provider-Konfiguration
-- Device-Parameter
-- Szenenhistorie
-- Capture-Bänke
-- Action Log
-- Ghost-Historie
-- Snapshots
-- Exporte
+### 21.1 Session contains
 
-### 21.2 Determinismus
-Für eine Session mit identischem:
-- Input
-- Analyse-Cache
-- Seed
-- Provider-Setup
-- Action Log
+- project metadata
+- input references
+- analysis cache IDs
+- global seeds
+- lane seeds
+- provider configuration
+- device parameters
+- scene history
+- capture banks
+- action log
+- Ghost history
+- snapshots
+- exports
 
-muss ein reproduzierbarer Rebuild möglich sein.
+### 21.2 Determinism
 
-### 21.3 Snapshot-Typen
+For a session with identical:
+
+- input
+- analysis cache
+- seed
+- provider setup
+- action log
+
+Riotbox should be able to produce a reproducible rebuild.
+
+### 21.3 Snapshot types
+
 - quick snapshot
 - scene snapshot
 - full session snapshot
@@ -1168,7 +1029,7 @@ muss ein reproduzierbarer Rebuild möglich sein.
 
 ---
 
-## 22. Datenmodell (vereinfachte Skizze)
+## 22. Data Model (simplified sketch)
 
 ```text
 Session
@@ -1216,104 +1077,133 @@ Action
 
 ---
 
-## 23. Capture und Looping als Herzstück
+## 23. Capture and Looping as the Core
 
-### 23.1 Capture-Arten
-- Source Loop Capture
-- Device Output Capture
-- Bus Capture
-- Full Scene Capture
-- Ghost Favorite Capture
+Capture is not a side utility. It is a central musical action.
 
-### 23.2 Capture-Workflow
-1. guter Moment entsteht
-2. Benutzer oder Ghost markiert ihn
-3. Quantisierte Extraktion
-4. Speicherung als Loop, Pad oder Szene
-5. direkte Wiederverwendung
+Key requirements:
 
-### 23.3 Warum das zentral ist
-Das ist der Punkt, an dem Riotbox vom “Generator” zum **musikalischen Werkzeug** wird.  
-Nicht nur erzeugen, sondern **Momente ernten und weiterverwenden**.
+- capture must be fast
+- capture must be quantized
+- captured material must immediately become reusable
+- capture must preserve provenance
+- promoted captures must fit naturally into later scenes
 
----
+Strong moments should be easy to:
 
-## 24. Resample-Lab
-
-### 24.1 Idee
-Riotbox darf nicht nur das Eingangssignal bearbeiten, sondern auch **sich selbst sampeln**.
-
-### 24.2 Beispielkette
-1. MC-202 erzeugt gute Phrase
-2. Phrase wird intern gebounced
-3. W-30 sampelt sie auf Pad
-4. Pad wird gepitcht/reverset/gesliced
-5. TR-909 übernimmt einen Fill daraus
-6. Ghost promoted das Ergebnis in eine neue Szene
-
-### 24.3 Wert
-Das schafft eine selbstreferenzielle Kreativitätsschleife und verleiht dem Instrument Eigenleben.
+- freeze
+- store as pads
+- promote to scenes
+- resample
+- compare with earlier captures
 
 ---
 
-## 25. FX- und Mixer-Strategie
+## 24. Resample Lab
 
-### 25.1 Mixer-Layer
-- Input stem buses
-- MC-202 bus
-- W-30 bus
-- TR-909 bus
-- FX bus
-- master bus
+The Resample Lab is the place where Riotbox stops behaving like a source editor and starts behaving like an instrument.
 
-### 25.2 Essenzielle Effekte
-- drive
-- filter
-- delay
-- room reverb
-- compressor/limiter
-- bit reduction
-- sample rate reduction
-- transient shaping
-- tape-ish saturation (später optional)
+Core operations:
 
-### 25.3 Designregel
-Effekte dienen der Performance und der Geräte-Persönlichkeit, nicht der maximalen Studio-Universalität.
+- resample internal buses
+- trim
+- reverse
+- repitch
+- alter rate
+- destruct
+- freeze
+- reassign to banks
+
+Later possibilities:
+
+- careful time-stretch
+- granular treatment
+- spectral abuse
+
+Rule:
+
+internal material created by the system should eventually compete with or outrank the original source.
 
 ---
 
-## 26. Export und Interoperabilität
+## 25. FX and Mixer Strategy
 
-### 26.1 Export-Arten
-- Stereo Mixdown
-- Stem Export
-- MIDI Export
-- Session Export
-- Snapshot Export
-- Provenance Manifest
-- optional Sync/Clock-Referenz
+FX should support identity, not only polish.
 
-### 26.2 Stems
-Mindestens:
+Key layers:
+
+- source bus
+- device buses
+- send FX
+- drum bus
+- master limiter / safety
+
+Desired behavior:
+
+- controlled aggression
+- fast scene-dependent changes
+- musically useful dirt
+- room and space as structural tools
+- obvious recoverability after extreme states
+
+### 25.3 Design rule
+
+Effects serve performance and device personality, not maximum studio universality.
+
+---
+
+## 26. Export and Interoperability
+
+### 26.1 Export types
+
+Riotbox should support:
+
+- stereo export
+- stem export
+- MIDI export where useful
+- session export
+- session snapshots
+- provenance manifest
+- optional sync / clock reference
+- replay-ready logs
+
+### 26.2 Minimum stem breakdown
+
+At minimum:
+
 - drums
-- bass/202
-- sampler/w30
-- vocals/fragments
+- bass / 202
+- sampler / W-30
+- vocals / fragments
 - FX
 - full mix
 
-### 26.3 Export-Anforderungen
-- reproduzierbar
-- mit Seed/Session referenzierbar
-- klar benannt
-- in Batch nutzbar
+### 26.3 Export requirements
+
+- reproducible
+- referencable by seed and session
+- clearly named
+- usable in batch contexts
+
+Interoperability matters, but must not dominate the MVP at the cost of capture-first live usefulness.
 
 ---
 
-## 27. Qualitätssicherung und Profi-Härtung
+## 27. Quality Assurance and Pro Hardening
 
-### 27.1 Realtime-Stabilität
-Pflichtmetriken:
+Professional hardening should cover:
+
+- robustness
+- diagnostics
+- crash recovery
+- deterministic replay
+- export consistency
+- rehearsable stage behavior
+
+### 27.1 Realtime stability
+
+Required metrics:
+
 - xruns
 - callback timing
 - buffer underruns
@@ -1322,46 +1212,65 @@ Pflichtmetriken:
 - sidecar latency
 - action queue lag
 
-### 27.2 Testarten
-### Audio/Signal
+### 27.2 Test categories
+
+#### Audio / signal
+
 - voice correctness
 - no-click guarantees
 - envelope behavior
 - scheduler timing
 
-### Logik
-- scene transitions
-- undo/redo
-- capture integrity
-- deterministischer replay
+#### Logic
 
-### Integration
-- audio core ↔ sidecar
+- scene transitions
+- undo / redo
+- capture integrity
+- deterministic replay
+
+#### Integration
+
+- audio core <-> sidecar
 - provider swapping
 - model timeout handling
 - crash recovery
 
-### Golden Renders
-Referenz-Renderings für:
-- gleiche Seeds
-- identische Aktionen
-- gleiche Input-Dateien
+### Golden renders
 
-### 27.3 Crash-Strategie
-- Sidecar-Neustart ohne Audio-Stop
-- Analysejobs abbrechbar
-- Ghost deaktivierbar
-- Panic-Funktion für Live-Betrieb
+Reference renders for:
+
+- same seeds
+- identical actions
+- same input files
+
+### 27.3 Crash strategy
+
+- sidecar restart without stopping audio
+- analysis jobs cancelable
+- Ghost disableable
+- panic function for live use
+
+Additional QA needs:
+
+- fixture sessions
+- golden renders
+- replay tests
+- confidence and error visibility
+- musical review sessions, not only technical tests
 
 ---
 
-## 28. Provider-Architektur
+## 28. Provider Architecture
 
-### 28.1 Warum Provider
-Viele Analyse- und KI-Bausteine werden sich ändern.  
-Daher braucht Riotbox austauschbare Interfaces.
+### 28.1 Why providers
 
-### 28.2 Provider-Typen
+Many analysis and AI components will change over time.  
+Riotbox therefore needs swappable interfaces.
+
+### 28.2 Provider types
+
+Provider interfaces should keep Riotbox flexible around:
+
 - `StemProvider`
 - `BeatProvider`
 - `HarmonyProvider`
@@ -1370,47 +1279,72 @@ Daher braucht Riotbox austauschbare Interfaces.
 - `AgentProvider`
 - `StretchProvider`
 
-### 28.3 Vorteil
-- schnelle Prototypen
-- spätere Lizenzwechsel
-- Vergleich mehrerer Methoden
-- robustere Produktstrategie
+### 28.3 Benefits
+
+- faster prototyping
+- later licensing swaps
+- comparison of multiple methods
+- more robust product strategy
+
+Rules:
+
+- provider boundaries must be explicit
+- licensing and replacement must stay manageable
+- no provider must own the realtime core
 
 ---
 
-## 29. Recht, Lizenzen, Originalität
+## 29. Legal, Licensing, Originality
 
-### 29.1 Grundhaltung
-Riotbox soll professionell einsetzbar sein.  
-Deshalb ist die rechtliche und ästhetische Trennung von:
-- struktureller Inspiration
-- materiellem Copying
-- rekombiniertem Input
+Riotbox should support originality by design.
 
-früh mitzudenken.
+### 29.1 Core stance
 
-### 29.2 Maßnahmen
-- Betriebsmodi klar trennen
-- Provenance auf Objekt-Ebene speichern
-- Quellanteile markieren
-- Similarity-Firewall als spätere Exportstufe vorsehen
-- Provider-Lizenzen isolieren
+Riotbox should be usable in professional contexts.  
+That means the legal and aesthetic distinction between:
 
-### 29.3 Similarity-Firewall (spätere Ausbaustufe)
-Vor Export kann geprüft werden:
-- rhythmische Ähnlichkeit
-- melodische Kontur
-- Hook-Redundanz
-- interne Wiederholungsprobleme
+- structural inspiration
+- material copying
+- recombined source material
 
-Bei Grenzwerten:
-- Phrase mutieren
-- andere Loop-Wahl
-- Alternativkandidat einsetzen
+needs to be considered early.
+
+### 29.2 Measures
+
+- clearly separate operating modes
+- store provenance at object level
+- mark source contribution where needed
+- keep provider licensing isolated
+- design for a later similarity firewall
+
+Principles:
+
+- work from structure, not blind cloning
+- distinguish derivative and de novo behavior
+- keep provider licensing swappable
+- make later similarity controls possible
+- avoid building recognizability maximization into the product
+
+### 29.3 Similarity firewall
+
+As a later export-stage safeguard, Riotbox may check:
+
+- rhythmic similarity
+- melodic contour
+- hook redundancy
+- internal repetition problems
+
+If thresholds are exceeded, possible responses include:
+
+- mutate the phrase
+- choose another loop
+- substitute an alternative candidate
 
 ---
 
-## 30. Repository-Struktur
+## 30. Repository Structure
+
+Recommended top-level structure:
 
 ```text
 riotbox/
@@ -1458,222 +1392,243 @@ riotbox/
     exports/
 ```
 
+The exact final shape may vary, but the separation between core, devices, sidecar, docs, and tests should remain obvious.
+
 ---
 
-## 31. MVP-Definition
+## 31. MVP Definition
 
-### 31.1 Ziel des MVP
-Ein Benutzer lädt einen Track und kann innerhalb weniger Minuten:
-- die Struktur analysieren,
-- einen spielbaren Rebuild starten,
-- Loops capturen,
-- 202 und 909 live steuern,
-- eine KI assistieren lassen,
-- das Ergebnis als Session speichern.
+### 31.1 MVP goal
 
-### 31.2 Was im MVP drin sein muss
-- Audio laden
-- grundlegende Analyse
+Within a few minutes, a user should be able to:
+
+- analyze track structure
+- start a playable rebuild
+- capture loops
+- control 202 and 909 live
+- receive AI assistance
+- save the result as a session
+
+### 31.2 Required MVP contents
+
+- load audio
+- basic analysis
 - Source Graph
-- einfacher Hybrid-Rebuild
-- MC-202 Follower
-- W-30 Pad Capture
-- TR-909 Reinforcement
-- Jam-Screen
-- Quantized mutation
-- Undo
-- lokale Agent-Vorschläge
-- Session Save/Load
+- simple hybrid rebuild
+- MC-202 follower
+- W-30 pad capture
+- TR-909 reinforcement
+- Jam screen
+- quantized mutation
+- undo
+- local agent suggestions
+- session save / load
 
-### 31.3 Was bewusst nicht im MVP ist
-- Vollwertige Vocal-Manipulation
-- vollständiger DAW-Export-Workflow
-- polierter Installer für alle Plattformen
-- komplexe granular/spectral Spezialverfahren
-- Multi-user / Netzwerkfunktionen
-- Cloud-AI
-- Plugin-Format
+### 31.3 Explicitly out of MVP
 
----
-
-## 32. Umsetzungsphasen
-
-### Phase 0 — Sound Bible & Spezifikation
-### Ziele
-- Klangvision schriftlich fixieren
-- Referenzvokabular definieren
-- Terminologie vereinheitlichen
-- erste TUI-Skizzen
-- Action-Lexikon definieren
-
-### Exit-Kriterien
-- akzeptiertes Vokabular
-- definierte Makros
-- definierte Gerätepersönlichkeiten
-- definierter MVP
+- full vocal manipulation
+- complete DAW export workflow
+- polished installer for all platforms
+- advanced granular / spectral processes
+- multi-user / network features
+- cloud AI
+- plugin format
 
 ---
 
-### Phase 1 — Core Skeleton
-### Inhalt
-- Projektstruktur
-- Rust Audio Core
-- TUI-Grundgerüst
-- Transport
-- Scheduler
-- Session-State
-- Action Log
-- Snapshot-Grundlagen
+## 32. Implementation Phases
 
-### Exit-Kriterien
-- stabiles Playback
-- UI reagiert
-- Sessions lassen sich speichern
-- Scheduling ist testbar
+### Phase 0 - Sound bible and specification
 
----
+Goals:
 
-### Phase 2 — Analyse-Vertical-Slice
-### Inhalt
-- Datei laden
-- Decode/Normalize
-- BarGrid
-- Sections
-- erste Loop-Kandidaten
-- rudimentäre Stem-Trennung
-- Sidecar-RPC
+- write down the sound vision
+- define reference vocabulary
+- unify terminology
+- sketch first TUI ideas
+- define the action lexicon
 
-### Exit-Kriterien
-- ein Track wird in Source Graph übersetzt
-- Jam-Screen zeigt sinnvolle Analysewerte
-- erste quantisierte Loop-Captures möglich
+Exit criteria:
 
----
+- accepted vocabulary
+- defined macros
+- defined device personalities
+- defined MVP
 
-### Phase 3 — TR-909 MVP
-### Inhalt
-- Drum-Detektion
-- Reinforcement/Layering
-- einfache Pattern-Übernahme
-- Accent/Fills
-- Drum Bus
+### Phase 1 - Core skeleton
 
-### Exit-Kriterien
-- Inputdrums lassen sich hörbar stärken
-- 909 kann kontrolliert übernehmen
-- Fills sind live triggerbar
+Contents:
 
----
+- project structure
+- Rust audio core
+- TUI skeleton
+- transport
+- scheduler
+- session state
+- action log
+- snapshot basics
 
-### Phase 4 — MC-202 MVP
-### Inhalt
-- Mono Synth Voice
-- Follower-Bassline
-- Accent/Slide
-- Phrase-Generator
+Exit criteria:
+
+- stable playback
+- responsive UI
+- sessions can be stored
+- scheduling is testable
+
+### Phase 2 - Analysis vertical slice
+
+Contents:
+
+- load file
+- decode / normalize
+- bar grid
+- sections
+- first loop candidates
+- rudimentary stem separation
+- sidecar RPC
+
+Exit criteria:
+
+- a track becomes a Source Graph
+- the Jam screen shows useful analysis values
+- first quantized loop captures are possible
+
+### Phase 3 - TR-909 MVP
+
+Contents:
+
+- drum detection
+- reinforcement / layering
+- basic pattern adoption
+- accents / fills
+- drum bus
+
+Exit criteria:
+
+- source drums can be strengthened audibly
+- 909 can take over in a controlled way
+- fills are triggerable live
+
+### Phase 4 - MC-202 MVP
+
+Contents:
+
+- mono synth voice
+- follower bassline
+- accent / slide
+- phrase generator
 - `202_touch`
 
-### Exit-Kriterien
-- gute follower-Basslines
-- live steuerbare Klangparameter
-- quantisierte Phrase-Mutation
+Exit criteria:
 
----
+- good follower basslines
+- live-controllable sound parameters
+- quantized phrase mutation
 
-### Phase 5 — W-30 MVP
-### Inhalt
-- Slice Pool
-- Pad Forge
-- Loop Freezer
-- Bank Manager
+### Phase 5 - W-30 MVP
+
+Contents:
+
+- slice pool
+- pad forge
+- loop freezer
+- bank manager
 - Resample Lab v1
 
-### Exit-Kriterien
-- gute Loops können gecaptured werden
-- Pads sind spielbar
-- interner Bus kann resampled werden
+Exit criteria:
 
----
+- good loops can be captured
+- pads are playable
+- internal bus resampling works
 
-### Phase 6 — Scene Brain
-### Inhalt
+### Phase 6 - Scene Brain
+
+Contents:
+
 - Scene Graph
-- Energie-Management
-- Arrangement-Regeln
-- Strip/Build/Slam-Logik
-- Launch und Restore
+- energy management
+- arrangement rules
+- strip / build / slam logic
+- launch and restore
 
-### Exit-Kriterien
-- aus einem Track entstehen mehrere brauchbare Szenen
-- Szenenwechsel klingen musikalisch
+Exit criteria:
+
+- a track yields multiple usable scenes
+- scene changes sound musical
+
+### Phase 7 - Ghost / AI Assist
+
+Contents:
+
+- tool API
+- local agent
+- Watch / Assist / Perform
+- Ghost log
+- limits and mutation budgets
+
+Exit criteria:
+
+- the agent makes useful suggestions
+- the agent can safely execute quantized actions
+- everything remains undoable
+
+### Phase 8 - Pro hardening
+
+Contents:
+
+- robustness
+- diagnostics
+- crash recovery
+- deterministic replay
+- export
+- provider replaceability
+
+Exit criteria:
+
+- stage-worthy run
+- reliable session replay
+- reproducible exports
 
 ---
 
-### Phase 7 — Ghost / AI Assist
-### Inhalt
-- Tool API
-- lokaler Agent
-- Watch/Assist/Perform
-- Ghost Log
-- Limits und Mutationsbudget
+## 33. Detailed Module Backlog
 
-### Exit-Kriterien
-- Agent kann sinnvolle Vorschläge machen
-- Agent kann quantisierte Aktionen sicher ausführen
-- alles bleibt undo-bar
+### 33.1 Audio core
 
----
-
-### Phase 8 — Pro Hardening
-### Inhalt
-- Robustheit
-- Diagnose
-- Crash-Recovery
-- deterministischer Replay
-- Export
-- Provider-Austauschbarkeit
-
-### Exit-Kriterien
-- bühnentauglicher Durchlauf
-- Session-Replay verlässlich
-- Exporte reproduzierbar
-
----
-
-## 33. Detaillierter Backlog nach Modulen
-
-### 33.1 Audio Core
-- [ ] Device-Auswahl
-- [ ] Sample-Rate-Management
-- [ ] Buffer-Management
-- [ ] Scheduler
-- [ ] Voice Pool
-- [ ] Mixer
+- [ ] device selection
+- [ ] sample-rate management
+- [ ] buffer management
+- [ ] scheduler
+- [ ] voice pool
+- [ ] mixer
 - [ ] FX sends
 - [ ] master limiter
 - [ ] panic state
 
-### 33.2 Session / State
-- [ ] Session-ID
-- [ ] Serialization
-- [ ] Snapshot-System
-- [ ] Action Log
+### 33.2 Session / state
+
+- [ ] session ID
+- [ ] serialization
+- [ ] snapshot system
+- [ ] action log
 - [ ] undo payloads
 - [ ] replay engine
 - [ ] version migration
 
-### 33.3 Analysis Sidecar
+### 33.3 Analysis sidecar
+
 - [ ] RPC server
 - [ ] job queue
 - [ ] cache store
 - [ ] decode pipeline
-- [ ] beat/bar analysis
+- [ ] beat / bar analysis
 - [ ] harmony analysis
 - [ ] contour extraction
 - [ ] loop miner
 - [ ] embedding interface
 
 ### 33.4 MC-202
+
 - [ ] mono oscillator core
 - [ ] filter
 - [ ] envelopes
@@ -1685,15 +1640,17 @@ Ein Benutzer lädt einen Track und kann innerhalb weniger Minuten:
 - [ ] UI page
 
 ### 33.5 W-30
+
 - [ ] slice editor
 - [ ] pad mapping
 - [ ] bank switching
 - [ ] resample routing
-- [ ] reverse/pitch/rate
+- [ ] reverse / pitch / rate
 - [ ] capture shortcuts
 - [ ] provenance tracking
 
 ### 33.6 TR-909
+
 - [ ] kick layer
 - [ ] snare layer
 - [ ] hat generator
@@ -1703,6 +1660,7 @@ Ein Benutzer lädt einen Track und kann innerhalb weniger Minuten:
 - [ ] slam bus
 
 ### 33.7 Arrangement
+
 - [ ] section classifier
 - [ ] scene templates
 - [ ] energy model
@@ -1711,6 +1669,7 @@ Ein Benutzer lädt einen Track und kann innerhalb weniger Minuten:
 - [ ] restore rules
 
 ### 33.8 TUI
+
 - [ ] Jam screen
 - [ ] MC202 page
 - [ ] W30 page
@@ -1721,7 +1680,8 @@ Ein Benutzer lädt einen Track und kann innerhalb weniger Minuten:
 - [ ] help overlay
 - [ ] performance meters
 
-### 33.9 AI Agent
+### 33.9 AI agent
+
 - [ ] state summarizer
 - [ ] tool schema
 - [ ] budget manager
@@ -1733,68 +1693,77 @@ Ein Benutzer lädt einen Track und kann innerhalb weniger Minuten:
 
 ---
 
-## 34. Nichtfunktionale Anforderungen
+## 34. Non-Functional Requirements
 
-### 34.1 Latenz
-- spielbare Reaktion für Makros
-- quantisierte Commit-Logik
-- klar sichtbare “pending action”-Zustände
+### 34.1 Latency
 
-### 34.2 Stabilität
-- Audio darf nicht knacksen
-- Ghost darf deaktivierbar sein
-- Analyse darf ausfallen, Session darf weiterlaufen
+- playable macro reaction
+- quantized commit logic
+- clearly visible pending-action states
 
-### 34.3 Speicher und CPU
-- konservative Echtzeitpfade
-- große Samples streamen oder vorhalten
-- Sidecar-Last begrenzen
+### 34.2 Stability
+
+- audio must not crackle
+- Ghost must be disableable
+- sessions must continue even if analysis fails
+
+### 34.3 Memory and CPU
+
+- conservative realtime paths
+- large samples streamed or preloaded appropriately
+- bounded sidecar load
 - graceful degradation
 
-### 34.4 Bedienbarkeit
-- sinnvolle Defaults
-- starke Presets
-- gutes Logging
-- keine Parameterflut im Jam-Screen
+### 34.4 Usability
+
+- sensible defaults
+- strong presets
+- useful logging
+- no parameter flood on the Jam screen
 
 ---
 
-## 35. Preset- und Style-System
+## 35. Preset and Style System
 
-### 35.1 Preset-Ebenen
-- globales Projektpreset
-- Gerätepreset
-- Szenenpreset
-- Controller-Mapping
-- Ghost-Policy
+### 35.1 Preset layers
 
-### 35.2 Erste Stilfamilien
+- global project preset
+- device preset
+- scene preset
+- controller mapping
+- Ghost policy
+
+### 35.2 Early style families
+
 - `feral_break`
 - `acid_wire`
 - `sampler_bruise`
 - `night_slam`
 - `ghost_cut`
 
-Jede Familie definiert:
-- Energieverhalten
-- Device-Gewichte
-- Mutationsfreude
-- Quelltreue
-- Grit/Drive
-- Ghost-Autonomie
+Each family defines:
+
+- energy behavior
+- device weighting
+- mutation appetite
+- source loyalty
+- grit / drive
+- Ghost autonomy
 
 ---
 
-## 36. Preset-Makros
+## 36. Preset Macros
 
-### Globale Makros
+### Global macros
+
 - `source_retain`
 - `energy`
 - `mutation`
 - `density`
 - `ghost`
 
-### Geräte-Makros
+### Device macros
+
 - `202_touch`
 - `w30_grit`
 - `loop_freeze`
@@ -1802,7 +1771,8 @@ Jede Familie definiert:
 - `hat_density`
 - `bank_morph`
 
-### Performance-Makros
+### Performance macros
+
 - `fake_drop`
 - `destroy_rebuild`
 - `promote_now`
@@ -1811,170 +1781,185 @@ Jede Familie definiert:
 
 ---
 
-## 37. Explainability und Vertrauen
+## 37. Explainability and Trust
 
-### 37.1 Warum wichtig
-Sobald KI und komplexe Analyse mitspielen, braucht der Benutzer Vertrauen.
+As soon as AI and complex analysis matter, the user needs trust.
 
-### 37.2 Maßnahmen
-- jede Ghost-Aktion wird geloggt
-- wichtige Analysewerte sichtbar
-- Confidence-Werte anzeigen
-- “warum diese Aktion?” erklärbar
-- Locks und Budgets sichtbar
-- Undo immer in Reichweite
+Measures:
 
----
-
-## 38. Risikoanalyse
-
-### 38.1 Technische Risiken
-### Realtime vs. KI
-Gefahr: Modellaufrufe blockieren indirekt den Flow.  
-Gegenmaßnahme: strikte Prozessgrenzen.
-
-### Analysequalität
-Gefahr: schlechte Beat-/Chord-Erkennung.  
-Gegenmaßnahme: alternative Hypothesen, Confidence und manuelle Korrekturpfade.
-
-### Überkomplexität
-Gefahr: zu viele Features zu früh.  
-Gegenmaßnahme: klarer MVP und harte Priorisierung.
-
-### Unmusikalische Mutation
-Gefahr: System klingt clever, aber nicht gut.  
-Gegenmaßnahme: Scoring, Capture-first, starke Presets, reale Test-Sessions.
-
-### 38.2 Produkt-Risiken
-### UX drift
-Gefahr: Tool wird Nerd-Labor statt Instrument.  
-Gegenmaßnahme: Jam-first.
-
-### Stilklischee
-Gefahr: zu plakative Retro-Kopie.  
-Gegenmaßnahme: Geräte als Rollen, nicht als Cosplay.
-
-### Lizenz-/Provider-Probleme
-Gefahr: unpassende Analyse- oder Modelllizenzen.  
-Gegenmaßnahme: Provider-Schnittstellen und saubere Austauschbarkeit.
+- every Ghost action is logged
+- important analysis values are visible
+- confidence values are shown
+- "why this action?" can be explained
+- locks and budgets are visible
+- undo stays close at hand
 
 ---
 
-## 39. Team- und Rollenempfehlung
+## 38. Risk Analysis
 
-Für effiziente Entwicklung sinnvoll:
+### 38.1 Technical risks
+
+**Realtime vs. AI**  
+Risk: model calls indirectly block flow.  
+Countermeasure: strict process boundaries.
+
+**Analysis quality**  
+Risk: poor beat or chord detection.  
+Countermeasure: alternative hypotheses, confidence values, manual correction paths.
+
+**Overcomplexity**  
+Risk: too many features too early.  
+Countermeasure: strict MVP and hard prioritization.
+
+**Unmusical mutation**  
+Risk: the system sounds clever but not good.  
+Countermeasure: scoring, capture-first, strong presets, real music test sessions.
+
+### 38.2 Product risks
+
+**UX drift**  
+Risk: tool becomes a nerd lab instead of an instrument.  
+Countermeasure: Jam-first.
+
+**Style cliche**  
+Risk: overly literal retro imitation.  
+Countermeasure: devices as roles, not cosplay.
+
+**Licensing / provider problems**  
+Risk: unsuitable analysis or model licenses.  
+Countermeasure: provider boundaries and replaceability.
+
+---
+
+## 39. Team and Role Recommendations
+
+Useful roles:
 
 - **Product / Sound Director**  
-  hält Vision, Sound-Bible und UX-Schärfe
+  owns vision, sound bible, and UX sharpness
 
 - **Realtime Audio Engineer**  
-  Audio Core, DSP, Scheduling, Gerätelogik
+  owns audio core, DSP, scheduling, and device logic
 
 - **MIR / ML Engineer**  
-  Analysepipeline, Features, Scoring, Agent-Integration
+  owns analysis pipeline, features, scoring, and agent integration
 
 - **TUI / Interaction Engineer**  
-  Jam/Sculpt/Lab, Controller-Mappings, Diagnose
+  owns Jam / Sculpt / Lab, controller mappings, and diagnostics
 
 - **QA / Music Tester**  
-  reale Session-Tests, Golden Renders, Klangkritik
+  owns real session tests, golden renders, and sound critique
 
-In der Frühphase können Rollen kombiniert werden.
-
----
-
-## 40. Erste Meilensteine in Wochenlogik
-
-## Meilenstein A
-**“Track laden, sehen, loopen.”**
-- Datei laden
-- Analyse starten
-- Grid/Sections anzeigen
-- Top-Loops capturen
-
-## Meilenstein B
-**“Track mutieren, aber musikalisch.”**
-- 909-Reinforcement
-- 202-Follower
-- einfache Szenen
-
-## Meilenstein C
-**“Track wird Instrument.”**
-- W-30-Pads
-- Capture-first Workflow
-- Resampling
-
-## Meilenstein D
-**“Instrument bekommt Eigenleben.”**
-- Ghost Watch/Assist
-- Actions, Budgets, Logs
-
-## Meilenstein E
-**“Bühnentauglich.”**
-- Pro Hardening
-- Replay
-- Export
-- Crash-Sicherheit
+Early on, roles can be combined.
 
 ---
 
-## 41. Entscheidungsregeln für die Entwicklung
+## 40. Early Milestones in Weekly Logic
 
-Wenn zwischen zwei Varianten gewählt wird, gilt:
+### Milestone A
 
-1. **Stabilität vor Cleverness**
-2. **Musikalische Wirkung vor algorithmischer Eleganz**
-3. **Instrumenten-Charakter vor Feature-Masse**
-4. **Capture und Performance vor Offline-Perfektion**
-5. **Nachvollziehbarkeit vor Magie**
-6. **MVP-Schärfe vor Konzeptinflation**
+**"Load a track, see it, loop it."**
+
+- load a file
+- start analysis
+- show grid / sections
+- capture top loops
+
+### Milestone B
+
+**"Mutate a track, but musically."**
+
+- 909 reinforcement
+- 202 follower
+- simple scenes
+
+### Milestone C
+
+**"The track becomes an instrument."**
+
+- W-30 pads
+- capture-first workflow
+- resampling
+
+### Milestone D
+
+**"The instrument gains agency."**
+
+- Ghost Watch / Assist
+- actions, budgets, logs
+
+### Milestone E
+
+**"Stage-worthy."**
+
+- pro hardening
+- replay
+- export
+- crash safety
 
 ---
 
-## 42. Schlussbild
+## 41. Development Decision Rules
 
-Riotbox soll sich anfühlen wie:
+When choosing between options:
 
-- ein **wilder Hardware-Hybrid**, der nie gebaut wurde,
-- eine **feral** Mischung aus **MC-202**, **W-30** und **TR-909**,
-- ein **terminalbasiertes Live-Instrument**, kein verkleidetes Forschungsprojekt,
-- ein System, das aus Audio **Momente**, aus Momenten **Phrasen** und aus Phrasen **neue Szenen** macht,
-- ein Werkzeug, das man **spielt, beobachtet, erntet und wieder anheizt**.
-
-Der Kern des Produkts ist nicht “KI macht Musik”, sondern:
-
-> **Riotbox übersetzt Klang in musikalische Handlungsräume.**  
-> Der Mensch, der Ghost oder beide zusammen bespielen diese Räume live.
+1. **Stability before cleverness**
+2. **Musical impact before algorithmic elegance**
+3. **Instrument character before feature mass**
+4. **Capture and performance before offline perfection**
+5. **Traceability before magic**
+6. **MVP sharpness before concept inflation**
 
 ---
 
-## 43. Nächste konkrete Dokumente
+## 42. Final Product Image
 
-Nach diesem Masterplan sollten als nächste Artefakte entstehen:
+Riotbox should feel like:
+
+- a wild hardware hybrid that was never built
+- a feral blend of MC-202, W-30, and TR-909
+- a terminal-based live instrument, not a disguised research project
+- a system that turns audio into moments, moments into phrases, and phrases into new scenes
+- a tool you play, watch, harvest, and reignite
+
+The product core is not "AI makes music", but:
+
+> **Riotbox translates sound into musical spaces of action.**  
+> The human, the Ghost, or both together perform those spaces live.
+
+---
+
+## 43. Next Concrete Documents
+
+After this masterplan, the next artifacts should be:
 
 1. **PRD v1**  
-   exakte Produktanforderungen für MVP
+   exact product requirements for the MVP
 
 2. **Audio Core Spec**  
-   Scheduler, Mixer, Voices, Timing, FX, Buffers
+   scheduler, mixer, voices, timing, FX, buffers
 
 3. **Source Graph Spec**  
-   Datenmodell und Analyse-Outputs
+   data model and analysis outputs
 
 4. **TUI Screen Spec**  
-   Seiten, Zustände, Tastatur und Makros
+   pages, states, keyboard mapping, macros
 
 5. **Ghost API Spec**  
-   Tool-Schema, Budgets, Aktionen, Logs
+   tool schema, budgets, actions, logs
 
 6. **Session File Spec**  
-   Serialisierung, Migration, Replay
+   serialization, migration, replay
 
-7. **Preset & Style Spec**  
-   Makrobereiche, Stilfamilien, Gerätegewichte
+7. **Preset and Style Spec**  
+   macro ranges, style families, device weighting
+
+8. **Feral Reconstruction Addendum**  
+   decision logic for harvest, break rebuild, hook resample, and abuse mix
 
 ---
 
-## 44. Ein-Satz-Version
+## 44. One-Sentence Version
 
-> **Riotbox ist ein ferales Terminal-Audioinstrument, das eingehendes Audio in ein spielbares, mutierbares und KI-steuerbares Live-System aus MC-202-, W-30- und TR-909-Persönlichkeiten übersetzt.**
+> Riotbox is a terminal-native live instrument that analyzes audio, rebuilds it through device personalities, and turns it into a controllable, capture-first performance system.
