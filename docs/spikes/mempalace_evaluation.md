@@ -120,6 +120,57 @@ For Riotbox, MemPalace is not currently a low-friction tool we can assume will w
 
 That matters because a dev-memory helper only earns its keep if setup is boring.
 
+## Rootless Podman Follow-up
+
+### Follow-up question
+
+Can rootless Podman provide a workable environment even if the host Python baseline is too new?
+
+### What was tested
+
+Rootless Podman was checked directly on this machine.
+
+Observed host facts:
+
+- `podman` is installed
+- Podman reports `rootless: true`
+- container runtime, storage, and rootless networking are configured normally on this host
+
+Follow-up container trial:
+
+- image: `python:3.12-slim`
+- runtime: rootless Podman
+- mounted a small writable Riotbox corpus
+- mounted a writable palace directory
+- installed `mempalace==3.1.0` inside the container
+- ran `mempalace init --yes`
+- started `mempalace mine`
+
+### What worked in the container
+
+- the exact host-side `Python 3.14` compatibility failure did not occur
+- `mempalace init --yes` completed successfully
+- `mempalace mine` started successfully inside the container
+- Chroma began downloading its embedding model during the mine step, which means the runtime got materially further than the host trial
+
+### What was not completed in this follow-up
+
+At the time of writing, the rootless container follow-up had not yet completed the full download-and-index cycle through to a finished search result. The remaining wait was model download time, not the earlier runtime compatibility crash.
+
+### Updated conclusion
+
+Rootless Podman looks like a viable mitigation for the host runtime problem.
+
+That changes the evaluation slightly:
+
+- MemPalace is still not recommended as a default Riotbox workflow dependency right now
+- but a containerized retry path is clearly more promising than the raw host install path
+
+So the refined recommendation is:
+
+- park it for now as a standard workflow tool
+- if we revisit it, use a pinned containerized environment first
+
 ## Operational Risks
 
 ### 1. Runtime compatibility risk
