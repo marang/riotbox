@@ -164,6 +164,16 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Do not revert unrelated user changes
 - Keep commits scoped to one coherent slice where possible
 
+### PR descriptions
+
+- Every PR description should include a short `Why This Matters` section.
+- That section should explain the slice in product and roadmap terms, not only list code changes.
+- At minimum, state:
+  - what larger phase or milestone this slice belongs to
+  - what real product path or architecture seam it unlocks
+  - what is still intentionally out of scope or stubbed
+- Do not write PR descriptions as changelogs only.
+
 ### Linear hygiene
 
 - Keep Linear updates human-readable.
