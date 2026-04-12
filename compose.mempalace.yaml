@@ -1,0 +1,10 @@
+services:
+  mempalace:
+    build:
+      context: .
+      dockerfile: Containerfile.mempalace
+    working_dir: /repo
+    volumes:
+      - .:/repo
+      - ./.mempalace/palace:/palace
+      - ./.mempalace/cache:/root/.cache

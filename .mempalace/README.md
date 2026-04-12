@@ -1,6 +1,6 @@
 # MemPalace Evaluation Storage
 
-This directory is the repo-local home for MemPalace evaluation data.
+This directory is the repo-local home for MemPalace data.
 
 Purpose:
 
@@ -28,7 +28,21 @@ Important:
 Recommended container mounts for repeatable local trials:
 
 - repo root -> `/repo`
-- `.mempalace-eval/palace` -> `/palace`
-- `.mempalace-eval/cache` -> `/root/.cache`
+- `.mempalace/palace` -> `/palace`
+- `.mempalace/cache` -> `/root/.cache`
 
-The current evaluation used a rootless Podman container with pinned `python:3.12-slim`.
+The current evaluation uses a rootless Podman setup with pinned `python:3.12-slim`.
+
+Repo tooling now exists for this:
+
+- `compose.mempalace.yaml`
+- `Containerfile.mempalace`
+- `scripts/mempalace.sh`
+- `just mem-init`
+- `just mem-status`
+- `just mem-search "query"`
+
+The wrapper script automatically:
+
+- syncs `docs/`, `plan/`, `crates/`, and `AGENTS.md` into `.mempalace/corpus/`
+- re-mines the corpus if those sources changed since the last successful index

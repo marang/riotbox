@@ -141,7 +141,7 @@ Follow-up container trial:
 
 - image: `python:3.12-slim`
 - runtime: rootless Podman
-- mounted repo-local persistent directories under `.mempalace-eval/`
+- mounted repo-local persistent directories under `.mempalace/`
 - installed `mempalace==3.1.0` inside the container
 - ran `mempalace init --yes`
 - completed `mempalace mine`
@@ -151,10 +151,10 @@ Follow-up container trial:
 
 The container was configured so data persisted in the repo, not only inside the container filesystem:
 
-- `.mempalace-eval/palace/` stores the persistent Chroma database
-- `.mempalace-eval/cache/` stores downloaded model/cache data
-- `.mempalace-eval/results/` stores captured run outputs
-- `.mempalace-eval/corpus/` stores the copied Riotbox evaluation corpus
+- `.mempalace/palace/` stores the persistent Chroma database
+- `.mempalace/cache/` stores downloaded model/cache data
+- `.mempalace/results/` stores captured run outputs
+- `.mempalace/corpus/` stores the copied Riotbox evaluation corpus
 
 This keeps the evaluation repeatable without depending on container-local state.
 
@@ -176,12 +176,12 @@ Observed result:
 
 Result files:
 
-- `.mempalace-eval/results/init.txt`
-- `.mempalace-eval/results/mine.txt`
-- `.mempalace-eval/results/status.txt`
-- `.mempalace-eval/results/search_rust.txt`
-- `.mempalace-eval/results/search_feral.txt`
-- `.mempalace-eval/results/search_source_graph.txt`
+- `.mempalace/results/init.txt`
+- `.mempalace/results/mine.txt`
+- `.mempalace/results/status.txt`
+- `.mempalace/results/search_rust.txt`
+- `.mempalace/results/search_feral.txt`
+- `.mempalace/results/search_source_graph.txt`
 
 ### Query quality snapshot
 
@@ -257,7 +257,7 @@ The broader bakeoff changes the recommendation again, but only slightly:
 - MemPalace is now clearly useful enough to justify keeping as an optional Riotbox dev-memory tool
 - it should be treated as a complement to `rg`, not as a replacement
 - it is strongest when the user asks a semantic question rather than a literal file/symbol lookup
-- it still should not be made a mandatory default dependency for every contributor until the containerized workflow is wrapped in something more boring
+- it still should not be made a mandatory default dependency for every contributor, even though the repo now provides a pinned container wrapper and `just` commands for the supported path
 
 ### Updated conclusion
 
@@ -315,8 +315,8 @@ Concrete recommendation:
 - do not add it to the Riotbox product/runtime tooling baseline
 - do not route any product state through it
 - keep using repo docs, Linear, and Git history as canonical sources
-- keep the currently recommended MemPalace setup as: rootless Podman, pinned `python:3.12`, repo-local persistent storage under `.mempalace-eval/`
-- treat the ticket outcome as: usable optional dev-memory tool that complements `rg`, with broader default adoption still gated on workflow polish
+- keep the currently recommended MemPalace setup as: rootless Podman, pinned `python:3.12`, repo-local persistent storage under `.mempalace/`
+- treat the ticket outcome as: usable optional dev-memory tool that complements `rg`, with broader default adoption still gated on whether every contributor actually benefits from it
 
 ## Revisit Triggers
 
