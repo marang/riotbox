@@ -1,6 +1,6 @@
 use crate::protocol::{
     BuildSourceGraphStubPayload, PingPayload, PongPayload, SidecarErrorPayload, SidecarRequest,
-    SidecarResponse, SourceGraphBuiltPayload, decode_json_line, encode_json_line,
+    SidecarResponse, decode_json_line, encode_json_line,
 };
 use riotbox_core::source_graph::{SourceDescriptor, SourceGraph};
 use std::{
@@ -122,7 +122,7 @@ impl StdioSidecarClient {
         self.write_request(&request)?;
 
         match self.read_response()? {
-            SidecarResponse::SourceGraphBuilt(SourceGraphBuiltPayload { graph, .. }) => Ok(graph),
+            SidecarResponse::SourceGraphBuilt(payload) => Ok(payload.graph),
             SidecarResponse::Error(error) => Err(ClientError::Sidecar(error)),
             SidecarResponse::Pong(_) => Err(ClientError::UnexpectedResponse("pong")),
         }

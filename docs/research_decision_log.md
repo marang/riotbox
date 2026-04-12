@@ -123,6 +123,18 @@ Evidence: the `RIOTBOX-9` spike crate successfully spawns a Python sidecar, comp
 Consequences: the next analysis-facing slices should build on a narrow synchronous transport contract first, keep progress streaming optional, and move to sockets only when real workload or lifecycle pressure justifies it. This decision does not freeze `Python` or `NDJSON over stdio` as permanent choices; both should be revisited once the sidecar contract carries more message types, stronger versioning pressure, or external lifecycle needs.  
 Status: accepted
 
+### RBX-008
+
+Date: 2026-04-12  
+Topic: Rust CI baseline  
+Phase: Spec Freeze + Core Model  
+Question: what minimum automated checks should Riotbox enforce on the Rust workspace at the current project stage?  
+Decision: start with one small GitHub Actions workflow that runs `cargo fmt --check`, `cargo test`, and `cargo clippy --all-targets --all-features -- -D warnings` on pushes to `main` and on pull requests.  
+Why: these checks cover formatting drift, broken behavior, and obvious lint-level engineering regressions without prematurely building a large automation surface.  
+Evidence: the current workspace already uses `cargo` and a matching `just ci` command locally, so the workflow can mirror existing developer expectations instead of inventing a second build path.  
+Consequences: contributors should treat those three commands as the local pre-PR baseline, and future CI growth should add replay, benchmark, or screenshot checks only when those contracts become stable enough to enforce.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics
