@@ -164,6 +164,12 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Do not revert unrelated user changes
 - Keep commits scoped to one coherent slice where possible
 
+### Linear hygiene
+
+- Keep Linear updates human-readable.
+- Move issues to review when the PR is open and to done when the PR is merged.
+- Archive completed issues once they are truly finished so the workspace stays under the free-tier issue cap.
+
 ---
 
 ## Commands
