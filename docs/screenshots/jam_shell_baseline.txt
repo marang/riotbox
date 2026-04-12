@@ -1,0 +1,38 @@
+Riotbox Jam Shell Baseline
+Normalized terminal capture for `RIOTBOX-21`
+Source: `riotbox-app` shell in ingest mode
+Notes:
+- normalized from a real TTY smoke pass
+- source path shortened to `<source.wav>` for stability
+- intended as a review/update baseline, not a pixel-perfect golden render
+
+┌Jam───────────────────────────────────────────────────────────────────────────┐
+│Riotbox Jam                                                                 │
+│Mode ingest | Source src-xxxxxxxxxxxx | 160.0 BPM | confidence 0.45         │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Runtime───────────┐┌Macros────────────┐┌Lanes─────────────┐┌Shell─────────────┐
+│Audio: unknown    ││retain 0.50       ││MC-202: unset     ││Source refs: 1    │
+│Sidecar: ready    ││chaos 0.25        ││W-30: unset       ││Graph refs: 1     │
+│Ghost: watch      ││mc202 0.40        ││TR-909 slam: off  ││Refresh: re-ingest│
+└──────────────────┘└──────────────────┘└──────────────────┘└──────────────────┘
+┌Source─────────────────────────────────────┐┌Sections─────────────────────────┐
+│<source.wav> | 2.00s | 44100 Hz | 2 ch     ││intro | bars 1-1 | 0.00s-1.50s  │
+│native                                     ││drop  | bars 2-2 | 1.50s-2.00s  │
+│tempo confidence 0.45 | timing Medium      ││                                 │
+│section Medium                             ││                                 │
+│sections 2 | loops 1 | hooks 0 | warnings 1││                                 │
+│overall confidence 0.52 | break potential  ││                                 │
+│Medium                                     ││                                 │
+└───────────────────────────────────────────┘└─────────────────────────────────┘
+┌Pending───────────────────────────────┐┌Recent────────────────────────────────┐
+│no pending actions                    ││no committed actions yet              │
+│                                      ││                                      │
+│                                      ││                                      │
+│                                      ││                                      │
+└──────────────────────────────────────┘└──────────────────────────────────────┘
+┌Footer────────────────────────────────────────────────────────────────────────┐
+│Keys: q quit | ? help | r re-ingest source                                   │
+│Status: ingested source into Jam shell                                       │
+│Warning: decoded-source baseline used WAV metadata and simple energy         │
+│heuristics                                                                   │
+└──────────────────────────────────────────────────────────────────────────────┘

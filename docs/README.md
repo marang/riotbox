@@ -58,6 +58,8 @@ docs/
     cpal_audio_latency_spike.md
     mempalace_evaluation.md
     rust_python_sidecar_transport_spike.md
+  screenshots/
+    jam_shell_baseline.txt
   specs/
     source_graph_spec.md
     session_file_spec.md
@@ -95,4 +97,5 @@ docs/
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
+- `screenshots/jam_shell_baseline.txt`: baseline captured
 - all other specs: not started
