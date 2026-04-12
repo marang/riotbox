@@ -179,6 +179,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Keep Linear updates human-readable.
 - Move issues to review when the PR is open and to done when the PR is merged.
 - Archive completed issues once they are truly finished so the workspace stays under the free-tier issue cap.
+- Follow the repo workflow note in `docs/workflow_conventions.md` for branch / PR / merge / Linear conventions.
 
 ---
 
