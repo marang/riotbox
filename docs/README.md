@@ -51,6 +51,7 @@ docs/
   README.md
   prd_v1.md
   execution_roadmap.md
+  workflow_conventions.md
   phase_definition_of_done.md
   research_decision_log.md
   spikes/
@@ -76,6 +77,7 @@ docs/
 
 - `prd_v1.md`: draft started
 - `execution_roadmap.md`: draft started
+- `workflow_conventions.md`: draft started
 - `specs/technology_stack_spec.md`: draft started
 - `specs/rust_engineering_guidelines.md`: draft started
 - `specs/source_graph_spec.md`: draft started
