@@ -1,0 +1,54 @@
+Riotbox Jam Shell Trust + Action Baseline
+Normalized terminal capture for `RIOTBOX-22`
+Source: `riotbox-app` shell in ingest mode
+Notes:
+- normalized from the current Jam shell state fixture
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights the shift from generic shell status toward trust and action cues
+
+┌Jam───────────────────────────────────────────────────────────────────────────┐
+│Riotbox Jam                                                                 │
+│Mode ingest | Source src-1 | 126.0 BPM | trust usable                       │
+│Now idle at beat 32.0 in scene-a | Next ghost mutate_scene @ next_bar       │
+└──────────────────────────────────────────────────────────────────────────────┘
+┌Now───────────────┐┌Next──────────────┐┌Trust─────────────┐┌Lanes────────────┐
+│Transport: idle   ││queued ghost      ││overall 0.74      ││MC-202: leader   │
+│Beat 32.0 |       ││mutate_scene @    ││warnings 1        ││W-30: bank-a     │
+│scene scene-a     ││next_bar          ││timing medium |   ││TR-909 slam: on  │
+│Ghost: assist     ││recent user       ││sections high     ││                 │
+│(clear)           ││capture_now       ││loops 1 | hooks 0 ││                 │
+│                  ││[committed]       ││                  ││                 │
+└──────────────────┘└──────────────────┘└──────────────────┘└─────────────────┘
+┌Source─────────────────────────────────────┐┌Sections─────────────────────────┐
+│fixtures/input.wav | 12.00s | 44100 Hz |  ││intro | bars 1-2 | 0.00s-4.00s  │
+│2 ch | native                             ││| medium | conf 0.71            │
+│tempo confidence 0.76 | timing medium |   ││drop | bars 3-6 | 4.00s-12.00s  │
+│sections high                             ││| high | conf 0.83              │
+│sections 2 | loops 1 | hooks 0 | warnings ││                                 │
+│1                                         ││                                 │
+│overall confidence 0.74 | break potential ││                                 │
+│high                                      ││                                 │
+└───────────────────────────────────────────┘┌Macros────────────────────────────┐
+                                            │retain 0.70                      │
+                                            │chaos 0.20                       │
+                                            │mc202 0.80                       │
+                                            │w30 0.50 | tr909 0.90            │
+                                            │                                  │
+                                            │                                  │
+                                            │                                  │
+                                            │                                  │
+                                            └──────────────────────────────────┘
+┌Pending────────────────────────────────────┐┌Recent────────────────────────────┐
+│a-0002 ghost mutate.scene @ next_bar      ││a-0001 user capture.now          │
+│                                          ││[Committed]                      │
+│                                          ││                                  │
+│                                          ││                                  │
+│                                          ││                                  │
+│                                          ││                                  │
+└──────────────────────────────────────────┘└──────────────────────────────────┘
+┌Footer────────────────────────────────────────────────────────────────────────┐
+│Keys: q quit | ? help | r re-ingest source                                   │
+│Status: ingested source into Jam shell | audio unknown | sidecar ready       │
+│Warning: decoded-source baseline used WAV metadata and simple energy         │
+│heuristics                                                                   │
+└──────────────────────────────────────────────────────────────────────────────┘

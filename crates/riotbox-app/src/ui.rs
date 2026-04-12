@@ -7,7 +7,9 @@ use ratatui::{
     text::Line,
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
-use riotbox_core::source_graph::{DecodeProfile, Section, SectionLabelHint};
+use riotbox_core::source_graph::{
+    DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint,
+};
 
 use crate::jam_app::JamAppState;
 
@@ -106,8 +108,8 @@ pub fn render_jam_shell(frame: &mut Frame<'_>, shell: &JamShellState) {
         .constraints([
             Constraint::Length(4),
             Constraint::Length(7),
-            Constraint::Length(8),
-            Constraint::Min(6),
+            Constraint::Length(9),
+            Constraint::Min(7),
             Constraint::Length(5),
         ])
         .split(area);
@@ -151,32 +153,21 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .bpm_estimate
         .map(|bpm| format!("{bpm:.1} BPM"))
         .unwrap_or_else(|| "unknown BPM".into());
-    let scene_text = shell
-        .app
-        .jam_view
-        .scene
-        .active_scene
-        .as_deref()
-        .unwrap_or("no active scene");
+    let trust = trust_summary(shell);
 
     let paragraph = Paragraph::new(vec![
         Line::from("Riotbox Jam"),
         Line::from(format!(
-            "Mode {} | Source {} | {} | confidence {:.2}",
+            "Mode {} | Source {} | {} | trust {}",
             shell.launch_mode.label(),
             source.source_id,
             bpm_text,
-            source.bpm_confidence
+            trust.headline
         )),
         Line::from(format!(
-            "Transport {} at beat {:.1} | scene {}",
-            if shell.app.jam_view.transport.is_playing {
-                "playing"
-            } else {
-                "idle"
-            },
-            shell.app.jam_view.transport.position_beats,
-            scene_text
+            "Now {} | Next {}",
+            now_line(shell),
+            next_action_line(shell)
         )),
     ])
     .block(Block::default().title("Jam").borders(Borders::ALL))
@@ -196,37 +187,49 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         ])
         .split(area);
 
-    let runtime = Paragraph::new(vec![
-        Line::from(format!("Audio: {}", shell.app.runtime_view.audio_status)),
+    let now = Paragraph::new(vec![
+        Line::from(format!("Transport: {}", transport_label(shell))),
         Line::from(format!(
-            "Sidecar: {}",
-            shell.app.runtime_view.sidecar_status
+            "Beat {:.1} | scene {}",
+            shell.app.jam_view.transport.position_beats,
+            shell
+                .app
+                .jam_view
+                .scene
+                .active_scene
+                .as_deref()
+                .unwrap_or("none")
         )),
-        Line::from(format!(
-            "Ghost: {} ({})",
-            shell.app.jam_view.ghost.mode,
-            if shell.app.jam_view.ghost.is_blocked {
-                "blocked"
-            } else {
-                "clear"
-            }
-        )),
+        Line::from(format!("Ghost: {}", ghost_label(shell))),
     ])
-    .block(Block::default().title("Runtime").borders(Borders::ALL))
+    .block(Block::default().title("Now").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
-    let macros = &shell.app.jam_view.macros;
-    let macros_panel = Paragraph::new(vec![
+    let next = Paragraph::new(vec![
+        Line::from(primary_pending_line(shell)),
+        Line::from(primary_recent_line(shell)),
+        Line::from(format!("status {}", shell.status_message)),
+    ])
+    .block(Block::default().title("Next").borders(Borders::ALL))
+    .wrap(Wrap { trim: true });
+
+    let trust = trust_summary(shell);
+    let trust_panel = Paragraph::new(vec![
         Line::from(format!(
-            "retain {:.2} | chaos {:.2}",
-            macros.source_retain, macros.chaos
+            "overall {:.2} | warnings {}",
+            trust.overall_confidence, trust.warning_count
         )),
         Line::from(format!(
-            "mc202 {:.2} | w30 {:.2} | tr909 {:.2}",
-            macros.mc202_touch, macros.w30_grit, macros.tr909_slam
+            "timing {} | sections {}",
+            trust.timing_quality, trust.section_quality
+        )),
+        Line::from(format!(
+            "loops {} | hooks {}",
+            shell.app.jam_view.source.loop_candidate_count,
+            shell.app.jam_view.source.hook_candidate_count
         )),
     ])
-    .block(Block::default().title("Macros").borders(Borders::ALL))
+    .block(Block::default().title("Trust").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
     let lanes = Paragraph::new(vec![
@@ -262,43 +265,34 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     .block(Block::default().title("Lanes").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
-    let session = Paragraph::new(vec![
-        Line::from(format!(
-            "Source refs: {}",
-            shell.app.session.source_refs.len()
-        )),
-        Line::from(format!(
-            "Graph refs: {}",
-            shell.app.session.source_graph_refs.len()
-        )),
-        Line::from(format!("Refresh: {}", shell.launch_mode.refresh_verb())),
-    ])
-    .block(Block::default().title("Shell").borders(Borders::ALL))
-    .wrap(Wrap { trim: true });
-
-    frame.render_widget(runtime, columns[0]);
-    frame.render_widget(macros_panel, columns[1]);
-    frame.render_widget(lanes, columns[2]);
-    frame.render_widget(session, columns[3]);
+    frame.render_widget(now, columns[0]);
+    frame.render_widget(next, columns[1]);
+    frame.render_widget(trust_panel, columns[2]);
+    frame.render_widget(lanes, columns[3]);
 }
 
 fn render_source_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let columns = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(56), Constraint::Percentage(44)])
+        .constraints([
+            Constraint::Percentage(46),
+            Constraint::Percentage(34),
+            Constraint::Percentage(20),
+        ])
         .split(area);
 
-    let source_lines = source_detail_lines(shell);
-    let sections = section_items(shell);
-
-    let source = Paragraph::new(source_lines)
+    let source = Paragraph::new(source_detail_lines(shell))
         .block(Block::default().title("Source").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
-    let sections =
-        List::new(sections).block(Block::default().title("Sections").borders(Borders::ALL));
+    let sections = List::new(section_items(shell))
+        .block(Block::default().title("Sections").borders(Borders::ALL));
+    let macros = Paragraph::new(macro_lines(shell))
+        .block(Block::default().title("Macros").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
 
     frame.render_widget(source, columns[0]);
     frame.render_widget(sections, columns[1]);
+    frame.render_widget(macros, columns[2]);
 }
 
 fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -356,11 +350,18 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Keys: q quit | ? help | r {}",
         shell.launch_mode.refresh_verb()
     )));
-    lines.push(Line::from(format!("Status: {}", shell.status_message)));
+    lines.push(Line::from(format!(
+        "Status: {} | audio {} | sidecar {}",
+        shell.status_message,
+        shell.app.runtime_view.audio_status,
+        shell.app.runtime_view.sidecar_status
+    )));
 
     if shell.app.runtime_view.runtime_warnings.is_empty() && shell.app.jam_view.warnings.is_empty()
     {
-        lines.push(Line::from("Warnings clear"));
+        lines.push(Line::from(
+            "Warnings clear | source trust stable enough for shell work",
+        ));
     } else {
         for warning in shell
             .app
@@ -417,10 +418,10 @@ fn source_detail_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 decode_profile_label(&graph.source.decode_profile)
             )),
             Line::from(format!(
-                "tempo confidence {:.2} | timing {:?} | section {:?}",
+                "tempo confidence {:.2} | timing {} | sections {}",
                 source.bpm_confidence,
-                graph.analysis_summary.timing_quality,
-                graph.analysis_summary.section_quality
+                quality_label(&graph.analysis_summary.timing_quality),
+                quality_label(&graph.analysis_summary.section_quality)
             )),
             Line::from(format!(
                 "sections {} | loops {} | hooks {} | warnings {}",
@@ -430,9 +431,9 @@ fn source_detail_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 graph.analysis_summary.warnings.len()
             )),
             Line::from(format!(
-                "overall confidence {:.2} | break potential {:?}",
+                "overall confidence {:.2} | break potential {}",
                 graph.analysis_summary.overall_confidence,
-                graph.analysis_summary.break_rebuild_potential
+                quality_label(&graph.analysis_summary.break_rebuild_potential)
             )),
         ],
         None => vec![Line::from("No source graph loaded")],
@@ -447,12 +448,13 @@ fn section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
             .take(4)
             .map(|section| {
                 ListItem::new(format!(
-                    "{} | bars {}-{} | {:.2}s-{:.2}s | conf {:.2}",
+                    "{} | bars {}-{} | {:.2}s-{:.2}s | {} | conf {:.2}",
                     section_label(section),
                     section.bar_start,
                     section.bar_end,
                     section.start_seconds,
                     section.end_seconds,
+                    energy_label(section),
                     section.confidence
                 ))
             })
@@ -460,6 +462,19 @@ fn section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
         Some(_) => vec![ListItem::new("no sections available")],
         None => vec![ListItem::new("no source graph loaded")],
     }
+}
+
+fn macro_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let macros = &shell.app.jam_view.macros;
+    vec![
+        Line::from(format!("retain {:.2}", macros.source_retain)),
+        Line::from(format!("chaos {:.2}", macros.chaos)),
+        Line::from(format!("mc202 {:.2}", macros.mc202_touch)),
+        Line::from(format!(
+            "w30 {:.2} | tr909 {:.2}",
+            macros.w30_grit, macros.tr909_slam
+        )),
+    ]
 }
 
 fn section_label(section: &Section) -> &'static str {
@@ -503,6 +518,132 @@ fn centered_rect(percent_x: u16, percent_y: u16, area: Rect) -> Rect {
             Constraint::Percentage((100 - percent_x) / 2),
         ])
         .split(vertical[1])[1]
+}
+
+fn transport_label(shell: &JamShellState) -> &'static str {
+    if shell.app.jam_view.transport.is_playing {
+        "playing"
+    } else {
+        "idle"
+    }
+}
+
+fn ghost_label(shell: &JamShellState) -> String {
+    format!(
+        "{} ({})",
+        shell.app.jam_view.ghost.mode,
+        if shell.app.jam_view.ghost.is_blocked {
+            "blocked"
+        } else {
+            "clear"
+        }
+    )
+}
+
+fn now_line(shell: &JamShellState) -> String {
+    let scene = shell
+        .app
+        .jam_view
+        .scene
+        .active_scene
+        .as_deref()
+        .unwrap_or("no scene");
+    format!(
+        "{} at beat {:.1} in {}",
+        transport_label(shell),
+        shell.app.jam_view.transport.position_beats,
+        scene
+    )
+}
+
+fn next_action_line(shell: &JamShellState) -> String {
+    if let Some(action) = shell.app.jam_view.pending_actions.first() {
+        format!(
+            "{} {} @ {}",
+            action.actor, action.command, action.quantization
+        )
+    } else {
+        "no pending action queued".into()
+    }
+}
+
+fn primary_pending_line(shell: &JamShellState) -> String {
+    if let Some(action) = shell.app.jam_view.pending_actions.first() {
+        format!(
+            "queued {} {} @ {}",
+            action.actor, action.command, action.quantization
+        )
+    } else {
+        "queued no pending action".into()
+    }
+}
+
+fn primary_recent_line(shell: &JamShellState) -> String {
+    if let Some(action) = shell.app.jam_view.recent_actions.first() {
+        format!(
+            "recent {} {} [{}]",
+            action.actor, action.command, action.status
+        )
+    } else {
+        "recent no committed action yet".into()
+    }
+}
+
+struct TrustSummary {
+    headline: &'static str,
+    overall_confidence: f32,
+    warning_count: usize,
+    timing_quality: &'static str,
+    section_quality: &'static str,
+}
+
+fn trust_summary(shell: &JamShellState) -> TrustSummary {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) => {
+            let overall = graph.analysis_summary.overall_confidence;
+            let headline = if overall >= 0.8 {
+                "strong"
+            } else if overall >= 0.62 {
+                "usable"
+            } else {
+                "tentative"
+            };
+
+            TrustSummary {
+                headline,
+                overall_confidence: overall,
+                warning_count: graph.analysis_summary.warnings.len(),
+                timing_quality: quality_label(&graph.analysis_summary.timing_quality),
+                section_quality: quality_label(&graph.analysis_summary.section_quality),
+            }
+        }
+        None => TrustSummary {
+            headline: "unknown",
+            overall_confidence: 0.0,
+            warning_count: 0,
+            timing_quality: "unknown",
+            section_quality: "unknown",
+        },
+    }
+}
+
+fn quality_label(quality: &QualityClass) -> &'static str {
+    match quality {
+        QualityClass::Low => "low",
+        QualityClass::Medium => "medium",
+        QualityClass::High => "high",
+        QualityClass::Unknown => "unknown",
+    }
+}
+
+fn energy_label(section: &Section) -> &'static str {
+    match section.energy_class {
+        EnergyClass::Low => "low",
+        EnergyClass::Medium => "medium",
+        EnergyClass::High => "high",
+        EnergyClass::Peak => "peak",
+        EnergyClass::Unknown => "unknown",
+    }
 }
 
 #[cfg(test)]
@@ -655,15 +796,18 @@ mod tests {
     }
 
     #[test]
-    fn renders_richer_jam_shell_snapshot() {
+    fn renders_more_musical_jam_shell_snapshot() {
         let shell = sample_shell_state();
         let rendered = render_jam_shell_snapshot(&shell, 100, 30);
 
-        assert!(rendered.contains("Mode ingest"));
-        assert!(rendered.contains("fixtures/input.wav"));
-        assert!(rendered.contains("tempo confidence"));
-        assert!(rendered.contains("intro | bars 1-2"));
-        assert!(rendered.contains("Keys: q quit | ? help | r re-ingest source"));
+        assert!(rendered.contains("trust usable"));
+        assert!(rendered.contains("scene-a"));
+        assert!(rendered.contains("queued"));
+        assert!(rendered.contains("ghost"));
+        assert!(rendered.contains("overall"));
+        assert!(rendered.contains("warnings"));
+        assert!(rendered.contains("recent"));
+        assert!(rendered.contains("committed"));
     }
 
     #[test]
