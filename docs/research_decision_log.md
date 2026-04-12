@@ -110,6 +110,19 @@ Evidence: official `cpal` documentation confirms default host/device discovery, 
 Consequences: later audio work should build a runtime shell above `cpal` rather than replacing it with a higher-level playback abstraction, and health metrics should be captured from the stream layer from the start.  
 Status: accepted
 
+### RBX-007
+
+Date: 2026-04-12  
+Topic: Rust-Python sidecar transport  
+Phase: Analysis Vertical Slice  
+Question: what transport should Riotbox use for the first real Rust-to-Python sidecar integration slice?  
+Options considered: newline-delimited JSON over `stdio`, Unix domain sockets, localhost TCP, binary message formats such as MessagePack or Protobuf.  
+Decision: use newline-delimited JSON over `stdio` for the first sidecar-facing slice, with explicit request IDs and version fields in messages. Keep future socket-based transports open if concurrency or lifecycle needs outgrow `stdio`.  
+Why: this is the smallest debuggable process boundary, keeps transport setup simple while request shapes are still settling, and fits the current goal of bounded request/response analysis without dragging realtime code into sidecar concerns.  
+Evidence: the `RIOTBOX-9` spike crate successfully spawns a Python sidecar, completes a `ping` roundtrip, and deserializes a Python-produced stub `SourceGraph` into the existing Rust model.  
+Consequences: the next analysis-facing slices should build on a narrow synchronous transport contract first, keep progress streaming optional, and move to sockets only when real workload or lifecycle pressure justifies it.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

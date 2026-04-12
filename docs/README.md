@@ -53,6 +53,9 @@ docs/
   execution_roadmap.md
   phase_definition_of_done.md
   research_decision_log.md
+  spikes/
+    cpal_audio_latency_spike.md
+    rust_python_sidecar_transport_spike.md
   specs/
     source_graph_spec.md
     session_file_spec.md
@@ -86,4 +89,6 @@ docs/
 - `specs/fixture_corpus_spec.md`: draft started
 - `phase_definition_of_done.md`: draft started
 - `research_decision_log.md`: draft started
+- `spikes/cpal_audio_latency_spike.md`: draft started
+- `spikes/rust_python_sidecar_transport_spike.md`: draft started
 - all other specs: not started

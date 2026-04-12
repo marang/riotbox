@@ -1,5 +1,10 @@
 [workspace]
-members = ["crates/riotbox-app", "crates/riotbox-audio", "crates/riotbox-core"]
+members = [
+    "crates/riotbox-app",
+    "crates/riotbox-audio",
+    "crates/riotbox-core",
+    "crates/riotbox-sidecar",
+]
 resolver = "2"
 
 [workspace.package]
