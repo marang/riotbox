@@ -21,14 +21,20 @@ This directory holds implementation-facing specifications derived from the strat
 ## Recommended Build Order
 
 1. [PRD v1](./prd_v1.md)
-2. `Source Graph Spec`
-3. `Session File Spec`
-4. `Action Lexicon Spec`
-5. `Audio Core Spec`
-6. `TUI Screen Spec`
-7. `Ghost API Spec`
-8. `Preset & Style Spec`
-9. `Validation & Golden Render Spec`
+2. [Execution Roadmap](./execution_roadmap.md)
+3. [Technology Stack Spec](./specs/technology_stack_spec.md)
+4. [Rust Engineering Guidelines](./specs/rust_engineering_guidelines.md)
+5. [Source Graph Spec](./specs/source_graph_spec.md)
+6. [Session File Spec](./specs/session_file_spec.md)
+7. [Action Lexicon Spec](./specs/action_lexicon_spec.md)
+8. [Audio Core Spec](./specs/audio_core_spec.md)
+9. [TUI Screen Spec](./specs/tui_screen_spec.md)
+10. [Ghost API Spec](./specs/ghost_api_spec.md)
+11. [Preset & Style Spec](./specs/preset_style_spec.md)
+12. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
+13. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
+14. [Phase Definition of Done](./phase_definition_of_done.md)
+15. [Research / Decision Log](./research_decision_log.md)
 
 ## Why This Order
 
@@ -43,18 +49,38 @@ This directory holds implementation-facing specifications derived from the strat
 docs/
   README.md
   prd_v1.md
+  execution_roadmap.md
+  phase_definition_of_done.md
+  research_decision_log.md
   specs/
     source_graph_spec.md
     session_file_spec.md
     action_lexicon_spec.md
+    technology_stack_spec.md
+    rust_engineering_guidelines.md
     audio_core_spec.md
     tui_screen_spec.md
     ghost_api_spec.md
     preset_style_spec.md
-    validation_spec.md
+    validation_benchmark_spec.md
+    fixture_corpus_spec.md
 ```
 
 ## Current Status
 
 - `prd_v1.md`: draft started
+- `execution_roadmap.md`: draft started
+- `specs/technology_stack_spec.md`: draft started
+- `specs/rust_engineering_guidelines.md`: draft started
+- `specs/source_graph_spec.md`: draft started
+- `specs/session_file_spec.md`: draft started
+- `specs/action_lexicon_spec.md`: draft started
+- `specs/audio_core_spec.md`: draft started
+- `specs/tui_screen_spec.md`: draft started
+- `specs/ghost_api_spec.md`: draft started
+- `specs/preset_style_spec.md`: draft started
+- `specs/validation_benchmark_spec.md`: draft started
+- `specs/fixture_corpus_spec.md`: draft started
+- `phase_definition_of_done.md`: draft started
+- `research_decision_log.md`: draft started
 - all other specs: not started
