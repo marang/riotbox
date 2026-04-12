@@ -51,7 +51,7 @@ pub enum SidecarRequest {
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum SidecarResponse {
     Pong(PongPayload),
-    SourceGraphBuilt(SourceGraphBuiltPayload),
+    SourceGraphBuilt(Box<SourceGraphBuiltPayload>),
     Error(SidecarErrorPayload),
 }
 
@@ -176,10 +176,10 @@ mod tests {
 
     #[test]
     fn response_roundtrips_through_ndjson() {
-        let response = SidecarResponse::SourceGraphBuilt(SourceGraphBuiltPayload {
+        let response = SidecarResponse::SourceGraphBuilt(Box::new(SourceGraphBuiltPayload {
             request_id: "req-1".into(),
             graph: sample_graph(),
-        });
+        }));
 
         let encoded = encode_json_line(&response).expect("encode response");
         let decoded: SidecarResponse =

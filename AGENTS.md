@@ -173,11 +173,20 @@ Current useful commands:
 ```bash
 cargo fmt
 cargo test
+just ci
 just check
 just clippy
 ```
 
 Add new commands here when the repo grows enough that agents need a stable shortlist.
+
+Current CI baseline:
+
+- GitHub Actions runs:
+  - `cargo fmt --check`
+  - `cargo test`
+  - `cargo clippy --all-targets --all-features -- -D warnings`
+- Before opening or updating a PR, prefer running `just ci` locally.
 
 ---
 

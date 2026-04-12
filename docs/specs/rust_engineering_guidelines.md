@@ -97,6 +97,16 @@ cargo check
 cargo clippy --all-targets --all-features -- -D warnings
 ```
 
+Current baseline for repository automation:
+
+```bash
+cargo fmt --check
+cargo test
+cargo clippy --all-targets --all-features -- -D warnings
+```
+
+These checks should pass locally before a PR update whenever practical, and they are the minimum expected GitHub Actions baseline for the current workspace.
+
 ---
 
 ## 8. Module Design
@@ -129,6 +139,7 @@ cargo clippy --all-targets --all-features -- -D warnings
 - Use `cargo` as the primary build and test interface.
 - Use a small task runner only as a convenience layer, not as a replacement for understanding the underlying Cargo commands.
 - Keep root-level automation shallow and readable.
+- Keep the first CI workflow small and explicit: formatting, tests, and clippy before broader benchmark or packaging automation.
 
 ---
 
