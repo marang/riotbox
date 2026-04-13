@@ -17,6 +17,7 @@ use crate::jam_app::JamAppState;
 pub enum ShellScreen {
     Jam,
     Log,
+    Source,
 }
 
 impl ShellScreen {
@@ -25,6 +26,7 @@ impl ShellScreen {
         match self {
             Self::Jam => "jam",
             Self::Log => "log",
+            Self::Source => "source",
         }
     }
 
@@ -32,7 +34,8 @@ impl ShellScreen {
     pub const fn next(&self) -> Self {
         match self {
             Self::Jam => Self::Log,
-            Self::Log => Self::Jam,
+            Self::Log => Self::Source,
+            Self::Source => Self::Jam,
         }
     }
 }
@@ -118,6 +121,11 @@ impl JamShellState {
                 self.status_message = "switched to log screen".into();
                 ShellKeyOutcome::Continue
             }
+            KeyCode::Char('3') => {
+                self.active_screen = ShellScreen::Source;
+                self.status_message = "switched to source screen".into();
+                ShellKeyOutcome::Continue
+            }
             KeyCode::Char(' ') => {
                 self.status_message = "transport toggle requested".into();
                 ShellKeyOutcome::ToggleTransport
@@ -189,6 +197,7 @@ pub fn render_jam_shell(frame: &mut Frame<'_>, shell: &JamShellState) {
     match shell.active_screen {
         ShellScreen::Jam => render_jam_body(frame, rows[2], shell),
         ShellScreen::Log => render_log_body(frame, rows[2], shell),
+        ShellScreen::Source => render_source_body(frame, rows[2], shell),
     }
     render_footer(frame, rows[3], shell);
 
@@ -275,9 +284,16 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     } else {
         "2 Log"
     };
+    let source_label = if shell.active_screen == ShellScreen::Source {
+        "[3 Source]"
+    } else {
+        "3 Source"
+    };
 
     let paragraph = Paragraph::new(vec![
-        Line::from(format!("Screens: {jam_label} | {log_label} | Tab switch")),
+        Line::from(format!(
+            "Screens: {jam_label} | {log_label} | {source_label} | Tab switch"
+        )),
         Line::from(format!(
             "Purpose: {}",
             match shell.active_screen {
@@ -286,6 +302,9 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
                 }
                 ShellScreen::Log => {
                     "trust surface for queued, committed, rejected, and undone actions"
+                }
+                ShellScreen::Source => {
+                    "analysis structure surface for sections, candidates, and warnings"
                 }
             }
         )),
@@ -617,10 +636,81 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     frame.render_widget(rejected_panel, columns[2]);
 }
 
+fn render_source_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(6),
+            Constraint::Length(9),
+            Constraint::Min(8),
+        ])
+        .split(area);
+
+    let top = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(45), Constraint::Percentage(55)])
+        .split(rows[0]);
+
+    let identity = Paragraph::new(source_identity_lines(shell))
+        .block(Block::default().title("Identity").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    let timing = Paragraph::new(source_timing_lines(shell))
+        .block(Block::default().title("Timing").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(identity, top[0]);
+    frame.render_widget(timing, top[1]);
+
+    let middle = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+        ])
+        .split(rows[1]);
+
+    let sections = List::new(source_section_items(shell))
+        .block(Block::default().title("Sections").borders(Borders::ALL));
+    let candidates = Paragraph::new(source_candidate_lines(shell))
+        .block(Block::default().title("Candidates").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    let provenance = Paragraph::new(source_provenance_lines(shell))
+        .block(Block::default().title("Provenance").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(sections, middle[0]);
+    frame.render_widget(candidates, middle[1]);
+    frame.render_widget(provenance, middle[2]);
+
+    let bottom = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Percentage(52), Constraint::Percentage(48)])
+        .split(rows[2]);
+
+    let warnings = Paragraph::new(source_warning_lines(shell))
+        .block(
+            Block::default()
+                .title("Source Graph Warnings")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let confidence = Paragraph::new(source_confidence_lines(shell))
+        .block(
+            Block::default()
+                .title("Confidence Summary")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(warnings, bottom[0]);
+    frame.render_widget(confidence, bottom[1]);
+}
+
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | 1 jam | 2 log | Tab switch | space play/pause | r {}",
+        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | Tab switch | space play/pause | r {}",
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
@@ -668,7 +758,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("Jam shell keys"),
         Line::from("q or Esc: quit"),
         Line::from("? or h: toggle help"),
-        Line::from("1: Jam screen | 2: Log screen | Tab: next screen"),
+        Line::from("1: Jam screen | 2: Log screen | 3: Source screen | Tab: next screen"),
         Line::from("space: play / pause transport"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
@@ -1056,6 +1146,198 @@ fn log_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         .collect()
 }
 
+fn source_identity_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) => vec![
+            Line::from(format!("source {}", graph.source.source_id)),
+            Line::from(graph.source.path.clone()),
+            Line::from(format!(
+                "{:.2}s | {} Hz | {} ch | {}",
+                graph.source.duration_seconds,
+                graph.source.sample_rate,
+                graph.source.channel_count,
+                decode_profile_label(&graph.source.decode_profile)
+            )),
+            Line::from(format!("hash {}", graph.source.content_hash)),
+        ],
+        None => vec![Line::from("no source graph loaded")],
+    }
+}
+
+fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) => vec![
+            Line::from(format!(
+                "tempo {} | conf {:.2}",
+                graph
+                    .timing
+                    .bpm_estimate
+                    .map(|bpm| format!("{bpm:.1} BPM"))
+                    .unwrap_or_else(|| "unknown".into()),
+                graph.timing.bpm_confidence
+            )),
+            Line::from(format!(
+                "meter {}",
+                graph
+                    .timing
+                    .meter_hint
+                    .as_ref()
+                    .map(|meter| format!("{}/{}", meter.beats_per_bar, meter.beat_unit))
+                    .unwrap_or_else(|| "unknown".into())
+            )),
+            Line::from(format!(
+                "beats {} | bars {} | phrases {}",
+                graph.timing.beat_grid.len(),
+                graph.timing.bar_grid.len(),
+                graph.timing.phrase_grid.len()
+            )),
+            Line::from(format!(
+                "timing {} | sections {}",
+                quality_label(&graph.analysis_summary.timing_quality),
+                quality_label(&graph.analysis_summary.section_quality)
+            )),
+        ],
+        None => vec![Line::from("no timing information available")],
+    }
+}
+
+fn source_section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) if !graph.sections.is_empty() => graph
+            .sections
+            .iter()
+            .take(6)
+            .map(|section| {
+                ListItem::new(format!(
+                    "{} | bars {}-{} | {:.2}s-{:.2}s | {} | conf {:.2}",
+                    section_label(section),
+                    section.bar_start,
+                    section.bar_end,
+                    section.start_seconds,
+                    section.end_seconds,
+                    energy_label(section),
+                    section.confidence
+                ))
+            })
+            .collect(),
+        Some(_) => vec![ListItem::new("no sections available")],
+        None => vec![ListItem::new("no source graph loaded")],
+    }
+}
+
+fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) => {
+            let best_loop = graph
+                .candidates
+                .iter()
+                .filter(|candidate| {
+                    candidate.candidate_type
+                        == riotbox_core::source_graph::CandidateType::LoopCandidate
+                })
+                .max_by(|left, right| left.score.total_cmp(&right.score));
+            let best_hook = graph
+                .candidates
+                .iter()
+                .filter(|candidate| {
+                    candidate.candidate_type
+                        == riotbox_core::source_graph::CandidateType::HookCandidate
+                })
+                .max_by(|left, right| left.score.total_cmp(&right.score));
+
+            vec![
+                Line::from(format!(
+                    "loops {} | hooks {}",
+                    graph.loop_candidate_count(),
+                    graph.hook_candidate_count()
+                )),
+                Line::from(format!(
+                    "best loop {}",
+                    best_loop
+                        .map(|candidate| format!(
+                            "{:.2} ({:.2})",
+                            candidate.score, candidate.confidence
+                        ))
+                        .unwrap_or_else(|| "none".into())
+                )),
+                Line::from(format!(
+                    "best hook {}",
+                    best_hook
+                        .map(|candidate| format!(
+                            "{:.2} ({:.2})",
+                            candidate.score, candidate.confidence
+                        ))
+                        .unwrap_or_else(|| "none".into())
+                )),
+                Line::from(format!("assets {}", graph.assets.len())),
+            ]
+        }
+        None => vec![Line::from("no candidate information available")],
+    }
+}
+
+fn source_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) => vec![
+            Line::from(format!("sidecar {}", graph.provenance.sidecar_version)),
+            Line::from(format!(
+                "providers {}",
+                if graph.provenance.provider_set.is_empty() {
+                    "none".into()
+                } else {
+                    graph.provenance.provider_set.join(", ")
+                }
+            )),
+            Line::from(format!("seed {}", graph.provenance.analysis_seed)),
+            Line::from(format!("generated {}", graph.provenance.generated_at)),
+        ],
+        None => vec![Line::from("no provenance available")],
+    }
+}
+
+fn source_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) if !graph.analysis_summary.warnings.is_empty() => graph
+            .analysis_summary
+            .warnings
+            .iter()
+            .take(4)
+            .flat_map(|warning| {
+                [
+                    Line::from(format!("{}: {}", warning.code, warning.message)),
+                    Line::from(""),
+                ]
+            })
+            .collect(),
+        Some(_) => vec![Line::from("no source-graph warnings")],
+        None => vec![Line::from("no warnings because no source graph is loaded")],
+    }
+}
+
+fn source_confidence_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    match shell.app.source_graph.as_ref() {
+        Some(graph) => vec![
+            Line::from(format!(
+                "overall {:.2} | break potential {}",
+                graph.analysis_summary.overall_confidence,
+                quality_label(&graph.analysis_summary.break_rebuild_potential)
+            )),
+            Line::from(format!(
+                "timing {} | section quality {}",
+                quality_label(&graph.analysis_summary.timing_quality),
+                quality_label(&graph.analysis_summary.section_quality)
+            )),
+            Line::from(format!(
+                "summary loops {} | hooks {}",
+                graph.analysis_summary.loop_candidate_count,
+                graph.analysis_summary.hook_candidate_count
+            )),
+            Line::from(format!("jam trust {}", trust_summary(shell).headline)),
+        ],
+        None => vec![Line::from("no confidence summary available")],
+    }
+}
+
 struct TrustSummary {
     headline: &'static str,
     overall_confidence: f32,
@@ -1352,6 +1634,12 @@ mod tests {
         assert_eq!(shell.active_screen, ShellScreen::Log);
         assert_eq!(shell.status_message, "switched to log screen");
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('3')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.active_screen, ShellScreen::Source);
+        assert_eq!(shell.status_message, "switched to source screen");
+        assert_eq!(
             shell.handle_key_code(KeyCode::Tab),
             ShellKeyOutcome::Continue
         );
@@ -1400,5 +1688,23 @@ mod tests {
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("mutation"));
         assert!(rendered.contains("undid most recent musical"));
+    }
+
+    #[test]
+    fn renders_source_shell_snapshot_with_analysis_structure() {
+        let mut shell = sample_shell_state();
+        shell.active_screen = ShellScreen::Source;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("[3 Source]"));
+        assert!(rendered.contains("Identity"));
+        assert!(rendered.contains("Timing"));
+        assert!(rendered.contains("Sections"));
+        assert!(rendered.contains("Candidates"));
+        assert!(rendered.contains("Provenance"));
+        assert!(rendered.contains("Source Graph Warnings"));
+        assert!(rendered.contains("decoded.wav_baseline"));
+        assert!(rendered.contains("fixtures/input.wav"));
+        assert!(rendered.contains("wav_baseline_only"));
     }
 }

@@ -327,6 +327,18 @@ Evidence: `riotbox-app` now has shell-level screen switching, a first Log screen
 Consequences: later TUI work should keep `Jam` as the performance surface and deepen `Log` as the trust/history surface instead of adding parallel inspector screens for the same information. Filtering, search, and Ghost-specific log detail remain out of scope for this slice.
 Status: accepted
 
+### RBX-025
+
+Date: 2026-04-13
+Topic: the next TUI slice after Log should add the Source screen inside the same shell spine
+Phase: Jam-first Playable Slice
+Question: once `Jam` and `Log` both exist, what is the smallest next UI slice that improves analysis trust without opening a separate source-inspector runtime?
+Decision: add the first `Source` screen directly inside the existing shell, extend screen switching so `Jam`, `Log`, and `Source` are all reachable in one TUI spine, and render source identity, timing confidence, sections, candidate summaries, provenance, and source-graph warnings from the existing `SourceGraph`.
+Why: the TUI spec puts `Source` immediately after `Log`, and Riotbox already has enough decoded-source structure that users should be able to inspect it in one dedicated place. The next honest improvement is better visibility into analysis-derived structure, not a second inspector toolchain.
+Evidence: `riotbox-app` now renders a dedicated `Source` screen, tests cover the new screen and screen switching, and a normalized baseline artifact exists at `docs/screenshots/source_screen_baseline.txt`.
+Consequences: later source-oriented work should deepen this same screen for richer structure trust and candidate inspection instead of creating a separate source-debug UI. Deep graph editing and Ghost-specific diagnostics remain out of scope for this slice.
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

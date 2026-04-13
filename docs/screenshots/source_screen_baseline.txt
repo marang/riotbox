@@ -1,0 +1,34 @@
+┌Jam───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Riotbox Jam                                                                                                           │
+│Mode ingest | Screen source | Source src-1 | 126.0 BPM | trust usable                                                 │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigation────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Screens: 1 Jam | 2 Log | [3 Source] | Tab switch                                                                      │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Identity────────────────────────────────────────────┐┌Timing──────────────────────────────────────────────────────────┐
+│source src-1                                        ││tempo 126.0 BPM | conf 0.76                                     │
+│fixtures/input.wav                                  ││meter unknown                                                   │
+│12.00s | 44100 Hz | 2 ch | native                   ││beats 0 | bars 0 | phrases 0                                    │
+│hash hash-1                                         ││timing medium | sections high                                   │
+└────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────────────┘
+┌Sections──────────────────────────────────────┐┌Candidates────────────────────────┐┌Provenance────────────────────────┐
+│intro | bars 1-2 | 0.00s-4.00s | medium | conf││loops 1 | hooks 0                 ││sidecar 0.1.0                     │
+│drop | bars 3-6 | 4.00s-12.00s | high | conf 0││best loop 0.84 (0.78)             ││providers decoded.wav_baseline    │
+│                                              ││best hook none                    ││seed 1                            │
+│                                              ││assets 1                          ││generated 2026-04-12T00:00:00Z    │
+│                                              ││                                  ││                                  │
+│                                              ││                                  ││                                  │
+└──────────────────────────────────────────────┘└──────────────────────────────────┘└──────────────────────────────────┘
+┌Source Graph Warnings───────────────────────────────────────┐┌Confidence Summary──────────────────────────────────────┐
+│wav_baseline_only: decoded-source baseline used WAV metadata││overall 0.74 | break potential high                     │
+│and simple energy heuristics                                ││timing medium | section quality high                    │
+│                                                            ││summary loops 1 | hooks 0                               │
+│                                                            ││jam trust usable                                        │
+│                                                            ││                                                        │
+│                                                            ││                                                        │
+└────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────┘
+┌Footer────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Keys: q quit | ? help | 1 jam | 2 log | 3 source | Tab switch | space play/pause | r re-ingest source                 │
+│Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | u undo                                    │
+│Status: ingested source into Jam shell | audio unknown | sidecar unknown                                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
