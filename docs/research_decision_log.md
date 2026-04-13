@@ -374,6 +374,17 @@ Status: accepted
 
 ---
 
+Topic: pending TR-909 fill intent should be derived from the queue, not persisted as committed lane state  
+Phase: Jam-first Playable Slice  
+Question: how should Riotbox surface a queued TR-909 fill without creating save/reload drift between pending intent and committed runtime state?  
+Decision: keep the pending TR-909 fill as queue-only intent. `queue_tr909_fill` should not mutate persisted lane state ahead of commit, and the `JamViewModel` should derive its “fill armed” visibility from the pending queue instead of from `session.runtime_state`.  
+Why: the TUI contract requires users to distinguish queued from committed state, and the prior implementation could save committed-looking lane state even though the fill action still existed only in memory. Deriving the indicator from the queue preserves the visible cue without lying about what has already happened.  
+Evidence: `queue_tr909_fill` no longer flips `fill_armed_next_bar` in the session, `JamViewModel` now computes the armed indicator from pending `tr909.fill_next` actions, and app tests now verify that saving with a queued fill does not persist committed lane state across reload.  
+Consequences: later work that needs durable pending-action restoration must either persist the queue explicitly or keep all pending-only cues derived from pending action data rather than from runtime state.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

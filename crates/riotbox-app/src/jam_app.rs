@@ -382,11 +382,6 @@ impl JamAppState {
         );
         draft.explanation = Some("trigger TR-909 fill on next bar".into());
         self.queue.enqueue(draft, requested_at);
-        self.session
-            .runtime_state
-            .lane_state
-            .tr909
-            .fill_armed_next_bar = true;
         self.refresh_view();
     }
 
@@ -1580,13 +1575,14 @@ mod tests {
         assert_eq!(pending[4].command, ActionCommand::PromoteCaptureToPad);
         assert_eq!(pending[4].quantization, Quantization::NextBar);
         assert!(
-            state
+            !state
                 .session
                 .runtime_state
                 .lane_state
                 .tr909
                 .fill_armed_next_bar
         );
+        assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
         assert_eq!(state.jam_view.pending_actions.len(), 5);
     }
 
@@ -1847,6 +1843,56 @@ mod tests {
         );
         assert_eq!(state.jam_view.recent_actions[0].status, "committed");
         assert_eq!(state.jam_view.recent_actions[1].status, "undone");
+    }
+
+    #[test]
+    fn saving_with_pending_tr909_fill_does_not_persist_committed_lane_state() {
+        let dir = tempdir().expect("create temp dir");
+        let session_path = dir.path().join("jam-session.json");
+        let graph_path = dir.path().join("source-graph.json");
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+
+        save_session_json(&session_path, &session).expect("save session fixture");
+        save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
+
+        let mut state =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+        state.queue_tr909_fill(700);
+
+        assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
+        assert!(
+            !state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .fill_armed_next_bar
+        );
+
+        state.save().expect("save app state");
+
+        let persisted_session = load_session_json(&session_path).expect("reload session");
+        let reloaded =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("reload app");
+
+        assert!(
+            !persisted_session
+                .runtime_state
+                .lane_state
+                .tr909
+                .fill_armed_next_bar
+        );
+        assert!(
+            !reloaded
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .fill_armed_next_bar
+        );
+        assert!(!reloaded.jam_view.lanes.tr909_fill_armed_next_bar);
+        assert_eq!(reloaded.queue.pending_actions().len(), 0);
     }
 
     #[test]

@@ -17,8 +17,11 @@ pub struct JamViewModel {
 impl JamViewModel {
     #[must_use]
     pub fn build(session: &SessionFile, queue: &ActionQueue, graph: Option<&SourceGraph>) -> Self {
-        let pending_actions: Vec<PendingActionView> = queue
-            .pending_actions()
+        let pending_actions = queue.pending_actions();
+        let tr909_fill_pending = pending_actions
+            .iter()
+            .any(|action| matches!(action.command, crate::action::ActionCommand::Tr909FillNext));
+        let pending_actions: Vec<PendingActionView> = pending_actions
             .into_iter()
             .map(|action| PendingActionView {
                 id: action.id.to_string(),
@@ -91,11 +94,7 @@ impl JamViewModel {
                     .as_ref()
                     .map(ToString::to_string),
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
-                tr909_fill_armed_next_bar: session
-                    .runtime_state
-                    .lane_state
-                    .tr909
-                    .fill_armed_next_bar,
+                tr909_fill_armed_next_bar: tr909_fill_pending,
                 tr909_last_fill_bar: session.runtime_state.lane_state.tr909.last_fill_bar,
                 tr909_reinforcement_mode: session
                     .runtime_state
@@ -368,7 +367,6 @@ mod tests {
         session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
         session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
         session.runtime_state.lane_state.tr909.slam_enabled = true;
-        session.runtime_state.lane_state.tr909.fill_armed_next_bar = true;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(8);
         session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
         session.ghost_state.mode = GhostMode::Assist;
@@ -426,6 +424,18 @@ mod tests {
         draft.undo_policy = UndoPolicy::Undoable;
         draft.explanation = Some("capture current break".into());
         queue.enqueue(draft, 100);
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::Tr909FillNext,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
+                    ..Default::default()
+                },
+            ),
+            101,
+        );
 
         let vm = JamViewModel::build(&session, &queue, Some(&graph));
 
@@ -450,7 +460,7 @@ mod tests {
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 1);
+        assert_eq!(vm.pending_actions.len(), 2);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }

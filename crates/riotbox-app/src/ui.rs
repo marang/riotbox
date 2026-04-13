@@ -1795,7 +1795,6 @@ mod tests {
         session.runtime_state.lane_state.mc202.role = Some("leader".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.ghost_state.mode = GhostMode::Assist;
-        session.runtime_state.lane_state.tr909.fill_armed_next_bar = true;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(6);
         session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
         session.action_log.actions.push(Action {
@@ -1953,6 +1952,18 @@ mod tests {
                 Quantization::NextBar,
                 ActionTarget {
                     scope: Some(TargetScope::Scene),
+                    ..Default::default()
+                },
+            ),
+            130,
+        );
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::Tr909FillNext,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
                     ..Default::default()
                 },
             ),
