@@ -2,7 +2,7 @@ use std::{
     env,
     io::{self, stdout},
     path::PathBuf,
-    time::Duration,
+    time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
 use crossterm::{
@@ -19,6 +19,7 @@ use riotbox_app::{
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
 const DEFAULT_GRAPH_PATH: &str = "data/sessions/source-graph.json";
 const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
+const UI_TICK: Duration = Duration::from_millis(200);
 
 #[derive(Clone, Debug)]
 enum LaunchMode {
@@ -121,19 +122,75 @@ fn run_event_loop(
     loop {
         terminal.draw(|frame| render_jam_shell(frame, &shell))?;
 
-        if event::poll(Duration::from_millis(200))?
+        if event::poll(UI_TICK)?
             && let Event::Key(key) = event::read()?
         {
             match shell.handle_key_code(key.code) {
                 ShellKeyOutcome::Quit => return Ok(()),
                 ShellKeyOutcome::Continue => {}
+                ShellKeyOutcome::ToggleTransport => {
+                    let next_is_playing = !shell.app.runtime.transport.is_playing;
+                    shell.app.set_transport_playing(next_is_playing);
+                    shell.set_error_status(if next_is_playing {
+                        "transport started"
+                    } else {
+                        "transport paused"
+                    });
+                }
+                ShellKeyOutcome::QueueSceneMutation => {
+                    shell.app.queue_scene_mutation(timestamp_now());
+                    shell.set_error_status("queued scene mutation for next bar");
+                }
+                ShellKeyOutcome::QueueTr909Fill => {
+                    shell.app.queue_tr909_fill(timestamp_now());
+                    shell.set_error_status("queued TR-909 fill for next bar");
+                }
+                ShellKeyOutcome::QueueCaptureBar => {
+                    shell.app.queue_capture_bar(timestamp_now());
+                    shell.set_error_status("queued capture for next phrase");
+                }
+                ShellKeyOutcome::UndoLast => {
+                    if shell.app.undo_last_action(timestamp_now()).is_some() {
+                        shell.set_error_status("undid most recent action");
+                    } else {
+                        shell.set_error_status("no undoable action available");
+                    }
+                }
                 ShellKeyOutcome::RequestRefresh => match load_state(mode.clone()) {
                     Ok(state) => shell.replace_app_state(state),
                     Err(error) => shell.set_error_status(format!("refresh failed: {error}")),
                 },
             }
+        } else {
+            let delta_beats = tick_delta_beats(&shell);
+            if !shell
+                .app
+                .advance_transport_by(delta_beats, timestamp_now())
+                .is_empty()
+            {
+                shell.set_error_status("committed queued actions on transport boundary");
+            }
         }
     }
+}
+
+fn tick_delta_beats(shell: &JamShellState) -> f64 {
+    let bpm = shell
+        .app
+        .jam_view
+        .source
+        .bpm_estimate
+        .map(f64::from)
+        .filter(|bpm| *bpm > 0.0)
+        .unwrap_or(120.0);
+    bpm * UI_TICK.as_secs_f64() / 60.0
+}
+
+fn timestamp_now() -> u64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis() as u64
 }
 
 fn parse_args(args: impl IntoIterator<Item = String>) -> Result<LaunchMode, String> {

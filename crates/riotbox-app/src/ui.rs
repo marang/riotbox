@@ -41,6 +41,11 @@ impl ShellLaunchMode {
 pub enum ShellKeyOutcome {
     Continue,
     RequestRefresh,
+    ToggleTransport,
+    QueueSceneMutation,
+    QueueTr909Fill,
+    QueueCaptureBar,
+    UndoLast,
     Quit,
 }
 
@@ -71,6 +76,10 @@ impl JamShellState {
     pub fn handle_key_code(&mut self, code: KeyCode) -> ShellKeyOutcome {
         match code {
             KeyCode::Esc | KeyCode::Char('q') => ShellKeyOutcome::Quit,
+            KeyCode::Char(' ') => {
+                self.status_message = "transport toggle requested".into();
+                ShellKeyOutcome::ToggleTransport
+            }
             KeyCode::Char('?') | KeyCode::Char('h') => {
                 self.show_help = !self.show_help;
                 self.status_message = if self.show_help {
@@ -83,6 +92,22 @@ impl JamShellState {
             KeyCode::Char('r') => {
                 self.status_message = format!("{} requested", self.launch_mode.refresh_verb());
                 ShellKeyOutcome::RequestRefresh
+            }
+            KeyCode::Char('m') => {
+                self.status_message = "queue scene mutation on next bar".into();
+                ShellKeyOutcome::QueueSceneMutation
+            }
+            KeyCode::Char('f') => {
+                self.status_message = "queue TR-909 fill on next bar".into();
+                ShellKeyOutcome::QueueTr909Fill
+            }
+            KeyCode::Char('c') => {
+                self.status_message = "queue capture on next phrase".into();
+                ShellKeyOutcome::QueueCaptureBar
+            }
+            KeyCode::Char('u') => {
+                self.status_message = "undo most recent action requested".into();
+                ShellKeyOutcome::UndoLast
             }
             _ => ShellKeyOutcome::Continue,
         }
@@ -347,9 +372,12 @@ fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | r {}",
+        "Keys: q quit | ? help | space play/pause | r {}",
         shell.launch_mode.refresh_verb()
     )));
+    lines.push(Line::from(
+        "Actions: m mutate scene | f TR-909 fill | c capture phrase | u undo",
+    ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {}",
         shell.status_message,
@@ -392,7 +420,12 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("Jam shell keys"),
         Line::from("q or Esc: quit"),
         Line::from("? or h: toggle help"),
+        Line::from("space: play / pause transport"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
+        Line::from("m: queue scene mutation on next bar"),
+        Line::from("f: queue TR-909 fill on next bar"),
+        Line::from("c: queue phrase capture on next phrase"),
+        Line::from("u: undo most recent undoable action"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
         Line::from(shell.status_message.clone()),
@@ -811,7 +844,7 @@ mod tests {
     }
 
     #[test]
-    fn shell_state_handles_help_and_refresh_keys() {
+    fn shell_state_handles_help_refresh_and_action_keys() {
         let mut shell = sample_shell_state();
 
         assert_eq!(
@@ -826,6 +859,26 @@ mod tests {
             ShellKeyOutcome::RequestRefresh
         );
         assert_eq!(shell.status_message, "re-ingest source requested");
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('m')),
+            ShellKeyOutcome::QueueSceneMutation
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('f')),
+            ShellKeyOutcome::QueueTr909Fill
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('c')),
+            ShellKeyOutcome::QueueCaptureBar
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('u')),
+            ShellKeyOutcome::UndoLast
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char(' ')),
+            ShellKeyOutcome::ToggleTransport
+        );
 
         assert_eq!(shell.handle_key_code(KeyCode::Esc), ShellKeyOutcome::Quit);
     }

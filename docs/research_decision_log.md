@@ -279,6 +279,18 @@ Evidence: `riotbox-app` now renders the shell around trust and action cues, test
 Consequences: the next Jam shell slices should keep deepening this same path with safe musical cues, pending/commit clarity, and better source context rather than opening a second editor path. Explicit live mutation controls remain intentionally bounded until the shell/runtime seam is stronger.  
 Status: accepted
 
+### RBX-021
+
+Date: 2026-04-13  
+Topic: first live-safe Jam action entry should stay inside the existing queue and transport seam  
+Phase: Jam-first Playable Slice  
+Question: now that the Jam shell is readable and safe, how should Riotbox introduce its first user-triggered musical actions without inventing a second interaction or execution path?  
+Decision: add a small set of bounded Jam keybindings that enqueue real Action Lexicon entries into the existing `ActionQueue`, advance them through the current transport-boundary model, and keep undo as an app-side action-log operation. Do not add a parallel shell-local mutation executor or device-specific shortcut path.  
+Why: the current gap is not more passive UI, but the absence of first-class user action entry. The smallest slice that moves Riotbox toward “instrument” status is to let the Jam shell queue a few real actions and visibly commit them on beat/bar/phrase boundaries. Using the existing queue and transport model preserves replayability and keeps the product on one interaction spine.  
+Evidence: `riotbox-app` now exposes first live-safe Jam actions for scene mutation, TR-909 fill, and phrase capture, advances transport on a small app-side tick, commits queued actions through the existing commit-boundary flow, and supports one recent undo path. Tests cover the new queueing, boundary commit, undo, and shell keybinding behavior.  
+Consequences: later Jam interaction work should deepen the same queue/transport seam for capture, device MVPs, and stronger pending/commit visibility. Full device execution semantics still remain out of scope for this slice.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics
