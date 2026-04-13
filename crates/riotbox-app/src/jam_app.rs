@@ -10,8 +10,8 @@ use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
     TimestampMs,
     action::{
-        Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
-        ActionTarget, ActorType, Quantization, TargetScope,
+        Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
+        ActorType, Quantization, TargetScope,
     },
     ids::SourceId,
     persistence::{
