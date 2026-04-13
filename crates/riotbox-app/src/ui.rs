@@ -18,6 +18,7 @@ pub enum ShellScreen {
     Jam,
     Log,
     Source,
+    Capture,
 }
 
 impl ShellScreen {
@@ -27,6 +28,7 @@ impl ShellScreen {
             Self::Jam => "jam",
             Self::Log => "log",
             Self::Source => "source",
+            Self::Capture => "capture",
         }
     }
 
@@ -35,7 +37,8 @@ impl ShellScreen {
         match self {
             Self::Jam => Self::Log,
             Self::Log => Self::Source,
-            Self::Source => Self::Jam,
+            Self::Source => Self::Capture,
+            Self::Capture => Self::Jam,
         }
     }
 }
@@ -126,6 +129,11 @@ impl JamShellState {
                 self.status_message = "switched to source screen".into();
                 ShellKeyOutcome::Continue
             }
+            KeyCode::Char('4') => {
+                self.active_screen = ShellScreen::Capture;
+                self.status_message = "switched to capture screen".into();
+                ShellKeyOutcome::Continue
+            }
             KeyCode::Char(' ') => {
                 self.status_message = "transport toggle requested".into();
                 ShellKeyOutcome::ToggleTransport
@@ -198,6 +206,7 @@ pub fn render_jam_shell(frame: &mut Frame<'_>, shell: &JamShellState) {
         ShellScreen::Jam => render_jam_body(frame, rows[2], shell),
         ShellScreen::Log => render_log_body(frame, rows[2], shell),
         ShellScreen::Source => render_source_body(frame, rows[2], shell),
+        ShellScreen::Capture => render_capture_body(frame, rows[2], shell),
     }
     render_footer(frame, rows[3], shell);
 
@@ -289,10 +298,15 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     } else {
         "3 Source"
     };
+    let capture_label = if shell.active_screen == ShellScreen::Capture {
+        "[4 Capture]"
+    } else {
+        "4 Capture"
+    };
 
     let paragraph = Paragraph::new(vec![
         Line::from(format!(
-            "Screens: {jam_label} | {log_label} | {source_label} | Tab switch"
+            "Screens: {jam_label} | {log_label} | {source_label} | {capture_label} | Tab switch"
         )),
         Line::from(format!(
             "Purpose: {}",
@@ -305,6 +319,9 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
                 }
                 ShellScreen::Source => {
                     "analysis structure surface for sections, candidates, and warnings"
+                }
+                ShellScreen::Capture => {
+                    "capture surface for readiness, recent takes, and provenance"
                 }
             }
         )),
@@ -707,10 +724,77 @@ fn render_source_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     frame.render_widget(confidence, bottom[1]);
 }
 
+fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(6), Constraint::Min(12)])
+        .split(area);
+
+    let summary = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(rows[0]);
+
+    let readiness = Paragraph::new(capture_readiness_lines(shell))
+        .block(Block::default().title("Readiness").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    let latest = Paragraph::new(capture_latest_lines(shell))
+        .block(
+            Block::default()
+                .title("Latest Capture")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let provenance = Paragraph::new(capture_provenance_lines(shell))
+        .block(Block::default().title("Provenance").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(readiness, summary[0]);
+    frame.render_widget(latest, summary[1]);
+    frame.render_widget(provenance, summary[2]);
+
+    let bottom = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(38),
+            Constraint::Percentage(30),
+            Constraint::Percentage(32),
+        ])
+        .split(rows[1]);
+
+    let pending = Paragraph::new(pending_capture_lines(shell))
+        .block(
+            Block::default()
+                .title("Pending Capture Cues")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let recent = List::new(recent_capture_items(shell)).block(
+        Block::default()
+            .title("Recent Captures")
+            .borders(Borders::ALL),
+    );
+    let routing = Paragraph::new(capture_routing_lines(shell))
+        .block(
+            Block::default()
+                .title("Routing / Promotion")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(pending, bottom[0]);
+    frame.render_widget(recent, bottom[1]);
+    frame.render_widget(routing, bottom[2]);
+}
+
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | Tab switch | space play/pause | r {}",
+        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | r {}",
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
@@ -758,7 +842,9 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("Jam shell keys"),
         Line::from("q or Esc: quit"),
         Line::from("? or h: toggle help"),
-        Line::from("1: Jam screen | 2: Log screen | 3: Source screen | Tab: next screen"),
+        Line::from(
+            "1: Jam screen | 2: Log screen | 3: Source screen | 4: Capture screen | Tab: next screen",
+        ),
         Line::from("space: play / pause transport"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
@@ -988,6 +1074,193 @@ fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
+fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let pending_capture_count = shell
+        .app
+        .queue
+        .pending_actions()
+        .into_iter()
+        .filter(|action| is_capture_command(action))
+        .count();
+    let bank = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_active_bank
+        .as_deref()
+        .unwrap_or("unset");
+
+    vec![
+        Line::from(format!(
+            "transport {} | beat {:.1}",
+            transport_label(shell),
+            shell.app.jam_view.transport.position_beats
+        )),
+        Line::from(format!("pending capture actions {pending_capture_count}")),
+        Line::from(format!("w30 bank {bank}")),
+        Line::from(format!(
+            "last lane capture {}",
+            shell
+                .app
+                .jam_view
+                .capture
+                .last_capture_id
+                .as_deref()
+                .unwrap_or("none")
+        )),
+    ]
+}
+
+fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let capture = &shell.app.jam_view.capture;
+    vec![
+        Line::from(format!("captures total {}", capture.capture_count)),
+        Line::from(format!(
+            "latest {}",
+            capture.last_capture_id.as_deref().unwrap_or("none")
+        )),
+        Line::from(format!(
+            "target {}",
+            capture
+                .last_capture_target
+                .as_deref()
+                .unwrap_or("unassigned")
+        )),
+        Line::from(format!("origin refs {}", capture.last_capture_origin_count)),
+        Line::from(
+            capture
+                .last_capture_notes
+                .clone()
+                .unwrap_or_else(|| "no capture note yet".into()),
+        ),
+    ]
+}
+
+fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let Some(capture) = shell.app.session.captures.last() else {
+        return vec![Line::from("no captured material yet")];
+    };
+
+    vec![
+        Line::from(format!("file {}", capture.storage_path)),
+        Line::from(format!(
+            "from action {}",
+            capture
+                .created_from_action
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "manual or unknown".into())
+        )),
+        Line::from(format!(
+            "origins {}",
+            if capture.source_origin_refs.is_empty() {
+                "none".into()
+            } else {
+                capture.source_origin_refs.join(", ")
+            }
+        )),
+    ]
+}
+
+fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let pending: Vec<_> = shell
+        .app
+        .queue
+        .pending_actions()
+        .into_iter()
+        .filter(|action| is_capture_command(action))
+        .take(4)
+        .collect();
+    if pending.is_empty() {
+        return vec![Line::from("no queued capture actions")];
+    }
+
+    let mut lines = Vec::new();
+    for action in pending {
+        lines.push(Line::from(format!(
+            "{} {} {}",
+            action.id, action.actor, action.command
+        )));
+        lines.push(Line::from(format!(
+            "when {} | target {}",
+            action.quantization,
+            action_target_label(&action.target)
+        )));
+        if let Some(explanation) = &action.explanation {
+            lines.push(Line::from(format!("note {explanation}")));
+        }
+        lines.push(Line::from(""));
+    }
+
+    lines
+}
+
+fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
+    let captures: Vec<_> = shell.app.session.captures.iter().rev().take(5).collect();
+    if captures.is_empty() {
+        return vec![ListItem::new("no captures stored yet")];
+    }
+
+    captures
+        .into_iter()
+        .map(|capture| {
+            let target = capture
+                .assigned_target
+                .as_ref()
+                .map(|target| match target {
+                    riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
+                        format!("{bank_id}/{pad_id}")
+                    }
+                    riotbox_core::session::CaptureTarget::Scene(scene_id) => scene_id.to_string(),
+                })
+                .unwrap_or_else(|| "unassigned".into());
+
+            ListItem::new(format!(
+                "{} | {} | {} origins",
+                capture.capture_id,
+                target,
+                capture.source_origin_refs.len()
+            ))
+        })
+        .collect()
+}
+
+fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let last_target = shell
+        .app
+        .jam_view
+        .capture
+        .last_capture_target
+        .as_deref()
+        .unwrap_or("unassigned");
+
+    vec![
+        Line::from(format!("last route {last_target}")),
+        Line::from(format!(
+            "w30 bank {}",
+            shell
+                .app
+                .jam_view
+                .lanes
+                .w30_active_bank
+                .as_deref()
+                .unwrap_or("unset")
+        )),
+        Line::from(format!(
+            "next shell cue {}",
+            shell
+                .app
+                .jam_view
+                .pending_actions
+                .iter()
+                .find(|action| is_capture_command_view(action.command.as_str()))
+                .map(|action| format!("{} @ {}", action.command, action.quantization))
+                .unwrap_or_else(|| "no capture cue queued".into())
+        )),
+        Line::from("deep pad promotion remains out of scope"),
+    ]
+}
+
 fn pending_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let pending = shell.app.queue.pending_actions();
     if pending.is_empty() {
@@ -1124,6 +1397,32 @@ fn action_target_label(target: &riotbox_core::action::ActionTarget) -> String {
     } else {
         format!("{scope}:{detail}")
     }
+}
+
+fn is_capture_command(action: &riotbox_core::action::Action) -> bool {
+    matches!(
+        action.command,
+        riotbox_core::action::ActionCommand::CaptureNow
+            | riotbox_core::action::ActionCommand::CaptureLoop
+            | riotbox_core::action::ActionCommand::CaptureBarGroup
+            | riotbox_core::action::ActionCommand::W30CaptureToPad
+            | riotbox_core::action::ActionCommand::PromoteCaptureToPad
+            | riotbox_core::action::ActionCommand::PromoteCaptureToScene
+            | riotbox_core::action::ActionCommand::PromoteResample
+    )
+}
+
+fn is_capture_command_view(command: &str) -> bool {
+    matches!(
+        command,
+        "capture.now"
+            | "capture.loop"
+            | "capture.bar_group"
+            | "w30.capture_to_pad"
+            | "promote.capture_to_pad"
+            | "promote.capture_to_scene"
+            | "promote.resample"
+    )
 }
 
 fn log_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -1402,7 +1701,7 @@ mod tests {
             Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
             ActionTarget, ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
         },
-        ids::{ActionId, AssetId, BankId, SceneId, SectionId, SourceId},
+        ids::{ActionId, AssetId, BankId, PadId, SceneId, SectionId, SourceId},
         queue::ActionQueue,
         session::SessionFile,
         source_graph::{
@@ -1590,6 +1889,33 @@ mod tests {
             ),
             130,
         );
+        let mut capture_draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::CaptureBarGroup,
+            Quantization::NextPhrase,
+            ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(BankId::from("bank-a")),
+                pad_id: Some(PadId::from("pad-01")),
+                ..Default::default()
+            },
+        );
+        capture_draft.explanation = Some("stash the current phrase".into());
+        queue.enqueue(capture_draft, 131);
+
+        session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        session.captures.push(riotbox_core::session::CaptureRef {
+            capture_id: "cap-01".into(),
+            capture_type: riotbox_core::session::CaptureType::Pad,
+            source_origin_refs: vec!["asset-a".into(), "src-1".into()],
+            created_from_action: None,
+            storage_path: "captures/cap-01.wav".into(),
+            assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            notes: Some("keeper capture".into()),
+        });
 
         let app = JamAppState::from_parts(session, Some(graph), queue);
         JamShellState::new(app, ShellLaunchMode::Ingest)
@@ -1639,6 +1965,12 @@ mod tests {
         );
         assert_eq!(shell.active_screen, ShellScreen::Source);
         assert_eq!(shell.status_message, "switched to source screen");
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('4')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.active_screen, ShellScreen::Capture);
+        assert_eq!(shell.status_message, "switched to capture screen");
         assert_eq!(
             shell.handle_key_code(KeyCode::Tab),
             ShellKeyOutcome::Continue
@@ -1706,5 +2038,24 @@ mod tests {
         assert!(rendered.contains("decoded.wav_baseline"));
         assert!(rendered.contains("fixtures/input.wav"));
         assert!(rendered.contains("wav_baseline_only"));
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_capture_context() {
+        let mut shell = sample_shell_state();
+        shell.active_screen = ShellScreen::Capture;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("[4 Capture]"));
+        assert!(rendered.contains("Readiness"));
+        assert!(rendered.contains("Latest Capture"));
+        assert!(rendered.contains("Provenance"));
+        assert!(rendered.contains("Pending Capture Cues"));
+        assert!(rendered.contains("Recent Captures"));
+        assert!(rendered.contains("Routing / Promotion"));
+        assert!(rendered.contains("cap-01"));
+        assert!(rendered.contains("manual or unknown"));
+        assert!(rendered.contains("stash the current phrase"));
+        assert!(rendered.contains("captures total 1"));
     }
 }

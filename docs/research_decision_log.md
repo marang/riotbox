@@ -341,6 +341,17 @@ Status: accepted
 
 ---
 
+Topic: the next TUI slice after Source should add the Capture screen inside the same shell spine  
+Phase: Jam-first Playable Slice  
+Question: once `Jam`, `Log`, and `Source` all exist, what is the smallest next UI slice that makes capture feel like a first-class musical workflow without inventing a separate capture runtime?  
+Decision: add the first `Capture` screen directly inside the existing shell, extend screen switching so `Jam`, `Log`, `Source`, and `Capture` all remain in one TUI spine, and render readiness, recent captures, provenance, pending capture cues, and routing context from the existing session, queue, and `JamViewModel` state.  
+Why: the TUI spec calls out `Capture` as a core screen, and Riotbox already materializes real capture records plus queued capture actions. The next honest improvement is to make that workflow legible in the same shell, not to create a second capture inventory or a deeper W-30 editor before the capture path is visible.  
+Evidence: `riotbox-app` now renders a dedicated `Capture` screen, tests cover the new screen and screen switching, and a normalized baseline artifact exists at `docs/screenshots/capture_screen_baseline.txt`.  
+Consequences: later capture-oriented work should deepen this same screen for promotion, pinning, and reuse cues instead of opening a separate capture browser. Deep sample editing and full W-30 pad workflow remain intentionally out of scope for this slice.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
