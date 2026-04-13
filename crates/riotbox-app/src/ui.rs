@@ -323,7 +323,11 @@ fn render_source_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let columns = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(50), Constraint::Percentage(50)])
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
         .split(area);
 
     let pending_items = if shell.app.jam_view.pending_actions.is_empty() {
@@ -364,9 +368,13 @@ fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
         List::new(pending_items).block(Block::default().title("Pending").borders(Borders::ALL));
     let recent =
         List::new(recent_items).block(Block::default().title("Recent").borders(Borders::ALL));
+    let capture = Paragraph::new(capture_lines(shell))
+        .block(Block::default().title("Capture").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
 
     frame.render_widget(pending, columns[0]);
     frame.render_widget(recent, columns[1]);
+    frame.render_widget(capture, columns[2]);
 }
 
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -622,6 +630,31 @@ fn primary_recent_line(shell: &JamShellState) -> String {
     }
 }
 
+fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let capture = &shell.app.jam_view.capture;
+    vec![
+        Line::from(format!("captures {}", capture.capture_count)),
+        Line::from(format!(
+            "last {}",
+            capture.last_capture_id.as_deref().unwrap_or("none")
+        )),
+        Line::from(format!(
+            "target {}",
+            capture
+                .last_capture_target
+                .as_deref()
+                .unwrap_or("unassigned")
+        )),
+        Line::from(format!("origins {}", capture.last_capture_origin_count)),
+        Line::from(
+            capture
+                .last_capture_notes
+                .clone()
+                .unwrap_or_else(|| "no capture note yet".into()),
+        ),
+    ]
+}
+
 struct TrustSummary {
     headline: &'static str,
     overall_confidence: f32,
@@ -841,6 +874,7 @@ mod tests {
         assert!(rendered.contains("warnings"));
         assert!(rendered.contains("recent"));
         assert!(rendered.contains("committed"));
+        assert!(rendered.contains("Capture"));
     }
 
     #[test]

@@ -291,6 +291,18 @@ Evidence: `riotbox-app` now exposes first live-safe Jam actions for scene mutati
 Consequences: later Jam interaction work should deepen the same queue/transport seam for capture, device MVPs, and stronger pending/commit visibility. Full device execution semantics still remain out of scope for this slice.  
 Status: accepted
 
+### RBX-022
+
+Date: 2026-04-13  
+Topic: the first Jam capture workflow should materialize real capture records on commit  
+Phase: Jam-first Playable Slice  
+Question: after live-safe Jam actions exist, what is the smallest capture-oriented slice that makes capture feel like a real workflow instead of only another queued command label?  
+Decision: when a committed capture action lands, create a real `CaptureRef`, update the W-30 lane's `last_capture`, and expose the newest capture summary directly in the Jam shell. Do this within the current session/action/view seam instead of adding a separate capture runtime or a full Capture screen.  
+Why: Phase E still requires a first capture path. That requirement is not satisfied by merely being able to queue a capture action. The user needs to see that a committed capture produced reusable session state with a target and provenance. Materializing capture records at commit time gives Riotbox its first real capture loop while keeping the slice narrow.  
+Evidence: committed capture actions in `riotbox-app` now append `CaptureRef` records with source-origin refs and W-30 targeting, update `last_capture`, and feed a new capture summary in `JamViewModel`. Tests cover capture materialization and the Jam shell now renders a dedicated capture panel.  
+Consequences: later Capture-screen work and W-30 MVP work should build on these same session capture records rather than inventing a second capture inventory. Deep sample editing and resample routing remain out of scope for this slice.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

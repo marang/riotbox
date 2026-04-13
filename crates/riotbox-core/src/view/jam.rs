@@ -7,6 +7,7 @@ pub struct JamViewModel {
     pub scene: SceneSummaryView,
     pub macros: MacroStripView,
     pub lanes: LaneSummaryView,
+    pub capture: CaptureSummaryView,
     pub pending_actions: Vec<PendingActionView>,
     pub recent_actions: Vec<RecentActionView>,
     pub ghost: GhostStatusView,
@@ -91,6 +92,34 @@ impl JamViewModel {
                     .map(ToString::to_string),
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
             },
+            capture: CaptureSummaryView {
+                capture_count: session.captures.len(),
+                last_capture_id: session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .last_capture
+                    .as_ref()
+                    .map(ToString::to_string),
+                last_capture_target: session.captures.last().and_then(|capture| {
+                    capture.assigned_target.as_ref().map(|target| match target {
+                        crate::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
+                            format!("pad {bank_id}/{pad_id}")
+                        }
+                        crate::session::CaptureTarget::Scene(scene_id) => {
+                            format!("scene {scene_id}")
+                        }
+                    })
+                }),
+                last_capture_origin_count: session
+                    .captures
+                    .last()
+                    .map_or(0, |capture| capture.source_origin_refs.len()),
+                last_capture_notes: session
+                    .captures
+                    .last()
+                    .and_then(|capture| capture.notes.clone()),
+            },
             pending_actions,
             recent_actions,
             ghost: GhostStatusView {
@@ -154,6 +183,15 @@ pub struct LaneSummaryView {
     pub mc202_role: Option<String>,
     pub w30_active_bank: Option<String>,
     pub tr909_slam_enabled: bool,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct CaptureSummaryView {
+    pub capture_count: usize,
+    pub last_capture_id: Option<String>,
+    pub last_capture_target: Option<String>,
+    pub last_capture_origin_count: usize,
+    pub last_capture_notes: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -277,6 +315,8 @@ mod tests {
         session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-1")];
         session.runtime_state.lane_state.mc202.role = Some("follower".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
         session.runtime_state.lane_state.tr909.slam_enabled = true;
         session.ghost_state.mode = GhostMode::Assist;
         session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
@@ -306,6 +346,18 @@ mod tests {
             lock_state: session.runtime_state.lock_state.clone(),
             pending_policy: session.runtime_state.pending_policy.clone(),
         };
+        session.captures.push(crate::session::CaptureRef {
+            capture_id: "cap-01".into(),
+            capture_type: crate::session::CaptureType::Pad,
+            source_origin_refs: vec!["asset-a".into(), "src-1".into()],
+            created_from_action: None,
+            storage_path: "captures/cap-01.wav".into(),
+            assigned_target: Some(crate::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            }),
+            notes: Some("keeper capture".into()),
+        });
 
         let mut queue = ActionQueue::new();
         let mut draft = ActionDraft::new(
@@ -327,6 +379,12 @@ mod tests {
         assert_eq!(vm.source.loop_candidate_count, 1);
         assert_eq!(vm.source.hook_candidate_count, 1);
         assert_eq!(vm.scene.scene_count, 1);
+        assert_eq!(vm.capture.capture_count, 1);
+        assert_eq!(vm.capture.last_capture_id.as_deref(), Some("cap-01"));
+        assert_eq!(
+            vm.capture.last_capture_target.as_deref(),
+            Some("pad bank-a/pad-01")
+        );
         assert_eq!(vm.pending_actions.len(), 1);
         assert_eq!(vm.ghost.mode, "assist");
     }

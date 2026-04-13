@@ -13,13 +13,16 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, Quantization, TargetScope,
     },
-    ids::SourceId,
+    ids::{CaptureId, SourceId},
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
     },
     queue::{ActionQueue, CommittedActionRef},
-    session::{GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
+    session::{
+        CaptureRef, CaptureTarget, CaptureType, GraphStorageMode, SessionFile, SourceGraphRef,
+        SourceRef,
+    },
     source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
@@ -462,13 +465,25 @@ impl JamAppState {
 
         for committed_ref in &committed {
             if let Some(action) = self.queue.history_action(committed_ref.action_id) {
+                let action = action.clone();
                 self.session.action_log.actions.push(action.clone());
+                self.apply_committed_action_side_effects(&action);
             }
         }
 
         self.runtime.last_commit_boundary = Some(boundary);
         self.refresh_view();
         committed
+    }
+
+    fn apply_committed_action_side_effects(&mut self, action: &Action) {
+        if let Some(capture) =
+            capture_ref_from_action(&self.session, self.source_graph.as_ref(), action)
+        {
+            self.session.runtime_state.lane_state.w30.last_capture =
+                Some(capture.capture_id.clone());
+            self.session.captures.push(capture);
+        }
     }
 
     pub fn save(&self) -> Result<(), JamAppError> {
@@ -635,6 +650,71 @@ fn next_action_id_from_session(session: &SessionFile) -> riotbox_core::ids::Acti
             .map(|id| id.0.saturating_add(1))
             .unwrap_or(1),
     )
+}
+
+fn next_capture_id(session: &SessionFile) -> CaptureId {
+    CaptureId::from(format!(
+        "cap-{:02}",
+        session.captures.len().saturating_add(1)
+    ))
+}
+
+fn capture_ref_from_action(
+    session: &SessionFile,
+    source_graph: Option<&SourceGraph>,
+    action: &Action,
+) -> Option<CaptureRef> {
+    let capture_type = match action.command {
+        ActionCommand::CaptureNow | ActionCommand::CaptureLoop => CaptureType::Loop,
+        ActionCommand::CaptureBarGroup => CaptureType::Pad,
+        ActionCommand::W30CaptureToPad | ActionCommand::PromoteCaptureToPad => CaptureType::Pad,
+        ActionCommand::PromoteResample => CaptureType::Resample,
+        _ => return None,
+    };
+
+    let capture_id = next_capture_id(session);
+    let assigned_target = session
+        .runtime_state
+        .lane_state
+        .w30
+        .active_bank
+        .clone()
+        .zip(session.runtime_state.lane_state.w30.focused_pad.clone())
+        .map(|(bank_id, pad_id)| CaptureTarget::W30Pad { bank_id, pad_id });
+    let source_origin_refs = source_graph
+        .map(capture_origin_refs)
+        .unwrap_or_else(|| vec!["source-graph-unavailable".into()]);
+
+    Some(CaptureRef {
+        storage_path: format!("captures/{capture_id}.wav"),
+        notes: Some(capture_note(action)),
+        capture_id,
+        capture_type,
+        source_origin_refs,
+        created_from_action: Some(action.id),
+        assigned_target,
+    })
+}
+
+fn capture_origin_refs(graph: &SourceGraph) -> Vec<String> {
+    let mut refs = Vec::new();
+    refs.push(graph.source.source_id.to_string());
+    refs.extend(
+        graph
+            .candidates
+            .iter()
+            .take(2)
+            .map(|candidate| candidate.asset_ref.to_string()),
+    );
+    refs.dedup();
+    refs
+}
+
+fn capture_note(action: &Action) -> String {
+    match &action.explanation {
+        Some(explanation) if !explanation.is_empty() => explanation.clone(),
+        _ => format!("capture committed from {}", action.command),
+    }
 }
 
 fn resolve_source_graph(
@@ -1285,6 +1365,50 @@ mod tests {
                 .map(|action| action.command),
             Some(ActionCommand::Tr909FillNext)
         );
+    }
+
+    #[test]
+    fn committed_capture_actions_materialize_capture_refs() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.queue_capture_bar(300);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(state.session.captures.len(), 2);
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string),
+            Some("cap-02".into())
+        );
+        assert_eq!(state.jam_view.capture.capture_count, 2);
+        assert_eq!(
+            state.jam_view.capture.last_capture_id.as_deref(),
+            Some("cap-02")
+        );
+        assert_eq!(
+            state.jam_view.capture.last_capture_target.as_deref(),
+            Some("pad bank-a/pad-01")
+        );
+        assert_eq!(state.jam_view.capture.last_capture_origin_count, 2);
     }
 
     #[test]
