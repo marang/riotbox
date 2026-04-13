@@ -56,6 +56,7 @@ docs/
   research_decision_log.md
   reviews/
     whole_codebase_review_2026-04-13.md
+    periodic_codebase_review_2026-04-13.md
   spikes/
     cpal_audio_latency_spike.md
     mempalace_evaluation.md
@@ -100,6 +101,7 @@ docs/
 - `phase_definition_of_done.md`: draft started
 - `research_decision_log.md`: draft started
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
+- `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
