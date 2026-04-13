@@ -13,6 +13,30 @@ use riotbox_core::source_graph::{
 
 use crate::jam_app::JamAppState;
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ShellScreen {
+    Jam,
+    Log,
+}
+
+impl ShellScreen {
+    #[must_use]
+    pub const fn label(&self) -> &'static str {
+        match self {
+            Self::Jam => "jam",
+            Self::Log => "log",
+        }
+    }
+
+    #[must_use]
+    pub const fn next(&self) -> Self {
+        match self {
+            Self::Jam => Self::Log,
+            Self::Log => Self::Jam,
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum ShellLaunchMode {
     Load,
@@ -54,6 +78,7 @@ pub enum ShellKeyOutcome {
 pub struct JamShellState {
     pub app: JamAppState,
     pub launch_mode: ShellLaunchMode,
+    pub active_screen: ShellScreen,
     pub show_help: bool,
     pub status_message: String,
 }
@@ -69,6 +94,7 @@ impl JamShellState {
         Self {
             app,
             launch_mode,
+            active_screen: ShellScreen::Jam,
             show_help: false,
             status_message,
         }
@@ -77,6 +103,21 @@ impl JamShellState {
     pub fn handle_key_code(&mut self, code: KeyCode) -> ShellKeyOutcome {
         match code {
             KeyCode::Esc | KeyCode::Char('q') => ShellKeyOutcome::Quit,
+            KeyCode::Tab | KeyCode::BackTab => {
+                self.active_screen = self.active_screen.next();
+                self.status_message = format!("switched to {} screen", self.active_screen.label());
+                ShellKeyOutcome::Continue
+            }
+            KeyCode::Char('1') => {
+                self.active_screen = ShellScreen::Jam;
+                self.status_message = "switched to jam screen".into();
+                ShellKeyOutcome::Continue
+            }
+            KeyCode::Char('2') => {
+                self.active_screen = ShellScreen::Log;
+                self.status_message = "switched to log screen".into();
+                ShellKeyOutcome::Continue
+            }
             KeyCode::Char(' ') => {
                 self.status_message = "transport toggle requested".into();
                 ShellKeyOutcome::ToggleTransport
@@ -137,22 +178,38 @@ pub fn render_jam_shell(frame: &mut Frame<'_>, shell: &JamShellState) {
         .direction(Direction::Vertical)
         .constraints([
             Constraint::Length(4),
-            Constraint::Length(7),
-            Constraint::Length(9),
-            Constraint::Min(7),
+            Constraint::Length(3),
+            Constraint::Min(17),
             Constraint::Length(5),
         ])
         .split(area);
 
     render_header(frame, rows[0], shell);
-    render_overview_row(frame, rows[1], shell);
-    render_source_row(frame, rows[2], shell);
-    render_action_rows(frame, rows[3], shell);
-    render_footer(frame, rows[4], shell);
+    render_screen_tabs(frame, rows[1], shell);
+    match shell.active_screen {
+        ShellScreen::Jam => render_jam_body(frame, rows[2], shell),
+        ShellScreen::Log => render_log_body(frame, rows[2], shell),
+    }
+    render_footer(frame, rows[3], shell);
 
     if shell.show_help {
         render_help_overlay(frame, area, shell);
     }
+}
+
+fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(7),
+            Constraint::Length(9),
+            Constraint::Min(7),
+        ])
+        .split(area);
+
+    render_overview_row(frame, rows[0], shell);
+    render_source_row(frame, rows[1], shell);
+    render_action_rows(frame, rows[2], shell);
 }
 
 #[must_use]
@@ -188,8 +245,9 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let paragraph = Paragraph::new(vec![
         Line::from("Riotbox Jam"),
         Line::from(format!(
-            "Mode {} | Source {} | {} | trust {}",
+            "Mode {} | Screen {} | Source {} | {} | trust {}",
             shell.launch_mode.label(),
+            shell.active_screen.label(),
             source.source_id,
             bpm_text,
             trust.headline
@@ -201,6 +259,38 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         )),
     ])
     .block(Block::default().title("Jam").borders(Borders::ALL))
+    .wrap(Wrap { trim: true });
+
+    frame.render_widget(paragraph, area);
+}
+
+fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let jam_label = if shell.active_screen == ShellScreen::Jam {
+        "[1 Jam]"
+    } else {
+        "1 Jam"
+    };
+    let log_label = if shell.active_screen == ShellScreen::Log {
+        "[2 Log]"
+    } else {
+        "2 Log"
+    };
+
+    let paragraph = Paragraph::new(vec![
+        Line::from(format!("Screens: {jam_label} | {log_label} | Tab switch")),
+        Line::from(format!(
+            "Purpose: {}",
+            match shell.active_screen {
+                ShellScreen::Jam => {
+                    "instrument surface for immediate control and pending musical change"
+                }
+                ShellScreen::Log => {
+                    "trust surface for queued, committed, rejected, and undone actions"
+                }
+            }
+        )),
+    ])
+    .block(Block::default().title("Navigation").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
     frame.render_widget(paragraph, area);
@@ -407,10 +497,130 @@ fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     frame.render_widget(capture, columns[2]);
 }
 
+fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let rows = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(6), Constraint::Min(10)])
+        .split(area);
+
+    let summary_columns = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(rows[0]);
+
+    let history = &shell.app.session.action_log.actions;
+    let committed_count = history
+        .iter()
+        .filter(|action| action.status == riotbox_core::action::ActionStatus::Committed)
+        .count();
+    let rejected_count = history
+        .iter()
+        .filter(|action| action.status == riotbox_core::action::ActionStatus::Rejected)
+        .count();
+    let undone_count = history
+        .iter()
+        .filter(|action| action.status == riotbox_core::action::ActionStatus::Undone)
+        .count();
+    let ghost_count = history
+        .iter()
+        .filter(|action| action.actor == riotbox_core::action::ActorType::Ghost)
+        .count();
+
+    let counts = Paragraph::new(vec![
+        Line::from(format!(
+            "pending {}",
+            shell.app.queue.pending_actions().len()
+        )),
+        Line::from(format!("committed {committed_count} | ghost {ghost_count}")),
+        Line::from(format!("rejected {rejected_count} | undone {undone_count}")),
+    ])
+    .block(Block::default().title("Counts").borders(Borders::ALL))
+    .wrap(Wrap { trim: true });
+
+    let boundary = shell
+        .app
+        .runtime
+        .last_commit_boundary
+        .as_ref()
+        .map(|boundary| {
+            format!(
+                "{:?} @ beat {} bar {} phrase {}",
+                boundary.kind, boundary.beat_index, boundary.bar_index, boundary.phrase_index
+            )
+        })
+        .unwrap_or_else(|| "no commit boundary yet".into());
+    let current_scene = shell
+        .app
+        .runtime
+        .transport
+        .current_scene
+        .as_ref()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| "none".into());
+    let focus = Paragraph::new(vec![
+        Line::from(format!("scene {current_scene}")),
+        Line::from(format!(
+            "transport beat {:.1} | playing {}",
+            shell.app.runtime.transport.position_beats, shell.app.runtime.transport.is_playing
+        )),
+        Line::from(format!("last boundary {boundary}")),
+    ])
+    .block(Block::default().title("Focus").borders(Borders::ALL))
+    .wrap(Wrap { trim: true });
+
+    let warnings = log_warning_lines(shell);
+    let warnings_panel = Paragraph::new(warnings)
+        .block(Block::default().title("Warnings").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(counts, summary_columns[0]);
+    frame.render_widget(focus, summary_columns[1]);
+    frame.render_widget(warnings_panel, summary_columns[2]);
+
+    let columns = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(rows[1]);
+
+    let pending_panel = Paragraph::new(pending_log_lines(shell))
+        .block(
+            Block::default()
+                .title("Queued / Pending")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let committed_panel = Paragraph::new(committed_log_lines(shell))
+        .block(
+            Block::default()
+                .title("Accepted / Committed")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let rejected_panel = Paragraph::new(exception_log_lines(shell))
+        .block(
+            Block::default()
+                .title("Rejected / Undone")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(pending_panel, columns[0]);
+    frame.render_widget(committed_panel, columns[1]);
+    frame.render_widget(rejected_panel, columns[2]);
+}
+
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | space play/pause | r {}",
+        "Keys: q quit | ? help | 1 jam | 2 log | Tab switch | space play/pause | r {}",
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
@@ -458,6 +668,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("Jam shell keys"),
         Line::from("q or Esc: quit"),
         Line::from("? or h: toggle help"),
+        Line::from("1: Jam screen | 2: Log screen | Tab: next screen"),
         Line::from("space: play / pause transport"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
@@ -467,6 +678,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("u: undo most recent undoable action"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
+        Line::from(format!("Current screen: {}", shell.active_screen.label())),
         Line::from(shell.status_message.clone()),
     ])
     .block(Block::default().title("Help").borders(Borders::ALL))
@@ -686,6 +898,164 @@ fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
+fn pending_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let pending = shell.app.queue.pending_actions();
+    if pending.is_empty() {
+        return vec![Line::from("no queued or pending actions")];
+    }
+
+    let mut lines = Vec::new();
+    for action in pending.into_iter().take(4) {
+        lines.push(Line::from(format!(
+            "{} {} {}",
+            action.id, action.actor, action.command
+        )));
+        lines.push(Line::from(format!(
+            "status {} | when {} | target {}",
+            format!("{:?}", action.status).to_lowercase(),
+            action.quantization,
+            action_target_label(&action.target)
+        )));
+        lines.push(Line::from(format!(
+            "requested {}{}",
+            action.requested_at,
+            action
+                .explanation
+                .as_ref()
+                .map(|explanation| format!(" | {explanation}"))
+                .unwrap_or_default()
+        )));
+        lines.push(Line::from(""));
+    }
+
+    lines
+}
+
+fn committed_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let committed: Vec<_> = shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .filter(|action| action.status == riotbox_core::action::ActionStatus::Committed)
+        .take(4)
+        .collect();
+
+    if committed.is_empty() {
+        return vec![Line::from("no committed actions yet")];
+    }
+
+    action_entry_lines(committed)
+}
+
+fn exception_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let exceptions: Vec<_> = shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .filter(|action| {
+            matches!(
+                action.status,
+                riotbox_core::action::ActionStatus::Rejected
+                    | riotbox_core::action::ActionStatus::Undone
+                    | riotbox_core::action::ActionStatus::Failed
+            )
+        })
+        .take(4)
+        .collect();
+
+    if exceptions.is_empty() {
+        return vec![Line::from("no rejected, failed, or undone actions")];
+    }
+
+    action_entry_lines(exceptions)
+}
+
+fn action_entry_lines(actions: Vec<&riotbox_core::action::Action>) -> Vec<Line<'static>> {
+    let mut lines = Vec::new();
+    for action in actions {
+        lines.push(Line::from(format!(
+            "{} {} {}",
+            action.id, action.actor, action.command
+        )));
+        lines.push(Line::from(format!(
+            "status {} | when {} | target {}",
+            format!("{:?}", action.status).to_lowercase(),
+            action.quantization,
+            action_target_label(&action.target)
+        )));
+        lines.push(Line::from(format!(
+            "requested {} | committed {}",
+            action.requested_at,
+            action
+                .committed_at
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "-".into())
+        )));
+        if let Some(result) = &action.result {
+            lines.push(Line::from(format!("result {}", result.summary)));
+        } else if let Some(explanation) = &action.explanation {
+            lines.push(Line::from(format!("note {explanation}")));
+        }
+        lines.push(Line::from(""));
+    }
+
+    lines
+}
+
+fn action_target_label(target: &riotbox_core::action::ActionTarget) -> String {
+    let Some(scope) = &target.scope else {
+        return "unset".into();
+    };
+
+    let detail = if let Some(scene_id) = &target.scene_id {
+        scene_id.to_string()
+    } else if let Some(bank_id) = &target.bank_id {
+        match &target.pad_id {
+            Some(pad_id) => format!("{bank_id}/{pad_id}"),
+            None => bank_id.to_string(),
+        }
+    } else if let Some(loop_id) = &target.loop_id {
+        loop_id.to_string()
+    } else if let Some(object_id) = &target.object_id {
+        object_id.clone()
+    } else {
+        String::new()
+    };
+
+    let scope = format!("{scope:?}").to_lowercase();
+    if detail.is_empty() {
+        scope
+    } else {
+        format!("{scope}:{detail}")
+    }
+}
+
+fn log_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let warnings: Vec<_> = shell
+        .app
+        .runtime_view
+        .runtime_warnings
+        .iter()
+        .chain(shell.app.jam_view.warnings.iter())
+        .take(3)
+        .cloned()
+        .collect();
+    if warnings.is_empty() {
+        return vec![Line::from("no active runtime or trust warnings")];
+    }
+
+    warnings
+        .into_iter()
+        .map(|warning| Line::from(format!("warning {warning}")))
+        .collect()
+}
+
 struct TrustSummary {
     headline: &'static str,
     overall_confidence: f32,
@@ -798,6 +1168,54 @@ mod tests {
             undo_policy: UndoPolicy::Undoable,
             explanation: Some("capture opener".into()),
         });
+        session.action_log.actions.push(Action {
+            id: ActionId(2),
+            actor: ActorType::Ghost,
+            command: ActionCommand::MutateScene,
+            params: ActionParams::Mutation {
+                intensity: 0.4,
+                target_id: Some("scene-a".into()),
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::Scene),
+                scene_id: Some(SceneId::from("scene-a")),
+                ..Default::default()
+            },
+            requested_at: 125,
+            quantization: Quantization::NextPhrase,
+            status: ActionStatus::Rejected,
+            committed_at: None,
+            result: Some(ActionResult {
+                accepted: false,
+                summary: "scene lock blocked ghost mutation".into(),
+            }),
+            undo_policy: UndoPolicy::NotUndoable {
+                reason: "rejected actions do not create undo state".into(),
+            },
+            explanation: Some("ghost suggestion rejected".into()),
+        });
+        session.action_log.actions.push(Action {
+            id: ActionId(3),
+            actor: ActorType::User,
+            command: ActionCommand::UndoLast,
+            params: ActionParams::Empty,
+            target: ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..Default::default()
+            },
+            requested_at: 140,
+            quantization: Quantization::Immediate,
+            status: ActionStatus::Undone,
+            committed_at: Some(140),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "undid most recent musical action".into(),
+            }),
+            undo_policy: UndoPolicy::NotUndoable {
+                reason: "undo markers are not undoable".into(),
+            },
+            explanation: Some("user trust correction".into()),
+        });
 
         let mut graph = SourceGraph::new(
             SourceDescriptor {
@@ -907,7 +1325,7 @@ mod tests {
         assert!(rendered.contains("overall"));
         assert!(rendered.contains("warnings"));
         assert!(rendered.contains("recent"));
-        assert!(rendered.contains("committed"));
+        assert!(rendered.contains("[commit"));
         assert!(rendered.contains("Capture"));
     }
 
@@ -927,6 +1345,18 @@ mod tests {
             ShellKeyOutcome::RequestRefresh
         );
         assert_eq!(shell.status_message, "re-ingest source requested");
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('2')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.active_screen, ShellScreen::Log);
+        assert_eq!(shell.status_message, "switched to log screen");
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Tab),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.active_screen, ShellScreen::Jam);
+        assert_eq!(shell.status_message, "switched to jam screen");
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('m')),
             ShellKeyOutcome::QueueSceneMutation
@@ -953,5 +1383,22 @@ mod tests {
         );
 
         assert_eq!(shell.handle_key_code(KeyCode::Esc), ShellKeyOutcome::Quit);
+    }
+
+    #[test]
+    fn renders_log_shell_snapshot_with_action_trust_history() {
+        let mut shell = sample_shell_state();
+        shell.active_screen = ShellScreen::Log;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("[2 Log]"));
+        assert!(rendered.contains("Queued / Pending"));
+        assert!(rendered.contains("Accepted / Committed"));
+        assert!(rendered.contains("Rejected / Undone"));
+        assert!(rendered.contains("ghost"));
+        assert!(rendered.contains("mutate.scene"));
+        assert!(rendered.contains("scene lock blocked ghost"));
+        assert!(rendered.contains("mutation"));
+        assert!(rendered.contains("undid most recent musical"));
     }
 }

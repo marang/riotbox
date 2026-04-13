@@ -315,6 +315,18 @@ Evidence: `riotbox-core` and `riotbox-app` now track TR-909 fill and reinforceme
 Consequences: later TR-909 slices should consume the same lane state for audible pattern generation and drum reinforcement rather than bypassing it. This slice does not yet satisfy full TR-909 MVP exit criteria because audible reinforcement still remains out of scope.  
 Status: accepted
 
+### RBX-024
+
+Date: 2026-04-13
+Topic: the next TUI slice should add a Log screen instead of inventing a second action-trust surface
+Phase: Jam-first Playable Slice
+Question: after Jam has real queued actions, capture materialization, and the first TR-909 device cues, what is the smallest next UI slice that improves user trust without opening a parallel editor path?
+Decision: add the first `Log` screen directly inside the existing shell, with explicit screen switching between `Jam` and `Log`, and render queued, committed, rejected, and undone actions from the current session and queue state. Keep the slice read-only and avoid introducing a second log model or a separate inspector runtime.
+Why: the TUI spec already prioritizes `Log` immediately after `Jam`, and the current product gap is not a lack of more device controls but a lack of visible action trust. Now that Riotbox has real actions and side effects, users need a dedicated trust surface that answers what just changed, what is queued, and why outcomes differed.
+Evidence: `riotbox-app` now has shell-level screen switching, a first Log screen using existing action/session/runtime state, tests covering screen switching and log rendering, and a normalized baseline artifact in `docs/screenshots/jam_log_screen_baseline.txt`.
+Consequences: later TUI work should keep `Jam` as the performance surface and deepen `Log` as the trust/history surface instead of adding parallel inspector screens for the same information. Filtering, search, and Ghost-specific log detail remain out of scope for this slice.
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

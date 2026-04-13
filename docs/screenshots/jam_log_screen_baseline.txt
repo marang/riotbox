@@ -1,0 +1,34 @@
+┌Jam───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Riotbox Jam                                                                                                           │
+│Mode ingest | Screen log | Source src-1 | 126.0 BPM | trust usable                                                    │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Navigation────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Screens: 1 Jam | [2 Log] | Tab switch                                                                                 │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+┌Counts─────────────────────────────────┐┌Focus────────────────────────────────┐┌Warnings──────────────────────────────┐
+│pending 1                              ││scene scene-a                        ││warning decoded-source baseline used  │
+│committed 1 | ghost 1                  ││transport beat 32.0 | playing false  ││WAV metadata and simple energy        │
+│rejected 1 | undone 1                  ││last boundary no commit boundary yet ││heuristics                            │
+│                                       ││                                     ││                                      │
+└───────────────────────────────────────┘└─────────────────────────────────────┘└──────────────────────────────────────┘
+┌Queued / Pending───────────────────────┐┌Accepted / Committed─────────────────┐┌Rejected / Undone─────────────────────┐
+│a-0001 ghost mutate.scene              ││a-0001 user capture.now              ││a-0003 user undo.last                 │
+│status queued | when next_bar | target ││status committed | when next_bar |   ││status undone | when immediate |      │
+│scene                                  ││target lanew30                       ││target session                        │
+│requested 130                          ││requested 100 | committed 120        ││requested 140 | committed 140         │
+│                                       ││result captured                      ││result undid most recent musical      │
+│                                       ││                                     ││action                                │
+│                                       ││                                     ││                                      │
+│                                       ││                                     ││a-0002 ghost mutate.scene             │
+│                                       ││                                     ││status rejected | when next_phrase |  │
+│                                       ││                                     ││target scene:scene-a                  │
+│                                       ││                                     ││requested 125 | committed -           │
+│                                       ││                                     ││result scene lock blocked ghost       │
+│                                       ││                                     ││mutation                              │
+│                                       ││                                     ││                                      │
+└───────────────────────────────────────┘└─────────────────────────────────────┘└──────────────────────────────────────┘
+┌Footer────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│Keys: q quit | ? help | 1 jam | 2 log | Tab switch | space play/pause | r re-ingest source                            │
+│Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | u undo                                    │
+│Status: ingested source into Jam shell | audio unknown | sidecar unknown                                              │
+└──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
