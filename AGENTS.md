@@ -174,6 +174,17 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - workflow/documentation gaps introduced by the slice
 - If the self-review finds a real issue, fix it on the branch before creating the PR when feasible
 
+### CI gate
+
+- After opening a PR, inspect the GitHub Actions / CI results explicitly.
+- Do not treat a ticket as merely "waiting for review" if CI is red.
+- If CI fails and the failure is relevant to the slice, fix it on the same branch before considering the review boundary clean.
+- At minimum, check:
+  - formatter status
+  - test status
+  - lint status
+  - any slice-specific workflow required by the repo
+
 ### PR descriptions
 
 - Every PR description should include a short `Why This Matters` section.

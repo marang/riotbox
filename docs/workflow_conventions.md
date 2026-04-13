@@ -41,12 +41,14 @@ For a normal implementation or docs slice:
 4. run the relevant local verification
 5. do a self-review on the branch diff
 6. open a PR
-7. move the Linear issue to `In Review`
-8. add a human-readable issue update
-9. add a project-level update in the `Riotbox Project Updates` Linear document
-10. wait for merge / approval boundary before continuing to the next ticket
-11. after merge, sync local `main`
-12. move the issue to `Done`
+7. inspect GitHub Actions / CI output for the PR
+8. if CI is red and the failure belongs to the slice, fix it before treating the review boundary as clean
+9. move the Linear issue to `In Review`
+10. add a human-readable issue update
+11. add a project-level update in the `Riotbox Project Updates` Linear document
+12. wait for merge / approval boundary before continuing to the next ticket
+13. after merge, sync local `main`
+14. move the issue to `Done`
 
 This is the default unless the user explicitly asks for something else.
 
@@ -115,11 +117,30 @@ Do not write PR descriptions as changelogs only.
 Once a PR is open for a ticket:
 
 - treat that ticket as being at the review boundary
+- inspect the CI / GitHub Actions output explicitly
+- if CI is red, treat the branch as still active work until the relevant failures are addressed
 - prefer not to continue the next main ticket until the PR is merged
 - small follow-up fixes on the same PR are fine
 - do not silently bundle the next unrelated slice into the same PR
 
 This keeps review history and Linear issue history aligned.
+
+## 7.2 CI Check After PR Open
+
+After opening a PR, explicitly inspect the GitHub Actions / CI status.
+
+Minimum expectation:
+
+- formatter check passes
+- test suite passes
+- lint / static analysis passes
+- any slice-specific workflow required by the repo is checked
+
+Rules:
+
+- do not assume CI is fine just because local checks passed
+- if a CI failure is caused by the current slice, fix it on the same branch before treating the ticket as cleanly in review
+- mention important CI failures and fixes in the Linear issue update when they happen
 
 ## 7.1 Self-Review Before PR
 
