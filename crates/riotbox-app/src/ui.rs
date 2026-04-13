@@ -44,6 +44,7 @@ pub enum ShellKeyOutcome {
     ToggleTransport,
     QueueSceneMutation,
     QueueTr909Fill,
+    QueueTr909Reinforce,
     QueueCaptureBar,
     UndoLast,
     Quit,
@@ -100,6 +101,10 @@ impl JamShellState {
             KeyCode::Char('f') => {
                 self.status_message = "queue TR-909 fill on next bar".into();
                 ShellKeyOutcome::QueueTr909Fill
+            }
+            KeyCode::Char('d') => {
+                self.status_message = "queue TR-909 reinforcement on next phrase".into();
+                ShellKeyOutcome::QueueTr909Reinforce
             }
             KeyCode::Char('c') => {
                 self.status_message = "queue capture on next phrase".into();
@@ -286,6 +291,31 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 "off"
             }
         )),
+        Line::from(format!(
+            "fill armed: {} | last bar {}",
+            if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
+                "yes"
+            } else {
+                "no"
+            },
+            shell
+                .app
+                .jam_view
+                .lanes
+                .tr909_last_fill_bar
+                .map(|bar| bar.to_string())
+                .unwrap_or_else(|| "-".into())
+        )),
+        Line::from(format!(
+            "909 mode: {}",
+            shell
+                .app
+                .jam_view
+                .lanes
+                .tr909_reinforcement_mode
+                .as_deref()
+                .unwrap_or("unset")
+        )),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -384,7 +414,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | f TR-909 fill | c capture phrase | u undo",
+        "Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {}",
@@ -432,6 +462,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
         Line::from("f: queue TR-909 fill on next bar"),
+        Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("u: undo most recent undoable action"),
         Line::from(""),
@@ -744,6 +775,9 @@ mod tests {
         session.runtime_state.lane_state.mc202.role = Some("leader".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.ghost_state.mode = GhostMode::Assist;
+        session.runtime_state.lane_state.tr909.fill_armed_next_bar = true;
+        session.runtime_state.lane_state.tr909.last_fill_bar = Some(6);
+        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
         session.action_log.actions.push(Action {
             id: ActionId(1),
             actor: ActorType::User,
@@ -900,6 +934,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('f')),
             ShellKeyOutcome::QueueTr909Fill
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('d')),
+            ShellKeyOutcome::QueueTr909Reinforce
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('c')),

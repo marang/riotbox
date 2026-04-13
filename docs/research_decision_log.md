@@ -303,6 +303,18 @@ Evidence: committed capture actions in `riotbox-app` now append `CaptureRef` rec
 Consequences: later Capture-screen work and W-30 MVP work should build on these same session capture records rather than inventing a second capture inventory. Deep sample editing and resample routing remain out of scope for this slice.  
 Status: accepted
 
+### RBX-023
+
+Date: 2026-04-13  
+Topic: TR-909 MVP should start with explicit lane-state side effects before audible drum generation  
+Phase: TR-909 MVP  
+Question: after the Jam shell can queue and commit safe actions, what is the smallest TR-909 slice that moves the first device MVP forward without pretending the audio engine already supports real drum reinforcement?  
+Decision: let committed TR-909 actions update explicit lane state for fill arming, last fill bar, pattern reference, and reinforcement mode, and surface those cues in the Jam shell. Keep the slice inside the current session/action/view seam and defer actual audible drum synthesis to a later audio-facing step.  
+Why: Riotbox needs a real device seam before it can support believable TR-909 audio work. The first honest increment is to make `TR-909 fill` and `TR-909 reinforce` actions produce replayable device state that the shell can show and later audio work can consume. That preserves continuity from Phase E into Phase F instead of jumping directly from UI hints to untracked audio behavior.  
+Evidence: `riotbox-core` and `riotbox-app` now track TR-909 fill and reinforcement state explicitly, committed TR-909 actions mutate that state at transport boundaries, the Jam shell surfaces the resulting cues, and tests cover the new side effects plus keybinding entry.  
+Consequences: later TR-909 slices should consume the same lane state for audible pattern generation and drum reinforcement rather than bypassing it. This slice does not yet satisfy full TR-909 MVP exit criteria because audible reinforcement still remains out of scope.  
+Status: accepted
+
 ---
 
 ## 4. Mandatory Research Topics

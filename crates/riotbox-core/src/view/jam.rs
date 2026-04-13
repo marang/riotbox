@@ -91,6 +91,18 @@ impl JamViewModel {
                     .as_ref()
                     .map(ToString::to_string),
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
+                tr909_fill_armed_next_bar: session
+                    .runtime_state
+                    .lane_state
+                    .tr909
+                    .fill_armed_next_bar,
+                tr909_last_fill_bar: session.runtime_state.lane_state.tr909.last_fill_bar,
+                tr909_reinforcement_mode: session
+                    .runtime_state
+                    .lane_state
+                    .tr909
+                    .reinforcement_mode
+                    .clone(),
             },
             capture: CaptureSummaryView {
                 capture_count: session.captures.len(),
@@ -183,6 +195,9 @@ pub struct LaneSummaryView {
     pub mc202_role: Option<String>,
     pub w30_active_bank: Option<String>,
     pub tr909_slam_enabled: bool,
+    pub tr909_fill_armed_next_bar: bool,
+    pub tr909_last_fill_bar: Option<u64>,
+    pub tr909_reinforcement_mode: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -318,6 +333,9 @@ mod tests {
         session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
         session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
         session.runtime_state.lane_state.tr909.slam_enabled = true;
+        session.runtime_state.lane_state.tr909.fill_armed_next_bar = true;
+        session.runtime_state.lane_state.tr909.last_fill_bar = Some(8);
+        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
         session.ghost_state.mode = GhostMode::Assist;
         session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
             proposal_id: "gp-1".into(),
@@ -385,6 +403,9 @@ mod tests {
             vm.capture.last_capture_target.as_deref(),
             Some("pad bank-a/pad-01")
         );
+        assert!(vm.lanes.tr909_fill_armed_next_bar);
+        assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
+        assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
         assert_eq!(vm.pending_actions.len(), 1);
         assert_eq!(vm.ghost.mode, "assist");
     }

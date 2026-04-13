@@ -160,6 +160,9 @@ pub struct W30LaneState {
 pub struct Tr909LaneState {
     pub pattern_ref: Option<String>,
     pub slam_enabled: bool,
+    pub fill_armed_next_bar: bool,
+    pub last_fill_bar: Option<u64>,
+    pub reinforcement_mode: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

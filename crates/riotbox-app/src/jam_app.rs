@@ -382,6 +382,26 @@ impl JamAppState {
         );
         draft.explanation = Some("trigger TR-909 fill on next bar".into());
         self.queue.enqueue(draft, requested_at);
+        self.session
+            .runtime_state
+            .lane_state
+            .tr909
+            .fill_armed_next_bar = true;
+        self.refresh_view();
+    }
+
+    pub fn queue_tr909_reinforce(&mut self, requested_at: TimestampMs) {
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Tr909ReinforceBreak,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneTr909),
+                ..Default::default()
+            },
+        );
+        draft.explanation = Some("reinforce next phrase with TR-909 drum layer".into());
+        self.queue.enqueue(draft, requested_at);
         self.refresh_view();
     }
 
@@ -467,7 +487,7 @@ impl JamAppState {
             if let Some(action) = self.queue.history_action(committed_ref.action_id) {
                 let action = action.clone();
                 self.session.action_log.actions.push(action.clone());
-                self.apply_committed_action_side_effects(&action);
+                self.apply_committed_action_side_effects(&action, &boundary);
             }
         }
 
@@ -476,7 +496,11 @@ impl JamAppState {
         committed
     }
 
-    fn apply_committed_action_side_effects(&mut self, action: &Action) {
+    fn apply_committed_action_side_effects(
+        &mut self,
+        action: &Action,
+        boundary: &CommitBoundaryState,
+    ) {
         if let Some(capture) =
             capture_ref_from_action(&self.session, self.source_graph.as_ref(), action)
         {
@@ -484,6 +508,8 @@ impl JamAppState {
                 Some(capture.capture_id.clone());
             self.session.captures.push(capture);
         }
+
+        apply_tr909_side_effects(&mut self.session, action, Some(boundary));
     }
 
     pub fn save(&self) -> Result<(), JamAppError> {
@@ -714,6 +740,34 @@ fn capture_note(action: &Action) -> String {
     match &action.explanation {
         Some(explanation) if !explanation.is_empty() => explanation.clone(),
         _ => format!("capture committed from {}", action.command),
+    }
+}
+
+fn apply_tr909_side_effects(
+    session: &mut SessionFile,
+    action: &Action,
+    boundary: Option<&CommitBoundaryState>,
+) {
+    match action.command {
+        ActionCommand::Tr909FillNext => {
+            session.runtime_state.lane_state.tr909.fill_armed_next_bar = false;
+            session.runtime_state.lane_state.tr909.last_fill_bar =
+                boundary.map(|boundary| boundary.bar_index);
+            session.runtime_state.lane_state.tr909.pattern_ref =
+                boundary.map(|boundary| format!("fill-bar-{}", boundary.bar_index));
+            session.runtime_state.lane_state.tr909.reinforcement_mode = Some("fills".into());
+        }
+        ActionCommand::Tr909ReinforceBreak => {
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some("break_reinforce".into());
+            session.runtime_state.lane_state.tr909.pattern_ref = boundary.map(|boundary| {
+                boundary.scene_id.as_ref().map_or_else(
+                    || format!("reinforce-phrase-{}", boundary.phrase_index),
+                    |scene_id| format!("reinforce-{scene_id}"),
+                )
+            });
+        }
+        _ => {}
     }
 }
 
@@ -1320,18 +1374,29 @@ mod tests {
 
         state.queue_scene_mutation(300);
         state.queue_tr909_fill(301);
-        state.queue_capture_bar(302);
+        state.queue_tr909_reinforce(302);
+        state.queue_capture_bar(303);
 
         let pending = state.queue.pending_actions();
 
-        assert_eq!(pending.len(), 3);
+        assert_eq!(pending.len(), 4);
         assert_eq!(pending[0].command, ActionCommand::MutateScene);
         assert_eq!(pending[0].quantization, Quantization::NextBar);
         assert_eq!(pending[1].command, ActionCommand::Tr909FillNext);
         assert_eq!(pending[1].quantization, Quantization::NextBar);
-        assert_eq!(pending[2].command, ActionCommand::CaptureBarGroup);
+        assert_eq!(pending[2].command, ActionCommand::Tr909ReinforceBreak);
         assert_eq!(pending[2].quantization, Quantization::NextPhrase);
-        assert_eq!(state.jam_view.pending_actions.len(), 3);
+        assert_eq!(pending[3].command, ActionCommand::CaptureBarGroup);
+        assert_eq!(pending[3].quantization, Quantization::NextPhrase);
+        assert!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .fill_armed_next_bar
+        );
+        assert_eq!(state.jam_view.pending_actions.len(), 4);
     }
 
     #[test]
@@ -1409,6 +1474,65 @@ mod tests {
             Some("pad bank-a/pad-01")
         );
         assert_eq!(state.jam_view.capture.last_capture_origin_count, 2);
+    }
+
+    #[test]
+    fn committed_tr909_actions_update_lane_state() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.queue_tr909_fill(300);
+        state.queue_tr909_reinforce(301);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 2);
+        assert_eq!(
+            state.session.runtime_state.lane_state.tr909.last_fill_bar,
+            Some(9)
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .pattern_ref
+                .as_deref(),
+            Some("reinforce-scene-1")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .reinforcement_mode
+                .as_deref(),
+            Some("break_reinforce")
+        );
+        assert!(
+            !state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .fill_armed_next_bar
+        );
+        assert_eq!(
+            state.jam_view.lanes.tr909_reinforcement_mode.as_deref(),
+            Some("break_reinforce")
+        );
     }
 
     #[test]

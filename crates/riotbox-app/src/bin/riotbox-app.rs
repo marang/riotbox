@@ -145,6 +145,10 @@ fn run_event_loop(
                     shell.app.queue_tr909_fill(timestamp_now());
                     shell.set_error_status("queued TR-909 fill for next bar");
                 }
+                ShellKeyOutcome::QueueTr909Reinforce => {
+                    shell.app.queue_tr909_reinforce(timestamp_now());
+                    shell.set_error_status("queued TR-909 reinforcement for next phrase");
+                }
                 ShellKeyOutcome::QueueCaptureBar => {
                     shell.app.queue_capture_bar(timestamp_now());
                     shell.set_error_status("queued capture for next phrase");
