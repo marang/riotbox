@@ -153,6 +153,13 @@ fn run_event_loop(
                     shell.app.queue_capture_bar(timestamp_now());
                     shell.set_error_status("queued capture for next phrase");
                 }
+                ShellKeyOutcome::PromoteLastCapture => {
+                    if shell.app.queue_promote_last_capture(timestamp_now()) {
+                        shell.set_error_status("queued promotion for latest capture");
+                    } else {
+                        shell.set_error_status("no promotable capture or W-30 target available");
+                    }
+                }
                 ShellKeyOutcome::UndoLast => {
                     if shell.app.undo_last_action(timestamp_now()).is_some() {
                         shell.set_error_status("undid most recent action");

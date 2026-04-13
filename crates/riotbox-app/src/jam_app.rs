@@ -421,6 +421,63 @@ impl JamAppState {
         self.refresh_view();
     }
 
+    pub fn queue_promote_last_capture(&mut self, requested_at: TimestampMs) -> bool {
+        let Some(capture) = self
+            .session
+            .captures
+            .iter()
+            .rev()
+            .find(|capture| capture.assigned_target.is_none())
+            .or_else(|| self.session.captures.last())
+        else {
+            return false;
+        };
+
+        let Some(bank_id) = self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .clone()
+        else {
+            return false;
+        };
+        let Some(pad_id) = self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .focused_pad
+            .clone()
+        else {
+            return false;
+        };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::PromoteCaptureToPad,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Promotion {
+            capture_id: Some(capture.capture_id.clone()),
+            destination: Some(format!("w30:{bank_id}/{pad_id}")),
+        };
+        draft.explanation = Some(format!(
+            "promote {} into W-30 pad {bank_id}/{pad_id}",
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        true
+    }
+
     pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
         let next_undo_action_id = next_action_id_from_session(&self.session);
 
@@ -507,6 +564,22 @@ impl JamAppState {
             self.session.runtime_state.lane_state.w30.last_capture =
                 Some(capture.capture_id.clone());
             self.session.captures.push(capture);
+        } else if apply_capture_promotion_side_effects(&mut self.session, action) {
+            let result_summary = capture_promotion_summary(&self.session, action)
+                .unwrap_or_else(|| "promotion committed".into());
+            if let Some(logged_action) = self
+                .session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: result_summary,
+                });
+            }
         }
 
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
@@ -692,21 +765,23 @@ fn capture_ref_from_action(
 ) -> Option<CaptureRef> {
     let capture_type = match action.command {
         ActionCommand::CaptureNow | ActionCommand::CaptureLoop => CaptureType::Loop,
-        ActionCommand::CaptureBarGroup => CaptureType::Pad,
-        ActionCommand::W30CaptureToPad | ActionCommand::PromoteCaptureToPad => CaptureType::Pad,
-        ActionCommand::PromoteResample => CaptureType::Resample,
+        ActionCommand::CaptureBarGroup | ActionCommand::W30CaptureToPad => CaptureType::Pad,
         _ => return None,
     };
 
+    let assigned_target = match action.command {
+        ActionCommand::W30CaptureToPad => session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .clone()
+            .zip(session.runtime_state.lane_state.w30.focused_pad.clone())
+            .map(|(bank_id, pad_id)| CaptureTarget::W30Pad { bank_id, pad_id }),
+        _ => None,
+    };
+
     let capture_id = next_capture_id(session);
-    let assigned_target = session
-        .runtime_state
-        .lane_state
-        .w30
-        .active_bank
-        .clone()
-        .zip(session.runtime_state.lane_state.w30.focused_pad.clone())
-        .map(|(bank_id, pad_id)| CaptureTarget::W30Pad { bank_id, pad_id });
     let source_origin_refs = source_graph
         .map(capture_origin_refs)
         .unwrap_or_else(|| vec!["source-graph-unavailable".into()]);
@@ -720,6 +795,43 @@ fn capture_ref_from_action(
         created_from_action: Some(action.id),
         assigned_target,
     })
+}
+
+fn apply_capture_promotion_side_effects(session: &mut SessionFile, action: &Action) -> bool {
+    if !matches!(
+        action.command,
+        ActionCommand::PromoteCaptureToPad | ActionCommand::PromoteCaptureToScene
+    ) {
+        return false;
+    }
+
+    let target = match promotion_target_from_action(session, action) {
+        Some(target) => target,
+        None => return false,
+    };
+    let capture_id = match promotion_capture_id(session, action) {
+        Some(capture_id) => capture_id,
+        None => return false,
+    };
+
+    let Some(capture) = session
+        .captures
+        .iter_mut()
+        .find(|capture| capture.capture_id == capture_id)
+    else {
+        return false;
+    };
+
+    capture.assigned_target = Some(target.clone());
+    capture.notes = Some(updated_capture_note(capture.notes.as_deref(), &target));
+
+    session.runtime_state.lane_state.w30.last_capture = Some(capture.capture_id.clone());
+    if let CaptureTarget::W30Pad { bank_id, pad_id } = target {
+        session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
+        session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
+    }
+
+    true
 }
 
 fn capture_origin_refs(graph: &SourceGraph) -> Vec<String> {
@@ -740,6 +852,73 @@ fn capture_note(action: &Action) -> String {
     match &action.explanation {
         Some(explanation) if !explanation.is_empty() => explanation.clone(),
         _ => format!("capture committed from {}", action.command),
+    }
+}
+
+fn promotion_capture_id(session: &SessionFile, action: &Action) -> Option<CaptureId> {
+    match &action.params {
+        ActionParams::Promotion {
+            capture_id: Some(capture_id),
+            ..
+        } => Some(capture_id.clone()),
+        _ => session
+            .captures
+            .last()
+            .map(|capture| capture.capture_id.clone()),
+    }
+}
+
+fn promotion_target_from_action(session: &SessionFile, action: &Action) -> Option<CaptureTarget> {
+    match action.command {
+        ActionCommand::PromoteCaptureToPad => action
+            .target
+            .bank_id
+            .clone()
+            .or_else(|| session.runtime_state.lane_state.w30.active_bank.clone())
+            .zip(
+                action
+                    .target
+                    .pad_id
+                    .clone()
+                    .or_else(|| session.runtime_state.lane_state.w30.focused_pad.clone()),
+            )
+            .map(|(bank_id, pad_id)| CaptureTarget::W30Pad { bank_id, pad_id }),
+        ActionCommand::PromoteCaptureToScene => {
+            action.target.scene_id.clone().map(CaptureTarget::Scene)
+        }
+        _ => None,
+    }
+}
+
+fn promotion_note(target: &CaptureTarget) -> String {
+    match target {
+        CaptureTarget::W30Pad { bank_id, pad_id } => {
+            format!("promoted to pad {bank_id}/{pad_id}")
+        }
+        CaptureTarget::Scene(scene_id) => format!("promoted to scene {scene_id}"),
+    }
+}
+
+fn capture_promotion_summary(session: &SessionFile, action: &Action) -> Option<String> {
+    let capture_id = promotion_capture_id(session, action)?;
+    let capture = session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == capture_id)?;
+    capture.notes.clone()
+}
+
+fn updated_capture_note(existing_notes: Option<&str>, target: &CaptureTarget) -> String {
+    let promotion = promotion_note(target);
+    match existing_notes {
+        Some(existing_notes) => {
+            let base = existing_notes
+                .split(" | promoted to ")
+                .next()
+                .unwrap_or(existing_notes);
+            format!("{base} | {promotion}")
+        }
+        None => promotion,
     }
 }
 
@@ -1035,10 +1214,7 @@ mod tests {
             source_origin_refs: vec!["asset-a".into()],
             created_from_action: Some(ActionId(1)),
             storage_path: "captures/cap-01.wav".into(),
-            assigned_target: Some(CaptureTarget::W30Pad {
-                bank_id: BankId::from("bank-a"),
-                pad_id: PadId::from("pad-01"),
-            }),
+            assigned_target: None,
             notes: Some("keeper".into()),
         });
         session.ghost_state = GhostState {
@@ -1376,10 +1552,11 @@ mod tests {
         state.queue_tr909_fill(301);
         state.queue_tr909_reinforce(302);
         state.queue_capture_bar(303);
+        assert!(state.queue_promote_last_capture(304));
 
         let pending = state.queue.pending_actions();
 
-        assert_eq!(pending.len(), 4);
+        assert_eq!(pending.len(), 5);
         assert_eq!(pending[0].command, ActionCommand::MutateScene);
         assert_eq!(pending[0].quantization, Quantization::NextBar);
         assert_eq!(pending[1].command, ActionCommand::Tr909FillNext);
@@ -1388,6 +1565,8 @@ mod tests {
         assert_eq!(pending[2].quantization, Quantization::NextPhrase);
         assert_eq!(pending[3].command, ActionCommand::CaptureBarGroup);
         assert_eq!(pending[3].quantization, Quantization::NextPhrase);
+        assert_eq!(pending[4].command, ActionCommand::PromoteCaptureToPad);
+        assert_eq!(pending[4].quantization, Quantization::NextBar);
         assert!(
             state
                 .session
@@ -1396,7 +1575,7 @@ mod tests {
                 .tr909
                 .fill_armed_next_bar
         );
-        assert_eq!(state.jam_view.pending_actions.len(), 4);
+        assert_eq!(state.jam_view.pending_actions.len(), 5);
     }
 
     #[test]
@@ -1469,11 +1648,92 @@ mod tests {
             state.jam_view.capture.last_capture_id.as_deref(),
             Some("cap-02")
         );
+        assert_eq!(state.jam_view.capture.last_capture_target.as_deref(), None);
+        assert_eq!(state.jam_view.capture.last_capture_origin_count, 2);
+        assert_eq!(state.jam_view.capture.unassigned_capture_count, 2);
+        assert_eq!(state.jam_view.capture.promoted_capture_count, 0);
+    }
+
+    #[test]
+    fn committed_promotion_actions_assign_target_to_existing_capture() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.queue_promote_last_capture(300);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(state.session.captures.len(), 1);
+        assert_eq!(
+            state.session.captures[0].assigned_target,
+            Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-01"),
+            })
+        );
         assert_eq!(
             state.jam_view.capture.last_capture_target.as_deref(),
             Some("pad bank-a/pad-01")
         );
-        assert_eq!(state.jam_view.capture.last_capture_origin_count, 2);
+        assert_eq!(
+            state.jam_view.capture.last_promotion_result.as_deref(),
+            Some("promoted to pad bank-a/pad-01")
+        );
+    }
+
+    #[test]
+    fn second_promotion_updates_existing_capture_note_and_target() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.queue_promote_last_capture(300);
+        state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-02"));
+        assert!(state.queue_promote_last_capture(401));
+        state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 37,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        );
+
+        assert_eq!(
+            state.session.captures[0].assigned_target,
+            Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-02"),
+            })
+        );
+        assert_eq!(
+            state.session.captures[0].notes.as_deref(),
+            Some("keeper | promoted to pad bank-a/pad-02")
+        );
     }
 
     #[test]

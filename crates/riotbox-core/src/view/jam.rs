@@ -106,13 +106,20 @@ impl JamViewModel {
             },
             capture: CaptureSummaryView {
                 capture_count: session.captures.len(),
+                promoted_capture_count: session
+                    .captures
+                    .iter()
+                    .filter(|capture| capture.assigned_target.is_some())
+                    .count(),
+                unassigned_capture_count: session
+                    .captures
+                    .iter()
+                    .filter(|capture| capture.assigned_target.is_none())
+                    .count(),
                 last_capture_id: session
-                    .runtime_state
-                    .lane_state
-                    .w30
-                    .last_capture
-                    .as_ref()
-                    .map(ToString::to_string),
+                    .captures
+                    .last()
+                    .map(|capture| capture.capture_id.to_string()),
                 last_capture_target: session.captures.last().and_then(|capture| {
                     capture.assigned_target.as_ref().map(|target| match target {
                         crate::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
@@ -131,6 +138,16 @@ impl JamViewModel {
                     .captures
                     .last()
                     .and_then(|capture| capture.notes.clone()),
+                last_promotion_result: session.captures.last().and_then(|capture| {
+                    capture.assigned_target.as_ref().map(|target| match target {
+                        crate::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
+                            format!("promoted to pad {bank_id}/{pad_id}")
+                        }
+                        crate::session::CaptureTarget::Scene(scene_id) => {
+                            format!("promoted to scene {scene_id}")
+                        }
+                    })
+                }),
             },
             pending_actions,
             recent_actions,
@@ -203,10 +220,13 @@ pub struct LaneSummaryView {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CaptureSummaryView {
     pub capture_count: usize,
+    pub promoted_capture_count: usize,
+    pub unassigned_capture_count: usize,
     pub last_capture_id: Option<String>,
     pub last_capture_target: Option<String>,
     pub last_capture_origin_count: usize,
     pub last_capture_notes: Option<String>,
+    pub last_promotion_result: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -398,10 +418,16 @@ mod tests {
         assert_eq!(vm.source.hook_candidate_count, 1);
         assert_eq!(vm.scene.scene_count, 1);
         assert_eq!(vm.capture.capture_count, 1);
+        assert_eq!(vm.capture.promoted_capture_count, 1);
+        assert_eq!(vm.capture.unassigned_capture_count, 0);
         assert_eq!(vm.capture.last_capture_id.as_deref(), Some("cap-01"));
         assert_eq!(
             vm.capture.last_capture_target.as_deref(),
             Some("pad bank-a/pad-01")
+        );
+        assert_eq!(
+            vm.capture.last_promotion_result.as_deref(),
+            Some("promoted to pad bank-a/pad-01")
         );
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));

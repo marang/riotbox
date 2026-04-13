@@ -7,15 +7,16 @@
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Readiness──────────────────────────────┐┌Latest Capture───────────────────────┐┌Provenance────────────────────────────┐
 │transport idle | beat 32.0             ││captures total 1                     ││file captures/cap-01.wav              │
-│pending capture actions 1              ││latest cap-01                        ││from action manual or unknown         │
-│w30 bank bank-a                        ││target pad bank-a/pad-01             ││origins asset-a, src-1                │
-│last lane capture cap-01               ││origin refs 2                        ││                                      │
+│pending capture actions 1              ││promoted 0 | unassigned 1            ││from action manual or unknown         │
+│w30 bank bank-a                        ││latest cap-01                        ││origins asset-a, src-1                │
+│last lane capture cap-01               ││target unassigned                    ││                                      │
 └───────────────────────────────────────┘└─────────────────────────────────────┘└──────────────────────────────────────┘
 ┌Pending Capture Cues────────────────────────┐┌Recent Captures───────────────────┐┌Routing / Promotion─────────────────┐
-│a-0002 user capture.bar_group               ││cap-01 | bank-a/pad-01 | 2 origins││last route pad bank-a/pad-01        │
-│when next_phrase | target                   ││                                  ││w30 bank bank-a                     │
-│lanew30:bank-a/pad-01                       ││                                  ││next shell cue capture.bar_group @  │
-│note stash the current phrase               ││                                  ││next_phrase                         │
+│a-0002 user promote.capture_to_pad          ││cap-01 | unassigned | 2 origins   ││last route unassigned               │
+│when next_bar | target lanew30:bank-a/pad-01││                                  ││promotion result pending            │
+│note promote keeper capture into the live   ││                                  ││w30 bank bank-a                     │
+│pad                                         ││                                  ││next shell cue                      │
+│                                            ││                                  ││promote.capture_to_pad @ next_bar   │
 │                                            ││                                  ││deep pad promotion remains out of   │
 │                                            ││                                  ││scope                               │
 │                                            ││                                  ││                                    │
@@ -25,10 +26,9 @@
 │                                            ││                                  ││                                    │
 │                                            ││                                  ││                                    │
 │                                            ││                                  ││                                    │
-│                                            ││                                  ││                                    │
 └────────────────────────────────────────────┘└──────────────────────────────────┘└────────────────────────────────────┘
 ┌Footer────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | r re-ingest source   │
-│Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | u undo                                  │
-│Status: ingested source into Jam shell | audio unknown | sidecar unknown                                            │
+│Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | r re-ingest source     │
+│Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | p promote capture | u undo                │
+│Status: ingested source into Jam shell | audio unknown | sidecar unknown                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

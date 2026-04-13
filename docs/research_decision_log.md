@@ -352,6 +352,17 @@ Status: accepted
 
 ---
 
+Topic: the first capture-promotion flow should bind existing captures instead of pretending capture already equals promotion  
+Phase: Jam-first Playable Slice  
+Question: now that the `Capture` screen exists, what is the smallest next slice that makes captured material reusable in-flow without inventing a separate W-30 subsystem?  
+Decision: keep capture and promotion as distinct steps. Committed capture actions create capture records that may remain unassigned, while `promote.capture_to_pad` updates an existing capture's target inside the current action/session/view seam and surfaces the promotion result directly in the `Capture` screen.  
+Why: the PRD requires captured material to be reusable without leaving flow, but collapsing capture and promotion into one side effect makes the workflow semantically muddy and hides the real promotion seam. Distinguishing them keeps the architecture honest while still staying bounded inside the current shell and session model.  
+Evidence: `riotbox-app` now queues `promote.capture_to_pad` from the shell, applies promotion as a side effect on an existing `CaptureRef`, updates the action result summary, tracks promoted vs unassigned capture counts in `JamViewModel`, and refreshes the `Capture` screen plus baseline artifact to show the new state. Tests cover both unassigned capture materialization and later promotion.  
+Consequences: later W-30 work should build on this same `capture -> promote` path for pinning, pad reuse, and promotion history instead of reintroducing implicit auto-routing. Deep resample routing and full pad editing remain intentionally out of scope for now.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

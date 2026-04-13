@@ -76,6 +76,7 @@ pub enum ShellKeyOutcome {
     QueueTr909Fill,
     QueueTr909Reinforce,
     QueueCaptureBar,
+    PromoteLastCapture,
     UndoLast,
     Quit,
 }
@@ -166,6 +167,10 @@ impl JamShellState {
             KeyCode::Char('c') => {
                 self.status_message = "queue capture on next phrase".into();
                 ShellKeyOutcome::QueueCaptureBar
+            }
+            KeyCode::Char('p') => {
+                self.status_message = "queue promotion for latest capture".into();
+                ShellKeyOutcome::PromoteLastCapture
             }
             KeyCode::Char('u') => {
                 self.status_message = "undo most recent action requested".into();
@@ -798,7 +803,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | u undo",
+        "Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | p promote capture | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {}",
@@ -851,6 +856,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("f: queue TR-909 fill on next bar"),
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("c: queue phrase capture on next phrase"),
+        Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
         Line::from("u: undo most recent undoable action"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
@@ -1116,6 +1122,10 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     vec![
         Line::from(format!("captures total {}", capture.capture_count)),
         Line::from(format!(
+            "promoted {} | unassigned {}",
+            capture.promoted_capture_count, capture.unassigned_capture_count
+        )),
+        Line::from(format!(
             "latest {}",
             capture.last_capture_id.as_deref().unwrap_or("none")
         )),
@@ -1129,8 +1139,9 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(format!("origin refs {}", capture.last_capture_origin_count)),
         Line::from(
             capture
-                .last_capture_notes
+                .last_promotion_result
                 .clone()
+                .or_else(|| capture.last_capture_notes.clone())
                 .unwrap_or_else(|| "no capture note yet".into()),
         ),
     ]
@@ -1236,6 +1247,15 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     vec![
         Line::from(format!("last route {last_target}")),
+        Line::from(
+            shell
+                .app
+                .jam_view
+                .capture
+                .last_promotion_result
+                .clone()
+                .unwrap_or_else(|| "promotion result pending".into()),
+        ),
         Line::from(format!(
             "w30 bank {}",
             shell
@@ -1889,10 +1909,10 @@ mod tests {
             ),
             130,
         );
-        let mut capture_draft = ActionDraft::new(
+        let mut promote_draft = ActionDraft::new(
             ActorType::User,
-            ActionCommand::CaptureBarGroup,
-            Quantization::NextPhrase,
+            ActionCommand::PromoteCaptureToPad,
+            Quantization::NextBar,
             ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(BankId::from("bank-a")),
@@ -1900,8 +1920,12 @@ mod tests {
                 ..Default::default()
             },
         );
-        capture_draft.explanation = Some("stash the current phrase".into());
-        queue.enqueue(capture_draft, 131);
+        promote_draft.params = ActionParams::Promotion {
+            capture_id: Some("cap-01".into()),
+            destination: Some("w30:bank-a/pad-01".into()),
+        };
+        promote_draft.explanation = Some("promote keeper capture into the live pad".into());
+        queue.enqueue(promote_draft, 131);
 
         session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
         session.captures.push(riotbox_core::session::CaptureRef {
@@ -1910,10 +1934,7 @@ mod tests {
             source_origin_refs: vec!["asset-a".into(), "src-1".into()],
             created_from_action: None,
             storage_path: "captures/cap-01.wav".into(),
-            assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
-                bank_id: BankId::from("bank-a"),
-                pad_id: PadId::from("pad-01"),
-            }),
+            assigned_target: None,
             notes: Some("keeper capture".into()),
         });
 
@@ -1994,6 +2015,10 @@ mod tests {
             ShellKeyOutcome::QueueCaptureBar
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('p')),
+            ShellKeyOutcome::PromoteLastCapture
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('u')),
             ShellKeyOutcome::UndoLast
         );
@@ -2054,8 +2079,8 @@ mod tests {
         assert!(rendered.contains("Recent Captures"));
         assert!(rendered.contains("Routing / Promotion"));
         assert!(rendered.contains("cap-01"));
-        assert!(rendered.contains("manual or unknown"));
-        assert!(rendered.contains("stash the current phrase"));
+        assert!(rendered.contains("promote keeper capture"));
+        assert!(rendered.contains("promotion result pending"));
         assert!(rendered.contains("captures total 1"));
     }
 }
