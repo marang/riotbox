@@ -363,6 +363,17 @@ Status: accepted
 
 ---
 
+Topic: the next capture slice should add persisted pinned-capture recall instead of a second capture browser  
+Phase: Jam-first Playable Slice  
+Question: after the first promotion path exists, what is the smallest next slice that makes capture recall more intentional without opening a new capture-management subsystem?  
+Decision: add persisted pin metadata directly to `CaptureRef`, expose pinned capture counts and IDs through `JamViewModel`, and let the shell toggle pin state for the latest capture through a small app-layer interaction. Keep this as explicit session metadata rather than creating a separate favorite store or a new action family.  
+Why: the TUI spec explicitly calls out favorite or pinned captures, and the MVP needs meaningful capture recall. A persisted pin flag is enough to make the capture workflow feel more deliberate without disturbing the existing capture/promotion seam or inventing a second browser path.  
+Evidence: the session model now stores pin state on captures, `riotbox-app` can toggle pin state for the latest capture, the `Capture` screen shows a dedicated pinned section, and tests cover both the pin toggle and the updated screen rendering.  
+Consequences: later capture work should deepen this same persisted pinning path for favorites and reuse flows instead of duplicating capture metadata elsewhere. Deep tagging or folder-like capture management remains out of scope for now.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

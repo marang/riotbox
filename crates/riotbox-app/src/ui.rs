@@ -77,6 +77,7 @@ pub enum ShellKeyOutcome {
     QueueTr909Reinforce,
     QueueCaptureBar,
     PromoteLastCapture,
+    TogglePinLatestCapture,
     UndoLast,
     Quit,
 }
@@ -171,6 +172,10 @@ impl JamShellState {
             KeyCode::Char('p') => {
                 self.status_message = "queue promotion for latest capture".into();
                 ShellKeyOutcome::PromoteLastCapture
+            }
+            KeyCode::Char('v') => {
+                self.status_message = "toggle pin for latest capture".into();
+                ShellKeyOutcome::TogglePinLatestCapture
             }
             KeyCode::Char('u') => {
                 self.status_message = "undo most recent action requested".into();
@@ -765,9 +770,10 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let bottom = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(38),
-            Constraint::Percentage(30),
             Constraint::Percentage(32),
+            Constraint::Percentage(24),
+            Constraint::Percentage(20),
+            Constraint::Percentage(24),
         ])
         .split(rows[1]);
 
@@ -783,6 +789,8 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             .title("Recent Captures")
             .borders(Borders::ALL),
     );
+    let pinned = List::new(pinned_capture_items(shell))
+        .block(Block::default().title("Pinned").borders(Borders::ALL));
     let routing = Paragraph::new(capture_routing_lines(shell))
         .block(
             Block::default()
@@ -793,7 +801,8 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     frame.render_widget(pending, bottom[0]);
     frame.render_widget(recent, bottom[1]);
-    frame.render_widget(routing, bottom[2]);
+    frame.render_widget(pinned, bottom[2]);
+    frame.render_widget(routing, bottom[3]);
 }
 
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -803,7 +812,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | p promote capture | u undo",
+        "Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | p promote capture | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {}",
@@ -857,6 +866,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
+        Line::from("v: pin or unpin the latest capture for fast recall"),
         Line::from("u: undo most recent undoable action"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
@@ -1122,9 +1132,10 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     vec![
         Line::from(format!("captures total {}", capture.capture_count)),
         Line::from(format!(
-            "promoted {} | unassigned {}",
-            capture.promoted_capture_count, capture.unassigned_capture_count
+            "pinned {} | promoted {}",
+            capture.pinned_capture_count, capture.promoted_capture_count
         )),
+        Line::from(format!("unassigned {}", capture.unassigned_capture_count)),
         Line::from(format!(
             "latest {}",
             capture.last_capture_id.as_deref().unwrap_or("none")
@@ -1227,10 +1238,48 @@ fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
                 .unwrap_or_else(|| "unassigned".into());
 
             ListItem::new(format!(
-                "{} | {} | {} origins",
+                "{} | {} | {} origins{}",
                 capture.capture_id,
                 target,
-                capture.source_origin_refs.len()
+                capture.source_origin_refs.len(),
+                if capture.is_pinned { " | pinned" } else { "" }
+            ))
+        })
+        .collect()
+}
+
+fn pinned_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
+    let captures: Vec<_> = shell
+        .app
+        .session
+        .captures
+        .iter()
+        .rev()
+        .filter(|capture| capture.is_pinned)
+        .take(5)
+        .collect();
+    if captures.is_empty() {
+        return vec![ListItem::new("no pinned captures yet")];
+    }
+
+    captures
+        .into_iter()
+        .map(|capture| {
+            ListItem::new(format!(
+                "{}{}",
+                capture.capture_id,
+                capture
+                    .assigned_target
+                    .as_ref()
+                    .map(|target| match target {
+                        riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
+                            format!(" -> {bank_id}/{pad_id}")
+                        }
+                        riotbox_core::session::CaptureTarget::Scene(scene_id) => {
+                            format!(" -> {scene_id}")
+                        }
+                    })
+                    .unwrap_or_else(|| " -> unassigned".into())
             ))
         })
         .collect()
@@ -1935,6 +1984,7 @@ mod tests {
             created_from_action: None,
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: None,
+            is_pinned: false,
             notes: Some("keeper capture".into()),
         });
 
@@ -2019,6 +2069,10 @@ mod tests {
             ShellKeyOutcome::PromoteLastCapture
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('v')),
+            ShellKeyOutcome::TogglePinLatestCapture
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('u')),
             ShellKeyOutcome::UndoLast
         );
@@ -2077,10 +2131,13 @@ mod tests {
         assert!(rendered.contains("Provenance"));
         assert!(rendered.contains("Pending Capture Cues"));
         assert!(rendered.contains("Recent Captures"));
+        assert!(rendered.contains("Pinned"));
         assert!(rendered.contains("Routing / Promotion"));
         assert!(rendered.contains("cap-01"));
         assert!(rendered.contains("promote keeper capture"));
         assert!(rendered.contains("promotion result pending"));
         assert!(rendered.contains("captures total 1"));
+        assert!(rendered.contains("pinned 0 | promoted 0"));
+        assert!(rendered.contains("no pinned captures yet"));
     }
 }

@@ -230,6 +230,7 @@ pub struct CaptureRef {
     pub created_from_action: Option<ActionId>,
     pub storage_path: String,
     pub assigned_target: Option<CaptureTarget>,
+    pub is_pinned: bool,
     pub notes: Option<String>,
 }
 
@@ -392,6 +393,7 @@ mod tests {
                 bank_id: BankId::from("bank-a"),
                 pad_id: PadId::from("pad-01"),
             }),
+            is_pinned: false,
             notes: Some("keeper".into()),
         });
         session.ghost_state = GhostState {

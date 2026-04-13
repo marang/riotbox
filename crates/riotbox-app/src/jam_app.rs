@@ -478,6 +478,16 @@ impl JamAppState {
         true
     }
 
+    pub fn toggle_pin_latest_capture(&mut self) -> Option<bool> {
+        let new_state = {
+            let capture = self.session.captures.last_mut()?;
+            capture.is_pinned = !capture.is_pinned;
+            capture.is_pinned
+        };
+        self.refresh_view();
+        Some(new_state)
+    }
+
     pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
         let next_undo_action_id = next_action_id_from_session(&self.session);
 
@@ -794,6 +804,7 @@ fn capture_ref_from_action(
         source_origin_refs,
         created_from_action: Some(action.id),
         assigned_target,
+        is_pinned: false,
     })
 }
 
@@ -1215,6 +1226,7 @@ mod tests {
             created_from_action: Some(ActionId(1)),
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: None,
+            is_pinned: false,
             notes: Some("keeper".into()),
         });
         session.ghost_state = GhostState {
@@ -1734,6 +1746,26 @@ mod tests {
             state.session.captures[0].notes.as_deref(),
             Some("keeper | promoted to pad bank-a/pad-02")
         );
+    }
+
+    #[test]
+    fn toggling_pin_latest_capture_updates_session_and_view() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(state.toggle_pin_latest_capture(), Some(true));
+        assert!(state.session.captures[0].is_pinned);
+        assert_eq!(state.jam_view.capture.pinned_capture_count, 1);
+        assert_eq!(
+            state.jam_view.capture.pinned_capture_ids,
+            vec!["cap-01".to_string()]
+        );
+
+        assert_eq!(state.toggle_pin_latest_capture(), Some(false));
+        assert!(!state.session.captures[0].is_pinned);
+        assert_eq!(state.jam_view.capture.pinned_capture_count, 0);
+        assert!(state.jam_view.capture.pinned_capture_ids.is_empty());
     }
 
     #[test]

@@ -160,6 +160,13 @@ fn run_event_loop(
                         shell.set_error_status("no promotable capture or W-30 target available");
                     }
                 }
+                ShellKeyOutcome::TogglePinLatestCapture => {
+                    match shell.app.toggle_pin_latest_capture() {
+                        Some(true) => shell.set_error_status("pinned latest capture"),
+                        Some(false) => shell.set_error_status("unpinned latest capture"),
+                        None => shell.set_error_status("no capture available to pin"),
+                    }
+                }
                 ShellKeyOutcome::UndoLast => {
                     if shell.app.undo_last_action(timestamp_now()).is_some() {
                         shell.set_error_status("undid most recent action");

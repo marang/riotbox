@@ -106,6 +106,11 @@ impl JamViewModel {
             },
             capture: CaptureSummaryView {
                 capture_count: session.captures.len(),
+                pinned_capture_count: session
+                    .captures
+                    .iter()
+                    .filter(|capture| capture.is_pinned)
+                    .count(),
                 promoted_capture_count: session
                     .captures
                     .iter()
@@ -148,6 +153,14 @@ impl JamViewModel {
                         }
                     })
                 }),
+                pinned_capture_ids: session
+                    .captures
+                    .iter()
+                    .filter(|capture| capture.is_pinned)
+                    .rev()
+                    .take(4)
+                    .map(|capture| capture.capture_id.to_string())
+                    .collect(),
             },
             pending_actions,
             recent_actions,
@@ -220,6 +233,7 @@ pub struct LaneSummaryView {
 #[derive(Clone, Debug, PartialEq)]
 pub struct CaptureSummaryView {
     pub capture_count: usize,
+    pub pinned_capture_count: usize,
     pub promoted_capture_count: usize,
     pub unassigned_capture_count: usize,
     pub last_capture_id: Option<String>,
@@ -227,6 +241,7 @@ pub struct CaptureSummaryView {
     pub last_capture_origin_count: usize,
     pub last_capture_notes: Option<String>,
     pub last_promotion_result: Option<String>,
+    pub pinned_capture_ids: Vec<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -394,6 +409,7 @@ mod tests {
                 bank_id: "bank-a".into(),
                 pad_id: "pad-01".into(),
             }),
+            is_pinned: false,
             notes: Some("keeper capture".into()),
         });
 
@@ -418,6 +434,7 @@ mod tests {
         assert_eq!(vm.source.hook_candidate_count, 1);
         assert_eq!(vm.scene.scene_count, 1);
         assert_eq!(vm.capture.capture_count, 1);
+        assert_eq!(vm.capture.pinned_capture_count, 0);
         assert_eq!(vm.capture.promoted_capture_count, 1);
         assert_eq!(vm.capture.unassigned_capture_count, 0);
         assert_eq!(vm.capture.last_capture_id.as_deref(), Some("cap-01"));
@@ -429,6 +446,7 @@ mod tests {
             vm.capture.last_promotion_result.as_deref(),
             Some("promoted to pad bank-a/pad-01")
         );
+        assert!(vm.capture.pinned_capture_ids.is_empty());
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
