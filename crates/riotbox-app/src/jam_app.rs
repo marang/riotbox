@@ -9,6 +9,10 @@ use std::{
 use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
     TimestampMs,
+    action::{
+        Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
+        ActorType, Quantization, TargetScope,
+    },
     ids::SourceId,
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
@@ -301,6 +305,152 @@ impl JamAppState {
         self.refresh_view();
     }
 
+    pub fn set_transport_playing(&mut self, is_playing: bool) {
+        let next_clock = transport_clock_for_state(
+            self.runtime.transport.position_beats,
+            is_playing,
+            self.runtime.transport.current_scene.clone(),
+            self.source_graph.as_ref(),
+        );
+        self.update_transport_clock(next_clock);
+    }
+
+    pub fn advance_transport_by(
+        &mut self,
+        delta_beats: f64,
+        committed_at: TimestampMs,
+    ) -> Vec<CommittedActionRef> {
+        if !self.runtime.transport.is_playing || delta_beats <= 0.0 {
+            return Vec::new();
+        }
+
+        let previous = self.runtime.transport.clone();
+        let next_position = (previous.position_beats + delta_beats).max(0.0);
+        let next_clock = transport_clock_for_state(
+            next_position,
+            true,
+            previous.current_scene.clone(),
+            self.source_graph.as_ref(),
+        );
+        self.update_transport_clock(next_clock.clone());
+
+        if let Some(boundary) = crossed_commit_boundary(&previous, &next_clock) {
+            self.commit_ready_actions(boundary, committed_at)
+        } else {
+            Vec::new()
+        }
+    }
+
+    pub fn queue_scene_mutation(&mut self, requested_at: TimestampMs) {
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::MutateScene,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::Scene),
+                scene_id: self.session.runtime_state.scene_state.active_scene.clone(),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: self.session.runtime_state.macro_state.chaos,
+            target_id: self
+                .session
+                .runtime_state
+                .scene_state
+                .active_scene
+                .as_ref()
+                .map(ToString::to_string),
+        };
+        draft.explanation = Some("mutate current scene on next bar".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+    }
+
+    pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) {
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Tr909FillNext,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneTr909),
+                ..Default::default()
+            },
+        );
+        draft.explanation = Some("trigger TR-909 fill on next bar".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+    }
+
+    pub fn queue_capture_bar(&mut self, requested_at: TimestampMs) {
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::CaptureBarGroup,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Capture { bars: Some(4) };
+        draft.explanation = Some("capture next phrase into W-30 path".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+    }
+
+    pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
+        let next_undo_action_id = next_action_id_from_session(&self.session);
+
+        let undone = self
+            .session
+            .action_log
+            .actions
+            .iter_mut()
+            .rev()
+            .find(|action| {
+                action.status == ActionStatus::Committed
+                    && matches!(
+                        action.undo_policy,
+                        riotbox_core::action::UndoPolicy::Undoable
+                    )
+            })?;
+
+        undone.status = ActionStatus::Undone;
+        undone.result = Some(ActionResult {
+            accepted: true,
+            summary: format!("undone by user at {requested_at}"),
+        });
+
+        let undo_action = Action {
+            id: next_undo_action_id,
+            actor: ActorType::User,
+            command: ActionCommand::UndoLast,
+            params: ActionParams::Empty,
+            target: ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..Default::default()
+            },
+            requested_at,
+            quantization: Quantization::Immediate,
+            status: ActionStatus::Committed,
+            committed_at: Some(requested_at),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "undid most recent undoable action".into(),
+            }),
+            undo_policy: riotbox_core::action::UndoPolicy::NotUndoable {
+                reason: "undo marker actions are not themselves undoable".into(),
+            },
+            explanation: Some("undo most recent committed action".into()),
+        };
+
+        self.session.action_log.actions.push(undo_action.clone());
+        self.queue
+            .reserve_action_ids_after(max_action_id(&self.session));
+        self.refresh_view();
+        Some(undo_action)
+    }
+
     pub fn commit_ready_actions(
         &mut self,
         boundary: CommitBoundaryState,
@@ -407,7 +557,21 @@ fn transport_clock_from_state(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
 ) -> TransportClockState {
-    let beat_index = session.runtime_state.transport.position_beats.floor() as u64;
+    transport_clock_for_state(
+        session.runtime_state.transport.position_beats,
+        session.runtime_state.transport.is_playing,
+        session.runtime_state.transport.current_scene.clone(),
+        source_graph,
+    )
+}
+
+fn transport_clock_for_state(
+    position_beats: f64,
+    is_playing: bool,
+    current_scene: Option<riotbox_core::ids::SceneId>,
+    source_graph: Option<&SourceGraph>,
+) -> TransportClockState {
+    let beat_index = position_beats.floor() as u64;
     let beats_per_bar = source_graph
         .and_then(|graph| {
             graph
@@ -437,13 +601,40 @@ fn transport_clock_from_state(
         .unwrap_or_else(|| ((bar_index.saturating_sub(1)) / 8).saturating_add(1));
 
     TransportClockState {
-        is_playing: session.runtime_state.transport.is_playing,
-        position_beats: session.runtime_state.transport.position_beats,
+        is_playing,
+        position_beats,
         beat_index,
         bar_index,
         phrase_index,
-        current_scene: session.runtime_state.transport.current_scene.clone(),
+        current_scene,
     }
+}
+
+fn crossed_commit_boundary(
+    previous: &TransportClockState,
+    next: &TransportClockState,
+) -> Option<CommitBoundaryState> {
+    if next.phrase_index > previous.phrase_index {
+        return Some(next.boundary_state(riotbox_core::action::CommitBoundary::Phrase));
+    }
+
+    if next.bar_index > previous.bar_index {
+        return Some(next.boundary_state(riotbox_core::action::CommitBoundary::Bar));
+    }
+
+    if next.beat_index > previous.beat_index {
+        return Some(next.boundary_state(riotbox_core::action::CommitBoundary::Beat));
+    }
+
+    None
+}
+
+fn next_action_id_from_session(session: &SessionFile) -> riotbox_core::ids::ActionId {
+    riotbox_core::ids::ActionId(
+        max_action_id(session)
+            .map(|id| id.0.saturating_add(1))
+            .unwrap_or(1),
+    )
 }
 
 fn resolve_source_graph(
@@ -1039,6 +1230,83 @@ mod tests {
         assert_eq!(state.jam_view.pending_actions.len(), 0);
         assert_eq!(state.jam_view.recent_actions[0].id, second.to_string());
         assert_eq!(state.jam_view.recent_actions[1].id, first.to_string());
+    }
+
+    #[test]
+    fn queues_first_live_safe_jam_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.queue_scene_mutation(300);
+        state.queue_tr909_fill(301);
+        state.queue_capture_bar(302);
+
+        let pending = state.queue.pending_actions();
+
+        assert_eq!(pending.len(), 3);
+        assert_eq!(pending[0].command, ActionCommand::MutateScene);
+        assert_eq!(pending[0].quantization, Quantization::NextBar);
+        assert_eq!(pending[1].command, ActionCommand::Tr909FillNext);
+        assert_eq!(pending[1].quantization, Quantization::NextBar);
+        assert_eq!(pending[2].command, ActionCommand::CaptureBarGroup);
+        assert_eq!(pending[2].quantization, Quantization::NextPhrase);
+        assert_eq!(state.jam_view.pending_actions.len(), 3);
+    }
+
+    #[test]
+    fn advancing_transport_commits_crossed_bar_boundary() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.update_transport_clock(TransportClockState {
+            is_playing: false,
+            position_beats: 28.0,
+            beat_index: 28,
+            bar_index: 7,
+            phrase_index: 1,
+            current_scene: Some(SceneId::from("scene-1")),
+        });
+        state.set_transport_playing(true);
+        state.queue_tr909_fill(300);
+
+        let committed = state.advance_transport_by(4.2, 400);
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(committed[0].boundary.kind, CommitBoundary::Bar);
+        assert_eq!(state.queue.pending_actions().len(), 0);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .map(|action| action.command),
+            Some(ActionCommand::Tr909FillNext)
+        );
+    }
+
+    #[test]
+    fn undo_marks_last_undoable_action_and_appends_undo_marker() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        let undo_action = state.undo_last_action(500).expect("undo latest action");
+
+        assert_eq!(undo_action.command, ActionCommand::UndoLast);
+        assert_eq!(state.session.action_log.actions.len(), 2);
+        assert_eq!(
+            state.session.action_log.actions[0].status,
+            ActionStatus::Undone
+        );
+        assert_eq!(
+            state.session.action_log.actions[1].command,
+            ActionCommand::UndoLast
+        );
+        assert_eq!(state.jam_view.recent_actions[0].status, "committed");
+        assert_eq!(state.jam_view.recent_actions[1].status, "undone");
     }
 
     #[test]
