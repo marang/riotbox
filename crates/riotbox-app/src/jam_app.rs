@@ -260,23 +260,25 @@ impl JamAppState {
     pub fn analyze_source_file_to_json(
         source_path: impl AsRef<Path>,
         session_path: impl AsRef<Path>,
-        source_graph_path: impl AsRef<Path>,
+        source_graph_path: Option<PathBuf>,
         sidecar_script_path: impl AsRef<Path>,
         analysis_seed: u64,
     ) -> Result<Self, JamAppError> {
         let source_path = source_path.as_ref().canonicalize()?;
         let session_path = session_path.as_ref().to_path_buf();
-        let source_graph_path = source_graph_path.as_ref().to_path_buf();
 
         let mut client = StdioSidecarClient::spawn_python(sidecar_script_path)?;
         let pong = client.ping()?;
         let graph = client.analyze_source_file(&source_path, analysis_seed)?;
 
-        let session = session_from_ingested_graph(&graph, &source_path, &source_graph_path)?;
-        save_source_graph_json(&source_graph_path, &graph)?;
+        let session =
+            session_from_ingested_graph(&graph, &source_path, source_graph_path.as_deref())?;
+        if let Some(source_graph_path) = source_graph_path.as_deref() {
+            save_source_graph_json(source_graph_path, &graph)?;
+        }
         save_session_json(&session_path, &session)?;
 
-        let mut state = Self::from_json_files(&session_path, Some(&source_graph_path))?;
+        let mut state = Self::from_json_files(&session_path, source_graph_path.as_deref())?;
         state.set_sidecar_state(SidecarState::Ready {
             version: Some(pong.sidecar_version),
             transport: "stdio-ndjson".into(),
@@ -617,7 +619,7 @@ impl JamAppState {
 fn session_from_ingested_graph(
     graph: &SourceGraph,
     source_path: &Path,
-    source_graph_path: &Path,
+    source_graph_path: Option<&Path>,
 ) -> Result<SessionFile, JamAppError> {
     let timestamp = timestamp_now();
     let source_id = SourceId::from(graph.source.source_id.as_str());
@@ -640,9 +642,13 @@ fn session_from_ingested_graph(
         source_id,
         graph_version: graph.graph_version,
         graph_hash,
-        storage_mode: GraphStorageMode::External,
-        embedded_graph: None,
-        external_path: Some(source_graph_path.to_string_lossy().into_owned()),
+        storage_mode: if source_graph_path.is_some() {
+            GraphStorageMode::External
+        } else {
+            GraphStorageMode::Embedded
+        },
+        embedded_graph: source_graph_path.is_none().then(|| graph.clone()),
+        external_path: source_graph_path.map(|path| path.to_string_lossy().into_owned()),
         provenance: graph.provenance.clone(),
     });
     session.notes = Some("session created from analysis ingest slice".into());
@@ -1907,7 +1913,7 @@ mod tests {
         let state = JamAppState::analyze_source_file_to_json(
             &source_path,
             &session_path,
-            &graph_path,
+            Some(graph_path.clone()),
             sidecar_script_path(),
             29,
         )
@@ -1948,6 +1954,33 @@ mod tests {
     }
 
     #[test]
+    fn ingest_defaults_to_embedded_graph_storage_when_no_external_path_is_requested() {
+        let dir = tempdir().expect("create temp dir");
+        let source_path = dir.path().join("input.wav");
+        let session_path = dir.path().join("sessions").join("session.json");
+
+        write_pcm16_wave(&source_path, 44_100, 2, 2.0);
+
+        let state = JamAppState::analyze_source_file_to_json(
+            &source_path,
+            &session_path,
+            None,
+            sidecar_script_path(),
+            31,
+        )
+        .expect("ingest source file");
+
+        assert_eq!(state.session.source_graph_refs.len(), 1);
+        assert_eq!(
+            state.session.source_graph_refs[0].storage_mode,
+            GraphStorageMode::Embedded
+        );
+        assert!(state.session.source_graph_refs[0].external_path.is_none());
+        assert!(state.session.source_graph_refs[0].embedded_graph.is_some());
+        assert!(session_path.exists());
+    }
+
+    #[test]
     fn ingest_surfaces_missing_source_file_as_sidecar_error() {
         let dir = tempdir().expect("create temp dir");
         let source_path = dir.path().join("missing.wav");
@@ -1957,7 +1990,7 @@ mod tests {
         let error = JamAppState::analyze_source_file_to_json(
             &source_path,
             &session_path,
-            &graph_path,
+            Some(graph_path.clone()),
             sidecar_script_path(),
             29,
         )

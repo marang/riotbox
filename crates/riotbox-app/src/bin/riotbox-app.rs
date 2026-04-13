@@ -17,7 +17,6 @@ use riotbox_app::{
 };
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
-const DEFAULT_GRAPH_PATH: &str = "data/sessions/source-graph.json";
 const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
 const UI_TICK: Duration = Duration::from_millis(200);
 
@@ -30,7 +29,7 @@ enum LaunchMode {
     Ingest {
         source_path: PathBuf,
         session_path: PathBuf,
-        source_graph_path: PathBuf,
+        source_graph_path: Option<PathBuf>,
         sidecar_script_path: PathBuf,
         analysis_seed: u64,
     },
@@ -249,8 +248,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<LaunchMode, Stri
         Some(source_path) => Ok(LaunchMode::Ingest {
             source_path,
             session_path,
-            source_graph_path: source_graph_path
-                .unwrap_or_else(|| PathBuf::from(DEFAULT_GRAPH_PATH)),
+            source_graph_path,
             sidecar_script_path: sidecar_script_path
                 .unwrap_or_else(|| PathBuf::from(DEFAULT_SIDECAR_PATH)),
             analysis_seed,
@@ -276,8 +274,8 @@ fn next_path(args: &mut impl Iterator<Item = String>, flag: &str) -> Result<Path
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>]\n\nDefaults:\n  --session {}\n  --graph {}\n  --sidecar {}",
-        DEFAULT_SESSION_PATH, DEFAULT_GRAPH_PATH, DEFAULT_SIDECAR_PATH
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>]\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
 
@@ -316,8 +314,28 @@ mod tests {
             } => {
                 assert_eq!(source_path, PathBuf::from("input.wav"));
                 assert_eq!(session_path, PathBuf::from("session.json"));
-                assert_eq!(source_graph_path, PathBuf::from("graph.json"));
+                assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
                 assert_eq!(analysis_seed, 19);
+            }
+            LaunchMode::Load { .. } => panic!("expected ingest mode"),
+        }
+    }
+
+    #[test]
+    fn parse_args_defaults_ingest_to_embedded_graph_storage() {
+        let mode = parse_args([
+            "--source".into(),
+            "input.wav".into(),
+            "--session".into(),
+            "session.json".into(),
+        ])
+        .expect("parse ingest mode");
+
+        match mode {
+            LaunchMode::Ingest {
+                source_graph_path, ..
+            } => {
+                assert_eq!(source_graph_path, None);
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
         }

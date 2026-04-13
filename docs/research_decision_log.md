@@ -385,6 +385,17 @@ Status: accepted
 
 ---
 
+Topic: ingest should default to embedded graph storage and only write external graph files when explicitly requested  
+Phase: Jam-first Playable Slice  
+Question: how should the source-file ingest seam store its `SourceGraph` during MVP so it stays aligned with the current session-file contract without losing the ability to write explicit external graph files later?  
+Decision: make embedded graph storage the default ingest path. When no explicit graph path is requested, the ingest flow writes the `SourceGraph` into the session as an embedded graph reference. External graph files remain supported only when the caller passes an explicit graph path.  
+Why: the current session-file spec says MVP should prefer embedded graphs unless graph size becomes a real problem. Defaulting ingest to external files created extra file coupling and diverged from the current contract without any demonstrated need.  
+Evidence: the ingest entry point now accepts an optional graph path, CLI parsing defaults `--source` ingest to no external graph file, tests cover both explicit external graph output and the default embedded-graph path, and save/load behavior continues to work in both modes.  
+Consequences: later work can still add explicit external-graph workflows without changing the default MVP contract. Multi-source session questions remain separate and are tracked under the follow-up contract-alignment ticket.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
