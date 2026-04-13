@@ -166,13 +166,26 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 
 ### Review gate
 
-- Before opening a PR, run a self-review on the branch diff
-- The self-review should explicitly check for:
+- Before committing a finished feature-branch slice, run the `code-review` skill on the branch diff when that skill is available in the current session.
+- Use that review to identify findings, fix them on the branch, and answer any review questions before opening the PR.
+- After that, still run a short self-review on the branch diff.
+- The branch-level review should explicitly check for:
   - correctness bugs
   - architecture drift against `docs/` contracts
   - missing tests for new behavior
   - workflow/documentation gaps introduced by the slice
-- If the self-review finds a real issue, fix it on the branch before creating the PR when feasible
+- If the review finds a real issue, fix it on the branch before creating the PR when feasible
+
+### Periodic codebase review
+
+- Run the `review-codebase` skill on a regular cadence, not on every feature branch.
+- Default cadence: after every 5th finished feature branch.
+- Use that broader review to catch cross-slice drift, recurring weaknesses, missing tests, and architecture erosion that branch-local review may miss.
+- Record important findings in:
+  - `docs/reviews/`
+  - `docs/research_decision_log.md`
+  - workflow/docs updates when the findings change how the repo should be operated
+- If the `review-codebase` skill is not available in the current session, note that explicitly and fall back to a normal whole-codebase review pass.
 
 ### CI gate
 

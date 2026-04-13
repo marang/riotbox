@@ -39,16 +39,18 @@ For a normal implementation or docs slice:
 2. create a dedicated branch for that issue
 3. make one coherent slice of changes
 4. run the relevant local verification
-5. do a self-review on the branch diff
-6. open a PR
-7. inspect GitHub Actions / CI output for the PR
-8. if CI is red and the failure belongs to the slice, fix it before treating the review boundary as clean
-9. move the Linear issue to `In Review`
-10. add a human-readable issue update
-11. add a project-level update in the `Riotbox Project Updates` Linear document
-12. wait for merge / approval boundary before continuing to the next ticket
-13. after merge, sync local `main`
-14. move the issue to `Done`
+5. run `code-review` on the branch diff when that skill is available
+6. fix findings and answer review questions from that branch-level review
+7. do a short self-review on the branch diff
+8. open a PR
+9. inspect GitHub Actions / CI output for the PR
+10. if CI is red and the failure belongs to the slice, fix it before treating the review boundary as clean
+11. move the Linear issue to `In Review`
+12. add a human-readable issue update
+13. add a project-level update in the `Riotbox Project Updates` Linear document
+14. wait for merge / approval boundary before continuing to the next ticket
+15. after merge, sync local `main`
+16. move the issue to `Done`
 
 This is the default unless the user explicitly asks for something else.
 
@@ -125,6 +127,26 @@ Once a PR is open for a ticket:
 
 This keeps review history and Linear issue history aligned.
 
+## 7.1 Branch-Level Review Before PR
+
+Before opening a PR for a finished feature branch:
+
+- run the `code-review` skill when it is available in the current session
+- use that review to surface findings, fix them on the same branch, and answer review questions before the PR is created
+- then do the normal short self-review pass as a final check
+
+Minimum branch-level review expectations:
+
+- correctness and failure paths
+- drift against the active specs in `docs/`
+- whether new behavior is adequately covered by tests
+- whether docs or workflow notes need to move with the code
+
+If the `code-review` skill is not available in the current session:
+
+- state that clearly in the working notes or PR context
+- fall back to the normal self-review pass instead of skipping review entirely
+
 ## 7.2 CI Check After PR Open
 
 After opening a PR, explicitly inspect the GitHub Actions / CI status.
@@ -142,18 +164,29 @@ Rules:
 - if a CI failure is caused by the current slice, fix it on the same branch before treating the ticket as cleanly in review
 - mention important CI failures and fixes in the Linear issue update when they happen
 
-## 7.1 Self-Review Before PR
+## 7.3 Periodic Whole-Codebase Review
 
-Before opening a PR, do a branch-local code review first.
+Branch-level review is not enough on its own.
 
-The minimum self-review pass should check:
+On a regular cadence, run the `review-codebase` skill for a broader whole-repo review.
 
-- correctness and failure paths
-- drift against the active specs in `docs/`
-- whether new behavior is adequately covered by tests
-- whether docs or workflow notes need to move with the code
+Default cadence:
 
-If that self-review finds a real issue, fix it before opening the PR when feasible instead of pushing known defects into review.
+- after every 5th finished feature branch
+
+Purpose:
+
+- catch cross-slice architecture drift
+- detect recurring correctness or testing gaps
+- find patterns that do not show up clearly in one branch diff
+
+Expected outputs:
+
+- a review artifact under `docs/reviews/`
+- important resulting decisions or constraints in `docs/research_decision_log.md`
+- workflow or spec updates if the review changes how the repo should be operated
+
+If the `review-codebase` skill is not available in the current session, fall back to a manual whole-codebase review and record that fact explicitly.
 
 ---
 
