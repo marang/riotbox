@@ -34,4 +34,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   TR-909 audible render diagnostics in the Jam and Log shell screens.
 - [RIOTBOX-45.md](./RIOTBOX-45.md)
   Typed TR-909 pattern adoption inside the audible render seam.
+- [RIOTBOX-46.md](./RIOTBOX-46.md)
+  Phrase-aware TR-909 variation and release behavior inside the audible render seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
