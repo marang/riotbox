@@ -443,6 +443,46 @@ impl JamAppState {
         self.refresh_view();
     }
 
+    pub fn queue_tr909_slam_toggle(&mut self, requested_at: TimestampMs) -> bool {
+        if self
+            .queue
+            .pending_actions()
+            .iter()
+            .any(|action| action.command == ActionCommand::Tr909SetSlam)
+        {
+            return false;
+        }
+
+        let enabling = !self.session.runtime_state.lane_state.tr909.slam_enabled;
+        let intensity = if enabling {
+            self.session.runtime_state.macro_state.tr909_slam.max(0.85)
+        } else {
+            0.0
+        };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Tr909SetSlam,
+            Quantization::NextBeat,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneTr909),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity,
+            target_id: Some(if enabling { "enabled" } else { "disabled" }.into()),
+        };
+        draft.explanation = Some(if enabling {
+            format!("enable TR-909 slam at {:.2}", intensity)
+        } else {
+            "disable TR-909 slam".into()
+        });
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        true
+    }
+
     pub fn queue_capture_bar(&mut self, requested_at: TimestampMs) {
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -993,6 +1033,32 @@ fn apply_tr909_side_effects(
     boundary: Option<&CommitBoundaryState>,
 ) {
     match action.command {
+        ActionCommand::Tr909SetSlam => {
+            let intensity = match &action.params {
+                ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+                _ => session.runtime_state.macro_state.tr909_slam,
+            };
+            session.runtime_state.macro_state.tr909_slam = intensity;
+            session.runtime_state.lane_state.tr909.slam_enabled = intensity > 0.0;
+
+            if let Some(logged_action) = session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                let summary = if intensity > 0.0 {
+                    format!("enabled TR-909 slam at {:.2}", intensity)
+                } else {
+                    "disabled TR-909 slam".into()
+                };
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary,
+                });
+            }
+        }
         ActionCommand::Tr909FillNext => {
             session.runtime_state.lane_state.tr909.fill_armed_next_bar = false;
             session.runtime_state.lane_state.tr909.last_fill_bar =
@@ -1707,22 +1773,25 @@ mod tests {
         state.queue_scene_mutation(300);
         state.queue_tr909_fill(301);
         state.queue_tr909_reinforce(302);
-        state.queue_capture_bar(303);
-        assert!(state.queue_promote_last_capture(304));
+        assert!(state.queue_tr909_slam_toggle(303));
+        state.queue_capture_bar(304);
+        assert!(state.queue_promote_last_capture(305));
 
         let pending = state.queue.pending_actions();
 
-        assert_eq!(pending.len(), 5);
+        assert_eq!(pending.len(), 6);
         assert_eq!(pending[0].command, ActionCommand::MutateScene);
         assert_eq!(pending[0].quantization, Quantization::NextBar);
         assert_eq!(pending[1].command, ActionCommand::Tr909FillNext);
         assert_eq!(pending[1].quantization, Quantization::NextBar);
         assert_eq!(pending[2].command, ActionCommand::Tr909ReinforceBreak);
         assert_eq!(pending[2].quantization, Quantization::NextPhrase);
-        assert_eq!(pending[3].command, ActionCommand::CaptureBarGroup);
-        assert_eq!(pending[3].quantization, Quantization::NextPhrase);
-        assert_eq!(pending[4].command, ActionCommand::PromoteCaptureToPad);
-        assert_eq!(pending[4].quantization, Quantization::NextBar);
+        assert_eq!(pending[3].command, ActionCommand::Tr909SetSlam);
+        assert_eq!(pending[3].quantization, Quantization::NextBeat);
+        assert_eq!(pending[4].command, ActionCommand::CaptureBarGroup);
+        assert_eq!(pending[4].quantization, Quantization::NextPhrase);
+        assert_eq!(pending[5].command, ActionCommand::PromoteCaptureToPad);
+        assert_eq!(pending[5].quantization, Quantization::NextBar);
         assert!(
             !state
                 .session
@@ -1732,7 +1801,21 @@ mod tests {
                 .fill_armed_next_bar
         );
         assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
-        assert_eq!(state.jam_view.pending_actions.len(), 5);
+        assert_eq!(state.jam_view.pending_actions.len(), 6);
+    }
+
+    #[test]
+    fn queueing_tr909_slam_blocks_duplicate_pending_slam_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert!(state.queue_tr909_slam_toggle(300));
+        assert!(!state.queue_tr909_slam_toggle(301));
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Tr909SetSlam);
     }
 
     #[test]
@@ -1993,6 +2076,42 @@ mod tests {
         assert_eq!(
             state.jam_view.lanes.tr909_reinforcement_mode.as_deref(),
             Some("break_reinforce")
+        );
+    }
+
+    #[test]
+    fn committed_tr909_slam_action_updates_lane_state_and_macro_intensity() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert!(state.queue_tr909_slam_toggle(300));
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert!(state.session.runtime_state.lane_state.tr909.slam_enabled);
+        assert!(state.session.runtime_state.macro_state.tr909_slam >= 0.85);
+        assert!(state.jam_view.lanes.tr909_slam_enabled);
+        assert!(state.jam_view.macros.tr909_slam >= 0.85);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("enabled TR-909 slam at 0.85")
         );
     }
 

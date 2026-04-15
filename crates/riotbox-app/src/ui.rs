@@ -75,6 +75,7 @@ pub enum ShellKeyOutcome {
     QueueSceneMutation,
     QueueTr909Fill,
     QueueTr909Reinforce,
+    QueueTr909Slam,
     QueueCaptureBar,
     PromoteLastCapture,
     TogglePinLatestCapture,
@@ -164,6 +165,10 @@ impl JamShellState {
             KeyCode::Char('d') => {
                 self.status_message = "queue TR-909 reinforcement on next phrase".into();
                 ShellKeyOutcome::QueueTr909Reinforce
+            }
+            KeyCode::Char('s') => {
+                self.status_message = "queue TR-909 slam change on next beat".into();
+                ShellKeyOutcome::QueueTr909Slam
             }
             KeyCode::Char('c') => {
                 self.status_message = "queue capture on next phrase".into();
@@ -420,12 +425,13 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or("unset")
         )),
         Line::from(format!(
-            "TR-909 slam: {}",
+            "TR-909 slam: {} @ {:.2}",
             if shell.app.jam_view.lanes.tr909_slam_enabled {
                 "on"
             } else {
                 "off"
-            }
+            },
+            shell.app.jam_view.macros.tr909_slam
         )),
         Line::from(format!(
             "fill armed: {} | last bar {}",
@@ -864,6 +870,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("m: queue scene mutation on next bar"),
         Line::from("f: queue TR-909 fill on next bar"),
         Line::from("d: queue TR-909 reinforcement on next phrase"),
+        Line::from("s: queue TR-909 slam change on next beat"),
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
         Line::from("v: pin or unpin the latest capture for fast recall"),
@@ -2070,6 +2077,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('d')),
             ShellKeyOutcome::QueueTr909Reinforce
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('s')),
+            ShellKeyOutcome::QueueTr909Slam
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('c')),

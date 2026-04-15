@@ -418,6 +418,17 @@ Status: accepted
 
 ---
 
+Topic: the first TR-909 MVP increment should be one bounded slam control on the existing action seam  
+Phase: TR-909 MVP  
+Question: what is the smallest real TR-909 control Riotbox should add now that the review-driven cleanup queue is closed and the shell already supports queued lane actions?  
+Decision: start the TR-909 MVP with a single `tr909.set_slam` control queued through the existing `ActionQueue` and committed on the current transport-boundary seam. Keep it as a bounded toggle-like live control rather than inventing a separate device subsystem or pretending full drum takeover behavior already exists.  
+Why: the roadmap says TR-909 comes first among device MVPs, but the next slice still needs to stay small and reviewable. A bounded slam control adds a real device-facing interaction and visible lane change without reopening transport, persistence, or TUI architecture.  
+Evidence: the shell now exposes a dedicated `s` keypath for `tr909.set_slam`, the app queues it as a normal action, the committed side effects update both the TR-909 lane state and the macro intensity, and tests cover queueing, duplicate-pending protection, and committed slam state.  
+Consequences: later TR-909 work should deepen the same queue-and-commit seam for reinforcement and takeover behavior rather than adding shortcut execution paths. Full audible drum takeover and richer pattern semantics remain out of scope for this first device-facing increment.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

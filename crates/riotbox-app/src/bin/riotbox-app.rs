@@ -159,6 +159,13 @@ fn run_event_loop(
                     shell.app.queue_tr909_reinforce(timestamp_now());
                     shell.set_error_status("queued TR-909 reinforcement for next phrase");
                 }
+                ShellKeyOutcome::QueueTr909Slam => {
+                    if shell.app.queue_tr909_slam_toggle(timestamp_now()) {
+                        shell.set_error_status("queued TR-909 slam change for next beat");
+                    } else {
+                        shell.set_error_status("TR-909 slam change already queued");
+                    }
+                }
                 ShellKeyOutcome::QueueCaptureBar => {
                     shell.app.queue_capture_bar(timestamp_now());
                     shell.set_error_status("queued capture for next phrase");
