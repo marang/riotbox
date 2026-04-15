@@ -267,6 +267,18 @@ Recommended archive shapes:
 - one file per ticket for architecture, review, decision, or process tickets
 - grouped monthly or phase-oriented files for routine feature tickets when readability stays good
 
+Naming and formatting rules:
+
+- use `RIOTBOX-123.md` for one-ticket archive files
+- use `YYYY-MM.md` for grouped monthly files
+- use ISO dates in all metadata fields: `YYYY-MM-DD`
+- keep the metadata block field order consistent with the archive template
+- use stable final-status values such as:
+  - `Done`
+  - `Canceled`
+  - `Duplicate`
+  - `Superseded`
+
 Each archived ticket entry should include at least:
 
 - ticket id and title
@@ -284,11 +296,21 @@ Each archived ticket entry should include at least:
 - merge commit
 - follow-up tickets or bounded open questions
 
+Useful optional fields:
+
+- Linear issue URL
+- labels
+- assignee or owner
+- deleted-from-Linear date
+- verification summary
+- decision-log or spec links touched by the ticket
+
 Recommended metadata block:
 
 ```md
 - Ticket: `RIOTBOX-999`
 - Title: `Example ticket`
+- Linear issue: `https://linear.app/...`
 - Project: `Riotbox MVP Buildout`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
@@ -296,8 +318,13 @@ Recommended metadata block:
 - Started: `2026-04-16`
 - Finished: `2026-04-17`
 - Branch: `riotbox-999-example-ticket`
+- Assignee: `Markus`
+- Labels: `TUI`, `TR-909`
 - PR: `#99`
 - Merge commit: `abc1234`
+- Deleted from Linear: `2026-04-20`
+- Verification: `cargo fmt --all`, `cargo test`, `cargo clippy --all-targets --all-features -- -D warnings`
+- Docs touched: `docs/research_decision_log.md`
 - Follow-ups: `RIOTBOX-1000`, `RIOTBOX-1001`
 ```
 

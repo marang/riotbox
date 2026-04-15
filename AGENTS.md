@@ -224,6 +224,17 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Use the repo archive as canonical history and MemPalace only as a retrieval layer over that history.
 - For important architecture, review, and decision-heavy tickets, prefer one archive file per ticket.
 - For routine feature tickets, a grouped archive file is acceptable when the entries stay readable and searchable.
+- Keep archive entries structurally uniform.
+- Use:
+  - `RIOTBOX-123.md` for one-ticket archive files
+  - `YYYY-MM.md` for grouped monthly archive files
+- Use ISO dates (`YYYY-MM-DD`) for all archived ticket timestamps.
+- Keep metadata fields in the same order as the archive template so entries stay easy to scan, diff, and mine.
+- Use stable final-status terms such as:
+  - `Done`
+  - `Canceled`
+  - `Duplicate`
+  - `Superseded`
 - At minimum, preserve:
   - ticket id and title
   - Linear project
@@ -238,6 +249,13 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - PR link
   - merge commit
   - follow-up tickets or bounded open questions
+- When useful, also preserve:
+  - Linear issue URL
+  - labels
+  - assignee or owner
+  - deleted-from-Linear date
+  - verification summary
+  - decision-log or spec links touched by the ticket
 - Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
 
 ### Next-ticket heuristic

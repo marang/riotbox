@@ -28,6 +28,25 @@ Use one of these two shapes:
 - one file per ticket for architecture, review, decision, or process-heavy tickets
 - grouped files for routine feature work when readability stays good
 
+## Naming And Formatting
+
+Use these naming rules:
+
+- `RIOTBOX-123.md`
+  one-file archive entry for one important ticket
+- `YYYY-MM.md`
+  grouped archive file for routine tickets
+
+Formatting rules:
+
+- use ISO dates everywhere: `YYYY-MM-DD`
+- keep metadata field order consistent with the template
+- use stable final-status values such as:
+  - `Done`
+  - `Canceled`
+  - `Duplicate`
+  - `Superseded`
+
 Examples:
 
 - `RIOTBOX-038.md`
@@ -50,6 +69,15 @@ Every archived ticket entry should preserve at least:
 - PR link
 - merge commit
 - follow-up tickets or bounded open questions
+
+Useful optional fields:
+
+- Linear issue URL
+- labels
+- assignee or owner
+- deleted-from-Linear date
+- verification summary
+- decision-log or spec links touched by the ticket
 
 Use [TEMPLATE.md](./TEMPLATE.md) when creating a one-file ticket archive entry.
 
