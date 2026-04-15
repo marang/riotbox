@@ -176,6 +176,19 @@ fn run_event_loop(
                     shell.app.queue_scene_mutation(timestamp_now());
                     shell.set_error_status("queued scene mutation for next bar");
                 }
+                ShellKeyOutcome::QueueMc202RoleToggle => {
+                    match shell.app.queue_mc202_role_toggle(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued MC-202 role change for next phrase");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 role change already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 role already set");
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueTr909Fill => {
                     shell.app.queue_tr909_fill(timestamp_now());
                     shell.set_error_status("queued TR-909 fill for next bar");

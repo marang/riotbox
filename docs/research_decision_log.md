@@ -517,6 +517,17 @@ Status: accepted
 
 ---
 
+Topic: the first MC-202 MVP control should be a committed role toggle on the existing queue seam
+Phase: MC-202 MVP
+Question: after the current TR-909 lane is stabilized, what is the smallest honest MC-202 entry slice that creates real device progress without opening a second control path or pretending the follower generator already exists?
+Decision: start MC-202 with a bounded `mc202.set_role` action that toggles between `follower` and `leader` on the existing `ActionQueue` and `NextPhrase` commit seam. Surface the pending target in the Jam shell, update committed lane state plus a simple phrase reference on commit, and keep generation itself out of scope.
+Why: Riotbox needs a real first MC-202 control, but the follower/answer generation path is not ready yet. A committed role toggle uses the existing replay-aligned action seam, makes the lane visible and queueable in the shell, and avoids inventing a parallel device-control path just to enter the milestone.
+Evidence: `riotbox-app` now queues `mc202.set_role` as a phrase-boundary action, the commit path updates `mc202.role`, `mc202.phrase_ref`, and `mc202_touch`, `riotbox-core` exposes pending MC-202 role intent in `JamViewModel`, and shell tests cover both the keybinding and the pending-role cue.
+Consequences: later MC-202 work should build follower/answer generation and live parameter control on top of the same committed role seam rather than bypassing it with direct UI-only state or a second lane model.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

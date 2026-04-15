@@ -653,6 +653,45 @@ impl JamAppState {
         self.refresh_view();
     }
 
+    fn mc202_role_change_pending(&self) -> bool {
+        self.queue
+            .pending_actions()
+            .iter()
+            .any(|action| action.command == ActionCommand::Mc202SetRole)
+    }
+
+    pub fn queue_mc202_role_toggle(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+        if self.mc202_role_change_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let next_role = match self.session.runtime_state.lane_state.mc202.role.as_deref() {
+            Some("follower") => "leader",
+            Some("leader") => "follower",
+            Some(_) | None => "follower",
+        };
+        let target_touch = if next_role == "leader" { 0.85 } else { 0.65 };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Mc202SetRole,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                object_id: Some(next_role.into()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: target_touch,
+            target_id: Some(next_role.into()),
+        };
+        draft.explanation = Some(format!("set MC-202 role to {next_role} on next phrase"));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
     pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) {
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -973,6 +1012,7 @@ impl JamAppState {
             }
         }
 
+        apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
     }
 
@@ -1414,6 +1454,59 @@ fn apply_tr909_side_effects(
             }
         }
         _ => {}
+    }
+}
+
+fn apply_mc202_side_effects(
+    session: &mut SessionFile,
+    action: &Action,
+    boundary: Option<&CommitBoundaryState>,
+) {
+    if !matches!(action.command, ActionCommand::Mc202SetRole) {
+        return;
+    }
+
+    let Some(role) = action
+        .target
+        .object_id
+        .clone()
+        .or_else(|| match &action.params {
+            ActionParams::Mutation { target_id, .. } => target_id.clone(),
+            _ => None,
+        })
+    else {
+        return;
+    };
+
+    session.runtime_state.lane_state.mc202.role = Some(role.clone());
+    session.runtime_state.lane_state.mc202.phrase_ref = Some(boundary.map_or_else(
+        || format!("{role}-phrase"),
+        |boundary| {
+            boundary.scene_id.as_ref().map_or_else(
+                || format!("{role}-phrase-{}", boundary.phrase_index),
+                |scene_id| format!("{role}-{scene_id}"),
+            )
+        },
+    ));
+
+    let touch = match &action.params {
+        ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+        _ if role == "leader" => 0.85,
+        _ => 0.65,
+    };
+    session.runtime_state.macro_state.mc202_touch = touch;
+
+    if let Some(logged_action) = session
+        .action_log
+        .actions
+        .iter_mut()
+        .rev()
+        .find(|logged_action| logged_action.id == action.id)
+    {
+        logged_action.result = Some(ActionResult {
+            accepted: true,
+            summary: format!("set MC-202 role to {role} at {touch:.2}"),
+        });
     }
 }
 
@@ -2317,27 +2410,37 @@ mod tests {
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         state.queue_scene_mutation(300);
-        state.queue_tr909_fill(301);
-        state.queue_tr909_reinforce(302);
-        assert!(state.queue_tr909_slam_toggle(303));
-        state.queue_capture_bar(304);
-        assert!(state.queue_promote_last_capture(305));
+        assert_eq!(
+            state.queue_mc202_role_toggle(301),
+            QueueControlResult::Enqueued
+        );
+        state.queue_tr909_fill(302);
+        state.queue_tr909_reinforce(303);
+        assert!(state.queue_tr909_slam_toggle(304));
+        state.queue_capture_bar(305);
+        assert!(state.queue_promote_last_capture(306));
 
         let pending = state.queue.pending_actions();
 
-        assert_eq!(pending.len(), 6);
+        assert_eq!(pending.len(), 7);
         assert_eq!(pending[0].command, ActionCommand::MutateScene);
         assert_eq!(pending[0].quantization, Quantization::NextBar);
-        assert_eq!(pending[1].command, ActionCommand::Tr909FillNext);
-        assert_eq!(pending[1].quantization, Quantization::NextBar);
-        assert_eq!(pending[2].command, ActionCommand::Tr909ReinforceBreak);
-        assert_eq!(pending[2].quantization, Quantization::NextPhrase);
-        assert_eq!(pending[3].command, ActionCommand::Tr909SetSlam);
-        assert_eq!(pending[3].quantization, Quantization::NextBeat);
-        assert_eq!(pending[4].command, ActionCommand::CaptureBarGroup);
-        assert_eq!(pending[4].quantization, Quantization::NextPhrase);
-        assert_eq!(pending[5].command, ActionCommand::PromoteCaptureToPad);
-        assert_eq!(pending[5].quantization, Quantization::NextBar);
+        assert_eq!(pending[1].command, ActionCommand::Mc202SetRole);
+        assert_eq!(pending[1].quantization, Quantization::NextPhrase);
+        assert_eq!(pending[2].command, ActionCommand::Tr909FillNext);
+        assert_eq!(pending[2].quantization, Quantization::NextBar);
+        assert_eq!(pending[3].command, ActionCommand::Tr909ReinforceBreak);
+        assert_eq!(pending[3].quantization, Quantization::NextPhrase);
+        assert_eq!(pending[4].command, ActionCommand::Tr909SetSlam);
+        assert_eq!(pending[4].quantization, Quantization::NextBeat);
+        assert_eq!(pending[5].command, ActionCommand::CaptureBarGroup);
+        assert_eq!(pending[5].quantization, Quantization::NextPhrase);
+        assert_eq!(pending[6].command, ActionCommand::PromoteCaptureToPad);
+        assert_eq!(pending[6].quantization, Quantization::NextBar);
+        assert_eq!(
+            state.jam_view.lanes.mc202_pending_role.as_deref(),
+            Some("leader")
+        );
         assert!(
             !state
                 .session
@@ -2347,7 +2450,31 @@ mod tests {
                 .fill_armed_next_bar
         );
         assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
-        assert_eq!(state.jam_view.pending_actions.len(), 6);
+        assert_eq!(state.jam_view.pending_actions.len(), 7);
+    }
+
+    #[test]
+    fn queueing_mc202_role_change_blocks_duplicate_pending_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_role_toggle(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_role_toggle(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Mc202SetRole);
+        assert_eq!(
+            state.jam_view.lanes.mc202_pending_role.as_deref(),
+            Some("leader")
+        );
     }
 
     #[test]
@@ -2684,6 +2811,62 @@ mod tests {
         assert_eq!(
             state.runtime.tr909_render.pattern_ref.as_deref(),
             Some("reinforce-scene-1")
+        );
+    }
+
+    #[test]
+    fn committed_mc202_role_change_updates_lane_state_and_macro_touch() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_role_toggle(300),
+            QueueControlResult::Enqueued
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            Some("leader")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some("leader-scene-1")
+        );
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.85);
+        assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("leader"));
+        assert_eq!(state.jam_view.lanes.mc202_pending_role, None);
+        assert_eq!(
+            state.jam_view.lanes.mc202_phrase_ref.as_deref(),
+            Some("leader-scene-1")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("set MC-202 role to leader at 0.85")
         );
     }
 

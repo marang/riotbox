@@ -18,6 +18,23 @@ impl JamViewModel {
     #[must_use]
     pub fn build(session: &SessionFile, queue: &ActionQueue, graph: Option<&SourceGraph>) -> Self {
         let pending_actions = queue.pending_actions();
+        let mc202_pending_role =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::Mc202SetRole => action
+                        .target
+                        .object_id
+                        .clone()
+                        .or_else(|| match &action.params {
+                            crate::action::ActionParams::Mutation { target_id, .. } => {
+                                target_id.clone()
+                            }
+                            _ => None,
+                        }),
+                    _ => None,
+                });
         let tr909_takeover_pending_target =
             pending_actions
                 .iter()
@@ -95,6 +112,8 @@ impl JamViewModel {
             },
             lanes: LaneSummaryView {
                 mc202_role: session.runtime_state.lane_state.mc202.role.clone(),
+                mc202_pending_role,
+                mc202_phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
                 w30_active_bank: session
                     .runtime_state
                     .lane_state
@@ -239,6 +258,8 @@ pub struct MacroStripView {
 #[derive(Clone, Debug, PartialEq)]
 pub struct LaneSummaryView {
     pub mc202_role: Option<String>,
+    pub mc202_pending_role: Option<String>,
+    pub mc202_phrase_ref: Option<String>,
     pub w30_active_bank: Option<String>,
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
@@ -449,6 +470,19 @@ mod tests {
         queue.enqueue(
             ActionDraft::new(
                 ActorType::User,
+                ActionCommand::Mc202SetRole,
+                Quantization::NextPhrase,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneMc202),
+                    object_id: Some("leader".into()),
+                    ..Default::default()
+                },
+            ),
+            101,
+        );
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
                 ActionCommand::Tr909Release,
                 Quantization::NextPhrase,
                 ActionTarget {
@@ -456,7 +490,7 @@ mod tests {
                     ..Default::default()
                 },
             ),
-            101,
+            102,
         );
         queue.enqueue(
             ActionDraft::new(
@@ -468,7 +502,7 @@ mod tests {
                     ..Default::default()
                 },
             ),
-            102,
+            103,
         );
 
         let vm = JamViewModel::build(&session, &queue, Some(&graph));
@@ -491,6 +525,8 @@ mod tests {
             Some("promoted to pad bank-a/pad-01")
         );
         assert!(vm.capture.pinned_capture_ids.is_empty());
+        assert_eq!(vm.lanes.mc202_pending_role.as_deref(), Some("leader"));
+        assert_eq!(vm.lanes.mc202_phrase_ref, None);
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
         assert_eq!(
@@ -500,7 +536,7 @@ mod tests {
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 3);
+        assert_eq!(vm.pending_actions.len(), 4);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }

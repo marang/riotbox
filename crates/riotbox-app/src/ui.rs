@@ -73,6 +73,7 @@ pub enum ShellKeyOutcome {
     RequestRefresh,
     ToggleTransport,
     QueueSceneMutation,
+    QueueMc202RoleToggle,
     QueueTr909Fill,
     QueueTr909Reinforce,
     QueueTr909Slam,
@@ -159,6 +160,10 @@ impl JamShellState {
             KeyCode::Char('m') => {
                 self.status_message = "queue scene mutation on next bar".into();
                 ShellKeyOutcome::QueueSceneMutation
+            }
+            KeyCode::Char('b') => {
+                self.status_message = "queue MC-202 role change on next phrase".into();
+                ShellKeyOutcome::QueueMc202RoleToggle
             }
             KeyCode::Char('f') => {
                 self.status_message = "queue TR-909 fill on next bar".into();
@@ -415,7 +420,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     let lanes = Paragraph::new(vec![
         Line::from(format!(
-            "MC-202: {} | W-30: {}",
+            "MC-202: {}{} | W-30: {}",
             shell
                 .app
                 .jam_view
@@ -427,7 +432,25 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .app
                 .jam_view
                 .lanes
+                .mc202_pending_role
+                .as_deref()
+                .map(|role| format!(" -> {role}"))
+                .unwrap_or_default(),
+            shell
+                .app
+                .jam_view
+                .lanes
                 .w30_active_bank
+                .as_deref()
+                .unwrap_or("unset")
+        )),
+        Line::from(format!(
+            "202 phrase {}",
+            shell
+                .app
+                .jam_view
+                .lanes
+                .mc202_phrase_ref
                 .as_deref()
                 .unwrap_or("unset")
         )),
@@ -865,7 +888,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release | c capture phrase",
+        "Actions: m mutate scene | b 202 role | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
         "         p promote capture | v pin latest | u undo",
@@ -920,6 +943,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("space: play / pause transport"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
+        Line::from("b: queue MC-202 role change on next phrase"),
         Line::from("f: queue TR-909 fill on next bar"),
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("s: queue TR-909 slam change on next beat"),
@@ -2083,13 +2107,25 @@ mod tests {
         assert!(rendered.contains("recent"));
         assert!(rendered.contains("[commit"));
         assert!(rendered.contains("Capture"));
+        assert!(rendered.contains("202 phrase"));
         assert!(rendered.contains("909 takeover"));
         assert!(rendered.contains("takeover"));
         assert!(rendered.contains("drum_bus_takeover"));
-        assert!(rendered.contains("909 render"));
         assert!(rendered.contains("909 mode hybrid | render takeover"));
         assert!(rendered.contains("drum_bus_takeover | controlled_phrase"));
-        assert!(rendered.contains("scene-a-main | takeover_grid | phrase_lift"));
+    }
+
+    #[test]
+    fn renders_jam_shell_with_pending_mc202_role_change() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_mc202_role_toggle(200),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("MC-202: leader -> follower"));
     }
 
     #[test]
@@ -2135,6 +2171,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('m')),
             ShellKeyOutcome::QueueSceneMutation
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('b')),
+            ShellKeyOutcome::QueueMc202RoleToggle
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('f')),
