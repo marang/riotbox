@@ -528,6 +528,17 @@ Status: accepted
 
 ---
 
+Topic: the first MC-202 follower generator should stay phrase-quantized on the existing role seam
+Phase: MC-202 MVP
+Question: after committed role control exists, what is the smallest honest next slice that creates a usable MC-202 follower-line path without pretending a full synth engine, phrase editor, or answer generator already exists?
+Decision: add a bounded `mc202.generate_follower` action on the existing `ActionQueue` and `NextPhrase` commit seam. Surface pending follower generation in the Jam shell, commit it into `mc202.role`, `mc202.phrase_ref`, and `mc202_touch`, and keep deeper answer logic and live parameter editing out of scope.
+Why: Phase 4 needs a real follower-line path, not just another role toggle. Reusing the current phrase-boundary seam keeps generation replay-safe and visible, while committed lane-state updates make the MC-202 lane feel real without inventing a second phrase engine or UI-only device model.
+Evidence: `riotbox-app` now queues `mc202.generate_follower` as a phrase-boundary action, the commit path writes a follower-oriented phrase reference plus touch intensity into session state, `riotbox-core` exposes pending follower generation in `JamViewModel`, and shell tests cover both the new keybinding and the pending-generation cue.
+Consequences: later MC-202 work should extend the same committed phrase seam with answer generation and parameter control rather than bypassing it with direct shell state, callback-only heuristics, or a separate MC-202 runtime graph.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

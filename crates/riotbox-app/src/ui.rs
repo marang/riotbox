@@ -74,6 +74,7 @@ pub enum ShellKeyOutcome {
     ToggleTransport,
     QueueSceneMutation,
     QueueMc202RoleToggle,
+    QueueMc202GenerateFollower,
     QueueTr909Fill,
     QueueTr909Reinforce,
     QueueTr909Slam,
@@ -164,6 +165,10 @@ impl JamShellState {
             KeyCode::Char('b') => {
                 self.status_message = "queue MC-202 role change on next phrase".into();
                 ShellKeyOutcome::QueueMc202RoleToggle
+            }
+            KeyCode::Char('g') => {
+                self.status_message = "queue MC-202 follower phrase on next phrase".into();
+                ShellKeyOutcome::QueueMc202GenerateFollower
             }
             KeyCode::Char('f') => {
                 self.status_message = "queue TR-909 fill on next bar".into();
@@ -445,14 +450,19 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or("unset")
         )),
         Line::from(format!(
-            "202 phrase {}",
+            "202 phrase {} | gen {}",
             shell
                 .app
                 .jam_view
                 .lanes
                 .mc202_phrase_ref
                 .as_deref()
-                .unwrap_or("unset")
+                .unwrap_or("unset"),
+            if shell.app.jam_view.lanes.mc202_pending_follower_generation {
+                "queued"
+            } else {
+                "idle"
+            }
         )),
         Line::from(format!(
             "909 takeover {} | fill {} / {}",
@@ -944,6 +954,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
         Line::from("b: queue MC-202 role change on next phrase"),
+        Line::from("g: generate MC-202 follower on next phrase"),
         Line::from("f: queue TR-909 fill on next bar"),
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("s: queue TR-909 slam change on next beat"),
@@ -2108,6 +2119,7 @@ mod tests {
         assert!(rendered.contains("[commit"));
         assert!(rendered.contains("Capture"));
         assert!(rendered.contains("202 phrase"));
+        assert!(rendered.contains("gen idle"));
         assert!(rendered.contains("909 takeover"));
         assert!(rendered.contains("takeover"));
         assert!(rendered.contains("drum_bus_takeover"));
@@ -2126,6 +2138,19 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("MC-202: leader -> follower"));
+    }
+
+    #[test]
+    fn renders_jam_shell_with_pending_mc202_follower_generation() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_mc202_generate_follower(200),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("gen queued"));
     }
 
     #[test]
@@ -2175,6 +2200,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('b')),
             ShellKeyOutcome::QueueMc202RoleToggle
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('g')),
+            ShellKeyOutcome::QueueMc202GenerateFollower
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('f')),

@@ -653,15 +653,19 @@ impl JamAppState {
         self.refresh_view();
     }
 
-    fn mc202_role_change_pending(&self) -> bool {
-        self.queue
-            .pending_actions()
-            .iter()
-            .any(|action| action.command == ActionCommand::Mc202SetRole)
+    fn mc202_phrase_control_pending(&self) -> bool {
+        self.queue.pending_actions().iter().any(|action| {
+            matches!(
+                action.command,
+                ActionCommand::Mc202SetRole
+                    | ActionCommand::Mc202GenerateFollower
+                    | ActionCommand::Mc202GenerateAnswer
+            )
+        })
     }
 
     pub fn queue_mc202_role_toggle(&mut self, requested_at: TimestampMs) -> QueueControlResult {
-        if self.mc202_role_change_pending() {
+        if self.mc202_phrase_control_pending() {
             return QueueControlResult::AlreadyPending;
         }
 
@@ -687,6 +691,34 @@ impl JamAppState {
             target_id: Some(next_role.into()),
         };
         draft.explanation = Some(format!("set MC-202 role to {next_role} on next phrase"));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
+    pub fn queue_mc202_generate_follower(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> QueueControlResult {
+        if self.mc202_phrase_control_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Mc202GenerateFollower,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                object_id: Some("follower".into()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 0.78,
+            target_id: Some("follower".into()),
+        };
+        draft.explanation = Some("generate MC-202 follower phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -1462,24 +1494,79 @@ fn apply_mc202_side_effects(
     action: &Action,
     boundary: Option<&CommitBoundaryState>,
 ) {
-    if !matches!(action.command, ActionCommand::Mc202SetRole) {
-        return;
+    match action.command {
+        ActionCommand::Mc202SetRole => {
+            let Some(role) = action
+                .target
+                .object_id
+                .clone()
+                .or_else(|| match &action.params {
+                    ActionParams::Mutation { target_id, .. } => target_id.clone(),
+                    _ => None,
+                })
+            else {
+                return;
+            };
+
+            session.runtime_state.lane_state.mc202.role = Some(role.clone());
+            session.runtime_state.lane_state.mc202.phrase_ref =
+                Some(boundary_phrase_ref(boundary, &role));
+
+            let touch = match &action.params {
+                ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+                _ if role == "leader" => 0.85,
+                _ => 0.65,
+            };
+            session.runtime_state.macro_state.mc202_touch = touch;
+
+            if let Some(logged_action) = session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: format!("set MC-202 role to {role} at {touch:.2}"),
+                });
+            }
+        }
+        ActionCommand::Mc202GenerateFollower => {
+            let role = "follower";
+            let phrase_ref = boundary_phrase_ref(boundary, role);
+            let touch = match &action.params {
+                ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+                _ => 0.78,
+            };
+
+            session.runtime_state.lane_state.mc202.role = Some(role.into());
+            session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+            session.runtime_state.macro_state.mc202_touch =
+                session.runtime_state.macro_state.mc202_touch.max(touch);
+
+            if let Some(logged_action) = session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: format!(
+                        "generated MC-202 follower phrase {phrase_ref} at {:.2}",
+                        session.runtime_state.macro_state.mc202_touch
+                    ),
+                });
+            }
+        }
+        _ => {}
     }
+}
 
-    let Some(role) = action
-        .target
-        .object_id
-        .clone()
-        .or_else(|| match &action.params {
-            ActionParams::Mutation { target_id, .. } => target_id.clone(),
-            _ => None,
-        })
-    else {
-        return;
-    };
-
-    session.runtime_state.lane_state.mc202.role = Some(role.clone());
-    session.runtime_state.lane_state.mc202.phrase_ref = Some(boundary.map_or_else(
+fn boundary_phrase_ref(boundary: Option<&CommitBoundaryState>, role: &str) -> String {
+    boundary.map_or_else(
         || format!("{role}-phrase"),
         |boundary| {
             boundary.scene_id.as_ref().map_or_else(
@@ -1487,27 +1574,7 @@ fn apply_mc202_side_effects(
                 |scene_id| format!("{role}-{scene_id}"),
             )
         },
-    ));
-
-    let touch = match &action.params {
-        ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
-        _ if role == "leader" => 0.85,
-        _ => 0.65,
-    };
-    session.runtime_state.macro_state.mc202_touch = touch;
-
-    if let Some(logged_action) = session
-        .action_log
-        .actions
-        .iter_mut()
-        .rev()
-        .find(|logged_action| logged_action.id == action.id)
-    {
-        logged_action.result = Some(ActionResult {
-            accepted: true,
-            summary: format!("set MC-202 role to {role} at {touch:.2}"),
-        });
-    }
+    )
 }
 
 fn build_tr909_render_state(
@@ -2441,6 +2508,7 @@ mod tests {
             state.jam_view.lanes.mc202_pending_role.as_deref(),
             Some("leader")
         );
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(
             !state
                 .session
@@ -2474,6 +2542,57 @@ mod tests {
         assert_eq!(
             state.jam_view.lanes.mc202_pending_role.as_deref(),
             Some("leader")
+        );
+    }
+
+    #[test]
+    fn queueing_mc202_follower_generation_blocks_duplicate_pending_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_follower(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_generate_follower(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Mc202GenerateFollower);
+        assert!(state.jam_view.lanes.mc202_pending_follower_generation);
+    }
+
+    #[test]
+    fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_role_toggle(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_generate_follower(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let mut other_state = JamAppState::from_parts(
+            sample_session(&graph),
+            Some(graph.clone()),
+            ActionQueue::new(),
+        );
+        assert_eq!(
+            other_state.queue_mc202_generate_follower(302),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            other_state.queue_mc202_role_toggle(303),
+            QueueControlResult::AlreadyPending
         );
     }
 
@@ -2867,6 +2986,62 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("set MC-202 role to leader at 0.85")
+        );
+    }
+
+    #[test]
+    fn committed_mc202_follower_generation_updates_phrase_ref_and_touch() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_follower(300),
+            QueueControlResult::Enqueued
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            Some("follower")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some("follower-scene-1")
+        );
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.78);
+        assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert_eq!(
+            state.jam_view.lanes.mc202_phrase_ref.as_deref(),
+            Some("follower-scene-1")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("generated MC-202 follower phrase follower-scene-1 at 0.78")
         );
     }
 

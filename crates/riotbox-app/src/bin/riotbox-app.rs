@@ -189,6 +189,21 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueMc202GenerateFollower => {
+                    match shell.app.queue_mc202_generate_follower(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued MC-202 follower generation for next phrase",
+                            );
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 follower generation already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 follower already in state");
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueTr909Fill => {
                     shell.app.queue_tr909_fill(timestamp_now());
                     shell.set_error_status("queued TR-909 fill for next bar");

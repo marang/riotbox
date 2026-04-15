@@ -35,6 +35,12 @@ impl JamViewModel {
                         }),
                     _ => None,
                 });
+        let mc202_pending_follower_generation = pending_actions.iter().any(|action| {
+            matches!(
+                action.command,
+                crate::action::ActionCommand::Mc202GenerateFollower
+            )
+        });
         let tr909_takeover_pending_target =
             pending_actions
                 .iter()
@@ -113,6 +119,7 @@ impl JamViewModel {
             lanes: LaneSummaryView {
                 mc202_role: session.runtime_state.lane_state.mc202.role.clone(),
                 mc202_pending_role,
+                mc202_pending_follower_generation,
                 mc202_phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
                 w30_active_bank: session
                     .runtime_state
@@ -259,6 +266,7 @@ pub struct MacroStripView {
 pub struct LaneSummaryView {
     pub mc202_role: Option<String>,
     pub mc202_pending_role: Option<String>,
+    pub mc202_pending_follower_generation: bool,
     pub mc202_phrase_ref: Option<String>,
     pub w30_active_bank: Option<String>,
     pub tr909_slam_enabled: bool,
@@ -526,6 +534,7 @@ mod tests {
         );
         assert!(vm.capture.pinned_capture_ids.is_empty());
         assert_eq!(vm.lanes.mc202_pending_role.as_deref(), Some("leader"));
+        assert!(!vm.lanes.mc202_pending_follower_generation);
         assert_eq!(vm.lanes.mc202_phrase_ref, None);
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
