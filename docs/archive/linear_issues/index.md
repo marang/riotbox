@@ -40,4 +40,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Fixture-backed TR-909 regression coverage for shipped pattern-adoption and phrase-variation states.
 - [RIOTBOX-48.md](./RIOTBOX-48.md)
   First bounded MC-202 role control on the queue and phrase-boundary seam.
+- [RIOTBOX-51.md](./RIOTBOX-51.md)
+  First bounded MC-202 follower-generation path on the existing phrase-boundary seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
