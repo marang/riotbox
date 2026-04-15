@@ -90,6 +90,12 @@ Rules:
 
 ## 6. Source References
 
+MVP note:
+
+- Riotbox MVP currently supports exactly one active source per session
+- `source_refs` remains plural in the schema so later migrations can grow without rewriting the top-level shape
+- app/runtime code should reject sessions that silently contain multiple active sources during MVP
+
 ```text
 SourceRef {
   source_id
@@ -133,6 +139,12 @@ Allowed `storage_mode` values:
 MVP preference:
 
 - start with `embedded` unless graph size becomes a real problem
+
+MVP note:
+
+- Riotbox MVP currently supports exactly one active source graph reference per session
+- that graph reference must match the single active `source_ref`
+- plural shape is retained for forward compatibility, not to imply current multi-source support in the app/runtime
 
 ---
 

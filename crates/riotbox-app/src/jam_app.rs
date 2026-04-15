@@ -232,6 +232,7 @@ impl JamAppState {
     ) -> Result<Self, JamAppError> {
         let session_path = session_path.as_ref().to_path_buf();
         let session = load_session_json(&session_path)?;
+        validate_mvp_single_source_session(&session)?;
         let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
         let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
         let mut queue = ActionQueue::new();
@@ -989,6 +990,33 @@ fn resolve_source_graph(
     }
 }
 
+fn validate_mvp_single_source_session(session: &SessionFile) -> Result<(), JamAppError> {
+    if session.source_refs.len() > 1 {
+        return Err(JamAppError::InvalidSession(
+            "Riotbox MVP currently supports exactly one source reference per session".into(),
+        ));
+    }
+
+    if session.source_graph_refs.len() > 1 {
+        return Err(JamAppError::InvalidSession(
+            "Riotbox MVP currently supports exactly one source graph reference per session".into(),
+        ));
+    }
+
+    if let (Some(source_ref), Some(graph_ref)) = (
+        session.source_refs.first(),
+        session.source_graph_refs.first(),
+    ) && source_ref.source_id != graph_ref.source_id
+    {
+        return Err(JamAppError::InvalidSession(format!(
+            "source ref {} does not match source graph ref {}",
+            source_ref.source_id, graph_ref.source_id
+        )));
+    }
+
+    Ok(())
+}
+
 fn sync_graph_refs_with_state(
     session: &mut SessionFile,
     source_graph: Option<&SourceGraph>,
@@ -1376,6 +1404,52 @@ mod tests {
             Some("updated embedded session")
         );
         assert_eq!(persisted_graph, graph);
+    }
+
+    #[test]
+    fn rejects_session_with_multiple_source_refs_in_mvp_mode() {
+        let dir = tempdir().expect("create temp dir");
+        let session_path = dir.path().join("jam-session.json");
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.source_refs.push(SourceRef {
+            source_id: SourceId::from("src-2"),
+            path_hint: "other.wav".into(),
+            content_hash: "hash-2".into(),
+            duration_seconds: 64.0,
+            decode_profile: "normalized_stereo".into(),
+        });
+        save_session_json(&session_path, &session).expect("save multi-source session fixture");
+
+        let error = JamAppState::from_json_files(&session_path, None::<&Path>)
+            .expect_err("load should fail");
+
+        match error {
+            JamAppError::InvalidSession(message) => {
+                assert!(message.contains("exactly one source reference"));
+            }
+            other => panic!("unexpected error: {other}"),
+        }
+    }
+
+    #[test]
+    fn rejects_session_with_mismatched_single_source_and_graph_refs() {
+        let dir = tempdir().expect("create temp dir");
+        let session_path = dir.path().join("jam-session.json");
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.source_graph_refs[0].source_id = SourceId::from("src-other");
+        save_session_json(&session_path, &session).expect("save mismatched session fixture");
+
+        let error = JamAppState::from_json_files(&session_path, None::<&Path>)
+            .expect_err("load should fail");
+
+        match error {
+            JamAppError::InvalidSession(message) => {
+                assert!(message.contains("does not match source graph ref"));
+            }
+            other => panic!("unexpected error: {other}"),
+        }
     }
 
     #[test]

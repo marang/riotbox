@@ -396,6 +396,17 @@ Status: accepted
 
 ---
 
+Topic: Riotbox MVP should make the current single-source assumption explicit instead of silently collapsing plural session refs  
+Phase: Jam-first Playable Slice  
+Question: should the app start supporting multiple source refs now, or should MVP explicitly freeze to one active source and one matching graph ref until multi-source work is intentionally designed?  
+Decision: freeze MVP explicitly to a single active source and a single matching source-graph reference. Keep the schema plural for forward compatibility, but make the spec explicit and reject invalid multi-source sessions in the app/runtime instead of silently loading only the first graph.  
+Why: the current app behavior is single-source already. Leaving the plural core shape unqualified made the contract look broader than the runtime really was, which would create silent drift and make later multi-source work harder to reason about.  
+Evidence: the app load path now validates the single-source MVP constraint, rejects sessions with multiple source refs or mismatched source/graph IDs, and the session-file spec now calls the MVP restriction out explicitly while preserving the plural schema shape for future migration.  
+Consequences: later multi-source work will need an explicit active-source selector and updated app/runtime contracts instead of relying on the current single-source assumption.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
