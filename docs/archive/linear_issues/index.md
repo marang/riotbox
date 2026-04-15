@@ -22,4 +22,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Single-source MVP contract clarification.
 - [RIOTBOX-39.md](./RIOTBOX-39.md)
   Controlled TR-909 takeover and release path.
+- [RIOTBOX-40.md](./RIOTBOX-40.md)
+  Audio-facing TR-909 reinforcement render seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.

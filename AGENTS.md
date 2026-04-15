@@ -214,8 +214,10 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Move issues to review when the PR is open and to done when the PR is merged.
 - Follow the repo workflow note in `docs/workflow_conventions.md` for branch / PR / merge / Linear conventions.
 - Keep a small active backlog in Linear so work does not stall at ticket boundaries.
-- Prefer:
-  - 1 ticket in progress
+- Treat this as an active rule, not a soft preference.
+- During active implementation, do not let the working backlog drop to zero when the next likely slice is already clear.
+- Before closing the current ticket loop, ensure Linear still has:
+  - 1 ticket in progress or in review
   - 1-3 near-next tickets in backlog
   - milestone-level placeholders for later work only when they stay coarse and honest
 - Do not fully decompose distant phases into many detailed tickets before nearer slices land.
