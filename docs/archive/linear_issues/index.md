@@ -28,4 +28,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First audible TR-909 reinforcement behind the render seam.
 - [RIOTBOX-42.md](./RIOTBOX-42.md)
   Typed TR-909 source-support and takeover render profiles.
+- [RIOTBOX-43.md](./RIOTBOX-43.md)
+  Replay-safe TR-909 audio fixtures and regression checks.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
