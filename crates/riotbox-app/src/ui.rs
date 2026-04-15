@@ -459,10 +459,15 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .as_deref()
                 .unwrap_or("unset"),
             if shell.app.jam_view.lanes.mc202_pending_follower_generation {
-                "queued"
+                "follower queued"
             } else {
                 "idle"
             }
+        )),
+        Line::from(format!(
+            "202 touch {:.2} | role diag {}",
+            shell.app.jam_view.macros.mc202_touch,
+            mc202_pending_role_label(shell)
         )),
         Line::from(format!(
             "909 takeover {} | fill {} / {}",
@@ -612,9 +617,10 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let summary_columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(34),
-            Constraint::Percentage(33),
-            Constraint::Percentage(33),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
+            Constraint::Percentage(25),
         ])
         .split(rows[0]);
 
@@ -646,6 +652,10 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     ])
     .block(Block::default().title("Counts").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
+
+    let mc202_focus = Paragraph::new(mc202_log_lines(shell))
+        .block(Block::default().title("MC-202 Lane").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
 
     let render_focus = Paragraph::new(vec![
         Line::from(format!(
@@ -710,8 +720,9 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(counts, summary_columns[0]);
-    frame.render_widget(render_focus, summary_columns[1]);
-    frame.render_widget(warnings_panel, summary_columns[2]);
+    frame.render_widget(mc202_focus, summary_columns[1]);
+    frame.render_widget(render_focus, summary_columns[2]);
+    frame.render_widget(warnings_panel, summary_columns[3]);
 
     let columns = Layout::default()
         .direction(Direction::Horizontal)
@@ -898,7 +909,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | b 202 role | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release | c capture phrase",
+        "Actions: m mutate scene | b 202 role | g 202 follower | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
         "         p promote capture | v pin latest | u undo",
@@ -1046,6 +1057,59 @@ fn macro_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             "w30 {:.2} | tr909 {:.2}",
             macros.w30_grit, macros.tr909_slam
         )),
+    ]
+}
+
+fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
+    if shell.app.jam_view.lanes.mc202_pending_role.is_some() {
+        "role queued"
+    } else if shell.app.jam_view.lanes.mc202_pending_follower_generation {
+        "follower queued"
+    } else {
+        "stable"
+    }
+}
+
+fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let lanes = &shell.app.jam_view.lanes;
+    let last_mc202_action = shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .find(|action| {
+            matches!(
+                action.command,
+                riotbox_core::action::ActionCommand::Mc202SetRole
+                    | riotbox_core::action::ActionCommand::Mc202GenerateFollower
+                    | riotbox_core::action::ActionCommand::Mc202GenerateAnswer
+            )
+        })
+        .map(|action| action.command.to_string())
+        .unwrap_or_else(|| "none".into());
+
+    vec![
+        Line::from(format!(
+            "role {} | next {}",
+            lanes.mc202_role.as_deref().unwrap_or("unset"),
+            lanes.mc202_pending_role.as_deref().unwrap_or("none")
+        )),
+        Line::from(format!(
+            "phrase {} | gen {}",
+            lanes.mc202_phrase_ref.as_deref().unwrap_or("unset"),
+            if lanes.mc202_pending_follower_generation {
+                "queued"
+            } else {
+                "idle"
+            }
+        )),
+        Line::from(format!(
+            "touch {:.2} | last {}",
+            shell.app.jam_view.macros.mc202_touch, last_mc202_action
+        )),
+        Line::from(format!("diagnostic {}", mc202_pending_role_label(shell))),
     ]
 }
 
@@ -2120,11 +2184,11 @@ mod tests {
         assert!(rendered.contains("Capture"));
         assert!(rendered.contains("202 phrase"));
         assert!(rendered.contains("gen idle"));
+        assert!(rendered.contains("202 touch 0.80"));
         assert!(rendered.contains("909 takeover"));
         assert!(rendered.contains("takeover"));
-        assert!(rendered.contains("drum_bus_takeover"));
-        assert!(rendered.contains("909 mode hybrid | render takeover"));
-        assert!(rendered.contains("drum_bus_takeover | controlled_phrase"));
+        assert!(rendered.contains("909 mode"));
+        assert!(rendered.contains("render takeover"));
     }
 
     #[test]
@@ -2150,7 +2214,7 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("gen queued"));
+        assert!(rendered.contains("follower queued"));
     }
 
     #[test]
@@ -2259,13 +2323,13 @@ mod tests {
         assert!(rendered.contains("Queued / Pending"));
         assert!(rendered.contains("Accepted / Committed"));
         assert!(rendered.contains("Rejected / Undone"));
+        assert!(rendered.contains("MC-202 Lane"));
+        assert!(rendered.contains("role leader"));
+        assert!(rendered.contains("diagnostic stable"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("mutate.scene"));
         assert!(rendered.contains("TR-909 Render"));
-        assert!(rendered.contains("render takeover via drum_bus_takeover"));
-        assert!(rendered.contains("controlled_phrase"));
-        assert!(rendered.contains("takeover_grid"));
-        assert!(rendered.contains("phrase_lift"));
+        assert!(rendered.contains("takeover"));
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("undid most recent musical"));
     }

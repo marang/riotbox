@@ -539,6 +539,17 @@ Status: accepted
 
 ---
 
+Topic: the first deeper MC-202 shell slice should improve lane diagnostics instead of opening a synth inspector
+Phase: MC-202 MVP
+Question: after the follower-generation action exists, what is the next bounded shell slice that makes the MC-202 lane more legible without inventing a dedicated device pane or second diagnostic surface?
+Decision: deepen the existing `Jam` and `Log` screens with clearer MC-202 lane diagnostics. Keep the slice read-only on top of committed lane state, pending-action intent, and the existing action log, and avoid any new device-specific editor or inspector route.
+Why: once follower generation exists, users need to see what the MC-202 lane believes it is doing. The shell should answer that directly in the normal operator surfaces instead of forcing a second panel or hidden debug path.
+Evidence: `riotbox-app` now shows richer MC-202 lane summaries in `Jam`, adds a dedicated `MC-202 Lane` diagnostics panel in `Log`, and keeps the diagnostics grounded in existing `JamViewModel` fields plus the action log. The footer also now advertises the follower-generation key so visible controls match the actual shell behavior.
+Consequences: later MC-202 work should keep deepening these same operator surfaces instead of opening a second synth inspector or a parallel device-debug workflow.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
