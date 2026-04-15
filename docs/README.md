@@ -54,6 +54,10 @@ docs/
   workflow_conventions.md
   phase_definition_of_done.md
   research_decision_log.md
+  archive/
+    linear_issues/
+      README.md
+      index.md
   reviews/
     whole_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-13.md
@@ -100,6 +104,8 @@ docs/
 - `specs/fixture_corpus_spec.md`: draft started
 - `phase_definition_of_done.md`: draft started
 - `research_decision_log.md`: draft started
+- `archive/linear_issues/README.md`: archive policy started
+- `archive/linear_issues/index.md`: archive index started
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started

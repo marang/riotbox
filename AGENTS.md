@@ -212,8 +212,27 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 
 - Keep Linear updates human-readable.
 - Move issues to review when the PR is open and to done when the PR is merged.
-- Archive completed issues once they are truly finished so the workspace stays under the free-tier issue cap.
 - Follow the repo workflow note in `docs/workflow_conventions.md` for branch / PR / merge / Linear conventions.
+- Keep a small active backlog in Linear so work does not stall at ticket boundaries.
+- Prefer:
+  - 1 ticket in progress
+  - 1-3 near-next tickets in backlog
+  - milestone-level placeholders for later work only when they stay coarse and honest
+- Do not fully decompose distant phases into many detailed tickets before nearer slices land.
+- Treat Linear as the active operations layer, not the long-term archive.
+- Before deleting a completed Linear issue to stay under the free-tier cap, archive its useful context into repo markdown under `docs/archive/linear_issues/`.
+- Use the repo archive as canonical history and MemPalace only as a retrieval layer over that history.
+- For important architecture, review, and decision-heavy tickets, prefer one archive file per ticket.
+- For routine feature tickets, a grouped archive file is acceptable when the entries stay readable and searchable.
+- At minimum, preserve:
+  - ticket id and title
+  - milestone or phase
+  - why the ticket existed
+  - what shipped
+  - PR link
+  - merge commit
+  - follow-up tickets or bounded open questions
+- Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
 
 ### Next-ticket heuristic
 

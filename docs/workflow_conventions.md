@@ -218,6 +218,73 @@ Also add a short entry to the `Riotbox Project Updates` Linear document when:
 
 This is the reviewable cross-ticket history.
 
+## 8.3 Backlog Horizon
+
+Linear should not hold only the current ticket.
+
+Keep two horizons visible:
+
+- active work:
+  - `In Progress`
+  - `In Review`
+- near-term backlog:
+  - the next plausible, already-shaped tickets
+
+Recommended operating shape:
+
+- 1 main ticket in progress
+- 1-3 near-next tickets in backlog
+- milestone-level placeholders for later work when useful
+
+Rules:
+
+- do not leave backlog empty if the next likely slices are already clear
+- do not over-decompose distant phases into many detailed tickets too early
+- prefer a small, honest backlog over a large speculative ticket tree
+- derive backlog tickets from the roadmap, active specs, and current repo state
+
+## 8.4 Retention And Cleanup
+
+Linear is the active execution surface, not the canonical long-term archive.
+
+Because the workspace runs on the free tier, completed issues should not accumulate forever.
+
+Use this retention model:
+
+- Linear:
+  - active ticket flow
+  - near-term backlog
+  - recent completed work while it is still operationally useful
+- repo archive:
+  - long-term ticket history worth keeping
+- MemPalace:
+  - retrieval layer over repo docs and archive material, not canonical storage
+
+Before deleting a completed Linear issue, preserve its useful context in repo markdown under `docs/archive/linear_issues/`.
+
+Recommended archive shapes:
+
+- one file per ticket for architecture, review, decision, or process tickets
+- grouped monthly or phase-oriented files for routine feature tickets when readability stays good
+
+Each archived ticket entry should include at least:
+
+- ticket id and title
+- phase or milestone
+- status date or merge point
+- why the ticket existed
+- what shipped
+- PR link
+- merge commit
+- follow-up tickets or bounded open questions
+
+Deletion rule:
+
+- do not delete a Linear ticket until:
+  - the PR is merged
+  - the issue is marked done
+  - the repo archive entry exists
+
 ---
 
 ## 9. Automatic vs Manual Behavior
