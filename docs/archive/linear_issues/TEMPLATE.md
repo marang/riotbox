@@ -10,6 +10,7 @@
 - Started: `YYYY-MM-DD`
 - Finished: `YYYY-MM-DD`
 - Branch: `riotbox-000-example-ticket`
+- Linear branch: `username/riotbox-000-example-ticket`
 - Assignee: `Name`
 - Labels: `Label A`, `Label B`
 - PR: `#000`

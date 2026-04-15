@@ -243,13 +243,14 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - created date
   - implementation start date when known
   - done, merged, canceled, or deleted date when applicable
-  - feature branch
+  - actual repo feature branch used for the work
   - why the ticket existed
   - what shipped
   - PR link
   - merge commit
   - follow-up tickets or bounded open questions
 - When useful, also preserve:
+  - Linear-generated branch name if it differed from the actual repo branch and is worth keeping
   - Linear issue URL
   - labels
   - assignee or owner

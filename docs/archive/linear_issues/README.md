@@ -63,7 +63,7 @@ Every archived ticket entry should preserve at least:
 - created date
 - implementation start date when known
 - final status date such as merged, done, canceled, or deleted
-- feature branch when one existed
+- actual repo feature branch when one existed
 - why the ticket existed
 - what shipped
 - PR link
@@ -72,6 +72,7 @@ Every archived ticket entry should preserve at least:
 
 Useful optional fields:
 
+- Linear-generated branch name when it differs from the real repo branch
 - Linear issue URL
 - labels
 - assignee or owner

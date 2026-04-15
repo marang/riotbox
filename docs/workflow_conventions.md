@@ -288,7 +288,7 @@ Each archived ticket entry should include at least:
 - created date
 - implementation start date when known
 - final status date such as merged, done, canceled, or deleted
-- feature branch when one existed
+- actual repo feature branch when one existed
 - status date or merge point
 - why the ticket existed
 - what shipped
@@ -298,6 +298,7 @@ Each archived ticket entry should include at least:
 
 Useful optional fields:
 
+- Linear-generated branch name when it differs from the real repo branch
 - Linear issue URL
 - labels
 - assignee or owner
@@ -318,6 +319,7 @@ Recommended metadata block:
 - Started: `2026-04-16`
 - Finished: `2026-04-17`
 - Branch: `riotbox-999-example-ticket`
+- Linear branch: `username/riotbox-999-example-ticket`
 - Assignee: `Markus`
 - Labels: `TUI`, `TR-909`
 - PR: `#99`
