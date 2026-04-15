@@ -747,6 +747,73 @@ mod tests {
         Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
         Tr909TakeoverRenderProfile,
     };
+    use serde::Deserialize;
+
+    #[derive(Debug, Deserialize)]
+    struct AudioFixtureCase {
+        name: String,
+        render_state: AudioFixtureRenderState,
+        expected: AudioFixtureExpectation,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct AudioFixtureRenderState {
+        mode: String,
+        routing: String,
+        source_support_profile: Option<String>,
+        takeover_profile: Option<String>,
+        drum_bus_level: f32,
+        slam_intensity: f32,
+        is_transport_running: bool,
+        tempo_bpm: f32,
+        position_beats: f64,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct AudioFixtureExpectation {
+        min_active_samples: usize,
+        max_active_samples: usize,
+        min_peak_abs: f32,
+        max_peak_abs: f32,
+    }
+
+    impl AudioFixtureRenderState {
+        fn to_realtime(&self) -> RealtimeTr909RenderState {
+            RealtimeTr909RenderState {
+                mode: match self.mode.as_str() {
+                    "source_support" => Tr909RenderMode::SourceSupport,
+                    "fill" => Tr909RenderMode::Fill,
+                    "break_reinforce" => Tr909RenderMode::BreakReinforce,
+                    "takeover" => Tr909RenderMode::Takeover,
+                    _ => Tr909RenderMode::Idle,
+                },
+                routing: match self.routing.as_str() {
+                    "drum_bus_support" => Tr909RenderRouting::DrumBusSupport,
+                    "drum_bus_takeover" => Tr909RenderRouting::DrumBusTakeover,
+                    _ => Tr909RenderRouting::SourceOnly,
+                },
+                source_support_profile: self.source_support_profile.as_deref().map(|profile| {
+                    match profile {
+                        "break_lift" => Tr909SourceSupportProfile::BreakLift,
+                        "drop_drive" => Tr909SourceSupportProfile::DropDrive,
+                        _ => Tr909SourceSupportProfile::SteadyPulse,
+                    }
+                }),
+                takeover_profile: self
+                    .takeover_profile
+                    .as_deref()
+                    .map(|profile| match profile {
+                        "scene_lock" => Tr909TakeoverRenderProfile::SceneLock,
+                        _ => Tr909TakeoverRenderProfile::ControlledPhrase,
+                    }),
+                drum_bus_level: self.drum_bus_level,
+                slam_intensity: self.slam_intensity,
+                is_transport_running: self.is_transport_running,
+                tempo_bpm: self.tempo_bpm,
+                position_beats: self.position_beats,
+            }
+        }
+    }
 
     fn sample_output() -> AudioOutputInfo {
         AudioOutputInfo {
@@ -1042,5 +1109,52 @@ mod tests {
             .count();
 
         assert!(controlled_active > scene_lock_active);
+    }
+
+    #[test]
+    fn fixture_backed_tr909_audio_regressions_hold() {
+        let fixtures: Vec<AudioFixtureCase> = serde_json::from_str(include_str!(
+            "../tests/fixtures/tr909_audio_regression.json"
+        ))
+        .expect("parse TR-909 audio regression fixture");
+
+        for fixture in fixtures {
+            let mut callback_state = Tr909CallbackState::default();
+            let mut buffer = [0.0_f32; 512];
+
+            render_tr909_buffer(
+                &mut buffer,
+                44_100,
+                2,
+                &fixture.render_state.to_realtime(),
+                &mut callback_state,
+            );
+
+            let active_samples = buffer.iter().filter(|sample| sample.abs() > 0.0001).count();
+            let peak_abs = buffer
+                .iter()
+                .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+
+            assert!(
+                active_samples >= fixture.expected.min_active_samples,
+                "{} active sample count too low: got {active_samples}",
+                fixture.name
+            );
+            assert!(
+                active_samples <= fixture.expected.max_active_samples,
+                "{} active sample count too high: got {active_samples}",
+                fixture.name
+            );
+            assert!(
+                peak_abs >= fixture.expected.min_peak_abs,
+                "{} peak too low: got {peak_abs}",
+                fixture.name
+            );
+            assert!(
+                peak_abs <= fixture.expected.max_peak_abs,
+                "{} peak too high: got {peak_abs}",
+                fixture.name
+            );
+        }
     }
 }

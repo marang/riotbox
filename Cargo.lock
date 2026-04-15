@@ -926,6 +926,7 @@ dependencies = [
  "riotbox-audio",
  "riotbox-core",
  "riotbox-sidecar",
+ "serde",
  "serde_json",
  "sha2",
  "tempfile",
@@ -936,6 +937,8 @@ name = "riotbox-audio"
 version = "0.1.0"
 dependencies = [
  "cpal",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

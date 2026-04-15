@@ -1397,6 +1397,7 @@ fn max_action_id(session: &SessionFile) -> Option<riotbox_core::ids::ActionId> {
 mod tests {
     use std::{f32::consts::PI, fs, io, path::Path, path::PathBuf};
 
+    use serde::Deserialize;
     use tempfile::tempdir;
 
     use riotbox_audio::{
@@ -1434,6 +1435,20 @@ mod tests {
     use riotbox_sidecar::client::ClientError as SidecarClientError;
 
     use super::*;
+
+    #[derive(Debug, Deserialize)]
+    struct RenderProjectionFixture {
+        name: String,
+        transport_position_beats: f64,
+        reinforcement_mode: String,
+        takeover_enabled: bool,
+        takeover_profile: Option<String>,
+        pattern_ref: Option<String>,
+        expected_mode: String,
+        expected_routing: String,
+        expected_source_support_profile: Option<String>,
+        expected_takeover_profile: Option<String>,
+    }
 
     fn sample_audio_health(lifecycle: AudioRuntimeLifecycle) -> AudioRuntimeHealth {
         AudioRuntimeHealth {
@@ -2613,6 +2628,61 @@ mod tests {
             state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::BreakLift)
         );
+    }
+
+    #[test]
+    fn committed_state_fixture_backed_render_projections_hold() {
+        let fixtures: Vec<RenderProjectionFixture> = serde_json::from_str(include_str!(
+            "../tests/fixtures/tr909_committed_render_projection.json"
+        ))
+        .expect("parse committed render projection fixture");
+
+        let graph = sample_graph();
+        for fixture in fixtures {
+            let mut session = sample_session(&graph);
+            session.runtime_state.transport.position_beats = fixture.transport_position_beats;
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(fixture.reinforcement_mode.clone());
+            session.runtime_state.lane_state.tr909.takeover_enabled = fixture.takeover_enabled;
+            session.runtime_state.lane_state.tr909.takeover_profile =
+                fixture.takeover_profile.clone();
+            session.runtime_state.lane_state.tr909.pattern_ref = fixture.pattern_ref.clone();
+
+            let state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+
+            assert_eq!(
+                state.runtime.tr909_render.mode.label(),
+                fixture.expected_mode,
+                "{} render mode drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.runtime.tr909_render.routing.label(),
+                fixture.expected_routing,
+                "{} render routing drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .tr909_render
+                    .source_support_profile
+                    .map(|profile| profile.label().to_string()),
+                fixture.expected_source_support_profile,
+                "{} support profile drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .tr909_render
+                    .takeover_profile
+                    .map(|profile| profile.label().to_string()),
+                fixture.expected_takeover_profile,
+                "{} takeover profile drifted",
+                fixture.name
+            );
+        }
     }
 
     #[test]

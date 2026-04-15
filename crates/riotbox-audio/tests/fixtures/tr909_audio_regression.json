@@ -1,0 +1,62 @@
+[
+  {
+    "name": "idle_silence",
+    "render_state": {
+      "mode": "idle",
+      "routing": "source_only",
+      "source_support_profile": null,
+      "takeover_profile": null,
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
+    }
+  },
+  {
+    "name": "source_support_drop_drive",
+    "render_state": {
+      "mode": "source_support",
+      "routing": "drum_bus_support",
+      "source_support_profile": "drop_drive",
+      "takeover_profile": null,
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.008,
+      "max_peak_abs": 0.08
+    }
+  },
+  {
+    "name": "takeover_controlled_phrase",
+    "render_state": {
+      "mode": "takeover",
+      "routing": "drum_bus_takeover",
+      "source_support_profile": null,
+      "takeover_profile": "controlled_phrase",
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.018,
+      "max_peak_abs": 0.12
+    }
+  }
+]

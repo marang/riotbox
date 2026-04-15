@@ -1,0 +1,26 @@
+[
+  {
+    "name": "drop_drive_source_support",
+    "transport_position_beats": 32.0,
+    "reinforcement_mode": "source_support",
+    "takeover_enabled": false,
+    "takeover_profile": null,
+    "pattern_ref": "support-scene-1",
+    "expected_mode": "source_support",
+    "expected_routing": "drum_bus_support",
+    "expected_source_support_profile": "drop_drive",
+    "expected_takeover_profile": null
+  },
+  {
+    "name": "controlled_phrase_takeover",
+    "transport_position_beats": 32.0,
+    "reinforcement_mode": "takeover",
+    "takeover_enabled": true,
+    "takeover_profile": "controlled_phrase_takeover",
+    "pattern_ref": "takeover-scene-1",
+    "expected_mode": "takeover",
+    "expected_routing": "drum_bus_takeover",
+    "expected_source_support_profile": null,
+    "expected_takeover_profile": "controlled_phrase"
+  }
+]

@@ -473,6 +473,17 @@ Status: accepted
 
 ---
 
+Topic: early TR-909 audible regression coverage should be fixture-backed at both render projection and callback levels  
+Phase: TR-909 MVP  
+Question: now that Riotbox has audible TR-909 reinforcement plus typed render profiles, what is the smallest verification slice that protects replay-safe behavior without adding new musical logic?  
+Decision: add two bounded fixture-backed regression layers. Keep one app-side fixture that checks committed session and source state still project into the expected TR-909 render seam, and one audio-side fixture that checks the callback renderer still produces bounded audible metrics for key render cases.  
+Why: the new TR-909 path now spans committed lane state, render projection, and callback output. If that chain drifts silently, Phase 3 audio can become audibly wrong while still compiling. Fixture-backed checks preserve the replay-aligned seam and make later refactors safer without pretending to be full golden-audio approval tests.  
+Evidence: `riotbox-app` now loads committed render-projection fixtures for source-support and takeover states, `riotbox-audio` now loads callback render fixtures for idle, source-support, and takeover cases, and both fixture suites run inside the normal Rust test path.  
+Consequences: later TR-909 audio work should extend the same fixture-backed regression pattern with richer pattern cases and diagnostics instead of relying only on ad-hoc unit assertions.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
