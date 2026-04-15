@@ -5,7 +5,7 @@ This index tracks archived Linear ticket history that has been removed from the 
 ## Archive Files
 
 - [2026-04.md](./2026-04.md)
-  Grouped archive for routine April 2026 tickets, including canceled onboarding tickets and early implementation slices.
+  Grouped archive for routine April 2026 Riotbox tickets and early implementation slices.
 - [RIOTBOX-16.md](./RIOTBOX-16.md)
   MemPalace evaluation and dev-memory adoption decision.
 - [RIOTBOX-23.md](./RIOTBOX-23.md)
