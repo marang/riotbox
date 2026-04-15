@@ -20,4 +20,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Embedded-graph ingest contract alignment.
 - [RIOTBOX-37.md](./RIOTBOX-37.md)
   Single-source MVP contract clarification.
+- [RIOTBOX-39.md](./RIOTBOX-39.md)
+  Controlled TR-909 takeover and release path.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
