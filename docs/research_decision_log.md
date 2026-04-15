@@ -495,6 +495,17 @@ Status: accepted
 
 ---
 
+Topic: the first TR-909 pattern-adoption step should become typed render state before the audio callback deepens further  
+Phase: TR-909 MVP  
+Question: once the TR-909 audible seam is observable, what is the next bounded slice that makes the render path more musical without turning `pattern_ref` into callback-side string logic or opening a second drum-engine model?  
+Decision: add a typed `pattern adoption` layer to the existing TR-909 render contract. Derive it at the app layer from committed `pattern_ref`, render mode, and current profile context, and let the audio callback vary subdivision, trigger density, accenting, gain, and decay from that typed adoption signal.  
+Why: the next honest TR-909 step is to make the current audible seam adopt a bounded pattern shape, not to invent a full device sequencer. A typed adoption layer keeps the render path replay-aligned, keeps string parsing out of the callback, and makes the new musical behavior testable and diagnosable in the shell.  
+Evidence: `riotbox-audio` now defines an explicit `Tr909PatternAdoption` enum, `riotbox-app` derives it from committed render context, the callback changes its audible behavior from that adoption layer, fixtures cover both the app-side projection and audio-side regression cases, and the Jam/Log shell diagnostics surface the adopted pattern name.  
+Consequences: later TR-909 work should extend the same typed pattern-adoption seam with phrase-aware variation and richer fixtures instead of bypassing it with direct callback heuristics or a separate device-state graph.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

@@ -9,8 +9,8 @@ use std::{
 use riotbox_audio::{
     runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle},
     tr909::{
-        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
-        Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
+        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     },
 };
 use riotbox_core::{
@@ -160,6 +160,7 @@ pub struct JamRuntimeView {
     pub tr909_render_routing: String,
     pub tr909_render_profile: String,
     pub tr909_render_pattern_ref: Option<String>,
+    pub tr909_render_pattern_adoption: String,
     pub tr909_render_mix_summary: String,
     pub tr909_render_alignment: String,
     pub tr909_render_transport_summary: String,
@@ -219,6 +220,10 @@ impl JamRuntimeView {
             tr909_render_routing: runtime.tr909_render.routing.label().into(),
             tr909_render_profile: tr909_render_profile_label(&runtime.tr909_render).into(),
             tr909_render_pattern_ref: runtime.tr909_render.pattern_ref.clone(),
+            tr909_render_pattern_adoption: runtime
+                .tr909_render
+                .pattern_adoption
+                .map_or_else(|| "unset".into(), |pattern| pattern.label().into()),
             tr909_render_mix_summary: format!(
                 "drum {:.2} | slam {:.2}",
                 runtime.tr909_render.drum_bus_level, runtime.tr909_render.slam_intensity
@@ -236,6 +241,51 @@ fn tr909_render_profile_label(render: &Tr909RenderState) -> &'static str {
         (None, Some(profile)) => profile.label(),
         (None, None) => "unset",
     }
+}
+
+fn derive_tr909_pattern_adoption(
+    mode: Tr909RenderMode,
+    pattern_ref: Option<&str>,
+    source_support_profile: Option<Tr909SourceSupportProfile>,
+    takeover_profile: Option<Tr909TakeoverRenderProfile>,
+) -> Option<Tr909PatternAdoption> {
+    if matches!(mode, Tr909RenderMode::Idle) {
+        return None;
+    }
+
+    if matches!(mode, Tr909RenderMode::Takeover)
+        || matches!(
+            takeover_profile,
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase)
+        )
+    {
+        return Some(Tr909PatternAdoption::TakeoverGrid);
+    }
+
+    let pattern_ref = pattern_ref.map(str::to_ascii_lowercase);
+    if pattern_ref
+        .as_deref()
+        .is_some_and(|pattern| pattern.contains("takeover"))
+    {
+        return Some(Tr909PatternAdoption::TakeoverGrid);
+    }
+
+    if pattern_ref
+        .as_deref()
+        .is_some_and(|pattern| pattern.contains("main") || pattern.contains("drop"))
+        || matches!(
+            source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        )
+        || matches!(
+            mode,
+            Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce
+        )
+    {
+        return Some(Tr909PatternAdoption::MainlineDrive);
+    }
+
+    Some(Tr909PatternAdoption::SupportPulse)
 }
 
 fn tr909_render_alignment_label(render: &Tr909RenderState) -> &'static str {
@@ -1342,13 +1392,22 @@ fn build_tr909_render_state(
 
     let source_support_profile = matches!(mode, Tr909RenderMode::SourceSupport)
         .then(|| derive_tr909_source_support_profile(source_graph, transport));
+    let source_support_profile = source_support_profile.flatten();
+    let takeover_profile = derive_tr909_takeover_render_profile(tr909);
+    let pattern_adoption = derive_tr909_pattern_adoption(
+        mode,
+        tr909.pattern_ref.as_deref(),
+        source_support_profile,
+        takeover_profile,
+    );
 
     Tr909RenderState {
         mode,
         routing,
-        source_support_profile: source_support_profile.flatten(),
+        source_support_profile,
         pattern_ref: tr909.pattern_ref.clone(),
-        takeover_profile: derive_tr909_takeover_render_profile(tr909),
+        pattern_adoption,
+        takeover_profile,
         drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
         slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
@@ -1550,6 +1609,7 @@ mod tests {
         pattern_ref: Option<String>,
         expected_mode: String,
         expected_routing: String,
+        expected_pattern_adoption: Option<String>,
         expected_source_support_profile: Option<String>,
         expected_takeover_profile: Option<String>,
     }
@@ -1983,6 +2043,10 @@ mod tests {
         assert_eq!(
             state.runtime_view.tr909_render_pattern_ref.as_deref(),
             Some("scene-1-main")
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_pattern_adoption,
+            "takeover_grid"
         );
         assert_eq!(
             state.runtime_view.tr909_render_mix_summary,
@@ -2729,6 +2793,10 @@ mod tests {
             state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::DropDrive)
         );
+        assert_eq!(
+            state.runtime.tr909_render.pattern_adoption,
+            Some(Tr909PatternAdoption::MainlineDrive)
+        );
     }
 
     #[test]
@@ -2774,6 +2842,48 @@ mod tests {
             state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::BreakLift)
         );
+        assert_eq!(
+            state.runtime.tr909_render.pattern_adoption,
+            Some(Tr909PatternAdoption::SupportPulse)
+        );
+    }
+
+    #[test]
+    fn pattern_adoption_can_be_derived_without_pattern_ref() {
+        let graph = sample_graph();
+
+        let mut support_session = sample_session(&graph);
+        support_session
+            .runtime_state
+            .lane_state
+            .tr909
+            .reinforcement_mode = Some("source_support".into());
+        support_session.runtime_state.lane_state.tr909.pattern_ref = None;
+        let support_state =
+            JamAppState::from_parts(support_session, Some(graph.clone()), ActionQueue::new());
+        assert_eq!(
+            support_state.runtime.tr909_render.pattern_adoption,
+            Some(Tr909PatternAdoption::MainlineDrive)
+        );
+
+        let mut takeover_session = sample_session(&graph);
+        takeover_session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_enabled = true;
+        takeover_session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_profile = Some("controlled_phrase_takeover".into());
+        takeover_session.runtime_state.lane_state.tr909.pattern_ref = None;
+        let takeover_state =
+            JamAppState::from_parts(takeover_session, Some(graph), ActionQueue::new());
+        assert_eq!(
+            takeover_state.runtime.tr909_render.pattern_adoption,
+            Some(Tr909PatternAdoption::TakeoverGrid)
+        );
     }
 
     #[test]
@@ -2806,6 +2916,16 @@ mod tests {
                 state.runtime.tr909_render.routing.label(),
                 fixture.expected_routing,
                 "{} render routing drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .tr909_render
+                    .pattern_adoption
+                    .map(|pattern| pattern.label().to_string()),
+                fixture.expected_pattern_adoption,
+                "{} pattern adoption drifted",
                 fixture.name
             );
             assert_eq!(

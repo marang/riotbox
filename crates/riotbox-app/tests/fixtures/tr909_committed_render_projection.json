@@ -8,6 +8,7 @@
     "pattern_ref": "support-scene-1",
     "expected_mode": "source_support",
     "expected_routing": "drum_bus_support",
+    "expected_pattern_adoption": "mainline_drive",
     "expected_source_support_profile": "drop_drive",
     "expected_takeover_profile": null
   },
@@ -20,6 +21,7 @@
     "pattern_ref": "takeover-scene-1",
     "expected_mode": "takeover",
     "expected_routing": "drum_bus_takeover",
+    "expected_pattern_adoption": "takeover_grid",
     "expected_source_support_profile": null,
     "expected_takeover_profile": "controlled_phrase"
   }

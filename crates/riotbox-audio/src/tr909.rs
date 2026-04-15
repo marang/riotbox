@@ -72,12 +72,31 @@ impl Tr909TakeoverRenderProfile {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909PatternAdoption {
+    SupportPulse,
+    MainlineDrive,
+    TakeoverGrid,
+}
+
+impl Tr909PatternAdoption {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::SupportPulse => "support_pulse",
+            Self::MainlineDrive => "mainline_drive",
+            Self::TakeoverGrid => "takeover_grid",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tr909RenderState {
     pub mode: Tr909RenderMode,
     pub routing: Tr909RenderRouting,
     pub source_support_profile: Option<Tr909SourceSupportProfile>,
     pub pattern_ref: Option<String>,
+    pub pattern_adoption: Option<Tr909PatternAdoption>,
     pub takeover_profile: Option<Tr909TakeoverRenderProfile>,
     pub drum_bus_level: f32,
     pub slam_intensity: f32,
@@ -94,6 +113,7 @@ impl Default for Tr909RenderState {
             routing: Tr909RenderRouting::SourceOnly,
             source_support_profile: None,
             pattern_ref: None,
+            pattern_adoption: None,
             takeover_profile: None,
             drum_bus_level: 0.0,
             slam_intensity: 0.0,
@@ -108,8 +128,8 @@ impl Default for Tr909RenderState {
 #[cfg(test)]
 mod tests {
     use super::{
-        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
-        Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
+        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     };
 
     #[test]
@@ -122,6 +142,7 @@ mod tests {
         assert_eq!(state.routing.label(), "source_only");
         assert_eq!(state.source_support_profile, None);
         assert_eq!(state.pattern_ref, None);
+        assert_eq!(state.pattern_adoption, None);
         assert_eq!(state.takeover_profile, None);
         assert!(!state.is_transport_running);
     }
@@ -139,5 +160,11 @@ mod tests {
             "controlled_phrase"
         );
         assert_eq!(Tr909TakeoverRenderProfile::SceneLock.label(), "scene_lock");
+        assert_eq!(Tr909PatternAdoption::SupportPulse.label(), "support_pulse");
+        assert_eq!(
+            Tr909PatternAdoption::MainlineDrive.label(),
+            "mainline_drive"
+        );
+        assert_eq!(Tr909PatternAdoption::TakeoverGrid.label(), "takeover_grid");
     }
 }

@@ -1,0 +1,22 @@
+Riotbox Jam TR-909 Pattern Adoption Baseline
+Normalized terminal capture notes for `RIOTBOX-45`
+Source: `riotbox-app` shell state fixture
+Notes:
+- normalized from the current Jam and Log shell state fixture
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights the first typed TR-909 pattern-adoption layer on top of the existing audible render seam
+
+Key shell cues after this slice:
+
+- `Jam -> Lanes` now includes the adopted pattern shape beside the raw pattern ref:
+  - `drum_bus_takeover | controlled_phrase`
+  - `scene-a-main | takeover_grid`
+- `Log -> TR-909 Render` now includes:
+  - `controlled_phrase | takeover_grid`
+  - `scene-a-main | drum 0.82 | slam 0.90`
+
+Interpretation:
+
+- the app now derives a typed pattern-adoption shape from committed render context instead of leaving the callback to infer musical shape from loose strings
+- the audio callback now varies subdivision, trigger density, accenting, gain, and decay from that adopted pattern layer
+- pattern adoption remains inside the existing render seam and does not introduce a second TR-909 engine or editor path

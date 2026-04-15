@@ -475,8 +475,9 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .tr909_render_pattern_ref
                 .as_deref()
                 .unwrap_or("unset"),
-            shell.app.runtime_view.tr909_render_mix_summary
+            shell.app.runtime_view.tr909_render_pattern_adoption
         )),
+        Line::from(shell.app.runtime_view.tr909_render_mix_summary.clone()),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -642,16 +643,20 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         Line::from(format!(
             "{} | {}",
             shell.app.runtime_view.tr909_render_profile,
+            shell.app.runtime_view.tr909_render_pattern_adoption
+        )),
+        Line::from(format!(
+            "{} | {}",
             shell
                 .app
                 .runtime_view
                 .tr909_render_pattern_ref
                 .as_deref()
-                .unwrap_or("unset")
+                .unwrap_or("unset"),
+            shell.app.runtime_view.tr909_render_mix_summary
         )),
         Line::from(format!(
-            "{} | {}",
-            shell.app.runtime_view.tr909_render_mix_summary,
+            "align {}",
             shell.app.runtime_view.tr909_render_alignment
         )),
         Line::from(format!(
@@ -2098,7 +2103,7 @@ mod tests {
         assert!(rendered.contains("909 render"));
         assert!(rendered.contains("909 mode hybrid | render takeover"));
         assert!(rendered.contains("drum_bus_takeover | controlled_phrase"));
-        assert!(rendered.contains("scene-a-main | drum 0.82 | slam 0.90"));
+        assert!(rendered.contains("scene-a-main | takeover_grid"));
     }
 
     #[test]
@@ -2203,8 +2208,9 @@ mod tests {
         assert!(rendered.contains("mutate.scene"));
         assert!(rendered.contains("TR-909 Render"));
         assert!(rendered.contains("render takeover via drum_bus_takeover"));
-        assert!(rendered.contains("controlled_phrase | scene-a-main"));
-        assert!(rendered.contains("drum 0.82 | slam 0.90 | takeover"));
+        assert!(rendered.contains("controlled_phrase | takeover_grid"));
+        assert!(rendered.contains("scene-a-main | drum 0.82 | slam 0.90"));
+        assert!(rendered.contains("align takeover aligned"));
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("undid most recent musical"));
     }

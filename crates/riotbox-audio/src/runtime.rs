@@ -9,8 +9,8 @@ use std::{
 };
 
 use crate::tr909::{
-    Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
-    Tr909TakeoverRenderProfile,
+    Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
+    Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -348,6 +348,7 @@ struct RealtimeTr909RenderState {
     mode: Tr909RenderMode,
     routing: Tr909RenderRouting,
     source_support_profile: Option<Tr909SourceSupportProfile>,
+    pattern_adoption: Option<Tr909PatternAdoption>,
     takeover_profile: Option<Tr909TakeoverRenderProfile>,
     drum_bus_level: f32,
     slam_intensity: f32,
@@ -360,6 +361,7 @@ struct SharedTr909RenderState {
     mode: AtomicU32,
     routing: AtomicU32,
     source_support_profile: AtomicU32,
+    pattern_adoption: AtomicU32,
     takeover_profile: AtomicU32,
     drum_bus_level_bits: AtomicU32,
     slam_intensity_bits: AtomicU32,
@@ -374,6 +376,7 @@ impl SharedTr909RenderState {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_support_profile: AtomicU32::new(0),
+            pattern_adoption: AtomicU32::new(0),
             takeover_profile: AtomicU32::new(0),
             drum_bus_level_bits: AtomicU32::new(0),
             slam_intensity_bits: AtomicU32::new(0),
@@ -392,6 +395,10 @@ impl SharedTr909RenderState {
             .store(routing_to_u32(render_state.routing), Ordering::Relaxed);
         self.source_support_profile.store(
             support_profile_to_u32(render_state.source_support_profile),
+            Ordering::Relaxed,
+        );
+        self.pattern_adoption.store(
+            pattern_adoption_to_u32(render_state.pattern_adoption),
             Ordering::Relaxed,
         );
         self.takeover_profile.store(
@@ -416,6 +423,9 @@ impl SharedTr909RenderState {
             routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
             source_support_profile: support_profile_from_u32(
                 self.source_support_profile.load(Ordering::Relaxed),
+            ),
+            pattern_adoption: pattern_adoption_from_u32(
+                self.pattern_adoption.load(Ordering::Relaxed),
             ),
             takeover_profile: takeover_profile_from_u32(
                 self.takeover_profile.load(Ordering::Relaxed),
@@ -504,6 +514,14 @@ fn render_tr909_buffer<T>(
 }
 
 const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
+    if let Some(adoption) = render.pattern_adoption {
+        return match adoption {
+            Tr909PatternAdoption::SupportPulse => 1,
+            Tr909PatternAdoption::MainlineDrive => 2,
+            Tr909PatternAdoption::TakeoverGrid => 4,
+        };
+    }
+
     match render.mode {
         Tr909RenderMode::Idle => 1,
         Tr909RenderMode::SourceSupport => match render.source_support_profile {
@@ -515,6 +533,14 @@ const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
 }
 
 fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
+    if let Some(adoption) = render.pattern_adoption {
+        return match adoption {
+            Tr909PatternAdoption::SupportPulse => step % 2 == 0,
+            Tr909PatternAdoption::MainlineDrive => true,
+            Tr909PatternAdoption::TakeoverGrid => !matches!(step.rem_euclid(4), 1),
+        };
+    }
+
     match render.mode {
         Tr909RenderMode::Idle => false,
         Tr909RenderMode::SourceSupport => match render.source_support_profile {
@@ -551,11 +577,36 @@ fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
         Tr909RenderMode::BreakReinforce => 0.02,
         Tr909RenderMode::Idle => 0.0,
     };
-    (base + profile_boost + (render.slam_intensity * 0.2)).clamp(0.0, 0.8)
+    let pattern_boost = match render.pattern_adoption {
+        Some(Tr909PatternAdoption::SupportPulse) | None => 0.0,
+        Some(Tr909PatternAdoption::MainlineDrive) => 0.04,
+        Some(Tr909PatternAdoption::TakeoverGrid) => 0.07,
+    };
+    (base + profile_boost + pattern_boost + (render.slam_intensity * 0.2)).clamp(0.0, 0.8)
 }
 
 fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
-    let accent = if step % 2 == 0 { 0.0 } else { 14.0 };
+    let accent = match render.pattern_adoption {
+        Some(Tr909PatternAdoption::SupportPulse) | None => {
+            if step % 2 == 0 {
+                0.0
+            } else {
+                14.0
+            }
+        }
+        Some(Tr909PatternAdoption::MainlineDrive) => {
+            if step.rem_euclid(4) == 3 {
+                18.0
+            } else {
+                6.0
+            }
+        }
+        Some(Tr909PatternAdoption::TakeoverGrid) => match step.rem_euclid(4) {
+            0 => 22.0,
+            2 => 10.0,
+            _ => 4.0,
+        },
+    };
     let slam = render.slam_intensity.clamp(0.0, 1.0) * 18.0;
     match render.mode {
         Tr909RenderMode::Idle => 0.0,
@@ -585,12 +636,17 @@ fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         Tr909RenderRouting::DrumBusSupport => 0.12,
         Tr909RenderRouting::DrumBusTakeover => 0.18,
     };
-    (routing_gain * render.drum_bus_level.clamp(0.0, 1.0)).clamp(0.0, 0.25)
+    let pattern_gain = match render.pattern_adoption {
+        Some(Tr909PatternAdoption::SupportPulse) | None => 1.0,
+        Some(Tr909PatternAdoption::MainlineDrive) => 1.08,
+        Some(Tr909PatternAdoption::TakeoverGrid) => 1.16,
+    };
+    (routing_gain * pattern_gain * render.drum_bus_level.clamp(0.0, 1.0)).clamp(0.0, 0.25)
 }
 
 fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
     let slam = render.slam_intensity.clamp(0.0, 1.0);
-    match render.mode {
+    let base = match render.mode {
         Tr909RenderMode::Idle => 0.0,
         Tr909RenderMode::SourceSupport => match render.source_support_profile {
             Some(Tr909SourceSupportProfile::SteadyPulse) | None => 0.992 - (slam * 0.002),
@@ -603,7 +659,13 @@ fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
             Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 0.986 - (slam * 0.004),
             Some(Tr909TakeoverRenderProfile::SceneLock) => 0.982 - (slam * 0.005),
         },
-    }
+    };
+    let pattern_decay = match render.pattern_adoption {
+        Some(Tr909PatternAdoption::SupportPulse) | None => 0.0,
+        Some(Tr909PatternAdoption::MainlineDrive) => 0.002,
+        Some(Tr909PatternAdoption::TakeoverGrid) => 0.004,
+    };
+    (base - pattern_decay).max(0.0)
 }
 
 const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {
@@ -656,6 +718,24 @@ const fn support_profile_from_u32(value: u32) -> Option<Tr909SourceSupportProfil
         1 => Some(Tr909SourceSupportProfile::SteadyPulse),
         2 => Some(Tr909SourceSupportProfile::BreakLift),
         3 => Some(Tr909SourceSupportProfile::DropDrive),
+        _ => None,
+    }
+}
+
+const fn pattern_adoption_to_u32(pattern: Option<Tr909PatternAdoption>) -> u32 {
+    match pattern {
+        None => 0,
+        Some(Tr909PatternAdoption::SupportPulse) => 1,
+        Some(Tr909PatternAdoption::MainlineDrive) => 2,
+        Some(Tr909PatternAdoption::TakeoverGrid) => 3,
+    }
+}
+
+const fn pattern_adoption_from_u32(value: u32) -> Option<Tr909PatternAdoption> {
+    match value {
+        1 => Some(Tr909PatternAdoption::SupportPulse),
+        2 => Some(Tr909PatternAdoption::MainlineDrive),
+        3 => Some(Tr909PatternAdoption::TakeoverGrid),
         _ => None,
     }
 }
@@ -744,8 +824,8 @@ impl RuntimeTelemetry {
 mod tests {
     use super::*;
     use crate::tr909::{
-        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
-        Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
+        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     };
     use serde::Deserialize;
 
@@ -761,6 +841,7 @@ mod tests {
         mode: String,
         routing: String,
         source_support_profile: Option<String>,
+        pattern_adoption: Option<String>,
         takeover_profile: Option<String>,
         drum_bus_level: f32,
         slam_intensity: f32,
@@ -799,6 +880,14 @@ mod tests {
                         _ => Tr909SourceSupportProfile::SteadyPulse,
                     }
                 }),
+                pattern_adoption: self
+                    .pattern_adoption
+                    .as_deref()
+                    .map(|pattern| match pattern {
+                        "mainline_drive" => Tr909PatternAdoption::MainlineDrive,
+                        "takeover_grid" => Tr909PatternAdoption::TakeoverGrid,
+                        _ => Tr909PatternAdoption::SupportPulse,
+                    }),
                 takeover_profile: self
                     .takeover_profile
                     .as_deref()
@@ -890,6 +979,7 @@ mod tests {
             mode: Tr909RenderMode::Takeover,
             routing: Tr909RenderRouting::DrumBusTakeover,
             source_support_profile: None,
+            pattern_adoption: None,
             takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
             drum_bus_level: 0.8,
             slam_intensity: 0.9,
@@ -907,12 +997,14 @@ mod tests {
             snapshot.takeover_profile,
             Some(Tr909TakeoverRenderProfile::ControlledPhrase)
         );
+        assert_eq!(snapshot.pattern_adoption, None);
         assert_eq!(snapshot.tempo_bpm, 128.0);
         assert_eq!(snapshot.position_beats, 17.5);
 
         state.mode = Tr909RenderMode::SourceSupport;
         state.routing = Tr909RenderRouting::DrumBusSupport;
         state.source_support_profile = Some(Tr909SourceSupportProfile::DropDrive);
+        state.pattern_adoption = Some(Tr909PatternAdoption::MainlineDrive);
         state.takeover_profile = None;
         shared.update(&state);
 
@@ -922,6 +1014,10 @@ mod tests {
         assert_eq!(
             updated.source_support_profile,
             Some(Tr909SourceSupportProfile::DropDrive)
+        );
+        assert_eq!(
+            updated.pattern_adoption,
+            Some(Tr909PatternAdoption::MainlineDrive)
         );
     }
 
@@ -938,6 +1034,7 @@ mod tests {
                 mode: Tr909RenderMode::Idle,
                 routing: Tr909RenderRouting::SourceOnly,
                 source_support_profile: None,
+                pattern_adoption: None,
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.2,
@@ -964,6 +1061,7 @@ mod tests {
                 mode: Tr909RenderMode::BreakReinforce,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: None,
+                pattern_adoption: None,
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.6,
@@ -990,6 +1088,7 @@ mod tests {
                 mode: Tr909RenderMode::BreakReinforce,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: None,
+                pattern_adoption: None,
                 takeover_profile: None,
                 drum_bus_level: 0.0,
                 slam_intensity: 0.6,
@@ -1018,6 +1117,7 @@ mod tests {
                 mode: Tr909RenderMode::SourceSupport,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
+                pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1036,6 +1136,7 @@ mod tests {
                 mode: Tr909RenderMode::SourceSupport,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
+                pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1071,6 +1172,7 @@ mod tests {
                 mode: Tr909RenderMode::Takeover,
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
+                pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
                 drum_bus_level: 0.8,
                 slam_intensity: 0.45,
@@ -1089,6 +1191,7 @@ mod tests {
                 mode: Tr909RenderMode::Takeover,
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
+                pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::SceneLock),
                 drum_bus_level: 0.8,
                 slam_intensity: 0.45,
@@ -1156,5 +1259,86 @@ mod tests {
                 fixture.name
             );
         }
+    }
+
+    #[test]
+    fn pattern_adoption_variants_produce_distinct_activity() {
+        let mut pulse_state = Tr909CallbackState::default();
+        let mut drive_state = Tr909CallbackState::default();
+        let mut grid_state = Tr909CallbackState::default();
+        let mut pulse = [0.0_f32; 512];
+        let mut drive = [0.0_f32; 512];
+        let mut grid = [0.0_f32; 512];
+
+        render_tr909_buffer(
+            &mut pulse,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::SourceSupport,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
+                pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
+                takeover_profile: None,
+                drum_bus_level: 0.8,
+                slam_intensity: 0.35,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut pulse_state,
+        );
+
+        render_tr909_buffer(
+            &mut drive,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::SourceSupport,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
+                pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+                takeover_profile: None,
+                drum_bus_level: 0.8,
+                slam_intensity: 0.35,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut drive_state,
+        );
+
+        render_tr909_buffer(
+            &mut grid,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::Takeover,
+                routing: Tr909RenderRouting::DrumBusTakeover,
+                source_support_profile: None,
+                pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
+                takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
+                drum_bus_level: 0.8,
+                slam_intensity: 0.35,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut grid_state,
+        );
+
+        let pulse_peak = pulse
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let drive_peak = drive
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let grid_peak = grid
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+
+        assert_ne!(pulse_peak, drive_peak);
+        assert_ne!(drive_peak, grid_peak);
+        assert!(grid_peak > pulse_peak);
     }
 }
