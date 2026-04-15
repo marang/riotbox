@@ -6,7 +6,10 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
+use riotbox_audio::{
+    runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle},
+    tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState},
+};
 use riotbox_core::{
     TimestampMs,
     action::{
@@ -99,6 +102,7 @@ pub struct AppRuntimeState {
     pub sidecar: SidecarState,
     pub transport: TransportClockState,
     pub transport_driver: TransportDriverState,
+    pub tr909_render: Tr909RenderState,
     pub last_commit_boundary: Option<CommitBoundaryState>,
 }
 
@@ -109,6 +113,7 @@ impl Default for AppRuntimeState {
             sidecar: SidecarState::Unknown,
             transport: TransportClockState::default(),
             transport_driver: TransportDriverState::default(),
+            tr909_render: Tr909RenderState::default(),
             last_commit_boundary: None,
         }
     }
@@ -148,6 +153,8 @@ pub struct JamRuntimeView {
     pub audio_last_error: Option<String>,
     pub sidecar_status: String,
     pub sidecar_version: Option<String>,
+    pub tr909_render_mode: String,
+    pub tr909_render_routing: String,
     pub runtime_warnings: Vec<String>,
 }
 
@@ -198,6 +205,8 @@ impl JamRuntimeView {
             audio_last_error,
             sidecar_status,
             sidecar_version,
+            tr909_render_mode: runtime.tr909_render.mode.label().into(),
+            tr909_render_routing: runtime.tr909_render.routing.label().into(),
             runtime_warnings,
         }
     }
@@ -222,22 +231,22 @@ impl JamAppState {
         mut queue: ActionQueue,
     ) -> Self {
         queue.reserve_action_ids_after(max_action_id(&session));
+        let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
-        let runtime = AppRuntimeState {
-            transport: transport_clock_from_state(&session, source_graph.as_ref()),
-            ..AppRuntimeState::default()
-        };
-        let runtime_view = JamRuntimeView::build(&runtime);
-
-        Self {
+        let mut state = Self {
             files: None,
             session,
             source_graph,
             queue,
-            runtime,
+            runtime: AppRuntimeState {
+                transport,
+                ..AppRuntimeState::default()
+            },
             jam_view,
-            runtime_view,
-        }
+            runtime_view: JamRuntimeView::build(&AppRuntimeState::default()),
+        };
+        state.refresh_view();
+        state
     }
 
     pub fn from_json_files(
@@ -251,14 +260,9 @@ impl JamAppState {
         let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
+        let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
-        let runtime = AppRuntimeState {
-            transport: transport_clock_from_state(&session, source_graph.as_ref()),
-            ..AppRuntimeState::default()
-        };
-        let runtime_view = JamRuntimeView::build(&runtime);
-
-        Ok(Self {
+        let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
                 source_graph_path: explicit_source_graph_path,
@@ -266,10 +270,15 @@ impl JamAppState {
             session,
             source_graph,
             queue,
-            runtime,
+            runtime: AppRuntimeState {
+                transport,
+                ..AppRuntimeState::default()
+            },
             jam_view,
-            runtime_view,
-        })
+            runtime_view: JamRuntimeView::build(&AppRuntimeState::default()),
+        };
+        state.refresh_view();
+        Ok(state)
     }
 
     pub fn analyze_source_file_to_json(
@@ -302,6 +311,8 @@ impl JamAppState {
     }
 
     pub fn refresh_view(&mut self) {
+        self.runtime.tr909_render =
+            build_tr909_render_state(&self.session, &self.runtime.transport);
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
         self.runtime_view = JamRuntimeView::build(&self.runtime);
     }
@@ -1184,6 +1195,49 @@ fn apply_tr909_side_effects(
     }
 }
 
+fn build_tr909_render_state(
+    session: &SessionFile,
+    transport: &TransportClockState,
+) -> Tr909RenderState {
+    let tr909 = &session.runtime_state.lane_state.tr909;
+    let mixer = &session.runtime_state.mixer_state;
+
+    let mode = if tr909.takeover_enabled {
+        Tr909RenderMode::Takeover
+    } else {
+        match tr909.reinforcement_mode.as_deref() {
+            Some("fills") => Tr909RenderMode::Fill,
+            Some("break_reinforce") => Tr909RenderMode::BreakReinforce,
+            Some("takeover") => Tr909RenderMode::Takeover,
+            Some("source_support") => Tr909RenderMode::SourceSupport,
+            Some(_) => Tr909RenderMode::SourceSupport,
+            None if tr909.pattern_ref.is_some() || tr909.slam_enabled => {
+                Tr909RenderMode::SourceSupport
+            }
+            None => Tr909RenderMode::Idle,
+        }
+    };
+
+    let routing = match mode {
+        Tr909RenderMode::Idle => Tr909RenderRouting::SourceOnly,
+        Tr909RenderMode::SourceSupport
+        | Tr909RenderMode::Fill
+        | Tr909RenderMode::BreakReinforce => Tr909RenderRouting::DrumBusSupport,
+        Tr909RenderMode::Takeover => Tr909RenderRouting::DrumBusTakeover,
+    };
+
+    Tr909RenderState {
+        mode,
+        routing,
+        pattern_ref: tr909.pattern_ref.clone(),
+        takeover_profile: tr909.takeover_profile.clone(),
+        drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
+        slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
+        is_transport_running: transport.is_playing,
+        current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
+    }
+}
+
 fn resolve_source_graph(
     session: &SessionFile,
     explicit_source_graph_path: Option<&Path>,
@@ -1288,7 +1342,10 @@ mod tests {
 
     use tempfile::tempdir;
 
-    use riotbox_audio::runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle};
+    use riotbox_audio::{
+        runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
+        tr909::{Tr909RenderMode, Tr909RenderRouting},
+    };
     use riotbox_core::{
         action::{
             Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
@@ -1434,10 +1491,12 @@ mod tests {
         session.runtime_state.transport.position_beats = 32.0;
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.macro_state.scene_aggression = 0.75;
+        session.runtime_state.macro_state.tr909_slam = 0.55;
         session.runtime_state.lane_state.mc202.role = Some("follower".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        session.runtime_state.mixer_state.drum_level = 0.72;
         session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-1")];
         session.runtime_state.lock_state.locked_object_ids = vec!["ghost.main".into()];
@@ -1799,6 +1858,26 @@ mod tests {
         assert_eq!(state.runtime.transport.beat_index, 32);
         assert_eq!(state.runtime.transport.bar_index, 8);
         assert_eq!(state.runtime.transport.phrase_index, 1);
+    }
+
+    #[test]
+    fn default_tr909_render_state_stays_idle_until_lane_state_requests_support() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Idle);
+        assert_eq!(
+            state.runtime.tr909_render.routing,
+            Tr909RenderRouting::SourceOnly
+        );
+        assert_eq!(state.runtime.tr909_render.pattern_ref, None);
+        assert_eq!(state.runtime.tr909_render.drum_bus_level, 0.72);
+        assert!(state.runtime.tr909_render.is_transport_running);
+        assert_eq!(
+            state.runtime.tr909_render.current_scene_id.as_deref(),
+            Some("scene-1")
+        );
     }
 
     #[test]
@@ -2230,6 +2309,18 @@ mod tests {
             state.jam_view.lanes.tr909_reinforcement_mode.as_deref(),
             Some("break_reinforce")
         );
+        assert_eq!(
+            state.runtime.tr909_render.mode,
+            Tr909RenderMode::BreakReinforce
+        );
+        assert_eq!(
+            state.runtime.tr909_render.routing,
+            Tr909RenderRouting::DrumBusSupport
+        );
+        assert_eq!(
+            state.runtime.tr909_render.pattern_ref.as_deref(),
+            Some("reinforce-scene-1")
+        );
     }
 
     #[test]
@@ -2334,6 +2425,15 @@ mod tests {
             Some("controlled_phrase_takeover")
         );
         assert_eq!(state.jam_view.lanes.tr909_takeover_pending_target, None);
+        assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Takeover);
+        assert_eq!(
+            state.runtime.tr909_render.routing,
+            Tr909RenderRouting::DrumBusTakeover
+        );
+        assert_eq!(
+            state.runtime.tr909_render.takeover_profile.as_deref(),
+            Some("controlled_phrase_takeover")
+        );
 
         assert_eq!(state.queue_tr909_release(500), QueueControlResult::Enqueued);
         let committed_release = state.commit_ready_actions(
@@ -2388,6 +2488,18 @@ mod tests {
         assert!(!state.jam_view.lanes.tr909_takeover_enabled);
         assert_eq!(state.jam_view.lanes.tr909_takeover_profile, None);
         assert_eq!(state.jam_view.lanes.tr909_takeover_pending_target, None);
+        assert_eq!(
+            state.runtime.tr909_render.mode,
+            Tr909RenderMode::SourceSupport
+        );
+        assert_eq!(
+            state.runtime.tr909_render.routing,
+            Tr909RenderRouting::DrumBusSupport
+        );
+        assert_eq!(
+            state.runtime.tr909_render.pattern_ref.as_deref(),
+            Some("release-scene-1")
+        );
     }
 
     #[test]

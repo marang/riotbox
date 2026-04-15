@@ -118,6 +118,7 @@ docs/
 - `screenshots/jam_shell_trust_action_baseline.txt`: baseline captured
 - `screenshots/jam_log_screen_baseline.txt`: baseline captured
 - `screenshots/jam_tr909_takeover_baseline.txt`: baseline captured
+- `screenshots/jam_tr909_render_seam_baseline.txt`: baseline captured
 - `screenshots/source_screen_baseline.txt`: baseline captured
 - `screenshots/capture_screen_baseline.txt`: baseline captured
 - all other specs: not started

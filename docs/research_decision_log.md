@@ -440,6 +440,17 @@ Status: accepted
 
 ---
 
+Topic: the first audio-facing TR-909 render seam should be a derived runtime contract, not a second lane-control path  
+Phase: TR-909 MVP  
+Question: after TR-909 takeover and release exist on the normal action seam, what is the smallest next slice that prepares audible reinforcement work without prematurely building a drum engine or duplicating lane logic inside the audio crate?  
+Decision: add a small `riotbox-audio` TR-909 render contract and derive it from committed session lane state plus transport and mixer context inside `riotbox-app`. Expose the derived render mode and routing in the shell, but keep actual drum synthesis out of scope for this slice.  
+Why: Phase 3 is only really done once reinforcement becomes audible, but the next honest increment is not full drum generation. Riotbox first needs one explicit audio-facing contract that later render code can consume without bypassing the queue, replay, or committed lane state.  
+Evidence: `riotbox-audio` now defines a dedicated TR-909 render state, `riotbox-app` derives that state from the committed session/runtime model on refresh, tests cover idle, reinforce, takeover, and release projections, and the Jam shell shows the current render seam summary.  
+Consequences: later audible TR-909 work should consume this render contract and extend it if necessary instead of re-deriving drum state from ad-hoc UI cues or introducing a second device-state system.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

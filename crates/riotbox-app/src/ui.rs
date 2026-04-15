@@ -221,7 +221,7 @@ pub fn render_jam_shell(frame: &mut Frame<'_>, shell: &JamShellState) {
             Constraint::Length(4),
             Constraint::Length(3),
             Constraint::Min(17),
-            Constraint::Length(5),
+            Constraint::Length(6),
         ])
         .split(area);
 
@@ -415,17 +415,14 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     let lanes = Paragraph::new(vec![
         Line::from(format!(
-            "MC-202: {}",
+            "MC-202: {} | W-30: {}",
             shell
                 .app
                 .jam_view
                 .lanes
                 .mc202_role
                 .as_deref()
-                .unwrap_or("unset")
-        )),
-        Line::from(format!(
-            "W-30: {}",
+                .unwrap_or("unset"),
             shell
                 .app
                 .jam_view
@@ -448,22 +445,14 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             }
         )),
         Line::from(format!(
-            "takeover profile: {}",
+            "profile: {} | slam {:.2}",
             shell
                 .app
                 .jam_view
                 .lanes
                 .tr909_takeover_profile
                 .as_deref()
-                .unwrap_or("unset")
-        )),
-        Line::from(format!(
-            "TR-909 slam: {} @ {:.2}",
-            if shell.app.jam_view.lanes.tr909_slam_enabled {
-                "on"
-            } else {
-                "off"
-            },
+                .unwrap_or("unset"),
             shell.app.jam_view.macros.tr909_slam
         )),
         Line::from(format!(
@@ -482,14 +471,19 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or_else(|| "-".into())
         )),
         Line::from(format!(
-            "909 mode: {}",
+            "909 mode: {} | render {}",
             shell
                 .app
                 .jam_view
                 .lanes
                 .tr909_reinforcement_mode
                 .as_deref()
-                .unwrap_or("unset")
+                .unwrap_or("unset"),
+            shell.app.runtime_view.tr909_render_mode
+        )),
+        Line::from(format!(
+            "render seam via {}",
+            shell.app.runtime_view.tr909_render_routing
         )),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
@@ -857,10 +851,12 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "         p promote capture | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
-        "Status: {} | audio {} | sidecar {}",
+        "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
         shell.status_message,
         shell.app.runtime_view.audio_status,
-        shell.app.runtime_view.sidecar_status
+        shell.app.runtime_view.sidecar_status,
+        shell.app.runtime_view.tr909_render_mode,
+        shell.app.runtime_view.tr909_render_routing
     )));
 
     if shell.app.runtime_view.runtime_warnings.is_empty() && shell.app.jam_view.warnings.is_empty()
@@ -2054,7 +2050,7 @@ mod tests {
     #[test]
     fn renders_more_musical_jam_shell_snapshot() {
         let shell = sample_shell_state();
-        let rendered = render_jam_shell_snapshot(&shell, 100, 30);
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("trust usable"));
         assert!(rendered.contains("scene-a"));
@@ -2066,6 +2062,9 @@ mod tests {
         assert!(rendered.contains("[commit"));
         assert!(rendered.contains("Capture"));
         assert!(rendered.contains("TR-909 takeover"));
+        assert!(rendered.contains("takeover"));
+        assert!(rendered.contains("drum_bus_takeover"));
+        assert!(rendered.contains("909 render"));
     }
 
     #[test]

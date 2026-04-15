@@ -1,0 +1,20 @@
+Riotbox Jam TR-909 Render Seam Baseline
+Normalized terminal capture for `RIOTBOX-40`
+Source: `riotbox-app` shell state fixture
+Notes:
+- normalized from the current Jam shell state fixture
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights the first audio-facing TR-909 render seam summary without introducing audible drum generation yet
+
+Key shell cues after this slice:
+
+- `Lanes` now includes:
+  - `render seam: takeover via drum_bus_takeover`
+- `Footer` now includes:
+  - `Status: ... | 909 render takeover via drum_bus_takeover`
+
+Interpretation:
+
+- the shell still uses the existing queue / commit seam for all TR-909 actions
+- the committed session lane state is now also projected into a dedicated audio-facing render contract
+- later audio work can consume the same render contract instead of re-deriving drum takeover state from UI-only hints
