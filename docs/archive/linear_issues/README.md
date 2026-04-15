@@ -38,12 +38,20 @@ Examples:
 Every archived ticket entry should preserve at least:
 
 - ticket id and title
+- Linear project
 - milestone or phase
+- final status such as done, canceled, duplicate, or superseded
+- created date
+- implementation start date when known
+- final status date such as merged, done, canceled, or deleted
+- feature branch when one existed
 - why the ticket existed
 - what shipped
 - PR link
 - merge commit
 - follow-up tickets or bounded open questions
+
+Use [TEMPLATE.md](./TEMPLATE.md) when creating a one-file ticket archive entry.
 
 ## Index
 

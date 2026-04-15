@@ -270,13 +270,36 @@ Recommended archive shapes:
 Each archived ticket entry should include at least:
 
 - ticket id and title
+- Linear project
 - phase or milestone
+- final status such as done, canceled, duplicate, or superseded
+- created date
+- implementation start date when known
+- final status date such as merged, done, canceled, or deleted
+- feature branch when one existed
 - status date or merge point
 - why the ticket existed
 - what shipped
 - PR link
 - merge commit
 - follow-up tickets or bounded open questions
+
+Recommended metadata block:
+
+```md
+- Ticket: `RIOTBOX-999`
+- Title: `Example ticket`
+- Project: `Riotbox MVP Buildout`
+- Milestone: `TR-909 MVP`
+- Status: `Done`
+- Created: `2026-04-15`
+- Started: `2026-04-16`
+- Finished: `2026-04-17`
+- Branch: `riotbox-999-example-ticket`
+- PR: `#99`
+- Merge commit: `abc1234`
+- Follow-ups: `RIOTBOX-1000`, `RIOTBOX-1001`
+```
 
 Deletion rule:
 

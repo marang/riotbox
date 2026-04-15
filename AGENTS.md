@@ -226,7 +226,13 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - For routine feature tickets, a grouped archive file is acceptable when the entries stay readable and searchable.
 - At minimum, preserve:
   - ticket id and title
+  - Linear project
   - milestone or phase
+  - ticket status such as done, canceled, or superseded
+  - created date
+  - implementation start date when known
+  - done, merged, canceled, or deleted date when applicable
+  - feature branch
   - why the ticket existed
   - what shipped
   - PR link

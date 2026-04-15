@@ -57,6 +57,7 @@ docs/
   archive/
     linear_issues/
       README.md
+      TEMPLATE.md
       index.md
   reviews/
     whole_codebase_review_2026-04-13.md
@@ -105,6 +106,7 @@ docs/
 - `phase_definition_of_done.md`: draft started
 - `research_decision_log.md`: draft started
 - `archive/linear_issues/README.md`: archive policy started
+- `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
