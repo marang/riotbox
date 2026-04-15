@@ -16,6 +16,7 @@ use riotbox_app::{
     runtime::{DEFAULT_RUNTIME_PULSE_INTERVAL, RuntimePulseSource, RuntimeSignal},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
+use riotbox_audio::runtime::AudioRuntimeShell;
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
 const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
@@ -66,12 +67,30 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
 }
 
 fn run_terminal_ui(
-    shell: JamShellState,
+    mut shell: JamShellState,
     mode: LaunchMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = ManagedTerminal::enter()?;
     let runtime_pulses = RuntimePulseSource::spawn(DEFAULT_RUNTIME_PULSE_INTERVAL);
-    run_event_loop(terminal.terminal_mut(), shell, mode, runtime_pulses)
+    let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_tr909(
+        shell.app.runtime.tr909_render.clone(),
+    ) {
+        Ok(runtime) => {
+            shell.app.set_audio_health(runtime.health_snapshot());
+            Some(runtime)
+        }
+        Err(error) => {
+            shell.set_error_status(format!("audio unavailable: {error}"));
+            None
+        }
+    };
+    run_event_loop(
+        terminal.terminal_mut(),
+        shell,
+        mode,
+        runtime_pulses,
+        audio_runtime.as_mut(),
+    )
 }
 
 struct ManagedTerminal {
@@ -120,12 +139,18 @@ fn run_event_loop(
     mut shell: JamShellState,
     mode: LaunchMode,
     runtime_pulses: RuntimePulseSource,
+    mut audio_runtime: Option<&mut AudioRuntimeShell>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
         if let Some(RuntimeSignal::TransportPulse { timestamp_ms }) = runtime_pulses.drain_latest()
             && !shell.app.apply_runtime_pulse(timestamp_ms).is_empty()
         {
             shell.set_error_status("committed queued actions on transport boundary");
+        }
+
+        if let Some(audio_runtime) = audio_runtime.as_deref_mut() {
+            audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
+            shell.app.set_audio_health(audio_runtime.health_snapshot());
         }
 
         terminal.draw(|frame| render_jam_shell(frame, &shell))?;

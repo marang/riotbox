@@ -3,11 +3,12 @@ use std::{
     fmt::{self, Display, Formatter},
     sync::{
         Arc, Mutex,
-        atomic::{AtomicU64, Ordering},
+        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
     },
     time::Instant,
 };
 
+use crate::tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -138,11 +139,18 @@ pub struct AudioRuntimeShell {
     lifecycle: AudioRuntimeLifecycle,
     output: Option<AudioOutputInfo>,
     telemetry: Arc<RuntimeTelemetry>,
+    tr909_render: Arc<SharedTr909RenderState>,
     stream: Option<cpal::Stream>,
 }
 
 impl AudioRuntimeShell {
     pub fn start_default_output() -> Result<Self, AudioRuntimeError> {
+        Self::start_default_output_with_tr909(Tr909RenderState::default())
+    }
+
+    pub fn start_default_output_with_tr909(
+        render_state: Tr909RenderState,
+    ) -> Result<Self, AudioRuntimeError> {
         let host = cpal::default_host();
         let host_name = format!("{:?}", host.id());
 
@@ -179,6 +187,7 @@ impl AudioRuntimeShell {
         };
 
         let telemetry = Arc::new(RuntimeTelemetry::new());
+        let tr909_render = Arc::new(SharedTr909RenderState::new(&render_state));
         let stream_config = default_config.config();
         let start = Instant::now();
 
@@ -187,18 +196,21 @@ impl AudioRuntimeShell {
                 &device,
                 &stream_config,
                 Arc::clone(&telemetry),
+                Arc::clone(&tr909_render),
                 start,
             ),
             cpal::SampleFormat::I16 => build_silent_output_stream::<i16>(
                 &device,
                 &stream_config,
                 Arc::clone(&telemetry),
+                Arc::clone(&tr909_render),
                 start,
             ),
             cpal::SampleFormat::U16 => build_silent_output_stream::<u16>(
                 &device,
                 &stream_config,
                 Arc::clone(&telemetry),
+                Arc::clone(&tr909_render),
                 start,
             ),
             sample_format => {
@@ -227,6 +239,7 @@ impl AudioRuntimeShell {
             lifecycle: AudioRuntimeLifecycle::Running,
             output: Some(output),
             telemetry,
+            tr909_render,
             stream: Some(stream),
         })
     }
@@ -258,6 +271,10 @@ impl AudioRuntimeShell {
         }
     }
 
+    pub fn update_tr909_render_state(&self, render_state: &Tr909RenderState) {
+        self.tr909_render.update(render_state);
+    }
+
     pub fn stop(&mut self) {
         self.stream.take();
         self.lifecycle = AudioRuntimeLifecycle::Stopped;
@@ -268,11 +285,13 @@ impl AudioRuntimeShell {
         lifecycle: AudioRuntimeLifecycle,
         output: Option<AudioOutputInfo>,
         telemetry: Arc<RuntimeTelemetry>,
+        render_state: Arc<SharedTr909RenderState>,
     ) -> Self {
         Self {
             lifecycle,
             output,
             telemetry,
+            tr909_render: render_state,
             stream: None,
         }
     }
@@ -288,6 +307,7 @@ fn build_silent_output_stream<T>(
     device: &cpal::Device,
     config: &cpal::StreamConfig,
     telemetry: Arc<RuntimeTelemetry>,
+    tr909_render: Arc<SharedTr909RenderState>,
     start: Instant,
 ) -> Result<cpal::Stream, cpal::BuildStreamError>
 where
@@ -295,13 +315,20 @@ where
 {
     let callback_telemetry = Arc::clone(&telemetry);
     let error_telemetry = Arc::clone(&telemetry);
+    let mut render_state = Tr909CallbackState::default();
+    let sample_rate = config.sample_rate;
+    let channel_count = usize::from(config.channels.max(1));
 
     device.build_output_stream(
         config,
         move |data: &mut [T], _| {
-            for sample in data.iter_mut() {
-                *sample = T::from_sample(0.0);
-            }
+            render_tr909_buffer(
+                data,
+                sample_rate,
+                channel_count,
+                &tr909_render.snapshot(),
+                &mut render_state,
+            );
 
             let now = start.elapsed().as_micros() as u64;
             callback_telemetry.record_callback_at(now);
@@ -311,6 +338,240 @@ where
         },
         None,
     )
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct RealtimeTr909RenderState {
+    mode: Tr909RenderMode,
+    routing: Tr909RenderRouting,
+    drum_bus_level: f32,
+    slam_intensity: f32,
+    is_transport_running: bool,
+    tempo_bpm: f32,
+    position_beats: f64,
+}
+
+struct SharedTr909RenderState {
+    mode: AtomicU32,
+    routing: AtomicU32,
+    drum_bus_level_bits: AtomicU32,
+    slam_intensity_bits: AtomicU32,
+    is_transport_running: AtomicBool,
+    tempo_bpm_bits: AtomicU32,
+    position_beats_bits: AtomicU64,
+}
+
+impl SharedTr909RenderState {
+    fn new(render_state: &Tr909RenderState) -> Self {
+        let shared = Self {
+            mode: AtomicU32::new(0),
+            routing: AtomicU32::new(0),
+            drum_bus_level_bits: AtomicU32::new(0),
+            slam_intensity_bits: AtomicU32::new(0),
+            is_transport_running: AtomicBool::new(false),
+            tempo_bpm_bits: AtomicU32::new(0),
+            position_beats_bits: AtomicU64::new(0),
+        };
+        shared.update(render_state);
+        shared
+    }
+
+    fn update(&self, render_state: &Tr909RenderState) {
+        self.mode
+            .store(mode_to_u32(render_state.mode), Ordering::Relaxed);
+        self.routing
+            .store(routing_to_u32(render_state.routing), Ordering::Relaxed);
+        self.drum_bus_level_bits
+            .store(render_state.drum_bus_level.to_bits(), Ordering::Relaxed);
+        self.slam_intensity_bits
+            .store(render_state.slam_intensity.to_bits(), Ordering::Relaxed);
+        self.is_transport_running
+            .store(render_state.is_transport_running, Ordering::Relaxed);
+        self.tempo_bpm_bits
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+        self.position_beats_bits
+            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+    }
+
+    fn snapshot(&self) -> RealtimeTr909RenderState {
+        RealtimeTr909RenderState {
+            mode: mode_from_u32(self.mode.load(Ordering::Relaxed)),
+            routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            drum_bus_level: f32::from_bits(self.drum_bus_level_bits.load(Ordering::Relaxed)),
+            slam_intensity: f32::from_bits(self.slam_intensity_bits.load(Ordering::Relaxed)),
+            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+        }
+    }
+}
+
+#[derive(Debug, Default)]
+struct Tr909CallbackState {
+    beat_position: f64,
+    oscillator_phase: f32,
+    oscillator_hz: f32,
+    envelope: f32,
+    last_step: i64,
+    was_running: bool,
+}
+
+fn render_tr909_buffer<T>(
+    data: &mut [T],
+    sample_rate: u32,
+    channel_count: usize,
+    render: &RealtimeTr909RenderState,
+    state: &mut Tr909CallbackState,
+) where
+    T: cpal::SizedSample + cpal::FromSample<f32>,
+{
+    if !render.is_transport_running
+        || matches!(render.mode, Tr909RenderMode::Idle)
+        || render.tempo_bpm <= 0.0
+    {
+        state.was_running = false;
+        state.envelope = 0.0;
+        state.beat_position = render.position_beats;
+        for sample in data.iter_mut() {
+            *sample = T::from_sample(0.0);
+        }
+        return;
+    }
+
+    let subdivision = render_subdivision(render.mode);
+    let current_step = (render.position_beats * f64::from(subdivision)).floor() as i64;
+    if !state.was_running || (state.beat_position - render.position_beats).abs() > 0.125 {
+        state.beat_position = render.position_beats;
+        state.last_step = current_step.saturating_sub(1);
+        state.was_running = true;
+    }
+
+    let beats_per_sample = f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));
+    let frame_count = data.len() / channel_count.max(1);
+
+    for frame_index in 0..frame_count {
+        let step = (state.beat_position * f64::from(subdivision)).floor() as i64;
+        if step != state.last_step {
+            state.last_step = step;
+            if should_trigger_step(render.mode, step) {
+                state.envelope = trigger_envelope(render);
+                state.oscillator_hz = trigger_frequency(render.mode, step, render.slam_intensity);
+            }
+        }
+
+        let sample = if state.envelope > 0.0005 {
+            let gain = render_gain(render);
+            let waveform = (std::f32::consts::TAU * state.oscillator_phase).sin();
+            state.oscillator_phase =
+                (state.oscillator_phase + state.oscillator_hz / sample_rate.max(1) as f32).fract();
+            let rendered = waveform * state.envelope * gain;
+            state.envelope *= envelope_decay(render.mode, render.slam_intensity);
+            rendered
+        } else {
+            0.0
+        };
+
+        let base = frame_index * channel_count;
+        for channel in 0..channel_count {
+            data[base + channel] = T::from_sample(sample);
+        }
+
+        state.beat_position += beats_per_sample;
+    }
+}
+
+const fn render_subdivision(mode: Tr909RenderMode) -> u32 {
+    match mode {
+        Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport => 1,
+        Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce | Tr909RenderMode::Takeover => 2,
+    }
+}
+
+fn should_trigger_step(mode: Tr909RenderMode, step: i64) -> bool {
+    match mode {
+        Tr909RenderMode::Idle => false,
+        Tr909RenderMode::SourceSupport => true,
+        Tr909RenderMode::Fill => true,
+        Tr909RenderMode::BreakReinforce => true,
+        Tr909RenderMode::Takeover => step % 2 == 0 || step % 2 == 1,
+    }
+}
+
+fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
+    let base = match render.routing {
+        Tr909RenderRouting::SourceOnly => 0.0,
+        Tr909RenderRouting::DrumBusSupport => 0.22,
+        Tr909RenderRouting::DrumBusTakeover => 0.34,
+    };
+    (base + (render.slam_intensity * 0.2)).clamp(0.0, 0.8)
+}
+
+fn trigger_frequency(mode: Tr909RenderMode, step: i64, slam_intensity: f32) -> f32 {
+    let accent = if step % 2 == 0 { 0.0 } else { 14.0 };
+    let slam = slam_intensity.clamp(0.0, 1.0) * 18.0;
+    match mode {
+        Tr909RenderMode::Idle => 0.0,
+        Tr909RenderMode::SourceSupport => 52.0 + slam,
+        Tr909RenderMode::Fill => 78.0 + accent + slam,
+        Tr909RenderMode::BreakReinforce => 64.0 + accent + slam,
+        Tr909RenderMode::Takeover => 92.0 + accent + slam,
+    }
+}
+
+fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
+    let routing_gain = match render.routing {
+        Tr909RenderRouting::SourceOnly => 0.0,
+        Tr909RenderRouting::DrumBusSupport => 0.12,
+        Tr909RenderRouting::DrumBusTakeover => 0.18,
+    };
+    (routing_gain * render.drum_bus_level.clamp(0.0, 1.0)).clamp(0.0, 0.25)
+}
+
+fn envelope_decay(mode: Tr909RenderMode, slam_intensity: f32) -> f32 {
+    let slam = slam_intensity.clamp(0.0, 1.0);
+    match mode {
+        Tr909RenderMode::Idle => 0.0,
+        Tr909RenderMode::SourceSupport => 0.992 - (slam * 0.002),
+        Tr909RenderMode::Fill => 0.988 - (slam * 0.003),
+        Tr909RenderMode::BreakReinforce => 0.989 - (slam * 0.003),
+        Tr909RenderMode::Takeover => 0.986 - (slam * 0.004),
+    }
+}
+
+const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {
+    match mode {
+        Tr909RenderMode::Idle => 0,
+        Tr909RenderMode::SourceSupport => 1,
+        Tr909RenderMode::Fill => 2,
+        Tr909RenderMode::BreakReinforce => 3,
+        Tr909RenderMode::Takeover => 4,
+    }
+}
+
+const fn mode_from_u32(value: u32) -> Tr909RenderMode {
+    match value {
+        1 => Tr909RenderMode::SourceSupport,
+        2 => Tr909RenderMode::Fill,
+        3 => Tr909RenderMode::BreakReinforce,
+        4 => Tr909RenderMode::Takeover,
+        _ => Tr909RenderMode::Idle,
+    }
+}
+
+const fn routing_to_u32(routing: Tr909RenderRouting) -> u32 {
+    match routing {
+        Tr909RenderRouting::SourceOnly => 0,
+        Tr909RenderRouting::DrumBusSupport => 1,
+        Tr909RenderRouting::DrumBusTakeover => 2,
+    }
+}
+
+const fn routing_from_u32(value: u32) -> Tr909RenderRouting {
+    match value {
+        1 => Tr909RenderRouting::DrumBusSupport,
+        2 => Tr909RenderRouting::DrumBusTakeover,
+        _ => Tr909RenderRouting::SourceOnly,
+    }
 }
 
 #[derive(Default)]
@@ -380,6 +641,7 @@ impl RuntimeTelemetry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState};
 
     fn sample_output() -> AudioOutputInfo {
         AudioOutputInfo {
@@ -409,6 +671,7 @@ mod tests {
     #[test]
     fn health_snapshot_reflects_faulted_runtime_state() {
         let telemetry = Arc::new(RuntimeTelemetry::new());
+        let render_state = Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
         telemetry.record_callback_at(100);
         telemetry.record_callback_at(240);
         telemetry.record_stream_error("stream stalled".into());
@@ -417,6 +680,7 @@ mod tests {
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
+            render_state,
         );
 
         let snapshot = shell.health_snapshot();
@@ -434,14 +698,118 @@ mod tests {
     #[test]
     fn stop_transitions_runtime_to_stopped() {
         let telemetry = Arc::new(RuntimeTelemetry::new());
+        let render_state = Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
         let mut shell = AudioRuntimeShell::from_test_parts(
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
+            render_state,
         );
 
         shell.stop();
 
         assert_eq!(shell.lifecycle(), AudioRuntimeLifecycle::Stopped);
+    }
+
+    #[test]
+    fn shared_render_state_tracks_updates() {
+        let shared = SharedTr909RenderState::new(&Tr909RenderState::default());
+        let mut state = Tr909RenderState {
+            mode: Tr909RenderMode::Takeover,
+            routing: Tr909RenderRouting::DrumBusTakeover,
+            drum_bus_level: 0.8,
+            slam_intensity: 0.9,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 17.5,
+            ..Tr909RenderState::default()
+        };
+        shared.update(&state);
+
+        let snapshot = shared.snapshot();
+        assert_eq!(snapshot.mode, Tr909RenderMode::Takeover);
+        assert_eq!(snapshot.routing, Tr909RenderRouting::DrumBusTakeover);
+        assert_eq!(snapshot.tempo_bpm, 128.0);
+        assert_eq!(snapshot.position_beats, 17.5);
+
+        state.mode = Tr909RenderMode::SourceSupport;
+        state.routing = Tr909RenderRouting::DrumBusSupport;
+        shared.update(&state);
+
+        let updated = shared.snapshot();
+        assert_eq!(updated.mode, Tr909RenderMode::SourceSupport);
+        assert_eq!(updated.routing, Tr909RenderRouting::DrumBusSupport);
+    }
+
+    #[test]
+    fn render_buffer_stays_silent_when_idle() {
+        let mut state = Tr909CallbackState::default();
+        let mut buffer = [1.0_f32; 128];
+
+        render_tr909_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::Idle,
+                routing: Tr909RenderRouting::SourceOnly,
+                drum_bus_level: 0.8,
+                slam_intensity: 0.2,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
+    }
+
+    #[test]
+    fn render_buffer_produces_audible_samples_for_support_mode() {
+        let mut state = Tr909CallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_tr909_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::BreakReinforce,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                drum_bus_level: 0.8,
+                slam_intensity: 0.6,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn render_buffer_respects_zero_drum_bus_level() {
+        let mut state = Tr909CallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_tr909_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::BreakReinforce,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                drum_bus_level: 0.0,
+                slam_intensity: 0.6,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
     }
 }

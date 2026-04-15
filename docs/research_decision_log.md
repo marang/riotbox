@@ -451,6 +451,17 @@ Status: accepted
 
 ---
 
+Topic: the first audible TR-909 reinforcement slice should stay inside the existing render seam and audio runtime shell  
+Phase: TR-909 MVP  
+Question: once Riotbox has an explicit TR-909 render contract, what is the smallest next step that makes reinforcement honestly audible without pretending a full drum-machine engine already exists?  
+Decision: drive a bounded callback-side TR-909 reinforcement renderer directly from the existing render seam, and start that audio path from the Jam app without introducing a second device-control system or a separate drum runtime. Keep the sound generation intentionally simple and replay-aligned: support, reinforce, and takeover should become audibly distinct, but full pattern adoption and richer device semantics stay out of scope.  
+Why: Phase 3 requires audible reinforcement, but jumping from a render contract straight to a full TR-909 engine would be too large and too architecture-risky. The honest next move is to make the existing seam produce audible results while preserving the queue, transport, and committed lane-state path.  
+Evidence: `riotbox-audio` now renders bounded TR-909 reinforcement audio from the render seam in the audio callback, `riotbox-app` starts the audio runtime and keeps it updated from the current committed render state, and tests cover silent idle behavior, audible support-mode output, and zero drum-bus silence.  
+Consequences: later TR-909 slices should deepen the same audible render path with better profiles, pattern adoption, and regression fixtures rather than replacing it with a parallel drum subsystem.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

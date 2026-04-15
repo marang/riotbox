@@ -47,6 +47,8 @@ pub struct Tr909RenderState {
     pub drum_bus_level: f32,
     pub slam_intensity: f32,
     pub is_transport_running: bool,
+    pub tempo_bpm: f32,
+    pub position_beats: f64,
     pub current_scene_id: Option<String>,
 }
 
@@ -60,6 +62,8 @@ impl Default for Tr909RenderState {
             drum_bus_level: 0.0,
             slam_intensity: 0.0,
             is_transport_running: false,
+            tempo_bpm: 0.0,
+            position_beats: 0.0,
             current_scene_id: None,
         }
     }

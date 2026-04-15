@@ -311,8 +311,11 @@ impl JamAppState {
     }
 
     pub fn refresh_view(&mut self) {
-        self.runtime.tr909_render =
-            build_tr909_render_state(&self.session, &self.runtime.transport);
+        self.runtime.tr909_render = build_tr909_render_state(
+            &self.session,
+            &self.runtime.transport,
+            self.source_graph.as_ref(),
+        );
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
         self.runtime_view = JamRuntimeView::build(&self.runtime);
     }
@@ -1198,9 +1201,13 @@ fn apply_tr909_side_effects(
 fn build_tr909_render_state(
     session: &SessionFile,
     transport: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
 ) -> Tr909RenderState {
     let tr909 = &session.runtime_state.lane_state.tr909;
     let mixer = &session.runtime_state.mixer_state;
+    let tempo_bpm = source_graph
+        .and_then(|graph| graph.timing.bpm_estimate)
+        .unwrap_or(0.0);
 
     let mode = if tr909.takeover_enabled {
         Tr909RenderMode::Takeover
@@ -1234,6 +1241,8 @@ fn build_tr909_render_state(
         drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
         slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
+        tempo_bpm,
+        position_beats: transport.position_beats,
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
     }
 }
@@ -1454,6 +1463,8 @@ mod tests {
             weight: 1.0,
             notes: Some("primary loop".into()),
         });
+        graph.timing.bpm_estimate = Some(126.0);
+        graph.timing.bpm_confidence = 0.81;
         graph.analysis_summary = AnalysisSummary {
             overall_confidence: 0.87,
             timing_quality: QualityClass::High,
@@ -1874,6 +1885,8 @@ mod tests {
         assert_eq!(state.runtime.tr909_render.pattern_ref, None);
         assert_eq!(state.runtime.tr909_render.drum_bus_level, 0.72);
         assert!(state.runtime.tr909_render.is_transport_running);
+        assert_eq!(state.runtime.tr909_render.tempo_bpm, 126.0);
+        assert_eq!(state.runtime.tr909_render.position_beats, 32.0);
         assert_eq!(
             state.runtime.tr909_render.current_scene_id.as_deref(),
             Some("scene-1")
