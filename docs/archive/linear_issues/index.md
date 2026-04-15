@@ -38,4 +38,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Phrase-aware TR-909 variation and release behavior inside the audible render seam.
 - [RIOTBOX-47.md](./RIOTBOX-47.md)
   Fixture-backed TR-909 regression coverage for shipped pattern-adoption and phrase-variation states.
+- [RIOTBOX-48.md](./RIOTBOX-48.md)
+  First bounded MC-202 role control on the queue and phrase-boundary seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
