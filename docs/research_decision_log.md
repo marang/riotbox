@@ -407,6 +407,17 @@ Status: accepted
 
 ---
 
+Topic: terminal UI should consume runtime pulses instead of owning transport advancement  
+Phase: Jam-first Playable Slice  
+Question: how should Riotbox remove musical timing authority from the terminal redraw loop before the full audio scheduler exists?  
+Decision: introduce a small app-runtime pulse source outside the TUI event loop and make the app own elapsed-time transport advancement from those pulses. The terminal loop should only render snapshots, dispatch key intents, and consume already-timed runtime signals.  
+Why: the periodic codebase review identified a real architecture problem: the shell poll tick was both advancing transport and deciding boundary commits. That made musical timing depend on redraw cadence, which conflicts with the audio-core contract and would force a rewrite once audio or a real scheduler becomes authoritative.  
+Evidence: `riotbox-app` now has a dedicated runtime pulse source, the terminal binary no longer computes beat deltas, and `JamAppState` advances transport from elapsed pulse timestamps through an explicit driver state. Tests cover runtime-anchor setup and elapsed-time transport progression while preserving the existing queue and commit-boundary behavior.  
+Consequences: later scheduler or audio-runtime work can replace the current pulse source with a stronger timing authority without reopening the TUI contract. The shell stays bounded to rendering and intent dispatch, while the app/runtime seam becomes the place where transport time enters the product.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

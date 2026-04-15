@@ -13,12 +13,13 @@ use crossterm::{
 use ratatui::{Terminal, backend::CrosstermBackend};
 use riotbox_app::{
     jam_app::{JamAppError, JamAppState},
+    runtime::{DEFAULT_RUNTIME_PULSE_INTERVAL, RuntimePulseSource, RuntimeSignal},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
 const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
-const UI_TICK: Duration = Duration::from_millis(200);
+const INPUT_POLL: Duration = Duration::from_millis(50);
 
 #[derive(Clone, Debug)]
 enum LaunchMode {
@@ -69,7 +70,8 @@ fn run_terminal_ui(
     mode: LaunchMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = ManagedTerminal::enter()?;
-    run_event_loop(terminal.terminal_mut(), shell, mode)
+    let runtime_pulses = RuntimePulseSource::spawn(DEFAULT_RUNTIME_PULSE_INTERVAL);
+    run_event_loop(terminal.terminal_mut(), shell, mode, runtime_pulses)
 }
 
 struct ManagedTerminal {
@@ -117,11 +119,18 @@ fn run_event_loop(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     mut shell: JamShellState,
     mode: LaunchMode,
+    runtime_pulses: RuntimePulseSource,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
+        if let Some(RuntimeSignal::TransportPulse { timestamp_ms }) = runtime_pulses.drain_latest()
+            && !shell.app.apply_runtime_pulse(timestamp_ms).is_empty()
+        {
+            shell.set_error_status("committed queued actions on transport boundary");
+        }
+
         terminal.draw(|frame| render_jam_shell(frame, &shell))?;
 
-        if event::poll(UI_TICK)?
+        if event::poll(INPUT_POLL)?
             && let Event::Key(key) = event::read()?
         {
             match shell.handle_key_code(key.code) {
@@ -129,7 +138,9 @@ fn run_event_loop(
                 ShellKeyOutcome::Continue => {}
                 ShellKeyOutcome::ToggleTransport => {
                     let next_is_playing = !shell.app.runtime.transport.is_playing;
-                    shell.app.set_transport_playing(next_is_playing);
+                    shell
+                        .app
+                        .set_transport_playing_at(next_is_playing, timestamp_now());
                     shell.set_error_status(if next_is_playing {
                         "transport started"
                     } else {
@@ -178,29 +189,8 @@ fn run_event_loop(
                     Err(error) => shell.set_error_status(format!("refresh failed: {error}")),
                 },
             }
-        } else {
-            let delta_beats = tick_delta_beats(&shell);
-            if !shell
-                .app
-                .advance_transport_by(delta_beats, timestamp_now())
-                .is_empty()
-            {
-                shell.set_error_status("committed queued actions on transport boundary");
-            }
         }
     }
-}
-
-fn tick_delta_beats(shell: &JamShellState) -> f64 {
-    let bpm = shell
-        .app
-        .jam_view
-        .source
-        .bpm_estimate
-        .map(f64::from)
-        .filter(|bpm| *bpm > 0.0)
-        .unwrap_or(120.0);
-    bpm * UI_TICK.as_secs_f64() / 60.0
 }
 
 fn timestamp_now() -> u64 {
