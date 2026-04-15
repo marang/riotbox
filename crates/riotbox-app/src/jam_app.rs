@@ -8,7 +8,10 @@ use std::{
 
 use riotbox_audio::{
     runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle},
-    tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState},
+    tr909::{
+        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
+    },
 };
 use riotbox_core::{
     TimestampMs,
@@ -1233,17 +1236,62 @@ fn build_tr909_render_state(
         Tr909RenderMode::Takeover => Tr909RenderRouting::DrumBusTakeover,
     };
 
+    let source_support_profile = matches!(mode, Tr909RenderMode::SourceSupport)
+        .then(|| derive_tr909_source_support_profile(source_graph, transport));
+
     Tr909RenderState {
         mode,
         routing,
+        source_support_profile: source_support_profile.flatten(),
         pattern_ref: tr909.pattern_ref.clone(),
-        takeover_profile: tr909.takeover_profile.clone(),
+        takeover_profile: derive_tr909_takeover_render_profile(tr909),
         drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
         slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
         tempo_bpm,
         position_beats: transport.position_beats,
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
+    }
+}
+
+fn derive_tr909_source_support_profile(
+    source_graph: Option<&SourceGraph>,
+    transport: &TransportClockState,
+) -> Option<Tr909SourceSupportProfile> {
+    let graph = source_graph?;
+    let current_section = graph.sections.iter().find(|section| {
+        let bar_index = transport.bar_index as u32;
+        bar_index >= section.bar_start && bar_index <= section.bar_end
+    });
+
+    let profile = match current_section.map(|section| (section.label_hint, section.energy_class)) {
+        Some((
+            riotbox_core::source_graph::SectionLabelHint::Break
+            | riotbox_core::source_graph::SectionLabelHint::Build,
+            _,
+        )) => Tr909SourceSupportProfile::BreakLift,
+        Some((
+            riotbox_core::source_graph::SectionLabelHint::Drop
+            | riotbox_core::source_graph::SectionLabelHint::Chorus,
+            riotbox_core::source_graph::EnergyClass::High
+            | riotbox_core::source_graph::EnergyClass::Peak,
+        )) => Tr909SourceSupportProfile::DropDrive,
+        _ => Tr909SourceSupportProfile::SteadyPulse,
+    };
+
+    Some(profile)
+}
+
+fn derive_tr909_takeover_render_profile(
+    tr909: &riotbox_core::session::Tr909LaneState,
+) -> Option<Tr909TakeoverRenderProfile> {
+    if !tr909.takeover_enabled {
+        return None;
+    }
+
+    match tr909.takeover_profile.as_deref() {
+        Some("controlled_phrase_takeover") => Some(Tr909TakeoverRenderProfile::ControlledPhrase),
+        Some(_) | None => Some(Tr909TakeoverRenderProfile::SceneLock),
     }
 }
 
@@ -1353,7 +1401,10 @@ mod tests {
 
     use riotbox_audio::{
         runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
-        tr909::{Tr909RenderMode, Tr909RenderRouting},
+        tr909::{
+            Tr909RenderMode, Tr909RenderRouting, Tr909SourceSupportProfile,
+            Tr909TakeoverRenderProfile,
+        },
     };
     use riotbox_core::{
         action::{
@@ -2444,8 +2495,8 @@ mod tests {
             Tr909RenderRouting::DrumBusTakeover
         );
         assert_eq!(
-            state.runtime.tr909_render.takeover_profile.as_deref(),
-            Some("controlled_phrase_takeover")
+            state.runtime.tr909_render.takeover_profile,
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase)
         );
 
         assert_eq!(state.queue_tr909_release(500), QueueControlResult::Enqueued);
@@ -2512,6 +2563,55 @@ mod tests {
         assert_eq!(
             state.runtime.tr909_render.pattern_ref.as_deref(),
             Some("release-scene-1")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
+    }
+
+    #[test]
+    fn source_support_render_profile_tracks_current_source_section() {
+        let mut graph = sample_graph();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-b"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 32.0,
+            bar_start: 9,
+            bar_end: 16,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.86,
+            tags: vec!["break".into()],
+        });
+
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("source_support".into());
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("support-scene-1".into());
+        session.runtime_state.transport.position_beats = 16.0;
+
+        let state =
+            JamAppState::from_parts(session.clone(), Some(graph.clone()), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.tr909_render.mode,
+            Tr909RenderMode::SourceSupport
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
+
+        session.runtime_state.transport.position_beats = 36.0;
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.tr909_render.mode,
+            Tr909RenderMode::SourceSupport
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::BreakLift)
         );
     }
 

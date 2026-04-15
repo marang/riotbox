@@ -462,6 +462,17 @@ Status: accepted
 
 ---
 
+Topic: early TR-909 render profiles should be typed and derived from source plus committed lane state  
+Phase: TR-909 MVP  
+Question: now that TR-909 reinforcement is audibly real, how should Riotbox make support and takeover sound semantically different without reintroducing stringly callback logic or a second device-control path?  
+Decision: keep render-profile choice inside the existing TR-909 render contract and make it typed. Derive source-support profiles from the current source section at the app layer, derive takeover profiles from the committed TR-909 lane state, and let the audio callback consume those typed profiles to vary density, gain, pitch, and decay.  
+Why: the next honest step after first audible reinforcement is to deepen musical differentiation, not to invent a parallel drum engine. Typed render profiles preserve the app-to-audio seam, keep the callback free of string parsing, and make profile behavior testable and replay-aligned.  
+Evidence: `riotbox-audio` now defines explicit support and takeover render-profile enums, `riotbox-app` derives source-support profiles from source-section context and takeover profiles from committed lane state, and tests cover both the app-side derivation and callback-side audible differences between profiles.  
+Consequences: later TR-909 work should extend the same typed render-profile seam with richer pattern adoption and fixture coverage instead of pushing profile semantics back into UI strings or bypassing the current render contract.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

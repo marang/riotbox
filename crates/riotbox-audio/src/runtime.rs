@@ -8,7 +8,10 @@ use std::{
     time::Instant,
 };
 
-use crate::tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState};
+use crate::tr909::{
+    Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
+    Tr909TakeoverRenderProfile,
+};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -344,6 +347,8 @@ where
 struct RealtimeTr909RenderState {
     mode: Tr909RenderMode,
     routing: Tr909RenderRouting,
+    source_support_profile: Option<Tr909SourceSupportProfile>,
+    takeover_profile: Option<Tr909TakeoverRenderProfile>,
     drum_bus_level: f32,
     slam_intensity: f32,
     is_transport_running: bool,
@@ -354,6 +359,8 @@ struct RealtimeTr909RenderState {
 struct SharedTr909RenderState {
     mode: AtomicU32,
     routing: AtomicU32,
+    source_support_profile: AtomicU32,
+    takeover_profile: AtomicU32,
     drum_bus_level_bits: AtomicU32,
     slam_intensity_bits: AtomicU32,
     is_transport_running: AtomicBool,
@@ -366,6 +373,8 @@ impl SharedTr909RenderState {
         let shared = Self {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
+            source_support_profile: AtomicU32::new(0),
+            takeover_profile: AtomicU32::new(0),
             drum_bus_level_bits: AtomicU32::new(0),
             slam_intensity_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
@@ -381,6 +390,14 @@ impl SharedTr909RenderState {
             .store(mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing
             .store(routing_to_u32(render_state.routing), Ordering::Relaxed);
+        self.source_support_profile.store(
+            support_profile_to_u32(render_state.source_support_profile),
+            Ordering::Relaxed,
+        );
+        self.takeover_profile.store(
+            takeover_profile_to_u32(render_state.takeover_profile),
+            Ordering::Relaxed,
+        );
         self.drum_bus_level_bits
             .store(render_state.drum_bus_level.to_bits(), Ordering::Relaxed);
         self.slam_intensity_bits
@@ -397,6 +414,12 @@ impl SharedTr909RenderState {
         RealtimeTr909RenderState {
             mode: mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            source_support_profile: support_profile_from_u32(
+                self.source_support_profile.load(Ordering::Relaxed),
+            ),
+            takeover_profile: takeover_profile_from_u32(
+                self.takeover_profile.load(Ordering::Relaxed),
+            ),
             drum_bus_level: f32::from_bits(self.drum_bus_level_bits.load(Ordering::Relaxed)),
             slam_intensity: f32::from_bits(self.slam_intensity_bits.load(Ordering::Relaxed)),
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
@@ -438,7 +461,7 @@ fn render_tr909_buffer<T>(
         return;
     }
 
-    let subdivision = render_subdivision(render.mode);
+    let subdivision = render_subdivision(render);
     let current_step = (render.position_beats * f64::from(subdivision)).floor() as i64;
     if !state.was_running || (state.beat_position - render.position_beats).abs() > 0.125 {
         state.beat_position = render.position_beats;
@@ -453,9 +476,9 @@ fn render_tr909_buffer<T>(
         let step = (state.beat_position * f64::from(subdivision)).floor() as i64;
         if step != state.last_step {
             state.last_step = step;
-            if should_trigger_step(render.mode, step) {
+            if should_trigger_step(render, step) {
                 state.envelope = trigger_envelope(render);
-                state.oscillator_hz = trigger_frequency(render.mode, step, render.slam_intensity);
+                state.oscillator_hz = trigger_frequency(render, step);
             }
         }
 
@@ -465,7 +488,7 @@ fn render_tr909_buffer<T>(
             state.oscillator_phase =
                 (state.oscillator_phase + state.oscillator_hz / sample_rate.max(1) as f32).fract();
             let rendered = waveform * state.envelope * gain;
-            state.envelope *= envelope_decay(render.mode, render.slam_intensity);
+            state.envelope *= envelope_decay(render);
             rendered
         } else {
             0.0
@@ -480,20 +503,31 @@ fn render_tr909_buffer<T>(
     }
 }
 
-const fn render_subdivision(mode: Tr909RenderMode) -> u32 {
-    match mode {
-        Tr909RenderMode::Idle | Tr909RenderMode::SourceSupport => 1,
+const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
+    match render.mode {
+        Tr909RenderMode::Idle => 1,
+        Tr909RenderMode::SourceSupport => match render.source_support_profile {
+            Some(Tr909SourceSupportProfile::BreakLift | Tr909SourceSupportProfile::DropDrive) => 2,
+            Some(Tr909SourceSupportProfile::SteadyPulse) | None => 1,
+        },
         Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce | Tr909RenderMode::Takeover => 2,
     }
 }
 
-fn should_trigger_step(mode: Tr909RenderMode, step: i64) -> bool {
-    match mode {
+fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
+    match render.mode {
         Tr909RenderMode::Idle => false,
-        Tr909RenderMode::SourceSupport => true,
+        Tr909RenderMode::SourceSupport => match render.source_support_profile {
+            Some(Tr909SourceSupportProfile::BreakLift) => step % 2 == 0,
+            Some(Tr909SourceSupportProfile::DropDrive) => true,
+            Some(Tr909SourceSupportProfile::SteadyPulse) | None => true,
+        },
         Tr909RenderMode::Fill => true,
         Tr909RenderMode::BreakReinforce => true,
-        Tr909RenderMode::Takeover => step % 2 == 0 || step % 2 == 1,
+        Tr909RenderMode::Takeover => match render.takeover_profile {
+            Some(Tr909TakeoverRenderProfile::SceneLock) => step % 4 != 3,
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => true,
+        },
     }
 }
 
@@ -503,18 +537,45 @@ fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
         Tr909RenderRouting::DrumBusSupport => 0.22,
         Tr909RenderRouting::DrumBusTakeover => 0.34,
     };
-    (base + (render.slam_intensity * 0.2)).clamp(0.0, 0.8)
+    let profile_boost = match render.mode {
+        Tr909RenderMode::SourceSupport => match render.source_support_profile {
+            Some(Tr909SourceSupportProfile::SteadyPulse) | None => 0.0,
+            Some(Tr909SourceSupportProfile::BreakLift) => 0.03,
+            Some(Tr909SourceSupportProfile::DropDrive) => 0.08,
+        },
+        Tr909RenderMode::Takeover => match render.takeover_profile {
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 0.06,
+            Some(Tr909TakeoverRenderProfile::SceneLock) => 0.1,
+        },
+        Tr909RenderMode::Fill => 0.04,
+        Tr909RenderMode::BreakReinforce => 0.02,
+        Tr909RenderMode::Idle => 0.0,
+    };
+    (base + profile_boost + (render.slam_intensity * 0.2)).clamp(0.0, 0.8)
 }
 
-fn trigger_frequency(mode: Tr909RenderMode, step: i64, slam_intensity: f32) -> f32 {
+fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
     let accent = if step % 2 == 0 { 0.0 } else { 14.0 };
-    let slam = slam_intensity.clamp(0.0, 1.0) * 18.0;
-    match mode {
+    let slam = render.slam_intensity.clamp(0.0, 1.0) * 18.0;
+    match render.mode {
         Tr909RenderMode::Idle => 0.0,
-        Tr909RenderMode::SourceSupport => 52.0 + slam,
+        Tr909RenderMode::SourceSupport => {
+            let base = match render.source_support_profile {
+                Some(Tr909SourceSupportProfile::SteadyPulse) | None => 52.0,
+                Some(Tr909SourceSupportProfile::BreakLift) => 66.0,
+                Some(Tr909SourceSupportProfile::DropDrive) => 78.0,
+            };
+            base + accent + slam
+        }
         Tr909RenderMode::Fill => 78.0 + accent + slam,
         Tr909RenderMode::BreakReinforce => 64.0 + accent + slam,
-        Tr909RenderMode::Takeover => 92.0 + accent + slam,
+        Tr909RenderMode::Takeover => {
+            let base = match render.takeover_profile {
+                Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 92.0,
+                Some(Tr909TakeoverRenderProfile::SceneLock) => 108.0,
+            };
+            base + accent + slam
+        }
     }
 }
 
@@ -527,14 +588,21 @@ fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
     (routing_gain * render.drum_bus_level.clamp(0.0, 1.0)).clamp(0.0, 0.25)
 }
 
-fn envelope_decay(mode: Tr909RenderMode, slam_intensity: f32) -> f32 {
-    let slam = slam_intensity.clamp(0.0, 1.0);
-    match mode {
+fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
+    let slam = render.slam_intensity.clamp(0.0, 1.0);
+    match render.mode {
         Tr909RenderMode::Idle => 0.0,
-        Tr909RenderMode::SourceSupport => 0.992 - (slam * 0.002),
+        Tr909RenderMode::SourceSupport => match render.source_support_profile {
+            Some(Tr909SourceSupportProfile::SteadyPulse) | None => 0.992 - (slam * 0.002),
+            Some(Tr909SourceSupportProfile::BreakLift) => 0.989 - (slam * 0.003),
+            Some(Tr909SourceSupportProfile::DropDrive) => 0.986 - (slam * 0.004),
+        },
         Tr909RenderMode::Fill => 0.988 - (slam * 0.003),
         Tr909RenderMode::BreakReinforce => 0.989 - (slam * 0.003),
-        Tr909RenderMode::Takeover => 0.986 - (slam * 0.004),
+        Tr909RenderMode::Takeover => match render.takeover_profile {
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 0.986 - (slam * 0.004),
+            Some(Tr909TakeoverRenderProfile::SceneLock) => 0.982 - (slam * 0.005),
+        },
     }
 }
 
@@ -571,6 +639,40 @@ const fn routing_from_u32(value: u32) -> Tr909RenderRouting {
         1 => Tr909RenderRouting::DrumBusSupport,
         2 => Tr909RenderRouting::DrumBusTakeover,
         _ => Tr909RenderRouting::SourceOnly,
+    }
+}
+
+const fn support_profile_to_u32(profile: Option<Tr909SourceSupportProfile>) -> u32 {
+    match profile {
+        None => 0,
+        Some(Tr909SourceSupportProfile::SteadyPulse) => 1,
+        Some(Tr909SourceSupportProfile::BreakLift) => 2,
+        Some(Tr909SourceSupportProfile::DropDrive) => 3,
+    }
+}
+
+const fn support_profile_from_u32(value: u32) -> Option<Tr909SourceSupportProfile> {
+    match value {
+        1 => Some(Tr909SourceSupportProfile::SteadyPulse),
+        2 => Some(Tr909SourceSupportProfile::BreakLift),
+        3 => Some(Tr909SourceSupportProfile::DropDrive),
+        _ => None,
+    }
+}
+
+const fn takeover_profile_to_u32(profile: Option<Tr909TakeoverRenderProfile>) -> u32 {
+    match profile {
+        None => 0,
+        Some(Tr909TakeoverRenderProfile::ControlledPhrase) => 1,
+        Some(Tr909TakeoverRenderProfile::SceneLock) => 2,
+    }
+}
+
+const fn takeover_profile_from_u32(value: u32) -> Option<Tr909TakeoverRenderProfile> {
+    match value {
+        1 => Some(Tr909TakeoverRenderProfile::ControlledPhrase),
+        2 => Some(Tr909TakeoverRenderProfile::SceneLock),
+        _ => None,
     }
 }
 
@@ -641,7 +743,10 @@ impl RuntimeTelemetry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState};
+    use crate::tr909::{
+        Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
+    };
 
     fn sample_output() -> AudioOutputInfo {
         AudioOutputInfo {
@@ -717,6 +822,8 @@ mod tests {
         let mut state = Tr909RenderState {
             mode: Tr909RenderMode::Takeover,
             routing: Tr909RenderRouting::DrumBusTakeover,
+            source_support_profile: None,
+            takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
             drum_bus_level: 0.8,
             slam_intensity: 0.9,
             is_transport_running: true,
@@ -729,16 +836,26 @@ mod tests {
         let snapshot = shared.snapshot();
         assert_eq!(snapshot.mode, Tr909RenderMode::Takeover);
         assert_eq!(snapshot.routing, Tr909RenderRouting::DrumBusTakeover);
+        assert_eq!(
+            snapshot.takeover_profile,
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase)
+        );
         assert_eq!(snapshot.tempo_bpm, 128.0);
         assert_eq!(snapshot.position_beats, 17.5);
 
         state.mode = Tr909RenderMode::SourceSupport;
         state.routing = Tr909RenderRouting::DrumBusSupport;
+        state.source_support_profile = Some(Tr909SourceSupportProfile::DropDrive);
+        state.takeover_profile = None;
         shared.update(&state);
 
         let updated = shared.snapshot();
         assert_eq!(updated.mode, Tr909RenderMode::SourceSupport);
         assert_eq!(updated.routing, Tr909RenderRouting::DrumBusSupport);
+        assert_eq!(
+            updated.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
     }
 
     #[test]
@@ -753,6 +870,8 @@ mod tests {
             &RealtimeTr909RenderState {
                 mode: Tr909RenderMode::Idle,
                 routing: Tr909RenderRouting::SourceOnly,
+                source_support_profile: None,
+                takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.2,
                 is_transport_running: true,
@@ -777,6 +896,8 @@ mod tests {
             &RealtimeTr909RenderState {
                 mode: Tr909RenderMode::BreakReinforce,
                 routing: Tr909RenderRouting::DrumBusSupport,
+                source_support_profile: None,
+                takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.6,
                 is_transport_running: true,
@@ -801,6 +922,8 @@ mod tests {
             &RealtimeTr909RenderState {
                 mode: Tr909RenderMode::BreakReinforce,
                 routing: Tr909RenderRouting::DrumBusSupport,
+                source_support_profile: None,
+                takeover_profile: None,
                 drum_bus_level: 0.0,
                 slam_intensity: 0.6,
                 is_transport_running: true,
@@ -811,5 +934,113 @@ mod tests {
         );
 
         assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
+    }
+
+    #[test]
+    fn source_support_profiles_produce_different_peak_levels() {
+        let mut steady_state = Tr909CallbackState::default();
+        let mut drive_state = Tr909CallbackState::default();
+        let mut steady = [0.0_f32; 512];
+        let mut drive = [0.0_f32; 512];
+
+        render_tr909_buffer(
+            &mut steady,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::SourceSupport,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
+                takeover_profile: None,
+                drum_bus_level: 0.8,
+                slam_intensity: 0.35,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut steady_state,
+        );
+
+        render_tr909_buffer(
+            &mut drive,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::SourceSupport,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
+                takeover_profile: None,
+                drum_bus_level: 0.8,
+                slam_intensity: 0.35,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut drive_state,
+        );
+
+        let steady_peak = steady
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let drive_peak = drive
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+
+        assert!(drive_peak > steady_peak);
+    }
+
+    #[test]
+    fn controlled_phrase_takeover_profile_is_more_active_than_scene_lock() {
+        let mut controlled_state = Tr909CallbackState::default();
+        let mut lock_state = Tr909CallbackState::default();
+        let mut controlled = [0.0_f32; 512];
+        let mut scene_lock = [0.0_f32; 512];
+
+        render_tr909_buffer(
+            &mut controlled,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::Takeover,
+                routing: Tr909RenderRouting::DrumBusTakeover,
+                source_support_profile: None,
+                takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
+                drum_bus_level: 0.8,
+                slam_intensity: 0.45,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut controlled_state,
+        );
+
+        render_tr909_buffer(
+            &mut scene_lock,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::Takeover,
+                routing: Tr909RenderRouting::DrumBusTakeover,
+                source_support_profile: None,
+                takeover_profile: Some(Tr909TakeoverRenderProfile::SceneLock),
+                drum_bus_level: 0.8,
+                slam_intensity: 0.45,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut lock_state,
+        );
+
+        let controlled_active = controlled
+            .iter()
+            .filter(|sample| sample.abs() > 0.0001)
+            .count();
+        let scene_lock_active = scene_lock
+            .iter()
+            .filter(|sample| sample.abs() > 0.0001)
+            .count();
+
+        assert!(controlled_active > scene_lock_active);
     }
 }
