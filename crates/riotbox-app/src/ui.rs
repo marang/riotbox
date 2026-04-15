@@ -76,6 +76,8 @@ pub enum ShellKeyOutcome {
     QueueTr909Fill,
     QueueTr909Reinforce,
     QueueTr909Slam,
+    QueueTr909Takeover,
+    QueueTr909Release,
     QueueCaptureBar,
     PromoteLastCapture,
     TogglePinLatestCapture,
@@ -169,6 +171,14 @@ impl JamShellState {
             KeyCode::Char('s') => {
                 self.status_message = "queue TR-909 slam change on next beat".into();
                 ShellKeyOutcome::QueueTr909Slam
+            }
+            KeyCode::Char('t') => {
+                self.status_message = "queue TR-909 takeover on next phrase".into();
+                ShellKeyOutcome::QueueTr909Takeover
+            }
+            KeyCode::Char('x') => {
+                self.status_message = "queue TR-909 release on next phrase".into();
+                ShellKeyOutcome::QueueTr909Release
             }
             KeyCode::Char('c') => {
                 self.status_message = "queue capture on next phrase".into();
@@ -421,6 +431,29 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .jam_view
                 .lanes
                 .w30_active_bank
+                .as_deref()
+                .unwrap_or("unset")
+        )),
+        Line::from(format!(
+            "TR-909 takeover: {} | pending {}",
+            if shell.app.jam_view.lanes.tr909_takeover_enabled {
+                "on"
+            } else {
+                "off"
+            },
+            match shell.app.jam_view.lanes.tr909_takeover_pending_target {
+                Some(true) => "engage",
+                Some(false) => "release",
+                None => "-",
+            }
+        )),
+        Line::from(format!(
+            "takeover profile: {}",
+            shell
+                .app
+                .jam_view
+                .lanes
+                .tr909_takeover_profile
                 .as_deref()
                 .unwrap_or("unset")
         )),
@@ -818,7 +851,10 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | p promote capture | v pin latest | u undo",
+        "Actions: m mutate scene | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release | c capture phrase",
+    ));
+    lines.push(Line::from(
+        "         p promote capture | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {}",
@@ -871,6 +907,8 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("f: queue TR-909 fill on next bar"),
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("s: queue TR-909 slam change on next beat"),
+        Line::from("t: queue TR-909 takeover on next phrase"),
+        Line::from("x: queue TR-909 release on next phrase"),
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
         Line::from("v: pin or unpin the latest capture for fast recall"),
@@ -1801,6 +1839,9 @@ mod tests {
         session.runtime_state.macro_state.tr909_slam = 0.9;
         session.runtime_state.lane_state.mc202.role = Some("leader".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        session.runtime_state.lane_state.tr909.takeover_enabled = true;
+        session.runtime_state.lane_state.tr909.takeover_profile =
+            Some("controlled_phrase_takeover".into());
         session.ghost_state.mode = GhostMode::Assist;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(6);
         session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
@@ -2024,6 +2065,7 @@ mod tests {
         assert!(rendered.contains("recent"));
         assert!(rendered.contains("[commit"));
         assert!(rendered.contains("Capture"));
+        assert!(rendered.contains("TR-909 takeover"));
     }
 
     #[test]
@@ -2081,6 +2123,14 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('s')),
             ShellKeyOutcome::QueueTr909Slam
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('t')),
+            ShellKeyOutcome::QueueTr909Takeover
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('x')),
+            ShellKeyOutcome::QueueTr909Release
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('c')),

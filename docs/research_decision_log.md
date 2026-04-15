@@ -429,6 +429,17 @@ Status: accepted
 
 ---
 
+Topic: the next TR-909 MVP increment should add explicit takeover and release actions on the existing seam  
+Phase: TR-909 MVP  
+Question: how should Riotbox add controlled TR-909 lane takeover without inventing a second execution path or hiding state transitions behind UI-only toggles?  
+Decision: add explicit `tr909.takeover` and `tr909.release` actions, queue them through the existing action seam, and commit them on phrase boundaries. Represent the committed state in TR-909 lane state and expose the pending target separately in the Jam view so the shell can show queued-versus-committed takeover clearly.  
+Why: the milestone requires controlled 909 takeover, but the current shell only had fill, reinforce, and slam controls. A takeover/release pair is the next smallest real device-facing increment that keeps replay, queueing, and view state aligned.  
+Evidence: the core action vocabulary now includes dedicated takeover and release commands, the app queues them with duplicate-pending protection, committed side effects update lane takeover state on phrase boundaries, and the Jam shell shows both committed takeover state and any queued takeover/release change. Tests cover queueing guards plus takeover and release commits.  
+Consequences: later TR-909 work should deepen takeover semantics behind the same commands, for example richer pattern adoption or audio-facing render seams, instead of introducing a separate lane-control system.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

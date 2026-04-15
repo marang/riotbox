@@ -18,6 +18,15 @@ impl JamViewModel {
     #[must_use]
     pub fn build(session: &SessionFile, queue: &ActionQueue, graph: Option<&SourceGraph>) -> Self {
         let pending_actions = queue.pending_actions();
+        let tr909_takeover_pending_target =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::Tr909Takeover => Some(true),
+                    crate::action::ActionCommand::Tr909Release => Some(false),
+                    _ => None,
+                });
         let tr909_fill_pending = pending_actions
             .iter()
             .any(|action| matches!(action.command, crate::action::ActionCommand::Tr909FillNext));
@@ -94,6 +103,14 @@ impl JamViewModel {
                     .as_ref()
                     .map(ToString::to_string),
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
+                tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
+                tr909_takeover_pending_target,
+                tr909_takeover_profile: session
+                    .runtime_state
+                    .lane_state
+                    .tr909
+                    .takeover_profile
+                    .clone(),
                 tr909_fill_armed_next_bar: tr909_fill_pending,
                 tr909_last_fill_bar: session.runtime_state.lane_state.tr909.last_fill_bar,
                 tr909_reinforcement_mode: session
@@ -224,6 +241,9 @@ pub struct LaneSummaryView {
     pub mc202_role: Option<String>,
     pub w30_active_bank: Option<String>,
     pub tr909_slam_enabled: bool,
+    pub tr909_takeover_enabled: bool,
+    pub tr909_takeover_pending_target: Option<bool>,
+    pub tr909_takeover_profile: Option<String>,
     pub tr909_fill_armed_next_bar: bool,
     pub tr909_last_fill_bar: Option<u64>,
     pub tr909_reinforcement_mode: Option<String>,
@@ -366,6 +386,8 @@ mod tests {
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
         session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        session.runtime_state.lane_state.tr909.takeover_enabled = true;
+        session.runtime_state.lane_state.tr909.takeover_profile = Some("scene-control".into());
         session.runtime_state.lane_state.tr909.slam_enabled = true;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(8);
         session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
@@ -427,6 +449,18 @@ mod tests {
         queue.enqueue(
             ActionDraft::new(
                 ActorType::User,
+                ActionCommand::Tr909Release,
+                Quantization::NextPhrase,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
+                    ..Default::default()
+                },
+            ),
+            101,
+        );
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
                 ActionCommand::Tr909FillNext,
                 Quantization::NextBar,
                 ActionTarget {
@@ -434,7 +468,7 @@ mod tests {
                     ..Default::default()
                 },
             ),
-            101,
+            102,
         );
 
         let vm = JamViewModel::build(&session, &queue, Some(&graph));
@@ -457,10 +491,16 @@ mod tests {
             Some("promoted to pad bank-a/pad-01")
         );
         assert!(vm.capture.pinned_capture_ids.is_empty());
+        assert!(vm.lanes.tr909_takeover_enabled);
+        assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
+        assert_eq!(
+            vm.lanes.tr909_takeover_profile.as_deref(),
+            Some("scene-control")
+        );
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 2);
+        assert_eq!(vm.pending_actions.len(), 3);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }

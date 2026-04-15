@@ -186,7 +186,7 @@ Per lane, store only the state required to reproduce behavior:
 
 - MC-202 role and phrase references
 - W-30 bank or pad assignment
-- TR-909 pattern or reinforcement state
+- TR-909 takeover, pattern, and reinforcement state
 
 ### 8.4 Mixer state
 

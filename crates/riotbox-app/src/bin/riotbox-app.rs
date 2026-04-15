@@ -166,6 +166,32 @@ fn run_event_loop(
                         shell.set_error_status("TR-909 slam change already queued");
                     }
                 }
+                ShellKeyOutcome::QueueTr909Takeover => {
+                    match shell.app.queue_tr909_takeover(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued TR-909 takeover for next phrase");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("TR-909 takeover change already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("TR-909 takeover already active");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueTr909Release => {
+                    match shell.app.queue_tr909_release(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued TR-909 release for next phrase");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("TR-909 takeover change already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("TR-909 takeover already released");
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueCaptureBar => {
                     shell.app.queue_capture_bar(timestamp_now());
                     shell.set_error_status("queued capture for next phrase");

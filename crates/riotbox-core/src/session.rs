@@ -159,6 +159,8 @@ pub struct W30LaneState {
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct Tr909LaneState {
     pub pattern_ref: Option<String>,
+    pub takeover_enabled: bool,
+    pub takeover_profile: Option<String>,
     pub slam_enabled: bool,
     pub fill_armed_next_bar: bool,
     pub last_fill_bar: Option<u64>,
