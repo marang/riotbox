@@ -248,6 +248,19 @@ Rules:
 - prefer a small, honest backlog over a large speculative ticket tree
 - derive backlog tickets from the roadmap, active specs, and current repo state
 
+## 8.3.1 Automatic Next-Ticket Continuation
+
+If a ticket loop is fully closed, the agent may continue directly with the next-best backlog ticket without waiting for a new user prompt.
+
+Conditions:
+
+- the previous ticket is merged or otherwise fully closed
+- no unresolved review or CI blocker remains on the closed slice
+- the next ticket satisfies the repo's next-ticket heuristic
+- the near-term backlog remains honest and within the 1-5 ticket rule
+
+This is meant to preserve momentum, not to bypass roadmap discipline. The agent should still prefer the smallest coherent next slice that advances the current phase instead of opening a new side path.
+
 ## 8.4 Retention And Cleanup
 
 Linear is the active execution surface, not the canonical long-term archive.

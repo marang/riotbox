@@ -276,6 +276,12 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - does it preserve the current architecture instead of creating a shadow path?
   - is it small enough to review as one coherent slice?
 - If multiple candidates are possible, prefer the one that keeps Riotbox moving along the product spine already defined in the roadmap instead of opening a new side path.
+- After a ticket is cleanly closed, the agent may autonomously start the next-best backlog ticket if:
+  - the previous slice is merged or otherwise fully closed
+  - no unresolved review or CI blocker remains on the closed slice
+  - the next ticket satisfies the next-ticket heuristic above
+  - the near-term Linear backlog still stays within the repo rule of 1-5 honest backlog tickets
+- Prefer continuing through the next-best roadmap-aligned ticket instead of waiting for a user nudge when the next step is already clear and bounded.
 
 ---
 
