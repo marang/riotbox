@@ -158,12 +158,17 @@ pub struct JamRuntimeView {
     pub sidecar_version: Option<String>,
     pub tr909_render_mode: String,
     pub tr909_render_routing: String,
+    pub tr909_render_profile: String,
+    pub tr909_render_pattern_ref: Option<String>,
+    pub tr909_render_mix_summary: String,
+    pub tr909_render_alignment: String,
+    pub tr909_render_transport_summary: String,
     pub runtime_warnings: Vec<String>,
 }
 
 impl JamRuntimeView {
     #[must_use]
-    pub fn build(runtime: &AppRuntimeState) -> Self {
+    pub fn build(runtime: &AppRuntimeState, session: &SessionFile) -> Self {
         let (audio_status, audio_callback_count, audio_last_error) = match &runtime.audio {
             Some(health) => (
                 match health.lifecycle {
@@ -202,6 +207,8 @@ impl JamRuntimeView {
             SidecarState::Unknown | SidecarState::Ready { .. } => {}
         }
 
+        runtime_warnings.extend(derive_tr909_render_warnings(&runtime.tr909_render, session));
+
         Self {
             audio_status,
             audio_callback_count,
@@ -210,9 +217,104 @@ impl JamRuntimeView {
             sidecar_version,
             tr909_render_mode: runtime.tr909_render.mode.label().into(),
             tr909_render_routing: runtime.tr909_render.routing.label().into(),
+            tr909_render_profile: tr909_render_profile_label(&runtime.tr909_render).into(),
+            tr909_render_pattern_ref: runtime.tr909_render.pattern_ref.clone(),
+            tr909_render_mix_summary: format!(
+                "drum {:.2} | slam {:.2}",
+                runtime.tr909_render.drum_bus_level, runtime.tr909_render.slam_intensity
+            ),
+            tr909_render_alignment: tr909_render_alignment_label(&runtime.tr909_render).into(),
+            tr909_render_transport_summary: tr909_render_transport_summary(&runtime.tr909_render),
             runtime_warnings,
         }
     }
+}
+
+fn tr909_render_profile_label(render: &Tr909RenderState) -> &'static str {
+    match (render.takeover_profile, render.source_support_profile) {
+        (Some(profile), _) => profile.label(),
+        (None, Some(profile)) => profile.label(),
+        (None, None) => "unset",
+    }
+}
+
+fn tr909_render_alignment_label(render: &Tr909RenderState) -> &'static str {
+    match render.mode {
+        Tr909RenderMode::Idle => "source-only idle",
+        Tr909RenderMode::SourceSupport => "support aligned",
+        Tr909RenderMode::Fill => "fill aligned",
+        Tr909RenderMode::BreakReinforce => "break reinforce aligned",
+        Tr909RenderMode::Takeover => "takeover aligned",
+    }
+}
+
+fn tr909_render_transport_summary(render: &Tr909RenderState) -> String {
+    let transport = if render.is_transport_running {
+        "running"
+    } else {
+        "stopped"
+    };
+    let scene = render.current_scene_id.as_deref().unwrap_or("none");
+    format!(
+        "{transport} @ {:.1} beats | {:.1} BPM | scene {scene}",
+        render.position_beats, render.tempo_bpm
+    )
+}
+
+fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile) -> Vec<String> {
+    let mut warnings = Vec::new();
+    let lane = &session.runtime_state.lane_state.tr909;
+
+    if matches!(render.mode, Tr909RenderMode::Idle)
+        && !matches!(render.routing, Tr909RenderRouting::SourceOnly)
+    {
+        warnings.push("909 render idle but routing is not source_only".into());
+    }
+
+    if matches!(render.mode, Tr909RenderMode::Takeover)
+        && !matches!(render.routing, Tr909RenderRouting::DrumBusTakeover)
+    {
+        warnings.push("909 takeover render is not routed to drum_bus_takeover".into());
+    }
+
+    if !matches!(render.mode, Tr909RenderMode::Takeover) && render.takeover_profile.is_some() {
+        warnings.push("909 render carries a takeover profile outside takeover mode".into());
+    }
+
+    if matches!(render.mode, Tr909RenderMode::SourceSupport)
+        && render.source_support_profile.is_none()
+    {
+        warnings.push("909 source-support render is missing a support profile".into());
+    }
+
+    if !matches!(render.mode, Tr909RenderMode::SourceSupport)
+        && render.source_support_profile.is_some()
+    {
+        warnings.push("909 render carries a support profile outside source-support mode".into());
+    }
+
+    if matches!(
+        render.routing,
+        Tr909RenderRouting::DrumBusSupport | Tr909RenderRouting::DrumBusTakeover
+    ) && render.drum_bus_level <= 0.0
+    {
+        warnings.push("909 render is routed to the drum bus at zero drum level".into());
+    }
+
+    if lane.takeover_enabled && !matches!(render.mode, Tr909RenderMode::Takeover) {
+        warnings.push("909 lane takeover is committed but render mode is not takeover".into());
+    }
+
+    if render.pattern_ref.is_none()
+        && (lane.takeover_enabled
+            || lane.reinforcement_mode.is_some()
+            || lane.slam_enabled
+            || render.takeover_profile.is_some())
+    {
+        warnings.push("909 render has no pattern_ref while musical support is active".into());
+    }
+
+    warnings
 }
 
 #[derive(Clone, Debug)]
@@ -236,6 +338,7 @@ impl JamAppState {
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
+        let runtime_view = JamRuntimeView::build(&AppRuntimeState::default(), &session);
         let mut state = Self {
             files: None,
             session,
@@ -246,7 +349,7 @@ impl JamAppState {
                 ..AppRuntimeState::default()
             },
             jam_view,
-            runtime_view: JamRuntimeView::build(&AppRuntimeState::default()),
+            runtime_view,
         };
         state.refresh_view();
         state
@@ -265,6 +368,7 @@ impl JamAppState {
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
+        let runtime_view = JamRuntimeView::build(&AppRuntimeState::default(), &session);
         let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
@@ -278,7 +382,7 @@ impl JamAppState {
                 ..AppRuntimeState::default()
             },
             jam_view,
-            runtime_view: JamRuntimeView::build(&AppRuntimeState::default()),
+            runtime_view,
         };
         state.refresh_view();
         Ok(state)
@@ -320,17 +424,17 @@ impl JamAppState {
             self.source_graph.as_ref(),
         );
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
-        self.runtime_view = JamRuntimeView::build(&self.runtime);
+        self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
     }
 
     pub fn set_audio_health(&mut self, health: AudioRuntimeHealth) {
         self.runtime.audio = Some(health);
-        self.runtime_view = JamRuntimeView::build(&self.runtime);
+        self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
     }
 
     pub fn set_sidecar_state(&mut self, state: SidecarState) {
         self.runtime.sidecar = state;
-        self.runtime_view = JamRuntimeView::build(&self.runtime);
+        self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
     }
 
     pub fn update_transport_clock(&mut self, clock: TransportClockState) {
@@ -1858,6 +1962,48 @@ mod tests {
                 .runtime_warnings
                 .iter()
                 .any(|warning| warning.contains("sidecar degraded"))
+        );
+    }
+
+    #[test]
+    fn runtime_view_surfaces_tr909_render_diagnostics() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.tr909.takeover_enabled = true;
+        session.runtime_state.lane_state.tr909.takeover_profile =
+            Some("controlled_phrase_takeover".into());
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-1-main".into());
+        session.runtime_state.macro_state.tr909_slam = 0.91;
+        session.runtime_state.mixer_state.drum_level = 0.0;
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(state.runtime_view.tr909_render_mode, "takeover");
+        assert_eq!(state.runtime_view.tr909_render_routing, "drum_bus_takeover");
+        assert_eq!(state.runtime_view.tr909_render_profile, "controlled_phrase");
+        assert_eq!(
+            state.runtime_view.tr909_render_pattern_ref.as_deref(),
+            Some("scene-1-main")
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_mix_summary,
+            "drum 0.00 | slam 0.91"
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_alignment,
+            "takeover aligned"
+        );
+        assert!(
+            state
+                .runtime_view
+                .tr909_render_transport_summary
+                .contains("running @ 32.0 beats")
+        );
+        assert!(
+            state
+                .runtime_view
+                .runtime_warnings
+                .iter()
+                .any(|warning| warning == "909 render is routed to the drum bus at zero drum level")
         );
     }
 

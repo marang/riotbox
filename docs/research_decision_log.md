@@ -484,6 +484,17 @@ Status: accepted
 
 ---
 
+Topic: TR-909 audible render diagnostics should stay read-only and ride on the existing Jam and Log shell seams  
+Phase: TR-909 MVP  
+Question: once TR-909 reinforcement is audible and fixture-backed, what is the smallest next shell slice that helps humans inspect the render contract without opening a new control path or device-state system?  
+Decision: surface concise TR-909 render diagnostics directly in the existing Jam and Log screens. Keep the Jam screen focused on at-a-glance lane cues, and add a compact TR-909 render panel in the Log screen for mode, routing, profile, pattern, mix, and alignment summaries.  
+Why: the render seam is now musically meaningful enough that users and reviewers need to see what the audio path believes it is rendering. The next honest step is not more control, but better observability on top of the same committed render contract.  
+Evidence: `riotbox-app` now derives richer TR-909 render summaries and warnings from the committed render state, the Jam screen shows concise mode/profile/pattern/mix cues, the Log screen exposes a dedicated render diagnostics panel, and app tests cover both the runtime view derivation and the updated shell snapshots.  
+Consequences: later TR-909 work should extend the same read-only diagnostic seam with richer audible metrics or trust cues rather than inventing a separate render-debug model or device inspector outside the current shell.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

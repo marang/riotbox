@@ -361,10 +361,10 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
+            Constraint::Percentage(18),
+            Constraint::Percentage(18),
+            Constraint::Percentage(18),
+            Constraint::Percentage(46),
         ])
         .split(area);
 
@@ -432,31 +432,12 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or("unset")
         )),
         Line::from(format!(
-            "TR-909 takeover: {} | pending {}",
+            "909 takeover {} | fill {} / {}",
             if shell.app.jam_view.lanes.tr909_takeover_enabled {
                 "on"
             } else {
                 "off"
             },
-            match shell.app.jam_view.lanes.tr909_takeover_pending_target {
-                Some(true) => "engage",
-                Some(false) => "release",
-                None => "-",
-            }
-        )),
-        Line::from(format!(
-            "profile: {} | slam {:.2}",
-            shell
-                .app
-                .jam_view
-                .lanes
-                .tr909_takeover_profile
-                .as_deref()
-                .unwrap_or("unset"),
-            shell.app.jam_view.macros.tr909_slam
-        )),
-        Line::from(format!(
-            "fill armed: {} | last bar {}",
             if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
                 "yes"
             } else {
@@ -471,7 +452,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or_else(|| "-".into())
         )),
         Line::from(format!(
-            "909 mode: {} | render {}",
+            "909 mode {} | render {}",
             shell
                 .app
                 .jam_view
@@ -482,8 +463,19 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.runtime_view.tr909_render_mode
         )),
         Line::from(format!(
-            "render seam via {}",
-            shell.app.runtime_view.tr909_render_routing
+            "{} | {}",
+            shell.app.runtime_view.tr909_render_routing,
+            shell.app.runtime_view.tr909_render_profile
+        )),
+        Line::from(format!(
+            "{} | {}",
+            shell
+                .app
+                .runtime_view
+                .tr909_render_pattern_ref
+                .as_deref()
+                .unwrap_or("unset"),
+            shell.app.runtime_view.tr909_render_mix_summary
         )),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
@@ -579,7 +571,7 @@ fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
 fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(6), Constraint::Min(10)])
+        .constraints([Constraint::Length(7), Constraint::Min(9)])
         .split(area);
 
     let summary_columns = Layout::default()
@@ -620,35 +612,72 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     .block(Block::default().title("Counts").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
-    let boundary = shell
-        .app
-        .runtime
-        .last_commit_boundary
-        .as_ref()
-        .map(|boundary| {
-            format!(
-                "{:?} @ beat {} bar {} phrase {}",
-                boundary.kind, boundary.beat_index, boundary.bar_index, boundary.phrase_index
-            )
-        })
-        .unwrap_or_else(|| "no commit boundary yet".into());
-    let current_scene = shell
-        .app
-        .runtime
-        .transport
-        .current_scene
-        .as_ref()
-        .map(ToString::to_string)
-        .unwrap_or_else(|| "none".into());
-    let focus = Paragraph::new(vec![
-        Line::from(format!("scene {current_scene}")),
+    let render_focus = Paragraph::new(vec![
         Line::from(format!(
-            "transport beat {:.1} | playing {}",
-            shell.app.runtime.transport.position_beats, shell.app.runtime.transport.is_playing
+            "{} | scene {}",
+            if shell.app.runtime.transport.is_playing {
+                format!(
+                    "running @ {:.1}",
+                    shell.app.runtime.transport.position_beats
+                )
+            } else {
+                format!(
+                    "stopped @ {:.1}",
+                    shell.app.runtime.transport.position_beats
+                )
+            },
+            shell
+                .app
+                .runtime
+                .transport
+                .current_scene
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "none".into())
         )),
-        Line::from(format!("last boundary {boundary}")),
+        Line::from(format!(
+            "render {} via {}",
+            shell.app.runtime_view.tr909_render_mode, shell.app.runtime_view.tr909_render_routing
+        )),
+        Line::from(format!(
+            "{} | {}",
+            shell.app.runtime_view.tr909_render_profile,
+            shell
+                .app
+                .runtime_view
+                .tr909_render_pattern_ref
+                .as_deref()
+                .unwrap_or("unset")
+        )),
+        Line::from(format!(
+            "{} | {}",
+            shell.app.runtime_view.tr909_render_mix_summary,
+            shell.app.runtime_view.tr909_render_alignment
+        )),
+        Line::from(format!(
+            "boundary {}",
+            shell
+                .app
+                .runtime
+                .last_commit_boundary
+                .as_ref()
+                .map(|boundary| {
+                    format!(
+                        "{:?} @ beat {} bar {} phrase {}",
+                        boundary.kind,
+                        boundary.beat_index,
+                        boundary.bar_index,
+                        boundary.phrase_index
+                    )
+                })
+                .unwrap_or_else(|| "none yet".into())
+        )),
     ])
-    .block(Block::default().title("Focus").borders(Borders::ALL))
+    .block(
+        Block::default()
+            .title("TR-909 Render")
+            .borders(Borders::ALL),
+    )
     .wrap(Wrap { trim: true });
 
     let warnings = log_warning_lines(shell);
@@ -657,7 +686,7 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(counts, summary_columns[0]);
-    frame.render_widget(focus, summary_columns[1]);
+    frame.render_widget(render_focus, summary_columns[1]);
     frame.render_widget(warnings_panel, summary_columns[2]);
 
     let columns = Layout::default()
@@ -1833,11 +1862,13 @@ mod tests {
         session.runtime_state.macro_state.mc202_touch = 0.8;
         session.runtime_state.macro_state.w30_grit = 0.5;
         session.runtime_state.macro_state.tr909_slam = 0.9;
+        session.runtime_state.mixer_state.drum_level = 0.82;
         session.runtime_state.lane_state.mc202.role = Some("leader".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
         session.runtime_state.lane_state.tr909.takeover_profile =
             Some("controlled_phrase_takeover".into());
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-a-main".into());
         session.ghost_state.mode = GhostMode::Assist;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(6);
         session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
@@ -2061,10 +2092,13 @@ mod tests {
         assert!(rendered.contains("recent"));
         assert!(rendered.contains("[commit"));
         assert!(rendered.contains("Capture"));
-        assert!(rendered.contains("TR-909 takeover"));
+        assert!(rendered.contains("909 takeover"));
         assert!(rendered.contains("takeover"));
         assert!(rendered.contains("drum_bus_takeover"));
         assert!(rendered.contains("909 render"));
+        assert!(rendered.contains("909 mode hybrid | render takeover"));
+        assert!(rendered.contains("drum_bus_takeover | controlled_phrase"));
+        assert!(rendered.contains("scene-a-main | drum 0.82 | slam 0.90"));
     }
 
     #[test]
@@ -2167,8 +2201,11 @@ mod tests {
         assert!(rendered.contains("Rejected / Undone"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("mutate.scene"));
+        assert!(rendered.contains("TR-909 Render"));
+        assert!(rendered.contains("render takeover via drum_bus_takeover"));
+        assert!(rendered.contains("controlled_phrase | scene-a-main"));
+        assert!(rendered.contains("drum 0.82 | slam 0.90 | takeover"));
         assert!(rendered.contains("scene lock blocked ghost"));
-        assert!(rendered.contains("mutation"));
         assert!(rendered.contains("undid most recent musical"));
     }
 
