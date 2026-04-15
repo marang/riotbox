@@ -218,7 +218,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - During active implementation, do not let the working backlog drop to zero when the next likely slice is already clear.
 - Before closing the current ticket loop, ensure Linear still has:
   - 1 ticket in progress or in review
-  - 1-3 near-next tickets in backlog
+  - 1-5 near-next tickets in backlog
   - milestone-level placeholders for later work only when they stay coarse and honest
 - Do not fully decompose distant phases into many detailed tickets before nearer slices land.
 - Treat Linear as the active operations layer, not the long-term archive.

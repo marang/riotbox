@@ -234,7 +234,7 @@ Keep two horizons visible:
 Recommended operating shape:
 
 - 1 main ticket in progress
-- 1-3 near-next tickets in backlog
+- 1-5 near-next tickets in backlog
 - milestone-level placeholders for later work when useful
 
 Rules:
@@ -243,7 +243,7 @@ Rules:
 - treat this as a standing workflow rule, not just a planning preference
 - before closing the current ticket loop, ensure Linear still has:
   - 1 ticket in progress or in review
-  - 1-3 near-next tickets in backlog
+  - 1-5 near-next tickets in backlog
 - do not over-decompose distant phases into many detailed tickets too early
 - prefer a small, honest backlog over a large speculative ticket tree
 - derive backlog tickets from the roadmap, active specs, and current repo state
