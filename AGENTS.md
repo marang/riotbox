@@ -359,6 +359,87 @@ Practical consequence:
 - use real-session verification for audio spikes, device enumeration, and latency checks
 - write down which context produced the observation
 
+## Agent Sandbox Howto
+
+When Riotbox runs inside `agent-sandbox`, do not guess which host capability is missing. Check it explicitly and then ask for the smallest missing mount or image capability.
+
+First-line self-checks:
+
+```bash
+command -v git
+command -v cargo
+command -v pkg-config
+command -v podman
+pkg-config --libs --cflags alsa
+test -S "/run/user/$(id -u)/podman/podman.sock" && echo podman-socket-ok
+```
+
+Interpretation:
+
+- if `pkg-config --libs --cflags alsa` fails, the sandbox cannot build the current Linux audio path cleanly
+- if `podman` is missing or the Podman socket is unavailable, MemPalace operational commands cannot run from inside the sandbox
+- `just` is convenient but not required; prefer direct script commands if `just` is absent
+
+Preferred solution:
+
+- bake the needed tooling into the sandbox image
+- use mounts only for host-specific assets or sockets
+
+### Arch Host Requirements
+
+For the current Riotbox repo on an Arch host, these are the practical requirements.
+
+Audio build requirements:
+
+- `pkg-config` available in the sandbox
+- ALSA headers and pkg-config data visible in the sandbox
+
+Useful host mounts on Arch:
+
+- `/usr/include/alsa` -> `/usr/include/alsa`
+- `/usr/lib/pkgconfig` -> `/usr/lib/pkgconfig`
+- `/usr/lib/libasound.so` -> `/usr/lib/libasound.so`
+- `/usr/lib/libasound.so.2` -> `/usr/lib/libasound.so.2`
+
+Required environment:
+
+- `PKG_CONFIG_PATH=/usr/lib/pkgconfig`
+
+MemPalace operational requirements:
+
+- `podman` client available in the sandbox
+- `podman compose` support available in the sandbox
+
+If using the host's rootless Podman instead of nested Podman inside the sandbox:
+
+- mount the host Podman socket:
+  - `/run/user/<host-uid>/podman/podman.sock`
+- expose it at the same path or a known sandbox path
+- set:
+  - `CONTAINER_HOST=unix:///run/user/<host-uid>/podman/podman.sock`
+
+In that setup, the repo-local `scripts/mempalace.sh` wrapper can use the host container runtime without needing full nested container support.
+
+### Git Push Ergonomics
+
+For smoother Git pushes from the sandbox:
+
+- ensure SSH auth is available
+- ensure GitHub host trust is available
+
+The current agent can work around missing writable `known_hosts` by using a temporary file, but a better sandbox setup is:
+
+- writable `~/.ssh/known_hosts`, or
+- pre-seeded GitHub host keys inside the image
+
+### Host Services
+
+When the sandbox needs to reach a host-local TCP service, prefer:
+
+- `host.containers.internal`
+
+Do not assume `localhost` refers to the host. In the sandbox it is container-local.
+
 ---
 
 ## When In Doubt
