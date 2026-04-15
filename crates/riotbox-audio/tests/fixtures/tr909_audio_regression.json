@@ -66,6 +66,72 @@
     }
   },
   {
+    "name": "takeover_scene_lock",
+    "render_state": {
+      "mode": "takeover",
+      "routing": "drum_bus_takeover",
+      "source_support_profile": null,
+      "pattern_adoption": "takeover_grid",
+      "phrase_variation": "phrase_drive",
+      "takeover_profile": "scene_lock",
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 64.0
+    },
+    "expected": {
+      "min_active_samples": 320,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.01,
+      "max_peak_abs": 0.08
+    }
+  },
+  {
+    "name": "fills_phrase_drive",
+    "render_state": {
+      "mode": "fill",
+      "routing": "drum_bus_support",
+      "source_support_profile": null,
+      "pattern_adoption": "mainline_drive",
+      "phrase_variation": "phrase_drive",
+      "takeover_profile": null,
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 64.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.015,
+      "max_peak_abs": 0.12
+    }
+  },
+  {
+    "name": "break_reinforce_phrase_lift",
+    "render_state": {
+      "mode": "break_reinforce",
+      "routing": "drum_bus_support",
+      "source_support_profile": null,
+      "pattern_adoption": "mainline_drive",
+      "phrase_variation": "phrase_lift",
+      "takeover_profile": null,
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 48.0
+    },
+    "expected": {
+      "min_active_samples": 260,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.01,
+      "max_peak_abs": 0.11
+    }
+  },
+  {
     "name": "release_tail_source_support",
     "render_state": {
       "mode": "source_support",

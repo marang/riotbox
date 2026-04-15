@@ -40,5 +40,47 @@
     "expected_phrase_variation": "phrase_lift",
     "expected_source_support_profile": null,
     "expected_takeover_profile": "controlled_phrase"
+  },
+  {
+    "name": "scene_lock_takeover",
+    "transport_position_beats": 64.0,
+    "reinforcement_mode": "takeover",
+    "takeover_enabled": true,
+    "takeover_profile": "scene_lock_takeover",
+    "pattern_ref": "lock-scene-1",
+    "expected_mode": "takeover",
+    "expected_routing": "drum_bus_takeover",
+    "expected_pattern_adoption": "takeover_grid",
+    "expected_phrase_variation": "phrase_drive",
+    "expected_source_support_profile": null,
+    "expected_takeover_profile": "scene_lock"
+  },
+  {
+    "name": "fills_phrase_drive",
+    "transport_position_beats": 64.0,
+    "reinforcement_mode": "fills",
+    "takeover_enabled": false,
+    "takeover_profile": null,
+    "pattern_ref": "fill-scene-1",
+    "expected_mode": "fill",
+    "expected_routing": "drum_bus_support",
+    "expected_pattern_adoption": "mainline_drive",
+    "expected_phrase_variation": "phrase_drive",
+    "expected_source_support_profile": null,
+    "expected_takeover_profile": null
+  },
+  {
+    "name": "break_reinforce_phrase_lift",
+    "transport_position_beats": 32.0,
+    "reinforcement_mode": "break_reinforce",
+    "takeover_enabled": false,
+    "takeover_profile": null,
+    "pattern_ref": "break-scene-1",
+    "expected_mode": "break_reinforce",
+    "expected_routing": "drum_bus_support",
+    "expected_pattern_adoption": "mainline_drive",
+    "expected_phrase_variation": "phrase_lift",
+    "expected_source_support_profile": null,
+    "expected_takeover_profile": null
   }
 ]
