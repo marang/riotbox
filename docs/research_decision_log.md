@@ -506,6 +506,17 @@ Status: accepted
 
 ---
 
+Topic: TR-909 phrase-aware variation and release behavior should extend the existing render seam instead of creating a second phrase engine  
+Phase: TR-909 MVP  
+Question: after typed pattern adoption exists, what is the next bounded slice that makes the TR-909 lane feel more phrase-aware without adding a second timing model, release engine, or device-control path?  
+Decision: add a typed `phrase variation` layer to the existing TR-909 render contract. Derive it at the app layer from committed transport phrase context, current mode/profile context, and explicit release-pattern cues, then let the audio callback vary subdivision, trigger activity, pitch, gain, and decay from that typed phrase variation.  
+Why: the next honest TR-909 step is to deepen the existing audible seam so it responds to phrase context and release state, not to invent a second sequencer or phrase-specific runtime model. A typed phrase-variation layer keeps the behavior replay-aligned, preserves the current queue/commit seam, and makes phrase behavior fixture-testable at both render-projection and callback levels.  
+Evidence: `riotbox-audio` now defines an explicit `Tr909PhraseVariation` enum, `riotbox-app` derives phrase variation from transport phrase state and release-pattern context, the callback changes audible behavior from that variation layer, fixtures now cover release-tail cases, and the Jam/Log shell diagnostics surface the current phrase variation label.  
+Consequences: later TR-909 work should continue extending the same typed render seam with richer musical behavior rather than bypassing it with direct callback heuristics, UI-only phrase modes, or a separate device-state graph.  
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

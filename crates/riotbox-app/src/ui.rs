@@ -468,14 +468,15 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.runtime_view.tr909_render_profile
         )),
         Line::from(format!(
-            "{} | {}",
+            "{} | {} | {}",
             shell
                 .app
                 .runtime_view
                 .tr909_render_pattern_ref
                 .as_deref()
                 .unwrap_or("unset"),
-            shell.app.runtime_view.tr909_render_pattern_adoption
+            shell.app.runtime_view.tr909_render_pattern_adoption,
+            shell.app.runtime_view.tr909_render_phrase_variation
         )),
         Line::from(shell.app.runtime_view.tr909_render_mix_summary.clone()),
     ])
@@ -615,7 +616,7 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 
     let render_focus = Paragraph::new(vec![
         Line::from(format!(
-            "{} | scene {}",
+            "{} | scene {} | {}",
             if shell.app.runtime.transport.is_playing {
                 format!(
                     "running @ {:.1}",
@@ -634,33 +635,7 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
                 .current_scene
                 .as_ref()
                 .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into())
-        )),
-        Line::from(format!(
-            "render {} via {}",
-            shell.app.runtime_view.tr909_render_mode, shell.app.runtime_view.tr909_render_routing
-        )),
-        Line::from(format!(
-            "{} | {}",
-            shell.app.runtime_view.tr909_render_profile,
-            shell.app.runtime_view.tr909_render_pattern_adoption
-        )),
-        Line::from(format!(
-            "{} | {}",
-            shell
-                .app
-                .runtime_view
-                .tr909_render_pattern_ref
-                .as_deref()
-                .unwrap_or("unset"),
-            shell.app.runtime_view.tr909_render_mix_summary
-        )),
-        Line::from(format!(
-            "align {}",
-            shell.app.runtime_view.tr909_render_alignment
-        )),
-        Line::from(format!(
-            "boundary {}",
+                .unwrap_or_else(|| "none".into()),
             shell
                 .app
                 .runtime
@@ -668,15 +643,26 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
                 .as_ref()
                 .map(|boundary| {
                     format!(
-                        "{:?} @ beat {} bar {} phrase {}",
-                        boundary.kind,
-                        boundary.beat_index,
-                        boundary.bar_index,
-                        boundary.phrase_index
+                        "{:?} b{} p{}",
+                        boundary.kind, boundary.bar_index, boundary.phrase_index
                     )
                 })
-                .unwrap_or_else(|| "none yet".into())
+                .unwrap_or_else(|| "boundary none".into())
         )),
+        Line::from(format!(
+            "render {} via {} | {}",
+            shell.app.runtime_view.tr909_render_mode,
+            shell.app.runtime_view.tr909_render_routing,
+            shell.app.runtime_view.tr909_render_profile
+        )),
+        Line::from(format!(
+            "{} | {} | {}",
+            shell.app.runtime_view.tr909_render_pattern_adoption,
+            shell.app.runtime_view.tr909_render_phrase_variation,
+            shell.app.runtime_view.tr909_render_alignment
+        )),
+        Line::from(shell.app.runtime_view.tr909_render_mix_summary.clone()),
+        Line::from(shell.app.runtime_view.tr909_render_alignment.clone()),
     ])
     .block(
         Block::default()
@@ -2103,7 +2089,7 @@ mod tests {
         assert!(rendered.contains("909 render"));
         assert!(rendered.contains("909 mode hybrid | render takeover"));
         assert!(rendered.contains("drum_bus_takeover | controlled_phrase"));
-        assert!(rendered.contains("scene-a-main | takeover_grid"));
+        assert!(rendered.contains("scene-a-main | takeover_grid | phrase_lift"));
     }
 
     #[test]
@@ -2208,9 +2194,9 @@ mod tests {
         assert!(rendered.contains("mutate.scene"));
         assert!(rendered.contains("TR-909 Render"));
         assert!(rendered.contains("render takeover via drum_bus_takeover"));
-        assert!(rendered.contains("controlled_phrase | takeover_grid"));
-        assert!(rendered.contains("scene-a-main | drum 0.82 | slam 0.90"));
-        assert!(rendered.contains("align takeover aligned"));
+        assert!(rendered.contains("controlled_phrase"));
+        assert!(rendered.contains("takeover_grid"));
+        assert!(rendered.contains("phrase_lift"));
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("undid most recent musical"));
     }

@@ -6,6 +6,7 @@
       "routing": "source_only",
       "source_support_profile": null,
       "pattern_adoption": null,
+      "phrase_variation": null,
       "takeover_profile": null,
       "drum_bus_level": 0.72,
       "slam_intensity": 0.55,
@@ -27,6 +28,7 @@
       "routing": "drum_bus_support",
       "source_support_profile": "drop_drive",
       "pattern_adoption": "mainline_drive",
+      "phrase_variation": "phrase_lift",
       "takeover_profile": null,
       "drum_bus_level": 0.72,
       "slam_intensity": 0.55,
@@ -48,6 +50,7 @@
       "routing": "drum_bus_takeover",
       "source_support_profile": null,
       "pattern_adoption": "takeover_grid",
+      "phrase_variation": "phrase_lift",
       "takeover_profile": "controlled_phrase",
       "drum_bus_level": 0.72,
       "slam_intensity": 0.55,
@@ -60,6 +63,28 @@
       "max_active_samples": 512,
       "min_peak_abs": 0.018,
       "max_peak_abs": 0.12
+    }
+  },
+  {
+    "name": "release_tail_source_support",
+    "render_state": {
+      "mode": "source_support",
+      "routing": "drum_bus_support",
+      "source_support_profile": "drop_drive",
+      "pattern_adoption": "mainline_drive",
+      "phrase_variation": "phrase_release",
+      "takeover_profile": null,
+      "drum_bus_level": 0.72,
+      "slam_intensity": 0.55,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 40,
+      "max_active_samples": 420,
+      "min_peak_abs": 0.002,
+      "max_peak_abs": 0.05
     }
   }
 ]

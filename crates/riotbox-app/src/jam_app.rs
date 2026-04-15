@@ -9,8 +9,8 @@ use std::{
 use riotbox_audio::{
     runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle},
     tr909::{
-        Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
-        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
+        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     },
 };
 use riotbox_core::{
@@ -161,6 +161,7 @@ pub struct JamRuntimeView {
     pub tr909_render_profile: String,
     pub tr909_render_pattern_ref: Option<String>,
     pub tr909_render_pattern_adoption: String,
+    pub tr909_render_phrase_variation: String,
     pub tr909_render_mix_summary: String,
     pub tr909_render_alignment: String,
     pub tr909_render_transport_summary: String,
@@ -224,6 +225,10 @@ impl JamRuntimeView {
                 .tr909_render
                 .pattern_adoption
                 .map_or_else(|| "unset".into(), |pattern| pattern.label().into()),
+            tr909_render_phrase_variation: runtime
+                .tr909_render
+                .phrase_variation
+                .map_or_else(|| "unset".into(), |variation| variation.label().into()),
             tr909_render_mix_summary: format!(
                 "drum {:.2} | slam {:.2}",
                 runtime.tr909_render.drum_bus_level, runtime.tr909_render.slam_intensity
@@ -286,6 +291,63 @@ fn derive_tr909_pattern_adoption(
     }
 
     Some(Tr909PatternAdoption::SupportPulse)
+}
+
+fn derive_tr909_phrase_variation(
+    mode: Tr909RenderMode,
+    transport: &TransportClockState,
+    pattern_ref: Option<&str>,
+    source_support_profile: Option<Tr909SourceSupportProfile>,
+    takeover_profile: Option<Tr909TakeoverRenderProfile>,
+) -> Option<Tr909PhraseVariation> {
+    if matches!(mode, Tr909RenderMode::Idle) {
+        return None;
+    }
+
+    let pattern_ref = pattern_ref.map(str::to_ascii_lowercase);
+    if pattern_ref
+        .as_deref()
+        .is_some_and(|pattern| pattern.contains("release"))
+    {
+        return Some(Tr909PhraseVariation::PhraseRelease);
+    }
+
+    let phrase_cycle = transport.phrase_index % 4;
+    let variation = match mode {
+        Tr909RenderMode::Takeover => match takeover_profile {
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => match phrase_cycle {
+                0 => Tr909PhraseVariation::PhraseAnchor,
+                1 => Tr909PhraseVariation::PhraseLift,
+                2 => Tr909PhraseVariation::PhraseDrive,
+                _ => Tr909PhraseVariation::PhraseRelease,
+            },
+            Some(Tr909TakeoverRenderProfile::SceneLock) => match phrase_cycle % 2 {
+                0 => Tr909PhraseVariation::PhraseDrive,
+                _ => Tr909PhraseVariation::PhraseAnchor,
+            },
+        },
+        Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce => match phrase_cycle % 2 {
+            0 => Tr909PhraseVariation::PhraseDrive,
+            _ => Tr909PhraseVariation::PhraseLift,
+        },
+        Tr909RenderMode::SourceSupport => match source_support_profile {
+            Some(Tr909SourceSupportProfile::SteadyPulse) | None => match phrase_cycle % 2 {
+                0 => Tr909PhraseVariation::PhraseAnchor,
+                _ => Tr909PhraseVariation::PhraseLift,
+            },
+            Some(Tr909SourceSupportProfile::BreakLift) => match phrase_cycle % 2 {
+                0 => Tr909PhraseVariation::PhraseLift,
+                _ => Tr909PhraseVariation::PhraseDrive,
+            },
+            Some(Tr909SourceSupportProfile::DropDrive) => match phrase_cycle % 2 {
+                0 => Tr909PhraseVariation::PhraseDrive,
+                _ => Tr909PhraseVariation::PhraseLift,
+            },
+        },
+        Tr909RenderMode::Idle => Tr909PhraseVariation::PhraseAnchor,
+    };
+
+    Some(variation)
 }
 
 fn tr909_render_alignment_label(render: &Tr909RenderState) -> &'static str {
@@ -1400,6 +1462,13 @@ fn build_tr909_render_state(
         source_support_profile,
         takeover_profile,
     );
+    let phrase_variation = derive_tr909_phrase_variation(
+        mode,
+        transport,
+        tr909.pattern_ref.as_deref(),
+        source_support_profile,
+        takeover_profile,
+    );
 
     Tr909RenderState {
         mode,
@@ -1407,6 +1476,7 @@ fn build_tr909_render_state(
         source_support_profile,
         pattern_ref: tr909.pattern_ref.clone(),
         pattern_adoption,
+        phrase_variation,
         takeover_profile,
         drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
         slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
@@ -1610,6 +1680,7 @@ mod tests {
         expected_mode: String,
         expected_routing: String,
         expected_pattern_adoption: Option<String>,
+        expected_phrase_variation: Option<String>,
         expected_source_support_profile: Option<String>,
         expected_takeover_profile: Option<String>,
     }
@@ -2047,6 +2118,10 @@ mod tests {
         assert_eq!(
             state.runtime_view.tr909_render_pattern_adoption,
             "takeover_grid"
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_phrase_variation,
+            "phrase_lift"
         );
         assert_eq!(
             state.runtime_view.tr909_render_mix_summary,
@@ -2723,6 +2798,10 @@ mod tests {
             state.runtime.tr909_render.takeover_profile,
             Some(Tr909TakeoverRenderProfile::ControlledPhrase)
         );
+        assert_eq!(
+            state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseLift)
+        );
 
         assert_eq!(state.queue_tr909_release(500), QueueControlResult::Enqueued);
         let committed_release = state.commit_ready_actions(
@@ -2796,6 +2875,10 @@ mod tests {
         assert_eq!(
             state.runtime.tr909_render.pattern_adoption,
             Some(Tr909PatternAdoption::MainlineDrive)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseRelease)
         );
     }
 
@@ -2884,6 +2967,32 @@ mod tests {
             takeover_state.runtime.tr909_render.pattern_adoption,
             Some(Tr909PatternAdoption::TakeoverGrid)
         );
+        assert_eq!(
+            takeover_state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseLift)
+        );
+    }
+
+    #[test]
+    fn phrase_variation_tracks_phrase_context_and_release_patterns() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("source_support".into());
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("release-scene-1".into());
+        let release_state =
+            JamAppState::from_parts(session.clone(), Some(graph.clone()), ActionQueue::new());
+        assert_eq!(
+            release_state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseRelease)
+        );
+
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-1-main".into());
+        session.runtime_state.transport.position_beats = 64.0;
+        let drive_state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(
+            drive_state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseAnchor)
+        );
     }
 
     #[test]
@@ -2926,6 +3035,16 @@ mod tests {
                     .map(|pattern| pattern.label().to_string()),
                 fixture.expected_pattern_adoption,
                 "{} pattern adoption drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .tr909_render
+                    .phrase_variation
+                    .map(|variation| variation.label().to_string()),
+                fixture.expected_phrase_variation,
+                "{} phrase variation drifted",
                 fixture.name
             );
             assert_eq!(

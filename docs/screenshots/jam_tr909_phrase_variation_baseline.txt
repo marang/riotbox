@@ -1,0 +1,22 @@
+Riotbox Jam TR-909 Phrase Variation Baseline
+Normalized terminal capture notes for `RIOTBOX-46`
+Source: `riotbox-app` shell state fixture
+Notes:
+- normalized from the current Jam and Log shell state fixture
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights the first typed phrase-aware TR-909 variation layer on top of the existing pattern-adoption seam
+
+Key shell cues after this slice:
+
+- `Jam -> Lanes` now includes both adopted pattern shape and phrase variation:
+  - `drum_bus_takeover | controlled_phrase`
+  - `scene-a-main | takeover_grid | phrase_lift`
+- `Log -> TR-909 Render` now includes the same phrase-aware render cue:
+  - `render takeover via drum_bus_takeover | controlled_phrase`
+  - `takeover_grid | phrase_lift | takeover aligned`
+
+Interpretation:
+
+- the app now derives a typed phrase-variation state from committed phrase context and release-pattern cues
+- the audio callback now varies subdivision, trigger cadence, pitch, gain, and decay from that phrase-variation layer
+- release-tail behavior remains inside the same committed render seam instead of spawning a second TR-909 release engine

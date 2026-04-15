@@ -9,8 +9,8 @@ use std::{
 };
 
 use crate::tr909::{
-    Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
-    Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+    Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
+    Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -349,6 +349,7 @@ struct RealtimeTr909RenderState {
     routing: Tr909RenderRouting,
     source_support_profile: Option<Tr909SourceSupportProfile>,
     pattern_adoption: Option<Tr909PatternAdoption>,
+    phrase_variation: Option<Tr909PhraseVariation>,
     takeover_profile: Option<Tr909TakeoverRenderProfile>,
     drum_bus_level: f32,
     slam_intensity: f32,
@@ -362,6 +363,7 @@ struct SharedTr909RenderState {
     routing: AtomicU32,
     source_support_profile: AtomicU32,
     pattern_adoption: AtomicU32,
+    phrase_variation: AtomicU32,
     takeover_profile: AtomicU32,
     drum_bus_level_bits: AtomicU32,
     slam_intensity_bits: AtomicU32,
@@ -377,6 +379,7 @@ impl SharedTr909RenderState {
             routing: AtomicU32::new(0),
             source_support_profile: AtomicU32::new(0),
             pattern_adoption: AtomicU32::new(0),
+            phrase_variation: AtomicU32::new(0),
             takeover_profile: AtomicU32::new(0),
             drum_bus_level_bits: AtomicU32::new(0),
             slam_intensity_bits: AtomicU32::new(0),
@@ -399,6 +402,10 @@ impl SharedTr909RenderState {
         );
         self.pattern_adoption.store(
             pattern_adoption_to_u32(render_state.pattern_adoption),
+            Ordering::Relaxed,
+        );
+        self.phrase_variation.store(
+            phrase_variation_to_u32(render_state.phrase_variation),
             Ordering::Relaxed,
         );
         self.takeover_profile.store(
@@ -426,6 +433,9 @@ impl SharedTr909RenderState {
             ),
             pattern_adoption: pattern_adoption_from_u32(
                 self.pattern_adoption.load(Ordering::Relaxed),
+            ),
+            phrase_variation: phrase_variation_from_u32(
+                self.phrase_variation.load(Ordering::Relaxed),
             ),
             takeover_profile: takeover_profile_from_u32(
                 self.takeover_profile.load(Ordering::Relaxed),
@@ -514,46 +524,82 @@ fn render_tr909_buffer<T>(
 }
 
 const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
-    if let Some(adoption) = render.pattern_adoption {
-        return match adoption {
+    let base = if let Some(adoption) = render.pattern_adoption {
+        match adoption {
             Tr909PatternAdoption::SupportPulse => 1,
             Tr909PatternAdoption::MainlineDrive => 2,
             Tr909PatternAdoption::TakeoverGrid => 4,
-        };
-    }
+        }
+    } else {
+        match render.mode {
+            Tr909RenderMode::Idle => 1,
+            Tr909RenderMode::SourceSupport => match render.source_support_profile {
+                Some(
+                    Tr909SourceSupportProfile::BreakLift | Tr909SourceSupportProfile::DropDrive,
+                ) => 2,
+                Some(Tr909SourceSupportProfile::SteadyPulse) | None => 1,
+            },
+            Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce | Tr909RenderMode::Takeover => {
+                2
+            }
+        }
+    };
 
-    match render.mode {
-        Tr909RenderMode::Idle => 1,
-        Tr909RenderMode::SourceSupport => match render.source_support_profile {
-            Some(Tr909SourceSupportProfile::BreakLift | Tr909SourceSupportProfile::DropDrive) => 2,
-            Some(Tr909SourceSupportProfile::SteadyPulse) | None => 1,
-        },
-        Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce | Tr909RenderMode::Takeover => 2,
+    match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => base,
+        Some(Tr909PhraseVariation::PhraseLift) => {
+            if base < 2 {
+                2
+            } else {
+                base
+            }
+        }
+        Some(Tr909PhraseVariation::PhraseDrive) => {
+            if base < 4 {
+                4
+            } else {
+                base
+            }
+        }
+        Some(Tr909PhraseVariation::PhraseRelease) => {
+            if base > 2 {
+                2
+            } else {
+                base
+            }
+        }
     }
 }
 
 fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
-    if let Some(adoption) = render.pattern_adoption {
-        return match adoption {
+    let base = if let Some(adoption) = render.pattern_adoption {
+        match adoption {
             Tr909PatternAdoption::SupportPulse => step % 2 == 0,
             Tr909PatternAdoption::MainlineDrive => true,
             Tr909PatternAdoption::TakeoverGrid => !matches!(step.rem_euclid(4), 1),
-        };
-    }
+        }
+    } else {
+        match render.mode {
+            Tr909RenderMode::Idle => false,
+            Tr909RenderMode::SourceSupport => match render.source_support_profile {
+                Some(Tr909SourceSupportProfile::BreakLift) => step % 2 == 0,
+                Some(Tr909SourceSupportProfile::DropDrive) => true,
+                Some(Tr909SourceSupportProfile::SteadyPulse) | None => true,
+            },
+            Tr909RenderMode::Fill => true,
+            Tr909RenderMode::BreakReinforce => true,
+            Tr909RenderMode::Takeover => match render.takeover_profile {
+                Some(Tr909TakeoverRenderProfile::SceneLock) => step % 4 != 3,
+                Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => true,
+            },
+        }
+    };
 
-    match render.mode {
-        Tr909RenderMode::Idle => false,
-        Tr909RenderMode::SourceSupport => match render.source_support_profile {
-            Some(Tr909SourceSupportProfile::BreakLift) => step % 2 == 0,
-            Some(Tr909SourceSupportProfile::DropDrive) => true,
-            Some(Tr909SourceSupportProfile::SteadyPulse) | None => true,
-        },
-        Tr909RenderMode::Fill => true,
-        Tr909RenderMode::BreakReinforce => true,
-        Tr909RenderMode::Takeover => match render.takeover_profile {
-            Some(Tr909TakeoverRenderProfile::SceneLock) => step % 4 != 3,
-            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => true,
-        },
+    match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => base,
+        Some(Tr909PhraseVariation::PhraseLift) => base || step.rem_euclid(8) == 7,
+        Some(Tr909PhraseVariation::PhraseDrive) => base || matches!(step.rem_euclid(4), 1 | 3),
+        Some(Tr909PhraseVariation::PhraseRelease) => base && step.rem_euclid(4) == 0,
     }
 }
 
@@ -582,7 +628,14 @@ fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
         Some(Tr909PatternAdoption::MainlineDrive) => 0.04,
         Some(Tr909PatternAdoption::TakeoverGrid) => 0.07,
     };
-    (base + profile_boost + pattern_boost + (render.slam_intensity * 0.2)).clamp(0.0, 0.8)
+    let phrase_boost = match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => 0.0,
+        Some(Tr909PhraseVariation::PhraseLift) => 0.03,
+        Some(Tr909PhraseVariation::PhraseDrive) => 0.06,
+        Some(Tr909PhraseVariation::PhraseRelease) => -0.05,
+    };
+    (base + profile_boost + pattern_boost + phrase_boost + (render.slam_intensity * 0.2))
+        .clamp(0.0, 0.8)
 }
 
 fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
@@ -607,6 +660,12 @@ fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
             _ => 4.0,
         },
     };
+    let phrase_pitch = match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => 0.0,
+        Some(Tr909PhraseVariation::PhraseLift) => 6.0,
+        Some(Tr909PhraseVariation::PhraseDrive) => 12.0,
+        Some(Tr909PhraseVariation::PhraseRelease) => -8.0,
+    };
     let slam = render.slam_intensity.clamp(0.0, 1.0) * 18.0;
     match render.mode {
         Tr909RenderMode::Idle => 0.0,
@@ -616,16 +675,16 @@ fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
                 Some(Tr909SourceSupportProfile::BreakLift) => 66.0,
                 Some(Tr909SourceSupportProfile::DropDrive) => 78.0,
             };
-            base + accent + slam
+            base + accent + phrase_pitch + slam
         }
-        Tr909RenderMode::Fill => 78.0 + accent + slam,
-        Tr909RenderMode::BreakReinforce => 64.0 + accent + slam,
+        Tr909RenderMode::Fill => 78.0 + accent + phrase_pitch + slam,
+        Tr909RenderMode::BreakReinforce => 64.0 + accent + phrase_pitch + slam,
         Tr909RenderMode::Takeover => {
             let base = match render.takeover_profile {
                 Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => 92.0,
                 Some(Tr909TakeoverRenderProfile::SceneLock) => 108.0,
             };
-            base + accent + slam
+            base + accent + phrase_pitch + slam
         }
     }
 }
@@ -641,7 +700,14 @@ fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         Some(Tr909PatternAdoption::MainlineDrive) => 1.08,
         Some(Tr909PatternAdoption::TakeoverGrid) => 1.16,
     };
-    (routing_gain * pattern_gain * render.drum_bus_level.clamp(0.0, 1.0)).clamp(0.0, 0.25)
+    let phrase_gain = match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => 1.0,
+        Some(Tr909PhraseVariation::PhraseLift) => 1.06,
+        Some(Tr909PhraseVariation::PhraseDrive) => 1.14,
+        Some(Tr909PhraseVariation::PhraseRelease) => 0.72,
+    };
+    (routing_gain * pattern_gain * phrase_gain * render.drum_bus_level.clamp(0.0, 1.0))
+        .clamp(0.0, 0.25)
 }
 
 fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
@@ -665,7 +731,13 @@ fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
         Some(Tr909PatternAdoption::MainlineDrive) => 0.002,
         Some(Tr909PatternAdoption::TakeoverGrid) => 0.004,
     };
-    (base - pattern_decay).max(0.0)
+    let phrase_decay = match render.phrase_variation {
+        Some(Tr909PhraseVariation::PhraseAnchor) | None => 0.0,
+        Some(Tr909PhraseVariation::PhraseLift) => -0.001,
+        Some(Tr909PhraseVariation::PhraseDrive) => -0.003,
+        Some(Tr909PhraseVariation::PhraseRelease) => 0.01,
+    };
+    (base - pattern_decay - phrase_decay).clamp(0.0, 1.0)
 }
 
 const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {
@@ -736,6 +808,26 @@ const fn pattern_adoption_from_u32(value: u32) -> Option<Tr909PatternAdoption> {
         1 => Some(Tr909PatternAdoption::SupportPulse),
         2 => Some(Tr909PatternAdoption::MainlineDrive),
         3 => Some(Tr909PatternAdoption::TakeoverGrid),
+        _ => None,
+    }
+}
+
+const fn phrase_variation_to_u32(variation: Option<Tr909PhraseVariation>) -> u32 {
+    match variation {
+        None => 0,
+        Some(Tr909PhraseVariation::PhraseAnchor) => 1,
+        Some(Tr909PhraseVariation::PhraseLift) => 2,
+        Some(Tr909PhraseVariation::PhraseDrive) => 3,
+        Some(Tr909PhraseVariation::PhraseRelease) => 4,
+    }
+}
+
+const fn phrase_variation_from_u32(value: u32) -> Option<Tr909PhraseVariation> {
+    match value {
+        1 => Some(Tr909PhraseVariation::PhraseAnchor),
+        2 => Some(Tr909PhraseVariation::PhraseLift),
+        3 => Some(Tr909PhraseVariation::PhraseDrive),
+        4 => Some(Tr909PhraseVariation::PhraseRelease),
         _ => None,
     }
 }
@@ -824,8 +916,8 @@ impl RuntimeTelemetry {
 mod tests {
     use super::*;
     use crate::tr909::{
-        Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
-        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
+        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     };
     use serde::Deserialize;
 
@@ -842,6 +934,7 @@ mod tests {
         routing: String,
         source_support_profile: Option<String>,
         pattern_adoption: Option<String>,
+        phrase_variation: Option<String>,
         takeover_profile: Option<String>,
         drum_bus_level: f32,
         slam_intensity: f32,
@@ -888,6 +981,14 @@ mod tests {
                         "takeover_grid" => Tr909PatternAdoption::TakeoverGrid,
                         _ => Tr909PatternAdoption::SupportPulse,
                     }),
+                phrase_variation: self.phrase_variation.as_deref().map(
+                    |variation| match variation {
+                        "phrase_lift" => Tr909PhraseVariation::PhraseLift,
+                        "phrase_drive" => Tr909PhraseVariation::PhraseDrive,
+                        "phrase_release" => Tr909PhraseVariation::PhraseRelease,
+                        _ => Tr909PhraseVariation::PhraseAnchor,
+                    },
+                ),
                 takeover_profile: self
                     .takeover_profile
                     .as_deref()
@@ -980,6 +1081,7 @@ mod tests {
             routing: Tr909RenderRouting::DrumBusTakeover,
             source_support_profile: None,
             pattern_adoption: None,
+            phrase_variation: None,
             takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
             drum_bus_level: 0.8,
             slam_intensity: 0.9,
@@ -998,6 +1100,7 @@ mod tests {
             Some(Tr909TakeoverRenderProfile::ControlledPhrase)
         );
         assert_eq!(snapshot.pattern_adoption, None);
+        assert_eq!(snapshot.phrase_variation, None);
         assert_eq!(snapshot.tempo_bpm, 128.0);
         assert_eq!(snapshot.position_beats, 17.5);
 
@@ -1005,6 +1108,7 @@ mod tests {
         state.routing = Tr909RenderRouting::DrumBusSupport;
         state.source_support_profile = Some(Tr909SourceSupportProfile::DropDrive);
         state.pattern_adoption = Some(Tr909PatternAdoption::MainlineDrive);
+        state.phrase_variation = Some(Tr909PhraseVariation::PhraseDrive);
         state.takeover_profile = None;
         shared.update(&state);
 
@@ -1018,6 +1122,10 @@ mod tests {
         assert_eq!(
             updated.pattern_adoption,
             Some(Tr909PatternAdoption::MainlineDrive)
+        );
+        assert_eq!(
+            updated.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseDrive)
         );
     }
 
@@ -1035,6 +1143,7 @@ mod tests {
                 routing: Tr909RenderRouting::SourceOnly,
                 source_support_profile: None,
                 pattern_adoption: None,
+                phrase_variation: None,
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.2,
@@ -1062,6 +1171,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: None,
                 pattern_adoption: None,
+                phrase_variation: None,
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.6,
@@ -1089,6 +1199,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: None,
                 pattern_adoption: None,
+                phrase_variation: None,
                 takeover_profile: None,
                 drum_bus_level: 0.0,
                 slam_intensity: 0.6,
@@ -1118,6 +1229,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
                 pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1137,6 +1249,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
                 pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1173,6 +1286,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
                 pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
                 drum_bus_level: 0.8,
                 slam_intensity: 0.45,
@@ -1192,6 +1306,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
                 pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::SceneLock),
                 drum_bus_level: 0.8,
                 slam_intensity: 0.45,
@@ -1279,6 +1394,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
                 pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1298,6 +1414,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
                 pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
                 takeover_profile: None,
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1317,6 +1434,7 @@ mod tests {
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
                 pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseRelease),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
                 drum_bus_level: 0.8,
                 slam_intensity: 0.35,
@@ -1340,5 +1458,58 @@ mod tests {
         assert_ne!(pulse_peak, drive_peak);
         assert_ne!(drive_peak, grid_peak);
         assert!(grid_peak > pulse_peak);
+    }
+
+    #[test]
+    fn phrase_variations_produce_distinct_activity() {
+        let mut anchor_state = Tr909CallbackState::default();
+        let mut drive_state = Tr909CallbackState::default();
+        let mut release_state = Tr909CallbackState::default();
+        let mut anchor = [0.0_f32; 512];
+        let mut drive = [0.0_f32; 512];
+        let mut release = [0.0_f32; 512];
+
+        let base = RealtimeTr909RenderState {
+            mode: Tr909RenderMode::Takeover,
+            routing: Tr909RenderRouting::DrumBusTakeover,
+            source_support_profile: None,
+            pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
+            takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
+            drum_bus_level: 0.8,
+            slam_intensity: 0.45,
+            is_transport_running: true,
+            tempo_bpm: 126.0,
+            position_beats: 0.0,
+        };
+
+        render_tr909_buffer(&mut anchor, 44_100, 2, &base, &mut anchor_state);
+
+        let mut drive_render = base;
+        drive_render.phrase_variation = Some(Tr909PhraseVariation::PhraseDrive);
+        render_tr909_buffer(&mut drive, 44_100, 2, &drive_render, &mut drive_state);
+
+        let mut release_render = base;
+        release_render.phrase_variation = Some(Tr909PhraseVariation::PhraseRelease);
+        render_tr909_buffer(&mut release, 44_100, 2, &release_render, &mut release_state);
+
+        let anchor_peak = anchor
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let drive_peak = drive
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let release_peak = release
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let anchor_active = anchor.iter().filter(|sample| sample.abs() > 0.0001).count();
+        let release_active = release
+            .iter()
+            .filter(|sample| sample.abs() > 0.0001)
+            .count();
+
+        assert!(drive_peak > anchor_peak);
+        assert!(release_peak < drive_peak);
+        assert!(release_active < anchor_active);
     }
 }

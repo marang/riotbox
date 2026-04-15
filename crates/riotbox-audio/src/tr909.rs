@@ -90,6 +90,26 @@ impl Tr909PatternAdoption {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909PhraseVariation {
+    PhraseAnchor,
+    PhraseLift,
+    PhraseDrive,
+    PhraseRelease,
+}
+
+impl Tr909PhraseVariation {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::PhraseAnchor => "phrase_anchor",
+            Self::PhraseLift => "phrase_lift",
+            Self::PhraseDrive => "phrase_drive",
+            Self::PhraseRelease => "phrase_release",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct Tr909RenderState {
     pub mode: Tr909RenderMode,
@@ -97,6 +117,7 @@ pub struct Tr909RenderState {
     pub source_support_profile: Option<Tr909SourceSupportProfile>,
     pub pattern_ref: Option<String>,
     pub pattern_adoption: Option<Tr909PatternAdoption>,
+    pub phrase_variation: Option<Tr909PhraseVariation>,
     pub takeover_profile: Option<Tr909TakeoverRenderProfile>,
     pub drum_bus_level: f32,
     pub slam_intensity: f32,
@@ -114,6 +135,7 @@ impl Default for Tr909RenderState {
             source_support_profile: None,
             pattern_ref: None,
             pattern_adoption: None,
+            phrase_variation: None,
             takeover_profile: None,
             drum_bus_level: 0.0,
             slam_intensity: 0.0,
@@ -128,8 +150,8 @@ impl Default for Tr909RenderState {
 #[cfg(test)]
 mod tests {
     use super::{
-        Tr909PatternAdoption, Tr909RenderMode, Tr909RenderRouting, Tr909RenderState,
-        Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
+        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     };
 
     #[test]
@@ -143,6 +165,7 @@ mod tests {
         assert_eq!(state.source_support_profile, None);
         assert_eq!(state.pattern_ref, None);
         assert_eq!(state.pattern_adoption, None);
+        assert_eq!(state.phrase_variation, None);
         assert_eq!(state.takeover_profile, None);
         assert!(!state.is_transport_running);
     }
@@ -166,5 +189,12 @@ mod tests {
             "mainline_drive"
         );
         assert_eq!(Tr909PatternAdoption::TakeoverGrid.label(), "takeover_grid");
+        assert_eq!(Tr909PhraseVariation::PhraseAnchor.label(), "phrase_anchor");
+        assert_eq!(Tr909PhraseVariation::PhraseLift.label(), "phrase_lift");
+        assert_eq!(Tr909PhraseVariation::PhraseDrive.label(), "phrase_drive");
+        assert_eq!(
+            Tr909PhraseVariation::PhraseRelease.label(),
+            "phrase_release"
+        );
     }
 }
