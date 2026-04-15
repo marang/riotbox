@@ -60,20 +60,21 @@ This is the default unless the user explicitly asks for something else.
 
 Preferred branch pattern:
 
-- `riotbox-<issue-number>-<short-slice-name>`
+- `feature/<identifier>-<short-slice-name>`
 
 Examples:
 
-- `riotbox-18-analysis-ingest-slice`
-- `riotbox-19-decoded-source-baseline`
+- `feature/riotbox-18-analysis-ingest-slice`
+- `feature/riotbox-19-decoded-source-baseline`
 
 Rules:
 
 - keep the name short and human-readable
 - keep one branch aligned to one main issue
 - do not overload a branch with unrelated slices
+- keep the branch under the repo convention even if external tools suggest a different slug
 
-Linear may suggest its own branch names. That is useful context, but the repo branch should stay concise and readable.
+If Linear is configured to generate branch names, it should use the same repo convention instead of a username-prefixed path.
 
 ---
 
@@ -318,8 +319,8 @@ Recommended metadata block:
 - Created: `2026-04-15`
 - Started: `2026-04-16`
 - Finished: `2026-04-17`
-- Branch: `riotbox-999-example-ticket`
-- Linear branch: `username/riotbox-999-example-ticket`
+- Branch: `feature/riotbox-999-example-ticket`
+- Linear branch: `feature/riotbox-999-example-ticket`
 - Assignee: `Markus`
 - Labels: `TUI`, `TR-909`
 - PR: `#99`
