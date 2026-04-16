@@ -1,0 +1,27 @@
+Riotbox W-30 Diagnostics Baseline
+Normalized terminal capture notes for `RIOTBOX-57`
+Source: `riotbox-app` shell state fixture
+Notes:
+- normalized from the current Capture and Log shell state fixtures
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights read-only W-30 operator diagnostics on top of the existing recall/audition seam
+
+Key shell cues after this slice:
+
+- `Capture -> Routing / Promotion` now includes:
+  - `pending W-30 cue recall bank-b/pad-03` or `pending W-30 cue audition bank-b/pad-03`
+  - `w30 bank bank-a | pad unset`
+  - `latest promoted cap-01 -> bank-b/pad-03`
+  - `last lane capture cap-01`
+- `Log -> W-30 Lane` now includes:
+  - `bank bank-b | pad pad-03`
+  - `cue idle`
+  - `capture cap-01`
+  - `recent audition`
+  - `note auditioned cap-01 on W-30 pad bank-b/pad-03`
+
+Interpretation:
+
+- the Capture screen now explains which W-30 cue is queued, what promoted material is available, and which lane capture the shell is about to reuse
+- the Log screen now shows compact W-30 lane diagnostics alongside MC-202 and TR-909 instead of leaving W-30 state buried in generic action history
+- diagnostics remain derived from the existing capture/promotion and committed cue seam; no second W-30 model or preview surface was introduced

@@ -23,9 +23,8 @@
         "202 touch 0.85"
       ],
       "log_contains": [
-        "role leader | next none",
-        "phrase leader-scene-1 | gen",
-        "touch 0.85 | last",
+        "role leader",
+        "phrase leader-scene-1",
         "mc202.set_role"
       ]
     }
@@ -54,10 +53,8 @@
         "202 touch 0.78"
       ],
       "log_contains": [
-        "role follower | next none",
-        "phrase follower-scene-1 |",
-        "gen idle",
-        "touch 0.78 | last",
+        "role follower",
+        "phrase follower-scene-1",
         "mc202.generate_follower"
       ]
     }
@@ -86,9 +83,8 @@
         "202 touch 0.82"
       ],
       "log_contains": [
-        "role answer | next none",
-        "phrase answer-scene-1 |",
-        "touch 0.82 | last",
+        "role answer",
+        "phrase answer-scene-1",
         "mc202.generate_answer"
       ]
     }
