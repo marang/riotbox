@@ -550,6 +550,17 @@ Status: accepted
 
 ---
 
+Topic: the first MC-202 answer generator should reuse the existing phrase seam instead of opening a second phrase engine
+Phase: MC-202 MVP
+Question: after committed follower generation exists, what is the next bounded MC-202 slice that deepens phrase interplay without pretending a full answer editor, callback-side sequencer, or hidden phrase graph already exists?
+Decision: add a bounded `mc202.generate_answer` action on the existing `ActionQueue` and `NextPhrase` commit seam. Surface pending answer generation in the Jam shell, commit it into `mc202.role`, `mc202.phrase_ref`, and `mc202_touch`, and keep deeper phrase editing and live synth control out of scope.
+Why: the current MC-202 lane already has a replay-safe phrase seam and committed lane-state model. Extending that seam with answer generation creates a real next musical response without inventing a second phrase engine or a UI-only device model.
+Evidence: `riotbox-app` now queues `mc202.generate_answer` on `NextPhrase`, commits it into answer-oriented lane state plus touch intensity, exposes the pending answer cue in the shell, and covers the path with fixture-backed regression tests alongside the existing role and follower cases.
+Consequences: later MC-202 work should keep extending the same committed phrase seam, including richer answer behavior and parameter controls, instead of bypassing it with direct shell state, callback-only heuristics, or a separate MC-202 runtime graph.
+Status: accepted
+
+---
+
 Topic: the first W-30 MVP slice should reuse the capture and promotion seam for live recall
 Phase: W-30 MVP
 Question: after capture, promotion, and pinning exist, what is the smallest honest W-30 entry slice that creates a real live-recall cue without inventing a second sample browser, pad editor, or playback-control surface?

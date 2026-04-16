@@ -41,6 +41,12 @@ impl JamViewModel {
                 crate::action::ActionCommand::Mc202GenerateFollower
             )
         });
+        let mc202_pending_answer_generation = pending_actions.iter().any(|action| {
+            matches!(
+                action.command,
+                crate::action::ActionCommand::Mc202GenerateAnswer
+            )
+        });
         let w30_pending_recall_target =
             pending_actions
                 .iter()
@@ -148,6 +154,7 @@ impl JamViewModel {
                 mc202_role: session.runtime_state.lane_state.mc202.role.clone(),
                 mc202_pending_role,
                 mc202_pending_follower_generation,
+                mc202_pending_answer_generation,
                 mc202_phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
                 w30_active_bank: session
                     .runtime_state
@@ -304,6 +311,7 @@ pub struct LaneSummaryView {
     pub mc202_role: Option<String>,
     pub mc202_pending_role: Option<String>,
     pub mc202_pending_follower_generation: bool,
+    pub mc202_pending_answer_generation: bool,
     pub mc202_phrase_ref: Option<String>,
     pub w30_active_bank: Option<String>,
     pub w30_focused_pad: Option<String>,
@@ -589,6 +597,7 @@ mod tests {
         assert!(vm.capture.pinned_capture_ids.is_empty());
         assert_eq!(vm.lanes.mc202_pending_role.as_deref(), Some("leader"));
         assert!(!vm.lanes.mc202_pending_follower_generation);
+        assert!(!vm.lanes.mc202_pending_answer_generation);
         assert_eq!(vm.lanes.mc202_phrase_ref, None);
         assert_eq!(vm.lanes.w30_active_bank.as_deref(), Some("bank-a"));
         assert_eq!(vm.lanes.w30_focused_pad.as_deref(), Some("pad-01"));
