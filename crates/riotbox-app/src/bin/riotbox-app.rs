@@ -72,8 +72,9 @@ fn run_terminal_ui(
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = ManagedTerminal::enter()?;
     let runtime_pulses = RuntimePulseSource::spawn(DEFAULT_RUNTIME_PULSE_INTERVAL);
-    let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_tr909(
+    let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states(
         shell.app.runtime.tr909_render.clone(),
+        shell.app.runtime.w30_preview.clone(),
     ) {
         Ok(runtime) => {
             shell.app.set_audio_health(runtime.health_snapshot());
@@ -150,6 +151,7 @@ fn run_event_loop(
 
         if let Some(audio_runtime) = audio_runtime.as_deref_mut() {
             audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
+            audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
             shell.app.set_audio_health(audio_runtime.health_snapshot());
         }
 

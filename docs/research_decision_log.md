@@ -627,6 +627,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 audio-facing preview should start as one typed render seam instead of direct sample playback
+Phase: W-30 MVP
+Question: after live recall, promoted-material audition, diagnostics, and replay-safe regression coverage exist, what is the smallest next slice that prepares the W-30 lane for later audible preview without opening a second device model or pretending full sample playback is already solved?
+Decision: add one typed `W30PreviewRenderState` in `riotbox-audio`, derive it only from the existing committed session and action seam in `riotbox-app`, and mirror it into the audio runtime alongside the existing TR-909 render state. Surface the preview mode, profile, target, and mix summary in the current shell/runtime summaries, but stop short of real W-30 sample playback in this slice.
+Why: Riotbox needed an honest audio-facing seam for the W-30 lane before pads become audible or internally resampled. The smallest correct move is to make the preview state explicit and callback-reachable using the same replay-safe lane, capture, and action log state that already drives recall and audition, instead of inventing a hidden preview-only model or jumping straight to sample rendering.
+Evidence: `riotbox-audio` now has a dedicated `w30` render-state module and shared runtime storage, `AudioRuntimeShell` updates that preview state on the same path as TR-909 render updates, and `riotbox-app` derives typed preview mode/profile/routing from committed W-30 state and exposes it through `JamRuntimeView` plus shell regressions.
+Consequences: later W-30 work should attach audible preview rendering, pad playback, and resample taps to this same typed preview seam rather than bypassing it with ad hoc callback state or a separate W-30 playback path.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

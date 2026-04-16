@@ -12,6 +12,9 @@ use crate::tr909::{
     Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
     Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
 };
+use crate::w30::{
+    W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSourceProfile,
+};
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -143,16 +146,30 @@ pub struct AudioRuntimeShell {
     output: Option<AudioOutputInfo>,
     telemetry: Arc<RuntimeTelemetry>,
     tr909_render: Arc<SharedTr909RenderState>,
+    w30_preview: Arc<SharedW30PreviewRenderState>,
     stream: Option<cpal::Stream>,
 }
 
 impl AudioRuntimeShell {
     pub fn start_default_output() -> Result<Self, AudioRuntimeError> {
-        Self::start_default_output_with_tr909(Tr909RenderState::default())
+        Self::start_default_output_with_render_states(
+            Tr909RenderState::default(),
+            W30PreviewRenderState::default(),
+        )
     }
 
     pub fn start_default_output_with_tr909(
         render_state: Tr909RenderState,
+    ) -> Result<Self, AudioRuntimeError> {
+        Self::start_default_output_with_render_states(
+            render_state,
+            W30PreviewRenderState::default(),
+        )
+    }
+
+    pub fn start_default_output_with_render_states(
+        tr909_render_state: Tr909RenderState,
+        w30_preview_render_state: W30PreviewRenderState,
     ) -> Result<Self, AudioRuntimeError> {
         let host = cpal::default_host();
         let host_name = format!("{:?}", host.id());
@@ -190,7 +207,8 @@ impl AudioRuntimeShell {
         };
 
         let telemetry = Arc::new(RuntimeTelemetry::new());
-        let tr909_render = Arc::new(SharedTr909RenderState::new(&render_state));
+        let tr909_render = Arc::new(SharedTr909RenderState::new(&tr909_render_state));
+        let w30_preview = Arc::new(SharedW30PreviewRenderState::new(&w30_preview_render_state));
         let stream_config = default_config.config();
         let start = Instant::now();
 
@@ -200,6 +218,7 @@ impl AudioRuntimeShell {
                 &stream_config,
                 Arc::clone(&telemetry),
                 Arc::clone(&tr909_render),
+                Arc::clone(&w30_preview),
                 start,
             ),
             cpal::SampleFormat::I16 => build_silent_output_stream::<i16>(
@@ -207,6 +226,7 @@ impl AudioRuntimeShell {
                 &stream_config,
                 Arc::clone(&telemetry),
                 Arc::clone(&tr909_render),
+                Arc::clone(&w30_preview),
                 start,
             ),
             cpal::SampleFormat::U16 => build_silent_output_stream::<u16>(
@@ -214,6 +234,7 @@ impl AudioRuntimeShell {
                 &stream_config,
                 Arc::clone(&telemetry),
                 Arc::clone(&tr909_render),
+                Arc::clone(&w30_preview),
                 start,
             ),
             sample_format => {
@@ -243,6 +264,7 @@ impl AudioRuntimeShell {
             output: Some(output),
             telemetry,
             tr909_render,
+            w30_preview,
             stream: Some(stream),
         })
     }
@@ -278,6 +300,10 @@ impl AudioRuntimeShell {
         self.tr909_render.update(render_state);
     }
 
+    pub fn update_w30_preview_render_state(&self, render_state: &W30PreviewRenderState) {
+        self.w30_preview.update(render_state);
+    }
+
     pub fn stop(&mut self) {
         self.stream.take();
         self.lifecycle = AudioRuntimeLifecycle::Stopped;
@@ -288,13 +314,15 @@ impl AudioRuntimeShell {
         lifecycle: AudioRuntimeLifecycle,
         output: Option<AudioOutputInfo>,
         telemetry: Arc<RuntimeTelemetry>,
-        render_state: Arc<SharedTr909RenderState>,
+        tr909_render_state: Arc<SharedTr909RenderState>,
+        w30_preview_state: Arc<SharedW30PreviewRenderState>,
     ) -> Self {
         Self {
             lifecycle,
             output,
             telemetry,
-            tr909_render: render_state,
+            tr909_render: tr909_render_state,
+            w30_preview: w30_preview_state,
             stream: None,
         }
     }
@@ -311,6 +339,7 @@ fn build_silent_output_stream<T>(
     config: &cpal::StreamConfig,
     telemetry: Arc<RuntimeTelemetry>,
     tr909_render: Arc<SharedTr909RenderState>,
+    w30_preview: Arc<SharedW30PreviewRenderState>,
     start: Instant,
 ) -> Result<cpal::Stream, cpal::BuildStreamError>
 where
@@ -319,12 +348,14 @@ where
     let callback_telemetry = Arc::clone(&telemetry);
     let error_telemetry = Arc::clone(&telemetry);
     let mut render_state = Tr909CallbackState::default();
+    let mut w30_preview_state = W30PreviewCallbackState::default();
     let sample_rate = config.sample_rate;
     let channel_count = usize::from(config.channels.max(1));
 
     device.build_output_stream(
         config,
         move |data: &mut [T], _| {
+            sync_w30_preview_state(&w30_preview.snapshot(), &mut w30_preview_state);
             render_tr909_buffer(
                 data,
                 sample_rate,
@@ -449,6 +480,82 @@ impl SharedTr909RenderState {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct RealtimeW30PreviewRenderState {
+    mode: W30PreviewRenderMode,
+    routing: W30PreviewRenderRouting,
+    source_profile: Option<W30PreviewSourceProfile>,
+    music_bus_level: f32,
+    grit_level: f32,
+    is_transport_running: bool,
+    tempo_bpm: f32,
+    position_beats: f64,
+}
+
+struct SharedW30PreviewRenderState {
+    mode: AtomicU32,
+    routing: AtomicU32,
+    source_profile: AtomicU32,
+    music_bus_level_bits: AtomicU32,
+    grit_level_bits: AtomicU32,
+    is_transport_running: AtomicBool,
+    tempo_bpm_bits: AtomicU32,
+    position_beats_bits: AtomicU64,
+}
+
+impl SharedW30PreviewRenderState {
+    fn new(render_state: &W30PreviewRenderState) -> Self {
+        let shared = Self {
+            mode: AtomicU32::new(0),
+            routing: AtomicU32::new(0),
+            source_profile: AtomicU32::new(0),
+            music_bus_level_bits: AtomicU32::new(0),
+            grit_level_bits: AtomicU32::new(0),
+            is_transport_running: AtomicBool::new(false),
+            tempo_bpm_bits: AtomicU32::new(0),
+            position_beats_bits: AtomicU64::new(0),
+        };
+        shared.update(render_state);
+        shared
+    }
+
+    fn update(&self, render_state: &W30PreviewRenderState) {
+        self.mode
+            .store(w30_mode_to_u32(render_state.mode), Ordering::Relaxed);
+        self.routing
+            .store(w30_routing_to_u32(render_state.routing), Ordering::Relaxed);
+        self.source_profile.store(
+            w30_source_profile_to_u32(render_state.source_profile),
+            Ordering::Relaxed,
+        );
+        self.music_bus_level_bits
+            .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
+        self.grit_level_bits
+            .store(render_state.grit_level.to_bits(), Ordering::Relaxed);
+        self.is_transport_running
+            .store(render_state.is_transport_running, Ordering::Relaxed);
+        self.tempo_bpm_bits
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+        self.position_beats_bits
+            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+    }
+
+    fn snapshot(&self) -> RealtimeW30PreviewRenderState {
+        RealtimeW30PreviewRenderState {
+            mode: w30_mode_from_u32(self.mode.load(Ordering::Relaxed)),
+            routing: w30_routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            source_profile: w30_source_profile_from_u32(
+                self.source_profile.load(Ordering::Relaxed),
+            ),
+            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
+            grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
+            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+        }
+    }
+}
+
 #[derive(Debug, Default)]
 struct Tr909CallbackState {
     beat_position: f64,
@@ -457,6 +564,31 @@ struct Tr909CallbackState {
     envelope: f32,
     last_step: i64,
     was_running: bool,
+}
+
+#[derive(Debug, Default)]
+struct W30PreviewCallbackState {
+    last_mode: Option<W30PreviewRenderMode>,
+    last_routing: Option<W30PreviewRenderRouting>,
+    last_source_profile: Option<W30PreviewSourceProfile>,
+    last_music_bus_level: f32,
+    last_grit_level: f32,
+    last_transport_running: bool,
+    last_position_beats: f64,
+}
+
+fn sync_w30_preview_state(
+    render: &RealtimeW30PreviewRenderState,
+    state: &mut W30PreviewCallbackState,
+) {
+    state.last_mode = (!matches!(render.mode, W30PreviewRenderMode::Idle)).then_some(render.mode);
+    state.last_routing =
+        (!matches!(render.routing, W30PreviewRenderRouting::Silent)).then_some(render.routing);
+    state.last_source_profile = render.source_profile;
+    state.last_music_bus_level = render.music_bus_level;
+    state.last_grit_level = render.grit_level;
+    state.last_transport_running = render.is_transport_running;
+    state.last_position_beats = render.position_beats;
 }
 
 fn render_tr909_buffer<T>(
@@ -848,6 +980,54 @@ const fn takeover_profile_from_u32(value: u32) -> Option<Tr909TakeoverRenderProf
     }
 }
 
+const fn w30_mode_to_u32(mode: W30PreviewRenderMode) -> u32 {
+    match mode {
+        W30PreviewRenderMode::Idle => 0,
+        W30PreviewRenderMode::LiveRecall => 1,
+        W30PreviewRenderMode::PromotedAudition => 2,
+    }
+}
+
+const fn w30_mode_from_u32(value: u32) -> W30PreviewRenderMode {
+    match value {
+        1 => W30PreviewRenderMode::LiveRecall,
+        2 => W30PreviewRenderMode::PromotedAudition,
+        _ => W30PreviewRenderMode::Idle,
+    }
+}
+
+const fn w30_routing_to_u32(routing: W30PreviewRenderRouting) -> u32 {
+    match routing {
+        W30PreviewRenderRouting::Silent => 0,
+        W30PreviewRenderRouting::MusicBusPreview => 1,
+    }
+}
+
+const fn w30_routing_from_u32(value: u32) -> W30PreviewRenderRouting {
+    match value {
+        1 => W30PreviewRenderRouting::MusicBusPreview,
+        _ => W30PreviewRenderRouting::Silent,
+    }
+}
+
+const fn w30_source_profile_to_u32(profile: Option<W30PreviewSourceProfile>) -> u32 {
+    match profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => 1,
+        Some(W30PreviewSourceProfile::PromotedRecall) => 2,
+        Some(W30PreviewSourceProfile::PromotedAudition) => 3,
+        None => 0,
+    }
+}
+
+const fn w30_source_profile_from_u32(value: u32) -> Option<W30PreviewSourceProfile> {
+    match value {
+        1 => Some(W30PreviewSourceProfile::PinnedRecall),
+        2 => Some(W30PreviewSourceProfile::PromotedRecall),
+        3 => Some(W30PreviewSourceProfile::PromotedAudition),
+        _ => None,
+    }
+}
+
 #[derive(Default)]
 struct RuntimeTelemetrySnapshot {
     callback_count: u64,
@@ -918,6 +1098,10 @@ mod tests {
     use crate::tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+    };
+    use crate::w30::{
+        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
+        W30PreviewSourceProfile,
     };
     use serde::Deserialize;
 
@@ -1033,7 +1217,11 @@ mod tests {
     #[test]
     fn health_snapshot_reflects_faulted_runtime_state() {
         let telemetry = Arc::new(RuntimeTelemetry::new());
-        let render_state = Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
+        let tr909_render_state =
+            Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
+        let w30_preview_state = Arc::new(SharedW30PreviewRenderState::new(
+            &W30PreviewRenderState::default(),
+        ));
         telemetry.record_callback_at(100);
         telemetry.record_callback_at(240);
         telemetry.record_stream_error("stream stalled".into());
@@ -1042,7 +1230,8 @@ mod tests {
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
-            render_state,
+            tr909_render_state,
+            w30_preview_state,
         );
 
         let snapshot = shell.health_snapshot();
@@ -1060,12 +1249,17 @@ mod tests {
     #[test]
     fn stop_transitions_runtime_to_stopped() {
         let telemetry = Arc::new(RuntimeTelemetry::new());
-        let render_state = Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
+        let tr909_render_state =
+            Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
+        let w30_preview_state = Arc::new(SharedW30PreviewRenderState::new(
+            &W30PreviewRenderState::default(),
+        ));
         let mut shell = AudioRuntimeShell::from_test_parts(
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
-            render_state,
+            tr909_render_state,
+            w30_preview_state,
         );
 
         shell.stop();
@@ -1127,6 +1321,50 @@ mod tests {
             updated.phrase_variation,
             Some(Tr909PhraseVariation::PhraseDrive)
         );
+    }
+
+    #[test]
+    fn shared_w30_preview_state_tracks_updates() {
+        let shared = SharedW30PreviewRenderState::new(&W30PreviewRenderState::default());
+        let mut state = W30PreviewRenderState {
+            mode: W30PreviewRenderMode::LiveRecall,
+            routing: W30PreviewRenderRouting::MusicBusPreview,
+            source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
+            active_bank_id: Some("bank-a".into()),
+            focused_pad_id: Some("pad-01".into()),
+            capture_id: Some("cap-01".into()),
+            music_bus_level: 0.55,
+            grit_level: 0.68,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 21.0,
+        };
+        shared.update(&state);
+
+        let snapshot = shared.snapshot();
+        assert_eq!(snapshot.mode, W30PreviewRenderMode::LiveRecall);
+        assert_eq!(snapshot.routing, W30PreviewRenderRouting::MusicBusPreview);
+        assert_eq!(
+            snapshot.source_profile,
+            Some(W30PreviewSourceProfile::PinnedRecall)
+        );
+        assert_eq!(snapshot.music_bus_level, 0.55);
+        assert_eq!(snapshot.grit_level, 0.68);
+        assert_eq!(snapshot.tempo_bpm, 128.0);
+        assert_eq!(snapshot.position_beats, 21.0);
+
+        state.mode = W30PreviewRenderMode::PromotedAudition;
+        state.source_profile = Some(W30PreviewSourceProfile::PromotedAudition);
+        state.grit_level = 0.82;
+        shared.update(&state);
+
+        let updated = shared.snapshot();
+        assert_eq!(updated.mode, W30PreviewRenderMode::PromotedAudition);
+        assert_eq!(
+            updated.source_profile,
+            Some(W30PreviewSourceProfile::PromotedAudition)
+        );
+        assert_eq!(updated.grit_level, 0.82);
     }
 
     #[test]
