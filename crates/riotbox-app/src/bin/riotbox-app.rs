@@ -279,6 +279,14 @@ fn run_event_loop(
                         None => shell.set_error_status("no capture available to pin"),
                     }
                 }
+                ShellKeyOutcome::LowerDrumBusLevel => {
+                    let level = shell.app.adjust_drum_bus_level(-0.1);
+                    shell.set_error_status(format!("drum bus level {:.2}", level));
+                }
+                ShellKeyOutcome::RaiseDrumBusLevel => {
+                    let level = shell.app.adjust_drum_bus_level(0.1);
+                    shell.set_error_status(format!("drum bus level {:.2}", level));
+                }
                 ShellKeyOutcome::UndoLast => {
                     if shell.app.undo_last_action(timestamp_now()).is_some() {
                         shell.set_error_status("undid most recent action");

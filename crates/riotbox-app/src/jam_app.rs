@@ -230,7 +230,7 @@ impl JamRuntimeView {
                 .phrase_variation
                 .map_or_else(|| "unset".into(), |variation| variation.label().into()),
             tr909_render_mix_summary: format!(
-                "drum {:.2} | slam {:.2}",
+                "drum bus {:.2} | slam {:.2}",
                 runtime.tr909_render.drum_bus_level, runtime.tr909_render.slam_intensity
             ),
             tr909_render_alignment: tr909_render_alignment_label(&runtime.tr909_render).into(),
@@ -975,6 +975,14 @@ impl JamAppState {
         };
         self.refresh_view();
         Some(new_state)
+    }
+
+    pub fn adjust_drum_bus_level(&mut self, delta: f32) -> f32 {
+        let next_level =
+            (self.session.runtime_state.mixer_state.drum_level + delta).clamp(0.0, 1.0);
+        self.session.runtime_state.mixer_state.drum_level = next_level;
+        self.refresh_view();
+        next_level
     }
 
     fn recallable_w30_capture(&self) -> Option<&CaptureRef> {
@@ -2461,7 +2469,7 @@ mod tests {
         );
         assert_eq!(
             state.runtime_view.tr909_render_mix_summary,
-            "drum 0.00 | slam 0.91"
+            "drum bus 0.00 | slam 0.91"
         );
         assert_eq!(
             state.runtime_view.tr909_render_alignment,
@@ -2480,6 +2488,38 @@ mod tests {
                 .iter()
                 .any(|warning| warning == "909 render is routed to the drum bus at zero drum level")
         );
+    }
+
+    #[test]
+    fn adjusting_drum_bus_level_updates_session_and_runtime_view() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.tr909.takeover_enabled = true;
+        session.runtime_state.lane_state.tr909.takeover_profile =
+            Some("controlled_phrase_takeover".into());
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-1-main".into());
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        let raised = state.adjust_drum_bus_level(0.18);
+        assert!((raised - 0.90).abs() < f32::EPSILON);
+        assert!((state.session.runtime_state.mixer_state.drum_level - 0.90).abs() < f32::EPSILON);
+        assert_eq!(
+            state.runtime_view.tr909_render_mix_summary,
+            "drum bus 0.90 | slam 0.55"
+        );
+
+        let lowered = state.adjust_drum_bus_level(-1.5);
+        assert_eq!(lowered, 0.0);
+        assert_eq!(state.session.runtime_state.mixer_state.drum_level, 0.0);
+        assert_eq!(
+            state.runtime_view.tr909_render_mix_summary,
+            "drum bus 0.00 | slam 0.55"
+        );
+        assert!(state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| warning == "909 render is routed to the drum bus at zero drum level"));
     }
 
     #[test]

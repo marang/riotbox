@@ -561,6 +561,17 @@ Status: accepted
 
 ---
 
+Topic: live drum-bus control should stay on the existing mixer seam instead of opening a mixer page
+Phase: Jam-First Playable Slice
+Question: how should Riotbox close the current usability gap where the TR-909 render seam can be technically running but still silent because the drum bus is at zero?
+Decision: add one bounded live drum-bus level control directly in the Jam shell and keep it on the existing persisted `mixer_state.drum_level` seam. Update the Jam and Log shell summaries from the same render-mix projection and avoid opening a second mixer page or a parallel callback-side control model.
+Why: the repo already has the right seam: persisted mixer state, app-derived render summaries, and a running audio path. A small live control makes the current render seam audibly testable by ear without widening scope into a full mixer surface.
+Evidence: `riotbox-app` now adjusts `session.runtime_state.mixer_state.drum_level` live from the shell, refreshes the same `tr909_render_mix_summary`, and keeps the render warning active when the drum bus reaches zero. Tests cover mixer-state adjustment and the new shell keybindings.
+Consequences: later mixer work should deepen the same session/runtime seam with clearer controls and diagnostics rather than bypassing it with a second page or callback-only volume state.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
