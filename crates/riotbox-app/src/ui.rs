@@ -1926,6 +1926,7 @@ fn energy_label(section: &Section) -> &'static str {
 #[cfg(test)]
 mod tests {
     use riotbox_core::{
+        TimestampMs,
         action::{
             Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
             ActionTarget, ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
@@ -1938,9 +1939,86 @@ mod tests {
             DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Section, SectionLabelHint,
             SourceDescriptor, SourceGraph,
         },
+        transport::CommitBoundaryState,
     };
+    use serde::Deserialize;
 
     use super::*;
+
+    #[derive(Debug, Deserialize)]
+    struct Mc202RegressionFixture {
+        name: String,
+        initial_role: String,
+        action: Mc202RegressionAction,
+        requested_at: TimestampMs,
+        committed_at: TimestampMs,
+        boundary: Mc202RegressionBoundary,
+        expected: Mc202RegressionExpected,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum Mc202RegressionAction {
+        SetRole,
+        GenerateFollower,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Mc202RegressionBoundary {
+        kind: Mc202RegressionBoundaryKind,
+        beat_index: u64,
+        bar_index: u64,
+        phrase_index: u64,
+        scene_id: Option<String>,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum Mc202RegressionBoundaryKind {
+        Immediate,
+        Beat,
+        HalfBar,
+        Bar,
+        Phrase,
+        Scene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Mc202RegressionExpected {
+        role: String,
+        phrase_ref: String,
+        touch: f32,
+        result_summary: String,
+        jam_contains: Vec<String>,
+        log_contains: Vec<String>,
+    }
+
+    impl Mc202RegressionBoundary {
+        fn to_commit_boundary_state(&self) -> CommitBoundaryState {
+            CommitBoundaryState {
+                kind: match self.kind {
+                    Mc202RegressionBoundaryKind::Immediate => {
+                        riotbox_core::action::CommitBoundary::Immediate
+                    }
+                    Mc202RegressionBoundaryKind::Beat => riotbox_core::action::CommitBoundary::Beat,
+                    Mc202RegressionBoundaryKind::HalfBar => {
+                        riotbox_core::action::CommitBoundary::HalfBar
+                    }
+                    Mc202RegressionBoundaryKind::Bar => riotbox_core::action::CommitBoundary::Bar,
+                    Mc202RegressionBoundaryKind::Phrase => {
+                        riotbox_core::action::CommitBoundary::Phrase
+                    }
+                    Mc202RegressionBoundaryKind::Scene => {
+                        riotbox_core::action::CommitBoundary::Scene
+                    }
+                },
+                beat_index: self.beat_index,
+                bar_index: self.bar_index,
+                phrase_index: self.phrase_index,
+                scene_id: self.scene_id.clone().map(SceneId::from),
+            }
+        }
+    }
 
     fn sample_shell_state() -> JamShellState {
         let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T00:00:00Z");
@@ -2215,6 +2293,128 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("follower queued"));
+    }
+
+    fn mc202_committed_shell_state(fixture: &Mc202RegressionFixture) -> JamShellState {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.action_log.actions.clear();
+        session.captures.clear();
+        session.runtime_state.lane_state.w30.last_capture = None;
+        session.runtime_state.lane_state.mc202.role = Some(fixture.initial_role.clone());
+        session.runtime_state.lane_state.mc202.phrase_ref = None;
+        session.runtime_state.macro_state.mc202_touch = 0.4;
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Ingest,
+        );
+
+        let queue_result = match fixture.action {
+            Mc202RegressionAction::SetRole => {
+                shell.app.queue_mc202_role_toggle(fixture.requested_at)
+            }
+            Mc202RegressionAction::GenerateFollower => shell
+                .app
+                .queue_mc202_generate_follower(fixture.requested_at),
+        };
+        assert_eq!(
+            queue_result,
+            crate::jam_app::QueueControlResult::Enqueued,
+            "{} did not enqueue",
+            fixture.name
+        );
+
+        let committed = shell.app.commit_ready_actions(
+            fixture.boundary.to_commit_boundary_state(),
+            fixture.committed_at,
+        );
+        assert_eq!(
+            committed.len(),
+            1,
+            "{} did not commit exactly one action",
+            fixture.name
+        );
+        assert_eq!(
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .role
+                .as_deref(),
+            Some(fixture.expected.role.as_str()),
+            "{} role drifted",
+            fixture.name
+        );
+        assert_eq!(
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some(fixture.expected.phrase_ref.as_str()),
+            "{} phrase ref drifted",
+            fixture.name
+        );
+        assert_eq!(
+            shell.app.session.runtime_state.macro_state.mc202_touch, fixture.expected.touch,
+            "{} touch drifted",
+            fixture.name
+        );
+        assert_eq!(
+            shell
+                .app
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some(fixture.expected.result_summary.as_str()),
+            "{} result summary drifted",
+            fixture.name
+        );
+
+        shell
+    }
+
+    #[test]
+    fn mc202_fixture_backed_shell_regressions_hold() {
+        let fixtures: Vec<Mc202RegressionFixture> =
+            serde_json::from_str(include_str!("../tests/fixtures/mc202_regression.json"))
+                .expect("parse MC-202 regression fixtures");
+
+        for fixture in fixtures {
+            let mut shell = mc202_committed_shell_state(&fixture);
+            shell.active_screen = ShellScreen::Jam;
+            let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.jam_contains {
+                assert!(
+                    jam_rendered.contains(needle),
+                    "{} jam snapshot missing {needle}",
+                    fixture.name
+                );
+            }
+
+            shell.active_screen = ShellScreen::Log;
+            let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.log_contains {
+                assert!(
+                    log_rendered.contains(needle),
+                    "{} log snapshot missing {needle}",
+                    fixture.name
+                );
+            }
+        }
     }
 
     #[test]
