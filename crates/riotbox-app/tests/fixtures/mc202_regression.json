@@ -61,5 +61,36 @@
         "mc202.generate_follower"
       ]
     }
+  },
+  {
+    "name": "answer_generation_committed",
+    "initial_role": "follower",
+    "action": "generate_answer",
+    "requested_at": 302,
+    "committed_at": 402,
+    "boundary": {
+      "kind": "phrase",
+      "beat_index": 36,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "role": "answer",
+      "phrase_ref": "answer-scene-1",
+      "touch": 0.82,
+      "result_summary": "generated MC-202 answer phrase answer-scene-1 at 0.82",
+      "jam_contains": [
+        "MC-202: answer",
+        "202 phrase answer-scene-1",
+        "202 touch 0.82"
+      ],
+      "log_contains": [
+        "role answer | next none",
+        "phrase answer-scene-1 |",
+        "touch 0.82 | last",
+        "mc202.generate_answer"
+      ]
+    }
   }
 ]

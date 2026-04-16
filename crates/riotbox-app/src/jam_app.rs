@@ -724,6 +724,31 @@ impl JamAppState {
         QueueControlResult::Enqueued
     }
 
+    pub fn queue_mc202_generate_answer(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+        if self.mc202_phrase_control_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Mc202GenerateAnswer,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                object_id: Some("answer".into()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 0.82,
+            target_id: Some("answer".into()),
+        };
+        draft.explanation = Some("generate MC-202 answer phrase on next phrase boundary".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
     pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) {
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -1731,6 +1756,35 @@ fn apply_mc202_side_effects(
                 });
             }
         }
+        ActionCommand::Mc202GenerateAnswer => {
+            let role = "answer";
+            let phrase_ref = boundary_phrase_ref(boundary, role);
+            let touch = match &action.params {
+                ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+                _ => 0.82,
+            };
+
+            session.runtime_state.lane_state.mc202.role = Some(role.into());
+            session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+            session.runtime_state.macro_state.mc202_touch =
+                session.runtime_state.macro_state.mc202_touch.max(touch);
+
+            if let Some(logged_action) = session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: format!(
+                        "generated MC-202 answer phrase {phrase_ref} at {:.2}",
+                        session.runtime_state.macro_state.mc202_touch
+                    ),
+                });
+            }
+        }
         _ => {}
     }
 }
@@ -2031,6 +2085,7 @@ mod tests {
     enum Mc202RegressionAction {
         SetRole,
         GenerateFollower,
+        GenerateAnswer,
     }
 
     #[derive(Debug, Deserialize)]
@@ -2776,6 +2831,7 @@ mod tests {
             Some("leader")
         );
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
         assert!(
             !state
                 .session
@@ -2831,6 +2887,29 @@ mod tests {
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0].command, ActionCommand::Mc202GenerateFollower);
         assert!(state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+    }
+
+    #[test]
+    fn queueing_mc202_answer_generation_blocks_duplicate_pending_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_answer(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_generate_answer(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Mc202GenerateAnswer);
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(state.jam_view.lanes.mc202_pending_answer_generation);
     }
 
     #[test]
@@ -2859,6 +2938,17 @@ mod tests {
         );
         assert_eq!(
             other_state.queue_mc202_role_toggle(303),
+            QueueControlResult::AlreadyPending
+        );
+
+        let mut answer_state =
+            JamAppState::from_parts(sample_session(&graph), Some(graph), ActionQueue::new());
+        assert_eq!(
+            answer_state.queue_mc202_generate_answer(304),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            answer_state.queue_mc202_role_toggle(305),
             QueueControlResult::AlreadyPending
         );
     }
@@ -3503,6 +3593,7 @@ mod tests {
         assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.78);
         assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
         assert_eq!(
             state.jam_view.lanes.mc202_phrase_ref.as_deref(),
             Some("follower-scene-1")
@@ -3516,6 +3607,63 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("generated MC-202 follower phrase follower-scene-1 at 0.78")
+        );
+    }
+
+    #[test]
+    fn committed_mc202_answer_generation_updates_phrase_ref_and_touch() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_answer(300),
+            QueueControlResult::Enqueued
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            Some("answer")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some("answer-scene-1")
+        );
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.82);
+        assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("answer"));
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+        assert_eq!(
+            state.jam_view.lanes.mc202_phrase_ref.as_deref(),
+            Some("answer-scene-1")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("generated MC-202 answer phrase answer-scene-1 at 0.82")
         );
     }
 
@@ -3537,6 +3685,9 @@ mod tests {
                 }
                 Mc202RegressionAction::GenerateFollower => {
                     state.queue_mc202_generate_follower(fixture.requested_at)
+                }
+                Mc202RegressionAction::GenerateAnswer => {
+                    state.queue_mc202_generate_answer(fixture.requested_at)
                 }
             };
             assert_eq!(
@@ -3600,6 +3751,11 @@ mod tests {
             assert!(
                 !state.jam_view.lanes.mc202_pending_follower_generation,
                 "{} left a pending follower-generation behind",
+                fixture.name
+            );
+            assert!(
+                !state.jam_view.lanes.mc202_pending_answer_generation,
+                "{} left a pending answer-generation behind",
                 fixture.name
             );
 

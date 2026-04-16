@@ -75,6 +75,7 @@ pub enum ShellKeyOutcome {
     QueueSceneMutation,
     QueueMc202RoleToggle,
     QueueMc202GenerateFollower,
+    QueueMc202GenerateAnswer,
     QueueTr909Fill,
     QueueTr909Reinforce,
     QueueTr909Slam,
@@ -173,6 +174,10 @@ impl JamShellState {
             KeyCode::Char('g') => {
                 self.status_message = "queue MC-202 follower phrase on next phrase".into();
                 ShellKeyOutcome::QueueMc202GenerateFollower
+            }
+            KeyCode::Char('a') => {
+                self.status_message = "queue MC-202 answer phrase on next phrase".into();
+                ShellKeyOutcome::QueueMc202GenerateAnswer
             }
             KeyCode::Char('f') => {
                 self.status_message = "queue TR-909 fill on next bar".into();
@@ -485,7 +490,9 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .mc202_phrase_ref
                 .as_deref()
                 .unwrap_or("unset"),
-            if shell.app.jam_view.lanes.mc202_pending_follower_generation {
+            if shell.app.jam_view.lanes.mc202_pending_answer_generation {
+                "answer queued"
+            } else if shell.app.jam_view.lanes.mc202_pending_follower_generation {
                 "follower queued"
             } else {
                 "idle"
@@ -961,7 +968,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | b 202 role | g 202 follower | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
+        "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
         "         p promote capture | l W-30 recall | v pin latest | u undo",
@@ -1018,6 +1025,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("m: queue scene mutation on next bar"),
         Line::from("b: queue MC-202 role change on next phrase"),
         Line::from("g: generate MC-202 follower on next phrase"),
+        Line::from("a: generate MC-202 answer on next phrase"),
         Line::from("f: queue TR-909 fill on next bar"),
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("s: queue TR-909 slam change on next beat"),
@@ -1118,6 +1126,8 @@ fn macro_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
     if shell.app.jam_view.lanes.mc202_pending_role.is_some() {
         "role queued"
+    } else if shell.app.jam_view.lanes.mc202_pending_answer_generation {
+        "answer queued"
     } else if shell.app.jam_view.lanes.mc202_pending_follower_generation {
         "follower queued"
     } else {
@@ -1154,7 +1164,9 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(format!(
             "phrase {} | gen {}",
             lanes.mc202_phrase_ref.as_deref().unwrap_or("unset"),
-            if lanes.mc202_pending_follower_generation {
+            if lanes.mc202_pending_answer_generation {
+                "queued answer"
+            } else if lanes.mc202_pending_follower_generation {
                 "queued"
             } else {
                 "idle"
@@ -2038,6 +2050,7 @@ mod tests {
     enum Mc202RegressionAction {
         SetRole,
         GenerateFollower,
+        GenerateAnswer,
     }
 
     #[derive(Debug, Deserialize)]
@@ -2371,6 +2384,19 @@ mod tests {
         assert!(rendered.contains("follower queued"));
     }
 
+    #[test]
+    fn renders_jam_shell_with_pending_mc202_answer_generation() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_mc202_generate_answer(200),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("answer queued"));
+    }
+
     fn mc202_committed_shell_state(fixture: &Mc202RegressionFixture) -> JamShellState {
         let sample_shell = sample_shell_state();
         let mut session = sample_shell.app.session.clone();
@@ -2397,6 +2423,9 @@ mod tests {
             Mc202RegressionAction::GenerateFollower => shell
                 .app
                 .queue_mc202_generate_follower(fixture.requested_at),
+            Mc202RegressionAction::GenerateAnswer => {
+                shell.app.queue_mc202_generate_answer(fixture.requested_at)
+            }
         };
         assert_eq!(
             queue_result,
@@ -2544,6 +2573,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('g')),
             ShellKeyOutcome::QueueMc202GenerateFollower
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('a')),
+            ShellKeyOutcome::QueueMc202GenerateAnswer
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('f')),
