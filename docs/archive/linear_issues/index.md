@@ -50,6 +50,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   First deeper MC-202 diagnostics pass in the Jam and Log shell screens.
 - [RIOTBOX-53.md](./RIOTBOX-53.md)
   Fixture-backed MC-202 role and follower regression coverage.
+- [RIOTBOX-54.md](./RIOTBOX-54.md)
+  Bounded W-30 promoted-material audition on the existing capture, promotion, and live-recall seam.
 - [RIOTBOX-55.md](./RIOTBOX-55.md)
   Bounded MC-202 answer generation on the existing committed phrase seam.
 - [RIOTBOX-56.md](./RIOTBOX-56.md)
