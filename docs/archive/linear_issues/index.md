@@ -62,4 +62,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replay-safe W-30 live-recall and promoted-audition regression fixtures.
 - [RIOTBOX-59.md](./RIOTBOX-59.md)
   First typed audio-facing W-30 preview render seam on top of the committed cue path.
+- [RIOTBOX-60.md](./RIOTBOX-60.md)
+  First audible W-30 preview on top of the typed preview render seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
