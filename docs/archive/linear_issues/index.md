@@ -44,4 +44,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First bounded MC-202 follower-generation path on the existing phrase-boundary seam.
 - [RIOTBOX-52.md](./RIOTBOX-52.md)
   First deeper MC-202 diagnostics pass in the Jam and Log shell screens.
+- [RIOTBOX-53.md](./RIOTBOX-53.md)
+  Fixture-backed MC-202 role and follower regression coverage.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
