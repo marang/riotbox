@@ -56,4 +56,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Bounded MC-202 answer generation on the existing committed phrase seam.
 - [RIOTBOX-56.md](./RIOTBOX-56.md)
   Live drum-bus level control to make the shipped TR-909 render seam audibly testable.
+- [RIOTBOX-57.md](./RIOTBOX-57.md)
+  W-30 audition and recall diagnostics in the existing Capture and Log shell screens.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
