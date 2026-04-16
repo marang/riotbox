@@ -60,6 +60,19 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
+        let w30_pending_audition_target =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30AuditionPromoted => action
+                        .target
+                        .bank_id
+                        .as_ref()
+                        .zip(action.target.pad_id.as_ref())
+                        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
+                    _ => None,
+                });
         let tr909_takeover_pending_target =
             pending_actions
                 .iter()
@@ -171,6 +184,7 @@ impl JamViewModel {
                     .as_ref()
                     .map(ToString::to_string),
                 w30_pending_recall_target,
+                w30_pending_audition_target,
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
                 tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
                 tr909_takeover_pending_target,
@@ -316,6 +330,7 @@ pub struct LaneSummaryView {
     pub w30_active_bank: Option<String>,
     pub w30_focused_pad: Option<String>,
     pub w30_pending_recall_target: Option<String>,
+    pub w30_pending_audition_target: Option<String>,
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
     pub tr909_takeover_pending_target: Option<bool>,
@@ -605,6 +620,7 @@ mod tests {
             vm.lanes.w30_pending_recall_target.as_deref(),
             Some("bank-a/pad-02")
         );
+        assert_eq!(vm.lanes.w30_pending_audition_target, None);
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
         assert_eq!(vm.lanes.tr909_takeover_pending_profile.as_deref(), None);

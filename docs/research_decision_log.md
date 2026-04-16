@@ -572,6 +572,17 @@ Status: accepted
 
 ---
 
+Topic: promoted-material audition should stay on the existing W-30 pad cue seam instead of opening a second browser
+Phase: W-30 MVP
+Question: after live recall exists, what is the next bounded W-30 slice that makes promoted material feel more like an instrument without inventing a second sample browser, pad editor, or callback-only preview path?
+Decision: add one explicit `w30.audition_promoted` action on the existing `ActionQueue` and `NextBar` seam. Queue it against the latest promoted W-30 capture, block conflicting pending W-30 pad cues, surface the pending audition target in the shared shell summary, and commit it into the same lane focus seam plus a bounded `w30_grit` bump.
+Why: the repo already has a real capture, promotion, and live-recall seam. Extending that seam with promoted-material audition deepens the W-30 lane musically while keeping the slice replay-safe and visible in the current shell instead of inventing a second W-30 model.
+Evidence: `riotbox-app` now queues `w30.audition_promoted` on `NextBar`, commits it through the same W-30 side-effect path that updates bank, pad focus, and last-capture state, adds a bounded grit bump, and exposes the pending audition cue in the Jam and Capture shell views. Tests cover cue conflict blocking, committed side effects, and the shell-visible pending cue.
+Consequences: later W-30 work should keep building audible preview and deeper pad behavior on top of the same committed cue seam instead of bypassing it with shell-only flags or a separate preview browser.
+Status: accepted
+
+---
+
 Topic: live drum-bus control should stay on the existing mixer seam instead of opening a mixer page
 Phase: Jam-First Playable Slice
 Question: how should Riotbox close the current usability gap where the TR-909 render seam can be technically running but still silent because the drum bus is at zero?
