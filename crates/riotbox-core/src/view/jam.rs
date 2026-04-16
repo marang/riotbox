@@ -60,7 +60,22 @@ impl JamViewModel {
                 .rev()
                 .find_map(|action| match action.command {
                     crate::action::ActionCommand::Tr909Takeover => Some(true),
+                    crate::action::ActionCommand::Tr909SceneLock => Some(true),
                     crate::action::ActionCommand::Tr909Release => Some(false),
+                    _ => None,
+                });
+        let tr909_takeover_pending_profile =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::Tr909Takeover => {
+                        Some("controlled_phrase_takeover".to_string())
+                    }
+                    crate::action::ActionCommand::Tr909SceneLock => {
+                        Some("scene_lock_takeover".to_string())
+                    }
+                    crate::action::ActionCommand::Tr909Release => None,
                     _ => None,
                 });
         let tr909_fill_pending = pending_actions
@@ -152,6 +167,7 @@ impl JamViewModel {
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
                 tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
                 tr909_takeover_pending_target,
+                tr909_takeover_pending_profile,
                 tr909_takeover_profile: session
                     .runtime_state
                     .lane_state
@@ -295,6 +311,7 @@ pub struct LaneSummaryView {
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
     pub tr909_takeover_pending_target: Option<bool>,
+    pub tr909_takeover_pending_profile: Option<String>,
     pub tr909_takeover_profile: Option<String>,
     pub tr909_fill_armed_next_bar: bool,
     pub tr909_last_fill_bar: Option<u64>,
@@ -581,6 +598,7 @@ mod tests {
         );
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
+        assert_eq!(vm.lanes.tr909_takeover_pending_profile.as_deref(), None);
         assert_eq!(
             vm.lanes.tr909_takeover_profile.as_deref(),
             Some("scene-control")

@@ -79,6 +79,7 @@ pub enum ShellKeyOutcome {
     QueueTr909Reinforce,
     QueueTr909Slam,
     QueueTr909Takeover,
+    QueueTr909SceneLock,
     QueueTr909Release,
     QueueCaptureBar,
     PromoteLastCapture,
@@ -188,6 +189,10 @@ impl JamShellState {
             KeyCode::Char('t') => {
                 self.status_message = "queue TR-909 takeover on next phrase".into();
                 ShellKeyOutcome::QueueTr909Takeover
+            }
+            KeyCode::Char('k') => {
+                self.status_message = "queue TR-909 scene-lock on next phrase".into();
+                ShellKeyOutcome::QueueTr909SceneLock
             }
             KeyCode::Char('x') => {
                 self.status_message = "queue TR-909 release on next phrase".into();
@@ -510,12 +515,19 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             mc202_pending_role_label(shell)
         )),
         Line::from(format!(
-            "909 takeover {} | fill {} / {}",
+            "909 takeover {} {} | fill {} / {}",
             if shell.app.jam_view.lanes.tr909_takeover_enabled {
                 "on"
             } else {
                 "off"
             },
+            shell
+                .app
+                .jam_view
+                .lanes
+                .tr909_takeover_pending_profile
+                .as_deref()
+                .unwrap_or("-"),
             if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
                 "yes"
             } else {
@@ -949,7 +961,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | b 202 role | g 202 follower | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release | c capture phrase",
+        "Actions: m mutate scene | b 202 role | g 202 follower | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
         "         p promote capture | l W-30 recall | v pin latest | u undo",
@@ -1010,6 +1022,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("d: queue TR-909 reinforcement on next phrase"),
         Line::from("s: queue TR-909 slam change on next beat"),
         Line::from("t: queue TR-909 takeover on next phrase"),
+        Line::from("k: queue TR-909 scene-lock variation on next phrase"),
         Line::from("x: queue TR-909 release on next phrase"),
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
@@ -2547,6 +2560,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('t')),
             ShellKeyOutcome::QueueTr909Takeover
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('k')),
+            ShellKeyOutcome::QueueTr909SceneLock
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('x')),

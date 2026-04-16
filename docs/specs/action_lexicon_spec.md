@@ -163,6 +163,7 @@ Optional target references:
 - `tr909.set_slam`
 - `tr909.reinforce_break`
 - `tr909.takeover`
+- `tr909.scene_lock`
 - `tr909.release`
 
 ### 6.6 Structural / safety

@@ -572,6 +572,17 @@ Status: accepted
 
 ---
 
+Topic: TR-909 scene-lock variation should reuse the existing takeover seam instead of adding a second editor path
+Phase: TR-909 MVP
+Question: after takeover, release, pattern adoption, and phrase variation exist, what is the next bounded TR-909 control that deepens the lane musically without opening a second TR-909 editor or phrase engine?
+Decision: add one explicit `tr909.scene_lock` action on the existing `ActionQueue` and `NextPhrase` commit seam. Commit it into the same takeover lane state already used by the audio-facing render projection by setting `takeover_enabled`, `takeover_profile`, `pattern_ref`, and `reinforcement_mode`, and surface the pending profile in the Jam shell instead of creating a second TR-909 control model.
+Why: the codebase already had a typed `scene_lock` render profile and fixture coverage, but no honest committed control could reach it. A bounded scene-lock action deepens the current TR-909 MVP through the same replay-safe seam that already drives takeover and release, while avoiding a hidden render-only mode or a separate device editor path.
+Evidence: `riotbox-core` now treats `tr909.scene_lock` as part of the canonical action vocabulary, `riotbox-app` queues it on `NextPhrase` with the same pending-guard used by takeover and release, committed side effects drive `scene_lock_takeover` lane state and render projection, and Jam-shell key handling plus tests cover the new pending-profile and committed scene-lock path.
+Consequences: later TR-909 work should keep extending the same committed takeover seam, including richer scene-lock behavior, instead of bypassing it with callback-only toggles or a separate TR-909 variation editor.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
