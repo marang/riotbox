@@ -219,6 +219,31 @@ Also add a short entry to the `Riotbox Project Updates` Linear document when:
 
 This is the reviewable cross-ticket history.
 
+## 8.2.1 Parallel Workflow Lane
+
+When delegation is available, workflow upkeep may run in parallel with implementation instead of waiting until the end.
+
+Preferred split for substantial slices:
+
+- implementation lane:
+  - code changes
+  - tests
+  - branch review
+  - PR content
+  - merge readiness
+- workflow / ops lane:
+  - Linear state transitions
+  - issue comments
+  - project update document entries
+  - repo archive preparation and similar process obligations
+
+Rules:
+
+- treat the workflow / ops lane as real work, not optional cleanup
+- keep code state, git state, Linear state, and archive readiness moving together
+- the main coordinating agent still owns correctness, final review, and final integration
+- delegation should reduce workflow drift, not hide responsibility for it
+
 ## 8.3 Backlog Horizon
 
 Linear should not hold only the current ticket.
