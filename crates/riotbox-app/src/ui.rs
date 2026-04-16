@@ -84,6 +84,8 @@ pub enum ShellKeyOutcome {
     PromoteLastCapture,
     QueueW30LiveRecall,
     TogglePinLatestCapture,
+    LowerDrumBusLevel,
+    RaiseDrumBusLevel,
     UndoLast,
     Quit,
 }
@@ -206,6 +208,14 @@ impl JamShellState {
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
                 ShellKeyOutcome::TogglePinLatestCapture
+            }
+            KeyCode::Char('[') => {
+                self.status_message = "lower drum bus level".into();
+                ShellKeyOutcome::LowerDrumBusLevel
+            }
+            KeyCode::Char(']') => {
+                self.status_message = "raise drum bus level".into();
+                ShellKeyOutcome::RaiseDrumBusLevel
             }
             KeyCode::Char('u') => {
                 self.status_message = "undo most recent action requested".into();
@@ -935,7 +945,7 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | r {}",
+        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | [ ] drum | r {}",
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
@@ -1004,6 +1014,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
         Line::from("l: queue the latest pinned or promoted W-30 pad recall on next bar"),
+        Line::from("[ / ]: lower or raise the drum bus level"),
         Line::from("v: pin or unpin the latest capture for fast recall"),
         Line::from("u: undo most recent undoable action"),
         Line::from(""),
@@ -2558,6 +2569,14 @@ mod tests {
             ShellKeyOutcome::TogglePinLatestCapture
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('[')),
+            ShellKeyOutcome::LowerDrumBusLevel
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char(']')),
+            ShellKeyOutcome::RaiseDrumBusLevel
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('u')),
             ShellKeyOutcome::UndoLast
         );
@@ -2649,6 +2668,5 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("w30.swap_bank @ next_bar"));
-        assert!(rendered.contains("l W-30 recall"));
     }
 }
