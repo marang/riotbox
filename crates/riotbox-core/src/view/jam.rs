@@ -41,6 +41,19 @@ impl JamViewModel {
                 crate::action::ActionCommand::Mc202GenerateFollower
             )
         });
+        let w30_pending_recall_target =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30SwapBank => action
+                        .target
+                        .bank_id
+                        .as_ref()
+                        .zip(action.target.pad_id.as_ref())
+                        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
+                    _ => None,
+                });
         let tr909_takeover_pending_target =
             pending_actions
                 .iter()
@@ -128,6 +141,14 @@ impl JamViewModel {
                     .active_bank
                     .as_ref()
                     .map(ToString::to_string),
+                w30_focused_pad: session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .focused_pad
+                    .as_ref()
+                    .map(ToString::to_string),
+                w30_pending_recall_target,
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
                 tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
                 tr909_takeover_pending_target,
@@ -269,6 +290,8 @@ pub struct LaneSummaryView {
     pub mc202_pending_follower_generation: bool,
     pub mc202_phrase_ref: Option<String>,
     pub w30_active_bank: Option<String>,
+    pub w30_focused_pad: Option<String>,
+    pub w30_pending_recall_target: Option<String>,
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
     pub tr909_takeover_pending_target: Option<bool>,
@@ -491,6 +514,20 @@ mod tests {
         queue.enqueue(
             ActionDraft::new(
                 ActorType::User,
+                ActionCommand::W30SwapBank,
+                Quantization::NextBar,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneW30),
+                    bank_id: Some("bank-a".into()),
+                    pad_id: Some("pad-02".into()),
+                    ..Default::default()
+                },
+            ),
+            102,
+        );
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
                 ActionCommand::Tr909Release,
                 Quantization::NextPhrase,
                 ActionTarget {
@@ -498,7 +535,7 @@ mod tests {
                     ..Default::default()
                 },
             ),
-            102,
+            103,
         );
         queue.enqueue(
             ActionDraft::new(
@@ -510,7 +547,7 @@ mod tests {
                     ..Default::default()
                 },
             ),
-            103,
+            104,
         );
 
         let vm = JamViewModel::build(&session, &queue, Some(&graph));
@@ -536,6 +573,12 @@ mod tests {
         assert_eq!(vm.lanes.mc202_pending_role.as_deref(), Some("leader"));
         assert!(!vm.lanes.mc202_pending_follower_generation);
         assert_eq!(vm.lanes.mc202_phrase_ref, None);
+        assert_eq!(vm.lanes.w30_active_bank.as_deref(), Some("bank-a"));
+        assert_eq!(vm.lanes.w30_focused_pad.as_deref(), Some("pad-01"));
+        assert_eq!(
+            vm.lanes.w30_pending_recall_target.as_deref(),
+            Some("bank-a/pad-02")
+        );
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
         assert_eq!(
@@ -545,7 +588,7 @@ mod tests {
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 4);
+        assert_eq!(vm.pending_actions.len(), 5);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }

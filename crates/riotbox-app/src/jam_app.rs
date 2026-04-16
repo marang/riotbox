@@ -930,6 +930,43 @@ impl JamAppState {
         true
     }
 
+    pub fn queue_w30_live_recall(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_live_recall_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let capture = self.recallable_w30_capture()?.clone();
+        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
+            return None;
+        };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30SwapBank,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 1.0,
+            target_id: Some(capture.capture_id.to_string()),
+        };
+        draft.explanation = Some(format!(
+            "recall {} on W-30 pad {bank_id}/{pad_id}",
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn toggle_pin_latest_capture(&mut self) -> Option<bool> {
         let new_state = {
             let capture = self.session.captures.last_mut()?;
@@ -938,6 +975,28 @@ impl JamAppState {
         };
         self.refresh_view();
         Some(new_state)
+    }
+
+    fn recallable_w30_capture(&self) -> Option<&CaptureRef> {
+        self.session
+            .captures
+            .iter()
+            .rev()
+            .find(|capture| capture.is_pinned && capture_targets_w30_pad(capture))
+            .or_else(|| {
+                self.session
+                    .captures
+                    .iter()
+                    .rev()
+                    .find(|capture| capture_targets_w30_pad(capture))
+            })
+    }
+
+    fn w30_live_recall_pending(&self) -> bool {
+        self.queue
+            .pending_actions()
+            .into_iter()
+            .any(|action| action.command == ActionCommand::W30SwapBank)
     }
 
     pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
@@ -1044,6 +1103,7 @@ impl JamAppState {
             }
         }
 
+        apply_w30_side_effects(&mut self.session, action, Some(boundary));
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
     }
@@ -1399,6 +1459,57 @@ fn updated_capture_note(existing_notes: Option<&str>, target: &CaptureTarget) ->
             format!("{base} | {promotion}")
         }
         None => promotion,
+    }
+}
+
+fn capture_targets_w30_pad(capture: &CaptureRef) -> bool {
+    matches!(capture.assigned_target, Some(CaptureTarget::W30Pad { .. }))
+}
+
+fn apply_w30_side_effects(
+    session: &mut SessionFile,
+    action: &Action,
+    _boundary: Option<&CommitBoundaryState>,
+) {
+    if !matches!(action.command, ActionCommand::W30SwapBank) {
+        return;
+    }
+
+    let Some(bank_id) = action.target.bank_id.clone() else {
+        return;
+    };
+    let Some(pad_id) = action.target.pad_id.clone() else {
+        return;
+    };
+    let recalled_capture_id = match &action.params {
+        ActionParams::Mutation {
+            target_id: Some(target_id),
+            ..
+        } => Some(CaptureId::from(target_id.clone())),
+        _ => None,
+    };
+
+    session.runtime_state.lane_state.w30.active_bank = Some(bank_id.clone());
+    session.runtime_state.lane_state.w30.focused_pad = Some(pad_id.clone());
+    if let Some(capture_id) = recalled_capture_id.clone() {
+        session.runtime_state.lane_state.w30.last_capture = Some(capture_id);
+    }
+
+    if let Some(logged_action) = session
+        .action_log
+        .actions
+        .iter_mut()
+        .rev()
+        .find(|logged_action| logged_action.id == action.id)
+    {
+        let summary = recalled_capture_id.as_ref().map_or_else(
+            || format!("recalled W-30 pad {bank_id}/{pad_id}"),
+            |capture_id| format!("recalled {capture_id} on W-30 pad {bank_id}/{pad_id}"),
+        );
+        logged_action.result = Some(ActionResult {
+            accepted: true,
+            summary,
+        });
     }
 }
 
@@ -2925,6 +3036,150 @@ mod tests {
         assert!(!state.session.captures[0].is_pinned);
         assert_eq!(state.jam_view.capture.pinned_capture_count, 0);
         assert!(state.jam_view.capture.pinned_capture_ids.is_empty());
+    }
+
+    #[test]
+    fn queue_w30_live_recall_prefers_latest_pinned_promoted_capture() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-04".into(),
+            }),
+            is_pinned: false,
+            notes: Some("secondary".into()),
+        });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-03"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-c".into()],
+            created_from_action: None,
+            storage_path: "captures/cap-03.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: "bank-c".into(),
+                pad_id: "pad-07".into(),
+            }),
+            is_pinned: true,
+            notes: Some("keeper".into()),
+        });
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_live_recall(600),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::W30SwapBank);
+        assert_eq!(
+            pending[0].target.bank_id.as_ref().map(ToString::to_string),
+            Some("bank-c".into())
+        );
+        assert_eq!(
+            pending[0].target.pad_id.as_ref().map(ToString::to_string),
+            Some("pad-07".into())
+        );
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("recall cap-03 on W-30 pad bank-c/pad-07")
+        );
+        assert_eq!(
+            state.jam_view.lanes.w30_pending_recall_target.as_deref(),
+            Some("bank-c/pad-07")
+        );
+    }
+
+    #[test]
+    fn committed_w30_live_recall_updates_lane_focus_and_log_result() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        state.session.captures[0].is_pinned = true;
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_live_recall(610),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            700,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .active_bank
+                .as_ref()
+                .map(ToString::to_string),
+            Some("bank-b".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .as_ref()
+                .map(ToString::to_string),
+            Some("pad-03".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string),
+            Some("cap-01".into())
+        );
+        assert_eq!(
+            state.jam_view.lanes.w30_active_bank.as_deref(),
+            Some("bank-b")
+        );
+        assert_eq!(
+            state.jam_view.lanes.w30_focused_pad.as_deref(),
+            Some("pad-03")
+        );
+        assert_eq!(state.jam_view.lanes.w30_pending_recall_target, None);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("recalled cap-01 on W-30 pad bank-b/pad-03")
+        );
     }
 
     #[test]

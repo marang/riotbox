@@ -550,6 +550,17 @@ Status: accepted
 
 ---
 
+Topic: the first W-30 MVP slice should reuse the capture and promotion seam for live recall
+Phase: W-30 MVP
+Question: after capture, promotion, and pinning exist, what is the smallest honest W-30 entry slice that creates a real live-recall cue without inventing a second sample browser, pad editor, or playback-control surface?
+Decision: start W-30 with a bounded live-recall cue on the existing `w30.swap_bank` action seam. Queue recall against the latest pinned promoted capture first, fall back to the latest promoted capture, commit it on `NextBar`, and update lane focus plus the capture reference on commit.
+Why: Riotbox already has enough capture and promotion state to expose a truthful first W-30 cue. Reusing that seam keeps the entry slice replay-safe, visible in the Jam shell, and grounded in the current session model instead of opening a parallel W-30 control path too early.
+Evidence: `riotbox-app` now queues `w30.swap_bank` as a live-recall cue, prefers pinned promoted captures for recall targeting, updates `w30.active_bank`, `w30.focused_pad`, and `w30.last_capture` on commit, and surfaces the pending recall in the Jam and Capture shell views. `riotbox-core` now carries W-30 focused-pad and pending-recall state in `JamViewModel`, and app/UI tests cover both the queue path and the committed side effects.
+Consequences: later W-30 work should build audible audition, recall variations, and deeper pad handling on top of the same capture/promotion and committed recall seam instead of bypassing it with direct shell-only state or a separate W-30 browser model.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
