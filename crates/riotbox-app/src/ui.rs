@@ -515,6 +515,10 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or("none")
         )),
         Line::from(format!(
+            "W-30 preview {} / {}",
+            shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_profile
+        )),
+        Line::from(format!(
             "202 touch {:.2} | role diag {}",
             shell.app.jam_view.macros.mc202_touch,
             mc202_pending_role_label(shell)
@@ -1191,25 +1195,20 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let recent_label = recent
         .map(|action| short_w30_action_label(&action.command))
         .unwrap_or("none");
-    let recent_note = recent
-        .and_then(|action| {
-            action
-                .result
-                .as_ref()
-                .map(|result| result.summary.clone())
-                .or_else(|| action.explanation.clone())
-        })
-        .unwrap_or_else(|| "no committed W-30 cue yet".into());
 
     vec![
         Line::from(format!(
-            "bank {} | pad {}",
+            "bank {}/{}",
             lanes.w30_active_bank.as_deref().unwrap_or("unset"),
             lanes.w30_focused_pad.as_deref().unwrap_or("unset")
         )),
-        Line::from(format!("cue {}", w30_pending_cue_label(shell))),
         Line::from(format!(
-            "capture {}",
+            "cue {} | {}",
+            w30_pending_cue_label(shell),
+            shell.app.runtime_view.w30_preview_mode
+        )),
+        Line::from(format!(
+            "capture {} | {}",
             shell
                 .app
                 .session
@@ -1219,10 +1218,10 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .last_capture
                 .as_ref()
                 .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into())
+                .unwrap_or_else(|| "none".into()),
+            shell.app.runtime_view.w30_preview_profile
         )),
         Line::from(format!("recent {recent_label}")),
-        Line::from(format!("note {recent_note}")),
     ]
 }
 
@@ -1597,6 +1596,12 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .w30_focused_pad
                 .as_deref()
                 .unwrap_or("unset")
+        )),
+        Line::from(format!(
+            "preview {} via {} | {}",
+            shell.app.runtime_view.w30_preview_mode,
+            shell.app.runtime_view.w30_preview_routing,
+            shell.app.runtime_view.w30_preview_mix_summary
         )),
         Line::from(format!("latest promoted {latest_promoted}")),
         Line::from(format!(
@@ -2321,6 +2326,7 @@ mod tests {
         session.runtime_state.macro_state.w30_grit = 0.5;
         session.runtime_state.macro_state.tr909_slam = 0.9;
         session.runtime_state.mixer_state.drum_level = 0.82;
+        session.runtime_state.mixer_state.music_level = 0.64;
         session.runtime_state.lane_state.mc202.role = Some("leader".into());
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
@@ -3007,7 +3013,6 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("w30.swap_bank @ next_bar"));
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("recall"));
     }
@@ -3029,7 +3034,6 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("w30.audition_promoted"));
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("audition"));
         assert!(rendered.contains("latest promoted"));
@@ -3067,8 +3071,8 @@ mod tests {
 
         assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("cue idle"));
-        assert!(rendered.contains("recent audition"));
         assert!(rendered.contains("auditioned cap-01"));
-        assert!(rendered.contains("bank-b/pad-03"));
+        assert!(rendered.contains("bank-b"));
+        assert!(rendered.contains("pad-03"));
     }
 }

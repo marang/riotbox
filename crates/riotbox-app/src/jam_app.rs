@@ -12,6 +12,10 @@ use riotbox_audio::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     },
+    w30::{
+        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
+        W30PreviewSourceProfile,
+    },
 };
 use riotbox_core::{
     TimestampMs,
@@ -106,6 +110,7 @@ pub struct AppRuntimeState {
     pub transport: TransportClockState,
     pub transport_driver: TransportDriverState,
     pub tr909_render: Tr909RenderState,
+    pub w30_preview: W30PreviewRenderState,
     pub last_commit_boundary: Option<CommitBoundaryState>,
 }
 
@@ -117,6 +122,7 @@ impl Default for AppRuntimeState {
             transport: TransportClockState::default(),
             transport_driver: TransportDriverState::default(),
             tr909_render: Tr909RenderState::default(),
+            w30_preview: W30PreviewRenderState::default(),
             last_commit_boundary: None,
         }
     }
@@ -165,6 +171,12 @@ pub struct JamRuntimeView {
     pub tr909_render_mix_summary: String,
     pub tr909_render_alignment: String,
     pub tr909_render_transport_summary: String,
+    pub w30_preview_mode: String,
+    pub w30_preview_routing: String,
+    pub w30_preview_profile: String,
+    pub w30_preview_target_summary: String,
+    pub w30_preview_mix_summary: String,
+    pub w30_preview_transport_summary: String,
     pub runtime_warnings: Vec<String>,
 }
 
@@ -210,6 +222,7 @@ impl JamRuntimeView {
         }
 
         runtime_warnings.extend(derive_tr909_render_warnings(&runtime.tr909_render, session));
+        runtime_warnings.extend(derive_w30_preview_warnings(&runtime.w30_preview, session));
 
         Self {
             audio_status,
@@ -235,9 +248,54 @@ impl JamRuntimeView {
             ),
             tr909_render_alignment: tr909_render_alignment_label(&runtime.tr909_render).into(),
             tr909_render_transport_summary: tr909_render_transport_summary(&runtime.tr909_render),
+            w30_preview_mode: runtime.w30_preview.mode.label().into(),
+            w30_preview_routing: runtime.w30_preview.routing.label().into(),
+            w30_preview_profile: w30_preview_profile_label(&runtime.w30_preview).into(),
+            w30_preview_target_summary: w30_preview_target_summary(&runtime.w30_preview),
+            w30_preview_mix_summary: format!(
+                "music bus {:.2} | grit {:.2}",
+                runtime.w30_preview.music_bus_level, runtime.w30_preview.grit_level
+            ),
+            w30_preview_transport_summary: w30_preview_transport_summary(&runtime.w30_preview),
             runtime_warnings,
         }
     }
+}
+
+fn w30_preview_profile_label(render: &W30PreviewRenderState) -> &'static str {
+    render
+        .source_profile
+        .map_or("unset", W30PreviewSourceProfile::label)
+}
+
+fn w30_preview_target_summary(render: &W30PreviewRenderState) -> String {
+    if matches!(render.mode, W30PreviewRenderMode::Idle) {
+        return "target unset".into();
+    }
+
+    format!(
+        "{} / {} | {}",
+        render.active_bank_id.as_deref().unwrap_or("bank unset"),
+        render.focused_pad_id.as_deref().unwrap_or("pad unset"),
+        render.capture_id.as_deref().unwrap_or("capture unset")
+    )
+}
+
+fn w30_preview_transport_summary(render: &W30PreviewRenderState) -> String {
+    if matches!(render.mode, W30PreviewRenderMode::Idle) {
+        return "preview idle".into();
+    }
+
+    format!(
+        "{} @ {:.1} | {:.1} BPM",
+        if render.is_transport_running {
+            "transport running"
+        } else {
+            "transport stopped"
+        },
+        render.position_beats,
+        render.tempo_bpm
+    )
 }
 
 fn tr909_render_profile_label(render: &Tr909RenderState) -> &'static str {
@@ -429,6 +487,36 @@ fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile
     warnings
 }
 
+fn derive_w30_preview_warnings(
+    render: &W30PreviewRenderState,
+    session: &SessionFile,
+) -> Vec<String> {
+    if matches!(render.mode, W30PreviewRenderMode::Idle) {
+        return Vec::new();
+    }
+
+    let mut warnings = Vec::new();
+
+    if matches!(render.routing, W30PreviewRenderRouting::MusicBusPreview)
+        && render.music_bus_level <= 0.0
+    {
+        warnings.push("W-30 preview is routed to the music bus at zero music level".into());
+    }
+
+    let has_capture = render.capture_id.as_ref().is_some_and(|capture_id| {
+        session
+            .captures
+            .iter()
+            .any(|capture| capture.capture_id.to_string() == *capture_id)
+    });
+    if !has_capture {
+        warnings
+            .push("W-30 preview has no committed capture backing the current lane focus".into());
+    }
+
+    warnings
+}
+
 #[derive(Clone, Debug)]
 pub struct JamAppState {
     pub files: Option<JamFileSet>,
@@ -531,6 +619,11 @@ impl JamAppState {
 
     pub fn refresh_view(&mut self) {
         self.runtime.tr909_render = build_tr909_render_state(
+            &self.session,
+            &self.runtime.transport,
+            self.source_graph.as_ref(),
+        );
+        self.runtime.w30_preview = build_w30_preview_render_state(
             &self.session,
             &self.runtime.transport,
             self.source_graph.as_ref(),
@@ -1964,6 +2057,80 @@ fn derive_tr909_source_support_profile(
     Some(profile)
 }
 
+fn build_w30_preview_render_state(
+    session: &SessionFile,
+    transport: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
+) -> W30PreviewRenderState {
+    let w30 = &session.runtime_state.lane_state.w30;
+    let has_lane_focus =
+        w30.active_bank.is_some() || w30.focused_pad.is_some() || w30.last_capture.is_some();
+    if !has_lane_focus {
+        return W30PreviewRenderState::default();
+    }
+
+    let mode = match last_committed_w30_preview_action(session) {
+        Some(ActionCommand::W30AuditionPromoted) => W30PreviewRenderMode::PromotedAudition,
+        Some(ActionCommand::W30SwapBank) | None => W30PreviewRenderMode::LiveRecall,
+        Some(_) => unreachable!("filtered by helper"),
+    };
+
+    let capture = w30.last_capture.as_ref().and_then(|capture_id| {
+        session
+            .captures
+            .iter()
+            .find(|capture| capture.capture_id == *capture_id)
+    });
+    let source_profile = match mode {
+        W30PreviewRenderMode::Idle => None,
+        W30PreviewRenderMode::PromotedAudition => Some(W30PreviewSourceProfile::PromotedAudition),
+        W30PreviewRenderMode::LiveRecall => capture.map(|capture| {
+            if capture.is_pinned {
+                W30PreviewSourceProfile::PinnedRecall
+            } else {
+                W30PreviewSourceProfile::PromotedRecall
+            }
+        }),
+    };
+    let tempo_bpm = source_graph
+        .and_then(|graph| graph.timing.bpm_estimate)
+        .unwrap_or(0.0);
+
+    W30PreviewRenderState {
+        mode,
+        routing: W30PreviewRenderRouting::MusicBusPreview,
+        source_profile,
+        active_bank_id: w30.active_bank.as_ref().map(ToString::to_string),
+        focused_pad_id: w30.focused_pad.as_ref().map(ToString::to_string),
+        capture_id: w30.last_capture.as_ref().map(ToString::to_string),
+        music_bus_level: session
+            .runtime_state
+            .mixer_state
+            .music_level
+            .clamp(0.0, 1.0),
+        grit_level: session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0),
+        is_transport_running: transport.is_playing,
+        tempo_bpm,
+        position_beats: transport.position_beats,
+    }
+}
+
+fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&ActionCommand> {
+    session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .find(|action| {
+            action.status == ActionStatus::Committed
+                && matches!(
+                    action.command,
+                    ActionCommand::W30SwapBank | ActionCommand::W30AuditionPromoted
+                )
+        })
+        .map(|action| &action.command)
+}
+
 fn derive_tr909_takeover_render_profile(
     tr909: &riotbox_core::session::Tr909LaneState,
 ) -> Option<Tr909TakeoverRenderProfile> {
@@ -2392,6 +2559,7 @@ mod tests {
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
         session.runtime_state.mixer_state.drum_level = 0.72;
+        session.runtime_state.mixer_state.music_level = 0.64;
         session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-1")];
         session.runtime_state.lock_state.locked_object_ids = vec!["ghost.main".into()];
@@ -3641,6 +3809,24 @@ mod tests {
         assert_eq!(state.jam_view.lanes.w30_pending_recall_target, None);
         assert_eq!(state.jam_view.lanes.w30_pending_audition_target, None);
         assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::LiveRecall
+        );
+        assert_eq!(
+            state.runtime.w30_preview.routing,
+            W30PreviewRenderRouting::MusicBusPreview
+        );
+        assert_eq!(
+            state.runtime.w30_preview.source_profile,
+            Some(W30PreviewSourceProfile::PinnedRecall)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.capture_id.as_deref(),
+            Some("cap-01")
+        );
+        assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+        assert_eq!(state.runtime_view.w30_preview_profile, "pinned_recall");
+        assert_eq!(
             state
                 .session
                 .action_log
@@ -3725,6 +3911,24 @@ mod tests {
         );
         assert_eq!(state.jam_view.lanes.w30_pending_recall_target, None);
         assert_eq!(state.jam_view.lanes.w30_pending_audition_target, None);
+        assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::PromotedAudition
+        );
+        assert_eq!(
+            state.runtime.w30_preview.routing,
+            W30PreviewRenderRouting::MusicBusPreview
+        );
+        assert_eq!(
+            state.runtime.w30_preview.source_profile,
+            Some(W30PreviewSourceProfile::PromotedAudition)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.capture_id.as_deref(),
+            Some("cap-01")
+        );
+        assert_eq!(state.runtime_view.w30_preview_mode, "promoted_audition");
+        assert_eq!(state.runtime_view.w30_preview_profile, "promoted_audition");
         assert_eq!(
             state
                 .session

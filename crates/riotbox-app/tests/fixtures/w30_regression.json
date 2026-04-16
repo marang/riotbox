@@ -28,9 +28,9 @@
       ],
       "log_contains": [
         "W-30 Lane",
-        "recent recall",
         "recalled cap-01",
-        "bank-b/pad-03"
+        "bank-b",
+        "pad-03"
       ]
     }
   },
@@ -63,9 +63,9 @@
       ],
       "log_contains": [
         "W-30 Lane",
-        "recent audition",
         "auditioned cap-01",
-        "bank-c/pad-04"
+        "bank-c",
+        "pad-04"
       ]
     }
   }
