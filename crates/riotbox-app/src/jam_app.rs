@@ -1845,6 +1845,71 @@ mod tests {
         expected_takeover_profile: Option<String>,
     }
 
+    #[derive(Debug, Deserialize)]
+    struct Mc202RegressionFixture {
+        name: String,
+        initial_role: String,
+        action: Mc202RegressionAction,
+        requested_at: TimestampMs,
+        committed_at: TimestampMs,
+        boundary: Mc202RegressionBoundary,
+        expected: Mc202RegressionExpected,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum Mc202RegressionAction {
+        SetRole,
+        GenerateFollower,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Mc202RegressionBoundary {
+        kind: Mc202RegressionBoundaryKind,
+        beat_index: u64,
+        bar_index: u64,
+        phrase_index: u64,
+        scene_id: Option<String>,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum Mc202RegressionBoundaryKind {
+        Immediate,
+        Beat,
+        HalfBar,
+        Bar,
+        Phrase,
+        Scene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct Mc202RegressionExpected {
+        role: String,
+        phrase_ref: String,
+        touch: f32,
+        result_summary: String,
+    }
+
+    impl Mc202RegressionBoundary {
+        fn into_commit_boundary_state(self) -> CommitBoundaryState {
+            CommitBoundaryState {
+                kind: match self.kind {
+                    Mc202RegressionBoundaryKind::Immediate => CommitBoundary::Immediate,
+                    Mc202RegressionBoundaryKind::Beat => CommitBoundary::Beat,
+                    Mc202RegressionBoundaryKind::HalfBar => CommitBoundary::HalfBar,
+                    Mc202RegressionBoundaryKind::Bar => CommitBoundary::Bar,
+                    Mc202RegressionBoundaryKind::Phrase => CommitBoundary::Phrase,
+                    Mc202RegressionBoundaryKind::Scene => CommitBoundary::Scene,
+                },
+                beat_index: self.beat_index,
+                bar_index: self.bar_index,
+                phrase_index: self.phrase_index,
+                scene_id: self.scene_id.map(SceneId::from),
+            }
+        }
+    }
+
     fn sample_audio_health(lifecycle: AudioRuntimeLifecycle) -> AudioRuntimeHealth {
         AudioRuntimeHealth {
             lifecycle,
@@ -3043,6 +3108,128 @@ mod tests {
                 .map(|result| result.summary.as_str()),
             Some("generated MC-202 follower phrase follower-scene-1 at 0.78")
         );
+    }
+
+    #[test]
+    fn mc202_fixture_backed_committed_state_regressions_hold() {
+        let fixtures: Vec<Mc202RegressionFixture> =
+            serde_json::from_str(include_str!("../tests/fixtures/mc202_regression.json"))
+                .expect("parse MC-202 regression fixtures");
+
+        for fixture in fixtures {
+            let graph = sample_graph();
+            let mut session = sample_session(&graph);
+            session.runtime_state.lane_state.mc202.role = Some(fixture.initial_role.clone());
+            let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+            let queue_result = match fixture.action {
+                Mc202RegressionAction::SetRole => {
+                    state.queue_mc202_role_toggle(fixture.requested_at)
+                }
+                Mc202RegressionAction::GenerateFollower => {
+                    state.queue_mc202_generate_follower(fixture.requested_at)
+                }
+            };
+            assert_eq!(
+                queue_result,
+                QueueControlResult::Enqueued,
+                "{} did not enqueue",
+                fixture.name
+            );
+
+            let committed = state.commit_ready_actions(
+                fixture.boundary.into_commit_boundary_state(),
+                fixture.committed_at,
+            );
+            assert_eq!(
+                committed.len(),
+                1,
+                "{} did not commit exactly one action",
+                fixture.name
+            );
+
+            assert_eq!(
+                state.session.runtime_state.lane_state.mc202.role.as_deref(),
+                Some(fixture.expected.role.as_str()),
+                "{} role drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .lane_state
+                    .mc202
+                    .phrase_ref
+                    .as_deref(),
+                Some(fixture.expected.phrase_ref.as_str()),
+                "{} phrase ref drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.session.runtime_state.macro_state.mc202_touch, fixture.expected.touch,
+                "{} touch drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .action_log
+                    .actions
+                    .last()
+                    .and_then(|action| action.result.as_ref())
+                    .map(|result| result.summary.as_str()),
+                Some(fixture.expected.result_summary.as_str()),
+                "{} result summary drifted",
+                fixture.name
+            );
+            assert!(
+                state.jam_view.lanes.mc202_pending_role.is_none(),
+                "{} left a pending role behind",
+                fixture.name
+            );
+            assert!(
+                !state.jam_view.lanes.mc202_pending_follower_generation,
+                "{} left a pending follower-generation behind",
+                fixture.name
+            );
+
+            let tempdir = tempdir().expect("create MC-202 regression tempdir");
+            let session_path = tempdir.path().join(format!("{}.json", fixture.name));
+            save_session_json(&session_path, &state.session)
+                .expect("save MC-202 regression session");
+            let loaded =
+                load_session_json(&session_path).expect("reload MC-202 regression session");
+
+            assert_eq!(
+                loaded.runtime_state.lane_state.mc202.role.as_deref(),
+                Some(fixture.expected.role.as_str()),
+                "{} role did not survive replay roundtrip",
+                fixture.name
+            );
+            assert_eq!(
+                loaded.runtime_state.lane_state.mc202.phrase_ref.as_deref(),
+                Some(fixture.expected.phrase_ref.as_str()),
+                "{} phrase ref did not survive replay roundtrip",
+                fixture.name
+            );
+            assert_eq!(
+                loaded.runtime_state.macro_state.mc202_touch, fixture.expected.touch,
+                "{} touch did not survive replay roundtrip",
+                fixture.name
+            );
+            assert_eq!(
+                loaded
+                    .action_log
+                    .actions
+                    .last()
+                    .and_then(|action| action.result.as_ref())
+                    .map(|result| result.summary.as_str()),
+                Some(fixture.expected.result_summary.as_str()),
+                "{} result summary did not survive replay roundtrip",
+                fixture.name
+            );
+        }
     }
 
     #[test]
