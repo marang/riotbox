@@ -2181,6 +2181,55 @@ mod tests {
         result_summary: String,
     }
 
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionFixture {
+        name: String,
+        action: W30RegressionAction,
+        capture_bank: String,
+        capture_pad: String,
+        capture_pinned: bool,
+        requested_at: TimestampMs,
+        committed_at: TimestampMs,
+        boundary: W30RegressionBoundary,
+        expected: W30RegressionExpected,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum W30RegressionAction {
+        LiveRecall,
+        PromotedAudition,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionBoundary {
+        kind: W30RegressionBoundaryKind,
+        beat_index: u64,
+        bar_index: u64,
+        phrase_index: u64,
+        scene_id: Option<String>,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum W30RegressionBoundaryKind {
+        Immediate,
+        Beat,
+        HalfBar,
+        Bar,
+        Phrase,
+        Scene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionExpected {
+        active_bank: String,
+        focused_pad: String,
+        last_capture: String,
+        w30_grit: f32,
+        result_summary: String,
+    }
+
     impl Mc202RegressionBoundary {
         fn into_commit_boundary_state(self) -> CommitBoundaryState {
             CommitBoundaryState {
@@ -2191,6 +2240,25 @@ mod tests {
                     Mc202RegressionBoundaryKind::Bar => CommitBoundary::Bar,
                     Mc202RegressionBoundaryKind::Phrase => CommitBoundary::Phrase,
                     Mc202RegressionBoundaryKind::Scene => CommitBoundary::Scene,
+                },
+                beat_index: self.beat_index,
+                bar_index: self.bar_index,
+                phrase_index: self.phrase_index,
+                scene_id: self.scene_id.map(SceneId::from),
+            }
+        }
+    }
+
+    impl W30RegressionBoundary {
+        fn into_commit_boundary_state(self) -> CommitBoundaryState {
+            CommitBoundaryState {
+                kind: match self.kind {
+                    W30RegressionBoundaryKind::Immediate => CommitBoundary::Immediate,
+                    W30RegressionBoundaryKind::Beat => CommitBoundary::Beat,
+                    W30RegressionBoundaryKind::HalfBar => CommitBoundary::HalfBar,
+                    W30RegressionBoundaryKind::Bar => CommitBoundary::Bar,
+                    W30RegressionBoundaryKind::Phrase => CommitBoundary::Phrase,
+                    W30RegressionBoundaryKind::Scene => CommitBoundary::Scene,
                 },
                 beat_index: self.beat_index,
                 bar_index: self.bar_index,
@@ -4035,6 +4103,108 @@ mod tests {
                     .map(|result| result.summary.as_str()),
                 Some(fixture.expected.result_summary.as_str()),
                 "{} result summary did not survive replay roundtrip",
+                fixture.name
+            );
+        }
+    }
+
+    #[test]
+    fn w30_fixture_backed_committed_state_regressions_hold() {
+        let fixtures: Vec<W30RegressionFixture> =
+            serde_json::from_str(include_str!("../tests/fixtures/w30_regression.json"))
+                .expect("parse W-30 regression fixtures");
+
+        for fixture in fixtures {
+            let graph = sample_graph();
+            let mut session = sample_session(&graph);
+            session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from(fixture.capture_bank.clone()),
+                pad_id: PadId::from(fixture.capture_pad.clone()),
+            });
+            session.captures[0].is_pinned = fixture.capture_pinned;
+            session.runtime_state.macro_state.w30_grit = 0.0;
+            let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+            let queue_result = match fixture.action {
+                W30RegressionAction::LiveRecall => {
+                    state.queue_w30_live_recall(fixture.requested_at)
+                }
+                W30RegressionAction::PromotedAudition => {
+                    state.queue_w30_promoted_audition(fixture.requested_at)
+                }
+            };
+            assert_eq!(
+                queue_result,
+                Some(QueueControlResult::Enqueued),
+                "{} did not enqueue",
+                fixture.name
+            );
+
+            let committed = state.commit_ready_actions(
+                fixture.boundary.into_commit_boundary_state(),
+                fixture.committed_at,
+            );
+            assert_eq!(
+                committed.len(),
+                1,
+                "{} did not commit exactly one action",
+                fixture.name
+            );
+
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .active_bank
+                    .as_ref()
+                    .map(ToString::to_string),
+                Some(fixture.expected.active_bank.clone()),
+                "{} bank drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .focused_pad
+                    .as_ref()
+                    .map(ToString::to_string),
+                Some(fixture.expected.focused_pad.clone()),
+                "{} pad drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .last_capture
+                    .as_ref()
+                    .map(ToString::to_string),
+                Some(fixture.expected.last_capture.clone()),
+                "{} last capture drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.session.runtime_state.macro_state.w30_grit, fixture.expected.w30_grit,
+                "{} grit drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .action_log
+                    .actions
+                    .last()
+                    .and_then(|action| action.result.as_ref())
+                    .map(|result| result.summary.as_str()),
+                Some(fixture.expected.result_summary.as_str()),
+                "{} result summary drifted",
                 fixture.name
             );
         }

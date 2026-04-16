@@ -616,6 +616,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 MVP should gain shared replay-safe regression fixtures before deeper audio-facing preview work
+Phase: W-30 MVP
+Question: after live recall, promoted-material audition, and shell diagnostics exist, what is the smallest next slice that hardens the current W-30 lane before it grows into an audio-facing preview seam?
+Decision: add one shared W-30 regression fixture corpus in `riotbox-app` and reuse it in both committed-state and shell-visible tests. Cover the shipped `live recall` and `promoted audition` cues, assert committed lane state plus result summaries at the app layer, and assert Capture/Log shell output from the same fixture data.
+Why: TR-909 and MC-202 already use fixture-backed regressions to keep the current seam replay-safe while the device lane grows. W-30 needed the same verification net before deeper preview or pad behavior could be added honestly.
+Evidence: `riotbox-app` now has `w30_regression.json`, fixture-backed committed-state regressions in `jam_app`, and fixture-backed shell regressions in `ui` for both recall and promoted-audition paths.
+Consequences: later W-30 work should extend the same fixture corpus when preview render state or deeper pad behavior lands instead of relying only on ad hoc unit tests or manual shell checks.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

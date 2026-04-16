@@ -1,0 +1,72 @@
+[
+  {
+    "name": "live_recall_committed",
+    "action": "live_recall",
+    "capture_bank": "bank-b",
+    "capture_pad": "pad-03",
+    "capture_pinned": true,
+    "requested_at": 620,
+    "committed_at": 700,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 33,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-b",
+      "focused_pad": "pad-03",
+      "last_capture": "cap-01",
+      "w30_grit": 0.0,
+      "result_summary": "recalled cap-01 on W-30 pad bank-b/pad-03",
+      "capture_contains": [
+        "latest promoted",
+        "cap-01",
+        "bank-b",
+        "pending W-30 cue idle"
+      ],
+      "log_contains": [
+        "W-30 Lane",
+        "recent recall",
+        "recalled cap-01",
+        "bank-b/pad-03"
+      ]
+    }
+  },
+  {
+    "name": "promoted_audition_committed",
+    "action": "promoted_audition",
+    "capture_bank": "bank-c",
+    "capture_pad": "pad-04",
+    "capture_pinned": false,
+    "requested_at": 621,
+    "committed_at": 701,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 33,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-c",
+      "focused_pad": "pad-04",
+      "last_capture": "cap-01",
+      "w30_grit": 0.68,
+      "result_summary": "auditioned cap-01 on W-30 pad bank-c/pad-04",
+      "capture_contains": [
+        "latest promoted",
+        "cap-01",
+        "bank-c",
+        "pending W-30 cue idle"
+      ],
+      "log_contains": [
+        "W-30 Lane",
+        "recent audition",
+        "auditioned cap-01",
+        "bank-c/pad-04"
+      ]
+    }
+  }
+]

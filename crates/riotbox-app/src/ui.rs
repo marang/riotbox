@@ -2149,7 +2149,7 @@ mod tests {
             Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
             ActionTarget, ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
         },
-        ids::{ActionId, AssetId, BankId, PadId, SceneId, SectionId, SourceId},
+        ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SourceId},
         queue::ActionQueue,
         session::SessionFile,
         source_graph::{
@@ -2212,6 +2212,52 @@ mod tests {
         log_contains: Vec<String>,
     }
 
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionFixture {
+        name: String,
+        action: W30RegressionAction,
+        capture_bank: String,
+        capture_pad: String,
+        capture_pinned: bool,
+        requested_at: TimestampMs,
+        committed_at: TimestampMs,
+        boundary: W30RegressionBoundary,
+        expected: W30RegressionExpected,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum W30RegressionAction {
+        LiveRecall,
+        PromotedAudition,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionBoundary {
+        kind: W30RegressionBoundaryKind,
+        beat_index: u64,
+        bar_index: u64,
+        phrase_index: u64,
+        scene_id: Option<String>,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum W30RegressionBoundaryKind {
+        Immediate,
+        Beat,
+        HalfBar,
+        Bar,
+        Phrase,
+        Scene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionExpected {
+        capture_contains: Vec<String>,
+        log_contains: Vec<String>,
+    }
+
     impl Mc202RegressionBoundary {
         fn to_commit_boundary_state(&self) -> CommitBoundaryState {
             CommitBoundaryState {
@@ -2230,6 +2276,31 @@ mod tests {
                     Mc202RegressionBoundaryKind::Scene => {
                         riotbox_core::action::CommitBoundary::Scene
                     }
+                },
+                beat_index: self.beat_index,
+                bar_index: self.bar_index,
+                phrase_index: self.phrase_index,
+                scene_id: self.scene_id.clone().map(SceneId::from),
+            }
+        }
+    }
+
+    impl W30RegressionBoundary {
+        fn to_commit_boundary_state(&self) -> CommitBoundaryState {
+            CommitBoundaryState {
+                kind: match self.kind {
+                    W30RegressionBoundaryKind::Immediate => {
+                        riotbox_core::action::CommitBoundary::Immediate
+                    }
+                    W30RegressionBoundaryKind::Beat => riotbox_core::action::CommitBoundary::Beat,
+                    W30RegressionBoundaryKind::HalfBar => {
+                        riotbox_core::action::CommitBoundary::HalfBar
+                    }
+                    W30RegressionBoundaryKind::Bar => riotbox_core::action::CommitBoundary::Bar,
+                    W30RegressionBoundaryKind::Phrase => {
+                        riotbox_core::action::CommitBoundary::Phrase
+                    }
+                    W30RegressionBoundaryKind::Scene => riotbox_core::action::CommitBoundary::Scene,
                 },
                 beat_index: self.beat_index,
                 bar_index: self.bar_index,
@@ -2635,6 +2706,88 @@ mod tests {
                 assert!(
                     jam_rendered.contains(needle),
                     "{} jam snapshot missing {needle}",
+                    fixture.name
+                );
+            }
+
+            shell.active_screen = ShellScreen::Log;
+            let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.log_contains {
+                assert!(
+                    log_rendered.contains(needle),
+                    "{} log snapshot missing {needle}",
+                    fixture.name
+                );
+            }
+        }
+    }
+
+    fn w30_committed_shell_state(fixture: &W30RegressionFixture) -> JamShellState {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.action_log.actions.clear();
+        session.runtime_state.macro_state.w30_grit = 0.0;
+        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        session.captures[0].assigned_target = Some(riotbox_core::session::CaptureTarget::W30Pad {
+            bank_id: fixture.capture_bank.clone().into(),
+            pad_id: fixture.capture_pad.clone().into(),
+        });
+        session.captures[0].is_pinned = fixture.capture_pinned;
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Ingest,
+        );
+
+        let queue_result = match fixture.action {
+            W30RegressionAction::LiveRecall => {
+                shell.app.queue_w30_live_recall(fixture.requested_at)
+            }
+            W30RegressionAction::PromotedAudition => {
+                shell.app.queue_w30_promoted_audition(fixture.requested_at)
+            }
+        };
+        assert_eq!(
+            queue_result,
+            Some(crate::jam_app::QueueControlResult::Enqueued),
+            "{} did not enqueue",
+            fixture.name
+        );
+
+        let committed = shell.app.commit_ready_actions(
+            fixture.boundary.to_commit_boundary_state(),
+            fixture.committed_at,
+        );
+        assert_eq!(
+            committed.len(),
+            1,
+            "{} did not commit exactly one action",
+            fixture.name
+        );
+
+        shell
+    }
+
+    #[test]
+    fn w30_fixture_backed_shell_regressions_hold() {
+        let fixtures: Vec<W30RegressionFixture> =
+            serde_json::from_str(include_str!("../tests/fixtures/w30_regression.json"))
+                .expect("parse W-30 regression fixtures");
+
+        for fixture in fixtures {
+            let mut shell = w30_committed_shell_state(&fixture);
+            shell.active_screen = ShellScreen::Capture;
+            let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.capture_contains {
+                assert!(
+                    capture_rendered.contains(needle),
+                    "{} capture snapshot missing {needle}",
                     fixture.name
                 );
             }
