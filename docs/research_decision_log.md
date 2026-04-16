@@ -638,6 +638,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 audible preview should deepen the typed preview seam and keep fresh ingest sessions audibly reachable
+Phase: W-30 MVP
+Question: once the typed W-30 preview seam exists, what is the smallest honest slice that makes it audibly testable without bypassing the committed render model or opening a second playback path?
+Decision: keep W-30 preview audio on the same `W30PreviewRenderState` seam and render it inside the existing audio callback alongside TR-909, using one bounded lo-fi preview synth that responds to preview mode, source profile, grit, transport, and music-bus level. Also open the music bus to a modest default level for fresh ingest sessions so the new audible seam is reachable in normal app launches.
+Why: Riotbox already had the right preview contract and callback plumbing, but the W-30 lane was still silent even when preview state was active. The smallest correct move is to make that seam audibly real in place, not to add a separate W-30 player, hidden callback-only state, or a one-off shell preview path. Giving fresh ingest sessions a nonzero music bus keeps the new seam practically testable instead of leaving it gated behind an implicit zero-level default.
+Evidence: `riotbox-audio` now mixes a dedicated W-30 preview renderer in the existing output callback, covers live recall, promoted audition, zero-music silence, and stopped-preview audibility with runtime tests, and `riotbox-app` initializes fresh ingest sessions with a nonzero `mixer_state.music_level` so committed W-30 preview work can actually be heard.
+Consequences: later W-30 work should keep extending this same seam with richer preview profiles, real pad playback, and deeper diagnostics, and should treat music-bus defaults and controls as part of the same mixer path instead of inventing a second W-30-only gain model.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

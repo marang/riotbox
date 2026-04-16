@@ -349,20 +349,29 @@ where
     let error_telemetry = Arc::clone(&telemetry);
     let mut render_state = Tr909CallbackState::default();
     let mut w30_preview_state = W30PreviewCallbackState::default();
+    let mut mix_buffer = Vec::<f32>::new();
     let sample_rate = config.sample_rate;
     let channel_count = usize::from(config.channels.max(1));
 
     device.build_output_stream(
         config,
         move |data: &mut [T], _| {
-            sync_w30_preview_state(&w30_preview.snapshot(), &mut w30_preview_state);
-            render_tr909_buffer(
-                data,
+            if mix_buffer.len() != data.len() {
+                mix_buffer.resize(data.len(), 0.0);
+            }
+
+            render_mix_buffer(
+                &mut mix_buffer,
                 sample_rate,
                 channel_count,
                 &tr909_render.snapshot(),
                 &mut render_state,
+                &w30_preview.snapshot(),
+                &mut w30_preview_state,
             );
+            for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
+                *output = T::from_sample(sample);
+            }
 
             let now = start.elapsed().as_micros() as u64;
             callback_telemetry.record_callback_at(now);
@@ -568,6 +577,12 @@ struct Tr909CallbackState {
 
 #[derive(Debug, Default)]
 struct W30PreviewCallbackState {
+    beat_position: f64,
+    oscillator_phase: f32,
+    lfo_phase: f32,
+    envelope: f32,
+    last_step: i64,
+    was_active: bool,
     last_mode: Option<W30PreviewRenderMode>,
     last_routing: Option<W30PreviewRenderRouting>,
     last_source_profile: Option<W30PreviewSourceProfile>,
@@ -591,15 +606,28 @@ fn sync_w30_preview_state(
     state.last_position_beats = render.position_beats;
 }
 
-fn render_tr909_buffer<T>(
-    data: &mut [T],
+fn render_mix_buffer(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    tr909_render: &RealtimeTr909RenderState,
+    tr909_state: &mut Tr909CallbackState,
+    w30_render: &RealtimeW30PreviewRenderState,
+    w30_state: &mut W30PreviewCallbackState,
+) {
+    data.fill(0.0);
+    render_tr909_buffer(data, sample_rate, channel_count, tr909_render, tr909_state);
+    sync_w30_preview_state(w30_render, w30_state);
+    render_w30_preview_buffer(data, sample_rate, channel_count, w30_render, w30_state);
+}
+
+fn render_tr909_buffer(
+    data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
     render: &RealtimeTr909RenderState,
     state: &mut Tr909CallbackState,
-) where
-    T: cpal::SizedSample + cpal::FromSample<f32>,
-{
+) {
     if !render.is_transport_running
         || matches!(render.mode, Tr909RenderMode::Idle)
         || render.tempo_bpm <= 0.0
@@ -607,9 +635,6 @@ fn render_tr909_buffer<T>(
         state.was_running = false;
         state.envelope = 0.0;
         state.beat_position = render.position_beats;
-        for sample in data.iter_mut() {
-            *sample = T::from_sample(0.0);
-        }
         return;
     }
 
@@ -648,11 +673,199 @@ fn render_tr909_buffer<T>(
 
         let base = frame_index * channel_count;
         for channel in 0..channel_count {
-            data[base + channel] = T::from_sample(sample);
+            data[base + channel] += sample;
         }
 
         state.beat_position += beats_per_sample;
     }
+}
+
+fn render_w30_preview_buffer(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    render: &RealtimeW30PreviewRenderState,
+    state: &mut W30PreviewCallbackState,
+) {
+    let active = !matches!(render.mode, W30PreviewRenderMode::Idle)
+        && matches!(render.routing, W30PreviewRenderRouting::MusicBusPreview)
+        && render.music_bus_level > 0.0;
+
+    if !active {
+        state.was_active = false;
+        state.envelope = 0.0;
+        state.beat_position = render.position_beats;
+        return;
+    }
+
+    if !state.was_active {
+        state.beat_position = render.position_beats;
+        state.envelope = 1.0;
+        state.last_step = w30_current_step(render.position_beats, render);
+        state.oscillator_phase = 0.0;
+        state.lfo_phase = 0.0;
+        state.was_active = true;
+    }
+
+    let frame_count = data.len() / channel_count.max(1);
+    let transport_running = render.is_transport_running && render.tempo_bpm > 0.0;
+    let beats_per_sample = if transport_running {
+        f64::from(render.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1))
+    } else {
+        f64::from(w30_preview_idle_bpm(render)) / 60.0 / f64::from(sample_rate.max(1))
+    };
+
+    for frame_index in 0..frame_count {
+        if transport_running {
+            let step = w30_current_step(state.beat_position, render);
+            if step != state.last_step {
+                state.last_step = step;
+                if should_trigger_w30_step(render, step) {
+                    state.envelope = w30_trigger_envelope(render);
+                }
+            }
+        } else {
+            state.envelope = (state.envelope * 0.9998).max(0.35);
+        }
+
+        let frequency = w30_preview_frequency(render, state.last_step);
+        let tremolo = if transport_running {
+            1.0
+        } else {
+            state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
+            0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
+        };
+        let waveform = w30_preview_waveform(state.oscillator_phase, render.grit_level);
+        let sample =
+            waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
+        state.oscillator_phase =
+            (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
+        if transport_running {
+            state.envelope *= w30_envelope_decay(render);
+        }
+
+        let base = frame_index * channel_count;
+        for channel in 0..channel_count {
+            data[base + channel] += sample;
+        }
+
+        state.beat_position += beats_per_sample;
+    }
+}
+
+fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState) -> i64 {
+    (position_beats * f64::from(w30_preview_subdivision(render))).floor() as i64
+}
+
+fn w30_preview_subdivision(render: &RealtimeW30PreviewRenderState) -> u32 {
+    match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => 1,
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => 2,
+        Some(W30PreviewSourceProfile::PromotedAudition) => 4,
+    }
+}
+
+fn should_trigger_w30_step(render: &RealtimeW30PreviewRenderState, step: i64) -> bool {
+    match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => true,
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => step.rem_euclid(2) == 0,
+        Some(W30PreviewSourceProfile::PromotedAudition) => {
+            !matches!(step.rem_euclid(4), 1) || render.grit_level >= 0.65
+        }
+    }
+}
+
+fn w30_trigger_envelope(render: &RealtimeW30PreviewRenderState) -> f32 {
+    let mode_boost = match render.mode {
+        W30PreviewRenderMode::Idle => 0.0,
+        W30PreviewRenderMode::LiveRecall => 0.16,
+        W30PreviewRenderMode::PromotedAudition => 0.24,
+    };
+    let profile_boost = match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => 0.0,
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => 0.05,
+        Some(W30PreviewSourceProfile::PromotedAudition) => 0.1,
+    };
+    (0.32 + mode_boost + profile_boost + render.grit_level.clamp(0.0, 1.0) * 0.18).clamp(0.0, 0.9)
+}
+
+fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f32 {
+    let base = match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => 196.0,
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => 261.63,
+        Some(W30PreviewSourceProfile::PromotedAudition) => 329.63,
+    };
+    let step_offset = match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => {
+            if step.rem_euclid(2) == 0 {
+                -8.0
+            } else {
+                0.0
+            }
+        }
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => match step.rem_euclid(4) {
+            0 => 0.0,
+            1 => 7.0,
+            2 => 12.0,
+            _ => 7.0,
+        },
+        Some(W30PreviewSourceProfile::PromotedAudition) => match step.rem_euclid(4) {
+            0 => 0.0,
+            1 => 12.0,
+            2 => 19.0,
+            _ => 7.0,
+        },
+    };
+    let grit_offset = render.grit_level.clamp(0.0, 1.0) * 28.0;
+    base + step_offset + grit_offset
+}
+
+fn w30_preview_waveform(phase: f32, grit_level: f32) -> f32 {
+    let sine = (std::f32::consts::TAU * phase).sin();
+    let overtone = (std::f32::consts::TAU * phase * 2.0).sin();
+    let grit = grit_level.clamp(0.0, 1.0);
+    let blended = sine * (1.0 - grit * 0.45) + overtone * (0.18 + grit * 0.3);
+    let quant_steps = (24.0 - grit * 18.0).max(4.0);
+    ((blended * quant_steps).round() / quant_steps).clamp(-1.0, 1.0)
+}
+
+fn w30_render_gain(render: &RealtimeW30PreviewRenderState, transport_running: bool) -> f32 {
+    let base = match render.mode {
+        W30PreviewRenderMode::Idle => 0.0,
+        W30PreviewRenderMode::LiveRecall => 0.12,
+        W30PreviewRenderMode::PromotedAudition => 0.18,
+    };
+    let profile_gain = match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => 1.0,
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => 1.08,
+        Some(W30PreviewSourceProfile::PromotedAudition) => 1.2,
+    };
+    let transport_gain = if transport_running { 1.0 } else { 0.72 };
+    (base
+        * profile_gain
+        * transport_gain
+        * render.music_bus_level.clamp(0.0, 1.0)
+        * (1.0 + render.grit_level.clamp(0.0, 1.0) * 0.2))
+        .clamp(0.0, 0.28)
+}
+
+fn w30_envelope_decay(render: &RealtimeW30PreviewRenderState) -> f32 {
+    let base = match render.mode {
+        W30PreviewRenderMode::Idle => 0.0,
+        W30PreviewRenderMode::LiveRecall => 0.99983,
+        W30PreviewRenderMode::PromotedAudition => 0.99972,
+    };
+    let profile_offset = match render.source_profile {
+        Some(W30PreviewSourceProfile::PinnedRecall) => 0.00002,
+        Some(W30PreviewSourceProfile::PromotedRecall) | None => 0.0,
+        Some(W30PreviewSourceProfile::PromotedAudition) => -0.00003,
+    };
+    let grit_offset = render.grit_level.clamp(0.0, 1.0) * 0.00008;
+    (base + profile_offset - grit_offset).clamp(0.0, 1.0)
+}
+
+fn w30_preview_idle_bpm(render: &RealtimeW30PreviewRenderState) -> f32 {
+    render.tempo_bpm.max(92.0)
 }
 
 const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
@@ -1370,7 +1583,7 @@ mod tests {
     #[test]
     fn render_buffer_stays_silent_when_idle() {
         let mut state = Tr909CallbackState::default();
-        let mut buffer = [1.0_f32; 128];
+        let mut buffer = [0.0_f32; 128];
 
         render_tr909_buffer(
             &mut buffer,
@@ -1393,6 +1606,160 @@ mod tests {
         );
 
         assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
+    }
+
+    #[test]
+    fn w30_preview_stays_silent_when_idle() {
+        let mut state = W30PreviewCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_preview_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::Idle,
+                routing: W30PreviewRenderRouting::Silent,
+                source_profile: None,
+                music_bus_level: 0.64,
+                grit_level: 0.4,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
+    }
+
+    #[test]
+    fn w30_preview_produces_audible_samples_for_live_recall() {
+        let mut state = W30PreviewCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_preview_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::LiveRecall,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
+                music_bus_level: 0.64,
+                grit_level: 0.4,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn w30_preview_respects_zero_music_bus_level() {
+        let mut state = W30PreviewCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_preview_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::LiveRecall,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
+                music_bus_level: 0.0,
+                grit_level: 0.6,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
+    }
+
+    #[test]
+    fn promoted_w30_audition_is_more_present_than_pinned_recall() {
+        let mut pinned_state = W30PreviewCallbackState::default();
+        let mut audition_state = W30PreviewCallbackState::default();
+        let mut pinned = [0.0_f32; 512];
+        let mut audition = [0.0_f32; 512];
+
+        render_w30_preview_buffer(
+            &mut pinned,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::LiveRecall,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
+                music_bus_level: 0.64,
+                grit_level: 0.4,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut pinned_state,
+        );
+
+        render_w30_preview_buffer(
+            &mut audition,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::PromotedAudition,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
+                music_bus_level: 0.64,
+                grit_level: 0.68,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut audition_state,
+        );
+
+        let pinned_peak = pinned
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let audition_peak = audition
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let pinned_energy = pinned.iter().map(|sample| sample.abs()).sum::<f32>();
+        let audition_energy = audition.iter().map(|sample| sample.abs()).sum::<f32>();
+
+        assert!(audition_peak > pinned_peak);
+        assert!(audition_energy > pinned_energy);
+    }
+
+    #[test]
+    fn stopped_w30_preview_remains_audible_for_manual_previewing() {
+        let mut state = W30PreviewCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_preview_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::PromotedAudition,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
+                music_bus_level: 0.64,
+                grit_level: 0.72,
+                is_transport_running: false,
+                tempo_bpm: 0.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
     }
 
     #[test]
