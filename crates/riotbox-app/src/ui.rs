@@ -85,6 +85,7 @@ pub enum ShellKeyOutcome {
     QueueCaptureBar,
     PromoteLastCapture,
     QueueW30LiveRecall,
+    QueueW30PromotedAudition,
     TogglePinLatestCapture,
     LowerDrumBusLevel,
     RaiseDrumBusLevel,
@@ -214,6 +215,10 @@ impl JamShellState {
             KeyCode::Char('l') => {
                 self.status_message = "queue W-30 live recall on next bar".into();
                 ShellKeyOutcome::QueueW30LiveRecall
+            }
+            KeyCode::Char('o') => {
+                self.status_message = "queue W-30 promoted-material audition on next bar".into();
+                ShellKeyOutcome::QueueW30PromotedAudition
             }
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
@@ -499,15 +504,8 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             }
         )),
         Line::from(format!(
-            "W-30 recall {} | last {}",
-            shell
-                .app
-                .jam_view
-                .lanes
-                .w30_pending_recall_target
-                .as_deref()
-                .map(|target| format!("{target} queued"))
-                .unwrap_or_else(|| "idle".into()),
+            "W-30 cue {} | last {}",
+            w30_pending_cue_label(shell),
             shell
                 .app
                 .jam_view
@@ -971,7 +969,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
-        "         p promote capture | l W-30 recall | v pin latest | u undo",
+        "         p promote capture | l W-30 recall | o W-30 audition | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1035,6 +1033,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
         Line::from("l: queue the latest pinned or promoted W-30 pad recall on next bar"),
+        Line::from("o: queue audition of the latest promoted W-30 pad on next bar"),
         Line::from("[ / ]: lower or raise the drum bus level"),
         Line::from("v: pin or unpin the latest capture for fast recall"),
         Line::from("u: undo most recent undoable action"),
@@ -1566,7 +1565,12 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
         .jam_view
         .pending_actions
         .iter()
-        .find(|action| action.command == "w30.swap_bank")
+        .find(|action| {
+            matches!(
+                action.command.as_str(),
+                "w30.swap_bank" | "w30.audition_promoted"
+            )
+        })
         .or_else(|| {
             shell
                 .app
@@ -1577,6 +1581,28 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
         })
         .map(|action| format!("{} @ {}", action.command, action.quantization))
         .unwrap_or_else(|| "no capture cue queued".into())
+}
+
+fn w30_pending_cue_label(shell: &JamShellState) -> String {
+    if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_audition_target
+        .as_deref()
+    {
+        format!("audition {target}")
+    } else if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_recall_target
+        .as_deref()
+    {
+        format!("recall {target}")
+    } else {
+        "idle".into()
+    }
 }
 
 fn pending_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -2353,7 +2379,7 @@ mod tests {
         assert!(rendered.contains("202 phrase"));
         assert!(rendered.contains("gen idle"));
         assert!(rendered.contains("202 touch 0.80"));
-        assert!(rendered.contains("W-30 recall idle"));
+        assert!(rendered.contains("W-30 cue idle"));
         assert!(rendered.contains("909 takeover"));
         assert!(rendered.contains("takeover"));
     }
@@ -2615,6 +2641,10 @@ mod tests {
             ShellKeyOutcome::QueueW30LiveRecall
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('o')),
+            ShellKeyOutcome::QueueW30PromotedAudition
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('v')),
             ShellKeyOutcome::TogglePinLatestCapture
         );
@@ -2718,5 +2748,25 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("w30.swap_bank @ next_bar"));
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_w30_audition_cue() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_promoted_audition(210),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("w30.audition_promoted"));
     }
 }
