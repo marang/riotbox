@@ -126,4 +126,5 @@ docs/
 - `screenshots/source_screen_baseline.txt`: baseline captured
 - `screenshots/capture_screen_baseline.txt`: baseline captured
 - `screenshots/capture_w30_live_recall_baseline.txt`: baseline captured
+- `screenshots/w30_diagnostics_baseline.txt`: baseline captured
 - all other specs: not started

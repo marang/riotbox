@@ -605,6 +605,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 diagnostics should deepen the existing Capture and Log screens instead of opening a second control surface
+Phase: W-30 MVP
+Question: after live recall and promoted-material audition exist, what is the smallest next slice that makes the W-30 lane legible for operators without inventing a separate W-30 page, browser, or hidden preview state?
+Decision: surface bounded W-30 diagnostics in the existing `Capture` and `Log` screens. Use the current `JamViewModel`, session capture inventory, and committed action log to show pending cue kind, focused bank/pad, latest promoted capture, last lane capture, and the most recent committed W-30 cue outcome.
+Why: the repo already has a truthful W-30 seam for recall and audition, but the shell still hides too much of that state inside generic action history. The next honest step is to make the current seam explain itself in-place, not to open a second W-30 control surface or a preview-only browser.
+Evidence: `riotbox-app` now adds a dedicated `W-30 Lane` diagnostics panel to `Log`, deepens `Capture -> Routing / Promotion` with explicit pending cue and promoted-target context, and covers the new shell cues with snapshot-style tests for queued and committed W-30 states.
+Consequences: later W-30 work should continue extending these same screens and the existing committed cue seam for audible preview and deeper pad behavior instead of bypassing them with separate shell-only panels or hidden preview state.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

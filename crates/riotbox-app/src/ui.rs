@@ -674,10 +674,11 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let summary_columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
-            Constraint::Percentage(25),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
+            Constraint::Percentage(20),
         ])
         .split(rows[0]);
 
@@ -712,6 +713,10 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 
     let mc202_focus = Paragraph::new(mc202_log_lines(shell))
         .block(Block::default().title("MC-202 Lane").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    let w30_focus = Paragraph::new(w30_log_lines(shell))
+        .block(Block::default().title("W-30 Lane").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
 
     let render_focus = Paragraph::new(vec![
@@ -778,8 +783,9 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 
     frame.render_widget(counts, summary_columns[0]);
     frame.render_widget(mc202_focus, summary_columns[1]);
-    frame.render_widget(render_focus, summary_columns[2]);
-    frame.render_widget(warnings_panel, summary_columns[3]);
+    frame.render_widget(w30_focus, summary_columns[2]);
+    frame.render_widget(render_focus, summary_columns[3]);
+    frame.render_widget(warnings_panel, summary_columns[4]);
 
     let columns = Layout::default()
         .direction(Direction::Horizontal)
@@ -1179,6 +1185,47 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
+fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let lanes = &shell.app.jam_view.lanes;
+    let recent = last_committed_w30_action(shell);
+    let recent_label = recent
+        .map(|action| short_w30_action_label(&action.command))
+        .unwrap_or("none");
+    let recent_note = recent
+        .and_then(|action| {
+            action
+                .result
+                .as_ref()
+                .map(|result| result.summary.clone())
+                .or_else(|| action.explanation.clone())
+        })
+        .unwrap_or_else(|| "no committed W-30 cue yet".into());
+
+    vec![
+        Line::from(format!(
+            "bank {} | pad {}",
+            lanes.w30_active_bank.as_deref().unwrap_or("unset"),
+            lanes.w30_focused_pad.as_deref().unwrap_or("unset")
+        )),
+        Line::from(format!("cue {}", w30_pending_cue_label(shell))),
+        Line::from(format!(
+            "capture {}",
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "none".into())
+        )),
+        Line::from(format!("recent {recent_label}")),
+        Line::from(format!("note {recent_note}")),
+    ]
+}
+
 fn section_label(section: &Section) -> &'static str {
     match section.label_hint {
         SectionLabelHint::Intro => "intro",
@@ -1519,6 +1566,8 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         .last_capture_target
         .as_deref()
         .unwrap_or("unassigned");
+    let latest_promoted = latest_w30_promoted_capture_label(shell);
+    let pending_w30 = w30_pending_cue_label(shell);
 
     vec![
         Line::from(format!("last route {last_target}")),
@@ -1531,18 +1580,16 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .clone()
                 .unwrap_or_else(|| "promotion result pending".into()),
         ),
+        Line::from(format!("pending W-30 cue {pending_w30}")),
         Line::from(format!(
-            "w30 bank {}",
+            "w30 bank {} | pad {}",
             shell
                 .app
                 .jam_view
                 .lanes
                 .w30_active_bank
                 .as_deref()
-                .unwrap_or("unset")
-        )),
-        Line::from(format!(
-            "focused pad {}",
+                .unwrap_or("unset"),
             shell
                 .app
                 .jam_view
@@ -1551,12 +1598,42 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .as_deref()
                 .unwrap_or("unset")
         )),
+        Line::from(format!("latest promoted {latest_promoted}")),
+        Line::from(format!(
+            "last lane capture {}",
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "none".into())
+        )),
         Line::from(format!(
             "next shell cue {}",
             capture_or_recall_cue_label(shell)
         )),
-        Line::from("deep pad promotion remains out of scope"),
+        Line::from("audition and recall stay on the shared next-bar seam"),
     ]
+}
+
+fn latest_w30_promoted_capture_label(shell: &JamShellState) -> String {
+    shell
+        .app
+        .session
+        .captures
+        .iter()
+        .rev()
+        .find_map(|capture| match capture.assigned_target.as_ref() {
+            Some(riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id }) => {
+                Some(format!("{} -> {bank_id}/{pad_id}", capture.capture_id))
+            }
+            _ => None,
+        })
+        .unwrap_or_else(|| "none".into())
 }
 
 fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
@@ -1602,6 +1679,32 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         format!("recall {target}")
     } else {
         "idle".into()
+    }
+}
+
+fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::action::Action> {
+    shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .find(|action| {
+            action.status == riotbox_core::action::ActionStatus::Committed
+                && matches!(
+                    action.command,
+                    riotbox_core::action::ActionCommand::W30SwapBank
+                        | riotbox_core::action::ActionCommand::W30AuditionPromoted
+                )
+        })
+}
+
+fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'static str {
+    match command {
+        riotbox_core::action::ActionCommand::W30SwapBank => "recall",
+        riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
+        _ => "other",
     }
 }
 
@@ -2679,8 +2782,10 @@ mod tests {
         assert!(rendered.contains("Accepted / Committed"));
         assert!(rendered.contains("Rejected / Undone"));
         assert!(rendered.contains("MC-202 Lane"));
+        assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("role leader"));
-        assert!(rendered.contains("diagnostic stable"));
+        assert!(rendered.contains("cue idle"));
+        assert!(rendered.contains("recent none"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("mutate.scene"));
         assert!(rendered.contains("TR-909 Render"));
@@ -2727,6 +2832,8 @@ mod tests {
         assert!(rendered.contains("captures total 1"));
         assert!(rendered.contains("pinned 0 | promoted 0"));
         assert!(rendered.contains("no pinned captures yet"));
+        assert!(rendered.contains("pending W-30 cue idle"));
+        assert!(rendered.contains("latest promoted none"));
     }
 
     #[test]
@@ -2748,6 +2855,8 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("w30.swap_bank @ next_bar"));
+        assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("recall"));
     }
 
     #[test]
@@ -2768,5 +2877,45 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("w30.audition_promoted"));
+        assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("audition"));
+        assert!(rendered.contains("latest promoted"));
+        assert!(rendered.contains("cap-01"));
+    }
+
+    #[test]
+    fn renders_log_shell_snapshot_with_committed_w30_audition_diagnostics() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_promoted_audition(220),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            240,
+        );
+        assert_eq!(committed.len(), 1);
+        shell.active_screen = ShellScreen::Log;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("W-30 Lane"));
+        assert!(rendered.contains("cue idle"));
+        assert!(rendered.contains("recent audition"));
+        assert!(rendered.contains("auditioned cap-01"));
+        assert!(rendered.contains("bank-b/pad-03"));
     }
 }
