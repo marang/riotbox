@@ -72,6 +72,7 @@ docs/
     jam_log_screen_baseline.txt
     jam_tr909_takeover_baseline.txt
     source_screen_baseline.txt
+    capture_w30_live_recall_baseline.txt
   specs/
     source_graph_spec.md
     session_file_spec.md
@@ -124,4 +125,5 @@ docs/
 - `screenshots/jam_tr909_phrase_variation_baseline.txt`: baseline captured
 - `screenshots/source_screen_baseline.txt`: baseline captured
 - `screenshots/capture_screen_baseline.txt`: baseline captured
+- `screenshots/capture_w30_live_recall_baseline.txt`: baseline captured
 - all other specs: not started

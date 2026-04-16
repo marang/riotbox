@@ -256,6 +256,22 @@ fn run_event_loop(
                         shell.set_error_status("no promotable capture or W-30 target available");
                     }
                 }
+                ShellKeyOutcome::QueueW30LiveRecall => {
+                    match shell.app.queue_w30_live_recall(timestamp_now()) {
+                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 live recall for next bar");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 live recall already queued");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 live recall already in state");
+                        }
+                        None => shell.set_error_status(
+                            "no pinned or promoted W-30 capture available to recall",
+                        ),
+                    }
+                }
                 ShellKeyOutcome::TogglePinLatestCapture => {
                     match shell.app.toggle_pin_latest_capture() {
                         Some(true) => shell.set_error_status("pinned latest capture"),
