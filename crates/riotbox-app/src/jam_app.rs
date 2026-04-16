@@ -758,7 +758,9 @@ impl JamAppState {
         self.queue.pending_actions().iter().any(|action| {
             matches!(
                 action.command,
-                ActionCommand::Tr909Takeover | ActionCommand::Tr909Release
+                ActionCommand::Tr909Takeover
+                    | ActionCommand::Tr909SceneLock
+                    | ActionCommand::Tr909Release
             )
         })
     }
@@ -825,6 +827,43 @@ impl JamAppState {
             target_id: Some("takeover".into()),
         };
         draft.explanation = Some("engage controlled TR-909 takeover on next phrase".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
+    pub fn queue_tr909_scene_lock(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+        if self.tr909_takeover_change_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        if self.session.runtime_state.lane_state.tr909.takeover_enabled
+            && self
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_profile
+                .as_deref()
+                == Some("scene_lock_takeover")
+        {
+            return QueueControlResult::AlreadyInState;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Tr909SceneLock,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneTr909),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 1.0,
+            target_id: Some("scene_lock".into()),
+        };
+        draft.explanation = Some("engage scene-lock TR-909 variation on next phrase".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -1579,6 +1618,18 @@ fn apply_tr909_side_effects(
                 boundary.scene_id.as_ref().map_or_else(
                     || format!("takeover-phrase-{}", boundary.phrase_index),
                     |scene_id| format!("takeover-{scene_id}"),
+                )
+            });
+            session.runtime_state.lane_state.tr909.reinforcement_mode = Some("takeover".into());
+        }
+        ActionCommand::Tr909SceneLock => {
+            session.runtime_state.lane_state.tr909.takeover_enabled = true;
+            session.runtime_state.lane_state.tr909.takeover_profile =
+                Some("scene_lock_takeover".into());
+            session.runtime_state.lane_state.tr909.pattern_ref = boundary.map(|boundary| {
+                boundary.scene_id.as_ref().map_or_else(
+                    || format!("lock-phrase-{}", boundary.phrase_index),
+                    |scene_id| format!("lock-{scene_id}"),
                 )
             });
             session.runtime_state.lane_state.tr909.reinforcement_mode = Some("takeover".into());
@@ -2848,7 +2899,69 @@ mod tests {
             state.jam_view.lanes.tr909_takeover_pending_target,
             Some(true)
         );
+        assert_eq!(
+            state
+                .jam_view
+                .lanes
+                .tr909_takeover_pending_profile
+                .as_deref(),
+            Some("controlled_phrase_takeover")
+        );
         assert!(!state.jam_view.lanes.tr909_takeover_enabled);
+    }
+
+    #[test]
+    fn queueing_tr909_scene_lock_requires_clear_pending_and_non_scene_lock_state() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_tr909_scene_lock(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_tr909_scene_lock(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Tr909SceneLock);
+        assert_eq!(
+            state.jam_view.lanes.tr909_takeover_pending_target,
+            Some(true)
+        );
+        assert_eq!(
+            state
+                .jam_view
+                .lanes
+                .tr909_takeover_pending_profile
+                .as_deref(),
+            Some("scene_lock_takeover")
+        );
+        assert!(!state.jam_view.lanes.tr909_takeover_enabled);
+
+        let mut already_locked =
+            JamAppState::from_parts(sample_session(&graph), Some(graph), ActionQueue::new());
+        already_locked
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_enabled = true;
+        already_locked
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_profile = Some("scene_lock_takeover".into());
+        already_locked.refresh_view();
+
+        assert_eq!(
+            already_locked.queue_tr909_scene_lock(302),
+            QueueControlResult::AlreadyInState
+        );
     }
 
     #[test]
@@ -2873,6 +2986,7 @@ mod tests {
             state.jam_view.lanes.tr909_takeover_pending_target,
             Some(false)
         );
+        assert_eq!(state.jam_view.lanes.tr909_takeover_pending_profile, None);
         assert!(state.jam_view.lanes.tr909_takeover_enabled);
     }
 
@@ -3628,6 +3742,7 @@ mod tests {
             state.jam_view.lanes.tr909_takeover_profile.as_deref(),
             Some("controlled_phrase_takeover")
         );
+        assert_eq!(state.jam_view.lanes.tr909_takeover_pending_profile, None);
         assert_eq!(state.jam_view.lanes.tr909_takeover_pending_target, None);
         assert_eq!(state.runtime.tr909_render.mode, Tr909RenderMode::Takeover);
         assert_eq!(
@@ -3642,6 +3757,81 @@ mod tests {
             state.runtime.tr909_render.phrase_variation,
             Some(Tr909PhraseVariation::PhraseLift)
         );
+
+        state.update_transport_clock(TransportClockState {
+            is_playing: true,
+            position_beats: 64.0,
+            beat_index: 64,
+            bar_index: 16,
+            phrase_index: 2,
+            current_scene: Some(SceneId::from("scene-1")),
+        });
+
+        assert_eq!(
+            state.queue_tr909_scene_lock(450),
+            QueueControlResult::Enqueued
+        );
+        let committed_scene_lock = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 44,
+                bar_index: 11,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        );
+
+        assert_eq!(committed_scene_lock.len(), 1);
+        assert!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_enabled
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_profile
+                .as_deref(),
+            Some("scene_lock_takeover")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .pattern_ref
+                .as_deref(),
+            Some("lock-scene-1")
+        );
+        assert_eq!(
+            state.jam_view.lanes.tr909_takeover_profile.as_deref(),
+            Some("scene_lock_takeover")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.takeover_profile,
+            Some(Tr909TakeoverRenderProfile::SceneLock)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseDrive)
+        );
+
+        state.update_transport_clock(TransportClockState {
+            is_playing: true,
+            position_beats: 32.0,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 1,
+            current_scene: Some(SceneId::from("scene-1")),
+        });
 
         assert_eq!(state.queue_tr909_release(500), QueueControlResult::Enqueued);
         let committed_release = state.commit_ready_actions(

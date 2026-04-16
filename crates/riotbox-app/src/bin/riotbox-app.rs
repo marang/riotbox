@@ -232,6 +232,21 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueTr909SceneLock => {
+                    match shell.app.queue_tr909_scene_lock(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued TR-909 scene-lock variation for next phrase",
+                            );
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("TR-909 takeover change already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("TR-909 scene-lock variation already active");
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueTr909Release => {
                     match shell.app.queue_tr909_release(timestamp_now()) {
                         riotbox_app::jam_app::QueueControlResult::Enqueued => {
