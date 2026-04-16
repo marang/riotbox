@@ -1391,6 +1391,8 @@ fn session_from_ingested_graph(
         external_path: source_graph_path.map(|path| path.to_string_lossy().into_owned()),
         provenance: graph.provenance.clone(),
     });
+    // Keep the music bus open enough that W-30 preview work is audible in fresh ingest sessions.
+    session.runtime_state.mixer_state.music_level = 0.64;
     session.notes = Some("session created from analysis ingest slice".into());
 
     Ok(session)
@@ -4974,6 +4976,7 @@ mod tests {
         );
         assert_eq!(state.session.source_refs.len(), 1);
         assert_eq!(state.session.source_graph_refs.len(), 1);
+        assert_eq!(state.session.runtime_state.mixer_state.music_level, 0.64);
         assert_eq!(
             state.session.source_graph_refs[0].storage_mode,
             GraphStorageMode::External
@@ -5015,6 +5018,7 @@ mod tests {
         .expect("ingest source file");
 
         assert_eq!(state.session.source_graph_refs.len(), 1);
+        assert_eq!(state.session.runtime_state.mixer_state.music_level, 0.64);
         assert_eq!(
             state.session.source_graph_refs[0].storage_mode,
             GraphStorageMode::Embedded
