@@ -92,4 +92,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First real W-30 bank-manager control on the committed preview seam.
 - [RIOTBOX-74.md](./RIOTBOX-74.md)
   First bounded W-30 pad-forge control on the current committed preview seam.
+- [RIOTBOX-75.md](./RIOTBOX-75.md)
+  W-30 bank-manager and damage-profile diagnostics in the existing shell spine.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
