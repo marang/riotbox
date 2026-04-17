@@ -183,6 +183,23 @@ impl JamViewModel {
         let tr909_fill_pending = pending_actions
             .iter()
             .any(|action| matches!(action.command, crate::action::ActionCommand::Tr909FillNext));
+        let pending_capture_count = pending_actions
+            .iter()
+            .filter(|action| is_capture_command(action))
+            .count();
+        let pending_capture_items = pending_actions
+            .iter()
+            .filter(|action| is_capture_command(action))
+            .take(4)
+            .map(|action| PendingCaptureActionView {
+                id: action.id.to_string(),
+                actor: action.actor.to_string(),
+                command: action.command.to_string(),
+                quantization: action.quantization.to_string(),
+                target: capture_action_target_label(action),
+                explanation: action.explanation.clone(),
+            })
+            .collect();
         let pending_actions: Vec<PendingActionView> = pending_actions
             .into_iter()
             .map(|action| PendingActionView {
@@ -310,6 +327,8 @@ impl JamViewModel {
                     .iter()
                     .filter(|capture| capture.assigned_target.is_none())
                     .count(),
+                pending_capture_count,
+                pending_capture_items,
                 last_capture_id: session
                     .captures
                     .last()
@@ -365,6 +384,51 @@ impl JamViewModel {
             },
             warnings,
         }
+    }
+}
+
+fn is_capture_command(action: &crate::action::Action) -> bool {
+    matches!(
+        action.command,
+        crate::action::ActionCommand::CaptureNow
+            | crate::action::ActionCommand::CaptureLoop
+            | crate::action::ActionCommand::CaptureBarGroup
+            | crate::action::ActionCommand::W30CaptureToPad
+            | crate::action::ActionCommand::PromoteCaptureToPad
+            | crate::action::ActionCommand::PromoteCaptureToScene
+            | crate::action::ActionCommand::W30LoopFreeze
+            | crate::action::ActionCommand::PromoteResample
+    )
+}
+
+fn capture_action_target_label(action: &crate::action::Action) -> String {
+    match action.target.scope {
+        Some(crate::action::TargetScope::LaneW30) => {
+            if let (Some(bank_id), Some(pad_id)) = (
+                action.target.bank_id.as_ref(),
+                action.target.pad_id.as_ref(),
+            ) {
+                format!("lanew30:{bank_id}/{pad_id}")
+            } else {
+                "lanew30".into()
+            }
+        }
+        Some(crate::action::TargetScope::Scene) => action
+            .target
+            .scene_id
+            .as_ref()
+            .map_or_else(|| "scene".into(), |scene_id| format!("scene:{scene_id}")),
+        Some(crate::action::TargetScope::LaneMc202) => {
+            action.target.object_id.as_ref().map_or_else(
+                || "lanemc202".into(),
+                |object_id| format!("lanemc202:{object_id}"),
+            )
+        }
+        Some(crate::action::TargetScope::LaneTr909) => "lanetr909".into(),
+        Some(crate::action::TargetScope::Global) => "global".into(),
+        Some(crate::action::TargetScope::Mixer) => "mixer".into(),
+        Some(crate::action::TargetScope::Ghost) => "ghost".into(),
+        Some(crate::action::TargetScope::Session) | None => "session".into(),
     }
 }
 
@@ -442,6 +506,8 @@ pub struct CaptureSummaryView {
     pub pinned_capture_count: usize,
     pub promoted_capture_count: usize,
     pub unassigned_capture_count: usize,
+    pub pending_capture_count: usize,
+    pub pending_capture_items: Vec<PendingCaptureActionView>,
     pub last_capture_id: Option<String>,
     pub last_capture_target: Option<String>,
     pub last_capture_origin_count: usize,
@@ -456,6 +522,16 @@ pub struct PendingActionView {
     pub actor: String,
     pub command: String,
     pub quantization: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct PendingCaptureActionView {
+    pub id: String,
+    pub actor: String,
+    pub command: String,
+    pub quantization: String,
+    pub target: String,
+    pub explanation: Option<String>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -767,6 +843,7 @@ mod tests {
         assert_eq!(vm.capture.pinned_capture_count, 0);
         assert_eq!(vm.capture.promoted_capture_count, 1);
         assert_eq!(vm.capture.unassigned_capture_count, 0);
+        assert_eq!(vm.capture.pending_capture_count, 2);
         assert_eq!(vm.capture.last_capture_id.as_deref(), Some("cap-01"));
         assert_eq!(
             vm.capture.last_capture_target.as_deref(),
@@ -777,6 +854,18 @@ mod tests {
             Some("promoted to pad bank-a/pad-01")
         );
         assert!(vm.capture.pinned_capture_ids.is_empty());
+        assert_eq!(vm.capture.pending_capture_items.len(), 2);
+        assert_eq!(vm.capture.pending_capture_items[0].command, "capture.now");
+        assert_eq!(vm.capture.pending_capture_items[0].target, "lanew30");
+        assert_eq!(
+            vm.capture.pending_capture_items[0].explanation.as_deref(),
+            Some("capture current break")
+        );
+        assert_eq!(
+            vm.capture.pending_capture_items[1].command,
+            "promote.resample"
+        );
+        assert_eq!(vm.capture.pending_capture_items[1].target, "lanew30");
         assert_eq!(vm.lanes.mc202_pending_role.as_deref(), Some("leader"));
         assert!(!vm.lanes.mc202_pending_follower_generation);
         assert!(!vm.lanes.mc202_pending_answer_generation);

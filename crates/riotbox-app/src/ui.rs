@@ -1713,13 +1713,7 @@ fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let pending_capture_count = shell
-        .app
-        .queue
-        .pending_actions()
-        .into_iter()
-        .filter(|action| is_capture_command(action))
-        .count();
+    let pending_capture_count = shell.app.jam_view.capture.pending_capture_count;
     let bank = shell
         .app
         .jam_view
@@ -1807,14 +1801,7 @@ fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let pending: Vec<_> = shell
-        .app
-        .queue
-        .pending_actions()
-        .into_iter()
-        .filter(|action| is_capture_command(action))
-        .take(4)
-        .collect();
+    let pending = &shell.app.jam_view.capture.pending_capture_items;
     if pending.is_empty() {
         return vec![Line::from("no queued capture actions")];
     }
@@ -1827,8 +1814,7 @@ fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         )));
         lines.push(Line::from(format!(
             "when {} | target {}",
-            action.quantization,
-            action_target_label(&action.target)
+            action.quantization, action.target
         )));
         if let Some(explanation) = &action.explanation {
             lines.push(Line::from(format!("note {explanation}")));
@@ -2288,20 +2274,6 @@ fn action_target_label(target: &riotbox_core::action::ActionTarget) -> String {
     } else {
         format!("{scope}:{detail}")
     }
-}
-
-fn is_capture_command(action: &riotbox_core::action::Action) -> bool {
-    matches!(
-        action.command,
-        riotbox_core::action::ActionCommand::CaptureNow
-            | riotbox_core::action::ActionCommand::CaptureLoop
-            | riotbox_core::action::ActionCommand::CaptureBarGroup
-            | riotbox_core::action::ActionCommand::W30CaptureToPad
-            | riotbox_core::action::ActionCommand::PromoteCaptureToPad
-            | riotbox_core::action::ActionCommand::PromoteCaptureToScene
-            | riotbox_core::action::ActionCommand::W30LoopFreeze
-            | riotbox_core::action::ActionCommand::PromoteResample
-    )
 }
 
 fn is_capture_command_view(command: &str) -> bool {
