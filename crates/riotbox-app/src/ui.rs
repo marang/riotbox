@@ -7,6 +7,7 @@ use ratatui::{
     text::Line,
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
+use riotbox_audio::w30::W30PreviewRenderMode;
 use riotbox_core::source_graph::{
     DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint,
 };
@@ -460,7 +461,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     let lanes = Paragraph::new(vec![
         Line::from(format!(
-            "MC-202: {}{} | W-30: {}/{}",
+            "MC-202: {}{} | touch {:.2}",
             shell
                 .app
                 .jam_view
@@ -476,20 +477,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .as_deref()
                 .map(|role| format!(" -> {role}"))
                 .unwrap_or_default(),
-            shell
-                .app
-                .jam_view
-                .lanes
-                .w30_active_bank
-                .as_deref()
-                .unwrap_or("unset"),
-            shell
-                .app
-                .jam_view
-                .lanes
-                .w30_focused_pad
-                .as_deref()
-                .unwrap_or("unset")
+            shell.app.jam_view.macros.mc202_touch,
         )),
         Line::from(format!(
             "202 phrase {} | gen {}",
@@ -509,80 +497,30 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             }
         )),
         Line::from(format!(
-            "W-30 cue {} | last {}",
+            "W-30 cue {} | 909 {} fill {}",
             w30_pending_cue_label(shell),
-            shell
-                .app
-                .jam_view
-                .capture
-                .last_capture_id
-                .as_deref()
-                .unwrap_or("none")
-        )),
-        Line::from(format!(
-            "W-30 preview {} / {}",
-            shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_profile
-        )),
-        Line::from(format!(
-            "202 touch {:.2} | role diag {}",
-            shell.app.jam_view.macros.mc202_touch,
-            mc202_pending_role_label(shell)
-        )),
-        Line::from(format!(
-            "909 takeover {} {} | fill {} / {}",
             if shell.app.jam_view.lanes.tr909_takeover_enabled {
-                "on"
+                "takeover"
             } else {
-                "off"
+                "support"
             },
-            shell
-                .app
-                .jam_view
-                .lanes
-                .tr909_takeover_pending_profile
-                .as_deref()
-                .unwrap_or("-"),
             if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
-                "yes"
+                "armed"
             } else {
-                "no"
-            },
-            shell
-                .app
-                .jam_view
-                .lanes
-                .tr909_last_fill_bar
-                .map(|bar| bar.to_string())
-                .unwrap_or_else(|| "-".into())
+                "idle"
+            }
         )),
         Line::from(format!(
-            "909 mode {} | render {}",
-            shell
-                .app
-                .jam_view
-                .lanes
-                .tr909_reinforcement_mode
-                .as_deref()
-                .unwrap_or("unset"),
-            shell.app.runtime_view.tr909_render_mode
+            "W-30 {} | {}",
+            w30_preview_mode_profile_compact(shell),
+            w30_target_compact(shell)
         )),
         Line::from(format!(
-            "{} | {}",
-            shell.app.runtime_view.tr909_render_routing,
-            shell.app.runtime_view.tr909_render_profile
+            "W-30 {} | {} | {}",
+            w30_mix_compact(shell),
+            w30_capture_compact(shell),
+            w30_trigger_compact(shell)
         )),
-        Line::from(format!(
-            "{} | {} | {}",
-            shell
-                .app
-                .runtime_view
-                .tr909_render_pattern_ref
-                .as_deref()
-                .unwrap_or("unset"),
-            shell.app.runtime_view.tr909_render_pattern_adoption,
-            shell.app.runtime_view.tr909_render_phrase_variation
-        )),
-        Line::from(shell.app.runtime_view.tr909_render_mix_summary.clone()),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -1209,26 +1147,90 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             lanes.w30_focused_pad.as_deref().unwrap_or("unset")
         )),
         Line::from(format!(
-            "cue {} | {}",
-            w30_pending_cue_label(shell),
-            shell.app.runtime_view.w30_preview_mode
+            "cue {} | {recent_label}",
+            w30_pending_cue_label(shell)
         )),
+        Line::from(format!("prev {}", w30_preview_mode_profile_compact(shell))),
+        Line::from(format!("out {}", w30_mix_compact(shell))),
         Line::from(format!(
-            "capture {} | {}",
-            shell
-                .app
-                .session
-                .runtime_state
-                .lane_state
-                .w30
-                .last_capture
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into()),
-            shell.app.runtime_view.w30_preview_profile
+            "cap {} | {}",
+            w30_capture_compact(shell),
+            w30_trigger_compact(shell),
         )),
-        Line::from(format!("recent {recent_label}")),
     ]
+}
+
+fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
+    format!(
+        "{}/{}",
+        match shell.app.runtime.w30_preview.mode {
+            W30PreviewRenderMode::Idle => "idle",
+            W30PreviewRenderMode::LiveRecall => "recall",
+            W30PreviewRenderMode::PromotedAudition => "audition",
+        },
+        match shell.app.runtime.w30_preview.source_profile {
+            None => "unset",
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::PinnedRecall) => "pinned",
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall) => "promoted",
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition) => "audition",
+        }
+    )
+}
+
+fn w30_target_compact(shell: &JamShellState) -> String {
+    format!(
+        "{}/{}",
+        shell
+            .app
+            .jam_view
+            .lanes
+            .w30_active_bank
+            .as_deref()
+            .unwrap_or("unset"),
+        shell
+            .app
+            .jam_view
+            .lanes
+            .w30_focused_pad
+            .as_deref()
+            .unwrap_or("unset")
+    )
+}
+
+fn w30_mix_compact(shell: &JamShellState) -> String {
+    format!(
+        "bus {:.2} grit {:.2}",
+        shell.app.runtime.w30_preview.music_bus_level, shell.app.runtime.w30_preview.grit_level
+    )
+}
+
+fn w30_capture_compact(shell: &JamShellState) -> String {
+    shell
+        .app
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .last_capture
+        .as_ref()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| "none".into())
+}
+
+fn w30_trigger_compact(shell: &JamShellState) -> String {
+    let render = &shell.app.runtime.w30_preview;
+    if render.trigger_revision == 0 {
+        if matches!(render.mode, W30PreviewRenderMode::Idle) {
+            "unset".into()
+        } else {
+            "pending".into()
+        }
+    } else {
+        format!(
+            "r{}@{:.2}",
+            render.trigger_revision, render.trigger_velocity
+        )
+    }
 }
 
 fn section_label(section: &Section) -> &'static str {
@@ -2574,10 +2576,11 @@ mod tests {
         assert!(rendered.contains("Capture"));
         assert!(rendered.contains("202 phrase"));
         assert!(rendered.contains("gen idle"));
-        assert!(rendered.contains("202 touch 0.80"));
+        assert!(rendered.contains("MC-202: leader | touch 0.80"));
         assert!(rendered.contains("W-30 cue idle"));
-        assert!(rendered.contains("909 takeover"));
-        assert!(rendered.contains("takeover"));
+        assert!(rendered.contains("W-30 recall/promoted | bank-a/unset"));
+        assert!(rendered.contains("W-30 bus 0.64 grit 0.50 | cap-01 | pending"));
+        assert!(rendered.contains("909 takeover fill armed"));
     }
 
     #[test]
@@ -2964,7 +2967,10 @@ mod tests {
         assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("role leader"));
         assert!(rendered.contains("cue idle"));
-        assert!(rendered.contains("recent none"));
+        assert!(rendered.contains("cue idle | none"));
+        assert!(rendered.contains("prev recall/promoted"));
+        assert!(rendered.contains("out bus 0.64 grit 0.50"));
+        assert!(rendered.contains("cap cap-01 | pending"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("mutate.scene"));
         assert!(rendered.contains("TR-909 Render"));
@@ -3116,5 +3122,45 @@ mod tests {
         assert!(rendered.contains("auditioned cap-01"));
         assert!(rendered.contains("bank-b"));
         assert!(rendered.contains("pad-03"));
+        assert!(rendered.contains("cue idle | audition"));
+        assert!(rendered.contains("prev audition/audition"));
+        assert!(rendered.contains("out bus 0.64 grit 0.68"));
+        assert!(rendered.contains("cap cap-01 | pending"));
+    }
+
+    #[test]
+    fn renders_log_shell_snapshot_with_committed_w30_trigger_preview_diagnostics() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_trigger_pad(230),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Beat,
+                beat_index: 34,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            250,
+        );
+        assert_eq!(committed.len(), 1);
+        shell.active_screen = ShellScreen::Log;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("W-30 Lane"));
+        assert!(rendered.contains("cue idle | trigger"));
+        assert!(rendered.contains("prev recall/promoted"));
+        assert!(rendered.contains("out bus 0.64 grit 0.69"));
+        assert!(rendered.contains("cap cap-01 | r1@0.84"));
     }
 }

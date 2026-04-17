@@ -1,0 +1,24 @@
+Riotbox W-30 Audible Preview Baseline
+Normalized terminal capture notes for `RIOTBOX-62`
+Source: `riotbox-app` shell state fixtures
+Notes:
+- normalized from the current Jam and Log shell state fixtures
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights readable audible-preview cues on top of the existing committed W-30 preview seam
+
+Key shell cues after this slice:
+
+- `Jam` now includes:
+  - `W-30 recall/promoted | bank-a/unset`
+  - `W-30 bus 0.64 grit 0.50 | cap-01 | pending`
+- `Log -> W-30 Lane` now includes:
+  - `cue idle | trigger`
+  - `prev recall/promoted`
+  - `out bus 0.64 grit 0.69`
+  - `cap cap-01 | r1@0.84`
+
+Interpretation:
+
+- the shell now makes the audible W-30 preview seam legible where operators already look instead of forcing a second W-30-only surface
+- Jam exposes the current preview mode, target, and output cue inline with the rest of the musical state
+- Log deepens the same seam with compact preview, output, and trigger cues so committed preview behavior stays reviewable after the action commits

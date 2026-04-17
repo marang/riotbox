@@ -20,7 +20,7 @@
       "jam_contains": [
         "MC-202: leader",
         "202 phrase leader-scene-1",
-        "202 touch 0.85"
+        "touch 0.85"
       ],
       "log_contains": [
         "role leader",
@@ -50,7 +50,7 @@
       "jam_contains": [
         "MC-202: follower",
         "202 phrase follower-scene-1",
-        "202 touch 0.78"
+        "touch 0.78"
       ],
       "log_contains": [
         "role follower",
@@ -80,7 +80,7 @@
       "jam_contains": [
         "MC-202: answer",
         "202 phrase answer-scene-1",
-        "202 touch 0.82"
+        "touch 0.82"
       ],
       "log_contains": [
         "role answer",

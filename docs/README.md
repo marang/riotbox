@@ -73,6 +73,7 @@ docs/
     jam_tr909_takeover_baseline.txt
     source_screen_baseline.txt
     capture_w30_live_recall_baseline.txt
+    w30_audible_preview_baseline.txt
   specs/
     source_graph_spec.md
     session_file_spec.md
@@ -126,5 +127,6 @@ docs/
 - `screenshots/source_screen_baseline.txt`: baseline captured
 - `screenshots/capture_screen_baseline.txt`: baseline captured
 - `screenshots/capture_w30_live_recall_baseline.txt`: baseline captured
+- `screenshots/w30_audible_preview_baseline.txt`: baseline captured
 - `screenshots/w30_diagnostics_baseline.txt`: baseline captured
 - all other specs: not started
