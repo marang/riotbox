@@ -158,4 +158,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   First bounded Scene Brain restore action on the existing transport seam.
 - [RIOTBOX-108.md](./RIOTBOX-108.md)
   Restore target and pending restore cues surfaced in the default Jam and Log shell surfaces.
+- [RIOTBOX-109.md](./RIOTBOX-109.md)
+  Replay-safe committed-state and shell regression fixtures for the first scene restore seam.
+- [RIOTBOX-110.md](./RIOTBOX-110.md)
+  First Scene Brain `scene jump -> restore` learning recipe and README pointer.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
