@@ -759,6 +759,17 @@ Status: accepted
 
 ---
 
+Topic: first bounded W-30 bank-manager control should swap committed focus across promoted banks without opening a second bank editor
+Phase: W-30 MVP
+Question: now that live recall has its own explicit action seam, what is the smallest next slice that turns `w30.swap_bank` into a real bank-manager control while staying on the existing preview and commit boundaries?
+Decision: use `w30.swap_bank` as a `NextBar` control that rotates to the next promoted W-30 bank, preserves the current focused pad when that pad exists in the target bank, falls back to the first promoted pad in that bank otherwise, and commits the same W-30 preview-facing lane updates through the existing focused-pad seam.
+Why: the current W-30 MVP already has explicit committed focus, preview mode, and live recall semantics. A first real bank swap should therefore be a bounded movement across existing promoted banks, not a new shell-only bank cursor or a second bank-manager state machine. Reusing the committed focus seam keeps action history honest and lets later bank-grid work refine the same path instead of replacing it.
+Evidence: `riotbox-app` now resolves `w30.swap_bank` from actual promoted W-30 targets, queues it on `NextBar`, blocks it against other pending W-30 pad cues, updates lane focus plus the last capture on commit, and distinguishes pending bank cues from recall cues in the shell. `riotbox-core` now carries a dedicated `w30_pending_bank_swap_target`, and queue/commit plus shell regressions cover both the pending and committed bank-swap behavior.
+Consequences: later W-30 bank-manager work should keep extending this explicit committed bank-swap seam rather than inventing a separate bank navigation surface. The current slice stays bounded to promoted-bank rotation only; full bank-grid editing, empty-bank travel, and deeper pad-forge controls remain out of scope.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

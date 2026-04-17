@@ -1267,6 +1267,54 @@ impl JamAppState {
         Some(QueueControlResult::Enqueued)
     }
 
+    pub fn queue_w30_swap_bank(&mut self, requested_at: TimestampMs) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let (bank_id, pad_id, capture_id) = self.next_w30_bank_target()?;
+        let current_focus = self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .clone()
+            .zip(
+                self.session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .focused_pad
+                    .clone(),
+            );
+        if current_focus == Some((bank_id.clone(), pad_id.clone())) {
+            return Some(QueueControlResult::AlreadyInState);
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30SwapBank,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 1.0,
+            target_id: Some(capture_id.to_string()),
+        };
+        draft.explanation = Some(format!(
+            "swap W-30 bank to {bank_id}/{pad_id} with {capture_id} on next bar"
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn queue_w30_promoted_audition(
         &mut self,
         requested_at: TimestampMs,
@@ -1447,6 +1495,68 @@ impl JamAppState {
         targets.first().cloned()
     }
 
+    fn next_w30_bank_target(&self) -> Option<(BankId, PadId, CaptureId)> {
+        let current_bank = self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .clone();
+        let current_pad = self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .focused_pad
+            .clone();
+
+        let targets = self.w30_focus_targets();
+
+        if targets.is_empty() {
+            return None;
+        }
+
+        let banks = targets
+            .iter()
+            .map(|(bank_id, _)| bank_id.clone())
+            .collect::<BTreeSet<_>>()
+            .into_iter()
+            .collect::<Vec<_>>();
+        let target_bank = if let Some(current_bank) = current_bank {
+            if let Some(index) = banks.iter().position(|bank_id| *bank_id == current_bank) {
+                banks[(index + 1) % banks.len()].clone()
+            } else {
+                banks.first().cloned()?
+            }
+        } else {
+            banks.first().cloned()?
+        };
+
+        let target_pad = if let Some(current_pad) = current_pad.as_ref()
+            && targets
+                .iter()
+                .any(|(bank_id, pad_id)| *bank_id == target_bank && pad_id == current_pad)
+        {
+            current_pad.clone()
+        } else {
+            targets
+                .iter()
+                .find(|(bank_id, _)| *bank_id == target_bank)
+                .map(|(_, pad_id)| pad_id.clone())?
+        };
+
+        let capture_id = self
+            .session
+            .captures
+            .iter()
+            .rev()
+            .find(|capture| capture_targets_specific_w30_pad(capture, &target_bank, &target_pad))
+            .map(|capture| capture.capture_id.clone())?;
+
+        Some((target_bank, target_pad, capture_id))
+    }
+
     fn recallable_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
@@ -1577,7 +1687,8 @@ impl JamAppState {
         self.queue.pending_actions().into_iter().any(|action| {
             matches!(
                 action.command,
-                ActionCommand::W30LiveRecall
+                ActionCommand::W30SwapBank
+                    | ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
@@ -2107,6 +2218,7 @@ fn apply_w30_side_effects(
     if !matches!(
         action.command,
         ActionCommand::W30LiveRecall
+            | ActionCommand::W30SwapBank
             | ActionCommand::W30StepFocus
             | ActionCommand::W30AuditionPromoted
             | ActionCommand::W30TriggerPad
@@ -2133,6 +2245,7 @@ fn apply_w30_side_effects(
     session.runtime_state.lane_state.w30.preview_mode = Some(match action.command {
         ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
         ActionCommand::W30LiveRecall
+        | ActionCommand::W30SwapBank
         | ActionCommand::W30StepFocus
         | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
         _ => unreachable!("checked above"),
@@ -2179,6 +2292,10 @@ fn apply_w30_side_effects(
             ActionCommand::W30LiveRecall => capture_id.as_ref().map_or_else(
                 || format!("recalled W-30 pad {bank_id}/{pad_id}"),
                 |capture_id| format!("recalled {capture_id} on W-30 pad {bank_id}/{pad_id}"),
+            ),
+            ActionCommand::W30SwapBank => capture_id.as_ref().map_or_else(
+                || format!("swapped W-30 bank to {bank_id}/{pad_id}"),
+                |capture_id| format!("swapped W-30 bank to {bank_id}/{pad_id} with {capture_id}"),
             ),
             ActionCommand::W30AuditionPromoted => capture_id.as_ref().map_or_else(
                 || format!("auditioned W-30 pad {bank_id}/{pad_id}"),
@@ -2640,6 +2757,7 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
             && matches!(
                 action.command,
                 ActionCommand::W30LiveRecall
+                    | ActionCommand::W30SwapBank
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
@@ -2652,6 +2770,7 @@ fn normalize_w30_preview_mode(session: &mut SessionFile) {
         .map(|action| match action.command {
             ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
             ActionCommand::W30LiveRecall
+            | ActionCommand::W30SwapBank
             | ActionCommand::W30StepFocus
             | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
             _ => unreachable!("filtered by helper"),
@@ -4486,6 +4605,69 @@ mod tests {
     }
 
     #[test]
+    fn queue_w30_swap_bank_targets_next_bank_on_next_bar() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-b"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            is_pinned: false,
+            notes: Some("bank b".into()),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_swap_bank(628),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::W30SwapBank);
+        assert_eq!(pending[0].quantization, Quantization::NextBar);
+        assert_eq!(
+            pending[0].target.bank_id.as_ref().map(ToString::to_string),
+            Some("bank-b".into())
+        );
+        assert_eq!(
+            pending[0].target.pad_id.as_ref().map(ToString::to_string),
+            Some("pad-01".into())
+        );
+        assert!(matches!(
+            &pending[0].params,
+            ActionParams::Mutation {
+                target_id: Some(target_id),
+                ..
+            } if target_id == "cap-02"
+        ));
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("swap W-30 bank to bank-b/pad-01 with cap-02 on next bar")
+        );
+        assert_eq!(
+            state.jam_view.lanes.w30_pending_bank_swap_target.as_deref(),
+            Some("bank-b/pad-01")
+        );
+    }
+
+    #[test]
     fn queue_w30_live_recall_falls_back_to_latest_pinned_capture_without_explicit_focus() {
         let graph = sample_graph();
         let session = sample_session(&graph);
@@ -4559,6 +4741,10 @@ mod tests {
             Some(QueueControlResult::AlreadyPending)
         );
         assert_eq!(
+            state.queue_w30_swap_bank(631),
+            Some(QueueControlResult::AlreadyPending)
+        );
+        assert_eq!(
             state.queue_w30_trigger_pad(632),
             Some(QueueControlResult::AlreadyPending)
         );
@@ -4587,6 +4773,10 @@ mod tests {
         );
         assert_eq!(
             other_state.queue_w30_step_focus(633),
+            Some(QueueControlResult::AlreadyPending)
+        );
+        assert_eq!(
+            other_state.queue_w30_swap_bank(633),
             Some(QueueControlResult::AlreadyPending)
         );
         assert_eq!(
@@ -4722,6 +4912,99 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("recalled cap-01 on W-30 pad bank-b/pad-03")
+        );
+    }
+
+    #[test]
+    fn committed_w30_bank_swap_updates_lane_focus_and_log_result() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-b"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            is_pinned: false,
+            notes: Some("bank b".into()),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_swap_bank(612),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 41,
+                bar_index: 11,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            712,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .active_bank
+                .as_ref()
+                .map(ToString::to_string),
+            Some("bank-b".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .as_ref()
+                .map(ToString::to_string),
+            Some("pad-01".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string),
+            Some("cap-02".into())
+        );
+        assert_eq!(state.jam_view.lanes.w30_pending_bank_swap_target, None);
+        assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("swapped W-30 bank to bank-b/pad-01 with cap-02")
         );
     }
 
