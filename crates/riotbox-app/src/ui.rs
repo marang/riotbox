@@ -1135,11 +1135,14 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         ));
     } else {
         lines.push(Line::from(
-            "Primary: y scene jump | g follow | a answer | f fill | c capture | w hit | u undo | more in ? help",
+            "Primary: y scene jump | g follow | f fill | c capture | w hit | u undo",
+        ));
+        lines.push(Line::from(
+            "Advanced: a answer | b voice | d push | t takeover | k lock | x release | more in ? help",
         ));
     }
     lines.push(Line::from(
-        "Lane ops: b voice | d push | t takeover | k lock | x release | l recall | o audition | z freeze",
+        "Lane ops: l recall | o audition | z freeze | e resample | B bank | j browse",
     ));
     lines.push(Line::from(format!(
         "Status: {} | jam {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1217,14 +1220,15 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     lines.extend([
         Line::from(""),
         Line::from("Primary gestures"),
-        Line::from("space: play / pause | y: scene jump | g: follow | a: answer"),
-        Line::from("f: fill | c: capture | w: hit | u: undo | 2: confirm in Log"),
+        Line::from("space: play / pause | y: scene jump | g: follow | f: fill"),
+        Line::from("c: capture | w: hit | u: undo | 2: confirm in Log"),
         Line::from(""),
         Line::from("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
         Line::from(""),
-        Line::from("Secondary / lane ops"),
+        Line::from("Advanced / lane gestures"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
-        Line::from("m: mutate scene | b: MC-202 voice | d: 909 push | s: 909 slam"),
+        Line::from("a: answer | m: mutate scene | b: MC-202 voice | d: 909 push"),
+        Line::from("s: 909 slam"),
         Line::from("t: 909 takeover | k: 909 lock | x: 909 release"),
         Line::from("p: promote | n: W-30 next pad | B: W-30 bank | j: browse"),
         Line::from("D: damage | z: freeze | l: recall | o: audition | e: resample"),
@@ -3952,6 +3956,14 @@ mod tests {
         assert!(rendered.contains("Suggested gestures"));
         assert!(rendered.contains("Pending / landed"));
         assert!(rendered.contains("next fill"));
+        assert!(
+            rendered.contains("Primary: y scene jump | g follow | f fill"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("Advanced: a answer | b voice | d push"),
+            "{rendered}"
+        );
         assert!(!rendered.contains("Sections"), "{rendered}");
     }
 
