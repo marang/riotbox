@@ -108,4 +108,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Follow-up periodic repo review after the recent W-30 seam batch.
 - [RIOTBOX-82.md](./RIOTBOX-82.md)
   W-30 phrase-cue conflict cleanup between loop freeze and resample.
+- [RIOTBOX-83.md](./RIOTBOX-83.md)
+  Capture pending summaries now flow through the projected app/core state seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
