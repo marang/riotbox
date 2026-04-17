@@ -726,6 +726,17 @@ Status: accepted
 
 ---
 
+Topic: Pending W-30 resample cues should enter the shell through the core Jam view model
+Phase: W-30 MVP
+Question: after the periodic codebase review flagged a shell-side queue scan for pending W-30 resample intent, what is the smallest correction that restores the presentation boundary without creating a second W-30 summary path?
+Decision: extend `JamViewModel.lanes` with explicit pending W-30 resample cue data and have the shell derive its cue label from that core presentation contract instead of scanning `ActionQueue` directly.
+Why: the shell already receives pending MC-202, TR-909, recall, audition, and trigger summaries through the core Jam view model. Leaving pending W-30 resample intent as a direct queue scan would keep one small but real boundary leak alive, making later shell work easier to drift into ad hoc queue inspection.
+Evidence: `riotbox-core` now surfaces `w30_pending_resample_capture_id` in `LaneSummaryView`, the Jam-view regression fixture covers that new field, and `riotbox-app` no longer scans `ActionQueue` directly for the W-30 resample cue label.
+Consequences: future shell summaries should keep extending the core Jam view contract rather than introducing new queue reads inside `ui.rs`. Queue-level state remains modeled centrally before it is rendered.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

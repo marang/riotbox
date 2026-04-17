@@ -86,6 +86,24 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
+        let w30_pending_resample_capture_id =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::PromoteResample
+                        if action.target.scope == Some(crate::action::TargetScope::LaneW30) =>
+                    {
+                        match &action.params {
+                            crate::action::ActionParams::Promotion {
+                                capture_id: Some(capture_id),
+                                ..
+                            } => Some(capture_id.to_string()),
+                            _ => Some("pending".into()),
+                        }
+                    }
+                    _ => None,
+                });
         let tr909_takeover_pending_target =
             pending_actions
                 .iter()
@@ -199,6 +217,7 @@ impl JamViewModel {
                 w30_pending_trigger_target,
                 w30_pending_recall_target,
                 w30_pending_audition_target,
+                w30_pending_resample_capture_id,
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
                 tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
                 tr909_takeover_pending_target,
@@ -346,6 +365,7 @@ pub struct LaneSummaryView {
     pub w30_pending_trigger_target: Option<String>,
     pub w30_pending_recall_target: Option<String>,
     pub w30_pending_audition_target: Option<String>,
+    pub w30_pending_resample_capture_id: Option<String>,
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
     pub tr909_takeover_pending_target: Option<bool>,
@@ -620,6 +640,20 @@ mod tests {
             ),
             104,
         );
+        let mut resample_draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::PromoteResample,
+            Quantization::NextPhrase,
+            ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                ..Default::default()
+            },
+        );
+        resample_draft.params = crate::action::ActionParams::Promotion {
+            capture_id: Some("cap-01".into()),
+            destination: Some("w30:resample".into()),
+        };
+        queue.enqueue(resample_draft, 105);
 
         let vm = JamViewModel::build(&session, &queue, Some(&graph));
 
@@ -656,6 +690,10 @@ mod tests {
             Some("bank-a/pad-02")
         );
         assert_eq!(vm.lanes.w30_pending_audition_target, None);
+        assert_eq!(
+            vm.lanes.w30_pending_resample_capture_id.as_deref(),
+            Some("cap-01")
+        );
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
         assert_eq!(vm.lanes.tr909_takeover_pending_profile.as_deref(), None);
@@ -666,7 +704,7 @@ mod tests {
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 6);
+        assert_eq!(vm.pending_actions.len(), 7);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }
