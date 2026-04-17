@@ -748,6 +748,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 live recall should stop overloading the bank-swap action name before bank-manager controls land
+Phase: W-30 MVP
+Question: once committed focus-step behavior exists, what is the smallest honest cleanup that keeps later bank-manager work from inheriting misleading W-30 action semantics?
+Decision: split the existing live-recall behavior onto an explicit `w30.live_recall` action command and reserve `w30.swap_bank` for future real bank-manager movement. Keep the queue target resolution, `NextBar` quantization, committed preview behavior, and focused-pad side effects otherwise unchanged.
+Why: the repo already moved pad stepping onto its own committed `w30.step_focus` seam. Leaving live recall on `w30.swap_bank` would make action history misleading and would force the first actual bank-manager slice to either reuse a dishonest command name or create another workaround around the same seam.
+Evidence: `riotbox-core` now exposes `w30.live_recall`, the Jam view uses it for pending recall summaries, `riotbox-app` queues recall with that explicit command while preserving the existing recall targeting logic and committed side effects, and the shell baselines plus queue/commit tests were updated to show `w30.live_recall` instead of `w30.swap_bank` for recall cues.
+Consequences: later W-30 bank-manager work can now use `w30.swap_bank` for real bank changes without rewriting old recall history again. The current live-recall seam stays replay-safe, but its action log and shell labels are now honest about what the slice actually does.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
