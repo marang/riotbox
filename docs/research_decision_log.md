@@ -969,3 +969,14 @@ Every major decision should record:
 - what follow-up work it created
 
 If that is not written down, the decision is not stable enough to rely on.
+
+---
+
+Topic: first workflow benchmarks should start as explicit interaction budgets, not a second measurement system
+Phase: Playable shell UX
+Question: after recent Jam UX work, what is the smallest honest way to start recording the roadmap's workflow benchmarks without inventing a new analytics or stopwatch architecture?
+Decision: record the first workflow baseline as an explicit operator-path budget derived from the shipped example-source flow and the current quantization seam. For now, use the README/example-source path plus the first-run gesture path to document `time to first playable Jam state` and `time to first successful capture` in repo markdown under `docs/benchmarks/`.
+Why: Riotbox needs benchmark visibility now, but the project does not yet need a second runtime measurement subsystem just to start tracking user-path budgets. The smallest honest move is to tie the benchmark to one shipped fixture, one shipped gesture path, and the current `NextBar` / `NextPhrase` commit model.
+Evidence: the repo now has an explicit benchmark artifact at `docs/benchmarks/jam_workflow_baseline_2026-04-17.md`, grounded in the shipped `Beat08_128BPM(Full).wav` example path and the current first-run `Space -> f -> c` loop.
+Consequences: later benchmark work should keep the same workflow names and fixture references, but can replace the derived timing budget with semi-automated or fully automated stopwatch data once that path exists. Until then, this benchmark family should stay small, readable, and tied to the shipped shell semantics.
+Status: accepted
