@@ -1319,6 +1319,50 @@ impl JamAppState {
         Some(QueueControlResult::Enqueued)
     }
 
+    pub fn queue_w30_browse_slice_pool(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let (bank_id, pad_id, capture_id) = self.next_w30_slice_pool_capture()?;
+        if self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture
+            .as_ref()
+            == Some(&capture_id)
+        {
+            return Some(QueueControlResult::AlreadyInState);
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30BrowseSlicePool,
+            Quantization::NextBeat,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 1.0,
+            target_id: Some(capture_id.to_string()),
+        };
+        draft.explanation = Some(format!(
+            "browse W-30 slice pool to {capture_id} on {bank_id}/{pad_id} on next beat"
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn queue_w30_apply_damage_profile(
         &mut self,
         requested_at: TimestampMs,
@@ -1771,11 +1815,62 @@ impl JamAppState {
             })
     }
 
+    fn current_w30_lane_target(&self) -> Option<(BankId, PadId)> {
+        self.session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .clone()
+            .zip(
+                self.session
+                    .runtime_state
+                    .lane_state
+                    .w30
+                    .focused_pad
+                    .clone(),
+            )
+    }
+
+    fn next_w30_slice_pool_capture(&self) -> Option<(BankId, PadId, CaptureId)> {
+        let (bank_id, pad_id) = self.current_w30_lane_target()?;
+        let pool: Vec<&CaptureRef> = self
+            .session
+            .captures
+            .iter()
+            .filter(|capture| capture_targets_specific_w30_pad(capture, &bank_id, &pad_id))
+            .collect();
+        if pool.is_empty() {
+            return None;
+        }
+
+        let next_capture = self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture
+            .as_ref()
+            .and_then(|last_capture_id| {
+                pool.iter()
+                    .position(|capture| capture.capture_id == *last_capture_id)
+                    .map(|index| pool[(index + 1) % pool.len()])
+            })
+            .unwrap_or_else(|| {
+                pool.last()
+                    .copied()
+                    .expect("non-empty slice pool should have a last capture")
+            });
+
+        Some((bank_id, pad_id, next_capture.capture_id.clone()))
+    }
+
     fn w30_pad_cue_pending(&self) -> bool {
         self.queue.pending_actions().into_iter().any(|action| {
             matches!(
                 action.command,
                 ActionCommand::W30SwapBank
+                    | ActionCommand::W30BrowseSlicePool
                     | ActionCommand::W30ApplyDamageProfile
                     | ActionCommand::W30LoopFreeze
                     | ActionCommand::W30LiveRecall
@@ -2337,6 +2432,7 @@ fn apply_w30_side_effects(
         action.command,
         ActionCommand::W30LiveRecall
             | ActionCommand::W30SwapBank
+            | ActionCommand::W30BrowseSlicePool
             | ActionCommand::W30ApplyDamageProfile
             | ActionCommand::W30LoopFreeze
             | ActionCommand::W30StepFocus
@@ -2382,6 +2478,7 @@ fn apply_w30_side_effects(
             .unwrap_or(W30PreviewModeState::LiveRecall),
         ActionCommand::W30LiveRecall
         | ActionCommand::W30SwapBank
+        | ActionCommand::W30BrowseSlicePool
         | ActionCommand::W30LoopFreeze
         | ActionCommand::W30StepFocus
         | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
@@ -2437,6 +2534,25 @@ fn apply_w30_side_effects(
                 || format!("swapped W-30 bank to {bank_id}/{pad_id}"),
                 |capture_id| format!("swapped W-30 bank to {bank_id}/{pad_id} with {capture_id}"),
             ),
+            ActionCommand::W30BrowseSlicePool => {
+                let position = boundary.map_or_else(
+                    || "beat pending".to_string(),
+                    |boundary| {
+                        format!(
+                            "beat {} / phrase {}",
+                            boundary.beat_index, boundary.phrase_index
+                        )
+                    },
+                );
+                capture_id.as_ref().map_or_else(
+                    || format!("browsed W-30 slice pool on {bank_id}/{pad_id} at {position}"),
+                    |capture_id| {
+                        format!(
+                            "browsed W-30 slice pool to {capture_id} on {bank_id}/{pad_id} at {position}"
+                        )
+                    },
+                )
+            }
             ActionCommand::W30ApplyDamageProfile => capture_id.as_ref().map_or_else(
                 || {
                     format!(
@@ -2922,6 +3038,7 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
                 action.command,
                 ActionCommand::W30LiveRecall
                     | ActionCommand::W30SwapBank
+                    | ActionCommand::W30BrowseSlicePool
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
@@ -2935,6 +3052,7 @@ fn normalize_w30_preview_mode(session: &mut SessionFile) {
             ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
             ActionCommand::W30LiveRecall
             | ActionCommand::W30SwapBank
+            | ActionCommand::W30BrowseSlicePool
             | ActionCommand::W30StepFocus
             | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
             _ => unreachable!("filtered by helper"),
@@ -4872,6 +4990,74 @@ mod tests {
     }
 
     #[test]
+    fn queue_w30_browse_slice_pool_targets_next_capture_on_current_pad() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: vec![CaptureId::from("cap-01")],
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            is_pinned: false,
+            notes: Some("alt slice".into()),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_browse_slice_pool(629),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::W30BrowseSlicePool);
+        assert_eq!(pending[0].quantization, Quantization::NextBeat);
+        assert_eq!(
+            pending[0].target.bank_id.as_ref().map(ToString::to_string),
+            Some("bank-a".into())
+        );
+        assert_eq!(
+            pending[0].target.pad_id.as_ref().map(ToString::to_string),
+            Some("pad-01".into())
+        );
+        assert!(matches!(
+            &pending[0].params,
+            ActionParams::Mutation {
+                target_id: Some(target_id),
+                ..
+            } if target_id == "cap-02"
+        ));
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("browse W-30 slice pool to cap-02 on bank-a/pad-01 on next beat")
+        );
+        assert_eq!(
+            state
+                .jam_view
+                .lanes
+                .w30_pending_slice_pool_target
+                .as_deref(),
+            Some("bank-a/pad-01")
+        );
+    }
+
+    #[test]
     fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
         let graph = sample_graph();
         let session = sample_session(&graph);
@@ -5321,6 +5507,100 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("swapped W-30 bank to bank-b/pad-01 with cap-02")
+        );
+    }
+
+    #[test]
+    fn committed_w30_slice_pool_browse_updates_last_capture_and_log_result() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: vec![CaptureId::from("cap-01")],
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            is_pinned: false,
+            notes: Some("alt slice".into()),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_browse_slice_pool(713),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 42,
+                bar_index: 11,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            813,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .active_bank
+                .as_ref()
+                .map(ToString::to_string),
+            Some("bank-a".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .as_ref()
+                .map(ToString::to_string),
+            Some("pad-01".into())
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string),
+            Some("cap-02".into())
+        );
+        assert_eq!(state.jam_view.lanes.w30_pending_slice_pool_target, None);
+        assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("browsed W-30 slice pool to cap-02 on bank-a/pad-01 at beat 42 / phrase 3")
         );
     }
 

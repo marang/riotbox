@@ -88,6 +88,7 @@ pub enum ShellKeyOutcome {
     QueueW30TriggerPad,
     QueueW30StepFocus,
     QueueW30SwapBank,
+    QueueW30BrowseSlicePool,
     QueueW30ApplyDamageProfile,
     QueueW30LoopFreeze,
     QueueW30LiveRecall,
@@ -230,6 +231,10 @@ impl JamShellState {
             KeyCode::Char('B') => {
                 self.status_message = "queue W-30 bank swap on next bar".into();
                 ShellKeyOutcome::QueueW30SwapBank
+            }
+            KeyCode::Char('j') => {
+                self.status_message = "queue W-30 slice-pool browse on next beat".into();
+                ShellKeyOutcome::QueueW30BrowseSlicePool
             }
             KeyCode::Char('D') => {
                 self.status_message = "queue W-30 damage profile on next bar".into();
@@ -951,7 +956,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
-        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | D W-30 damage | z W-30 freeze | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
+        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | j W-30 browse | D W-30 damage | z W-30 freeze | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1017,6 +1022,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("w: queue the current W-30 pad trigger on next beat"),
         Line::from("n: queue the next W-30 focused pad step on next beat"),
         Line::from("B: queue the next W-30 bank swap on next bar"),
+        Line::from("j: browse the current W-30 pad slice pool on next beat"),
         Line::from("D: queue the bounded W-30 shred damage profile on next bar"),
         Line::from("l: queue the latest pinned or promoted W-30 pad recall on next bar"),
         Line::from("o: queue audition of the latest promoted W-30 pad on next bar"),
@@ -2082,6 +2088,14 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         .app
         .jam_view
         .lanes
+        .w30_pending_slice_pool_target
+        .as_deref()
+    {
+        format!("browse {target}")
+    } else if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
         .w30_pending_damage_profile_target
         .as_deref()
     {
@@ -2130,6 +2144,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
                     riotbox_core::action::ActionCommand::W30TriggerPad
                         | riotbox_core::action::ActionCommand::W30StepFocus
                         | riotbox_core::action::ActionCommand::W30SwapBank
+                        | riotbox_core::action::ActionCommand::W30BrowseSlicePool
                         | riotbox_core::action::ActionCommand::W30ApplyDamageProfile
                         | riotbox_core::action::ActionCommand::W30LoopFreeze
                         | riotbox_core::action::ActionCommand::W30LiveRecall
@@ -2144,6 +2159,7 @@ fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'st
         riotbox_core::action::ActionCommand::W30TriggerPad => "trigger",
         riotbox_core::action::ActionCommand::W30StepFocus => "step",
         riotbox_core::action::ActionCommand::W30SwapBank => "bank",
+        riotbox_core::action::ActionCommand::W30BrowseSlicePool => "browse",
         riotbox_core::action::ActionCommand::W30ApplyDamageProfile => "damage",
         riotbox_core::action::ActionCommand::W30LoopFreeze => "freeze",
         riotbox_core::action::ActionCommand::W30LiveRecall => "recall",
@@ -3433,6 +3449,10 @@ mod tests {
             ShellKeyOutcome::QueueW30SwapBank
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('j')),
+            ShellKeyOutcome::QueueW30BrowseSlicePool
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('D')),
             ShellKeyOutcome::QueueW30ApplyDamageProfile
         );
@@ -3679,6 +3699,50 @@ mod tests {
         assert!(rendered.contains("bank-b/pad-01"));
         assert!(rendered.contains("pending W-30 cue bank"), "{rendered}");
         assert!(rendered.contains("mgr next bank-b/pad-01"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_w30_slice_pool_browse_cue() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell
+            .app
+            .session
+            .captures
+            .push(riotbox_core::session::CaptureRef {
+                capture_id: "cap-02".into(),
+                capture_type: riotbox_core::session::CaptureType::Pad,
+                source_origin_refs: vec!["asset-b".into()],
+                lineage_capture_refs: vec!["cap-01".into()],
+                resample_generation_depth: 0,
+                created_from_action: None,
+                storage_path: "captures/cap-02.wav".into(),
+                assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
+                    bank_id: "bank-a".into(),
+                    pad_id: "pad-01".into(),
+                }),
+                is_pinned: false,
+                notes: Some("alt slice".into()),
+            });
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-a".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_browse_slice_pool(209),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("browse"));
+        assert!(rendered.contains("bank-a/pad-01"));
     }
 
     #[test]

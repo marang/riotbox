@@ -161,6 +161,7 @@ Optional target references:
 - `w30.trigger_pad`
 - `w30.audition_promoted`
 - `w30.swap_bank`
+- `w30.browse_slice_pool`
 - `w30.step_focus`
 - `w30.apply_damage_profile`
 - `w30.loop_freeze`
