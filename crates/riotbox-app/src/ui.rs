@@ -2570,10 +2570,32 @@ mod tests {
         capture_bank: String,
         capture_pad: String,
         capture_pinned: bool,
+        #[serde(default)]
+        extra_captures: Vec<W30RegressionCapture>,
+        #[serde(default)]
+        initial_active_bank: Option<String>,
+        #[serde(default)]
+        initial_focused_pad: Option<String>,
+        #[serde(default)]
+        initial_last_capture: Option<String>,
+        #[serde(default)]
+        initial_preview_mode: Option<String>,
+        #[serde(default)]
+        initial_w30_grit: Option<f32>,
         requested_at: TimestampMs,
         committed_at: TimestampMs,
         boundary: W30RegressionBoundary,
         expected: W30RegressionExpected,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionCapture {
+        capture_id: String,
+        bank: String,
+        pad: String,
+        pinned: bool,
+        #[serde(default)]
+        notes: Option<String>,
     }
 
     #[derive(Clone, Copy, Debug, Deserialize)]
@@ -2581,6 +2603,8 @@ mod tests {
     enum W30RegressionAction {
         LiveRecall,
         PromotedAudition,
+        SwapBank,
+        ApplyDamageProfile,
     }
 
     #[derive(Debug, Deserialize)]
@@ -2605,8 +2629,18 @@ mod tests {
 
     #[derive(Debug, Deserialize)]
     struct W30RegressionExpected {
+        #[serde(default)]
+        jam_contains: Vec<String>,
         capture_contains: Vec<String>,
         log_contains: Vec<String>,
+    }
+
+    fn w30_preview_mode_state(value: &str) -> riotbox_core::session::W30PreviewModeState {
+        match value {
+            "live_recall" => riotbox_core::session::W30PreviewModeState::LiveRecall,
+            "promoted_audition" => riotbox_core::session::W30PreviewModeState::PromotedAudition,
+            other => panic!("unsupported W-30 preview mode fixture value: {other}"),
+        }
     }
 
     impl Mc202RegressionBoundary {
@@ -3063,8 +3097,9 @@ mod tests {
             for needle in &fixture.expected.jam_contains {
                 assert!(
                     jam_rendered.contains(needle),
-                    "{} jam snapshot missing {needle}",
-                    fixture.name
+                    "{} jam snapshot missing {needle}\n{jam_rendered}",
+                    fixture.name,
+                    jam_rendered = jam_rendered
                 );
             }
 
@@ -3084,17 +3119,47 @@ mod tests {
         let sample_shell = sample_shell_state();
         let mut session = sample_shell.app.session.clone();
         session.action_log.actions.clear();
-        session.runtime_state.macro_state.w30_grit = 0.0;
-        session.runtime_state.lane_state.w30.active_bank =
-            Some(BankId::from(fixture.capture_bank.clone()));
-        session.runtime_state.lane_state.w30.focused_pad =
-            Some(PadId::from(fixture.capture_pad.clone()));
-        session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        session.runtime_state.macro_state.w30_grit = fixture.initial_w30_grit.unwrap_or(0.0);
+        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from(
+            fixture
+                .initial_active_bank
+                .clone()
+                .unwrap_or_else(|| fixture.capture_bank.clone()),
+        ));
+        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from(
+            fixture
+                .initial_focused_pad
+                .clone()
+                .unwrap_or_else(|| fixture.capture_pad.clone()),
+        ));
+        session.runtime_state.lane_state.w30.last_capture =
+            fixture.initial_last_capture.clone().map(CaptureId::from);
+        session.runtime_state.lane_state.w30.preview_mode = fixture
+            .initial_preview_mode
+            .as_deref()
+            .map(w30_preview_mode_state);
         session.captures[0].assigned_target = Some(riotbox_core::session::CaptureTarget::W30Pad {
             bank_id: fixture.capture_bank.clone().into(),
             pad_id: fixture.capture_pad.clone().into(),
         });
         session.captures[0].is_pinned = fixture.capture_pinned;
+        for extra in &fixture.extra_captures {
+            session.captures.push(riotbox_core::session::CaptureRef {
+                capture_id: extra.capture_id.clone().into(),
+                capture_type: riotbox_core::session::CaptureType::Pad,
+                source_origin_refs: vec!["fixture-extra".into()],
+                lineage_capture_refs: Vec::new(),
+                resample_generation_depth: 0,
+                created_from_action: None,
+                storage_path: format!("captures/{}.wav", extra.capture_id),
+                assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
+                    bank_id: extra.bank.clone().into(),
+                    pad_id: extra.pad.clone().into(),
+                }),
+                is_pinned: extra.pinned,
+                notes: extra.notes.clone(),
+            });
+        }
 
         let mut shell = JamShellState::new(
             JamAppState::from_parts(
@@ -3112,6 +3177,10 @@ mod tests {
             W30RegressionAction::PromotedAudition => {
                 shell.app.queue_w30_promoted_audition(fixture.requested_at)
             }
+            W30RegressionAction::SwapBank => shell.app.queue_w30_swap_bank(fixture.requested_at),
+            W30RegressionAction::ApplyDamageProfile => shell
+                .app
+                .queue_w30_apply_damage_profile(fixture.requested_at),
         };
         assert_eq!(
             queue_result,
@@ -3142,13 +3211,25 @@ mod tests {
 
         for fixture in fixtures {
             let mut shell = w30_committed_shell_state(&fixture);
+            shell.active_screen = ShellScreen::Jam;
+            let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.jam_contains {
+                assert!(
+                    jam_rendered.contains(needle),
+                    "{} jam snapshot missing {needle}\n{jam_rendered}",
+                    fixture.name,
+                    jam_rendered = jam_rendered
+                );
+            }
+
             shell.active_screen = ShellScreen::Capture;
             let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
             for needle in &fixture.expected.capture_contains {
                 assert!(
                     capture_rendered.contains(needle),
-                    "{} capture snapshot missing {needle}",
-                    fixture.name
+                    "{} capture snapshot missing {needle}\n{capture_rendered}",
+                    fixture.name,
+                    capture_rendered = capture_rendered
                 );
             }
 
@@ -3157,8 +3238,9 @@ mod tests {
             for needle in &fixture.expected.log_contains {
                 assert!(
                     log_rendered.contains(needle),
-                    "{} log snapshot missing {needle}",
-                    fixture.name
+                    "{} log snapshot missing {needle}\n{log_rendered}",
+                    fixture.name,
+                    log_rendered = log_rendered
                 );
             }
         }

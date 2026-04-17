@@ -792,6 +792,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 bank-manager and pad-forge hardening should extend the shared W-30 regression corpus instead of creating a second fixture path
+Phase: W-30 MVP
+Question: once `w30.swap_bank` and `w30.apply_damage_profile` have shipped on the committed preview seam, how should the repo harden them without fragmenting the current W-30 regression story?
+Decision: extend the existing `w30_regression.json` corpus so the new bank-manager and pad-forge controls use the same fixture-backed committed-state and shell regression path as live recall and promoted audition. Add only the extra fixture metadata needed to express multi-bank setup and initial W-30 preview state, and keep the slice verification-only.
+Why: the W-30 MVP already has one honest replay-safe regression seam for committed app state and shell output. Bank swap and damage profile are the same class of committed preview-lane actions, so giving them a separate fixture file or a second one-off test harness would create drift in the repo’s verification model rather than just widening the existing safety net.
+Evidence: `riotbox-app` now covers `live_recall`, `promoted_audition`, `swap_bank`, and `apply_damage_profile` from the shared `w30_regression.json` corpus. The same corpus now drives committed-state assertions in `jam_app` and shell-visible assertions in `ui`, including the new bank-manager and pad-forge diagnostics shipped in `RIOTBOX-75`.
+Consequences: later W-30 controls on the same committed preview seam should keep extending the shared fixture corpus unless they require genuinely new runtime dimensions. The slice remains intentionally verification-only and does not change shipped W-30 behavior.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
