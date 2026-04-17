@@ -124,4 +124,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First bounded Scene Brain projection from analyzed source sections into existing session state.
 - [RIOTBOX-90.md](./RIOTBOX-90.md)
   First committed Scene Brain scene-select action on the current transport seam.
+- [RIOTBOX-91.md](./RIOTBOX-91.md)
+  Scene Brain active-scene and next-candidate diagnostics in the existing Jam and Log shell spine.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
