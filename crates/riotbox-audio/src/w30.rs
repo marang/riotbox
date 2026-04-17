@@ -36,6 +36,7 @@ impl W30PreviewRenderRouting {
 pub enum W30PreviewSourceProfile {
     PinnedRecall,
     PromotedRecall,
+    SlicePoolBrowse,
     PromotedAudition,
 }
 
@@ -45,6 +46,7 @@ impl W30PreviewSourceProfile {
         match self {
             Self::PinnedRecall => "pinned_recall",
             Self::PromotedRecall => "promoted_recall",
+            Self::SlicePoolBrowse => "slice_pool_browse",
             Self::PromotedAudition => "promoted_audition",
         }
     }
@@ -209,6 +211,10 @@ mod tests {
         assert_eq!(
             W30PreviewSourceProfile::PromotedRecall.label(),
             "promoted_recall"
+        );
+        assert_eq!(
+            W30PreviewSourceProfile::SlicePoolBrowse.label(),
+            "slice_pool_browse"
         );
         assert_eq!(
             W30PreviewSourceProfile::PromotedAudition.label(),

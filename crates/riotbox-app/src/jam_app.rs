@@ -2947,15 +2947,15 @@ fn build_w30_preview_render_state(
             .iter()
             .find(|capture| capture.capture_id == *capture_id)
     });
+    let last_preview_action =
+        last_committed_w30_preview_action(session).map(|action| action.command);
     let source_profile = match mode {
         W30PreviewRenderMode::Idle => None,
         W30PreviewRenderMode::PromotedAudition => Some(W30PreviewSourceProfile::PromotedAudition),
-        W30PreviewRenderMode::LiveRecall => capture.map(|capture| {
-            if capture.is_pinned {
-                W30PreviewSourceProfile::PinnedRecall
-            } else {
-                W30PreviewSourceProfile::PromotedRecall
-            }
+        W30PreviewRenderMode::LiveRecall => capture.map(|capture| match last_preview_action {
+            Some(ActionCommand::W30BrowseSlicePool) => W30PreviewSourceProfile::SlicePoolBrowse,
+            _ if capture.is_pinned => W30PreviewSourceProfile::PinnedRecall,
+            _ => W30PreviewSourceProfile::PromotedRecall,
         }),
     };
     let tempo_bpm = source_graph
@@ -5593,6 +5593,7 @@ mod tests {
         );
         assert_eq!(state.jam_view.lanes.w30_pending_slice_pool_target, None);
         assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+        assert_eq!(state.runtime_view.w30_preview_profile, "slice_pool_browse");
         assert_eq!(
             state
                 .session
