@@ -100,4 +100,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Audible W-30 internal resample taps on the current runtime seam.
 - [RIOTBOX-78.md](./RIOTBOX-78.md)
   Compact W-30 resample-lab diagnostics in the existing shell spine.
+- [RIOTBOX-79.md](./RIOTBOX-79.md)
+  Replay-safe callback regression fixtures for the audible W-30 internal resample seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
