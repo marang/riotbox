@@ -1144,6 +1144,7 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let recent_label = recent
         .map(|action| short_w30_action_label(&action.command))
         .unwrap_or("none");
+    let lineage_active = w30_resample_lineage_active(shell);
 
     vec![
         Line::from(format!(
@@ -1157,11 +1158,21 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         )),
         Line::from(format!("prev {}", w30_preview_mode_profile_compact(shell))),
         Line::from(format!("out {}", w30_mix_compact(shell))),
-        Line::from(format!(
-            "cap {} | {}",
-            w30_capture_compact(shell),
-            w30_trigger_compact(shell),
-        )),
+        if lineage_active {
+            Line::from(format!(
+                "cap {} g{}/l{} | {}",
+                w30_capture_compact(shell),
+                shell.app.runtime.w30_resample_tap.generation_depth,
+                shell.app.runtime.w30_resample_tap.lineage_capture_count,
+                w30_trigger_compact_short(shell),
+            ))
+        } else {
+            Line::from(format!(
+                "cap {} | {}",
+                w30_capture_compact(shell),
+                w30_trigger_compact(shell),
+            ))
+        },
     ]
 }
 
@@ -1216,6 +1227,78 @@ fn w30_resample_tap_compact(shell: &JamShellState) -> String {
     };
 
     format!("{profile} g{}", tap.generation_depth)
+}
+
+fn w30_capture_lineage_compact(shell: &JamShellState) -> String {
+    let Some(capture_id) = shell
+        .app
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .last_capture
+        .as_ref()
+    else {
+        return "lineage none".into();
+    };
+
+    let Some(capture) = shell
+        .app
+        .session
+        .captures
+        .iter()
+        .find(|capture| &capture.capture_id == capture_id)
+    else {
+        return format!("lineage missing {capture_id}");
+    };
+
+    let lineage_chain = if capture.lineage_capture_refs.is_empty() {
+        capture.capture_id.to_string()
+    } else {
+        format!(
+            "{}>{}",
+            capture
+                .lineage_capture_refs
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>()
+                .join(">"),
+            capture.capture_id
+        )
+    };
+
+    format!("{lineage_chain} | g{}", capture.resample_generation_depth)
+}
+
+fn w30_resample_lineage_compact(shell: &JamShellState) -> String {
+    let tap = &shell.app.runtime.w30_resample_tap;
+    match tap.source_capture_id.as_deref() {
+        Some(capture_id) if !matches!(tap.mode, riotbox_audio::w30::W30ResampleTapMode::Idle) => {
+            format!(
+                "{capture_id} g{}/l{}",
+                tap.generation_depth, tap.lineage_capture_count
+            )
+        }
+        Some(capture_id) => capture_id.into(),
+        None => format!(
+            "unset g{}/l{}",
+            tap.generation_depth, tap.lineage_capture_count
+        ),
+    }
+}
+
+fn w30_resample_lineage_active(shell: &JamShellState) -> bool {
+    let tap = &shell.app.runtime.w30_resample_tap;
+    tap.generation_depth > 0 || tap.lineage_capture_count > 0
+}
+
+fn w30_trigger_compact_short(shell: &JamShellState) -> String {
+    let value = w30_trigger_compact(shell);
+    if value == "pending" {
+        "pend".into()
+    } else {
+        value
+    }
 }
 
 fn w30_mix_compact(shell: &JamShellState) -> String {
@@ -1596,8 +1679,7 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         .unwrap_or("unassigned");
     let latest_promoted = latest_w30_promoted_capture_label(shell);
     let pending_w30 = w30_pending_cue_label(shell);
-
-    vec![
+    let mut lines = vec![
         Line::from(format!("last route {last_target}")),
         Line::from(
             shell
@@ -1609,32 +1691,40 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .unwrap_or_else(|| "promotion result pending".into()),
         ),
         Line::from(format!("pending W-30 cue {pending_w30}")),
+        Line::from(format!("bank/pad {}", w30_target_compact(shell))),
         Line::from(format!(
-            "w30 bank {} | pad {}",
-            shell
-                .app
-                .jam_view
-                .lanes
-                .w30_active_bank
-                .as_deref()
-                .unwrap_or("unset"),
-            shell
-                .app
-                .jam_view
-                .lanes
-                .w30_focused_pad
-                .as_deref()
-                .unwrap_or("unset")
-        )),
-        Line::from(format!(
-            "preview {} via {} | {}",
-            shell.app.runtime_view.w30_preview_mode,
-            shell.app.runtime_view.w30_preview_routing,
-            shell.app.runtime_view.w30_preview_mix_summary
+            "preview {} | {}",
+            shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_mix_summary
         )),
         Line::from(format!("tap {}", w30_resample_tap_compact(shell))),
-        Line::from(format!("latest promoted {latest_promoted}")),
-        Line::from(format!(
+    ];
+
+    if w30_resample_lineage_active(shell) {
+        lines.push(Line::from(format!(
+            "tap lineage {}",
+            w30_resample_lineage_compact(shell)
+        )));
+        lines.push(Line::from(format!(
+            "lane {} | cue {}",
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .last_capture
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "none".into()),
+            capture_or_recall_cue_label(shell)
+        )));
+        lines.push(Line::from(format!(
+            "lineage {}",
+            w30_capture_lineage_compact(shell)
+        )));
+    } else {
+        lines.push(Line::from(format!("latest promoted {latest_promoted}")));
+        lines.push(Line::from(format!(
             "last lane capture {}",
             shell
                 .app
@@ -1646,13 +1736,19 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .as_ref()
                 .map(ToString::to_string)
                 .unwrap_or_else(|| "none".into())
-        )),
-        Line::from(format!(
+        )));
+        lines.push(Line::from(format!(
             "next shell cue {}",
             capture_or_recall_cue_label(shell)
-        )),
-        Line::from("audition and recall stay on the shared next-bar seam"),
-    ]
+        )));
+        lines.push(Line::from(
+            "audition and recall stay on the shared next-bar seam",
+        ));
+        return lines;
+    }
+
+    lines.push(Line::from(format!("latest promoted {latest_promoted}")));
+    lines
 }
 
 fn latest_w30_promoted_capture_label(shell: &JamShellState) -> String {
@@ -1680,7 +1776,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
         .find(|action| {
             matches!(
                 action.command.as_str(),
-                "w30.trigger_pad" | "w30.swap_bank" | "w30.audition_promoted"
+                "w30.trigger_pad" | "w30.swap_bank" | "w30.audition_promoted" | "promote.resample"
             )
         })
         .or_else(|| {
@@ -1720,6 +1816,23 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         .as_deref()
     {
         format!("recall {target}")
+    } else if let Some(action) = shell
+        .app
+        .queue
+        .pending_actions()
+        .into_iter()
+        .find(|action| {
+            action.command == riotbox_core::action::ActionCommand::PromoteResample
+                && action.target.scope == Some(riotbox_core::action::TargetScope::LaneW30)
+        })
+    {
+        match &action.params {
+            riotbox_core::action::ActionParams::Promotion {
+                capture_id: Some(capture_id),
+                ..
+            } => format!("resample {capture_id}"),
+            _ => "resample".into(),
+        }
     } else {
         "idle".into()
     }
@@ -1740,6 +1853,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
                     riotbox_core::action::ActionCommand::W30TriggerPad
                         | riotbox_core::action::ActionCommand::W30SwapBank
                         | riotbox_core::action::ActionCommand::W30AuditionPromoted
+                        | riotbox_core::action::ActionCommand::PromoteResample
                 )
         })
 }
@@ -1749,6 +1863,7 @@ fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'st
         riotbox_core::action::ActionCommand::W30TriggerPad => "trigger",
         riotbox_core::action::ActionCommand::W30SwapBank => "recall",
         riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
+        riotbox_core::action::ActionCommand::PromoteResample => "resample",
         _ => "other",
     }
 }
@@ -3138,8 +3253,51 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("resample cap-01"));
         assert!(rendered.contains("resample"));
         assert!(rendered.contains("cap-01"));
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_committed_w30_resample_lineage_diagnostics() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.session.captures[0].lineage_capture_refs = vec!["cap-root".into()];
+        shell.app.session.captures[0].resample_generation_depth = 1;
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-b".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-03".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_internal_resample(220),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            240,
+        );
+        assert_eq!(committed.len(), 1);
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("tap raw g2"));
+        assert!(rendered.contains("cap-02 g2/l2"));
+        assert!(rendered.contains("lineage"));
+        assert!(rendered.contains("cap-root>cap-01>cap-02 | g2"));
+        assert!(rendered.contains("lane cap-02 | cue no"));
+        assert!(rendered.contains("capture cue queued"));
     }
 
     #[test]
@@ -3216,5 +3374,44 @@ mod tests {
         assert!(rendered.contains("prev recall/promoted"));
         assert!(rendered.contains("out bus 0.64 grit 0.69"));
         assert!(rendered.contains("cap cap-01 | r1@0.84"));
+    }
+
+    #[test]
+    fn renders_log_shell_snapshot_with_committed_w30_resample_lineage_diagnostics() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.session.captures[0].lineage_capture_refs = vec!["cap-root".into()];
+        shell.app.session.captures[0].resample_generation_depth = 1;
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-b".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-03".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_internal_resample(245),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 34,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            260,
+        );
+        assert_eq!(committed.len(), 1);
+        shell.active_screen = ShellScreen::Log;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("W-30 Lane"));
+        assert!(rendered.contains("cue idle | resample"));
+        assert!(rendered.contains("cap cap-02 g2/l2 |"));
     }
 }
