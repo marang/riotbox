@@ -1361,7 +1361,7 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
     ) -> Option<QueueControlResult> {
-        if self.w30_pad_cue_pending() {
+        if self.w30_phrase_capture_cue_pending() || self.w30_pad_cue_pending() {
             return Some(QueueControlResult::AlreadyPending);
         }
 
@@ -1473,7 +1473,7 @@ impl JamAppState {
         &mut self,
         requested_at: TimestampMs,
     ) -> Option<QueueControlResult> {
-        if self.w30_resample_pending() {
+        if self.w30_phrase_capture_cue_pending() {
             return Some(QueueControlResult::AlreadyPending);
         }
 
@@ -1786,10 +1786,12 @@ impl JamAppState {
         })
     }
 
-    fn w30_resample_pending(&self) -> bool {
+    fn w30_phrase_capture_cue_pending(&self) -> bool {
         self.queue.pending_actions().into_iter().any(|action| {
-            action.command == ActionCommand::PromoteResample
-                && action.target.scope == Some(TargetScope::LaneW30)
+            matches!(
+                action.command,
+                ActionCommand::W30LoopFreeze | ActionCommand::PromoteResample
+            ) && action.target.scope == Some(TargetScope::LaneW30)
         })
     }
 
@@ -5070,6 +5072,56 @@ mod tests {
         );
         assert_eq!(
             state.queue_w30_internal_resample(636),
+            Some(QueueControlResult::AlreadyPending)
+        );
+    }
+
+    #[test]
+    fn queueing_w30_internal_resample_blocks_pending_loop_freeze() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_loop_freeze(635),
+            Some(QueueControlResult::Enqueued)
+        );
+        assert_eq!(
+            state.queue_w30_internal_resample(636),
+            Some(QueueControlResult::AlreadyPending)
+        );
+    }
+
+    #[test]
+    fn queueing_w30_loop_freeze_blocks_pending_internal_resample() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_internal_resample(635),
+            Some(QueueControlResult::Enqueued)
+        );
+        assert_eq!(
+            state.queue_w30_loop_freeze(636),
             Some(QueueControlResult::AlreadyPending)
         );
     }
