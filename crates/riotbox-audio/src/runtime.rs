@@ -1517,6 +1517,27 @@ mod tests {
         max_peak_abs: f32,
     }
 
+    #[derive(Debug, Deserialize)]
+    struct W30AudioFixtureCase {
+        name: String,
+        render_state: W30AudioFixtureRenderState,
+        expected: AudioFixtureExpectation,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30AudioFixtureRenderState {
+        mode: String,
+        routing: String,
+        source_profile: Option<String>,
+        trigger_revision: u64,
+        trigger_velocity: f32,
+        music_bus_level: f32,
+        grit_level: f32,
+        is_transport_running: bool,
+        tempo_bpm: f32,
+        position_beats: f64,
+    }
+
     impl AudioFixtureRenderState {
         fn to_realtime(&self) -> RealtimeTr909RenderState {
             RealtimeTr909RenderState {
@@ -1564,6 +1585,34 @@ mod tests {
                     }),
                 drum_bus_level: self.drum_bus_level,
                 slam_intensity: self.slam_intensity,
+                is_transport_running: self.is_transport_running,
+                tempo_bpm: self.tempo_bpm,
+                position_beats: self.position_beats,
+            }
+        }
+    }
+
+    impl W30AudioFixtureRenderState {
+        fn to_realtime(&self) -> RealtimeW30PreviewRenderState {
+            RealtimeW30PreviewRenderState {
+                mode: match self.mode.as_str() {
+                    "live_recall" => W30PreviewRenderMode::LiveRecall,
+                    "promoted_audition" => W30PreviewRenderMode::PromotedAudition,
+                    _ => W30PreviewRenderMode::Idle,
+                },
+                routing: match self.routing.as_str() {
+                    "music_bus_preview" => W30PreviewRenderRouting::MusicBusPreview,
+                    _ => W30PreviewRenderRouting::Silent,
+                },
+                source_profile: self.source_profile.as_deref().map(|profile| match profile {
+                    "pinned_recall" => W30PreviewSourceProfile::PinnedRecall,
+                    "promoted_audition" => W30PreviewSourceProfile::PromotedAudition,
+                    _ => W30PreviewSourceProfile::PromotedRecall,
+                }),
+                trigger_revision: self.trigger_revision,
+                trigger_velocity: self.trigger_velocity,
+                music_bus_level: self.music_bus_level,
+                grit_level: self.grit_level,
                 is_transport_running: self.is_transport_running,
                 tempo_bpm: self.tempo_bpm,
                 position_beats: self.position_beats,
@@ -2214,6 +2263,53 @@ mod tests {
             let mut buffer = [0.0_f32; 512];
 
             render_tr909_buffer(
+                &mut buffer,
+                44_100,
+                2,
+                &fixture.render_state.to_realtime(),
+                &mut callback_state,
+            );
+
+            let active_samples = buffer.iter().filter(|sample| sample.abs() > 0.0001).count();
+            let peak_abs = buffer
+                .iter()
+                .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+
+            assert!(
+                active_samples >= fixture.expected.min_active_samples,
+                "{} active sample count too low: got {active_samples}",
+                fixture.name
+            );
+            assert!(
+                active_samples <= fixture.expected.max_active_samples,
+                "{} active sample count too high: got {active_samples}",
+                fixture.name
+            );
+            assert!(
+                peak_abs >= fixture.expected.min_peak_abs,
+                "{} peak too low: got {peak_abs}",
+                fixture.name
+            );
+            assert!(
+                peak_abs <= fixture.expected.max_peak_abs,
+                "{} peak too high: got {peak_abs}",
+                fixture.name
+            );
+        }
+    }
+
+    #[test]
+    fn fixture_backed_w30_preview_audio_regressions_hold() {
+        let fixtures: Vec<W30AudioFixtureCase> = serde_json::from_str(include_str!(
+            "../tests/fixtures/w30_preview_audio_regression.json"
+        ))
+        .expect("parse W-30 preview audio regression fixture");
+
+        for fixture in fixtures {
+            let mut callback_state = W30PreviewCallbackState::default();
+            let mut buffer = [0.0_f32; 512];
+
+            render_w30_preview_buffer(
                 &mut buffer,
                 44_100,
                 2,
