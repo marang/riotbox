@@ -63,6 +63,7 @@ docs/
     whole_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-17.md
+    periodic_codebase_review_2026-04-17_w30_followup.md
   spikes/
     cpal_audio_latency_spike.md
     mempalace_evaluation.md
@@ -115,6 +116,7 @@ docs/
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured
+- `reviews/periodic_codebase_review_2026-04-17_w30_followup.md`: review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
