@@ -190,5 +190,56 @@
         "to cap-01 on W-30 pad bank-a/pad-01"
       ]
     }
+  },
+  {
+    "name": "loop_freeze_committed",
+    "action": "loop_freeze",
+    "capture_bank": "bank-b",
+    "capture_pad": "pad-03",
+    "capture_pinned": false,
+    "initial_active_bank": "bank-b",
+    "initial_focused_pad": "pad-03",
+    "initial_last_capture": "cap-01",
+    "initial_preview_mode": "live_recall",
+    "requested_at": 632,
+    "committed_at": 732,
+    "boundary": {
+      "kind": "phrase",
+      "beat_index": 49,
+      "bar_index": 13,
+      "phrase_index": 4,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-b",
+      "focused_pad": "pad-03",
+      "last_capture": "cap-02",
+      "w30_grit": 0.0,
+      "preview_mode": "live_recall",
+      "preview_routing": "music_bus_preview",
+      "preview_profile": "pinned_recall",
+      "preview_capture": "cap-02",
+      "preview_music_bus_level": 0.64,
+      "preview_grit_level": 0.0,
+      "preview_transport_running": true,
+      "result_summary": "froze cap-01 into cap-02 for W-30 reuse on bank-b/pad-03",
+      "jam_contains": [
+        "W-30 cue idle | mgr idle",
+        "W-30 bus 0.64 grit 0.00 | tap pin g0 | freeze"
+      ],
+      "capture_contains": [
+        "pending W-30 cue idle",
+        "freeze bank-b/pad-03",
+        "latest promoted cap-02 ->",
+        "last lane capture cap-02"
+      ],
+      "log_contains": [
+        "cue idle | freeze",
+        "tapmix 0.64/0.00",
+        "tap cap-02 g0/l1 int",
+        "result froze cap-01 into cap-02",
+        "bank-b/pad-03"
+      ]
+    }
   }
 ]

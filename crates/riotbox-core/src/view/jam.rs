@@ -112,6 +112,19 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
+        let w30_pending_loop_freeze_target =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30LoopFreeze => action
+                        .target
+                        .bank_id
+                        .as_ref()
+                        .zip(action.target.pad_id.as_ref())
+                        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
+                    _ => None,
+                });
         let w30_pending_focus_step_target =
             pending_actions
                 .iter()
@@ -258,6 +271,7 @@ impl JamViewModel {
                 w30_pending_audition_target,
                 w30_pending_bank_swap_target,
                 w30_pending_damage_profile_target,
+                w30_pending_loop_freeze_target,
                 w30_pending_focus_step_target,
                 w30_pending_resample_capture_id,
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
@@ -409,6 +423,7 @@ pub struct LaneSummaryView {
     pub w30_pending_audition_target: Option<String>,
     pub w30_pending_bank_swap_target: Option<String>,
     pub w30_pending_damage_profile_target: Option<String>,
+    pub w30_pending_loop_freeze_target: Option<String>,
     pub w30_pending_focus_step_target: Option<String>,
     pub w30_pending_resample_capture_id: Option<String>,
     pub tr909_slam_enabled: bool,

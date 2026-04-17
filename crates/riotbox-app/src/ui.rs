@@ -89,6 +89,7 @@ pub enum ShellKeyOutcome {
     QueueW30StepFocus,
     QueueW30SwapBank,
     QueueW30ApplyDamageProfile,
+    QueueW30LoopFreeze,
     QueueW30LiveRecall,
     QueueW30PromotedAudition,
     QueueW30Resample,
@@ -233,6 +234,10 @@ impl JamShellState {
             KeyCode::Char('D') => {
                 self.status_message = "queue W-30 damage profile on next bar".into();
                 ShellKeyOutcome::QueueW30ApplyDamageProfile
+            }
+            KeyCode::Char('z') => {
+                self.status_message = "queue W-30 loop freeze on next phrase".into();
+                ShellKeyOutcome::QueueW30LoopFreeze
             }
             KeyCode::Char('l') => {
                 self.status_message = "queue W-30 live recall on next bar".into();
@@ -530,7 +535,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             "W-30 {} | tap {} | {}",
             w30_mix_compact(shell),
             w30_resample_tap_jam_compact(shell),
-            w30_damage_profile_status_compact(shell),
+            w30_operation_status_compact(shell),
         )),
         Line::from(format!(
             "909 {} fill {}",
@@ -946,7 +951,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
-        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | D W-30 damage | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
+        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | D W-30 damage | z W-30 freeze | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1511,15 +1516,62 @@ fn w30_damage_profile_status_compact(shell: &JamShellState) -> &'static str {
     }
 }
 
+fn w30_loop_freeze_compact(shell: &JamShellState) -> String {
+    if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_loop_freeze_target
+        .as_deref()
+    {
+        format!("next {target}")
+    } else if let Some(target) = latest_committed_w30_action_by_command(
+        shell,
+        riotbox_core::action::ActionCommand::W30LoopFreeze,
+    )
+    .and_then(w30_action_target_compact)
+    {
+        target
+    } else {
+        "idle".into()
+    }
+}
+
+fn w30_loop_freeze_status_compact(shell: &JamShellState) -> &'static str {
+    if shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_loop_freeze_target
+        .is_some()
+    {
+        "next-freeze"
+    } else if latest_committed_w30_action_by_command(
+        shell,
+        riotbox_core::action::ActionCommand::W30LoopFreeze,
+    )
+    .is_some()
+    {
+        "freeze"
+    } else {
+        "idle"
+    }
+}
+
 fn w30_operation_status_compact(shell: &JamShellState) -> String {
-    match (
+    let operations = [
         w30_bank_manager_status_compact(shell),
         w30_damage_profile_status_compact(shell),
-    ) {
-        ("idle", "idle") => "idle".into(),
-        ("idle", forge) => forge.into(),
-        (mgr, "idle") => mgr.into(),
-        (mgr, forge) => format!("{mgr}+{forge}"),
+        w30_loop_freeze_status_compact(shell),
+    ]
+    .into_iter()
+    .filter(|status| *status != "idle")
+    .collect::<Vec<_>>();
+
+    if operations.is_empty() {
+        "idle".into()
+    } else {
+        operations.join("+")
     }
 }
 
@@ -1887,6 +1939,10 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             w30_resample_mix_log_compact(shell)
         )));
         lines.push(Line::from(format!(
+            "freeze {}",
+            w30_loop_freeze_compact(shell)
+        )));
+        lines.push(Line::from(format!(
             "lineage {}",
             w30_capture_lineage_compact(shell)
         )));
@@ -1909,6 +1965,10 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .clone()
                 .unwrap_or_else(|| "promotion result pending".into()),
         ));
+        lines.push(Line::from(format!(
+            "freeze {}",
+            w30_loop_freeze_compact(shell)
+        )));
         lines.push(Line::from(format!("latest promoted {latest_promoted}")));
         lines.push(Line::from(format!(
             "last lane capture {}",
@@ -1966,6 +2026,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
                     | "w30.step_focus"
                     | "w30.swap_bank"
                     | "w30.apply_damage_profile"
+                    | "w30.loop_freeze"
                     | "w30.live_recall"
                     | "w30.audition_promoted"
                     | "promote.resample"
@@ -2028,6 +2089,14 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         .app
         .jam_view
         .lanes
+        .w30_pending_loop_freeze_target
+        .as_deref()
+    {
+        format!("freeze {target}")
+    } else if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
         .w30_pending_recall_target
         .as_deref()
     {
@@ -2061,6 +2130,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
                         | riotbox_core::action::ActionCommand::W30StepFocus
                         | riotbox_core::action::ActionCommand::W30SwapBank
                         | riotbox_core::action::ActionCommand::W30ApplyDamageProfile
+                        | riotbox_core::action::ActionCommand::W30LoopFreeze
                         | riotbox_core::action::ActionCommand::W30LiveRecall
                         | riotbox_core::action::ActionCommand::W30AuditionPromoted
                         | riotbox_core::action::ActionCommand::PromoteResample
@@ -2074,6 +2144,7 @@ fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'st
         riotbox_core::action::ActionCommand::W30StepFocus => "step",
         riotbox_core::action::ActionCommand::W30SwapBank => "bank",
         riotbox_core::action::ActionCommand::W30ApplyDamageProfile => "damage",
+        riotbox_core::action::ActionCommand::W30LoopFreeze => "freeze",
         riotbox_core::action::ActionCommand::W30LiveRecall => "recall",
         riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
         riotbox_core::action::ActionCommand::PromoteResample => "resample",
@@ -2228,6 +2299,7 @@ fn is_capture_command(action: &riotbox_core::action::Action) -> bool {
             | riotbox_core::action::ActionCommand::W30CaptureToPad
             | riotbox_core::action::ActionCommand::PromoteCaptureToPad
             | riotbox_core::action::ActionCommand::PromoteCaptureToScene
+            | riotbox_core::action::ActionCommand::W30LoopFreeze
             | riotbox_core::action::ActionCommand::PromoteResample
     )
 }
@@ -2241,6 +2313,7 @@ fn is_capture_command_view(command: &str) -> bool {
             | "w30.capture_to_pad"
             | "promote.capture_to_pad"
             | "promote.capture_to_scene"
+            | "w30.loop_freeze"
             | "promote.resample"
     )
 }
@@ -2627,6 +2700,7 @@ mod tests {
         PromotedAudition,
         SwapBank,
         ApplyDamageProfile,
+        LoopFreeze,
     }
 
     #[derive(Debug, Deserialize)]
@@ -3203,6 +3277,9 @@ mod tests {
             W30RegressionAction::ApplyDamageProfile => shell
                 .app
                 .queue_w30_apply_damage_profile(fixture.requested_at),
+            W30RegressionAction::LoopFreeze => {
+                shell.app.queue_w30_loop_freeze(fixture.requested_at)
+            }
         };
         assert_eq!(
             queue_result,
@@ -3371,6 +3448,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('D')),
             ShellKeyOutcome::QueueW30ApplyDamageProfile
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('z')),
+            ShellKeyOutcome::QueueW30LoopFreeze
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('l')),
@@ -3707,7 +3788,7 @@ mod tests {
         let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
         assert!(jam_rendered.contains("mgr swap"), "{jam_rendered}");
         assert!(
-            jam_rendered.contains("tap prm g0 | shred"),
+            jam_rendered.contains("tap prm g0 | swap+shred"),
             "{jam_rendered}"
         );
 

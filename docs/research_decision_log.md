@@ -836,6 +836,17 @@ Status: accepted
 
 ---
 
+Topic: first W-30 loop-freezer reuse should stay on the existing capture seam instead of opening a second reuse editor path
+Phase: W-30 MVP
+Question: once W-30 preview, bank-manager, damage-profile, and internal-resample seams already exist, what is the smallest honest way to let operators freeze and reuse a loop without inventing a parallel W-30 editor flow?
+Decision: add one bounded `w30.loop_freeze` action on the current W-30 capture seam. Queue it on `NextPhrase`, reuse the currently committed W-30 capture target, materialize exactly one new pinned capture on commit, preserve capture lineage through explicit `lineage_capture_refs`, and keep the same W-30 preview/runtime path after commit.
+Why: the repo already has one replay-safe W-30 capture and preview seam. A first freezer cue should deepen that seam instead of creating a second “reuse lab” path with separate persistence, routing, or preview rules. The main risk in this slice is lineage drift, not missing UI surface, so the action needs to leave reuse explicit in the same capture model and shell surfaces.
+Evidence: `riotbox-core` now exposes `w30.loop_freeze` in the action lexicon and Jam view, while `riotbox-app` queues it on the existing W-30 lane, commits it into a new pinned capture with preserved lineage, and surfaces the pending/committed freeze cues in `Jam`, `Capture`, and `Log`. The shared `w30_regression.json` corpus now covers the committed freeze case for both app-state and shell regressions.
+Consequences: later W-30 freezer and reuse work should keep extending the same capture lineage and preview seam unless the roadmap explicitly calls for a fuller editor workflow. Richer reuse browsing, loop editing, and multi-slot freeze management remain follow-up work and stay out of scope here.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
