@@ -517,18 +517,9 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             }
         )),
         Line::from(format!(
-            "W-30 cue {} | 909 {} fill {}",
+            "W-30 cue {} | mgr {}",
             w30_pending_cue_label(shell),
-            if shell.app.jam_view.lanes.tr909_takeover_enabled {
-                "takeover"
-            } else {
-                "support"
-            },
-            if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
-                "armed"
-            } else {
-                "idle"
-            }
+            w30_bank_manager_status_compact(shell),
         )),
         Line::from(format!(
             "W-30 {} | {}",
@@ -539,7 +530,20 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             "W-30 {} | {} | {}",
             w30_mix_compact(shell),
             w30_capture_compact(shell),
-            w30_trigger_compact(shell),
+            w30_damage_profile_status_compact(shell),
+        )),
+        Line::from(format!(
+            "909 {} fill {}",
+            if shell.app.jam_view.lanes.tr909_takeover_enabled {
+                "takeover"
+            } else {
+                "support"
+            },
+            if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
+                "armed"
+            } else {
+                "idle"
+            }
         )),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
@@ -1175,7 +1179,11 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             w30_pending_cue_label(shell)
         )),
         Line::from(format!("prev {}", w30_preview_mode_profile_compact(shell))),
-        Line::from(format!("out {}", w30_mix_compact(shell))),
+        Line::from(format!(
+            "mix {} {}",
+            w30_mix_log_compact(shell),
+            w30_operation_status_compact(shell),
+        )),
         if lineage_active {
             Line::from(format!(
                 "cap {} g{}/l{} | {}",
@@ -1326,6 +1334,13 @@ fn w30_mix_compact(shell: &JamShellState) -> String {
     )
 }
 
+fn w30_mix_log_compact(shell: &JamShellState) -> String {
+    format!(
+        "{:.2}/{:.2}",
+        shell.app.runtime.w30_preview.music_bus_level, shell.app.runtime.w30_preview.grit_level
+    )
+}
+
 fn w30_capture_compact(shell: &JamShellState) -> String {
     shell
         .app
@@ -1352,6 +1367,128 @@ fn w30_trigger_compact(shell: &JamShellState) -> String {
             "r{}@{:.2}",
             render.trigger_revision, render.trigger_velocity
         )
+    }
+}
+
+fn w30_action_target_compact(action: &riotbox_core::action::Action) -> Option<String> {
+    action
+        .target
+        .bank_id
+        .as_ref()
+        .zip(action.target.pad_id.as_ref())
+        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}"))
+}
+
+fn latest_committed_w30_action_by_command(
+    shell: &JamShellState,
+    command: riotbox_core::action::ActionCommand,
+) -> Option<&riotbox_core::action::Action> {
+    shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .find(|action| {
+            action.status == riotbox_core::action::ActionStatus::Committed
+                && action.command == command
+        })
+}
+
+fn w30_bank_manager_compact(shell: &JamShellState) -> String {
+    if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_bank_swap_target
+        .as_deref()
+    {
+        format!("next {target}")
+    } else if let Some(target) = latest_committed_w30_action_by_command(
+        shell,
+        riotbox_core::action::ActionCommand::W30SwapBank,
+    )
+    .and_then(w30_action_target_compact)
+    {
+        target
+    } else {
+        "idle".into()
+    }
+}
+
+fn w30_bank_manager_status_compact(shell: &JamShellState) -> &'static str {
+    if shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_bank_swap_target
+        .is_some()
+    {
+        "next-swap"
+    } else if latest_committed_w30_action_by_command(
+        shell,
+        riotbox_core::action::ActionCommand::W30SwapBank,
+    )
+    .is_some()
+    {
+        "swap"
+    } else {
+        "idle"
+    }
+}
+
+fn w30_damage_profile_compact(shell: &JamShellState) -> String {
+    if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_damage_profile_target
+        .as_deref()
+    {
+        format!("next {target}")
+    } else if let Some(target) = latest_committed_w30_action_by_command(
+        shell,
+        riotbox_core::action::ActionCommand::W30ApplyDamageProfile,
+    )
+    .and_then(w30_action_target_compact)
+    {
+        target
+    } else {
+        "idle".into()
+    }
+}
+
+fn w30_damage_profile_status_compact(shell: &JamShellState) -> &'static str {
+    if shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_damage_profile_target
+        .is_some()
+    {
+        "next-shred"
+    } else if latest_committed_w30_action_by_command(
+        shell,
+        riotbox_core::action::ActionCommand::W30ApplyDamageProfile,
+    )
+    .is_some()
+    {
+        "shred"
+    } else {
+        "idle"
+    }
+}
+
+fn w30_operation_status_compact(shell: &JamShellState) -> String {
+    match (
+        w30_bank_manager_status_compact(shell),
+        w30_damage_profile_status_compact(shell),
+    ) {
+        ("idle", "idle") => "idle".into(),
+        ("idle", forge) => forge.into(),
+        (mgr, "idle") => mgr.into(),
+        (mgr, forge) => format!("{mgr}+{forge}"),
     }
 }
 
@@ -1688,42 +1825,30 @@ fn pinned_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
 }
 
 fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let last_target = shell
-        .app
-        .jam_view
-        .capture
-        .last_capture_target
-        .as_deref()
-        .unwrap_or("unassigned");
     let latest_promoted = latest_w30_promoted_capture_label(shell);
     let pending_w30 = w30_pending_cue_label(shell);
     let mut lines = vec![
-        Line::from(format!("last route {last_target}")),
-        Line::from(
-            shell
-                .app
-                .jam_view
-                .capture
-                .last_promotion_result
-                .clone()
-                .unwrap_or_else(|| "promotion result pending".into()),
-        ),
         Line::from(format!("pending W-30 cue {pending_w30}")),
-        Line::from(format!("bank/pad {}", w30_target_compact(shell))),
+        Line::from(format!(
+            "bank/pad {} | mgr {}",
+            w30_target_compact(shell),
+            w30_bank_manager_compact(shell)
+        )),
         Line::from(format!(
             "preview {} | {}",
-            shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_mix_summary
+            shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_mix_summary,
         )),
-        Line::from(format!("tap {}", w30_resample_tap_compact(shell))),
+        Line::from(format!(
+            "forge {} | tap {}",
+            w30_damage_profile_compact(shell),
+            w30_resample_tap_compact(shell),
+        )),
     ];
 
     if w30_resample_lineage_active(shell) {
         lines.push(Line::from(format!(
-            "tap lineage {}",
-            w30_resample_lineage_compact(shell)
-        )));
-        lines.push(Line::from(format!(
-            "lane {} | cue {}",
+            "tap {} | lane {}",
+            w30_resample_lineage_compact(shell),
             shell
                 .app
                 .session
@@ -1734,13 +1859,34 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .as_ref()
                 .map(ToString::to_string)
                 .unwrap_or_else(|| "none".into()),
+        )));
+        lines.push(Line::from(format!(
+            "cue {}",
             capture_or_recall_cue_label(shell)
         )));
         lines.push(Line::from(format!(
             "lineage {}",
             w30_capture_lineage_compact(shell)
         )));
+        lines.push(Line::from(format!("latest promoted {latest_promoted}")));
     } else {
+        let last_target = shell
+            .app
+            .jam_view
+            .capture
+            .last_capture_target
+            .as_deref()
+            .unwrap_or("unassigned");
+        lines.push(Line::from(format!("route {last_target}")));
+        lines.push(Line::from(
+            shell
+                .app
+                .jam_view
+                .capture
+                .last_promotion_result
+                .clone()
+                .unwrap_or_else(|| "promotion result pending".into()),
+        ));
         lines.push(Line::from(format!("latest promoted {latest_promoted}")));
         lines.push(Line::from(format!(
             "last lane capture {}",
@@ -2763,8 +2909,11 @@ mod tests {
         assert!(rendered.contains("MC-202: leader | touch 0.80"));
         assert!(rendered.contains("W-30 cue idle"));
         assert!(rendered.contains("W-30 recall/promoted | bank-a/unset"));
-        assert!(rendered.contains("W-30 bus 0.64 grit 0.50 | cap-01 | pending"));
-        assert!(rendered.contains("909 takeover fill armed"));
+        assert!(rendered.contains("W-30 bus 0.64 grit 0.50 | cap-01 | idle"));
+        assert!(
+            rendered.contains("tr909.fill_next @ next_bar"),
+            "{rendered}"
+        );
     }
 
     #[test]
@@ -3171,7 +3320,7 @@ mod tests {
         assert!(rendered.contains("cue idle"));
         assert!(rendered.contains("cue idle | none"));
         assert!(rendered.contains("prev recall/promoted"));
-        assert!(rendered.contains("out bus 0.64 grit 0.50"));
+        assert!(rendered.contains("mix 0.64/0.50 idle"));
         assert!(rendered.contains("cap cap-01 | pending"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("mutate.scene"));
@@ -3352,6 +3501,8 @@ mod tests {
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("bank"));
         assert!(rendered.contains("bank-b/pad-01"));
+        assert!(rendered.contains("pending W-30 cue bank"), "{rendered}");
+        assert!(rendered.contains("mgr next bank-b/pad-01"), "{rendered}");
     }
 
     #[test]
@@ -3377,6 +3528,98 @@ mod tests {
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("damage"));
         assert!(rendered.contains("bank-a/pad-01"));
+        assert!(rendered.contains("next bank-a/pad-01"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_w30_bank_manager_and_damage_profile_diagnostics_across_shell_surfaces() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell
+            .app
+            .session
+            .captures
+            .push(riotbox_core::session::CaptureRef {
+                capture_id: "cap-02".into(),
+                capture_type: riotbox_core::session::CaptureType::Pad,
+                source_origin_refs: vec!["asset-b".into()],
+                lineage_capture_refs: Vec::new(),
+                resample_generation_depth: 0,
+                created_from_action: None,
+                storage_path: "captures/cap-02.wav".into(),
+                assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
+                    bank_id: "bank-b".into(),
+                    pad_id: "pad-01".into(),
+                }),
+                is_pinned: false,
+                notes: Some("bank b".into()),
+            });
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-a".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+
+        assert_eq!(
+            shell.app.queue_w30_swap_bank(208),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 17,
+                bar_index: 5,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            220,
+        );
+        assert_eq!(committed.len(), 1);
+
+        assert_eq!(
+            shell.app.queue_w30_apply_damage_profile(222),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 21,
+                bar_index: 6,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            240,
+        );
+        assert_eq!(committed.len(), 1);
+
+        let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(jam_rendered.contains("mgr swap"), "{jam_rendered}");
+        assert!(jam_rendered.contains("| shred"), "{jam_rendered}");
+
+        shell.active_screen = ShellScreen::Capture;
+        let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(
+            capture_rendered.contains("mgr bank-b/pad-01"),
+            "{capture_rendered}"
+        );
+        assert!(
+            capture_rendered.contains("forge bank-b/pad-01"),
+            "{capture_rendered}"
+        );
+
+        shell.active_screen = ShellScreen::Log;
+        let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(
+            log_rendered.contains("bank bank-b/pad-01"),
+            "{log_rendered}"
+        );
+        assert!(log_rendered.contains("cue idle | damage"), "{log_rendered}");
+        assert!(log_rendered.contains("mix 0.64/0.82"), "{log_rendered}");
+        assert!(log_rendered.contains("swap+shred"), "{log_rendered}");
     }
 
     #[test]
@@ -3465,9 +3708,13 @@ mod tests {
         assert!(rendered.contains("tap raw g2"));
         assert!(rendered.contains("cap-02 g2/l2"));
         assert!(rendered.contains("lineage"));
-        assert!(rendered.contains("cap-root>cap-01>cap-02 | g2"));
-        assert!(rendered.contains("lane cap-02 | cue no"));
-        assert!(rendered.contains("capture cue queued"));
+        assert!(
+            rendered.contains("cap-root>cap-01>cap-02 | g2"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("tap cap-02 g2/l2 | lane"), "{rendered}");
+        assert!(rendered.contains("cap-02"), "{rendered}");
+        assert!(rendered.contains("cue no capture cue queued"), "{rendered}");
     }
 
     #[test]
@@ -3506,8 +3753,8 @@ mod tests {
         assert!(rendered.contains("pad-03"));
         assert!(rendered.contains("cue idle | audition"));
         assert!(rendered.contains("prev audition/audition"));
-        assert!(rendered.contains("out bus 0.64 grit 0.68"));
-        assert!(rendered.contains("cap cap-01 | pending"));
+        assert!(rendered.contains("mix 0.64/0.68"));
+        assert!(rendered.contains("cap cap-01 | pending"), "{rendered}");
     }
 
     #[test]
@@ -3542,8 +3789,8 @@ mod tests {
         assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("cue idle | trigger"));
         assert!(rendered.contains("prev recall/promoted"));
-        assert!(rendered.contains("out bus 0.64 grit 0.69"));
-        assert!(rendered.contains("cap cap-01 | r1@0.84"));
+        assert!(rendered.contains("mix 0.64/0.69"));
+        assert!(rendered.contains("cap cap-01 | r1@0.84"), "{rendered}");
     }
 
     #[test]
@@ -3582,6 +3829,7 @@ mod tests {
 
         assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("cue idle | resample"));
-        assert!(rendered.contains("cap cap-02 g2/l2 |"));
+        assert!(rendered.contains("mix 0.64/0.50"), "{rendered}");
+        assert!(rendered.contains("idle"), "{rendered}");
     }
 }

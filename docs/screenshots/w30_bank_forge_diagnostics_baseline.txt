@@ -1,0 +1,29 @@
+Riotbox W-30 Bank And Forge Diagnostics Baseline
+Normalized terminal capture notes for `RIOTBOX-75`
+Source: `riotbox-app` shell state fixtures
+Notes:
+- normalized from the current Jam, Capture, and Log shell state fixtures
+- intended as a review/update artifact, not a pixel-perfect golden render
+- highlights read-only W-30 bank-manager and pad-forge diagnostics on top of the existing committed preview seam
+
+Key shell cues after this slice:
+
+- `Jam -> Lanes` now includes:
+  - `W-30 cue ... | mgr ...`
+  - `W-30 recall/promoted | bank-b/pad-01`
+  - `W-30 bus 0.64 grit 0.82 | cap-02 | shred`
+- `Capture -> Routing / Promotion` now includes:
+  - `pending W-30 cue bank bank-b/pad-01`
+  - `bank/pad bank-a/pad-01 | mgr next bank-b/pad-01`
+  - `forge next bank-a/pad-01 | tap idle`
+  - lineage-safe routing lines still visible when resample lineage is active
+- `Log -> W-30 Lane` now includes:
+  - `cue idle | damage`
+  - `mix 0.64/0.82`
+  - `swap+shred`
+
+Interpretation:
+
+- the Jam shell now shows that W-30 bank-manager and pad-forge state exist as first-class committed diagnostics, not only as generic action history
+- the Capture screen now keeps the current preview target, pending bank-manager move, pending forge move, and lineage cues visible without opening a second W-30 editor
+- the Log screen now makes recent W-30 bank and forge behavior legible in the compact lane panel while staying on the same committed preview seam
