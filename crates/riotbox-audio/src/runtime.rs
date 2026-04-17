@@ -1711,6 +1711,13 @@ mod tests {
     }
 
     #[derive(Debug, Deserialize)]
+    struct W30ResampleAudioFixtureCase {
+        name: String,
+        render_state: W30ResampleAudioFixtureRenderState,
+        expected: AudioFixtureExpectation,
+    }
+
+    #[derive(Debug, Deserialize)]
     struct W30AudioFixtureRenderState {
         mode: String,
         routing: String,
@@ -1722,6 +1729,18 @@ mod tests {
         is_transport_running: bool,
         tempo_bpm: f32,
         position_beats: f64,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30ResampleAudioFixtureRenderState {
+        mode: String,
+        routing: String,
+        source_profile: Option<String>,
+        lineage_capture_count: u8,
+        generation_depth: u8,
+        music_bus_level: f32,
+        grit_level: f32,
+        is_transport_running: bool,
     }
 
     impl AudioFixtureRenderState {
@@ -1802,6 +1821,31 @@ mod tests {
                 is_transport_running: self.is_transport_running,
                 tempo_bpm: self.tempo_bpm,
                 position_beats: self.position_beats,
+            }
+        }
+    }
+
+    impl W30ResampleAudioFixtureRenderState {
+        fn to_realtime(&self) -> RealtimeW30ResampleTapState {
+            RealtimeW30ResampleTapState {
+                mode: match self.mode.as_str() {
+                    "capture_lineage_ready" => W30ResampleTapMode::CaptureLineageReady,
+                    _ => W30ResampleTapMode::Idle,
+                },
+                routing: match self.routing.as_str() {
+                    "internal_capture_tap" => W30ResampleTapRouting::InternalCaptureTap,
+                    _ => W30ResampleTapRouting::Silent,
+                },
+                source_profile: self.source_profile.as_deref().map(|profile| match profile {
+                    "promoted_capture" => W30ResampleTapSourceProfile::PromotedCapture,
+                    "pinned_capture" => W30ResampleTapSourceProfile::PinnedCapture,
+                    _ => W30ResampleTapSourceProfile::RawCapture,
+                }),
+                lineage_capture_count: self.lineage_capture_count,
+                generation_depth: self.generation_depth,
+                music_bus_level: self.music_bus_level,
+                grit_level: self.grit_level,
+                is_transport_running: self.is_transport_running,
             }
         }
     }
@@ -2571,6 +2615,53 @@ mod tests {
             let mut buffer = [0.0_f32; 512];
 
             render_w30_preview_buffer(
+                &mut buffer,
+                44_100,
+                2,
+                &fixture.render_state.to_realtime(),
+                &mut callback_state,
+            );
+
+            let active_samples = buffer.iter().filter(|sample| sample.abs() > 0.0001).count();
+            let peak_abs = buffer
+                .iter()
+                .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+
+            assert!(
+                active_samples >= fixture.expected.min_active_samples,
+                "{} active sample count too low: got {active_samples}",
+                fixture.name
+            );
+            assert!(
+                active_samples <= fixture.expected.max_active_samples,
+                "{} active sample count too high: got {active_samples}",
+                fixture.name
+            );
+            assert!(
+                peak_abs >= fixture.expected.min_peak_abs,
+                "{} peak too low: got {peak_abs}",
+                fixture.name
+            );
+            assert!(
+                peak_abs <= fixture.expected.max_peak_abs,
+                "{} peak too high: got {peak_abs}",
+                fixture.name
+            );
+        }
+    }
+
+    #[test]
+    fn fixture_backed_w30_resample_audio_regressions_hold() {
+        let fixtures: Vec<W30ResampleAudioFixtureCase> = serde_json::from_str(include_str!(
+            "../tests/fixtures/w30_resample_audio_regression.json"
+        ))
+        .expect("parse W-30 resample audio regression fixture");
+
+        for fixture in fixtures {
+            let mut callback_state = W30ResampleTapCallbackState::default();
+            let mut buffer = [0.0_f32; 512];
+
+            render_w30_resample_tap_buffer(
                 &mut buffer,
                 44_100,
                 2,

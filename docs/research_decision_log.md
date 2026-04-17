@@ -825,6 +825,17 @@ Status: accepted
 
 ---
 
+Topic: audible W-30 internal resample taps should use the same fixture-backed callback regression pattern as the other shipped audio seams
+Phase: W-30 MVP
+Question: once the resample-tap callback path is audibly real, how should the repo harden it without inventing a one-off verification style?
+Decision: add a dedicated `w30_resample_audio_regression.json` fixture corpus and a callback-level test that evaluates the same active-sample and peak bounds already used for TR-909 and W-30 preview. Keep the slice verification-only and leave the shipped render behavior unchanged.
+Why: the repo already has one honest audio-regression pattern for callback-visible behavior. Leaving W-30 internal resample taps on direct one-off tests alone would make the newest audible seam easier to drift than the older TR-909 and W-30 preview paths. Extending the existing fixture shape is the smallest consistent hardening move.
+Evidence: `riotbox-audio` now parses `w30_resample_audio_regression.json`, maps fixture rows into `RealtimeW30ResampleTapState`, and verifies idle silence, transport-running lineage-ready taps, stopped-tap audibility, and zero-music-bus silence through the same active-sample and peak assertions used elsewhere.
+Consequences: later W-30 audio callback work should keep widening the shared fixture-backed regression net instead of adding seam-specific harnesses. This slice changes no runtime behavior; it only makes future drift on the audible resample seam easier to catch.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
