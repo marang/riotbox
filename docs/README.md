@@ -44,11 +44,25 @@ This directory holds implementation-facing specifications derived from the strat
 - TUI and Ghost API become much easier once actions, state, and persistence are explicit.
 - The feral profile can then evolve as a style layer without destabilizing the core.
 
+## User Learning Path
+
+If you are trying to learn the current shell rather than read specs first, use this path:
+
+1. [Repo README](../README.md)
+   Musician-facing overview, quickstart, limitations, and current product promise.
+2. [Jam Recipes](./jam_recipes.md)
+   Concrete practice flows for first gestures, capture/reuse, undo, and source comparison.
+3. [Local Test Audio Notes](../data/test_audio/README.md)
+   Where the current example sources came from and how to fetch them locally.
+4. [Example Source Notes](../data/test_audio/examples/README.md)
+   Which local example files are good for which kind of learning run.
+
 ## Suggested File Layout
 
 ```text
 docs/
   README.md
+  jam_recipes.md
   prd_v1.md
   execution_roadmap.md
   workflow_conventions.md
@@ -102,6 +116,7 @@ docs/
 - `prd_v1.md`: draft started
 - `execution_roadmap.md`: draft started
 - `workflow_conventions.md`: draft started
+- `jam_recipes.md`: learning-path guide captured
 - `specs/technology_stack_spec.md`: draft started
 - `specs/rust_engineering_guidelines.md`: draft started
 - `specs/source_graph_spec.md`: draft started
