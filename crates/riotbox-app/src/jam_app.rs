@@ -3523,6 +3523,12 @@ mod tests {
         section_labels: Vec<String>,
         action: SceneRegressionAction,
         #[serde(default)]
+        initial_active_scene: Option<String>,
+        #[serde(default)]
+        initial_current_scene: Option<String>,
+        #[serde(default)]
+        initial_restore_scene: Option<String>,
+        #[serde(default)]
         requested_at: Option<TimestampMs>,
         #[serde(default)]
         committed_at: Option<TimestampMs>,
@@ -3536,6 +3542,7 @@ mod tests {
     enum SceneRegressionAction {
         ProjectCandidates,
         SelectNextScene,
+        RestoreScene,
     }
 
     #[derive(Debug, Deserialize)]
@@ -3563,6 +3570,8 @@ mod tests {
         scenes: Vec<String>,
         active_scene: String,
         current_scene: String,
+        #[serde(default)]
+        restore_scene: Option<String>,
         #[serde(default)]
         result_summary: Option<String>,
     }
@@ -3887,6 +3896,22 @@ mod tests {
         }
 
         graph
+    }
+
+    fn seed_scene_fixture_state(state: &mut JamAppState, fixture: &SceneRegressionFixture) {
+        if let Some(current_scene) = fixture.initial_current_scene.as_deref() {
+            state.session.runtime_state.transport.current_scene =
+                Some(SceneId::from(current_scene));
+        }
+        if let Some(active_scene) = fixture.initial_active_scene.as_deref() {
+            state.session.runtime_state.scene_state.active_scene =
+                Some(SceneId::from(active_scene));
+        }
+        if let Some(restore_scene) = fixture.initial_restore_scene.as_deref() {
+            state.session.runtime_state.scene_state.restore_scene =
+                Some(SceneId::from(restore_scene));
+        }
+        state.refresh_view();
     }
 
     fn sample_session(graph: &SourceGraph) -> SessionFile {
@@ -7977,30 +8002,58 @@ mod tests {
             session.runtime_state.scene_state.scenes.clear();
 
             let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+            seed_scene_fixture_state(&mut state, &fixture);
 
-            if matches!(fixture.action, SceneRegressionAction::SelectNextScene) {
-                assert_eq!(
-                    state.queue_scene_select(
-                        fixture.requested_at.expect("scene select requested_at")
-                    ),
-                    QueueControlResult::Enqueued,
-                    "{} did not enqueue",
-                    fixture.name
-                );
+            match fixture.action {
+                SceneRegressionAction::ProjectCandidates => {}
+                SceneRegressionAction::SelectNextScene => {
+                    assert_eq!(
+                        state.queue_scene_select(
+                            fixture.requested_at.expect("scene select requested_at")
+                        ),
+                        QueueControlResult::Enqueued,
+                        "{} did not enqueue",
+                        fixture.name
+                    );
 
-                let committed = state.commit_ready_actions(
-                    fixture
-                        .boundary
-                        .expect("scene select boundary")
-                        .into_commit_boundary_state(),
-                    fixture.committed_at.expect("scene select committed_at"),
-                );
-                assert_eq!(
-                    committed.len(),
-                    1,
-                    "{} did not commit exactly one action",
-                    fixture.name
-                );
+                    let committed = state.commit_ready_actions(
+                        fixture
+                            .boundary
+                            .expect("scene select boundary")
+                            .into_commit_boundary_state(),
+                        fixture.committed_at.expect("scene select committed_at"),
+                    );
+                    assert_eq!(
+                        committed.len(),
+                        1,
+                        "{} did not commit exactly one action",
+                        fixture.name
+                    );
+                }
+                SceneRegressionAction::RestoreScene => {
+                    assert_eq!(
+                        state.queue_scene_restore(
+                            fixture.requested_at.expect("scene restore requested_at")
+                        ),
+                        QueueControlResult::Enqueued,
+                        "{} did not enqueue",
+                        fixture.name
+                    );
+
+                    let committed = state.commit_ready_actions(
+                        fixture
+                            .boundary
+                            .expect("scene restore boundary")
+                            .into_commit_boundary_state(),
+                        fixture.committed_at.expect("scene restore committed_at"),
+                    );
+                    assert_eq!(
+                        committed.len(),
+                        1,
+                        "{} did not commit exactly one action",
+                        fixture.name
+                    );
+                }
             }
 
             let actual_scenes = state
@@ -8040,6 +8093,19 @@ mod tests {
                     .as_deref(),
                 Some(fixture.expected.current_scene.as_str()),
                 "{} transport scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .scene_state
+                    .restore_scene
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .as_deref(),
+                fixture.expected.restore_scene.as_deref(),
+                "{} restore scene drifted",
                 fixture.name
             );
             assert_eq!(
