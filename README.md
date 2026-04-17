@@ -28,6 +28,26 @@ If you only want the fastest possible first run:
 
 That is the current core loop: **load material, queue one gesture, let it land in time, keep the good accident**.
 
+## What To Expect Right Now
+
+If you start Riotbox on the same example loop and only press `Space`, `f`, `c`, and `2`, you will often get a **similar result each run**.
+
+That is expected in the current prototype because:
+
+- the first-run recipe is intentionally a **tiny learning path**, not a full performance recipe
+- `f` always queues the same first TR-909 fill gesture
+- the current build is still more about **quantized action flow** than about a wide expressive mixer/performance surface
+- Riotbox is deterministic enough that the same source plus the same first gesture often produces the same first feel
+
+So the quickstart is useful for confirming:
+
+- transport is running
+- actions queue and land on musical boundaries
+- `Log` shows what actually committed
+- capture is working
+
+But it is **not** enough on its own to understand the whole shell.
+
 ## What Riotbox Is
 
 Think of Riotbox as a hybrid of:
@@ -87,6 +107,108 @@ If you want the simplest first success, do not try every action. Start with:
 - `c` to capture a phrase
 - `2` to confirm the action committed in `Log`
 
+If that works, stop repeating only that recipe. Move on to one of the more specific flows below.
+
+## Learn By Doing
+
+The easiest way to learn Riotbox right now is to try one small recipe at a time instead of pressing every key randomly.
+
+### Recipe 1: Confirm The Timing Model
+
+Goal: understand that Riotbox is about **queued change**, not instant change.
+
+1. start with:
+
+   ```bash
+   cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav"
+   ```
+
+2. press `Space`
+3. press `f`
+4. stay on `Jam` for a moment, then press `2`
+5. confirm in `Log` that the action was first pending and then committed on a boundary
+
+What to learn:
+
+- Riotbox is showing **now** and **next**
+- the important question is not “did I press a key?” but “when did it land?”
+
+### Recipe 2: Compare Different First Gestures
+
+Goal: stop treating Riotbox like a one-button fill demo.
+
+Use the same source, but restart and compare:
+
+- `y` for a scene jump
+- `g` for MC-202 follow
+- `a` for MC-202 answer
+- `f` for TR-909 fill
+- `w` for W-30 hit
+
+For each one:
+
+1. start transport with `Space`
+2. press exactly one gesture
+3. check `Jam`
+4. then check `Log` with `2`
+
+What to learn:
+
+- different lanes suggest different kinds of change
+- `Log` is the quickest way to learn what Riotbox thinks you actually asked for
+
+### Recipe 3: Capture And Reuse Something
+
+Goal: understand that Riotbox is not only about mutation, but also about **keeping** material.
+
+Try this:
+
+1. `Space`
+2. `f` or `g`
+3. wait for it to land
+4. press `c`
+5. switch to `Capture` with `4`
+6. press `p` to promote the latest capture
+7. press `w` to hit the focused W-30 pad
+8. use `2` and `4` to watch `Log` and `Capture`
+
+What to learn:
+
+- a good accident can become reusable material
+- `Capture` is where Riotbox starts becoming a sampler/capture machine instead of just a mutation shell
+
+### Recipe 4: Undo Bad Moves On Purpose
+
+Goal: learn confidence, not just success.
+
+1. `Space`
+2. queue one gesture
+3. wait for it to land
+4. press `u`
+5. inspect `Log`
+
+What to learn:
+
+- Riotbox wants you to test gestures, not fear them
+- `undo` is part of normal use, not just error recovery
+
+### Recipe 5: Switch Source Material
+
+Goal: learn how much the source affects the feel.
+
+Try these local examples one after another:
+
+- `data/test_audio/examples/Beat03_130BPM(Full).wav`
+- `data/test_audio/examples/Beat08_128BPM(Full).wav`
+- `data/test_audio/examples/DH_BeatC_120-01.wav`
+- `data/test_audio/examples/DH_RushArp_120_A.wav`
+
+What to learn:
+
+- drum-heavy loops make the queue/commit model easier to read
+- more tonal loops are often better for `Source`, scene, and MC-202 exploration
+- Riotbox is currently more legible on some inputs than others
+
 If `just` is installed, the normal local check path is:
 
 ```bash
@@ -124,6 +246,21 @@ What should be clear after that first minute:
 - actions do not always fire instantly; they commit on musical boundaries
 - `Log` is the quickest place to see whether your action actually landed
 - `Capture` is where good results start turning into reusable material
+
+## How To Read The Screens
+
+If you feel lost, do not stare at everything equally.
+
+- `Jam`: what is happening now, what lands next, and which few gestures are worth trying
+- `Log`: the truth surface; check this when you are unsure whether something really committed
+- `Source`: what Riotbox thinks the file contains structurally
+- `Capture`: what material you now own and can promote, pin, recall, or reuse
+
+Practical rule:
+
+- confused about whether something worked -> press `2`
+- confused about what Riotbox thinks the source is -> press `3`
+- confused about what you captured or promoted -> press `4`
 
 ## Example Session Flow
 
@@ -185,6 +322,23 @@ The shell already has a broad action vocabulary, but these are the best first ke
 - `u` undo
 
 The rest of the keymap is real, but it is not the best way to learn Riotbox on minute one.
+
+## Current Limitations
+
+To avoid the wrong expectation:
+
+- Riotbox does **not** yet behave like a finished “load loop, hear a polished remix instantly” instrument
+- some first gestures can sound repetitive if you use the same source and the same opening move every time
+- the current shell is strongest as:
+  - a quantized action/commit instrument
+  - a capture-and-reuse prototype
+  - a way to learn the lane behaviors
+- it is still weaker as:
+  - a polished mixer/performance surface
+  - a broad preset/browse workflow
+  - a fully obvious first-run musician product
+
+So if the first recipe feels too similar every run, that does **not** mean nothing is working. It usually means you have learned the first minimal loop and should now try a different lane, a different source, or the capture/reuse path.
 
 ## Repo Map
 
