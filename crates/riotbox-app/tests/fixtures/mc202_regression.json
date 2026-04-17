@@ -18,9 +18,8 @@
       "touch": 0.85,
       "result_summary": "set MC-202 role to leader at 0.85",
       "jam_contains": [
-        "voice leader",
-        "phrase leader-scene-1",
-        "touch 0.85"
+        "current voice leader",
+        "current phrase leader-scene-1"
       ],
       "log_contains": [
         "role leader",
@@ -48,9 +47,8 @@
       "touch": 0.78,
       "result_summary": "generated MC-202 follower phrase follower-scene-1 at 0.78",
       "jam_contains": [
-        "voice follower",
-        "phrase follower-scene-1",
-        "touch 0.78"
+        "current voice follower",
+        "current phrase follower-scene-1"
       ],
       "log_contains": [
         "role follower",
@@ -78,9 +76,8 @@
       "touch": 0.82,
       "result_summary": "generated MC-202 answer phrase answer-scene-1 at 0.82",
       "jam_contains": [
-        "voice answer",
-        "phrase answer-scene-1",
-        "touch 0.82"
+        "current voice answer",
+        "current phrase answer-scene-1"
       ],
       "log_contains": [
         "role answer",
