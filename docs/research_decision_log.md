@@ -915,6 +915,17 @@ Status: accepted
 
 ---
 
+Topic: Jam should become perform-first before Riotbox adds a separate inspect mode
+Phase: Playable shell UX
+Question: once Riotbox already has strong lane state, trust cues, and multiple support screens, what is the smallest honest next step that makes the Jam surface feel more like an instrument and less like an engine dashboard?
+Decision: keep one Jam screen for now, but reduce it to a perform-first hierarchy: `Now`, `Next`, and `Trust` on the top row; three compact lane cards for `MC-202`, `W-30`, and `TR-909` in the middle; and a lower row containing only `Pending / landed`, `Suggested gestures`, and `Warnings / trust`. Move source detail, section lists, macro dumps, and deeper diagnostics off the main Jam surface and keep them on `Source`, `Capture`, `Log`, or the help overlay.
+Why: the strongest UX feedback was not that Riotbox lacked state, but that too much equal-priority information was competing on the primary Jam surface. The next honest improvement is to reorder and reduce the surface, not to open a second inspect architecture before the simpler Jam hierarchy has been tested in use.
+Evidence: `riotbox-app` now removes the old Source / Sections / Macros row from the main Jam surface, replaces it with three lane cards plus suggested-gesture and warning blocks, shortens the footer/help language toward primary versus secondary actions, and keeps fixture-backed Jam regressions green after the wording and layout shift. The review artifact at `docs/screenshots/jam_perform_first_baseline.txt` records the new hierarchy.
+Consequences: a future inspect-mode split remains possible, but it is no longer the default next move. Follow-up UX slices should first test whether the reduced Jam surface plus better help text is enough. If further reduction still fails, a later ticket can add a deeper inspect layer without reopening the current screen contract.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline
