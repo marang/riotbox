@@ -82,5 +82,113 @@
         "pad-04"
       ]
     }
+  },
+  {
+    "name": "bank_swap_committed",
+    "action": "swap_bank",
+    "capture_bank": "bank-a",
+    "capture_pad": "pad-01",
+    "capture_pinned": false,
+    "extra_captures": [
+      {
+        "capture_id": "cap-02",
+        "bank": "bank-b",
+        "pad": "pad-01",
+        "pinned": false,
+        "notes": "bank b"
+      }
+    ],
+    "initial_active_bank": "bank-a",
+    "initial_focused_pad": "pad-01",
+    "requested_at": 628,
+    "committed_at": 712,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 41,
+      "bar_index": 11,
+      "phrase_index": 3,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-b",
+      "focused_pad": "pad-01",
+      "last_capture": "cap-02",
+      "w30_grit": 0.0,
+      "preview_mode": "live_recall",
+      "preview_routing": "music_bus_preview",
+      "preview_profile": "promoted_recall",
+      "preview_capture": "cap-02",
+      "preview_music_bus_level": 0.64,
+      "preview_grit_level": 0.0,
+      "preview_transport_running": true,
+      "result_summary": "swapped W-30 bank to bank-b/pad-01 with cap-02",
+      "jam_contains": [
+        "W-30 cue idle | mgr swap",
+        "W-30 recall/promoted | bank-b/pad-01"
+      ],
+      "capture_contains": [
+        "pending W-30 cue idle",
+        "bank/pad bank-b/pad-01",
+        "mgr bank-b/pad-01",
+        "latest promoted cap-02 ->"
+      ],
+      "log_contains": [
+        "cue idle | bank",
+        "bank bank-b/pad-01",
+        "result swapped W-30 bank to",
+        "bank-b/pad-01 with cap-02"
+      ]
+    }
+  },
+  {
+    "name": "damage_profile_committed",
+    "action": "apply_damage_profile",
+    "capture_bank": "bank-a",
+    "capture_pad": "pad-01",
+    "capture_pinned": false,
+    "initial_active_bank": "bank-a",
+    "initial_focused_pad": "pad-01",
+    "initial_last_capture": "cap-01",
+    "initial_preview_mode": "live_recall",
+    "initial_w30_grit": 0.4,
+    "requested_at": 620,
+    "committed_at": 720,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 45,
+      "bar_index": 12,
+      "phrase_index": 3,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-a",
+      "focused_pad": "pad-01",
+      "last_capture": "cap-01",
+      "w30_grit": 0.82,
+      "preview_mode": "live_recall",
+      "preview_routing": "music_bus_preview",
+      "preview_profile": "promoted_recall",
+      "preview_capture": "cap-01",
+      "preview_music_bus_level": 0.64,
+      "preview_grit_level": 0.82,
+      "preview_transport_running": true,
+      "result_summary": "applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01",
+      "jam_contains": [
+        "W-30 cue idle | mgr idle",
+        "W-30 bus 0.64 grit 0.82 | cap-01 | shred"
+      ],
+      "capture_contains": [
+        "pending W-30 cue idle",
+        "forge bank-a/pad-01",
+        "preview live_recall",
+        "bus 0.64 | grit 0.82"
+      ],
+      "log_contains": [
+        "cue idle | damage",
+        "mix 0.64/0.82 shred",
+        "result applied shred damage profile",
+        "to cap-01 on W-30 pad bank-a/pad-01"
+      ]
+    }
   }
 ]

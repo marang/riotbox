@@ -3088,10 +3088,32 @@ mod tests {
         capture_bank: String,
         capture_pad: String,
         capture_pinned: bool,
+        #[serde(default)]
+        extra_captures: Vec<W30RegressionCapture>,
+        #[serde(default)]
+        initial_active_bank: Option<String>,
+        #[serde(default)]
+        initial_focused_pad: Option<String>,
+        #[serde(default)]
+        initial_last_capture: Option<String>,
+        #[serde(default)]
+        initial_preview_mode: Option<String>,
+        #[serde(default)]
+        initial_w30_grit: Option<f32>,
         requested_at: TimestampMs,
         committed_at: TimestampMs,
         boundary: W30RegressionBoundary,
         expected: W30RegressionExpected,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionCapture {
+        capture_id: String,
+        bank: String,
+        pad: String,
+        pinned: bool,
+        #[serde(default)]
+        notes: Option<String>,
     }
 
     #[derive(Clone, Copy, Debug, Deserialize)]
@@ -3099,6 +3121,8 @@ mod tests {
     enum W30RegressionAction {
         LiveRecall,
         PromotedAudition,
+        SwapBank,
+        ApplyDamageProfile,
     }
 
     #[derive(Debug, Deserialize)]
@@ -3127,14 +3151,29 @@ mod tests {
         focused_pad: String,
         last_capture: String,
         w30_grit: f32,
-        preview_mode: String,
-        preview_routing: String,
-        preview_profile: String,
-        preview_capture: String,
-        preview_music_bus_level: f32,
-        preview_grit_level: f32,
-        preview_transport_running: bool,
+        #[serde(default)]
+        preview_mode: Option<String>,
+        #[serde(default)]
+        preview_routing: Option<String>,
+        #[serde(default)]
+        preview_profile: Option<String>,
+        #[serde(default)]
+        preview_capture: Option<String>,
+        #[serde(default)]
+        preview_music_bus_level: Option<f32>,
+        #[serde(default)]
+        preview_grit_level: Option<f32>,
+        #[serde(default)]
+        preview_transport_running: Option<bool>,
         result_summary: String,
+    }
+
+    fn w30_preview_mode_state(value: &str) -> W30PreviewModeState {
+        match value {
+            "live_recall" => W30PreviewModeState::LiveRecall,
+            "promoted_audition" => W30PreviewModeState::PromotedAudition,
+            other => panic!("unsupported W-30 preview mode fixture value: {other}"),
+        }
     }
 
     impl Mc202RegressionBoundary {
@@ -6020,11 +6059,42 @@ mod tests {
                 pad_id: PadId::from(fixture.capture_pad.clone()),
             });
             session.captures[0].is_pinned = fixture.capture_pinned;
-            session.runtime_state.lane_state.w30.active_bank =
-                Some(BankId::from(fixture.capture_bank.clone()));
-            session.runtime_state.lane_state.w30.focused_pad =
-                Some(PadId::from(fixture.capture_pad.clone()));
-            session.runtime_state.macro_state.w30_grit = 0.0;
+            for extra in &fixture.extra_captures {
+                session.captures.push(CaptureRef {
+                    capture_id: CaptureId::from(extra.capture_id.clone()),
+                    capture_type: CaptureType::Pad,
+                    source_origin_refs: vec!["fixture-extra".into()],
+                    lineage_capture_refs: Vec::new(),
+                    resample_generation_depth: 0,
+                    created_from_action: None,
+                    storage_path: format!("captures/{}.wav", extra.capture_id),
+                    assigned_target: Some(CaptureTarget::W30Pad {
+                        bank_id: BankId::from(extra.bank.clone()),
+                        pad_id: PadId::from(extra.pad.clone()),
+                    }),
+                    is_pinned: extra.pinned,
+                    notes: extra.notes.clone(),
+                });
+            }
+            session.runtime_state.lane_state.w30.active_bank = Some(BankId::from(
+                fixture
+                    .initial_active_bank
+                    .clone()
+                    .unwrap_or_else(|| fixture.capture_bank.clone()),
+            ));
+            session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from(
+                fixture
+                    .initial_focused_pad
+                    .clone()
+                    .unwrap_or_else(|| fixture.capture_pad.clone()),
+            ));
+            session.runtime_state.lane_state.w30.last_capture =
+                fixture.initial_last_capture.clone().map(CaptureId::from);
+            session.runtime_state.lane_state.w30.preview_mode = fixture
+                .initial_preview_mode
+                .as_deref()
+                .map(w30_preview_mode_state);
+            session.runtime_state.macro_state.w30_grit = fixture.initial_w30_grit.unwrap_or(0.0);
             let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
             let queue_result = match fixture.action {
@@ -6033,6 +6103,10 @@ mod tests {
                 }
                 W30RegressionAction::PromotedAudition => {
                     state.queue_w30_promoted_audition(fixture.requested_at)
+                }
+                W30RegressionAction::SwapBank => state.queue_w30_swap_bank(fixture.requested_at),
+                W30RegressionAction::ApplyDamageProfile => {
+                    state.queue_w30_apply_damage_profile(fixture.requested_at)
                 }
             };
             assert_eq!(
@@ -6097,54 +6171,63 @@ mod tests {
                 "{} grit drifted",
                 fixture.name
             );
-            assert_eq!(
-                state.runtime.w30_preview.mode.label(),
-                fixture.expected.preview_mode,
-                "{} preview mode drifted",
-                fixture.name
-            );
-            assert_eq!(
-                state.runtime.w30_preview.routing.label(),
-                fixture.expected.preview_routing,
-                "{} preview routing drifted",
-                fixture.name
-            );
-            assert_eq!(
-                state
-                    .runtime
-                    .w30_preview
-                    .source_profile
-                    .map(|profile| profile.label()),
-                Some(fixture.expected.preview_profile.as_str()),
-                "{} preview profile drifted",
-                fixture.name
-            );
-            assert_eq!(
-                state.runtime.w30_preview.capture_id.as_deref(),
-                Some(fixture.expected.preview_capture.as_str()),
-                "{} preview capture drifted",
-                fixture.name
-            );
-            assert!(
-                (state.runtime.w30_preview.music_bus_level
-                    - fixture.expected.preview_music_bus_level)
-                    .abs()
-                    < f32::EPSILON,
-                "{} preview music bus drifted",
-                fixture.name
-            );
-            assert!(
-                (state.runtime.w30_preview.grit_level - fixture.expected.preview_grit_level).abs()
-                    < f32::EPSILON,
-                "{} preview grit drifted",
-                fixture.name
-            );
-            assert_eq!(
-                state.runtime.w30_preview.is_transport_running,
-                fixture.expected.preview_transport_running,
-                "{} preview transport-running drifted",
-                fixture.name
-            );
+            if let Some(expected) = fixture.expected.preview_mode.as_deref() {
+                assert_eq!(
+                    state.runtime.w30_preview.mode.label(),
+                    expected,
+                    "{} preview mode drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected) = fixture.expected.preview_routing.as_deref() {
+                assert_eq!(
+                    state.runtime.w30_preview.routing.label(),
+                    expected,
+                    "{} preview routing drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected) = fixture.expected.preview_profile.as_deref() {
+                assert_eq!(
+                    state
+                        .runtime
+                        .w30_preview
+                        .source_profile
+                        .map(|profile| profile.label()),
+                    Some(expected),
+                    "{} preview profile drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected) = fixture.expected.preview_capture.as_deref() {
+                assert_eq!(
+                    state.runtime.w30_preview.capture_id.as_deref(),
+                    Some(expected),
+                    "{} preview capture drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected) = fixture.expected.preview_music_bus_level {
+                assert!(
+                    (state.runtime.w30_preview.music_bus_level - expected).abs() < f32::EPSILON,
+                    "{} preview music bus drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected) = fixture.expected.preview_grit_level {
+                assert!(
+                    (state.runtime.w30_preview.grit_level - expected).abs() < f32::EPSILON,
+                    "{} preview grit drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected) = fixture.expected.preview_transport_running {
+                assert_eq!(
+                    state.runtime.w30_preview.is_transport_running, expected,
+                    "{} preview transport-running drifted",
+                    fixture.name
+                );
+            }
             assert_eq!(
                 state
                     .session
