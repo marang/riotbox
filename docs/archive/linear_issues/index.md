@@ -112,4 +112,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Capture pending summaries now flow through the projected app/core state seam.
 - [RIOTBOX-84.md](./RIOTBOX-84.md)
   W-30 operation diagnostics now follow the current lane target instead of stale global history.
+- [RIOTBOX-85.md](./RIOTBOX-85.md)
+  First bounded W-30 slice-pool browse control on the current lineage seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
