@@ -937,6 +937,17 @@ Status: accepted
 
 ---
 
+Topic: Jam should speak in gesture language on the perform-first surface
+Phase: Playable shell UX
+Question: once the Jam surface is reduced and the first-run path is tighter, what is the smallest next change that makes Riotbox feel less like an internal action model and more like an instrument?
+Decision: keep the deep `Log`/diagnostic surfaces technically precise, but shift the perform-first Jam surface, footer, help overlay, and status line toward clearer gesture vocabulary. Use words such as `voice`, `jump`, `follow`, `hit`, and `push` where those improve immediacy, while leaving the internal action model and command ids unchanged.
+Why: the remaining UX friction was not capability but wording. The Jam shell was still presenting several actions in engine terms (`role`, `scene select`, `trigger`, `reinforce`) even after the hierarchy was improved. Translating the outward-facing layer is the smallest honest next move because it changes how the shell reads without inventing a new behavior model.
+Evidence: `riotbox-app` now updates status messages, footer/help guidance, Jam MC-202 card wording, and perform-facing pending/landed labels to use the curated gesture vocabulary while leaving the deeper `Log` diagnostics and action ids intact. The fixture-backed Jam shell regressions stay green after the wording change.
+Consequences: future UX work should preserve the split between perform language and diagnostic language. If later tickets add an inspect surface, it can stay more technical; the default Jam surface should continue optimizing for musical intent first.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline

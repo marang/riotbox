@@ -179,19 +179,19 @@ impl JamShellState {
                 ShellKeyOutcome::RequestRefresh
             }
             KeyCode::Char('m') => {
-                self.status_message = "queue scene mutation on next bar".into();
+                self.status_message = "queue scene mutate on next bar".into();
                 ShellKeyOutcome::QueueSceneMutation
             }
             KeyCode::Char('y') => {
-                self.status_message = "queue scene select on next bar".into();
+                self.status_message = "queue scene jump on next bar".into();
                 ShellKeyOutcome::QueueSceneSelect
             }
             KeyCode::Char('b') => {
-                self.status_message = "queue MC-202 role change on next phrase".into();
+                self.status_message = "queue MC-202 voice swap on next phrase".into();
                 ShellKeyOutcome::QueueMc202RoleToggle
             }
             KeyCode::Char('g') => {
-                self.status_message = "queue MC-202 follower phrase on next phrase".into();
+                self.status_message = "queue MC-202 follow phrase on next phrase".into();
                 ShellKeyOutcome::QueueMc202GenerateFollower
             }
             KeyCode::Char('a') => {
@@ -203,7 +203,7 @@ impl JamShellState {
                 ShellKeyOutcome::QueueTr909Fill
             }
             KeyCode::Char('d') => {
-                self.status_message = "queue TR-909 reinforcement on next phrase".into();
+                self.status_message = "queue TR-909 push on next phrase".into();
                 ShellKeyOutcome::QueueTr909Reinforce
             }
             KeyCode::Char('s') => {
@@ -231,11 +231,11 @@ impl JamShellState {
                 ShellKeyOutcome::PromoteLastCapture
             }
             KeyCode::Char('w') => {
-                self.status_message = "queue W-30 pad trigger on next beat".into();
+                self.status_message = "queue W-30 hit on next beat".into();
                 ShellKeyOutcome::QueueW30TriggerPad
             }
             KeyCode::Char('n') => {
-                self.status_message = "queue W-30 focus step on next beat".into();
+                self.status_message = "queue W-30 next pad on next beat".into();
                 ShellKeyOutcome::QueueW30StepFocus
             }
             KeyCode::Char('B') => {
@@ -243,7 +243,7 @@ impl JamShellState {
                 ShellKeyOutcome::QueueW30SwapBank
             }
             KeyCode::Char('j') => {
-                self.status_message = "queue W-30 slice-pool browse on next beat".into();
+                self.status_message = "queue W-30 browse on next beat".into();
                 ShellKeyOutcome::QueueW30BrowseSlicePool
             }
             KeyCode::Char('D') => {
@@ -259,11 +259,11 @@ impl JamShellState {
                 ShellKeyOutcome::QueueW30LiveRecall
             }
             KeyCode::Char('o') => {
-                self.status_message = "queue W-30 promoted-material audition on next bar".into();
+                self.status_message = "queue W-30 audition on next bar".into();
                 ShellKeyOutcome::QueueW30PromotedAudition
             }
             KeyCode::Char('e') => {
-                self.status_message = "queue W-30 internal resample on next phrase".into();
+                self.status_message = "queue W-30 resample on next phrase".into();
                 ShellKeyOutcome::QueueW30Resample
             }
             KeyCode::Char('v') => {
@@ -572,7 +572,7 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
         Some(FirstRunOnrampStage::FirstResult) => vec![
             Line::from("You got the first result."),
             Line::from("Best next move: [c] capture the keeper or [u] undo it if it missed."),
-            Line::from("Then try one more gesture: [y] scene, [g] follower, or [w] trigger."),
+            Line::from("Then try one more gesture: [y] jump, [g] follow, or [w] hit."),
         ],
         None => Vec::new(),
     };
@@ -1003,10 +1003,10 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Primary: y scene | g follower | a answer | f fill | c capture | w trigger | u undo | more in ? help",
+        "Primary: y scene jump | g follow | a answer | f fill | c capture | w hit | u undo | more in ? help",
     ));
     lines.push(Line::from(
-        "Lane ops: b role | d reinforce | t takeover | k lock | x release | l recall | o audition | z freeze",
+        "Lane ops: b voice | d push | t takeover | k lock | x release | l recall | o audition | z freeze",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1082,14 +1082,14 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     lines.extend([
         Line::from(""),
         Line::from("Primary gestures"),
-        Line::from("space: play / pause | y: scene select | g: follower | a: answer"),
-        Line::from("f: fill | c: capture | w: trigger | u: undo | 2: confirm in Log"),
+        Line::from("space: play / pause | y: scene jump | g: follow | a: answer"),
+        Line::from("f: fill | c: capture | w: hit | u: undo | 2: confirm in Log"),
         Line::from(""),
         Line::from("Secondary / lane ops"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
-        Line::from("m: mutate scene | b: MC-202 role | d: 909 reinforce | s: 909 slam"),
+        Line::from("m: mutate scene | b: MC-202 voice | d: 909 push | s: 909 slam"),
         Line::from("t: 909 takeover | k: 909 lock | x: 909 release"),
-        Line::from("p: promote | n: W-30 step | B: W-30 bank | j: browse"),
+        Line::from("p: promote | n: W-30 next pad | B: W-30 bank | j: browse"),
         Line::from("D: damage | z: freeze | l: recall | o: audition | e: resample"),
         Line::from("[ / ]: lower or raise drum bus | v: pin latest"),
         Line::from(""),
@@ -1110,18 +1110,18 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let lanes = &shell.app.jam_view.lanes;
     let role_line = if let Some(role) = lanes.mc202_pending_role.as_deref() {
         format!(
-            "role {} -> {role}",
+            "voice {} -> {role}",
             lanes.mc202_role.as_deref().unwrap_or("unset")
         )
     } else {
-        format!("role {}", lanes.mc202_role.as_deref().unwrap_or("unset"))
+        format!("voice {}", lanes.mc202_role.as_deref().unwrap_or("unset"))
     };
     let next = if let Some(role) = lanes.mc202_pending_role.as_deref() {
-        format!("next role {role}")
+        format!("next voice {role}")
     } else if lanes.mc202_pending_answer_generation {
         "next answer".into()
     } else if lanes.mc202_pending_follower_generation {
-        "next follower".into()
+        "next follow".into()
     } else {
         "next none".into()
     };
@@ -1213,7 +1213,7 @@ fn tr909_next_line(shell: &JamShellState) -> String {
         .iter()
         .find_map(|action| match action.command {
             Tr909FillNext => Some("fill".into()),
-            Tr909ReinforceBreak => Some("reinforce".into()),
+            Tr909ReinforceBreak => Some("push".into()),
             Tr909SetSlam => Some("slam".into()),
             Tr909Takeover => Some("takeover".into()),
             Tr909SceneLock => Some("lock".into()),
@@ -1233,7 +1233,9 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let pending_line = if let Some(action) = shell.app.jam_view.pending_actions.first() {
         format!(
             "pending {} {} @ {}",
-            action.actor, action.command, action.quantization
+            action.actor,
+            jam_action_label(&action.command),
+            action.quantization
         )
     } else {
         "pending none".into()
@@ -1256,7 +1258,11 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
 fn latest_landed_line(shell: &JamShellState) -> String {
     if let Some(action) = shell.app.jam_view.recent_actions.first() {
-        format!("landed {} {}", action.actor, action.command)
+        format!(
+            "landed {} {}",
+            action.actor,
+            jam_action_label(&action.command)
+        )
     } else {
         "landed none yet".into()
     }
@@ -1266,7 +1272,7 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if !shell.app.jam_view.transport.is_playing {
         return vec![
             Line::from("[Space] play"),
-            Line::from("[y] scene  [f] fill"),
+            Line::from("[y] jump  [f] fill"),
             Line::from("[c] capture"),
         ];
     }
@@ -1280,9 +1286,9 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 
     vec![
-        Line::from("[y] scene  [g] follower"),
+        Line::from("[y] jump  [g] follow"),
         Line::from("[a] answer  [f] fill"),
-        Line::from("[c] capture  [w] trigger"),
+        Line::from("[c] capture  [w] hit"),
     ]
 }
 
@@ -1318,13 +1324,41 @@ fn primary_warning_line(shell: &JamShellState) -> String {
 
 fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
     if shell.app.jam_view.lanes.mc202_pending_role.is_some() {
-        "role queued"
+        "voice queued"
     } else if shell.app.jam_view.lanes.mc202_pending_answer_generation {
         "answer queued"
     } else if shell.app.jam_view.lanes.mc202_pending_follower_generation {
-        "follower queued"
+        "follow queued"
     } else {
         "stable"
+    }
+}
+
+fn jam_action_label(command: &str) -> String {
+    match command {
+        "mutate.scene" => "mutate".into(),
+        "scene.launch" => "scene jump".into(),
+        "mc202.set_role" => "voice swap".into(),
+        "mc202.generate_follower" => "follow".into(),
+        "mc202.generate_answer" => "answer".into(),
+        "tr909.fill_next" => "fill".into(),
+        "tr909.reinforce_break" => "push".into(),
+        "tr909.set_slam" => "slam".into(),
+        "tr909.takeover" => "takeover".into(),
+        "tr909.scene_lock" => "lock".into(),
+        "tr909.release" => "release".into(),
+        "capture.now" | "capture.loop" | "capture.bar_group" => "capture".into(),
+        "promote.capture_to_pad" | "promote.capture_to_scene" => "promote".into(),
+        "w30.trigger_pad" => "hit".into(),
+        "w30.step_focus" => "next pad".into(),
+        "w30.swap_bank" => "bank swap".into(),
+        "w30.browse_slice_pool" => "browse".into(),
+        "w30.apply_damage_profile" => "damage".into(),
+        "w30.loop_freeze" => "freeze".into(),
+        "w30.live_recall" => "recall".into(),
+        "w30.audition_promoted" => "audition".into(),
+        "promote.resample" => "resample".into(),
+        _ => command.to_string(),
     }
 }
 
@@ -3627,7 +3661,7 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("role leader -> follower"));
+        assert!(rendered.contains("voice leader -> follower"));
     }
 
     #[test]
@@ -3640,7 +3674,7 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("follower queued"));
+        assert!(rendered.contains("follow queued"));
     }
 
     #[test]
@@ -3693,8 +3727,8 @@ mod tests {
 
         assert!(rendered.contains("You got the first result."), "{rendered}");
         assert!(rendered.contains("[c] capture the keeper"), "{rendered}");
-        assert!(rendered.contains("[y] scene"), "{rendered}");
-        assert!(rendered.contains("[w] trigger"), "{rendered}");
+        assert!(rendered.contains("[y] jump"), "{rendered}");
+        assert!(rendered.contains("[w] hit"), "{rendered}");
     }
 
     #[test]

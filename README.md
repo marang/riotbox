@@ -28,6 +28,26 @@ If you only want the fastest possible first run:
 
 That is the current core loop: **load material, queue one gesture, let it land in time, keep the good accident**.
 
+## What To Expect Right Now
+
+If you start Riotbox on the same example loop and only press `Space`, `f`, `c`, and `2`, you will often get a **similar result each run**.
+
+That is expected in the current prototype because:
+
+- the first-run recipe is intentionally a **tiny learning path**, not a full performance recipe
+- `f` always queues the same first TR-909 fill gesture
+- the current build is still more about **quantized action flow** than about a wide expressive mixer/performance surface
+- Riotbox is deterministic enough that the same source plus the same first gesture often produces the same first feel
+
+So the quickstart is useful for confirming:
+
+- transport is running
+- actions queue and land on musical boundaries
+- `Log` shows what actually committed
+- capture is working
+
+But it is **not** enough on its own to understand the whole shell.
+
 ## What Riotbox Is
 
 Think of Riotbox as a hybrid of:
@@ -87,6 +107,25 @@ If you want the simplest first success, do not try every action. Start with:
 - `c` to capture a phrase
 - `2` to confirm the action committed in `Log`
 
+If that works, stop repeating only that recipe. Move on to one of the more specific flows below.
+
+## Learn By Doing
+
+If you want more than the tiny quickstart loop, use the dedicated recipe guide:
+
+- [`docs/jam_recipes.md`](docs/jam_recipes.md)
+
+That guide contains concrete flows for:
+
+- timing and commit learning
+- comparing different first gestures
+- capture and reuse
+- undo
+- source comparison
+- reading `Jam` and `Log` together
+
+It is the best place to continue once `Space -> f -> c -> 2` feels too repetitive.
+
 If `just` is installed, the normal local check path is:
 
 ```bash
@@ -124,6 +163,21 @@ What should be clear after that first minute:
 - actions do not always fire instantly; they commit on musical boundaries
 - `Log` is the quickest place to see whether your action actually landed
 - `Capture` is where good results start turning into reusable material
+
+## How To Read The Screens
+
+If you feel lost, do not stare at everything equally.
+
+- `Jam`: what is happening now, what lands next, and which few gestures are worth trying
+- `Log`: the truth surface; check this when you are unsure whether something really committed
+- `Source`: what Riotbox thinks the file contains structurally
+- `Capture`: what material you now own and can promote, pin, recall, or reuse
+
+Practical rule:
+
+- confused about whether something worked -> press `2`
+- confused about what Riotbox thinks the source is -> press `3`
+- confused about what you captured or promoted -> press `4`
 
 ## Example Session Flow
 
@@ -186,6 +240,23 @@ The shell already has a broad action vocabulary, but these are the best first ke
 
 The rest of the keymap is real, but it is not the best way to learn Riotbox on minute one.
 
+## Current Limitations
+
+To avoid the wrong expectation:
+
+- Riotbox does **not** yet behave like a finished “load loop, hear a polished remix instantly” instrument
+- some first gestures can sound repetitive if you use the same source and the same opening move every time
+- the current shell is strongest as:
+  - a quantized action/commit instrument
+  - a capture-and-reuse prototype
+  - a way to learn the lane behaviors
+- it is still weaker as:
+  - a polished mixer/performance surface
+  - a broad preset/browse workflow
+  - a fully obvious first-run musician product
+
+So if the first recipe feels too similar every run, that does **not** mean nothing is working. It usually means you have learned the first minimal loop and should now try a different lane, a different source, or the capture/reuse path.
+
 ## Repo Map
 
 - [`docs/`](docs/) — specs, decision log, workflow, and review artifacts
@@ -219,6 +290,7 @@ What is still not done:
 
 - [`docs/prd_v1.md`](docs/prd_v1.md)
 - [`docs/execution_roadmap.md`](docs/execution_roadmap.md)
+- [`docs/jam_recipes.md`](docs/jam_recipes.md)
 - [`docs/specs/tui_screen_spec.md`](docs/specs/tui_screen_spec.md)
 - [`docs/specs/action_lexicon_spec.md`](docs/specs/action_lexicon_spec.md)
 - [`plan/riotbox_masterplan.md`](plan/riotbox_masterplan.md)

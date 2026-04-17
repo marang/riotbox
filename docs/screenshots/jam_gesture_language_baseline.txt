@@ -1,0 +1,26 @@
+Riotbox Jam Gesture Language Baseline
+Normalized terminal capture notes for `RIOTBOX-99`
+Source: `riotbox-app` Jam shell snapshot fixtures
+Notes:
+- normalized from the current perform-first Jam shell snapshots
+- intended as a review/update artifact, not a pixel-perfect golden render
+- records the vocabulary split between the playable Jam surface and the more technical diagnostic surfaces
+
+Gesture-language expectations after this slice:
+
+- perform-first Jam wording should bias toward musical intent:
+  - `voice` instead of `role`
+  - `scene jump` instead of `scene select`
+  - `follow` instead of `follower` when used as a gesture label
+  - `hit` instead of `trigger` on the primary Jam/help surface
+  - `push` instead of `reinforce` on the primary Jam/help surface
+- pending and landed summaries on the Jam surface should use the same translated labels
+- footer and help should separate `Primary` gestures from `Lane ops` using the same vocabulary
+- `Log`, committed diagnostics, and command ids may remain more technical where precision is more valuable than immediacy
+
+Interpretation:
+
+- Riotbox now keeps one clearer split:
+  - `Jam` speaks more like a playable instrument
+  - `Log` still speaks more like a trusted action and lane diagnostic surface
+- this is a presentation-layer slice only; the action lexicon and core command ids are unchanged
