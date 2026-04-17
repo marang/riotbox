@@ -74,6 +74,7 @@ docs/
     jam_log_screen_baseline.txt
     jam_perform_first_baseline.txt
     jam_first_30_seconds_baseline.txt
+    jam_gesture_language_baseline.txt
     jam_tr909_takeover_baseline.txt
     source_screen_baseline.txt
     capture_w30_live_recall_baseline.txt
@@ -127,6 +128,7 @@ docs/
 - `screenshots/jam_log_screen_baseline.txt`: baseline captured
 - `screenshots/jam_perform_first_baseline.txt`: baseline captured
 - `screenshots/jam_first_30_seconds_baseline.txt`: baseline captured
+- `screenshots/jam_gesture_language_baseline.txt`: baseline captured
 - `screenshots/jam_tr909_takeover_baseline.txt`: baseline captured
 - `screenshots/jam_tr909_render_seam_baseline.txt`: baseline captured
 - `screenshots/jam_tr909_render_diagnostics_baseline.txt`: baseline captured
