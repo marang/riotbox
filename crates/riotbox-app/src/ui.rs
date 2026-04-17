@@ -1178,6 +1178,7 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         .map(|action| short_w30_action_label(&action.command))
         .unwrap_or("none");
     let lineage_active = w30_resample_lineage_active(shell);
+    let slice_pool_relevant = w30_slice_pool_relevant(shell);
 
     vec![
         Line::from(format!(
@@ -1202,11 +1203,15 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         if lineage_active {
             Line::from(w30_resample_log_focus_compact(shell))
         } else {
-            Line::from(format!(
-                "cap {} | {}",
-                w30_capture_compact(shell),
-                w30_trigger_compact(shell),
-            ))
+            if slice_pool_relevant {
+                Line::from(format!("pool {}", w30_slice_pool_log_compact(shell)))
+            } else {
+                Line::from(format!(
+                    "cap {} | {}",
+                    w30_capture_compact(shell),
+                    w30_trigger_compact(shell),
+                ))
+            }
         },
     ]
 }
@@ -1394,6 +1399,109 @@ fn w30_capture_compact(shell: &JamShellState) -> String {
         .as_ref()
         .map(ToString::to_string)
         .unwrap_or_else(|| "none".into())
+}
+
+fn current_w30_slice_pool(shell: &JamShellState) -> Vec<&riotbox_core::session::CaptureRef> {
+    let Some((active_bank, focused_pad)) = current_w30_lane_target(shell) else {
+        return Vec::new();
+    };
+
+    shell
+        .app
+        .session
+        .captures
+        .iter()
+        .filter(|capture| {
+            matches!(
+                capture.assigned_target.as_ref(),
+                Some(riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id })
+                    if bank_id.as_str() == active_bank && pad_id.as_str() == focused_pad
+            )
+        })
+        .collect()
+}
+
+fn current_w30_slice_pool_position(
+    shell: &JamShellState,
+    pool: &[&riotbox_core::session::CaptureRef],
+) -> Option<usize> {
+    let last_capture = shell
+        .app
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .last_capture
+        .as_ref()?;
+    pool.iter()
+        .position(|capture| &capture.capture_id == last_capture)
+}
+
+fn w30_slice_pool_relevant(shell: &JamShellState) -> bool {
+    shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_slice_pool_capture_id
+        .is_some()
+        || current_w30_slice_pool(shell).len() > 1
+}
+
+fn w30_slice_pool_compact(shell: &JamShellState) -> String {
+    let pool = current_w30_slice_pool(shell);
+    if pool.is_empty() {
+        return "none".into();
+    }
+
+    let current_index =
+        current_w30_slice_pool_position(shell, &pool).unwrap_or_else(|| pool.len() - 1);
+    let current_capture = pool[current_index].capture_id.to_string();
+    let next_capture = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_slice_pool_capture_id
+        .clone()
+        .or_else(|| {
+            (pool.len() > 1).then(|| {
+                pool[(current_index + 1) % pool.len()]
+                    .capture_id
+                    .to_string()
+            })
+        })
+        .unwrap_or_else(|| "hold".into());
+
+    format!(
+        "{current_capture} {}/{} -> {next_capture}",
+        current_index + 1,
+        pool.len()
+    )
+}
+
+fn w30_slice_pool_log_compact(shell: &JamShellState) -> String {
+    let pool = current_w30_slice_pool(shell);
+    if pool.is_empty() {
+        return "none".into();
+    }
+
+    let current_index =
+        current_w30_slice_pool_position(shell, &pool).unwrap_or_else(|| pool.len() - 1);
+    let next_capture = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_slice_pool_capture_id
+        .clone()
+        .or_else(|| {
+            (pool.len() > 1).then(|| {
+                pool[(current_index + 1) % pool.len()]
+                    .capture_id
+                    .to_string()
+            })
+        })
+        .unwrap_or_else(|| "hold".into());
+
+    format!("{}/{} -> {next_capture}", current_index + 1, pool.len())
 }
 
 fn w30_trigger_compact(shell: &JamShellState) -> String {
@@ -1918,13 +2026,22 @@ fn pinned_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
 fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let latest_promoted = latest_w30_promoted_capture_label(shell);
     let pending_w30 = w30_pending_cue_label(shell);
-    let mut lines = vec![
-        Line::from(format!("pending W-30 cue {pending_w30}")),
-        Line::from(format!(
+    let bank_or_pool_line = if w30_slice_pool_relevant(shell) {
+        format!(
+            "bank/pad {} | pool {}",
+            w30_target_compact(shell),
+            w30_slice_pool_compact(shell)
+        )
+    } else {
+        format!(
             "bank/pad {} | mgr {}",
             w30_target_compact(shell),
             w30_bank_manager_compact(shell)
-        )),
+        )
+    };
+    let mut lines = vec![
+        Line::from(format!("pending W-30 cue {pending_w30}")),
+        Line::from(bank_or_pool_line),
         Line::from(format!(
             "preview {} | {}",
             shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_mix_summary,
@@ -3742,7 +3859,63 @@ mod tests {
 
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("browse"));
-        assert!(rendered.contains("bank-a/pad-01"));
+        assert!(rendered.contains("bank-a/pad-01"), "{rendered}");
+        assert!(rendered.contains("bank/pad bank-a/pad-01"), "{rendered}");
+        assert!(rendered.contains("pool cap-01 1/2 -> cap-02"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_log_shell_snapshot_with_committed_w30_slice_pool_browse_diagnostics() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell
+            .app
+            .session
+            .captures
+            .push(riotbox_core::session::CaptureRef {
+                capture_id: "cap-02".into(),
+                capture_type: riotbox_core::session::CaptureType::Pad,
+                source_origin_refs: vec!["asset-b".into()],
+                lineage_capture_refs: vec!["cap-01".into()],
+                resample_generation_depth: 0,
+                created_from_action: None,
+                storage_path: "captures/cap-02.wav".into(),
+                assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
+                    bank_id: "bank-a".into(),
+                    pad_id: "pad-01".into(),
+                }),
+                is_pinned: false,
+                notes: Some("alt slice".into()),
+            });
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-a".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_browse_slice_pool(320),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.app.commit_ready_actions(
+            riotbox_core::transport::CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Beat,
+                beat_index: 42,
+                bar_index: 11,
+                phrase_index: 3,
+                scene_id: Some("scene-1".into()),
+            },
+            420,
+        );
+        shell.active_screen = ShellScreen::Log;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("cue idle | browse"), "{rendered}");
+        assert!(rendered.contains("bank bank-a/pad-01"), "{rendered}");
+        assert!(rendered.contains("tap cap-02 g0/l1 int"), "{rendered}");
     }
 
     #[test]

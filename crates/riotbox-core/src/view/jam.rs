@@ -112,6 +112,20 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
+        let w30_pending_slice_pool_capture_id =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30BrowseSlicePool => match &action.params {
+                        crate::action::ActionParams::Mutation {
+                            target_id: Some(target_id),
+                            ..
+                        } => Some(target_id.clone()),
+                        _ => None,
+                    },
+                    _ => None,
+                });
         let w30_pending_damage_profile_target =
             pending_actions
                 .iter()
@@ -301,6 +315,7 @@ impl JamViewModel {
                 w30_pending_audition_target,
                 w30_pending_bank_swap_target,
                 w30_pending_slice_pool_target,
+                w30_pending_slice_pool_capture_id,
                 w30_pending_damage_profile_target,
                 w30_pending_loop_freeze_target,
                 w30_pending_focus_step_target,
@@ -501,6 +516,7 @@ pub struct LaneSummaryView {
     pub w30_pending_audition_target: Option<String>,
     pub w30_pending_bank_swap_target: Option<String>,
     pub w30_pending_slice_pool_target: Option<String>,
+    pub w30_pending_slice_pool_capture_id: Option<String>,
     pub w30_pending_damage_profile_target: Option<String>,
     pub w30_pending_loop_freeze_target: Option<String>,
     pub w30_pending_focus_step_target: Option<String>,
@@ -568,8 +584,8 @@ pub struct GhostStatusView {
 mod tests {
     use crate::{
         action::{
-            ActionCommand, ActionDraft, ActionTarget, ActorType, GhostMode, Quantization,
-            TargetScope, UndoPolicy,
+            ActionCommand, ActionDraft, ActionParams, ActionTarget, ActorType, GhostMode,
+            Quantization, TargetScope, UndoPolicy,
         },
         ids::{BankId, SceneId, SourceId},
         queue::ActionQueue,
@@ -768,17 +784,24 @@ mod tests {
             103,
         );
         queue.enqueue(
-            ActionDraft::new(
-                ActorType::User,
-                ActionCommand::W30BrowseSlicePool,
-                Quantization::NextBeat,
-                ActionTarget {
-                    scope: Some(TargetScope::LaneW30),
-                    bank_id: Some("bank-a".into()),
-                    pad_id: Some("pad-04".into()),
-                    ..Default::default()
-                },
-            ),
+            {
+                let mut draft = ActionDraft::new(
+                    ActorType::User,
+                    ActionCommand::W30BrowseSlicePool,
+                    Quantization::NextBeat,
+                    ActionTarget {
+                        scope: Some(TargetScope::LaneW30),
+                        bank_id: Some("bank-a".into()),
+                        pad_id: Some("pad-04".into()),
+                        ..Default::default()
+                    },
+                );
+                draft.params = ActionParams::Mutation {
+                    intensity: 1.0,
+                    target_id: Some("cap-02".into()),
+                };
+                draft
+            },
             104,
         );
         queue.enqueue(
@@ -916,6 +939,10 @@ mod tests {
         assert_eq!(
             vm.lanes.w30_pending_slice_pool_target.as_deref(),
             Some("bank-a/pad-04")
+        );
+        assert_eq!(
+            vm.lanes.w30_pending_slice_pool_capture_id.as_deref(),
+            Some("cap-02")
         );
         assert_eq!(
             vm.lanes.w30_pending_damage_profile_target.as_deref(),
