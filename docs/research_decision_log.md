@@ -926,6 +926,17 @@ Status: accepted
 
 ---
 
+Topic: the first 30 seconds after ingest should bias toward one obvious success path
+Phase: Playable shell UX
+Question: after adding the bounded first-run onramp and reducing the Jam surface, what is the smallest next step that makes the first playable moment easier to discover without creating a second onboarding system?
+Decision: keep the existing inline `Start Here` guidance, but sharpen it into one explicit first-success flow: `[Space]` to start transport, `[f]` to queue one first fill, and `[2]` to confirm the landed result in `Log`. Once the first action is armed or committed, keep the guidance focused on only the next decision: let it land, then either capture the keeper or undo it.
+Why: the next user problem was no longer “what screen is this?” but “what do I do first, and how do I know it worked?” A bounded single-path flow is the smallest honest improvement. It preserves the current Jam/help architecture and gives new users one clearer first success before widening back out to the rest of the shell.
+Evidence: `riotbox-app` now rewrites the first-run `Start Here` and help-overlay copy around a single first fill and confirmation loop, removes the earlier first-step ambiguity between multiple actions, and keeps the focused first-run UI regressions green.
+Consequences: later first-run work can still introduce richer post-success guidance or broader onboarding, but the inline path should remain singular and easy to scan. If this still proves too open, the next follow-up should improve the moment-after-success guidance before inventing a separate onboarding surface.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline
