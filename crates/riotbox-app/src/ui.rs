@@ -91,6 +91,7 @@ pub enum ShellKeyOutcome {
     ToggleTransport,
     QueueSceneMutation,
     QueueSceneSelect,
+    QueueSceneRestore,
     QueueMc202RoleToggle,
     QueueMc202GenerateFollower,
     QueueMc202GenerateAnswer,
@@ -223,6 +224,10 @@ impl JamShellState {
             KeyCode::Char('y') => {
                 self.status_message = "queue scene jump on next bar".into();
                 ShellKeyOutcome::QueueSceneSelect
+            }
+            KeyCode::Char('Y') => {
+                self.status_message = "queue scene restore on next bar".into();
+                ShellKeyOutcome::QueueSceneRestore
             }
             KeyCode::Char('b') => {
                 self.status_message = "queue MC-202 voice swap on next phrase".into();
@@ -855,8 +860,8 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             next_scene_candidate_label(shell)
         )),
         Line::from(
-            pending_scene_launch_label(shell)
-                .map(|scene_id| format!("pending {scene_id}"))
+            pending_scene_transition(shell)
+                .map(|(label, scene_id)| format!("pending {label} {scene_id}"))
                 .unwrap_or_else(|| "pending none".into()),
         ),
     ])
@@ -1138,7 +1143,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             "Primary: y scene jump | g follow | f fill | c capture | w hit | u undo",
         ));
         lines.push(Line::from(
-            "Advanced: a answer | b voice | d push | t takeover | k lock | x release | more in ? help",
+            "Advanced: Y restore | a answer | b voice | d push | t takeover | k lock | more in ? help",
         ));
     }
     lines.push(Line::from(
@@ -1227,6 +1232,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(""),
         Line::from("Advanced / lane gestures"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
+        Line::from("Y: scene restore"),
         Line::from("a: answer | m: mutate scene | b: MC-202 voice | d: 909 push"),
         Line::from("s: 909 slam"),
         Line::from("t: 909 takeover | k: 909 lock | x: 909 release"),
@@ -1621,6 +1627,7 @@ fn jam_action_label(command: &str) -> String {
     match command {
         "mutate.scene" => "mutate".into(),
         "scene.launch" => "scene jump".into(),
+        "scene.restore" => "scene restore".into(),
         "mc202.set_role" => "voice swap".into(),
         "mc202.generate_follower" => "follow".into(),
         "mc202.generate_answer" => "answer".into(),
@@ -2329,14 +2336,25 @@ fn next_scene_candidate_label(shell: &JamShellState) -> String {
         .unwrap_or_else(|| "none".into())
 }
 
-fn pending_scene_launch_label(shell: &JamShellState) -> Option<String> {
+fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, String)> {
     shell
         .app
         .queue
         .pending_actions()
         .iter()
-        .find(|action| action.command == riotbox_core::action::ActionCommand::SceneLaunch)
+        .find(|action| {
+            matches!(
+                action.command,
+                riotbox_core::action::ActionCommand::SceneLaunch
+                    | riotbox_core::action::ActionCommand::SceneRestore
+            )
+        })
         .and_then(|action| {
+            let label = match action.command {
+                riotbox_core::action::ActionCommand::SceneLaunch => "scene launch",
+                riotbox_core::action::ActionCommand::SceneRestore => "scene restore",
+                _ => unreachable!("scene transition scan only matches launch and restore"),
+            };
             action
                 .target
                 .scene_id
@@ -2348,13 +2366,14 @@ fn pending_scene_launch_label(shell: &JamShellState) -> Option<String> {
                     } => Some(scene_id.to_string()),
                     _ => None,
                 })
+                .map(|scene_id| (label, scene_id))
         })
 }
 
 fn scene_pending_line(shell: &JamShellState) -> String {
-    pending_scene_launch_label(shell).map_or_else(
+    pending_scene_transition(shell).map_or_else(
         || "scene launch idle".into(),
-        |scene_id| format!("scene launch -> {scene_id}"),
+        |(label, scene_id)| format!("{label} -> {scene_id}"),
     )
 }
 
@@ -3926,7 +3945,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Advanced: a answer | b voice | d push"),
+            rendered.contains("Advanced: Y restore | a answer | b voice | d push"),
             "{rendered}"
         );
         assert!(!rendered.contains("Sections"), "{rendered}");
@@ -3963,6 +3982,36 @@ mod tests {
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("scene launch ->"));
+    }
+
+    #[test]
+    fn renders_jam_shell_with_pending_scene_restore_summary() {
+        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        assert_eq!(
+            shell.app.queue_scene_restore(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("scene-02-break"), "{rendered}");
+        assert!(
+            rendered.contains("scene restore -> scene-01-drop"),
+            "{rendered}"
+        );
     }
 
     #[test]
@@ -4541,6 +4590,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('y')),
             ShellKeyOutcome::QueueSceneSelect
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('Y')),
+            ShellKeyOutcome::QueueSceneRestore
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('b')),
