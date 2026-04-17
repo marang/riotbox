@@ -559,28 +559,20 @@ fn render_perform_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
 fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let lines = match first_run_onramp_stage(shell) {
         Some(FirstRunOnrampStage::Start) => vec![
-            Line::from("Press Space to start transport so queued actions can actually land"),
-            Line::from("2 press f for a TR-909 fill or c for a first capture"),
-            Line::from("3 press 2 for Log to confirm what committed and when"),
-            Line::from("Goal: get one obvious change before exploring the rest of the shell"),
+            Line::from("1 [Space] start transport"),
+            Line::from("2 [f] queue one first fill"),
+            Line::from("3 [2] watch Log when it lands on the next bar"),
+            Line::from("Goal: get one obvious first change before doing anything else"),
         ],
         Some(FirstRunOnrampStage::QueuedFirstMove) => vec![
-            Line::from(
-                "First move is queued. Let transport cross the shown beat, bar, or phrase boundary.",
-            ),
-            Line::from(
-                "Switch to Log with 2 to confirm the action committed instead of only staying pending.",
-            ),
-            Line::from("After that, try c to capture the result or u to undo it."),
+            Line::from("Your first move is armed."),
+            Line::from("Let transport cross the next bar so the fill can actually land."),
+            Line::from("Then [2] confirm it in Log and decide: [c] capture it or [u] undo it."),
         ],
         Some(FirstRunOnrampStage::FirstResult) => vec![
-            Line::from("First change landed. Good."),
-            Line::from(
-                "Next best move: press c to capture it, or press 4 to inspect the Capture screen.",
-            ),
-            Line::from(
-                "Then try one more lane-shaped gesture like y scene select, g follower, or w W-30 trigger.",
-            ),
+            Line::from("You got the first result."),
+            Line::from("Best next move: [c] capture the keeper or [u] undo it if it missed."),
+            Line::from("Then try one more gesture: [y] scene, [g] follower, or [w] trigger."),
         ],
         None => Vec::new(),
     };
@@ -1071,19 +1063,18 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         match stage {
             FirstRunOnrampStage::Start => {
                 lines.push(Line::from("space: start transport"));
-                lines.push(Line::from("f: queue a TR-909 fill | c: queue a capture"));
-                lines.push(Line::from("2: switch to Log and watch the commit"));
+                lines.push(Line::from("f: queue one first fill"));
+                lines.push(Line::from("2: switch to Log and watch it land"));
             }
             FirstRunOnrampStage::QueuedFirstMove => {
-                lines.push(Line::from("let transport cross the queued action boundary"));
-                lines.push(Line::from("2: switch to Log and confirm the commit"));
-                lines.push(Line::from("c: capture the result | u: undo it"));
+                lines.push(Line::from("let transport cross the next bar"));
+                lines.push(Line::from("2: confirm the first landed action in Log"));
+                lines.push(Line::from("c: capture it | u: undo it"));
             }
             FirstRunOnrampStage::FirstResult => {
-                lines.push(Line::from("c: capture the first keeper result"));
-                lines.push(Line::from(
-                    "4: inspect Capture | y/g/w: try one more lane gesture",
-                ));
+                lines.push(Line::from("c: capture the first keeper"));
+                lines.push(Line::from("u: undo it if it missed"));
+                lines.push(Line::from("y / g / w: try one more gesture"));
             }
         }
     }
@@ -3671,15 +3662,15 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("Start Here"), "{rendered}");
+        assert!(rendered.contains("1 [Space] start transport"), "{rendered}");
         assert!(
-            rendered.contains("Press Space to start transport"),
+            rendered.contains("2 [f] queue one first fill"),
             "{rendered}"
         );
         assert!(
-            rendered.contains("TR-909 fill or c for a first capture"),
+            rendered.contains("3 [2] watch Log when it lands on the next bar"),
             "{rendered}"
         );
-        assert!(rendered.contains("press 2 for Log"), "{rendered}");
     }
 
     #[test]
@@ -3689,10 +3680,10 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("First move is queued."), "{rendered}");
-        assert!(rendered.contains("boundary"), "{rendered}");
-        assert!(rendered.contains("action committed"), "{rendered}");
-        assert!(rendered.contains("capture the result"), "{rendered}");
+        assert!(rendered.contains("Your first move is armed."), "{rendered}");
+        assert!(rendered.contains("next bar"), "{rendered}");
+        assert!(rendered.contains("confirm it in Log"), "{rendered}");
+        assert!(rendered.contains("[c] capture"), "{rendered}");
     }
 
     #[test]
@@ -3700,13 +3691,10 @@ mod tests {
         let shell = first_result_shell_state();
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(
-            rendered.contains("First change landed. Good."),
-            "{rendered}"
-        );
-        assert!(rendered.contains("press c to capture"), "{rendered}");
-        assert!(rendered.contains("y scene select"), "{rendered}");
-        assert!(rendered.contains("w W-30 trigger"), "{rendered}");
+        assert!(rendered.contains("You got the first result."), "{rendered}");
+        assert!(rendered.contains("[c] capture the keeper"), "{rendered}");
+        assert!(rendered.contains("[y] scene"), "{rendered}");
+        assert!(rendered.contains("[w] trigger"), "{rendered}");
     }
 
     #[test]
@@ -3718,8 +3706,11 @@ mod tests {
 
         assert!(rendered.contains("First run"), "{rendered}");
         assert!(rendered.contains("space: start transport"), "{rendered}");
-        assert!(rendered.contains("f: queue a TR-909 fill"), "{rendered}");
-        assert!(rendered.contains("2: switch to Log"), "{rendered}");
+        assert!(rendered.contains("f: queue one first fill"), "{rendered}");
+        assert!(
+            rendered.contains("2: switch to Log and watch it land"),
+            "{rendered}"
+        );
     }
 
     fn mc202_committed_shell_state(fixture: &Mc202RegressionFixture) -> JamShellState {

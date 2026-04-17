@@ -1,0 +1,29 @@
+Riotbox Jam First 30 Seconds Baseline
+Normalized terminal capture notes for `RIOTBOX-98`
+Source: `riotbox-app` first-run Jam shell snapshot fixtures
+Notes:
+- normalized from the staged first-run guidance snapshots
+- intended as a review/update artifact, not a pixel-perfect golden render
+- records the tighter first-success loop after fresh ingest
+
+Expected first-run sequence after this slice:
+
+- `Start Here` now pushes one obvious path instead of multiple equally ranked first moves:
+  - `1 [Space] start transport`
+  - `2 [f] queue one first fill`
+  - `3 [2] watch Log when it lands on the next bar`
+- once the first action is queued, the guidance narrows again:
+  - the move is armed
+  - let it cross the next bar
+  - then confirm it in `Log`
+  - decide between `[c] capture it` or `[u] undo it`
+- once the first result is committed, the shell only presents the next immediate fork:
+  - keep it with `[c]`
+  - reject it with `[u]`
+  - then try one more gesture such as `[y]`, `[g]`, or `[w]`
+
+Interpretation:
+
+- the first-run path is now less about “here are some possible things” and more about “do this, verify that it landed, then choose keep or undo”
+- Riotbox still stays inside the existing Jam shell and help overlay
+- this remains a bounded guidance layer, not a separate onboarding mode or wizard
