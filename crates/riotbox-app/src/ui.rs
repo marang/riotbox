@@ -1415,10 +1415,19 @@ fn w30_action_target_compact(action: &riotbox_core::action::Action) -> Option<St
         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}"))
 }
 
-fn latest_committed_w30_action_by_command(
+fn current_w30_lane_target(shell: &JamShellState) -> Option<(&str, &str)> {
+    let lanes = &shell.app.jam_view.lanes;
+    Some((
+        lanes.w30_active_bank.as_deref()?,
+        lanes.w30_focused_pad.as_deref()?,
+    ))
+}
+
+fn latest_committed_w30_action_for_current_target(
     shell: &JamShellState,
     command: riotbox_core::action::ActionCommand,
 ) -> Option<&riotbox_core::action::Action> {
+    let (active_bank, focused_pad) = current_w30_lane_target(shell)?;
     shell
         .app
         .session
@@ -1429,6 +1438,13 @@ fn latest_committed_w30_action_by_command(
         .find(|action| {
             action.status == riotbox_core::action::ActionStatus::Committed
                 && action.command == command
+                && action
+                    .target
+                    .bank_id
+                    .as_ref()
+                    .map(|bank_id| bank_id.as_str())
+                    == Some(active_bank)
+                && action.target.pad_id.as_ref().map(|pad_id| pad_id.as_str()) == Some(focused_pad)
         })
 }
 
@@ -1441,7 +1457,7 @@ fn w30_bank_manager_compact(shell: &JamShellState) -> String {
         .as_deref()
     {
         format!("next {target}")
-    } else if let Some(target) = latest_committed_w30_action_by_command(
+    } else if let Some(target) = latest_committed_w30_action_for_current_target(
         shell,
         riotbox_core::action::ActionCommand::W30SwapBank,
     )
@@ -1462,7 +1478,7 @@ fn w30_bank_manager_status_compact(shell: &JamShellState) -> &'static str {
         .is_some()
     {
         "next-swap"
-    } else if latest_committed_w30_action_by_command(
+    } else if latest_committed_w30_action_for_current_target(
         shell,
         riotbox_core::action::ActionCommand::W30SwapBank,
     )
@@ -1483,7 +1499,7 @@ fn w30_damage_profile_compact(shell: &JamShellState) -> String {
         .as_deref()
     {
         format!("next {target}")
-    } else if let Some(target) = latest_committed_w30_action_by_command(
+    } else if let Some(target) = latest_committed_w30_action_for_current_target(
         shell,
         riotbox_core::action::ActionCommand::W30ApplyDamageProfile,
     )
@@ -1504,7 +1520,7 @@ fn w30_damage_profile_status_compact(shell: &JamShellState) -> &'static str {
         .is_some()
     {
         "next-shred"
-    } else if latest_committed_w30_action_by_command(
+    } else if latest_committed_w30_action_for_current_target(
         shell,
         riotbox_core::action::ActionCommand::W30ApplyDamageProfile,
     )
@@ -1525,7 +1541,7 @@ fn w30_loop_freeze_compact(shell: &JamShellState) -> String {
         .as_deref()
     {
         format!("next {target}")
-    } else if let Some(target) = latest_committed_w30_action_by_command(
+    } else if let Some(target) = latest_committed_w30_action_for_current_target(
         shell,
         riotbox_core::action::ActionCommand::W30LoopFreeze,
     )
@@ -1546,7 +1562,7 @@ fn w30_loop_freeze_status_compact(shell: &JamShellState) -> &'static str {
         .is_some()
     {
         "next-freeze"
-    } else if latest_committed_w30_action_by_command(
+    } else if latest_committed_w30_action_for_current_target(
         shell,
         riotbox_core::action::ActionCommand::W30LoopFreeze,
     )
@@ -1932,7 +1948,6 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             "lineage {}",
             w30_capture_lineage_compact(shell)
         )));
-        lines.push(Line::from(format!("latest promoted {latest_promoted}")));
     } else {
         let last_target = shell
             .app
@@ -3787,6 +3802,119 @@ mod tests {
     }
 
     #[test]
+    fn w30_operation_diagnostics_follow_current_lane_target() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell
+            .app
+            .session
+            .captures
+            .push(riotbox_core::session::CaptureRef {
+                capture_id: "cap-02".into(),
+                capture_type: riotbox_core::session::CaptureType::Pad,
+                source_origin_refs: vec!["asset-b".into()],
+                lineage_capture_refs: Vec::new(),
+                resample_generation_depth: 0,
+                created_from_action: None,
+                storage_path: "captures/cap-02.wav".into(),
+                assigned_target: Some(riotbox_core::session::CaptureTarget::W30Pad {
+                    bank_id: "bank-b".into(),
+                    pad_id: "pad-01".into(),
+                }),
+                is_pinned: false,
+                notes: Some("bank b".into()),
+            });
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-b".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-02".into());
+        shell.app.refresh_view();
+
+        assert_eq!(
+            shell.app.queue_w30_swap_bank(208),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 17,
+                bar_index: 5,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            220,
+        );
+        assert_eq!(committed.len(), 1);
+
+        assert_eq!(
+            shell.app.queue_w30_apply_damage_profile(222),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 21,
+                bar_index: 6,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            240,
+        );
+        assert_eq!(committed.len(), 1);
+
+        assert_eq!(
+            shell.app.queue_w30_loop_freeze(245),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 29,
+                bar_index: 8,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            260,
+        );
+        assert_eq!(committed.len(), 1);
+
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-c".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+
+        let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(jam_rendered.contains("mgr idle"), "{jam_rendered}");
+
+        shell.active_screen = ShellScreen::Capture;
+        let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(
+            capture_rendered.contains("bank/pad bank-c/pad-01"),
+            "{capture_rendered}"
+        );
+        assert!(capture_rendered.contains("mgr idle"), "{capture_rendered}");
+        assert!(
+            capture_rendered.contains("forge idle"),
+            "{capture_rendered}"
+        );
+        assert!(
+            capture_rendered.contains("freeze idle"),
+            "{capture_rendered}"
+        );
+
+        shell.active_screen = ShellScreen::Log;
+        let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(
+            log_rendered.contains("mix 0.64/0.82 idle"),
+            "{log_rendered}"
+        );
+    }
+
+    #[test]
     fn renders_capture_shell_snapshot_with_w30_audition_cue() {
         let mut shell = sample_shell_state();
         shell.app.session.captures[0].assigned_target =
@@ -3882,6 +4010,10 @@ mod tests {
         assert!(rendered.contains("tap src cap-02 g2/l2 |"), "{rendered}");
         assert!(rendered.contains("route internal"), "{rendered}");
         assert!(rendered.contains("tap mix 0.64/0.50"), "{rendered}");
+        assert!(
+            rendered.matches("latest promoted").count() <= 1,
+            "{rendered}"
+        );
     }
 
     #[test]
