@@ -86,4 +86,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Pending W-30 resample cue summaries now flow through the core Jam view model.
 - [RIOTBOX-67.md](./RIOTBOX-67.md)
   First bounded W-30 pad-bank stepping on the committed preview seam.
+- [RIOTBOX-72.md](./RIOTBOX-72.md)
+  Explicit W-30 live-recall command semantics split from future bank-manager movement.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
