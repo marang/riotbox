@@ -277,7 +277,7 @@
       "w30_grit": 0.0,
       "preview_mode": "live_recall",
       "preview_routing": "music_bus_preview",
-      "preview_profile": "promoted_recall",
+      "preview_profile": "slice_pool_browse",
       "preview_capture": "cap-02",
       "preview_music_bus_level": 0.64,
       "preview_grit_level": 0.0,
@@ -285,7 +285,7 @@
       "result_summary": "browsed W-30 slice pool to cap-02 on bank-a/pad-01 at beat 42 / phrase 3",
       "jam_contains": [
         "W-30 cue idle | mgr idle",
-        "W-30 recall/promoted | bank-a/pad-01"
+        "W-30 recall/browse | bank-a/pad-01"
       ],
       "capture_contains": [
         "pending W-30 cue idle",

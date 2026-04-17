@@ -858,6 +858,17 @@ Status: accepted
 
 ---
 
+Topic: first W-30 slice-pool browse should project a distinct preview profile on the existing live-recall seam
+Phase: W-30 MVP
+Question: once slice-pool browse is committed on the current pad-lineage seam, what is the smallest honest next step that makes that consequence audible without inventing a second W-30 preview/editor mode?
+Decision: keep browse on the existing `W30PreviewRenderMode::LiveRecall` seam and add one typed `W30PreviewSourceProfile::SlicePoolBrowse`. Derive it only from the last committed `w30.browse_slice_pool` action, surface it in the Jam shell as `recall/browse`, and give the audio callback one bounded browse-specific envelope/frequency pattern behind the same preview state.
+Why: the current W-30 MVP already has one replay-safe preview seam and one committed pad-lineage model. A first browse consequence should deepen that seam instead of opening a parallel browser-preview architecture with separate persistence or routing rules. The real need is a distinct committed preview consequence, not a richer editor.
+Evidence: `riotbox-app` now derives `slice_pool_browse` from committed browse history while keeping preview mode on `live_recall`, fixture-backed app and shell regressions cover the browse case, and `riotbox-audio` now encodes the new profile in shared state plus callback-level audio regressions to keep browse audibility distinct from normal promoted recall.
+Consequences: later slice-pool work should continue extending the same committed preview seam unless the roadmap explicitly introduces a fuller browse/editor workflow. Richer pool visualization, cross-pad navigation, and deeper preview shaping remain bounded follow-up slices.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

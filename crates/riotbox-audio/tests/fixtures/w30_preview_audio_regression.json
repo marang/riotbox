@@ -103,5 +103,26 @@
       "min_peak_abs": 0.012,
       "max_peak_abs": 0.16
     }
+  },
+  {
+    "name": "slice_pool_browse_preview",
+    "render_state": {
+      "mode": "live_recall",
+      "routing": "music_bus_preview",
+      "source_profile": "slice_pool_browse",
+      "trigger_revision": 0,
+      "trigger_velocity": 0.0,
+      "music_bus_level": 0.64,
+      "grit_level": 0.0,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.01,
+      "max_peak_abs": 0.16
+    }
   }
 ]

@@ -1228,6 +1228,7 @@ fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
             None => "unset",
             Some(riotbox_audio::w30::W30PreviewSourceProfile::PinnedRecall) => "pinned",
             Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall) => "promoted",
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::SlicePoolBrowse) => "browse",
             Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition) => "audition",
         }
     )
