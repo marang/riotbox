@@ -150,4 +150,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Jam pending-action promotion down to the next two visible moves plus compact queue summary.
 - [RIOTBOX-104.md](./RIOTBOX-104.md)
   Jam footer and help copy split into primary versus advanced gesture ranks.
+- [RIOTBOX-105.md](./RIOTBOX-105.md)
+  Jam lane-card compression down to current and next summaries.
+- [RIOTBOX-106.md](./RIOTBOX-106.md)
+  First landed-result and next-step cue on the Jam shell.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
