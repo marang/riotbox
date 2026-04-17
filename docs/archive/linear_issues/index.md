@@ -134,4 +134,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Perform-first Jam shell reduction and hierarchy cleanup.
 - [RIOTBOX-95.md](./RIOTBOX-95.md)
   First-run onramp guidance for the first meaningful play moment inside the Jam shell.
+- [RIOTBOX-98.md](./RIOTBOX-98.md)
+  First 30-second success-path tightening after fresh ingest.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
