@@ -56,7 +56,7 @@ The honest status: **this is already playable as a prototype shell, but it is no
 
 ## Start In 5 Steps
 
-1. Run Riotbox on one of the included WAVs:
+1. Run Riotbox on your own WAV or one of the local test examples described in [`data/test_audio/README.md`](data/test_audio/README.md):
 
    ```bash
    cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav"
@@ -193,7 +193,7 @@ The rest of the keymap is real, but it is not the best way to learn Riotbox on m
 - [`crates/riotbox-app`](crates/riotbox-app/) — shell, app orchestration, runtime-facing state
 - [`crates/riotbox-core`](crates/riotbox-core/) — core models, queue, transport, session, action lexicon
 - [`crates/riotbox-audio`](crates/riotbox-audio/) — callback-side audio/runtime seams
-- [`data/test_audio`](data/test_audio/) — example WAVs for smoke runs
+- [`data/test_audio`](data/test_audio/) — source links and local-test audio notes
 
 ## Product Status
 

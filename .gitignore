@@ -6,4 +6,6 @@ target/
 .mempalace/corpus/
 .mempalace/*.sha256
 !.mempalace/README.md
-data/sessions/
+data/**
+!data/**/
+!data/**/*.md
