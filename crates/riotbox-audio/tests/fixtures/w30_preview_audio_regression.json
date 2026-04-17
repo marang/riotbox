@@ -1,0 +1,107 @@
+[
+  {
+    "name": "live_recall_pinned_preview",
+    "render_state": {
+      "mode": "live_recall",
+      "routing": "music_bus_preview",
+      "source_profile": "pinned_recall",
+      "trigger_revision": 0,
+      "trigger_velocity": 0.0,
+      "music_bus_level": 0.64,
+      "grit_level": 0.0,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.01,
+      "max_peak_abs": 0.12
+    }
+  },
+  {
+    "name": "promoted_audition_preview",
+    "render_state": {
+      "mode": "promoted_audition",
+      "routing": "music_bus_preview",
+      "source_profile": "promoted_audition",
+      "trigger_revision": 0,
+      "trigger_velocity": 0.0,
+      "music_bus_level": 0.64,
+      "grit_level": 0.68,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.015,
+      "max_peak_abs": 0.16
+    }
+  },
+  {
+    "name": "stopped_promoted_audition_preview",
+    "render_state": {
+      "mode": "promoted_audition",
+      "routing": "music_bus_preview",
+      "source_profile": "promoted_audition",
+      "trigger_revision": 0,
+      "trigger_velocity": 0.0,
+      "music_bus_level": 0.64,
+      "grit_level": 0.72,
+      "is_transport_running": false,
+      "tempo_bpm": 0.0,
+      "position_beats": 0.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.015,
+      "max_peak_abs": 0.18
+    }
+  },
+  {
+    "name": "zero_music_bus_silence",
+    "render_state": {
+      "mode": "live_recall",
+      "routing": "music_bus_preview",
+      "source_profile": "promoted_recall",
+      "trigger_revision": 0,
+      "trigger_velocity": 0.0,
+      "music_bus_level": 0.0,
+      "grit_level": 0.6,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
+    }
+  },
+  {
+    "name": "triggered_promoted_recall_preview",
+    "render_state": {
+      "mode": "live_recall",
+      "routing": "music_bus_preview",
+      "source_profile": "promoted_recall",
+      "trigger_revision": 7,
+      "trigger_velocity": 0.92,
+      "music_bus_level": 0.64,
+      "grit_level": 0.45,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.012,
+      "max_peak_abs": 0.16
+    }
+  }
+]

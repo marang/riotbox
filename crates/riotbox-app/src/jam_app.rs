@@ -2630,6 +2630,13 @@ mod tests {
         focused_pad: String,
         last_capture: String,
         w30_grit: f32,
+        preview_mode: String,
+        preview_routing: String,
+        preview_profile: String,
+        preview_capture: String,
+        preview_music_bus_level: f32,
+        preview_grit_level: f32,
+        preview_transport_running: bool,
         result_summary: String,
     }
 
@@ -4798,6 +4805,54 @@ mod tests {
             assert_eq!(
                 state.session.runtime_state.macro_state.w30_grit, fixture.expected.w30_grit,
                 "{} grit drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.runtime.w30_preview.mode.label(),
+                fixture.expected.preview_mode,
+                "{} preview mode drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.runtime.w30_preview.routing.label(),
+                fixture.expected.preview_routing,
+                "{} preview routing drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .w30_preview
+                    .source_profile
+                    .map(|profile| profile.label()),
+                Some(fixture.expected.preview_profile.as_str()),
+                "{} preview profile drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.runtime.w30_preview.capture_id.as_deref(),
+                Some(fixture.expected.preview_capture.as_str()),
+                "{} preview capture drifted",
+                fixture.name
+            );
+            assert!(
+                (state.runtime.w30_preview.music_bus_level
+                    - fixture.expected.preview_music_bus_level)
+                    .abs()
+                    < f32::EPSILON,
+                "{} preview music bus drifted",
+                fixture.name
+            );
+            assert!(
+                (state.runtime.w30_preview.grit_level - fixture.expected.preview_grit_level).abs()
+                    < f32::EPSILON,
+                "{} preview grit drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.runtime.w30_preview.is_transport_running,
+                fixture.expected.preview_transport_running,
+                "{} preview transport-running drifted",
                 fixture.name
             );
             assert_eq!(
