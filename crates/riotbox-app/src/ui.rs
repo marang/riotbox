@@ -527,9 +527,9 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             w30_target_compact(shell)
         )),
         Line::from(format!(
-            "W-30 {} | {} | {}",
+            "W-30 {} | tap {} | {}",
             w30_mix_compact(shell),
-            w30_capture_compact(shell),
+            w30_resample_tap_jam_compact(shell),
             w30_damage_profile_status_compact(shell),
         )),
         Line::from(format!(
@@ -1179,19 +1179,17 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             w30_pending_cue_label(shell)
         )),
         Line::from(format!("prev {}", w30_preview_mode_profile_compact(shell))),
-        Line::from(format!(
-            "mix {} {}",
-            w30_mix_log_compact(shell),
-            w30_operation_status_compact(shell),
-        )),
+        Line::from(if lineage_active {
+            format!("tapmix {}", w30_resample_mix_log_compact(shell))
+        } else {
+            format!(
+                "mix {} {}",
+                w30_mix_log_compact(shell),
+                w30_operation_status_compact(shell),
+            )
+        }),
         if lineage_active {
-            Line::from(format!(
-                "cap {} g{}/l{} | {}",
-                w30_capture_compact(shell),
-                shell.app.runtime.w30_resample_tap.generation_depth,
-                shell.app.runtime.w30_resample_tap.lineage_capture_count,
-                w30_trigger_compact_short(shell),
-            ))
+            Line::from(w30_resample_log_focus_compact(shell))
         } else {
             Line::from(format!(
                 "cap {} | {}",
@@ -1242,7 +1240,7 @@ fn w30_target_compact(shell: &JamShellState) -> String {
 fn w30_resample_tap_compact(shell: &JamShellState) -> String {
     let tap = &shell.app.runtime.w30_resample_tap;
     if matches!(tap.mode, riotbox_audio::w30::W30ResampleTapMode::Idle) {
-        return "idle".into();
+        return "idle/silent".into();
     }
 
     let profile = match tap.source_profile {
@@ -1250,6 +1248,22 @@ fn w30_resample_tap_compact(shell: &JamShellState) -> String {
         Some(riotbox_audio::w30::W30ResampleTapSourceProfile::RawCapture) => "raw",
         Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PromotedCapture) => "promoted",
         Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PinnedCapture) => "pinned",
+    };
+
+    format!("ready/{profile} g{}", tap.generation_depth)
+}
+
+fn w30_resample_tap_jam_compact(shell: &JamShellState) -> String {
+    let tap = &shell.app.runtime.w30_resample_tap;
+    if matches!(tap.mode, riotbox_audio::w30::W30ResampleTapMode::Idle) {
+        return "idle".into();
+    }
+
+    let profile = match tap.source_profile {
+        None => "unset",
+        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::RawCapture) => "raw",
+        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PromotedCapture) => "prm",
+        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PinnedCapture) => "pin",
     };
 
     format!("{profile} g{}", tap.generation_depth)
@@ -1296,35 +1310,44 @@ fn w30_capture_lineage_compact(shell: &JamShellState) -> String {
     format!("{lineage_chain} | g{}", capture.resample_generation_depth)
 }
 
-fn w30_resample_lineage_compact(shell: &JamShellState) -> String {
+fn w30_resample_route_compact(shell: &JamShellState) -> &'static str {
+    match shell.app.runtime.w30_resample_tap.routing {
+        riotbox_audio::w30::W30ResampleTapRouting::Silent => "silent",
+        riotbox_audio::w30::W30ResampleTapRouting::InternalCaptureTap => "internal",
+    }
+}
+
+fn w30_resample_source_compact(shell: &JamShellState) -> String {
     let tap = &shell.app.runtime.w30_resample_tap;
     match tap.source_capture_id.as_deref() {
-        Some(capture_id) if !matches!(tap.mode, riotbox_audio::w30::W30ResampleTapMode::Idle) => {
-            format!(
-                "{capture_id} g{}/l{}",
-                tap.generation_depth, tap.lineage_capture_count
-            )
-        }
-        Some(capture_id) => capture_id.into(),
+        Some(capture_id) => format!(
+            "src {capture_id} g{}/l{}",
+            tap.generation_depth, tap.lineage_capture_count
+        ),
         None => format!(
-            "unset g{}/l{}",
+            "src unset g{}/l{}",
             tap.generation_depth, tap.lineage_capture_count
         ),
     }
 }
 
+fn w30_resample_log_focus_compact(shell: &JamShellState) -> String {
+    let tap = &shell.app.runtime.w30_resample_tap;
+    let capture_id = tap.source_capture_id.as_deref().unwrap_or("unset");
+    let route = match tap.routing {
+        riotbox_audio::w30::W30ResampleTapRouting::Silent => "sil",
+        riotbox_audio::w30::W30ResampleTapRouting::InternalCaptureTap => "int",
+    };
+
+    format!(
+        "tap {capture_id} g{}/l{} {route}",
+        tap.generation_depth, tap.lineage_capture_count
+    )
+}
+
 fn w30_resample_lineage_active(shell: &JamShellState) -> bool {
     let tap = &shell.app.runtime.w30_resample_tap;
     tap.generation_depth > 0 || tap.lineage_capture_count > 0
-}
-
-fn w30_trigger_compact_short(shell: &JamShellState) -> String {
-    let value = w30_trigger_compact(shell);
-    if value == "pending" {
-        "pend".into()
-    } else {
-        value
-    }
 }
 
 fn w30_mix_compact(shell: &JamShellState) -> String {
@@ -1338,6 +1361,14 @@ fn w30_mix_log_compact(shell: &JamShellState) -> String {
     format!(
         "{:.2}/{:.2}",
         shell.app.runtime.w30_preview.music_bus_level, shell.app.runtime.w30_preview.grit_level
+    )
+}
+
+fn w30_resample_mix_log_compact(shell: &JamShellState) -> String {
+    format!(
+        "{:.2}/{:.2}",
+        shell.app.runtime.w30_resample_tap.music_bus_level,
+        shell.app.runtime.w30_resample_tap.grit_level
     )
 }
 
@@ -1847,22 +1878,13 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     if w30_resample_lineage_active(shell) {
         lines.push(Line::from(format!(
-            "tap {} | lane {}",
-            w30_resample_lineage_compact(shell),
-            shell
-                .app
-                .session
-                .runtime_state
-                .lane_state
-                .w30
-                .last_capture
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into()),
+            "tap {} | route {}",
+            w30_resample_source_compact(shell),
+            w30_resample_route_compact(shell),
         )));
         lines.push(Line::from(format!(
-            "cue {}",
-            capture_or_recall_cue_label(shell)
+            "tap mix {}",
+            w30_resample_mix_log_compact(shell)
         )));
         lines.push(Line::from(format!(
             "lineage {}",
@@ -2943,7 +2965,7 @@ mod tests {
         assert!(rendered.contains("MC-202: leader | touch 0.80"));
         assert!(rendered.contains("W-30 cue idle"));
         assert!(rendered.contains("W-30 recall/promoted | bank-a/unset"));
-        assert!(rendered.contains("W-30 bus 0.64 grit 0.50 | cap-01 | idle"));
+        assert!(rendered.contains("W-30 bus 0.64 grit 0.50 | tap raw g0 | idle"));
         assert!(
             rendered.contains("tr909.fill_next @ next_bar"),
             "{rendered}"
@@ -3451,7 +3473,11 @@ mod tests {
         assert!(rendered.contains("pinned 0 | promoted 0"));
         assert!(rendered.contains("no pinned captures yet"));
         assert!(rendered.contains("pending W-30 cue idle"));
-        assert!(rendered.contains("tap raw g0"));
+        assert!(
+            rendered.contains("forge idle | tap ready/raw"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("g0"), "{rendered}");
         assert!(rendered.contains("latest promoted none"));
     }
 
@@ -3680,7 +3706,10 @@ mod tests {
 
         let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
         assert!(jam_rendered.contains("mgr swap"), "{jam_rendered}");
-        assert!(jam_rendered.contains("| shred"), "{jam_rendered}");
+        assert!(
+            jam_rendered.contains("tap prm g0 | shred"),
+            "{jam_rendered}"
+        );
 
         shell.active_screen = ShellScreen::Capture;
         let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -3787,16 +3816,19 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("tap raw g2"));
-        assert!(rendered.contains("cap-02 g2/l2"));
+        assert!(
+            rendered.contains("forge idle | tap ready/raw"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("g2"), "{rendered}");
         assert!(rendered.contains("lineage"));
         assert!(
             rendered.contains("cap-root>cap-01>cap-02 | g2"),
             "{rendered}"
         );
-        assert!(rendered.contains("tap cap-02 g2/l2 | lane"), "{rendered}");
-        assert!(rendered.contains("cap-02"), "{rendered}");
-        assert!(rendered.contains("cue no capture cue queued"), "{rendered}");
+        assert!(rendered.contains("tap src cap-02 g2/l2 |"), "{rendered}");
+        assert!(rendered.contains("route internal"), "{rendered}");
+        assert!(rendered.contains("tap mix 0.64/0.50"), "{rendered}");
     }
 
     #[test]
@@ -3911,7 +3943,66 @@ mod tests {
 
         assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("cue idle | resample"));
-        assert!(rendered.contains("mix 0.64/0.50"), "{rendered}");
-        assert!(rendered.contains("idle"), "{rendered}");
+        assert!(rendered.contains("tapmix 0.64/0.50"), "{rendered}");
+        assert!(rendered.contains("tap cap-02 g2/l2 int"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_w30_resample_lab_diagnostics_across_shell_surfaces() {
+        let mut shell = sample_shell_state();
+        shell.app.queue = ActionQueue::new();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.session.captures[0].lineage_capture_refs = vec!["cap-root".into()];
+        shell.app.session.captures[0].resample_generation_depth = 1;
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-b".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-03".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+
+        assert_eq!(
+            shell.app.queue_w30_internal_resample(265),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        let committed = shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 10,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-a")),
+            },
+            280,
+        );
+        assert_eq!(committed.len(), 1);
+
+        let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(jam_rendered.contains("tap raw g2 | idle"), "{jam_rendered}");
+
+        shell.active_screen = ShellScreen::Capture;
+        let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(
+            capture_rendered.contains("tap src cap-02 g2/l2 |"),
+            "{capture_rendered}"
+        );
+        assert!(
+            capture_rendered.contains("route internal"),
+            "{capture_rendered}"
+        );
+        assert!(
+            capture_rendered.contains("tap mix 0.64/0.50"),
+            "{capture_rendered}"
+        );
+
+        shell.active_screen = ShellScreen::Log;
+        let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(
+            log_rendered.contains("tap cap-02 g2/l2 int"),
+            "{log_rendered}"
+        );
+        assert!(log_rendered.contains("tapmix 0.64/0.50"), "{log_rendered}");
     }
 }
