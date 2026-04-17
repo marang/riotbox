@@ -111,103 +111,20 @@ If that works, stop repeating only that recipe. Move on to one of the more speci
 
 ## Learn By Doing
 
-The easiest way to learn Riotbox right now is to try one small recipe at a time instead of pressing every key randomly.
+If you want more than the tiny quickstart loop, use the dedicated recipe guide:
 
-### Recipe 1: Confirm The Timing Model
+- [`docs/jam_recipes.md`](docs/jam_recipes.md)
 
-Goal: understand that Riotbox is about **queued change**, not instant change.
+That guide contains concrete flows for:
 
-1. start with:
+- timing and commit learning
+- comparing different first gestures
+- capture and reuse
+- undo
+- source comparison
+- reading `Jam` and `Log` together
 
-   ```bash
-   cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav"
-   ```
-
-2. press `Space`
-3. press `f`
-4. stay on `Jam` for a moment, then press `2`
-5. confirm in `Log` that the action was first pending and then committed on a boundary
-
-What to learn:
-
-- Riotbox is showing **now** and **next**
-- the important question is not “did I press a key?” but “when did it land?”
-
-### Recipe 2: Compare Different First Gestures
-
-Goal: stop treating Riotbox like a one-button fill demo.
-
-Use the same source, but restart and compare:
-
-- `y` for a scene jump
-- `g` for MC-202 follow
-- `a` for MC-202 answer
-- `f` for TR-909 fill
-- `w` for W-30 hit
-
-For each one:
-
-1. start transport with `Space`
-2. press exactly one gesture
-3. check `Jam`
-4. then check `Log` with `2`
-
-What to learn:
-
-- different lanes suggest different kinds of change
-- `Log` is the quickest way to learn what Riotbox thinks you actually asked for
-
-### Recipe 3: Capture And Reuse Something
-
-Goal: understand that Riotbox is not only about mutation, but also about **keeping** material.
-
-Try this:
-
-1. `Space`
-2. `f` or `g`
-3. wait for it to land
-4. press `c`
-5. switch to `Capture` with `4`
-6. press `p` to promote the latest capture
-7. press `w` to hit the focused W-30 pad
-8. use `2` and `4` to watch `Log` and `Capture`
-
-What to learn:
-
-- a good accident can become reusable material
-- `Capture` is where Riotbox starts becoming a sampler/capture machine instead of just a mutation shell
-
-### Recipe 4: Undo Bad Moves On Purpose
-
-Goal: learn confidence, not just success.
-
-1. `Space`
-2. queue one gesture
-3. wait for it to land
-4. press `u`
-5. inspect `Log`
-
-What to learn:
-
-- Riotbox wants you to test gestures, not fear them
-- `undo` is part of normal use, not just error recovery
-
-### Recipe 5: Switch Source Material
-
-Goal: learn how much the source affects the feel.
-
-Try these local examples one after another:
-
-- `data/test_audio/examples/Beat03_130BPM(Full).wav`
-- `data/test_audio/examples/Beat08_128BPM(Full).wav`
-- `data/test_audio/examples/DH_BeatC_120-01.wav`
-- `data/test_audio/examples/DH_RushArp_120_A.wav`
-
-What to learn:
-
-- drum-heavy loops make the queue/commit model easier to read
-- more tonal loops are often better for `Source`, scene, and MC-202 exploration
-- Riotbox is currently more legible on some inputs than others
+It is the best place to continue once `Space -> f -> c -> 2` feels too repetitive.
 
 If `just` is installed, the normal local check path is:
 
@@ -373,6 +290,7 @@ What is still not done:
 
 - [`docs/prd_v1.md`](docs/prd_v1.md)
 - [`docs/execution_roadmap.md`](docs/execution_roadmap.md)
+- [`docs/jam_recipes.md`](docs/jam_recipes.md)
 - [`docs/specs/tui_screen_spec.md`](docs/specs/tui_screen_spec.md)
 - [`docs/specs/action_lexicon_spec.md`](docs/specs/action_lexicon_spec.md)
 - [`plan/riotbox_masterplan.md`](plan/riotbox_masterplan.md)
