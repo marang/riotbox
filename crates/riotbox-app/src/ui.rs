@@ -1816,23 +1816,14 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         .as_deref()
     {
         format!("recall {target}")
-    } else if let Some(action) = shell
+    } else if let Some(capture_id) = shell
         .app
-        .queue
-        .pending_actions()
-        .into_iter()
-        .find(|action| {
-            action.command == riotbox_core::action::ActionCommand::PromoteResample
-                && action.target.scope == Some(riotbox_core::action::TargetScope::LaneW30)
-        })
+        .jam_view
+        .lanes
+        .w30_pending_resample_capture_id
+        .as_deref()
     {
-        match &action.params {
-            riotbox_core::action::ActionParams::Promotion {
-                capture_id: Some(capture_id),
-                ..
-            } => format!("resample {capture_id}"),
-            _ => "resample".into(),
-        }
+        format!("resample {capture_id}")
     } else {
         "idle".into()
     }
