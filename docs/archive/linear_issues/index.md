@@ -104,4 +104,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replay-safe callback regression fixtures for the audible W-30 internal resample seam.
 - [RIOTBOX-80.md](./RIOTBOX-80.md)
   First bounded W-30 loop-freezer reuse cue on the existing capture seam.
+- [RIOTBOX-81.md](./RIOTBOX-81.md)
+  Follow-up periodic repo review after the recent W-30 seam batch.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
