@@ -660,6 +660,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 audible preview diagnostics should stay inside the existing Jam and Log shell surfaces
+Phase: W-30 MVP
+Question: once W-30 preview is audible and the first playable trigger exists, what is the smallest next slice that makes that preview state legible without opening a separate W-30 control page?
+Decision: keep W-30 audible preview diagnostics inside the existing `Jam` and `Log` shell surfaces, and derive compact mode, target, mix, and trigger cues from `JamRuntimeView` plus the committed lane state instead of creating a dedicated W-30 browser or a second preview-only panel hierarchy.
+Why: the runtime seam already exposes the information needed to understand what the audible preview path is doing. The smallest honest move is to summarize that existing seam where operators already look, not to add a second surface that would drift from the committed queue and render model.
+Evidence: `JamRuntimeView` now carries an explicit W-30 trigger summary on top of the existing preview mode, target, and mix summaries; the Jam shell now surfaces those cues inline in the main lane overview; the Log screen deepens the `W-30 Lane` panel with the same audible preview state; and the normalized review artifact at `docs/screenshots/w30_audible_preview_baseline.txt` records the result.
+Consequences: later W-30 diagnostics should keep extending these same shell summaries and the current typed preview seam instead of splitting preview interpretation across a second W-30-only surface or a callback-only debug overlay.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

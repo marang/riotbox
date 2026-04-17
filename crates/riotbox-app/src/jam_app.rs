@@ -177,6 +177,7 @@ pub struct JamRuntimeView {
     pub w30_preview_target_summary: String,
     pub w30_preview_mix_summary: String,
     pub w30_preview_transport_summary: String,
+    pub w30_preview_trigger_summary: String,
     pub runtime_warnings: Vec<String>,
 }
 
@@ -257,6 +258,7 @@ impl JamRuntimeView {
                 runtime.w30_preview.music_bus_level, runtime.w30_preview.grit_level
             ),
             w30_preview_transport_summary: w30_preview_transport_summary(&runtime.w30_preview),
+            w30_preview_trigger_summary: w30_preview_trigger_summary(&runtime.w30_preview),
             runtime_warnings,
         }
     }
@@ -295,6 +297,21 @@ fn w30_preview_transport_summary(render: &W30PreviewRenderState) -> String {
         },
         render.position_beats,
         render.tempo_bpm
+    )
+}
+
+fn w30_preview_trigger_summary(render: &W30PreviewRenderState) -> String {
+    if render.trigger_revision == 0 {
+        if matches!(render.mode, W30PreviewRenderMode::Idle) {
+            return "trigger unset".into();
+        }
+
+        return "trigger pending from committed seam".into();
+    }
+
+    format!(
+        "trigger r{} @ {:.2}",
+        render.trigger_revision, render.trigger_velocity
     )
 }
 
