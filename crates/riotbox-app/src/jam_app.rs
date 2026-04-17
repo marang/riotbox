@@ -1291,6 +1291,37 @@ impl JamAppState {
         Some(QueueControlResult::Enqueued)
     }
 
+    pub fn queue_w30_internal_resample(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_resample_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let capture = self.resample_ready_w30_capture()?.clone();
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::PromoteResample,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Promotion {
+            capture_id: Some(capture.capture_id.clone()),
+            destination: Some("w30:resample".into()),
+        };
+        draft.explanation = Some(format!(
+            "resample {} through W-30 on next phrase",
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn toggle_pin_latest_capture(&mut self) -> Option<bool> {
         let new_state = {
             let capture = self.session.captures.last_mut()?;
@@ -1348,6 +1379,21 @@ impl JamAppState {
             .or_else(|| self.recallable_w30_capture())
     }
 
+    fn resample_ready_w30_capture(&self) -> Option<&CaptureRef> {
+        self.session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture
+            .as_ref()
+            .and_then(|capture_id| {
+                self.session
+                    .captures
+                    .iter()
+                    .find(|capture| capture.capture_id == *capture_id)
+            })
+    }
+
     fn w30_pad_cue_pending(&self) -> bool {
         self.queue.pending_actions().into_iter().any(|action| {
             matches!(
@@ -1356,6 +1402,13 @@ impl JamAppState {
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
             )
+        })
+    }
+
+    fn w30_resample_pending(&self) -> bool {
+        self.queue.pending_actions().into_iter().any(|action| {
+            action.command == ActionCommand::PromoteResample
+                && action.target.scope == Some(TargetScope::LaneW30)
         })
     }
 
@@ -1667,6 +1720,7 @@ fn capture_ref_from_action(
     let capture_type = match action.command {
         ActionCommand::CaptureNow | ActionCommand::CaptureLoop => CaptureType::Loop,
         ActionCommand::CaptureBarGroup | ActionCommand::W30CaptureToPad => CaptureType::Pad,
+        ActionCommand::PromoteResample => CaptureType::Resample,
         _ => return None,
     };
 
@@ -1683,17 +1737,38 @@ fn capture_ref_from_action(
     };
 
     let capture_id = next_capture_id(session);
-    let source_origin_refs = source_graph
-        .map(capture_origin_refs)
+    let source_capture = matches!(action.command, ActionCommand::PromoteResample)
+        .then(|| promotion_capture_id(session, action))
+        .flatten()
+        .and_then(|capture_id| {
+            session
+                .captures
+                .iter()
+                .find(|capture| capture.capture_id == capture_id)
+        });
+    let source_origin_refs = source_capture
+        .map(|capture| capture.source_origin_refs.clone())
+        .or_else(|| source_graph.map(capture_origin_refs))
         .unwrap_or_else(|| vec!["source-graph-unavailable".into()]);
+    let mut lineage_capture_refs = source_capture
+        .map(|capture| capture.lineage_capture_refs.clone())
+        .unwrap_or_default();
+    if let Some(source_capture) = source_capture
+        && !lineage_capture_refs.contains(&source_capture.capture_id)
+    {
+        lineage_capture_refs.push(source_capture.capture_id.clone());
+    }
+    let resample_generation_depth = source_capture
+        .map(|capture| capture.resample_generation_depth.saturating_add(1))
+        .unwrap_or(0);
 
     Some(CaptureRef {
         storage_path: format!("captures/{capture_id}.wav"),
         capture_id,
         capture_type,
         source_origin_refs,
-        lineage_capture_refs: Vec::new(),
-        resample_generation_depth: 0,
+        lineage_capture_refs,
+        resample_generation_depth,
         created_from_action: Some(action.id),
         assigned_target,
         is_pinned: false,
@@ -4039,6 +4114,44 @@ mod tests {
     }
 
     #[test]
+    fn queue_w30_internal_resample_targets_current_lane_capture_on_next_phrase() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_internal_resample(627),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::PromoteResample);
+        assert_eq!(pending[0].quantization, Quantization::NextPhrase);
+        assert_eq!(pending[0].target.scope, Some(TargetScope::LaneW30));
+        assert!(matches!(
+            &pending[0].params,
+            ActionParams::Promotion {
+                capture_id: Some(capture_id),
+                ..
+            } if capture_id == &CaptureId::from("cap-01")
+        ));
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("resample cap-01 through W-30 on next phrase")
+        );
+    }
+
+    #[test]
     fn queueing_w30_pad_cues_blocks_conflicting_pending_actions() {
         let graph = sample_graph();
         let session = sample_session(&graph);
@@ -4085,6 +4198,31 @@ mod tests {
         );
         assert_eq!(
             other_state.queue_w30_trigger_pad(634),
+            Some(QueueControlResult::AlreadyPending)
+        );
+    }
+
+    #[test]
+    fn queueing_w30_internal_resample_blocks_duplicate_pending_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_internal_resample(635),
+            Some(QueueControlResult::Enqueued)
+        );
+        assert_eq!(
+            state.queue_w30_internal_resample(636),
             Some(QueueControlResult::AlreadyPending)
         );
     }
@@ -4347,6 +4485,66 @@ mod tests {
                 .map(|result| result.summary.as_str()),
             Some("triggered cap-01 on W-30 pad bank-b/pad-03 at beat 33 / phrase 2")
         );
+    }
+
+    #[test]
+    fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        state.session.captures[0].is_pinned = true;
+        state.session.captures[0].lineage_capture_refs = vec![CaptureId::from("cap-root")];
+        state.session.captures[0].resample_generation_depth = 1;
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_internal_resample(650),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        );
+
+        assert_eq!(committed.len(), 1);
+        let capture = state
+            .session
+            .captures
+            .last()
+            .expect("new resample capture should exist");
+        assert_eq!(capture.capture_type, CaptureType::Resample);
+        assert_eq!(capture.capture_id, CaptureId::from("cap-02"));
+        assert_eq!(
+            capture.lineage_capture_refs,
+            vec![CaptureId::from("cap-root"), CaptureId::from("cap-01")]
+        );
+        assert_eq!(capture.resample_generation_depth, 2);
+        assert_eq!(capture.assigned_target, None);
+        assert_eq!(
+            state.session.runtime_state.lane_state.w30.last_capture,
+            Some(CaptureId::from("cap-02"))
+        );
+        assert_eq!(
+            state.runtime.w30_resample_tap.source_capture_id.as_deref(),
+            Some("cap-02")
+        );
+        assert_eq!(state.runtime.w30_resample_tap.lineage_capture_count, 2);
+        assert_eq!(state.runtime.w30_resample_tap.generation_depth, 2);
     }
 
     #[test]

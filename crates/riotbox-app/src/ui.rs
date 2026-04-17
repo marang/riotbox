@@ -88,6 +88,7 @@ pub enum ShellKeyOutcome {
     QueueW30TriggerPad,
     QueueW30LiveRecall,
     QueueW30PromotedAudition,
+    QueueW30Resample,
     TogglePinLatestCapture,
     LowerDrumBusLevel,
     RaiseDrumBusLevel,
@@ -225,6 +226,10 @@ impl JamShellState {
             KeyCode::Char('o') => {
                 self.status_message = "queue W-30 promoted-material audition on next bar".into();
                 ShellKeyOutcome::QueueW30PromotedAudition
+            }
+            KeyCode::Char('e') => {
+                self.status_message = "queue W-30 internal resample on next phrase".into();
+                ShellKeyOutcome::QueueW30Resample
             }
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
@@ -922,7 +927,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
-        "         p promote capture | w W-30 trigger | l W-30 recall | o W-30 audition | v pin latest | u undo",
+        "         p promote capture | w W-30 trigger | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -2949,6 +2954,10 @@ mod tests {
             ShellKeyOutcome::QueueW30PromotedAudition
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('e')),
+            ShellKeyOutcome::QueueW30Resample
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('v')),
             ShellKeyOutcome::TogglePinLatestCapture
         );
@@ -3105,6 +3114,31 @@ mod tests {
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("audition"));
         assert!(rendered.contains("latest promoted"));
+        assert!(rendered.contains("cap-01"));
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_w30_resample_cue() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-b".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-03".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_internal_resample(215),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("resample"));
         assert!(rendered.contains("cap-01"));
     }
 

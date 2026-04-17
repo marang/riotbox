@@ -338,6 +338,21 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueW30Resample => {
+                    match shell.app.queue_w30_internal_resample(timestamp_now()) {
+                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 internal resample for next phrase");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 internal resample already queued");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 internal resample already in state");
+                        }
+                        None => shell
+                            .set_error_status("no committed W-30 capture available to resample"),
+                    }
+                }
                 ShellKeyOutcome::TogglePinLatestCapture => {
                     match shell.app.toggle_pin_latest_capture() {
                         Some(true) => shell.set_error_status("pinned latest capture"),

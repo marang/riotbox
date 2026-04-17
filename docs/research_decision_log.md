@@ -682,6 +682,17 @@ Status: accepted
 
 ---
 
+Topic: the first W-30 internal resample action should stay on the committed capture lineage seam
+Phase: W-30 MVP
+Question: once internal resample lineage metadata and tap-ready state exist, what is the smallest next slice that makes W-30 internal resampling feel real without opening a second capture inventory, pad editor, or callback-only resample trigger?
+Decision: add one explicit `promote.resample` action on the existing `ActionQueue` and `NextPhrase` seam for the W-30 lane. Queue it only against the current committed W-30 lane capture, block duplicate pending W-30 resample actions, and materialize the committed result as a new `CaptureRef` with explicit lineage and incremented `resample_generation_depth`.
+Why: the repo already has the right ingredients for internal resampling: committed W-30 lane focus, explicit capture lineage metadata, and a typed resample tap summary. The smallest honest move is to create one replay-safe committed resample action on top of that same seam, not to invent a second capture browser, a hidden callback-only resample path, or a full W-30 lab before the lineage model is exercised for real.
+Evidence: `riotbox-app` now queues `promote.resample` against the current `w30.last_capture`, commits it on `NextPhrase`, creates a new `CaptureRef` with cloned source-origin refs plus extended lineage and generation depth, updates the W-30 lane to point at the new capture, and surfaces the pending cue in the current shell flow. App and shell tests cover the queue path, duplicate blocking, committed lineage materialization, and the capture-screen cue.
+Consequences: later W-30 internal buses, pad-bank behavior, and deeper resample tooling should continue extending this committed lineage seam instead of bypassing it with hidden resample state or direct callback-only mutation.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
