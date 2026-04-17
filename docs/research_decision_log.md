@@ -904,6 +904,17 @@ Status: accepted
 
 ---
 
+Topic: first-run onramp should stay inside the existing Jam shell spine
+Phase: Playable shell UX
+Question: once Riotbox already has real lanes and actions, what is the smallest honest first-run improvement that helps a new user find one meaningful play moment without inventing a second onboarding shell or wizard?
+Decision: add a bounded first-run onramp directly inside the existing Jam screen and help overlay. Show a reduced `Start Here` guidance block only while the session is still in an early state, and let it evolve from `start transport` to `first move queued` to `first change landed` instead of opening a separate first-run mode.
+Why: the current user problem is not missing engine state, but missing orientation in the first 30 to 60 seconds. A small guidance layer on top of the shipped Jam shell preserves the current runtime and screen architecture, reduces equal-rank noise at first contact, and gives Riotbox one obvious first move without pretending the shell is already fully simplified.
+Evidence: `riotbox-app` now swaps the dense source row for a dedicated `Start Here` block only during early first-run states, extends the help overlay with stage-aware onboarding hints, and covers both the untouched mature shell and the new first-run guidance with focused UI regressions.
+Consequences: deeper perform-first Jam simplification and richer onboarding remain separate work. `RIOTBOX-94` can still reduce the long-term Jam surface, and later product work can still add a fuller first-run flow if the small inline onramp proves insufficient.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline
