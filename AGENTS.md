@@ -216,8 +216,9 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Treat workflow and archive obligations as a real work lane, not as optional cleanup after coding.
 - When delegation is available and the slice is substantial enough, prefer two parallel lanes:
   - main implementation lane
-  - workflow / ops lane for Linear state, project updates, archive prep, and similar repo-process obligations
+  - workflow / ops lane or subagent for Linear state, project updates, archive prep, and similar repo-process obligations
 - The workflow / ops lane should keep Linear and repo bookkeeping continuously aligned while implementation is moving, not only after the code is already finished.
+- The main thread may keep implementing while the workflow / ops lane keeps Linear state, project updates, and archive obligations aligned.
 - The main thread still owns correctness, final review, PR quality, merge readiness, and final integration.
 - Keep a small active backlog in Linear so work does not stall at ticket boundaries.
 - Treat this as an active rule, not a soft preference.

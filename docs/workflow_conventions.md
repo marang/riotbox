@@ -241,6 +241,7 @@ Rules:
 
 - treat the workflow / ops lane as real work, not optional cleanup
 - keep code state, git state, Linear state, and archive readiness moving together
+- implementation may continue on the main thread while a parallel workflow lane or subagent keeps Linear state, project updates, and archive obligations aligned
 - the main coordinating agent still owns correctness, final review, and final integration
 - delegation should reduce workflow drift, not hide responsibility for it
 
