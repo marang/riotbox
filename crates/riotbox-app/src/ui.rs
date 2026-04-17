@@ -107,6 +107,7 @@ pub struct JamShellState {
     pub app: JamAppState,
     pub launch_mode: ShellLaunchMode,
     pub active_screen: ShellScreen,
+    pub first_run_onramp: bool,
     pub show_help: bool,
     pub status_message: String,
 }
@@ -114,6 +115,9 @@ pub struct JamShellState {
 impl JamShellState {
     #[must_use]
     pub fn new(app: JamAppState, launch_mode: ShellLaunchMode) -> Self {
+        let first_run_onramp = matches!(launch_mode, ShellLaunchMode::Ingest)
+            && app.session.action_log.actions.is_empty()
+            && app.session.captures.is_empty();
         let status_message = match launch_mode {
             ShellLaunchMode::Load => "loaded session from disk".into(),
             ShellLaunchMode::Ingest => "ingested source into Jam shell".into(),
@@ -123,6 +127,7 @@ impl JamShellState {
             app,
             launch_mode,
             active_screen: ShellScreen::Jam,
+            first_run_onramp,
             show_help: false,
             status_message,
         }
@@ -282,6 +287,9 @@ impl JamShellState {
     }
 
     pub fn replace_app_state(&mut self, app: JamAppState) {
+        self.first_run_onramp = matches!(self.launch_mode, ShellLaunchMode::Ingest)
+            && app.session.action_log.actions.is_empty()
+            && app.session.captures.is_empty();
         self.app = app;
         self.status_message = match self.launch_mode {
             ShellLaunchMode::Load => "reloaded session from disk".into(),
@@ -322,18 +330,33 @@ pub fn render_jam_shell(frame: &mut Frame<'_>, shell: &JamShellState) {
 }
 
 fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
-    let rows = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(8),
-            Constraint::Length(9),
-            Constraint::Min(7),
-        ])
-        .split(area);
+    if first_run_onramp_stage(shell).is_some() {
+        let rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(8),
+                Constraint::Length(6),
+                Constraint::Min(9),
+            ])
+            .split(area);
 
-    render_overview_row(frame, rows[0], shell);
-    render_source_row(frame, rows[1], shell);
-    render_action_rows(frame, rows[2], shell);
+        render_overview_row(frame, rows[0], shell);
+        render_first_run_onramp_row(frame, rows[1], shell);
+        render_action_rows(frame, rows[2], shell);
+    } else {
+        let rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(8),
+                Constraint::Length(9),
+                Constraint::Min(7),
+            ])
+            .split(area);
+
+        render_overview_row(frame, rows[0], shell);
+        render_source_row(frame, rows[1], shell);
+        render_action_rows(frame, rows[2], shell);
+    }
 }
 
 #[must_use]
@@ -598,6 +621,42 @@ fn render_source_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     frame.render_widget(source, columns[0]);
     frame.render_widget(sections, columns[1]);
     frame.render_widget(macros, columns[2]);
+}
+
+fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let lines = match first_run_onramp_stage(shell) {
+        Some(FirstRunOnrampStage::Start) => vec![
+            Line::from("Press Space to start transport so queued actions can actually land"),
+            Line::from("2 press f for a TR-909 fill or c for a first capture"),
+            Line::from("3 press 2 for Log to confirm what committed and when"),
+            Line::from("Goal: get one obvious change before exploring the rest of the shell"),
+        ],
+        Some(FirstRunOnrampStage::QueuedFirstMove) => vec![
+            Line::from(
+                "First move is queued. Let transport cross the shown beat, bar, or phrase boundary.",
+            ),
+            Line::from(
+                "Switch to Log with 2 to confirm the action committed instead of only staying pending.",
+            ),
+            Line::from("After that, try c to capture the result or u to undo it."),
+        ],
+        Some(FirstRunOnrampStage::FirstResult) => vec![
+            Line::from("First change landed. Good."),
+            Line::from(
+                "Next best move: press c to capture it, or press 4 to inspect the Capture screen.",
+            ),
+            Line::from(
+                "Then try one more lane-shaped gesture like y scene select, g follower, or w W-30 trigger.",
+            ),
+        ],
+        None => Vec::new(),
+    };
+
+    let paragraph = Paragraph::new(lines)
+        .block(Block::default().title("Start Here").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(paragraph, area);
 }
 
 fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -1027,13 +1086,40 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 
 fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let popup = centered_rect(60, 45, area);
-    let help = Paragraph::new(vec![
+    let mut lines = vec![
         Line::from("Jam shell keys"),
         Line::from("q or Esc: quit"),
         Line::from("? or h: toggle help"),
         Line::from(
             "1: Jam screen | 2: Log screen | 3: Source screen | 4: Capture screen | Tab: next screen",
         ),
+    ];
+
+    if let Some(stage) = first_run_onramp_stage(shell) {
+        lines.push(Line::from(""));
+        lines.push(Line::from("First run"));
+        match stage {
+            FirstRunOnrampStage::Start => {
+                lines.push(Line::from("space: start transport"));
+                lines.push(Line::from("f: queue a TR-909 fill | c: queue a capture"));
+                lines.push(Line::from("2: switch to Log and watch the commit"));
+            }
+            FirstRunOnrampStage::QueuedFirstMove => {
+                lines.push(Line::from("let transport cross the queued action boundary"));
+                lines.push(Line::from("2: switch to Log and confirm the commit"));
+                lines.push(Line::from("c: capture the result | u: undo it"));
+            }
+            FirstRunOnrampStage::FirstResult => {
+                lines.push(Line::from("c: capture the first keeper result"));
+                lines.push(Line::from(
+                    "4: inspect Capture | y/g/w: try one more lane gesture",
+                ));
+            }
+        }
+    }
+
+    lines.extend([
+        Line::from(""),
         Line::from("space: play / pause transport"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
         Line::from("m: queue scene mutation on next bar"),
@@ -1062,9 +1148,11 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
         Line::from(format!("Current screen: {}", shell.active_screen.label())),
         Line::from(shell.status_message.clone()),
-    ])
-    .block(Block::default().title("Help").borders(Borders::ALL))
-    .wrap(Wrap { trim: true });
+    ]);
+
+    let help = Paragraph::new(lines)
+        .block(Block::default().title("Help").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
 
     frame.render_widget(Clear, popup);
     frame.render_widget(help, popup);
@@ -1911,6 +1999,44 @@ fn primary_recent_line(shell: &JamShellState) -> String {
     } else {
         "recent no committed action yet".into()
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum FirstRunOnrampStage {
+    Start,
+    QueuedFirstMove,
+    FirstResult,
+}
+
+fn first_run_onramp_stage(shell: &JamShellState) -> Option<FirstRunOnrampStage> {
+    if !shell.first_run_onramp {
+        return None;
+    }
+
+    let committed_count = shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .filter(|action| action.status == riotbox_core::action::ActionStatus::Committed)
+        .count();
+    let has_pending = !shell.app.jam_view.pending_actions.is_empty();
+    let capture_count = shell.app.session.captures.len();
+
+    if capture_count > 0 || committed_count > 1 {
+        return None;
+    }
+
+    if committed_count == 0 {
+        return Some(if has_pending {
+            FirstRunOnrampStage::QueuedFirstMove
+        } else {
+            FirstRunOnrampStage::Start
+        });
+    }
+
+    Some(FirstRunOnrampStage::FirstResult)
 }
 
 fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -3358,6 +3484,48 @@ mod tests {
         JamShellState::new(app, ShellLaunchMode::Ingest)
     }
 
+    fn first_run_shell_state() -> JamShellState {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.action_log.actions.clear();
+        session.captures.clear();
+        session.runtime_state.lane_state.w30.last_capture = None;
+
+        let app = JamAppState::from_parts(
+            session,
+            sample_shell.app.source_graph.clone(),
+            ActionQueue::new(),
+        );
+        JamShellState::new(app, ShellLaunchMode::Ingest)
+    }
+
+    fn first_result_shell_state() -> JamShellState {
+        let mut shell = first_run_shell_state();
+        shell.app.session.action_log.actions.push(Action {
+            id: ActionId(1),
+            actor: ActorType::User,
+            command: ActionCommand::Tr909FillNext,
+            params: ActionParams::Empty,
+            target: ActionTarget {
+                scope: Some(TargetScope::LaneTr909),
+                ..Default::default()
+            },
+            requested_at: 200,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Committed,
+            committed_at: Some(220),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "committed fill on next bar".into(),
+            }),
+            undo_policy: UndoPolicy::Undoable,
+            explanation: Some("first committed fill".into()),
+        });
+
+        shell.app.refresh_view();
+        shell
+    }
+
     #[test]
     fn renders_more_musical_jam_shell_snapshot() {
         let shell = sample_shell_state();
@@ -3438,6 +3606,63 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("answer queued"));
+    }
+
+    #[test]
+    fn renders_jam_shell_with_first_run_onramp() {
+        let shell = first_run_shell_state();
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Start Here"), "{rendered}");
+        assert!(
+            rendered.contains("Press Space to start transport"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("TR-909 fill or c for a first capture"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("press 2 for Log"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_jam_shell_with_queued_first_move_guidance() {
+        let mut shell = first_run_shell_state();
+        shell.app.queue_tr909_fill(200);
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("First move is queued."), "{rendered}");
+        assert!(rendered.contains("boundary"), "{rendered}");
+        assert!(rendered.contains("action committed"), "{rendered}");
+        assert!(rendered.contains("capture the result"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_jam_shell_with_first_result_guidance() {
+        let shell = first_result_shell_state();
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("First change landed. Good."),
+            "{rendered}"
+        );
+        assert!(rendered.contains("press c to capture"), "{rendered}");
+        assert!(rendered.contains("y scene select"), "{rendered}");
+        assert!(rendered.contains("w W-30 trigger"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_help_overlay_with_first_run_guidance() {
+        let mut shell = first_run_shell_state();
+        shell.show_help = true;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("First run"), "{rendered}");
+        assert!(rendered.contains("space: start transport"), "{rendered}");
+        assert!(rendered.contains("f: queue a TR-909 fill"), "{rendered}");
+        assert!(rendered.contains("2: switch to Log"), "{rendered}");
     }
 
     fn mc202_committed_shell_state(fixture: &Mc202RegressionFixture) -> JamShellState {
