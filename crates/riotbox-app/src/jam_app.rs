@@ -24,7 +24,7 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, Quantization, TargetScope,
     },
-    ids::{CaptureId, SourceId},
+    ids::{BankId, CaptureId, PadId, SourceId},
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
@@ -1340,7 +1340,36 @@ impl JamAppState {
         next_level
     }
 
+    fn focused_w30_capture(&self) -> Option<&CaptureRef> {
+        let w30 = &self.session.runtime_state.lane_state.w30;
+        let (bank_id, pad_id) = w30.active_bank.as_ref().zip(w30.focused_pad.as_ref())?;
+
+        self.session
+            .captures
+            .iter()
+            .rev()
+            .find(|capture| capture_targets_specific_w30_pad(capture, bank_id, pad_id))
+    }
+
     fn recallable_w30_capture(&self) -> Option<&CaptureRef> {
+        if self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .is_some()
+            && self
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .is_some()
+        {
+            return self.focused_w30_capture();
+        }
+
         self.session
             .captures
             .iter()
@@ -1356,6 +1385,24 @@ impl JamAppState {
     }
 
     fn auditionable_w30_capture(&self) -> Option<&CaptureRef> {
+        if self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .is_some()
+            && self
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .is_some()
+        {
+            return self.focused_w30_capture();
+        }
+
         self.session
             .captures
             .iter()
@@ -1364,6 +1411,24 @@ impl JamAppState {
     }
 
     fn triggerable_w30_capture(&self) -> Option<&CaptureRef> {
+        if self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .is_some()
+            && self
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .is_some()
+        {
+            return self.focused_w30_capture();
+        }
+
         self.session
             .runtime_state
             .lane_state
@@ -1380,6 +1445,24 @@ impl JamAppState {
     }
 
     fn resample_ready_w30_capture(&self) -> Option<&CaptureRef> {
+        if self
+            .session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .is_some()
+            && self
+                .session
+                .runtime_state
+                .lane_state
+                .w30
+                .focused_pad
+                .is_some()
+        {
+            return self.focused_w30_capture();
+        }
+
         self.session
             .runtime_state
             .lane_state
@@ -1903,6 +1986,20 @@ fn updated_capture_note(existing_notes: Option<&str>, target: &CaptureTarget) ->
 
 fn capture_targets_w30_pad(capture: &CaptureRef) -> bool {
     matches!(capture.assigned_target, Some(CaptureTarget::W30Pad { .. }))
+}
+
+fn capture_targets_specific_w30_pad(
+    capture: &CaptureRef,
+    bank_id: &BankId,
+    pad_id: &PadId,
+) -> bool {
+    matches!(
+        capture.assigned_target.as_ref(),
+        Some(CaptureTarget::W30Pad {
+            bank_id: target_bank_id,
+            pad_id: target_pad_id,
+        }) if target_bank_id == bank_id && target_pad_id == pad_id
+    )
 }
 
 fn apply_w30_side_effects(
@@ -3958,7 +4055,7 @@ mod tests {
     }
 
     #[test]
-    fn queue_w30_live_recall_prefers_latest_pinned_promoted_capture() {
+    fn queue_w30_live_recall_targets_committed_lane_focus_before_latest_pinned_capture() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -3993,6 +4090,9 @@ mod tests {
             is_pinned: true,
             notes: Some("keeper".into()),
         });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-04"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-03"));
         state.refresh_view();
 
         assert_eq!(
@@ -4005,25 +4105,25 @@ mod tests {
         assert_eq!(pending[0].command, ActionCommand::W30SwapBank);
         assert_eq!(
             pending[0].target.bank_id.as_ref().map(ToString::to_string),
-            Some("bank-c".into())
+            Some("bank-b".into())
         );
         assert_eq!(
             pending[0].target.pad_id.as_ref().map(ToString::to_string),
-            Some("pad-07".into())
+            Some("pad-04".into())
         );
         assert_eq!(
             pending[0].explanation.as_deref(),
-            Some("recall cap-03 on W-30 pad bank-c/pad-07")
+            Some("recall cap-02 on W-30 pad bank-b/pad-04")
         );
         assert_eq!(
             state.jam_view.lanes.w30_pending_recall_target.as_deref(),
-            Some("bank-c/pad-07")
+            Some("bank-b/pad-04")
         );
         assert_eq!(state.jam_view.lanes.w30_pending_audition_target, None);
     }
 
     #[test]
-    fn queue_w30_promoted_audition_targets_latest_promoted_capture() {
+    fn queue_w30_promoted_audition_targets_committed_lane_focus() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -4043,6 +4143,8 @@ mod tests {
             is_pinned: false,
             notes: Some("secondary".into()),
         });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-04"));
         state.refresh_view();
 
         assert_eq!(
@@ -4073,7 +4175,7 @@ mod tests {
     }
 
     #[test]
-    fn queue_w30_trigger_pad_targets_current_lane_capture_on_next_beat() {
+    fn queue_w30_trigger_pad_targets_focused_lane_capture_on_next_beat() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -4082,6 +4184,24 @@ mod tests {
             bank_id: BankId::from("bank-a"),
             pad_id: PadId::from("pad-01"),
         });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-04".into(),
+            }),
+            is_pinned: false,
+            notes: Some("secondary".into()),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-04"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
         state.refresh_view();
 
         assert_eq!(
@@ -4095,33 +4215,48 @@ mod tests {
         assert_eq!(pending[0].quantization, Quantization::NextBeat);
         assert_eq!(
             pending[0].target.bank_id.as_ref().map(ToString::to_string),
-            Some("bank-a".into())
+            Some("bank-b".into())
         );
         assert_eq!(
             pending[0].target.pad_id.as_ref().map(ToString::to_string),
-            Some("pad-01".into())
+            Some("pad-04".into())
         );
         assert_eq!(
             pending[0].explanation.as_deref(),
-            Some("trigger W-30 pad bank-a/pad-01 from cap-01 on next beat")
+            Some("trigger W-30 pad bank-b/pad-04 from cap-02 on next beat")
         );
         assert_eq!(
             state.jam_view.lanes.w30_pending_trigger_target.as_deref(),
-            Some("bank-a/pad-01")
+            Some("bank-b/pad-04")
         );
         assert_eq!(state.jam_view.lanes.w30_pending_recall_target, None);
         assert_eq!(state.jam_view.lanes.w30_pending_audition_target, None);
     }
 
     #[test]
-    fn queue_w30_internal_resample_targets_current_lane_capture_on_next_phrase() {
+    fn queue_w30_internal_resample_targets_focused_lane_capture_on_next_phrase() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
-            bank_id: BankId::from("bank-b"),
-            pad_id: PadId::from("pad-03"),
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Resample,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: vec![CaptureId::from("cap-01")],
+            resample_generation_depth: 1,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            }),
+            is_pinned: false,
+            notes: Some("resampled".into()),
         });
         state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
         state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
@@ -4143,11 +4278,58 @@ mod tests {
             ActionParams::Promotion {
                 capture_id: Some(capture_id),
                 ..
-            } if capture_id == &CaptureId::from("cap-01")
+            } if capture_id == &CaptureId::from("cap-02")
         ));
         assert_eq!(
             pending[0].explanation.as_deref(),
-            Some("resample cap-01 through W-30 on next phrase")
+            Some("resample cap-02 through W-30 on next phrase")
+        );
+    }
+
+    #[test]
+    fn queue_w30_live_recall_falls_back_to_latest_pinned_capture_without_explicit_focus() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-04".into(),
+            }),
+            is_pinned: true,
+            notes: Some("keeper".into()),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-z"));
+        state.session.runtime_state.lane_state.w30.focused_pad = None;
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_live_recall(605),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(
+            pending[0].target.bank_id.as_ref().map(ToString::to_string),
+            Some("bank-b".into())
+        );
+        assert_eq!(
+            pending[0].target.pad_id.as_ref().map(ToString::to_string),
+            Some("pad-04".into())
+        );
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("recall cap-02 on W-30 pad bank-b/pad-04")
         );
     }
 
@@ -4161,6 +4343,8 @@ mod tests {
             bank_id: BankId::from("bank-b"),
             pad_id: PadId::from("pad-03"),
         });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
         state.refresh_view();
 
         assert_eq!(
@@ -4186,6 +4370,8 @@ mod tests {
             bank_id: BankId::from("bank-c"),
             pad_id: PadId::from("pad-05"),
         });
+        other_state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-c"));
+        other_state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-05"));
         other_state.refresh_view();
 
         assert_eq!(
@@ -4238,6 +4424,8 @@ mod tests {
             pad_id: PadId::from("pad-03"),
         });
         state.session.captures[0].is_pinned = true;
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
         state.refresh_view();
 
         assert_eq!(
@@ -4340,6 +4528,8 @@ mod tests {
             bank_id: BankId::from("bank-b"),
             pad_id: PadId::from("pad-03"),
         });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
         state.refresh_view();
 
         assert_eq!(
@@ -4443,6 +4633,8 @@ mod tests {
             bank_id: BankId::from("bank-b"),
             pad_id: PadId::from("pad-03"),
         });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
         state.refresh_view();
 
         assert_eq!(
@@ -4932,6 +5124,10 @@ mod tests {
                 pad_id: PadId::from(fixture.capture_pad.clone()),
             });
             session.captures[0].is_pinned = fixture.capture_pinned;
+            session.runtime_state.lane_state.w30.active_bank =
+                Some(BankId::from(fixture.capture_bank.clone()));
+            session.runtime_state.lane_state.w30.focused_pad =
+                Some(PadId::from(fixture.capture_pad.clone()));
             session.runtime_state.macro_state.w30_grit = 0.0;
             let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 

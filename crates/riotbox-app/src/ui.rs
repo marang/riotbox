@@ -2891,8 +2891,10 @@ mod tests {
         let mut session = sample_shell.app.session.clone();
         session.action_log.actions.clear();
         session.runtime_state.macro_state.w30_grit = 0.0;
-        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
-        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        session.runtime_state.lane_state.w30.active_bank =
+            Some(BankId::from(fixture.capture_bank.clone()));
+        session.runtime_state.lane_state.w30.focused_pad =
+            Some(PadId::from(fixture.capture_pad.clone()));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
         session.captures[0].assigned_target = Some(riotbox_core::session::CaptureTarget::W30Pad {
             bank_id: fixture.capture_bank.clone().into(),

@@ -704,6 +704,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 capture resolution should follow committed lane focus before pad-bank stepping lands
+Phase: W-30 MVP
+Question: after the periodic codebase review flagged capture-driven W-30 helpers, what is the smallest correction that keeps later bank-step and trigger work honest on the current preview seam?
+Decision: when explicit `w30.active_bank` and `w30.focused_pad` exist, resolve W-30 recall, audition, trigger, and internal resample actions from the latest committed capture assigned to that focused pad. Only fall back to the older latest-capture or latest-promoted heuristics when no explicit lane focus exists.
+Why: bank-step work becomes partly cosmetic if committed focus can move without changing the capture chosen by recall, audition, trigger, or resample actions. The smallest honest fix is to make the existing helpers respect committed lane focus first, not to invent a second W-30 selection model or defer the inconsistency until after more pad-bank controls land.
+Evidence: `riotbox-app` now resolves focused W-30 captures before queueing recall, audition, trigger, and resample actions, and the regression tests explicitly cover focused-bank capture selection instead of the older latest-promoted-only behavior.
+Consequences: later pad-bank stepping should update committed lane focus and rely on the same resolver rather than choosing captures through separate shell-only or queue-only heuristics.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
