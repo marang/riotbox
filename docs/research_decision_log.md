@@ -882,6 +882,17 @@ Status: accepted
 
 ---
 
+Topic: first Scene Brain selection should queue one committed `scene.launch` on the existing transport seam
+Phase: Scene Brain
+Question: once Riotbox already derives deterministic scene candidates, what is the smallest honest next step that lets the operator move to another scene without inventing a second arrangement path, transition model, or editor workflow?
+Decision: add one bounded `scene.launch` action that cycles to the next committed scene candidate, queues on `NextBar`, commits through the existing action queue and transport boundary seam, and updates only the current session `active_scene` plus transport `current_scene`. Keep richer scene launch, restore, and transition logic out of scope.
+Why: the repo already has one explicit scene list, one transport scene pointer, and one replay-safe queue and commit model. The next honest move is not a richer scene editor but a single committed scene-select control that proves scene changes can stay explicit, logged, and replay-safe on the existing seam.
+Evidence: `riotbox-app` now queues `scene.launch` for the next candidate, blocks duplicate pending scene launches, commits it on the current bar boundary, and updates both session scene state and transport scene state with targeted regression coverage plus a minimal shell key.
+Consequences: later Scene Brain work should continue from this same queueable scene-launch seam when adding restore, recovery, or richer transition semantics. Selection UIs, scene diagnostics, and transition policies remain follow-up slices.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline

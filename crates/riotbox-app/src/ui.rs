@@ -74,6 +74,7 @@ pub enum ShellKeyOutcome {
     RequestRefresh,
     ToggleTransport,
     QueueSceneMutation,
+    QueueSceneSelect,
     QueueMc202RoleToggle,
     QueueMc202GenerateFollower,
     QueueMc202GenerateAnswer,
@@ -175,6 +176,10 @@ impl JamShellState {
             KeyCode::Char('m') => {
                 self.status_message = "queue scene mutation on next bar".into();
                 ShellKeyOutcome::QueueSceneMutation
+            }
+            KeyCode::Char('y') => {
+                self.status_message = "queue scene select on next bar".into();
+                ShellKeyOutcome::QueueSceneSelect
             }
             KeyCode::Char('b') => {
                 self.status_message = "queue MC-202 role change on next phrase".into();
@@ -953,7 +958,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
+        "Actions: m mutate scene | y scene select | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
         "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | j W-30 browse | D W-30 damage | z W-30 freeze | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
@@ -3513,6 +3518,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('m')),
             ShellKeyOutcome::QueueSceneMutation
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('y')),
+            ShellKeyOutcome::QueueSceneSelect
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('b')),

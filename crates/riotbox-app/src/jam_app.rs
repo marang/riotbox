@@ -848,6 +848,79 @@ impl JamAppState {
         self.refresh_view();
     }
 
+    fn scene_launch_pending(&self) -> bool {
+        self.queue
+            .pending_actions()
+            .iter()
+            .any(|action| action.command == ActionCommand::SceneLaunch)
+    }
+
+    fn next_scene_candidate(&self) -> Option<SceneId> {
+        let scenes = &self.session.runtime_state.scene_state.scenes;
+        let current_scene = self
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene
+            .clone()
+            .or_else(|| self.session.runtime_state.transport.current_scene.clone());
+
+        if scenes.is_empty() {
+            return None;
+        }
+
+        if let Some(current_scene) = current_scene
+            && let Some(index) = scenes
+                .iter()
+                .position(|scene_id| *scene_id == current_scene)
+        {
+            return Some(scenes[(index + 1) % scenes.len()].clone());
+        }
+
+        scenes.first().cloned()
+    }
+
+    pub fn queue_scene_select(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+        if self.scene_launch_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let Some(scene_id) = self.next_scene_candidate() else {
+            return QueueControlResult::AlreadyInState;
+        };
+
+        let current_scene = self
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene
+            .clone()
+            .or_else(|| self.session.runtime_state.transport.current_scene.clone());
+        if current_scene.as_ref() == Some(&scene_id)
+            && self.session.runtime_state.scene_state.scenes.len() <= 1
+        {
+            return QueueControlResult::AlreadyInState;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::SceneLaunch,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::Scene),
+                scene_id: Some(scene_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Scene {
+            scene_id: Some(scene_id.clone()),
+        };
+        draft.explanation = Some(format!("launch scene {scene_id} on next bar"));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
     fn mc202_phrase_control_pending(&self) -> bool {
         self.queue.pending_actions().iter().any(|action| {
             matches!(
@@ -1999,6 +2072,11 @@ impl JamAppState {
         apply_w30_side_effects(&mut self.session, action, Some(boundary));
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
+        apply_scene_side_effects(&mut self.session, action, Some(boundary));
+        if action.command == ActionCommand::SceneLaunch {
+            self.runtime.transport.current_scene =
+                self.session.runtime_state.transport.current_scene.clone();
+        }
     }
 
     pub fn save(&self) -> Result<(), JamAppError> {
@@ -2874,6 +2952,55 @@ fn apply_mc202_side_effects(
             }
         }
         _ => {}
+    }
+}
+
+fn apply_scene_side_effects(
+    session: &mut SessionFile,
+    action: &Action,
+    boundary: Option<&CommitBoundaryState>,
+) {
+    if action.command != ActionCommand::SceneLaunch {
+        return;
+    }
+
+    let Some(scene_id) = action
+        .target
+        .scene_id
+        .clone()
+        .or_else(|| match &action.params {
+            ActionParams::Scene {
+                scene_id: Some(scene_id),
+            } => Some(scene_id.clone()),
+            _ => None,
+        })
+    else {
+        return;
+    };
+
+    session.runtime_state.scene_state.active_scene = Some(scene_id.clone());
+    session.runtime_state.transport.current_scene = Some(scene_id.clone());
+
+    if let Some(logged_action) = session
+        .action_log
+        .actions
+        .iter_mut()
+        .rev()
+        .find(|logged_action| logged_action.id == action.id)
+    {
+        let position = boundary.map_or_else(
+            || "pending scene boundary".to_string(),
+            |boundary| {
+                format!(
+                    "bar {} / phrase {}",
+                    boundary.bar_index, boundary.phrase_index
+                )
+            },
+        );
+        logged_action.result = Some(ActionResult {
+            accepted: true,
+            summary: format!("launched scene {scene_id} at {position}"),
+        });
     }
 }
 
@@ -4305,6 +4432,116 @@ mod tests {
         );
         assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
         assert_eq!(state.jam_view.pending_actions.len(), 7);
+    }
+
+    #[test]
+    fn queue_scene_select_enqueues_scene_launch_for_next_bar() {
+        let mut graph = sample_graph();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-b"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 24.0,
+            bar_start: 9,
+            bar_end: 12,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.84,
+            tags: vec!["contrast".into()],
+        });
+
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.current_scene = None;
+        session.runtime_state.scene_state.active_scene = None;
+        session.runtime_state.scene_state.scenes.clear();
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+        assert_eq!(
+            state.queue_scene_select(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::SceneLaunch);
+        assert_eq!(pending[0].quantization, Quantization::NextBar);
+        assert_eq!(
+            pending[0].target.scene_id,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            pending[0].params,
+            ActionParams::Scene {
+                scene_id: Some(SceneId::from("scene-02-break"))
+            }
+        );
+    }
+
+    #[test]
+    fn committed_scene_select_updates_transport_and_scene_state() {
+        let mut graph = sample_graph();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-b"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 24.0,
+            bar_start: 9,
+            bar_end: 12,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.84,
+            tags: vec!["contrast".into()],
+        });
+
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.current_scene = None;
+        session.runtime_state.scene_state.active_scene = None;
+        session.runtime_state.scene_state.scenes.clear();
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            350,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.session.runtime_state.transport.current_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.runtime.transport.current_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.current_scene_id.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("launched scene scene-02-break at bar 9 / phrase 2")
+        );
     }
 
     #[test]
