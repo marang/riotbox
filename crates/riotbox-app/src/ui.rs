@@ -194,16 +194,21 @@ impl JamShellState {
             }
             KeyCode::Char('i') => {
                 if self.active_screen != ShellScreen::Jam {
-                    self.status_message = "jam inspect is only available on the jam screen".into();
+                    self.status_message = "open Jam first if you want to use inspect".into();
                 } else if first_run_onramp_stage(self).is_some() {
                     self.status_message =
-                        "finish the first guided move before opening jam inspect".into();
+                        "finish the first guided move before opening inspect".into();
                 } else {
                     self.jam_mode = match self.jam_mode {
                         JamViewMode::Perform => JamViewMode::Inspect,
                         JamViewMode::Inspect => JamViewMode::Perform,
                     };
-                    self.status_message = format!("switched jam to {} mode", self.jam_mode.label());
+                    self.status_message = match self.jam_mode {
+                        JamViewMode::Perform => "returned Jam to perform mode".into(),
+                        JamViewMode::Inspect => {
+                            "opened Jam inspect | press i to return to perform".into()
+                        }
+                    };
                 }
                 ShellKeyOutcome::Continue
             }
@@ -490,7 +495,7 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
                     if shell.jam_mode == JamViewMode::Perform {
                         "instrument surface for immediate control and pending musical change"
                     } else {
-                        "inspect surface for lane detail, source structure, and diagnostics"
+                        "read-only inspect surface for lane detail, source structure, and diagnostics"
                     }
                 }
                 ShellScreen::Log => {
@@ -1114,13 +1119,25 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
+    let inspect_key_label =
+        if shell.active_screen == ShellScreen::Jam && shell.jam_mode == JamViewMode::Inspect {
+            "i return to perform"
+        } else {
+            "i jam inspect"
+        };
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | i jam inspect | space play/pause | [ ] drum | r {}",
-        shell.launch_mode.refresh_verb()
+        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | {inspect_key_label} | space play/pause | [ ] drum | r {}",
+        shell.launch_mode.refresh_verb(),
     )));
-    lines.push(Line::from(
-        "Primary: y scene jump | g follow | a answer | f fill | c capture | w hit | u undo | more in ? help",
-    ));
+    if shell.active_screen == ShellScreen::Jam && shell.jam_mode == JamViewMode::Inspect {
+        lines.push(Line::from(
+            "Inspect is read-only: use i to return, then queue actions from perform mode",
+        ));
+    } else {
+        lines.push(Line::from(
+            "Primary: y scene jump | g follow | a answer | f fill | c capture | w hit | u undo | more in ? help",
+        ));
+    }
     lines.push(Line::from(
         "Lane ops: b voice | d push | t takeover | k lock | x release | l recall | o audition | z freeze",
     ));
@@ -1172,7 +1189,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(
             "1: Jam screen | 2: Log screen | 3: Source screen | 4: Capture screen | Tab: next screen",
         ),
-        Line::from("i: toggle Jam perform / inspect mode"),
+        Line::from("i: open inspect from Jam | press i again to return to perform"),
     ];
 
     if let Some(stage) = first_run_onramp_stage(shell) {
@@ -4453,7 +4470,7 @@ mod tests {
         );
         assert_eq!(
             shell.status_message,
-            "jam inspect is only available on the jam screen"
+            "open Jam first if you want to use inspect"
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Tab),
@@ -4467,13 +4484,16 @@ mod tests {
             ShellKeyOutcome::Continue
         );
         assert_eq!(shell.jam_mode, JamViewMode::Inspect);
-        assert_eq!(shell.status_message, "switched jam to inspect mode");
+        assert_eq!(
+            shell.status_message,
+            "opened Jam inspect | press i to return to perform"
+        );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('i')),
             ShellKeyOutcome::Continue
         );
         assert_eq!(shell.jam_mode, JamViewMode::Perform);
-        assert_eq!(shell.status_message, "switched jam to perform mode");
+        assert_eq!(shell.status_message, "returned Jam to perform mode");
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('m')),
             ShellKeyOutcome::QueueSceneMutation
@@ -4598,7 +4618,7 @@ mod tests {
         assert_eq!(shell.jam_mode, JamViewMode::Perform);
         assert_eq!(
             shell.status_message,
-            "finish the first guided move before opening jam inspect"
+            "finish the first guided move before opening inspect"
         );
     }
 
