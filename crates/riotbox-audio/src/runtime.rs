@@ -225,6 +225,7 @@ impl AudioRuntimeShell {
                 Arc::clone(&telemetry),
                 Arc::clone(&tr909_render),
                 Arc::clone(&w30_preview),
+                Arc::clone(&w30_resample_tap),
                 start,
             ),
             cpal::SampleFormat::I16 => build_silent_output_stream::<i16>(
@@ -233,6 +234,7 @@ impl AudioRuntimeShell {
                 Arc::clone(&telemetry),
                 Arc::clone(&tr909_render),
                 Arc::clone(&w30_preview),
+                Arc::clone(&w30_resample_tap),
                 start,
             ),
             cpal::SampleFormat::U16 => build_silent_output_stream::<u16>(
@@ -241,6 +243,7 @@ impl AudioRuntimeShell {
                 Arc::clone(&telemetry),
                 Arc::clone(&tr909_render),
                 Arc::clone(&w30_preview),
+                Arc::clone(&w30_resample_tap),
                 start,
             ),
             sample_format => {
@@ -353,6 +356,7 @@ fn build_silent_output_stream<T>(
     telemetry: Arc<RuntimeTelemetry>,
     tr909_render: Arc<SharedTr909RenderState>,
     w30_preview: Arc<SharedW30PreviewRenderState>,
+    w30_resample_tap: Arc<SharedW30ResampleTapState>,
     start: Instant,
 ) -> Result<cpal::Stream, cpal::BuildStreamError>
 where
@@ -362,6 +366,7 @@ where
     let error_telemetry = Arc::clone(&telemetry);
     let mut render_state = Tr909CallbackState::default();
     let mut w30_preview_state = W30PreviewCallbackState::default();
+    let mut w30_resample_state = W30ResampleTapCallbackState::default();
     let mut mix_buffer = Vec::<f32>::new();
     let sample_rate = config.sample_rate;
     let channel_count = usize::from(config.channels.max(1));
@@ -379,8 +384,12 @@ where
                 channel_count,
                 &tr909_render.snapshot(),
                 &mut render_state,
-                &w30_preview.snapshot(),
-                &mut w30_preview_state,
+                &mut W30MixRenderState {
+                    preview_render: &w30_preview.snapshot(),
+                    preview_state: &mut w30_preview_state,
+                    resample_render: &w30_resample_tap.snapshot(),
+                    resample_state: &mut w30_resample_state,
+                },
             );
             for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
                 *output = T::from_sample(sample);
@@ -590,7 +599,6 @@ impl SharedW30PreviewRenderState {
     }
 }
 
-#[cfg(test)]
 #[derive(Copy, Clone, Debug, PartialEq)]
 struct RealtimeW30ResampleTapState {
     mode: W30ResampleTapMode,
@@ -657,7 +665,6 @@ impl SharedW30ResampleTapState {
             .store(render_state.is_transport_running, Ordering::Relaxed);
     }
 
-    #[cfg(test)]
     fn snapshot(&self) -> RealtimeW30ResampleTapState {
         RealtimeW30ResampleTapState {
             mode: w30_resample_mode_from_u32(self.mode.load(Ordering::Relaxed)),
@@ -681,7 +688,6 @@ fn w30_resample_mode_to_u32(mode: W30ResampleTapMode) -> u32 {
     }
 }
 
-#[cfg(test)]
 fn w30_resample_mode_from_u32(value: u32) -> W30ResampleTapMode {
     match value {
         1 => W30ResampleTapMode::CaptureLineageReady,
@@ -696,7 +702,6 @@ fn w30_resample_routing_to_u32(routing: W30ResampleTapRouting) -> u32 {
     }
 }
 
-#[cfg(test)]
 fn w30_resample_routing_from_u32(value: u32) -> W30ResampleTapRouting {
     match value {
         1 => W30ResampleTapRouting::InternalCaptureTap,
@@ -713,7 +718,6 @@ fn w30_resample_source_profile_to_u32(profile: Option<W30ResampleTapSourceProfil
     }
 }
 
-#[cfg(test)]
 fn w30_resample_source_profile_from_u32(value: u32) -> Option<W30ResampleTapSourceProfile> {
     match value {
         1 => Some(W30ResampleTapSourceProfile::RawCapture),
@@ -751,6 +755,23 @@ struct W30PreviewCallbackState {
     last_position_beats: f64,
 }
 
+#[derive(Debug, Default)]
+struct W30ResampleTapCallbackState {
+    beat_position: f64,
+    oscillator_phase: f32,
+    shimmer_phase: f32,
+    envelope: f32,
+    last_step: i64,
+    was_active: bool,
+}
+
+struct W30MixRenderState<'a> {
+    preview_render: &'a RealtimeW30PreviewRenderState,
+    preview_state: &'a mut W30PreviewCallbackState,
+    resample_render: &'a RealtimeW30ResampleTapState,
+    resample_state: &'a mut W30ResampleTapCallbackState,
+}
+
 fn sync_w30_preview_state(
     render: &RealtimeW30PreviewRenderState,
     state: &mut W30PreviewCallbackState,
@@ -771,13 +792,25 @@ fn render_mix_buffer(
     channel_count: usize,
     tr909_render: &RealtimeTr909RenderState,
     tr909_state: &mut Tr909CallbackState,
-    w30_render: &RealtimeW30PreviewRenderState,
-    w30_state: &mut W30PreviewCallbackState,
+    w30: &mut W30MixRenderState<'_>,
 ) {
     data.fill(0.0);
     render_tr909_buffer(data, sample_rate, channel_count, tr909_render, tr909_state);
-    sync_w30_preview_state(w30_render, w30_state);
-    render_w30_preview_buffer(data, sample_rate, channel_count, w30_render, w30_state);
+    sync_w30_preview_state(w30.preview_render, w30.preview_state);
+    render_w30_preview_buffer(
+        data,
+        sample_rate,
+        channel_count,
+        w30.preview_render,
+        w30.preview_state,
+    );
+    render_w30_resample_tap_buffer(
+        data,
+        sample_rate,
+        channel_count,
+        w30.resample_render,
+        w30.resample_state,
+    );
 }
 
 fn render_tr909_buffer(
@@ -920,6 +953,158 @@ fn render_w30_preview_buffer(
 
         state.beat_position += beats_per_sample;
     }
+}
+
+fn render_w30_resample_tap_buffer(
+    data: &mut [f32],
+    sample_rate: u32,
+    channel_count: usize,
+    render: &RealtimeW30ResampleTapState,
+    state: &mut W30ResampleTapCallbackState,
+) {
+    let active = !matches!(render.mode, W30ResampleTapMode::Idle)
+        && matches!(render.routing, W30ResampleTapRouting::InternalCaptureTap)
+        && render.music_bus_level > 0.0;
+
+    if !active {
+        state.was_active = false;
+        state.envelope = 0.0;
+        state.beat_position = 0.0;
+        return;
+    }
+
+    if !state.was_active {
+        state.beat_position = 0.0;
+        state.envelope = 1.0;
+        state.last_step = 0;
+        state.oscillator_phase = 0.0;
+        state.shimmer_phase = 0.0;
+        state.was_active = true;
+    }
+
+    let transport_running = render.is_transport_running;
+    let beats_per_sample = if transport_running {
+        124.0_f64 / 60.0 / f64::from(sample_rate.max(1))
+    } else {
+        92.0_f64 / 60.0 / f64::from(sample_rate.max(1))
+    };
+    let frame_count = data.len() / channel_count.max(1);
+
+    for frame_index in 0..frame_count {
+        if transport_running {
+            let step =
+                (state.beat_position * f64::from(w30_resample_subdivision(render))).floor() as i64;
+            if step != state.last_step {
+                state.last_step = step;
+                if should_trigger_w30_resample_step(render, step) {
+                    state.envelope = w30_resample_trigger_envelope(render);
+                }
+            }
+        } else {
+            state.envelope = state.envelope.max(0.42) * 0.99975;
+        }
+
+        let frequency = w30_resample_frequency(render, state.last_step);
+        let shimmer_rate = 0.35 + f32::from(render.generation_depth) * 0.18;
+        state.shimmer_phase =
+            (state.shimmer_phase + shimmer_rate / sample_rate.max(1) as f32).fract();
+        let shimmer =
+            0.72 + 0.28 * ((std::f32::consts::TAU * state.shimmer_phase).sin() * 0.5 + 0.5);
+        let waveform = w30_resample_waveform(state.oscillator_phase, render.grit_level);
+        let sample = waveform
+            * state.envelope
+            * shimmer
+            * w30_resample_render_gain(render, transport_running);
+        state.oscillator_phase =
+            (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
+        if transport_running {
+            state.envelope *= w30_resample_decay(render);
+        }
+
+        let base = frame_index * channel_count;
+        for channel in 0..channel_count {
+            data[base + channel] += sample;
+        }
+
+        state.beat_position += beats_per_sample;
+    }
+}
+
+fn w30_resample_subdivision(render: &RealtimeW30ResampleTapState) -> u32 {
+    let base = match render.source_profile {
+        Some(W30ResampleTapSourceProfile::RawCapture) => 1,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => 2,
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => 4,
+        None => 1,
+    };
+    (base + u32::from(render.lineage_capture_count >= 2)).min(4)
+}
+
+fn should_trigger_w30_resample_step(render: &RealtimeW30ResampleTapState, step: i64) -> bool {
+    match render.source_profile {
+        Some(W30ResampleTapSourceProfile::RawCapture) | None => step.rem_euclid(2) == 0,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => !matches!(step.rem_euclid(4), 1),
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => true,
+    }
+}
+
+fn w30_resample_trigger_envelope(render: &RealtimeW30ResampleTapState) -> f32 {
+    let profile_boost = match render.source_profile {
+        Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.0,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.05,
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => 0.1,
+    };
+    let lineage_boost = f32::from(render.lineage_capture_count.min(4)) * 0.03;
+    let generation_boost = f32::from(render.generation_depth.min(4)) * 0.04;
+    (0.24 + profile_boost + lineage_boost + generation_boost + render.grit_level * 0.12)
+        .clamp(0.0, 0.9)
+}
+
+fn w30_resample_frequency(render: &RealtimeW30ResampleTapState, step: i64) -> f32 {
+    let base = match render.source_profile {
+        Some(W30ResampleTapSourceProfile::RawCapture) | None => 130.81,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => 164.81,
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => 196.0,
+    };
+    let step_offset = match step.rem_euclid(4) {
+        0 => 0.0,
+        1 => 5.0,
+        2 => 12.0,
+        _ => 7.0,
+    };
+    let lineage_offset = f32::from(render.lineage_capture_count.min(5)) * 3.0;
+    let generation_offset = f32::from(render.generation_depth.min(5)) * 5.0;
+    let grit_offset = render.grit_level * 18.0;
+    base + step_offset + lineage_offset + generation_offset + grit_offset
+}
+
+fn w30_resample_waveform(phase: f32, grit_level: f32) -> f32 {
+    let sine = (std::f32::consts::TAU * phase).sin();
+    let saw = ((phase * 2.0) - 1.0).clamp(-1.0, 1.0);
+    let shimmer = (std::f32::consts::TAU * phase * 3.0).sin();
+    let grit = grit_level.clamp(0.0, 1.0);
+    (sine * (1.0 - grit * 0.35) + saw * 0.22 + shimmer * (0.12 + grit * 0.22)).clamp(-1.0, 1.0)
+}
+
+fn w30_resample_render_gain(render: &RealtimeW30ResampleTapState, transport_running: bool) -> f32 {
+    let profile_gain = match render.source_profile {
+        Some(W30ResampleTapSourceProfile::RawCapture) | None => 0.08,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => 0.11,
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => 0.14,
+    };
+    let transport_gain = if transport_running { 1.0 } else { 0.7 };
+    (profile_gain
+        * transport_gain
+        * render.music_bus_level.clamp(0.0, 1.0)
+        * (1.0 + render.grit_level.clamp(0.0, 1.0) * 0.18))
+        .clamp(0.0, 0.22)
+}
+
+fn w30_resample_decay(render: &RealtimeW30ResampleTapState) -> f32 {
+    let generation_offset = f32::from(render.generation_depth.min(4)) * 0.00003;
+    let lineage_offset = f32::from(render.lineage_capture_count.min(4)) * 0.00002;
+    let grit_offset = render.grit_level.clamp(0.0, 1.0) * 0.00005;
+    (0.99978 - generation_offset - lineage_offset - grit_offset).clamp(0.0, 1.0)
 }
 
 fn w30_current_step(position_beats: f64, render: &RealtimeW30PreviewRenderState) -> i64 {
@@ -1483,7 +1668,8 @@ mod tests {
     };
     use crate::w30::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile,
+        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState,
     };
     use serde::Deserialize;
 
@@ -2077,6 +2263,81 @@ mod tests {
 
         assert!(retriggered.iter().any(|sample| sample.abs() > 0.0001));
         assert_eq!(state.last_trigger_revision, 7);
+    }
+
+    #[test]
+    fn w30_resample_tap_stays_silent_when_idle() {
+        let mut state = W30ResampleTapCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_resample_tap_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30ResampleTapState {
+                mode: W30ResampleTapMode::Idle,
+                routing: W30ResampleTapRouting::Silent,
+                source_profile: None,
+                lineage_capture_count: 0,
+                generation_depth: 0,
+                music_bus_level: 0.64,
+                grit_level: 0.4,
+                is_transport_running: true,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
+    }
+
+    #[test]
+    fn w30_resample_tap_produces_audible_samples_when_lineage_is_ready() {
+        let mut state = W30ResampleTapCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_resample_tap_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30ResampleTapState {
+                mode: W30ResampleTapMode::CaptureLineageReady,
+                routing: W30ResampleTapRouting::InternalCaptureTap,
+                source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
+                lineage_capture_count: 2,
+                generation_depth: 1,
+                music_bus_level: 0.58,
+                grit_level: 0.62,
+                is_transport_running: true,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn w30_resample_tap_respects_zero_music_bus_level() {
+        let mut state = W30ResampleTapCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_resample_tap_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30ResampleTapState {
+                mode: W30ResampleTapMode::CaptureLineageReady,
+                routing: W30ResampleTapRouting::InternalCaptureTap,
+                source_profile: Some(W30ResampleTapSourceProfile::PinnedCapture),
+                lineage_capture_count: 3,
+                generation_depth: 2,
+                music_bus_level: 0.0,
+                grit_level: 0.7,
+                is_transport_running: false,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
     }
 
     #[test]
