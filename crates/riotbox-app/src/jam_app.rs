@@ -3448,6 +3448,56 @@ mod tests {
         expected: Mc202RegressionExpected,
     }
 
+    #[derive(Debug, Deserialize)]
+    struct SceneRegressionFixture {
+        name: String,
+        section_labels: Vec<String>,
+        action: SceneRegressionAction,
+        #[serde(default)]
+        requested_at: Option<TimestampMs>,
+        #[serde(default)]
+        committed_at: Option<TimestampMs>,
+        #[serde(default)]
+        boundary: Option<SceneRegressionBoundary>,
+        expected: SceneRegressionExpected,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum SceneRegressionAction {
+        ProjectCandidates,
+        SelectNextScene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SceneRegressionBoundary {
+        kind: SceneRegressionBoundaryKind,
+        beat_index: u64,
+        bar_index: u64,
+        phrase_index: u64,
+        scene_id: Option<String>,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum SceneRegressionBoundaryKind {
+        Immediate,
+        Beat,
+        HalfBar,
+        Bar,
+        Phrase,
+        Scene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SceneRegressionExpected {
+        scenes: Vec<String>,
+        active_scene: String,
+        current_scene: String,
+        #[serde(default)]
+        result_summary: Option<String>,
+    }
+
     #[derive(Clone, Copy, Debug, Deserialize)]
     #[serde(rename_all = "snake_case")]
     enum Mc202RegressionAction {
@@ -3600,6 +3650,25 @@ mod tests {
         }
     }
 
+    impl SceneRegressionBoundary {
+        fn into_commit_boundary_state(self) -> CommitBoundaryState {
+            CommitBoundaryState {
+                kind: match self.kind {
+                    SceneRegressionBoundaryKind::Immediate => CommitBoundary::Immediate,
+                    SceneRegressionBoundaryKind::Beat => CommitBoundary::Beat,
+                    SceneRegressionBoundaryKind::HalfBar => CommitBoundary::HalfBar,
+                    SceneRegressionBoundaryKind::Bar => CommitBoundary::Bar,
+                    SceneRegressionBoundaryKind::Phrase => CommitBoundary::Phrase,
+                    SceneRegressionBoundaryKind::Scene => CommitBoundary::Scene,
+                },
+                beat_index: self.beat_index,
+                bar_index: self.bar_index,
+                phrase_index: self.phrase_index,
+                scene_id: self.scene_id.map(SceneId::from),
+            }
+        }
+    }
+
     impl W30RegressionBoundary {
         fn into_commit_boundary_state(self) -> CommitBoundaryState {
             CommitBoundaryState {
@@ -3636,6 +3705,20 @@ mod tests {
             stream_error_count: u64::from(matches!(lifecycle, AudioRuntimeLifecycle::Faulted)),
             last_stream_error: matches!(lifecycle, AudioRuntimeLifecycle::Faulted)
                 .then(|| "stream stalled".into()),
+        }
+    }
+
+    fn scene_label_hint(label: &str) -> SectionLabelHint {
+        match label {
+            "intro" => SectionLabelHint::Intro,
+            "build" => SectionLabelHint::Build,
+            "drop" => SectionLabelHint::Drop,
+            "break" => SectionLabelHint::Break,
+            "verse" => SectionLabelHint::Verse,
+            "chorus" => SectionLabelHint::Chorus,
+            "bridge" => SectionLabelHint::Bridge,
+            "outro" => SectionLabelHint::Outro,
+            _ => SectionLabelHint::Unknown,
         }
     }
 
@@ -3712,6 +3795,28 @@ mod tests {
                 message: "few hook fragments".into(),
             }],
         };
+        graph
+    }
+
+    fn scene_regression_graph(section_labels: &[String]) -> SourceGraph {
+        let mut graph = sample_graph();
+        graph.sections.clear();
+
+        for (index, label) in section_labels.iter().enumerate() {
+            let bar_start = (index as u32 * 8) + 1;
+            graph.sections.push(Section {
+                section_id: SectionId::from(format!("section-{index}")),
+                label_hint: scene_label_hint(label),
+                start_seconds: index as f32 * 16.0,
+                end_seconds: (index + 1) as f32 * 16.0,
+                bar_start,
+                bar_end: bar_start + 7,
+                energy_class: EnergyClass::High,
+                confidence: 0.9,
+                tags: vec![label.clone()],
+            });
+        }
+
         graph
     }
 
@@ -7692,6 +7797,178 @@ mod tests {
                 assert_eq!(payload.code, "source_missing");
             }
             other => panic!("unexpected error: {other}"),
+        }
+    }
+
+    #[test]
+    fn scene_fixture_backed_committed_state_regressions_hold() {
+        let fixtures: Vec<SceneRegressionFixture> =
+            serde_json::from_str(include_str!("../tests/fixtures/scene_regression.json"))
+                .expect("parse Scene Brain regression fixtures");
+
+        for fixture in fixtures {
+            let graph = scene_regression_graph(&fixture.section_labels);
+            let mut session = sample_session(&graph);
+            session.runtime_state.transport.current_scene = None;
+            session.runtime_state.scene_state.active_scene = None;
+            session.runtime_state.scene_state.scenes.clear();
+
+            let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+            if matches!(fixture.action, SceneRegressionAction::SelectNextScene) {
+                assert_eq!(
+                    state.queue_scene_select(
+                        fixture.requested_at.expect("scene select requested_at")
+                    ),
+                    QueueControlResult::Enqueued,
+                    "{} did not enqueue",
+                    fixture.name
+                );
+
+                let committed = state.commit_ready_actions(
+                    fixture
+                        .boundary
+                        .expect("scene select boundary")
+                        .into_commit_boundary_state(),
+                    fixture.committed_at.expect("scene select committed_at"),
+                );
+                assert_eq!(
+                    committed.len(),
+                    1,
+                    "{} did not commit exactly one action",
+                    fixture.name
+                );
+            }
+
+            let actual_scenes = state
+                .session
+                .runtime_state
+                .scene_state
+                .scenes
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                actual_scenes, fixture.expected.scenes,
+                "{} scenes drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .scene_state
+                    .active_scene
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .as_deref(),
+                Some(fixture.expected.active_scene.as_str()),
+                "{} active scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .runtime_state
+                    .transport
+                    .current_scene
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .as_deref(),
+                Some(fixture.expected.current_scene.as_str()),
+                "{} transport scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.jam_view.scene.active_scene.as_deref(),
+                Some(fixture.expected.active_scene.as_str()),
+                "{} jam view scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .transport
+                    .current_scene
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .as_deref(),
+                Some(fixture.expected.current_scene.as_str()),
+                "{} runtime transport scene drifted",
+                fixture.name
+            );
+
+            if let Some(expected_summary) = &fixture.expected.result_summary {
+                assert_eq!(
+                    state
+                        .session
+                        .action_log
+                        .actions
+                        .last()
+                        .and_then(|action| action.result.as_ref())
+                        .map(|result| result.summary.as_str()),
+                    Some(expected_summary.as_str()),
+                    "{} result summary drifted",
+                    fixture.name
+                );
+            }
+
+            let tempdir = tempdir().expect("create Scene Brain regression tempdir");
+            let session_path = tempdir.path().join(format!("{}.json", fixture.name));
+            save_session_json(&session_path, &state.session)
+                .expect("save Scene Brain regression session");
+            let loaded =
+                load_session_json(&session_path).expect("reload Scene Brain regression session");
+
+            let loaded_scenes = loaded
+                .runtime_state
+                .scene_state
+                .scenes
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>();
+            assert_eq!(
+                loaded_scenes, fixture.expected.scenes,
+                "{} scenes did not survive replay roundtrip",
+                fixture.name
+            );
+            assert_eq!(
+                loaded
+                    .runtime_state
+                    .scene_state
+                    .active_scene
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .as_deref(),
+                Some(fixture.expected.active_scene.as_str()),
+                "{} active scene did not survive replay roundtrip",
+                fixture.name
+            );
+            assert_eq!(
+                loaded
+                    .runtime_state
+                    .transport
+                    .current_scene
+                    .as_ref()
+                    .map(ToString::to_string)
+                    .as_deref(),
+                Some(fixture.expected.current_scene.as_str()),
+                "{} transport scene did not survive replay roundtrip",
+                fixture.name
+            );
+            if let Some(expected_summary) = &fixture.expected.result_summary {
+                assert_eq!(
+                    loaded
+                        .action_log
+                        .actions
+                        .last()
+                        .and_then(|action| action.result.as_ref())
+                        .map(|result| result.summary.as_str()),
+                    Some(expected_summary.as_str()),
+                    "{} result summary did not survive replay roundtrip",
+                    fixture.name
+                );
+            }
         }
     }
 }

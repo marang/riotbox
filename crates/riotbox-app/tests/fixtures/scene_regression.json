@@ -1,0 +1,56 @@
+[
+  {
+    "name": "scene_candidate_projection_committed",
+    "section_labels": ["intro", "drop"],
+    "action": "project_candidates",
+    "expected": {
+      "scenes": ["scene-01-intro", "scene-02-drop"],
+      "active_scene": "scene-01-intro",
+      "current_scene": "scene-01-intro",
+      "jam_contains": [
+        "Beat 32.0 | active",
+        "scene-01-intro",
+        "Scenes 2 | next",
+        "scene-02-drop",
+        "scene launch idle"
+      ],
+      "log_contains": [
+        "scene scene-01-intro",
+        "-> scene-02-drop"
+      ]
+    }
+  },
+  {
+    "name": "scene_launch_committed",
+    "section_labels": ["intro", "drop"],
+    "action": "select_next_scene",
+    "requested_at": 300,
+    "committed_at": 420,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 37,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-01-intro"
+    },
+    "expected": {
+      "scenes": ["scene-01-intro", "scene-02-drop"],
+      "active_scene": "scene-02-drop",
+      "current_scene": "scene-02-drop",
+      "result_summary": "launched scene scene-02-drop at bar 9 / phrase 2",
+      "jam_contains": [
+        "Beat 32.0 | active",
+        "scene-02-drop",
+        "Scenes 2 | next",
+        "scene-01-intro",
+        "scene launch idle"
+      ],
+      "log_contains": [
+        "scene scene-02-drop ->",
+        "scene-01-intro",
+        "result launched scene scene-02-drop",
+        "at bar 9 / phrase 2"
+      ]
+    }
+  }
+]
