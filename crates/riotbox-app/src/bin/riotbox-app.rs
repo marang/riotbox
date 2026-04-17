@@ -337,6 +337,23 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueW30BrowseSlicePool => {
+                    match shell.app.queue_w30_browse_slice_pool(timestamp_now()) {
+                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 slice-pool browse for next beat");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell
+                                .set_error_status("W-30 slice pool already on the current capture");
+                        }
+                        None => shell.set_error_status(
+                            "no alternate capture in the current W-30 slice pool",
+                        ),
+                    }
+                }
                 ShellKeyOutcome::QueueW30ApplyDamageProfile => {
                     match shell.app.queue_w30_apply_damage_profile(timestamp_now()) {
                         Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {

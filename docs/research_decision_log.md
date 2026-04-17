@@ -847,6 +847,17 @@ Status: accepted
 
 ---
 
+Topic: first W-30 slice-pool browse should stay on the current pad-lineage seam instead of opening a second browser model
+Phase: W-30 MVP
+Question: once loop-freeze reuse already leaves multiple captures on one W-30 pad target, what is the smallest honest next slice that lets operators step through that pool without inventing a separate slice browser, inventory model, or preview-only state?
+Decision: add one bounded `w30.browse_slice_pool` action on the existing W-30 lane. Queue it on `NextBeat`, cycle through the captures already assigned to the currently focused W-30 bank/pad, commit it through the same preview-side-effect seam as live recall, and surface only a minimal pending cue in the existing shell.
+Why: the repo already has one replay-safe W-30 capture and preview path. After loop-freeze, the immediate need is not a richer browser but a small way to move across the current pad’s committed reuse pool. Reusing the existing lane focus, `last_capture`, and preview-mode seam keeps the slice deterministic and visible without opening a shadow W-30 inventory architecture.
+Evidence: `riotbox-core` now exposes `w30.browse_slice_pool` in the action lexicon and Jam view, while `riotbox-app` queues it against the current W-30 target, commits the next capture in that target’s assigned pool into `last_capture`, keeps preview mode on the existing live-recall path, and surfaces the pending browse cue in the shell. Queue and committed-state tests cover the bounded browse behavior.
+Consequences: later W-30 slice-pool work should keep extending this same committed pad-lineage seam unless the roadmap explicitly calls for a fuller browse/editor workflow. Richer cross-pad slice browsing, preview profiling, and dedicated diagnostics remain follow-up slices.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
