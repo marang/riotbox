@@ -649,6 +649,17 @@ Status: accepted
 
 ---
 
+Topic: Playable W-30 pad hits should use a committed trigger action on the existing preview seam
+Phase: W-30 MVP
+Question: after live recall, promoted audition, and audible preview exist, what is the smallest next slice that makes the W-30 lane feel playable without inventing a second playback path or bypassing replay-safe action state?
+Decision: add one explicit `w30.trigger_pad` action quantized to `next_beat`, keep it on the same committed W-30 lane and action log seam as recall and audition, and carry the trigger through the existing `W30PreviewRenderState` using a monotonic trigger revision plus trigger velocity so the audio callback can retrigger the current pad accent in place.
+Why: Riotbox needed a first playable W-30 control, but the existing architecture already had the right lane focus, capture selection, and preview callback seam. The smallest honest move is to commit a trigger action and let the current preview renderer retrigger from that committed state, instead of adding a hidden one-shot player, direct shell-to-audio trigger, or a second W-30 engine.
+Evidence: `riotbox-core` now exposes `w30.trigger_pad`, `riotbox-app` queues it on `next_beat`, carries pending trigger cues in the Jam view, commits it into lane state plus result summaries, and derives trigger revision and velocity in `W30PreviewRenderState`. `riotbox-audio` now retriggers the current W-30 preview accent when that revision changes, with app, UI, and runtime regressions covering the new path.
+Consequences: later W-30 pad features should keep using this committed trigger seam for replay-safe one-shot behavior, and should extend the existing preview render state instead of creating direct callback-only trigger plumbing.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

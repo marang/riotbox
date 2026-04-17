@@ -73,6 +73,19 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
+        let w30_pending_trigger_target =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30TriggerPad => action
+                        .target
+                        .bank_id
+                        .as_ref()
+                        .zip(action.target.pad_id.as_ref())
+                        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
+                    _ => None,
+                });
         let tr909_takeover_pending_target =
             pending_actions
                 .iter()
@@ -183,6 +196,7 @@ impl JamViewModel {
                     .focused_pad
                     .as_ref()
                     .map(ToString::to_string),
+                w30_pending_trigger_target,
                 w30_pending_recall_target,
                 w30_pending_audition_target,
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
@@ -329,6 +343,7 @@ pub struct LaneSummaryView {
     pub mc202_phrase_ref: Option<String>,
     pub w30_active_bank: Option<String>,
     pub w30_focused_pad: Option<String>,
+    pub w30_pending_trigger_target: Option<String>,
     pub w30_pending_recall_target: Option<String>,
     pub w30_pending_audition_target: Option<String>,
     pub tr909_slam_enabled: bool,
@@ -568,6 +583,20 @@ mod tests {
         queue.enqueue(
             ActionDraft::new(
                 ActorType::User,
+                ActionCommand::W30TriggerPad,
+                Quantization::NextBeat,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneW30),
+                    bank_id: Some("bank-a".into()),
+                    pad_id: Some("pad-03".into()),
+                    ..Default::default()
+                },
+            ),
+            102,
+        );
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
                 ActionCommand::Tr909Release,
                 Quantization::NextPhrase,
                 ActionTarget {
@@ -617,6 +646,10 @@ mod tests {
         assert_eq!(vm.lanes.w30_active_bank.as_deref(), Some("bank-a"));
         assert_eq!(vm.lanes.w30_focused_pad.as_deref(), Some("pad-01"));
         assert_eq!(
+            vm.lanes.w30_pending_trigger_target.as_deref(),
+            Some("bank-a/pad-03")
+        );
+        assert_eq!(
             vm.lanes.w30_pending_recall_target.as_deref(),
             Some("bank-a/pad-02")
         );
@@ -631,7 +664,7 @@ mod tests {
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 5);
+        assert_eq!(vm.pending_actions.len(), 6);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }
