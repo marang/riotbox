@@ -552,7 +552,11 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.jam_view.source.source_id,
             next_scene_candidate_label(shell)
         )),
-        Line::from(format!("ghost {}", ghost_label(shell))),
+        Line::from(format!(
+            "restore scene {} | ghost {}",
+            restore_scene_label(shell),
+            ghost_label(shell)
+        )),
     ])
     .block(Block::default().title("Now").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -847,7 +851,7 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         Line::from(format!("committed {committed_count} | ghost {ghost_count}")),
         Line::from(format!("rejected {rejected_count} | undone {undone_count}")),
         Line::from(format!(
-            "scene {} -> {}",
+            "scene {}",
             shell
                 .app
                 .session
@@ -856,14 +860,9 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
                 .active_scene
                 .as_ref()
                 .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into()),
-            next_scene_candidate_label(shell)
+                .unwrap_or_else(|| "none".into())
         )),
-        Line::from(
-            pending_scene_transition(shell)
-                .map(|(label, scene_id)| format!("pending {label} {scene_id}"))
-                .unwrap_or_else(|| "pending none".into()),
-        ),
+        Line::from(format!("restore {}", restore_scene_label(shell))),
     ])
     .block(Block::default().title("Counts").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -2336,6 +2335,18 @@ fn next_scene_candidate_label(shell: &JamShellState) -> String {
         .unwrap_or_else(|| "none".into())
 }
 
+fn restore_scene_label(shell: &JamShellState) -> String {
+    shell
+        .app
+        .session
+        .runtime_state
+        .scene_state
+        .restore_scene
+        .as_ref()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| "none".into())
+}
+
 fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, String)> {
     shell
         .app
@@ -2372,7 +2383,7 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
 
 fn scene_pending_line(shell: &JamShellState) -> String {
     pending_scene_transition(shell).map_or_else(
-        || "scene launch idle".into(),
+        || "scene transition idle".into(),
         |(label, scene_id)| format!("{label} -> {scene_id}"),
     )
 }
@@ -3981,6 +3992,7 @@ mod tests {
         assert!(rendered.contains("scene-a"));
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
+        assert!(rendered.contains("restore scene none"));
         assert!(rendered.contains("scene launch ->"));
     }
 
@@ -4009,9 +4021,45 @@ mod tests {
 
         assert!(rendered.contains("scene-02-break"), "{rendered}");
         assert!(
+            rendered.contains("restore scene scene-01-drop"),
+            "{rendered}"
+        );
+        assert!(
             rendered.contains("scene restore -> scene-01-drop"),
             "{rendered}"
         );
+    }
+
+    #[test]
+    fn renders_log_shell_with_pending_scene_restore_summary() {
+        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        assert_eq!(
+            shell.app.queue_scene_restore(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+        shell.active_screen = ShellScreen::Log;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("restore scene-01-drop"), "{rendered}");
+        assert!(
+            rendered.contains("requested 300 | restore scene"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("scene-01-drop on next bar"), "{rendered}");
     }
 
     #[test]
@@ -4752,8 +4800,8 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("Counts"));
-        assert!(rendered.contains("scene scene-a ->"));
-        assert!(rendered.contains("scene-01-intro"));
+        assert!(rendered.contains("scene scene-a"));
+        assert!(rendered.contains("restore none"));
         assert!(rendered.contains("pending"));
     }
 

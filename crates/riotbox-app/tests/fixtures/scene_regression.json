@@ -12,11 +12,11 @@
         "scene-01-intro",
         "source src-1 | next scene",
         "scene-02-drop",
-        "scene launch idle"
+        "scene transition idle"
       ],
       "log_contains": [
         "scene scene-01-intro",
-        "-> scene-02-drop"
+        "restore none"
       ]
     }
   },
@@ -43,11 +43,11 @@
         "scene-02-drop",
         "source src-1 | next scene",
         "scene-01-intro",
-        "scene launch idle"
+        "scene transition idle"
       ],
       "log_contains": [
-        "scene scene-02-drop ->",
-        "scene-01-intro",
+        "scene scene-02-drop",
+        "restore scene-01-intro",
         "result launched scene scene-02-drop",
         "at bar 9 / phrase 2"
       ]
