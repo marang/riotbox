@@ -130,4 +130,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replay-safe Scene Brain committed-state and shell regression fixtures.
 - [RIOTBOX-93.md](./RIOTBOX-93.md)
   Root README, logo, and musician-facing quickstart/product overview.
+- [RIOTBOX-95.md](./RIOTBOX-95.md)
+  First-run onramp guidance for the first meaningful play moment inside the Jam shell.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
