@@ -176,6 +176,12 @@ What this teaches:
 
 That is already enough to understand much more of Riotbox than the tiny first-run loop.
 
+What this is not:
+
+- not the best recipe for proving wide sound variety yet
+- not a guarantee that `Beat03` and `Beat08` will already feel dramatically different on the `w` step
+- not a substitute for `Recipe 2` and `Recipe 5` if you want to learn lane differences and source differences separately
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -184,6 +190,8 @@ So if two runs feel similar:
 
 - try a different source
 - try a different lane
+- use `Recipe 2` before repeating `Recipe 7`
+- use `Recipe 5` if you want to understand source-specific differences
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 

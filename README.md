@@ -28,6 +28,11 @@ If you only want the fastest possible first run:
 
 That is the current core loop: **load material, queue one gesture, let it land in time, keep the good accident**.
 
+If that first loop works, do not keep repeating only it. Move straight to:
+
+- [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 2` to compare different first gestures
+- [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 5` to compare different example sources
+
 ## What To Expect Right Now
 
 If you start Riotbox on the same example loop and only press `Space`, `f`, `c`, and `2`, you will often get a **similar result each run**.
@@ -125,6 +130,12 @@ That guide contains concrete flows for:
 - reading `Jam` and `Log` together
 
 It is the best place to continue once `Space -> f -> c -> 2` feels too repetitive.
+
+Best next moves from there:
+
+- `Recipe 2` if you want different lane behavior from the same source
+- `Recipe 5` if you want to learn how `Beat03`, `Beat08`, `DH_BeatC`, and `DH_RushArp` change the shell feel
+- `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> promote -> hit -> undo
 
 If `just` is installed, the normal local check path is:
 

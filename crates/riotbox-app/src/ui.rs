@@ -1164,7 +1164,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 }
 
 fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
-    let popup = centered_rect(60, 45, area);
+    let popup = centered_rect(60, 55, area);
     let mut lines = vec![
         Line::from("Jam shell keys"),
         Line::from("q or Esc: quit"),
@@ -1202,6 +1202,8 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("Primary gestures"),
         Line::from("space: play / pause | y: scene jump | g: follow | a: answer"),
         Line::from("f: fill | c: capture | w: hit | u: undo | 2: confirm in Log"),
+        Line::from(""),
+        Line::from("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
         Line::from(""),
         Line::from("Secondary / lane ops"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
@@ -4044,6 +4046,10 @@ mod tests {
         assert!(rendered.contains("f: queue one first fill"), "{rendered}");
         assert!(
             rendered.contains("2: switch to Log and watch it land"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
             "{rendered}"
         );
     }
