@@ -120,4 +120,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replay-safe W-30 slice-pool browse regression fixtures on the shared app and shell corpus path.
 - [RIOTBOX-88.md](./RIOTBOX-88.md)
   Bounded W-30 slice-pool browse preview profile on the existing live-recall seam.
+- [RIOTBOX-89.md](./RIOTBOX-89.md)
+  First bounded Scene Brain projection from analyzed source sections into existing session state.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
