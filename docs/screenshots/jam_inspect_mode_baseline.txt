@@ -1,0 +1,31 @@
+Riotbox Jam Inspect Mode Baseline
+Normalized terminal capture notes for `RIOTBOX-97`
+Source: `riotbox-app` Jam shell inspect snapshot fixture
+Notes:
+- normalized from the current Jam inspect regression fixture
+- intended as a review/update artifact, not a pixel-perfect golden render
+- records the bounded inspect mode without restoring the old all-at-once Jam dashboard
+
+Expected inspect surface after this slice:
+
+- `Jam` stays the default perform-first surface
+- `[i]` toggles one bounded `inspect` mode only while the user is already on `Jam`
+- the first-run onramp still blocks inspect mode until the first guided move is complete
+
+Inspect-mode hierarchy:
+
+- the top row stays the same `Now / Next / Trust` frame as perform mode
+- the middle row deepens lane confidence without opening a new screen family:
+  - `MC-202 detail`
+  - `W-30 detail`
+  - `TR-909 detail`
+- the lower row gives just enough supporting depth:
+  - `Source structure`
+  - `Material flow`
+  - `Diagnostics`
+
+Interpretation:
+
+- Riotbox now has a clearer split between the default instrument surface and a deeper read-only Jam inspection layer
+- the inspect surface reuses existing `Log`, `SourceGraph`, capture, and runtime seams instead of inventing a second hidden model
+- `Log`, `Source`, and `Capture` remain separate screens; inspect mode only adds bounded confidence depth inside `Jam`

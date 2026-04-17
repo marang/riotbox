@@ -69,6 +69,22 @@ impl ShellLaunchMode {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum JamViewMode {
+    Perform,
+    Inspect,
+}
+
+impl JamViewMode {
+    #[must_use]
+    pub const fn label(&self) -> &'static str {
+        match self {
+            Self::Perform => "perform",
+            Self::Inspect => "inspect",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ShellKeyOutcome {
     Continue,
     RequestRefresh,
@@ -107,6 +123,7 @@ pub struct JamShellState {
     pub app: JamAppState,
     pub launch_mode: ShellLaunchMode,
     pub active_screen: ShellScreen,
+    pub jam_mode: JamViewMode,
     pub first_run_onramp: bool,
     pub show_help: bool,
     pub status_message: String,
@@ -127,6 +144,7 @@ impl JamShellState {
             app,
             launch_mode,
             active_screen: ShellScreen::Jam,
+            jam_mode: JamViewMode::Perform,
             first_run_onramp,
             show_help: false,
             status_message,
@@ -172,6 +190,21 @@ impl JamShellState {
                 } else {
                     "help overlay closed".into()
                 };
+                ShellKeyOutcome::Continue
+            }
+            KeyCode::Char('i') => {
+                if self.active_screen != ShellScreen::Jam {
+                    self.status_message = "jam inspect is only available on the jam screen".into();
+                } else if first_run_onramp_stage(self).is_some() {
+                    self.status_message =
+                        "finish the first guided move before opening jam inspect".into();
+                } else {
+                    self.jam_mode = match self.jam_mode {
+                        JamViewMode::Perform => JamViewMode::Inspect,
+                        JamViewMode::Inspect => JamViewMode::Perform,
+                    };
+                    self.status_message = format!("switched jam to {} mode", self.jam_mode.label());
+                }
                 ShellKeyOutcome::Continue
             }
             KeyCode::Char('r') => {
@@ -343,7 +376,7 @@ fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         render_overview_row(frame, rows[0], shell);
         render_first_run_onramp_row(frame, rows[1], shell);
         render_action_rows(frame, rows[2], shell);
-    } else {
+    } else if shell.jam_mode == JamViewMode::Perform {
         let rows = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
@@ -356,6 +389,19 @@ fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         render_overview_row(frame, rows[0], shell);
         render_perform_row(frame, rows[1], shell);
         render_focus_row(frame, rows[2], shell);
+    } else {
+        let rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(7),
+                Constraint::Length(9),
+                Constraint::Min(9),
+            ])
+            .split(area);
+
+        render_overview_row(frame, rows[0], shell);
+        render_inspect_lane_row(frame, rows[1], shell);
+        render_inspect_detail_row(frame, rows[2], shell);
     }
 }
 
@@ -394,7 +440,7 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         Line::from(format!(
             "Mode {} | Screen {} | Source {} | {} | trust {}",
             shell.launch_mode.label(),
-            shell.active_screen.label(),
+            screen_context_label(shell),
             source.source_id,
             bpm_text,
             trust.headline
@@ -441,7 +487,11 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
             "Purpose: {}",
             match shell.active_screen {
                 ShellScreen::Jam => {
-                    "instrument surface for immediate control and pending musical change"
+                    if shell.jam_mode == JamViewMode::Perform {
+                        "instrument surface for immediate control and pending musical change"
+                    } else {
+                        "inspect surface for lane detail, source structure, and diagnostics"
+                    }
                 }
                 ShellScreen::Log => {
                     "trust surface for queued, committed, rejected, and undone actions"
@@ -676,6 +726,72 @@ fn render_focus_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     frame.render_widget(pending, columns[0]);
     frame.render_widget(gestures, columns[1]);
     frame.render_widget(warnings, columns[2]);
+}
+
+fn render_inspect_lane_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let columns = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(33),
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+        ])
+        .split(area);
+
+    let mc202 = Paragraph::new(mc202_log_lines(shell))
+        .block(
+            Block::default()
+                .title("MC-202 detail")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let w30 = Paragraph::new(w30_log_lines(shell))
+        .block(Block::default().title("W-30 detail").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    let tr909 = Paragraph::new(tr909_inspect_lines(shell))
+        .block(
+            Block::default()
+                .title("TR-909 detail")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(mc202, columns[0]);
+    frame.render_widget(w30, columns[1]);
+    frame.render_widget(tr909, columns[2]);
+}
+
+fn render_inspect_detail_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let columns = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
+        ])
+        .split(area);
+
+    let source = Paragraph::new(source_inspect_lines(shell))
+        .block(
+            Block::default()
+                .title("Source structure")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let material = Paragraph::new(material_inspect_lines(shell))
+        .block(
+            Block::default()
+                .title("Material flow")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let diagnostics = Paragraph::new(jam_diagnostic_lines(shell))
+        .block(Block::default().title("Diagnostics").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(source, columns[0]);
+    frame.render_widget(material, columns[1]);
+    frame.render_widget(diagnostics, columns[2]);
 }
 
 fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -999,7 +1115,7 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let mut lines = Vec::new();
     lines.push(Line::from(format!(
-        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | [ ] drum | r {}",
+        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | i jam inspect | space play/pause | [ ] drum | r {}",
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
@@ -1009,8 +1125,9 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Lane ops: b voice | d push | t takeover | k lock | x release | l recall | o audition | z freeze",
     ));
     lines.push(Line::from(format!(
-        "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
+        "Status: {} | jam {} | audio {} | sidecar {} | 909 render {} via {}",
         shell.status_message,
+        shell.jam_mode.label(),
         shell.app.runtime_view.audio_status,
         shell.app.runtime_view.sidecar_status,
         shell.app.runtime_view.tr909_render_mode,
@@ -1055,6 +1172,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(
             "1: Jam screen | 2: Log screen | 3: Source screen | 4: Capture screen | Tab: next screen",
         ),
+        Line::from("i: toggle Jam perform / inspect mode"),
     ];
 
     if let Some(stage) = first_run_onramp_stage(shell) {
@@ -1094,6 +1212,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("[ / ]: lower or raise drum bus | v: pin latest"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
+        Line::from(format!("Jam view: {}", shell.jam_mode.label())),
         Line::from(format!("Current screen: {}", shell.active_screen.label())),
         Line::from(shell.status_message.clone()),
     ]);
@@ -1104,6 +1223,13 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     frame.render_widget(Clear, popup);
     frame.render_widget(help, popup);
+}
+
+fn screen_context_label(shell: &JamShellState) -> String {
+    match shell.active_screen {
+        ShellScreen::Jam => format!("jam/{}", shell.jam_mode.label()),
+        _ => shell.active_screen.label().into(),
+    }
 }
 
 fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -1229,6 +1355,43 @@ fn tr909_next_line(shell: &JamShellState) -> String {
         })
 }
 
+fn tr909_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let render = &shell.app.runtime_view;
+    let last_boundary = shell
+        .app
+        .runtime
+        .last_commit_boundary
+        .as_ref()
+        .map(|boundary| {
+            format!(
+                "{:?} b{} p{}",
+                boundary.kind, boundary.bar_index, boundary.phrase_index
+            )
+        })
+        .unwrap_or_else(|| "none".into());
+
+    vec![
+        Line::from(format!(
+            "mode {} | next {}",
+            render.tr909_render_mode,
+            tr909_next_line(shell)
+        )),
+        Line::from(format!(
+            "profile {} | route {}",
+            render.tr909_render_profile, render.tr909_render_routing
+        )),
+        Line::from(format!(
+            "{} | {}",
+            render.tr909_render_pattern_adoption, render.tr909_render_phrase_variation
+        )),
+        Line::from(render.tr909_render_mix_summary.clone()),
+        Line::from(format!(
+            "{} | boundary {last_boundary}",
+            render.tr909_render_alignment
+        )),
+    ]
+}
+
 fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let pending_line = if let Some(action) = shell.app.jam_view.pending_actions.first() {
         format!(
@@ -1320,6 +1483,105 @@ fn primary_warning_line(shell: &JamShellState) -> String {
         .next()
         .map(|warning| warning.to_string())
         .unwrap_or_else(|| "no major warning".into())
+}
+
+fn source_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let source = &shell.app.jam_view.source;
+    let first_section = shell
+        .app
+        .source_graph
+        .as_ref()
+        .and_then(|graph| graph.sections.first())
+        .map(section_compact_label)
+        .unwrap_or_else(|| "first none".into());
+    let second_section = shell
+        .app
+        .source_graph
+        .as_ref()
+        .and_then(|graph| graph.sections.get(1))
+        .map(section_compact_label)
+        .unwrap_or_else(|| "next none".into());
+
+    vec![
+        Line::from(format!(
+            "tempo {:.1} | trust {}",
+            source.bpm_estimate.unwrap_or(0.0),
+            trust_summary(shell).headline
+        )),
+        Line::from(format!(
+            "sections {} | loops {} | hooks {}",
+            source.section_count, source.loop_candidate_count, source.hook_candidate_count
+        )),
+        Line::from(first_section),
+        Line::from(second_section),
+        source_warning_lines(shell)
+            .into_iter()
+            .next()
+            .unwrap_or_else(|| Line::from("warnings clear")),
+    ]
+}
+
+fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let capture = &shell.app.jam_view.capture;
+    vec![
+        Line::from(format!(
+            "captures {} | pending {}",
+            capture.capture_count, capture.pending_capture_count
+        )),
+        Line::from(format!("w30 {}", w30_target_compact(shell))),
+        Line::from(format!(
+            "last {}",
+            capture.last_capture_id.as_deref().unwrap_or("none")
+        )),
+        Line::from(format!(
+            "target {}",
+            capture
+                .last_capture_target
+                .as_deref()
+                .unwrap_or("unassigned")
+        )),
+        Line::from(format!(
+            "notes {}",
+            capture
+                .last_capture_notes
+                .as_deref()
+                .unwrap_or("no capture note yet")
+        )),
+    ]
+}
+
+fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let last_boundary = shell
+        .app
+        .runtime
+        .last_commit_boundary
+        .as_ref()
+        .map(|boundary| {
+            format!(
+                "{:?} b{} p{}",
+                boundary.kind, boundary.bar_index, boundary.phrase_index
+            )
+        })
+        .unwrap_or_else(|| "none".into());
+
+    vec![
+        Line::from(format!(
+            "audio {} | sidecar {}",
+            shell.app.runtime_view.audio_status, shell.app.runtime_view.sidecar_status
+        )),
+        Line::from(format!(
+            "transport {} @ {:.1}",
+            transport_label(shell),
+            shell.app.runtime.transport.position_beats
+        )),
+        Line::from(format!("last boundary {last_boundary}")),
+        Line::from(format!(
+            "pending {} | landed {}",
+            shell.app.jam_view.pending_actions.len(),
+            shell.app.jam_view.recent_actions.len()
+        )),
+        Line::from(primary_warning_line(shell)),
+    ]
 }
 
 fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
@@ -2825,6 +3087,29 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
+fn section_compact_label(section: &Section) -> String {
+    format!(
+        "{} bars {}-{}",
+        section_label_hint_compact(&section.label_hint),
+        section.bar_start,
+        section.bar_end
+    )
+}
+
+fn section_label_hint_compact(label_hint: &SectionLabelHint) -> &'static str {
+    match label_hint {
+        SectionLabelHint::Intro => "intro",
+        SectionLabelHint::Build => "build",
+        SectionLabelHint::Drop => "drop",
+        SectionLabelHint::Break => "break",
+        SectionLabelHint::Verse => "verse",
+        SectionLabelHint::Chorus => "chorus",
+        SectionLabelHint::Bridge => "bridge",
+        SectionLabelHint::Outro => "outro",
+        SectionLabelHint::Unknown => "unknown",
+    }
+}
+
 fn source_section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) if !graph.sections.is_empty() => graph
@@ -3635,6 +3920,22 @@ mod tests {
     }
 
     #[test]
+    fn renders_jam_shell_inspect_snapshot() {
+        let mut shell = sample_shell_state();
+        shell.jam_mode = JamViewMode::Inspect;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Screen jam/inspect"), "{rendered}");
+        assert!(rendered.contains("MC-202 detail"), "{rendered}");
+        assert!(rendered.contains("W-30 detail"), "{rendered}");
+        assert!(rendered.contains("TR-909 detail"), "{rendered}");
+        assert!(rendered.contains("Source structure"), "{rendered}");
+        assert!(rendered.contains("Material flow"), "{rendered}");
+        assert!(rendered.contains("Diagnostics"), "{rendered}");
+        assert!(!rendered.contains("Suggested gestures"), "{rendered}");
+    }
+
+    #[test]
     fn renders_jam_shell_with_scene_brain_summary() {
         let mut shell = sample_shell_state();
         assert_eq!(
@@ -4141,11 +4442,32 @@ mod tests {
         assert_eq!(shell.active_screen, ShellScreen::Capture);
         assert_eq!(shell.status_message, "switched to capture screen");
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('i')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(
+            shell.status_message,
+            "jam inspect is only available on the jam screen"
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Tab),
             ShellKeyOutcome::Continue
         );
         assert_eq!(shell.active_screen, ShellScreen::Jam);
         assert_eq!(shell.status_message, "switched to jam screen");
+        assert_eq!(shell.jam_mode, JamViewMode::Perform);
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('i')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.jam_mode, JamViewMode::Inspect);
+        assert_eq!(shell.status_message, "switched jam to inspect mode");
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('i')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.jam_mode, JamViewMode::Perform);
+        assert_eq!(shell.status_message, "switched jam to perform mode");
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('m')),
             ShellKeyOutcome::QueueSceneMutation
@@ -4256,6 +4578,22 @@ mod tests {
         );
 
         assert_eq!(shell.handle_key_code(KeyCode::Esc), ShellKeyOutcome::Quit);
+    }
+
+    #[test]
+    fn first_run_shell_blocks_jam_inspect_toggle() {
+        let mut shell = first_run_shell_state();
+
+        assert_eq!(shell.jam_mode, JamViewMode::Perform);
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('i')),
+            ShellKeyOutcome::Continue
+        );
+        assert_eq!(shell.jam_mode, JamViewMode::Perform);
+        assert_eq!(
+            shell.status_message,
+            "finish the first guided move before opening jam inspect"
+        );
     }
 
     #[test]
