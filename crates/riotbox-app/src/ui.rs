@@ -2821,6 +2821,7 @@ mod tests {
         SwapBank,
         ApplyDamageProfile,
         LoopFreeze,
+        BrowseSlicePool,
     }
 
     #[derive(Debug, Deserialize)]
@@ -3399,6 +3400,9 @@ mod tests {
                 .queue_w30_apply_damage_profile(fixture.requested_at),
             W30RegressionAction::LoopFreeze => {
                 shell.app.queue_w30_loop_freeze(fixture.requested_at)
+            }
+            W30RegressionAction::BrowseSlicePool => {
+                shell.app.queue_w30_browse_slice_pool(fixture.requested_at)
             }
         };
         assert_eq!(
