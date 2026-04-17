@@ -114,4 +114,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   W-30 operation diagnostics now follow the current lane target instead of stale global history.
 - [RIOTBOX-85.md](./RIOTBOX-85.md)
   First bounded W-30 slice-pool browse control on the current lineage seam.
+- [RIOTBOX-86.md](./RIOTBOX-86.md)
+  W-30 slice-pool browse diagnostics in the existing Capture and Log shell surfaces.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
