@@ -86,6 +86,19 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
+        let w30_pending_focus_step_target =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30StepFocus => action
+                        .target
+                        .bank_id
+                        .as_ref()
+                        .zip(action.target.pad_id.as_ref())
+                        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
+                    _ => None,
+                });
         let w30_pending_resample_capture_id =
             pending_actions
                 .iter()
@@ -217,6 +230,7 @@ impl JamViewModel {
                 w30_pending_trigger_target,
                 w30_pending_recall_target,
                 w30_pending_audition_target,
+                w30_pending_focus_step_target,
                 w30_pending_resample_capture_id,
                 tr909_slam_enabled: session.runtime_state.lane_state.tr909.slam_enabled,
                 tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
@@ -365,6 +379,7 @@ pub struct LaneSummaryView {
     pub w30_pending_trigger_target: Option<String>,
     pub w30_pending_recall_target: Option<String>,
     pub w30_pending_audition_target: Option<String>,
+    pub w30_pending_focus_step_target: Option<String>,
     pub w30_pending_resample_capture_id: Option<String>,
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
@@ -619,6 +634,20 @@ mod tests {
         queue.enqueue(
             ActionDraft::new(
                 ActorType::User,
+                ActionCommand::W30StepFocus,
+                Quantization::NextBeat,
+                ActionTarget {
+                    scope: Some(TargetScope::LaneW30),
+                    bank_id: Some("bank-c".into()),
+                    pad_id: Some("pad-01".into()),
+                    ..Default::default()
+                },
+            ),
+            103,
+        );
+        queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
                 ActionCommand::Tr909Release,
                 Quantization::NextPhrase,
                 ActionTarget {
@@ -691,6 +720,10 @@ mod tests {
         );
         assert_eq!(vm.lanes.w30_pending_audition_target, None);
         assert_eq!(
+            vm.lanes.w30_pending_focus_step_target.as_deref(),
+            Some("bank-c/pad-01")
+        );
+        assert_eq!(
             vm.lanes.w30_pending_resample_capture_id.as_deref(),
             Some("cap-01")
         );
@@ -704,7 +737,7 @@ mod tests {
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
-        assert_eq!(vm.pending_actions.len(), 7);
+        assert_eq!(vm.pending_actions.len(), 8);
         assert_eq!(vm.ghost.mode, "assist");
     }
 }
