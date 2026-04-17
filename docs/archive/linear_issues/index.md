@@ -90,4 +90,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Explicit W-30 live-recall command semantics split from future bank-manager movement.
 - [RIOTBOX-73.md](./RIOTBOX-73.md)
   First real W-30 bank-manager control on the committed preview seam.
+- [RIOTBOX-74.md](./RIOTBOX-74.md)
+  First bounded W-30 pad-forge control on the current committed preview seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
