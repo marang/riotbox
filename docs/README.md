@@ -59,6 +59,9 @@ docs/
       README.md
       TEMPLATE.md
       index.md
+  benchmarks/
+    README.md
+    jam_workflow_baseline_2026-04-17.md
   reviews/
     whole_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-13.md
@@ -116,6 +119,8 @@ docs/
 - `archive/linear_issues/README.md`: archive policy started
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started
+- `benchmarks/README.md`: benchmark archive policy started
+- `benchmarks/jam_workflow_baseline_2026-04-17.md`: workflow benchmark baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured
