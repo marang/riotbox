@@ -163,6 +163,7 @@ Optional target references:
 - `w30.swap_bank`
 - `w30.step_focus`
 - `w30.apply_damage_profile`
+- `w30.loop_freeze`
 - `tr909.fill_next`
 - `tr909.set_slam`
 - `tr909.reinforce_break`

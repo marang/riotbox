@@ -623,6 +623,7 @@ pub struct JamAppState {
 impl JamAppState {
     const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
     const W30_DAMAGE_PROFILE_GRIT: f32 = 0.82;
+    const W30_LOOP_FREEZE_LABEL: &str = "freeze";
 
     #[must_use]
     pub fn from_parts(
@@ -1356,6 +1357,44 @@ impl JamAppState {
         Some(QueueControlResult::Enqueued)
     }
 
+    pub fn queue_w30_loop_freeze(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let capture = self.loop_freeze_ready_w30_capture()?.clone();
+        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
+            return None;
+        };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30LoopFreeze,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Promotion {
+            capture_id: Some(capture.capture_id.clone()),
+            destination: Some("w30:loop_freeze".into()),
+        };
+        draft.explanation = Some(format!(
+            "{} {} for W-30 reuse on {bank_id}/{pad_id} on next phrase",
+            Self::W30_LOOP_FREEZE_LABEL,
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn queue_w30_promoted_audition(
         &mut self,
         requested_at: TimestampMs,
@@ -1695,6 +1734,10 @@ impl JamAppState {
         self.triggerable_w30_capture()
     }
 
+    fn loop_freeze_ready_w30_capture(&self) -> Option<&CaptureRef> {
+        self.triggerable_w30_capture()
+    }
+
     fn resample_ready_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
@@ -1734,6 +1777,7 @@ impl JamAppState {
                 action.command,
                 ActionCommand::W30SwapBank
                     | ActionCommand::W30ApplyDamageProfile
+                    | ActionCommand::W30LoopFreeze
                     | ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
@@ -2058,6 +2102,17 @@ fn capture_ref_from_action(
         ActionCommand::CaptureNow | ActionCommand::CaptureLoop => CaptureType::Loop,
         ActionCommand::CaptureBarGroup | ActionCommand::W30CaptureToPad => CaptureType::Pad,
         ActionCommand::PromoteResample => CaptureType::Resample,
+        ActionCommand::W30LoopFreeze => matches!(action.params, ActionParams::Promotion { .. })
+            .then(|| promotion_capture_id(session, action))
+            .flatten()
+            .and_then(|capture_id| {
+                session
+                    .captures
+                    .iter()
+                    .find(|capture| capture.capture_id == capture_id)
+                    .map(|capture| capture.capture_type)
+            })
+            .unwrap_or(CaptureType::Loop),
         _ => return None,
     };
 
@@ -2070,19 +2125,28 @@ fn capture_ref_from_action(
             .clone()
             .zip(session.runtime_state.lane_state.w30.focused_pad.clone())
             .map(|(bank_id, pad_id)| CaptureTarget::W30Pad { bank_id, pad_id }),
+        ActionCommand::W30LoopFreeze => action
+            .target
+            .bank_id
+            .clone()
+            .zip(action.target.pad_id.clone())
+            .map(|(bank_id, pad_id)| CaptureTarget::W30Pad { bank_id, pad_id }),
         _ => None,
     };
 
     let capture_id = next_capture_id(session);
-    let source_capture = matches!(action.command, ActionCommand::PromoteResample)
-        .then(|| promotion_capture_id(session, action))
-        .flatten()
-        .and_then(|capture_id| {
-            session
-                .captures
-                .iter()
-                .find(|capture| capture.capture_id == capture_id)
-        });
+    let source_capture = matches!(
+        action.command,
+        ActionCommand::PromoteResample | ActionCommand::W30LoopFreeze
+    )
+    .then(|| promotion_capture_id(session, action))
+    .flatten()
+    .and_then(|capture_id| {
+        session
+            .captures
+            .iter()
+            .find(|capture| capture.capture_id == capture_id)
+    });
     let source_origin_refs = source_capture
         .map(|capture| capture.source_origin_refs.clone())
         .or_else(|| source_graph.map(capture_origin_refs))
@@ -2096,7 +2160,13 @@ fn capture_ref_from_action(
         lineage_capture_refs.push(source_capture.capture_id.clone());
     }
     let resample_generation_depth = source_capture
-        .map(|capture| capture.resample_generation_depth.saturating_add(1))
+        .map(|capture| {
+            if matches!(action.command, ActionCommand::PromoteResample) {
+                capture.resample_generation_depth.saturating_add(1)
+            } else {
+                capture.resample_generation_depth
+            }
+        })
         .unwrap_or(0);
 
     Some(CaptureRef {
@@ -2108,7 +2178,7 @@ fn capture_ref_from_action(
         resample_generation_depth,
         created_from_action: Some(action.id),
         assigned_target,
-        is_pinned: false,
+        is_pinned: matches!(action.command, ActionCommand::W30LoopFreeze),
         notes: Some(capture_note(action)),
     })
 }
@@ -2266,6 +2336,7 @@ fn apply_w30_side_effects(
         ActionCommand::W30LiveRecall
             | ActionCommand::W30SwapBank
             | ActionCommand::W30ApplyDamageProfile
+            | ActionCommand::W30LoopFreeze
             | ActionCommand::W30StepFocus
             | ActionCommand::W30AuditionPromoted
             | ActionCommand::W30TriggerPad
@@ -2279,11 +2350,21 @@ fn apply_w30_side_effects(
     let Some(pad_id) = action.target.pad_id.clone() else {
         return;
     };
+    let source_capture_id = match &action.params {
+        ActionParams::Promotion {
+            capture_id: Some(capture_id),
+            ..
+        } => Some(capture_id.clone()),
+        _ => None,
+    };
     let capture_id = match &action.params {
         ActionParams::Mutation {
             target_id: Some(target_id),
             ..
         } => Some(CaptureId::from(target_id.clone())),
+        ActionParams::Promotion { .. } if action.command == ActionCommand::W30LoopFreeze => {
+            session.runtime_state.lane_state.w30.last_capture.clone()
+        }
         _ => None,
     };
 
@@ -2299,6 +2380,7 @@ fn apply_w30_side_effects(
             .unwrap_or(W30PreviewModeState::LiveRecall),
         ActionCommand::W30LiveRecall
         | ActionCommand::W30SwapBank
+        | ActionCommand::W30LoopFreeze
         | ActionCommand::W30StepFocus
         | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
         _ => unreachable!("checked above"),
@@ -2371,6 +2453,16 @@ fn apply_w30_side_effects(
                 || format!("auditioned W-30 pad {bank_id}/{pad_id}"),
                 |capture_id| format!("auditioned {capture_id} on W-30 pad {bank_id}/{pad_id}"),
             ),
+            ActionCommand::W30LoopFreeze => match (source_capture_id.as_ref(), capture_id.as_ref())
+            {
+                (Some(source_capture_id), Some(capture_id)) => format!(
+                    "froze {source_capture_id} into {capture_id} for W-30 reuse on {bank_id}/{pad_id}"
+                ),
+                (None, Some(capture_id)) => {
+                    format!("froze {capture_id} for W-30 reuse on {bank_id}/{pad_id}")
+                }
+                _ => format!("froze W-30 reuse on {bank_id}/{pad_id}"),
+            },
             ActionCommand::W30TriggerPad => {
                 let position = boundary.map_or_else(
                     || "beat pending".to_string(),
@@ -3123,6 +3215,7 @@ mod tests {
         PromotedAudition,
         SwapBank,
         ApplyDamageProfile,
+        LoopFreeze,
     }
 
     #[derive(Debug, Deserialize)]
@@ -6107,6 +6200,9 @@ mod tests {
                 W30RegressionAction::SwapBank => state.queue_w30_swap_bank(fixture.requested_at),
                 W30RegressionAction::ApplyDamageProfile => {
                     state.queue_w30_apply_damage_profile(fixture.requested_at)
+                }
+                W30RegressionAction::LoopFreeze => {
+                    state.queue_w30_loop_freeze(fixture.requested_at)
                 }
             };
             assert_eq!(
