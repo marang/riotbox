@@ -134,10 +134,14 @@ This index tracks archived Linear ticket history that has been removed from the 
   Perform-first Jam shell reduction and hierarchy cleanup.
 - [RIOTBOX-95.md](./RIOTBOX-95.md)
   First-run onramp guidance for the first meaningful play moment inside the Jam shell.
+- [RIOTBOX-97.md](./RIOTBOX-97.md)
+  Bounded Jam inspect mode that deepens confidence without reopening the old dashboard density.
 - [RIOTBOX-98.md](./RIOTBOX-98.md)
   First 30-second success-path tightening after fresh ingest.
 - [RIOTBOX-99.md](./RIOTBOX-99.md)
   Gesture-language curation plus dedicated Jam recipe guidance on the perform-first shell.
 - [RIOTBOX-100.md](./RIOTBOX-100.md)
   First explicit workflow benchmark baseline for time to playable Jam and first successful capture.
+- [RIOTBOX-102.md](./RIOTBOX-102.md)
+  Clearer recipe and source-comparison learning paths after the first narrow Jam success loop.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
