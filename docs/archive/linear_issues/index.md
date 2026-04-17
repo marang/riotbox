@@ -68,4 +68,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First playable W-30 pad trigger on the committed preview seam.
 - [RIOTBOX-62.md](./RIOTBOX-62.md)
   W-30 audible preview diagnostics and normalized shell baseline.
+- [RIOTBOX-63.md](./RIOTBOX-63.md)
+  Internal W-30 resample tap seam behind the canonical capture lineage path.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
