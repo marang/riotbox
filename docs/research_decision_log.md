@@ -781,6 +781,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 bank-manager and pad-forge follow-ups should deepen the current shell diagnostics instead of opening a second diagnostics surface
+Phase: W-30 MVP
+Question: once `w30.swap_bank` and `w30.apply_damage_profile` exist on the committed preview seam, how should the shell expose them without regressing the current W-30 capture, lineage, and preview diagnostics?
+Decision: keep the slice presentation-only and make the existing `Jam`, `Capture`, and `Log` surfaces carry explicit bank-manager and pad-forge diagnostics. Show the bank-manager state as one compact status next to the current pending cue, show pad-forge state next to the current W-30 mix and capture cues, and compress the Log/Capture wording enough that older lineage and trigger diagnostics stay visible in the same panels.
+Why: the repo already has one honest W-30 shell spine. A diagnostics follow-up should deepen that spine instead of adding a separate W-30 debug page or a second forge-specific surface. The main risk in this slice is not missing state, but crowding the fixed terminal layout enough to hide older preview and lineage cues, so the shell wording needs to stay compact and explicit.
+Evidence: `riotbox-app` now surfaces explicit bank-manager and pad-forge diagnostics in the `Jam` lane summary, the `Capture -> Routing / Promotion` panel, and the `Log -> W-30 Lane` panel. New shell regressions cover committed bank-swap plus damage-profile state, while existing W-30 shell regressions still pass after the wording compaction. The review artifact at `docs/screenshots/w30_bank_forge_diagnostics_baseline.txt` records the updated shell cues.
+Consequences: later W-30 shell work should keep extending the same Jam/Capture/Log surfaces unless the roadmap explicitly calls for a new operator surface. Deeper W-30 forge behavior remains out of scope here; the slice only makes the current committed bank-manager and pad-forge moves legible.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

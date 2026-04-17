@@ -132,4 +132,5 @@ docs/
 - `screenshots/w30_audible_preview_baseline.txt`: baseline captured
 - `screenshots/w30_resample_tap_baseline.txt`: baseline captured
 - `screenshots/w30_diagnostics_baseline.txt`: baseline captured
+- `screenshots/w30_bank_forge_diagnostics_baseline.txt`: baseline captured
 - all other specs: not started
