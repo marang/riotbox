@@ -337,6 +337,20 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueW30ApplyDamageProfile => {
+                    match shell.app.queue_w30_apply_damage_profile(timestamp_now()) {
+                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 damage profile for next bar");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 damage profile already active");
+                        }
+                        None => shell.set_error_status("no W-30 pad available for damage profile"),
+                    }
+                }
                 ShellKeyOutcome::QueueW30LiveRecall => {
                     match shell.app.queue_w30_live_recall(timestamp_now()) {
                         Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {

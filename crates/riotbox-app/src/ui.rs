@@ -88,6 +88,7 @@ pub enum ShellKeyOutcome {
     QueueW30TriggerPad,
     QueueW30StepFocus,
     QueueW30SwapBank,
+    QueueW30ApplyDamageProfile,
     QueueW30LiveRecall,
     QueueW30PromotedAudition,
     QueueW30Resample,
@@ -228,6 +229,10 @@ impl JamShellState {
             KeyCode::Char('B') => {
                 self.status_message = "queue W-30 bank swap on next bar".into();
                 ShellKeyOutcome::QueueW30SwapBank
+            }
+            KeyCode::Char('D') => {
+                self.status_message = "queue W-30 damage profile on next bar".into();
+                ShellKeyOutcome::QueueW30ApplyDamageProfile
             }
             KeyCode::Char('l') => {
                 self.status_message = "queue W-30 live recall on next bar".into();
@@ -937,7 +942,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
-        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
+        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | D W-30 damage | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1003,6 +1008,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("w: queue the current W-30 pad trigger on next beat"),
         Line::from("n: queue the next W-30 focused pad step on next beat"),
         Line::from("B: queue the next W-30 bank swap on next bar"),
+        Line::from("D: queue the bounded W-30 shred damage profile on next bar"),
         Line::from("l: queue the latest pinned or promoted W-30 pad recall on next bar"),
         Line::from("o: queue audition of the latest promoted W-30 pad on next bar"),
         Line::from("[ / ]: lower or raise the drum bus level"),
@@ -1791,6 +1797,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
                 "w30.trigger_pad"
                     | "w30.step_focus"
                     | "w30.swap_bank"
+                    | "w30.apply_damage_profile"
                     | "w30.live_recall"
                     | "w30.audition_promoted"
                     | "promote.resample"
@@ -1845,6 +1852,14 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         .app
         .jam_view
         .lanes
+        .w30_pending_damage_profile_target
+        .as_deref()
+    {
+        format!("damage shred {target}")
+    } else if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
         .w30_pending_recall_target
         .as_deref()
     {
@@ -1877,6 +1892,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
                     riotbox_core::action::ActionCommand::W30TriggerPad
                         | riotbox_core::action::ActionCommand::W30StepFocus
                         | riotbox_core::action::ActionCommand::W30SwapBank
+                        | riotbox_core::action::ActionCommand::W30ApplyDamageProfile
                         | riotbox_core::action::ActionCommand::W30LiveRecall
                         | riotbox_core::action::ActionCommand::W30AuditionPromoted
                         | riotbox_core::action::ActionCommand::PromoteResample
@@ -1889,6 +1905,7 @@ fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'st
         riotbox_core::action::ActionCommand::W30TriggerPad => "trigger",
         riotbox_core::action::ActionCommand::W30StepFocus => "step",
         riotbox_core::action::ActionCommand::W30SwapBank => "bank",
+        riotbox_core::action::ActionCommand::W30ApplyDamageProfile => "damage",
         riotbox_core::action::ActionCommand::W30LiveRecall => "recall",
         riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
         riotbox_core::action::ActionCommand::PromoteResample => "resample",
@@ -3099,6 +3116,10 @@ mod tests {
             ShellKeyOutcome::QueueW30SwapBank
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('D')),
+            ShellKeyOutcome::QueueW30ApplyDamageProfile
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('l')),
             ShellKeyOutcome::QueueW30LiveRecall
         );
@@ -3331,6 +3352,31 @@ mod tests {
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("bank"));
         assert!(rendered.contains("bank-b/pad-01"));
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_w30_damage_profile_cue() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell.app.session.runtime_state.lane_state.w30.active_bank = Some("bank-a".into());
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_apply_damage_profile(210),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("damage"));
+        assert!(rendered.contains("bank-a/pad-01"));
     }
 
     #[test]

@@ -621,6 +621,9 @@ pub struct JamAppState {
 }
 
 impl JamAppState {
+    const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
+    const W30_DAMAGE_PROFILE_GRIT: f32 = 0.82;
+
     #[must_use]
     pub fn from_parts(
         mut session: SessionFile,
@@ -1315,6 +1318,44 @@ impl JamAppState {
         Some(QueueControlResult::Enqueued)
     }
 
+    pub fn queue_w30_apply_damage_profile(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let capture = self.damage_profile_ready_w30_capture()?.clone();
+        let CaptureTarget::W30Pad { bank_id, pad_id } = capture.assigned_target.clone()? else {
+            return None;
+        };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30ApplyDamageProfile,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: Self::W30_DAMAGE_PROFILE_GRIT,
+            target_id: Some(capture.capture_id.to_string()),
+        };
+        draft.explanation = Some(format!(
+            "apply {} damage profile to {} on W-30 pad {bank_id}/{pad_id}",
+            Self::W30_DAMAGE_PROFILE_LABEL,
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn queue_w30_promoted_audition(
         &mut self,
         requested_at: TimestampMs,
@@ -1650,6 +1691,10 @@ impl JamAppState {
             .or_else(|| self.recallable_w30_capture())
     }
 
+    fn damage_profile_ready_w30_capture(&self) -> Option<&CaptureRef> {
+        self.triggerable_w30_capture()
+    }
+
     fn resample_ready_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
@@ -1688,6 +1733,7 @@ impl JamAppState {
             matches!(
                 action.command,
                 ActionCommand::W30SwapBank
+                    | ActionCommand::W30ApplyDamageProfile
                     | ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
@@ -2219,6 +2265,7 @@ fn apply_w30_side_effects(
         action.command,
         ActionCommand::W30LiveRecall
             | ActionCommand::W30SwapBank
+            | ActionCommand::W30ApplyDamageProfile
             | ActionCommand::W30StepFocus
             | ActionCommand::W30AuditionPromoted
             | ActionCommand::W30TriggerPad
@@ -2244,6 +2291,12 @@ fn apply_w30_side_effects(
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id.clone());
     session.runtime_state.lane_state.w30.preview_mode = Some(match action.command {
         ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
+        ActionCommand::W30ApplyDamageProfile => session
+            .runtime_state
+            .lane_state
+            .w30
+            .preview_mode
+            .unwrap_or(W30PreviewModeState::LiveRecall),
         ActionCommand::W30LiveRecall
         | ActionCommand::W30SwapBank
         | ActionCommand::W30StepFocus
@@ -2255,12 +2308,15 @@ fn apply_w30_side_effects(
     }
     if matches!(
         action.command,
-        ActionCommand::W30AuditionPromoted | ActionCommand::W30TriggerPad
+        ActionCommand::W30AuditionPromoted
+            | ActionCommand::W30TriggerPad
+            | ActionCommand::W30ApplyDamageProfile
     ) {
         let grit = match &action.params {
             ActionParams::Mutation { intensity, .. } => match action.command {
                 ActionCommand::W30AuditionPromoted => intensity.clamp(0.0, 1.0),
                 ActionCommand::W30TriggerPad => (intensity * 0.82).clamp(0.0, 1.0),
+                ActionCommand::W30ApplyDamageProfile => intensity.clamp(0.0, 1.0),
                 _ => unreachable!("checked above"),
             },
             _ => 0.68,
@@ -2296,6 +2352,20 @@ fn apply_w30_side_effects(
             ActionCommand::W30SwapBank => capture_id.as_ref().map_or_else(
                 || format!("swapped W-30 bank to {bank_id}/{pad_id}"),
                 |capture_id| format!("swapped W-30 bank to {bank_id}/{pad_id} with {capture_id}"),
+            ),
+            ActionCommand::W30ApplyDamageProfile => capture_id.as_ref().map_or_else(
+                || {
+                    format!(
+                        "applied {} damage profile on W-30 pad {bank_id}/{pad_id}",
+                        JamAppState::W30_DAMAGE_PROFILE_LABEL
+                    )
+                },
+                |capture_id| {
+                    format!(
+                        "applied {} damage profile to {capture_id} on W-30 pad {bank_id}/{pad_id}",
+                        JamAppState::W30_DAMAGE_PROFILE_LABEL
+                    )
+                },
             ),
             ActionCommand::W30AuditionPromoted => capture_id.as_ref().map_or_else(
                 || format!("auditioned W-30 pad {bank_id}/{pad_id}"),
@@ -4668,6 +4738,60 @@ mod tests {
     }
 
     #[test]
+    fn queue_w30_apply_damage_profile_targets_focused_lane_capture_on_next_bar() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_apply_damage_profile(644),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::W30ApplyDamageProfile);
+        assert_eq!(pending[0].quantization, Quantization::NextBar);
+        assert_eq!(
+            pending[0].target.bank_id.as_ref().map(ToString::to_string),
+            Some("bank-a".into())
+        );
+        assert_eq!(
+            pending[0].target.pad_id.as_ref().map(ToString::to_string),
+            Some("pad-01".into())
+        );
+        assert!(matches!(
+            &pending[0].params,
+            ActionParams::Mutation {
+                intensity,
+                target_id: Some(target_id),
+            } if (*intensity - JamAppState::W30_DAMAGE_PROFILE_GRIT).abs() < f32::EPSILON
+                && target_id == "cap-01"
+        ));
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("apply shred damage profile to cap-01 on W-30 pad bank-a/pad-01")
+        );
+        assert_eq!(
+            state
+                .jam_view
+                .lanes
+                .w30_pending_damage_profile_target
+                .as_deref(),
+            Some("bank-a/pad-01")
+        );
+    }
+
+    #[test]
     fn queue_w30_live_recall_falls_back_to_latest_pinned_capture_without_explicit_focus() {
         let graph = sample_graph();
         let session = sample_session(&graph);
@@ -4745,6 +4869,10 @@ mod tests {
             Some(QueueControlResult::AlreadyPending)
         );
         assert_eq!(
+            state.queue_w30_apply_damage_profile(631),
+            Some(QueueControlResult::AlreadyPending)
+        );
+        assert_eq!(
             state.queue_w30_trigger_pad(632),
             Some(QueueControlResult::AlreadyPending)
         );
@@ -4777,6 +4905,10 @@ mod tests {
         );
         assert_eq!(
             other_state.queue_w30_swap_bank(633),
+            Some(QueueControlResult::AlreadyPending)
+        );
+        assert_eq!(
+            other_state.queue_w30_apply_damage_profile(633),
             Some(QueueControlResult::AlreadyPending)
         );
         assert_eq!(
@@ -5005,6 +5137,59 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("swapped W-30 bank to bank-b/pad-01 with cap-02")
+        );
+    }
+
+    #[test]
+    fn committed_w30_damage_profile_updates_grit_and_log_result() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        state.session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        state.session.runtime_state.lane_state.w30.preview_mode =
+            Some(W30PreviewModeState::LiveRecall);
+        state.session.runtime_state.macro_state.w30_grit = 0.4;
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_apply_damage_profile(620),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 45,
+                bar_index: 12,
+                phrase_index: 3,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            720,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.macro_state.w30_grit,
+            JamAppState::W30_DAMAGE_PROFILE_GRIT
+        );
+        assert_eq!(state.jam_view.lanes.w30_pending_damage_profile_target, None);
+        assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01")
         );
     }
 

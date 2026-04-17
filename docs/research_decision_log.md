@@ -770,6 +770,17 @@ Status: accepted
 
 ---
 
+Topic: first bounded W-30 pad-forge control should apply one explicit damage profile on the current preview seam
+Phase: W-30 MVP
+Question: once committed W-30 trigger, recall, bank-swap, and internal resample behavior exist, what is the smallest honest first step toward pad-forge behavior without introducing per-pad forge state or a second W-30 editor?
+Decision: implement `w30.apply_damage_profile` as one bounded `NextBar` control on the current focused W-30 capture seam. It targets the current preview-facing pad capture, reuses the existing committed bank and pad focus path, and raises the existing `w30_grit` macro to one explicit `shred` profile level instead of inventing a full per-pad damage model yet.
+Why: the repo already has one replay-safe W-30 preview seam with explicit bank, pad, capture, and grit state flowing into the audio runtime. A first pad-forge move should deepen that seam instead of bypassing it with a hidden forge editor, a callback-only grit toggle, or a prematurely detailed damage-profile schema that the current session model cannot yet persist honestly.
+Evidence: `riotbox-app` now queues `w30.apply_damage_profile` on `NextBar`, resolves it from the current W-30 targetable capture, blocks it against other pending W-30 pad cues, preserves the current preview mode while raising committed `w30_grit`, and records an explicit damage-profile result summary on commit. `riotbox-core` now surfaces pending damage-profile targets in `JamViewModel`, and queue, commit, and shell regressions cover both the pending cue and the committed grit update.
+Consequences: later W-30 pad-forge work should refine this same committed damage seam instead of introducing a separate forge state machine. The current slice remains intentionally bounded to one `shred` profile and one global grit macro; per-pad forge persistence, multiple named damage profiles, and deeper bank-grid editing remain out of scope.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
