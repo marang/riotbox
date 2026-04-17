@@ -737,6 +737,17 @@ Status: accepted
 
 ---
 
+Topic: first bounded W-30 pad-bank stepping should use an explicit committed focus-step action on the preview seam
+Phase: W-30 MVP
+Question: once committed W-30 lane focus and preview mode are explicit, what is the smallest next slice that lets operators step across promoted pads without inventing a second shell cursor, pad editor, or preview-only state machine?
+Decision: add one explicit `w30.step_focus` action on the existing `ActionQueue` and `NextBeat` seam for the W-30 lane. Resolve its target from the next promoted W-30 pad after the current committed lane focus, block it against other pending W-30 pad cues, and update committed W-30 lane focus plus the existing preview seam when it lands.
+Why: stepping should be a real committed musical control, not a shell-only cursor move disguised as recall. A dedicated `w30.step_focus` action keeps pending cues, recent action summaries, and replay history honest while still staying bounded to the current W-30 preview model instead of opening a full pad-bank editor early.
+Evidence: `riotbox-core` now exposes `w30.step_focus` explicitly, the Jam view surfaces pending focus-step targets, `riotbox-app` queues it on `NextBeat` from actual promoted W-30 pads, the shell binds it directly, and the app/UI regressions cover both pending and committed focus-step behavior.
+Consequences: later W-30 bank-grid work should continue extending this explicit committed focus seam rather than smuggling pad stepping through recall semantics or a separate shell-only focus cursor.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

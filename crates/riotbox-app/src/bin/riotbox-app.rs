@@ -306,6 +306,21 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueW30StepFocus => {
+                    match shell.app.queue_w30_step_focus(timestamp_now()) {
+                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 focus step for next beat");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 focus already on the next stepped pad");
+                        }
+                        None => shell
+                            .set_error_status("no promoted W-30 pads available to step through"),
+                    }
+                }
                 ShellKeyOutcome::QueueW30LiveRecall => {
                     match shell.app.queue_w30_live_recall(timestamp_now()) {
                         Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
