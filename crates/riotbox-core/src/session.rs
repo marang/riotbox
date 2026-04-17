@@ -149,8 +149,16 @@ pub struct Mc202LaneState {
     pub phrase_ref: Option<String>,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum W30PreviewModeState {
+    LiveRecall,
+    PromotedAudition,
+}
+
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct W30LaneState {
+    pub preview_mode: Option<W30PreviewModeState>,
     pub active_bank: Option<BankId>,
     pub focused_pad: Option<PadId>,
     pub last_capture: Option<CaptureId>,

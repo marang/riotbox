@@ -715,6 +715,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 preview mode should be explicit committed lane state rather than action-log reconstruction
+Phase: W-30 MVP
+Question: after the periodic codebase review flagged preview-mode reconstruction from `action_log`, what is the smallest correction that keeps the audible preview seam deterministic and replay-safe?
+Decision: persist explicit W-30 preview intent in `runtime_state.lane_state.w30.preview_mode`, update it from committed W-30 preview-facing actions, and build the runtime preview seam from that explicit state. Keep a one-time legacy backfill from committed W-30 preview actions only when loading older sessions that do not yet carry the explicit field.
+Why: the preview seam should depend on one committed source of truth, not on whichever W-30 action happens to be latest in the historical log. Making preview intent explicit keeps later pad-bank stepping and lane-focus work honest, while the one-time backfill preserves compatibility for older saved sessions without leaving the runtime builder tied to history forever.
+Evidence: `riotbox-core` now persists explicit W-30 preview intent in lane state, `riotbox-app` updates it during committed W-30 side effects, and regression tests cover both legacy backfill and the rule that explicit lane state overrides stale action history.
+Consequences: future W-30 controls should update `preview_mode` through committed lane state instead of teaching the runtime builder about more action-log patterns. Replay and restore semantics stay explicit even as more W-30 controls land.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
