@@ -1257,14 +1257,6 @@ fn screen_context_label(shell: &JamShellState) -> String {
 
 fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let lanes = &shell.app.jam_view.lanes;
-    let role_line = if let Some(role) = lanes.mc202_pending_role.as_deref() {
-        format!(
-            "voice {} -> {role}",
-            lanes.mc202_role.as_deref().unwrap_or("unset")
-        )
-    } else {
-        format!("voice {}", lanes.mc202_role.as_deref().unwrap_or("unset"))
-    };
     let next = if let Some(role) = lanes.mc202_pending_role.as_deref() {
         format!("next voice {role}")
     } else if lanes.mc202_pending_answer_generation {
@@ -1276,47 +1268,32 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     };
 
     vec![
-        Line::from(role_line),
         Line::from(format!(
-            "phrase {}",
-            lanes.mc202_phrase_ref.as_deref().unwrap_or("unset")
+            "current voice {}",
+            lanes.mc202_role.as_deref().unwrap_or("unset")
         )),
         Line::from(next),
         Line::from(format!(
-            "touch {:.2} | {}",
-            shell.app.jam_view.macros.mc202_touch,
-            mc202_pending_role_label(shell)
+            "current phrase {}",
+            lanes.mc202_phrase_ref.as_deref().unwrap_or("unset")
         )),
     ]
 }
 
 fn w30_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let operation = if w30_pending_cue_label(shell) != "idle" {
-        format!(
-            "next {} | mgr {}",
-            w30_pending_cue_label(shell),
-            w30_bank_manager_status_compact(shell)
-        )
+    let next = if w30_pending_cue_label(shell) != "idle" {
+        format!("next {}", w30_pending_cue_label(shell))
     } else {
-        format!(
-            "next {} | mgr {}",
-            w30_operation_status_compact(shell),
-            w30_bank_manager_status_compact(shell)
-        )
+        format!("next {}", w30_operation_status_compact(shell))
     };
 
     vec![
-        Line::from(format!("pad {}", w30_target_compact(shell))),
+        Line::from(format!("current pad {}", w30_target_compact(shell))),
         Line::from(format!(
-            "preview {}",
+            "current preview {}",
             w30_preview_mode_profile_compact(shell)
         )),
-        Line::from(operation),
-        Line::from(format!(
-            "tap {} | {}",
-            w30_resample_tap_jam_compact(shell),
-            w30_operation_status_compact(shell)
-        )),
+        Line::from(next),
     ]
 }
 
@@ -1325,7 +1302,7 @@ fn tr909_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     vec![
         Line::from(format!(
-            "mode {}",
+            "current mode {}",
             if shell.app.jam_view.lanes.tr909_takeover_enabled {
                 "takeover"
             } else {
@@ -1333,7 +1310,7 @@ fn tr909_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             }
         )),
         Line::from(format!(
-            "fill {} | slam {:.2}",
+            "current fill {} | slam {:.2}",
             if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
                 "armed"
             } else {
@@ -1342,10 +1319,6 @@ fn tr909_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             shell.app.jam_view.macros.tr909_slam
         )),
         Line::from(format!("next {next}")),
-        Line::from(format!(
-            "render {} | drum {:.2}",
-            shell.app.runtime_view.tr909_render_mode, shell.app.runtime.tr909_render.drum_bus_level
-        )),
     ]
 }
 
@@ -1814,22 +1787,6 @@ fn w30_resample_tap_compact(shell: &JamShellState) -> String {
     };
 
     format!("ready/{profile} g{}", tap.generation_depth)
-}
-
-fn w30_resample_tap_jam_compact(shell: &JamShellState) -> String {
-    let tap = &shell.app.runtime.w30_resample_tap;
-    if matches!(tap.mode, riotbox_audio::w30::W30ResampleTapMode::Idle) {
-        return "idle".into();
-    }
-
-    let profile = match tap.source_profile {
-        None => "unset",
-        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::RawCapture) => "raw",
-        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PromotedCapture) => "prm",
-        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PinnedCapture) => "pin",
-    };
-
-    format!("{profile} g{}", tap.generation_depth)
 }
 
 fn w30_capture_lineage_compact(shell: &JamShellState) -> String {
@@ -4018,7 +3975,8 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("voice leader -> follower"));
+        assert!(rendered.contains("current voice leader"));
+        assert!(rendered.contains("next voice follower"));
     }
 
     #[test]
@@ -4031,7 +3989,7 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("follow queued"));
+        assert!(rendered.contains("next follow"));
     }
 
     #[test]
@@ -4044,7 +4002,7 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("answer queued"));
+        assert!(rendered.contains("next answer"));
     }
 
     #[test]
@@ -5117,11 +5075,11 @@ mod tests {
         assert_eq!(committed.len(), 1);
 
         let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
-        assert!(jam_rendered.contains("mgr swap"), "{jam_rendered}");
         assert!(
-            jam_rendered.contains("tap prm g0 | swap+shred"),
+            jam_rendered.contains("current pad bank-b/pad-01"),
             "{jam_rendered}"
         );
+        assert!(jam_rendered.contains("next swap+shred"), "{jam_rendered}");
 
         shell.active_screen = ShellScreen::Capture;
         let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -5232,7 +5190,11 @@ mod tests {
         shell.app.refresh_view();
 
         let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
-        assert!(jam_rendered.contains("mgr idle"), "{jam_rendered}");
+        assert!(
+            jam_rendered.contains("current pad bank-c/pad-01"),
+            "{jam_rendered}"
+        );
+        assert!(jam_rendered.contains("next idle"), "{jam_rendered}");
 
         shell.active_screen = ShellScreen::Capture;
         let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -5509,7 +5471,11 @@ mod tests {
         assert_eq!(committed.len(), 1);
 
         let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
-        assert!(jam_rendered.contains("tap raw g2 | idle"), "{jam_rendered}");
+        assert!(
+            jam_rendered.contains("current pad bank-b/pad-03"),
+            "{jam_rendered}"
+        );
+        assert!(jam_rendered.contains("next idle"), "{jam_rendered}");
 
         shell.active_screen = ShellScreen::Capture;
         let capture_rendered = render_jam_shell_snapshot(&shell, 120, 34);
