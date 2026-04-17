@@ -64,4 +64,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First typed audio-facing W-30 preview render seam on top of the committed cue path.
 - [RIOTBOX-60.md](./RIOTBOX-60.md)
   First audible W-30 preview on top of the typed preview render seam.
+- [RIOTBOX-61.md](./RIOTBOX-61.md)
+  First playable W-30 pad trigger on the committed preview seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
