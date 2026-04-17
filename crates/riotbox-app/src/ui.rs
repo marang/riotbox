@@ -325,7 +325,7 @@ fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(7),
+            Constraint::Length(8),
             Constraint::Length(9),
             Constraint::Min(7),
         ])
@@ -452,7 +452,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let now = Paragraph::new(vec![
         Line::from(format!("Transport: {}", transport_label(shell))),
         Line::from(format!(
-            "Beat {:.1} | scene {}",
+            "Beat {:.1} | active {}",
             shell.app.jam_view.transport.position_beats,
             shell
                 .app
@@ -462,6 +462,11 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .as_deref()
                 .unwrap_or("none")
         )),
+        Line::from(format!(
+            "Scenes {} | next {}",
+            shell.app.jam_view.scene.scene_count,
+            next_scene_candidate_label(shell)
+        )),
         Line::from(format!("Ghost: {}", ghost_label(shell))),
     ])
     .block(Block::default().title("Now").borders(Borders::ALL))
@@ -469,6 +474,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     let next = Paragraph::new(vec![
         Line::from(primary_pending_line(shell)),
+        Line::from(scene_pending_line(shell)),
         Line::from(primary_recent_line(shell)),
         Line::from(format!("status {}", shell.status_message)),
     ])
@@ -693,6 +699,24 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         )),
         Line::from(format!("committed {committed_count} | ghost {ghost_count}")),
         Line::from(format!("rejected {rejected_count} | undone {undone_count}")),
+        Line::from(format!(
+            "scene {} -> {}",
+            shell
+                .app
+                .session
+                .runtime_state
+                .scene_state
+                .active_scene
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "none".into()),
+            next_scene_candidate_label(shell)
+        )),
+        Line::from(
+            pending_scene_launch_label(shell)
+                .map(|scene_id| format!("pending {scene_id}"))
+                .unwrap_or_else(|| "pending none".into()),
+        ),
     ])
     .block(Block::default().title("Counts").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -1801,6 +1825,65 @@ fn next_action_line(shell: &JamShellState) -> String {
     }
 }
 
+fn next_scene_candidate_label(shell: &JamShellState) -> String {
+    let scenes = &shell.app.session.runtime_state.scene_state.scenes;
+    let current_scene = shell
+        .app
+        .session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .clone()
+        .or_else(|| {
+            shell
+                .app
+                .session
+                .runtime_state
+                .transport
+                .current_scene
+                .clone()
+        });
+
+    if scenes.is_empty() {
+        return "none".into();
+    }
+
+    if let Some(current_scene) = current_scene
+        && let Some(index) = scenes
+            .iter()
+            .position(|scene_id| *scene_id == current_scene)
+    {
+        return scenes[(index + 1) % scenes.len()].to_string();
+    }
+
+    scenes
+        .first()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| "none".into())
+}
+
+fn pending_scene_launch_label(shell: &JamShellState) -> Option<String> {
+    shell
+        .app
+        .queue
+        .pending_actions()
+        .iter()
+        .find(|action| action.command == riotbox_core::action::ActionCommand::SceneLaunch)
+        .and_then(|action| {
+            action
+                .target
+                .scene_id
+                .as_ref()
+                .map(ToString::to_string)
+                .or_else(|| match &action.params {
+                    riotbox_core::action::ActionParams::Scene {
+                        scene_id: Some(scene_id),
+                    } => Some(scene_id.to_string()),
+                    _ => None,
+                })
+        })
+}
+
 fn primary_pending_line(shell: &JamShellState) -> String {
     if let Some(action) = shell.app.jam_view.pending_actions.first() {
         format!(
@@ -1810,6 +1893,13 @@ fn primary_pending_line(shell: &JamShellState) -> String {
     } else {
         "queued no pending action".into()
     }
+}
+
+fn scene_pending_line(shell: &JamShellState) -> String {
+    pending_scene_launch_label(shell).map_or_else(
+        || "scene launch idle".into(),
+        |scene_id| format!("scene launch -> {scene_id}"),
+    )
 }
 
 fn primary_recent_line(shell: &JamShellState) -> String {
@@ -3174,6 +3264,23 @@ mod tests {
     }
 
     #[test]
+    fn renders_jam_shell_with_scene_brain_summary() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_scene_select(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Beat 32.0 | active"));
+        assert!(rendered.contains("scene-a"));
+        assert!(rendered.contains("Scenes 2 | next"));
+        assert!(rendered.contains("scene-01-intro"));
+        assert!(rendered.contains("scene launch ->"));
+    }
+
+    #[test]
     fn renders_jam_shell_with_pending_mc202_role_change() {
         let mut shell = sample_shell_state();
         assert_eq!(
@@ -3651,6 +3758,22 @@ mod tests {
         assert!(rendered.contains("takeover"));
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("undid most recent musical"));
+    }
+
+    #[test]
+    fn renders_log_shell_snapshot_with_scene_brain_diagnostics() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_scene_select(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+        shell.active_screen = ShellScreen::Log;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Counts"));
+        assert!(rendered.contains("scene scene-a ->"));
+        assert!(rendered.contains("scene-01-intro"));
+        assert!(rendered.contains("pending"));
     }
 
     #[test]

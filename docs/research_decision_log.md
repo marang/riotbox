@@ -893,6 +893,17 @@ Status: accepted
 
 ---
 
+Topic: early Scene Brain diagnostics should stay in the existing Jam and Log shell spine
+Phase: Scene Brain
+Question: once Riotbox has deterministic scene candidates and one committed `scene.launch` seam, what is the smallest honest next step that makes that state legible to the operator without opening a second scene page or a shell-only scene model?
+Decision: surface active scene, next scene candidate, pending scene launch, and committed transport-scene context directly in the existing `Jam` overview and `Log` summary panels. Keep the slice presentation-only on top of the shipped app and runtime seam.
+Why: the repo already keeps TR-909, MC-202, and W-30 seams visible inside the current shell spine. Scene Brain should become legible the same way before introducing richer scene launch, restore, or transition controls. A first diagnostic slice should deepen the current shell, not create a separate scene browser or debug page.
+Evidence: `riotbox-app` now shows active scene plus next-candidate context in the Jam overview, folds scene state into the existing Log summary without adding a new page or panel family, and covers the new shell state with focused scene-diagnostic snapshot tests.
+Consequences: later Scene Brain work should keep extending the same shell surfaces unless the roadmap explicitly calls for a fuller scene page. Replay-safe scene fixtures and richer launch or restore behavior remain follow-up slices.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline
