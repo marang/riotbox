@@ -78,6 +78,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   W-30 resample-lineage diagnostics in the existing Capture and Log shell surfaces.
 - [RIOTBOX-68.md](./RIOTBOX-68.md)
   Periodic repo-root review findings after the recent W-30 MVP slice batch.
+- [RIOTBOX-69.md](./RIOTBOX-69.md)
+  Explicit committed W-30 preview mode instead of action-log reconstruction.
 - [RIOTBOX-70.md](./RIOTBOX-70.md)
   W-30 capture resolution now follows committed lane focus on the current preview seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
