@@ -84,6 +84,7 @@ pub enum ShellKeyOutcome {
     QueueTr909Release,
     QueueCaptureBar,
     PromoteLastCapture,
+    QueueW30TriggerPad,
     QueueW30LiveRecall,
     QueueW30PromotedAudition,
     TogglePinLatestCapture,
@@ -211,6 +212,10 @@ impl JamShellState {
             KeyCode::Char('p') => {
                 self.status_message = "queue promotion for latest capture".into();
                 ShellKeyOutcome::PromoteLastCapture
+            }
+            KeyCode::Char('w') => {
+                self.status_message = "queue W-30 pad trigger on next beat".into();
+                ShellKeyOutcome::QueueW30TriggerPad
             }
             KeyCode::Char('l') => {
                 self.status_message = "queue W-30 live recall on next bar".into();
@@ -979,7 +984,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Actions: m mutate scene | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
     ));
     lines.push(Line::from(
-        "         p promote capture | l W-30 recall | o W-30 audition | v pin latest | u undo",
+        "         p promote capture | w W-30 trigger | l W-30 recall | o W-30 audition | v pin latest | u undo",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1042,6 +1047,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("x: queue TR-909 release on next phrase"),
         Line::from("c: queue phrase capture on next phrase"),
         Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
+        Line::from("w: queue the current W-30 pad trigger on next beat"),
         Line::from("l: queue the latest pinned or promoted W-30 pad recall on next bar"),
         Line::from("o: queue audition of the latest promoted W-30 pad on next bar"),
         Line::from("[ / ]: lower or raise the drum bus level"),
@@ -1650,7 +1656,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
         .find(|action| {
             matches!(
                 action.command.as_str(),
-                "w30.swap_bank" | "w30.audition_promoted"
+                "w30.trigger_pad" | "w30.swap_bank" | "w30.audition_promoted"
             )
         })
         .or_else(|| {
@@ -1667,6 +1673,14 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
 
 fn w30_pending_cue_label(shell: &JamShellState) -> String {
     if let Some(target) = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_trigger_target
+        .as_deref()
+    {
+        format!("trigger {target}")
+    } else if let Some(target) = shell
         .app
         .jam_view
         .lanes
@@ -1699,7 +1713,8 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
             action.status == riotbox_core::action::ActionStatus::Committed
                 && matches!(
                     action.command,
-                    riotbox_core::action::ActionCommand::W30SwapBank
+                    riotbox_core::action::ActionCommand::W30TriggerPad
+                        | riotbox_core::action::ActionCommand::W30SwapBank
                         | riotbox_core::action::ActionCommand::W30AuditionPromoted
                 )
         })
@@ -1707,6 +1722,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
 
 fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'static str {
     match command {
+        riotbox_core::action::ActionCommand::W30TriggerPad => "trigger",
         riotbox_core::action::ActionCommand::W30SwapBank => "recall",
         riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
         _ => "other",
@@ -2899,6 +2915,10 @@ mod tests {
             ShellKeyOutcome::PromoteLastCapture
         );
         assert_eq!(
+            shell.handle_key_code(KeyCode::Char('w')),
+            ShellKeyOutcome::QueueW30TriggerPad
+        );
+        assert_eq!(
             shell.handle_key_code(KeyCode::Char('l')),
             ShellKeyOutcome::QueueW30LiveRecall
         );
@@ -3015,6 +3035,28 @@ mod tests {
 
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("recall"));
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_w30_trigger_cue() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-a".into(),
+                pad_id: "pad-01".into(),
+            });
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_trigger_pad(205),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("pending W-30 cue"));
+        assert!(rendered.contains("trigger"));
+        assert!(rendered.contains("bank-a/pad-01"));
     }
 
     #[test]

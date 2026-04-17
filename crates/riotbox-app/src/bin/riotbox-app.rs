@@ -288,6 +288,22 @@ fn run_event_loop(
                         shell.set_error_status("no promotable capture or W-30 target available");
                     }
                 }
+                ShellKeyOutcome::QueueW30TriggerPad => {
+                    match shell.app.queue_w30_trigger_pad(timestamp_now()) {
+                        Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                            shell.set_error_status("queued W-30 pad trigger for next beat");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                            shell.set_error_status("W-30 pad cue already queued");
+                        }
+                        Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                            shell.set_error_status("W-30 pad trigger already in state");
+                        }
+                        None => {
+                            shell.set_error_status("no committed W-30 pad available to trigger")
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueW30LiveRecall => {
                     match shell.app.queue_w30_live_recall(timestamp_now()) {
                         Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {

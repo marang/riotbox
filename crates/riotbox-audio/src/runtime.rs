@@ -494,6 +494,8 @@ struct RealtimeW30PreviewRenderState {
     mode: W30PreviewRenderMode,
     routing: W30PreviewRenderRouting,
     source_profile: Option<W30PreviewSourceProfile>,
+    trigger_revision: u64,
+    trigger_velocity: f32,
     music_bus_level: f32,
     grit_level: f32,
     is_transport_running: bool,
@@ -505,6 +507,8 @@ struct SharedW30PreviewRenderState {
     mode: AtomicU32,
     routing: AtomicU32,
     source_profile: AtomicU32,
+    trigger_revision: AtomicU64,
+    trigger_velocity_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     grit_level_bits: AtomicU32,
     is_transport_running: AtomicBool,
@@ -518,6 +522,8 @@ impl SharedW30PreviewRenderState {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_profile: AtomicU32::new(0),
+            trigger_revision: AtomicU64::new(0),
+            trigger_velocity_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
@@ -537,6 +543,10 @@ impl SharedW30PreviewRenderState {
             w30_source_profile_to_u32(render_state.source_profile),
             Ordering::Relaxed,
         );
+        self.trigger_revision
+            .store(render_state.trigger_revision, Ordering::Relaxed);
+        self.trigger_velocity_bits
+            .store(render_state.trigger_velocity.to_bits(), Ordering::Relaxed);
         self.music_bus_level_bits
             .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
         self.grit_level_bits
@@ -556,6 +566,8 @@ impl SharedW30PreviewRenderState {
             source_profile: w30_source_profile_from_u32(
                 self.source_profile.load(Ordering::Relaxed),
             ),
+            trigger_revision: self.trigger_revision.load(Ordering::Relaxed),
+            trigger_velocity: f32::from_bits(self.trigger_velocity_bits.load(Ordering::Relaxed)),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
@@ -582,6 +594,7 @@ struct W30PreviewCallbackState {
     lfo_phase: f32,
     envelope: f32,
     last_step: i64,
+    last_trigger_revision: u64,
     was_active: bool,
     last_mode: Option<W30PreviewRenderMode>,
     last_routing: Option<W30PreviewRenderRouting>,
@@ -695,6 +708,7 @@ fn render_w30_preview_buffer(
         state.was_active = false;
         state.envelope = 0.0;
         state.beat_position = render.position_beats;
+        state.last_trigger_revision = render.trigger_revision;
         return;
     }
 
@@ -704,7 +718,16 @@ fn render_w30_preview_buffer(
         state.last_step = w30_current_step(render.position_beats, render);
         state.oscillator_phase = 0.0;
         state.lfo_phase = 0.0;
+        state.last_trigger_revision = render.trigger_revision;
         state.was_active = true;
+    }
+
+    if render.trigger_revision > state.last_trigger_revision {
+        state.last_trigger_revision = render.trigger_revision;
+        state.envelope = state.envelope.max(
+            w30_trigger_envelope(render) * (0.85 + render.trigger_velocity.clamp(0.0, 1.0) * 0.3),
+        );
+        state.oscillator_phase = 0.0;
     }
 
     let frame_count = data.len() / channel_count.max(1);
@@ -1546,6 +1569,8 @@ mod tests {
             active_bank_id: Some("bank-a".into()),
             focused_pad_id: Some("pad-01".into()),
             capture_id: Some("cap-01".into()),
+            trigger_revision: 3,
+            trigger_velocity: 0.78,
             music_bus_level: 0.55,
             grit_level: 0.68,
             is_transport_running: true,
@@ -1561,6 +1586,8 @@ mod tests {
             snapshot.source_profile,
             Some(W30PreviewSourceProfile::PinnedRecall)
         );
+        assert_eq!(snapshot.trigger_revision, 3);
+        assert_eq!(snapshot.trigger_velocity, 0.78);
         assert_eq!(snapshot.music_bus_level, 0.55);
         assert_eq!(snapshot.grit_level, 0.68);
         assert_eq!(snapshot.tempo_bpm, 128.0);
@@ -1621,6 +1648,8 @@ mod tests {
                 mode: W30PreviewRenderMode::Idle,
                 routing: W30PreviewRenderRouting::Silent,
                 source_profile: None,
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
                 music_bus_level: 0.64,
                 grit_level: 0.4,
                 is_transport_running: true,
@@ -1646,6 +1675,8 @@ mod tests {
                 mode: W30PreviewRenderMode::LiveRecall,
                 routing: W30PreviewRenderRouting::MusicBusPreview,
                 source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
                 music_bus_level: 0.64,
                 grit_level: 0.4,
                 is_transport_running: true,
@@ -1671,6 +1702,8 @@ mod tests {
                 mode: W30PreviewRenderMode::LiveRecall,
                 routing: W30PreviewRenderRouting::MusicBusPreview,
                 source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
                 music_bus_level: 0.0,
                 grit_level: 0.6,
                 is_transport_running: true,
@@ -1698,6 +1731,8 @@ mod tests {
                 mode: W30PreviewRenderMode::LiveRecall,
                 routing: W30PreviewRenderRouting::MusicBusPreview,
                 source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
                 music_bus_level: 0.64,
                 grit_level: 0.4,
                 is_transport_running: true,
@@ -1715,6 +1750,8 @@ mod tests {
                 mode: W30PreviewRenderMode::PromotedAudition,
                 routing: W30PreviewRenderRouting::MusicBusPreview,
                 source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
                 music_bus_level: 0.64,
                 grit_level: 0.68,
                 is_transport_running: true,
@@ -1750,6 +1787,8 @@ mod tests {
                 mode: W30PreviewRenderMode::PromotedAudition,
                 routing: W30PreviewRenderRouting::MusicBusPreview,
                 source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
                 music_bus_level: 0.64,
                 grit_level: 0.72,
                 is_transport_running: false,
@@ -1760,6 +1799,38 @@ mod tests {
         );
 
         assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn w30_trigger_revision_retriggers_preview_accent() {
+        let mut state = W30PreviewCallbackState::default();
+        let mut retriggered = [0.0_f32; 512];
+        let render = RealtimeW30PreviewRenderState {
+            mode: W30PreviewRenderMode::LiveRecall,
+            routing: W30PreviewRenderRouting::MusicBusPreview,
+            source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
+            trigger_revision: 0,
+            trigger_velocity: 0.0,
+            music_bus_level: 0.64,
+            grit_level: 0.45,
+            is_transport_running: true,
+            tempo_bpm: 126.0,
+            position_beats: 0.0,
+        };
+
+        let mut primed = [0.0_f32; 512];
+        render_w30_preview_buffer(&mut primed, 44_100, 2, &render, &mut state);
+        state.envelope = 0.0;
+        state.was_active = true;
+        state.last_trigger_revision = 0;
+
+        let mut retrigger_render = render;
+        retrigger_render.trigger_revision = 7;
+        retrigger_render.trigger_velocity = 0.92;
+        render_w30_preview_buffer(&mut retriggered, 44_100, 2, &retrigger_render, &mut state);
+
+        assert!(retriggered.iter().any(|sample| sample.abs() > 0.0001));
+        assert_eq!(state.last_trigger_revision, 7);
     }
 
     #[test]

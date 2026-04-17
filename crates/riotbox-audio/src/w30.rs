@@ -58,6 +58,8 @@ pub struct W30PreviewRenderState {
     pub active_bank_id: Option<String>,
     pub focused_pad_id: Option<String>,
     pub capture_id: Option<String>,
+    pub trigger_revision: u64,
+    pub trigger_velocity: f32,
     pub music_bus_level: f32,
     pub grit_level: f32,
     pub is_transport_running: bool,
@@ -74,6 +76,8 @@ impl Default for W30PreviewRenderState {
             active_bank_id: None,
             focused_pad_id: None,
             capture_id: None,
+            trigger_revision: 0,
+            trigger_velocity: 0.0,
             music_bus_level: 0.0,
             grit_level: 0.0,
             is_transport_running: false,
@@ -100,6 +104,8 @@ mod tests {
         assert_eq!(state.active_bank_id, None);
         assert_eq!(state.focused_pad_id, None);
         assert_eq!(state.capture_id, None);
+        assert_eq!(state.trigger_revision, 0);
+        assert_eq!(state.trigger_velocity, 0.0);
         assert!(!state.is_transport_running);
     }
 
