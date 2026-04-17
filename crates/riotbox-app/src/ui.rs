@@ -625,9 +625,9 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
             Line::from("Then [2] confirm it in Log and decide: [c] capture it or [u] undo it."),
         ],
         Some(FirstRunOnrampStage::FirstResult) => vec![
-            Line::from("You got the first result."),
-            Line::from("Best next move: [c] capture the keeper or [u] undo it if it missed."),
-            Line::from("Then try one more gesture: [y] jump, [g] follow, or [w] hit."),
+            Line::from(format!("What changed: {}", latest_landed_line(shell))),
+            Line::from("What next: [c] capture it or [u] undo it if it missed."),
+            Line::from("Then try one more move: [y] jump or [g] follow."),
         ],
         None => Vec::new(),
     };
@@ -1481,6 +1481,14 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             Line::from("let it land"),
             Line::from("[2] log  [u] undo"),
             Line::from("[c] capture if good"),
+        ];
+    }
+
+    if !shell.app.jam_view.recent_actions.is_empty() {
+        return vec![
+            Line::from(format!("what changed: {}", latest_landed_line(shell))),
+            Line::from("what next: [c] capture  [u] undo"),
+            Line::from("then try: [y] jump  [g] follow"),
         ];
     }
 
@@ -4078,10 +4086,39 @@ mod tests {
         let shell = first_result_shell_state();
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("You got the first result."), "{rendered}");
-        assert!(rendered.contains("[c] capture the keeper"), "{rendered}");
-        assert!(rendered.contains("[y] jump"), "{rendered}");
-        assert!(rendered.contains("[w] hit"), "{rendered}");
+        assert!(
+            rendered.contains("What changed: landed user fill"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("What next: [c] capture it or [u] undo it if it missed."),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("Then try one more move: [y] jump or [g] follow."),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_jam_shell_with_post_commit_next_step_cue() {
+        let first_result_shell = first_result_shell_state();
+        let mut shell = JamShellState::new(first_result_shell.app, ShellLaunchMode::Load);
+        shell.app.set_transport_playing(true);
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("what changed: landed user fill"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("what next: [c] capture  [u] undo"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("then try: [y] jump  [g] follow"),
+            "{rendered}"
+        );
     }
 
     #[test]
