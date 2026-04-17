@@ -1,0 +1,35 @@
+Riotbox Jam Perform-First Baseline
+Normalized terminal capture notes for `RIOTBOX-94`
+Source: `riotbox-app` Jam shell snapshot fixture
+Notes:
+- normalized from the current Jam shell regression fixture
+- intended as a review/update artifact, not a pixel-perfect golden render
+- records the perform-first Jam reduction without introducing a separate inspect mode
+
+Key shell cues after this slice:
+
+- `Jam -> Now` now answers the current live state directly:
+  - transport and beat position
+  - active scene
+  - current source plus next scene candidate
+  - current Ghost mode
+- `Jam -> Next` now emphasizes:
+  - the next queued action
+  - pending scene launch
+  - the latest landed action
+  - the current shell status
+- `Jam -> MC-202 / W-30 / TR-909` now uses three lane cards instead of one long lane dump:
+  - current lane mode or target
+  - next lane change
+  - one compact live-relevant secondary cue
+- `Jam -> Pending / landed`, `Suggested gestures`, and `Warnings / trust` now replace the older Source / Sections / Macros row on the main performance surface
+
+Interpretation:
+
+- the Jam screen now behaves more like a playable surface and less like an operator dashboard
+- deep analysis structure, section lists, and capture lineage still exist, but they now live on `Source`, `Capture`, `Log`, or `Help` instead of competing for first-rank space on `Jam`
+- the shell keeps one Jam surface for now, but it now explicitly prioritizes:
+  - what is happening now
+  - what lands next
+  - what one or two gestures matter right now
+  - whether trust is good enough to keep playing

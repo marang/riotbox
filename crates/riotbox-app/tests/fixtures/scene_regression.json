@@ -8,9 +8,9 @@
       "active_scene": "scene-01-intro",
       "current_scene": "scene-01-intro",
       "jam_contains": [
-        "Beat 32.0 | active",
+        "idle @ 32.0",
         "scene-01-intro",
-        "Scenes 2 | next",
+        "source src-1 | next scene",
         "scene-02-drop",
         "scene launch idle"
       ],
@@ -39,9 +39,9 @@
       "current_scene": "scene-02-drop",
       "result_summary": "launched scene scene-02-drop at bar 9 / phrase 2",
       "jam_contains": [
-        "Beat 32.0 | active",
+        "idle @ 32.0",
         "scene-02-drop",
-        "Scenes 2 | next",
+        "source src-1 | next scene",
         "scene-01-intro",
         "scene launch idle"
       ],

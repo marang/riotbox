@@ -347,15 +347,15 @@ fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         let rows = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
+                Constraint::Length(7),
                 Constraint::Length(8),
-                Constraint::Length(9),
-                Constraint::Min(7),
+                Constraint::Min(8),
             ])
             .split(area);
 
         render_overview_row(frame, rows[0], shell);
-        render_source_row(frame, rows[1], shell);
-        render_action_rows(frame, rows[2], shell);
+        render_perform_row(frame, rows[1], shell);
+        render_focus_row(frame, rows[2], shell);
     }
 }
 
@@ -465,18 +465,20 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(18),
-            Constraint::Percentage(18),
-            Constraint::Percentage(18),
-            Constraint::Percentage(46),
+            Constraint::Percentage(34),
+            Constraint::Percentage(33),
+            Constraint::Percentage(33),
         ])
         .split(area);
 
     let now = Paragraph::new(vec![
-        Line::from(format!("Transport: {}", transport_label(shell))),
         Line::from(format!(
-            "Beat {:.1} | active {}",
-            shell.app.jam_view.transport.position_beats,
+            "{} @ {:.1}",
+            transport_label(shell),
+            shell.app.jam_view.transport.position_beats
+        )),
+        Line::from(format!(
+            "scene {}",
             shell
                 .app
                 .jam_view
@@ -486,19 +488,19 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .unwrap_or("none")
         )),
         Line::from(format!(
-            "Scenes {} | next {}",
-            shell.app.jam_view.scene.scene_count,
+            "source {} | next scene {}",
+            shell.app.jam_view.source.source_id,
             next_scene_candidate_label(shell)
         )),
-        Line::from(format!("Ghost: {}", ghost_label(shell))),
+        Line::from(format!("ghost {}", ghost_label(shell))),
     ])
     .block(Block::default().title("Now").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
     let next = Paragraph::new(vec![
-        Line::from(primary_pending_line(shell)),
+        Line::from(next_action_line(shell)),
         Line::from(scene_pending_line(shell)),
-        Line::from(primary_recent_line(shell)),
+        Line::from(latest_landed_line(shell)),
         Line::from(format!("status {}", shell.status_message)),
     ])
     .block(Block::default().title("Next").borders(Borders::ALL))
@@ -507,8 +509,8 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let trust = trust_summary(shell);
     let trust_panel = Paragraph::new(vec![
         Line::from(format!(
-            "overall {:.2} | warnings {}",
-            trust.overall_confidence, trust.warning_count
+            "{} ({:.2}) | warnings {}",
+            trust.headline, trust.overall_confidence, trust.warning_count
         )),
         Line::from(format!(
             "timing {} | sections {}",
@@ -519,108 +521,39 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.jam_view.source.loop_candidate_count,
             shell.app.jam_view.source.hook_candidate_count
         )),
+        Line::from(primary_warning_line(shell)),
     ])
     .block(Block::default().title("Trust").borders(Borders::ALL))
-    .wrap(Wrap { trim: true });
-
-    let lanes = Paragraph::new(vec![
-        Line::from(format!(
-            "MC-202: {}{} | touch {:.2}",
-            shell
-                .app
-                .jam_view
-                .lanes
-                .mc202_role
-                .as_deref()
-                .unwrap_or("unset"),
-            shell
-                .app
-                .jam_view
-                .lanes
-                .mc202_pending_role
-                .as_deref()
-                .map(|role| format!(" -> {role}"))
-                .unwrap_or_default(),
-            shell.app.jam_view.macros.mc202_touch,
-        )),
-        Line::from(format!(
-            "202 phrase {} | gen {}",
-            shell
-                .app
-                .jam_view
-                .lanes
-                .mc202_phrase_ref
-                .as_deref()
-                .unwrap_or("unset"),
-            if shell.app.jam_view.lanes.mc202_pending_answer_generation {
-                "answer queued"
-            } else if shell.app.jam_view.lanes.mc202_pending_follower_generation {
-                "follower queued"
-            } else {
-                "idle"
-            }
-        )),
-        Line::from(format!(
-            "W-30 cue {} | mgr {}",
-            w30_pending_cue_label(shell),
-            w30_bank_manager_status_compact(shell),
-        )),
-        Line::from(format!(
-            "W-30 {} | {}",
-            w30_preview_mode_profile_compact(shell),
-            w30_target_compact(shell)
-        )),
-        Line::from(format!(
-            "W-30 {} | tap {} | {}",
-            w30_mix_compact(shell),
-            w30_resample_tap_jam_compact(shell),
-            w30_operation_status_compact(shell),
-        )),
-        Line::from(format!(
-            "909 {} fill {}",
-            if shell.app.jam_view.lanes.tr909_takeover_enabled {
-                "takeover"
-            } else {
-                "support"
-            },
-            if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
-                "armed"
-            } else {
-                "idle"
-            }
-        )),
-    ])
-    .block(Block::default().title("Lanes").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
     frame.render_widget(now, columns[0]);
     frame.render_widget(next, columns[1]);
     frame.render_widget(trust_panel, columns[2]);
-    frame.render_widget(lanes, columns[3]);
 }
 
-fn render_source_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+fn render_perform_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let columns = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([
-            Constraint::Percentage(46),
+            Constraint::Percentage(33),
             Constraint::Percentage(34),
-            Constraint::Percentage(20),
+            Constraint::Percentage(33),
         ])
         .split(area);
 
-    let source = Paragraph::new(source_detail_lines(shell))
-        .block(Block::default().title("Source").borders(Borders::ALL))
+    let mc202 = Paragraph::new(mc202_perform_lines(shell))
+        .block(Block::default().title("MC-202").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
-    let sections = List::new(section_items(shell))
-        .block(Block::default().title("Sections").borders(Borders::ALL));
-    let macros = Paragraph::new(macro_lines(shell))
-        .block(Block::default().title("Macros").borders(Borders::ALL))
+    let w30 = Paragraph::new(w30_perform_lines(shell))
+        .block(Block::default().title("W-30").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
+    let tr909 = Paragraph::new(tr909_perform_lines(shell))
+        .block(Block::default().title("TR-909").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
 
-    frame.render_widget(source, columns[0]);
-    frame.render_widget(sections, columns[1]);
-    frame.render_widget(macros, columns[2]);
+    frame.render_widget(mc202, columns[0]);
+    frame.render_widget(w30, columns[1]);
+    frame.render_widget(tr909, columns[2]);
 }
 
 fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -714,6 +647,43 @@ fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     frame.render_widget(pending, columns[0]);
     frame.render_widget(recent, columns[1]);
     frame.render_widget(capture, columns[2]);
+}
+
+fn render_focus_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
+    let columns = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Percentage(40),
+            Constraint::Percentage(30),
+            Constraint::Percentage(30),
+        ])
+        .split(area);
+
+    let pending = Paragraph::new(jam_pending_landed_lines(shell))
+        .block(
+            Block::default()
+                .title("Pending / landed")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let gestures = Paragraph::new(suggested_gesture_lines(shell))
+        .block(
+            Block::default()
+                .title("Suggested gestures")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+    let warnings = Paragraph::new(jam_warning_lines(shell))
+        .block(
+            Block::default()
+                .title("Warnings / trust")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
+
+    frame.render_widget(pending, columns[0]);
+    frame.render_widget(gestures, columns[1]);
+    frame.render_widget(warnings, columns[2]);
 }
 
 fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -1041,10 +1011,10 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.launch_mode.refresh_verb()
     )));
     lines.push(Line::from(
-        "Actions: m mutate scene | y scene select | b 202 role | g 202 follower | a 202 answer | f 909 fill | d 909 reinforce | t 909 takeover | k 909 scene lock | x 909 release | c capture phrase",
+        "Primary: y scene | g follower | a answer | f fill | c capture | w trigger | u undo | more in ? help",
     ));
     lines.push(Line::from(
-        "         p promote capture | w W-30 trigger | n W-30 step | B W-30 bank | j W-30 browse | D W-30 damage | z W-30 freeze | l W-30 recall | o W-30 audition | e W-30 resample | v pin latest | u undo",
+        "Lane ops: b role | d reinforce | t takeover | k lock | x release | l recall | o audition | z freeze",
     ));
     lines.push(Line::from(format!(
         "Status: {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1120,30 +1090,17 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     lines.extend([
         Line::from(""),
-        Line::from("space: play / pause transport"),
+        Line::from("Primary gestures"),
+        Line::from("space: play / pause | y: scene select | g: follower | a: answer"),
+        Line::from("f: fill | c: capture | w: trigger | u: undo | 2: confirm in Log"),
+        Line::from(""),
+        Line::from("Secondary / lane ops"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
-        Line::from("m: queue scene mutation on next bar"),
-        Line::from("b: queue MC-202 role change on next phrase"),
-        Line::from("g: generate MC-202 follower on next phrase"),
-        Line::from("a: generate MC-202 answer on next phrase"),
-        Line::from("f: queue TR-909 fill on next bar"),
-        Line::from("d: queue TR-909 reinforcement on next phrase"),
-        Line::from("s: queue TR-909 slam change on next beat"),
-        Line::from("t: queue TR-909 takeover on next phrase"),
-        Line::from("k: queue TR-909 scene-lock variation on next phrase"),
-        Line::from("x: queue TR-909 release on next phrase"),
-        Line::from("c: queue phrase capture on next phrase"),
-        Line::from("p: queue promotion of the latest capture into the current W-30 pad"),
-        Line::from("w: queue the current W-30 pad trigger on next beat"),
-        Line::from("n: queue the next W-30 focused pad step on next beat"),
-        Line::from("B: queue the next W-30 bank swap on next bar"),
-        Line::from("j: browse the current W-30 pad slice pool on next beat"),
-        Line::from("D: queue the bounded W-30 shred damage profile on next bar"),
-        Line::from("l: queue the latest pinned or promoted W-30 pad recall on next bar"),
-        Line::from("o: queue audition of the latest promoted W-30 pad on next bar"),
-        Line::from("[ / ]: lower or raise the drum bus level"),
-        Line::from("v: pin or unpin the latest capture for fast recall"),
-        Line::from("u: undo most recent undoable action"),
+        Line::from("m: mutate scene | b: MC-202 role | d: 909 reinforce | s: 909 slam"),
+        Line::from("t: 909 takeover | k: 909 lock | x: 909 release"),
+        Line::from("p: promote | n: W-30 step | B: W-30 bank | j: browse"),
+        Line::from("D: damage | z: freeze | l: recall | o: audition | e: resample"),
+        Line::from("[ / ]: lower or raise drum bus | v: pin latest"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
         Line::from(format!("Current screen: {}", shell.active_screen.label())),
@@ -1158,77 +1115,214 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     frame.render_widget(help, popup);
 }
 
-fn source_detail_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let source = &shell.app.jam_view.source;
+fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let lanes = &shell.app.jam_view.lanes;
+    let role_line = if let Some(role) = lanes.mc202_pending_role.as_deref() {
+        format!(
+            "role {} -> {role}",
+            lanes.mc202_role.as_deref().unwrap_or("unset")
+        )
+    } else {
+        format!("role {}", lanes.mc202_role.as_deref().unwrap_or("unset"))
+    };
+    let next = if let Some(role) = lanes.mc202_pending_role.as_deref() {
+        format!("next role {role}")
+    } else if lanes.mc202_pending_answer_generation {
+        "next answer".into()
+    } else if lanes.mc202_pending_follower_generation {
+        "next follower".into()
+    } else {
+        "next none".into()
+    };
 
-    match shell.app.source_graph.as_ref() {
-        Some(graph) => vec![
-            Line::from(format!(
-                "{} | {:.2}s | {} Hz | {} ch | {}",
-                graph.source.path,
-                graph.source.duration_seconds,
-                graph.source.sample_rate,
-                graph.source.channel_count,
-                decode_profile_label(&graph.source.decode_profile)
-            )),
-            Line::from(format!(
-                "tempo confidence {:.2} | timing {} | sections {}",
-                source.bpm_confidence,
-                quality_label(&graph.analysis_summary.timing_quality),
-                quality_label(&graph.analysis_summary.section_quality)
-            )),
-            Line::from(format!(
-                "sections {} | loops {} | hooks {} | warnings {}",
-                graph.sections.len(),
-                source.loop_candidate_count,
-                source.hook_candidate_count,
-                graph.analysis_summary.warnings.len()
-            )),
-            Line::from(format!(
-                "overall confidence {:.2} | break potential {}",
-                graph.analysis_summary.overall_confidence,
-                quality_label(&graph.analysis_summary.break_rebuild_potential)
-            )),
-        ],
-        None => vec![Line::from("No source graph loaded")],
-    }
-}
-
-fn section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
-    match shell.app.source_graph.as_ref() {
-        Some(graph) if !graph.sections.is_empty() => graph
-            .sections
-            .iter()
-            .take(4)
-            .map(|section| {
-                ListItem::new(format!(
-                    "{} | bars {}-{} | {:.2}s-{:.2}s | {} | conf {:.2}",
-                    section_label(section),
-                    section.bar_start,
-                    section.bar_end,
-                    section.start_seconds,
-                    section.end_seconds,
-                    energy_label(section),
-                    section.confidence
-                ))
-            })
-            .collect(),
-        Some(_) => vec![ListItem::new("no sections available")],
-        None => vec![ListItem::new("no source graph loaded")],
-    }
-}
-
-fn macro_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let macros = &shell.app.jam_view.macros;
     vec![
-        Line::from(format!("retain {:.2}", macros.source_retain)),
-        Line::from(format!("chaos {:.2}", macros.chaos)),
-        Line::from(format!("mc202 {:.2}", macros.mc202_touch)),
+        Line::from(role_line),
         Line::from(format!(
-            "w30 {:.2} | tr909 {:.2}",
-            macros.w30_grit, macros.tr909_slam
+            "phrase {}",
+            lanes.mc202_phrase_ref.as_deref().unwrap_or("unset")
+        )),
+        Line::from(next),
+        Line::from(format!(
+            "touch {:.2} | {}",
+            shell.app.jam_view.macros.mc202_touch,
+            mc202_pending_role_label(shell)
         )),
     ]
+}
+
+fn w30_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let operation = if w30_pending_cue_label(shell) != "idle" {
+        format!(
+            "next {} | mgr {}",
+            w30_pending_cue_label(shell),
+            w30_bank_manager_status_compact(shell)
+        )
+    } else {
+        format!(
+            "next {} | mgr {}",
+            w30_operation_status_compact(shell),
+            w30_bank_manager_status_compact(shell)
+        )
+    };
+
+    vec![
+        Line::from(format!("pad {}", w30_target_compact(shell))),
+        Line::from(format!(
+            "preview {}",
+            w30_preview_mode_profile_compact(shell)
+        )),
+        Line::from(operation),
+        Line::from(format!(
+            "tap {} | {}",
+            w30_resample_tap_jam_compact(shell),
+            w30_operation_status_compact(shell)
+        )),
+    ]
+}
+
+fn tr909_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let next = tr909_next_line(shell);
+
+    vec![
+        Line::from(format!(
+            "mode {}",
+            if shell.app.jam_view.lanes.tr909_takeover_enabled {
+                "takeover"
+            } else {
+                "support"
+            }
+        )),
+        Line::from(format!(
+            "fill {} | slam {:.2}",
+            if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
+                "armed"
+            } else {
+                "idle"
+            },
+            shell.app.jam_view.macros.tr909_slam
+        )),
+        Line::from(format!("next {next}")),
+        Line::from(format!(
+            "render {} | drum {:.2}",
+            shell.app.runtime_view.tr909_render_mode, shell.app.runtime.tr909_render.drum_bus_level
+        )),
+    ]
+}
+
+fn tr909_next_line(shell: &JamShellState) -> String {
+    use riotbox_core::action::ActionCommand::{
+        Tr909FillNext, Tr909ReinforceBreak, Tr909Release, Tr909SceneLock, Tr909SetSlam,
+        Tr909Takeover,
+    };
+
+    shell
+        .app
+        .queue
+        .pending_actions()
+        .iter()
+        .find_map(|action| match action.command {
+            Tr909FillNext => Some("fill".into()),
+            Tr909ReinforceBreak => Some("reinforce".into()),
+            Tr909SetSlam => Some("slam".into()),
+            Tr909Takeover => Some("takeover".into()),
+            Tr909SceneLock => Some("lock".into()),
+            Tr909Release => Some("release".into()),
+            _ => None,
+        })
+        .unwrap_or_else(|| {
+            if shell.app.jam_view.lanes.tr909_fill_armed_next_bar {
+                "fill armed".into()
+            } else {
+                "none".into()
+            }
+        })
+}
+
+fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let pending_line = if let Some(action) = shell.app.jam_view.pending_actions.first() {
+        format!(
+            "pending {} {} @ {}",
+            action.actor, action.command, action.quantization
+        )
+    } else {
+        "pending none".into()
+    };
+
+    let more_pending = shell.app.jam_view.pending_actions.len().saturating_sub(1);
+    let queue_depth_line = if more_pending > 0 {
+        format!("more queued {more_pending}")
+    } else {
+        "more queued 0".into()
+    };
+
+    vec![
+        Line::from(pending_line),
+        Line::from(queue_depth_line),
+        Line::from(latest_landed_line(shell)),
+        Line::from(format!("status {}", shell.status_message)),
+    ]
+}
+
+fn latest_landed_line(shell: &JamShellState) -> String {
+    if let Some(action) = shell.app.jam_view.recent_actions.first() {
+        format!("landed {} {}", action.actor, action.command)
+    } else {
+        "landed none yet".into()
+    }
+}
+
+fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    if !shell.app.jam_view.transport.is_playing {
+        return vec![
+            Line::from("[Space] play"),
+            Line::from("[y] scene  [f] fill"),
+            Line::from("[c] capture"),
+        ];
+    }
+
+    if !shell.app.jam_view.pending_actions.is_empty() {
+        return vec![
+            Line::from("let it land"),
+            Line::from("[2] log  [u] undo"),
+            Line::from("[c] capture if good"),
+        ];
+    }
+
+    vec![
+        Line::from("[y] scene  [g] follower"),
+        Line::from("[a] answer  [f] fill"),
+        Line::from("[c] capture  [w] trigger"),
+    ]
+}
+
+fn jam_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let trust = trust_summary(shell);
+    let readiness = if trust.headline == "strong" || trust.headline == "usable" {
+        "ready"
+    } else {
+        "tentative"
+    };
+
+    vec![
+        Line::from(format!("trust {} | {}", trust.headline, readiness)),
+        Line::from(primary_warning_line(shell)),
+        Line::from(format!(
+            "audio {} | sidecar {}",
+            shell.app.runtime_view.audio_status, shell.app.runtime_view.sidecar_status
+        )),
+    ]
+}
+
+fn primary_warning_line(shell: &JamShellState) -> String {
+    shell
+        .app
+        .runtime_view
+        .runtime_warnings
+        .iter()
+        .chain(shell.app.jam_view.warnings.iter())
+        .next()
+        .map(|warning| warning.to_string())
+        .unwrap_or_else(|| "no major warning".into())
 }
 
 fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
@@ -1482,13 +1576,6 @@ fn w30_resample_log_focus_compact(shell: &JamShellState) -> String {
 fn w30_resample_lineage_active(shell: &JamShellState) -> bool {
     let tap = &shell.app.runtime.w30_resample_tap;
     tap.generation_depth > 0 || tap.lineage_capture_count > 0
-}
-
-fn w30_mix_compact(shell: &JamShellState) -> String {
-    format!(
-        "bus {:.2} grit {:.2}",
-        shell.app.runtime.w30_preview.music_bus_level, shell.app.runtime.w30_preview.grit_level
-    )
 }
 
 fn w30_mix_log_compact(shell: &JamShellState) -> String {
@@ -1972,33 +2059,11 @@ fn pending_scene_launch_label(shell: &JamShellState) -> Option<String> {
         })
 }
 
-fn primary_pending_line(shell: &JamShellState) -> String {
-    if let Some(action) = shell.app.jam_view.pending_actions.first() {
-        format!(
-            "queued {} {} @ {}",
-            action.actor, action.command, action.quantization
-        )
-    } else {
-        "queued no pending action".into()
-    }
-}
-
 fn scene_pending_line(shell: &JamShellState) -> String {
     pending_scene_launch_label(shell).map_or_else(
         || "scene launch idle".into(),
         |scene_id| format!("scene launch -> {scene_id}"),
     )
-}
-
-fn primary_recent_line(shell: &JamShellState) -> String {
-    if let Some(action) = shell.app.jam_view.recent_actions.first() {
-        format!(
-            "recent {} {} [{}]",
-            action.actor, action.command, action.status
-        )
-    } else {
-        "recent no committed action yet".into()
-    }
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -3533,23 +3598,15 @@ mod tests {
 
         assert!(rendered.contains("trust usable"));
         assert!(rendered.contains("scene-a"));
-        assert!(rendered.contains("queued"));
         assert!(rendered.contains("ghost"));
-        assert!(rendered.contains("overall"));
         assert!(rendered.contains("warnings"));
-        assert!(rendered.contains("recent"));
-        assert!(rendered.contains("[commit"));
-        assert!(rendered.contains("Capture"));
-        assert!(rendered.contains("202 phrase"));
-        assert!(rendered.contains("gen idle"));
-        assert!(rendered.contains("MC-202: leader | touch 0.80"));
-        assert!(rendered.contains("W-30 cue idle"));
-        assert!(rendered.contains("W-30 recall/promoted | bank-a/unset"));
-        assert!(rendered.contains("W-30 bus 0.64 grit 0.50 | tap raw g0 | idle"));
-        assert!(
-            rendered.contains("tr909.fill_next @ next_bar"),
-            "{rendered}"
-        );
+        assert!(rendered.contains("MC-202"));
+        assert!(rendered.contains("W-30"));
+        assert!(rendered.contains("TR-909"));
+        assert!(rendered.contains("Suggested gestures"));
+        assert!(rendered.contains("Pending / landed"));
+        assert!(rendered.contains("next fill"));
+        assert!(!rendered.contains("Sections"), "{rendered}");
     }
 
     #[test]
@@ -3562,9 +3619,9 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("Beat 32.0 | active"));
+        assert!(rendered.contains("idle @ 32.0"));
         assert!(rendered.contains("scene-a"));
-        assert!(rendered.contains("Scenes 2 | next"));
+        assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("scene launch ->"));
     }
@@ -3579,7 +3636,7 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("MC-202: leader -> follower"));
+        assert!(rendered.contains("role leader -> follower"));
     }
 
     #[test]
@@ -3681,7 +3738,7 @@ mod tests {
                 sample_shell.app.source_graph.clone(),
                 ActionQueue::new(),
             ),
-            ShellLaunchMode::Ingest,
+            ShellLaunchMode::Load,
         );
 
         let queue_result = match fixture.action {
@@ -3770,7 +3827,7 @@ mod tests {
 
         let mut shell = JamShellState::new(
             JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
-            ShellLaunchMode::Ingest,
+            ShellLaunchMode::Load,
         );
 
         if matches!(fixture.action, SceneRegressionAction::SelectNextScene) {
@@ -3939,7 +3996,7 @@ mod tests {
                 sample_shell.app.source_graph.clone(),
                 ActionQueue::new(),
             ),
-            ShellLaunchMode::Ingest,
+            ShellLaunchMode::Load,
         );
 
         let queue_result = match fixture.action {

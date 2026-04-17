@@ -123,8 +123,9 @@
       "preview_transport_running": true,
       "result_summary": "swapped W-30 bank to bank-b/pad-01 with cap-02",
       "jam_contains": [
-        "W-30 cue idle | mgr swap",
-        "W-30 recall/promoted | bank-b/pad-01"
+        "pad bank-b/pad-01",
+        "preview recall/promoted",
+        "next swap | mgr swap"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
@@ -174,8 +175,9 @@
       "preview_transport_running": true,
       "result_summary": "applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01",
       "jam_contains": [
-        "W-30 cue idle | mgr idle",
-        "W-30 bus 0.64 grit 0.82 | tap prm g0 | shred"
+        "pad bank-a/pad-01",
+        "next shred | mgr idle",
+        "tap prm g0 | shred"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
@@ -224,8 +226,9 @@
       "preview_transport_running": true,
       "result_summary": "froze cap-01 into cap-02 for W-30 reuse on bank-b/pad-03",
       "jam_contains": [
-        "W-30 cue idle | mgr idle",
-        "W-30 bus 0.64 grit 0.00 | tap pin g0 | freeze"
+        "pad bank-b/pad-03",
+        "next freeze | mgr idle",
+        "tap pin g0 | freeze"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
@@ -284,8 +287,9 @@
       "preview_transport_running": true,
       "result_summary": "browsed W-30 slice pool to cap-02 on bank-a/pad-01 at beat 42 / phrase 3",
       "jam_contains": [
-        "W-30 cue idle | mgr idle",
-        "W-30 recall/browse | bank-a/pad-01"
+        "pad bank-a/pad-01",
+        "preview recall/browse",
+        "next idle | mgr idle"
       ],
       "capture_contains": [
         "pending W-30 cue idle",
