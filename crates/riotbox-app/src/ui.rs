@@ -2836,6 +2836,60 @@ mod tests {
         expected: Mc202RegressionExpected,
     }
 
+    #[derive(Debug, Deserialize)]
+    struct SceneRegressionFixture {
+        name: String,
+        section_labels: Vec<String>,
+        action: SceneRegressionAction,
+        #[serde(default)]
+        requested_at: Option<TimestampMs>,
+        #[serde(default)]
+        committed_at: Option<TimestampMs>,
+        #[serde(default)]
+        boundary: Option<SceneRegressionBoundary>,
+        expected: SceneRegressionExpected,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum SceneRegressionAction {
+        ProjectCandidates,
+        SelectNextScene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SceneRegressionBoundary {
+        kind: SceneRegressionBoundaryKind,
+        beat_index: u64,
+        bar_index: u64,
+        phrase_index: u64,
+        scene_id: Option<String>,
+    }
+
+    #[derive(Clone, Copy, Debug, Deserialize)]
+    #[serde(rename_all = "snake_case")]
+    enum SceneRegressionBoundaryKind {
+        Immediate,
+        Beat,
+        HalfBar,
+        Bar,
+        Phrase,
+        Scene,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SceneRegressionExpected {
+        active_scene: String,
+        #[allow(dead_code)]
+        current_scene: String,
+        #[allow(dead_code)]
+        scenes: Vec<String>,
+        #[serde(default)]
+        result_summary: Option<String>,
+        jam_contains: Vec<String>,
+        log_contains: Vec<String>,
+    }
+
     #[derive(Clone, Copy, Debug, Deserialize)]
     #[serde(rename_all = "snake_case")]
     enum Mc202RegressionAction {
@@ -2981,6 +3035,73 @@ mod tests {
                 scene_id: self.scene_id.clone().map(SceneId::from),
             }
         }
+    }
+
+    impl SceneRegressionBoundary {
+        fn to_commit_boundary_state(&self) -> CommitBoundaryState {
+            CommitBoundaryState {
+                kind: match self.kind {
+                    SceneRegressionBoundaryKind::Immediate => {
+                        riotbox_core::action::CommitBoundary::Immediate
+                    }
+                    SceneRegressionBoundaryKind::Beat => riotbox_core::action::CommitBoundary::Beat,
+                    SceneRegressionBoundaryKind::HalfBar => {
+                        riotbox_core::action::CommitBoundary::HalfBar
+                    }
+                    SceneRegressionBoundaryKind::Bar => riotbox_core::action::CommitBoundary::Bar,
+                    SceneRegressionBoundaryKind::Phrase => {
+                        riotbox_core::action::CommitBoundary::Phrase
+                    }
+                    SceneRegressionBoundaryKind::Scene => {
+                        riotbox_core::action::CommitBoundary::Scene
+                    }
+                },
+                beat_index: self.beat_index,
+                bar_index: self.bar_index,
+                phrase_index: self.phrase_index,
+                scene_id: self.scene_id.clone().map(SceneId::from),
+            }
+        }
+    }
+
+    fn scene_label_hint(label: &str) -> SectionLabelHint {
+        match label {
+            "intro" => SectionLabelHint::Intro,
+            "build" => SectionLabelHint::Build,
+            "drop" => SectionLabelHint::Drop,
+            "break" => SectionLabelHint::Break,
+            "verse" => SectionLabelHint::Verse,
+            "chorus" => SectionLabelHint::Chorus,
+            "bridge" => SectionLabelHint::Bridge,
+            "outro" => SectionLabelHint::Outro,
+            _ => SectionLabelHint::Unknown,
+        }
+    }
+
+    fn scene_regression_graph(section_labels: &[String]) -> SourceGraph {
+        let mut graph = sample_shell_state()
+            .app
+            .source_graph
+            .clone()
+            .expect("sample shell source graph");
+        graph.sections.clear();
+
+        for (index, label) in section_labels.iter().enumerate() {
+            let bar_start = (index as u32 * 8) + 1;
+            graph.sections.push(riotbox_core::source_graph::Section {
+                section_id: riotbox_core::ids::SectionId::from(format!("section-{index}")),
+                label_hint: scene_label_hint(label),
+                start_seconds: index as f32 * 16.0,
+                end_seconds: (index + 1) as f32 * 16.0,
+                bar_start,
+                bar_end: bar_start + 7,
+                energy_class: riotbox_core::source_graph::EnergyClass::High,
+                confidence: 0.9,
+                tags: vec![label.clone()],
+            });
+        }
+
+        graph
     }
 
     impl W30RegressionBoundary {
@@ -3414,6 +3535,70 @@ mod tests {
         shell
     }
 
+    fn scene_committed_shell_state(fixture: &SceneRegressionFixture) -> JamShellState {
+        let sample_shell = sample_shell_state();
+        let graph = scene_regression_graph(&fixture.section_labels);
+        let mut session = sample_shell.app.session.clone();
+        session.runtime_state.transport.current_scene = None;
+        session.runtime_state.scene_state.active_scene = None;
+        session.runtime_state.scene_state.scenes.clear();
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Ingest,
+        );
+
+        if matches!(fixture.action, SceneRegressionAction::SelectNextScene) {
+            assert_eq!(
+                shell
+                    .app
+                    .queue_scene_select(fixture.requested_at.expect("scene select requested_at")),
+                crate::jam_app::QueueControlResult::Enqueued,
+                "{} did not enqueue",
+                fixture.name
+            );
+
+            let committed = shell.app.commit_ready_actions(
+                fixture
+                    .boundary
+                    .as_ref()
+                    .expect("scene select boundary")
+                    .to_commit_boundary_state(),
+                fixture.committed_at.expect("scene select committed_at"),
+            );
+            assert_eq!(
+                committed.len(),
+                1,
+                "{} did not commit exactly one action",
+                fixture.name
+            );
+        }
+
+        assert_eq!(
+            shell.app.jam_view.scene.active_scene.as_deref(),
+            Some(fixture.expected.active_scene.as_str()),
+            "{} active scene drifted",
+            fixture.name
+        );
+        if let Some(expected_summary) = &fixture.expected.result_summary {
+            assert_eq!(
+                shell
+                    .app
+                    .session
+                    .action_log
+                    .actions
+                    .last()
+                    .and_then(|action| action.result.as_ref())
+                    .map(|result| result.summary.as_str()),
+                Some(expected_summary.as_str()),
+                "{} result summary drifted",
+                fixture.name
+            );
+        }
+
+        shell
+    }
+
     #[test]
     fn mc202_fixture_backed_shell_regressions_hold() {
         let fixtures: Vec<Mc202RegressionFixture> =
@@ -3440,6 +3625,38 @@ mod tests {
                     log_rendered.contains(needle),
                     "{} log snapshot missing {needle}",
                     fixture.name
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn scene_fixture_backed_shell_regressions_hold() {
+        let fixtures: Vec<SceneRegressionFixture> =
+            serde_json::from_str(include_str!("../tests/fixtures/scene_regression.json"))
+                .expect("parse Scene Brain regression fixtures");
+
+        for fixture in fixtures {
+            let mut shell = scene_committed_shell_state(&fixture);
+            shell.active_screen = ShellScreen::Jam;
+            let jam_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.jam_contains {
+                assert!(
+                    jam_rendered.contains(needle),
+                    "{} jam snapshot missing {needle}\n{jam_rendered}",
+                    fixture.name,
+                    jam_rendered = jam_rendered
+                );
+            }
+
+            shell.active_screen = ShellScreen::Log;
+            let log_rendered = render_jam_shell_snapshot(&shell, 120, 34);
+            for needle in &fixture.expected.log_contains {
+                assert!(
+                    log_rendered.contains(needle),
+                    "{} log snapshot missing {needle}\n{log_rendered}",
+                    fixture.name,
+                    log_rendered = log_rendered
                 );
             }
         }
