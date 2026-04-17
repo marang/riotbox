@@ -142,6 +142,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Gesture-language curation plus dedicated Jam recipe guidance on the perform-first shell.
 - [RIOTBOX-100.md](./RIOTBOX-100.md)
   First explicit workflow benchmark baseline for time to playable Jam and first successful capture.
+- [RIOTBOX-101.md](./RIOTBOX-101.md)
+  Tighter inspect purpose and exit cues on the bounded Jam inspect surface.
 - [RIOTBOX-102.md](./RIOTBOX-102.md)
   Clearer recipe and source-comparison learning paths after the first narrow Jam success loop.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
