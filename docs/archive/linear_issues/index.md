@@ -76,4 +76,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First bounded W-30 internal resample action on the canonical capture-lineage seam.
 - [RIOTBOX-66.md](./RIOTBOX-66.md)
   W-30 resample-lineage diagnostics in the existing Capture and Log shell surfaces.
+- [RIOTBOX-68.md](./RIOTBOX-68.md)
+  Periodic repo-root review findings after the recent W-30 MVP slice batch.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
