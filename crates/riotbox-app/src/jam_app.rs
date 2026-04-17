@@ -32,7 +32,7 @@ use riotbox_core::{
     queue::{ActionQueue, CommittedActionRef},
     session::{
         CaptureRef, CaptureTarget, CaptureType, GraphStorageMode, SessionFile, SourceGraphRef,
-        SourceRef,
+        SourceRef, W30PreviewModeState,
     },
     source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
@@ -622,10 +622,11 @@ pub struct JamAppState {
 impl JamAppState {
     #[must_use]
     pub fn from_parts(
-        session: SessionFile,
+        mut session: SessionFile,
         source_graph: Option<SourceGraph>,
         mut queue: ActionQueue,
     ) -> Self {
+        normalize_w30_preview_mode(&mut session);
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
@@ -651,7 +652,8 @@ impl JamAppState {
         source_graph_path: Option<impl AsRef<Path>>,
     ) -> Result<Self, JamAppError> {
         let session_path = session_path.as_ref().to_path_buf();
-        let session = load_session_json(&session_path)?;
+        let mut session = load_session_json(&session_path)?;
+        normalize_w30_preview_mode(&mut session);
         validate_mvp_single_source_session(&session)?;
         let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
         let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
@@ -2032,6 +2034,13 @@ fn apply_w30_side_effects(
 
     session.runtime_state.lane_state.w30.active_bank = Some(bank_id.clone());
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id.clone());
+    session.runtime_state.lane_state.w30.preview_mode = Some(match action.command {
+        ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
+        ActionCommand::W30SwapBank | ActionCommand::W30TriggerPad => {
+            W30PreviewModeState::LiveRecall
+        }
+        _ => unreachable!("checked above"),
+    });
     if let Some(capture_id) = capture_id.clone() {
         session.runtime_state.lane_state.w30.last_capture = Some(capture_id);
     }
@@ -2421,12 +2430,9 @@ fn build_w30_preview_render_state(
         return W30PreviewRenderState::default();
     }
 
-    let mode = match last_committed_w30_preview_action(session).map(|action| action.command) {
-        Some(ActionCommand::W30AuditionPromoted) => W30PreviewRenderMode::PromotedAudition,
-        Some(ActionCommand::W30SwapBank | ActionCommand::W30TriggerPad) | None => {
-            W30PreviewRenderMode::LiveRecall
-        }
-        Some(_) => unreachable!("filtered by helper"),
+    let mode = match w30.preview_mode.unwrap_or(W30PreviewModeState::LiveRecall) {
+        W30PreviewModeState::LiveRecall => W30PreviewRenderMode::LiveRecall,
+        W30PreviewModeState::PromotedAudition => W30PreviewRenderMode::PromotedAudition,
     };
     let last_trigger = last_committed_w30_trigger_action(session);
 
@@ -2530,6 +2536,27 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
                     | ActionCommand::W30TriggerPad
             )
     })
+}
+
+fn normalize_w30_preview_mode(session: &mut SessionFile) {
+    let preview_mode = last_committed_w30_preview_action(session)
+        .map(|action| match action.command {
+            ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
+            ActionCommand::W30SwapBank | ActionCommand::W30TriggerPad => {
+                W30PreviewModeState::LiveRecall
+            }
+            _ => unreachable!("filtered by helper"),
+        })
+        .unwrap_or(W30PreviewModeState::LiveRecall);
+
+    let w30 = &mut session.runtime_state.lane_state.w30;
+    let has_lane_focus =
+        w30.active_bank.is_some() || w30.focused_pad.is_some() || w30.last_capture.is_some();
+    if !has_lane_focus || w30.preview_mode.is_some() {
+        return;
+    }
+
+    w30.preview_mode = Some(preview_mode);
 }
 
 fn last_committed_w30_trigger_action(session: &SessionFile) -> Option<&Action> {
@@ -2970,6 +2997,7 @@ mod tests {
         session.runtime_state.macro_state.scene_aggression = 0.75;
         session.runtime_state.macro_state.tr909_slam = 0.55;
         session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
@@ -4737,6 +4765,106 @@ mod tests {
         );
         assert_eq!(state.runtime.w30_resample_tap.lineage_capture_count, 2);
         assert_eq!(state.runtime.w30_resample_tap.generation_depth, 2);
+    }
+
+    #[test]
+    fn legacy_w30_preview_mode_is_backfilled_from_committed_preview_history() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.w30.preview_mode = None;
+        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        session.action_log.actions.push(Action {
+            id: ActionId(2),
+            actor: ActorType::User,
+            command: ActionCommand::W30AuditionPromoted,
+            params: ActionParams::Mutation {
+                target_id: Some("cap-01".into()),
+                intensity: 0.68,
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(BankId::from("bank-b")),
+                pad_id: Some(PadId::from("pad-03")),
+                ..Default::default()
+            },
+            requested_at: 600,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Committed,
+            committed_at: Some(700),
+            undo_policy: UndoPolicy::Undoable,
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "auditioned cap-01 on W-30 pad bank-b/pad-03".into(),
+            }),
+            explanation: Some("audition promoted cap-01 on W-30 pad bank-b/pad-03".into()),
+        });
+
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.session.runtime_state.lane_state.w30.preview_mode,
+            Some(W30PreviewModeState::PromotedAudition)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::PromotedAudition
+        );
+    }
+
+    #[test]
+    fn explicit_w30_preview_mode_overrides_stale_action_history() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+        session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        session.action_log.actions.push(Action {
+            id: ActionId(2),
+            actor: ActorType::User,
+            command: ActionCommand::W30AuditionPromoted,
+            params: ActionParams::Mutation {
+                target_id: Some("cap-01".into()),
+                intensity: 0.68,
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(BankId::from("bank-b")),
+                pad_id: Some(PadId::from("pad-03")),
+                ..Default::default()
+            },
+            requested_at: 600,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Committed,
+            committed_at: Some(700),
+            undo_policy: UndoPolicy::Undoable,
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "auditioned cap-01 on W-30 pad bank-b/pad-03".into(),
+            }),
+            explanation: Some("audition promoted cap-01 on W-30 pad bank-b/pad-03".into()),
+        });
+
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.session.runtime_state.lane_state.w30.preview_mode,
+            Some(W30PreviewModeState::LiveRecall)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::LiveRecall
+        );
     }
 
     #[test]
