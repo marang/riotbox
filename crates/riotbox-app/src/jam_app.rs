@@ -848,11 +848,13 @@ impl JamAppState {
         self.refresh_view();
     }
 
-    fn scene_launch_pending(&self) -> bool {
-        self.queue
-            .pending_actions()
-            .iter()
-            .any(|action| action.command == ActionCommand::SceneLaunch)
+    fn scene_transition_pending(&self) -> bool {
+        self.queue.pending_actions().iter().any(|action| {
+            matches!(
+                action.command,
+                ActionCommand::SceneLaunch | ActionCommand::SceneRestore
+            )
+        })
     }
 
     fn next_scene_candidate(&self) -> Option<SceneId> {
@@ -880,8 +882,25 @@ impl JamAppState {
         scenes.first().cloned()
     }
 
+    fn restorable_scene_target(&self) -> Option<SceneId> {
+        let current_scene = self
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene
+            .clone()
+            .or_else(|| self.session.runtime_state.transport.current_scene.clone());
+
+        self.session
+            .runtime_state
+            .scene_state
+            .restore_scene
+            .clone()
+            .filter(|scene_id| current_scene.as_ref() != Some(scene_id))
+    }
+
     pub fn queue_scene_select(&mut self, requested_at: TimestampMs) -> QueueControlResult {
-        if self.scene_launch_pending() {
+        if self.scene_transition_pending() {
             return QueueControlResult::AlreadyPending;
         }
 
@@ -916,6 +935,34 @@ impl JamAppState {
             scene_id: Some(scene_id.clone()),
         };
         draft.explanation = Some(format!("launch scene {scene_id} on next bar"));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
+    pub fn queue_scene_restore(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+        if self.scene_transition_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let Some(scene_id) = self.restorable_scene_target() else {
+            return QueueControlResult::AlreadyInState;
+        };
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::SceneRestore,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::Scene),
+                scene_id: Some(scene_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Scene {
+            scene_id: Some(scene_id.clone()),
+        };
+        draft.explanation = Some(format!("restore scene {scene_id} on next bar"));
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -2073,7 +2120,10 @@ impl JamAppState {
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
         apply_scene_side_effects(&mut self.session, action, Some(boundary));
-        if action.command == ActionCommand::SceneLaunch {
+        if matches!(
+            action.command,
+            ActionCommand::SceneLaunch | ActionCommand::SceneRestore
+        ) {
             self.runtime.transport.current_scene =
                 self.session.runtime_state.transport.current_scene.clone();
         }
@@ -2960,7 +3010,10 @@ fn apply_scene_side_effects(
     action: &Action,
     boundary: Option<&CommitBoundaryState>,
 ) {
-    if action.command != ActionCommand::SceneLaunch {
+    if !matches!(
+        action.command,
+        ActionCommand::SceneLaunch | ActionCommand::SceneRestore
+    ) {
         return;
     }
 
@@ -2978,8 +3031,19 @@ fn apply_scene_side_effects(
         return;
     };
 
+    let previous_scene = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .clone()
+        .or_else(|| session.runtime_state.transport.current_scene.clone());
+
     session.runtime_state.scene_state.active_scene = Some(scene_id.clone());
     session.runtime_state.transport.current_scene = Some(scene_id.clone());
+    session.runtime_state.scene_state.restore_scene = previous_scene
+        .as_ref()
+        .filter(|previous_scene| **previous_scene != scene_id)
+        .cloned();
 
     if let Some(logged_action) = session
         .action_log
@@ -2997,9 +3061,14 @@ fn apply_scene_side_effects(
                 )
             },
         );
+        let verb = match action.command {
+            ActionCommand::SceneLaunch => "launched",
+            ActionCommand::SceneRestore => "restored",
+            _ => unreachable!("scene side effects only handle launch and restore"),
+        };
         logged_action.result = Some(ActionResult {
             accepted: true,
-            summary: format!("launched scene {scene_id} at {position}"),
+            summary: format!("{verb} scene {scene_id} at {position}"),
         });
     }
 }
@@ -4626,6 +4695,10 @@ mod tests {
             Some(SceneId::from("scene-02-break"))
         );
         assert_eq!(
+            state.session.runtime_state.scene_state.restore_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
             state.runtime.transport.current_scene,
             Some(SceneId::from("scene-02-break"))
         );
@@ -4646,6 +4719,96 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("launched scene scene-02-break at bar 9 / phrase 2")
+        );
+    }
+
+    #[test]
+    fn queue_scene_restore_enqueues_scene_restore_for_next_bar() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(state.queue_scene_restore(300), QueueControlResult::Enqueued);
+        assert_eq!(
+            state.queue_scene_restore(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::SceneRestore);
+        assert_eq!(pending[0].quantization, Quantization::NextBar);
+        assert_eq!(
+            pending[0].target.scene_id,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            pending[0].params,
+            ActionParams::Scene {
+                scene_id: Some(SceneId::from("scene-01-drop"))
+            }
+        );
+    }
+
+    #[test]
+    fn committed_scene_restore_updates_transport_scene_and_restore_pointer() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(state.queue_scene_restore(300), QueueControlResult::Enqueued);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            420,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.session.runtime_state.transport.current_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.session.runtime_state.scene_state.restore_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.runtime.transport.current_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-01-drop")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.current_scene_id.as_deref(),
+            Some("scene-01-drop")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("restored scene scene-01-drop at bar 9 / phrase 2")
         );
     }
 

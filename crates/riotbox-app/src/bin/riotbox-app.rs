@@ -186,10 +186,23 @@ fn run_event_loop(
                             shell.set_error_status("queued scene select for next bar");
                         }
                         riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
-                            shell.set_error_status("scene select already queued");
+                            shell.set_error_status("scene transition already queued");
                         }
                         riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
                             shell.set_error_status("no next scene candidate available");
+                        }
+                    }
+                }
+                ShellKeyOutcome::QueueSceneRestore => {
+                    match shell.app.queue_scene_restore(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued scene restore for next bar");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("scene transition already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("no restore scene available");
                         }
                     }
                 }

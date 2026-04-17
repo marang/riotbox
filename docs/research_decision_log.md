@@ -904,6 +904,17 @@ Status: accepted
 
 ---
 
+Topic: first Scene Brain recovery should reuse the committed restore pointer on the existing transport seam
+Phase: Scene Brain
+Question: once Riotbox already has deterministic scene candidates, one committed `scene.launch` seam, and visible scene diagnostics, what is the smallest honest next step that makes scene recovery real without opening a second transition model or scene browser?
+Decision: add one bounded `scene.restore` action that targets the existing session `restore_scene` pointer, queues on `NextBar`, commits through the current action queue and transport boundary seam, and swaps the restore pointer back to the previously active scene when the restore lands. Keep richer transition shaping, scene recovery policy, and deeper restore diagnostics out of scope.
+Why: the current contracts already name scene restore as part of the TUI and action lexicon, and `scene.launch` by itself still leaves Scene Brain without a real recovery path. The smallest honest move is to reuse the explicit restore pointer already present in session state instead of inventing a second scene stack, transition graph, or shell-only recovery model.
+Evidence: `riotbox-app` now queues `scene.restore` on the same `NextBar` seam as `scene.launch`, blocks overlapping scene transitions, updates `active_scene`, transport `current_scene`, and `restore_scene` together on commit, exposes a minimal pending restore cue in the Jam shell, and covers both committed state and shell visibility with focused regressions.
+Consequences: later Scene Brain work should continue from the same committed restore pointer when adding richer launch/restore cues, scene transition policy, or more musical recovery behavior. Replay-safe restore fixtures and more detailed shell diagnostics remain separate follow-up slices.
+Status: accepted
+
+---
+
 Topic: first-run onramp should stay inside the existing Jam shell spine
 Phase: Playable shell UX
 Question: once Riotbox already has real lanes and actions, what is the smallest honest first-run improvement that helps a new user find one meaningful play moment without inventing a second onboarding shell or wizard?
