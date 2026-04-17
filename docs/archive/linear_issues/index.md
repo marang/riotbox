@@ -148,4 +148,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Clearer recipe and source-comparison learning paths after the first narrow Jam success loop.
 - [RIOTBOX-103.md](./RIOTBOX-103.md)
   Jam pending-action promotion down to the next two visible moves plus compact queue summary.
+- [RIOTBOX-104.md](./RIOTBOX-104.md)
+  Jam footer and help copy split into primary versus advanced gesture ranks.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
