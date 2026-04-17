@@ -803,6 +803,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 internal resample taps should become audibly real on the existing audio callback instead of staying diagnostics-only
+Phase: W-30 MVP
+Question: once the app/runtime seam already derives a typed `w30_resample_tap` state, what is the smallest honest next step that makes it audible without introducing a second W-30 render path?
+Decision: route the existing `W30ResampleTapState` through the same realtime callback that already mixes TR-909 support and W-30 preview. Keep the slice bounded to one synthetic internal-capture tap voice that reacts to source profile, lineage depth, generation depth, grit, transport-running state, and music-bus level, and verify it with direct audio callback tests instead of opening a second fixture harness yet.
+Why: the repo already had explicit app/runtime diagnostics for internal resample lineage, but the audio runtime still ignored that state. Making the current seam audibly real is the smallest step that turns the typed W-30 resample path into product-visible behavior while preserving the one-callback audio architecture and avoiding a hidden W-30-only render loop.
+Evidence: `riotbox-audio` now threads shared resample-tap state into `build_silent_output_stream`, snapshots it in the callback, and mixes a bounded `render_w30_resample_tap_buffer(...)` voice next to the existing TR-909 and W-30 preview paths. Direct runtime tests now cover idle silence, audible lineage-ready taps, and zero-music-bus silence for the new seam, and the full repo verification loop stays green.
+Consequences: later W-30 resample-lab work should keep extending this same callback seam instead of creating a parallel internal-resample renderer. Richer profile fixtures, shell diagnostics, and loop-freezer reuse cues remain follow-up work and should build on the same typed runtime state.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
