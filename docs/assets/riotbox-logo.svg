@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="700" viewBox="0 0 1600 700" fill="none">
+  <defs>
+    <linearGradient id="bg" x1="120" y1="80" x2="1480" y2="620" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#1A130F"/>
+      <stop offset="1" stop-color="#0B0A09"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="270" y1="180" x2="1320" y2="560" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FF8E3C"/>
+      <stop offset="1" stop-color="#F6D365"/>
+    </linearGradient>
+    <filter id="shadow" x="76" y="46" width="1448" height="608" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+      <feFlood flood-opacity="0" result="BackgroundImageFix"/>
+      <feGaussianBlur in="BackgroundImageFix" stdDeviation="12"/>
+      <feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+      <feOffset dy="16"/>
+      <feGaussianBlur stdDeviation="22"/>
+      <feColorMatrix type="matrix" values="0 0 0 0 0.937255 0 0 0 0 0.443137 0 0 0 0 0.0862745 0 0 0 0.18 0"/>
+      <feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_1_1"/>
+      <feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_1_1" result="shape"/>
+    </filter>
+  </defs>
+
+  <rect width="1600" height="700" rx="38" fill="#090909"/>
+
+  <g filter="url(#shadow)">
+    <rect x="120" y="90" width="1360" height="520" rx="28" fill="url(#bg)" stroke="#FF8E3C" stroke-opacity="0.25" stroke-width="2"/>
+    <rect x="120" y="90" width="1360" height="76" rx="28" fill="#110D0A"/>
+    <circle cx="174" cy="128" r="11" fill="#FF5F57"/>
+    <circle cx="212" cy="128" r="11" fill="#FFBD2E"/>
+    <circle cx="250" cy="128" r="11" fill="#28C840"/>
+    <text x="304" y="137" fill="#F0E7DD" fill-opacity="0.84" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24" letter-spacing="0.14em">RIOTBOX / FERAL TERMINAL AUDIO INSTRUMENT</text>
+
+    <rect x="182" y="214" width="292" height="214" rx="22" fill="#12100E" stroke="#F6D365" stroke-opacity="0.16"/>
+    <rect x="516" y="214" width="292" height="214" rx="22" fill="#12100E" stroke="#F6D365" stroke-opacity="0.16"/>
+    <rect x="850" y="214" width="448" height="214" rx="22" fill="#12100E" stroke="#F6D365" stroke-opacity="0.16"/>
+
+    <text x="216" y="266" fill="#F6D365" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="22">NOW</text>
+    <text x="216" y="314" fill="#F0E7DD" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="28">playing @ 32.0</text>
+    <text x="216" y="354" fill="#F0E7DD" fill-opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24">scene drop-1</text>
+    <text x="216" y="394" fill="#F0E7DD" fill-opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24">trust usable</text>
+
+    <text x="550" y="266" fill="#F6D365" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="22">NEXT</text>
+    <text x="550" y="314" fill="#F0E7DD" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="28">909 fill @ next bar</text>
+    <text x="550" y="354" fill="#F0E7DD" fill-opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24">capture phrase armed</text>
+    <text x="550" y="394" fill="#F0E7DD" fill-opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24">follower ready</text>
+
+    <text x="884" y="266" fill="#F6D365" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="22">LANES</text>
+    <text x="884" y="314" fill="#F0E7DD" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="28">MC-202   W-30   TR-909</text>
+    <text x="884" y="354" fill="#F0E7DD" fill-opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24">answer    pad-01  takeover</text>
+    <text x="884" y="394" fill="#F0E7DD" fill-opacity="0.72" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="24">touch     cap-01  slam on</text>
+
+    <path d="M184 500C266 446 340 538 420 500C500 462 588 542 670 500C752 458 840 542 924 500C1008 458 1088 538 1174 500C1260 462 1330 520 1416 488" stroke="url(#glow)" stroke-width="8" stroke-linecap="round"/>
+    <path d="M184 534C266 580 340 490 420 534C500 578 588 490 670 534C752 576 840 490 924 534C1008 576 1088 494 1174 534C1260 572 1330 512 1416 548" stroke="#FF8E3C" stroke-opacity="0.42" stroke-width="4" stroke-linecap="round"/>
+
+    <text x="182" y="548" fill="#FFF7EE" font-family="Impact, Haettenschweiler, Arial Narrow Bold, sans-serif" font-size="138" letter-spacing="0.08em">RIOTBOX</text>
+    <text x="186" y="592" fill="#F6D365" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, Liberation Mono, monospace" font-size="28" letter-spacing="0.12em">LOAD AUDIO. QUEUE GESTURES. COMMIT IN TIME. CAPTURE THE GOOD ACCIDENT.</text>
+  </g>
+</svg>
