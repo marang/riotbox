@@ -180,6 +180,19 @@ fn run_event_loop(
                     shell.app.queue_scene_mutation(timestamp_now());
                     shell.set_error_status("queued scene mutation for next bar");
                 }
+                ShellKeyOutcome::QueueSceneSelect => {
+                    match shell.app.queue_scene_select(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status("queued scene select for next bar");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("scene select already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("no next scene candidate available");
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueMc202RoleToggle => {
                     match shell.app.queue_mc202_role_toggle(timestamp_now()) {
                         riotbox_app::jam_app::QueueControlResult::Enqueued => {
