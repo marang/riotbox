@@ -1,0 +1,97 @@
+[
+  {
+    "name": "idle_silence",
+    "render_state": {
+      "mode": "idle",
+      "routing": "silent",
+      "source_profile": null,
+      "lineage_capture_count": 0,
+      "generation_depth": 0,
+      "music_bus_level": 0.64,
+      "grit_level": 0.4,
+      "is_transport_running": true
+    },
+    "expected": {
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
+    }
+  },
+  {
+    "name": "promoted_capture_lineage_ready",
+    "render_state": {
+      "mode": "capture_lineage_ready",
+      "routing": "internal_capture_tap",
+      "source_profile": "promoted_capture",
+      "lineage_capture_count": 2,
+      "generation_depth": 1,
+      "music_bus_level": 0.58,
+      "grit_level": 0.62,
+      "is_transport_running": true
+    },
+    "expected": {
+      "min_active_samples": 280,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.01,
+      "max_peak_abs": 0.14
+    }
+  },
+  {
+    "name": "pinned_capture_higher_generation",
+    "render_state": {
+      "mode": "capture_lineage_ready",
+      "routing": "internal_capture_tap",
+      "source_profile": "pinned_capture",
+      "lineage_capture_count": 3,
+      "generation_depth": 2,
+      "music_bus_level": 0.67,
+      "grit_level": 0.74,
+      "is_transport_running": true
+    },
+    "expected": {
+      "min_active_samples": 320,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.015,
+      "max_peak_abs": 0.18
+    }
+  },
+  {
+    "name": "stopped_promoted_capture_lineage_ready",
+    "render_state": {
+      "mode": "capture_lineage_ready",
+      "routing": "internal_capture_tap",
+      "source_profile": "promoted_capture",
+      "lineage_capture_count": 2,
+      "generation_depth": 1,
+      "music_bus_level": 0.58,
+      "grit_level": 0.62,
+      "is_transport_running": false
+    },
+    "expected": {
+      "min_active_samples": 320,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.008,
+      "max_peak_abs": 0.12
+    }
+  },
+  {
+    "name": "zero_music_bus_silence",
+    "render_state": {
+      "mode": "capture_lineage_ready",
+      "routing": "internal_capture_tap",
+      "source_profile": "pinned_capture",
+      "lineage_capture_count": 4,
+      "generation_depth": 3,
+      "music_bus_level": 0.0,
+      "grit_level": 0.82,
+      "is_transport_running": false
+    },
+    "expected": {
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
+    }
+  }
+]
