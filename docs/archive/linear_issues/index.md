@@ -154,4 +154,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Jam lane-card compression down to current and next summaries.
 - [RIOTBOX-106.md](./RIOTBOX-106.md)
   First landed-result and next-step cue on the Jam shell.
+- [RIOTBOX-107.md](./RIOTBOX-107.md)
+  First bounded Scene Brain restore action on the existing transport seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
