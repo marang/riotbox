@@ -1412,27 +1412,44 @@ fn tr909_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let pending_line = if let Some(action) = shell.app.jam_view.pending_actions.first() {
-        format!(
-            "pending {} {} @ {}",
-            action.actor,
-            jam_action_label(&action.command),
-            action.quantization
-        )
-    } else {
-        "pending none".into()
-    };
+    let first_pending_line = shell
+        .app
+        .jam_view
+        .pending_actions
+        .first()
+        .map(|action| {
+            format!(
+                "next 1 {} {} @ {}",
+                action.actor,
+                jam_action_label(&action.command),
+                action.quantization
+            )
+        })
+        .unwrap_or_else(|| "next 1 none".into());
 
-    let more_pending = shell.app.jam_view.pending_actions.len().saturating_sub(1);
-    let queue_depth_line = if more_pending > 0 {
-        format!("more queued {more_pending}")
-    } else {
-        "more queued 0".into()
-    };
+    let second_pending_line = shell
+        .app
+        .jam_view
+        .pending_actions
+        .get(1)
+        .map(|action| {
+            let mut line = format!(
+                "next 2 {} {} @ {}",
+                action.actor,
+                jam_action_label(&action.command),
+                action.quantization
+            );
+            let more_pending = shell.app.jam_view.pending_actions.len().saturating_sub(2);
+            if more_pending > 0 {
+                line.push_str(&format!(" | +{more_pending} more"));
+            }
+            line
+        })
+        .unwrap_or_else(|| "next 2 none".into());
 
     vec![
-        Line::from(pending_line),
-        Line::from(queue_depth_line),
+        Line::from(first_pending_line),
+        Line::from(second_pending_line),
         Line::from(latest_landed_line(shell)),
         Line::from(format!("status {}", shell.status_message)),
     ]
@@ -4008,6 +4025,22 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("answer queued"));
+    }
+
+    #[test]
+    fn renders_jam_shell_with_two_promoted_pending_actions_and_queue_summary() {
+        let first_run_shell = first_run_shell_state();
+        let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
+        shell.app.queue_scene_mutation(200);
+        shell.app.queue_tr909_fill(201);
+        shell.app.queue_capture_bar(202);
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("next 1 user mutate"), "{rendered}");
+        assert!(rendered.contains("next 2 user fill"), "{rendered}");
+        assert!(rendered.contains("+1 more"), "{rendered}");
+        assert!(!rendered.contains("more queued"), "{rendered}");
     }
 
     #[test]
