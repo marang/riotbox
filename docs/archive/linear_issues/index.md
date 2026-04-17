@@ -84,4 +84,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   W-30 capture resolution now follows committed lane focus on the current preview seam.
 - [RIOTBOX-71.md](./RIOTBOX-71.md)
   Pending W-30 resample cue summaries now flow through the core Jam view model.
+- [RIOTBOX-67.md](./RIOTBOX-67.md)
+  First bounded W-30 pad-bank stepping on the committed preview seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
