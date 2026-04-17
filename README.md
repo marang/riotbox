@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/assets/riotbox-logo.svg" alt="Riotbox" width="960" />
+  <img src="docs/assets/brand/riotbox-logo-primary-v3.png" alt="Riotbox" width="960" />
 </p>
 
 # Riotbox
