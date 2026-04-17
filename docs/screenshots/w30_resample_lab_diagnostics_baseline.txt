@@ -1,0 +1,27 @@
+Riotbox W-30 Resample Lab Diagnostics Baseline
+Normalized terminal capture notes for `RIOTBOX-78`
+Source: `riotbox-app` shell state fixtures
+Notes:
+- normalized from the current Jam, Capture, and Log shell state fixtures
+- intended as a review/update artifact, not a pixel-perfect golden render
+- keeps the new audible resample-tap seam legible inside the existing shell spine
+
+Key shell cues after this slice:
+
+- `Jam -> Lanes` now includes:
+  - `W-30 bus 0.64 grit 0.50 | tap ready/raw g2 | idle`
+- `Capture -> Routing / Promotion` now includes:
+  - `forge idle | tap ready/raw g2`
+  - `tap src cap-02 g2/l2 | route internal`
+  - `tap mix 0.64/0.50`
+  - `lineage cap-root>cap-01>cap-02 | g2`
+- `Log -> W-30 Lane` now includes:
+  - `cue idle | resample`
+  - `tapmix 0.64/0.50`
+  - `tap cap-02 g2/l2 int`
+
+Interpretation:
+
+- the audible internal resample seam is no longer only implied by lineage counters or generic action history
+- the Capture screen now shows the resample source, route, mix, and lineage in one compact operator path
+- the Log screen now keeps a compressed but explicit resample-lab summary without opening a second W-30 diagnostics page

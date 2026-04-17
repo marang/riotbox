@@ -175,7 +175,7 @@
       "result_summary": "applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01",
       "jam_contains": [
         "W-30 cue idle | mgr idle",
-        "W-30 bus 0.64 grit 0.82 | cap-01 | shred"
+        "W-30 bus 0.64 grit 0.82 | tap prm g0 | shred"
       ],
       "capture_contains": [
         "pending W-30 cue idle",

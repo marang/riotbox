@@ -814,6 +814,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 resample-lab diagnostics should stay in the existing Jam, Capture, and Log shell spine after the audible seam lands
+Phase: W-30 MVP
+Question: once internal resample taps are audibly real on the callback seam, how should the shell expose that state without opening a second W-30 lab page or regressing older preview, bank-manager, and pad-forge cues?
+Decision: keep the slice presentation-only and deepen the existing shell spine with compact resample-lab diagnostics. Jam now shows one `tap` summary next to the current W-30 mix line, Capture now shows source, route, mix, and lineage for the current resample tap, and Log now uses a compressed resample-lab line pair that fits the existing W-30 lane panel width.
+Why: the repo already has one honest W-30 operator surface. After `RIOTBOX-77`, the risk is not missing state but leaving the audible resample seam hard to read unless operators inspect generic action history or source lineage by hand. Extending the current Jam/Capture/Log path keeps the shell aligned with the one existing W-30 runtime seam instead of adding another diagnostics surface.
+Evidence: `riotbox-app` now renders explicit resample-tap summaries across Jam, Capture, and Log, the shell regressions cover both committed lineage diagnostics and a cross-surface resample-lab snapshot, and the normalized artifact at `docs/screenshots/w30_resample_lab_diagnostics_baseline.txt` records the expected cues.
+Consequences: later W-30 resample work should keep extending these same shell surfaces unless the roadmap explicitly calls for a separate operator page. The current slice remains presentation-only and does not change the shipped audio behavior from `RIOTBOX-77`.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
