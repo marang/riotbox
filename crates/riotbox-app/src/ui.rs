@@ -519,7 +519,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             "W-30 {} | {} | {}",
             w30_mix_compact(shell),
             w30_capture_compact(shell),
-            w30_trigger_compact(shell)
+            w30_trigger_compact(shell),
         )),
     ])
     .block(Block::default().title("Lanes").borders(Borders::ALL))
@@ -1197,6 +1197,22 @@ fn w30_target_compact(shell: &JamShellState) -> String {
     )
 }
 
+fn w30_resample_tap_compact(shell: &JamShellState) -> String {
+    let tap = &shell.app.runtime.w30_resample_tap;
+    if matches!(tap.mode, riotbox_audio::w30::W30ResampleTapMode::Idle) {
+        return "idle".into();
+    }
+
+    let profile = match tap.source_profile {
+        None => "unset",
+        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::RawCapture) => "raw",
+        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PromotedCapture) => "promoted",
+        Some(riotbox_audio::w30::W30ResampleTapSourceProfile::PinnedCapture) => "pinned",
+    };
+
+    format!("{profile} g{}", tap.generation_depth)
+}
+
 fn w30_mix_compact(shell: &JamShellState) -> String {
     format!(
         "bus {:.2} grit {:.2}",
@@ -1611,6 +1627,7 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             shell.app.runtime_view.w30_preview_routing,
             shell.app.runtime_view.w30_preview_mix_summary
         )),
+        Line::from(format!("tap {}", w30_resample_tap_compact(shell))),
         Line::from(format!("latest promoted {latest_promoted}")),
         Line::from(format!(
             "last lane capture {}",
@@ -2549,6 +2566,8 @@ mod tests {
             capture_id: "cap-01".into(),
             capture_type: riotbox_core::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into(), "src-1".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: None,
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: None,
@@ -3018,6 +3037,7 @@ mod tests {
         assert!(rendered.contains("pinned 0 | promoted 0"));
         assert!(rendered.contains("no pinned captures yet"));
         assert!(rendered.contains("pending W-30 cue idle"));
+        assert!(rendered.contains("tap raw g0"));
         assert!(rendered.contains("latest promoted none"));
     }
 

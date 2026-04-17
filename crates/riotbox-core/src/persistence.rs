@@ -252,6 +252,8 @@ mod tests {
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: Some(ActionId(1)),
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: Some(CaptureTarget::W30Pad {

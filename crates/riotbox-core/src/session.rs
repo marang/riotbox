@@ -229,6 +229,10 @@ pub struct CaptureRef {
     pub capture_id: CaptureId,
     pub capture_type: CaptureType,
     pub source_origin_refs: Vec<String>,
+    #[serde(default)]
+    pub lineage_capture_refs: Vec<CaptureId>,
+    #[serde(default)]
+    pub resample_generation_depth: u8,
     pub created_from_action: Option<ActionId>,
     pub storage_path: String,
     pub assigned_target: Option<CaptureTarget>,
@@ -389,6 +393,8 @@ mod tests {
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: Some(ActionId(1)),
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: Some(CaptureTarget::W30Pad {

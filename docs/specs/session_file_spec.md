@@ -271,6 +271,8 @@ CaptureRef {
   capture_id
   type
   source_origin_refs
+  lineage_capture_refs
+  resample_generation_depth
   created_from_action
   storage_path
   assigned_target
@@ -287,6 +289,8 @@ Examples:
 Minimum provenance:
 
 - source object references when available
+- explicit capture-to-capture lineage when the material is internally reused
+- resample generation depth for internally derived material
 - generating action ID
 - resulting assigned pad or bank if applicable
 

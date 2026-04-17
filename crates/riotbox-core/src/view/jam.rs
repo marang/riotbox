@@ -530,6 +530,8 @@ mod tests {
             capture_id: "cap-01".into(),
             capture_type: crate::session::CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into(), "src-1".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: None,
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: Some(crate::session::CaptureTarget::W30Pad {
