@@ -106,4 +106,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First bounded W-30 loop-freezer reuse cue on the existing capture seam.
 - [RIOTBOX-81.md](./RIOTBOX-81.md)
   Follow-up periodic repo review after the recent W-30 seam batch.
+- [RIOTBOX-82.md](./RIOTBOX-82.md)
+  W-30 phrase-cue conflict cleanup between loop freeze and resample.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
