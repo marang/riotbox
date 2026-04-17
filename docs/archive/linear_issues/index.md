@@ -122,4 +122,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Bounded W-30 slice-pool browse preview profile on the existing live-recall seam.
 - [RIOTBOX-89.md](./RIOTBOX-89.md)
   First bounded Scene Brain projection from analyzed source sections into existing session state.
+- [RIOTBOX-90.md](./RIOTBOX-90.md)
+  First committed Scene Brain scene-select action on the current transport seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
