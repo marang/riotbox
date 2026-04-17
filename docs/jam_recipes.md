@@ -182,6 +182,38 @@ What this is not:
 - not a guarantee that `Beat03` and `Beat08` will already feel dramatically different on the `w` step
 - not a substitute for `Recipe 2` and `Recipe 5` if you want to learn lane differences and source differences separately
 
+## Recipe 8: Jump Then Restore
+
+Goal: learn the first Scene Brain recovery loop.
+
+Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
+
+1. press `Space`
+2. press `y`
+3. press `2` and confirm the scene jump landed
+4. go back to `Jam` with `1`
+5. press `Y`
+6. press `2` and confirm the restore landed
+
+What to observe:
+
+- `Y` is only meaningful after Riotbox already has a committed previous scene to restore to
+- `Jam` shows the current restore target before you fire it
+- `Log` is the clearest place to verify both the queued restore target and the committed restore result
+
+If you want one more short loop:
+
+1. press `1`
+2. press `y` again
+3. let the new jump land
+4. press `Y` again
+
+What this teaches:
+
+- Scene Brain already has one explicit `jump -> restore` pair
+- restore is deterministic and pointer-based, not a hidden undo mode
+- scene changes are becoming recoverable without opening a second arrangement model
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -192,6 +224,7 @@ So if two runs feel similar:
 - try a different lane
 - use `Recipe 2` before repeating `Recipe 7`
 - use `Recipe 5` if you want to understand source-specific differences
+- use `Recipe 8` if you want the first bounded Scene Brain flow instead of only lane gestures
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 
