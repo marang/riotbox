@@ -871,6 +871,17 @@ Status: accepted
 
 ## 4. Mandatory Research Topics
 
+Topic: first Scene Brain slice should project deterministic scene candidates from source sections into existing session state
+Phase: Scene Brain
+Question: what is the smallest honest first Scene Brain step after W-30 MVP that creates multiple usable scene candidates without opening a second arrangement or scene-graph architecture?
+Decision: derive deterministic scene candidate IDs from ordered `SourceGraph.sections`, store them in the existing session `scene_state.scenes`, and normalize `active_scene` plus transport `current_scene` onto that same committed state when no scene is already set. Keep the first slice bounded to candidate projection and the shell visibility that already exists.
+Why: the current repo already has one explicit session scene state, one transport scene pointer, and Jam shell visibility for current scene and scene count. A first Scene Brain slice should deepen that spine instead of inventing a second scene graph or separate arrangement inventory before selection and transition semantics even exist.
+Evidence: `riotbox-app` now derives scene candidates from analyzed section order during ingest and app-state normalization, and targeted tests prove both empty-session projection and persisted ingest state without changing the current queue or launch architecture.
+Consequences: later Scene Brain work should build scene-select, launch, and restore behavior on the same session and transport state. Richer scene graphs, energy management, and transition logic remain follow-up slices.
+Status: accepted
+
+---
+
 The following topics require explicit entries before related implementation scales:
 
 - audio backend and latency baseline
