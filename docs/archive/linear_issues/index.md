@@ -72,4 +72,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Internal W-30 resample tap seam behind the canonical capture lineage path.
 - [RIOTBOX-64.md](./RIOTBOX-64.md)
   Replay-safe fixture coverage for the shipped audible W-30 preview seam.
+- [RIOTBOX-65.md](./RIOTBOX-65.md)
+  First bounded W-30 internal resample action on the canonical capture-lineage seam.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
