@@ -135,6 +135,7 @@ Best next moves from there:
 
 - `Recipe 2` if you want different lane behavior from the same source
 - `Recipe 5` if you want to learn how `Beat03`, `Beat08`, `DH_BeatC`, and `DH_RushArp` change the shell feel
+- `Recipe 8` if you want the first Scene Brain `scene jump -> restore` flow
 - `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> promote -> hit -> undo
 
 If `just` is installed, the normal local check path is:
