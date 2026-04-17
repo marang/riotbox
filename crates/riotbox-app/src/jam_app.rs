@@ -14,7 +14,8 @@ use riotbox_audio::{
     },
     w30::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile,
+        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
 use riotbox_core::{
@@ -111,6 +112,7 @@ pub struct AppRuntimeState {
     pub transport_driver: TransportDriverState,
     pub tr909_render: Tr909RenderState,
     pub w30_preview: W30PreviewRenderState,
+    pub w30_resample_tap: W30ResampleTapState,
     pub last_commit_boundary: Option<CommitBoundaryState>,
 }
 
@@ -123,6 +125,7 @@ impl Default for AppRuntimeState {
             transport_driver: TransportDriverState::default(),
             tr909_render: Tr909RenderState::default(),
             w30_preview: W30PreviewRenderState::default(),
+            w30_resample_tap: W30ResampleTapState::default(),
             last_commit_boundary: None,
         }
     }
@@ -178,6 +181,11 @@ pub struct JamRuntimeView {
     pub w30_preview_mix_summary: String,
     pub w30_preview_transport_summary: String,
     pub w30_preview_trigger_summary: String,
+    pub w30_resample_tap_mode: String,
+    pub w30_resample_tap_routing: String,
+    pub w30_resample_tap_profile: String,
+    pub w30_resample_tap_source_summary: String,
+    pub w30_resample_tap_mix_summary: String,
     pub runtime_warnings: Vec<String>,
 }
 
@@ -224,6 +232,10 @@ impl JamRuntimeView {
 
         runtime_warnings.extend(derive_tr909_render_warnings(&runtime.tr909_render, session));
         runtime_warnings.extend(derive_w30_preview_warnings(&runtime.w30_preview, session));
+        runtime_warnings.extend(derive_w30_resample_tap_warnings(
+            &runtime.w30_resample_tap,
+            session,
+        ));
 
         Self {
             audio_status,
@@ -259,6 +271,17 @@ impl JamRuntimeView {
             ),
             w30_preview_transport_summary: w30_preview_transport_summary(&runtime.w30_preview),
             w30_preview_trigger_summary: w30_preview_trigger_summary(&runtime.w30_preview),
+            w30_resample_tap_mode: runtime.w30_resample_tap.mode.label().into(),
+            w30_resample_tap_routing: runtime.w30_resample_tap.routing.label().into(),
+            w30_resample_tap_profile: w30_resample_tap_profile_label(&runtime.w30_resample_tap)
+                .into(),
+            w30_resample_tap_source_summary: w30_resample_tap_source_summary(
+                &runtime.w30_resample_tap,
+            ),
+            w30_resample_tap_mix_summary: format!(
+                "music bus {:.2} | grit {:.2}",
+                runtime.w30_resample_tap.music_bus_level, runtime.w30_resample_tap.grit_level
+            ),
             runtime_warnings,
         }
     }
@@ -313,6 +336,28 @@ fn w30_preview_trigger_summary(render: &W30PreviewRenderState) -> String {
         "trigger r{} @ {:.2}",
         render.trigger_revision, render.trigger_velocity
     )
+}
+
+fn w30_resample_tap_profile_label(render: &W30ResampleTapState) -> &'static str {
+    match render.source_profile {
+        None => "unset",
+        Some(W30ResampleTapSourceProfile::RawCapture) => "raw_capture",
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => "promoted_capture",
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => "pinned_capture",
+    }
+}
+
+fn w30_resample_tap_source_summary(render: &W30ResampleTapState) -> String {
+    match render.source_capture_id.as_deref() {
+        Some(capture_id) => format!(
+            "{capture_id} | gen {} | lineage {}",
+            render.generation_depth, render.lineage_capture_count
+        ),
+        None => format!(
+            "source unset | gen {} | lineage {}",
+            render.generation_depth, render.lineage_capture_count
+        ),
+    }
 }
 
 fn tr909_render_profile_label(render: &Tr909RenderState) -> &'static str {
@@ -534,6 +579,35 @@ fn derive_w30_preview_warnings(
     warnings
 }
 
+fn derive_w30_resample_tap_warnings(
+    render: &W30ResampleTapState,
+    session: &SessionFile,
+) -> Vec<String> {
+    if matches!(render.mode, W30ResampleTapMode::Idle) {
+        return Vec::new();
+    }
+
+    let mut warnings = Vec::new();
+
+    if matches!(render.routing, W30ResampleTapRouting::InternalCaptureTap)
+        && render.music_bus_level <= 0.0
+    {
+        warnings.push("W-30 resample tap is prepared at zero music level".into());
+    }
+
+    let has_capture = render.source_capture_id.as_ref().is_some_and(|capture_id| {
+        session
+            .captures
+            .iter()
+            .any(|capture| capture.capture_id.to_string() == *capture_id)
+    });
+    if !has_capture {
+        warnings.push("W-30 resample tap has no committed capture backing its lineage".into());
+    }
+
+    warnings
+}
+
 #[derive(Clone, Debug)]
 pub struct JamAppState {
     pub files: Option<JamFileSet>,
@@ -645,6 +719,8 @@ impl JamAppState {
             &self.runtime.transport,
             self.source_graph.as_ref(),
         );
+        self.runtime.w30_resample_tap =
+            build_w30_resample_tap_state(&self.session, &self.runtime.transport);
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
         self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
     }
@@ -1613,13 +1689,15 @@ fn capture_ref_from_action(
 
     Some(CaptureRef {
         storage_path: format!("captures/{capture_id}.wav"),
-        notes: Some(capture_note(action)),
         capture_id,
         capture_type,
         source_origin_refs,
+        lineage_capture_refs: Vec::new(),
+        resample_generation_depth: 0,
         created_from_action: Some(action.id),
         assigned_target,
         is_pinned: false,
+        notes: Some(capture_note(action)),
     })
 }
 
@@ -2227,6 +2305,49 @@ fn build_w30_preview_render_state(
     }
 }
 
+fn build_w30_resample_tap_state(
+    session: &SessionFile,
+    transport: &TransportClockState,
+) -> W30ResampleTapState {
+    let w30 = &session.runtime_state.lane_state.w30;
+    let Some(capture) = w30.last_capture.as_ref().and_then(|capture_id| {
+        session
+            .captures
+            .iter()
+            .find(|capture| capture.capture_id == *capture_id)
+    }) else {
+        return W30ResampleTapState::default();
+    };
+
+    let source_profile = if capture.is_pinned {
+        Some(W30ResampleTapSourceProfile::PinnedCapture)
+    } else if capture.assigned_target.is_some() {
+        Some(W30ResampleTapSourceProfile::PromotedCapture)
+    } else {
+        Some(W30ResampleTapSourceProfile::RawCapture)
+    };
+
+    W30ResampleTapState {
+        mode: W30ResampleTapMode::CaptureLineageReady,
+        routing: W30ResampleTapRouting::InternalCaptureTap,
+        source_profile,
+        source_capture_id: Some(capture.capture_id.to_string()),
+        lineage_capture_count: capture
+            .lineage_capture_refs
+            .len()
+            .try_into()
+            .unwrap_or(u8::MAX),
+        generation_depth: capture.resample_generation_depth,
+        music_bus_level: session
+            .runtime_state
+            .mixer_state
+            .music_level
+            .clamp(0.0, 1.0),
+        grit_level: session.runtime_state.macro_state.w30_grit.clamp(0.0, 1.0),
+        is_transport_running: transport.is_playing,
+    }
+}
+
 fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
     session.action_log.actions.iter().rev().find(|action| {
         action.status == ActionStatus::Committed
@@ -2710,6 +2831,8 @@ mod tests {
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: Some(ActionId(1)),
             storage_path: "captures/cap-01.wav".into(),
             assigned_target: None,
@@ -3009,6 +3132,60 @@ mod tests {
                 .runtime_warnings
                 .iter()
                 .any(|warning| warning == "909 render is routed to the drum bus at zero drum level")
+        );
+    }
+
+    #[test]
+    fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        session.captures[0].is_pinned = true;
+        session.captures[0].lineage_capture_refs =
+            vec![CaptureId::from("cap-seed"), CaptureId::from("cap-bar-02")];
+        session.captures[0].resample_generation_depth = 2;
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.w30_resample_tap.mode,
+            W30ResampleTapMode::CaptureLineageReady
+        );
+        assert_eq!(
+            state.runtime.w30_resample_tap.routing,
+            W30ResampleTapRouting::InternalCaptureTap
+        );
+        assert_eq!(
+            state.runtime.w30_resample_tap.source_profile,
+            Some(W30ResampleTapSourceProfile::PinnedCapture)
+        );
+        assert_eq!(
+            state.runtime.w30_resample_tap.source_capture_id.as_deref(),
+            Some("cap-01")
+        );
+        assert_eq!(state.runtime.w30_resample_tap.lineage_capture_count, 2);
+        assert_eq!(state.runtime.w30_resample_tap.generation_depth, 2);
+        assert_eq!(
+            state.runtime_view.w30_resample_tap_mode,
+            "capture_lineage_ready"
+        );
+        assert_eq!(
+            state.runtime_view.w30_resample_tap_routing,
+            "internal_capture_tap"
+        );
+        assert_eq!(
+            state.runtime_view.w30_resample_tap_profile,
+            "pinned_capture"
+        );
+        assert_eq!(
+            state.runtime_view.w30_resample_tap_source_summary,
+            "cap-01 | gen 2 | lineage 2"
+        );
+        assert_eq!(
+            state.runtime_view.w30_resample_tap_mix_summary,
+            "music bus 0.64 | grit 0.40"
         );
     }
 
@@ -3708,6 +3885,8 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: None,
             storage_path: "captures/cap-02.wav".into(),
             assigned_target: Some(CaptureTarget::W30Pad {
@@ -3721,6 +3900,8 @@ mod tests {
             capture_id: CaptureId::from("cap-03"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-c".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: None,
             storage_path: "captures/cap-03.wav".into(),
             assigned_target: Some(CaptureTarget::W30Pad {
@@ -3769,6 +3950,8 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
             created_from_action: None,
             storage_path: "captures/cap-02.wav".into(),
             assigned_target: Some(CaptureTarget::W30Pad {

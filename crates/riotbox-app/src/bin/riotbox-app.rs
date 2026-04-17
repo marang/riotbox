@@ -75,6 +75,7 @@ fn run_terminal_ui(
     let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states(
         shell.app.runtime.tr909_render.clone(),
         shell.app.runtime.w30_preview.clone(),
+        shell.app.runtime.w30_resample_tap.clone(),
     ) {
         Ok(runtime) => {
             shell.app.set_audio_health(runtime.health_snapshot());
@@ -152,6 +153,7 @@ fn run_event_loop(
         if let Some(audio_runtime) = audio_runtime.as_deref_mut() {
             audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
             audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
+            audio_runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
             shell.app.set_audio_health(audio_runtime.health_snapshot());
         }
 

@@ -671,6 +671,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 internal resample taps should extend explicit capture lineage instead of inventing a second capture system
+Phase: W-30 MVP
+Question: after audible preview, pad triggering, and shell diagnostics exist, what is the smallest next slice that prepares internal W-30 resample taps without pretending the full resample lab already exists?
+Decision: add one typed `W30ResampleTapState` on top of the current W-30 runtime seam and derive it only from explicit `CaptureRef` lineage metadata plus the committed W-30 lane focus. Extend `CaptureRef` with `lineage_capture_refs` and `resample_generation_depth`, default new captures to generation zero, and keep the first shell proof point inside the existing capture-oriented shell summaries instead of opening a separate resample page.
+Why: Riotbox already has real capture records, promotion, audible preview, and a typed W-30 runtime seam. The smallest honest preparation step for internal resample taps is to make capture-to-capture lineage explicit and mirror one tap-ready state through that same seam, not to open a second capture inventory, a hidden preview-only resample model, or a full resample-lab UI.
+Evidence: `riotbox-core` now persists explicit capture lineage metadata, `riotbox-audio` now carries a typed `W30ResampleTapState`, `riotbox-app` derives that tap-ready state from the current lane capture and runtime mix context, and the shell baseline at `docs/screenshots/w30_resample_tap_baseline.txt` records the first compact tap cue on the existing Capture surface.
+Consequences: later W-30 resample actions and internal bus taps should populate the same lineage fields, deepen the same tap state, and keep using the existing shell surfaces instead of bypassing session capture history or creating a second W-30 resample runtime.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:

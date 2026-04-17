@@ -14,6 +14,7 @@ use crate::tr909::{
 };
 use crate::w30::{
     W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSourceProfile,
+    W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -147,6 +148,7 @@ pub struct AudioRuntimeShell {
     telemetry: Arc<RuntimeTelemetry>,
     tr909_render: Arc<SharedTr909RenderState>,
     w30_preview: Arc<SharedW30PreviewRenderState>,
+    w30_resample_tap: Arc<SharedW30ResampleTapState>,
     stream: Option<cpal::Stream>,
 }
 
@@ -155,6 +157,7 @@ impl AudioRuntimeShell {
         Self::start_default_output_with_render_states(
             Tr909RenderState::default(),
             W30PreviewRenderState::default(),
+            W30ResampleTapState::default(),
         )
     }
 
@@ -164,12 +167,14 @@ impl AudioRuntimeShell {
         Self::start_default_output_with_render_states(
             render_state,
             W30PreviewRenderState::default(),
+            W30ResampleTapState::default(),
         )
     }
 
     pub fn start_default_output_with_render_states(
         tr909_render_state: Tr909RenderState,
         w30_preview_render_state: W30PreviewRenderState,
+        w30_resample_tap_state: W30ResampleTapState,
     ) -> Result<Self, AudioRuntimeError> {
         let host = cpal::default_host();
         let host_name = format!("{:?}", host.id());
@@ -209,6 +214,7 @@ impl AudioRuntimeShell {
         let telemetry = Arc::new(RuntimeTelemetry::new());
         let tr909_render = Arc::new(SharedTr909RenderState::new(&tr909_render_state));
         let w30_preview = Arc::new(SharedW30PreviewRenderState::new(&w30_preview_render_state));
+        let w30_resample_tap = Arc::new(SharedW30ResampleTapState::new(&w30_resample_tap_state));
         let stream_config = default_config.config();
         let start = Instant::now();
 
@@ -265,6 +271,7 @@ impl AudioRuntimeShell {
             telemetry,
             tr909_render,
             w30_preview,
+            w30_resample_tap,
             stream: Some(stream),
         })
     }
@@ -304,6 +311,10 @@ impl AudioRuntimeShell {
         self.w30_preview.update(render_state);
     }
 
+    pub fn update_w30_resample_tap_state(&self, render_state: &W30ResampleTapState) {
+        self.w30_resample_tap.update(render_state);
+    }
+
     pub fn stop(&mut self) {
         self.stream.take();
         self.lifecycle = AudioRuntimeLifecycle::Stopped;
@@ -316,6 +327,7 @@ impl AudioRuntimeShell {
         telemetry: Arc<RuntimeTelemetry>,
         tr909_render_state: Arc<SharedTr909RenderState>,
         w30_preview_state: Arc<SharedW30PreviewRenderState>,
+        w30_resample_tap_state: Arc<SharedW30ResampleTapState>,
     ) -> Self {
         Self {
             lifecycle,
@@ -323,6 +335,7 @@ impl AudioRuntimeShell {
             telemetry,
             tr909_render: tr909_render_state,
             w30_preview: w30_preview_state,
+            w30_resample_tap: w30_resample_tap_state,
             stream: None,
         }
     }
@@ -574,6 +587,139 @@ impl SharedW30PreviewRenderState {
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
             position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
         }
+    }
+}
+
+#[cfg(test)]
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct RealtimeW30ResampleTapState {
+    mode: W30ResampleTapMode,
+    routing: W30ResampleTapRouting,
+    source_profile: Option<W30ResampleTapSourceProfile>,
+    lineage_capture_count: u8,
+    generation_depth: u8,
+    music_bus_level: f32,
+    grit_level: f32,
+    is_transport_running: bool,
+}
+
+struct SharedW30ResampleTapState {
+    mode: AtomicU32,
+    routing: AtomicU32,
+    source_profile: AtomicU32,
+    lineage_capture_count: AtomicU32,
+    generation_depth: AtomicU32,
+    music_bus_level_bits: AtomicU32,
+    grit_level_bits: AtomicU32,
+    is_transport_running: AtomicBool,
+}
+
+impl SharedW30ResampleTapState {
+    fn new(render_state: &W30ResampleTapState) -> Self {
+        let shared = Self {
+            mode: AtomicU32::new(0),
+            routing: AtomicU32::new(0),
+            source_profile: AtomicU32::new(0),
+            lineage_capture_count: AtomicU32::new(0),
+            generation_depth: AtomicU32::new(0),
+            music_bus_level_bits: AtomicU32::new(0),
+            grit_level_bits: AtomicU32::new(0),
+            is_transport_running: AtomicBool::new(false),
+        };
+        shared.update(render_state);
+        shared
+    }
+
+    fn update(&self, render_state: &W30ResampleTapState) {
+        self.mode.store(
+            w30_resample_mode_to_u32(render_state.mode),
+            Ordering::Relaxed,
+        );
+        self.routing.store(
+            w30_resample_routing_to_u32(render_state.routing),
+            Ordering::Relaxed,
+        );
+        self.source_profile.store(
+            w30_resample_source_profile_to_u32(render_state.source_profile),
+            Ordering::Relaxed,
+        );
+        self.lineage_capture_count.store(
+            u32::from(render_state.lineage_capture_count),
+            Ordering::Relaxed,
+        );
+        self.generation_depth
+            .store(u32::from(render_state.generation_depth), Ordering::Relaxed);
+        self.music_bus_level_bits
+            .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
+        self.grit_level_bits
+            .store(render_state.grit_level.to_bits(), Ordering::Relaxed);
+        self.is_transport_running
+            .store(render_state.is_transport_running, Ordering::Relaxed);
+    }
+
+    #[cfg(test)]
+    fn snapshot(&self) -> RealtimeW30ResampleTapState {
+        RealtimeW30ResampleTapState {
+            mode: w30_resample_mode_from_u32(self.mode.load(Ordering::Relaxed)),
+            routing: w30_resample_routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            source_profile: w30_resample_source_profile_from_u32(
+                self.source_profile.load(Ordering::Relaxed),
+            ),
+            lineage_capture_count: self.lineage_capture_count.load(Ordering::Relaxed) as u8,
+            generation_depth: self.generation_depth.load(Ordering::Relaxed) as u8,
+            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
+            grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
+            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+        }
+    }
+}
+
+fn w30_resample_mode_to_u32(mode: W30ResampleTapMode) -> u32 {
+    match mode {
+        W30ResampleTapMode::Idle => 0,
+        W30ResampleTapMode::CaptureLineageReady => 1,
+    }
+}
+
+#[cfg(test)]
+fn w30_resample_mode_from_u32(value: u32) -> W30ResampleTapMode {
+    match value {
+        1 => W30ResampleTapMode::CaptureLineageReady,
+        _ => W30ResampleTapMode::Idle,
+    }
+}
+
+fn w30_resample_routing_to_u32(routing: W30ResampleTapRouting) -> u32 {
+    match routing {
+        W30ResampleTapRouting::Silent => 0,
+        W30ResampleTapRouting::InternalCaptureTap => 1,
+    }
+}
+
+#[cfg(test)]
+fn w30_resample_routing_from_u32(value: u32) -> W30ResampleTapRouting {
+    match value {
+        1 => W30ResampleTapRouting::InternalCaptureTap,
+        _ => W30ResampleTapRouting::Silent,
+    }
+}
+
+fn w30_resample_source_profile_to_u32(profile: Option<W30ResampleTapSourceProfile>) -> u32 {
+    match profile {
+        None => 0,
+        Some(W30ResampleTapSourceProfile::RawCapture) => 1,
+        Some(W30ResampleTapSourceProfile::PromotedCapture) => 2,
+        Some(W30ResampleTapSourceProfile::PinnedCapture) => 3,
+    }
+}
+
+#[cfg(test)]
+fn w30_resample_source_profile_from_u32(value: u32) -> Option<W30ResampleTapSourceProfile> {
+    match value {
+        1 => Some(W30ResampleTapSourceProfile::RawCapture),
+        2 => Some(W30ResampleTapSourceProfile::PromotedCapture),
+        3 => Some(W30ResampleTapSourceProfile::PinnedCapture),
+        _ => None,
     }
 }
 
@@ -1458,6 +1604,9 @@ mod tests {
         let w30_preview_state = Arc::new(SharedW30PreviewRenderState::new(
             &W30PreviewRenderState::default(),
         ));
+        let w30_resample_tap_state = Arc::new(SharedW30ResampleTapState::new(
+            &W30ResampleTapState::default(),
+        ));
         telemetry.record_callback_at(100);
         telemetry.record_callback_at(240);
         telemetry.record_stream_error("stream stalled".into());
@@ -1468,6 +1617,7 @@ mod tests {
             telemetry,
             tr909_render_state,
             w30_preview_state,
+            w30_resample_tap_state,
         );
 
         let snapshot = shell.health_snapshot();
@@ -1490,12 +1640,16 @@ mod tests {
         let w30_preview_state = Arc::new(SharedW30PreviewRenderState::new(
             &W30PreviewRenderState::default(),
         ));
+        let w30_resample_tap_state = Arc::new(SharedW30ResampleTapState::new(
+            &W30ResampleTapState::default(),
+        ));
         let mut shell = AudioRuntimeShell::from_test_parts(
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
             tr909_render_state,
             w30_preview_state,
+            w30_resample_tap_state,
         );
 
         shell.stop();
@@ -1605,6 +1759,49 @@ mod tests {
             Some(W30PreviewSourceProfile::PromotedAudition)
         );
         assert_eq!(updated.grit_level, 0.82);
+    }
+
+    #[test]
+    fn shared_w30_resample_tap_state_tracks_updates() {
+        let shared = SharedW30ResampleTapState::new(&W30ResampleTapState::default());
+        let mut state = W30ResampleTapState {
+            mode: W30ResampleTapMode::CaptureLineageReady,
+            routing: W30ResampleTapRouting::InternalCaptureTap,
+            source_profile: Some(W30ResampleTapSourceProfile::PromotedCapture),
+            source_capture_id: Some("cap-03".into()),
+            lineage_capture_count: 2,
+            generation_depth: 1,
+            music_bus_level: 0.61,
+            grit_level: 0.72,
+            is_transport_running: true,
+        };
+        shared.update(&state);
+
+        let snapshot = shared.snapshot();
+        assert_eq!(snapshot.mode, W30ResampleTapMode::CaptureLineageReady);
+        assert_eq!(snapshot.routing, W30ResampleTapRouting::InternalCaptureTap);
+        assert_eq!(
+            snapshot.source_profile,
+            Some(W30ResampleTapSourceProfile::PromotedCapture)
+        );
+        assert_eq!(snapshot.lineage_capture_count, 2);
+        assert_eq!(snapshot.generation_depth, 1);
+        assert_eq!(snapshot.music_bus_level, 0.61);
+        assert_eq!(snapshot.grit_level, 0.72);
+        assert!(snapshot.is_transport_running);
+
+        state.source_profile = Some(W30ResampleTapSourceProfile::PinnedCapture);
+        state.lineage_capture_count = 3;
+        state.generation_depth = 2;
+        shared.update(&state);
+
+        let updated = shared.snapshot();
+        assert_eq!(
+            updated.source_profile,
+            Some(W30ResampleTapSourceProfile::PinnedCapture)
+        );
+        assert_eq!(updated.lineage_capture_count, 3);
+        assert_eq!(updated.generation_depth, 2);
     }
 
     #[test]

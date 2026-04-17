@@ -1,0 +1,21 @@
+W-30 resample tap baseline
+==========================
+
+Ticket: RIOTBOX-63
+Purpose: keep the first internal W-30 resample-tap seam reviewable inside the current shell without opening a separate W-30 resample page.
+
+Capture shell expected cues:
+
+- `tap raw g0`
+- `preview live_recall via music_bus_preview | music bus 0.64 | grit 0.50`
+
+Jam and Log shell expectations stay intact:
+
+- existing W-30 preview and trigger summaries remain unchanged
+- the resample-tap seam is prepared behind the same capture lineage instead of replacing those summaries
+
+Interpretation:
+
+- `tap raw g0` means the current lane capture is source-derived with no internal resample generations yet
+- later promoted or pinned captures can advance that same cue to higher generation depth without inventing a second capture inventory
+- later resample-lab behavior should deepen this same seam by increasing generation depth and lineage count rather than bypassing the existing capture lineage
