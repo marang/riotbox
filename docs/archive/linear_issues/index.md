@@ -146,4 +146,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Tighter inspect purpose and exit cues on the bounded Jam inspect surface.
 - [RIOTBOX-102.md](./RIOTBOX-102.md)
   Clearer recipe and source-comparison learning paths after the first narrow Jam success loop.
+- [RIOTBOX-103.md](./RIOTBOX-103.md)
+  Jam pending-action promotion down to the next two visible moves plus compact queue summary.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
