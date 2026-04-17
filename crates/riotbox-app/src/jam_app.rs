@@ -25,7 +25,7 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, Quantization, TargetScope,
     },
-    ids::{BankId, CaptureId, PadId, SourceId},
+    ids::{BankId, CaptureId, PadId, SceneId, SourceId},
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
@@ -35,7 +35,7 @@ use riotbox_core::{
         CaptureRef, CaptureTarget, CaptureType, GraphStorageMode, SessionFile, SourceGraphRef,
         SourceRef, W30PreviewModeState,
     },
-    source_graph::{DecodeProfile, SourceGraph},
+    source_graph::{DecodeProfile, SectionLabelHint, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
 };
@@ -632,6 +632,7 @@ impl JamAppState {
         mut queue: ActionQueue,
     ) -> Self {
         normalize_w30_preview_mode(&mut session);
+        normalize_scene_candidates(&mut session, source_graph.as_ref());
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
@@ -662,6 +663,7 @@ impl JamAppState {
         validate_mvp_single_source_session(&session)?;
         let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
         let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
+        normalize_scene_candidates(&mut session, source_graph.as_ref());
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
@@ -2073,8 +2075,70 @@ fn session_from_ingested_graph(
     // Keep the music bus open enough that W-30 preview work is audible in fresh ingest sessions.
     session.runtime_state.mixer_state.music_level = 0.64;
     session.notes = Some("session created from analysis ingest slice".into());
+    normalize_scene_candidates(&mut session, Some(graph));
 
     Ok(session)
+}
+
+fn normalize_scene_candidates(session: &mut SessionFile, source_graph: Option<&SourceGraph>) {
+    if session.runtime_state.scene_state.scenes.is_empty()
+        && let Some(graph) = source_graph
+    {
+        session.runtime_state.scene_state.scenes = derive_scene_candidates(graph);
+    }
+
+    if session.runtime_state.scene_state.active_scene.is_none() {
+        session.runtime_state.scene_state.active_scene =
+            session.runtime_state.transport.current_scene.clone();
+    }
+
+    if session.runtime_state.transport.current_scene.is_none() {
+        session.runtime_state.transport.current_scene =
+            session.runtime_state.scene_state.active_scene.clone();
+    }
+
+    if session.runtime_state.scene_state.active_scene.is_none()
+        && let Some(first_scene) = session.runtime_state.scene_state.scenes.first().cloned()
+    {
+        session.runtime_state.scene_state.active_scene = Some(first_scene.clone());
+        session.runtime_state.transport.current_scene = Some(first_scene);
+    }
+}
+
+fn derive_scene_candidates(graph: &SourceGraph) -> Vec<SceneId> {
+    let mut sections = graph.sections.iter().collect::<Vec<_>>();
+    sections.sort_by(|left, right| {
+        left.bar_start
+            .cmp(&right.bar_start)
+            .then(left.bar_end.cmp(&right.bar_end))
+            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
+    });
+
+    sections
+        .into_iter()
+        .enumerate()
+        .map(|(index, section)| {
+            SceneId::from(format!(
+                "scene-{:02}-{}",
+                index + 1,
+                section_label_slug(section.label_hint)
+            ))
+        })
+        .collect()
+}
+
+const fn section_label_slug(label: SectionLabelHint) -> &'static str {
+    match label {
+        SectionLabelHint::Intro => "intro",
+        SectionLabelHint::Build => "build",
+        SectionLabelHint::Drop => "drop",
+        SectionLabelHint::Break => "break",
+        SectionLabelHint::Verse => "verse",
+        SectionLabelHint::Chorus => "chorus",
+        SectionLabelHint::Bridge => "bridge",
+        SectionLabelHint::Outro => "outro",
+        SectionLabelHint::Unknown => "unknown",
+    }
 }
 
 fn source_graph_hash(graph: &SourceGraph) -> Result<String, JamAppError> {
@@ -3673,6 +3737,54 @@ mod tests {
         assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
         assert_eq!(state.runtime_view.audio_status, "unknown");
         assert_eq!(state.runtime_view.sidecar_status, "unknown");
+    }
+
+    #[test]
+    fn derives_scene_candidates_from_source_sections_when_session_is_empty() {
+        let mut graph = sample_graph();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-b"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 24.0,
+            bar_start: 9,
+            bar_end: 12,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.84,
+            tags: vec!["contrast".into()],
+        });
+
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.current_scene = None;
+        session.runtime_state.scene_state.active_scene = None;
+        session.runtime_state.scene_state.scenes.clear();
+
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .scene_state
+                .scenes
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            vec!["scene-01-drop".to_string(), "scene-02-break".to_string()]
+        );
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.session.runtime_state.transport.current_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(state.jam_view.scene.scene_count, 2);
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-01-drop")
+        );
     }
 
     #[test]
@@ -7237,6 +7349,22 @@ mod tests {
         assert_eq!(state.session.source_refs.len(), 1);
         assert_eq!(state.session.source_graph_refs.len(), 1);
         assert_eq!(state.session.runtime_state.mixer_state.music_level, 0.64);
+        assert_eq!(state.jam_view.scene.scene_count, 2);
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-01-intro")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .scene_state
+                .scenes
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            vec!["scene-01-intro".to_string(), "scene-02-drop".to_string()]
+        );
         assert_eq!(
             state.session.source_graph_refs[0].storage_mode,
             GraphStorageMode::External
@@ -7258,6 +7386,21 @@ mod tests {
         assert_eq!(persisted_graph.source.channel_count, 2);
         assert!(persisted_graph.source.duration_seconds >= 1.9);
         assert!(persisted_graph.timing.bpm_estimate.is_some());
+        let persisted_session = load_session_json(&session_path).expect("reload session");
+        assert_eq!(
+            persisted_session
+                .runtime_state
+                .scene_state
+                .scenes
+                .iter()
+                .map(ToString::to_string)
+                .collect::<Vec<_>>(),
+            vec!["scene-01-intro".to_string(), "scene-02-drop".to_string()]
+        );
+        assert_eq!(
+            persisted_session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-01-intro"))
+        );
     }
 
     #[test]
