@@ -52,7 +52,7 @@ impl JamViewModel {
                 .iter()
                 .rev()
                 .find_map(|action| match action.command {
-                    crate::action::ActionCommand::W30SwapBank => action
+                    crate::action::ActionCommand::W30LiveRecall => action
                         .target
                         .bank_id
                         .as_ref()
@@ -606,7 +606,7 @@ mod tests {
         queue.enqueue(
             ActionDraft::new(
                 ActorType::User,
-                ActionCommand::W30SwapBank,
+                ActionCommand::W30LiveRecall,
                 Quantization::NextBar,
                 ActionTarget {
                     scope: Some(TargetScope::LaneW30),

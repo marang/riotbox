@@ -19,7 +19,7 @@
 │live pad                            ││                           ││                      ││w30 bank bank-a            │
 │                                    ││                           ││                      ││focused pad unset          │
 │                                    ││                           ││                      ││next shell cue             │
-│                                    ││                           ││                      ││w30.swap_bank @ next_bar   │
+│                                    ││                           ││                      ││w30.live_recall @ next_bar │
 │                                    ││                           ││                      ││deep pad promotion remains │
 │                                    ││                           ││                      ││out of scope               │
 │                                    ││                           ││                      ││                           │

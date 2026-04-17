@@ -1198,7 +1198,7 @@ impl JamAppState {
 
         let mut draft = ActionDraft::new(
             ActorType::User,
-            ActionCommand::W30SwapBank,
+            ActionCommand::W30LiveRecall,
             Quantization::NextBar,
             riotbox_core::action::ActionTarget {
                 scope: Some(TargetScope::LaneW30),
@@ -1577,7 +1577,7 @@ impl JamAppState {
         self.queue.pending_actions().into_iter().any(|action| {
             matches!(
                 action.command,
-                ActionCommand::W30SwapBank
+                ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
@@ -2106,7 +2106,7 @@ fn apply_w30_side_effects(
 ) {
     if !matches!(
         action.command,
-        ActionCommand::W30SwapBank
+        ActionCommand::W30LiveRecall
             | ActionCommand::W30StepFocus
             | ActionCommand::W30AuditionPromoted
             | ActionCommand::W30TriggerPad
@@ -2132,9 +2132,9 @@ fn apply_w30_side_effects(
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id.clone());
     session.runtime_state.lane_state.w30.preview_mode = Some(match action.command {
         ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
-        ActionCommand::W30SwapBank | ActionCommand::W30StepFocus | ActionCommand::W30TriggerPad => {
-            W30PreviewModeState::LiveRecall
-        }
+        ActionCommand::W30LiveRecall
+        | ActionCommand::W30StepFocus
+        | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
         _ => unreachable!("checked above"),
     });
     if let Some(capture_id) = capture_id.clone() {
@@ -2176,7 +2176,7 @@ fn apply_w30_side_effects(
                 );
                 format!("focused W-30 pad {bank_id}/{pad_id} at {position}")
             }
-            ActionCommand::W30SwapBank => capture_id.as_ref().map_or_else(
+            ActionCommand::W30LiveRecall => capture_id.as_ref().map_or_else(
                 || format!("recalled W-30 pad {bank_id}/{pad_id}"),
                 |capture_id| format!("recalled {capture_id} on W-30 pad {bank_id}/{pad_id}"),
             ),
@@ -2639,7 +2639,7 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
         action.status == ActionStatus::Committed
             && matches!(
                 action.command,
-                ActionCommand::W30SwapBank
+                ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
@@ -2651,7 +2651,7 @@ fn normalize_w30_preview_mode(session: &mut SessionFile) {
     let preview_mode = last_committed_w30_preview_action(session)
         .map(|action| match action.command {
             ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
-            ActionCommand::W30SwapBank
+            ActionCommand::W30LiveRecall
             | ActionCommand::W30StepFocus
             | ActionCommand::W30TriggerPad => W30PreviewModeState::LiveRecall,
             _ => unreachable!("filtered by helper"),
@@ -4239,7 +4239,7 @@ mod tests {
 
         let pending = state.queue.pending_actions();
         assert_eq!(pending.len(), 1);
-        assert_eq!(pending[0].command, ActionCommand::W30SwapBank);
+        assert_eq!(pending[0].command, ActionCommand::W30LiveRecall);
         assert_eq!(
             pending[0].target.bank_id.as_ref().map(ToString::to_string),
             Some("bank-b".into())

@@ -1784,7 +1784,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
                 action.command.as_str(),
                 "w30.trigger_pad"
                     | "w30.step_focus"
-                    | "w30.swap_bank"
+                    | "w30.live_recall"
                     | "w30.audition_promoted"
                     | "promote.resample"
             )
@@ -1861,7 +1861,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
                     action.command,
                     riotbox_core::action::ActionCommand::W30TriggerPad
                         | riotbox_core::action::ActionCommand::W30StepFocus
-                        | riotbox_core::action::ActionCommand::W30SwapBank
+                        | riotbox_core::action::ActionCommand::W30LiveRecall
                         | riotbox_core::action::ActionCommand::W30AuditionPromoted
                         | riotbox_core::action::ActionCommand::PromoteResample
                 )
@@ -1872,7 +1872,7 @@ fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'st
     match command {
         riotbox_core::action::ActionCommand::W30TriggerPad => "trigger",
         riotbox_core::action::ActionCommand::W30StepFocus => "step",
-        riotbox_core::action::ActionCommand::W30SwapBank => "recall",
+        riotbox_core::action::ActionCommand::W30LiveRecall => "recall",
         riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
         riotbox_core::action::ActionCommand::PromoteResample => "resample",
         _ => "other",
