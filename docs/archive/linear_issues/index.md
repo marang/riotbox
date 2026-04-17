@@ -110,4 +110,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   W-30 phrase-cue conflict cleanup between loop freeze and resample.
 - [RIOTBOX-83.md](./RIOTBOX-83.md)
   Capture pending summaries now flow through the projected app/core state seam.
+- [RIOTBOX-84.md](./RIOTBOX-84.md)
+  W-30 operation diagnostics now follow the current lane target instead of stale global history.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
