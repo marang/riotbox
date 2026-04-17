@@ -241,5 +241,66 @@
         "bank-b/pad-03"
       ]
     }
+  },
+  {
+    "name": "slice_pool_browse_committed",
+    "action": "browse_slice_pool",
+    "capture_bank": "bank-a",
+    "capture_pad": "pad-01",
+    "capture_pinned": false,
+    "extra_captures": [
+      {
+        "capture_id": "cap-02",
+        "bank": "bank-a",
+        "pad": "pad-01",
+        "pinned": false,
+        "notes": "alt slice"
+      }
+    ],
+    "initial_active_bank": "bank-a",
+    "initial_focused_pad": "pad-01",
+    "initial_last_capture": "cap-01",
+    "initial_preview_mode": "live_recall",
+    "requested_at": 629,
+    "committed_at": 713,
+    "boundary": {
+      "kind": "beat",
+      "beat_index": 42,
+      "bar_index": 11,
+      "phrase_index": 3,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-a",
+      "focused_pad": "pad-01",
+      "last_capture": "cap-02",
+      "w30_grit": 0.0,
+      "preview_mode": "live_recall",
+      "preview_routing": "music_bus_preview",
+      "preview_profile": "promoted_recall",
+      "preview_capture": "cap-02",
+      "preview_music_bus_level": 0.64,
+      "preview_grit_level": 0.0,
+      "preview_transport_running": true,
+      "result_summary": "browsed W-30 slice pool to cap-02 on bank-a/pad-01 at beat 42 / phrase 3",
+      "jam_contains": [
+        "W-30 cue idle | mgr idle",
+        "W-30 recall/promoted | bank-a/pad-01"
+      ],
+      "capture_contains": [
+        "pending W-30 cue idle",
+        "bank/pad bank-a/pad-01",
+        "pool cap-02 2/2 -> cap-01",
+        "latest promoted cap-02 ->"
+      ],
+      "log_contains": [
+        "cue idle | browse",
+        "bank bank-a/pad-01",
+        "mix 0.64/0.00 idle",
+        "pool 2/2 -> cap-01",
+        "result browsed W-30 slice pool to",
+        "cap-02 on bank-a/pad-01"
+      ]
+    }
   }
 ]
