@@ -693,6 +693,17 @@ Status: accepted
 
 ---
 
+Topic: W-30 resample lineage diagnostics should stay in the existing Capture and Log shell surfaces
+Phase: W-30 MVP
+Question: once the first committed W-30 internal resample action exists, what is the smallest next slice that keeps lineage provenance legible without opening a second W-30 diagnostics page or resample-only browser?
+Decision: deepen the existing `Capture` and `Log` surfaces with compact lineage diagnostics derived from the committed lane capture and the typed resample-tap seam. Surface pending resample intent explicitly, show compact generation and lineage counts in the W-30 log lane, and keep fuller lineage-chain context in the capture routing panel instead of creating a separate resample screen.
+Why: the repo already has truthful resample state, but after `RIOTBOX-65` operators still had to infer too much lineage from generic capture summaries. The smallest honest move is to summarize the existing committed seam where users already look, not to split W-30 provenance across a second diagnostics hierarchy that could drift from the queue and runtime state.
+Evidence: `riotbox-app` now shows pending `promote.resample` intent in the W-30 shell cue, renders compact tap and lineage summaries in `Capture -> Routing / Promotion`, compresses generation and lineage counts into the `Log -> W-30 Lane` panel, and covers the new wording with capture and log shell regressions.
+Consequences: later W-30 lab work should keep extending these same shell surfaces and the current committed lineage seam instead of moving provenance into a second W-30-only browser or a callback-only debug path.
+Status: accepted
+
+---
+
 ## 4. Mandatory Research Topics
 
 The following topics require explicit entries before related implementation scales:
