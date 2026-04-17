@@ -944,6 +944,16 @@ Decision: keep the deep `Log`/diagnostic surfaces technically precise, but shift
 Why: the remaining UX friction was not capability but wording. The Jam shell was still presenting several actions in engine terms (`role`, `scene select`, `trigger`, `reinforce`) even after the hierarchy was improved. Translating the outward-facing layer is the smallest honest next move because it changes how the shell reads without inventing a new behavior model.
 Evidence: `riotbox-app` now updates status messages, footer/help guidance, Jam MC-202 card wording, and perform-facing pending/landed labels to use the curated gesture vocabulary while leaving the deeper `Log` diagnostics and action ids intact. The fixture-backed Jam shell regressions stay green after the wording change.
 Consequences: future UX work should preserve the split between perform language and diagnostic language. If later tickets add an inspect surface, it can stay more technical; the default Jam surface should continue optimizing for musical intent first.
+
+---
+
+Topic: Jam inspect mode should deepen confidence without restoring the old dashboard
+Phase: Playable shell UX
+Question: after the perform-first surface and clearer gesture language both land, what is the smallest next step that adds confidence depth without re-bloating the default Jam screen?
+Decision: keep the current perform-first Jam layout as the default, but add one explicit `perform / inspect` toggle inside `Jam`. The inspect view should preserve the top-level `Now / Next / Trust` frame while swapping the lower half for lane detail, source structure, material flow, and compact diagnostics. Do not create a second dashboard screen or hide this behind `Log`, `Source`, or `Capture`.
+Why: the current UX gap is no longer missing information; it is missing confidence depth at the moment a user wants to look slightly further without leaving the Jam context entirely. A bounded inspect mode is the smallest honest follow-up because it preserves the reduced default surface and reuses existing app/runtime/source seams instead of reviving the older all-at-once Jam dump.
+Evidence: `riotbox-app` now adds an explicit Jam inspect toggle, blocks that toggle during the first-run guided path, reuses the existing MC-202/W-30/TR-909 diagnostic lines plus source-graph and capture/runtime summaries, and keeps focused snapshot and key-handling tests green. The review artifact at `docs/screenshots/jam_inspect_mode_baseline.txt` records the bounded inspect hierarchy.
+Consequences: later Jam UX work should keep the split clear: perform mode is the default instrument surface, inspect mode is a read-only confidence layer, and deeper technical truth should still live on `Log`, `Source`, and `Capture`. If later feedback asks for even more detail, the next move should be to refine inspect density, not to reopen a second hidden dashboard path.
 Status: accepted
 
 ---
