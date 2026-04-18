@@ -25,6 +25,6 @@ Current benchmark artifacts:
 - [scene_guidance_stack_baseline_2026-04-18.md](./scene_guidance_stack_baseline_2026-04-18.md)
   First bounded baseline for the queued-scene guidance stack across `Jam`, `Help`, and `Log`, refreshed for the energy-aware live/restore seam.
 - [scene_restore_ready_readability_baseline_2026-04-18.md](./scene_restore_ready_readability_baseline_2026-04-18.md)
-  First bounded readability baseline for the explicit `restore ready` cue and help seam on `Jam`.
+  First bounded readability baseline for the explicit `restore <scene>/<energy> ready` cue and help seam on `Jam`.
 - [scene_restore_state_contrast_baseline_2026-04-18.md](./scene_restore_state_contrast_baseline_2026-04-18.md)
-  First bounded readability baseline for the current `restore wakes...` versus `restore ... ready` contrast on `Jam`.
+  First bounded readability baseline for the current `restore waits...` versus `restore ... ready` contrast on `Jam`.
