@@ -36,6 +36,11 @@ use riotbox_core::{
         SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
     },
     source_graph::{DecodeProfile, SectionLabelHint, SourceGraph},
+    tr909_policy::{
+        Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy, Tr909RenderModePolicy,
+        Tr909RenderRoutingPolicy, Tr909SourceSupportProfilePolicy,
+        Tr909TakeoverRenderProfilePolicy, derive_tr909_render_policy,
+    },
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
 };
@@ -369,106 +374,64 @@ fn tr909_render_profile_label(render: &Tr909RenderState) -> &'static str {
     }
 }
 
-fn derive_tr909_pattern_adoption(
-    mode: Tr909RenderMode,
-    pattern_ref: Option<&str>,
-    source_support_profile: Option<Tr909SourceSupportProfile>,
-    takeover_profile: Option<Tr909TakeoverRenderProfile>,
-) -> Option<Tr909PatternAdoption> {
-    if matches!(mode, Tr909RenderMode::Idle) {
-        return None;
+fn audio_tr909_render_mode(mode: Tr909RenderModePolicy) -> Tr909RenderMode {
+    match mode {
+        Tr909RenderModePolicy::Idle => Tr909RenderMode::Idle,
+        Tr909RenderModePolicy::SourceSupport => Tr909RenderMode::SourceSupport,
+        Tr909RenderModePolicy::Fill => Tr909RenderMode::Fill,
+        Tr909RenderModePolicy::BreakReinforce => Tr909RenderMode::BreakReinforce,
+        Tr909RenderModePolicy::Takeover => Tr909RenderMode::Takeover,
     }
-
-    if matches!(mode, Tr909RenderMode::Takeover)
-        || matches!(
-            takeover_profile,
-            Some(Tr909TakeoverRenderProfile::ControlledPhrase)
-        )
-    {
-        return Some(Tr909PatternAdoption::TakeoverGrid);
-    }
-
-    let pattern_ref = pattern_ref.map(str::to_ascii_lowercase);
-    if pattern_ref
-        .as_deref()
-        .is_some_and(|pattern| pattern.contains("takeover"))
-    {
-        return Some(Tr909PatternAdoption::TakeoverGrid);
-    }
-
-    if pattern_ref
-        .as_deref()
-        .is_some_and(|pattern| pattern.contains("main") || pattern.contains("drop"))
-        || matches!(
-            source_support_profile,
-            Some(Tr909SourceSupportProfile::DropDrive)
-        )
-        || matches!(
-            mode,
-            Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce
-        )
-    {
-        return Some(Tr909PatternAdoption::MainlineDrive);
-    }
-
-    Some(Tr909PatternAdoption::SupportPulse)
 }
 
-fn derive_tr909_phrase_variation(
-    mode: Tr909RenderMode,
-    transport: &TransportClockState,
-    pattern_ref: Option<&str>,
-    source_support_profile: Option<Tr909SourceSupportProfile>,
-    takeover_profile: Option<Tr909TakeoverRenderProfile>,
+fn audio_tr909_render_routing(routing: Tr909RenderRoutingPolicy) -> Tr909RenderRouting {
+    match routing {
+        Tr909RenderRoutingPolicy::SourceOnly => Tr909RenderRouting::SourceOnly,
+        Tr909RenderRoutingPolicy::DrumBusSupport => Tr909RenderRouting::DrumBusSupport,
+        Tr909RenderRoutingPolicy::DrumBusTakeover => Tr909RenderRouting::DrumBusTakeover,
+    }
+}
+
+fn audio_tr909_source_support_profile(
+    profile: Option<Tr909SourceSupportProfilePolicy>,
+) -> Option<Tr909SourceSupportProfile> {
+    profile.map(|profile| match profile {
+        Tr909SourceSupportProfilePolicy::SteadyPulse => Tr909SourceSupportProfile::SteadyPulse,
+        Tr909SourceSupportProfilePolicy::BreakLift => Tr909SourceSupportProfile::BreakLift,
+        Tr909SourceSupportProfilePolicy::DropDrive => Tr909SourceSupportProfile::DropDrive,
+    })
+}
+
+fn audio_tr909_takeover_profile(
+    profile: Option<Tr909TakeoverRenderProfilePolicy>,
+) -> Option<Tr909TakeoverRenderProfile> {
+    profile.map(|profile| match profile {
+        Tr909TakeoverRenderProfilePolicy::ControlledPhrase => {
+            Tr909TakeoverRenderProfile::ControlledPhrase
+        }
+        Tr909TakeoverRenderProfilePolicy::SceneLock => Tr909TakeoverRenderProfile::SceneLock,
+    })
+}
+
+fn audio_tr909_pattern_adoption(
+    adoption: Option<Tr909PatternAdoptionPolicy>,
+) -> Option<Tr909PatternAdoption> {
+    adoption.map(|adoption| match adoption {
+        Tr909PatternAdoptionPolicy::SupportPulse => Tr909PatternAdoption::SupportPulse,
+        Tr909PatternAdoptionPolicy::MainlineDrive => Tr909PatternAdoption::MainlineDrive,
+        Tr909PatternAdoptionPolicy::TakeoverGrid => Tr909PatternAdoption::TakeoverGrid,
+    })
+}
+
+fn audio_tr909_phrase_variation(
+    variation: Option<Tr909PhraseVariationPolicy>,
 ) -> Option<Tr909PhraseVariation> {
-    if matches!(mode, Tr909RenderMode::Idle) {
-        return None;
-    }
-
-    let pattern_ref = pattern_ref.map(str::to_ascii_lowercase);
-    if pattern_ref
-        .as_deref()
-        .is_some_and(|pattern| pattern.contains("release"))
-    {
-        return Some(Tr909PhraseVariation::PhraseRelease);
-    }
-
-    let phrase_cycle = transport.phrase_index % 4;
-    let variation = match mode {
-        Tr909RenderMode::Takeover => match takeover_profile {
-            Some(Tr909TakeoverRenderProfile::ControlledPhrase) | None => match phrase_cycle {
-                0 => Tr909PhraseVariation::PhraseAnchor,
-                1 => Tr909PhraseVariation::PhraseLift,
-                2 => Tr909PhraseVariation::PhraseDrive,
-                _ => Tr909PhraseVariation::PhraseRelease,
-            },
-            Some(Tr909TakeoverRenderProfile::SceneLock) => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariation::PhraseDrive,
-                _ => Tr909PhraseVariation::PhraseAnchor,
-            },
-        },
-        Tr909RenderMode::Fill | Tr909RenderMode::BreakReinforce => match phrase_cycle % 2 {
-            0 => Tr909PhraseVariation::PhraseDrive,
-            _ => Tr909PhraseVariation::PhraseLift,
-        },
-        Tr909RenderMode::SourceSupport => match source_support_profile {
-            Some(Tr909SourceSupportProfile::SteadyPulse) | None => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariation::PhraseAnchor,
-                _ => Tr909PhraseVariation::PhraseLift,
-            },
-            Some(Tr909SourceSupportProfile::BreakLift) => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariation::PhraseLift,
-                _ => Tr909PhraseVariation::PhraseDrive,
-            },
-            Some(Tr909SourceSupportProfile::DropDrive) => match phrase_cycle % 2 {
-                0 => Tr909PhraseVariation::PhraseDrive,
-                _ => Tr909PhraseVariation::PhraseLift,
-            },
-        },
-        Tr909RenderMode::Idle => Tr909PhraseVariation::PhraseAnchor,
-    };
-
-    Some(variation)
+    variation.map(|variation| match variation {
+        Tr909PhraseVariationPolicy::PhraseAnchor => Tr909PhraseVariation::PhraseAnchor,
+        Tr909PhraseVariationPolicy::PhraseLift => Tr909PhraseVariation::PhraseLift,
+        Tr909PhraseVariationPolicy::PhraseDrive => Tr909PhraseVariation::PhraseDrive,
+        Tr909PhraseVariationPolicy::PhraseRelease => Tr909PhraseVariation::PhraseRelease,
+    })
 }
 
 fn tr909_render_alignment_label(render: &Tr909RenderState) -> &'static str {
@@ -3087,56 +3050,16 @@ fn build_tr909_render_state(
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
-
-    let mode = if tr909.takeover_enabled {
-        Tr909RenderMode::Takeover
-    } else {
-        match tr909.reinforcement_mode {
-            Some(Tr909ReinforcementModeState::Fills) => Tr909RenderMode::Fill,
-            Some(Tr909ReinforcementModeState::BreakReinforce) => Tr909RenderMode::BreakReinforce,
-            Some(Tr909ReinforcementModeState::Takeover) => Tr909RenderMode::Takeover,
-            Some(Tr909ReinforcementModeState::SourceSupport) => Tr909RenderMode::SourceSupport,
-            None if tr909.pattern_ref.is_some() || tr909.slam_enabled => {
-                Tr909RenderMode::SourceSupport
-            }
-            None => Tr909RenderMode::Idle,
-        }
-    };
-
-    let routing = match mode {
-        Tr909RenderMode::Idle => Tr909RenderRouting::SourceOnly,
-        Tr909RenderMode::SourceSupport
-        | Tr909RenderMode::Fill
-        | Tr909RenderMode::BreakReinforce => Tr909RenderRouting::DrumBusSupport,
-        Tr909RenderMode::Takeover => Tr909RenderRouting::DrumBusTakeover,
-    };
-
-    let source_support_profile = matches!(mode, Tr909RenderMode::SourceSupport)
-        .then(|| derive_tr909_source_support_profile(source_graph, transport));
-    let source_support_profile = source_support_profile.flatten();
-    let takeover_profile = derive_tr909_takeover_render_profile(tr909);
-    let pattern_adoption = derive_tr909_pattern_adoption(
-        mode,
-        tr909.pattern_ref.as_deref(),
-        source_support_profile,
-        takeover_profile,
-    );
-    let phrase_variation = derive_tr909_phrase_variation(
-        mode,
-        transport,
-        tr909.pattern_ref.as_deref(),
-        source_support_profile,
-        takeover_profile,
-    );
+    let policy = derive_tr909_render_policy(tr909, transport, source_graph);
 
     Tr909RenderState {
-        mode,
-        routing,
-        source_support_profile,
+        mode: audio_tr909_render_mode(policy.mode),
+        routing: audio_tr909_render_routing(policy.routing),
+        source_support_profile: audio_tr909_source_support_profile(policy.source_support_profile),
         pattern_ref: tr909.pattern_ref.clone(),
-        pattern_adoption,
-        phrase_variation,
-        takeover_profile,
+        pattern_adoption: audio_tr909_pattern_adoption(policy.pattern_adoption),
+        phrase_variation: audio_tr909_phrase_variation(policy.phrase_variation),
+        takeover_profile: audio_tr909_takeover_profile(policy.takeover_profile),
         drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
         slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
@@ -3144,34 +3067,6 @@ fn build_tr909_render_state(
         position_beats: transport.position_beats,
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
     }
-}
-
-fn derive_tr909_source_support_profile(
-    source_graph: Option<&SourceGraph>,
-    transport: &TransportClockState,
-) -> Option<Tr909SourceSupportProfile> {
-    let graph = source_graph?;
-    let current_section = graph.sections.iter().find(|section| {
-        let bar_index = transport.bar_index as u32;
-        bar_index >= section.bar_start && bar_index <= section.bar_end
-    });
-
-    let profile = match current_section.map(|section| (section.label_hint, section.energy_class)) {
-        Some((
-            riotbox_core::source_graph::SectionLabelHint::Break
-            | riotbox_core::source_graph::SectionLabelHint::Build,
-            _,
-        )) => Tr909SourceSupportProfile::BreakLift,
-        Some((
-            riotbox_core::source_graph::SectionLabelHint::Drop
-            | riotbox_core::source_graph::SectionLabelHint::Chorus,
-            riotbox_core::source_graph::EnergyClass::High
-            | riotbox_core::source_graph::EnergyClass::Peak,
-        )) => Tr909SourceSupportProfile::DropDrive,
-        _ => Tr909SourceSupportProfile::SteadyPulse,
-    };
-
-    Some(profile)
 }
 
 fn build_w30_preview_render_state(
@@ -3325,23 +3220,6 @@ fn last_committed_w30_trigger_action(session: &SessionFile) -> Option<&Action> {
         action.status == ActionStatus::Committed
             && matches!(action.command, ActionCommand::W30TriggerPad)
     })
-}
-
-fn derive_tr909_takeover_render_profile(
-    tr909: &riotbox_core::session::Tr909LaneState,
-) -> Option<Tr909TakeoverRenderProfile> {
-    if !tr909.takeover_enabled {
-        return None;
-    }
-
-    match tr909.takeover_profile {
-        Some(Tr909TakeoverProfileState::ControlledPhraseTakeover) => {
-            Some(Tr909TakeoverRenderProfile::ControlledPhrase)
-        }
-        Some(Tr909TakeoverProfileState::SceneLockTakeover) | None => {
-            Some(Tr909TakeoverRenderProfile::SceneLock)
-        }
-    }
 }
 
 fn resolve_source_graph(
