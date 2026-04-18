@@ -8,6 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 use riotbox_audio::w30::W30PreviewRenderMode;
+use riotbox_core::action::{ActionCommand, ActionStatus};
 use riotbox_core::source_graph::{
     DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint,
 };
@@ -973,7 +974,10 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
                 .as_deref()
                 .unwrap_or("unknown")
         )),
-        Line::from(format!("restore {}", restore_scene_label(shell))),
+        Line::from(
+            scene_history_trail_line(shell)
+                .unwrap_or_else(|| format!("restore {}", restore_scene_label(shell))),
+        ),
     ])
     .block(Block::default().title("Counts").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -1564,6 +1568,50 @@ fn latest_landed_line(shell: &JamShellState) -> String {
         )
     } else {
         "landed none yet".into()
+    }
+}
+
+fn scene_history_trail_line(shell: &JamShellState) -> Option<String> {
+    let trail = shell
+        .app
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .filter(|action| {
+            action.status == ActionStatus::Committed
+                && matches!(
+                    action.command,
+                    ActionCommand::SceneLaunch | ActionCommand::SceneRestore
+                )
+        })
+        .take(3)
+        .map(|action| {
+            let verb = match action.command {
+                ActionCommand::SceneLaunch => "j",
+                ActionCommand::SceneRestore => "r",
+                _ => unreachable!("scene trail filter only matches launch/restore"),
+            };
+            let scene = action
+                .result
+                .as_ref()
+                .and_then(|result| result.summary.split_whitespace().nth(2))
+                .or(action
+                    .target
+                    .scene_id
+                    .as_ref()
+                    .map(|scene_id| scene_id.as_str()))
+                .map(compact_scene_label)
+                .unwrap_or_else(|| "none".into());
+            format!("{verb} {scene}")
+        })
+        .collect::<Vec<_>>();
+
+    if trail.is_empty() {
+        None
+    } else {
+        Some(format!("trail {}", trail.join(" <- ")))
     }
 }
 
