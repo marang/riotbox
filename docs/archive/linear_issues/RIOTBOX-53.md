@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-53`
 - Title: `Add fixture-backed MC-202 role and follower regression coverage`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-53/add-fixture-backed-mc-202-role-and-follower-regression-coverage`
-- Project: `Riotbox MVP Buildout`
+- Project: `P006 | MC-202 MVP`
 - Milestone: `MC-202 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

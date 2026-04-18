@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-98`
 - Title: `Tighten the first 30 seconds of play after Riotbox ingest completes`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-98/tighten-the-first-30-seconds-of-play-after-riotbox-ingest-completes`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

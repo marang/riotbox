@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-56`
 - Title: `Add live drum-bus level control to make TR-909 render audibly testable`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-56/add-live-drum-bus-level-control-to-make-tr-909-render-audibly-testable`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `Jam-First Playable Slice`
 - Status: `Done`
 - Created: `2026-04-16`

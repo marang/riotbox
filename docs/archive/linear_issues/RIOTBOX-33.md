@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-33`
 - Title: `Run periodic review-codebase pass after five feature slices`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-33/run-periodic-review-codebase-pass-after-five-feature-slices`
-- Project: `Riotbox MVP Buildout`
+- Project: `P000 | Repo Ops / QA / Workflow`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-13`

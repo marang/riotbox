@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-89`
 - Title: `Derive first bounded scene candidates from analyzed source sections`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-89/derive-first-bounded-scene-candidates-from-analyzed-source-sections`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

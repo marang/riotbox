@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-48`
 - Title: `Start MC-202 MVP with the first bounded lead or follower control`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-48/start-mc-202-mvp-with-the-first-bounded-lead-or-follower-control`
-- Project: `Riotbox MVP Buildout`
+- Project: `P006 | MC-202 MVP`
 - Milestone: `MC-202 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

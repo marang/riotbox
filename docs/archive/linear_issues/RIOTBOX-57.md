@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-57`
 - Title: `Surface W-30 audition and recall diagnostics in Capture and Log screens`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-57/surface-w-30-audition-and-recall-diagnostics-in-capture-and-log`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

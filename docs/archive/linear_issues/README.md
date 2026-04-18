@@ -57,8 +57,8 @@ Examples:
 Every archived ticket entry should preserve at least:
 
 - ticket id and title
-- Linear project
-- milestone or phase
+- phase or meta project
+- milestone or legacy phase label when useful
 - final status such as done, canceled, duplicate, or superseded
 - created date
 - implementation start date when known
@@ -72,6 +72,7 @@ Every archived ticket entry should preserve at least:
 
 Useful optional fields:
 
+- legacy Linear project when the ticket originally lived under an older container model
 - Linear-generated branch name when it differs from the real repo branch
 - Linear issue URL
 - labels

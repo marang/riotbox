@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-97`
 - Title: `Add deeper Jam inspect surface without re-bloating the perform-first shell`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-97/add-deeper-jam-inspect-surface-without-re-bloating-the-perform-first`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

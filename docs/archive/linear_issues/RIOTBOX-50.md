@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-50`
 - Title: `Start W-30 MVP with the first bounded live recall cue`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-50/start-w-30-mvp-with-the-first-bounded-live-recall-cue`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

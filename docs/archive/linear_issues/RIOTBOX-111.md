@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-111`
 - Title: `Add first scene energy summary on the existing Jam and Log shell surfaces`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-111/add-first-scene-energy-summary-on-the-existing-jam-and-log-shell`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

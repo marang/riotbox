@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-78`
 - Title: `Surface W-30 resample-lab diagnostics in the existing shell`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-78/surface-w-30-resample-lab-diagnostics-in-the-existing-shell`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

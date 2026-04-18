@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-49`
 - Title: `Add committed TR-909 scene-lock variation control`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-49/add-committed-tr-909-scene-lock-variation-control`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

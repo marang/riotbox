@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-105`
 - Title: `Compress Jam lane cards to current and next summaries`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-105/compress-jam-lane-cards-to-current-and-next-summaries`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `Jam-First Playable Slice`
 - Status: `Done`
 - Created: `2026-04-17`

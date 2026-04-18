@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-72`
 - Title: `Split W-30 live recall from bank-swap semantics before bank-manager controls`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-72/split-w-30-live-recall-from-bank-swap-semantics-before-bank-manager`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

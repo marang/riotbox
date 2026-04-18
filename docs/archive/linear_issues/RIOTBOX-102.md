@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-102`
 - Title: `Surface recipe-guide and source-comparison learning paths more clearly from the shell docs`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-102/surface-recipe-guide-and-source-comparison-learning-paths-more-clearly`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

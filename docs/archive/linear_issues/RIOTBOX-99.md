@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-99`
 - Title: `Curate Jam action language into clearer primary and secondary gesture vocabularies`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-99/curate-jam-action-language-into-clearer-primary-and-secondary-gesture`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

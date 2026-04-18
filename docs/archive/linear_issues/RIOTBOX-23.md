@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-23`
 - Title: `Run comprehensive whole-codebase review before the next build slice`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-23/run-comprehensive-whole-codebase-review-before-the-next-build-slice`
-- Project: `Riotbox MVP Buildout`
+- Project: `P000 | Repo Ops / QA / Workflow`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-12`

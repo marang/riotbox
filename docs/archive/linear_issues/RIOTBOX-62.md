@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-62`
 - Title: `Surface W-30 audible preview diagnostics and shell baseline`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-62/surface-w-30-audible-preview-diagnostics-and-shell-baseline`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

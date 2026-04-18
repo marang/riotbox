@@ -3,8 +3,8 @@
 - Ticket: `RIOTBOX-000`
 - Title: `Example ticket title`
 - Linear issue: `https://linear.app/...`
-- Project: `Riotbox MVP Buildout`
-- Milestone: `Example milestone`
+- Project: `P000 | Repo Ops / QA / Workflow`
+- Milestone: `Example milestone or legacy milestone`
 - Status: `Done`
 - Created: `YYYY-MM-DD`
 - Started: `YYYY-MM-DD`

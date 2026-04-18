@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-94`
 - Title: `Reframe Jam screen into clearer perform-first vs inspect-first surfaces`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-94/reframe-jam-screen-into-clearer-perform-first-vs-inspect-first`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

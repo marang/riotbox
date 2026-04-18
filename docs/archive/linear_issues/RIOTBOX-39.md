@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-39`
 - Title: `Add controlled TR-909 takeover and release path`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-39/add-controlled-tr-909-takeover-and-release-path`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

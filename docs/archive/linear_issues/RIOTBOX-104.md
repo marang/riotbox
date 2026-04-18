@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-104`
 - Title: `Split Jam help and footer into primary vs advanced gesture groups`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-104/split-jam-help-and-footer-into-primary-vs-advanced-gesture-groups`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `Jam-First Playable Slice`
 - Status: `Done`
 - Created: `2026-04-17`

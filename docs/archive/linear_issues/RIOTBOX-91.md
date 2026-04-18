@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-91`
 - Title: `Surface scene candidate and active-scene diagnostics in Jam and Log shell`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-91/surface-scene-candidate-and-active-scene-diagnostics-in-jam-and-log`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

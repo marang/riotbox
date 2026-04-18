@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-61`
 - Title: `Add first playable W-30 pad trigger on the committed preview seam`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-61/add-first-playable-w-30-pad-trigger-on-the-committed-preview-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

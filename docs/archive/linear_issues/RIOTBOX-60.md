@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-60`
 - Title: `Make W-30 preview audibly real from the new preview seam`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-60/make-w-30-preview-audibly-real-from-the-new-preview-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

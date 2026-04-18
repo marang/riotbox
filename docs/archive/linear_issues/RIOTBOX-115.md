@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-115`
 - Title: `Centralize perform-facing gesture vocabulary across Jam shell surfaces`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-115/centralize-perform-facing-gesture-vocabulary-across-jam-shell-surfaces`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-18`

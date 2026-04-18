@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-80`
 - Title: `Add first bounded W-30 loop-freezer reuse cue on the capture seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-80/add-first-bounded-w-30-loop-freezer-reuse-cue-on-the-capture-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

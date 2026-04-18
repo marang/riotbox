@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-59`
 - Title: `Prepare audio-facing W-30 preview render seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-59/prepare-audio-facing-w-30-preview-render-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-42`
 - Title: `Add first TR-909 source-support and takeover render profiles`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-42/add-first-tr-909-source-support-and-takeover-render-profiles`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

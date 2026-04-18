@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-45`
 - Title: `Add first TR-909 pattern adoption inside the audible render seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-45/add-first-tr-909-pattern-adoption-inside-the-audible-render-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

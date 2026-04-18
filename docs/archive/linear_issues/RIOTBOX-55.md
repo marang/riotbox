@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-55`
 - Title: `Add bounded MC-202 answer generation path`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-55/add-bounded-mc-202-answer-generation-path`
-- Project: `Riotbox MVP Buildout`
+- Project: `P006 | MC-202 MVP`
 - Milestone: `MC-202 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-76`
 - Title: `Add replay-safe W-30 bank-manager and pad-forge regression fixtures`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-76/add-replay-safe-w-30-bank-manager-and-pad-forge-regression-fixtures`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

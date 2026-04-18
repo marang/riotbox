@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-37`
 - Title: `Resolve single-source app behavior versus plural session graph contract`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-37/resolve-single-source-app-behavior-versus-plural-session-graph`
-- Project: `Riotbox MVP Buildout`
+- Project: `P003 | Analysis Vertical Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-13`

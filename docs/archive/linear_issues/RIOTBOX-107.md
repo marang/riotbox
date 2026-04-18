@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-107`
 - Title: `Add first bounded scene restore action on the current transport seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-107/add-first-bounded-scene-restore-action-on-the-current-transport-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-67`
 - Title: `Add first bounded W-30 pad-bank stepping on the committed preview seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-67/add-first-bounded-w-30-pad-bank-stepping-on-the-committed-preview-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-70`
 - Title: `Make W-30 capture resolution follow committed lane focus`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-70/make-w-30-capture-resolution-follow-committed-lane-focus`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

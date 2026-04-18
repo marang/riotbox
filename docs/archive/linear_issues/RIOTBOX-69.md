@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-69`
 - Title: `Make W-30 preview mode explicit instead of deriving it from action-log history`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-69/make-w-30-preview-mode-explicit-instead-of-deriving-it-from-action-log`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-64`
 - Title: `Add replay-safe W-30 preview audio fixtures and regression checks`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-64/add-replay-safe-w-30-preview-audio-fixtures-and-regression-checks`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

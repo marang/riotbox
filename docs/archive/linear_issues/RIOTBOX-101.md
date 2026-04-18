@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-101`
 - Title: `Tighten inspect-mode guidance and exit cues on the Jam shell`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-101/tighten-inspect-mode-guidance-and-exit-cues-on-the-jam-shell`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `Jam-First Playable Slice`
 - Status: `Done`
 - Created: `2026-04-17`

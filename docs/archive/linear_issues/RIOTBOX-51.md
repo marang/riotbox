@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-51`
 - Title: `Add first MC-202 follower generation action`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-51/add-first-mc-202-follower-generation-action`
-- Project: `Riotbox MVP Buildout`
+- Project: `P006 | MC-202 MVP`
 - Milestone: `MC-202 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

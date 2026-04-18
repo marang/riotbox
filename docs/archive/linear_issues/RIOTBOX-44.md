@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-44`
 - Title: `Surface TR-909 audible render diagnostics in Jam and Log screens`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-44/surface-tr-909-audible-render-diagnostics-in-jam-and-log-screens`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

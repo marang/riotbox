@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-109`
 - Title: `Add replay-safe scene restore committed-state and shell regression fixtures`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-109/add-replay-safe-scene-restore-committed-state-and-shell-regression`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

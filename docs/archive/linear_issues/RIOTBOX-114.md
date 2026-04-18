@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-114`
 - Title: `Promote scene energy mapping out of the TUI-only positional derivation`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-114/promote-scene-energy-mapping-out-of-the-tui-only-positional-derivation`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-18`

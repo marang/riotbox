@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-40`
 - Title: `Prepare audio-facing TR-909 reinforcement render seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-40/prepare-audio-facing-tr-909-reinforcement-render-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`
