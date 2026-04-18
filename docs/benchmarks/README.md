@@ -18,3 +18,5 @@ Current benchmark artifacts:
 
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
+- [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
+  First workflow-budget baseline for the current Scene Brain `jump -> restore` recovery loop.
