@@ -4,11 +4,11 @@ use std::{
     fmt::{self, Display, Formatter},
     io,
     path::{Path, PathBuf},
-    time::{Duration, SystemTime, UNIX_EPOCH},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use riotbox_audio::{
-    runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle},
+    runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle, AudioRuntimeTimingSnapshot},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
@@ -139,7 +139,7 @@ impl Default for AppRuntimeState {
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct TransportDriverState {
-    pub last_pulse_at_ms: Option<TimestampMs>,
+    pub last_audio_position_beats: Option<u64>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -724,18 +724,8 @@ impl JamAppState {
             self.source_graph.as_ref(),
         );
         self.update_transport_clock(next_clock);
-        self.runtime.transport_driver.last_pulse_at_ms = None;
-    }
-
-    pub fn set_transport_playing_at(&mut self, is_playing: bool, now_ms: TimestampMs) {
-        let next_clock = transport_clock_for_state(
-            self.runtime.transport.position_beats,
-            is_playing,
-            self.runtime.transport.current_scene.clone(),
-            self.source_graph.as_ref(),
-        );
-        self.update_transport_clock(next_clock);
-        self.runtime.transport_driver.last_pulse_at_ms = is_playing.then_some(now_ms);
+        self.runtime.transport_driver.last_audio_position_beats =
+            is_playing.then_some(self.runtime.transport.beat_index);
     }
 
     pub fn advance_transport_by(
@@ -764,25 +754,29 @@ impl JamAppState {
         }
     }
 
-    pub fn apply_runtime_pulse(&mut self, now_ms: TimestampMs) -> Vec<CommittedActionRef> {
-        if !self.runtime.transport.is_playing {
-            self.runtime.transport_driver.last_pulse_at_ms = None;
-            return Vec::new();
+    pub fn apply_audio_timing_snapshot(
+        &mut self,
+        timing: AudioRuntimeTimingSnapshot,
+        committed_at: TimestampMs,
+    ) -> Vec<CommittedActionRef> {
+        let previous = self.runtime.transport.clone();
+        let next_clock = transport_clock_for_state(
+            timing.position_beats,
+            timing.is_transport_running,
+            previous.current_scene.clone(),
+            self.source_graph.as_ref(),
+        );
+        self.update_transport_clock(next_clock.clone());
+        self.runtime.transport_driver.last_audio_position_beats =
+            timing.is_transport_running.then_some(next_clock.beat_index);
+
+        if timing.is_transport_running
+            && let Some(boundary) = crossed_commit_boundary(&previous, &next_clock)
+        {
+            return self.commit_ready_actions(boundary, committed_at);
         }
 
-        let Some(previous_pulse_at) = self.runtime.transport_driver.last_pulse_at_ms else {
-            self.runtime.transport_driver.last_pulse_at_ms = Some(now_ms);
-            return Vec::new();
-        };
-
-        if now_ms <= previous_pulse_at {
-            self.runtime.transport_driver.last_pulse_at_ms = Some(now_ms);
-            return Vec::new();
-        }
-
-        self.runtime.transport_driver.last_pulse_at_ms = Some(now_ms);
-        let delta_beats = self.beats_for_elapsed_ms(now_ms - previous_pulse_at);
-        self.advance_transport_by(delta_beats, now_ms)
+        Vec::new()
     }
 
     pub fn queue_scene_mutation(&mut self, requested_at: TimestampMs) {
@@ -2107,18 +2101,6 @@ impl JamAppState {
         }
 
         Ok(())
-    }
-
-    fn beats_for_elapsed_ms(&self, elapsed_ms: TimestampMs) -> f64 {
-        let bpm = self
-            .jam_view
-            .source
-            .bpm_estimate
-            .map(f64::from)
-            .filter(|bpm| *bpm > 0.0)
-            .unwrap_or(120.0);
-
-        bpm * Duration::from_millis(elapsed_ms).as_secs_f64() / 60.0
     }
 }
 
@@ -4339,20 +4321,26 @@ mod tests {
     }
 
     #[test]
-    fn setting_transport_playing_at_records_runtime_driver_anchor() {
+    fn setting_transport_playing_records_audio_transport_anchor() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-        state.set_transport_playing_at(true, 1_000);
+        state.set_transport_playing(true);
 
         assert!(state.runtime.transport.is_playing);
-        assert_eq!(state.runtime.transport_driver.last_pulse_at_ms, Some(1_000));
+        assert_eq!(
+            state.runtime.transport_driver.last_audio_position_beats,
+            Some(state.runtime.transport.beat_index)
+        );
 
-        state.set_transport_playing_at(false, 1_250);
+        state.set_transport_playing(false);
 
         assert!(!state.runtime.transport.is_playing);
-        assert_eq!(state.runtime.transport_driver.last_pulse_at_ms, None);
+        assert_eq!(
+            state.runtime.transport_driver.last_audio_position_beats,
+            None
+        );
     }
 
     #[test]
@@ -4939,7 +4927,7 @@ mod tests {
     }
 
     #[test]
-    fn advancing_transport_commits_crossed_bar_boundary() {
+    fn audio_timing_snapshot_commits_crossed_bar_boundary() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -4952,10 +4940,17 @@ mod tests {
             phrase_index: 1,
             current_scene: Some(SceneId::from("scene-1")),
         });
-        state.set_transport_playing_at(true, 1_000);
+        state.set_transport_playing(true);
         state.queue_tr909_fill(300);
 
-        let committed = state.apply_runtime_pulse(3_100);
+        let committed = state.apply_audio_timing_snapshot(
+            AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: 32.0,
+            },
+            3_100,
+        );
 
         assert_eq!(committed.len(), 1);
         assert_eq!(committed[0].boundary.kind, CommitBoundary::Bar);
@@ -4972,7 +4967,7 @@ mod tests {
     }
 
     #[test]
-    fn runtime_pulse_advances_transport_from_elapsed_time() {
+    fn audio_timing_snapshot_advances_transport_from_callback_position() {
         let graph = sample_graph();
         let session = sample_session(&graph);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -4985,14 +4980,24 @@ mod tests {
             phrase_index: 1,
             current_scene: Some(SceneId::from("scene-1")),
         });
-        state.set_transport_playing_at(true, 2_000);
+        state.set_transport_playing(true);
 
-        let committed = state.apply_runtime_pulse(2_500);
+        let committed = state.apply_audio_timing_snapshot(
+            AudioRuntimeTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 124.0,
+                position_beats: 33.0,
+            },
+            2_500,
+        );
 
         assert!(committed.is_empty());
         assert!(state.runtime.transport.position_beats > 32.9);
         assert!(state.runtime.transport.position_beats < 33.1);
-        assert_eq!(state.runtime.transport_driver.last_pulse_at_ms, Some(2_500));
+        assert_eq!(
+            state.runtime.transport_driver.last_audio_position_beats,
+            Some(33)
+        );
     }
 
     #[test]

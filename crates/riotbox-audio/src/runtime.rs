@@ -47,6 +47,13 @@ pub struct AudioRuntimeHealth {
     pub last_stream_error: Option<String>,
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
+pub struct AudioRuntimeTimingSnapshot {
+    pub is_transport_running: bool,
+    pub tempo_bpm: f32,
+    pub position_beats: f64,
+}
+
 #[derive(Debug)]
 pub enum AudioRuntimeError {
     NoDefaultOutputDevice {
@@ -146,6 +153,7 @@ pub struct AudioRuntimeShell {
     lifecycle: AudioRuntimeLifecycle,
     output: Option<AudioOutputInfo>,
     telemetry: Arc<RuntimeTelemetry>,
+    transport: Arc<SharedTransportTimingState>,
     tr909_render: Arc<SharedTr909RenderState>,
     w30_preview: Arc<SharedW30PreviewRenderState>,
     w30_resample_tap: Arc<SharedW30ResampleTapState>,
@@ -212,6 +220,11 @@ impl AudioRuntimeShell {
         };
 
         let telemetry = Arc::new(RuntimeTelemetry::new());
+        let transport = Arc::new(SharedTransportTimingState::new(
+            tr909_render_state.is_transport_running,
+            tr909_render_state.tempo_bpm,
+            tr909_render_state.position_beats,
+        ));
         let tr909_render = Arc::new(SharedTr909RenderState::new(&tr909_render_state));
         let w30_preview = Arc::new(SharedW30PreviewRenderState::new(&w30_preview_render_state));
         let w30_resample_tap = Arc::new(SharedW30ResampleTapState::new(&w30_resample_tap_state));
@@ -222,28 +235,37 @@ impl AudioRuntimeShell {
             cpal::SampleFormat::F32 => build_silent_output_stream::<f32>(
                 &device,
                 &stream_config,
-                Arc::clone(&telemetry),
-                Arc::clone(&tr909_render),
-                Arc::clone(&w30_preview),
-                Arc::clone(&w30_resample_tap),
+                AudioRuntimeSharedState {
+                    telemetry: Arc::clone(&telemetry),
+                    transport: Arc::clone(&transport),
+                    tr909_render: Arc::clone(&tr909_render),
+                    w30_preview: Arc::clone(&w30_preview),
+                    w30_resample_tap: Arc::clone(&w30_resample_tap),
+                },
                 start,
             ),
             cpal::SampleFormat::I16 => build_silent_output_stream::<i16>(
                 &device,
                 &stream_config,
-                Arc::clone(&telemetry),
-                Arc::clone(&tr909_render),
-                Arc::clone(&w30_preview),
-                Arc::clone(&w30_resample_tap),
+                AudioRuntimeSharedState {
+                    telemetry: Arc::clone(&telemetry),
+                    transport: Arc::clone(&transport),
+                    tr909_render: Arc::clone(&tr909_render),
+                    w30_preview: Arc::clone(&w30_preview),
+                    w30_resample_tap: Arc::clone(&w30_resample_tap),
+                },
                 start,
             ),
             cpal::SampleFormat::U16 => build_silent_output_stream::<u16>(
                 &device,
                 &stream_config,
-                Arc::clone(&telemetry),
-                Arc::clone(&tr909_render),
-                Arc::clone(&w30_preview),
-                Arc::clone(&w30_resample_tap),
+                AudioRuntimeSharedState {
+                    telemetry: Arc::clone(&telemetry),
+                    transport: Arc::clone(&transport),
+                    tr909_render: Arc::clone(&tr909_render),
+                    w30_preview: Arc::clone(&w30_preview),
+                    w30_resample_tap: Arc::clone(&w30_resample_tap),
+                },
                 start,
             ),
             sample_format => {
@@ -272,6 +294,7 @@ impl AudioRuntimeShell {
             lifecycle: AudioRuntimeLifecycle::Running,
             output: Some(output),
             telemetry,
+            transport,
             tr909_render,
             w30_preview,
             w30_resample_tap,
@@ -306,6 +329,21 @@ impl AudioRuntimeShell {
         }
     }
 
+    #[must_use]
+    pub fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
+        self.telemetry.timing_snapshot()
+    }
+
+    pub fn update_transport_state(
+        &self,
+        is_transport_running: bool,
+        tempo_bpm: f32,
+        position_beats: f64,
+    ) {
+        self.transport
+            .update(is_transport_running, tempo_bpm, position_beats);
+    }
+
     pub fn update_tr909_render_state(&self, render_state: &Tr909RenderState) {
         self.tr909_render.update(render_state);
     }
@@ -328,6 +366,7 @@ impl AudioRuntimeShell {
         lifecycle: AudioRuntimeLifecycle,
         output: Option<AudioOutputInfo>,
         telemetry: Arc<RuntimeTelemetry>,
+        transport: Arc<SharedTransportTimingState>,
         tr909_render_state: Arc<SharedTr909RenderState>,
         w30_preview_state: Arc<SharedW30PreviewRenderState>,
         w30_resample_tap_state: Arc<SharedW30ResampleTapState>,
@@ -336,6 +375,7 @@ impl AudioRuntimeShell {
             lifecycle,
             output,
             telemetry,
+            transport,
             tr909_render: tr909_render_state,
             w30_preview: w30_preview_state,
             w30_resample_tap: w30_resample_tap_state,
@@ -353,18 +393,17 @@ impl Drop for AudioRuntimeShell {
 fn build_silent_output_stream<T>(
     device: &cpal::Device,
     config: &cpal::StreamConfig,
-    telemetry: Arc<RuntimeTelemetry>,
-    tr909_render: Arc<SharedTr909RenderState>,
-    w30_preview: Arc<SharedW30PreviewRenderState>,
-    w30_resample_tap: Arc<SharedW30ResampleTapState>,
+    shared: AudioRuntimeSharedState,
     start: Instant,
 ) -> Result<cpal::Stream, cpal::BuildStreamError>
 where
     T: cpal::SizedSample + cpal::FromSample<f32>,
 {
-    let callback_telemetry = Arc::clone(&telemetry);
-    let error_telemetry = Arc::clone(&telemetry);
+    let callback_telemetry = Arc::clone(&shared.telemetry);
+    let error_telemetry = Arc::clone(&shared.telemetry);
+    let callback_transport = Arc::clone(&shared.transport);
     let mut render_state = Tr909CallbackState::default();
+    let mut transport_state = TransportTimingCallbackState::default();
     let mut w30_preview_state = W30PreviewCallbackState::default();
     let mut w30_resample_state = W30ResampleTapCallbackState::default();
     let mut mix_buffer = Vec::<f32>::new();
@@ -378,16 +417,34 @@ where
                 mix_buffer.resize(data.len(), 0.0);
             }
 
+            let frame_count = data.len() / channel_count.max(1);
+            let callback_timing = advance_transport_timing(
+                &callback_transport.snapshot(),
+                &mut transport_state,
+                sample_rate,
+                frame_count,
+            );
+            let mut tr909_render_state = shared.tr909_render.snapshot();
+            tr909_render_state.is_transport_running = callback_timing.is_transport_running;
+            tr909_render_state.tempo_bpm = callback_timing.tempo_bpm;
+            tr909_render_state.position_beats = callback_timing.render_position_beats;
+            let mut w30_preview_render_state = shared.w30_preview.snapshot();
+            w30_preview_render_state.is_transport_running = callback_timing.is_transport_running;
+            w30_preview_render_state.tempo_bpm = callback_timing.tempo_bpm;
+            w30_preview_render_state.position_beats = callback_timing.render_position_beats;
+            let mut w30_resample_render_state = shared.w30_resample_tap.snapshot();
+            w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
+
             render_mix_buffer(
                 &mut mix_buffer,
                 sample_rate,
                 channel_count,
-                &tr909_render.snapshot(),
+                &tr909_render_state,
                 &mut render_state,
                 &mut W30MixRenderState {
-                    preview_render: &w30_preview.snapshot(),
+                    preview_render: &w30_preview_render_state,
                     preview_state: &mut w30_preview_state,
-                    resample_render: &w30_resample_tap.snapshot(),
+                    resample_render: &w30_resample_render_state,
                     resample_state: &mut w30_resample_state,
                 },
             );
@@ -396,13 +453,62 @@ where
             }
 
             let now = start.elapsed().as_micros() as u64;
-            callback_telemetry.record_callback_at(now);
+            callback_telemetry.record_callback_at(now, &callback_timing);
         },
         move |error| {
             error_telemetry.record_stream_error(error.to_string());
         },
         None,
     )
+}
+
+#[derive(Clone)]
+struct AudioRuntimeSharedState {
+    telemetry: Arc<RuntimeTelemetry>,
+    transport: Arc<SharedTransportTimingState>,
+    tr909_render: Arc<SharedTr909RenderState>,
+    w30_preview: Arc<SharedW30PreviewRenderState>,
+    w30_resample_tap: Arc<SharedW30ResampleTapState>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct RealtimeTransportTimingState {
+    is_transport_running: bool,
+    tempo_bpm: f32,
+    position_beats: f64,
+}
+
+struct SharedTransportTimingState {
+    is_transport_running: AtomicBool,
+    tempo_bpm_bits: AtomicU32,
+    position_beats_bits: AtomicU64,
+}
+
+impl SharedTransportTimingState {
+    fn new(is_transport_running: bool, tempo_bpm: f32, position_beats: f64) -> Self {
+        Self {
+            is_transport_running: AtomicBool::new(is_transport_running),
+            tempo_bpm_bits: AtomicU32::new(tempo_bpm.to_bits()),
+            position_beats_bits: AtomicU64::new(position_beats.to_bits()),
+        }
+    }
+
+    fn update(&self, is_transport_running: bool, tempo_bpm: f32, position_beats: f64) {
+        self.is_transport_running
+            .store(is_transport_running, Ordering::Relaxed);
+        self.tempo_bpm_bits
+            .store(tempo_bpm.to_bits(), Ordering::Relaxed);
+        self.position_beats_bits
+            .store(position_beats.to_bits(), Ordering::Relaxed);
+    }
+
+    fn snapshot(&self) -> RealtimeTransportTimingState {
+        RealtimeTransportTimingState {
+            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
@@ -738,6 +844,20 @@ struct Tr909CallbackState {
 }
 
 #[derive(Debug, Default)]
+struct TransportTimingCallbackState {
+    beat_position: f64,
+    was_running: bool,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct CallbackTimingSnapshot {
+    is_transport_running: bool,
+    tempo_bpm: f32,
+    render_position_beats: f64,
+    completed_position_beats: f64,
+}
+
+#[derive(Debug, Default)]
 struct W30PreviewCallbackState {
     beat_position: f64,
     oscillator_phase: f32,
@@ -811,6 +931,42 @@ fn render_mix_buffer(
         w30.resample_render,
         w30.resample_state,
     );
+}
+
+fn advance_transport_timing(
+    control: &RealtimeTransportTimingState,
+    state: &mut TransportTimingCallbackState,
+    sample_rate: u32,
+    frame_count: usize,
+) -> CallbackTimingSnapshot {
+    let transport_running = control.is_transport_running && control.tempo_bpm > 0.0;
+    if !transport_running {
+        state.was_running = false;
+        state.beat_position = control.position_beats;
+        return CallbackTimingSnapshot {
+            is_transport_running: false,
+            tempo_bpm: control.tempo_bpm,
+            render_position_beats: control.position_beats,
+            completed_position_beats: control.position_beats,
+        };
+    }
+
+    if !state.was_running || (state.beat_position - control.position_beats).abs() > 0.125 {
+        state.beat_position = control.position_beats;
+        state.was_running = true;
+    }
+
+    let render_position_beats = state.beat_position;
+    let beats_per_sample = f64::from(control.tempo_bpm) / 60.0 / f64::from(sample_rate.max(1));
+    let completed_position_beats = render_position_beats + (beats_per_sample * frame_count as f64);
+    state.beat_position = completed_position_beats;
+
+    CallbackTimingSnapshot {
+        is_transport_running: true,
+        tempo_bpm: control.tempo_bpm,
+        render_position_beats,
+        completed_position_beats,
+    }
 }
 
 fn render_tr909_buffer(
@@ -1614,6 +1770,7 @@ struct RuntimeTelemetrySnapshot {
     max_callback_gap_micros: Option<u64>,
     stream_error_count: u64,
     last_stream_error: Option<String>,
+    timing: AudioRuntimeTimingSnapshot,
 }
 
 struct RuntimeTelemetry {
@@ -1622,6 +1779,9 @@ struct RuntimeTelemetry {
     last_callback_micros: AtomicU64,
     stream_error_count: AtomicU64,
     last_stream_error: Mutex<Option<String>>,
+    is_transport_running: AtomicBool,
+    tempo_bpm_bits: AtomicU32,
+    position_beats_bits: AtomicU64,
 }
 
 impl RuntimeTelemetry {
@@ -1632,10 +1792,13 @@ impl RuntimeTelemetry {
             last_callback_micros: AtomicU64::new(0),
             stream_error_count: AtomicU64::new(0),
             last_stream_error: Mutex::new(None),
+            is_transport_running: AtomicBool::new(false),
+            tempo_bpm_bits: AtomicU32::new(0.0_f32.to_bits()),
+            position_beats_bits: AtomicU64::new(0.0_f64.to_bits()),
         }
     }
 
-    fn record_callback_at(&self, now_micros: u64) {
+    fn record_callback_at(&self, now_micros: u64, timing: &CallbackTimingSnapshot) {
         let previous = self
             .last_callback_micros
             .swap(now_micros, Ordering::Relaxed);
@@ -1645,6 +1808,12 @@ impl RuntimeTelemetry {
                 .fetch_max(gap, Ordering::Relaxed);
         }
         self.callback_count.fetch_add(1, Ordering::Relaxed);
+        self.is_transport_running
+            .store(timing.is_transport_running, Ordering::Relaxed);
+        self.tempo_bpm_bits
+            .store(timing.tempo_bpm.to_bits(), Ordering::Relaxed);
+        self.position_beats_bits
+            .store(timing.completed_position_beats.to_bits(), Ordering::Relaxed);
     }
 
     fn record_stream_error(&self, message: String) {
@@ -1668,7 +1837,16 @@ impl RuntimeTelemetry {
                 .lock()
                 .expect("lock stream error buffer")
                 .clone(),
+            timing: AudioRuntimeTimingSnapshot {
+                is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+                tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
+                position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+            },
         }
+    }
+
+    fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
+        self.snapshot().timing
     }
 }
 
@@ -1882,17 +2060,28 @@ mod tests {
         }
     }
 
+    fn sample_timing(position_beats: f64) -> CallbackTimingSnapshot {
+        CallbackTimingSnapshot {
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            render_position_beats: position_beats,
+            completed_position_beats: position_beats,
+        }
+    }
+
     #[test]
     fn telemetry_tracks_callback_count_and_max_gap() {
         let telemetry = RuntimeTelemetry::new();
-        telemetry.record_callback_at(100);
-        telemetry.record_callback_at(350);
-        telemetry.record_callback_at(775);
+        telemetry.record_callback_at(100, &sample_timing(16.0));
+        telemetry.record_callback_at(350, &sample_timing(16.5));
+        telemetry.record_callback_at(775, &sample_timing(17.0));
 
         let snapshot = telemetry.snapshot();
 
         assert_eq!(snapshot.callback_count, 3);
         assert_eq!(snapshot.max_callback_gap_micros, Some(425));
+        assert!(snapshot.timing.is_transport_running);
+        assert_eq!(snapshot.timing.position_beats, 17.0);
     }
 
     #[test]
@@ -1906,14 +2095,16 @@ mod tests {
         let w30_resample_tap_state = Arc::new(SharedW30ResampleTapState::new(
             &W30ResampleTapState::default(),
         ));
-        telemetry.record_callback_at(100);
-        telemetry.record_callback_at(240);
+        let transport = Arc::new(SharedTransportTimingState::new(false, 128.0, 0.0));
+        telemetry.record_callback_at(100, &sample_timing(12.0));
+        telemetry.record_callback_at(240, &sample_timing(12.25));
         telemetry.record_stream_error("stream stalled".into());
 
         let shell = AudioRuntimeShell::from_test_parts(
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
+            transport,
             tr909_render_state,
             w30_preview_state,
             w30_resample_tap_state,
@@ -1942,10 +2133,12 @@ mod tests {
         let w30_resample_tap_state = Arc::new(SharedW30ResampleTapState::new(
             &W30ResampleTapState::default(),
         ));
+        let transport = Arc::new(SharedTransportTimingState::new(false, 128.0, 0.0));
         let mut shell = AudioRuntimeShell::from_test_parts(
             AudioRuntimeLifecycle::Running,
             Some(sample_output()),
             telemetry,
+            transport,
             tr909_render_state,
             w30_preview_state,
             w30_resample_tap_state,
@@ -1954,6 +2147,40 @@ mod tests {
         shell.stop();
 
         assert_eq!(shell.lifecycle(), AudioRuntimeLifecycle::Stopped);
+    }
+
+    #[test]
+    fn timing_snapshot_reflects_callback_owned_transport_progress() {
+        let telemetry = Arc::new(RuntimeTelemetry::new());
+        let transport = Arc::new(SharedTransportTimingState::new(true, 126.0, 32.0));
+        let shell = AudioRuntimeShell::from_test_parts(
+            AudioRuntimeLifecycle::Running,
+            Some(sample_output()),
+            Arc::clone(&telemetry),
+            Arc::clone(&transport),
+            Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default())),
+            Arc::new(SharedW30PreviewRenderState::new(
+                &W30PreviewRenderState::default(),
+            )),
+            Arc::new(SharedW30ResampleTapState::new(
+                &W30ResampleTapState::default(),
+            )),
+        );
+
+        telemetry.record_callback_at(
+            100,
+            &CallbackTimingSnapshot {
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                render_position_beats: 32.0,
+                completed_position_beats: 32.5,
+            },
+        );
+
+        let snapshot = shell.timing_snapshot();
+        assert!(snapshot.is_transport_running);
+        assert_eq!(snapshot.tempo_bpm, 126.0);
+        assert_eq!(snapshot.position_beats, 32.5);
     }
 
     #[test]

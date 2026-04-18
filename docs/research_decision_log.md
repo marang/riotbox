@@ -1001,3 +1001,14 @@ Why: Riotbox needs benchmark visibility now, but the project does not yet need a
 Evidence: the repo now has an explicit benchmark artifact at `docs/benchmarks/jam_workflow_baseline_2026-04-17.md`, grounded in the shipped `Beat08_128BPM(Full).wav` example path and the current first-run `Space -> f -> c` loop.
 Consequences: later benchmark work should keep the same workflow names and fixture references, but can replace the derived timing budget with semi-automated or fully automated stopwatch data once that path exists. Until then, this benchmark family should stay small, readable, and tied to the shipped shell semantics.
 Status: accepted
+
+---
+
+Topic: audio callback timing should be the live transport authority before deeper audio QA hardening
+Phase: Pro Hardening
+Question: once the app shell, queue, and audio render seams already exist, what is the smallest honest next move that makes live transport timing and quantized commit boundaries depend on the audio runtime instead of an app-side wall-clock pulse thread?
+Decision: remove the app-local 20ms `RuntimePulseSource` thread and let `riotbox-audio` publish a typed timing snapshot derived from callback-owned beat progression. The app should consume that timing snapshot, reconstruct bar/phrase context from the current source graph, and commit queued actions from crossed boundaries observed in the audio-owned timing stream.
+Why: the repo review finding was not about missing features; it was about musical honesty. As long as the app advanced transport and committed actions from its own wall-clock pulse, control-plane jitter could become the de facto timing spine while the callback merely rendered a lagging copy. Exposing callback-owned timing first is the smallest bounded fix because it moves authority toward the audio runtime without redesigning the whole scheduler in one slice.
+Evidence: `riotbox-audio` now owns a small shared transport control/state seam and publishes `AudioRuntimeTimingSnapshot` values from callback progress; `riotbox-app` consumes those snapshots in the event loop, removes the old `runtime.rs` pulse thread module, and keeps focused transport/commit tests green under the new path.
+Consequences: this does not yet finish the transport redesign. The app still reconstructs bar/phrase indices and still mirrors the current audio-owned beat position back into lane render state. Later hardening can push more of that contract into shared/core or audio-owned surfaces, but deeper audio QA and replay work now has one truthful live timing spine to build on.
+Status: accepted
