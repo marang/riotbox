@@ -134,6 +134,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Perform-first Jam shell reduction and hierarchy cleanup.
 - [RIOTBOX-95.md](./RIOTBOX-95.md)
   First-run onramp guidance for the first meaningful play moment inside the Jam shell.
+- [RIOTBOX-96.md](./RIOTBOX-96.md)
+  Repo-front-door logo rework toward the sharper feral breakbeat identity now used in the brand assets.
 - [RIOTBOX-97.md](./RIOTBOX-97.md)
   Bounded Jam inspect mode that deepens confidence without reopening the old dashboard density.
 - [RIOTBOX-98.md](./RIOTBOX-98.md)
