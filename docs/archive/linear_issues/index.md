@@ -184,4 +184,14 @@ This index tracks archived Linear ticket history that has been removed from the 
   Clarify landed scene-result and next-step guidance after jump or restore.
 - [RIOTBOX-121.md](./RIOTBOX-121.md)
   First readability benchmark baseline for Scene Brain timing cues on the perform-first Jam shell.
+- [RIOTBOX-122.md](./RIOTBOX-122.md)
+  Compact current-vs-restore scene contrast cue on the perform-first Jam shell.
+- [RIOTBOX-123.md](./RIOTBOX-123.md)
+  One bounded scene-result history cue on the existing Log truth surface.
+- [RIOTBOX-124.md](./RIOTBOX-124.md)
+  Tiny visual countdown cue for queued Scene Brain actions on `Jam`.
+- [RIOTBOX-126.md](./RIOTBOX-126.md)
+  Repo workflow rule that open PRs and green CI do not stall the main implementation lane.
+- [RIOTBOX-127.md](./RIOTBOX-127.md)
+  Refresh of the stale `AGENTS.md` current-state snapshot toward live repo docs.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
