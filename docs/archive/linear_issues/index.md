@@ -174,4 +174,14 @@ This index tracks archived Linear ticket history that has been removed from the 
   Centralize perform-facing Jam gesture vocabulary across status, footer, help, and action summaries.
 - [RIOTBOX-116.md](./RIOTBOX-116.md)
   Operationalize the audio QA workflow spec in the active agent and PR workflow.
+- [RIOTBOX-117.md](./RIOTBOX-117.md)
+  Align archive ticket metadata with the numbered phase-project roadmap structure.
+- [RIOTBOX-118.md](./RIOTBOX-118.md)
+  Surface the explicit scene landing boundary on the Jam shell.
+- [RIOTBOX-119.md](./RIOTBOX-119.md)
+  Add the compact beat / bar / phrase pulse cue for queued scene actions on Jam.
+- [RIOTBOX-120.md](./RIOTBOX-120.md)
+  Clarify landed scene-result and next-step guidance after jump or restore.
+- [RIOTBOX-121.md](./RIOTBOX-121.md)
+  First readability benchmark baseline for Scene Brain timing cues on the perform-first Jam shell.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
