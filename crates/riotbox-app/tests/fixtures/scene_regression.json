@@ -15,7 +15,7 @@
         "scene transition idle"
       ],
       "log_contains": [
-        "scene scene-01-intro",
+        "scene intro | high",
         "restore none"
       ]
     }
@@ -47,7 +47,7 @@
         "scene transition idle"
       ],
       "log_contains": [
-        "scene scene-02-drop",
+        "scene drop | high",
         "restore scene-01-intro",
         "result launched scene scene-02-drop",
         "at bar 9 / phrase 2"
@@ -82,7 +82,7 @@
         "scene transition idle"
       ],
       "log_contains": [
-        "scene scene-01-intro",
+        "scene intro | high",
         "restore scene-02-drop",
         "result restored scene scene-01-intro",
         "at bar 10 / phrase 2"

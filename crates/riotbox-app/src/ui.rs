@@ -538,14 +538,15 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.jam_view.transport.position_beats
         )),
         Line::from(format!(
-            "scene {}",
+            "scene {} | energy {}",
             shell
                 .app
                 .jam_view
                 .scene
                 .active_scene
                 .as_deref()
-                .unwrap_or("none")
+                .unwrap_or("none"),
+            current_scene_energy_label(shell)
         )),
         Line::from(format!(
             "source {} | next scene {}",
@@ -851,16 +852,9 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         Line::from(format!("committed {committed_count} | ghost {ghost_count}")),
         Line::from(format!("rejected {rejected_count} | undone {undone_count}")),
         Line::from(format!(
-            "scene {}",
-            shell
-                .app
-                .session
-                .runtime_state
-                .scene_state
-                .active_scene
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into())
+            "scene {} | {}",
+            current_scene_compact_label(shell),
+            current_scene_energy_label(shell)
         )),
         Line::from(format!("restore {}", restore_scene_label(shell))),
     ])
@@ -2333,6 +2327,89 @@ fn next_scene_candidate_label(shell: &JamShellState) -> String {
         .first()
         .map(ToString::to_string)
         .unwrap_or_else(|| "none".into())
+}
+
+fn current_scene_energy_label(shell: &JamShellState) -> &'static str {
+    let Some(graph) = shell.app.source_graph.as_ref() else {
+        return "unknown";
+    };
+
+    let mut sections = graph.sections.iter().collect::<Vec<_>>();
+    sections.sort_by(|left, right| {
+        left.bar_start
+            .cmp(&right.bar_start)
+            .then(left.bar_end.cmp(&right.bar_end))
+            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
+    });
+
+    if sections.is_empty() {
+        return "unknown";
+    }
+
+    let current_scene = shell
+        .app
+        .session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .clone()
+        .or_else(|| {
+            shell
+                .app
+                .session
+                .runtime_state
+                .transport
+                .current_scene
+                .clone()
+        });
+
+    let section = current_scene
+        .and_then(|scene_id| {
+            shell
+                .app
+                .session
+                .runtime_state
+                .scene_state
+                .scenes
+                .iter()
+                .position(|candidate| *candidate == scene_id)
+        })
+        .and_then(|index| sections.get(index).copied())
+        .unwrap_or(sections[0]);
+
+    energy_label(section)
+}
+
+fn current_scene_compact_label(shell: &JamShellState) -> String {
+    let scene_id = shell
+        .app
+        .session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .map(ToString::to_string)
+        .or_else(|| {
+            shell
+                .app
+                .session
+                .runtime_state
+                .transport
+                .current_scene
+                .as_ref()
+                .map(ToString::to_string)
+        })
+        .unwrap_or_else(|| "none".into());
+
+    let mut parts = scene_id.splitn(3, '-');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some("scene"), Some(index), Some(label))
+            if index.chars().all(|ch| ch.is_ascii_digit()) =>
+        {
+            label.to_string()
+        }
+        _ => scene_id,
+    }
 }
 
 fn restore_scene_label(shell: &JamShellState) -> String {
@@ -4013,6 +4090,7 @@ mod tests {
 
         assert!(rendered.contains("idle @ 32.0"));
         assert!(rendered.contains("scene-a"));
+        assert!(rendered.contains("energy medium"));
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("restore scene none"));
@@ -4043,6 +4121,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("scene-02-break"), "{rendered}");
+        assert!(rendered.contains("energy high"), "{rendered}");
         assert!(
             rendered.contains("restore scene scene-01-drop"),
             "{rendered}"
@@ -4852,7 +4931,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("Counts"));
-        assert!(rendered.contains("scene scene-a"));
+        assert!(rendered.contains("scene scene-a | medium"));
         assert!(rendered.contains("restore none"));
         assert!(rendered.contains("pending"));
     }
