@@ -22,3 +22,5 @@ Current benchmark artifacts:
   First workflow-budget baseline for the current Scene Brain `jump -> restore` recovery loop.
 - [scene_timing_readability_baseline_2026-04-18.md](./scene_timing_readability_baseline_2026-04-18.md)
   Current readability baseline for Scene Brain timing, contrast, and recent-result cues across `Jam` and `Log`.
+- [scene_guidance_stack_baseline_2026-04-18.md](./scene_guidance_stack_baseline_2026-04-18.md)
+  First bounded baseline for the queued-scene guidance stack across `Jam`, `Help`, and `Log`.
