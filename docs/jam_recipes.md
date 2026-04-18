@@ -250,6 +250,38 @@ What this teaches:
 - Riotbox is not only action-driven; the source itself still shapes what the shell teaches well today
 - the best learning source for one seam is not automatically the best learning source for every seam
 
+## Recipe 10: Read The Scene Cues On Purpose
+
+Goal: practice the current Scene Brain readability stack instead of only firing `jump` and `restore` blindly.
+
+Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(Full).wav` if you want the steadier timing feel.
+
+1. press `Space`
+2. on `Jam`, queue a jump with `y`
+3. before it lands, look for all three of these cues:
+   - `launch -> ... @ next ...`
+   - `pulse [..>.] ...`
+   - the current `live ... <> restore ...` contrast line
+4. press `2` after the jump lands
+5. on `Log`, confirm the scene result and note the `trail ...` cue
+6. press `1`
+7. queue restore with `Y`
+8. before restore lands, read the same three `Jam` cues again
+9. press `2` after restore lands and confirm the new `trail ...` entry
+
+What to observe:
+
+- `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
+- `pulse [..>.] ...` is the compact countdown cue toward that boundary
+- `live ... <> restore ...` tells you which scene is active and which scene `Y` would return to
+- `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
+
+What this teaches:
+
+- Scene Brain now has a real small readability stack, not just action ids
+- `Jam` is enough to follow the next scene move, while `Log` is enough to confirm what actually landed
+- the current shell can already teach `jump -> restore` timing and role contrast, even though it is still not a finished visual timing instrument
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
