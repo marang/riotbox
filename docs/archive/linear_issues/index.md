@@ -194,4 +194,12 @@ This index tracks archived Linear ticket history that has been removed from the 
   Repo workflow rule that open PRs and green CI do not stall the main implementation lane.
 - [RIOTBOX-127.md](./RIOTBOX-127.md)
   Refresh of the stale `AGENTS.md` current-state snapshot toward live repo docs.
+- [RIOTBOX-128.md](./RIOTBOX-128.md)
+  Archive batch for `RIOTBOX-122` through `RIOTBOX-127` after the first Scene Brain readability and workflow slices.
+- [RIOTBOX-129.md](./RIOTBOX-129.md)
+  Refresh of the Scene Brain timing-readability benchmark after contrast, trail, and countdown cues landed.
+- [RIOTBOX-130.md](./RIOTBOX-130.md)
+  Bounded `scene jump -> restore` cue-reading recipe on the current Scene Brain shell.
+- [RIOTBOX-131.md](./RIOTBOX-131.md)
+  Compact scene-specific help cue for queued `jump` and `restore` actions.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
