@@ -2599,13 +2599,24 @@ fn scene_pending_line(shell: &JamShellState) -> String {
 }
 
 fn scene_commit_pulse_line(shell: &JamShellState) -> Option<String> {
-    let (_, _, boundary) = pending_scene_transition(shell)?;
+    pending_scene_transition(shell)?;
     let transport = &shell.app.runtime.transport;
+    let countdown = scene_countdown_cue(transport.beat_index);
 
     Some(format!(
-        "pulse b{} | bar {} | ph {} -> {boundary}",
+        "pulse {countdown} b{} | b{} | p{}",
         transport.beat_index, transport.bar_index, transport.phrase_index
     ))
+}
+
+fn scene_countdown_cue(beat_index: u64) -> String {
+    let slot = ((beat_index.saturating_sub(1) % 4) + 1) as usize;
+    let mut chars = ['-'; 4];
+    for ch in chars.iter_mut().take(slot.saturating_sub(1)) {
+        *ch = '=';
+    }
+    chars[slot - 1] = '>';
+    format!("[{}]", chars.iter().collect::<String>())
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -4287,7 +4298,7 @@ mod tests {
         assert!(rendered.contains("launch ->"), "{rendered}");
         assert!(rendered.contains("@ next bar"), "{rendered}");
         assert!(
-            rendered.contains("pulse b32 | bar 8 | ph 1 -> next bar"),
+            rendered.contains("pulse [===>] b32 | b8 | p1"),
             "{rendered}"
         );
     }
@@ -4326,7 +4337,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("pulse b32 | bar 8 | ph 1 -> next bar"),
+            rendered.contains("pulse [===>] b32 | b8 | p1"),
             "{rendered}"
         );
     }
