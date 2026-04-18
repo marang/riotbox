@@ -1,4 +1,8 @@
-use crate::{queue::ActionQueue, session::SessionFile, source_graph::SourceGraph};
+use crate::{
+    queue::ActionQueue,
+    session::SessionFile,
+    source_graph::{EnergyClass, Section, SourceGraph},
+};
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct JamViewModel {
@@ -281,6 +285,8 @@ impl JamViewModel {
                     .active_scene
                     .as_ref()
                     .map(ToString::to_string),
+                active_scene_energy: graph
+                    .and_then(|graph| current_scene_energy_label(session, graph)),
                 scene_count: session.runtime_state.scene_state.scenes.len(),
             },
             macros: MacroStripView {
@@ -490,7 +496,52 @@ pub struct SourceSummaryView {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SceneSummaryView {
     pub active_scene: Option<String>,
+    pub active_scene_energy: Option<String>,
     pub scene_count: usize,
+}
+
+fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
+    let scene_id = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(session.runtime_state.transport.current_scene.as_ref());
+    let sections = sorted_sections(graph);
+    let section = scene_id
+        .and_then(|scene_id| parse_projected_scene_index(scene_id.as_str()))
+        .and_then(|scene_index| sections.get(scene_index).copied())
+        .or_else(|| sections.first().copied())?;
+    Some(section_energy_label(section).to_string())
+}
+
+fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
+    let mut parts = scene_id.splitn(3, '-');
+    match (parts.next(), parts.next()) {
+        (Some("scene"), Some(index)) => index.parse::<usize>().ok()?.checked_sub(1),
+        _ => None,
+    }
+}
+
+fn sorted_sections(graph: &SourceGraph) -> Vec<&Section> {
+    let mut sections = graph.sections.iter().collect::<Vec<_>>();
+    sections.sort_by(|left, right| {
+        left.bar_start
+            .cmp(&right.bar_start)
+            .then(left.bar_end.cmp(&right.bar_end))
+            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
+    });
+    sections
+}
+
+const fn section_energy_label(section: &Section) -> &'static str {
+    match section.energy_class {
+        EnergyClass::Low => "low",
+        EnergyClass::Medium => "medium",
+        EnergyClass::High => "high",
+        EnergyClass::Peak => "peak",
+        EnergyClass::Unknown => "unknown",
+    }
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -891,6 +942,7 @@ mod tests {
         assert_eq!(vm.source.loop_candidate_count, 1);
         assert_eq!(vm.source.hook_candidate_count, 1);
         assert_eq!(vm.scene.scene_count, 1);
+        assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.capture.capture_count, 1);
         assert_eq!(vm.capture.pinned_capture_count, 0);
         assert_eq!(vm.capture.promoted_capture_count, 1);
@@ -969,5 +1021,62 @@ mod tests {
         assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
         assert_eq!(vm.pending_actions.len(), 11);
         assert_eq!(vm.ghost.mode, "assist");
+    }
+
+    #[test]
+    fn derives_scene_energy_from_projected_scene_id() {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: "src-1".into(),
+                path: "audio/test.wav".into(),
+                content_hash: "graph-1".into(),
+                duration_seconds: 32.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "0.1.0".into(),
+                provider_set: vec!["beat".into(), "section".into()],
+                generated_at: "2026-04-12T18:00:00Z".into(),
+                source_hash: "graph-1".into(),
+                analysis_seed: 7,
+                run_notes: Some("scene-energy-test".into()),
+            },
+        );
+        graph.sections.push(crate::source_graph::Section {
+            section_id: "sec-a".into(),
+            label_hint: crate::source_graph::SectionLabelHint::Intro,
+            start_seconds: 0.0,
+            end_seconds: 16.0,
+            bar_start: 1,
+            bar_end: 8,
+            energy_class: crate::source_graph::EnergyClass::Medium,
+            confidence: 0.9,
+            tags: vec![],
+        });
+        graph.sections.push(crate::source_graph::Section {
+            section_id: "sec-b".into(),
+            label_hint: crate::source_graph::SectionLabelHint::Drop,
+            start_seconds: 16.0,
+            end_seconds: 32.0,
+            bar_start: 9,
+            bar_end: 16,
+            energy_class: crate::source_graph::EnergyClass::High,
+            confidence: 0.9,
+            tags: vec![],
+        });
+
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-drop"));
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+        assert_eq!(vm.scene.active_scene.as_deref(), Some("scene-02-drop"));
+        assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
     }
 }

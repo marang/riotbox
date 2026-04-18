@@ -546,7 +546,13 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .active_scene
                 .as_deref()
                 .unwrap_or("none"),
-            current_scene_energy_label(shell)
+            shell
+                .app
+                .jam_view
+                .scene
+                .active_scene_energy
+                .as_deref()
+                .unwrap_or("unknown")
         )),
         Line::from(format!(
             "source {} | next scene {}",
@@ -854,7 +860,13 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         Line::from(format!(
             "scene {} | {}",
             current_scene_compact_label(shell),
-            current_scene_energy_label(shell)
+            shell
+                .app
+                .jam_view
+                .scene
+                .active_scene_energy
+                .as_deref()
+                .unwrap_or("unknown")
         )),
         Line::from(format!("restore {}", restore_scene_label(shell))),
     ])
@@ -2327,57 +2339,6 @@ fn next_scene_candidate_label(shell: &JamShellState) -> String {
         .first()
         .map(ToString::to_string)
         .unwrap_or_else(|| "none".into())
-}
-
-fn current_scene_energy_label(shell: &JamShellState) -> &'static str {
-    let Some(graph) = shell.app.source_graph.as_ref() else {
-        return "unknown";
-    };
-
-    let mut sections = graph.sections.iter().collect::<Vec<_>>();
-    sections.sort_by(|left, right| {
-        left.bar_start
-            .cmp(&right.bar_start)
-            .then(left.bar_end.cmp(&right.bar_end))
-            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
-    });
-
-    if sections.is_empty() {
-        return "unknown";
-    }
-
-    let current_scene = shell
-        .app
-        .session
-        .runtime_state
-        .scene_state
-        .active_scene
-        .clone()
-        .or_else(|| {
-            shell
-                .app
-                .session
-                .runtime_state
-                .transport
-                .current_scene
-                .clone()
-        });
-
-    let section = current_scene
-        .and_then(|scene_id| {
-            shell
-                .app
-                .session
-                .runtime_state
-                .scene_state
-                .scenes
-                .iter()
-                .position(|candidate| *candidate == scene_id)
-        })
-        .and_then(|index| sections.get(index).copied())
-        .unwrap_or(sections[0]);
-
-    energy_label(section)
 }
 
 fn current_scene_compact_label(shell: &JamShellState) -> String {
