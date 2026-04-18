@@ -1587,7 +1587,10 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(first_pending_line),
         Line::from(second_pending_line),
         Line::from(latest_landed_line(shell)),
-        Line::from(format!("status {}", shell.status_message)),
+        Line::from(
+            scene_post_commit_cue_line(shell)
+                .unwrap_or_else(|| format!("status {}", shell.status_message)),
+        ),
     ]
 }
 
@@ -1656,7 +1659,7 @@ fn latest_landed_command(shell: &JamShellState) -> Option<&str> {
         .map(|action| action.command.as_str())
 }
 
-fn scene_post_commit_guidance_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<String> {
     let command = latest_landed_command(shell)?;
     if !matches!(command, "scene.launch" | "scene.restore") {
         return None;
@@ -1664,19 +1667,15 @@ fn scene_post_commit_guidance_lines(shell: &JamShellState) -> Option<Vec<Line<'s
 
     let current_scene = current_scene_compact_label(shell);
     let restore_scene = compact_scene_label(restore_scene_label(shell).as_str());
-    let next_line = if command == "scene.launch" {
-        "next: [Y] restore  [c] capture"
+    let next_step = if command == "scene.launch" {
+        "[Y] restore [c] capture"
     } else {
-        "next: [y] jump  [c] capture"
+        "[y] jump [c] capture"
     };
 
-    Some(vec![
-        Line::from(format!(
-            "changed: {current_scene} | restore {restore_scene}"
-        )),
-        Line::from(next_line),
-        Line::from("then try: [g] follow  [f] fill"),
-    ])
+    Some(format!(
+        "scene {current_scene} | restore {restore_scene} | next {next_step}"
+    ))
 }
 
 fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -1697,9 +1696,6 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 
     if !shell.app.jam_view.recent_actions.is_empty() {
-        if let Some(lines) = scene_post_commit_guidance_lines(shell) {
-            return lines;
-        }
         return vec![
             Line::from(format!("what changed: {}", latest_landed_line(shell))),
             Line::from("what next: [c] capture  [u] undo"),
@@ -4604,17 +4600,11 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(
-            rendered.contains("changed: break | restore drop"),
+            rendered.contains("scene break | restore drop"),
             "{rendered}"
         );
-        assert!(
-            rendered.contains("next: [Y] restore  [c] capture"),
-            "{rendered}"
-        );
-        assert!(
-            rendered.contains("then try: [g] follow  [f] fill"),
-            "{rendered}"
-        );
+        assert!(rendered.contains("next [Y] restore"), "{rendered}");
+        assert!(rendered.contains("[c] capture"), "{rendered}");
     }
 
     #[test]
@@ -4627,17 +4617,11 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(
-            rendered.contains("changed: drop | restore break"),
+            rendered.contains("scene drop | restore break"),
             "{rendered}"
         );
-        assert!(
-            rendered.contains("next: [y] jump  [c] capture"),
-            "{rendered}"
-        );
-        assert!(
-            rendered.contains("then try: [g] follow  [f] fill"),
-            "{rendered}"
-        );
+        assert!(rendered.contains("next [y] jump"), "{rendered}");
+        assert!(rendered.contains("[c] capture"), "{rendered}");
     }
 
     #[test]
