@@ -214,6 +214,42 @@ What this teaches:
 - restore is deterministic and pointer-based, not a hidden undo mode
 - scene changes are becoming recoverable without opening a second arrangement model
 
+## Recipe 9: Compare Two Scene Sources
+
+Goal: feel how source choice changes Scene Brain legibility.
+
+Use these two sources back to back:
+
+- `Beat08_128BPM(Full).wav`
+- `DH_RushArp_120_A.wav`
+
+Run the same loop on both:
+
+1. press `Space`
+2. press `y`
+3. press `2` and confirm the scene jump landed
+4. press `1`
+5. press `Y`
+6. press `2` and confirm the restore landed
+
+What to compare:
+
+- how easy it is to notice that a scene jump happened at all
+- whether the restore feels like a clear “go back” move or only a status change
+- whether `Jam` plus `Log` together make the loop understandable without guesswork
+
+What to expect right now:
+
+- `Beat08_128BPM(Full).wav` is still the easier source for learning timing and queue/commit behavior
+- `DH_RushArp_120_A.wav` is currently the clearer source for reading Scene Brain contrast as an actual musical shift
+- neither source makes Scene Brain feel finished yet, but the tonal example is the better one when you want to learn `jump -> restore` as contrast instead of only as action ids
+
+What this teaches:
+
+- source choice already changes how readable the same Scene Brain flow feels
+- Riotbox is not only action-driven; the source itself still shapes what the shell teaches well today
+- the best learning source for one seam is not automatically the best learning source for every seam
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -225,6 +261,7 @@ So if two runs feel similar:
 - use `Recipe 2` before repeating `Recipe 7`
 - use `Recipe 5` if you want to understand source-specific differences
 - use `Recipe 8` if you want the first bounded Scene Brain flow instead of only lane gestures
+- use `Recipe 9` if you want to compare where Scene Brain is already more legible today
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 
