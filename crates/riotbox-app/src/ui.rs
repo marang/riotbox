@@ -1434,8 +1434,8 @@ fn scene_restore_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
         return Some(vec![
             Line::from(""),
             Line::from("Scene restore"),
-            Line::from("Y wakes after one landed jump"),
-            Line::from("jump once, then Y brings the last scene back"),
+            Line::from("Y waits for one landed jump"),
+            Line::from("land one jump, then Y can restore the last scene"),
         ]);
     }
 
@@ -1749,7 +1749,7 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if show_restore_readiness_cue(shell) {
         return vec![
             Line::from("[y] jump first"),
-            Line::from("[Y] restore wakes after one landed jump"),
+            Line::from("[Y] restore waits for one landed jump"),
             Line::from("[c] capture"),
         ];
     }
@@ -4965,7 +4965,7 @@ mod tests {
 
         assert!(rendered.contains("[y] jump first"), "{rendered}");
         assert!(
-            rendered.contains("[Y] restore wakes after one landed"),
+            rendered.contains("[Y] restore waits for one landed"),
             "{rendered}"
         );
         assert!(rendered.contains("jump"), "{rendered}");
@@ -4994,11 +4994,11 @@ mod tests {
 
         assert!(rendered.contains("Scene restore"), "{rendered}");
         assert!(
-            rendered.contains("Y wakes after one landed jump"),
+            rendered.contains("Y waits for one landed jump"),
             "{rendered}"
         );
         assert!(
-            rendered.contains("jump once, then Y brings the last scene back"),
+            rendered.contains("land one jump, then Y can restore the last scene"),
             "{rendered}"
         );
     }
