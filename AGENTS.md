@@ -207,6 +207,9 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - After opening a PR, inspect the GitHub Actions / CI results explicitly.
 - Do not treat a ticket as merely "waiting for review" if CI is red.
 - If CI fails and the failure is relevant to the slice, fix it on the same branch before considering the review boundary clean.
+- Treat open PRs and in-flight CI as merge gates, not as a reason to pause the main implementation lane.
+- If the current PR is locally clean and CI is only running or already green, continue with the next bounded roadmap-aligned slice and re-check the open PR periodically.
+- When no event or webhook mechanism is available, use explicit periodic polling instead of idling.
 - At minimum, check:
   - formatter status
   - test status
