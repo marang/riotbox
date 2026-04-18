@@ -42,7 +42,7 @@
       "jam_contains": [
         "idle @ 32.0",
         "scene-02-drop",
-        "live drop <> restore intro",
+        "live drop/high <> restore intro/high",
         "source src-1 | next scene",
         "scene-01-intro",
         "scene transition idle"
@@ -79,7 +79,7 @@
       "result_summary": "restored scene scene-01-intro at bar 10 / phrase 2",
       "jam_contains": [
         "scene-01-intro",
-        "live intro <> restore drop",
+        "live intro/high <> restore drop/high",
         "scene transition idle"
       ],
       "log_contains": [
