@@ -141,6 +141,7 @@ docs/
 - `benchmarks/README.md`: benchmark archive policy started
 - `benchmarks/jam_workflow_baseline_2026-04-17.md`: workflow benchmark baseline captured
 - `benchmarks/scene_jump_restore_workflow_baseline_2026-04-18.md`: Scene Brain workflow benchmark baseline captured
+- `benchmarks/scene_timing_readability_baseline_2026-04-18.md`: Scene Brain timing-readability baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured
