@@ -194,4 +194,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Repo workflow rule that open PRs and green CI do not stall the main implementation lane.
 - [RIOTBOX-127.md](./RIOTBOX-127.md)
   Refresh of the stale `AGENTS.md` current-state snapshot toward live repo docs.
+- [RIOTBOX-133.md](./RIOTBOX-133.md)
+  Compact queued-scene footer cue on `Jam` while `jump` or `restore` is pending.
+- [RIOTBOX-134.md](./RIOTBOX-134.md)
+  Bounded guidance-stack baseline across `Jam`, `Help`, and `Log` for queued scene actions.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
