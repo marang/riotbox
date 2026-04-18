@@ -144,6 +144,7 @@ docs/
 - `benchmarks/scene_timing_readability_baseline_2026-04-18.md`: Scene Brain timing-readability baseline refreshed for energy-aware live/restore cues
 - `benchmarks/scene_guidance_stack_baseline_2026-04-18.md`: Scene Brain queued-guidance stack baseline captured
 - `benchmarks/scene_restore_ready_readability_baseline_2026-04-18.md`: Scene Brain restore-ready readability baseline captured
+- `benchmarks/scene_restore_state_contrast_baseline_2026-04-18.md`: Scene Brain restore wake-up vs ready contrast baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured
