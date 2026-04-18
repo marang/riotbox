@@ -272,6 +272,33 @@ Rules:
 - the main coordinating agent still owns correctness, final review, and final integration
 - delegation should reduce workflow drift, not hide responsibility for it
 
+## 8.2.2 Workflow Reminder Sidecar
+
+When running autonomously for long stretches, keep a lightweight workflow reminder sidecar alive if `tmux` is available.
+
+Repo-local commands:
+
+- `scripts/start_workflow_reminder_tmux.sh`
+- `scripts/check_workflow_reminder_tmux.sh`
+
+Purpose:
+
+- reduce idle drift after clean checkpoints
+- keep reminding the main lane to continue bounded roadmap work
+- keep re-checking open PRs instead of treating them as a reason to stop
+- keep Linear and repo archive obligations visible while coding continues
+- do this quietly, without spawning persistent repo log files
+
+Rules:
+
+- start the reminder sidecar before or during longer unattended implementation runs
+- verify periodically that the tmux session and reminder pane are still alive
+- the default reminder cadence should be light:
+  - 30 seconds is enough
+- use the sidecar as a nudge layer only; it does not replace CI checks, branch review, or merge judgment
+- prefer direct tmux pane output over repo-local feed/log files
+- if the sidecar dies, restart it instead of quietly losing the reminder lane
+
 ## 8.3 Backlog Horizon
 
 Linear should not hold only the current ticket.
