@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-54`
 - Title: `Add bounded W-30 promoted-material audition cue`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-54/add-bounded-w-30-promoted-material-audition-cue`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

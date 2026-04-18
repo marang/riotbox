@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-110`
 - Title: `Add first scene-restore learning recipe and README pointer`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-110/add-first-scene-restore-learning-recipe-and-readme-pointer`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

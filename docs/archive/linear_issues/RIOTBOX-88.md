@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-88`
 - Title: `Prepare bounded W-30 slice-pool preview profile on the lineage seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-88/prepare-bounded-w-30-slice-pool-preview-profile-on-the-lineage-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

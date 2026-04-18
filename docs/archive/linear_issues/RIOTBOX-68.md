@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-68`
 - Title: `Run periodic review-codebase after W-30 MVP slice batch`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-68/run-periodic-review-codebase-after-w-30-mvp-slice-batch`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

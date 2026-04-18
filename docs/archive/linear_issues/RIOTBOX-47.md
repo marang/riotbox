@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-47`
 - Title: `Add fixture-backed TR-909 pattern-adoption regression coverage`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-47/add-fixture-backed-tr-909-pattern-adoption-regression-coverage`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

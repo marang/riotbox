@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-85`
 - Title: `Add first bounded W-30 slice-pool browse control on the current lineage seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-85/add-first-bounded-w-30-slice-pool-browse-control-on-the-current`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

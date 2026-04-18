@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-16`
 - Title: `Evaluate MemPalace for project memory and agent-assist knowledge retrieval`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-16/evaluate-mempalace-for-project-memory-and-agent-assist-knowledge`
-- Project: `Riotbox MVP Buildout`
+- Project: `P000 | Repo Ops / QA / Workflow`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-12`

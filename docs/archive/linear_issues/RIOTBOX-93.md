@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-93`
 - Title: `Create repo-root README with logo, quickstart, and musician-facing product overview`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-93/create-repo-root-readme-with-logo-quickstart-and-musician-facing`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

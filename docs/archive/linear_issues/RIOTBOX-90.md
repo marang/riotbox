@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-90`
 - Title: `Add first committed scene-select action on the current transport seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-90/add-first-committed-scene-select-action-on-the-current-transport-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

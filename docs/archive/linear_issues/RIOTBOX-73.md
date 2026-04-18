@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-73`
 - Title: `Add first explicit W-30 bank-swap control on the committed focus seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-73/add-first-explicit-w-30-bank-swap-control-on-the-committed-focus-seam`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

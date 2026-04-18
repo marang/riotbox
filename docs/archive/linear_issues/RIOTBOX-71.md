@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-71`
 - Title: `Move pending W-30 resample cue summary into the core Jam view model`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-71/move-pending-w-30-resample-cue-summary-into-the-core-jam-view-model`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-87`
 - Title: `Add replay-safe W-30 slice-pool browse regression fixtures`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-87/add-replay-safe-w-30-slice-pool-browse-regression-fixtures`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

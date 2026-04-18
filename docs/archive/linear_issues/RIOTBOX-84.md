@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-84`
 - Title: `Scope W-30 operation diagnostics to the current lane target`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-84/scope-w-30-operation-diagnostics-to-the-current-lane-target`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

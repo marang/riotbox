@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-83`
 - Title: `Move Capture pending summaries behind projected app/core state`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-83/move-capture-pending-summaries-behind-projected-appcore-state`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

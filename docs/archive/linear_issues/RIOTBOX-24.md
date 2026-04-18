@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-24`
 - Title: `Fix whole-codebase review findings before the next feature slice`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-24/fix-whole-codebase-review-findings-before-the-next-feature-slice`
-- Project: `Riotbox MVP Buildout`
+- Project: `P000 | Repo Ops / QA / Workflow`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-12`

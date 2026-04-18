@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-81`
 - Title: `Run periodic repo-wide review after the recent W-30 seam slices`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-81/run-periodic-repo-wide-review-after-the-recent-w-30-seam-slices`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

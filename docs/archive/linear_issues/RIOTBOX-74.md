@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-74`
 - Title: `Add first bounded W-30 damage-profile control on the current pad-forge seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-74/add-first-bounded-w-30-damage-profile-control-on-the-current-pad-forge`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

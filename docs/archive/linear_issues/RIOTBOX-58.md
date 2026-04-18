@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-58`
 - Title: `Add replay-safe W-30 live-recall and audition regression fixtures`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-58/add-replay-safe-w-30-live-recall-and-audition-regression-fixtures`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

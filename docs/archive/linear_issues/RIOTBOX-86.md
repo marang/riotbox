@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-86`
 - Title: `Surface W-30 slice-pool browse diagnostics in Capture and Log shell`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-86/surface-w-30-slice-pool-browse-diagnostics-in-capture-and-log-shell`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

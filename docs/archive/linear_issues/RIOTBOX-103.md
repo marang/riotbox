@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-103`
 - Title: `Promote only the next 1-2 pending actions on the Jam shell`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-103/promote-only-the-next-1-2-pending-actions-on-the-jam-shell`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `Jam-First Playable Slice`
 - Status: `Done`
 - Created: `2026-04-17`

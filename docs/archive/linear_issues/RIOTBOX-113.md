@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-113`
 - Title: `Add source-driven scene contrast recipe for Scene Brain`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-113/add-source-driven-scene-contrast-recipe-for-scene-brain`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

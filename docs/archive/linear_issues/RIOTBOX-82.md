@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-82`
 - Title: `Unify W-30 phrase-cue conflict blocking between loop freeze and resample`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-82/unify-w-30-phrase-cue-conflict-blocking-between-loop-freeze-and`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

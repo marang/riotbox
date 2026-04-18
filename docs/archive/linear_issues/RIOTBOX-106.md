@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-106`
 - Title: `Add first-landed-result and next-step cue on the Jam shell`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-106/add-first-landed-result-and-next-step-cue-on-the-jam-shell`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `Jam-First Playable Slice`
 - Status: `Done`
 - Created: `2026-04-17`

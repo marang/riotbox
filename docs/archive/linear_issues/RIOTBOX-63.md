@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-63`
 - Title: `Prepare internal W-30 resample tap seam behind capture lineage`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-63/prepare-internal-w-30-resample-tap-seam-behind-capture-lineage`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-16`

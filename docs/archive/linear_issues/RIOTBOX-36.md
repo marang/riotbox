@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-36`
 - Title: `Align ingest graph storage with the MVP embedded-graph session contract`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-36/align-ingest-graph-storage-with-the-mvp-embedded-graph-session`
-- Project: `Riotbox MVP Buildout`
+- Project: `P003 | Analysis Vertical Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-13`

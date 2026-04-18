@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-108`
 - Title: `Surface scene restore target and pending restore cues in Jam and Log`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-108/surface-scene-restore-target-and-pending-restore-cues-in-jam-and-log`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

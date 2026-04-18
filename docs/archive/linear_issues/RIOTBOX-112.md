@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-112`
 - Title: `Add scene jump and restore workflow benchmark baseline`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-112/add-scene-jump-and-restore-workflow-benchmark-baseline`
-- Project: `Riotbox MVP Buildout`
+- Project: `P008 | Scene Brain`
 - Milestone: `Scene Brain`
 - Status: `Done`
 - Created: `2026-04-17`

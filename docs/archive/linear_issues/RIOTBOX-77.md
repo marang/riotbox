@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-77`
 - Title: `Make W-30 internal resample taps audibly real on the current runtime seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-77/make-w-30-internal-resample-taps-audibly-real-on-the-current-runtime`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

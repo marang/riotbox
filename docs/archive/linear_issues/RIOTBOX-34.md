@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-34`
 - Title: `Move transport clock and commit boundaries out of the TUI event loop`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-34/move-transport-clock-and-commit-boundaries-out-of-the-tui-event-loop`
-- Project: `Riotbox MVP Buildout`
+- Project: `P002 | Core Skeleton`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-13`

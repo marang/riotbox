@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-66`
 - Title: `Surface W-30 resample lineage diagnostics in Capture and Log`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-66/surface-w-30-resample-lineage-diagnostics-in-capture-and-log`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

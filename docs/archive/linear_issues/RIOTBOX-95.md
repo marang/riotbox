@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-95`
 - Title: `Design a first-run onramp for the first meaningful play moment`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-95/design-a-first-run-onramp-for-the-first-meaningful-play-moment`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

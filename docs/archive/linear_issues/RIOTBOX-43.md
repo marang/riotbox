@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-43`
 - Title: `Add replay-safe TR-909 audio fixtures and regression checks`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-43/add-replay-safe-tr-909-audio-fixtures-and-regression-checks`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

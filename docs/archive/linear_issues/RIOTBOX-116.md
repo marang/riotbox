@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-116`
 - Title: `Operationalize audio QA workflow spec in agent and PR workflow`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-116/operationalize-audio-qa-workflow-spec-in-agent-and-pr-workflow`
-- Project: `Riotbox MVP Buildout`
+- Project: `P000 | Repo Ops / QA / Workflow`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-18`

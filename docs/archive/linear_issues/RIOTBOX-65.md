@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-65`
 - Title: `Add first bounded W-30 internal resample action on the capture-lineage seam`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-65/add-first-bounded-w-30-internal-resample-action-on-the-capture-lineage`
-- Project: `Riotbox MVP Buildout`
+- Project: `P007 | W-30 MVP`
 - Milestone: `W-30 MVP`
 - Status: `Done`
 - Created: `2026-04-17`

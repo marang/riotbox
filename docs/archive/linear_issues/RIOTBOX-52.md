@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-52`
 - Title: `Surface MC-202 phrase and role diagnostics in Jam and Log screens`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-52/surface-mc-202-phrase-and-role-diagnostics-in-jam-and-log-screens`
-- Project: `Riotbox MVP Buildout`
+- Project: `P006 | MC-202 MVP`
 - Milestone: `MC-202 MVP`
 - Status: `Done`
 - Created: `2026-04-15`

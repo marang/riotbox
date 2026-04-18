@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-100`
 - Title: `Measure first playable Jam and first successful capture workflow benchmarks`
 - Linear issue: `https://linear.app/riotbox/issue/riotbox-100/measure-first-playable-jam-and-first-successful-capture-workflow`
-- Project: `Riotbox MVP Buildout`
+- Project: `P004 | Jam-First Playable Slice`
 - Milestone: `None`
 - Status: `Done`
 - Created: `2026-04-17`

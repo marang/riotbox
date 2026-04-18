@@ -3,7 +3,7 @@
 - Ticket: `RIOTBOX-46`
 - Title: `Add phrase-aware TR-909 variation and release behavior`
 - Linear issue: `https://linear.app/riotbox/issue/RIOTBOX-46/add-phrase-aware-tr-909-variation-and-release-behavior`
-- Project: `Riotbox MVP Buildout`
+- Project: `P005 | TR-909 MVP`
 - Milestone: `TR-909 MVP`
 - Status: `Done`
 - Created: `2026-04-15`
