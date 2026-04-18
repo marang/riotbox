@@ -119,6 +119,112 @@ pub enum ShellKeyOutcome {
     Quit,
 }
 
+const GESTURE_MUTATE: &str = "mutate";
+const GESTURE_SCENE_JUMP: &str = "scene jump";
+const GESTURE_RESTORE: &str = "restore";
+const GESTURE_VOICE: &str = "voice";
+const GESTURE_FOLLOW: &str = "follow";
+const GESTURE_ANSWER: &str = "answer";
+const GESTURE_FILL: &str = "fill";
+const GESTURE_PUSH: &str = "push";
+const GESTURE_SLAM: &str = "slam";
+const GESTURE_TAKEOVER: &str = "takeover";
+const GESTURE_LOCK: &str = "lock";
+const GESTURE_RELEASE: &str = "release";
+const GESTURE_CAPTURE: &str = "capture";
+const GESTURE_PROMOTE: &str = "promote";
+const GESTURE_HIT: &str = "hit";
+const GESTURE_NEXT_PAD: &str = "next pad";
+const GESTURE_BANK: &str = "bank";
+const GESTURE_BROWSE: &str = "browse";
+const GESTURE_DAMAGE: &str = "damage";
+const GESTURE_FREEZE: &str = "freeze";
+const GESTURE_RECALL: &str = "recall";
+const GESTURE_AUDITION: &str = "audition";
+const GESTURE_RESAMPLE: &str = "resample";
+const GESTURE_UNDO: &str = "undo";
+
+const PRIMARY_GESTURES: &[(&str, &str)] = &[
+    ("y", GESTURE_SCENE_JUMP),
+    ("g", GESTURE_FOLLOW),
+    ("f", GESTURE_FILL),
+    ("c", GESTURE_CAPTURE),
+    ("w", GESTURE_HIT),
+    ("u", GESTURE_UNDO),
+];
+
+const ADVANCED_GESTURES: &[(&str, &str)] = &[
+    ("Y", GESTURE_RESTORE),
+    ("a", GESTURE_ANSWER),
+    ("b", GESTURE_VOICE),
+    ("d", GESTURE_PUSH),
+    ("t", GESTURE_TAKEOVER),
+    ("k", GESTURE_LOCK),
+];
+
+const LANE_GESTURES: &[(&str, &str)] = &[
+    ("l", GESTURE_RECALL),
+    ("o", GESTURE_AUDITION),
+    ("z", GESTURE_FREEZE),
+    ("e", GESTURE_RESAMPLE),
+    ("B", GESTURE_BANK),
+    ("j", GESTURE_BROWSE),
+];
+
+const HELP_PRIMARY_GESTURES: &[(&str, &str)] = &[
+    ("y", GESTURE_SCENE_JUMP),
+    ("g", GESTURE_FOLLOW),
+    ("f", GESTURE_FILL),
+];
+
+const HELP_PRIMARY_CONFIRM_GESTURES: &[(&str, &str)] = &[
+    ("c", GESTURE_CAPTURE),
+    ("w", GESTURE_HIT),
+    ("u", GESTURE_UNDO),
+];
+
+const HELP_ADVANCED_GESTURES_A: &[(&str, &str)] = &[
+    ("Y", GESTURE_RESTORE),
+    ("a", GESTURE_ANSWER),
+    ("m", GESTURE_MUTATE),
+    ("b", GESTURE_VOICE),
+    ("d", GESTURE_PUSH),
+];
+
+const HELP_ADVANCED_GESTURES_B: &[(&str, &str)] = &[
+    ("s", GESTURE_SLAM),
+    ("t", GESTURE_TAKEOVER),
+    ("k", GESTURE_LOCK),
+    ("x", GESTURE_RELEASE),
+];
+
+const HELP_ADVANCED_GESTURES_C: &[(&str, &str)] = &[
+    ("p", GESTURE_PROMOTE),
+    ("n", GESTURE_NEXT_PAD),
+    ("B", GESTURE_BANK),
+    ("j", GESTURE_BROWSE),
+];
+
+const HELP_ADVANCED_GESTURES_D: &[(&str, &str)] = &[
+    ("D", GESTURE_DAMAGE),
+    ("z", GESTURE_FREEZE),
+    ("l", GESTURE_RECALL),
+    ("o", GESTURE_AUDITION),
+    ("e", GESTURE_RESAMPLE),
+];
+
+fn render_gesture_items(items: &[(&str, &str)], separator: &str) -> String {
+    items
+        .iter()
+        .map(|(key, label)| format!("{key}{separator}{label}"))
+        .collect::<Vec<_>>()
+        .join(" | ")
+}
+
+fn queued_status_message(label: &str, boundary: &str) -> String {
+    format!("queue {label} on {boundary}")
+}
+
 #[derive(Clone, Debug)]
 pub struct JamShellState {
     pub app: JamAppState,
@@ -218,95 +324,95 @@ impl JamShellState {
                 ShellKeyOutcome::RequestRefresh
             }
             KeyCode::Char('m') => {
-                self.status_message = "queue scene mutate on next bar".into();
+                self.status_message = queued_status_message(GESTURE_MUTATE, "next bar");
                 ShellKeyOutcome::QueueSceneMutation
             }
             KeyCode::Char('y') => {
-                self.status_message = "queue scene jump on next bar".into();
+                self.status_message = queued_status_message(GESTURE_SCENE_JUMP, "next bar");
                 ShellKeyOutcome::QueueSceneSelect
             }
             KeyCode::Char('Y') => {
-                self.status_message = "queue scene restore on next bar".into();
+                self.status_message = queued_status_message(GESTURE_RESTORE, "next bar");
                 ShellKeyOutcome::QueueSceneRestore
             }
             KeyCode::Char('b') => {
-                self.status_message = "queue MC-202 voice swap on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_VOICE, "next phrase");
                 ShellKeyOutcome::QueueMc202RoleToggle
             }
             KeyCode::Char('g') => {
-                self.status_message = "queue MC-202 follow phrase on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_FOLLOW, "next phrase");
                 ShellKeyOutcome::QueueMc202GenerateFollower
             }
             KeyCode::Char('a') => {
-                self.status_message = "queue MC-202 answer phrase on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_ANSWER, "next phrase");
                 ShellKeyOutcome::QueueMc202GenerateAnswer
             }
             KeyCode::Char('f') => {
-                self.status_message = "queue TR-909 fill on next bar".into();
+                self.status_message = queued_status_message(GESTURE_FILL, "next bar");
                 ShellKeyOutcome::QueueTr909Fill
             }
             KeyCode::Char('d') => {
-                self.status_message = "queue TR-909 push on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_PUSH, "next phrase");
                 ShellKeyOutcome::QueueTr909Reinforce
             }
             KeyCode::Char('s') => {
-                self.status_message = "queue TR-909 slam change on next beat".into();
+                self.status_message = queued_status_message(GESTURE_SLAM, "next beat");
                 ShellKeyOutcome::QueueTr909Slam
             }
             KeyCode::Char('t') => {
-                self.status_message = "queue TR-909 takeover on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_TAKEOVER, "next phrase");
                 ShellKeyOutcome::QueueTr909Takeover
             }
             KeyCode::Char('k') => {
-                self.status_message = "queue TR-909 scene-lock on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_LOCK, "next phrase");
                 ShellKeyOutcome::QueueTr909SceneLock
             }
             KeyCode::Char('x') => {
-                self.status_message = "queue TR-909 release on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_RELEASE, "next phrase");
                 ShellKeyOutcome::QueueTr909Release
             }
             KeyCode::Char('c') => {
-                self.status_message = "queue capture on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_CAPTURE, "next phrase");
                 ShellKeyOutcome::QueueCaptureBar
             }
             KeyCode::Char('p') => {
-                self.status_message = "queue promotion for latest capture".into();
+                self.status_message = format!("queue {GESTURE_PROMOTE} for latest capture");
                 ShellKeyOutcome::PromoteLastCapture
             }
             KeyCode::Char('w') => {
-                self.status_message = "queue W-30 hit on next beat".into();
+                self.status_message = queued_status_message(GESTURE_HIT, "next beat");
                 ShellKeyOutcome::QueueW30TriggerPad
             }
             KeyCode::Char('n') => {
-                self.status_message = "queue W-30 next pad on next beat".into();
+                self.status_message = queued_status_message(GESTURE_NEXT_PAD, "next beat");
                 ShellKeyOutcome::QueueW30StepFocus
             }
             KeyCode::Char('B') => {
-                self.status_message = "queue W-30 bank swap on next bar".into();
+                self.status_message = queued_status_message(GESTURE_BANK, "next bar");
                 ShellKeyOutcome::QueueW30SwapBank
             }
             KeyCode::Char('j') => {
-                self.status_message = "queue W-30 browse on next beat".into();
+                self.status_message = queued_status_message(GESTURE_BROWSE, "next beat");
                 ShellKeyOutcome::QueueW30BrowseSlicePool
             }
             KeyCode::Char('D') => {
-                self.status_message = "queue W-30 damage profile on next bar".into();
+                self.status_message = queued_status_message(GESTURE_DAMAGE, "next bar");
                 ShellKeyOutcome::QueueW30ApplyDamageProfile
             }
             KeyCode::Char('z') => {
-                self.status_message = "queue W-30 loop freeze on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_FREEZE, "next phrase");
                 ShellKeyOutcome::QueueW30LoopFreeze
             }
             KeyCode::Char('l') => {
-                self.status_message = "queue W-30 live recall on next bar".into();
+                self.status_message = queued_status_message(GESTURE_RECALL, "next bar");
                 ShellKeyOutcome::QueueW30LiveRecall
             }
             KeyCode::Char('o') => {
-                self.status_message = "queue W-30 audition on next bar".into();
+                self.status_message = queued_status_message(GESTURE_AUDITION, "next bar");
                 ShellKeyOutcome::QueueW30PromotedAudition
             }
             KeyCode::Char('e') => {
-                self.status_message = "queue W-30 resample on next phrase".into();
+                self.status_message = queued_status_message(GESTURE_RESAMPLE, "next phrase");
                 ShellKeyOutcome::QueueW30Resample
             }
             KeyCode::Char('v') => {
@@ -1144,16 +1250,19 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             "Inspect is read-only: use i to return, then queue actions from perform mode",
         ));
     } else {
-        lines.push(Line::from(
-            "Primary: y scene jump | g follow | f fill | c capture | w hit | u undo",
-        ));
-        lines.push(Line::from(
-            "Advanced: Y restore | a answer | b voice | d push | t takeover | k lock | more in ? help",
-        ));
+        lines.push(Line::from(format!(
+            "Primary: {}",
+            render_gesture_items(PRIMARY_GESTURES, " ")
+        )));
+        lines.push(Line::from(format!(
+            "Advanced: {} | more in ? help",
+            render_gesture_items(ADVANCED_GESTURES, " ")
+        )));
     }
-    lines.push(Line::from(
-        "Lane ops: l recall | o audition | z freeze | e resample | B bank | j browse",
-    ));
+    lines.push(Line::from(format!(
+        "Lane ops: {}",
+        render_gesture_items(LANE_GESTURES, " ")
+    )));
     lines.push(Line::from(format!(
         "Status: {} | jam {} | audio {} | sidecar {} | 909 render {} via {}",
         shell.status_message,
@@ -1230,19 +1339,23 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     lines.extend([
         Line::from(""),
         Line::from("Primary gestures"),
-        Line::from("space: play / pause | y: scene jump | g: follow | f: fill"),
-        Line::from("c: capture | w: hit | u: undo | 2: confirm in Log"),
+        Line::from(format!(
+            "space: play / pause | {}",
+            render_gesture_items(HELP_PRIMARY_GESTURES, ": ")
+        )),
+        Line::from(format!(
+            "{} | 2: confirm in Log",
+            render_gesture_items(HELP_PRIMARY_CONFIRM_GESTURES, ": ")
+        )),
         Line::from(""),
         Line::from("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
         Line::from(""),
         Line::from("Advanced / lane gestures"),
         Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
-        Line::from("Y: scene restore"),
-        Line::from("a: answer | m: mutate scene | b: MC-202 voice | d: 909 push"),
-        Line::from("s: 909 slam"),
-        Line::from("t: 909 takeover | k: 909 lock | x: 909 release"),
-        Line::from("p: promote | n: W-30 next pad | B: W-30 bank | j: browse"),
-        Line::from("D: damage | z: freeze | l: recall | o: audition | e: resample"),
+        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_A, ": ")),
+        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_B, ": ")),
+        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_C, ": ")),
+        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_D, ": ")),
         Line::from("[ / ]: lower or raise drum bus | v: pin latest"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
@@ -1630,29 +1743,29 @@ fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
 
 fn jam_action_label(command: &str) -> String {
     match command {
-        "mutate.scene" => "mutate".into(),
-        "scene.launch" => "scene jump".into(),
-        "scene.restore" => "scene restore".into(),
-        "mc202.set_role" => "voice swap".into(),
-        "mc202.generate_follower" => "follow".into(),
-        "mc202.generate_answer" => "answer".into(),
-        "tr909.fill_next" => "fill".into(),
-        "tr909.reinforce_break" => "push".into(),
-        "tr909.set_slam" => "slam".into(),
-        "tr909.takeover" => "takeover".into(),
-        "tr909.scene_lock" => "lock".into(),
-        "tr909.release" => "release".into(),
-        "capture.now" | "capture.loop" | "capture.bar_group" => "capture".into(),
-        "promote.capture_to_pad" | "promote.capture_to_scene" => "promote".into(),
-        "w30.trigger_pad" => "hit".into(),
-        "w30.step_focus" => "next pad".into(),
-        "w30.swap_bank" => "bank swap".into(),
-        "w30.browse_slice_pool" => "browse".into(),
-        "w30.apply_damage_profile" => "damage".into(),
-        "w30.loop_freeze" => "freeze".into(),
-        "w30.live_recall" => "recall".into(),
-        "w30.audition_promoted" => "audition".into(),
-        "promote.resample" => "resample".into(),
+        "mutate.scene" => GESTURE_MUTATE.into(),
+        "scene.launch" => GESTURE_SCENE_JUMP.into(),
+        "scene.restore" => GESTURE_RESTORE.into(),
+        "mc202.set_role" => GESTURE_VOICE.into(),
+        "mc202.generate_follower" => GESTURE_FOLLOW.into(),
+        "mc202.generate_answer" => GESTURE_ANSWER.into(),
+        "tr909.fill_next" => GESTURE_FILL.into(),
+        "tr909.reinforce_break" => GESTURE_PUSH.into(),
+        "tr909.set_slam" => GESTURE_SLAM.into(),
+        "tr909.takeover" => GESTURE_TAKEOVER.into(),
+        "tr909.scene_lock" => GESTURE_LOCK.into(),
+        "tr909.release" => GESTURE_RELEASE.into(),
+        "capture.now" | "capture.loop" | "capture.bar_group" => GESTURE_CAPTURE.into(),
+        "promote.capture_to_pad" | "promote.capture_to_scene" => GESTURE_PROMOTE.into(),
+        "w30.trigger_pad" => GESTURE_HIT.into(),
+        "w30.step_focus" => GESTURE_NEXT_PAD.into(),
+        "w30.swap_bank" => GESTURE_BANK.into(),
+        "w30.browse_slice_pool" => GESTURE_BROWSE.into(),
+        "w30.apply_damage_profile" => GESTURE_DAMAGE.into(),
+        "w30.loop_freeze" => GESTURE_FREEZE.into(),
+        "w30.live_recall" => GESTURE_RECALL.into(),
+        "w30.audition_promoted" => GESTURE_AUDITION.into(),
+        "promote.resample" => GESTURE_RESAMPLE.into(),
         _ => command.to_string(),
     }
 }
