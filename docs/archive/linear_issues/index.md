@@ -204,4 +204,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Compact scene-specific help cue for queued `jump` and `restore` actions.
 - [RIOTBOX-132.md](./RIOTBOX-132.md)
   Archive follow-up for `RIOTBOX-128` through `RIOTBOX-131` after the Scene Brain docs/help batch.
+- [RIOTBOX-133.md](./RIOTBOX-133.md)
+  Compact queued-scene footer cue on `Jam` while `jump` or `restore` is pending.
+- [RIOTBOX-134.md](./RIOTBOX-134.md)
+  Bounded guidance-stack baseline across `Jam`, `Help`, and `Log` for queued scene actions.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
