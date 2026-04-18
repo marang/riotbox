@@ -1339,6 +1339,10 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         }
     }
 
+    if let Some(scene_help_lines) = pending_scene_help_lines(shell) {
+        lines.extend(scene_help_lines);
+    }
+
     lines.extend([
         Line::from(""),
         Line::from("Primary gestures"),
@@ -1373,6 +1377,19 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     frame.render_widget(Clear, popup);
     frame.render_widget(help, popup);
+}
+
+fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    let (label, scene_id, boundary) = pending_scene_transition(shell)?;
+    let scene = compact_scene_label(scene_id.as_str());
+
+    Some(vec![
+        Line::from(""),
+        Line::from("Scene timing"),
+        Line::from(format!("{label} {scene}: lands at {boundary}")),
+        Line::from("Jam: read launch/restore, pulse, live <> restore"),
+        Line::from("2: confirm the landed trail on Log"),
+    ])
 }
 
 fn screen_context_label(shell: &JamShellState) -> String {
@@ -4615,6 +4632,67 @@ mod tests {
         );
         assert!(
             rendered.contains("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_help_overlay_with_pending_scene_jump_cue() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_scene_select(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+        shell.show_help = true;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Scene timing"), "{rendered}");
+        assert!(
+            rendered.contains("launch intro: lands at next bar"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("Jam: read launch/restore, pulse, live <> restore"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("2: confirm the landed trail on Log"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_help_overlay_with_pending_scene_restore_cue() {
+        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        shell.app.set_transport_playing(true);
+        assert_eq!(
+            shell.app.queue_scene_restore(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+        shell.show_help = true;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Scene timing"), "{rendered}");
+        assert!(
+            rendered.contains("restore drop: lands at next bar"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("2: confirm the landed trail on Log"),
             "{rendered}"
         );
     }
