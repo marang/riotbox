@@ -1,7 +1,7 @@
 # Scene Restore-Ready Readability Baseline 2026-04-18
 
 - Timestamp: `2026-04-18`
-- Commit SHA: `26ef9bb`
+- Commit SHA: `612d417`
 - Fixture ID: `data/test_audio/examples/DH_RushArp_120_A.wav`
 - Benchmark family: `readability`
 - Previous baseline: `None`
@@ -59,11 +59,11 @@ Current measured value:
 
 - zero screen switches
 - one direct shell read in `Jam` footer:
-  - `Scene cue: restore <scene> ready | Y brings back <scene>`
+  - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
 - optional one help overlay open:
   - `Scene restore`
-  - `Y is live now for <scene>`
-  - `press Y to bring <scene> back on the next bar`
+  - `Y is live now for <scene>/<energy>`
+  - `press Y to bring <scene>/<energy> back on the next bar`
 
 Judgment:
 
@@ -84,10 +84,10 @@ Definition for this baseline:
 Current measured value:
 
 - before first landed jump:
-  - `[Y] restore wakes after one landed`
+  - `[Y] restore waits for one landed jump`
 - after first landed jump:
   - `[Y] restore <scene> now`
-  - `Scene cue: restore <scene> ready | Y brings back <scene>`
+  - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
 
 Judgment:
 
@@ -96,7 +96,7 @@ Judgment:
 Why this is acceptable now:
 
 - the shell exposes two distinct states instead of one overloaded restore control
-- the ready state now points at the concrete target that became valid
+- the ready state now points at the concrete `scene/energy` target that became valid
 
 ## Qualitative Friction Notes
 
