@@ -7,6 +7,7 @@
       "scenes": ["scene-01-intro", "scene-02-drop"],
       "active_scene": "scene-01-intro",
       "current_scene": "scene-01-intro",
+      "active_scene_energy": "high",
       "jam_contains": [
         "idle @ 32.0",
         "scene-01-intro",
@@ -37,7 +38,9 @@
       "scenes": ["scene-01-intro", "scene-02-drop"],
       "active_scene": "scene-02-drop",
       "current_scene": "scene-02-drop",
+      "active_scene_energy": "high",
       "restore_scene": "scene-01-intro",
+      "restore_scene_energy": "high",
       "result_summary": "launched scene scene-02-drop at bar 9 / phrase 2",
       "jam_contains": [
         "idle @ 32.0",
@@ -75,7 +78,9 @@
       "scenes": ["scene-01-intro", "scene-02-drop"],
       "active_scene": "scene-01-intro",
       "current_scene": "scene-01-intro",
+      "active_scene_energy": "high",
       "restore_scene": "scene-02-drop",
+      "restore_scene_energy": "high",
       "result_summary": "restored scene scene-01-intro at bar 10 / phrase 2",
       "jam_contains": [
         "scene-01-intro",

@@ -4,6 +4,9 @@ use crate::{
     source_graph::{EnergyClass, Section, SourceGraph},
 };
 
+#[cfg(test)]
+use serde::Deserialize;
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct JamViewModel {
     pub transport: JamTransportView,
@@ -536,7 +539,11 @@ fn projected_scene_energy_label(
     let section = scene_id
         .and_then(parse_projected_scene_index)
         .and_then(|scene_index| sections.get(scene_index).copied())
-        .or_else(|| fallback_to_first_section.then(|| sections.first().copied()).flatten())?;
+        .or_else(|| {
+            fallback_to_first_section
+                .then(|| sections.first().copied())
+                .flatten()
+        })?;
     Some(section_energy_label(section).to_string())
 }
 
@@ -673,6 +680,55 @@ mod tests {
     };
 
     use super::*;
+
+    fn sample_graph_with_sections(section_labels: &[String]) -> SourceGraph {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: "src-1".into(),
+                path: "input.wav".into(),
+                content_hash: "hash-1".into(),
+                duration_seconds: 120.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "0.1.0".into(),
+                provider_set: vec!["beat".into(), "section".into()],
+                generated_at: "2026-04-12T18:00:00Z".into(),
+                source_hash: "hash-1".into(),
+                analysis_seed: 7,
+                run_notes: Some("scene-energy-projection-fixture".into()),
+            },
+        );
+
+        for (index, label) in section_labels.iter().enumerate() {
+            let bar_start = (index as u32 * 8) + 1;
+            graph.sections.push(crate::source_graph::Section {
+                section_id: format!("section-{index}").into(),
+                label_hint: match label.as_str() {
+                    "intro" => crate::source_graph::SectionLabelHint::Intro,
+                    "break" => crate::source_graph::SectionLabelHint::Break,
+                    "build" => crate::source_graph::SectionLabelHint::Build,
+                    "drop" => crate::source_graph::SectionLabelHint::Drop,
+                    "verse" => crate::source_graph::SectionLabelHint::Verse,
+                    "chorus" => crate::source_graph::SectionLabelHint::Chorus,
+                    "bridge" => crate::source_graph::SectionLabelHint::Bridge,
+                    "outro" => crate::source_graph::SectionLabelHint::Outro,
+                    _ => crate::source_graph::SectionLabelHint::Unknown,
+                },
+                start_seconds: index as f32 * 16.0,
+                end_seconds: (index + 1) as f32 * 16.0,
+                bar_start,
+                bar_end: bar_start + 7,
+                energy_class: crate::source_graph::EnergyClass::High,
+                confidence: 0.9,
+                tags: vec![label.clone()],
+            });
+        }
+
+        graph
+    }
 
     #[test]
     fn builds_minimal_jam_view_model() {
@@ -1113,5 +1169,76 @@ mod tests {
         assert_eq!(vm.scene.restore_scene.as_deref(), Some("scene-01-intro"));
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.scene.restore_scene_energy.as_deref(), Some("medium"));
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SceneEnergyProjectionFixture {
+        name: String,
+        section_labels: Vec<String>,
+        expected: SceneEnergyProjectionExpected,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct SceneEnergyProjectionExpected {
+        scenes: Vec<String>,
+        active_scene: String,
+        current_scene: String,
+        active_scene_energy: String,
+        #[serde(default)]
+        restore_scene: Option<String>,
+        #[serde(default)]
+        restore_scene_energy: Option<String>,
+    }
+
+    #[test]
+    fn fixture_backed_scene_energy_projection_holds() {
+        let fixtures: Vec<SceneEnergyProjectionFixture> = serde_json::from_str(include_str!(
+            "../../../riotbox-app/tests/fixtures/scene_regression.json"
+        ))
+        .expect("parse scene energy projection fixtures");
+
+        for fixture in fixtures {
+            let graph = sample_graph_with_sections(&fixture.section_labels);
+            let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
+            session.runtime_state.scene_state.scenes = fixture
+                .expected
+                .scenes
+                .iter()
+                .map(|scene| scene.as_str().into())
+                .collect();
+            session.runtime_state.scene_state.active_scene =
+                Some(fixture.expected.active_scene.as_str().into());
+            session.runtime_state.transport.current_scene =
+                Some(fixture.expected.current_scene.as_str().into());
+            session.runtime_state.scene_state.restore_scene =
+                fixture.expected.restore_scene.as_deref().map(Into::into);
+
+            let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+            assert_eq!(
+                vm.scene.active_scene.as_deref(),
+                Some(fixture.expected.active_scene.as_str()),
+                "{} active scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                vm.scene.restore_scene.as_deref(),
+                fixture.expected.restore_scene.as_deref(),
+                "{} restore scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                vm.scene.active_scene_energy.as_deref(),
+                Some(fixture.expected.active_scene_energy.as_str()),
+                "{} active energy drifted",
+                fixture.name
+            );
+            assert_eq!(
+                vm.scene.restore_scene_energy.as_deref(),
+                fixture.expected.restore_scene_energy.as_deref(),
+                "{} restore energy drifted",
+                fixture.name
+            );
+        }
     }
 }

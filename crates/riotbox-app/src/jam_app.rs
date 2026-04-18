@@ -1293,8 +1293,11 @@ mod tests {
         scenes: Vec<String>,
         active_scene: String,
         current_scene: String,
+        active_scene_energy: String,
         #[serde(default)]
         restore_scene: Option<String>,
+        #[serde(default)]
+        restore_scene_energy: Option<String>,
         #[serde(default)]
         result_summary: Option<String>,
     }
@@ -2570,10 +2573,7 @@ mod tests {
             state.jam_view.scene.active_scene_energy.as_deref(),
             Some("high")
         );
-        assert_eq!(
-            state.jam_view.scene.restore_scene_energy.as_deref(),
-            None
-        );
+        assert_eq!(state.jam_view.scene.restore_scene_energy.as_deref(), None);
         assert_eq!(
             state.runtime.tr909_render.current_scene_id.as_deref(),
             Some("scene-01-drop")
@@ -5874,6 +5874,18 @@ mod tests {
                 state.jam_view.scene.active_scene.as_deref(),
                 Some(fixture.expected.active_scene.as_str()),
                 "{} jam view scene drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.jam_view.scene.active_scene_energy.as_deref(),
+                Some(fixture.expected.active_scene_energy.as_str()),
+                "{} jam view active energy drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.jam_view.scene.restore_scene_energy.as_deref(),
+                fixture.expected.restore_scene_energy.as_deref(),
+                "{} jam view restore energy drifted",
                 fixture.name
             );
             assert_eq!(
