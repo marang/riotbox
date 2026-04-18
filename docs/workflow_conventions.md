@@ -356,9 +356,11 @@ Use this retention model:
 - repo archive:
   - long-term ticket history worth keeping
 - MemPalace:
-  - retrieval layer over repo docs and archive material, not canonical storage
+  - retrieval layer over live repo docs and specs, not canonical storage
+  - archived Linear ticket files should stay out of the mined corpus
 
 Before deleting a completed Linear issue, preserve its useful context in repo markdown under `docs/archive/linear_issues/`.
+Do that archive update as part of the normal ticket closeout path, not as a separate default `Archive ...` ticket.
 
 Recommended archive shapes:
 

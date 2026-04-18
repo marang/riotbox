@@ -45,4 +45,5 @@ Repo tooling now exists for this:
 The wrapper script automatically:
 
 - syncs `docs/`, `plan/`, `crates/`, and `AGENTS.md` into `.mempalace/corpus/`
+- excludes `docs/archive/linear_issues/` from the mined corpus so ticket-history cleanup does not dominate retrieval
 - re-mines the corpus if those sources changed since the last successful index

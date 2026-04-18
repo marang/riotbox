@@ -39,6 +39,7 @@ sync_corpus() {
 
   rm -rf "$CORPUS_DIR/docs" "$CORPUS_DIR/plan" "$CORPUS_DIR/crates" "$CORPUS_DIR/AGENTS.md"
   cp -R "$REPO_ROOT/docs" "$CORPUS_DIR/docs"
+  rm -rf "$CORPUS_DIR/docs/archive/linear_issues"
   cp -R "$REPO_ROOT/plan" "$CORPUS_DIR/plan"
   cp -R "$REPO_ROOT/crates" "$CORPUS_DIR/crates"
   cp "$REPO_ROOT/AGENTS.md" "$CORPUS_DIR/AGENTS.md"
@@ -48,7 +49,8 @@ write_manifest() {
   (
     cd "$REPO_ROOT"
     {
-      find docs plan crates -type f -print0
+      find docs -type f ! -path 'docs/archive/linear_issues/*' -print0
+      find plan crates -type f -print0
       printf '%s\0' "AGENTS.md"
     } | sort -z | while IFS= read -r -d '' path; do
       sha256sum "$path"

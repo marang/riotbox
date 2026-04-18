@@ -268,7 +268,9 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Do not fully decompose distant phases into many detailed tickets before nearer slices land.
 - Treat Linear as the active operations layer, not the long-term archive.
 - Before deleting a completed Linear issue to stay under the free-tier cap, archive its useful context into repo markdown under `docs/archive/linear_issues/`.
-- Use the repo archive as canonical history and MemPalace only as a retrieval layer over that history.
+- Do that archive work as part of the ticket closeout path, not as a separate default `Archive ...` ticket.
+- Use the repo archive as canonical Git-backed history.
+- MemPalace should stay focused on live product docs and specs, not archived Linear ticket files.
 - For important architecture, review, and decision-heavy tickets, prefer one archive file per ticket.
 - For routine feature tickets, a grouped archive file is acceptable when the entries stay readable and searchable.
 - Keep archive entries structurally uniform.
