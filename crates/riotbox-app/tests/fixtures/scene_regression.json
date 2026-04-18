@@ -49,7 +49,7 @@
       ],
       "log_contains": [
         "scene drop | high",
-        "trail j drop",
+        "trail jump drop",
         "result launched scene scene-02-drop",
         "at bar 9 / phrase 2"
       ]
@@ -84,7 +84,7 @@
       ],
       "log_contains": [
         "scene intro | high",
-        "trail r intro",
+        "trail restore intro",
         "result restored scene scene-01-intro",
         "at bar 10 / phrase 2"
       ]
