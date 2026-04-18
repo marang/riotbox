@@ -266,7 +266,7 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
 3. before it lands, look for all three of these cues:
    - `launch -> ... @ next ...`
    - `pulse [..>.] ...`
-   - the current `live ... <> restore ...` contrast line
+   - the current `live .../<energy> <> restore .../<energy>` contrast line
 4. press `2` after the jump lands
 5. on `Log`, confirm the scene result and note the `trail ...` cue
 6. press `1`
@@ -281,7 +281,7 @@ What to observe:
 
 - `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
-- `live ... <> restore ...` tells you which scene is active and which scene `Y` would return to
+- `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
 - the restore-ready cue is the positive mirror of the earlier wake-up-only state
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 

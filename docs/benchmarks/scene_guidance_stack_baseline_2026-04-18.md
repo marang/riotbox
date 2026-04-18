@@ -1,7 +1,7 @@
 # Scene Guidance Stack Baseline 2026-04-18
 
 - Timestamp: `2026-04-18`
-- Commit SHA: `cda6981`
+- Commit SHA: `9b97c12`
 - Fixture ID: `data/test_audio/examples/DH_RushArp_120_A.wav`
 - Benchmark family: `readability`
 - Previous baseline: `None`
@@ -89,7 +89,7 @@ Current measured value:
 - one direct help read:
   - `Scene timing`
   - `<launch|restore> <scene>: lands at next bar`
-  - `Jam: read launch/restore, pulse, live <> restore`
+  - `Jam: read launch/restore, pulse, live/restore energy`
   - `2: confirm the landed trail on Log`
 
 Judgment:
@@ -98,7 +98,7 @@ Judgment:
 
 Why this is acceptable now:
 
-- the help overlay points directly at the already-shipped scene seam instead of inventing a second diagnostic explanation
+- the help overlay points directly at the already-shipped scene seam, including the new compact energy contrast, instead of inventing a second diagnostic explanation
 - the block is bounded to one small scene-specific chunk
 
 ### 3. Time to confirm the recent scene result after using the guidance stack
