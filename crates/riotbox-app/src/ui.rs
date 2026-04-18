@@ -1257,10 +1257,14 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             "Primary: {}",
             render_gesture_items(PRIMARY_GESTURES, " ")
         )));
-        lines.push(Line::from(format!(
-            "Advanced: {} | more in ? help",
-            render_gesture_items(ADVANCED_GESTURES, " ")
-        )));
+        if let Some(scene_cue) = footer_scene_pending_cue(shell) {
+            lines.push(Line::from(format!("Scene cue: {scene_cue}")));
+        } else {
+            lines.push(Line::from(format!(
+                "Advanced: {} | more in ? help",
+                render_gesture_items(ADVANCED_GESTURES, " ")
+            )));
+        }
     }
     lines.push(Line::from(format!(
         "Lane ops: {}",
@@ -1303,6 +1307,17 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(paragraph, area);
+}
+
+fn footer_scene_pending_cue(shell: &JamShellState) -> Option<String> {
+    if shell.active_screen != ShellScreen::Jam {
+        return None;
+    }
+
+    let (label, scene_id, boundary) = pending_scene_transition(shell)?;
+    let scene = compact_scene_label(scene_id.as_str());
+
+    Some(format!("{label} {scene} @ {boundary} | pulse now, 2 trail"))
 }
 
 fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -4371,6 +4386,10 @@ mod tests {
             rendered.contains("pulse [===>] b32 | b8 | p1"),
             "{rendered}"
         );
+        assert!(
+            rendered.contains("launch intro @ next bar | pulse now, 2 trail"),
+            "{rendered}"
+        );
     }
 
     #[test]
@@ -4408,6 +4427,10 @@ mod tests {
         );
         assert!(
             rendered.contains("pulse [===>] b32 | b8 | p1"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("restore drop @ next bar | pulse now, 2 trail"),
             "{rendered}"
         );
     }
