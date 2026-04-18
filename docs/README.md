@@ -34,8 +34,9 @@ This directory holds implementation-facing specifications derived from the strat
 12. [Preset & Style Spec](./specs/preset_style_spec.md)
 13. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
 14. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
-15. [Phase Definition of Done](./phase_definition_of_done.md)
-16. [Research / Decision Log](./research_decision_log.md)
+15. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
+16. [Phase Definition of Done](./phase_definition_of_done.md)
+17. [Research / Decision Log](./research_decision_log.md)
 
 ## Why This Order
 
@@ -110,6 +111,7 @@ docs/
     preset_style_spec.md
     validation_benchmark_spec.md
     fixture_corpus_spec.md
+    audio_qa_workflow_spec.md
 ```
 
 ## Current Status
@@ -130,6 +132,7 @@ docs/
 - `specs/preset_style_spec.md`: draft started
 - `specs/validation_benchmark_spec.md`: draft started
 - `specs/fixture_corpus_spec.md`: draft started
+- `specs/audio_qa_workflow_spec.md`: audio QA workflow plan captured
 - `phase_definition_of_done.md`: draft started
 - `research_decision_log.md`: draft started
 - `archive/linear_issues/README.md`: archive policy started

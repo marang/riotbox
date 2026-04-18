@@ -165,6 +165,29 @@ Rules:
 - if a CI failure is caused by the current slice, fix it on the same branch before treating the ticket as cleanly in review
 - mention important CI failures and fixes in the Linear issue update when they happen
 
+## 7.2.1 Audio-Producing Slice Check
+
+For audio-producing changes, also consult:
+
+- `docs/specs/audio_qa_workflow_spec.md`
+
+Treat that spec as an active workflow guide for audio QA, while staying honest about current repo status.
+
+Current rule:
+
+- do not claim a stronger audio QA process than the repo can actually run today
+- use the strongest currently real checks for the affected seam
+- note clearly when a desired audio QA layer is still planned rather than operational
+
+Minimum expectation today for an audio-producing slice:
+
+- relevant local formatter, test, and lint checks pass
+- relevant audio-facing regression or fixture checks pass when the seam already has them
+- a local real-session listening pass is done when the slice materially changes behavior that can already be heard
+- the PR or working notes say when the slice could not yet use a fuller offline WAV / listening-pack harness because that harness is still future work
+
+As the repo gains the missing audio QA harnesses, tighten this section toward the stronger release gates defined in the audio QA workflow spec instead of leaving it as a light note.
+
 ## 7.3 Periodic Whole-Codebase Review
 
 Branch-level review is not enough on its own.
