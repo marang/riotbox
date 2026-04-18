@@ -7885,6 +7885,10 @@ mod tests {
             Some("scene-01-intro")
         );
         assert_eq!(
+            state.jam_view.scene.active_scene_energy.as_deref(),
+            Some("medium")
+        );
+        assert_eq!(
             state
                 .session
                 .runtime_state
