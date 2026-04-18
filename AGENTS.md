@@ -291,6 +291,17 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - verification summary
   - decision-log or spec links touched by the ticket
 - Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
+- During autonomous implementation runs, start the workflow reminder sidecar when tmux is available:
+  - `scripts/start_workflow_reminder_tmux.sh`
+- Verify periodically that it is still running:
+  - `scripts/check_workflow_reminder_tmux.sh`
+- Treat the reminder sidecar as a drift-reduction tool, not as a replacement for judgment:
+  - it should keep nudging the agent to continue bounded work, re-check open PRs, and keep Linear/archive obligations aligned
+  - it does not replace explicit CI inspection, branch review, or final merge responsibility
+  - keep it lightweight and quiet:
+    - direct tmux output only
+    - default 30-second interval
+    - no `CONVO_FEED` or `reports/subagents/*.log` churn
 
 ### Next-ticket heuristic
 
@@ -328,6 +339,8 @@ just check
 just clippy
 just mem-status
 just mem-search "replay truth"
+scripts/start_workflow_reminder_tmux.sh
+scripts/check_workflow_reminder_tmux.sh
 ```
 
 Add new commands here when the repo grows enough that agents need a stable shortlist.
