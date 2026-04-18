@@ -1571,6 +1571,38 @@ fn latest_landed_line(shell: &JamShellState) -> String {
     }
 }
 
+fn latest_landed_command(shell: &JamShellState) -> Option<&str> {
+    shell
+        .app
+        .jam_view
+        .recent_actions
+        .first()
+        .map(|action| action.command.as_str())
+}
+
+fn scene_post_commit_guidance_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    let command = latest_landed_command(shell)?;
+    if !matches!(command, "scene.launch" | "scene.restore") {
+        return None;
+    }
+
+    let current_scene = current_scene_compact_label(shell);
+    let restore_scene = compact_scene_label(restore_scene_label(shell).as_str());
+    let next_line = if command == "scene.launch" {
+        "next: [Y] restore  [c] capture"
+    } else {
+        "next: [y] jump  [c] capture"
+    };
+
+    Some(vec![
+        Line::from(format!(
+            "changed: {current_scene} | restore {restore_scene}"
+        )),
+        Line::from(next_line),
+        Line::from("then try: [g] follow  [f] fill"),
+    ])
+}
+
 fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if !shell.app.jam_view.transport.is_playing {
         return vec![
@@ -1589,6 +1621,9 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 
     if !shell.app.jam_view.recent_actions.is_empty() {
+        if let Some(lines) = scene_post_commit_guidance_lines(shell) {
+            return lines;
+        }
         return vec![
             Line::from(format!("what changed: {}", latest_landed_line(shell))),
             Line::from("what next: [c] capture  [u] undo"),
@@ -2478,6 +2513,10 @@ fn current_scene_compact_label(shell: &JamShellState) -> String {
         })
         .unwrap_or_else(|| "none".into());
 
+    compact_scene_label(scene_id.as_str())
+}
+
+fn compact_scene_label(scene_id: &str) -> String {
     let mut parts = scene_id.splitn(3, '-');
     match (parts.next(), parts.next(), parts.next()) {
         (Some("scene"), Some(index), Some(label))
@@ -2485,7 +2524,7 @@ fn current_scene_compact_label(shell: &JamShellState) -> String {
         {
             label.to_string()
         }
-        _ => scene_id,
+        _ => scene_id.to_string(),
     }
 }
 
@@ -4140,6 +4179,53 @@ mod tests {
         shell
     }
 
+    fn scene_post_commit_shell_state(
+        command: ActionCommand,
+        active_scene: &str,
+        restore_scene: &str,
+    ) -> JamShellState {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.action_log.actions.clear();
+        session.runtime_state.transport.current_scene = Some(SceneId::from(active_scene));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from(active_scene));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from(restore_scene));
+        session.action_log.actions.push(Action {
+            id: ActionId(1),
+            actor: ActorType::User,
+            command,
+            params: ActionParams::Scene {
+                scene_id: Some(SceneId::from(active_scene)),
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::Scene),
+                scene_id: Some(SceneId::from(active_scene)),
+                ..Default::default()
+            },
+            requested_at: 300,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Committed,
+            committed_at: Some(320),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: format!("scene {active_scene} landed"),
+            }),
+            undo_policy: UndoPolicy::Undoable,
+            explanation: Some(format!("landed {active_scene} scene move")),
+        });
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Load,
+        );
+        shell.app.set_transport_playing(true);
+        shell
+    }
+
     #[test]
     fn renders_more_musical_jam_shell_snapshot() {
         let shell = sample_shell_state();
@@ -4399,6 +4485,52 @@ mod tests {
         );
         assert!(
             rendered.contains("then try: [y] jump  [g] follow"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_scene_jump_post_commit_guidance() {
+        let shell = scene_post_commit_shell_state(
+            ActionCommand::SceneLaunch,
+            "scene-02-break",
+            "scene-01-drop",
+        );
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("changed: break | restore drop"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("next: [Y] restore  [c] capture"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("then try: [g] follow  [f] fill"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_scene_restore_post_commit_guidance() {
+        let shell = scene_post_commit_shell_state(
+            ActionCommand::SceneRestore,
+            "scene-01-drop",
+            "scene-02-break",
+        );
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("changed: drop | restore break"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("next: [y] jump  [c] capture"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("then try: [g] follow  [f] fill"),
             "{rendered}"
         );
     }
