@@ -170,4 +170,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Source-comparison recipe for the current Scene Brain `jump -> restore` learning path.
 - [RIOTBOX-114.md](./RIOTBOX-114.md)
   Promote scene energy into the shared Jam view contract instead of a TUI-only helper.
+- [RIOTBOX-115.md](./RIOTBOX-115.md)
+  Centralize perform-facing Jam gesture vocabulary across status, footer, help, and action summaries.
+- [RIOTBOX-116.md](./RIOTBOX-116.md)
+  Operationalize the audio QA workflow spec in the active agent and PR workflow.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
