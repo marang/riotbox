@@ -1,7 +1,7 @@
 # Scene Restore State Contrast Baseline 2026-04-18
 
 - Timestamp: `2026-04-18`
-- Commit SHA: `62f036e`
+- Commit SHA: `ad233da`
 - Fixture ID: `data/test_audio/examples/DH_RushArp_120_A.wav`
 - Benchmark family: `readability`
 - Previous baseline: `None`
@@ -11,7 +11,7 @@
 This is the first bounded readability baseline for the contrast between the two current restore
 states on `Jam`:
 
-- `restore wakes after one landed`
+- `restore waits for one landed jump`
 - `restore <scene>/<energy> ready`
 
 The goal is to keep those states from collapsing back into one ambiguous `Y` affordance as Scene
@@ -49,13 +49,13 @@ Current interaction seam assumptions:
 Definition for this baseline:
 
 - from first seeing `Jam`
-- to the moment the player can answer whether `Y` is only waking restore up or can already queue it
+- to the moment the player can answer whether `Y` is still waiting on the first landed jump or can already queue restore
 
 Current measured value:
 
 - zero screen switches
 - one direct shell read before the first landed jump:
-  - `[Y] restore wakes after one landed`
+  - `[Y] restore waits for one landed jump`
 - one direct shell read after the first landed jump:
   - `[Y] restore <scene> now`
   - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
@@ -81,8 +81,8 @@ Current measured value:
 - one explicit gesture: `[?]`
 - before first landed jump:
   - `Scene restore`
-  - `Y wakes after one landed jump`
-  - `jump once, then Y brings the last scene back`
+  - `Y waits for one landed jump`
+  - `land one jump, then Y can restore the last scene`
 - after first landed jump:
   - `Scene restore`
   - `Y is live now for <scene>/<energy>`
@@ -100,7 +100,7 @@ Why this is acceptable now:
 ## Qualitative Friction Notes
 
 - the contrast is readable now, but still text-heavy compared to a future more graphical timing instrument
-- the wake-up wording is intentionally more generic than the ready wording, which is correct today but still easy to over-compress later
+- the wake-up wording is intentionally more blocked and provisional than the ready wording, which is correct today but still easy to over-compress later
 - this seam is now much clearer as a state transition than as a musical promise
 
 ## Follow-Up
