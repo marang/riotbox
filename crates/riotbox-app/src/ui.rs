@@ -1316,6 +1316,14 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
 
     if let Some((label, scene_id, boundary)) = pending_scene_transition(shell) {
         let scene = compact_scene_label(scene_id.as_str());
+        if let Some(direction) = compact_energy_delta_label(
+            shell.app.jam_view.scene.active_scene_energy.as_deref(),
+            scene_energy_label_for_scene_id(shell, scene_id.as_str()),
+        ) {
+            return Some(format!(
+                "{label} {scene} @ {boundary} | {direction} + pulse, 2 trail"
+            ));
+        }
         return Some(format!(
             "{label} {scene} @ {boundary} | pulse + energy, 2 trail"
         ));
@@ -2770,6 +2778,17 @@ fn energy_delta_label(from: Option<&str>, to: Option<&str>) -> Option<&'static s
         std::cmp::Ordering::Greater => "energy rise",
         std::cmp::Ordering::Less => "energy drop",
         std::cmp::Ordering::Equal => "energy hold",
+    })
+}
+
+fn compact_energy_delta_label(from: Option<&str>, to: Option<&str>) -> Option<&'static str> {
+    let from = energy_rank(from?)?;
+    let to = energy_rank(to?)?;
+
+    Some(match to.cmp(&from) {
+        std::cmp::Ordering::Greater => "rise",
+        std::cmp::Ordering::Less => "drop",
+        std::cmp::Ordering::Equal => "hold",
     })
 }
 
@@ -4571,7 +4590,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Scene cue: launch drop @ next bar"),
+            rendered.contains("Scene cue: launch drop @ next bar | rise + pulse, 2 trail"),
             "{rendered}"
         );
         assert!(rendered.contains("energy rise"), "{rendered}");
@@ -4622,7 +4641,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("restore intro @ next bar | pulse + energy, 2 trail"),
+            rendered.contains("restore intro @ next bar | rise + pulse, 2 trail"),
             "{rendered}"
         );
     }
