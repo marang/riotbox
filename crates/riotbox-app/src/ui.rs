@@ -1257,7 +1257,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             "Primary: {}",
             render_gesture_items(PRIMARY_GESTURES, " ")
         )));
-        if let Some(scene_cue) = footer_scene_pending_cue(shell) {
+        if let Some(scene_cue) = footer_scene_affordance_cue(shell) {
             lines.push(Line::from(format!("Scene cue: {scene_cue}")));
         } else {
             lines.push(Line::from(format!(
@@ -1309,15 +1309,24 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     frame.render_widget(paragraph, area);
 }
 
-fn footer_scene_pending_cue(shell: &JamShellState) -> Option<String> {
+fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
     if shell.active_screen != ShellScreen::Jam {
         return None;
     }
 
-    let (label, scene_id, boundary) = pending_scene_transition(shell)?;
-    let scene = compact_scene_label(scene_id.as_str());
+    if let Some((label, scene_id, boundary)) = pending_scene_transition(shell) {
+        let scene = compact_scene_label(scene_id.as_str());
+        return Some(format!("{label} {scene} @ {boundary} | pulse now, 2 trail"));
+    }
 
-    Some(format!("{label} {scene} @ {boundary} | pulse now, 2 trail"))
+    if show_restore_ready_cue(shell) {
+        return Some(format!(
+            "restore {} ready | Y brings it back",
+            compact_scene_label(restore_scene_label(shell).as_str())
+        ));
+    }
+
+    None
 }
 
 fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -1357,8 +1366,8 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(scene_help_lines) = pending_scene_help_lines(shell) {
         lines.extend(scene_help_lines);
     }
-    if let Some(restore_help_lines) = restore_readiness_help_lines(shell) {
-        lines.extend(restore_help_lines);
+    if let Some(scene_restore_help_lines) = scene_restore_help_lines(shell) {
+        lines.extend(scene_restore_help_lines);
     }
 
     lines.extend([
@@ -1410,17 +1419,29 @@ fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
     ])
 }
 
-fn restore_readiness_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
-    if !show_restore_readiness_cue(shell) {
-        return None;
+fn scene_restore_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    if show_restore_readiness_cue(shell) {
+        return Some(vec![
+            Line::from(""),
+            Line::from("Scene restore"),
+            Line::from("Y wakes after one landed jump"),
+            Line::from("jump once, then Y brings the last scene back"),
+        ]);
     }
 
-    Some(vec![
-        Line::from(""),
-        Line::from("Scene restore"),
-        Line::from("Y wakes after one landed jump"),
-        Line::from("jump once, then Y brings the last scene back"),
-    ])
+    if show_restore_ready_cue(shell) {
+        return Some(vec![
+            Line::from(""),
+            Line::from("Scene restore"),
+            Line::from(format!(
+                "Y is live now for {}",
+                compact_scene_label(restore_scene_label(shell).as_str())
+            )),
+            Line::from("press Y to bring that scene back on the next bar"),
+        ]);
+    }
+
+    None
 }
 
 fn screen_context_label(shell: &JamShellState) -> String {
@@ -1719,6 +1740,17 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         ];
     }
 
+    if show_restore_ready_cue(shell) {
+        return vec![
+            Line::from(format!(
+                "[Y] restore {} now",
+                compact_scene_label(restore_scene_label(shell).as_str())
+            )),
+            Line::from("[y] jump  [c] capture"),
+            Line::from("[2] trail  [u] undo"),
+        ];
+    }
+
     if !shell.app.jam_view.recent_actions.is_empty() {
         return vec![
             Line::from(format!("what changed: {}", latest_landed_line(shell))),
@@ -1749,6 +1781,18 @@ fn show_restore_readiness_cue(shell: &JamShellState) -> bool {
             .restore_scene
             .is_none()
         && shell.app.session.runtime_state.scene_state.scenes.len() > 1
+}
+
+fn show_restore_ready_cue(shell: &JamShellState) -> bool {
+    shell.app.jam_view.transport.is_playing
+        && shell.app.jam_view.pending_actions.is_empty()
+        && shell
+            .app
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene
+            .is_some()
 }
 
 fn jam_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -4802,6 +4846,62 @@ mod tests {
         );
         assert!(
             rendered.contains("jump once, then Y brings the last scene back"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_jam_shell_with_restore_ready_cue() {
+        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        shell.app.set_transport_playing(true);
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("[Y] restore drop now"), "{rendered}");
+        assert!(
+            rendered.contains("Scene cue: restore drop ready | Y brings it back"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_help_overlay_with_restore_ready_cue() {
+        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        shell.app.set_transport_playing(true);
+        shell.show_help = true;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Scene restore"), "{rendered}");
+        assert!(rendered.contains("Y is live now for drop"), "{rendered}");
+        assert!(
+            rendered.contains("press Y to bring that scene back on the next bar"),
             "{rendered}"
         );
     }
