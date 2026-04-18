@@ -135,7 +135,7 @@ Best next moves from there:
 
 - `Recipe 2` if you want different lane behavior from the same source
 - `Recipe 5` if you want to learn how `Beat03`, `Beat08`, `DH_BeatC`, and `DH_RushArp` change the shell feel
-- `Recipe 8` if you want the first Scene Brain `scene jump -> restore` flow
+- `Recipe 8` if you want the first Scene Brain `scene jump -> restore` flow and the new `not ready -> ready` restore contrast
 - `Recipe 9` if you want to compare which example source currently makes Scene Brain easiest to read
 - `Recipe 10` if you want to explicitly practice reading the current Scene Brain `boundary -> pulse -> live/restore -> trail` cues
 - `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> promote -> hit -> undo

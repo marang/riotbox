@@ -184,21 +184,25 @@ What this is not:
 
 ## Recipe 8: Jump Then Restore
 
-Goal: learn the first Scene Brain recovery loop.
+Goal: learn the first Scene Brain recovery loop and the contrast between `restore not ready` and `restore ready`.
 
 Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 
 1. press `Space`
 2. press `y`
-3. press `2` and confirm the scene jump landed
-4. go back to `Jam` with `1`
-5. press `Y`
-6. press `2` and confirm the restore landed
+3. before the jump lands, notice that `Y` is still only a wake-up cue, not a ready restore
+4. press `2` and confirm the scene jump landed
+5. go back to `Jam` with `1`
+6. look for the new restore-ready cue:
+   - `Scene cue: restore ... ready | Y brings it back`
+   - `[Y] restore ... now`
+7. press `Y`
+8. press `2` and confirm the restore landed
 
 What to observe:
 
-- `Y` is only meaningful after Riotbox already has a committed previous scene to restore to
-- `Jam` shows the current restore target before you fire it
+- before the first landed jump, `Y` is only a wake-up affordance
+- after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
 - `Log` is the clearest place to verify both the queued restore target and the committed restore result
 
 If you want one more short loop:
@@ -212,6 +216,7 @@ What this teaches:
 
 - Scene Brain already has one explicit `jump -> restore` pair
 - restore is deterministic and pointer-based, not a hidden undo mode
+- the shell now distinguishes `restore not ready yet` from `restore ready now`
 - scene changes are becoming recoverable without opening a second arrangement model
 
 ## Recipe 9: Compare Two Scene Sources
@@ -265,15 +270,19 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
 4. press `2` after the jump lands
 5. on `Log`, confirm the scene result and note the `trail ...` cue
 6. press `1`
-7. queue restore with `Y`
-8. before restore lands, read the same three `Jam` cues again
-9. press `2` after restore lands and confirm the new `trail ...` entry
+7. on `Jam`, confirm the restore-ready cue now appears:
+   - `Scene cue: restore ... ready | Y brings it back`
+   - `[Y] restore ... now`
+8. queue restore with `Y`
+9. before restore lands, read the same three `Jam` cues again
+10. press `2` after restore lands and confirm the new `trail ...` entry
 
 What to observe:
 
 - `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live ... <> restore ...` tells you which scene is active and which scene `Y` would return to
+- the restore-ready cue is the positive mirror of the earlier wake-up-only state
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 
 What this teaches:
