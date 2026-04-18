@@ -678,7 +678,10 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(next_action_line(shell)),
         Line::from(scene_pending_line(shell)),
         Line::from(latest_landed_line(shell)),
-        Line::from(format!("status {}", shell.status_message)),
+        Line::from(
+            scene_commit_pulse_line(shell)
+                .unwrap_or_else(|| format!("status {}", shell.status_message)),
+        ),
     ])
     .block(Block::default().title("Next").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -2556,6 +2559,16 @@ fn scene_pending_line(shell: &JamShellState) -> String {
     )
 }
 
+fn scene_commit_pulse_line(shell: &JamShellState) -> Option<String> {
+    let (_, _, boundary) = pending_scene_transition(shell)?;
+    let transport = &shell.app.runtime.transport;
+
+    Some(format!(
+        "pulse b{} | bar {} | ph {} -> {boundary}",
+        transport.beat_index, transport.bar_index, transport.phrase_index
+    ))
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 enum FirstRunOnrampStage {
     Start,
@@ -4187,6 +4200,10 @@ mod tests {
         assert!(rendered.contains("restore scene none"));
         assert!(rendered.contains("launch ->"), "{rendered}");
         assert!(rendered.contains("@ next bar"), "{rendered}");
+        assert!(
+            rendered.contains("pulse b32 | bar 8 | ph 1 -> next bar"),
+            "{rendered}"
+        );
     }
 
     #[test]
@@ -4220,6 +4237,10 @@ mod tests {
         );
         assert!(
             rendered.contains("restore -> scene-01-drop @ next bar"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("pulse b32 | bar 8 | ph 1 -> next bar"),
             "{rendered}"
         );
     }
