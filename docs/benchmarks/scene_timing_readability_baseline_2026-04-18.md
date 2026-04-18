@@ -1,7 +1,7 @@
 # Scene Timing Readability Baseline 2026-04-18
 
 - Timestamp: `2026-04-18`
-- Commit SHA: `1285add`
+- Commit SHA: `9b97c12`
 - Fixture ID: `data/test_audio/examples/Beat08_128BPM(Full).wav`
 - Benchmark family: `readability`
 - Previous baseline: `None`
@@ -19,6 +19,7 @@ It measures whether the shipped Jam surface now answers three small timing quest
 It also checks whether the current shipped Scene Brain stack now keeps one compact answer for:
 
 - which scene is live versus which scene is the restore target
+- what their current compact energy contrast is on the same seam
 - what recent `jump` / `restore` history looks like on `Log`
 
 The baseline stays intentionally manual and repo-local. It measures the visible shell cues, not a new analytics subsystem.
@@ -54,7 +55,7 @@ Current interaction seam assumptions:
   - tiny ASCII countdown cue inside that pulse
   - scene-specific post-commit guidance
 - the current Jam `Now` panel exposes:
-  - compact `live <> restore` scene contrast
+  - compact `live/energy <> restore/energy` scene contrast
 - the current `Log` counts panel exposes:
   - compact recent scene trail for the last committed `jump` / `restore` moves
 
@@ -101,7 +102,7 @@ Current measured value:
 
 - zero screen switches
 - one direct shell read:
-  - `live <scene> <> restore <scene>`
+  - `live <scene>/<energy> <> restore <scene>/<energy>`
   - `changed: <scene> | restore <scene>`
   - `next: [Y] restore  [c] capture`
 
@@ -111,7 +112,7 @@ Judgment:
 
 Why this is acceptable now:
 
-- the live scene and restore target are now contrasted in the `Now` panel before the player even reads the post-commit guidance
+- the live scene, restore target, and their small energy contrast are now visible in the `Now` panel before the player even reads the post-commit guidance
 - the post-commit guidance is now scene-specific instead of generic action text
 - the recovery move is visible on the same Jam surface as the result
 
@@ -129,7 +130,7 @@ Current measured value:
 
 - zero screen switches
 - one direct shell read:
-  - `live <scene> <> restore <scene>`
+  - `live <scene>/<energy> <> restore <scene>/<energy>`
   - `changed: <scene> | restore <scene>`
   - `next: [y] jump  [c] capture`
 
@@ -177,4 +178,4 @@ Why this is acceptable now:
 
 - compare any future larger timing widget against this compact countdown baseline before adding heavier graphics
 - use this baseline when evaluating whether Scene Brain can stay perform-first without forcing frequent `Log` detours
-- use the current `live <> restore` and `trail ...` cues as the small-layout baseline before introducing denser scene history or inspect-only scene detail
+- use the current `live/energy <> restore/energy` and `trail ...` cues as the small-layout baseline before introducing denser scene history or inspect-only scene detail
