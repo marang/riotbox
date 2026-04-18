@@ -141,6 +141,8 @@ docs/
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17_w30_followup.md`: review captured
+- `reviews/periodic_codebase_review_2026-04-18.md`: review captured
+- `reviews/jam_first_use_feedback_2026-04-18.md`: first-use UX feedback captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
