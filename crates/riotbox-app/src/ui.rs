@@ -1624,8 +1624,8 @@ fn scene_history_trail_line(shell: &JamShellState) -> Option<String> {
         .take(3)
         .map(|action| {
             let verb = match action.command {
-                ActionCommand::SceneLaunch => "j",
-                ActionCommand::SceneRestore => "r",
+                ActionCommand::SceneLaunch => "jump",
+                ActionCommand::SceneRestore => "restore",
                 _ => unreachable!("scene trail filter only matches launch/restore"),
             };
             let scene = action
