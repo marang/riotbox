@@ -2498,7 +2498,18 @@ fn restore_scene_label(shell: &JamShellState) -> String {
         .unwrap_or_else(|| "none".into())
 }
 
-fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, String)> {
+fn quantization_boundary_label(quantization: riotbox_core::action::Quantization) -> &'static str {
+    match quantization {
+        riotbox_core::action::Quantization::Immediate => "immediately",
+        riotbox_core::action::Quantization::NextBeat => "next beat",
+        riotbox_core::action::Quantization::NextHalfBar => "next half bar",
+        riotbox_core::action::Quantization::NextBar => "next bar",
+        riotbox_core::action::Quantization::NextPhrase => "next phrase",
+        riotbox_core::action::Quantization::NextScene => "next scene",
+    }
+}
+
+fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, String, String)> {
     shell
         .app
         .queue
@@ -2513,8 +2524,8 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
         })
         .and_then(|action| {
             let label = match action.command {
-                riotbox_core::action::ActionCommand::SceneLaunch => "scene launch",
-                riotbox_core::action::ActionCommand::SceneRestore => "scene restore",
+                riotbox_core::action::ActionCommand::SceneLaunch => "launch",
+                riotbox_core::action::ActionCommand::SceneRestore => "restore",
                 _ => unreachable!("scene transition scan only matches launch and restore"),
             };
             action
@@ -2528,14 +2539,20 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
                     } => Some(scene_id.to_string()),
                     _ => None,
                 })
-                .map(|scene_id| (label, scene_id))
+                .map(|scene_id| {
+                    (
+                        label,
+                        scene_id,
+                        quantization_boundary_label(action.quantization).into(),
+                    )
+                })
         })
 }
 
 fn scene_pending_line(shell: &JamShellState) -> String {
     pending_scene_transition(shell).map_or_else(
         || "scene transition idle".into(),
-        |(label, scene_id)| format!("{label} -> {scene_id}"),
+        |(label, scene_id, boundary)| format!("{label} -> {scene_id} @ {boundary}"),
     )
 }
 
@@ -4168,7 +4185,8 @@ mod tests {
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("restore scene none"));
-        assert!(rendered.contains("scene launch ->"));
+        assert!(rendered.contains("launch ->"), "{rendered}");
+        assert!(rendered.contains("@ next bar"), "{rendered}");
     }
 
     #[test]
@@ -4201,7 +4219,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("scene restore -> scene-01-drop"),
+            rendered.contains("restore -> scene-01-drop @ next bar"),
             "{rendered}"
         );
     }
