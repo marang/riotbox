@@ -208,4 +208,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Compact queued-scene footer cue on `Jam` while `jump` or `restore` is pending.
 - [RIOTBOX-134.md](./RIOTBOX-134.md)
   Bounded guidance-stack baseline across `Jam`, `Help`, and `Log` for queued scene actions.
+- [RIOTBOX-141.md](./RIOTBOX-141.md)
+  One compact post-landing Scene Brain cue on the default Jam surface after `jump` or `restore` lands.
+- [RIOTBOX-142.md](./RIOTBOX-142.md)
+  Restored lightweight workflow reminder sidecar with 30-second tmux-only nudges and no extra feed/log churn.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
