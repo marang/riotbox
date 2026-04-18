@@ -665,11 +665,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.jam_view.source.source_id,
             next_scene_candidate_label(shell)
         )),
-        Line::from(format!(
-            "restore scene {} | ghost {}",
-            restore_scene_label(shell),
-            ghost_label(shell)
-        )),
+        Line::from(scene_restore_contrast_line(shell)),
     ])
     .block(Block::default().title("Now").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -2516,6 +2512,15 @@ fn current_scene_compact_label(shell: &JamShellState) -> String {
     compact_scene_label(scene_id.as_str())
 }
 
+fn scene_restore_contrast_line(shell: &JamShellState) -> String {
+    format!(
+        "live {} <> restore {} | ghost {}",
+        current_scene_compact_label(shell),
+        compact_scene_label(restore_scene_label(shell).as_str()),
+        ghost_label(shell)
+    )
+}
+
 fn compact_scene_label(scene_id: &str) -> String {
     let mut parts = scene_id.splitn(3, '-');
     match (parts.next(), parts.next(), parts.next()) {
@@ -4283,7 +4288,7 @@ mod tests {
         assert!(rendered.contains("energy medium"));
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
-        assert!(rendered.contains("restore scene none"));
+        assert!(rendered.contains("live scene-a <> restore none"));
         assert!(rendered.contains("launch ->"), "{rendered}");
         assert!(rendered.contains("@ next bar"), "{rendered}");
         assert!(
@@ -4318,7 +4323,7 @@ mod tests {
         assert!(rendered.contains("scene-02-break"), "{rendered}");
         assert!(rendered.contains("energy high"), "{rendered}");
         assert!(
-            rendered.contains("restore scene scene-01-drop"),
+            rendered.contains("live break <> restore drop"),
             "{rendered}"
         );
         assert!(
