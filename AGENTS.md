@@ -13,14 +13,20 @@ The goal is to keep implementation aligned with the planning documents and to pr
 ## Current State
 
 - Planning and spec layer exists under `docs/` and `plan/`
-- Initial Rust workspace exists at the repo root
-- First real code slice lives in `crates/riotbox-core`
-- Current implemented foundations:
-  - Source Graph v1 model
-  - Session v1 model
-  - Action types
-  - Action queue
-  - minimal Jam view model
+- Rust workspace is active at the repo root with real implementation across:
+  - `crates/riotbox-core`
+  - `crates/riotbox-app`
+  - `crates/riotbox-audio`
+  - `crates/riotbox-sidecar`
+- The current product spine is already beyond a minimal shell:
+  - Source Graph and Session v1 are real
+  - queue / commit semantics and action history are real
+  - `Jam`, `Log`, `Source`, and `Capture` shells are real
+  - TR-909, MC-202, W-30, and Scene Brain slices already exist behind the current Jam workflow
+- The current active roadmap phase should be read from the live docs, not inferred only from this file:
+  - `docs/README.md`
+  - `docs/execution_roadmap.md`
+  - `docs/phase_definition_of_done.md`
 
 ---
 
