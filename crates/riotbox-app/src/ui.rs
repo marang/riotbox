@@ -1357,6 +1357,9 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(scene_help_lines) = pending_scene_help_lines(shell) {
         lines.extend(scene_help_lines);
     }
+    if let Some(restore_help_lines) = restore_readiness_help_lines(shell) {
+        lines.extend(restore_help_lines);
+    }
 
     lines.extend([
         Line::from(""),
@@ -1404,6 +1407,19 @@ fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
         Line::from(format!("{label} {scene}: lands at {boundary}")),
         Line::from("Jam: read launch/restore, pulse, live <> restore"),
         Line::from("2: confirm the landed trail on Log"),
+    ])
+}
+
+fn restore_readiness_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    if !show_restore_readiness_cue(shell) {
+        return None;
+    }
+
+    Some(vec![
+        Line::from(""),
+        Line::from("Scene restore"),
+        Line::from("Y wakes after one landed jump"),
+        Line::from("jump once, then Y brings the last scene back"),
     ])
 }
 
@@ -1695,6 +1711,14 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         ];
     }
 
+    if show_restore_readiness_cue(shell) {
+        return vec![
+            Line::from("[y] jump first"),
+            Line::from("[Y] restore wakes after one landed jump"),
+            Line::from("[c] capture"),
+        ];
+    }
+
     if !shell.app.jam_view.recent_actions.is_empty() {
         return vec![
             Line::from(format!("what changed: {}", latest_landed_line(shell))),
@@ -1708,6 +1732,23 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from("[a] answer  [f] fill"),
         Line::from("[c] capture  [w] hit"),
     ]
+}
+
+fn show_restore_readiness_cue(shell: &JamShellState) -> bool {
+    let recent_command_allows_readiness =
+        matches!(latest_landed_command(shell), None | Some("undo.last"));
+
+    shell.app.jam_view.transport.is_playing
+        && shell.app.jam_view.pending_actions.is_empty()
+        && recent_command_allows_readiness
+        && shell
+            .app
+            .session
+            .runtime_state
+            .scene_state
+            .restore_scene
+            .is_none()
+        && shell.app.session.runtime_state.scene_state.scenes.len() > 1
 }
 
 fn jam_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -4701,6 +4742,66 @@ mod tests {
         );
         assert!(
             rendered.contains("2: confirm the landed trail on Log"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_jam_shell_with_restore_readiness_cue() {
+        let graph = scene_regression_graph(&["intro".into(), "drop".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.restore_scene = None;
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        shell.app.set_transport_playing(true);
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("[y] jump first"), "{rendered}");
+        assert!(
+            rendered.contains("[Y] restore wakes after one landed"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("jump"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_help_overlay_with_restore_readiness_cue() {
+        let graph = scene_regression_graph(&["intro".into(), "drop".into()]);
+        let mut session = sample_shell_state().app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.restore_scene = None;
+
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        shell.app.set_transport_playing(true);
+        shell.show_help = true;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Scene restore"), "{rendered}");
+        assert!(
+            rendered.contains("Y wakes after one landed jump"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("jump once, then Y brings the last scene back"),
             "{rendered}"
         );
     }
