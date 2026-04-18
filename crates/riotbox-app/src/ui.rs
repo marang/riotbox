@@ -1633,11 +1633,15 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
 fn latest_landed_line(shell: &JamShellState) -> String {
     if let Some(action) = shell.app.jam_view.recent_actions.first() {
-        format!(
+        let mut line = format!(
             "landed {} {}",
             action.actor,
             jam_action_label(&action.command)
-        )
+        );
+        if let Some(energy_delta) = landed_scene_energy_delta(shell, action.command.as_str()) {
+            line.push_str(&format!(" | {energy_delta}"));
+        }
+        line
     } else {
         "landed none yet".into()
     }
@@ -2650,7 +2654,13 @@ fn next_scene_candidate_label(shell: &JamShellState) -> String {
 }
 
 fn current_scene_compact_label(shell: &JamShellState) -> String {
-    let scene_id = shell
+    let scene_id = current_scene_id(shell).unwrap_or_else(|| "none".into());
+
+    compact_scene_label(scene_id.as_str())
+}
+
+fn current_scene_id(shell: &JamShellState) -> Option<String> {
+    shell
         .app
         .session
         .runtime_state
@@ -2668,9 +2678,6 @@ fn current_scene_compact_label(shell: &JamShellState) -> String {
                 .as_ref()
                 .map(ToString::to_string)
         })
-        .unwrap_or_else(|| "none".into());
-
-    compact_scene_label(scene_id.as_str())
 }
 
 fn scene_restore_contrast_line(shell: &JamShellState) -> String {
@@ -2704,6 +2711,53 @@ fn restore_scene_label(shell: &JamShellState) -> String {
         .as_ref()
         .map(ToString::to_string)
         .unwrap_or_else(|| "none".into())
+}
+
+fn scene_energy_label_for_scene_id<'a>(
+    shell: &'a JamShellState,
+    scene_id: &str,
+) -> Option<&'a str> {
+    let graph = shell.app.source_graph.as_ref()?;
+    let scene_index = parse_projected_scene_index(scene_id)?;
+    let mut sections = graph.sections.iter().collect::<Vec<_>>();
+    sections.sort_by(|left, right| {
+        left.bar_start
+            .cmp(&right.bar_start)
+            .then(left.bar_end.cmp(&right.bar_end))
+            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
+    });
+    sections
+        .get(scene_index)
+        .map(|section| energy_label(section))
+}
+
+fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
+    let mut parts = scene_id.splitn(3, '-');
+    match (parts.next(), parts.next()) {
+        (Some("scene"), Some(index)) => index.parse::<usize>().ok()?.checked_sub(1),
+        _ => None,
+    }
+}
+
+fn energy_rank(label: &str) -> Option<u8> {
+    match label {
+        "low" => Some(0),
+        "medium" => Some(1),
+        "high" => Some(2),
+        "peak" => Some(3),
+        _ => None,
+    }
+}
+
+fn energy_delta_label(from: Option<&str>, to: Option<&str>) -> Option<&'static str> {
+    let from = energy_rank(from?)?;
+    let to = energy_rank(to?)?;
+
+    Some(match to.cmp(&from) {
+        std::cmp::Ordering::Greater => "energy rise",
+        std::cmp::Ordering::Less => "energy drop",
+        std::cmp::Ordering::Equal => "energy hold",
+    })
 }
 
 fn quantization_boundary_label(quantization: riotbox_core::action::Quantization) -> &'static str {
@@ -2760,7 +2814,29 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
 fn scene_pending_line(shell: &JamShellState) -> String {
     pending_scene_transition(shell).map_or_else(
         || "scene transition idle".into(),
-        |(label, scene_id, boundary)| format!("{label} -> {scene_id} @ {boundary}"),
+        |(label, scene_id, boundary)| {
+            let mut line = format!("{label} -> {scene_id} @ {boundary}");
+            if let Some(energy_delta) = energy_delta_label(
+                shell.app.jam_view.scene.active_scene_energy.as_deref(),
+                scene_energy_label_for_scene_id(shell, scene_id.as_str()),
+            ) {
+                line.push_str(&format!(" | {energy_delta}"));
+            }
+            line
+        },
+    )
+}
+
+fn landed_scene_energy_delta(shell: &JamShellState, command: &str) -> Option<&'static str> {
+    if !matches!(command, "scene.launch" | "scene.restore") {
+        return None;
+    }
+
+    energy_delta_label(
+        scene_energy_label_for_scene_id(shell, restore_scene_label(shell).as_str()),
+        current_scene_id(shell)
+            .as_deref()
+            .and_then(|scene_id| scene_energy_label_for_scene_id(shell, scene_id)),
     )
 }
 
@@ -4410,7 +4486,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("trust usable"));
-        assert!(rendered.contains("scene-a"));
+        assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("warnings"));
         assert!(rendered.contains("MC-202"));
@@ -4448,7 +4524,22 @@ mod tests {
 
     #[test]
     fn renders_jam_shell_with_scene_brain_summary() {
-        let mut shell = sample_shell_state();
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Load,
+        );
         assert_eq!(
             shell.app.queue_scene_select(300),
             crate::jam_app::QueueControlResult::Enqueued
@@ -4457,11 +4548,11 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("idle @ 32.0"));
-        assert!(rendered.contains("scene-a"));
+        assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("energy medium"));
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
-        assert!(rendered.contains("live scene-a <> restore none"));
+        assert!(rendered.contains("live intro <> restore none"));
         assert!(rendered.contains("launch ->"), "{rendered}");
         assert!(rendered.contains("@ next bar"), "{rendered}");
         assert!(
@@ -4469,27 +4560,34 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("launch intro @ next bar | pulse now, 2 trail"),
+            rendered.contains("Scene cue: launch drop @ next bar"),
             "{rendered}"
         );
+        assert!(rendered.contains("energy rise"), "{rendered}");
     }
 
     #[test]
     fn renders_jam_shell_with_pending_scene_restore_summary() {
-        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let graph = sample_shell_state()
+            .app
+            .source_graph
+            .clone()
+            .expect("sample shell source graph");
         let mut session = sample_shell_state().app.session.clone();
         session.runtime_state.scene_state.scenes = vec![
             SceneId::from("scene-01-drop"),
-            SceneId::from("scene-02-break"),
+            SceneId::from("scene-02-intro"),
         ];
-        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
-        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-drop"));
         session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
 
         let mut shell = JamShellState::new(
             JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
             ShellLaunchMode::Load,
         );
+        shell.app.session.runtime_state.scene_state.restore_scene =
+            Some(SceneId::from("scene-02-intro"));
         assert_eq!(
             shell.app.queue_scene_restore(300),
             crate::jam_app::QueueControlResult::Enqueued
@@ -4497,22 +4595,23 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("scene-02-break"), "{rendered}");
-        assert!(rendered.contains("energy high"), "{rendered}");
+        assert!(rendered.contains("scene-01-drop"), "{rendered}");
+        assert!(rendered.contains("energy medium"), "{rendered}");
         assert!(
-            rendered.contains("live break <> restore drop"),
+            rendered.contains("live drop <> restore intro"),
             "{rendered}"
         );
         assert!(
-            rendered.contains("restore -> scene-01-drop @ next bar"),
+            rendered.contains("restore -> scene-02-intro @ next bar"),
             "{rendered}"
         );
+        assert!(rendered.contains("energy rise"), "{rendered}");
         assert!(
             rendered.contains("pulse [===>] b32 | b8 | p1"),
             "{rendered}"
         );
         assert!(
-            rendered.contains("restore drop @ next bar | pulse now, 2 trail"),
+            rendered.contains("restore intro @ next bar | pulse now, 2 trail"),
             "{rendered}"
         );
     }
@@ -4688,6 +4787,10 @@ mod tests {
             rendered.contains("scene break | restore drop"),
             "{rendered}"
         );
+        assert!(
+            rendered.contains("landed user scene jump | energy rise"),
+            "{rendered}"
+        );
         assert!(rendered.contains("next [Y] restore"), "{rendered}");
         assert!(rendered.contains("[c] capture"), "{rendered}");
     }
@@ -4703,6 +4806,10 @@ mod tests {
 
         assert!(
             rendered.contains("scene drop | restore break"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("landed user restore | energy drop"),
             "{rendered}"
         );
         assert!(rendered.contains("next [y] jump"), "{rendered}");
