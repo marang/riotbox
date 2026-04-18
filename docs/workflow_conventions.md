@@ -434,6 +434,29 @@ Deletion rule:
   - the PR is merged
   - the issue is marked done
   - the repo archive entry exists
+- when deleting, prefer the repo-local helper:
+  - `scripts/linear_issue_delete.sh RIOTBOX-123`
+- the helper should use token auth via `LINEAR_API_TOKEN`
+- do not treat pasted browser session cookies as the normal cleanup path
+
+Priority rule:
+
+- `In Progress` / `In Review` -> `High (2)`
+- honest near-next backlog -> `Medium (3)`
+- distant work -> `Low (4)` or unset
+- archive / repo-ops slices -> usually `Medium (3)` unless urgent
+
+Label rule:
+
+- keep labels orthogonal to projects:
+  - projects answer phase
+  - labels answer slice type
+- keep the base label set small:
+  - `workflow`
+  - `archive`
+  - `ux`
+  - `benchmark`
+  - `review-followup`
 
 ---
 
@@ -447,6 +470,7 @@ Current practical split:
 - commit and push flow
 - PR creation
 - issue state transitions
+- issue deletion through the token-backed `issueDelete` helper after archive handoff
 - issue comments
 - project update document edits
 

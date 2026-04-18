@@ -237,6 +237,20 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Keep Linear updates human-readable.
 - Move issues to review when the PR is open and to done when the PR is merged.
 - Follow the repo workflow note in `docs/workflow_conventions.md` for branch / PR / merge / Linear conventions.
+- Keep Linear priorities explicit:
+  - `In Progress` / `In Review` -> `High (2)`
+  - honest near-next backlog -> `Medium (3)`
+  - distant work -> `Low (4)` or unset
+  - archive / repo-ops slices -> usually `Medium (3)` unless urgent
+- Keep Linear labels explicit and orthogonal to projects:
+  - projects answer phase
+  - labels answer slice type
+  - current base labels:
+    - `workflow`
+    - `archive`
+    - `ux`
+    - `benchmark`
+    - `review-followup`
 - Treat workflow and archive obligations as a real work lane, not as optional cleanup after coding.
 - When delegation is available and the slice is substantial enough, prefer two parallel lanes:
   - main implementation lane
@@ -291,6 +305,11 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - verification summary
   - decision-log or spec links touched by the ticket
 - Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
+- Prefer the repo-local helper for deletion:
+  - `scripts/linear_issue_delete.sh RIOTBOX-123`
+- Use token auth for that helper:
+  - `LINEAR_API_TOKEN=...`
+- Do not rely on pasted browser session cookies as the normal workflow path.
 - During autonomous implementation runs, start the workflow reminder sidecar when tmux is available:
   - `scripts/start_workflow_reminder_tmux.sh`
 - Verify periodically that it is still running:
@@ -341,6 +360,7 @@ just mem-status
 just mem-search "replay truth"
 scripts/start_workflow_reminder_tmux.sh
 scripts/check_workflow_reminder_tmux.sh
+scripts/linear_issue_delete.sh RIOTBOX-123
 ```
 
 Add new commands here when the repo grows enough that agents need a stable shortlist.
