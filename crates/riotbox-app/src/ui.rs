@@ -1316,7 +1316,9 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
 
     if let Some((label, scene_id, boundary)) = pending_scene_transition(shell) {
         let scene = compact_scene_label(scene_id.as_str());
-        return Some(format!("{label} {scene} @ {boundary} | pulse now, 2 trail"));
+        return Some(format!(
+            "{label} {scene} @ {boundary} | pulse + energy, 2 trail"
+        ));
     }
 
     if show_restore_ready_cue(shell) {
@@ -1414,7 +1416,7 @@ fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
         Line::from(""),
         Line::from("Scene timing"),
         Line::from(format!("{label} {scene}: lands at {boundary}")),
-        Line::from("Jam: read launch/restore, pulse, live <> restore"),
+        Line::from("Jam: read launch/restore, pulse, live/restore energy"),
         Line::from("2: confirm the landed trail on Log"),
     ])
 }
@@ -4620,7 +4622,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("restore intro @ next bar | pulse now, 2 trail"),
+            rendered.contains("restore intro @ next bar | pulse + energy, 2 trail"),
             "{rendered}"
         );
     }
@@ -4870,7 +4872,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Jam: read launch/restore, pulse, live <> restore"),
+            rendered.contains("Jam: read launch/restore, pulse, live/restore energy"),
             "{rendered}"
         );
         assert!(
