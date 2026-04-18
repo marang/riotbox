@@ -1330,10 +1330,9 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
     }
 
     if show_restore_ready_cue(shell) {
+        let restore_target = restore_scene_target_compact_label(shell);
         return Some(format!(
-            "restore {} ready | Y brings back {}",
-            compact_scene_label(restore_scene_label(shell).as_str()),
-            compact_scene_label(restore_scene_label(shell).as_str())
+            "restore {restore_target} ready | Y brings back {restore_target}"
         ));
     }
 
@@ -1441,16 +1440,13 @@ fn scene_restore_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
     }
 
     if show_restore_ready_cue(shell) {
+        let restore_target = restore_scene_target_compact_label(shell);
         return Some(vec![
             Line::from(""),
             Line::from("Scene restore"),
+            Line::from(format!("Y is live now for {restore_target}")),
             Line::from(format!(
-                "Y is live now for {}",
-                compact_scene_label(restore_scene_label(shell).as_str())
-            )),
-            Line::from(format!(
-                "press Y to bring {} back on the next bar",
-                compact_scene_label(restore_scene_label(shell).as_str())
+                "press Y to bring {restore_target} back on the next bar"
             )),
         ]);
     }
@@ -2794,6 +2790,14 @@ fn compact_energy_delta_label(from: Option<&str>, to: Option<&str>) -> Option<&'
         std::cmp::Ordering::Less => "drop",
         std::cmp::Ordering::Equal => "hold",
     })
+}
+
+fn restore_scene_target_compact_label(shell: &JamShellState) -> String {
+    let scene = compact_scene_label(restore_scene_label(shell).as_str());
+    if let Some(energy) = shell.app.jam_view.scene.restore_scene_energy.as_deref() {
+        return format!("{scene}/{}", compact_energy_label(energy));
+    }
+    scene
 }
 
 fn quantization_boundary_label(quantization: riotbox_core::action::Quantization) -> &'static str {
@@ -5021,7 +5025,7 @@ mod tests {
 
         assert!(rendered.contains("[Y] restore drop now"), "{rendered}");
         assert!(
-            rendered.contains("Scene cue: restore drop ready | Y brings back drop"),
+            rendered.contains("Scene cue: restore drop/high ready | Y brings back drop/high"),
             "{rendered}"
         );
     }
@@ -5048,9 +5052,12 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("Scene restore"), "{rendered}");
-        assert!(rendered.contains("Y is live now for drop"), "{rendered}");
         assert!(
-            rendered.contains("press Y to bring drop back on the next bar"),
+            rendered.contains("Y is live now for drop/high"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("press Y to bring drop/high back on the next bar"),
             "{rendered}"
         );
     }
