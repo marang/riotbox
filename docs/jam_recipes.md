@@ -191,6 +191,7 @@ Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 1. press `Space`
 2. press `y`
 3. before the jump lands, notice that `Y` is still only a wake-up cue, not a ready restore
+   - `[Y] restore waits for one landed jump`
 4. press `2` and confirm the scene jump landed
 5. go back to `Jam` with `1`
 6. look for the new restore-ready cue:
@@ -201,7 +202,7 @@ Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 
 What to observe:
 
-- before the first landed jump, `Y` is only a wake-up affordance
+- before the first landed jump, `Y` explicitly waits for one landed jump
 - after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
 - `Log` is the clearest place to verify both the queued restore target and the committed restore result
 
@@ -216,7 +217,7 @@ What this teaches:
 
 - Scene Brain already has one explicit `jump -> restore` pair
 - restore is deterministic and pointer-based, not a hidden undo mode
-- the shell now distinguishes `restore not ready yet` from `restore ready now`
+- the shell now distinguishes `restore waits for one landed jump` from `restore ready now`
 - scene changes are becoming recoverable without opening a second arrangement model
 
 ## Recipe 9: Compare Two Scene Sources
@@ -282,7 +283,7 @@ What to observe:
 - `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
-- the restore-ready cue is the positive mirror of the earlier wake-up-only state
+- the restore-ready cue is the positive mirror of the earlier `restore waits for one landed jump` state
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 
 What this teaches:
