@@ -2681,10 +2681,29 @@ fn current_scene_id(shell: &JamShellState) -> Option<String> {
 }
 
 fn scene_restore_contrast_line(shell: &JamShellState) -> String {
+    let current_scene = current_scene_compact_label(shell);
+    let current_energy = current_scene_id(shell)
+        .as_deref()
+        .and_then(|scene_id| scene_energy_label_for_scene_id(shell, scene_id))
+        .map(compact_energy_label)
+        .unwrap_or("unk");
+    let restore_scene = compact_scene_label(restore_scene_label(shell).as_str());
+    let restore_energy = shell
+        .app
+        .session
+        .runtime_state
+        .scene_state
+        .restore_scene
+        .as_ref()
+        .and_then(|scene_id| scene_energy_label_for_scene_id(shell, scene_id.as_str()))
+        .map(compact_energy_label);
+
     format!(
-        "live {} <> restore {} | ghost {}",
-        current_scene_compact_label(shell),
-        compact_scene_label(restore_scene_label(shell).as_str()),
+        "live {current_scene}/{current_energy} <> restore {} | ghost {}",
+        match restore_energy {
+            Some(restore_energy) => format!("{restore_scene}/{restore_energy}"),
+            None => restore_scene,
+        },
         ghost_label(shell)
     )
 }
@@ -2746,6 +2765,16 @@ fn energy_rank(label: &str) -> Option<u8> {
         "high" => Some(2),
         "peak" => Some(3),
         _ => None,
+    }
+}
+
+fn compact_energy_label(label: &str) -> &'static str {
+    match label {
+        "low" => "low",
+        "medium" => "med",
+        "high" => "high",
+        "peak" => "peak",
+        _ => "unk",
     }
 }
 
@@ -4552,7 +4581,7 @@ mod tests {
         assert!(rendered.contains("energy medium"));
         assert!(rendered.contains("source src-1 | next scene"));
         assert!(rendered.contains("scene-01-intro"));
-        assert!(rendered.contains("live intro <> restore none"));
+        assert!(rendered.contains("live intro/med <> restore none"));
         assert!(rendered.contains("launch ->"), "{rendered}");
         assert!(rendered.contains("@ next bar"), "{rendered}");
         assert!(
@@ -4598,7 +4627,7 @@ mod tests {
         assert!(rendered.contains("scene-01-drop"), "{rendered}");
         assert!(rendered.contains("energy medium"), "{rendered}");
         assert!(
-            rendered.contains("live drop <> restore intro"),
+            rendered.contains("live drop/med <> restore intro/high"),
             "{rendered}"
         );
         assert!(
@@ -4788,6 +4817,10 @@ mod tests {
             "{rendered}"
         );
         assert!(
+            rendered.contains("live break/high <> restore drop/med"),
+            "{rendered}"
+        );
+        assert!(
             rendered.contains("landed user scene jump | energy rise"),
             "{rendered}"
         );
@@ -4806,6 +4839,10 @@ mod tests {
 
         assert!(
             rendered.contains("scene drop | restore break"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("live drop/med <> restore break/high"),
             "{rendered}"
         );
         assert!(
