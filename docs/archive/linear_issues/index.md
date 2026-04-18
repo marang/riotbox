@@ -166,4 +166,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   First compact current-scene energy summary on the existing Jam and Log shell surfaces.
 - [RIOTBOX-112.md](./RIOTBOX-112.md)
   First workflow-budget baseline for the current Scene Brain `jump -> restore` recovery loop.
+- [RIOTBOX-113.md](./RIOTBOX-113.md)
+  Source-comparison recipe for the current Scene Brain `jump -> restore` learning path.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
