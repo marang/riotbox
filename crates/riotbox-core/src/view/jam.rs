@@ -285,8 +285,16 @@ impl JamViewModel {
                     .active_scene
                     .as_ref()
                     .map(ToString::to_string),
+                restore_scene: session
+                    .runtime_state
+                    .scene_state
+                    .restore_scene
+                    .as_ref()
+                    .map(ToString::to_string),
                 active_scene_energy: graph
                     .and_then(|graph| current_scene_energy_label(session, graph)),
+                restore_scene_energy: graph
+                    .and_then(|graph| restore_scene_energy_label(session, graph)),
                 scene_count: session.runtime_state.scene_state.scenes.len(),
             },
             macros: MacroStripView {
@@ -486,22 +494,49 @@ pub struct SourceSummaryView {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SceneSummaryView {
     pub active_scene: Option<String>,
+    pub restore_scene: Option<String>,
     pub active_scene_energy: Option<String>,
+    pub restore_scene_energy: Option<String>,
     pub scene_count: usize,
 }
 
 fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
-    let scene_id = session
-        .runtime_state
-        .scene_state
-        .active_scene
-        .as_ref()
-        .or(session.runtime_state.transport.current_scene.as_ref());
+    projected_scene_energy_label(
+        session
+            .runtime_state
+            .scene_state
+            .active_scene
+            .as_ref()
+            .or(session.runtime_state.transport.current_scene.as_ref())
+            .map(|scene_id| scene_id.as_str()),
+        true,
+        graph,
+    )
+}
+
+fn restore_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
+    projected_scene_energy_label(
+        session
+            .runtime_state
+            .scene_state
+            .restore_scene
+            .as_ref()
+            .map(|scene_id| scene_id.as_str()),
+        false,
+        graph,
+    )
+}
+
+fn projected_scene_energy_label(
+    scene_id: Option<&str>,
+    fallback_to_first_section: bool,
+    graph: &SourceGraph,
+) -> Option<String> {
     let sections = sorted_sections(graph);
     let section = scene_id
-        .and_then(|scene_id| parse_projected_scene_index(scene_id.as_str()))
+        .and_then(parse_projected_scene_index)
         .and_then(|scene_index| sections.get(scene_index).copied())
-        .or_else(|| sections.first().copied())?;
+        .or_else(|| fallback_to_first_section.then(|| sections.first().copied()).flatten())?;
     Some(section_energy_label(section).to_string())
 }
 
@@ -934,7 +969,9 @@ mod tests {
         assert_eq!(vm.source.loop_candidate_count, 1);
         assert_eq!(vm.source.hook_candidate_count, 1);
         assert_eq!(vm.scene.scene_count, 1);
+        assert_eq!(vm.scene.restore_scene, None);
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
+        assert_eq!(vm.scene.restore_scene_energy, None);
         assert_eq!(vm.capture.capture_count, 1);
         assert_eq!(vm.capture.pinned_capture_count, 0);
         assert_eq!(vm.capture.promoted_capture_count, 1);
@@ -1064,6 +1101,7 @@ mod tests {
 
         let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
         session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-drop"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-intro"));
         session.runtime_state.scene_state.scenes = vec![
             SceneId::from("scene-01-intro"),
             SceneId::from("scene-02-drop"),
@@ -1072,6 +1110,8 @@ mod tests {
         let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
 
         assert_eq!(vm.scene.active_scene.as_deref(), Some("scene-02-drop"));
+        assert_eq!(vm.scene.restore_scene.as_deref(), Some("scene-01-intro"));
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
+        assert_eq!(vm.scene.restore_scene_energy.as_deref(), Some("medium"));
     }
 }

@@ -2461,6 +2461,18 @@ mod tests {
             Some("scene-02-break")
         );
         assert_eq!(
+            state.jam_view.scene.restore_scene.as_deref(),
+            Some("scene-01-drop")
+        );
+        assert_eq!(
+            state.jam_view.scene.active_scene_energy.as_deref(),
+            Some("medium")
+        );
+        assert_eq!(
+            state.jam_view.scene.restore_scene_energy.as_deref(),
+            Some("high")
+        );
+        assert_eq!(
             state.runtime.tr909_render.current_scene_id.as_deref(),
             Some("scene-02-break")
         );
@@ -2549,6 +2561,18 @@ mod tests {
         assert_eq!(
             state.jam_view.scene.active_scene.as_deref(),
             Some("scene-01-drop")
+        );
+        assert_eq!(
+            state.jam_view.scene.restore_scene.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state.jam_view.scene.active_scene_energy.as_deref(),
+            Some("high")
+        );
+        assert_eq!(
+            state.jam_view.scene.restore_scene_energy.as_deref(),
+            None
         );
         assert_eq!(
             state.runtime.tr909_render.current_scene_id.as_deref(),
