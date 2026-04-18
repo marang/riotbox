@@ -2660,42 +2660,26 @@ fn current_scene_compact_label(shell: &JamShellState) -> String {
 }
 
 fn current_scene_id(shell: &JamShellState) -> Option<String> {
-    shell
-        .app
-        .session
-        .runtime_state
-        .scene_state
-        .active_scene
-        .as_ref()
-        .map(ToString::to_string)
-        .or_else(|| {
-            shell
-                .app
-                .session
-                .runtime_state
-                .transport
-                .current_scene
-                .as_ref()
-                .map(ToString::to_string)
-        })
+    shell.app.jam_view.scene.active_scene.clone()
 }
 
 fn scene_restore_contrast_line(shell: &JamShellState) -> String {
     let current_scene = current_scene_compact_label(shell);
-    let current_energy = current_scene_id(shell)
+    let current_energy = shell
+        .app
+        .jam_view
+        .scene
+        .active_scene_energy
         .as_deref()
-        .and_then(|scene_id| scene_energy_label_for_scene_id(shell, scene_id))
         .map(compact_energy_label)
         .unwrap_or("unk");
     let restore_scene = compact_scene_label(restore_scene_label(shell).as_str());
     let restore_energy = shell
         .app
-        .session
-        .runtime_state
-        .scene_state
-        .restore_scene
-        .as_ref()
-        .and_then(|scene_id| scene_energy_label_for_scene_id(shell, scene_id.as_str()))
+        .jam_view
+        .scene
+        .restore_scene_energy
+        .as_deref()
         .map(compact_energy_label);
 
     format!(
@@ -2723,12 +2707,10 @@ fn compact_scene_label(scene_id: &str) -> String {
 fn restore_scene_label(shell: &JamShellState) -> String {
     shell
         .app
-        .session
-        .runtime_state
-        .scene_state
+        .jam_view
+        .scene
         .restore_scene
-        .as_ref()
-        .map(ToString::to_string)
+        .clone()
         .unwrap_or_else(|| "none".into())
 }
 
@@ -2862,10 +2844,8 @@ fn landed_scene_energy_delta(shell: &JamShellState, command: &str) -> Option<&'s
     }
 
     energy_delta_label(
-        scene_energy_label_for_scene_id(shell, restore_scene_label(shell).as_str()),
-        current_scene_id(shell)
-            .as_deref()
-            .and_then(|scene_id| scene_energy_label_for_scene_id(shell, scene_id)),
+        shell.app.jam_view.scene.restore_scene_energy.as_deref(),
+        shell.app.jam_view.scene.active_scene_energy.as_deref(),
     )
 }
 
