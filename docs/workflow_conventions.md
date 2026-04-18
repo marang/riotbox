@@ -168,6 +168,8 @@ Rules:
 - mention important CI failures and fixes in the Linear issue update when they happen
 - treat CI checks as merge gates, not as a reason to pause all forward progress
 - when no event or webhook mechanism is available, poll open PR status periodically while continuing on the next bounded slice
+- do not fall back into standalone status-only updates when there is no blocker
+- if a progress update is necessary, pair it with the next concrete action already being taken
 
 ## 7.2.1 Audio-Producing Slice Check
 
@@ -271,33 +273,6 @@ Rules:
 - implementation may continue on the main thread while a parallel workflow lane or subagent keeps Linear state, project updates, and archive obligations aligned
 - the main coordinating agent still owns correctness, final review, and final integration
 - delegation should reduce workflow drift, not hide responsibility for it
-
-## 8.2.2 Workflow Reminder Sidecar
-
-When running autonomously for long stretches, keep a lightweight workflow reminder sidecar alive if `tmux` is available.
-
-Repo-local commands:
-
-- `scripts/start_workflow_reminder_tmux.sh`
-- `scripts/check_workflow_reminder_tmux.sh`
-
-Purpose:
-
-- reduce idle drift after clean checkpoints
-- keep reminding the main lane to continue bounded roadmap work
-- keep re-checking open PRs instead of treating them as a reason to stop
-- keep Linear and repo archive obligations visible while coding continues
-- do this quietly, without spawning persistent repo log files
-
-Rules:
-
-- start the reminder sidecar before or during longer unattended implementation runs
-- verify periodically that the tmux session and reminder pane are still alive
-- the default reminder cadence should be light:
-  - 30 seconds is enough
-- use the sidecar as a nudge layer only; it does not replace CI checks, branch review, or merge judgment
-- prefer direct tmux pane output over repo-local feed/log files
-- if the sidecar dies, restart it instead of quietly losing the reminder lane
 
 ## 8.3 Backlog Horizon
 

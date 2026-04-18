@@ -216,6 +216,8 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Treat open PRs and in-flight CI as merge gates, not as a reason to pause the main implementation lane.
 - If the current PR is locally clean and CI is only running or already green, continue with the next bounded roadmap-aligned slice and re-check the open PR periodically.
 - When no event or webhook mechanism is available, use explicit periodic polling instead of idling.
+- Do not emit standalone status-only progress reports when there is no real blocker.
+- If a user-facing update is necessary during active work, tie it directly to the next concrete action already being taken.
 - At minimum, check:
   - formatter status
   - test status
@@ -312,17 +314,6 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Use token auth for that helper:
   - `LINEAR_API_TOKEN=...`
 - Do not rely on pasted browser session cookies as the normal workflow path.
-- During autonomous implementation runs, start the workflow reminder sidecar when tmux is available:
-  - `scripts/start_workflow_reminder_tmux.sh`
-- Verify periodically that it is still running:
-  - `scripts/check_workflow_reminder_tmux.sh`
-- Treat the reminder sidecar as a drift-reduction tool, not as a replacement for judgment:
-  - it should keep nudging the agent to continue bounded work, re-check open PRs, and keep Linear/archive obligations aligned
-  - it does not replace explicit CI inspection, branch review, or final merge responsibility
-  - keep it lightweight and quiet:
-    - direct tmux output only
-    - default 30-second interval
-    - no `CONVO_FEED` or `reports/subagents/*.log` churn
 
 ### Next-ticket heuristic
 
@@ -360,8 +351,6 @@ just check
 just clippy
 just mem-status
 just mem-search "replay truth"
-scripts/start_workflow_reminder_tmux.sh
-scripts/check_workflow_reminder_tmux.sh
 scripts/linear_issue_delete.sh RIOTBOX-123
 ```
 
