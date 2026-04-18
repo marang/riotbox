@@ -33,7 +33,7 @@ use riotbox_core::{
     queue::{ActionQueue, CommittedActionRef},
     session::{
         CaptureRef, CaptureTarget, CaptureType, GraphStorageMode, SessionFile, SourceGraphRef,
-        SourceRef, W30PreviewModeState,
+        SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
     },
     source_graph::{DecodeProfile, SectionLabelHint, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
@@ -1178,14 +1178,8 @@ impl JamAppState {
         }
 
         if self.session.runtime_state.lane_state.tr909.takeover_enabled
-            && self
-                .session
-                .runtime_state
-                .lane_state
-                .tr909
-                .takeover_profile
-                .as_deref()
-                == Some("scene_lock_takeover")
+            && self.session.runtime_state.lane_state.tr909.takeover_profile
+                == Some(Tr909TakeoverProfileState::SceneLockTakeover)
         {
             return QueueControlResult::AlreadyInState;
         }
@@ -2839,11 +2833,12 @@ fn apply_tr909_side_effects(
                 boundary.map(|boundary| boundary.bar_index);
             session.runtime_state.lane_state.tr909.pattern_ref =
                 boundary.map(|boundary| format!("fill-bar-{}", boundary.bar_index));
-            session.runtime_state.lane_state.tr909.reinforcement_mode = Some("fills".into());
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::Fills);
         }
         ActionCommand::Tr909ReinforceBreak => {
             session.runtime_state.lane_state.tr909.reinforcement_mode =
-                Some("break_reinforce".into());
+                Some(Tr909ReinforcementModeState::BreakReinforce);
             session.runtime_state.lane_state.tr909.pattern_ref = boundary.map(|boundary| {
                 boundary.scene_id.as_ref().map_or_else(
                     || format!("reinforce-phrase-{}", boundary.phrase_index),
@@ -2854,26 +2849,28 @@ fn apply_tr909_side_effects(
         ActionCommand::Tr909Takeover => {
             session.runtime_state.lane_state.tr909.takeover_enabled = true;
             session.runtime_state.lane_state.tr909.takeover_profile =
-                Some("controlled_phrase_takeover".into());
+                Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
             session.runtime_state.lane_state.tr909.pattern_ref = boundary.map(|boundary| {
                 boundary.scene_id.as_ref().map_or_else(
                     || format!("takeover-phrase-{}", boundary.phrase_index),
                     |scene_id| format!("takeover-{scene_id}"),
                 )
             });
-            session.runtime_state.lane_state.tr909.reinforcement_mode = Some("takeover".into());
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::Takeover);
         }
         ActionCommand::Tr909SceneLock => {
             session.runtime_state.lane_state.tr909.takeover_enabled = true;
             session.runtime_state.lane_state.tr909.takeover_profile =
-                Some("scene_lock_takeover".into());
+                Some(Tr909TakeoverProfileState::SceneLockTakeover);
             session.runtime_state.lane_state.tr909.pattern_ref = boundary.map(|boundary| {
                 boundary.scene_id.as_ref().map_or_else(
                     || format!("lock-phrase-{}", boundary.phrase_index),
                     |scene_id| format!("lock-{scene_id}"),
                 )
             });
-            session.runtime_state.lane_state.tr909.reinforcement_mode = Some("takeover".into());
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::Takeover);
         }
         ActionCommand::Tr909Release => {
             session.runtime_state.lane_state.tr909.takeover_enabled = false;
@@ -2884,16 +2881,11 @@ fn apply_tr909_side_effects(
                     |scene_id| format!("release-{scene_id}"),
                 )
             });
-            if session
-                .runtime_state
-                .lane_state
-                .tr909
-                .reinforcement_mode
-                .as_deref()
-                == Some("takeover")
+            if session.runtime_state.lane_state.tr909.reinforcement_mode
+                == Some(Tr909ReinforcementModeState::Takeover)
             {
                 session.runtime_state.lane_state.tr909.reinforcement_mode =
-                    Some("source_support".into());
+                    Some(Tr909ReinforcementModeState::SourceSupport);
             }
         }
         _ => {}
@@ -3099,12 +3091,11 @@ fn build_tr909_render_state(
     let mode = if tr909.takeover_enabled {
         Tr909RenderMode::Takeover
     } else {
-        match tr909.reinforcement_mode.as_deref() {
-            Some("fills") => Tr909RenderMode::Fill,
-            Some("break_reinforce") => Tr909RenderMode::BreakReinforce,
-            Some("takeover") => Tr909RenderMode::Takeover,
-            Some("source_support") => Tr909RenderMode::SourceSupport,
-            Some(_) => Tr909RenderMode::SourceSupport,
+        match tr909.reinforcement_mode {
+            Some(Tr909ReinforcementModeState::Fills) => Tr909RenderMode::Fill,
+            Some(Tr909ReinforcementModeState::BreakReinforce) => Tr909RenderMode::BreakReinforce,
+            Some(Tr909ReinforcementModeState::Takeover) => Tr909RenderMode::Takeover,
+            Some(Tr909ReinforcementModeState::SourceSupport) => Tr909RenderMode::SourceSupport,
             None if tr909.pattern_ref.is_some() || tr909.slam_enabled => {
                 Tr909RenderMode::SourceSupport
             }
@@ -3343,9 +3334,13 @@ fn derive_tr909_takeover_render_profile(
         return None;
     }
 
-    match tr909.takeover_profile.as_deref() {
-        Some("controlled_phrase_takeover") => Some(Tr909TakeoverRenderProfile::ControlledPhrase),
-        Some(_) | None => Some(Tr909TakeoverRenderProfile::SceneLock),
+    match tr909.takeover_profile {
+        Some(Tr909TakeoverProfileState::ControlledPhraseTakeover) => {
+            Some(Tr909TakeoverRenderProfile::ControlledPhrase)
+        }
+        Some(Tr909TakeoverProfileState::SceneLockTakeover) | None => {
+            Some(Tr909TakeoverRenderProfile::SceneLock)
+        }
     }
 }
 
@@ -3476,7 +3471,7 @@ mod tests {
         session::{
             CaptureRef, CaptureTarget, CaptureType, GhostBudgetState, GhostState,
             GhostSuggestionRecord, GraphStorageMode, SessionFile, Snapshot, SourceGraphRef,
-            SourceRef,
+            SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
@@ -3494,9 +3489,9 @@ mod tests {
     struct RenderProjectionFixture {
         name: String,
         transport_position_beats: f64,
-        reinforcement_mode: String,
+        reinforcement_mode: Tr909ReinforcementModeState,
         takeover_enabled: bool,
-        takeover_profile: Option<String>,
+        takeover_profile: Option<Tr909TakeoverProfileState>,
         pattern_ref: Option<String>,
         expected_mode: String,
         expected_routing: String,
@@ -4287,7 +4282,7 @@ mod tests {
         let mut session = sample_session(&graph);
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
         session.runtime_state.lane_state.tr909.takeover_profile =
-            Some("controlled_phrase_takeover".into());
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
         session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-1-main".into());
         session.runtime_state.macro_state.tr909_slam = 0.91;
         session.runtime_state.mixer_state.drum_level = 0.0;
@@ -4391,7 +4386,7 @@ mod tests {
         let mut session = sample_session(&graph);
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
         session.runtime_state.lane_state.tr909.takeover_profile =
-            Some("controlled_phrase_takeover".into());
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
         session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-1-main".into());
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -4983,12 +4978,8 @@ mod tests {
             Some(true)
         );
         assert_eq!(
-            state
-                .jam_view
-                .lanes
-                .tr909_takeover_pending_profile
-                .as_deref(),
-            Some("controlled_phrase_takeover")
+            state.jam_view.lanes.tr909_takeover_pending_profile,
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover)
         );
         assert!(!state.jam_view.lanes.tr909_takeover_enabled);
     }
@@ -5016,12 +5007,8 @@ mod tests {
             Some(true)
         );
         assert_eq!(
-            state
-                .jam_view
-                .lanes
-                .tr909_takeover_pending_profile
-                .as_deref(),
-            Some("scene_lock_takeover")
+            state.jam_view.lanes.tr909_takeover_pending_profile,
+            Some(Tr909TakeoverProfileState::SceneLockTakeover)
         );
         assert!(!state.jam_view.lanes.tr909_takeover_enabled);
 
@@ -5038,7 +5025,7 @@ mod tests {
             .runtime_state
             .lane_state
             .tr909
-            .takeover_profile = Some("scene_lock_takeover".into());
+            .takeover_profile = Some(Tr909TakeoverProfileState::SceneLockTakeover);
         already_locked.refresh_view();
 
         assert_eq!(
@@ -5053,7 +5040,7 @@ mod tests {
         let mut session = sample_session(&graph);
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
         session.runtime_state.lane_state.tr909.takeover_profile =
-            Some("controlled_phrase_takeover".into());
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         assert_eq!(state.queue_tr909_release(300), QueueControlResult::Enqueued);
@@ -6784,9 +6771,8 @@ mod tests {
                 .runtime_state
                 .lane_state
                 .tr909
-                .reinforcement_mode
-                .as_deref(),
-            Some("break_reinforce")
+                .reinforcement_mode,
+            Some(Tr909ReinforcementModeState::BreakReinforce)
         );
         assert!(
             !state
@@ -6797,8 +6783,8 @@ mod tests {
                 .fill_armed_next_bar
         );
         assert_eq!(
-            state.jam_view.lanes.tr909_reinforcement_mode.as_deref(),
-            Some("break_reinforce")
+            state.jam_view.lanes.tr909_reinforcement_mode,
+            Some(Tr909ReinforcementModeState::BreakReinforce)
         );
         assert_eq!(
             state.runtime.tr909_render.mode,
@@ -7390,9 +7376,8 @@ mod tests {
                 .runtime_state
                 .lane_state
                 .tr909
-                .takeover_profile
-                .as_deref(),
-            Some("controlled_phrase_takeover")
+                .takeover_profile,
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover)
         );
         assert_eq!(
             state
@@ -7400,9 +7385,8 @@ mod tests {
                 .runtime_state
                 .lane_state
                 .tr909
-                .reinforcement_mode
-                .as_deref(),
-            Some("takeover")
+                .reinforcement_mode,
+            Some(Tr909ReinforcementModeState::Takeover)
         );
         assert_eq!(
             state
@@ -7416,8 +7400,8 @@ mod tests {
         );
         assert!(state.jam_view.lanes.tr909_takeover_enabled);
         assert_eq!(
-            state.jam_view.lanes.tr909_takeover_profile.as_deref(),
-            Some("controlled_phrase_takeover")
+            state.jam_view.lanes.tr909_takeover_profile,
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover)
         );
         assert_eq!(state.jam_view.lanes.tr909_takeover_pending_profile, None);
         assert_eq!(state.jam_view.lanes.tr909_takeover_pending_target, None);
@@ -7474,9 +7458,8 @@ mod tests {
                 .runtime_state
                 .lane_state
                 .tr909
-                .takeover_profile
-                .as_deref(),
-            Some("scene_lock_takeover")
+                .takeover_profile,
+            Some(Tr909TakeoverProfileState::SceneLockTakeover)
         );
         assert_eq!(
             state
@@ -7489,8 +7472,8 @@ mod tests {
             Some("lock-scene-1")
         );
         assert_eq!(
-            state.jam_view.lanes.tr909_takeover_profile.as_deref(),
-            Some("scene_lock_takeover")
+            state.jam_view.lanes.tr909_takeover_profile,
+            Some(Tr909TakeoverProfileState::SceneLockTakeover)
         );
         assert_eq!(
             state.runtime.tr909_render.takeover_profile,
@@ -7546,9 +7529,8 @@ mod tests {
                 .runtime_state
                 .lane_state
                 .tr909
-                .reinforcement_mode
-                .as_deref(),
-            Some("source_support")
+                .reinforcement_mode,
+            Some(Tr909ReinforcementModeState::SourceSupport)
         );
         assert_eq!(
             state
@@ -7605,7 +7587,8 @@ mod tests {
         });
 
         let mut session = sample_session(&graph);
-        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("source_support".into());
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::SourceSupport);
         session.runtime_state.lane_state.tr909.pattern_ref = Some("support-scene-1".into());
         session.runtime_state.transport.position_beats = 16.0;
 
@@ -7647,7 +7630,7 @@ mod tests {
             .runtime_state
             .lane_state
             .tr909
-            .reinforcement_mode = Some("source_support".into());
+            .reinforcement_mode = Some(Tr909ReinforcementModeState::SourceSupport);
         support_session.runtime_state.lane_state.tr909.pattern_ref = None;
         let support_state =
             JamAppState::from_parts(support_session, Some(graph.clone()), ActionQueue::new());
@@ -7666,7 +7649,7 @@ mod tests {
             .runtime_state
             .lane_state
             .tr909
-            .takeover_profile = Some("controlled_phrase_takeover".into());
+            .takeover_profile = Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
         takeover_session.runtime_state.lane_state.tr909.pattern_ref = None;
         let takeover_state =
             JamAppState::from_parts(takeover_session, Some(graph), ActionQueue::new());
@@ -7684,7 +7667,8 @@ mod tests {
     fn phrase_variation_tracks_phrase_context_and_release_patterns() {
         let graph = sample_graph();
         let mut session = sample_session(&graph);
-        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("source_support".into());
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::SourceSupport);
         session.runtime_state.lane_state.tr909.pattern_ref = Some("release-scene-1".into());
         let release_state =
             JamAppState::from_parts(session.clone(), Some(graph.clone()), ActionQueue::new());
@@ -7714,10 +7698,9 @@ mod tests {
             let mut session = sample_session(&graph);
             session.runtime_state.transport.position_beats = fixture.transport_position_beats;
             session.runtime_state.lane_state.tr909.reinforcement_mode =
-                Some(fixture.reinforcement_mode.clone());
+                Some(fixture.reinforcement_mode);
             session.runtime_state.lane_state.tr909.takeover_enabled = fixture.takeover_enabled;
-            session.runtime_state.lane_state.tr909.takeover_profile =
-                fixture.takeover_profile.clone();
+            session.runtime_state.lane_state.tr909.takeover_profile = fixture.takeover_profile;
             session.runtime_state.lane_state.tr909.pattern_ref = fixture.pattern_ref.clone();
 
             let state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());

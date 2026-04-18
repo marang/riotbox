@@ -3665,7 +3665,7 @@ mod tests {
         },
         ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SourceId},
         queue::ActionQueue,
-        session::SessionFile,
+        session::{SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
             DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Section, SectionLabelHint,
@@ -4020,11 +4020,12 @@ mod tests {
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
         session.runtime_state.lane_state.tr909.takeover_profile =
-            Some("controlled_phrase_takeover".into());
+            Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
         session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-a-main".into());
         session.ghost_state.mode = GhostMode::Assist;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(6);
-        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::Takeover);
         session.action_log.actions.push(Action {
             id: ActionId(1),
             actor: ActorType::User,

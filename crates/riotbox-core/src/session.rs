@@ -156,6 +156,44 @@ pub enum W30PreviewModeState {
     PromotedAudition,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Tr909TakeoverProfileState {
+    ControlledPhraseTakeover,
+    SceneLockTakeover,
+}
+
+impl Tr909TakeoverProfileState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::ControlledPhraseTakeover => "controlled_phrase_takeover",
+            Self::SceneLockTakeover => "scene_lock_takeover",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Tr909ReinforcementModeState {
+    SourceSupport,
+    Fills,
+    BreakReinforce,
+    Takeover,
+}
+
+impl Tr909ReinforcementModeState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::SourceSupport => "source_support",
+            Self::Fills => "fills",
+            Self::BreakReinforce => "break_reinforce",
+            Self::Takeover => "takeover",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct W30LaneState {
     pub preview_mode: Option<W30PreviewModeState>,
@@ -168,11 +206,11 @@ pub struct W30LaneState {
 pub struct Tr909LaneState {
     pub pattern_ref: Option<String>,
     pub takeover_enabled: bool,
-    pub takeover_profile: Option<String>,
+    pub takeover_profile: Option<Tr909TakeoverProfileState>,
     pub slam_enabled: bool,
     pub fill_armed_next_bar: bool,
     pub last_fill_bar: Option<u64>,
-    pub reinforcement_mode: Option<String>,
+    pub reinforcement_mode: Option<Tr909ReinforcementModeState>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

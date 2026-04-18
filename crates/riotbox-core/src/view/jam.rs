@@ -1,6 +1,6 @@
 use crate::{
     queue::ActionQueue,
-    session::SessionFile,
+    session::{SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
     source_graph::{EnergyClass, Section, SourceGraph},
 };
 
@@ -203,10 +203,10 @@ impl JamViewModel {
                 .rev()
                 .find_map(|action| match action.command {
                     crate::action::ActionCommand::Tr909Takeover => {
-                        Some("controlled_phrase_takeover".to_string())
+                        Some(Tr909TakeoverProfileState::ControlledPhraseTakeover)
                     }
                     crate::action::ActionCommand::Tr909SceneLock => {
-                        Some("scene_lock_takeover".to_string())
+                        Some(Tr909TakeoverProfileState::SceneLockTakeover)
                     }
                     crate::action::ActionCommand::Tr909Release => None,
                     _ => None,
@@ -330,20 +330,10 @@ impl JamViewModel {
                 tr909_takeover_enabled: session.runtime_state.lane_state.tr909.takeover_enabled,
                 tr909_takeover_pending_target,
                 tr909_takeover_pending_profile,
-                tr909_takeover_profile: session
-                    .runtime_state
-                    .lane_state
-                    .tr909
-                    .takeover_profile
-                    .clone(),
+                tr909_takeover_profile: session.runtime_state.lane_state.tr909.takeover_profile,
                 tr909_fill_armed_next_bar: tr909_fill_pending,
                 tr909_last_fill_bar: session.runtime_state.lane_state.tr909.last_fill_bar,
-                tr909_reinforcement_mode: session
-                    .runtime_state
-                    .lane_state
-                    .tr909
-                    .reinforcement_mode
-                    .clone(),
+                tr909_reinforcement_mode: session.runtime_state.lane_state.tr909.reinforcement_mode,
             },
             capture: CaptureSummaryView {
                 capture_count: session.captures.len(),
@@ -575,11 +565,11 @@ pub struct LaneSummaryView {
     pub tr909_slam_enabled: bool,
     pub tr909_takeover_enabled: bool,
     pub tr909_takeover_pending_target: Option<bool>,
-    pub tr909_takeover_pending_profile: Option<String>,
-    pub tr909_takeover_profile: Option<String>,
+    pub tr909_takeover_pending_profile: Option<Tr909TakeoverProfileState>,
+    pub tr909_takeover_profile: Option<Tr909TakeoverProfileState>,
     pub tr909_fill_armed_next_bar: bool,
     pub tr909_last_fill_bar: Option<u64>,
-    pub tr909_reinforcement_mode: Option<String>,
+    pub tr909_reinforcement_mode: Option<Tr909ReinforcementModeState>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -732,10 +722,12 @@ mod tests {
         session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
         session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
         session.runtime_state.lane_state.tr909.takeover_enabled = true;
-        session.runtime_state.lane_state.tr909.takeover_profile = Some("scene-control".into());
+        session.runtime_state.lane_state.tr909.takeover_profile =
+            Some(Tr909TakeoverProfileState::SceneLockTakeover);
         session.runtime_state.lane_state.tr909.slam_enabled = true;
         session.runtime_state.lane_state.tr909.last_fill_bar = Some(8);
-        session.runtime_state.lane_state.tr909.reinforcement_mode = Some("hybrid".into());
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::Takeover);
         session.ghost_state.mode = GhostMode::Assist;
         session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
             proposal_id: "gp-1".into(),
@@ -1011,14 +1003,17 @@ mod tests {
         );
         assert!(vm.lanes.tr909_takeover_enabled);
         assert_eq!(vm.lanes.tr909_takeover_pending_target, Some(false));
-        assert_eq!(vm.lanes.tr909_takeover_pending_profile.as_deref(), None);
+        assert_eq!(vm.lanes.tr909_takeover_pending_profile, None);
         assert_eq!(
-            vm.lanes.tr909_takeover_profile.as_deref(),
-            Some("scene-control")
+            vm.lanes.tr909_takeover_profile,
+            Some(Tr909TakeoverProfileState::SceneLockTakeover)
         );
         assert!(vm.lanes.tr909_fill_armed_next_bar);
         assert_eq!(vm.lanes.tr909_last_fill_bar, Some(8));
-        assert_eq!(vm.lanes.tr909_reinforcement_mode.as_deref(), Some("hybrid"));
+        assert_eq!(
+            vm.lanes.tr909_reinforcement_mode,
+            Some(Tr909ReinforcementModeState::Takeover)
+        );
         assert_eq!(vm.pending_actions.len(), 11);
         assert_eq!(vm.ghost.mode, "assist");
     }

@@ -1764,18 +1764,21 @@ mod tests {
                     "fill" => Tr909RenderMode::Fill,
                     "break_reinforce" => Tr909RenderMode::BreakReinforce,
                     "takeover" => Tr909RenderMode::Takeover,
-                    _ => Tr909RenderMode::Idle,
+                    "idle" => Tr909RenderMode::Idle,
+                    other => panic!("unknown TR-909 fixture mode: {other}"),
                 },
                 routing: match self.routing.as_str() {
                     "drum_bus_support" => Tr909RenderRouting::DrumBusSupport,
                     "drum_bus_takeover" => Tr909RenderRouting::DrumBusTakeover,
-                    _ => Tr909RenderRouting::SourceOnly,
+                    "source_only" => Tr909RenderRouting::SourceOnly,
+                    other => panic!("unknown TR-909 fixture routing: {other}"),
                 },
                 source_support_profile: self.source_support_profile.as_deref().map(|profile| {
                     match profile {
                         "break_lift" => Tr909SourceSupportProfile::BreakLift,
                         "drop_drive" => Tr909SourceSupportProfile::DropDrive,
-                        _ => Tr909SourceSupportProfile::SteadyPulse,
+                        "steady_pulse" => Tr909SourceSupportProfile::SteadyPulse,
+                        other => panic!("unknown TR-909 fixture source support profile: {other}"),
                     }
                 }),
                 pattern_adoption: self
@@ -1784,14 +1787,16 @@ mod tests {
                     .map(|pattern| match pattern {
                         "mainline_drive" => Tr909PatternAdoption::MainlineDrive,
                         "takeover_grid" => Tr909PatternAdoption::TakeoverGrid,
-                        _ => Tr909PatternAdoption::SupportPulse,
+                        "support_pulse" => Tr909PatternAdoption::SupportPulse,
+                        other => panic!("unknown TR-909 fixture pattern adoption: {other}"),
                     }),
                 phrase_variation: self.phrase_variation.as_deref().map(
                     |variation| match variation {
                         "phrase_lift" => Tr909PhraseVariation::PhraseLift,
                         "phrase_drive" => Tr909PhraseVariation::PhraseDrive,
                         "phrase_release" => Tr909PhraseVariation::PhraseRelease,
-                        _ => Tr909PhraseVariation::PhraseAnchor,
+                        "phrase_anchor" => Tr909PhraseVariation::PhraseAnchor,
+                        other => panic!("unknown TR-909 fixture phrase variation: {other}"),
                     },
                 ),
                 takeover_profile: self
@@ -1799,7 +1804,8 @@ mod tests {
                     .as_deref()
                     .map(|profile| match profile {
                         "scene_lock" => Tr909TakeoverRenderProfile::SceneLock,
-                        _ => Tr909TakeoverRenderProfile::ControlledPhrase,
+                        "controlled_phrase" => Tr909TakeoverRenderProfile::ControlledPhrase,
+                        other => panic!("unknown TR-909 fixture takeover profile: {other}"),
                     }),
                 drum_bus_level: self.drum_bus_level,
                 slam_intensity: self.slam_intensity,
