@@ -1,6 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+if [ -f .env.local ]; then
+  # Load local dev secrets for repo-local workflow helpers.
+  set -a
+  # shellcheck disable=SC1091
+  . ./.env.local
+  set +a
+fi
+
 if [ "${1:-}" = "" ]; then
   echo "usage: scripts/linear_issue_delete.sh <issue-id-or-identifier>" >&2
   echo "example: scripts/linear_issue_delete.sh RIOTBOX-96" >&2
