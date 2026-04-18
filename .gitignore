@@ -9,3 +9,5 @@ target/
 data/**
 !data/**/
 !data/**/*.md
+
+.env.local
