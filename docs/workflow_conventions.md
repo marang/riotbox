@@ -122,7 +122,9 @@ Once a PR is open for a ticket:
 - treat that ticket as being at the review boundary
 - inspect the CI / GitHub Actions output explicitly
 - if CI is red, treat the branch as still active work until the relevant failures are addressed
-- prefer not to continue the next main ticket until the PR is merged
+- do not let an open or in-flight PR stall the main implementation lane by default
+- if the current PR is clean locally and CI is still running or already green, continue on the next bounded backlog slice instead of idling
+- re-check open PRs periodically and merge them as soon as their gates are clean
 - small follow-up fixes on the same PR are fine
 - do not silently bundle the next unrelated slice into the same PR
 
@@ -164,6 +166,8 @@ Rules:
 - do not assume CI is fine just because local checks passed
 - if a CI failure is caused by the current slice, fix it on the same branch before treating the ticket as cleanly in review
 - mention important CI failures and fixes in the Linear issue update when they happen
+- treat CI checks as merge gates, not as a reason to pause all forward progress
+- when no event or webhook mechanism is available, poll open PR status periodically while continuing on the next bounded slice
 
 ## 7.2.1 Audio-Producing Slice Check
 
