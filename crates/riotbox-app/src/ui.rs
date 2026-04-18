@@ -1331,7 +1331,8 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
 
     if show_restore_ready_cue(shell) {
         return Some(format!(
-            "restore {} ready | Y brings it back",
+            "restore {} ready | Y brings back {}",
+            compact_scene_label(restore_scene_label(shell).as_str()),
             compact_scene_label(restore_scene_label(shell).as_str())
         ));
     }
@@ -1447,7 +1448,10 @@ fn scene_restore_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
                 "Y is live now for {}",
                 compact_scene_label(restore_scene_label(shell).as_str())
             )),
-            Line::from("press Y to bring that scene back on the next bar"),
+            Line::from(format!(
+                "press Y to bring {} back on the next bar",
+                compact_scene_label(restore_scene_label(shell).as_str())
+            )),
         ]);
     }
 
@@ -5017,7 +5021,7 @@ mod tests {
 
         assert!(rendered.contains("[Y] restore drop now"), "{rendered}");
         assert!(
-            rendered.contains("Scene cue: restore drop ready | Y brings it back"),
+            rendered.contains("Scene cue: restore drop ready | Y brings back drop"),
             "{rendered}"
         );
     }
@@ -5046,7 +5050,7 @@ mod tests {
         assert!(rendered.contains("Scene restore"), "{rendered}");
         assert!(rendered.contains("Y is live now for drop"), "{rendered}");
         assert!(
-            rendered.contains("press Y to bring that scene back on the next bar"),
+            rendered.contains("press Y to bring drop back on the next bar"),
             "{rendered}"
         );
     }
