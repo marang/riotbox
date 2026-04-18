@@ -7,16 +7,9 @@ use std::{
 };
 
 use riotbox_audio::{
-    runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle, AudioRuntimeTimingSnapshot},
-    tr909::{
-        Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
-    },
-    w30::{
-        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState,
-    },
+    runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot},
+    tr909::Tr909RenderState,
+    w30::{W30PreviewRenderState, W30ResampleTapState},
 };
 use riotbox_core::{
     TimestampMs,
@@ -1154,18 +1147,6 @@ impl JamAppState {
                 self.session.runtime_state.transport.current_scene.clone();
         }
     }
-
-    fn beats_for_elapsed_ms(&self, elapsed_ms: TimestampMs) -> f64 {
-        let bpm = self
-            .jam_view
-            .source
-            .bpm_estimate
-            .map(f64::from)
-            .filter(|bpm| *bpm > 0.0)
-            .unwrap_or(120.0);
-
-        bpm * Duration::from_millis(elapsed_ms).as_secs_f64() / 60.0
-    }
 }
 
 fn next_action_id_from_session(session: &SessionFile) -> riotbox_core::ids::ActionId {
@@ -1218,8 +1199,7 @@ mod tests {
         session::{
             CaptureRef, CaptureTarget, CaptureType, GhostBudgetState, GhostState,
             GhostSuggestionRecord, GraphStorageMode, SessionFile, Snapshot, SourceGraphRef,
-            SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
-            W30PreviewModeState,
+            SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
