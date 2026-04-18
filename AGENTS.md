@@ -36,9 +36,12 @@ Read these before making structural changes:
 6. `docs/specs/session_file_spec.md`
 7. `docs/specs/action_lexicon_spec.md`
 8. `docs/specs/audio_core_spec.md`
-9. `docs/specs/tui_screen_spec.md`
-10. `docs/specs/ghost_api_spec.md`
-11. `docs/specs/preset_style_spec.md`
+9. `docs/specs/validation_benchmark_spec.md`
+10. `docs/specs/fixture_corpus_spec.md`
+11. `docs/specs/audio_qa_workflow_spec.md`
+12. `docs/specs/tui_screen_spec.md`
+13. `docs/specs/ghost_api_spec.md`
+14. `docs/specs/preset_style_spec.md`
 
 Strategic context lives in:
 
@@ -175,6 +178,18 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - missing tests for new behavior
   - workflow/documentation gaps introduced by the slice
 - If the review finds a real issue, fix it on the branch before creating the PR when feasible
+
+### Audio-producing slices
+
+- For audio-producing changes, treat `docs/specs/audio_qa_workflow_spec.md` as an active workflow contract, not only an indexed reference.
+- Use it to decide which current audio QA layers apply to the slice and which ones are still intentionally not operational in the repo yet.
+- Do not claim offline WAV review packs, candidate-vs-baseline audio directories, or formal listening-pack gates unless the slice actually uses a real harness that already exists in the repo.
+- Until the fuller audio QA harnesses land, the minimum expectation for audio-producing slices is:
+  - relevant unit and integration tests
+  - relevant buffer regression coverage when the slice touches an existing audio seam
+  - local manual listening against the real session when the behavior changed materially and can be heard today
+  - explicit notes in the PR or working context when an audio QA layer from the spec is still aspirational rather than operational
+- When the fuller harnesses do land, tighten this rule to use the spec's stronger release gates instead of treating them as future work.
 
 ### Periodic codebase review
 
