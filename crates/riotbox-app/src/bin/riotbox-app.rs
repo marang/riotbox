@@ -13,7 +13,6 @@ use crossterm::{
 use ratatui::{Terminal, backend::CrosstermBackend};
 use riotbox_app::{
     jam_app::{JamAppError, JamAppState},
-    runtime::{DEFAULT_RUNTIME_PULSE_INTERVAL, RuntimePulseSource, RuntimeSignal},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 use riotbox_audio::runtime::AudioRuntimeShell;
@@ -71,13 +70,17 @@ fn run_terminal_ui(
     mode: LaunchMode,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let mut terminal = ManagedTerminal::enter()?;
-    let runtime_pulses = RuntimePulseSource::spawn(DEFAULT_RUNTIME_PULSE_INTERVAL);
     let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states(
         shell.app.runtime.tr909_render.clone(),
         shell.app.runtime.w30_preview.clone(),
         shell.app.runtime.w30_resample_tap.clone(),
     ) {
         Ok(runtime) => {
+            runtime.update_transport_state(
+                shell.app.runtime.transport.is_playing,
+                shell.app.runtime.tr909_render.tempo_bpm,
+                shell.app.runtime.transport.position_beats,
+            );
             shell.app.set_audio_health(runtime.health_snapshot());
             Some(runtime)
         }
@@ -86,13 +89,7 @@ fn run_terminal_ui(
             None
         }
     };
-    run_event_loop(
-        terminal.terminal_mut(),
-        shell,
-        mode,
-        runtime_pulses,
-        audio_runtime.as_mut(),
-    )
+    run_event_loop(terminal.terminal_mut(), shell, mode, audio_runtime.as_mut())
 }
 
 struct ManagedTerminal {
@@ -140,17 +137,23 @@ fn run_event_loop(
     terminal: &mut Terminal<CrosstermBackend<io::Stdout>>,
     mut shell: JamShellState,
     mode: LaunchMode,
-    runtime_pulses: RuntimePulseSource,
     mut audio_runtime: Option<&mut AudioRuntimeShell>,
 ) -> Result<(), Box<dyn std::error::Error>> {
     loop {
-        if let Some(RuntimeSignal::TransportPulse { timestamp_ms }) = runtime_pulses.drain_latest()
-            && !shell.app.apply_runtime_pulse(timestamp_ms).is_empty()
-        {
-            shell.set_error_status("committed queued actions on transport boundary");
-        }
-
         if let Some(audio_runtime) = audio_runtime.as_deref_mut() {
+            if !shell
+                .app
+                .apply_audio_timing_snapshot(audio_runtime.timing_snapshot(), timestamp_now())
+                .is_empty()
+            {
+                shell.set_error_status("committed queued actions on transport boundary");
+            }
+
+            audio_runtime.update_transport_state(
+                shell.app.runtime.transport.is_playing,
+                shell.app.runtime.tr909_render.tempo_bpm,
+                shell.app.runtime.transport.position_beats,
+            );
             audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
             audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
             audio_runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
@@ -167,9 +170,7 @@ fn run_event_loop(
                 ShellKeyOutcome::Continue => {}
                 ShellKeyOutcome::ToggleTransport => {
                     let next_is_playing = !shell.app.runtime.transport.is_playing;
-                    shell
-                        .app
-                        .set_transport_playing_at(next_is_playing, timestamp_now());
+                    shell.app.set_transport_playing(next_is_playing);
                     shell.set_error_status(if next_is_playing {
                         "transport started"
                     } else {
