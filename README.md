@@ -53,6 +53,8 @@ So the quickstart is useful for confirming:
 
 But it is **not** enough on its own to understand the whole shell.
 
+For W-30 capture reuse, the current source-backed path is intentionally bounded: Riotbox can preview short source-window excerpts and marks them with `.../src`, while `.../fallback` means it is using the safe synthetic preview. Use [`Recipe 11`](docs/jam_recipes.md#recipe-11-check-source-backed-w-30-reuse) for the current smoke test. This is not yet a full W-30 sampler engine.
+
 ## What Riotbox Is
 
 Think of Riotbox as a hybrid of:
