@@ -200,7 +200,7 @@ Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 4. press `2` and confirm the scene jump landed
 5. go back to `Jam` with `1`
 6. look for the new restore-ready cue:
-   - `Scene: restore .../<energy> ready | Y brings back .../<energy>`
+   - `Scene: restore .../<energy> ready | rise/drop/hold | Y brings back .../<energy>`
    - `[Y] restore ... now`
 7. press `Y`
 8. press `2` and confirm the restore landed
@@ -209,6 +209,7 @@ What to observe:
 
 - before the first landed jump, `Y` explicitly waits for one landed jump
 - after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
+- when both current and restore energies are known, the cue also names whether restore is an energy `rise`, `drop`, or `hold`
 - `Log` is the clearest place to verify both the queued restore target and the committed restore result
 
 If you want one more short loop:
@@ -277,7 +278,7 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
 5. on `Log`, confirm the scene result and note the `trail ...` cue
 6. press `1`
 7. on `Jam`, confirm the restore-ready cue now appears:
-   - `Scene: restore .../<energy> ready | Y brings back .../<energy>`
+   - `Scene: restore .../<energy> ready | rise/drop/hold | Y brings back .../<energy>`
    - `[Y] restore ... now`
 8. queue restore with `Y`
 9. before restore lands, read the same three `Jam` cues again
@@ -289,6 +290,7 @@ What to observe:
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
 - the restore-ready cue is the positive mirror of the earlier `restore waits for one landed jump` state
+- if Riotbox cannot infer both energy sides, the restore-ready cue falls back to the older target-only shape without `rise/drop/hold`
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 
 What this teaches:
