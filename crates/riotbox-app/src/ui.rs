@@ -2407,10 +2407,34 @@ fn w30_latest_capture_source_window_compact(shell: &JamShellState) -> Option<Str
         .find(|capture| &capture.capture_id == capture_id)?;
     let source_window = capture.source_window.as_ref()?;
 
-    Some(format!(
-        "win {:.2}-{:.2}s {}",
-        source_window.start_seconds, source_window.end_seconds, source_window.source_id
-    ))
+    Some(format_source_window_log_compact(source_window))
+}
+
+fn format_source_window_span(source_window: &riotbox_core::session::CaptureSourceWindow) -> String {
+    format!(
+        "{:.2}-{:.2}s",
+        source_window.start_seconds, source_window.end_seconds
+    )
+}
+
+fn format_source_window_provenance(
+    source_window: &riotbox_core::session::CaptureSourceWindow,
+) -> String {
+    format!(
+        "win {} {}",
+        source_window.source_id,
+        format_source_window_span(source_window)
+    )
+}
+
+fn format_source_window_log_compact(
+    source_window: &riotbox_core::session::CaptureSourceWindow,
+) -> String {
+    format!(
+        "win {} {}",
+        format_source_window_span(source_window),
+        source_window.source_id
+    )
 }
 
 fn current_w30_slice_pool(shell: &JamShellState) -> Vec<&riotbox_core::session::CaptureRef> {
@@ -3393,10 +3417,7 @@ fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ];
 
     if let Some(source_window) = &capture.source_window {
-        lines.push(Line::from(format!(
-            "win {} {:.2}-{:.2}s",
-            source_window.source_id, source_window.start_seconds, source_window.end_seconds
-        )));
+        lines.push(Line::from(format_source_window_provenance(source_window)));
     }
 
     lines
@@ -3439,10 +3460,9 @@ fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
         .map(|capture| {
             if let Some(source_window) = &capture.source_window {
                 return ListItem::new(format!(
-                    "{} | {:.2}-{:.2}s{}",
+                    "{} | {}{}",
                     capture.capture_id,
-                    source_window.start_seconds,
-                    source_window.end_seconds,
+                    format_source_window_span(source_window),
                     if capture.is_pinned { " | pinned" } else { "" }
                 ));
             }
