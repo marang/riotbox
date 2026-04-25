@@ -2498,6 +2498,35 @@ mod tests {
     }
 
     #[test]
+    fn queue_scene_select_prefers_energy_contrast_candidate() {
+        let graph = scene_regression_graph(&[
+            "drop".to_string(),
+            "chorus".to_string(),
+            "intro".to_string(),
+        ]);
+        let mut session = sample_session(&graph);
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-chorus"),
+            SceneId::from("scene-03-intro"),
+        ];
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-drop"));
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.jam_view.scene.next_scene.as_deref(),
+            Some("scene-03-intro")
+        );
+        assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+        assert_eq!(
+            state.queue.pending_actions()[0].target.scene_id,
+            Some(SceneId::from("scene-03-intro"))
+        );
+    }
+
+    #[test]
     fn committed_scene_select_updates_transport_and_scene_state() {
         let mut graph = sample_graph();
         graph.sections.push(Section {

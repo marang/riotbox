@@ -2,6 +2,7 @@ use riotbox_core::{
     TimestampMs,
     action::{ActionCommand, ActionDraft, ActionParams, ActorType, Quantization, TargetScope},
     ids::SceneId,
+    view::jam::next_scene_launch_candidate,
 };
 
 use super::{JamAppState, QueueControlResult};
@@ -43,34 +44,7 @@ impl JamAppState {
     }
 
     fn next_scene_candidate(&self) -> Option<SceneId> {
-        let scenes = &self.session.runtime_state.scene_state.scenes;
-        let current_scene = self
-            .session
-            .runtime_state
-            .scene_state
-            .active_scene
-            .clone()
-            .or_else(|| self.session.runtime_state.transport.current_scene.clone());
-
-        if scenes.is_empty() {
-            return None;
-        }
-
-        let candidate = current_scene
-            .as_ref()
-            .and_then(|current_scene| {
-                scenes
-                    .iter()
-                    .position(|scene_id| scene_id == current_scene)
-                    .map(|index| scenes[(index + 1) % scenes.len()].clone())
-            })
-            .or_else(|| scenes.first().cloned())?;
-
-        if scenes.len() <= 1 && current_scene.as_ref() == Some(&candidate) {
-            return None;
-        }
-
-        Some(candidate)
+        next_scene_launch_candidate(&self.session, self.source_graph.as_ref()).cloned()
     }
 
     fn restorable_scene_target(&self) -> Option<SceneId> {

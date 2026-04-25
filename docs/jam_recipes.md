@@ -80,6 +80,7 @@ What to observe:
 - each lane has a different feel
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
+- if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
 - if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
 
 ## Recipe 3: Capture And Reuse
@@ -215,6 +216,7 @@ What to observe:
 - before the first landed jump, `Y` explicitly waits for one landed jump
 - after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
 - when both current and restore energies are known, the cue also names whether restore is an energy `rise`, `drop`, or `hold`
+- when launch energy is known, Riotbox may choose the next contrast scene rather than the immediately adjacent same-energy scene
 - if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`; if it knows there are too few scenes, it says `[y] jump waits for 2 scenes`
 - `Log` is the clearest place to verify both the queued restore target and the committed restore result
 

@@ -81,8 +81,9 @@ It must expose:
 - recent committed actions
 - key confidence or warning signals
 - a compact timing rail for the next queued live gesture
-- suggested Scene launch gestures that may name the deterministic next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
+- suggested Scene launch gestures that may name the next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
 - Scene jump availability should come from the shared Jam view model, not be re-inferred separately by individual TUI surfaces
+- when section energy is known, the shared Scene launch target may prefer the first deterministic contrast candidate over the immediately adjacent same-energy scene
 - restore-ready Scene cues that name the target and, when known, whether restore is an energy `rise`, `drop`, or `hold`
 
 ### 5.1 Jam goals

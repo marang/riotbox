@@ -276,7 +276,7 @@ impl JamViewModel {
             warnings.push("transport idle".into());
         }
 
-        let next_scene = next_scene_candidate(session).map(ToString::to_string);
+        let next_scene = next_scene_launch_candidate(session, graph).map(ToString::to_string);
         let scene_jump_availability =
             scene_jump_availability(session, next_scene.as_deref().is_some());
         let next_scene_energy = graph
@@ -538,7 +538,10 @@ fn scene_jump_availability(
     SceneJumpAvailabilityView::Unknown
 }
 
-fn next_scene_candidate(session: &SessionFile) -> Option<&crate::ids::SceneId> {
+pub fn next_scene_launch_candidate<'a>(
+    session: &'a SessionFile,
+    graph: Option<&SourceGraph>,
+) -> Option<&'a crate::ids::SceneId> {
     let scenes = &session.runtime_state.scene_state.scenes;
     if scenes.is_empty() {
         return None;
@@ -551,20 +554,47 @@ fn next_scene_candidate(session: &SessionFile) -> Option<&crate::ids::SceneId> {
         .as_ref()
         .or(session.runtime_state.transport.current_scene.as_ref());
 
-    let candidate = current_scene
-        .and_then(|current_scene| {
-            scenes
-                .iter()
-                .position(|scene_id| scene_id == current_scene)
-                .map(|index| &scenes[(index + 1) % scenes.len()])
-        })
-        .or_else(|| scenes.first())?;
+    let candidates = ordered_next_scene_candidates(scenes, current_scene);
+    let candidate = *candidates.first()?;
 
     if scenes.len() <= 1 && current_scene == Some(candidate) {
         return None;
     }
 
+    let Some(graph) = graph else {
+        return Some(candidate);
+    };
+    let Some(current_energy) =
+        current_scene.and_then(|scene_id| known_scene_energy_label(scene_id.as_str(), graph))
+    else {
+        return Some(candidate);
+    };
+
+    if let Some(contrast_candidate) = candidates.iter().copied().find(|candidate| {
+        known_scene_energy_label(candidate.as_str(), graph)
+            .is_some_and(|candidate_energy| candidate_energy != current_energy)
+    }) {
+        return Some(contrast_candidate);
+    }
+
     Some(candidate)
+}
+
+fn ordered_next_scene_candidates<'a>(
+    scenes: &'a [crate::ids::SceneId],
+    current_scene: Option<&crate::ids::SceneId>,
+) -> Vec<&'a crate::ids::SceneId> {
+    let start_index = current_scene
+        .and_then(|current_scene| scenes.iter().position(|scene_id| scene_id == current_scene))
+        .map_or(0, |index| (index + 1) % scenes.len());
+
+    (0..scenes.len())
+        .map(|offset| &scenes[(start_index + offset) % scenes.len()])
+        .collect()
+}
+
+fn known_scene_energy_label(scene_id: &str, graph: &SourceGraph) -> Option<String> {
+    projected_scene_energy_label(Some(scene_id), false, graph).filter(|energy| energy != "unknown")
 }
 
 fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
@@ -1266,6 +1296,91 @@ mod tests {
             SceneJumpAvailabilityView::WaitingForMoreScenes
         );
         assert_eq!(vm.scene.next_scene_energy, None);
+    }
+
+    #[test]
+    fn prefers_contrast_next_scene_when_energy_data_is_available() {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: "src-1".into(),
+                path: "audio/test.wav".into(),
+                content_hash: "graph-1".into(),
+                duration_seconds: 48.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "0.1.0".into(),
+                provider_set: vec!["beat".into(), "section".into()],
+                generated_at: "2026-04-25T00:00:00Z".into(),
+                source_hash: "graph-1".into(),
+                analysis_seed: 7,
+                run_notes: Some("scene-contrast-test".into()),
+            },
+        );
+        graph.sections.push(crate::source_graph::Section {
+            section_id: "sec-a".into(),
+            label_hint: crate::source_graph::SectionLabelHint::Drop,
+            start_seconds: 0.0,
+            end_seconds: 16.0,
+            bar_start: 1,
+            bar_end: 8,
+            energy_class: crate::source_graph::EnergyClass::High,
+            confidence: 0.9,
+            tags: vec![],
+        });
+        graph.sections.push(crate::source_graph::Section {
+            section_id: "sec-b".into(),
+            label_hint: crate::source_graph::SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 32.0,
+            bar_start: 9,
+            bar_end: 16,
+            energy_class: crate::source_graph::EnergyClass::High,
+            confidence: 0.9,
+            tags: vec![],
+        });
+        graph.sections.push(crate::source_graph::Section {
+            section_id: "sec-c".into(),
+            label_hint: crate::source_graph::SectionLabelHint::Intro,
+            start_seconds: 32.0,
+            end_seconds: 48.0,
+            bar_start: 17,
+            bar_end: 24,
+            energy_class: crate::source_graph::EnergyClass::Medium,
+            confidence: 0.9,
+            tags: vec![],
+        });
+
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-25T00:00:00Z");
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+            SceneId::from("scene-03-intro"),
+        ];
+
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+        assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-03-intro"));
+        assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
+        assert_eq!(
+            next_scene_launch_candidate(&session, Some(&graph)).map(ToString::to_string),
+            Some("scene-03-intro".into())
+        );
+
+        let mut graph_with_unknown_current_energy = graph.clone();
+        graph_with_unknown_current_energy.sections[0].energy_class =
+            crate::source_graph::EnergyClass::Unknown;
+        let vm = JamViewModel::build(
+            &session,
+            &ActionQueue::new(),
+            Some(&graph_with_unknown_current_energy),
+        );
+
+        assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-02-break"));
     }
 
     #[derive(Debug, Deserialize)]
