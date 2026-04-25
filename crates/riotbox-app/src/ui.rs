@@ -2116,7 +2116,7 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             "cue {} | {recent_label}",
             w30_pending_cue_label(shell)
         )),
-        Line::from(format!("prev {}", w30_preview_mode_profile_compact(shell))),
+        Line::from(format!("prev {}", w30_preview_log_compact(shell))),
         Line::from(if lineage_active {
             format!("tapmix {}", w30_resample_mix_log_compact(shell))
         } else {
@@ -2143,23 +2143,63 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
-    format!(
-        "{}/{}",
-        match shell.app.runtime.w30_preview.mode {
-            W30PreviewRenderMode::Idle => "idle",
-            W30PreviewRenderMode::LiveRecall => "recall",
-            W30PreviewRenderMode::RawCaptureAudition => "audition raw",
-            W30PreviewRenderMode::PromotedAudition => "audition",
-        },
-        match shell.app.runtime.w30_preview.source_profile {
-            None => "unset",
-            Some(riotbox_audio::w30::W30PreviewSourceProfile::PinnedRecall) => "pinned",
-            Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall) => "promoted",
-            Some(riotbox_audio::w30::W30PreviewSourceProfile::SlicePoolBrowse) => "browse",
-            Some(riotbox_audio::w30::W30PreviewSourceProfile::RawCaptureAudition) => "raw",
-            Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition) => "audition",
-        }
-    )
+    let render = &shell.app.runtime.w30_preview;
+    let mode = match render.mode {
+        W30PreviewRenderMode::Idle => "idle",
+        W30PreviewRenderMode::LiveRecall => "recall",
+        W30PreviewRenderMode::RawCaptureAudition => "audition raw",
+        W30PreviewRenderMode::PromotedAudition => "audition",
+    };
+    let profile = match render.source_profile {
+        None => "unset",
+        Some(riotbox_audio::w30::W30PreviewSourceProfile::PinnedRecall) => "pinned",
+        Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall) => "promoted",
+        Some(riotbox_audio::w30::W30PreviewSourceProfile::SlicePoolBrowse) => "browse",
+        Some(riotbox_audio::w30::W30PreviewSourceProfile::RawCaptureAudition) => "raw",
+        Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition) => "audition",
+    };
+
+    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
+        return format!(
+            "{mode}/{}",
+            if render.source_window_preview.is_some() {
+                "src"
+            } else {
+                "fallback"
+            }
+        );
+    }
+
+    format!("{mode}/{profile}")
+}
+
+fn w30_preview_log_compact(shell: &JamShellState) -> String {
+    let render = &shell.app.runtime.w30_preview;
+    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
+        return format!(
+            "raw/{}",
+            if render.source_window_preview.is_some() {
+                "src"
+            } else {
+                "fallback"
+            }
+        );
+    }
+
+    w30_preview_mode_profile_compact(shell)
+}
+
+fn w30_preview_source_readiness(shell: &JamShellState) -> Option<&'static str> {
+    let render = &shell.app.runtime.w30_preview;
+    if !matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
+        return None;
+    }
+
+    if render.source_window_preview.is_some() {
+        Some("preview source-backed")
+    } else {
+        Some("preview fallback")
+    }
 }
 
 fn w30_target_compact(shell: &JamShellState) -> String {
@@ -3363,10 +3403,18 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let mut lines = vec![
         Line::from(format!("pending W-30 cue {pending_w30}")),
         Line::from(bank_or_pool_line),
-        Line::from(format!(
-            "preview {} | {}",
-            shell.app.runtime_view.w30_preview_mode, shell.app.runtime_view.w30_preview_mix_summary,
-        )),
+        Line::from({
+            let mut line = format!(
+                "preview {} | {}",
+                shell.app.runtime_view.w30_preview_mode,
+                shell.app.runtime_view.w30_preview_mix_summary,
+            );
+            if let Some(readiness) = w30_preview_source_readiness(shell) {
+                line.push_str(" | ");
+                line.push_str(readiness);
+            }
+            line
+        }),
         Line::from(format!(
             "forge {} | tap {}",
             w30_damage_profile_compact(shell),
@@ -6151,6 +6199,58 @@ mod tests {
         assert!(
             rendered_log.contains("w30.audition_raw_capture"),
             "{rendered_log}"
+        );
+    }
+
+    #[test]
+    fn committed_raw_capture_audition_surfaces_source_fallback_readiness() {
+        let mut shell = sample_shell_without_pending_queue();
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_audition(260),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.app.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            320,
+        );
+        shell.active_screen = ShellScreen::Jam;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("current preview audition"), "{rendered}");
+        assert!(rendered.contains("raw/fallback"), "{rendered}");
+
+        shell.active_screen = ShellScreen::Capture;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+        assert!(rendered.contains("preview fallback"), "{rendered}");
+    }
+
+    #[test]
+    fn source_backed_raw_capture_audition_compact_label_uses_src_cue() {
+        let mut shell = sample_shell_without_pending_queue();
+        shell.app.session.runtime_state.lane_state.w30.preview_mode =
+            Some(riotbox_core::session::W30PreviewModeState::RawCaptureAudition);
+        shell.app.refresh_view();
+        shell.app.runtime.w30_preview.source_window_preview =
+            Some(riotbox_audio::w30::W30PreviewSampleWindow {
+                source_start_frame: 0,
+                source_end_frame: 64,
+                sample_count: 64,
+                samples: [0.0; riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN],
+            });
+
+        assert_eq!(w30_preview_mode_profile_compact(&shell), "audition raw/src");
+        assert_eq!(
+            w30_preview_source_readiness(&shell),
+            Some("preview source-backed")
         );
     }
 
