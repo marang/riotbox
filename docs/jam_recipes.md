@@ -98,6 +98,7 @@ What to observe:
 - Riotbox is not only a mutation shell
 - captured material starts becoming reusable W-30 material
 - `Capture` is where the shell begins to feel sampler-like
+- `Do Next` is the fastest place to read the next capture/promote/hit step
 - `hear ... stored [p]->[w]` means the capture exists but still needs promotion before it is a playable W-30 hit
 - after promotion, `hear ... [w]/[o]` means you can trigger it with `w` or audition it with `o`
 
