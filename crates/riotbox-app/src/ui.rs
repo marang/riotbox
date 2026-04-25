@@ -1716,8 +1716,8 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<String> {
         return None;
     }
 
-    let current_scene = current_scene_compact_label(shell);
-    let restore_scene = compact_scene_label(restore_scene_label(shell).as_str());
+    let current_scene = current_scene_target_compact_label(shell);
+    let restore_scene = restore_scene_target_compact_label(shell);
     let next_step = if command == "scene.launch" {
         "[Y] restore [c] capture"
     } else {
@@ -2667,6 +2667,14 @@ fn current_scene_compact_label(shell: &JamShellState) -> String {
     let scene_id = current_scene_id(shell).unwrap_or_else(|| "none".into());
 
     compact_scene_label(scene_id.as_str())
+}
+
+fn current_scene_target_compact_label(shell: &JamShellState) -> String {
+    let scene = current_scene_compact_label(shell);
+    if let Some(energy) = shell.app.jam_view.scene.active_scene_energy.as_deref() {
+        return format!("{scene}/{}", compact_energy_label(energy));
+    }
+    scene
 }
 
 fn current_scene_id(shell: &JamShellState) -> Option<String> {
@@ -4822,7 +4830,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(
-            rendered.contains("scene break | restore drop"),
+            rendered.contains("scene break/high | restore drop/med"),
             "{rendered}"
         );
         assert!(
@@ -4833,7 +4841,8 @@ mod tests {
             rendered.contains("landed user scene jump | energy rise"),
             "{rendered}"
         );
-        assert!(rendered.contains("next [Y] restore"), "{rendered}");
+        assert!(rendered.contains("next [Y]"), "{rendered}");
+        assert!(rendered.contains("restore [c] capture"), "{rendered}");
         assert!(rendered.contains("[c] capture"), "{rendered}");
     }
 
@@ -4847,7 +4856,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(
-            rendered.contains("scene drop | restore break"),
+            rendered.contains("scene drop/med | restore break/high"),
             "{rendered}"
         );
         assert!(
@@ -4858,7 +4867,8 @@ mod tests {
             rendered.contains("landed user restore | energy drop"),
             "{rendered}"
         );
-        assert!(rendered.contains("next [y] jump"), "{rendered}");
+        assert!(rendered.contains("next [y]"), "{rendered}");
+        assert!(rendered.contains("jump [c] capture"), "{rendered}");
         assert!(rendered.contains("[c] capture"), "{rendered}");
     }
 
