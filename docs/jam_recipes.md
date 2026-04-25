@@ -79,6 +79,7 @@ What to observe:
 
 - each lane has a different feel
 - the first result is easier to compare when you only change one thing per run
+- when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`; otherwise it stays the generic `[y] jump`
 
 ## Recipe 3: Capture And Reuse
 
@@ -194,22 +195,26 @@ Goal: learn the first Scene Brain recovery loop and the contrast between `restor
 Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 
 1. press `Space`
-2. press `y`
-3. before the jump lands, notice that `Y` is still only a wake-up cue, not a ready restore
+2. before pressing anything else, read the suggested jump cue if it is visible:
+   - `[y] jump <scene> (rise/drop/hold)`
+3. press `y`
+4. before the jump lands, notice that `Y` is still only a wake-up cue, not a ready restore
    - `[Y] restore waits for one landed jump`
-4. press `2` and confirm the scene jump landed
-5. go back to `Jam` with `1`
-6. look for the new restore-ready cue:
+5. press `2` and confirm the scene jump landed
+6. go back to `Jam` with `1`
+7. look for the new restore-ready cue:
    - `Scene: restore .../<energy> ready | rise/drop/hold | Y brings back .../<energy>`
    - `[Y] restore ... now`
-7. press `Y`
-8. press `2` and confirm the restore landed
+8. press `Y`
+9. press `2` and confirm the restore landed
 
 What to observe:
 
+- the suggested `y` cue is the pre-queue hint; `launch -> ... @ next ...` is the queued action once you press `y`
 - before the first landed jump, `Y` explicitly waits for one landed jump
 - after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
 - when both current and restore energies are known, the cue also names whether restore is an energy `rise`, `drop`, or `hold`
+- if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`
 - `Log` is the clearest place to verify both the queued restore target and the committed restore result
 
 If you want one more short loop:
@@ -269,27 +274,31 @@ Goal: practice the current Scene Brain readability stack instead of only firing 
 Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(Full).wav` if you want the steadier timing feel.
 
 1. press `Space`
-2. on `Jam`, queue a jump with `y`
-3. before it lands, look for all three of these cues:
+2. on `Jam`, first read the suggested jump gesture:
+   - `[y] jump <scene> (rise/drop/hold)`
+3. queue that jump with `y`
+4. before it lands, look for all three of these cues:
    - `launch -> ... @ next ...`
    - `pulse [..>.] ...`
    - the current `live .../<energy> <> restore .../<energy>` contrast line
-4. press `2` after the jump lands
-5. on `Log`, confirm the scene result and note the `trail ...` cue
-6. press `1`
-7. on `Jam`, confirm the restore-ready cue now appears:
+5. press `2` after the jump lands
+6. on `Log`, confirm the scene result and note the `trail ...` cue
+7. press `1`
+8. on `Jam`, confirm the restore-ready cue now appears:
    - `Scene: restore .../<energy> ready | rise/drop/hold | Y brings back .../<energy>`
    - `[Y] restore ... now`
-8. queue restore with `Y`
-9. before restore lands, read the same three `Jam` cues again
-10. press `2` after restore lands and confirm the new `trail ...` entry
+9. queue restore with `Y`
+10. before restore lands, read the same three `Jam` cues again
+11. press `2` after restore lands and confirm the new `trail ...` entry
 
 What to observe:
 
+- `[y] jump <scene> (rise/drop/hold)` is a suggested next move; it is not yet queued
 - `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
 - the restore-ready cue is the positive mirror of the earlier `restore waits for one landed jump` state
+- if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`
 - if Riotbox cannot infer both energy sides, the restore-ready cue falls back to the older target-only shape without `rise/drop/hold`
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 
