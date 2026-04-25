@@ -1158,9 +1158,7 @@ fn render_w30_preview_buffer(
                 state.last_step = step;
                 if should_trigger_w30_step(render, step) {
                     state.envelope = w30_trigger_envelope(render);
-                    if render.source_window_preview.sample_count > 0
-                        && matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition)
-                    {
+                    if w30_source_window_active(render) {
                         state.source_sample_cursor = 0.0;
                     }
                 }
@@ -1196,9 +1194,7 @@ fn w30_preview_waveform_for_frame(
     state: &mut W30PreviewCallbackState,
     sample_rate: u32,
 ) -> f32 {
-    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition)
-        && render.source_window_preview.sample_count > 0
-    {
+    if w30_source_window_active(render) {
         let sample = w30_source_window_sample(&render.source_window_preview, state);
         let grit = render.grit_level.clamp(0.0, 1.0);
         return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
@@ -1209,6 +1205,11 @@ fn w30_preview_waveform_for_frame(
     state.oscillator_phase =
         (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
     waveform
+}
+
+fn w30_source_window_active(render: &RealtimeW30PreviewRenderState) -> bool {
+    !matches!(render.mode, W30PreviewRenderMode::Idle)
+        && render.source_window_preview.sample_count > 0
 }
 
 fn w30_source_window_sample(
@@ -2642,6 +2643,112 @@ mod tests {
             mode: W30PreviewRenderMode::RawCaptureAudition,
             routing: W30PreviewRenderRouting::MusicBusPreview,
             source_profile: Some(W30PreviewSourceProfile::RawCaptureAudition),
+            trigger_revision: 0,
+            trigger_velocity: 0.0,
+            source_window_preview: RealtimeW30PreviewSampleWindow {
+                source_start_frame: 0,
+                source_end_frame: 64,
+                sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+                samples: positive_samples,
+            },
+            music_bus_level: 0.64,
+            grit_level: 0.0,
+            is_transport_running: true,
+            tempo_bpm: 126.0,
+            position_beats: 0.0,
+        };
+        let negative_render = RealtimeW30PreviewRenderState {
+            source_window_preview: RealtimeW30PreviewSampleWindow {
+                samples: negative_samples,
+                ..base_render.source_window_preview
+            },
+            ..base_render
+        };
+
+        render_w30_preview_buffer(&mut positive, 44_100, 2, &base_render, &mut positive_state);
+        render_w30_preview_buffer(
+            &mut negative,
+            44_100,
+            2,
+            &negative_render,
+            &mut negative_state,
+        );
+
+        assert!(positive.iter().any(|sample| *sample > 0.001));
+        assert!(negative.iter().any(|sample| *sample < -0.001));
+        assert_ne!(positive, negative);
+    }
+
+    #[test]
+    fn w30_promoted_audition_uses_source_window_samples_when_available() {
+        let mut positive_state = W30PreviewCallbackState::default();
+        let mut negative_state = W30PreviewCallbackState::default();
+        let mut positive = [0.0_f32; 512];
+        let mut negative = [0.0_f32; 512];
+        let mut positive_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        let mut negative_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        for index in 0..W30_PREVIEW_SAMPLE_WINDOW_LEN {
+            positive_samples[index] = 0.2 + index as f32 * 0.002;
+            negative_samples[index] = -positive_samples[index];
+        }
+
+        let base_render = RealtimeW30PreviewRenderState {
+            mode: W30PreviewRenderMode::PromotedAudition,
+            routing: W30PreviewRenderRouting::MusicBusPreview,
+            source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
+            trigger_revision: 0,
+            trigger_velocity: 0.0,
+            source_window_preview: RealtimeW30PreviewSampleWindow {
+                source_start_frame: 0,
+                source_end_frame: 64,
+                sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+                samples: positive_samples,
+            },
+            music_bus_level: 0.64,
+            grit_level: 0.0,
+            is_transport_running: true,
+            tempo_bpm: 126.0,
+            position_beats: 0.0,
+        };
+        let negative_render = RealtimeW30PreviewRenderState {
+            source_window_preview: RealtimeW30PreviewSampleWindow {
+                samples: negative_samples,
+                ..base_render.source_window_preview
+            },
+            ..base_render
+        };
+
+        render_w30_preview_buffer(&mut positive, 44_100, 2, &base_render, &mut positive_state);
+        render_w30_preview_buffer(
+            &mut negative,
+            44_100,
+            2,
+            &negative_render,
+            &mut negative_state,
+        );
+
+        assert!(positive.iter().any(|sample| *sample > 0.001));
+        assert!(negative.iter().any(|sample| *sample < -0.001));
+        assert_ne!(positive, negative);
+    }
+
+    #[test]
+    fn w30_live_recall_uses_source_window_samples_when_available() {
+        let mut positive_state = W30PreviewCallbackState::default();
+        let mut negative_state = W30PreviewCallbackState::default();
+        let mut positive = [0.0_f32; 512];
+        let mut negative = [0.0_f32; 512];
+        let mut positive_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        let mut negative_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        for index in 0..W30_PREVIEW_SAMPLE_WINDOW_LEN {
+            positive_samples[index] = 0.2 + index as f32 * 0.002;
+            negative_samples[index] = -positive_samples[index];
+        }
+
+        let base_render = RealtimeW30PreviewRenderState {
+            mode: W30PreviewRenderMode::LiveRecall,
+            routing: W30PreviewRenderRouting::MusicBusPreview,
+            source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
             trigger_revision: 0,
             trigger_velocity: 0.0,
             source_window_preview: RealtimeW30PreviewSampleWindow {

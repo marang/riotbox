@@ -3384,6 +3384,48 @@ mod tests {
     }
 
     #[test]
+    fn promoted_and_recall_w30_previews_project_source_window_preview_samples() {
+        for preview_mode in [
+            W30PreviewModeState::PromotedAudition,
+            W30PreviewModeState::LiveRecall,
+        ] {
+            let tempdir = tempdir().expect("create source audio tempdir");
+            let source_path = tempdir.path().join("source.wav");
+            write_pcm16_wave(&source_path, 48_000, 2, 1.0);
+
+            let mut graph = sample_graph();
+            graph.source.path = source_path.to_string_lossy().into_owned();
+            graph.source.duration_seconds = 1.0;
+            let mut session = sample_session(&graph);
+            session.runtime_state.lane_state.w30.preview_mode = Some(preview_mode);
+            session.captures[0].source_window = Some(CaptureSourceWindow {
+                source_id: graph.source.source_id.clone(),
+                start_seconds: 0.0,
+                end_seconds: 1.0,
+                start_frame: 0,
+                end_frame: 48_000,
+            });
+            let source_audio_cache =
+                SourceAudioCache::load_pcm16_wav(&source_path).expect("load source audio cache");
+            let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+            state.source_audio_cache = Some(source_audio_cache);
+
+            state.refresh_view();
+
+            let preview = state
+                .runtime
+                .w30_preview
+                .source_window_preview
+                .as_ref()
+                .expect("source-window preview");
+            assert_eq!(preview.source_start_frame, 0);
+            assert_eq!(preview.source_end_frame, 48_000);
+            assert_eq!(preview.sample_count, 64);
+            assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
+        }
+    }
+
+    #[test]
     fn queue_w30_trigger_pad_targets_focused_lane_capture_on_next_beat() {
         let graph = sample_graph();
         let session = sample_session(&graph);

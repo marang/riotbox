@@ -194,14 +194,14 @@ The bounded early seam is a non-realtime source-audio cache:
 
 - decode source WAV fixtures before callback use
 - store normalized interleaved `f32` samples with explicit sample rate and channel count
-- expose bounded sample-window access for W-30 raw-capture preview
+- expose bounded sample-window access for source-backed W-30 preview paths
 - project a small fixed-size preview window from `CaptureRef.source_window` into callback-safe W-30 preview state
 - keep cache loading and source-window projection outside the realtime callback
 
 Current limitation:
 
 - the initial cache supports only PCM 16-bit WAV fixture input
-- the current raw-capture audition path uses a bounded preview excerpt, not a full pad-bank sampler engine
+- the current raw, promoted, and recall preview paths use a bounded preview excerpt, not a full pad-bank sampler engine
 - broader codec support and true W-30 sample playback remain separate implementation slices
 
 ---

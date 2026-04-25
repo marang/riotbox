@@ -154,7 +154,7 @@ pub(super) fn build_w30_preview_render_state(
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
-    let source_window_preview = if matches!(mode, W30PreviewRenderMode::RawCaptureAudition) {
+    let source_window_preview = if !matches!(mode, W30PreviewRenderMode::Idle) {
         capture.and_then(|capture| {
             build_w30_source_window_preview(capture, source_graph, source_audio_cache)
         })
