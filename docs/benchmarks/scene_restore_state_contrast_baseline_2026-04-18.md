@@ -58,7 +58,7 @@ Current measured value:
   - `[Y] restore waits for one landed jump`
 - one direct shell read after the first landed jump:
   - `[Y] restore <scene> now`
-  - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
+  - `Scene: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
 
 Judgment:
 

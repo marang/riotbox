@@ -1258,7 +1258,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             render_gesture_items(PRIMARY_GESTURES, " ")
         )));
         if let Some(scene_cue) = footer_scene_affordance_cue(shell) {
-            lines.push(Line::from(format!("Scene cue: {scene_cue}")));
+            lines.push(Line::from(format!("Scene: {scene_cue}")));
         } else {
             lines.push(Line::from(format!(
                 "Advanced: {} | more in ? help",
@@ -1322,11 +1322,11 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
             scene_energy_label_for_scene_id(shell, scene_id.as_str()),
         ) {
             return Some(format!(
-                "{label} {scene} @ {boundary} | {direction} + {tick}, 2 trail"
+                "{label} {scene} @ {boundary} | {direction} {tick} | 2 trail"
             ));
         }
         return Some(format!(
-            "{label} {scene} @ {boundary} | {tick} + energy, 2 trail"
+            "{label} {scene} @ {boundary} | {tick} energy | 2 trail"
         ));
     }
 
@@ -4607,7 +4607,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Scene cue: launch drop @ next bar | rise + [===>], 2 trail"),
+            rendered.contains("Scene: launch drop @ next bar | rise [===>] | 2 trail"),
             "{rendered}"
         );
         assert!(rendered.contains("energy rise"), "{rendered}");
@@ -4658,7 +4658,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("restore intro @ next bar | rise + [===>], 2 trail"),
+            rendered.contains("restore intro @ next bar | rise [===>] | 2 trail"),
             "{rendered}"
         );
     }
@@ -5036,7 +5036,7 @@ mod tests {
 
         assert!(rendered.contains("[Y] restore drop now"), "{rendered}");
         assert!(
-            rendered.contains("Scene cue: restore drop/high ready | Y brings back drop/high"),
+            rendered.contains("Scene: restore drop/high ready | Y brings back drop/high"),
             "{rendered}"
         );
     }

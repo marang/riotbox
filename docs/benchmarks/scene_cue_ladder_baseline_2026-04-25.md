@@ -59,7 +59,7 @@ Definition for this baseline:
 Current measured path:
 
 - `Jam` footer:
-  - `Scene cue: launch <scene> @ next bar | <rise|drop|hold> + [===>], 2 trail`
+  - `Scene: launch <scene> @ next bar | <rise|drop|hold> [===>] | 2 trail`
 - `Help` overlay:
   - `Scene timing`
   - `<launch|restore> <scene>: lands at next bar`
@@ -87,7 +87,7 @@ Current measured path:
 - before a landed jump:
   - `[Y] restore waits for one landed jump`
 - after a landed jump:
-  - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
+  - `Scene: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
 
 Judgment:
 
@@ -107,7 +107,7 @@ Definition for this baseline:
 Current measured path:
 
 - queued restore footer:
-  - `Scene cue: restore <scene> @ next bar | <rise|drop|hold> + [===>], 2 trail`
+  - `Scene: restore <scene> @ next bar | <rise|drop|hold> [===>] | 2 trail`
 - post-landed `Jam` cue:
   - `changed: scene <scene>/<energy> | next [y] jump [c] capture`
 - `Log` trail:

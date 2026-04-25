@@ -59,7 +59,7 @@ Current measured value:
 
 - zero screen switches
 - one direct shell read in `Jam` footer:
-  - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
+  - `Scene: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
 - optional one help overlay open:
   - `Scene restore`
   - `Y is live now for <scene>/<energy>`
@@ -87,7 +87,7 @@ Current measured value:
   - `[Y] restore waits for one landed jump`
 - after first landed jump:
   - `[Y] restore <scene> now`
-  - `Scene cue: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
+  - `Scene: restore <scene>/<energy> ready | Y brings back <scene>/<energy>`
 
 Judgment:
 
