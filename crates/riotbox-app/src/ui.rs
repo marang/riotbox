@@ -3063,7 +3063,7 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             "pinned {} | promoted {}",
             capture.pinned_capture_count, capture.promoted_capture_count
         )),
-        Line::from(format!("unassigned {}", capture.unassigned_capture_count)),
+        Line::from(format!("hear {}", capture_heard_path_label(shell))),
         Line::from(format!(
             "latest {}",
             capture.last_capture_id.as_deref().unwrap_or("none")
@@ -3301,6 +3301,24 @@ fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     lines.push(Line::from(format!("latest promoted {latest_promoted}")));
     lines
+}
+
+fn capture_heard_path_label(shell: &JamShellState) -> String {
+    let capture = &shell.app.jam_view.capture;
+    let Some(last_capture_id) = capture.last_capture_id.as_deref() else {
+        return "[c] first, then [p]->[w]".into();
+    };
+
+    match capture.last_capture_target.as_deref() {
+        Some(target) if target.starts_with("pad ") => {
+            format!("{last_capture_id}->{target} [w]/[o]")
+        }
+        Some(target) if target.starts_with("scene ") => {
+            format!("{last_capture_id}->{target} ready")
+        }
+        Some(target) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
+        _ => format!("{last_capture_id} stored [p]->[w]"),
+    }
 }
 
 fn latest_w30_promoted_capture_label(shell: &JamShellState) -> String {
@@ -5827,6 +5845,10 @@ mod tests {
         assert!(rendered.contains("no pinned captures yet"));
         assert!(rendered.contains("pending W-30 cue idle"));
         assert!(
+            rendered.contains("hear cap-01 stored [p]->[w]"),
+            "{rendered}"
+        );
+        assert!(
             rendered.contains("forge idle | tap ready/raw"),
             "{rendered}"
         );
@@ -6322,8 +6344,25 @@ mod tests {
 
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("audition"));
+        assert!(rendered.contains("[w]/[o]"), "{rendered}");
         assert!(rendered.contains("latest promoted"));
         assert!(rendered.contains("cap-01"));
+    }
+
+    #[test]
+    fn renders_capture_heard_path_for_scene_targets_without_w30_audition_keys() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::Scene("drop-1".into()));
+        shell.app.refresh_view();
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("hear cap-01->scene drop-1 ready"),
+            "{rendered}"
+        );
     }
 
     #[test]
