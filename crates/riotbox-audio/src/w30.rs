@@ -1,3 +1,5 @@
+pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 64;
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum W30PreviewRenderMode {
     Idle,
@@ -116,11 +118,20 @@ pub struct W30PreviewRenderState {
     pub capture_id: Option<String>,
     pub trigger_revision: u64,
     pub trigger_velocity: f32,
+    pub source_window_preview: Option<W30PreviewSampleWindow>,
     pub music_bus_level: f32,
     pub grit_level: f32,
     pub is_transport_running: bool,
     pub tempo_bpm: f32,
     pub position_beats: f64,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct W30PreviewSampleWindow {
+    pub source_start_frame: u64,
+    pub source_end_frame: u64,
+    pub sample_count: usize,
+    pub samples: [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
 }
 
 impl Default for W30PreviewRenderState {
@@ -134,6 +145,7 @@ impl Default for W30PreviewRenderState {
             capture_id: None,
             trigger_revision: 0,
             trigger_velocity: 0.0,
+            source_window_preview: None,
             music_bus_level: 0.0,
             grit_level: 0.0,
             is_transport_running: false,
@@ -192,6 +204,7 @@ mod tests {
         assert_eq!(state.capture_id, None);
         assert_eq!(state.trigger_revision, 0);
         assert_eq!(state.trigger_velocity, 0.0);
+        assert_eq!(state.source_window_preview, None);
         assert!(!state.is_transport_running);
     }
 

@@ -13,8 +13,9 @@ use crate::tr909::{
     Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
 };
 use crate::w30::{
-    W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSourceProfile,
-    W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+    W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
+    W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode,
+    W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
 };
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 
@@ -624,11 +625,31 @@ struct RealtimeW30PreviewRenderState {
     source_profile: Option<W30PreviewSourceProfile>,
     trigger_revision: u64,
     trigger_velocity: f32,
+    source_window_preview: RealtimeW30PreviewSampleWindow,
     music_bus_level: f32,
     grit_level: f32,
     is_transport_running: bool,
     tempo_bpm: f32,
     position_beats: f64,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct RealtimeW30PreviewSampleWindow {
+    source_start_frame: u64,
+    source_end_frame: u64,
+    sample_count: usize,
+    samples: [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
+}
+
+impl Default for RealtimeW30PreviewSampleWindow {
+    fn default() -> Self {
+        Self {
+            source_start_frame: 0,
+            source_end_frame: 0,
+            sample_count: 0,
+            samples: [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN],
+        }
+    }
 }
 
 struct SharedW30PreviewRenderState {
@@ -637,6 +658,10 @@ struct SharedW30PreviewRenderState {
     source_profile: AtomicU32,
     trigger_revision: AtomicU64,
     trigger_velocity_bits: AtomicU32,
+    source_start_frame: AtomicU64,
+    source_end_frame: AtomicU64,
+    source_sample_count: AtomicU32,
+    source_samples: [AtomicU32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
     music_bus_level_bits: AtomicU32,
     grit_level_bits: AtomicU32,
     is_transport_running: AtomicBool,
@@ -652,6 +677,10 @@ impl SharedW30PreviewRenderState {
             source_profile: AtomicU32::new(0),
             trigger_revision: AtomicU64::new(0),
             trigger_velocity_bits: AtomicU32::new(0),
+            source_start_frame: AtomicU64::new(0),
+            source_end_frame: AtomicU64::new(0),
+            source_sample_count: AtomicU32::new(0),
+            source_samples: std::array::from_fn(|_| AtomicU32::new(0.0_f32.to_bits())),
             music_bus_level_bits: AtomicU32::new(0),
             grit_level_bits: AtomicU32::new(0),
             is_transport_running: AtomicBool::new(false),
@@ -675,6 +704,7 @@ impl SharedW30PreviewRenderState {
             .store(render_state.trigger_revision, Ordering::Relaxed);
         self.trigger_velocity_bits
             .store(render_state.trigger_velocity.to_bits(), Ordering::Relaxed);
+        self.update_source_window_preview(render_state.source_window_preview.as_ref());
         self.music_bus_level_bits
             .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
         self.grit_level_bits
@@ -696,11 +726,49 @@ impl SharedW30PreviewRenderState {
             ),
             trigger_revision: self.trigger_revision.load(Ordering::Relaxed),
             trigger_velocity: f32::from_bits(self.trigger_velocity_bits.load(Ordering::Relaxed)),
+            source_window_preview: self.source_window_preview_snapshot(),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             grit_level: f32::from_bits(self.grit_level_bits.load(Ordering::Relaxed)),
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
             position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+        }
+    }
+
+    fn update_source_window_preview(&self, source_window: Option<&W30PreviewSampleWindow>) {
+        if let Some(source_window) = source_window {
+            let sample_count = source_window
+                .sample_count
+                .min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+            self.source_start_frame
+                .store(source_window.source_start_frame, Ordering::Relaxed);
+            self.source_end_frame
+                .store(source_window.source_end_frame, Ordering::Relaxed);
+            for (index, sample) in source_window.samples.iter().copied().enumerate() {
+                self.source_samples[index].store(sample.to_bits(), Ordering::Relaxed);
+            }
+            self.source_sample_count
+                .store(sample_count as u32, Ordering::Relaxed);
+        } else {
+            self.source_sample_count.store(0, Ordering::Relaxed);
+            self.source_start_frame.store(0, Ordering::Relaxed);
+            self.source_end_frame.store(0, Ordering::Relaxed);
+        }
+    }
+
+    fn source_window_preview_snapshot(&self) -> RealtimeW30PreviewSampleWindow {
+        let sample_count = (self.source_sample_count.load(Ordering::Relaxed) as usize)
+            .min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+        let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        for (index, sample) in samples.iter_mut().enumerate() {
+            *sample = f32::from_bits(self.source_samples[index].load(Ordering::Relaxed));
+        }
+
+        RealtimeW30PreviewSampleWindow {
+            source_start_frame: self.source_start_frame.load(Ordering::Relaxed),
+            source_end_frame: self.source_end_frame.load(Ordering::Relaxed),
+            sample_count,
+            samples,
         }
     }
 }
@@ -862,6 +930,8 @@ struct W30PreviewCallbackState {
     beat_position: f64,
     oscillator_phase: f32,
     lfo_phase: f32,
+    source_sample_cursor: f32,
+    last_source_window_signature: u64,
     envelope: f32,
     last_step: i64,
     last_trigger_revision: u64,
@@ -1053,8 +1123,16 @@ fn render_w30_preview_buffer(
         state.last_step = w30_current_step(render.position_beats, render);
         state.oscillator_phase = 0.0;
         state.lfo_phase = 0.0;
+        state.source_sample_cursor = 0.0;
+        state.last_source_window_signature = w30_source_window_signature(render);
         state.last_trigger_revision = render.trigger_revision;
         state.was_active = true;
+    }
+
+    let source_window_signature = w30_source_window_signature(render);
+    if source_window_signature != state.last_source_window_signature {
+        state.last_source_window_signature = source_window_signature;
+        state.source_sample_cursor = 0.0;
     }
 
     if render.trigger_revision > state.last_trigger_revision {
@@ -1080,24 +1158,26 @@ fn render_w30_preview_buffer(
                 state.last_step = step;
                 if should_trigger_w30_step(render, step) {
                     state.envelope = w30_trigger_envelope(render);
+                    if render.source_window_preview.sample_count > 0
+                        && matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition)
+                    {
+                        state.source_sample_cursor = 0.0;
+                    }
                 }
             }
         } else {
             state.envelope = (state.envelope * 0.9998).max(0.35);
         }
 
-        let frequency = w30_preview_frequency(render, state.last_step);
         let tremolo = if transport_running {
             1.0
         } else {
             state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
-        let waveform = w30_preview_waveform(state.oscillator_phase, render.grit_level);
+        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
         let sample =
             waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
-        state.oscillator_phase =
-            (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
         if transport_running {
             state.envelope *= w30_envelope_decay(render);
         }
@@ -1109,6 +1189,49 @@ fn render_w30_preview_buffer(
 
         state.beat_position += beats_per_sample;
     }
+}
+
+fn w30_preview_waveform_for_frame(
+    render: &RealtimeW30PreviewRenderState,
+    state: &mut W30PreviewCallbackState,
+    sample_rate: u32,
+) -> f32 {
+    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition)
+        && render.source_window_preview.sample_count > 0
+    {
+        let sample = w30_source_window_sample(&render.source_window_preview, state);
+        let grit = render.grit_level.clamp(0.0, 1.0);
+        return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
+    }
+
+    let frequency = w30_preview_frequency(render, state.last_step);
+    let waveform = w30_preview_waveform(state.oscillator_phase, render.grit_level);
+    state.oscillator_phase =
+        (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
+    waveform
+}
+
+fn w30_source_window_sample(
+    window: &RealtimeW30PreviewSampleWindow,
+    state: &mut W30PreviewCallbackState,
+) -> f32 {
+    let sample_count = window.sample_count.min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+    if sample_count == 0 {
+        return 0.0;
+    }
+
+    let cursor = state.source_sample_cursor as usize % sample_count;
+    state.source_sample_cursor = (state.source_sample_cursor + 0.5) % sample_count as f32;
+    window.samples[cursor]
+}
+
+fn w30_source_window_signature(render: &RealtimeW30PreviewRenderState) -> u64 {
+    render
+        .source_window_preview
+        .source_start_frame
+        .wrapping_mul(31)
+        .wrapping_add(render.source_window_preview.source_end_frame)
+        .wrapping_add(render.source_window_preview.sample_count as u64)
 }
 
 fn render_w30_resample_tap_buffer(
@@ -2035,6 +2158,7 @@ mod tests {
                 }),
                 trigger_revision: self.trigger_revision,
                 trigger_velocity: self.trigger_velocity,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: self.music_bus_level,
                 grit_level: self.grit_level,
                 is_transport_running: self.is_transport_running,
@@ -2272,6 +2396,7 @@ mod tests {
             capture_id: Some("cap-01".into()),
             trigger_revision: 3,
             trigger_velocity: 0.78,
+            source_window_preview: None,
             music_bus_level: 0.55,
             grit_level: 0.68,
             is_transport_running: true,
@@ -2394,6 +2519,7 @@ mod tests {
                 source_profile: None,
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.4,
                 is_transport_running: true,
@@ -2421,6 +2547,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.4,
                 is_transport_running: true,
@@ -2448,6 +2575,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::RawCaptureAudition),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.58,
                 is_transport_running: true,
@@ -2458,6 +2586,59 @@ mod tests {
         );
 
         assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn w30_raw_capture_audition_uses_source_window_samples_when_available() {
+        let mut positive_state = W30PreviewCallbackState::default();
+        let mut negative_state = W30PreviewCallbackState::default();
+        let mut positive = [0.0_f32; 512];
+        let mut negative = [0.0_f32; 512];
+        let mut positive_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        let mut negative_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        for index in 0..W30_PREVIEW_SAMPLE_WINDOW_LEN {
+            positive_samples[index] = 0.2 + index as f32 * 0.002;
+            negative_samples[index] = -positive_samples[index];
+        }
+
+        let base_render = RealtimeW30PreviewRenderState {
+            mode: W30PreviewRenderMode::RawCaptureAudition,
+            routing: W30PreviewRenderRouting::MusicBusPreview,
+            source_profile: Some(W30PreviewSourceProfile::RawCaptureAudition),
+            trigger_revision: 0,
+            trigger_velocity: 0.0,
+            source_window_preview: RealtimeW30PreviewSampleWindow {
+                source_start_frame: 0,
+                source_end_frame: 64,
+                sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+                samples: positive_samples,
+            },
+            music_bus_level: 0.64,
+            grit_level: 0.0,
+            is_transport_running: true,
+            tempo_bpm: 126.0,
+            position_beats: 0.0,
+        };
+        let negative_render = RealtimeW30PreviewRenderState {
+            source_window_preview: RealtimeW30PreviewSampleWindow {
+                samples: negative_samples,
+                ..base_render.source_window_preview
+            },
+            ..base_render
+        };
+
+        render_w30_preview_buffer(&mut positive, 44_100, 2, &base_render, &mut positive_state);
+        render_w30_preview_buffer(
+            &mut negative,
+            44_100,
+            2,
+            &negative_render,
+            &mut negative_state,
+        );
+
+        assert!(positive.iter().any(|sample| *sample > 0.001));
+        assert!(negative.iter().any(|sample| *sample < -0.001));
+        assert_ne!(positive, negative);
     }
 
     #[test]
@@ -2475,6 +2656,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.0,
                 grit_level: 0.6,
                 is_transport_running: true,
@@ -2504,6 +2686,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.4,
                 is_transport_running: true,
@@ -2523,6 +2706,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.68,
                 is_transport_running: true,
@@ -2562,6 +2746,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.0,
                 is_transport_running: true,
@@ -2581,6 +2766,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::SlicePoolBrowse),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.0,
                 is_transport_running: true,
@@ -2616,6 +2802,7 @@ mod tests {
                 source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
                 trigger_revision: 0,
                 trigger_velocity: 0.0,
+                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
                 music_bus_level: 0.64,
                 grit_level: 0.72,
                 is_transport_running: false,
@@ -2638,6 +2825,7 @@ mod tests {
             source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
             trigger_revision: 0,
             trigger_velocity: 0.0,
+            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
             music_bus_level: 0.64,
             grit_level: 0.45,
             is_transport_running: true,

@@ -1,12 +1,13 @@
 use riotbox_audio::{
+    source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
     },
     w30::{
-        W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState,
+        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
+        W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode,
+        W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
 use riotbox_core::{
@@ -114,6 +115,7 @@ pub(super) fn build_w30_preview_render_state(
     session: &SessionFile,
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
+    source_audio_cache: Option<&SourceAudioCache>,
 ) -> W30PreviewRenderState {
     let w30 = &session.runtime_state.lane_state.w30;
     let has_lane_focus =
@@ -152,6 +154,13 @@ pub(super) fn build_w30_preview_render_state(
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
+    let source_window_preview = if matches!(mode, W30PreviewRenderMode::RawCaptureAudition) {
+        capture.and_then(|capture| {
+            build_w30_source_window_preview(capture, source_graph, source_audio_cache)
+        })
+    } else {
+        None
+    };
 
     W30PreviewRenderState {
         mode,
@@ -167,6 +176,7 @@ pub(super) fn build_w30_preview_render_state(
                 _ => None,
             })
             .unwrap_or(0.0),
+        source_window_preview,
         music_bus_level: session
             .runtime_state
             .mixer_state
@@ -177,6 +187,65 @@ pub(super) fn build_w30_preview_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
     }
+}
+
+fn build_w30_source_window_preview(
+    capture: &riotbox_core::session::CaptureRef,
+    source_graph: Option<&SourceGraph>,
+    source_audio_cache: Option<&SourceAudioCache>,
+) -> Option<W30PreviewSampleWindow> {
+    let source_window = capture.source_window.as_ref()?;
+    let graph = source_graph?;
+    if source_window.source_id != graph.source.source_id {
+        return None;
+    }
+
+    let cache = source_audio_cache?;
+    let start_frame = usize::try_from(source_window.start_frame).unwrap_or(usize::MAX);
+    let end_frame = usize::try_from(source_window.end_frame).unwrap_or(usize::MAX);
+    let frame_count = end_frame.saturating_sub(start_frame);
+    let window = SourceAudioWindow {
+        start_frame,
+        frame_count,
+    };
+    let samples = cache.window_samples(window);
+    source_preview_from_interleaved(
+        samples,
+        usize::from(cache.channel_count),
+        source_window.start_frame,
+        source_window.end_frame,
+    )
+}
+
+fn source_preview_from_interleaved(
+    samples: &[f32],
+    channel_count: usize,
+    source_start_frame: u64,
+    source_end_frame: u64,
+) -> Option<W30PreviewSampleWindow> {
+    let channel_count = channel_count.max(1);
+    let frame_count = samples.len() / channel_count;
+    if frame_count == 0 {
+        return None;
+    }
+
+    let sample_count = frame_count.min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+    let stride = (frame_count / sample_count).max(1);
+    let mut preview = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+
+    for (index, slot) in preview.iter_mut().take(sample_count).enumerate() {
+        let frame_index = (index * stride).min(frame_count - 1);
+        let base = frame_index * channel_count;
+        let sum: f32 = samples[base..base + channel_count].iter().sum();
+        *slot = sum / channel_count as f32;
+    }
+
+    Some(W30PreviewSampleWindow {
+        source_start_frame,
+        source_end_frame,
+        sample_count,
+        samples: preview,
+    })
 }
 
 pub(super) fn build_w30_resample_tap_state(

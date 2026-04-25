@@ -17,6 +17,9 @@ impl JamAppState {
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime_view = JamRuntimeView::build(&AppRuntimeState::default(), &session);
+        let source_audio_cache = source_graph
+            .as_ref()
+            .and_then(|graph| SourceAudioCache::load_pcm16_wav(&graph.source.path).ok());
         let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
@@ -24,6 +27,7 @@ impl JamAppState {
             }),
             session,
             source_graph,
+            source_audio_cache,
             queue,
             runtime: AppRuntimeState {
                 transport,

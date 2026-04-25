@@ -8,6 +8,7 @@ use std::{
 
 use riotbox_audio::{
     runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot},
+    source_audio::SourceAudioCache,
     tr909::Tr909RenderState,
     w30::{W30PreviewRenderState, W30ResampleTapState},
 };
@@ -183,6 +184,7 @@ pub struct JamAppState {
     pub files: Option<JamFileSet>,
     pub session: SessionFile,
     pub source_graph: Option<SourceGraph>,
+    pub source_audio_cache: Option<SourceAudioCache>,
     pub queue: ActionQueue,
     pub runtime: AppRuntimeState,
     pub jam_view: JamViewModel,
@@ -210,6 +212,7 @@ impl JamAppState {
             files: None,
             session,
             source_graph,
+            source_audio_cache: None,
             queue,
             runtime: AppRuntimeState {
                 transport,
@@ -232,6 +235,7 @@ impl JamAppState {
             &self.session,
             &self.runtime.transport,
             self.source_graph.as_ref(),
+            self.source_audio_cache.as_ref(),
         );
         self.runtime.w30_resample_tap =
             build_w30_resample_tap_state(&self.session, &self.runtime.transport);
@@ -1224,6 +1228,7 @@ mod tests {
 
     use riotbox_audio::{
         runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
+        source_audio::SourceAudioCache,
         tr909::{
             Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
             Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
@@ -1246,9 +1251,10 @@ mod tests {
             load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
         },
         session::{
-            CaptureRef, CaptureTarget, CaptureType, GhostBudgetState, GhostState,
-            GhostSuggestionRecord, GraphStorageMode, SessionFile, Snapshot, SourceGraphRef,
-            SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
+            CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, GhostBudgetState,
+            GhostState, GhostSuggestionRecord, GraphStorageMode, SessionFile, Snapshot,
+            SourceGraphRef, SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
+            W30PreviewModeState,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
@@ -3337,6 +3343,44 @@ mod tests {
                 .map(|result| result.summary.as_str()),
             Some("auditioned raw cap-01 on W-30 preview bank-a/pad-01")
         );
+    }
+
+    #[test]
+    fn raw_capture_audition_projects_source_window_preview_samples() {
+        let tempdir = tempdir().expect("create source audio tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        write_pcm16_wave(&source_path, 48_000, 2, 1.0);
+
+        let mut graph = sample_graph();
+        graph.source.path = source_path.to_string_lossy().into_owned();
+        graph.source.duration_seconds = 1.0;
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.w30.preview_mode =
+            Some(W30PreviewModeState::RawCaptureAudition);
+        session.captures[0].source_window = Some(CaptureSourceWindow {
+            source_id: graph.source.source_id.clone(),
+            start_seconds: 0.0,
+            end_seconds: 1.0,
+            start_frame: 0,
+            end_frame: 48_000,
+        });
+        let source_audio_cache =
+            SourceAudioCache::load_pcm16_wav(&source_path).expect("load source audio cache");
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        state.source_audio_cache = Some(source_audio_cache);
+
+        state.refresh_view();
+
+        let preview = state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .as_ref()
+            .expect("source-window preview");
+        assert_eq!(preview.source_start_frame, 0);
+        assert_eq!(preview.source_end_frame, 48_000);
+        assert_eq!(preview.sample_count, 64);
+        assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
     }
 
     #[test]
