@@ -1232,7 +1232,7 @@ mod tests {
         source_audio::SourceAudioCache,
         tr909::{
             Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-            Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+            Tr909SourceSupportContext, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
         },
         w30::{
             W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewSourceProfile,
@@ -2086,6 +2086,7 @@ mod tests {
         assert_eq!(state.runtime_view.tr909_render_mode, "takeover");
         assert_eq!(state.runtime_view.tr909_render_routing, "drum_bus_takeover");
         assert_eq!(state.runtime_view.tr909_render_profile, "controlled_phrase");
+        assert_eq!(state.runtime_view.tr909_render_support_context, "unset");
         assert_eq!(
             state.runtime_view.tr909_render_pattern_ref.as_deref(),
             Some("scene-1-main")
@@ -2691,6 +2692,14 @@ mod tests {
         assert_eq!(
             state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::BreakLift)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::SceneTarget)
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_support_context,
+            "scene_target"
         );
         assert_eq!(
             state.runtime.tr909_render.pattern_adoption,
@@ -5802,6 +5811,14 @@ mod tests {
             state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::DropDrive)
         );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::TransportBar)
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_support_context,
+            "transport_bar"
+        );
 
         session.runtime_state.transport.position_beats = 36.0;
         let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -5813,6 +5830,14 @@ mod tests {
         assert_eq!(
             state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::BreakLift)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::TransportBar)
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_support_context,
+            "transport_bar"
         );
         assert_eq!(
             state.runtime.tr909_render.pattern_adoption,

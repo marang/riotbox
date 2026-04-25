@@ -57,6 +57,22 @@ impl Tr909SourceSupportProfile {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909SourceSupportContext {
+    SceneTarget,
+    TransportBar,
+}
+
+impl Tr909SourceSupportContext {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::SceneTarget => "scene_target",
+            Self::TransportBar => "transport_bar",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Tr909TakeoverRenderProfile {
     ControlledPhrase,
     SceneLock,
@@ -115,6 +131,7 @@ pub struct Tr909RenderState {
     pub mode: Tr909RenderMode,
     pub routing: Tr909RenderRouting,
     pub source_support_profile: Option<Tr909SourceSupportProfile>,
+    pub source_support_context: Option<Tr909SourceSupportContext>,
     pub pattern_ref: Option<String>,
     pub pattern_adoption: Option<Tr909PatternAdoption>,
     pub phrase_variation: Option<Tr909PhraseVariation>,
@@ -133,6 +150,7 @@ impl Default for Tr909RenderState {
             mode: Tr909RenderMode::Idle,
             routing: Tr909RenderRouting::SourceOnly,
             source_support_profile: None,
+            source_support_context: None,
             pattern_ref: None,
             pattern_adoption: None,
             phrase_variation: None,
@@ -151,7 +169,8 @@ impl Default for Tr909RenderState {
 mod tests {
     use super::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
     };
 
     #[test]
@@ -163,6 +182,7 @@ mod tests {
         assert_eq!(state.mode.label(), "idle");
         assert_eq!(state.routing.label(), "source_only");
         assert_eq!(state.source_support_profile, None);
+        assert_eq!(state.source_support_context, None);
         assert_eq!(state.pattern_ref, None);
         assert_eq!(state.pattern_adoption, None);
         assert_eq!(state.phrase_variation, None);
@@ -178,6 +198,14 @@ mod tests {
         );
         assert_eq!(Tr909SourceSupportProfile::BreakLift.label(), "break_lift");
         assert_eq!(Tr909SourceSupportProfile::DropDrive.label(), "drop_drive");
+        assert_eq!(
+            Tr909SourceSupportContext::SceneTarget.label(),
+            "scene_target"
+        );
+        assert_eq!(
+            Tr909SourceSupportContext::TransportBar.label(),
+            "transport_bar"
+        );
         assert_eq!(
             Tr909TakeoverRenderProfile::ControlledPhrase.label(),
             "controlled_phrase"

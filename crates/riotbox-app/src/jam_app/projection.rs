@@ -2,7 +2,8 @@ use riotbox_audio::{
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
     },
     w30::{
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
@@ -16,7 +17,7 @@ use riotbox_core::{
     source_graph::SourceGraph,
     tr909_policy::{
         Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy, Tr909RenderModePolicy,
-        Tr909RenderRoutingPolicy, Tr909SourceSupportProfilePolicy,
+        Tr909RenderRoutingPolicy, Tr909SourceSupportContextPolicy, Tr909SourceSupportProfilePolicy,
         Tr909TakeoverRenderProfilePolicy, derive_tr909_render_policy_with_scene_context,
     },
     transport::TransportClockState,
@@ -47,6 +48,15 @@ fn audio_tr909_source_support_profile(
         Tr909SourceSupportProfilePolicy::SteadyPulse => Tr909SourceSupportProfile::SteadyPulse,
         Tr909SourceSupportProfilePolicy::BreakLift => Tr909SourceSupportProfile::BreakLift,
         Tr909SourceSupportProfilePolicy::DropDrive => Tr909SourceSupportProfile::DropDrive,
+    })
+}
+
+fn audio_tr909_source_support_context(
+    context: Option<Tr909SourceSupportContextPolicy>,
+) -> Option<Tr909SourceSupportContext> {
+    context.map(|context| match context {
+        Tr909SourceSupportContextPolicy::SceneTarget => Tr909SourceSupportContext::SceneTarget,
+        Tr909SourceSupportContextPolicy::TransportBar => Tr909SourceSupportContext::TransportBar,
     })
 }
 
@@ -109,6 +119,7 @@ pub(super) fn build_tr909_render_state(
         mode: audio_tr909_render_mode(policy.mode),
         routing: audio_tr909_render_routing(policy.routing),
         source_support_profile: audio_tr909_source_support_profile(policy.source_support_profile),
+        source_support_context: audio_tr909_source_support_context(policy.source_support_context),
         pattern_ref: tr909.pattern_ref.clone(),
         pattern_adoption: audio_tr909_pattern_adoption(policy.pattern_adoption),
         phrase_variation: audio_tr909_phrase_variation(policy.phrase_variation),

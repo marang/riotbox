@@ -64,6 +64,22 @@ impl Tr909SourceSupportProfilePolicy {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909SourceSupportContextPolicy {
+    SceneTarget,
+    TransportBar,
+}
+
+impl Tr909SourceSupportContextPolicy {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::SceneTarget => "scene_target",
+            Self::TransportBar => "transport_bar",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Tr909TakeoverRenderProfilePolicy {
     ControlledPhrase,
     SceneLock,
@@ -122,6 +138,7 @@ pub struct Tr909RenderPolicyProjection {
     pub mode: Tr909RenderModePolicy,
     pub routing: Tr909RenderRoutingPolicy,
     pub source_support_profile: Option<Tr909SourceSupportProfilePolicy>,
+    pub source_support_context: Option<Tr909SourceSupportContextPolicy>,
     pub takeover_profile: Option<Tr909TakeoverRenderProfilePolicy>,
     pub pattern_adoption: Option<Tr909PatternAdoptionPolicy>,
     pub phrase_variation: Option<Tr909PhraseVariationPolicy>,
@@ -170,9 +187,11 @@ pub fn derive_tr909_render_policy_with_scene_context(
         Tr909RenderModePolicy::Takeover => Tr909RenderRoutingPolicy::DrumBusTakeover,
     };
 
-    let source_support_profile = matches!(mode, Tr909RenderModePolicy::SourceSupport)
-        .then(|| derive_tr909_source_support_profile(source_graph, transport, scene_context))
+    let source_support = matches!(mode, Tr909RenderModePolicy::SourceSupport)
+        .then(|| derive_tr909_source_support(source_graph, transport, scene_context))
         .flatten();
+    let source_support_profile = source_support.map(|support| support.profile);
+    let source_support_context = source_support.map(|support| support.context);
     let takeover_profile = derive_tr909_takeover_render_profile(tr909);
     let pattern_adoption = derive_tr909_pattern_adoption(
         mode,
@@ -192,23 +211,39 @@ pub fn derive_tr909_render_policy_with_scene_context(
         mode,
         routing,
         source_support_profile,
+        source_support_context,
         takeover_profile,
         pattern_adoption,
         phrase_variation,
     }
 }
 
-fn derive_tr909_source_support_profile(
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+struct Tr909SourceSupportPolicy {
+    profile: Tr909SourceSupportProfilePolicy,
+    context: Tr909SourceSupportContextPolicy,
+}
+
+fn derive_tr909_source_support(
     source_graph: Option<&SourceGraph>,
     transport: &TransportClockState,
     scene_context: Option<&SceneId>,
-) -> Option<Tr909SourceSupportProfilePolicy> {
+) -> Option<Tr909SourceSupportPolicy> {
     let graph = source_graph?;
-    let current_section = scene_context
-        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
-        .or_else(|| section_for_transport_bar(graph, transport));
+    let (current_section, context) = scene_context
+        .and_then(|scene_id| {
+            section_for_projected_scene(graph, scene_id)
+                .map(|section| (section, Tr909SourceSupportContextPolicy::SceneTarget))
+        })
+        .or_else(|| {
+            section_for_transport_bar(graph, transport)
+                .map(|section| (section, Tr909SourceSupportContextPolicy::TransportBar))
+        })?;
 
-    current_section.map(source_support_profile_for_section)
+    Some(Tr909SourceSupportPolicy {
+        profile: source_support_profile_for_section(current_section),
+        context,
+    })
 }
 
 fn source_support_profile_for_section(section: &Section) -> Tr909SourceSupportProfilePolicy {
@@ -567,6 +602,10 @@ mod tests {
             Some(Tr909SourceSupportProfilePolicy::BreakLift)
         );
         assert_eq!(
+            policy.source_support_context,
+            Some(Tr909SourceSupportContextPolicy::SceneTarget)
+        );
+        assert_eq!(
             policy.pattern_adoption,
             Some(Tr909PatternAdoptionPolicy::SupportPulse)
         );
@@ -594,6 +633,10 @@ mod tests {
         assert_eq!(
             policy.source_support_profile,
             Some(Tr909SourceSupportProfilePolicy::DropDrive)
+        );
+        assert_eq!(
+            policy.source_support_context,
+            Some(Tr909SourceSupportContextPolicy::TransportBar)
         );
     }
 }

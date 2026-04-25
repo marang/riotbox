@@ -21,6 +21,7 @@ pub struct JamRuntimeView {
     pub tr909_render_mode: String,
     pub tr909_render_routing: String,
     pub tr909_render_profile: String,
+    pub tr909_render_support_context: String,
     pub tr909_render_pattern_ref: Option<String>,
     pub tr909_render_pattern_adoption: String,
     pub tr909_render_phrase_variation: String,
@@ -99,6 +100,10 @@ impl JamRuntimeView {
             tr909_render_mode: runtime.tr909_render.mode.label().into(),
             tr909_render_routing: runtime.tr909_render.routing.label().into(),
             tr909_render_profile: tr909_render_profile_label(&runtime.tr909_render).into(),
+            tr909_render_support_context: runtime
+                .tr909_render
+                .source_support_context
+                .map_or_else(|| "unset".into(), |context| context.label().into()),
             tr909_render_pattern_ref: runtime.tr909_render.pattern_ref.clone(),
             tr909_render_pattern_adoption: runtime
                 .tr909_render
@@ -270,10 +275,23 @@ fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile
         warnings.push("909 source-support render is missing a support profile".into());
     }
 
+    if matches!(render.mode, Tr909RenderMode::SourceSupport)
+        && render.source_support_profile.is_some()
+        && render.source_support_context.is_none()
+    {
+        warnings.push("909 source-support render is missing a support context".into());
+    }
+
     if !matches!(render.mode, Tr909RenderMode::SourceSupport)
         && render.source_support_profile.is_some()
     {
         warnings.push("909 render carries a support profile outside source-support mode".into());
+    }
+
+    if !matches!(render.mode, Tr909RenderMode::SourceSupport)
+        && render.source_support_context.is_some()
+    {
+        warnings.push("909 render carries a support context outside source-support mode".into());
     }
 
     if matches!(

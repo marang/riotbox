@@ -1014,10 +1014,11 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
                 .unwrap_or_else(|| "boundary none".into())
         )),
         Line::from(format!(
-            "render {} via {} | {}",
+            "render {} via {} | {} / {}",
             shell.app.runtime_view.tr909_render_mode,
             shell.app.runtime_view.tr909_render_routing,
-            shell.app.runtime_view.tr909_render_profile
+            shell.app.runtime_view.tr909_render_profile,
+            shell.app.runtime_view.tr909_render_support_context
         )),
         Line::from(format!(
             "{} | {} | {}",
@@ -1674,8 +1675,10 @@ fn tr909_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             tr909_next_line(shell)
         )),
         Line::from(format!(
-            "profile {} | route {}",
-            render.tr909_render_profile, render.tr909_render_routing
+            "profile {} | context {} | route {}",
+            render.tr909_render_profile,
+            render.tr909_render_support_context,
+            render.tr909_render_routing
         )),
         Line::from(format!(
             "{} | {}",
