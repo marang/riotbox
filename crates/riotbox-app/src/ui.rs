@@ -1813,7 +1813,7 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if !shell.app.jam_view.transport.is_playing {
         return vec![
             Line::from("[Space] play"),
-            Line::from("[y] jump  [f] fill"),
+            Line::from(format!("{}  [f] fill", next_scene_jump_suggestion(shell))),
             Line::from("[c] capture"),
         ];
     }
@@ -2844,6 +2844,9 @@ fn next_action_line(shell: &JamShellState) -> String {
 
 fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
     let Some(scene_id) = shell.app.jam_view.scene.next_scene.as_deref() else {
+        if shell.app.jam_view.scene.scene_count <= 1 {
+            return "[y] jump waits for 2 scenes".into();
+        }
         return "[y] jump".into();
     };
 
@@ -5307,6 +5310,30 @@ mod tests {
         );
         assert!(
             rendered.contains("then try: [y] jump intro (hold)"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_jam_shell_with_single_scene_jump_waiting_cue() {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-01-intro")];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+
+        let shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Load,
+        );
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("[y] jump waits for 2 scenes"),
             "{rendered}"
         );
     }
