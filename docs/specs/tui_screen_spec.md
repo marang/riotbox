@@ -139,6 +139,7 @@ MVP rule:
 - the screen must not imply that a stored capture is already heard; if a promotion or audition step is still required, say so directly
 - first-action cues should outrank provenance and routing details on the default Capture surface
 - first-action cues should prefer pending capture or promotion intent over the last committed capture state when a capture-path action is queued
+- pending `Do Next` cues should carry semantic pending emphasis distinct from committed fallback guidance
 - contextual help may point to `Do Next`, `hear ...`, and `Log` confirmation, but should not duplicate the full Capture screen
 
 ---

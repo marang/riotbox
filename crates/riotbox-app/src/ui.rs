@@ -3205,41 +3205,57 @@ fn pending_capture_do_next_lines(
         "capture.now" | "capture.loop" | "capture.bar_group" | "w30.capture_to_pad"
     ) {
         return Some(vec![
-            Line::from(format!("queued [c] capture @ {}", pending.quantization)),
-            Line::from("wait for commit"),
-            Line::from("then [p] promote keeper"),
-            Line::from("[2] confirm capture"),
+            capture_pending_intent_line(format!("queued [c] capture @ {}", pending.quantization)),
+            capture_pending_detail_line("wait for commit"),
+            capture_pending_detail_line("then [p] promote keeper"),
+            capture_pending_detail_line("[2] confirm capture"),
         ]);
     }
 
     if pending.command == "promote.capture_to_pad" {
         return Some(vec![
-            Line::from(format!("queued [p] promote @ {}", pending.quantization)),
-            Line::from("wait, then [w] hit"),
-            Line::from(format!("target {}", pending.target)),
-            Line::from("[2] confirm promotion"),
+            capture_pending_intent_line(format!("queued [p] promote @ {}", pending.quantization)),
+            capture_pending_detail_line("wait, then [w] hit"),
+            capture_pending_detail_line(format!("target {}", pending.target)),
+            capture_pending_detail_line("[2] confirm promotion"),
         ]);
     }
 
     if pending.command == "promote.capture_to_scene" {
         return Some(vec![
-            Line::from(format!("queued scene promote @ {}", pending.quantization)),
-            Line::from("wait for scene target"),
-            Line::from(format!("target {}", pending.target)),
-            Line::from("[2] confirm promotion"),
+            capture_pending_intent_line(format!("queued scene promote @ {}", pending.quantization)),
+            capture_pending_detail_line("wait for scene target"),
+            capture_pending_detail_line(format!("target {}", pending.target)),
+            capture_pending_detail_line("[2] confirm promotion"),
         ]);
     }
 
     if pending.command == "w30.loop_freeze" || pending.command == "promote.resample" {
         return Some(vec![
-            Line::from(format!("queued W-30 reshape @ {}", pending.quantization)),
-            Line::from("wait for phrase seam"),
-            Line::from(format!("target {}", pending.target)),
-            Line::from("[2] confirm result"),
+            capture_pending_intent_line(format!("queued W-30 reshape @ {}", pending.quantization)),
+            capture_pending_detail_line("wait for phrase seam"),
+            capture_pending_detail_line(format!("target {}", pending.target)),
+            capture_pending_detail_line("[2] confirm result"),
         ]);
     }
 
     None
+}
+
+fn capture_pending_intent_line(message: impl Into<String>) -> Line<'static> {
+    Line::from(Span::styled(
+        message.into(),
+        Style::default()
+            .fg(Color::Yellow)
+            .add_modifier(Modifier::BOLD),
+    ))
+}
+
+fn capture_pending_detail_line(message: impl Into<String>) -> Line<'static> {
+    Line::from(Span::styled(
+        message.into(),
+        Style::default().fg(Color::Yellow),
+    ))
 }
 
 fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -4104,6 +4120,28 @@ mod tests {
             "{warning:?}"
         );
         assert_eq!(warning.spans[1].style.fg, Some(Color::Yellow));
+    }
+
+    #[test]
+    fn capture_pending_do_next_styles_define_pending_hierarchy() {
+        let intent = capture_pending_intent_line("queued [c] capture @ next_phrase");
+        assert_eq!(
+            intent.spans[0].content.as_ref(),
+            "queued [c] capture @ next_phrase"
+        );
+        assert_eq!(intent.spans[0].style.fg, Some(Color::Yellow));
+        assert!(
+            intent.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{intent:?}"
+        );
+
+        let detail = capture_pending_detail_line("wait for commit");
+        assert_eq!(detail.spans[0].content.as_ref(), "wait for commit");
+        assert_eq!(detail.spans[0].style.fg, Some(Color::Yellow));
+        assert!(
+            !detail.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{detail:?}"
+        );
     }
 
     #[derive(Debug, Deserialize)]
