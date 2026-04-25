@@ -34,6 +34,8 @@ Current benchmark artifacts:
   First bounded readability baseline for the complete Scene Brain cue ladder across queued, landed, ready, restore, and Log confirmation states.
 - [scene_footer_tick_readability_baseline_2026-04-25.md](./scene_footer_tick_readability_baseline_2026-04-25.md)
   First bounded readability baseline for the compact ASCII timing tick in the queued Scene Brain footer cue.
+- [scene_contrast_launch_baseline_2026-04-25.md](./scene_contrast_launch_baseline_2026-04-25.md)
+  First bounded readability baseline for Scene launch target selection preferring known energy contrast.
 - [jam_footer_color_hierarchy_baseline_2026-04-25.md](./jam_footer_color_hierarchy_baseline_2026-04-25.md)
   First bounded readability baseline for the semantic Jam footer color and emphasis hierarchy.
 - [capture_do_next_readability_baseline_2026-04-25.md](./capture_do_next_readability_baseline_2026-04-25.md)
