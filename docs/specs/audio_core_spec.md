@@ -186,6 +186,22 @@ Rules:
 - capture timing must be aligned with transport
 - capture events must be visible to session and action systems
 
+### 11.1 Source audio cache seam
+
+Raw capture playback must not read or decode files from the realtime callback.
+
+The bounded early seam is a non-realtime source-audio cache:
+
+- decode source WAV fixtures before callback use
+- store normalized interleaved `f32` samples with explicit sample rate and channel count
+- expose bounded sample-window access for later W-30 raw-capture preview
+- keep cache loading separate from W-30 preview rendering until a later slice wires playback intentionally
+
+Current limitation:
+
+- the initial cache supports only PCM 16-bit WAV fixture input
+- broader codec support and true W-30 sample playback remain separate implementation slices
+
 ---
 
 ## 12. Health Telemetry
