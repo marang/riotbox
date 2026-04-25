@@ -56,15 +56,21 @@ impl JamAppState {
             return None;
         }
 
-        if let Some(current_scene) = current_scene
-            && let Some(index) = scenes
-                .iter()
-                .position(|scene_id| *scene_id == current_scene)
-        {
-            return Some(scenes[(index + 1) % scenes.len()].clone());
+        let candidate = current_scene
+            .as_ref()
+            .and_then(|current_scene| {
+                scenes
+                    .iter()
+                    .position(|scene_id| scene_id == current_scene)
+                    .map(|index| scenes[(index + 1) % scenes.len()].clone())
+            })
+            .or_else(|| scenes.first().cloned())?;
+
+        if scenes.len() <= 1 && current_scene.as_ref() == Some(&candidate) {
+            return None;
         }
 
-        scenes.first().cloned()
+        Some(candidate)
     }
 
     fn restorable_scene_target(&self) -> Option<SceneId> {
@@ -92,19 +98,6 @@ impl JamAppState {
         let Some(scene_id) = self.next_scene_candidate() else {
             return QueueControlResult::AlreadyInState;
         };
-
-        let current_scene = self
-            .session
-            .runtime_state
-            .scene_state
-            .active_scene
-            .clone()
-            .or_else(|| self.session.runtime_state.transport.current_scene.clone());
-        if current_scene.as_ref() == Some(&scene_id)
-            && self.session.runtime_state.scene_state.scenes.len() <= 1
-        {
-            return QueueControlResult::AlreadyInState;
-        }
 
         let mut draft = ActionDraft::new(
             ActorType::User,

@@ -1264,6 +1264,7 @@ mod tests {
             SourceGraphVersion,
         },
         transport::TransportClockState,
+        view::jam::SceneJumpAvailabilityView,
     };
     use riotbox_sidecar::client::ClientError as SidecarClientError;
 
@@ -2477,6 +2478,23 @@ mod tests {
                 scene_id: Some(SceneId::from("scene-02-break"))
             }
         );
+    }
+
+    #[test]
+    fn queue_scene_select_rejects_single_current_scene_without_pending_action() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.jam_view.scene.scene_jump_availability,
+            SceneJumpAvailabilityView::WaitingForMoreScenes
+        );
+        assert_eq!(
+            state.queue_scene_select(300),
+            QueueControlResult::AlreadyInState
+        );
+        assert!(state.queue.pending_actions().is_empty());
     }
 
     #[test]
