@@ -276,6 +276,10 @@ impl JamViewModel {
             warnings.push("transport idle".into());
         }
 
+        let next_scene = next_scene_candidate(session).map(ToString::to_string);
+        let next_scene_energy = graph
+            .and_then(|graph| projected_scene_energy_label(next_scene.as_deref(), false, graph));
+
         Self {
             transport: JamTransportView {
                 is_playing: session.transport().is_playing,
@@ -295,10 +299,12 @@ impl JamViewModel {
                     .restore_scene
                     .as_ref()
                     .map(ToString::to_string),
+                next_scene,
                 active_scene_energy: graph
                     .and_then(|graph| current_scene_energy_label(session, graph)),
                 restore_scene_energy: graph
                     .and_then(|graph| restore_scene_energy_label(session, graph)),
+                next_scene_energy,
                 scene_count: session.runtime_state.scene_state.scenes.len(),
             },
             macros: MacroStripView {
@@ -499,9 +505,40 @@ pub struct SourceSummaryView {
 pub struct SceneSummaryView {
     pub active_scene: Option<String>,
     pub restore_scene: Option<String>,
+    pub next_scene: Option<String>,
     pub active_scene_energy: Option<String>,
     pub restore_scene_energy: Option<String>,
+    pub next_scene_energy: Option<String>,
     pub scene_count: usize,
+}
+
+fn next_scene_candidate(session: &SessionFile) -> Option<&crate::ids::SceneId> {
+    let scenes = &session.runtime_state.scene_state.scenes;
+    if scenes.is_empty() {
+        return None;
+    }
+
+    let current_scene = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(session.runtime_state.transport.current_scene.as_ref());
+
+    let candidate = current_scene
+        .and_then(|current_scene| {
+            scenes
+                .iter()
+                .position(|scene_id| scene_id == current_scene)
+                .map(|index| &scenes[(index + 1) % scenes.len()])
+        })
+        .or_else(|| scenes.first())?;
+
+    if scenes.len() <= 1 && current_scene == Some(candidate) {
+        return None;
+    }
+
+    Some(candidate)
 }
 
 fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
@@ -1178,8 +1215,19 @@ mod tests {
 
         assert_eq!(vm.scene.active_scene.as_deref(), Some("scene-02-drop"));
         assert_eq!(vm.scene.restore_scene.as_deref(), Some("scene-01-intro"));
+        assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-01-intro"));
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.scene.restore_scene_energy.as_deref(), Some("medium"));
+        assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
+
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-01-intro")];
+
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+        assert_eq!(vm.scene.next_scene, None);
+        assert_eq!(vm.scene.next_scene_energy, None);
     }
 
     #[derive(Debug, Deserialize)]

@@ -2449,6 +2449,14 @@ mod tests {
         session.runtime_state.scene_state.scenes.clear();
 
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(
+            state.jam_view.scene.next_scene.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state.jam_view.scene.next_scene_energy.as_deref(),
+            Some("medium")
+        );
         assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
         assert_eq!(
             state.queue_scene_select(301),

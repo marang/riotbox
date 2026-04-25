@@ -664,7 +664,13 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(format!(
             "source {} | next scene {}",
             shell.app.jam_view.source.source_id,
-            next_scene_candidate_label(shell)
+            shell
+                .app
+                .jam_view
+                .scene
+                .next_scene
+                .as_deref()
+                .unwrap_or("none")
         )),
         Line::from(scene_restore_contrast_line(shell)),
     ])
@@ -2842,53 +2848,15 @@ fn next_action_line(shell: &JamShellState) -> String {
     }
 }
 
-fn next_scene_candidate_label(shell: &JamShellState) -> String {
-    let scenes = &shell.app.session.runtime_state.scene_state.scenes;
-    let current_scene = shell
-        .app
-        .session
-        .runtime_state
-        .scene_state
-        .active_scene
-        .clone()
-        .or_else(|| {
-            shell
-                .app
-                .session
-                .runtime_state
-                .transport
-                .current_scene
-                .clone()
-        });
-
-    if scenes.is_empty() {
-        return "none".into();
-    }
-
-    if let Some(current_scene) = current_scene
-        && let Some(index) = scenes
-            .iter()
-            .position(|scene_id| *scene_id == current_scene)
-    {
-        return scenes[(index + 1) % scenes.len()].to_string();
-    }
-
-    scenes
-        .first()
-        .map(ToString::to_string)
-        .unwrap_or_else(|| "none".into())
-}
-
 fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
-    let scene_id = next_scene_candidate_label(shell);
-    if scene_id == "none" {
+    let Some(scene_id) = shell.app.jam_view.scene.next_scene.as_deref() else {
         return "[y] jump".into();
-    }
+    };
 
-    let scene = compact_scene_label(scene_id.as_str());
+    let scene = compact_scene_label(scene_id);
     match compact_energy_delta_label(
         shell.app.jam_view.scene.active_scene_energy.as_deref(),
-        scene_energy_label_for_scene_id(shell, scene_id.as_str()),
+        shell.app.jam_view.scene.next_scene_energy.as_deref(),
     ) {
         Some(direction) => format!("[y] jump {scene} ({direction})"),
         None => format!("[y] jump {scene}"),
