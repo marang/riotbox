@@ -37,6 +37,7 @@
       "capture_contains": [
         "latest promoted",
         "cap-01",
+        "cap-01 | 1.25-3.75s",
         "bank-b",
         "pending W-30 cue idle"
       ],
