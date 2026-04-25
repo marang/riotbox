@@ -722,13 +722,22 @@ mod tests {
                 end_seconds: (index + 1) as f32 * 16.0,
                 bar_start,
                 bar_end: bar_start + 7,
-                energy_class: crate::source_graph::EnergyClass::High,
+                energy_class: fixture_energy_for_label(label),
                 confidence: 0.9,
                 tags: vec![label.clone()],
             });
         }
 
         graph
+    }
+
+    fn fixture_energy_for_label(label: &str) -> crate::source_graph::EnergyClass {
+        match label {
+            "drop" | "chorus" => crate::source_graph::EnergyClass::High,
+            "break" | "outro" => crate::source_graph::EnergyClass::Low,
+            "intro" | "build" | "verse" | "bridge" => crate::source_graph::EnergyClass::Medium,
+            _ => crate::source_graph::EnergyClass::Unknown,
+        }
     }
 
     #[test]

@@ -1601,6 +1601,15 @@ mod tests {
         }
     }
 
+    fn scene_energy_for_label(label: &str) -> EnergyClass {
+        match label {
+            "drop" | "chorus" => EnergyClass::High,
+            "break" | "outro" => EnergyClass::Low,
+            "intro" | "build" | "verse" | "bridge" => EnergyClass::Medium,
+            _ => EnergyClass::Unknown,
+        }
+    }
+
     fn sample_graph() -> SourceGraph {
         let mut graph = SourceGraph::new(
             SourceDescriptor {
@@ -1690,7 +1699,7 @@ mod tests {
                 end_seconds: (index + 1) as f32 * 16.0,
                 bar_start,
                 bar_end: bar_start + 7,
-                energy_class: EnergyClass::High,
+                energy_class: scene_energy_for_label(label),
                 confidence: 0.9,
                 tags: vec![label.clone()],
             });
