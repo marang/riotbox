@@ -63,6 +63,35 @@
     }
   },
   {
+    "name": "raw_capture_source_window_preview",
+    "render_state": {
+      "mode": "raw_capture_audition",
+      "routing": "music_bus_preview",
+      "source_profile": "raw_capture_audition",
+      "trigger_revision": 0,
+      "trigger_velocity": 0.0,
+      "source_window_preview": {
+        "source_start_frame": 0,
+        "source_end_frame": 64,
+        "sample_count": 64,
+        "sample_pattern": "positive_ramp"
+      },
+      "music_bus_level": 0.64,
+      "grit_level": 0.0,
+      "is_transport_running": true,
+      "tempo_bpm": 126.0,
+      "position_beats": 32.0
+    },
+    "expected": {
+      "min_active_samples": 300,
+      "max_active_samples": 512,
+      "min_peak_abs": 0.015,
+      "max_peak_abs": 0.08,
+      "min_sum": 6.0,
+      "max_sum": 18.0
+    }
+  },
+  {
     "name": "stopped_promoted_audition_preview",
     "render_state": {
       "mode": "promoted_audition",

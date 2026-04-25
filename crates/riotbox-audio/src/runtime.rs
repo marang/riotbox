@@ -2034,6 +2034,8 @@ mod tests {
         max_active_samples: usize,
         min_peak_abs: f32,
         max_peak_abs: f32,
+        min_sum: Option<f32>,
+        max_sum: Option<f32>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -2057,11 +2059,20 @@ mod tests {
         source_profile: Option<String>,
         trigger_revision: u64,
         trigger_velocity: f32,
+        source_window_preview: Option<W30AudioFixtureSourceWindow>,
         music_bus_level: f32,
         grit_level: f32,
         is_transport_running: bool,
         tempo_bpm: f32,
         position_beats: f64,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30AudioFixtureSourceWindow {
+        source_start_frame: u64,
+        source_end_frame: u64,
+        sample_count: usize,
+        sample_pattern: String,
     }
 
     #[derive(Debug, Deserialize)]
@@ -2158,12 +2169,38 @@ mod tests {
                 }),
                 trigger_revision: self.trigger_revision,
                 trigger_velocity: self.trigger_velocity,
-                source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+                source_window_preview: self
+                    .source_window_preview
+                    .as_ref()
+                    .map_or_else(RealtimeW30PreviewSampleWindow::default, |source| {
+                        source.to_realtime()
+                    }),
                 music_bus_level: self.music_bus_level,
                 grit_level: self.grit_level,
                 is_transport_running: self.is_transport_running,
                 tempo_bpm: self.tempo_bpm,
                 position_beats: self.position_beats,
+            }
+        }
+    }
+
+    impl W30AudioFixtureSourceWindow {
+        fn to_realtime(&self) -> RealtimeW30PreviewSampleWindow {
+            let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+            match self.sample_pattern.as_str() {
+                "positive_ramp" => {
+                    for (index, sample) in samples.iter_mut().enumerate() {
+                        *sample = 0.18 + index as f32 * 0.002;
+                    }
+                }
+                other => panic!("unknown W-30 source-window sample pattern: {other}"),
+            }
+
+            RealtimeW30PreviewSampleWindow {
+                source_start_frame: self.source_start_frame,
+                source_end_frame: self.source_end_frame,
+                sample_count: self.sample_count.min(W30_PREVIEW_SAMPLE_WINDOW_LEN),
+                samples,
             }
         }
     }
@@ -3118,6 +3155,7 @@ mod tests {
             let peak_abs = buffer
                 .iter()
                 .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+            let sum = buffer.iter().sum::<f32>();
 
             assert!(
                 active_samples >= fixture.expected.min_active_samples,
@@ -3139,6 +3177,12 @@ mod tests {
                 "{} peak too high: got {peak_abs}",
                 fixture.name
             );
+            if let Some(min_sum) = fixture.expected.min_sum {
+                assert!(sum >= min_sum, "{} sum too low: got {sum}", fixture.name);
+            }
+            if let Some(max_sum) = fixture.expected.max_sum {
+                assert!(sum <= max_sum, "{} sum too high: got {sum}", fixture.name);
+            }
         }
     }
 
