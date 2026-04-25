@@ -61,8 +61,8 @@ Current measured value:
 
 - zero screen switches
 - one direct shell read in `Footer`:
-  - `Scene cue: launch <scene> @ next bar | <rise|drop|hold> + pulse, 2 trail`
-  - or `Scene cue: restore <scene> @ next bar | <rise|drop|hold> + pulse, 2 trail`
+  - `Scene cue: launch <scene> @ next bar | <rise|drop|hold> + [===>], 2 trail`
+  - or `Scene cue: restore <scene> @ next bar | <rise|drop|hold> + [===>], 2 trail`
 
 Judgment:
 
