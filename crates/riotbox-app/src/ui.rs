@@ -5059,7 +5059,7 @@ mod tests {
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("energy medium"));
         assert!(
-            rendered.contains("source src-1 | next scene intro/med"),
+            rendered.contains("source src-1 | next scene drop/high"),
             "{rendered}"
         );
         assert!(rendered.contains("scene-01-intro"));

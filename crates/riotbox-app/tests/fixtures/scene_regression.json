@@ -11,8 +11,7 @@
       "jam_contains": [
         "idle @ 32.0",
         "scene-01-intro",
-        "source src-1 | next scene",
-        "scene-02-drop",
+        "source src-1 | next scene drop/high",
         "scene transition idle"
       ],
       "log_contains": [
@@ -46,8 +45,7 @@
         "idle @ 32.0",
         "scene-02-drop",
         "live drop/high <> restore intro/med",
-        "source src-1 | next scene",
-        "scene-01-intro",
+        "source src-1 | next scene intro/med",
         "scene transition idle"
       ],
       "log_contains": [
