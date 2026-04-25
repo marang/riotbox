@@ -676,7 +676,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(scene_pending_line(shell)),
         Line::from(latest_landed_line(shell)),
         Line::from(
-            scene_commit_pulse_line(shell)
+            queued_timing_rail_line(shell)
                 .unwrap_or_else(|| format!("status {}", shell.status_message)),
         ),
     ])
@@ -2951,9 +2951,63 @@ fn scene_commit_pulse_line(shell: &JamShellState) -> Option<String> {
     ))
 }
 
+fn queued_timing_rail_line(shell: &JamShellState) -> Option<String> {
+    if let Some(scene_line) = scene_commit_pulse_line(shell) {
+        return Some(scene_line);
+    }
+
+    let pending_actions = shell.app.queue.pending_actions();
+    let action = pending_actions.first()?;
+    let transport = &shell.app.runtime.transport;
+    let countdown = quantization_countdown_cue(
+        action.quantization,
+        transport.beat_index,
+        transport.bar_index,
+    );
+
+    Some(format!(
+        "wait {countdown} {} | b{} | bar{} | p{}",
+        quantization_boundary_label(action.quantization),
+        transport.beat_index,
+        transport.bar_index,
+        transport.phrase_index
+    ))
+}
+
 fn scene_countdown_cue(beat_index: u64) -> String {
     let slot = ((beat_index.saturating_sub(1) % 4) + 1) as usize;
     let mut chars = ['-'; 4];
+    for ch in chars.iter_mut().take(slot.saturating_sub(1)) {
+        *ch = '=';
+    }
+    chars[slot - 1] = '>';
+    format!("[{}]", chars.iter().collect::<String>())
+}
+
+fn quantization_countdown_cue(
+    quantization: riotbox_core::action::Quantization,
+    beat_index: u64,
+    bar_index: u64,
+) -> String {
+    match quantization {
+        riotbox_core::action::Quantization::Immediate => "[now]".into(),
+        riotbox_core::action::Quantization::NextBeat => "[>]".into(),
+        riotbox_core::action::Quantization::NextHalfBar => {
+            let slot = (((beat_index.saturating_sub(1) % 4) / 2) + 1) as usize;
+            ascii_countdown(slot, 2)
+        }
+        riotbox_core::action::Quantization::NextBar => scene_countdown_cue(beat_index),
+        riotbox_core::action::Quantization::NextPhrase => {
+            let slot = ((bar_index.saturating_sub(1) % 8) + 1) as usize;
+            ascii_countdown(slot, 8)
+        }
+        riotbox_core::action::Quantization::NextScene => "[scene]".into(),
+    }
+}
+
+fn ascii_countdown(slot: usize, width: usize) -> String {
+    let slot = slot.clamp(1, width);
+    let mut chars = vec!['-'; width];
     for ch in chars.iter_mut().take(slot.saturating_sub(1)) {
         *ch = '=';
     }
@@ -4648,6 +4702,7 @@ mod tests {
         assert!(rendered.contains("Suggested gestures"));
         assert!(rendered.contains("Pending / landed"));
         assert!(rendered.contains("next fill"));
+        assert!(rendered.contains("wait [===>] next bar"), "{rendered}");
         assert!(
             rendered.contains("Primary: y scene jump | g follow | f fill"),
             "{rendered}"
@@ -4817,7 +4872,9 @@ mod tests {
 
     #[test]
     fn renders_jam_shell_with_pending_mc202_follower_generation() {
-        let mut shell = sample_shell_state();
+        let first_run_shell = first_run_shell_state();
+        let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
+        shell.app.set_transport_playing(true);
         assert_eq!(
             shell.app.queue_mc202_generate_follower(200),
             crate::jam_app::QueueControlResult::Enqueued
@@ -4826,6 +4883,10 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("next follow"));
+        assert!(
+            rendered.contains("wait [=======>] next phrase"),
+            "{rendered}"
+        );
     }
 
     #[test]
@@ -4855,6 +4916,26 @@ mod tests {
         assert!(rendered.contains("next 2 user fill"), "{rendered}");
         assert!(rendered.contains("+1 more"), "{rendered}");
         assert!(!rendered.contains("more queued"), "{rendered}");
+    }
+
+    #[test]
+    fn quantization_countdown_cues_match_boundary_widths() {
+        assert_eq!(
+            quantization_countdown_cue(Quantization::NextBeat, 32, 8),
+            "[>]"
+        );
+        assert_eq!(
+            quantization_countdown_cue(Quantization::NextHalfBar, 3, 1),
+            "[=>]"
+        );
+        assert_eq!(
+            quantization_countdown_cue(Quantization::NextBar, 32, 8),
+            "[===>]"
+        );
+        assert_eq!(
+            quantization_countdown_cue(Quantization::NextPhrase, 32, 8),
+            "[=======>]"
+        );
     }
 
     #[test]

@@ -53,6 +53,7 @@ What to observe:
 
 - the action is queued before it lands
 - it commits on a musical boundary, not instantly
+- `wait [..>] next ...` is the compact timing rail for the queued gesture
 - `Log` shows the truth more clearly than trying to infer it from one line on `Jam`
 
 ## Recipe 2: Compare First Gestures

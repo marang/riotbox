@@ -80,6 +80,7 @@ It must expose:
 - pending actions
 - recent committed actions
 - key confidence or warning signals
+- a compact timing rail for the next queued live gesture
 
 ### 5.1 Jam goals
 
