@@ -16,6 +16,7 @@ use riotbox_app::{
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 use riotbox_audio::runtime::AudioRuntimeShell;
+use riotbox_core::view::jam::SceneJumpAvailabilityView;
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
 const DEFAULT_SIDECAR_PATH: &str = "python/sidecar/json_stdio_sidecar.py";
@@ -190,7 +191,7 @@ fn run_event_loop(
                             shell.set_error_status("scene transition already queued");
                         }
                         riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
-                            shell.set_error_status("no next scene candidate available");
+                            shell.set_error_status(scene_select_unavailable_status(&shell));
                         }
                     }
                 }
@@ -494,6 +495,15 @@ fn timestamp_now() -> u64 {
         .as_millis() as u64
 }
 
+fn scene_select_unavailable_status(shell: &JamShellState) -> &'static str {
+    match shell.app.jam_view.scene.scene_jump_availability {
+        SceneJumpAvailabilityView::WaitingForMoreScenes => "scene jump waits for 2 scenes",
+        SceneJumpAvailabilityView::Ready | SceneJumpAvailabilityView::Unknown => {
+            "no next scene candidate available"
+        }
+    }
+}
+
 fn parse_args(args: impl IntoIterator<Item = String>) -> Result<LaunchMode, String> {
     let mut args = args.into_iter();
     let mut source_path = None;
@@ -575,6 +585,7 @@ impl LaunchMode {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use riotbox_core::{ids::SceneId, queue::ActionQueue, session::SessionFile};
 
     #[test]
     fn parse_args_builds_ingest_mode() {
@@ -662,5 +673,23 @@ mod tests {
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
         }
+    }
+
+    #[test]
+    fn scene_select_unavailable_status_explains_waiting_for_scene_material() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-25T00:00:00Z");
+        session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-01-intro")];
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+
+        let shell = JamShellState::new(
+            JamAppState::from_parts(session, None, ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+
+        assert_eq!(
+            scene_select_unavailable_status(&shell),
+            "scene jump waits for 2 scenes"
+        );
     }
 }
