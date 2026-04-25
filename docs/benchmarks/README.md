@@ -38,3 +38,5 @@ Current benchmark artifacts:
   First bounded readability baseline for the semantic Jam footer color and emphasis hierarchy.
 - [capture_do_next_readability_baseline_2026-04-25.md](./capture_do_next_readability_baseline_2026-04-25.md)
   First bounded readability baseline for the Capture `Do Next` hierarchy and audible handoff cues.
+- [capture_pending_do_next_readability_baseline_2026-04-25.md](./capture_pending_do_next_readability_baseline_2026-04-25.md)
+  Bounded readability baseline for pending-aware Capture `Do Next` states before committed capture fallback guidance.
