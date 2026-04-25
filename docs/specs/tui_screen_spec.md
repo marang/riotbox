@@ -81,6 +81,7 @@ It must expose:
 - recent committed actions
 - key confidence or warning signals
 - a compact timing rail for the next queued live gesture
+- restore-ready Scene cues that name the target and, when known, whether restore is an energy `rise`, `drop`, or `hold`
 
 ### 5.1 Jam goals
 
@@ -218,6 +219,7 @@ The TUI must support:
 Rules:
 
 - destructive or identity-changing actions should surface pending state before commit
+- scene restore affordances should preserve a target-only fallback when current or restore energy is unknown, but should include `rise/drop/hold` wherever both sides are known
 - the user must be able to tell whether an action is immediate, queued, or committed
 - no screen should imply committed state when the action is still pending
 
