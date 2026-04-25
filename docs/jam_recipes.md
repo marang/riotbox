@@ -79,7 +79,8 @@ What to observe:
 
 - each lane has a different feel
 - the first result is easier to compare when you only change one thing per run
-- when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`; otherwise it stays the generic `[y] jump`
+- when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
+- if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
 
 ## Recipe 3: Capture And Reuse
 
@@ -214,7 +215,7 @@ What to observe:
 - before the first landed jump, `Y` explicitly waits for one landed jump
 - after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
 - when both current and restore energies are known, the cue also names whether restore is an energy `rise`, `drop`, or `hold`
-- if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`
+- if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`; if it knows there are too few scenes, it says `[y] jump waits for 2 scenes`
 - `Log` is the clearest place to verify both the queued restore target and the committed restore result
 
 If you want one more short loop:
@@ -298,7 +299,7 @@ What to observe:
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
 - the restore-ready cue is the positive mirror of the earlier `restore waits for one landed jump` state
-- if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`
+- if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`; if it knows there are too few scenes, it says `[y] jump waits for 2 scenes`
 - if Riotbox cannot infer both energy sides, the restore-ready cue falls back to the older target-only shape without `rise/drop/hold`
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 

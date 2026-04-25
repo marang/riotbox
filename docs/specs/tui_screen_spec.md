@@ -81,7 +81,7 @@ It must expose:
 - recent committed actions
 - key confidence or warning signals
 - a compact timing rail for the next queued live gesture
-- suggested Scene launch gestures that may name the deterministic next target and energy `rise`, `drop`, or `hold`
+- suggested Scene launch gestures that may name the deterministic next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
 - restore-ready Scene cues that name the target and, when known, whether restore is an energy `rise`, `drop`, or `hold`
 
 ### 5.1 Jam goals
@@ -220,7 +220,7 @@ The TUI must support:
 Rules:
 
 - destructive or identity-changing actions should surface pending state before commit
-- scene launch suggestions should preserve a generic `[y] jump` fallback when the next target or energy direction is unknown
+- scene launch suggestions should preserve a generic `[y] jump` fallback when the next target or energy direction is unknown, but may say `[y] jump waits for 2 scenes` when the view knows no queueable Scene jump exists yet
 - scene restore affordances should preserve a target-only fallback when current or restore energy is unknown, but should include `rise/drop/hold` wherever both sides are known
 - the user must be able to tell whether an action is immediate, queued, or committed
 - no screen should imply committed state when the action is still pending
