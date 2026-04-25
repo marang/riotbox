@@ -5,6 +5,13 @@
     "capture_bank": "bank-b",
     "capture_pad": "pad-03",
     "capture_pinned": true,
+    "source_window": {
+      "source_id": "src-1",
+      "start_seconds": 1.25,
+      "end_seconds": 3.75,
+      "start_frame": 60000,
+      "end_frame": 180000
+    },
     "requested_at": 620,
     "committed_at": 700,
     "boundary": {
@@ -35,6 +42,7 @@
       ],
       "log_contains": [
         "W-30 Lane",
+        "win 1.25-3.75s src-1",
         "recalled cap-01",
         "bank-b",
         "pad-03"

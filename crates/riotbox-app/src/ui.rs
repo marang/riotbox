@@ -4391,6 +4391,8 @@ mod tests {
         capture_bank: String,
         capture_pad: String,
         capture_pinned: bool,
+        #[serde(default)]
+        source_window: Option<W30RegressionSourceWindow>,
         #[serde(default = "default_true")]
         capture_assigned: bool,
         #[serde(default)]
@@ -4409,6 +4411,15 @@ mod tests {
         committed_at: TimestampMs,
         boundary: W30RegressionBoundary,
         expected: W30RegressionExpected,
+    }
+
+    #[derive(Debug, Deserialize)]
+    struct W30RegressionSourceWindow {
+        source_id: String,
+        start_seconds: f32,
+        end_seconds: f32,
+        start_frame: u64,
+        end_frame: u64,
     }
 
     #[derive(Debug, Deserialize)]
@@ -5821,6 +5832,15 @@ mod tests {
                     pad_id: fixture.capture_pad.clone().into(),
                 });
         session.captures[0].is_pinned = fixture.capture_pinned;
+        session.captures[0].source_window = fixture.source_window.as_ref().map(|source_window| {
+            riotbox_core::session::CaptureSourceWindow {
+                source_id: SourceId::from(source_window.source_id.clone()),
+                start_seconds: source_window.start_seconds,
+                end_seconds: source_window.end_seconds,
+                start_frame: source_window.start_frame,
+                end_frame: source_window.end_frame,
+            }
+        });
         for extra in &fixture.extra_captures {
             session.captures.push(riotbox_core::session::CaptureRef {
                 capture_id: extra.capture_id.clone().into(),
