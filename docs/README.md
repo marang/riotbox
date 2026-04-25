@@ -82,6 +82,7 @@ docs/
     periodic_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-17.md
     periodic_codebase_review_2026-04-17_w30_followup.md
+    scene_launch_audio_coupling_2026-04-25.md
   spikes/
     cpal_audio_latency_spike.md
     mempalace_evaluation.md
@@ -157,6 +158,7 @@ docs/
 - `reviews/periodic_codebase_review_2026-04-17_w30_followup.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-18.md`: review captured
 - `reviews/jam_first_use_feedback_2026-04-18.md`: first-use UX feedback captured
+- `reviews/scene_launch_audio_coupling_2026-04-25.md`: Scene launch to TR-909 audio-coupling audit captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
