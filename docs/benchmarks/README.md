@@ -28,3 +28,5 @@ Current benchmark artifacts:
   First bounded readability baseline for the explicit `restore <scene>/<energy> ready` cue and help seam on `Jam`.
 - [scene_restore_state_contrast_baseline_2026-04-18.md](./scene_restore_state_contrast_baseline_2026-04-18.md)
   First bounded readability baseline for the current `restore waits...` versus `restore ... ready` contrast on `Jam`.
+- [scene_post_landed_energy_cue_baseline_2026-04-25.md](./scene_post_landed_energy_cue_baseline_2026-04-25.md)
+  First bounded readability baseline for the post-landed Scene Brain cue using compact `scene/energy` labels.
