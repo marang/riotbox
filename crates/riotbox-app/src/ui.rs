@@ -2132,11 +2132,7 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             if slice_pool_relevant {
                 Line::from(format!("pool {}", w30_slice_pool_log_compact(shell)))
             } else {
-                Line::from(format!(
-                    "cap {} | {}",
-                    w30_capture_compact(shell),
-                    w30_trigger_compact(shell),
-                ))
+                Line::from(w30_capture_log_compact(shell))
             }
         },
     ]
@@ -2383,6 +2379,38 @@ fn w30_capture_compact(shell: &JamShellState) -> String {
         .as_ref()
         .map(ToString::to_string)
         .unwrap_or_else(|| "none".into())
+}
+
+fn w30_capture_log_compact(shell: &JamShellState) -> String {
+    let capture_id = w30_capture_compact(shell);
+    if let Some(source_window) = w30_latest_capture_source_window_compact(shell) {
+        source_window
+    } else {
+        format!("cap {capture_id} | {}", w30_trigger_compact(shell))
+    }
+}
+
+fn w30_latest_capture_source_window_compact(shell: &JamShellState) -> Option<String> {
+    let capture_id = shell
+        .app
+        .session
+        .runtime_state
+        .lane_state
+        .w30
+        .last_capture
+        .as_ref()?;
+    let capture = shell
+        .app
+        .session
+        .captures
+        .iter()
+        .find(|capture| &capture.capture_id == capture_id)?;
+    let source_window = capture.source_window.as_ref()?;
+
+    Some(format!(
+        "win {:.2}-{:.2}s {}",
+        source_window.start_seconds, source_window.end_seconds, source_window.source_id
+    ))
 }
 
 fn current_w30_slice_pool(shell: &JamShellState) -> Vec<&riotbox_core::session::CaptureRef> {
@@ -6220,6 +6248,25 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("win src-1 1.25-3.75s"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_log_w30_source_window_when_available() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].source_window =
+            Some(riotbox_core::session::CaptureSourceWindow {
+                source_id: SourceId::from("src-1"),
+                start_seconds: 1.25,
+                end_seconds: 3.75,
+                start_frame: 60_000,
+                end_frame: 180_000,
+            });
+        shell.active_screen = ShellScreen::Log;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("win 1.25-3.75s src-1"), "{rendered}");
+        assert_eq!(w30_capture_log_compact(&shell), "win 1.25-3.75s src-1");
     }
 
     #[test]
