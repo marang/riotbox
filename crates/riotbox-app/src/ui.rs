@@ -1434,6 +1434,9 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(scene_restore_help_lines) = scene_restore_help_lines(shell) {
         lines.extend(scene_restore_help_lines);
     }
+    if let Some(capture_help_lines) = capture_help_lines(shell) {
+        lines.extend(capture_help_lines);
+    }
 
     lines.extend([
         Line::from(""),
@@ -1507,6 +1510,20 @@ fn scene_restore_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
     }
 
     None
+}
+
+fn capture_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    if shell.active_screen != ShellScreen::Capture {
+        return None;
+    }
+
+    Some(vec![
+        Line::from(""),
+        Line::from("Capture path"),
+        Line::from("Do Next: read capture -> promote -> hit"),
+        Line::from("hear ... stored means [p] promote, then [w] hit"),
+        Line::from("2: confirm promote, hit, and audition results in Log"),
+    ])
 }
 
 fn screen_context_label(shell: &JamShellState) -> String {
@@ -5134,6 +5151,29 @@ mod tests {
         );
         assert!(
             rendered.contains("2: confirm the landed trail on Log"),
+            "{rendered}"
+        );
+    }
+
+    #[test]
+    fn renders_help_overlay_with_capture_path_cue() {
+        let mut shell = sample_shell_state();
+        shell.active_screen = ShellScreen::Capture;
+        shell.show_help = true;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("Capture path"), "{rendered}");
+        assert!(
+            rendered.contains("Do Next: read capture -> promote -> hit"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("hear ... stored means [p] promote, then [w] hit"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("2: confirm promote, hit, and audition results in Log"),
             "{rendered}"
         );
     }
