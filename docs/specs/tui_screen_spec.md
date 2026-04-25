@@ -140,6 +140,7 @@ MVP rule:
 - first-action cues should outrank provenance and routing details on the default Capture surface
 - first-action cues should prefer pending capture or promotion intent over the last committed capture state when a capture-path action is queued
 - pending `Do Next` cues should carry semantic pending emphasis distinct from committed fallback guidance
+- secondary pending-capture panels should show the most relevant queued capture-path action first and send overflow detail to `Log`
 - contextual help may point to `Do Next`, `hear ...`, and `Log` confirmation, but should not duplicate the full Capture screen
 
 ---

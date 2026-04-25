@@ -3290,20 +3290,21 @@ fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         return vec![Line::from("no queued capture actions")];
     }
 
-    let mut lines = Vec::new();
-    for action in pending {
-        lines.push(Line::from(format!(
-            "{} {} {}",
-            action.id, action.actor, action.command
-        )));
-        lines.push(Line::from(format!(
+    let action = &pending[0];
+    let mut lines = vec![
+        Line::from(format!("next {} {}", action.actor, action.command)),
+        Line::from(format!(
             "when {} | target {}",
             action.quantization, action.target
-        )));
-        if let Some(explanation) = &action.explanation {
-            lines.push(Line::from(format!("note {explanation}")));
-        }
-        lines.push(Line::from(""));
+        )),
+    ];
+    if let Some(explanation) = &action.explanation {
+        lines.push(Line::from(format!("note {explanation}")));
+    }
+
+    let overflow_count = pending.len().saturating_sub(1);
+    if overflow_count > 0 {
+        lines.push(Line::from(format!("+{overflow_count} more in [2] Log")));
     }
 
     lines
@@ -6101,6 +6102,31 @@ mod tests {
     }
 
     #[test]
+    fn renders_capture_pending_cues_panel_as_first_item_with_log_overflow() {
+        let first_run_shell = first_run_shell_state();
+        let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
+        shell.app.queue_capture_bar(240);
+        shell.app.queue_capture_bar(241);
+
+        let lines = pending_capture_lines(&shell);
+        let rendered: Vec<String> = lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect();
+
+        assert_eq!(rendered[0], "next user capture.bar_group");
+        assert_eq!(rendered[1], "when next_phrase | target lanew30");
+        assert_eq!(rendered[2], "note capture next phrase into W-30 path");
+        assert_eq!(rendered[3], "+1 more in [2] Log");
+        assert_eq!(rendered.len(), 4);
+    }
+
+    #[test]
     fn renders_capture_shell_snapshot_with_w30_live_recall_cue() {
         let mut shell = sample_shell_state();
         shell.app.session.captures[0].assigned_target =
@@ -6635,7 +6661,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("pending W-30 cue"));
-        assert!(rendered.contains("resample cap-01"));
+        assert!(rendered.contains("+1 more in [2] Log"));
         assert!(rendered.contains("resample"));
         assert!(rendered.contains("cap-01"));
     }
