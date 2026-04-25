@@ -131,11 +131,13 @@ Show:
 - promotion results
 - favorite or pinned captures
 - the audible handoff path from stored capture to promoted pad, hit, audition, or recall
+- a primary next-step cue for capture, promote, hit, and audition before lower-level routing diagnostics
 
 MVP rule:
 
 - this may begin as a focused summary screen, not a deep sampler editor
 - the screen must not imply that a stored capture is already heard; if a promotion or audition step is still required, say so directly
+- first-action cues should outrank provenance and routing details on the default Capture surface
 
 ---
 

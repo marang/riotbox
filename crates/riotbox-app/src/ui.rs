@@ -1190,13 +1190,13 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 .borders(Borders::ALL),
         )
         .wrap(Wrap { trim: true });
-    let provenance = Paragraph::new(capture_provenance_lines(shell))
-        .block(Block::default().title("Provenance").borders(Borders::ALL))
+    let do_next = Paragraph::new(capture_do_next_lines(shell))
+        .block(Block::default().title("Do Next").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
 
     frame.render_widget(readiness, summary[0]);
     frame.render_widget(latest, summary[1]);
-    frame.render_widget(provenance, summary[2]);
+    frame.render_widget(do_next, summary[2]);
 
     let bottom = Layout::default()
         .direction(Direction::Horizontal)
@@ -1220,19 +1220,20 @@ fn render_capture_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             .title("Recent Captures")
             .borders(Borders::ALL),
     );
-    let pinned = List::new(pinned_capture_items(shell))
-        .block(Block::default().title("Pinned").borders(Borders::ALL));
+    let provenance = Paragraph::new(capture_provenance_lines(shell))
+        .block(Block::default().title("Provenance").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
     let routing = Paragraph::new(capture_routing_lines(shell))
         .block(
             Block::default()
-                .title("Routing / Promotion")
+                .title("Advanced Routing")
                 .borders(Borders::ALL),
         )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(pending, bottom[0]);
     frame.render_widget(recent, bottom[1]);
-    frame.render_widget(pinned, bottom[2]);
+    frame.render_widget(provenance, bottom[2]);
     frame.render_widget(routing, bottom[3]);
 }
 
@@ -3140,6 +3141,39 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
+fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let capture = &shell.app.jam_view.capture;
+    let Some(last_capture_id) = capture.last_capture_id.as_deref() else {
+        return vec![
+            Line::from("1 [c] capture phrase"),
+            Line::from("2 [p] promote keeper"),
+            Line::from("3 [w] hit promoted pad"),
+            Line::from("use Log to confirm"),
+        ];
+    };
+
+    match capture.last_capture_target.as_deref() {
+        Some(target) if target.starts_with("pad ") => vec![
+            Line::from(format!("now [w] hit {target}")),
+            Line::from("[o] audition same pad"),
+            Line::from("[b]/[s] browse or swap"),
+            Line::from(format!("source {last_capture_id}")),
+        ],
+        Some(target) if target.starts_with("scene ") => vec![
+            Line::from(format!("scene target {target}")),
+            Line::from("use Jam scene controls"),
+            Line::from("[2] confirm action trail"),
+            Line::from(format!("source {last_capture_id}")),
+        ],
+        _ => vec![
+            Line::from(format!("1 [p] promote {last_capture_id}")),
+            Line::from("2 [w] hit after promote"),
+            Line::from("3 [o] audition pad"),
+            Line::from("[2] confirm result"),
+        ],
+    }
+}
+
 fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let Some(capture) = shell.app.session.captures.last() else {
         return vec![Line::from("no captured material yet")];
@@ -3217,43 +3251,6 @@ fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
                 target,
                 capture.source_origin_refs.len(),
                 if capture.is_pinned { " | pinned" } else { "" }
-            ))
-        })
-        .collect()
-}
-
-fn pinned_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
-    let captures: Vec<_> = shell
-        .app
-        .session
-        .captures
-        .iter()
-        .rev()
-        .filter(|capture| capture.is_pinned)
-        .take(5)
-        .collect();
-    if captures.is_empty() {
-        return vec![ListItem::new("no pinned captures yet")];
-    }
-
-    captures
-        .into_iter()
-        .map(|capture| {
-            ListItem::new(format!(
-                "{}{}",
-                capture.capture_id,
-                capture
-                    .assigned_target
-                    .as_ref()
-                    .map(|target| match target {
-                        riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
-                            format!(" -> {bank_id}/{pad_id}")
-                        }
-                        riotbox_core::session::CaptureTarget::Scene(scene_id) => {
-                            format!(" -> {scene_id}")
-                        }
-                    })
-                    .unwrap_or_else(|| " -> unassigned".into())
             ))
         })
         .collect()
@@ -5913,17 +5910,18 @@ mod tests {
         assert!(rendered.contains("[4 Capture]"));
         assert!(rendered.contains("Readiness"));
         assert!(rendered.contains("Latest Capture"));
+        assert!(rendered.contains("Do Next"));
         assert!(rendered.contains("Provenance"));
         assert!(rendered.contains("Pending Capture Cues"));
         assert!(rendered.contains("Recent Captures"));
-        assert!(rendered.contains("Pinned"));
-        assert!(rendered.contains("Routing / Promotion"));
+        assert!(rendered.contains("Advanced Routing"));
         assert!(rendered.contains("cap-01"));
         assert!(rendered.contains("promote keeper capture"));
         assert!(rendered.contains("promotion result pending"));
         assert!(rendered.contains("captures total 1"));
         assert!(rendered.contains("pinned 0 | promoted 0"));
-        assert!(rendered.contains("no pinned captures yet"));
+        assert!(rendered.contains("1 [p] promote cap-01"), "{rendered}");
+        assert!(rendered.contains("2 [w] hit after promote"), "{rendered}");
         assert!(rendered.contains("pending W-30 cue idle"));
         assert!(
             rendered.contains("hear cap-01 stored [p]->[w]"),
@@ -6426,6 +6424,10 @@ mod tests {
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("audition"));
         assert!(rendered.contains("[w]/[o]"), "{rendered}");
+        assert!(
+            rendered.contains("now [w] hit pad bank-b/pad-03"),
+            "{rendered}"
+        );
         assert!(rendered.contains("latest promoted"));
         assert!(rendered.contains("cap-01"));
     }
@@ -6444,6 +6446,7 @@ mod tests {
             rendered.contains("hear cap-01->scene drop-1 ready"),
             "{rendered}"
         );
+        assert!(rendered.contains("scene target scene drop-1"), "{rendered}");
     }
 
     #[test]
