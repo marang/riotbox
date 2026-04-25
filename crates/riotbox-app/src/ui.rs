@@ -2875,6 +2875,9 @@ fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
 
 fn next_scene_target_compact_label(shell: &JamShellState) -> String {
     let Some(scene_id) = shell.app.jam_view.scene.next_scene.as_deref() else {
+        if shell.app.jam_view.scene.scene_count <= 1 {
+            return "waits for 2 scenes".into();
+        }
         return "none".into();
     };
 
@@ -5345,6 +5348,11 @@ mod tests {
         );
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
+        assert!(
+            rendered.contains("source src-1 | next scene waits for 2")
+                && rendered.contains("scenes"),
+            "{rendered}"
+        );
         assert!(
             rendered.contains("[y] jump waits for 2 scenes"),
             "{rendered}"
