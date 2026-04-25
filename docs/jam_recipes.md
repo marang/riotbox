@@ -330,6 +330,7 @@ What to observe:
 - `audition raw/src` means raw audition is using captured source material
 - `audition/src` means promoted audition is source-backed
 - `recall/.../src` or `prev recall/src` means the promoted hit or recall path is source-backed
+- `Log` can also show `win 1.25-3.75s src-1`; that is the source excerpt backing the current W-30 cue
 - `.../fallback` means Riotbox is still using the safe synthetic preview for that path
 - `fallback` is not automatically a bug; it means the current session did not have a decoded source-window preview available for that cue
 
