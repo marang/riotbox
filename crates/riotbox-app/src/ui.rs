@@ -2162,11 +2162,21 @@ fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
     if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
         return format!(
             "{mode}/{}",
-            if render.source_window_preview.is_some() {
-                "src"
-            } else {
-                "fallback"
-            }
+            w30_preview_source_suffix(render).unwrap_or("fallback")
+        );
+    }
+
+    if matches!(render.mode, W30PreviewRenderMode::PromotedAudition) {
+        return format!(
+            "{mode}/{}",
+            w30_preview_source_suffix(render).unwrap_or("fallback")
+        );
+    }
+
+    if matches!(render.mode, W30PreviewRenderMode::LiveRecall) {
+        return format!(
+            "{mode}/{profile}/{}",
+            w30_preview_source_suffix(render).unwrap_or("fallback")
         );
     }
 
@@ -2178,27 +2188,55 @@ fn w30_preview_log_compact(shell: &JamShellState) -> String {
     if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
         return format!(
             "raw/{}",
-            if render.source_window_preview.is_some() {
-                "src"
-            } else {
-                "fallback"
-            }
+            w30_preview_source_suffix(render).unwrap_or("fallback")
+        );
+    }
+
+    if matches!(render.mode, W30PreviewRenderMode::PromotedAudition) {
+        return format!(
+            "audition/{}",
+            w30_preview_source_suffix(render).unwrap_or("fallback")
+        );
+    }
+
+    if matches!(render.mode, W30PreviewRenderMode::LiveRecall) {
+        return format!(
+            "recall/{}",
+            w30_preview_source_suffix(render).unwrap_or("fallback")
         );
     }
 
     w30_preview_mode_profile_compact(shell)
 }
 
-fn w30_preview_source_readiness(shell: &JamShellState) -> Option<&'static str> {
-    let render = &shell.app.runtime.w30_preview;
-    if !matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
+fn w30_preview_source_suffix(
+    render: &riotbox_audio::w30::W30PreviewRenderState,
+) -> Option<&'static str> {
+    if matches!(render.mode, W30PreviewRenderMode::Idle) {
         return None;
     }
 
     if render.source_window_preview.is_some() {
-        Some("preview source-backed")
+        Some("src")
     } else {
-        Some("preview fallback")
+        Some("fallback")
+    }
+}
+
+fn w30_preview_source_readiness(shell: &JamShellState) -> Option<&'static str> {
+    let render = &shell.app.runtime.w30_preview;
+    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
+        return match w30_preview_source_suffix(render)? {
+            "src" => Some("source-backed"),
+            "fallback" => Some("fallback"),
+            _ => None,
+        };
+    }
+
+    if render.source_window_preview.is_some() {
+        Some("source-backed")
+    } else {
+        None
     }
 }
 
@@ -6070,7 +6108,7 @@ mod tests {
         assert!(rendered.contains("role leader"));
         assert!(rendered.contains("cue idle"));
         assert!(rendered.contains("cue idle | none"));
-        assert!(rendered.contains("prev recall/promoted"));
+        assert!(rendered.contains("prev recall/fallback"));
         assert!(rendered.contains("mix 0.64/0.50 idle"));
         assert!(rendered.contains("cap cap-01 | pending"));
         assert!(rendered.contains("ghost"));
@@ -6230,7 +6268,7 @@ mod tests {
 
         shell.active_screen = ShellScreen::Capture;
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
-        assert!(rendered.contains("preview fallback"), "{rendered}");
+        assert!(rendered.contains("| fallback"), "{rendered}");
     }
 
     #[test]
@@ -6248,10 +6286,39 @@ mod tests {
             });
 
         assert_eq!(w30_preview_mode_profile_compact(&shell), "audition raw/src");
+        assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
+    }
+
+    #[test]
+    fn source_backed_promoted_and_recall_compact_labels_use_src_cue() {
+        let mut shell = sample_shell_without_pending_queue();
+        let sample_window = riotbox_audio::w30::W30PreviewSampleWindow {
+            source_start_frame: 0,
+            source_end_frame: 64,
+            sample_count: 64,
+            samples: [0.0; riotbox_audio::w30::W30_PREVIEW_SAMPLE_WINDOW_LEN],
+        };
+
+        shell.app.runtime.w30_preview.mode = W30PreviewRenderMode::PromotedAudition;
+        shell.app.runtime.w30_preview.source_profile =
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition);
+        shell.app.runtime.w30_preview.source_window_preview = Some(sample_window.clone());
+
+        assert_eq!(w30_preview_mode_profile_compact(&shell), "audition/src");
+        assert_eq!(w30_preview_log_compact(&shell), "audition/src");
+        assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
+
+        shell.app.runtime.w30_preview.mode = W30PreviewRenderMode::LiveRecall;
+        shell.app.runtime.w30_preview.source_profile =
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall);
+        shell.app.runtime.w30_preview.source_window_preview = Some(sample_window);
+
         assert_eq!(
-            w30_preview_source_readiness(&shell),
-            Some("preview source-backed")
+            w30_preview_mode_profile_compact(&shell),
+            "recall/promoted/src"
         );
+        assert_eq!(w30_preview_log_compact(&shell), "recall/src");
+        assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
     }
 
     #[test]
@@ -6913,7 +6980,7 @@ mod tests {
         assert!(rendered.contains("bank-b"));
         assert!(rendered.contains("pad-03"));
         assert!(rendered.contains("cue idle | audition"));
-        assert!(rendered.contains("prev audition/audition"));
+        assert!(rendered.contains("prev audition/fallback"));
         assert!(rendered.contains("mix 0.64/0.68"));
         assert!(rendered.contains("cap cap-01 | pending"), "{rendered}");
     }
@@ -6949,7 +7016,7 @@ mod tests {
 
         assert!(rendered.contains("W-30 Lane"));
         assert!(rendered.contains("cue idle | trigger"));
-        assert!(rendered.contains("prev recall/promoted"));
+        assert!(rendered.contains("prev recall/fallback"));
         assert!(rendered.contains("mix 0.64/0.69"));
         assert!(rendered.contains("cap cap-01 | r1@0.84"), "{rendered}");
     }

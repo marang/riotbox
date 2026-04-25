@@ -100,7 +100,7 @@ What to observe:
 - `Capture` is where the shell begins to feel sampler-like
 - `Do Next` is the fastest place to read the next capture/promote/hit step
 - `hear ... stored [o] raw or [p]->[w]` means the capture exists; `[o]` auditions the raw moment, while `[p]` then `[w]` promotes it into a playable W-30 hit
-- `audition raw/src` means `[o]` is using source-backed capture material; `audition raw/fallback` means Riotbox stayed on the safe synthetic preview
+- `.../src` means the W-30 preview is source-backed; `.../fallback` means Riotbox stayed on the safe synthetic preview
 - after promotion, `hear ... [w]/[o]` means you can trigger it with `w` or audition it with `o`
 
 ## Recipe 4: Undo On Purpose

@@ -84,7 +84,7 @@
         "[p]->[w]",
         "preview",
         "raw_capture_audition |",
-        "preview fallback",
+        "| fallback",
         "music bus 0.64 | grit 0.58",
         "last lane capture cap-01"
       ],
@@ -182,7 +182,8 @@
       "result_summary": "swapped W-30 bank to bank-b/pad-01 with cap-02",
       "jam_contains": [
         "current pad bank-b/pad-01",
-        "current preview recall/promoted",
+        "current preview",
+        "recall/promoted/fallback",
         "next swap"
       ],
       "capture_contains": [
@@ -234,7 +235,8 @@
       "result_summary": "applied shred damage profile to cap-01 on W-30 pad bank-a/pad-01",
       "jam_contains": [
         "current pad bank-a/pad-01",
-        "current preview recall/promoted",
+        "current preview",
+        "recall/promoted/fallback",
         "next shred"
       ],
       "capture_contains": [
@@ -285,7 +287,8 @@
       "result_summary": "froze cap-01 into cap-02 for W-30 reuse on bank-b/pad-03",
       "jam_contains": [
         "current pad bank-b/pad-03",
-        "current preview recall/pinned",
+        "current preview",
+        "recall/pinned/fallback",
         "next freeze"
       ],
       "capture_contains": [
@@ -346,7 +349,8 @@
       "result_summary": "browsed W-30 slice pool to cap-02 on bank-a/pad-01 at beat 42 / phrase 3",
       "jam_contains": [
         "current pad bank-a/pad-01",
-        "current preview recall/browse",
+        "current preview",
+        "recall/browse/fallback",
         "next idle"
       ],
       "capture_contains": [
