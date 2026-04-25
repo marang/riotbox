@@ -1221,6 +1221,7 @@ fn max_action_id(session: &SessionFile) -> Option<riotbox_core::ids::ActionId> {
 
 #[cfg(test)]
 mod tests {
+    use crate::test_support::{scene_energy_for_label, scene_label_hint};
     use std::{f32::consts::PI, fs, io, path::Path, path::PathBuf};
 
     use serde::Deserialize;
@@ -1584,29 +1585,6 @@ mod tests {
             stream_error_count: u64::from(matches!(lifecycle, AudioRuntimeLifecycle::Faulted)),
             last_stream_error: matches!(lifecycle, AudioRuntimeLifecycle::Faulted)
                 .then(|| "stream stalled".into()),
-        }
-    }
-
-    fn scene_label_hint(label: &str) -> SectionLabelHint {
-        match label {
-            "intro" => SectionLabelHint::Intro,
-            "build" => SectionLabelHint::Build,
-            "drop" => SectionLabelHint::Drop,
-            "break" => SectionLabelHint::Break,
-            "verse" => SectionLabelHint::Verse,
-            "chorus" => SectionLabelHint::Chorus,
-            "bridge" => SectionLabelHint::Bridge,
-            "outro" => SectionLabelHint::Outro,
-            _ => SectionLabelHint::Unknown,
-        }
-    }
-
-    fn scene_energy_for_label(label: &str) -> EnergyClass {
-        match label {
-            "drop" | "chorus" => EnergyClass::High,
-            "break" | "outro" => EnergyClass::Low,
-            "intro" | "build" | "verse" | "bridge" => EnergyClass::Medium,
-            _ => EnergyClass::Unknown,
         }
     }
 
