@@ -147,6 +147,7 @@ docs/
 - `benchmarks/scene_restore_state_contrast_baseline_2026-04-18.md`: Scene Brain restore `waits` vs ready contrast baseline captured
 - `benchmarks/scene_post_landed_energy_cue_baseline_2026-04-25.md`: Scene Brain post-landed `scene/energy` cue baseline captured
 - `benchmarks/scene_cue_ladder_baseline_2026-04-25.md`: Scene Brain full cue-ladder readability baseline captured
+- `benchmarks/scene_footer_tick_readability_baseline_2026-04-25.md`: Scene Brain footer timing tick readability baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured

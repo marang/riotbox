@@ -32,3 +32,5 @@ Current benchmark artifacts:
   First bounded readability baseline for the post-landed Scene Brain cue using compact `scene/energy` labels.
 - [scene_cue_ladder_baseline_2026-04-25.md](./scene_cue_ladder_baseline_2026-04-25.md)
   First bounded readability baseline for the complete Scene Brain cue ladder across queued, landed, ready, restore, and Log confirmation states.
+- [scene_footer_tick_readability_baseline_2026-04-25.md](./scene_footer_tick_readability_baseline_2026-04-25.md)
+  First bounded readability baseline for the compact ASCII timing tick in the queued Scene Brain footer cue.
