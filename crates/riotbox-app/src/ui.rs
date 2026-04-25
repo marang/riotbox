@@ -145,15 +145,6 @@ const GESTURE_AUDITION: &str = "audition";
 const GESTURE_RESAMPLE: &str = "resample";
 const GESTURE_UNDO: &str = "undo";
 
-const PRIMARY_GESTURES: &[(&str, &str)] = &[
-    ("y", GESTURE_SCENE_JUMP),
-    ("g", GESTURE_FOLLOW),
-    ("f", GESTURE_FILL),
-    ("c", GESTURE_CAPTURE),
-    ("w", GESTURE_HIT),
-    ("u", GESTURE_UNDO),
-];
-
 const ADVANCED_GESTURES: &[(&str, &str)] = &[
     ("Y", GESTURE_RESTORE),
     ("a", GESTURE_ANSWER),
@@ -1254,10 +1245,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             "Inspect is read-only: use i to return, then queue actions from perform mode",
         ));
     } else {
-        lines.push(footer_primary_line(&render_gesture_items(
-            PRIMARY_GESTURES,
-            " ",
-        )));
+        lines.push(footer_primary_line(&render_primary_gesture_items(shell)));
         if let Some(scene_cue) = footer_scene_affordance_cue(shell) {
             lines.push(footer_scene_line(&scene_cue));
         } else {
@@ -1308,6 +1296,26 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(paragraph, area);
+}
+
+fn render_primary_gesture_items(shell: &JamShellState) -> String {
+    let scene_jump_label = if shell.app.jam_view.scene.next_scene.is_none()
+        && shell.app.jam_view.scene.scene_count <= 1
+    {
+        "jump waits"
+    } else {
+        GESTURE_SCENE_JUMP
+    };
+    let gestures = [
+        ("y", scene_jump_label),
+        ("g", GESTURE_FOLLOW),
+        ("f", GESTURE_FILL),
+        ("c", GESTURE_CAPTURE),
+        ("w", GESTURE_HIT),
+        ("u", GESTURE_UNDO),
+    ];
+
+    render_gesture_items(&gestures, " ")
 }
 
 fn footer_primary_line(gestures: &str) -> Line<'static> {
@@ -5334,6 +5342,10 @@ mod tests {
 
         assert!(
             rendered.contains("[y] jump waits for 2 scenes"),
+            "{rendered}"
+        );
+        assert!(
+            rendered.contains("Primary: y jump waits | g follow | f fill"),
             "{rendered}"
         );
     }
