@@ -94,5 +94,42 @@
         "at bar 10 / phrase 2"
       ]
     }
+  },
+  {
+    "name": "scene_restore_low_energy_break_committed",
+    "section_labels": ["drop", "break"],
+    "action": "restore_scene",
+    "initial_active_scene": "scene-01-drop",
+    "initial_current_scene": "scene-01-drop",
+    "initial_restore_scene": "scene-02-break",
+    "requested_at": 700,
+    "committed_at": 820,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 45,
+      "bar_index": 11,
+      "phrase_index": 2,
+      "scene_id": "scene-01-drop"
+    },
+    "expected": {
+      "scenes": ["scene-01-drop", "scene-02-break"],
+      "active_scene": "scene-02-break",
+      "current_scene": "scene-02-break",
+      "active_scene_energy": "low",
+      "restore_scene": "scene-01-drop",
+      "restore_scene_energy": "high",
+      "result_summary": "restored scene scene-02-break at bar 11 / phrase 2",
+      "jam_contains": [
+        "scene-02-break",
+        "live break/low <> restore drop/high",
+        "scene transition idle"
+      ],
+      "log_contains": [
+        "scene break | low",
+        "trail restore break",
+        "result restored scene scene-02-break",
+        "at bar 11 / phrase 2"
+      ]
+    }
   }
 ]
