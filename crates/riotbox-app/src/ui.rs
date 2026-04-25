@@ -3160,6 +3160,10 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
 fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
+    if let Some(lines) = pending_capture_do_next_lines(capture) {
+        return lines;
+    }
+
     let Some(last_capture_id) = capture.last_capture_id.as_deref() else {
         return vec![
             Line::from("1 [c] capture phrase"),
@@ -3189,6 +3193,53 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             Line::from("[2] confirm result"),
         ],
     }
+}
+
+fn pending_capture_do_next_lines(
+    capture: &riotbox_core::view::jam::CaptureSummaryView,
+) -> Option<Vec<Line<'static>>> {
+    let pending = capture.pending_capture_items.first()?;
+
+    if matches!(
+        pending.command.as_str(),
+        "capture.now" | "capture.loop" | "capture.bar_group" | "w30.capture_to_pad"
+    ) {
+        return Some(vec![
+            Line::from(format!("queued [c] capture @ {}", pending.quantization)),
+            Line::from("wait for commit"),
+            Line::from("then [p] promote keeper"),
+            Line::from("[2] confirm capture"),
+        ]);
+    }
+
+    if pending.command == "promote.capture_to_pad" {
+        return Some(vec![
+            Line::from(format!("queued [p] promote @ {}", pending.quantization)),
+            Line::from("wait, then [w] hit"),
+            Line::from(format!("target {}", pending.target)),
+            Line::from("[2] confirm promotion"),
+        ]);
+    }
+
+    if pending.command == "promote.capture_to_scene" {
+        return Some(vec![
+            Line::from(format!("queued scene promote @ {}", pending.quantization)),
+            Line::from("wait for scene target"),
+            Line::from(format!("target {}", pending.target)),
+            Line::from("[2] confirm promotion"),
+        ]);
+    }
+
+    if pending.command == "w30.loop_freeze" || pending.command == "promote.resample" {
+        return Some(vec![
+            Line::from(format!("queued W-30 reshape @ {}", pending.quantization)),
+            Line::from("wait for phrase seam"),
+            Line::from(format!("target {}", pending.target)),
+            Line::from("[2] confirm result"),
+        ]);
+    }
+
+    None
 }
 
 fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -4654,6 +4705,18 @@ mod tests {
         shell
     }
 
+    fn sample_shell_without_pending_queue() -> JamShellState {
+        let sample_shell = sample_shell_state();
+        JamShellState::new(
+            JamAppState::from_parts(
+                sample_shell.app.session.clone(),
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Ingest,
+        )
+    }
+
     fn scene_post_commit_shell_state(
         command: ActionCommand,
         active_scene: &str,
@@ -5960,8 +6023,15 @@ mod tests {
         assert!(rendered.contains("promotion result pending"));
         assert!(rendered.contains("captures total 1"));
         assert!(rendered.contains("pinned 0 | promoted 0"));
-        assert!(rendered.contains("1 [p] promote cap-01"), "{rendered}");
-        assert!(rendered.contains("2 [w] hit after promote"), "{rendered}");
+        assert!(
+            rendered.contains("queued [p] promote @ next_bar"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("wait, then [w] hit"), "{rendered}");
+        assert!(
+            rendered.contains("target lanew30:bank-a/pad-01"),
+            "{rendered}"
+        );
         assert!(rendered.contains("pending W-30 cue idle"));
         assert!(
             rendered.contains("hear cap-01 stored [p]->[w]"),
@@ -5973,6 +6043,23 @@ mod tests {
         );
         assert!(rendered.contains("g0"), "{rendered}");
         assert!(rendered.contains("latest promoted none"));
+    }
+
+    #[test]
+    fn renders_capture_do_next_with_pending_capture_state() {
+        let first_run_shell = first_run_shell_state();
+        let mut shell = JamShellState::new(first_run_shell.app, ShellLaunchMode::Load);
+        shell.app.queue_capture_bar(240);
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("queued [c] capture @ next_phrase"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("then [p] promote keeper"), "{rendered}");
+        assert!(rendered.contains("[2] confirm capture"), "{rendered}");
     }
 
     #[test]
@@ -6446,7 +6533,7 @@ mod tests {
 
     #[test]
     fn renders_capture_shell_snapshot_with_w30_audition_cue() {
-        let mut shell = sample_shell_state();
+        let mut shell = sample_shell_without_pending_queue();
         shell.app.session.captures[0].assigned_target =
             Some(riotbox_core::session::CaptureTarget::W30Pad {
                 bank_id: "bank-b".into(),
@@ -6474,7 +6561,7 @@ mod tests {
 
     #[test]
     fn renders_capture_heard_path_for_scene_targets_without_w30_audition_keys() {
-        let mut shell = sample_shell_state();
+        let mut shell = sample_shell_without_pending_queue();
         shell.app.session.captures[0].assigned_target =
             Some(riotbox_core::session::CaptureTarget::Scene("drop-1".into()));
         shell.app.refresh_view();
