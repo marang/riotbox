@@ -6319,6 +6319,27 @@ mod tests {
     }
 
     #[test]
+    fn source_window_formatters_keep_surface_shapes_stable() {
+        let source_window = riotbox_core::session::CaptureSourceWindow {
+            source_id: SourceId::from("src-1"),
+            start_seconds: 1.25,
+            end_seconds: 3.75,
+            start_frame: 60_000,
+            end_frame: 180_000,
+        };
+
+        assert_eq!(format_source_window_span(&source_window), "1.25-3.75s");
+        assert_eq!(
+            format_source_window_provenance(&source_window),
+            "win src-1 1.25-3.75s"
+        );
+        assert_eq!(
+            format_source_window_log_compact(&source_window),
+            "win 1.25-3.75s src-1"
+        );
+    }
+
+    #[test]
     fn renders_log_w30_source_window_when_available() {
         let mut shell = sample_shell_state();
         shell.app.session.captures[0].source_window =
