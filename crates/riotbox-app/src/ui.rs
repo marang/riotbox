@@ -1837,8 +1837,8 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if show_restore_ready_cue(shell) {
         return vec![
             Line::from(format!(
-                "[Y] restore {} now",
-                compact_scene_label(restore_scene_label(shell).as_str())
+                "[Y] restore {}",
+                restore_scene_now_compact_label(shell)
             )),
             Line::from("[y] jump  [c] capture"),
             Line::from("[2] trail  [u] undo"),
@@ -3018,6 +3018,14 @@ fn restore_scene_energy_direction_label(shell: &JamShellState) -> Option<&'stati
         shell.app.jam_view.scene.active_scene_energy.as_deref(),
         shell.app.jam_view.scene.restore_scene_energy.as_deref(),
     )
+}
+
+fn restore_scene_now_compact_label(shell: &JamShellState) -> String {
+    let scene = compact_scene_label(restore_scene_label(shell).as_str());
+    match restore_scene_energy_direction_label(shell) {
+        Some(direction) => format!("{scene} now ({direction})"),
+        None => format!("{scene} now"),
+    }
 }
 
 fn restore_scene_target_compact_label(shell: &JamShellState) -> String {
@@ -5565,7 +5573,10 @@ mod tests {
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-        assert!(rendered.contains("[Y] restore drop now"), "{rendered}");
+        assert!(
+            rendered.contains("[Y] restore drop now (rise)"),
+            "{rendered}"
+        );
         assert!(
             rendered.contains("Scene: restore drop/high ready | rise | Y brings back drop/high"),
             "{rendered}"
