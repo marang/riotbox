@@ -1849,12 +1849,15 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         return vec![
             Line::from(format!("what changed: {}", latest_landed_line(shell))),
             Line::from("what next: [c] capture  [u] undo"),
-            Line::from("then try: [y] jump  [g] follow"),
+            Line::from(format!(
+                "then try: {}  [g] follow",
+                next_scene_jump_suggestion(shell)
+            )),
         ];
     }
 
     vec![
-        Line::from("[y] jump  [g] follow"),
+        Line::from(format!("{}  [g] follow", next_scene_jump_suggestion(shell))),
         Line::from("[a] answer  [f] fill"),
         Line::from("[c] capture  [w] hit"),
     ]
@@ -2874,6 +2877,22 @@ fn next_scene_candidate_label(shell: &JamShellState) -> String {
         .first()
         .map(ToString::to_string)
         .unwrap_or_else(|| "none".into())
+}
+
+fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
+    let scene_id = next_scene_candidate_label(shell);
+    if scene_id == "none" {
+        return "[y] jump".into();
+    }
+
+    let scene = compact_scene_label(scene_id.as_str());
+    match compact_energy_delta_label(
+        shell.app.jam_view.scene.active_scene_energy.as_deref(),
+        scene_energy_label_for_scene_id(shell, scene_id.as_str()),
+    ) {
+        Some(direction) => format!("[y] jump {scene} ({direction})"),
+        None => format!("[y] jump {scene}"),
+    }
 }
 
 fn current_scene_compact_label(shell: &JamShellState) -> String {
@@ -5310,7 +5329,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("then try: [y] jump  [g] follow"),
+            rendered.contains("then try: [y] jump intro (hold)"),
             "{rendered}"
         );
     }
