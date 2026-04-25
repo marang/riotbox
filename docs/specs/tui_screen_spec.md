@@ -130,7 +130,7 @@ Show:
 - capture provenance summary
 - promotion results
 - favorite or pinned captures
-- the audible handoff path from stored capture to promoted pad, hit, audition, or recall
+- the audible handoff path from stored capture to raw audition, promoted pad, hit, promoted audition, or recall
 - a primary next-step cue for capture, promote, hit, and audition before lower-level routing diagnostics
 
 MVP rule:

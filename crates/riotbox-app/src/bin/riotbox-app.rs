@@ -425,8 +425,8 @@ fn run_event_loop(
                         ),
                     }
                 }
-                ShellKeyOutcome::QueueW30PromotedAudition => {
-                    match shell.app.queue_w30_promoted_audition(timestamp_now()) {
+                ShellKeyOutcome::QueueW30Audition => {
+                    match shell.app.queue_w30_audition(timestamp_now()) {
                         Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
                             shell.set_error_status("queued W-30 audition for next bar");
                         }
@@ -437,7 +437,7 @@ fn run_event_loop(
                             shell.set_error_status("W-30 audition already in state");
                         }
                         None => {
-                            shell.set_error_status("no promoted W-30 capture available to audition")
+                            shell.set_error_status("no W-30 or raw capture available to audition")
                         }
                     }
                 }

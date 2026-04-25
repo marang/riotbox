@@ -945,6 +945,55 @@ impl JamAppState {
         Some(QueueControlResult::Enqueued)
     }
 
+    pub fn queue_w30_audition(&mut self, requested_at: TimestampMs) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        if self.auditionable_w30_capture().is_some() {
+            return self.queue_w30_promoted_audition(requested_at);
+        }
+
+        self.queue_w30_raw_capture_audition(requested_at)
+    }
+
+    pub fn queue_w30_raw_capture_audition(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> Option<QueueControlResult> {
+        if self.w30_pad_cue_pending() {
+            return Some(QueueControlResult::AlreadyPending);
+        }
+
+        let capture = self.raw_auditionable_capture()?.clone();
+        let w30 = &self.session.runtime_state.lane_state.w30;
+        let bank_id = w30.active_bank.clone()?;
+        let pad_id = w30.focused_pad.clone()?;
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::W30AuditionRawCapture,
+            Quantization::NextBar,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                bank_id: Some(bank_id.clone()),
+                pad_id: Some(pad_id.clone()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 0.58,
+            target_id: Some(capture.capture_id.to_string()),
+        };
+        draft.explanation = Some(format!(
+            "audition raw capture {} on W-30 preview {bank_id}/{pad_id}",
+            capture.capture_id
+        ));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        Some(QueueControlResult::Enqueued)
+    }
+
     pub fn queue_w30_trigger_pad(
         &mut self,
         requested_at: TimestampMs,
@@ -1430,6 +1479,7 @@ mod tests {
     fn w30_preview_mode_state(value: &str) -> W30PreviewModeState {
         match value {
             "live_recall" => W30PreviewModeState::LiveRecall,
+            "raw_capture_audition" => W30PreviewModeState::RawCaptureAudition,
             "promoted_audition" => W30PreviewModeState::PromotedAudition,
             other => panic!("unsupported W-30 preview mode fixture value: {other}"),
         }
@@ -3155,6 +3205,97 @@ mod tests {
             Some("bank-b/pad-04")
         );
         assert_eq!(state.jam_view.lanes.w30_pending_recall_target, None);
+    }
+
+    #[test]
+    fn queue_w30_audition_targets_raw_capture_before_promotion() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_w30_audition(620),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::W30AuditionRawCapture);
+        assert_eq!(
+            pending[0].target.bank_id.as_ref().map(ToString::to_string),
+            Some("bank-a".into())
+        );
+        assert_eq!(
+            pending[0].target.pad_id.as_ref().map(ToString::to_string),
+            Some("pad-01".into())
+        );
+        assert_eq!(
+            pending[0].explanation.as_deref(),
+            Some("audition raw capture cap-01 on W-30 preview bank-a/pad-01")
+        );
+        assert_eq!(
+            state.jam_view.lanes.w30_pending_audition_target.as_deref(),
+            Some("bank-a/pad-01")
+        );
+    }
+
+    #[test]
+    fn committed_w30_raw_capture_audition_updates_preview_state() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_w30_audition(620),
+            Some(QueueControlResult::Enqueued)
+        );
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            700,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .map(|action| action.command),
+            Some(ActionCommand::W30AuditionRawCapture)
+        );
+        assert_eq!(
+            state.session.runtime_state.lane_state.w30.preview_mode,
+            Some(W30PreviewModeState::RawCaptureAudition)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::RawCaptureAudition
+        );
+        assert_eq!(
+            state.runtime.w30_preview.source_profile,
+            Some(W30PreviewSourceProfile::RawCaptureAudition)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.capture_id.as_deref(),
+            Some("cap-01")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("auditioned raw cap-01 on W-30 preview bank-a/pad-01")
+        );
     }
 
     #[test]

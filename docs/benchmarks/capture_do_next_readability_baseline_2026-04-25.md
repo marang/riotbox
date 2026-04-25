@@ -51,9 +51,9 @@ Current measured value:
 - zero screen switches
 - one top-row read:
   - `Do Next`
-  - `1 [p] promote <capture>`
-  - `2 [w] hit after promote`
-  - `3 [o] audition pad`
+  - `1 [o] audition raw <capture>`
+  - `2 [p] promote <capture>`
+  - `3 [w] hit after promote`
 
 Judgment:
 
@@ -76,7 +76,7 @@ Current measured value:
 
 - zero screen switches
 - one `Latest Capture` read:
-  - stored case: `hear <capture> stored [p]->[w]`
+  - stored case: `hear <capture> stored [o] raw or [p]->[w]`
   - promoted-pad case: `hear <capture>->pad <bank>/<pad> [w]/[o]`
 
 Judgment:

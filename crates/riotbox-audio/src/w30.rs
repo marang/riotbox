@@ -2,6 +2,7 @@
 pub enum W30PreviewRenderMode {
     Idle,
     LiveRecall,
+    RawCaptureAudition,
     PromotedAudition,
 }
 
@@ -11,6 +12,7 @@ impl W30PreviewRenderMode {
         match self {
             Self::Idle => "idle",
             Self::LiveRecall => "live_recall",
+            Self::RawCaptureAudition => "raw_capture_audition",
             Self::PromotedAudition => "promoted_audition",
         }
     }
@@ -37,6 +39,7 @@ pub enum W30PreviewSourceProfile {
     PinnedRecall,
     PromotedRecall,
     SlicePoolBrowse,
+    RawCaptureAudition,
     PromotedAudition,
 }
 
@@ -47,6 +50,7 @@ impl W30PreviewSourceProfile {
             Self::PinnedRecall => "pinned_recall",
             Self::PromotedRecall => "promoted_recall",
             Self::SlicePoolBrowse => "slice_pool_browse",
+            Self::RawCaptureAudition => "raw_capture_audition",
             Self::PromotedAudition => "promoted_audition",
         }
     }
@@ -196,6 +200,10 @@ mod tests {
         assert_eq!(W30PreviewRenderMode::Idle.label(), "idle");
         assert_eq!(W30PreviewRenderMode::LiveRecall.label(), "live_recall");
         assert_eq!(
+            W30PreviewRenderMode::RawCaptureAudition.label(),
+            "raw_capture_audition"
+        );
+        assert_eq!(
             W30PreviewRenderMode::PromotedAudition.label(),
             "promoted_audition"
         );
@@ -215,6 +223,10 @@ mod tests {
         assert_eq!(
             W30PreviewSourceProfile::SlicePoolBrowse.label(),
             "slice_pool_browse"
+        );
+        assert_eq!(
+            W30PreviewSourceProfile::RawCaptureAudition.label(),
+            "raw_capture_audition"
         );
         assert_eq!(
             W30PreviewSourceProfile::PromotedAudition.label(),

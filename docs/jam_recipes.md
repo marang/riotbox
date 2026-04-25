@@ -99,7 +99,7 @@ What to observe:
 - captured material starts becoming reusable W-30 material
 - `Capture` is where the shell begins to feel sampler-like
 - `Do Next` is the fastest place to read the next capture/promote/hit step
-- `hear ... stored [p]->[w]` means the capture exists but still needs promotion before it is a playable W-30 hit
+- `hear ... stored [o] raw or [p]->[w]` means the capture exists; `[o]` auditions the raw moment, while `[p]` then `[w]` promotes it into a playable W-30 hit
 - after promotion, `hear ... [w]/[o]` means you can trigger it with `w` or audition it with `o`
 
 ## Recipe 4: Undo On Purpose

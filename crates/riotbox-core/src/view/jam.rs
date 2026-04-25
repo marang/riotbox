@@ -72,7 +72,8 @@ impl JamViewModel {
                 .iter()
                 .rev()
                 .find_map(|action| match action.command {
-                    crate::action::ActionCommand::W30AuditionPromoted => action
+                    crate::action::ActionCommand::W30AuditionRawCapture
+                    | crate::action::ActionCommand::W30AuditionPromoted => action
                         .target
                         .bank_id
                         .as_ref()

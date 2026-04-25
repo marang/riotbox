@@ -22,6 +22,7 @@ pub(super) fn apply_w30_side_effects(
             | ActionCommand::W30ApplyDamageProfile
             | ActionCommand::W30LoopFreeze
             | ActionCommand::W30StepFocus
+            | ActionCommand::W30AuditionRawCapture
             | ActionCommand::W30AuditionPromoted
             | ActionCommand::W30TriggerPad
     ) {
@@ -55,6 +56,7 @@ pub(super) fn apply_w30_side_effects(
     session.runtime_state.lane_state.w30.active_bank = Some(bank_id.clone());
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id.clone());
     session.runtime_state.lane_state.w30.preview_mode = Some(match action.command {
+        ActionCommand::W30AuditionRawCapture => W30PreviewModeState::RawCaptureAudition,
         ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
         ActionCommand::W30ApplyDamageProfile => session
             .runtime_state
@@ -75,12 +77,14 @@ pub(super) fn apply_w30_side_effects(
     }
     if matches!(
         action.command,
-        ActionCommand::W30AuditionPromoted
+        ActionCommand::W30AuditionRawCapture
+            | ActionCommand::W30AuditionPromoted
             | ActionCommand::W30TriggerPad
             | ActionCommand::W30ApplyDamageProfile
     ) {
         let grit = match &action.params {
             ActionParams::Mutation { intensity, .. } => match action.command {
+                ActionCommand::W30AuditionRawCapture => intensity.clamp(0.0, 1.0),
                 ActionCommand::W30AuditionPromoted => intensity.clamp(0.0, 1.0),
                 ActionCommand::W30TriggerPad => (intensity * 0.82).clamp(0.0, 1.0),
                 ActionCommand::W30ApplyDamageProfile => intensity.clamp(0.0, 1.0),
@@ -151,6 +155,12 @@ pub(super) fn apply_w30_side_effects(
                         "applied {} damage profile to {capture_id} on W-30 pad {bank_id}/{pad_id}",
                         JamAppState::W30_DAMAGE_PROFILE_LABEL
                     )
+                },
+            ),
+            ActionCommand::W30AuditionRawCapture => capture_id.as_ref().map_or_else(
+                || format!("auditioned raw capture on W-30 preview {bank_id}/{pad_id}"),
+                |capture_id| {
+                    format!("auditioned raw {capture_id} on W-30 preview {bank_id}/{pad_id}")
                 },
             ),
             ActionCommand::W30AuditionPromoted => capture_id.as_ref().map_or_else(

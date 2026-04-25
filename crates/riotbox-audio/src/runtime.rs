@@ -1272,6 +1272,7 @@ fn w30_preview_subdivision(render: &RealtimeW30PreviewRenderState) -> u32 {
         Some(W30PreviewSourceProfile::PinnedRecall) => 1,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 2,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => 3,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => 2,
         Some(W30PreviewSourceProfile::PromotedAudition) => 4,
     }
 }
@@ -1281,6 +1282,7 @@ fn should_trigger_w30_step(render: &RealtimeW30PreviewRenderState, step: i64) ->
         Some(W30PreviewSourceProfile::PinnedRecall) => true,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => step.rem_euclid(2) == 0,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => step.rem_euclid(3) != 1,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => step.rem_euclid(2) == 0,
         Some(W30PreviewSourceProfile::PromotedAudition) => {
             !matches!(step.rem_euclid(4), 1) || render.grit_level >= 0.65
         }
@@ -1291,12 +1293,14 @@ fn w30_trigger_envelope(render: &RealtimeW30PreviewRenderState) -> f32 {
     let mode_boost = match render.mode {
         W30PreviewRenderMode::Idle => 0.0,
         W30PreviewRenderMode::LiveRecall => 0.16,
+        W30PreviewRenderMode::RawCaptureAudition => 0.2,
         W30PreviewRenderMode::PromotedAudition => 0.24,
     };
     let profile_boost = match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 0.0,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 0.05,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => 0.07,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => 0.08,
         Some(W30PreviewSourceProfile::PromotedAudition) => 0.1,
     };
     (0.32 + mode_boost + profile_boost + render.grit_level.clamp(0.0, 1.0) * 0.18).clamp(0.0, 0.9)
@@ -1307,6 +1311,7 @@ fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f
         Some(W30PreviewSourceProfile::PinnedRecall) => 196.0,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 261.63,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => 293.66,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => 220.0,
         Some(W30PreviewSourceProfile::PromotedAudition) => 329.63,
     };
     let step_offset = match render.source_profile {
@@ -1327,6 +1332,12 @@ fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f
             0 => 0.0,
             1 => 5.0,
             _ => 10.0,
+        },
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => match step.rem_euclid(4) {
+            0 => 0.0,
+            1 => 3.0,
+            2 => 10.0,
+            _ => 5.0,
         },
         Some(W30PreviewSourceProfile::PromotedAudition) => match step.rem_euclid(4) {
             0 => 0.0,
@@ -1352,12 +1363,14 @@ fn w30_render_gain(render: &RealtimeW30PreviewRenderState, transport_running: bo
     let base = match render.mode {
         W30PreviewRenderMode::Idle => 0.0,
         W30PreviewRenderMode::LiveRecall => 0.12,
+        W30PreviewRenderMode::RawCaptureAudition => 0.15,
         W30PreviewRenderMode::PromotedAudition => 0.18,
     };
     let profile_gain = match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 1.0,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 1.08,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => 1.12,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => 1.16,
         Some(W30PreviewSourceProfile::PromotedAudition) => 1.2,
     };
     let transport_gain = if transport_running { 1.0 } else { 0.72 };
@@ -1373,12 +1386,14 @@ fn w30_envelope_decay(render: &RealtimeW30PreviewRenderState) -> f32 {
     let base = match render.mode {
         W30PreviewRenderMode::Idle => 0.0,
         W30PreviewRenderMode::LiveRecall => 0.99983,
+        W30PreviewRenderMode::RawCaptureAudition => 0.99978,
         W30PreviewRenderMode::PromotedAudition => 0.99972,
     };
     let profile_offset = match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 0.00002,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 0.0,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => -0.00001,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => -0.00002,
         Some(W30PreviewSourceProfile::PromotedAudition) => -0.00003,
     };
     let grit_offset = render.grit_level.clamp(0.0, 1.0) * 0.00008;
@@ -1718,14 +1733,16 @@ const fn w30_mode_to_u32(mode: W30PreviewRenderMode) -> u32 {
     match mode {
         W30PreviewRenderMode::Idle => 0,
         W30PreviewRenderMode::LiveRecall => 1,
-        W30PreviewRenderMode::PromotedAudition => 2,
+        W30PreviewRenderMode::RawCaptureAudition => 2,
+        W30PreviewRenderMode::PromotedAudition => 3,
     }
 }
 
 const fn w30_mode_from_u32(value: u32) -> W30PreviewRenderMode {
     match value {
         1 => W30PreviewRenderMode::LiveRecall,
-        2 => W30PreviewRenderMode::PromotedAudition,
+        2 => W30PreviewRenderMode::RawCaptureAudition,
+        3 => W30PreviewRenderMode::PromotedAudition,
         _ => W30PreviewRenderMode::Idle,
     }
 }
@@ -1749,7 +1766,8 @@ const fn w30_source_profile_to_u32(profile: Option<W30PreviewSourceProfile>) -> 
         Some(W30PreviewSourceProfile::PinnedRecall) => 1,
         Some(W30PreviewSourceProfile::PromotedRecall) => 2,
         Some(W30PreviewSourceProfile::SlicePoolBrowse) => 3,
-        Some(W30PreviewSourceProfile::PromotedAudition) => 4,
+        Some(W30PreviewSourceProfile::RawCaptureAudition) => 4,
+        Some(W30PreviewSourceProfile::PromotedAudition) => 5,
         None => 0,
     }
 }
@@ -1759,7 +1777,8 @@ const fn w30_source_profile_from_u32(value: u32) -> Option<W30PreviewSourceProfi
         1 => Some(W30PreviewSourceProfile::PinnedRecall),
         2 => Some(W30PreviewSourceProfile::PromotedRecall),
         3 => Some(W30PreviewSourceProfile::SlicePoolBrowse),
-        4 => Some(W30PreviewSourceProfile::PromotedAudition),
+        4 => Some(W30PreviewSourceProfile::RawCaptureAudition),
+        5 => Some(W30PreviewSourceProfile::PromotedAudition),
         _ => None,
     }
 }
@@ -1999,6 +2018,7 @@ mod tests {
             RealtimeW30PreviewRenderState {
                 mode: match self.mode.as_str() {
                     "live_recall" => W30PreviewRenderMode::LiveRecall,
+                    "raw_capture_audition" => W30PreviewRenderMode::RawCaptureAudition,
                     "promoted_audition" => W30PreviewRenderMode::PromotedAudition,
                     _ => W30PreviewRenderMode::Idle,
                 },
@@ -2009,6 +2029,7 @@ mod tests {
                 source_profile: self.source_profile.as_deref().map(|profile| match profile {
                     "pinned_recall" => W30PreviewSourceProfile::PinnedRecall,
                     "slice_pool_browse" => W30PreviewSourceProfile::SlicePoolBrowse,
+                    "raw_capture_audition" => W30PreviewSourceProfile::RawCaptureAudition,
                     "promoted_audition" => W30PreviewSourceProfile::PromotedAudition,
                     _ => W30PreviewSourceProfile::PromotedRecall,
                 }),
@@ -2402,6 +2423,33 @@ mod tests {
                 trigger_velocity: 0.0,
                 music_bus_level: 0.64,
                 grit_level: 0.4,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 0.0,
+            },
+            &mut state,
+        );
+
+        assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn w30_preview_produces_audible_samples_for_raw_capture_audition() {
+        let mut state = W30PreviewCallbackState::default();
+        let mut buffer = [0.0_f32; 512];
+
+        render_w30_preview_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeW30PreviewRenderState {
+                mode: W30PreviewRenderMode::RawCaptureAudition,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::RawCaptureAudition),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
+                music_bus_level: 0.64,
+                grit_level: 0.58,
                 is_transport_running: true,
                 tempo_bpm: 126.0,
                 position_beats: 0.0,

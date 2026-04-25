@@ -159,6 +159,7 @@ Optional target references:
 - `w30.capture_to_pad`
 - `w30.live_recall`
 - `w30.trigger_pad`
+- `w30.audition_raw_capture`
 - `w30.audition_promoted`
 - `w30.swap_bank`
 - `w30.browse_slice_pool`

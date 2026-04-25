@@ -124,6 +124,7 @@ pub(super) fn build_w30_preview_render_state(
 
     let mode = match w30.preview_mode.unwrap_or(W30PreviewModeState::LiveRecall) {
         W30PreviewModeState::LiveRecall => W30PreviewRenderMode::LiveRecall,
+        W30PreviewModeState::RawCaptureAudition => W30PreviewRenderMode::RawCaptureAudition,
         W30PreviewModeState::PromotedAudition => W30PreviewRenderMode::PromotedAudition,
     };
     let last_trigger = last_committed_w30_trigger_action(session);
@@ -138,6 +139,9 @@ pub(super) fn build_w30_preview_render_state(
         last_committed_w30_preview_action(session).map(|action| action.command);
     let source_profile = match mode {
         W30PreviewRenderMode::Idle => None,
+        W30PreviewRenderMode::RawCaptureAudition => {
+            Some(W30PreviewSourceProfile::RawCaptureAudition)
+        }
         W30PreviewRenderMode::PromotedAudition => Some(W30PreviewSourceProfile::PromotedAudition),
         W30PreviewRenderMode::LiveRecall => capture.map(|capture| match last_preview_action {
             Some(ActionCommand::W30BrowseSlicePool) => W30PreviewSourceProfile::SlicePoolBrowse,
@@ -221,6 +225,7 @@ pub(super) fn build_w30_resample_tap_state(
 pub(super) fn normalize_w30_preview_mode(session: &mut SessionFile) {
     let preview_mode = last_committed_w30_preview_action(session)
         .map(|action| match action.command {
+            ActionCommand::W30AuditionRawCapture => W30PreviewModeState::RawCaptureAudition,
             ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
             ActionCommand::W30LiveRecall
             | ActionCommand::W30SwapBank
@@ -250,6 +255,7 @@ fn last_committed_w30_preview_action(session: &SessionFile) -> Option<&Action> {
                     | ActionCommand::W30SwapBank
                     | ActionCommand::W30BrowseSlicePool
                     | ActionCommand::W30StepFocus
+                    | ActionCommand::W30AuditionRawCapture
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
             )

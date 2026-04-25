@@ -153,6 +153,7 @@ pub struct Mc202LaneState {
 #[serde(rename_all = "snake_case")]
 pub enum W30PreviewModeState {
     LiveRecall,
+    RawCaptureAudition,
     PromotedAudition,
 }
 

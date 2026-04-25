@@ -111,7 +111,7 @@ pub enum ShellKeyOutcome {
     QueueW30ApplyDamageProfile,
     QueueW30LoopFreeze,
     QueueW30LiveRecall,
-    QueueW30PromotedAudition,
+    QueueW30Audition,
     QueueW30Resample,
     TogglePinLatestCapture,
     LowerDrumBusLevel,
@@ -410,7 +410,7 @@ impl JamShellState {
             }
             KeyCode::Char('o') => {
                 self.status_message = queued_status_message(GESTURE_AUDITION, "next bar");
-                ShellKeyOutcome::QueueW30PromotedAudition
+                ShellKeyOutcome::QueueW30Audition
             }
             KeyCode::Char('e') => {
                 self.status_message = queued_status_message(GESTURE_RESAMPLE, "next phrase");
@@ -2045,6 +2045,7 @@ fn jam_action_label(command: &str) -> String {
         "w30.apply_damage_profile" => GESTURE_DAMAGE.into(),
         "w30.loop_freeze" => GESTURE_FREEZE.into(),
         "w30.live_recall" => GESTURE_RECALL.into(),
+        "w30.audition_raw_capture" => GESTURE_AUDITION.into(),
         "w30.audition_promoted" => GESTURE_AUDITION.into(),
         "promote.resample" => GESTURE_RESAMPLE.into(),
         _ => command.to_string(),
@@ -2147,6 +2148,7 @@ fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
         match shell.app.runtime.w30_preview.mode {
             W30PreviewRenderMode::Idle => "idle",
             W30PreviewRenderMode::LiveRecall => "recall",
+            W30PreviewRenderMode::RawCaptureAudition => "audition raw",
             W30PreviewRenderMode::PromotedAudition => "audition",
         },
         match shell.app.runtime.w30_preview.source_profile {
@@ -2154,6 +2156,7 @@ fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
             Some(riotbox_audio::w30::W30PreviewSourceProfile::PinnedRecall) => "pinned",
             Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall) => "promoted",
             Some(riotbox_audio::w30::W30PreviewSourceProfile::SlicePoolBrowse) => "browse",
+            Some(riotbox_audio::w30::W30PreviewSourceProfile::RawCaptureAudition) => "raw",
             Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition) => "audition",
         }
     )
@@ -3187,9 +3190,9 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             Line::from(format!("source {last_capture_id}")),
         ],
         _ => vec![
-            Line::from(format!("1 [p] promote {last_capture_id}")),
-            Line::from("2 [w] hit after promote"),
-            Line::from("3 [o] audition pad"),
+            Line::from(format!("1 [o] audition raw {last_capture_id}")),
+            Line::from(format!("2 [p] promote {last_capture_id}")),
+            Line::from("3 [w] hit after promote"),
             Line::from("[2] confirm result"),
         ],
     }
@@ -3453,7 +3456,7 @@ fn capture_heard_path_label(shell: &JamShellState) -> String {
             format!("{last_capture_id}->{target} ready")
         }
         Some(target) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
-        _ => format!("{last_capture_id} stored [p]->[w]"),
+        _ => format!("{last_capture_id} stored [o] raw or [p]->[w]"),
     }
 }
 
@@ -3488,6 +3491,7 @@ fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
                     | "w30.apply_damage_profile"
                     | "w30.loop_freeze"
                     | "w30.live_recall"
+                    | "w30.audition_raw_capture"
                     | "w30.audition_promoted"
                     | "promote.resample"
             )
@@ -3601,6 +3605,7 @@ fn last_committed_w30_action(shell: &JamShellState) -> Option<&riotbox_core::act
                         | riotbox_core::action::ActionCommand::W30ApplyDamageProfile
                         | riotbox_core::action::ActionCommand::W30LoopFreeze
                         | riotbox_core::action::ActionCommand::W30LiveRecall
+                        | riotbox_core::action::ActionCommand::W30AuditionRawCapture
                         | riotbox_core::action::ActionCommand::W30AuditionPromoted
                         | riotbox_core::action::ActionCommand::PromoteResample
                 )
@@ -3616,6 +3621,7 @@ fn short_w30_action_label(command: &riotbox_core::action::ActionCommand) -> &'st
         riotbox_core::action::ActionCommand::W30ApplyDamageProfile => "damage",
         riotbox_core::action::ActionCommand::W30LoopFreeze => "freeze",
         riotbox_core::action::ActionCommand::W30LiveRecall => "recall",
+        riotbox_core::action::ActionCommand::W30AuditionRawCapture => "audition raw",
         riotbox_core::action::ActionCommand::W30AuditionPromoted => "audition",
         riotbox_core::action::ActionCommand::PromoteResample => "resample",
         _ => "other",
@@ -4332,6 +4338,9 @@ mod tests {
     fn w30_preview_mode_state(value: &str) -> riotbox_core::session::W30PreviewModeState {
         match value {
             "live_recall" => riotbox_core::session::W30PreviewModeState::LiveRecall,
+            "raw_capture_audition" => {
+                riotbox_core::session::W30PreviewModeState::RawCaptureAudition
+            }
             "promoted_audition" => riotbox_core::session::W30PreviewModeState::PromotedAudition,
             other => panic!("unsupported W-30 preview mode fixture value: {other}"),
         }
@@ -5937,7 +5946,7 @@ mod tests {
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('o')),
-            ShellKeyOutcome::QueueW30PromotedAudition
+            ShellKeyOutcome::QueueW30Audition
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('e')),
@@ -6073,9 +6082,10 @@ mod tests {
         );
         assert!(rendered.contains("pending W-30 cue idle"));
         assert!(
-            rendered.contains("hear cap-01 stored [p]->[w]"),
+            rendered.contains("hear cap-01 stored [o] raw or"),
             "{rendered}"
         );
+        assert!(rendered.contains("[p]->[w]"), "{rendered}");
         assert!(
             rendered.contains("forge idle | tap ready/raw"),
             "{rendered}"
@@ -6099,6 +6109,34 @@ mod tests {
         );
         assert!(rendered.contains("then [p] promote keeper"), "{rendered}");
         assert!(rendered.contains("[2] confirm capture"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_capture_shell_snapshot_with_raw_capture_audition_cue() {
+        let mut shell = sample_shell_without_pending_queue();
+        shell.app.session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+        shell.app.refresh_view();
+        assert_eq!(
+            shell.app.queue_w30_audition(260),
+            Some(crate::jam_app::QueueControlResult::Enqueued)
+        );
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 160, 34);
+
+        assert!(rendered.contains("pending W-30 cue audition"), "{rendered}");
+        assert!(rendered.contains("bank-a/pad-01"), "{rendered}");
+        assert!(
+            rendered.contains("hear cap-01 stored [o] raw or [p]->[w]"),
+            "{rendered}"
+        );
+
+        shell.active_screen = ShellScreen::Log;
+        let rendered_log = render_jam_shell_snapshot(&shell, 160, 34);
+        assert!(
+            rendered_log.contains("w30.audition_raw_capture"),
+            "{rendered_log}"
+        );
     }
 
     #[test]

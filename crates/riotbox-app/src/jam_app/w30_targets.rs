@@ -187,6 +187,14 @@ impl JamAppState {
             .find(|capture| capture_targets_w30_pad(capture))
     }
 
+    pub(super) fn raw_auditionable_capture(&self) -> Option<&CaptureRef> {
+        self.session
+            .captures
+            .iter()
+            .rev()
+            .find(|capture| capture.assigned_target.is_none())
+    }
+
     pub(super) fn triggerable_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
@@ -322,6 +330,7 @@ impl JamAppState {
                     | ActionCommand::W30LoopFreeze
                     | ActionCommand::W30LiveRecall
                     | ActionCommand::W30StepFocus
+                    | ActionCommand::W30AuditionRawCapture
                     | ActionCommand::W30AuditionPromoted
                     | ActionCommand::W30TriggerPad
             )
