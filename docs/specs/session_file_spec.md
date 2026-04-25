@@ -271,6 +271,7 @@ CaptureRef {
   capture_id
   type
   source_origin_refs
+  source_window?
   lineage_capture_refs
   resample_generation_depth
   created_from_action
@@ -289,10 +290,13 @@ Examples:
 Minimum provenance:
 
 - source object references when available
+- source audio window metadata when the capture maps directly back to the loaded source
 - explicit capture-to-capture lineage when the material is internally reused
 - resample generation depth for internally derived material
 - generating action ID
 - resulting assigned pad or bank if applicable
+
+`source_window` is optional for backward compatibility and for captures that are derived from internal resampling rather than a direct source range. When present, it should preserve source id, start/end seconds, and start/end source frames so later raw playback can resolve audio without guessing from UI state.
 
 ---
 

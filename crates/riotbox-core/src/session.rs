@@ -277,6 +277,8 @@ pub struct CaptureRef {
     pub capture_type: CaptureType,
     pub source_origin_refs: Vec<String>,
     #[serde(default)]
+    pub source_window: Option<CaptureSourceWindow>,
+    #[serde(default)]
     pub lineage_capture_refs: Vec<CaptureId>,
     #[serde(default)]
     pub resample_generation_depth: u8,
@@ -285,6 +287,15 @@ pub struct CaptureRef {
     pub assigned_target: Option<CaptureTarget>,
     pub is_pinned: bool,
     pub notes: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct CaptureSourceWindow {
+    pub source_id: SourceId,
+    pub start_seconds: f32,
+    pub end_seconds: f32,
+    pub start_frame: u64,
+    pub end_frame: u64,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -440,6 +451,7 @@ mod tests {
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: Some(ActionId(1)),
@@ -471,5 +483,34 @@ mod tests {
         let decoded: SessionFile = serde_json::from_str(&json).expect("deserialize session");
 
         assert_eq!(decoded, session);
+    }
+
+    #[test]
+    fn legacy_capture_refs_without_source_window_still_load() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
+        session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-01"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-a".into()],
+            source_window: None,
+            lineage_capture_refs: Vec::new(),
+            resample_generation_depth: 0,
+            created_from_action: Some(ActionId(1)),
+            storage_path: "captures/cap-01.wav".into(),
+            assigned_target: None,
+            is_pinned: false,
+            notes: None,
+        });
+
+        let mut value = serde_json::to_value(&session).expect("serialize session");
+        value["captures"][0]
+            .as_object_mut()
+            .expect("capture object")
+            .remove("source_window");
+
+        let decoded: SessionFile =
+            serde_json::from_value(value).expect("deserialize legacy session");
+
+        assert_eq!(decoded.captures[0].source_window, None);
     }
 }

@@ -1,14 +1,16 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams},
     ids::{BankId, CaptureId, PadId},
-    session::{CaptureRef, CaptureTarget, CaptureType, SessionFile},
+    session::{CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, SessionFile},
     source_graph::SourceGraph,
+    transport::CommitBoundaryState,
 };
 
 pub(super) fn capture_ref_from_action(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
     action: &Action,
+    boundary: &CommitBoundaryState,
 ) -> Option<CaptureRef> {
     let capture_type = match action.command {
         ActionCommand::CaptureNow | ActionCommand::CaptureLoop => CaptureType::Loop,
@@ -63,6 +65,9 @@ pub(super) fn capture_ref_from_action(
         .map(|capture| capture.source_origin_refs.clone())
         .or_else(|| source_graph.map(capture_origin_refs))
         .unwrap_or_else(|| vec!["source-graph-unavailable".into()]);
+    let source_window = source_capture
+        .and_then(|capture| capture.source_window.clone())
+        .or_else(|| source_graph.and_then(|graph| capture_source_window(graph, action, boundary)));
     let mut lineage_capture_refs = source_capture
         .map(|capture| capture.lineage_capture_refs.clone())
         .unwrap_or_default();
@@ -86,6 +91,7 @@ pub(super) fn capture_ref_from_action(
         capture_id,
         capture_type,
         source_origin_refs,
+        source_window,
         lineage_capture_refs,
         resample_generation_depth,
         created_from_action: Some(action.id),
@@ -93,6 +99,73 @@ pub(super) fn capture_ref_from_action(
         is_pinned: matches!(action.command, ActionCommand::W30LoopFreeze),
         notes: Some(capture_note(action)),
     })
+}
+
+fn capture_source_window(
+    graph: &SourceGraph,
+    action: &Action,
+    boundary: &CommitBoundaryState,
+) -> Option<CaptureSourceWindow> {
+    if !matches!(
+        action.command,
+        ActionCommand::CaptureNow
+            | ActionCommand::CaptureLoop
+            | ActionCommand::CaptureBarGroup
+            | ActionCommand::W30CaptureToPad
+    ) {
+        return None;
+    }
+
+    let start_seconds = seconds_for_beat(graph, boundary.beat_index)?
+        .max(0.0)
+        .min(graph.source.duration_seconds);
+    let bars = match action.params {
+        ActionParams::Capture { bars } => bars.unwrap_or(1),
+        _ => 1,
+    };
+    let beats_per_bar = graph
+        .timing
+        .meter_hint
+        .map_or(4_u64, |meter| u64::from(meter.beats_per_bar));
+    let end_beat = boundary
+        .beat_index
+        .saturating_add(u64::from(bars).saturating_mul(beats_per_bar));
+    let end_seconds = seconds_for_beat(graph, end_beat)
+        .unwrap_or_else(|| seconds_for_beat_estimate(graph, end_beat))
+        .min(graph.source.duration_seconds)
+        .max(start_seconds);
+
+    Some(CaptureSourceWindow {
+        source_id: graph.source.source_id.clone(),
+        start_seconds,
+        end_seconds,
+        start_frame: seconds_to_frame(start_seconds, graph.source.sample_rate),
+        end_frame: seconds_to_frame(end_seconds, graph.source.sample_rate),
+    })
+}
+
+fn seconds_for_beat(graph: &SourceGraph, beat_index: u64) -> Option<f32> {
+    graph
+        .timing
+        .beat_grid
+        .iter()
+        .find(|beat| u64::from(beat.beat_index) == beat_index)
+        .map(|beat| beat.time_seconds)
+        .or_else(|| {
+            graph
+                .timing
+                .bpm_estimate
+                .map(|_| seconds_for_beat_estimate(graph, beat_index))
+        })
+}
+
+fn seconds_for_beat_estimate(graph: &SourceGraph, beat_index: u64) -> f32 {
+    let bpm = graph.timing.bpm_estimate.unwrap_or(120.0).max(1.0);
+    beat_index as f32 * 60.0 / bpm
+}
+
+fn seconds_to_frame(seconds: f32, sample_rate: u32) -> u64 {
+    (seconds.max(0.0) * sample_rate as f32).floor() as u64
 }
 
 pub(super) fn apply_capture_promotion_side_effects(

@@ -1161,7 +1161,7 @@ impl JamAppState {
         boundary: &CommitBoundaryState,
     ) {
         if let Some(capture) =
-            capture_ref_from_action(&self.session, self.source_graph.as_ref(), action)
+            capture_ref_from_action(&self.session, self.source_graph.as_ref(), action, boundary)
         {
             self.session.runtime_state.lane_state.w30.last_capture =
                 Some(capture.capture_id.clone());
@@ -1774,6 +1774,7 @@ mod tests {
             capture_id: CaptureId::from("cap-01"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-a".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: Some(ActionId(1)),
@@ -3002,6 +3003,24 @@ mod tests {
         assert_eq!(state.jam_view.capture.last_capture_origin_count, 2);
         assert_eq!(state.jam_view.capture.unassigned_capture_count, 2);
         assert_eq!(state.jam_view.capture.promoted_capture_count, 0);
+        let source_window = state.session.captures[1]
+            .source_window
+            .as_ref()
+            .expect("capture source window");
+        assert_eq!(source_window.source_id, SourceId::from("src-1"));
+        assert!((source_window.start_seconds - 15.238).abs() < 0.01);
+        assert!((source_window.end_seconds - 22.857).abs() < 0.01);
+        assert_eq!(source_window.start_frame, 731_428);
+        assert_eq!(source_window.end_frame, 1_097_142);
+
+        let tempdir = tempdir().expect("create capture window tempdir");
+        let session_path = tempdir.path().join("capture-window.json");
+        save_session_json(&session_path, &state.session).expect("save capture-window session");
+        let reloaded = load_session_json(&session_path).expect("reload capture-window session");
+        assert_eq!(
+            reloaded.captures[1].source_window,
+            Some(source_window.clone())
+        );
     }
 
     #[test]
@@ -3116,6 +3135,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3131,6 +3151,7 @@ mod tests {
             capture_id: CaptureId::from("cap-03"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-c".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3184,6 +3205,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3331,6 +3353,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3390,6 +3413,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3452,6 +3476,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Resample,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: vec![CaptureId::from("cap-01")],
             resample_generation_depth: 1,
             created_from_action: None,
@@ -3505,6 +3530,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3568,6 +3594,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: vec![CaptureId::from("cap-01")],
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3686,6 +3713,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -3996,6 +4024,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -4089,6 +4118,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: vec![CaptureId::from("cap-01")],
             resample_generation_depth: 0,
             created_from_action: None,
@@ -4237,6 +4267,7 @@ mod tests {
             capture_id: CaptureId::from("cap-02"),
             capture_type: CaptureType::Pad,
             source_origin_refs: vec!["asset-b".into()],
+            source_window: None,
             lineage_capture_refs: Vec::new(),
             resample_generation_depth: 0,
             created_from_action: None,
@@ -5055,6 +5086,7 @@ mod tests {
                     capture_id: CaptureId::from(extra.capture_id.clone()),
                     capture_type: CaptureType::Pad,
                     source_origin_refs: vec!["fixture-extra".into()],
+                    source_window: None,
                     lineage_capture_refs: Vec::new(),
                     resample_generation_depth: 0,
                     created_from_action: None,
