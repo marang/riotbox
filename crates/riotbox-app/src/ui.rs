@@ -1386,6 +1386,11 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
 
     if show_restore_ready_cue(shell) {
         let restore_target = restore_scene_target_compact_label(shell);
+        if let Some(direction) = restore_scene_energy_direction_label(shell) {
+            return Some(format!(
+                "restore {restore_target} ready | {direction} | Y brings back {restore_target}"
+            ));
+        }
         return Some(format!(
             "restore {restore_target} ready | Y brings back {restore_target}"
         ));
@@ -1499,10 +1504,13 @@ fn scene_restore_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
 
     if show_restore_ready_cue(shell) {
         let restore_target = restore_scene_target_compact_label(shell);
+        let direction = restore_scene_energy_direction_label(shell)
+            .map(|direction| format!(" ({direction})"))
+            .unwrap_or_default();
         return Some(vec![
             Line::from(""),
             Line::from("Scene restore"),
-            Line::from(format!("Y is live now for {restore_target}")),
+            Line::from(format!("Y is live now for {restore_target}{direction}")),
             Line::from(format!(
                 "press Y to bring {restore_target} back on the next bar"
             )),
@@ -3003,6 +3011,13 @@ fn compact_energy_delta_label(from: Option<&str>, to: Option<&str>) -> Option<&'
         std::cmp::Ordering::Less => "drop",
         std::cmp::Ordering::Equal => "hold",
     })
+}
+
+fn restore_scene_energy_direction_label(shell: &JamShellState) -> Option<&'static str> {
+    compact_energy_delta_label(
+        shell.app.jam_view.scene.active_scene_energy.as_deref(),
+        shell.app.jam_view.scene.restore_scene_energy.as_deref(),
+    )
 }
 
 fn restore_scene_target_compact_label(shell: &JamShellState) -> String {
@@ -5552,7 +5567,7 @@ mod tests {
 
         assert!(rendered.contains("[Y] restore drop now"), "{rendered}");
         assert!(
-            rendered.contains("Scene: restore drop/high ready | Y brings back drop/high"),
+            rendered.contains("Scene: restore drop/high ready | rise | Y brings back drop/high"),
             "{rendered}"
         );
     }
@@ -5580,7 +5595,7 @@ mod tests {
 
         assert!(rendered.contains("Scene restore"), "{rendered}");
         assert!(
-            rendered.contains("Y is live now for drop/high"),
+            rendered.contains("Y is live now for drop/high (rise)"),
             "{rendered}"
         );
         assert!(
