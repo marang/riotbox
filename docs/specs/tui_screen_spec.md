@@ -129,10 +129,12 @@ Show:
 - capture provenance summary
 - promotion results
 - favorite or pinned captures
+- the audible handoff path from stored capture to promoted pad, hit, audition, or recall
 
 MVP rule:
 
 - this may begin as a focused summary screen, not a deep sampler editor
+- the screen must not imply that a stored capture is already heard; if a promotion or audition step is still required, say so directly
 
 ---
 
