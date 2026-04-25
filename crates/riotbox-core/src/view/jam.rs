@@ -523,6 +523,18 @@ pub enum SceneJumpAvailabilityView {
     Unknown,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneLaunchTargetReason {
+    Ordered,
+    EnergyContrast,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct SceneLaunchCandidateView<'a> {
+    pub scene_id: &'a crate::ids::SceneId,
+    pub reason: SceneLaunchTargetReason,
+}
+
 fn scene_jump_availability(
     session: &SessionFile,
     has_next_scene: bool,
@@ -542,6 +554,13 @@ pub fn next_scene_launch_candidate<'a>(
     session: &'a SessionFile,
     graph: Option<&SourceGraph>,
 ) -> Option<&'a crate::ids::SceneId> {
+    next_scene_launch_candidate_with_reason(session, graph).map(|candidate| candidate.scene_id)
+}
+
+pub fn next_scene_launch_candidate_with_reason<'a>(
+    session: &'a SessionFile,
+    graph: Option<&SourceGraph>,
+) -> Option<SceneLaunchCandidateView<'a>> {
     let scenes = &session.runtime_state.scene_state.scenes;
     if scenes.is_empty() {
         return None;
@@ -562,22 +581,38 @@ pub fn next_scene_launch_candidate<'a>(
     }
 
     let Some(graph) = graph else {
-        return Some(candidate);
+        return Some(SceneLaunchCandidateView {
+            scene_id: candidate,
+            reason: SceneLaunchTargetReason::Ordered,
+        });
     };
     let Some(current_energy) =
         current_scene.and_then(|scene_id| known_scene_energy_label(scene_id.as_str(), graph))
     else {
-        return Some(candidate);
+        return Some(SceneLaunchCandidateView {
+            scene_id: candidate,
+            reason: SceneLaunchTargetReason::Ordered,
+        });
     };
 
     if let Some(contrast_candidate) = candidates.iter().copied().find(|candidate| {
         known_scene_energy_label(candidate.as_str(), graph)
             .is_some_and(|candidate_energy| candidate_energy != current_energy)
     }) {
-        return Some(contrast_candidate);
+        return Some(SceneLaunchCandidateView {
+            scene_id: contrast_candidate,
+            reason: if contrast_candidate == candidate {
+                SceneLaunchTargetReason::Ordered
+            } else {
+                SceneLaunchTargetReason::EnergyContrast
+            },
+        });
     }
 
-    Some(candidate)
+    Some(SceneLaunchCandidateView {
+        scene_id: candidate,
+        reason: SceneLaunchTargetReason::Ordered,
+    })
 }
 
 fn ordered_next_scene_candidates<'a>(
@@ -1367,8 +1402,12 @@ mod tests {
         assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-03-intro"));
         assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
         assert_eq!(
-            next_scene_launch_candidate(&session, Some(&graph)).map(ToString::to_string),
-            Some("scene-03-intro".into())
+            next_scene_launch_candidate_with_reason(&session, Some(&graph))
+                .map(|candidate| (candidate.scene_id.to_string(), candidate.reason,)),
+            Some((
+                "scene-03-intro".into(),
+                SceneLaunchTargetReason::EnergyContrast,
+            ))
         );
 
         let mut graph_with_unknown_current_energy = graph.clone();
@@ -1381,6 +1420,14 @@ mod tests {
         );
 
         assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-02-break"));
+        assert_eq!(
+            next_scene_launch_candidate_with_reason(
+                &session,
+                Some(&graph_with_unknown_current_energy)
+            )
+            .map(|candidate| candidate.reason),
+            Some(SceneLaunchTargetReason::Ordered)
+        );
     }
 
     #[derive(Debug, Deserialize)]

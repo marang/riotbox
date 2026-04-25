@@ -2,7 +2,9 @@ use riotbox_core::{
     TimestampMs,
     action::{ActionCommand, ActionDraft, ActionParams, ActorType, Quantization, TargetScope},
     ids::SceneId,
-    view::jam::next_scene_launch_candidate,
+    view::jam::{
+        SceneLaunchCandidateView, SceneLaunchTargetReason, next_scene_launch_candidate_with_reason,
+    },
 };
 
 use super::{JamAppState, QueueControlResult};
@@ -43,8 +45,8 @@ impl JamAppState {
         })
     }
 
-    fn next_scene_candidate(&self) -> Option<SceneId> {
-        next_scene_launch_candidate(&self.session, self.source_graph.as_ref()).cloned()
+    fn next_scene_candidate(&self) -> Option<SceneLaunchCandidateView<'_>> {
+        next_scene_launch_candidate_with_reason(&self.session, self.source_graph.as_ref())
     }
 
     fn restorable_scene_target(&self) -> Option<SceneId> {
@@ -69,9 +71,10 @@ impl JamAppState {
             return QueueControlResult::AlreadyPending;
         }
 
-        let Some(scene_id) = self.next_scene_candidate() else {
+        let Some(candidate) = self.next_scene_candidate() else {
             return QueueControlResult::AlreadyInState;
         };
+        let scene_id = candidate.scene_id.clone();
 
         let mut draft = ActionDraft::new(
             ActorType::User,
@@ -86,7 +89,12 @@ impl JamAppState {
         draft.params = ActionParams::Scene {
             scene_id: Some(scene_id.clone()),
         };
-        draft.explanation = Some(format!("launch scene {scene_id} on next bar"));
+        draft.explanation = Some(match candidate.reason {
+            SceneLaunchTargetReason::EnergyContrast => {
+                format!("launch contrast scene {scene_id} on next bar")
+            }
+            SceneLaunchTargetReason::Ordered => format!("launch scene {scene_id} on next bar"),
+        });
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued

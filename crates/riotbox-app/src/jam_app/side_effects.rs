@@ -468,9 +468,18 @@ pub(super) fn apply_scene_side_effects(
             ActionCommand::SceneRestore => "restored",
             _ => unreachable!("scene side effects only handle launch and restore"),
         };
+        let target_kind = if action
+            .explanation
+            .as_deref()
+            .is_some_and(|explanation| explanation.contains("contrast scene"))
+        {
+            "contrast scene"
+        } else {
+            "scene"
+        };
         logged_action.result = Some(ActionResult {
             accepted: true,
-            summary: format!("{verb} scene {scene_id} at {position}"),
+            summary: format!("{verb} {target_kind} {scene_id} at {position}"),
         });
     }
 }

@@ -2524,6 +2524,33 @@ mod tests {
             state.queue.pending_actions()[0].target.scene_id,
             Some(SceneId::from("scene-03-intro"))
         );
+        assert_eq!(
+            state.queue.pending_actions()[0].explanation.as_deref(),
+            Some("launch contrast scene scene-03-intro on next bar")
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            350,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("launched contrast scene scene-03-intro at bar 9 / phrase 2")
+        );
     }
 
     #[test]
