@@ -277,6 +277,8 @@ impl JamViewModel {
         }
 
         let next_scene = next_scene_candidate(session).map(ToString::to_string);
+        let scene_jump_availability =
+            scene_jump_availability(session, next_scene.as_deref().is_some());
         let next_scene_energy = graph
             .and_then(|graph| projected_scene_energy_label(next_scene.as_deref(), false, graph));
 
@@ -300,6 +302,7 @@ impl JamViewModel {
                     .as_ref()
                     .map(ToString::to_string),
                 next_scene,
+                scene_jump_availability,
                 active_scene_energy: graph
                     .and_then(|graph| current_scene_energy_label(session, graph)),
                 restore_scene_energy: graph
@@ -506,10 +509,33 @@ pub struct SceneSummaryView {
     pub active_scene: Option<String>,
     pub restore_scene: Option<String>,
     pub next_scene: Option<String>,
+    pub scene_jump_availability: SceneJumpAvailabilityView,
     pub active_scene_energy: Option<String>,
     pub restore_scene_energy: Option<String>,
     pub next_scene_energy: Option<String>,
     pub scene_count: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneJumpAvailabilityView {
+    Ready,
+    WaitingForMoreScenes,
+    Unknown,
+}
+
+fn scene_jump_availability(
+    session: &SessionFile,
+    has_next_scene: bool,
+) -> SceneJumpAvailabilityView {
+    if has_next_scene {
+        return SceneJumpAvailabilityView::Ready;
+    }
+
+    if session.runtime_state.scene_state.scenes.len() <= 1 {
+        return SceneJumpAvailabilityView::WaitingForMoreScenes;
+    }
+
+    SceneJumpAvailabilityView::Unknown
 }
 
 fn next_scene_candidate(session: &SessionFile) -> Option<&crate::ids::SceneId> {
@@ -1074,6 +1100,10 @@ mod tests {
         assert_eq!(vm.source.hook_candidate_count, 1);
         assert_eq!(vm.scene.scene_count, 1);
         assert_eq!(vm.scene.restore_scene, None);
+        assert_eq!(
+            vm.scene.scene_jump_availability,
+            SceneJumpAvailabilityView::WaitingForMoreScenes
+        );
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.scene.restore_scene_energy, None);
         assert_eq!(vm.capture.capture_count, 1);
@@ -1216,6 +1246,10 @@ mod tests {
         assert_eq!(vm.scene.active_scene.as_deref(), Some("scene-02-drop"));
         assert_eq!(vm.scene.restore_scene.as_deref(), Some("scene-01-intro"));
         assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-01-intro"));
+        assert_eq!(
+            vm.scene.scene_jump_availability,
+            SceneJumpAvailabilityView::Ready
+        );
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.scene.restore_scene_energy.as_deref(), Some("medium"));
         assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
@@ -1227,6 +1261,10 @@ mod tests {
         let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
 
         assert_eq!(vm.scene.next_scene, None);
+        assert_eq!(
+            vm.scene.scene_jump_availability,
+            SceneJumpAvailabilityView::WaitingForMoreScenes
+        );
         assert_eq!(vm.scene.next_scene_energy, None);
     }
 

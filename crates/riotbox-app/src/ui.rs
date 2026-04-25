@@ -8,9 +8,12 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 use riotbox_audio::w30::W30PreviewRenderMode;
-use riotbox_core::action::{ActionCommand, ActionStatus};
 use riotbox_core::source_graph::{
     DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint,
+};
+use riotbox_core::{
+    action::{ActionCommand, ActionStatus},
+    view::jam::SceneJumpAvailabilityView,
 };
 
 use crate::jam_app::JamAppState;
@@ -1316,10 +1319,9 @@ fn render_help_primary_gesture_items(shell: &JamShellState) -> String {
 }
 
 fn scene_jump_primary_label(shell: &JamShellState) -> &'static str {
-    if shell.app.jam_view.scene.next_scene.is_none() && shell.app.jam_view.scene.scene_count <= 1 {
-        "jump waits"
-    } else {
-        GESTURE_SCENE_JUMP
+    match shell.app.jam_view.scene.scene_jump_availability {
+        SceneJumpAvailabilityView::WaitingForMoreScenes => "jump waits",
+        SceneJumpAvailabilityView::Ready | SceneJumpAvailabilityView::Unknown => GESTURE_SCENE_JUMP,
     }
 }
 
@@ -2857,10 +2859,14 @@ fn next_action_line(shell: &JamShellState) -> String {
 
 fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
     let Some(scene_id) = shell.app.jam_view.scene.next_scene.as_deref() else {
-        if shell.app.jam_view.scene.scene_count <= 1 {
-            return "[y] jump waits for 2 scenes".into();
+        match shell.app.jam_view.scene.scene_jump_availability {
+            SceneJumpAvailabilityView::WaitingForMoreScenes => {
+                return "[y] jump waits for 2 scenes".into();
+            }
+            SceneJumpAvailabilityView::Ready | SceneJumpAvailabilityView::Unknown => {
+                return "[y] jump".into();
+            }
         }
-        return "[y] jump".into();
     };
 
     let scene = compact_scene_label(scene_id);
@@ -2875,10 +2881,14 @@ fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
 
 fn next_scene_target_compact_label(shell: &JamShellState) -> String {
     let Some(scene_id) = shell.app.jam_view.scene.next_scene.as_deref() else {
-        if shell.app.jam_view.scene.scene_count <= 1 {
-            return "waits for 2 scenes".into();
+        match shell.app.jam_view.scene.scene_jump_availability {
+            SceneJumpAvailabilityView::WaitingForMoreScenes => {
+                return "waits for 2 scenes".into();
+            }
+            SceneJumpAvailabilityView::Ready | SceneJumpAvailabilityView::Unknown => {
+                return "none".into();
+            }
         }
-        return "none".into();
     };
 
     let scene = compact_scene_label(scene_id);
