@@ -163,12 +163,6 @@ const LANE_GESTURES: &[(&str, &str)] = &[
     ("j", GESTURE_BROWSE),
 ];
 
-const HELP_PRIMARY_GESTURES: &[(&str, &str)] = &[
-    ("y", GESTURE_SCENE_JUMP),
-    ("g", GESTURE_FOLLOW),
-    ("f", GESTURE_FILL),
-];
-
 const HELP_PRIMARY_CONFIRM_GESTURES: &[(&str, &str)] = &[
     ("c", GESTURE_CAPTURE),
     ("w", GESTURE_HIT),
@@ -1299,15 +1293,8 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 }
 
 fn render_primary_gesture_items(shell: &JamShellState) -> String {
-    let scene_jump_label = if shell.app.jam_view.scene.next_scene.is_none()
-        && shell.app.jam_view.scene.scene_count <= 1
-    {
-        "jump waits"
-    } else {
-        GESTURE_SCENE_JUMP
-    };
     let gestures = [
-        ("y", scene_jump_label),
+        ("y", scene_jump_primary_label(shell)),
         ("g", GESTURE_FOLLOW),
         ("f", GESTURE_FILL),
         ("c", GESTURE_CAPTURE),
@@ -1316,6 +1303,24 @@ fn render_primary_gesture_items(shell: &JamShellState) -> String {
     ];
 
     render_gesture_items(&gestures, " ")
+}
+
+fn render_help_primary_gesture_items(shell: &JamShellState) -> String {
+    let gestures = [
+        ("y", scene_jump_primary_label(shell)),
+        ("g", GESTURE_FOLLOW),
+        ("f", GESTURE_FILL),
+    ];
+
+    render_gesture_items(&gestures, ": ")
+}
+
+fn scene_jump_primary_label(shell: &JamShellState) -> &'static str {
+    if shell.app.jam_view.scene.next_scene.is_none() && shell.app.jam_view.scene.scene_count <= 1 {
+        "jump waits"
+    } else {
+        GESTURE_SCENE_JUMP
+    }
 }
 
 fn footer_primary_line(gestures: &str) -> Line<'static> {
@@ -1456,7 +1461,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("Primary gestures"),
         Line::from(format!(
             "space: play / pause | {}",
-            render_gesture_items(HELP_PRIMARY_GESTURES, ": ")
+            render_help_primary_gesture_items(shell)
         )),
         Line::from(format!(
             "{} | 2: confirm in Log",
@@ -5346,6 +5351,15 @@ mod tests {
         );
         assert!(
             rendered.contains("Primary: y jump waits | g follow | f fill"),
+            "{rendered}"
+        );
+
+        let mut shell = shell;
+        shell.show_help = true;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("space: play / pause | y: jump waits | g: follow | f: fill"),
             "{rendered}"
         );
     }
