@@ -3437,6 +3437,16 @@ fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
     captures
         .into_iter()
         .map(|capture| {
+            if let Some(source_window) = &capture.source_window {
+                return ListItem::new(format!(
+                    "{} | {:.2}-{:.2}s{}",
+                    capture.capture_id,
+                    source_window.start_seconds,
+                    source_window.end_seconds,
+                    if capture.is_pinned { " | pinned" } else { "" }
+                ));
+            }
+
             let target = capture
                 .assigned_target
                 .as_ref()
@@ -6268,6 +6278,24 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("win src-1 1.25-3.75s"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_recent_capture_source_window_shorthand_when_available() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].source_window =
+            Some(riotbox_core::session::CaptureSourceWindow {
+                source_id: SourceId::from("src-1"),
+                start_seconds: 1.25,
+                end_seconds: 3.75,
+                start_frame: 60_000,
+                end_frame: 180_000,
+            });
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("cap-01 | 1.25-3.75s"), "{rendered}");
     }
 
     #[test]
