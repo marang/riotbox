@@ -1,6 +1,7 @@
 use crate::{
+    ids::SceneId,
     session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
-    source_graph::{EnergyClass, SectionLabelHint, SourceGraph},
+    source_graph::{EnergyClass, Section, SectionLabelHint, SourceGraph},
     transport::TransportClockState,
 };
 
@@ -132,6 +133,16 @@ pub fn derive_tr909_render_policy(
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
 ) -> Tr909RenderPolicyProjection {
+    derive_tr909_render_policy_with_scene_context(tr909, transport, source_graph, None)
+}
+
+#[must_use]
+pub fn derive_tr909_render_policy_with_scene_context(
+    tr909: &Tr909LaneState,
+    transport: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
+    scene_context: Option<&SceneId>,
+) -> Tr909RenderPolicyProjection {
     let mode = if tr909.takeover_enabled {
         Tr909RenderModePolicy::Takeover
     } else {
@@ -160,7 +171,7 @@ pub fn derive_tr909_render_policy(
     };
 
     let source_support_profile = matches!(mode, Tr909RenderModePolicy::SourceSupport)
-        .then(|| derive_tr909_source_support_profile(source_graph, transport))
+        .then(|| derive_tr909_source_support_profile(source_graph, transport, scene_context))
         .flatten();
     let takeover_profile = derive_tr909_takeover_render_profile(tr909);
     let pattern_adoption = derive_tr909_pattern_adoption(
@@ -190,25 +201,65 @@ pub fn derive_tr909_render_policy(
 fn derive_tr909_source_support_profile(
     source_graph: Option<&SourceGraph>,
     transport: &TransportClockState,
+    scene_context: Option<&SceneId>,
 ) -> Option<Tr909SourceSupportProfilePolicy> {
     let graph = source_graph?;
-    let current_section = graph.sections.iter().find(|section| {
-        let bar_index = transport.bar_index as u32;
-        bar_index >= section.bar_start && bar_index <= section.bar_end
-    });
+    let current_section = scene_context
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
+        .or_else(|| section_for_transport_bar(graph, transport));
 
-    let profile = match current_section.map(|section| (section.label_hint, section.energy_class)) {
-        Some((SectionLabelHint::Break | SectionLabelHint::Build, _)) => {
+    current_section.map(source_support_profile_for_section)
+}
+
+fn source_support_profile_for_section(section: &Section) -> Tr909SourceSupportProfilePolicy {
+    match (section.label_hint, section.energy_class) {
+        (SectionLabelHint::Break | SectionLabelHint::Build, _) => {
             Tr909SourceSupportProfilePolicy::BreakLift
         }
-        Some((
+        (
             SectionLabelHint::Drop | SectionLabelHint::Chorus,
             EnergyClass::High | EnergyClass::Peak,
-        )) => Tr909SourceSupportProfilePolicy::DropDrive,
+        ) => Tr909SourceSupportProfilePolicy::DropDrive,
         _ => Tr909SourceSupportProfilePolicy::SteadyPulse,
-    };
+    }
+}
 
-    Some(profile)
+fn section_for_transport_bar<'a>(
+    graph: &'a SourceGraph,
+    transport: &TransportClockState,
+) -> Option<&'a Section> {
+    graph.sections.iter().find(|section| {
+        let bar_index = transport.bar_index as u32;
+        bar_index >= section.bar_start && bar_index <= section.bar_end
+    })
+}
+
+fn section_for_projected_scene<'a>(
+    graph: &'a SourceGraph,
+    scene_id: &SceneId,
+) -> Option<&'a Section> {
+    let scene_index = parse_projected_scene_index(scene_id.as_str())?;
+    let sections = sorted_sections(graph);
+    sections.get(scene_index).copied()
+}
+
+fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
+    let mut parts = scene_id.splitn(3, '-');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some("scene"), Some(index), Some(_label)) => index.parse::<usize>().ok()?.checked_sub(1),
+        _ => None,
+    }
+}
+
+fn sorted_sections(graph: &SourceGraph) -> Vec<&Section> {
+    let mut sections = graph.sections.iter().collect::<Vec<_>>();
+    sections.sort_by(|left, right| {
+        left.bar_start
+            .cmp(&right.bar_start)
+            .then(left.bar_end.cmp(&right.bar_end))
+            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
+    });
+    sections
 }
 
 fn derive_tr909_takeover_render_profile(
@@ -489,5 +540,60 @@ mod tests {
                 fixture.name
             );
         }
+    }
+
+    #[test]
+    fn source_support_profile_can_follow_projected_scene_context() {
+        let graph = sample_graph();
+        let transport = transport_state(4.0);
+        let policy = derive_tr909_render_policy_with_scene_context(
+            &Tr909LaneState {
+                pattern_ref: Some("support-scene-02-break".into()),
+                takeover_enabled: false,
+                takeover_profile: None,
+                slam_enabled: false,
+                fill_armed_next_bar: false,
+                last_fill_bar: None,
+                reinforcement_mode: Some(Tr909ReinforcementModeState::SourceSupport),
+            },
+            &transport,
+            Some(&graph),
+            Some(&SceneId::from("scene-02-break")),
+        );
+
+        assert_eq!(transport.bar_index, 1);
+        assert_eq!(
+            policy.source_support_profile,
+            Some(Tr909SourceSupportProfilePolicy::BreakLift)
+        );
+        assert_eq!(
+            policy.pattern_adoption,
+            Some(Tr909PatternAdoptionPolicy::SupportPulse)
+        );
+    }
+
+    #[test]
+    fn source_support_profile_falls_back_to_transport_for_unmapped_scene_context() {
+        let graph = sample_graph();
+        let transport = transport_state(4.0);
+        let policy = derive_tr909_render_policy_with_scene_context(
+            &Tr909LaneState {
+                pattern_ref: Some("support-legacy-scene".into()),
+                takeover_enabled: false,
+                takeover_profile: None,
+                slam_enabled: false,
+                fill_armed_next_bar: false,
+                last_fill_bar: None,
+                reinforcement_mode: Some(Tr909ReinforcementModeState::SourceSupport),
+            },
+            &transport,
+            Some(&graph),
+            Some(&SceneId::from("scene-1")),
+        );
+
+        assert_eq!(
+            policy.source_support_profile,
+            Some(Tr909SourceSupportProfilePolicy::DropDrive)
+        );
     }
 }

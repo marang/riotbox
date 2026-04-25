@@ -2637,6 +2637,68 @@ mod tests {
     }
 
     #[test]
+    fn committed_scene_select_projects_target_scene_into_tr909_source_support() {
+        let mut graph = sample_graph();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-b"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 24.0,
+            bar_start: 9,
+            bar_end: 12,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.84,
+            tags: vec!["break".into()],
+        });
+
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.position_beats = 32.0;
+        session.runtime_state.transport.current_scene = None;
+        session.runtime_state.scene_state.active_scene = None;
+        session.runtime_state.scene_state.scenes.clear();
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::SourceSupport);
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("support-scene".into());
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
+        assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 1,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            350,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.runtime.tr909_render.current_scene_id.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::BreakLift)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.pattern_adoption,
+            Some(Tr909PatternAdoption::SupportPulse)
+        );
+    }
+
+    #[test]
     fn queue_scene_restore_enqueues_scene_restore_for_next_bar() {
         let graph = sample_graph();
         let mut session = sample_session(&graph);

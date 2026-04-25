@@ -57,6 +57,14 @@ Add a bounded target-scene audio-coupling slice:
 
 This should stay inside the existing Source Graph, Session, transport, and TR-909 policy seams. It should not introduce a second arranger model.
 
+## Follow-up Status
+
+`RIOTBOX-230` closes the bounded gap identified here for projected Scene ids:
+
+- `scene-NN-label` targets now project into the matching sorted Source Graph section for TR-909 `SourceSupport`
+- unmapped, legacy, or out-of-range Scene ids still fall back to the transport-bar section
+- this keeps the new behavior inside the existing Source Graph, Session, transport, and TR-909 policy seams
+
 ## Verification Used
 
 - code inspection of the current Scene launch side-effect path

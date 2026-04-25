@@ -17,7 +17,7 @@ use riotbox_core::{
     tr909_policy::{
         Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy, Tr909RenderModePolicy,
         Tr909RenderRoutingPolicy, Tr909SourceSupportProfilePolicy,
-        Tr909TakeoverRenderProfilePolicy, derive_tr909_render_policy,
+        Tr909TakeoverRenderProfilePolicy, derive_tr909_render_policy_with_scene_context,
     },
     transport::TransportClockState,
 };
@@ -92,7 +92,18 @@ pub(super) fn build_tr909_render_state(
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
-    let policy = derive_tr909_render_policy(tr909, transport, source_graph);
+    let scene_context = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(transport.current_scene.as_ref());
+    let policy = derive_tr909_render_policy_with_scene_context(
+        tr909,
+        transport,
+        source_graph,
+        scene_context,
+    );
 
     Tr909RenderState {
         mode: audio_tr909_render_mode(policy.mode),
