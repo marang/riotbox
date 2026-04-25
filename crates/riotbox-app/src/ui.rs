@@ -664,13 +664,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(format!(
             "source {} | next scene {}",
             shell.app.jam_view.source.source_id,
-            shell
-                .app
-                .jam_view
-                .scene
-                .next_scene
-                .as_deref()
-                .unwrap_or("none")
+            next_scene_target_compact_label(shell)
         )),
         Line::from(scene_restore_contrast_line(shell)),
     ])
@@ -2863,6 +2857,18 @@ fn next_scene_jump_suggestion(shell: &JamShellState) -> String {
     }
 }
 
+fn next_scene_target_compact_label(shell: &JamShellState) -> String {
+    let Some(scene_id) = shell.app.jam_view.scene.next_scene.as_deref() else {
+        return "none".into();
+    };
+
+    let scene = compact_scene_label(scene_id);
+    if let Some(energy) = shell.app.jam_view.scene.next_scene_energy.as_deref() {
+        return format!("{scene}/{}", compact_energy_label(energy));
+    }
+    scene
+}
+
 fn current_scene_compact_label(shell: &JamShellState) -> String {
     let scene_id = current_scene_id(shell).unwrap_or_else(|| "none".into());
 
@@ -4987,7 +4993,7 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("trust usable"));
-        assert!(rendered.contains("scene-01-intro"));
+        assert!(rendered.contains("scene scene-a | energy med"));
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("warnings"));
         assert!(rendered.contains("MC-202"));
@@ -5052,7 +5058,10 @@ mod tests {
         assert!(rendered.contains("idle @ 32.0"));
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("energy medium"));
-        assert!(rendered.contains("source src-1 | next scene"));
+        assert!(
+            rendered.contains("source src-1 | next scene intro/med"),
+            "{rendered}"
+        );
         assert!(rendered.contains("scene-01-intro"));
         assert!(rendered.contains("live intro/med <> restore none"));
         assert!(rendered.contains("launch ->"), "{rendered}");
