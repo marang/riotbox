@@ -297,6 +297,49 @@ What this teaches:
 - `Jam` is enough to follow the next scene move, while `Log` is enough to confirm what actually landed
 - the current shell can already teach `jump -> restore` timing and role contrast, even though it is still not a finished visual timing instrument
 
+## Recipe 11: Check Source-Backed W-30 Reuse
+
+Goal: test whether the W-30 path is using captured source material or the safe fallback preview.
+
+Use a local WAV example, preferably:
+
+- `Beat08_128BPM(Full).wav`
+- `Beat03_130BPM(Full).wav`
+
+Start with:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav"
+```
+
+Then run this loop:
+
+1. press `Space`
+2. press `f` or `g`
+3. wait for the result to land
+4. press `c`
+5. press `4` for `Capture`
+6. press `o` to audition the raw captured moment
+7. press `p` to promote the capture
+8. press `w` to hit the promoted W-30 pad
+9. press `2` for `Log`
+10. switch between `1`, `2`, and `4` to compare `Jam`, `Log`, and `Capture`
+
+What to observe:
+
+- `audition raw/src` means raw audition is using captured source material
+- `audition/src` means promoted audition is source-backed
+- `recall/.../src` or `prev recall/src` means the promoted hit or recall path is source-backed
+- `.../fallback` means Riotbox is still using the safe synthetic preview for that path
+- `fallback` is not automatically a bug; it means the current session did not have a decoded source-window preview available for that cue
+
+What this teaches:
+
+- `[o]` is the quickest way to test the raw captured moment
+- `[p]` promotes the capture into the W-30 reuse path
+- `[w]` tests the promoted hit / recall path
+- Riotbox now exposes whether that path is source-backed, but it is still a bounded preview excerpt, not a full W-30 sampler engine
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -309,6 +352,7 @@ So if two runs feel similar:
 - use `Recipe 5` if you want to understand source-specific differences
 - use `Recipe 8` if you want the first bounded Scene Brain flow instead of only lane gestures
 - use `Recipe 9` if you want to compare where Scene Brain is already more legible today
+- use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 
