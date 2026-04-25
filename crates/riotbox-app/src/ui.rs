@@ -3344,7 +3344,7 @@ fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         return vec![Line::from("no captured material yet")];
     };
 
-    vec![
+    let mut lines = vec![
         Line::from(format!("file {}", capture.storage_path)),
         Line::from(format!(
             "from action {}",
@@ -3362,7 +3362,16 @@ fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 capture.source_origin_refs.join(", ")
             }
         )),
-    ]
+    ];
+
+    if let Some(source_window) = &capture.source_window {
+        lines.push(Line::from(format!(
+            "win {} {:.2}-{:.2}s",
+            source_window.source_id, source_window.start_seconds, source_window.end_seconds
+        )));
+    }
+
+    lines
 }
 
 fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -6193,6 +6202,24 @@ mod tests {
         );
         assert!(rendered.contains("g0"), "{rendered}");
         assert!(rendered.contains("latest promoted none"));
+    }
+
+    #[test]
+    fn renders_capture_provenance_source_window_when_available() {
+        let mut shell = sample_shell_state();
+        shell.app.session.captures[0].source_window =
+            Some(riotbox_core::session::CaptureSourceWindow {
+                source_id: SourceId::from("src-1"),
+                start_seconds: 1.25,
+                end_seconds: 3.75,
+                start_frame: 60_000,
+                end_frame: 180_000,
+            });
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("win src-1 1.25-3.75s"), "{rendered}");
     }
 
     #[test]
