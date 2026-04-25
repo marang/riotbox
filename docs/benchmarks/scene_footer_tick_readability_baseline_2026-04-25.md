@@ -51,7 +51,7 @@ Current measured value:
 
 - zero screen switches
 - one direct footer read:
-  - `Scene cue: launch <scene> @ next bar | <rise|drop|hold> + [===>], 2 trail`
+  - `Scene: launch <scene> @ next bar | <rise|drop|hold> [===>] | 2 trail`
 
 Judgment:
 
@@ -73,7 +73,7 @@ Current measured value:
 
 - zero screen switches
 - two direct `Jam` reads:
-  - footer: `... + [===>], 2 trail`
+  - footer: `... [===>] | 2 trail`
   - pulse line: `pulse [===>] b32 | b8 | p1`
 
 Judgment:

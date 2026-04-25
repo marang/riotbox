@@ -176,6 +176,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 ### Review gate
 
 - Before committing a finished feature-branch slice, run the `code-review` skill on the branch diff when that skill is available in the current session.
+- Do not assume one hardcoded user path for skills. If a skill path from session context is missing, check `$HOME/.codex/skills/<skill>/SKILL.md` before falling back.
 - Use that review to identify findings, fix them on the branch, and answer any review questions before opening the PR.
 - After that, still run a short self-review on the branch diff.
 - The branch-level review should explicitly check for:

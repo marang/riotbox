@@ -195,7 +195,7 @@ Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 4. press `2` and confirm the scene jump landed
 5. go back to `Jam` with `1`
 6. look for the new restore-ready cue:
-   - `Scene cue: restore .../<energy> ready | Y brings back .../<energy>`
+   - `Scene: restore .../<energy> ready | Y brings back .../<energy>`
    - `[Y] restore ... now`
 7. press `Y`
 8. press `2` and confirm the restore landed
@@ -272,7 +272,7 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
 5. on `Log`, confirm the scene result and note the `trail ...` cue
 6. press `1`
 7. on `Jam`, confirm the restore-ready cue now appears:
-   - `Scene cue: restore .../<energy> ready | Y brings back .../<energy>`
+   - `Scene: restore .../<energy> ready | Y brings back .../<energy>`
    - `[Y] restore ... now`
 8. queue restore with `Y`
 9. before restore lands, read the same three `Jam` cues again
