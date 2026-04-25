@@ -182,6 +182,18 @@ Highest-priority information:
 
 This ordering should control layout decisions and keybinding design.
 
+### 10.1 First Terminal Emphasis Tokens
+
+The first color/emphasis layer should stay small and semantic:
+
+- cyan + bold for primary perform controls
+- yellow + bold for active Scene timing or restore affordances
+- red + bold for warning labels, with yellow warning detail
+- green for clear/healthy confirmation
+- dark gray for lower-priority status diagnostics
+
+Do not use color as the only carrier of meaning. The text must still read correctly in monochrome snapshots and low-color terminals.
+
 ---
 
 ## 11. Interaction Rules

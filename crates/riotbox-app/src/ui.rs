@@ -3,8 +3,8 @@ use ratatui::{
     Frame, Terminal,
     backend::TestBackend,
     layout::{Constraint, Direction, Layout, Rect},
-    style::{Modifier, Style},
-    text::Line,
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 use riotbox_audio::w30::W30PreviewRenderMode;
@@ -1253,12 +1253,12 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             "Inspect is read-only: use i to return, then queue actions from perform mode",
         ));
     } else {
-        lines.push(Line::from(format!(
-            "Primary: {}",
-            render_gesture_items(PRIMARY_GESTURES, " ")
+        lines.push(footer_primary_line(&render_gesture_items(
+            PRIMARY_GESTURES,
+            " ",
         )));
         if let Some(scene_cue) = footer_scene_affordance_cue(shell) {
-            lines.push(Line::from(format!("Scene: {scene_cue}")));
+            lines.push(footer_scene_line(&scene_cue));
         } else {
             lines.push(Line::from(format!(
                 "Advanced: {} | more in ? help",
@@ -1270,7 +1270,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         "Lane ops: {}",
         render_gesture_items(LANE_GESTURES, " ")
     )));
-    lines.push(Line::from(format!(
+    lines.push(footer_status_line(&format!(
         "Status: {} | jam {} | audio {} | sidecar {} | 909 render {} via {}",
         shell.status_message,
         shell.jam_mode.label(),
@@ -1282,7 +1282,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 
     if shell.app.runtime_view.runtime_warnings.is_empty() && shell.app.jam_view.warnings.is_empty()
     {
-        lines.push(Line::from(
+        lines.push(footer_ok_line(
             "Warnings clear | source trust stable enough for shell work",
         ));
     } else {
@@ -1294,7 +1294,7 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             .chain(shell.app.jam_view.warnings.iter())
             .take(2)
         {
-            lines.push(Line::from(format!("Warning: {warning}")));
+            lines.push(footer_warning_line(warning));
         }
     }
 
@@ -1307,6 +1307,59 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .wrap(Wrap { trim: true });
 
     frame.render_widget(paragraph, area);
+}
+
+fn footer_primary_line(gestures: &str) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(
+            "Primary:",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(format!(" {gestures}")),
+    ])
+}
+
+fn footer_scene_line(scene_cue: &str) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(
+            "Scene:",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(
+            format!(" {scene_cue}"),
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ])
+}
+
+fn footer_status_line(status: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        status.to_owned(),
+        Style::default().fg(Color::DarkGray),
+    ))
+}
+
+fn footer_ok_line(message: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        message.to_owned(),
+        Style::default().fg(Color::Green),
+    ))
+}
+
+fn footer_warning_line(warning: &str) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(
+            "Warning:",
+            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(format!(" {warning}"), Style::default().fg(Color::Yellow)),
+    ])
 }
 
 fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
@@ -3880,6 +3933,41 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
+
+    #[test]
+    fn footer_line_styles_define_first_visual_hierarchy() {
+        let primary = footer_primary_line("[y] scene jump");
+        assert_eq!(primary.spans[0].content.as_ref(), "Primary:");
+        assert_eq!(primary.spans[0].style.fg, Some(Color::Cyan));
+        assert!(
+            primary.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{primary:?}"
+        );
+
+        let scene = footer_scene_line("launch drop @ next bar | rise [===>] | 2 trail");
+        assert_eq!(scene.spans[0].content.as_ref(), "Scene:");
+        assert_eq!(scene.spans[0].style.fg, Some(Color::Yellow));
+        assert!(
+            scene.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{scene:?}"
+        );
+        assert_eq!(scene.spans[1].style.fg, Some(Color::Yellow));
+
+        let status = footer_status_line("Status: playing");
+        assert_eq!(status.spans[0].style.fg, Some(Color::DarkGray));
+
+        let ok = footer_ok_line("Warnings clear");
+        assert_eq!(ok.spans[0].style.fg, Some(Color::Green));
+
+        let warning = footer_warning_line("tempo weak");
+        assert_eq!(warning.spans[0].content.as_ref(), "Warning:");
+        assert_eq!(warning.spans[0].style.fg, Some(Color::Red));
+        assert!(
+            warning.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{warning:?}"
+        );
+        assert_eq!(warning.spans[1].style.fg, Some(Color::Yellow));
+    }
 
     #[derive(Debug, Deserialize)]
     struct Mc202RegressionFixture {
