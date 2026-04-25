@@ -1394,6 +1394,8 @@ mod tests {
         capture_bank: String,
         capture_pad: String,
         capture_pinned: bool,
+        #[serde(default = "default_true")]
+        capture_assigned: bool,
         #[serde(default)]
         extra_captures: Vec<W30RegressionCapture>,
         #[serde(default)]
@@ -1426,11 +1428,16 @@ mod tests {
     #[serde(rename_all = "snake_case")]
     enum W30RegressionAction {
         LiveRecall,
+        RawCaptureAudition,
         PromotedAudition,
         SwapBank,
         ApplyDamageProfile,
         LoopFreeze,
         BrowseSlicePool,
+    }
+
+    fn default_true() -> bool {
+        true
     }
 
     #[derive(Debug, Deserialize)]
@@ -1539,6 +1546,18 @@ mod tests {
                 phrase_index: self.phrase_index,
                 scene_id: self.scene_id.map(SceneId::from),
             }
+        }
+    }
+
+    fn expected_w30_command(action: W30RegressionAction) -> ActionCommand {
+        match action {
+            W30RegressionAction::LiveRecall => ActionCommand::W30LiveRecall,
+            W30RegressionAction::RawCaptureAudition => ActionCommand::W30AuditionRawCapture,
+            W30RegressionAction::PromotedAudition => ActionCommand::W30AuditionPromoted,
+            W30RegressionAction::SwapBank => ActionCommand::W30SwapBank,
+            W30RegressionAction::ApplyDamageProfile => ActionCommand::W30ApplyDamageProfile,
+            W30RegressionAction::LoopFreeze => ActionCommand::W30LoopFreeze,
+            W30RegressionAction::BrowseSlicePool => ActionCommand::W30BrowseSlicePool,
         }
     }
 
@@ -5025,10 +5044,11 @@ mod tests {
         for fixture in fixtures {
             let graph = sample_graph();
             let mut session = sample_session(&graph);
-            session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
-                bank_id: BankId::from(fixture.capture_bank.clone()),
-                pad_id: PadId::from(fixture.capture_pad.clone()),
-            });
+            session.captures[0].assigned_target =
+                fixture.capture_assigned.then(|| CaptureTarget::W30Pad {
+                    bank_id: BankId::from(fixture.capture_bank.clone()),
+                    pad_id: PadId::from(fixture.capture_pad.clone()),
+                });
             session.captures[0].is_pinned = fixture.capture_pinned;
             for extra in &fixture.extra_captures {
                 session.captures.push(CaptureRef {
@@ -5072,6 +5092,9 @@ mod tests {
                 W30RegressionAction::LiveRecall => {
                     state.queue_w30_live_recall(fixture.requested_at)
                 }
+                W30RegressionAction::RawCaptureAudition => {
+                    state.queue_w30_audition(fixture.requested_at)
+                }
                 W30RegressionAction::PromotedAudition => {
                     state.queue_w30_promoted_audition(fixture.requested_at)
                 }
@@ -5101,6 +5124,17 @@ mod tests {
                 committed.len(),
                 1,
                 "{} did not commit exactly one action",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .session
+                    .action_log
+                    .actions
+                    .last()
+                    .map(|action| action.command),
+                Some(expected_w30_command(fixture.action)),
+                "{} command drifted",
                 fixture.name
             );
 

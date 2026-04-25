@@ -42,6 +42,62 @@
     }
   },
   {
+    "name": "raw_capture_audition_committed",
+    "action": "raw_capture_audition",
+    "capture_bank": "bank-a",
+    "capture_pad": "pad-01",
+    "capture_pinned": false,
+    "capture_assigned": false,
+    "initial_active_bank": "bank-a",
+    "initial_focused_pad": "pad-01",
+    "requested_at": 622,
+    "committed_at": 702,
+    "boundary": {
+      "kind": "bar",
+      "beat_index": 33,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-a",
+      "focused_pad": "pad-01",
+      "last_capture": "cap-01",
+      "w30_grit": 0.58,
+      "preview_mode": "raw_capture_audition",
+      "preview_routing": "music_bus_preview",
+      "preview_profile": "raw_capture_audition",
+      "preview_capture": "cap-01",
+      "preview_music_bus_level": 0.64,
+      "preview_grit_level": 0.58,
+      "preview_transport_running": true,
+      "result_summary": "auditioned raw cap-01 on W-30 preview bank-a/pad-01",
+      "jam_contains": [
+        "current pad bank-a/pad-01",
+        "current preview audition raw/raw",
+        "next idle"
+      ],
+      "capture_contains": [
+        "pending W-30 cue idle",
+        "hear cap-01 stored [o] raw or",
+        "[p]->[w]",
+        "preview",
+        "raw_capture_audition |",
+        "music bus 0.64 | grit 0.58",
+        "last lane capture cap-01"
+      ],
+      "log_contains": [
+        "W-30 Lane",
+        "cue idle | audition",
+        "raw",
+        "prev audition raw/raw",
+        "mix 0.64/0.58",
+        "w30.audition_raw_capture",
+        "result auditioned raw cap-01"
+      ]
+    }
+  },
+  {
     "name": "promoted_audition_committed",
     "action": "promoted_audition",
     "capture_bank": "bank-c",

@@ -4268,6 +4268,8 @@ mod tests {
         capture_bank: String,
         capture_pad: String,
         capture_pinned: bool,
+        #[serde(default = "default_true")]
+        capture_assigned: bool,
         #[serde(default)]
         extra_captures: Vec<W30RegressionCapture>,
         #[serde(default)]
@@ -4300,11 +4302,16 @@ mod tests {
     #[serde(rename_all = "snake_case")]
     enum W30RegressionAction {
         LiveRecall,
+        RawCaptureAudition,
         PromotedAudition,
         SwapBank,
         ApplyDamageProfile,
         LoopFreeze,
         BrowseSlicePool,
+    }
+
+    fn default_true() -> bool {
+        true
     }
 
     #[derive(Debug, Deserialize)]
@@ -5682,10 +5689,13 @@ mod tests {
             .initial_preview_mode
             .as_deref()
             .map(w30_preview_mode_state);
-        session.captures[0].assigned_target = Some(riotbox_core::session::CaptureTarget::W30Pad {
-            bank_id: fixture.capture_bank.clone().into(),
-            pad_id: fixture.capture_pad.clone().into(),
-        });
+        session.captures[0].assigned_target =
+            fixture
+                .capture_assigned
+                .then(|| riotbox_core::session::CaptureTarget::W30Pad {
+                    bank_id: fixture.capture_bank.clone().into(),
+                    pad_id: fixture.capture_pad.clone().into(),
+                });
         session.captures[0].is_pinned = fixture.capture_pinned;
         for extra in &fixture.extra_captures {
             session.captures.push(riotbox_core::session::CaptureRef {
@@ -5717,6 +5727,9 @@ mod tests {
         let queue_result = match fixture.action {
             W30RegressionAction::LiveRecall => {
                 shell.app.queue_w30_live_recall(fixture.requested_at)
+            }
+            W30RegressionAction::RawCaptureAudition => {
+                shell.app.queue_w30_audition(fixture.requested_at)
             }
             W30RegressionAction::PromotedAudition => {
                 shell.app.queue_w30_promoted_audition(fixture.requested_at)
