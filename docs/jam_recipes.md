@@ -297,6 +297,13 @@ What this teaches:
 - `Jam` is enough to follow the next scene move, while `Log` is enough to confirm what actually landed
 - the current shell can already teach `jump -> restore` timing and role contrast, even though it is still not a finished visual timing instrument
 
+Low-energy contrast note:
+
+- the regression vocabulary now also covers `drop/high <> break/low`, not only `intro/medium <> drop/high`
+- read `break/low` as a quieter recovery or decompression target, not as a finished arranger promise yet
+- if you see `live break/low <> restore drop/high`, Riotbox is telling you the restore path crosses an energy boundary downward and can later return to the stronger drop
+- this is currently most useful for checking whether the Scene Brain cues are legible; the musical transition quality is still part of the Scene Brain buildout
+
 ## Recipe 11: Check Source-Backed W-30 Reuse
 
 Goal: test whether the W-30 path is using captured source material or the safe fallback preview.
