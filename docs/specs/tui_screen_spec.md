@@ -176,7 +176,12 @@ Rules:
 - `accent scene` means `scene_target` source support is getting the bounded Scene-target support accent
 - `accent off fallback` means source support fell back to `transport_bar` and no Scene-target accent is active
 - non-source-support modes should keep accent wording in an `off` state
-- Jam Inspect may show the same TR-909 profile / context / accent / route tuple for diagnosis, but the primary Jam surface should not require reading this tuple to play
+- TR-909 Feral source-support lifts should expose a compact read-only reason
+  such as `feral break lift` so the musician can distinguish graph-driven
+  support from ordinary section-derived `break_lift`
+- Jam Inspect may show the same TR-909 profile / context / accent / reason /
+  route tuple for diagnosis, but the primary Jam surface should not require
+  reading this tuple to play
 - the accent cue is not a transition-engine promise; it only names the current render diagnostic state
 
 ---

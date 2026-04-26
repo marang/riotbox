@@ -221,7 +221,8 @@ impl JamAppState {
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
-        let runtime_view = JamRuntimeView::build(&AppRuntimeState::default(), &session);
+        let runtime_view =
+            JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
         let mut state = Self {
             files: None,
             session,
@@ -261,17 +262,20 @@ impl JamAppState {
         self.runtime.w30_resample_tap =
             build_w30_resample_tap_state(&self.session, &self.runtime.transport);
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
-        self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
+        self.runtime_view =
+            JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
     }
 
     pub fn set_audio_health(&mut self, health: AudioRuntimeHealth) {
         self.runtime.audio = Some(health);
-        self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
+        self.runtime_view =
+            JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
     }
 
     pub fn set_sidecar_state(&mut self, state: SidecarState) {
         self.runtime.sidecar = state;
-        self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
+        self.runtime_view =
+            JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
     }
 
     fn persist_capture_audio_artifact(&mut self, capture: &mut CaptureRef) {
@@ -2738,6 +2742,7 @@ mod tests {
         assert_eq!(state.runtime_view.tr909_render_profile, "controlled_phrase");
         assert_eq!(state.runtime_view.tr909_render_support_context, "unset");
         assert_eq!(state.runtime_view.tr909_render_support_accent, "off");
+        assert_eq!(state.runtime_view.tr909_render_support_reason, "unset");
         assert_eq!(
             state.runtime_view.tr909_render_pattern_ref.as_deref(),
             Some("scene-1-main")
@@ -8210,6 +8215,7 @@ mod tests {
             state.runtime_view.tr909_render_support_accent,
             "off fallback"
         );
+        assert_eq!(state.runtime_view.tr909_render_support_reason, "section");
 
         session.runtime_state.transport.position_beats = 36.0;
         let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -8234,6 +8240,7 @@ mod tests {
             state.runtime_view.tr909_render_support_accent,
             "off fallback"
         );
+        assert_eq!(state.runtime_view.tr909_render_support_reason, "section");
         assert_eq!(
             state.runtime.tr909_render.pattern_adoption,
             Some(Tr909PatternAdoption::SupportPulse)
@@ -8314,8 +8321,16 @@ mod tests {
             Some(Tr909SourceSupportProfile::SteadyPulse)
         );
         assert_eq!(
+            control_state.runtime_view.tr909_render_support_reason,
+            "section"
+        );
+        assert_eq!(
             feral_state.runtime.tr909_render.source_support_profile,
             Some(Tr909SourceSupportProfile::BreakLift)
+        );
+        assert_eq!(
+            feral_state.runtime_view.tr909_render_support_reason,
+            "feral break lift"
         );
         assert_eq!(
             feral_state.runtime.tr909_render.source_support_context,

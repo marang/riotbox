@@ -16,7 +16,8 @@ impl JamAppState {
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
-        let runtime_view = JamRuntimeView::build(&AppRuntimeState::default(), &session);
+        let runtime_view =
+            JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
         let source_audio_cache = source_graph
             .as_ref()
             .and_then(|graph| SourceAudioCache::load_pcm_wav(&graph.source.path).ok());

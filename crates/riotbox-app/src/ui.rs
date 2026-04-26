@@ -1060,46 +1060,18 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         .block(Block::default().title("W-30 Lane").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
 
-    let render_focus = Paragraph::new(vec![
-        Line::from(format!(
-            "{} | scene {} | {}",
-            if shell.app.runtime.transport.is_playing {
-                format!(
-                    "running @ {:.1}",
-                    shell.app.runtime.transport.position_beats
-                )
-            } else {
-                format!(
-                    "stopped @ {:.1}",
-                    shell.app.runtime.transport.position_beats
-                )
-            },
-            shell
-                .app
-                .runtime
-                .transport
-                .current_scene
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "none".into()),
-            shell
-                .app
-                .runtime
-                .last_commit_boundary
-                .as_ref()
-                .map(|boundary| {
-                    format!(
-                        "{:?} b{} p{}",
-                        boundary.kind, boundary.bar_index, boundary.phrase_index
-                    )
-                })
-                .unwrap_or_else(|| "boundary none".into())
-        )),
+    let mut render_focus_lines = vec![
+        Line::from(tr909_log_header_line(shell)),
         Line::from(format!(
             "render {} | accent {}",
             shell.app.runtime_view.tr909_render_mode,
             shell.app.runtime_view.tr909_render_support_accent
         )),
+    ];
+    if let Some(reason) = tr909_compact_reason_line(shell) {
+        render_focus_lines.push(Line::from(reason));
+    }
+    render_focus_lines.extend([
         Line::from(format!(
             "via {} | {} / {}",
             shell.app.runtime_view.tr909_render_routing,
@@ -1114,13 +1086,14 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         )),
         Line::from(shell.app.runtime_view.tr909_render_mix_summary.clone()),
         Line::from(shell.app.runtime_view.tr909_render_alignment.clone()),
-    ])
-    .block(
-        Block::default()
-            .title("TR-909 Render")
-            .borders(Borders::ALL),
-    )
-    .wrap(Wrap { trim: true });
+    ]);
+    let render_focus = Paragraph::new(render_focus_lines)
+        .block(
+            Block::default()
+                .title("TR-909 Render")
+                .borders(Borders::ALL),
+        )
+        .wrap(Wrap { trim: true });
 
     let warnings = log_warning_lines(shell);
     let warnings_panel = Paragraph::new(warnings)
@@ -1859,10 +1832,11 @@ fn tr909_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             tr909_next_line(shell)
         )),
         Line::from(format!(
-            "profile {} | context {} | accent {} | route {}",
+            "profile {} | context {} | accent {} | reason {} | route {}",
             render.tr909_render_profile,
             render.tr909_render_support_context,
             render.tr909_render_support_accent,
+            render.tr909_render_support_reason,
             render.tr909_render_routing
         )),
         Line::from(format!(
@@ -1875,6 +1849,54 @@ fn tr909_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             render.tr909_render_alignment
         )),
     ]
+}
+
+fn tr909_log_header_line(shell: &JamShellState) -> String {
+    let scene = shell
+        .app
+        .runtime
+        .transport
+        .current_scene
+        .as_ref()
+        .map(ToString::to_string)
+        .unwrap_or_else(|| "none".into());
+
+    if shell.app.runtime_view.tr909_render_support_reason == "feral break lift" {
+        return format!("feral break lift | scene {scene}");
+    }
+
+    let transport = if shell.app.runtime.transport.is_playing {
+        format!(
+            "running @ {:.1}",
+            shell.app.runtime.transport.position_beats
+        )
+    } else {
+        format!(
+            "stopped @ {:.1}",
+            shell.app.runtime.transport.position_beats
+        )
+    };
+    let boundary = shell
+        .app
+        .runtime
+        .last_commit_boundary
+        .as_ref()
+        .map(|boundary| {
+            format!(
+                "{:?} b{} p{}",
+                boundary.kind, boundary.bar_index, boundary.phrase_index
+            )
+        })
+        .unwrap_or_else(|| "boundary none".into());
+
+    format!("{transport} | scene {scene} | {boundary}")
+}
+
+fn tr909_compact_reason_line(shell: &JamShellState) -> Option<String> {
+    match shell.app.runtime_view.tr909_render_support_reason.as_str() {
+        "feral break lift" => Some("reason feral break lift".into()),
+        _ => None,
+    }
 }
 
 fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -4704,7 +4726,7 @@ mod tests {
             DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Relationship,
             RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
         },
-        transport::CommitBoundaryState,
+        transport::{CommitBoundaryState, TransportClockState},
     };
     use serde::Deserialize;
 
@@ -7319,6 +7341,51 @@ mod tests {
         assert!(rendered.contains("takeover"));
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("undid most recent musical"));
+    }
+
+    #[test]
+    fn renders_tr909_feral_support_reason_cue() {
+        let mut shell = sample_shell_state();
+        shell
+            .app
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_enabled = false;
+        shell
+            .app
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_profile = None;
+        shell
+            .app
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .reinforcement_mode = Some(Tr909ReinforcementModeState::SourceSupport);
+        shell.app.session.runtime_state.lane_state.tr909.pattern_ref =
+            Some("support-feral-break".into());
+        shell.app.update_transport_clock(TransportClockState {
+            is_playing: true,
+            position_beats: 4.0,
+            beat_index: 4,
+            bar_index: 1,
+            phrase_index: 1,
+            current_scene: Some(SceneId::from("scene-a")),
+        });
+        shell.active_screen = ShellScreen::Log;
+
+        assert_eq!(
+            shell.app.runtime_view.tr909_render_support_reason,
+            "feral break lift"
+        );
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("feral break lift"), "{rendered}");
     }
 
     #[test]
