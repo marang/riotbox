@@ -298,6 +298,9 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
 10. queue restore with `Y`
 11. before restore lands, read the same three `Jam` cues again
 12. press `2` after restore lands and confirm the new `trail ...` entry
+13. still on `Log`, check the TR-909 render line again:
+   - `render source_support | accent scene` after restore means the restored Scene target is now getting the same subtle support accent
+   - if restore falls back to `transport_bar`, Riotbox kept the safer source-section timing instead of forcing a Scene-target accent
 
 What to observe:
 
@@ -310,7 +313,7 @@ What to observe:
 - if Riotbox cannot infer both energy sides, the restore-ready cue falls back to the older target-only shape without `rise/drop/hold`
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 - `scene_target` is a render-state diagnostic, not a promise of a finished transition engine; it means the TR-909 support profile is now using the target Scene's projected source section
-- `accent scene` is a small audible support lift tied to that `scene_target` context; it is not a full transition engine or arranger
+- `accent scene` is a small audible support lift tied to that `scene_target` context; after restore, the target is the restored Scene, not the previous live Scene
 - `transport_bar` is the safe fallback; it means the Scene id could not be mapped to a source section, so the TR-909 profile still follows the current bar
 
 What this teaches:
