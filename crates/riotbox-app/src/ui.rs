@@ -2659,16 +2659,6 @@ fn format_source_window_span(source_window: &riotbox_core::session::CaptureSourc
     )
 }
 
-fn format_source_window_provenance(
-    source_window: &riotbox_core::session::CaptureSourceWindow,
-) -> String {
-    format!(
-        "win {} {}",
-        source_window.source_id,
-        format_source_window_span(source_window)
-    )
-}
-
 fn format_source_window_log_compact(
     source_window: &riotbox_core::session::CaptureSourceWindow,
 ) -> String {
@@ -3725,35 +3715,12 @@ fn capture_pending_detail_line(message: impl Into<String>) -> Line<'static> {
 }
 
 fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let Some(capture) = shell.app.session.captures.last() else {
+    let lines = &shell.app.jam_view.capture.latest_capture_provenance_lines;
+    if lines.is_empty() {
         return vec![Line::from("no captured material yet")];
-    };
-
-    let mut lines = vec![
-        Line::from(format!("file {}", capture.storage_path)),
-        Line::from(format!(
-            "from action {}",
-            capture
-                .created_from_action
-                .as_ref()
-                .map(ToString::to_string)
-                .unwrap_or_else(|| "manual or unknown".into())
-        )),
-        Line::from(format!(
-            "origins {}",
-            if capture.source_origin_refs.is_empty() {
-                "none".into()
-            } else {
-                capture.source_origin_refs.join(", ")
-            }
-        )),
-    ];
-
-    if let Some(source_window) = &capture.source_window {
-        lines.push(Line::from(format_source_window_provenance(source_window)));
     }
 
-    lines
+    lines.iter().cloned().map(Line::from).collect()
 }
 
 fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -3783,43 +3750,12 @@ fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
-    let captures: Vec<_> = shell.app.session.captures.iter().rev().take(5).collect();
-    if captures.is_empty() {
+    let rows = &shell.app.jam_view.capture.recent_capture_rows;
+    if rows.is_empty() {
         return vec![ListItem::new("no captures stored yet")];
     }
 
-    captures
-        .into_iter()
-        .map(|capture| {
-            if let Some(source_window) = &capture.source_window {
-                return ListItem::new(format!(
-                    "{} | {}{}",
-                    capture.capture_id,
-                    format_source_window_span(source_window),
-                    if capture.is_pinned { " | pinned" } else { "" }
-                ));
-            }
-
-            let target = capture
-                .assigned_target
-                .as_ref()
-                .map(|target| match target {
-                    riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
-                        format!("{bank_id}/{pad_id}")
-                    }
-                    riotbox_core::session::CaptureTarget::Scene(scene_id) => scene_id.to_string(),
-                })
-                .unwrap_or_else(|| "unassigned".into());
-
-            ListItem::new(format!(
-                "{} | {} | {} origins{}",
-                capture.capture_id,
-                target,
-                capture.source_origin_refs.len(),
-                if capture.is_pinned { " | pinned" } else { "" }
-            ))
-        })
-        .collect()
+    rows.iter().cloned().map(ListItem::new).collect()
 }
 
 fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -7145,6 +7081,7 @@ mod tests {
                 start_frame: 60_000,
                 end_frame: 180_000,
             });
+        shell.app.refresh_view();
         shell.active_screen = ShellScreen::Capture;
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -7163,6 +7100,7 @@ mod tests {
                 start_frame: 60_000,
                 end_frame: 180_000,
             });
+        shell.app.refresh_view();
         shell.active_screen = ShellScreen::Capture;
 
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -7181,10 +7119,6 @@ mod tests {
         };
 
         assert_eq!(format_source_window_span(&source_window), "1.25-3.75s");
-        assert_eq!(
-            format_source_window_provenance(&source_window),
-            "win src-1 1.25-3.75s"
-        );
         assert_eq!(
             format_source_window_log_compact(&source_window),
             "win 1.25-3.75s src-1"

@@ -421,6 +421,8 @@ impl JamViewModel {
                     })
                 }),
                 latest_w30_promoted_capture_label: latest_w30_promoted_capture_label(session),
+                recent_capture_rows: recent_capture_rows(session),
+                latest_capture_provenance_lines: latest_capture_provenance_lines(session),
                 pinned_capture_ids: session
                     .captures
                     .iter()
@@ -520,6 +522,94 @@ fn latest_w30_promoted_capture_label(session: &SessionFile) -> Option<String> {
             }
             _ => None,
         })
+}
+
+fn recent_capture_rows(session: &SessionFile) -> Vec<String> {
+    session
+        .captures
+        .iter()
+        .rev()
+        .take(5)
+        .map(|capture| {
+            if let Some(source_window) = &capture.source_window {
+                return format!(
+                    "{} | {}{}",
+                    capture.capture_id,
+                    format_source_window_span(source_window),
+                    if capture.is_pinned { " | pinned" } else { "" }
+                );
+            }
+
+            let target = capture
+                .assigned_target
+                .as_ref()
+                .map_or_else(|| "unassigned".into(), capture_recent_target_label);
+
+            format!(
+                "{} | {} | {} origins{}",
+                capture.capture_id,
+                target,
+                capture.source_origin_refs.len(),
+                if capture.is_pinned { " | pinned" } else { "" }
+            )
+        })
+        .collect()
+}
+
+fn latest_capture_provenance_lines(session: &SessionFile) -> Vec<String> {
+    let Some(capture) = session.captures.last() else {
+        return Vec::new();
+    };
+
+    let mut lines = vec![
+        format!("file {}", capture.storage_path),
+        format!(
+            "from action {}",
+            capture
+                .created_from_action
+                .as_ref()
+                .map(ToString::to_string)
+                .unwrap_or_else(|| "manual or unknown".into())
+        ),
+        format!(
+            "origins {}",
+            if capture.source_origin_refs.is_empty() {
+                "none".into()
+            } else {
+                capture.source_origin_refs.join(", ")
+            }
+        ),
+    ];
+
+    if let Some(source_window) = &capture.source_window {
+        lines.push(format_source_window_provenance(source_window));
+    }
+
+    lines
+}
+
+fn capture_recent_target_label(target: &crate::session::CaptureTarget) -> String {
+    match target {
+        crate::session::CaptureTarget::W30Pad { bank_id, pad_id } => {
+            format!("{bank_id}/{pad_id}")
+        }
+        crate::session::CaptureTarget::Scene(scene_id) => scene_id.to_string(),
+    }
+}
+
+fn format_source_window_span(source_window: &crate::session::CaptureSourceWindow) -> String {
+    format!(
+        "{:.2}-{:.2}s",
+        source_window.start_seconds, source_window.end_seconds
+    )
+}
+
+fn format_source_window_provenance(source_window: &crate::session::CaptureSourceWindow) -> String {
+    format!(
+        "win {} {}",
+        source_window.source_id,
+        format_source_window_span(source_window)
+    )
 }
 
 trait SessionAccessors {
@@ -833,6 +923,8 @@ pub struct CaptureSummaryView {
     pub last_capture_notes: Option<String>,
     pub last_promotion_result: Option<String>,
     pub latest_w30_promoted_capture_label: Option<String>,
+    pub recent_capture_rows: Vec<String>,
+    pub latest_capture_provenance_lines: Vec<String>,
     pub pinned_capture_ids: Vec<String>,
 }
 
@@ -1285,6 +1377,18 @@ mod tests {
         assert_eq!(
             vm.capture.latest_w30_promoted_capture_label.as_deref(),
             Some("cap-01 -> bank-a/pad-01")
+        );
+        assert_eq!(
+            vm.capture.recent_capture_rows,
+            vec!["cap-01 | bank-a/pad-01 | 2 origins"]
+        );
+        assert_eq!(
+            vm.capture.latest_capture_provenance_lines,
+            vec![
+                "file captures/cap-01.wav",
+                "from action manual or unknown",
+                "origins asset-a, src-1",
+            ]
         );
         assert!(vm.capture.pinned_capture_ids.is_empty());
         assert_eq!(vm.capture.pending_capture_items.len(), 2);
