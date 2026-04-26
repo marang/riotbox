@@ -196,6 +196,7 @@ Practical rule:
 - confused about whether something worked -> press `2`
 - confused about what Riotbox thinks the source is -> press `3`
 - confused about what you captured or promoted -> press `4`
+- debugging a confusing run -> add `--observer artifacts/audio_qa/local/user-session/events.ndjson` and inspect the NDJSON event trail
 
 ## Example Session Flow
 

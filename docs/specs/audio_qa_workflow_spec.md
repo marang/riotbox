@@ -437,6 +437,13 @@ Guardrails:
 - avoid storing unnecessary raw user audio when metrics or short deterministic artifacts are enough
 - record whether evidence came from sandbox, real user session, offline render, or host audio monitor
 
+Initial operational slice:
+
+- `riotbox-app --observer <events.ndjson>` writes an opt-in local NDJSON event stream for an interactive terminal run
+- current observer events include launch context, audio-runtime start or failure, keypress outcomes, queue / history snapshots, transport state, render-state summaries, and boundary commit observations
+- this first slice is file-backed, not socket-backed, and does not record raw user audio
+- use it to separate user input timing, queued-vs-committed state, runtime status, and render-state projection before claiming an audio-output bug or user-timing mistake
+
 ---
 
 ## 13. Current Repo Status
@@ -453,6 +460,7 @@ Today the repo already has:
 - an initial local baseline-vs-candidate audio artifact convention under `docs/benchmarks/`
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that also writes a local `comparison.md` report
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
+- an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 
 Today the repo does not yet have a full official workflow for:
 
@@ -460,6 +468,7 @@ Today the repo does not yet have a full official workflow for:
 - generated listening packs beyond the first W-30 preview smoke convention
 - automated baseline vs candidate WAV comparison
 - automated waveform or perceptual audio comparison
+- socket-backed host-session observation or monitored host audio capture
 - a standard listening rubric stored with benchmark artifacts
 
 Those gaps should be treated as near-term QA work, not optional polish.

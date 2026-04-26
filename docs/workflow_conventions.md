@@ -198,7 +198,13 @@ Minimum expectation today for an audio-producing slice:
 
 Do not close an audio-producing slice with only UI/log proof. If the feature is supposed to sound different, include a buffer regression, offline render comparison, source-vs-control metric check, or documented reason why the output seam is not yet operational.
 
-When manual TUI/audio verification is ambiguous enough that user input timing, unclear commit feedback, audio-device failure, and fallback-like output cannot be separated reliably, track that as a product/QA feature in Linear instead of encoding imaginary observer behavior into the agent workflow. The planned direction is an explicit opt-in user-session/audio observer described in `docs/specs/audio_qa_workflow_spec.md`.
+When manual TUI/audio verification is ambiguous enough that user input timing, unclear commit feedback, audio-device failure, and fallback-like output cannot be separated reliably, use the strongest observer path that exists before guessing. The current first slice is explicit and opt-in:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav" --observer artifacts/audio_qa/local/user-session/events.ndjson
+```
+
+That observer records launch, keypress, queue / commit, transport, and runtime evidence outside the realtime audio callback. It does not yet record raw host audio or provide a socket-backed monitor; keep those as product/QA work instead of encoding imaginary behavior into the agent workflow.
 
 As the repo gains the missing audio QA harnesses, tighten this section toward the stronger release gates defined in the audio QA workflow spec instead of leaving it as a light note.
 
