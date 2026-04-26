@@ -3425,9 +3425,7 @@ mod tests {
         let mut fixed_preview_buffer = vec![0.0_f32; frame_count * 2];
         let mut pad_samples = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
         let mut preview_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
-        for sample in &mut preview_samples {
-            *sample = 0.22;
-        }
+        preview_samples.fill(0.22);
         for (index, sample) in pad_samples.iter_mut().enumerate() {
             *sample = if index < W30_PREVIEW_SAMPLE_WINDOW_LEN {
                 0.22
