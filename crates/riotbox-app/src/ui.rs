@@ -1442,12 +1442,14 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let popup = centered_rect(60, 55, area);
     let mut lines = vec![
         Line::from("Jam shell keys"),
-        Line::from("q or Esc: quit"),
-        Line::from("? or h: toggle help"),
-        Line::from(
+        line_with_primary_key_prefixes("q or Esc: quit"),
+        line_with_primary_key_prefixes("? or h: toggle help"),
+        line_with_primary_key_prefixes(
             "1: Jam screen | 2: Log screen | 3: Source screen | 4: Capture screen | Tab: next screen",
         ),
-        Line::from("i: open inspect from Jam | press i again to return to perform"),
+        line_with_primary_key_prefixes(
+            "i: open inspect from Jam | press i again to return to perform",
+        ),
     ];
 
     if let Some(stage) = first_run_onramp_stage(shell) {
@@ -1455,19 +1457,27 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         lines.push(Line::from("First run"));
         match stage {
             FirstRunOnrampStage::Start => {
-                lines.push(Line::from("space: start transport"));
-                lines.push(Line::from("f: queue one first fill"));
-                lines.push(Line::from("2: switch to Log and watch it land"));
+                lines.push(line_with_primary_key_prefixes("space: start transport"));
+                lines.push(line_with_primary_key_prefixes("f: queue one first fill"));
+                lines.push(line_with_primary_key_prefixes(
+                    "2: switch to Log and watch it land",
+                ));
             }
             FirstRunOnrampStage::QueuedFirstMove => {
                 lines.push(Line::from("let transport cross the next bar"));
-                lines.push(Line::from("2: confirm the first landed action in Log"));
-                lines.push(Line::from("c: capture it | u: undo it"));
+                lines.push(line_with_primary_key_prefixes(
+                    "2: confirm the first landed action in Log",
+                ));
+                lines.push(line_with_primary_key_prefixes("c: capture it | u: undo it"));
             }
             FirstRunOnrampStage::FirstResult => {
-                lines.push(Line::from("c: capture the first keeper"));
-                lines.push(Line::from("u: undo it if it missed"));
-                lines.push(Line::from("y / g / w: try one more gesture"));
+                lines.push(line_with_primary_key_prefixes(
+                    "c: capture the first keeper",
+                ));
+                lines.push(line_with_primary_key_prefixes("u: undo it if it missed"));
+                lines.push(line_with_primary_key_prefixes(
+                    "y / g / w: try one more gesture",
+                ));
             }
         }
     }
@@ -1485,11 +1495,11 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     lines.extend([
         Line::from(""),
         Line::from("Primary gestures"),
-        Line::from(format!(
+        line_with_primary_key_prefixes(format!(
             "space: play / pause | {}",
             render_help_primary_gesture_items(shell)
         )),
-        Line::from(format!(
+        line_with_primary_key_prefixes(format!(
             "{} | 2: confirm in Log",
             render_gesture_items(HELP_PRIMARY_CONFIRM_GESTURES, ": ")
         )),
@@ -1497,12 +1507,12 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
         Line::from(""),
         Line::from("Advanced / lane gestures"),
-        Line::from(format!("r: {}", shell.launch_mode.refresh_verb())),
-        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_A, ": ")),
-        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_B, ": ")),
-        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_C, ": ")),
-        Line::from(render_gesture_items(HELP_ADVANCED_GESTURES_D, ": ")),
-        Line::from("[ / ]: lower or raise drum bus | v: pin latest"),
+        line_with_primary_key_prefixes(format!("r: {}", shell.launch_mode.refresh_verb())),
+        line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_A, ": ")),
+        line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_B, ": ")),
+        line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_C, ": ")),
+        line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_D, ": ")),
+        line_with_primary_key_prefixes("[ / ]: lower or raise drum bus | v: pin latest"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
         Line::from(format!("Jam view: {}", shell.jam_mode.label())),
@@ -1527,7 +1537,7 @@ fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>>
         Line::from("Scene timing"),
         Line::from(format!("{label} {scene}: lands at {boundary}")),
         Line::from("Jam: read launch/restore, pulse, live/restore energy"),
-        Line::from("2: confirm the landed trail on Log"),
+        line_with_primary_key_prefixes("2: confirm the landed trail on Log"),
     ])
 }
 
@@ -1568,8 +1578,8 @@ fn capture_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         Line::from(""),
         Line::from("Capture path"),
         Line::from("Do Next: read capture -> promote -> hit"),
-        Line::from("hear ... stored means [p] promote, then [w] hit"),
-        Line::from("2: confirm promote, hit, and audition results in Log"),
+        line_with_primary_keys("hear ... stored means [p] promote, then [w] hit"),
+        line_with_primary_key_prefixes("2: confirm promote, hit, and audition results in Log"),
     ])
 }
 
@@ -1966,6 +1976,28 @@ fn line_with_primary_keys(text: impl Into<String>) -> Line<'static> {
 
     if !rest.is_empty() || spans.is_empty() {
         spans.push(Span::raw(rest.to_owned()));
+    }
+
+    Line::from(spans)
+}
+
+fn line_with_primary_key_prefixes(text: impl Into<String>) -> Line<'static> {
+    let text = text.into();
+    let mut spans = Vec::new();
+
+    for (index, segment) in text.split(" | ").enumerate() {
+        if index > 0 {
+            spans.push(Span::raw(" | "));
+        }
+
+        let Some(colon) = segment.find(':') else {
+            spans.push(Span::raw(segment.to_owned()));
+            continue;
+        };
+
+        let (key, detail) = segment.split_at(colon);
+        spans.push(Span::styled(key.to_owned(), style_primary_control()));
+        spans.push(Span::raw(detail.to_owned()));
     }
 
     Line::from(spans)
@@ -4489,6 +4521,55 @@ mod tests {
             "{:?}",
             lines[0]
         );
+    }
+
+    #[test]
+    fn help_key_prefixes_use_primary_control_style() {
+        let line = line_with_primary_key_prefixes("space: play / pause | y: jump | Tab: next");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "space: play / pause | y: jump | Tab: next");
+        assert_eq!(line.spans[0].content.as_ref(), "space");
+        assert_eq!(line.spans[0].style.fg, Some(Color::Cyan));
+        assert!(
+            line.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[3].content.as_ref(), "y");
+        assert_eq!(line.spans[3].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[6].content.as_ref(), "Tab");
+        assert_eq!(line.spans[6].style.fg, Some(Color::Cyan));
+    }
+
+    #[test]
+    fn help_primary_gesture_line_styles_key_prefixes_without_rewriting_text() {
+        let shell = sample_shell_state();
+        let line = line_with_primary_key_prefixes(format!(
+            "space: play / pause | {}",
+            render_help_primary_gesture_items(&shell)
+        ));
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(
+            rendered,
+            "space: play / pause | y: scene jump | g: follow | f: fill"
+        );
+        assert_eq!(line.spans[0].content.as_ref(), "space");
+        assert_eq!(line.spans[0].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[3].content.as_ref(), "y");
+        assert_eq!(line.spans[3].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[6].content.as_ref(), "g");
+        assert_eq!(line.spans[6].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[9].content.as_ref(), "f");
+        assert_eq!(line.spans[9].style.fg, Some(Color::Cyan));
     }
 
     #[test]
