@@ -49,6 +49,14 @@ pub struct AudioRuntimeHealth {
     pub last_stream_error: Option<String>,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq)]
+pub struct OfflineAudioMetrics {
+    pub active_samples: usize,
+    pub peak_abs: f32,
+    pub rms: f32,
+    pub sum: f32,
+}
+
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct AudioRuntimeTimingSnapshot {
     pub is_transport_running: bool,
@@ -150,6 +158,52 @@ impl Display for AudioRuntimeError {
 }
 
 impl Error for AudioRuntimeError {}
+
+#[must_use]
+pub fn render_w30_preview_offline(
+    render_state: &W30PreviewRenderState,
+    sample_rate: u32,
+    channel_count: u16,
+    frame_count: usize,
+) -> Vec<f32> {
+    let shared_state = SharedW30PreviewRenderState::new(render_state);
+    let mut callback_state = W30PreviewCallbackState::default();
+    let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
+
+    render_w30_preview_buffer(
+        &mut buffer,
+        sample_rate,
+        usize::from(channel_count),
+        &shared_state.snapshot(),
+        &mut callback_state,
+    );
+
+    buffer
+}
+
+#[must_use]
+pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
+    let active_samples = samples
+        .iter()
+        .filter(|sample| sample.abs() > 0.0001)
+        .count();
+    let peak_abs = samples
+        .iter()
+        .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+    let sum = samples.iter().sum::<f32>();
+    let rms = if samples.is_empty() {
+        0.0
+    } else {
+        (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len() as f32).sqrt()
+    };
+
+    OfflineAudioMetrics {
+        active_samples,
+        peak_abs,
+        rms,
+        sum,
+    }
+}
 
 pub struct AudioRuntimeShell {
     lifecycle: AudioRuntimeLifecycle,
@@ -2047,7 +2101,7 @@ mod tests {
     };
     use crate::w30::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
-        W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
+        W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
         W30ResampleTapSourceProfile, W30ResampleTapState,
     };
     use serde::Deserialize;
@@ -3490,6 +3544,65 @@ mod tests {
                 assert!(rms <= max_rms, "{} RMS too high: got {rms}", fixture.name);
             }
         }
+    }
+
+    #[test]
+    fn offline_w30_preview_render_produces_reviewable_metrics() {
+        let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        for (index, sample) in samples.iter_mut().enumerate() {
+            *sample = 0.18 + index as f32 * 0.002;
+        }
+
+        let buffer = render_w30_preview_offline(
+            &W30PreviewRenderState {
+                mode: W30PreviewRenderMode::RawCaptureAudition,
+                routing: W30PreviewRenderRouting::MusicBusPreview,
+                source_profile: Some(W30PreviewSourceProfile::RawCaptureAudition),
+                active_bank_id: Some("bank-a".into()),
+                focused_pad_id: Some("pad-01".into()),
+                capture_id: Some("cap-01".into()),
+                trigger_revision: 0,
+                trigger_velocity: 0.0,
+                source_window_preview: Some(W30PreviewSampleWindow {
+                    source_start_frame: 0,
+                    source_end_frame: 64,
+                    sample_count: 64,
+                    samples,
+                }),
+                music_bus_level: 0.64,
+                grit_level: 0.0,
+                is_transport_running: true,
+                tempo_bpm: 126.0,
+                position_beats: 32.0,
+            },
+            44_100,
+            2,
+            256,
+        );
+
+        let metrics = signal_metrics(&buffer);
+
+        assert_eq!(buffer.len(), 512);
+        assert!(
+            metrics.active_samples >= 300,
+            "active sample count too low: got {}",
+            metrics.active_samples
+        );
+        assert!(
+            (0.02..=0.04).contains(&metrics.rms),
+            "unexpected RMS: got {}",
+            metrics.rms
+        );
+        assert!(
+            (6.0..=18.0).contains(&metrics.sum),
+            "unexpected sum: got {}",
+            metrics.sum
+        );
+        assert!(
+            (0.015..=0.08).contains(&metrics.peak_abs),
+            "unexpected peak: got {}",
+            metrics.peak_abs
+        );
     }
 
     #[test]
