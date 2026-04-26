@@ -1166,3 +1166,14 @@ Why: isolated pair tests can pass while the musician-facing flow still breaks th
 Evidence: `mc202_recipe_replay_proves_control_and_audio_path` verifies queue/commit state, landed render modes/shapes, non-silent MC-202 buffers, and signal-delta thresholds across the current Recipe 2 gesture chain.
 Consequences: broader recipe replay and observer correlation should build from this pattern: drive the same actions a musician performs, assert the control path, then prove the nearest audio seam changed.
 Status: accepted
+
+---
+
+Topic: MC-202 MVP exit requires state and audio undo, not log-only undo
+Phase: MC-202 MVP / Replay QA
+Question: after follower, answer, pressure, instigator, touch, mutation, contour, note budget, hook response, and recipe replay proof exist, what still blocks calling the first MC-202 MVP exit-clean?
+Decision: require a bounded MC-202 undo rollback slice before closing the MVP phase. Undo must restore the previous MC-202 lane state, refresh the typed render state, and prove the rendered output returns to the previous audible seam; marking the action log entry as `undone` is not enough.
+Why: the phase definition explicitly requires replay and undo to remain intact. Riotbox is an instrument for trying moves and backing out; if a musician hears an MC-202 move and presses undo, the sounded lane state must roll back, not only the diagnostic history.
+Evidence: the current `undo_last_action` path marks the latest undoable action as undone and appends an undo marker, while MC-202 side effects are already committed into session lane state, macro touch, and typed render projection.
+Consequences: complete the rollback on the existing action/log/session/render seam. Do not introduce a second MC-202 history stack or callback-only undo path.
+Status: accepted
