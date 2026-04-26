@@ -65,9 +65,15 @@ pub(super) fn capture_ref_from_action(
         .map(|capture| capture.source_origin_refs.clone())
         .or_else(|| source_graph.map(capture_origin_refs))
         .unwrap_or_else(|| vec!["source-graph-unavailable".into()]);
-    let source_window = source_capture
-        .and_then(|capture| capture.source_window.clone())
-        .or_else(|| source_graph.and_then(|graph| capture_source_window(graph, action, boundary)));
+    let source_window = if matches!(action.command, ActionCommand::PromoteResample) {
+        None
+    } else {
+        source_capture
+            .and_then(|capture| capture.source_window.clone())
+            .or_else(|| {
+                source_graph.and_then(|graph| capture_source_window(graph, action, boundary))
+            })
+    };
     let mut lineage_capture_refs = source_capture
         .map(|capture| capture.lineage_capture_refs.clone())
         .unwrap_or_default();

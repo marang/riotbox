@@ -9,10 +9,13 @@ use std::{
 
 use riotbox_audio::{
     mc202::Mc202RenderState,
-    runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot},
-    source_audio::{SourceAudioCache, SourceAudioWindow},
+    runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot, render_w30_resample_tap_offline},
+    source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
     tr909::Tr909RenderState,
-    w30::{W30PreviewRenderState, W30ResampleTapState},
+    w30::{
+        W30PreviewRenderState, W30ResampleTapMode, W30ResampleTapRouting,
+        W30ResampleTapSourceProfile, W30ResampleTapState,
+    },
 };
 use riotbox_core::{
     TimestampMs,
@@ -196,6 +199,12 @@ pub struct JamAppState {
     pub runtime_view: JamRuntimeView,
 }
 
+struct W30BusPrintInput {
+    sample_rate: u32,
+    channel_count: u16,
+    samples: Vec<f32>,
+}
+
 impl JamAppState {
     const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
     const W30_DAMAGE_PROFILE_GRIT: f32 = 0.82;
@@ -281,6 +290,155 @@ impl JamAppState {
             Err(reason) => {
                 append_capture_note(capture, &format!("audio artifact pending: {reason}"))
             }
+        }
+    }
+
+    fn persist_w30_bus_print_artifact(&mut self, capture: &mut CaptureRef) {
+        match self.write_w30_bus_print_artifact(capture) {
+            Ok(Some(path)) => {
+                if let Ok(cache) = SourceAudioCache::load_pcm_wav(&path) {
+                    self.capture_audio_cache
+                        .insert(capture.capture_id.clone(), cache);
+                }
+                append_capture_note(
+                    capture,
+                    &format!("bus print artifact written {}", capture.storage_path),
+                );
+            }
+            Ok(None) => {}
+            Err(reason) => append_capture_note(capture, &format!("bus print pending: {reason}")),
+        }
+    }
+
+    fn write_w30_bus_print_artifact(
+        &self,
+        capture: &CaptureRef,
+    ) -> Result<Option<PathBuf>, String> {
+        if capture.capture_type != riotbox_core::session::CaptureType::Resample {
+            return Ok(None);
+        }
+
+        let Some(source_capture_id) = capture.lineage_capture_refs.last() else {
+            return Err("resample capture has no source capture lineage".into());
+        };
+        let source_capture = self
+            .session
+            .captures
+            .iter()
+            .find(|candidate| candidate.capture_id == *source_capture_id)
+            .ok_or_else(|| format!("source capture {source_capture_id} not found"))?;
+        let Some(path) = self.capture_audio_artifact_path(capture) else {
+            return Ok(None);
+        };
+        let input = self
+            .w30_bus_print_input(source_capture)?
+            .ok_or_else(|| format!("source capture {source_capture_id} has no printable audio"))?;
+        let channel_count = usize::from(input.channel_count);
+        let input_frames = input.samples.len() / channel_count.max(1);
+        if input_frames == 0 {
+            return Err("source capture audio is empty".into());
+        }
+        let max_frames = usize::try_from(input.sample_rate)
+            .unwrap_or(usize::MAX)
+            .saturating_mul(8);
+        let frame_count = input_frames.min(max_frames).max(1);
+        let sample_count = frame_count.saturating_mul(channel_count);
+        let dry = &input.samples[..sample_count.min(input.samples.len())];
+        let render_state = self.w30_bus_print_render_state(capture, source_capture);
+        let wet = render_w30_resample_tap_offline(
+            &render_state,
+            input.sample_rate,
+            input.channel_count,
+            frame_count,
+        );
+        let printed: Vec<f32> = dry
+            .iter()
+            .zip(wet.iter())
+            .map(|(dry, wet)| (dry * 0.68 + wet * 1.45).clamp(-1.0, 1.0))
+            .collect();
+
+        write_interleaved_pcm16_wav(&path, input.sample_rate, input.channel_count, &printed)
+            .map_err(|error| error.to_string())?;
+        Ok(Some(path))
+    }
+
+    fn w30_bus_print_input(
+        &self,
+        capture: &CaptureRef,
+    ) -> Result<Option<W30BusPrintInput>, String> {
+        if let Some(cache) = self.capture_audio_cache.get(&capture.capture_id) {
+            return Ok(Some(W30BusPrintInput {
+                sample_rate: cache.sample_rate,
+                channel_count: cache.channel_count,
+                samples: cache.interleaved_samples().to_vec(),
+            }));
+        }
+
+        let Some(source_window) = capture.source_window.as_ref() else {
+            return Ok(None);
+        };
+        let Some(source_audio_cache) = self.source_audio_cache.as_ref() else {
+            return Ok(None);
+        };
+        let frame_count = source_window
+            .end_frame
+            .saturating_sub(source_window.start_frame);
+        if frame_count == 0 {
+            return Ok(None);
+        }
+        let samples = source_audio_cache
+            .window_samples(SourceAudioWindow {
+                start_frame: usize::try_from(source_window.start_frame)
+                    .map_err(|_| "source window start frame exceeds usize".to_string())?,
+                frame_count: usize::try_from(frame_count)
+                    .map_err(|_| "source window frame count exceeds usize".to_string())?,
+            })
+            .to_vec();
+
+        Ok(Some(W30BusPrintInput {
+            sample_rate: source_audio_cache.sample_rate,
+            channel_count: source_audio_cache.channel_count,
+            samples,
+        }))
+    }
+
+    fn w30_bus_print_render_state(
+        &self,
+        capture: &CaptureRef,
+        source_capture: &CaptureRef,
+    ) -> W30ResampleTapState {
+        let source_profile = if source_capture.is_pinned {
+            Some(W30ResampleTapSourceProfile::PinnedCapture)
+        } else if source_capture.assigned_target.is_some() {
+            Some(W30ResampleTapSourceProfile::PromotedCapture)
+        } else {
+            Some(W30ResampleTapSourceProfile::RawCapture)
+        };
+
+        W30ResampleTapState {
+            mode: W30ResampleTapMode::CaptureLineageReady,
+            routing: W30ResampleTapRouting::InternalCaptureTap,
+            source_profile,
+            source_capture_id: Some(source_capture.capture_id.to_string()),
+            lineage_capture_count: capture
+                .lineage_capture_refs
+                .len()
+                .try_into()
+                .unwrap_or(u8::MAX),
+            generation_depth: capture.resample_generation_depth,
+            music_bus_level: self
+                .session
+                .runtime_state
+                .mixer_state
+                .music_level
+                .clamp(0.0, 1.0),
+            grit_level: self
+                .session
+                .runtime_state
+                .macro_state
+                .w30_grit
+                .clamp(0.0, 1.0),
+            is_transport_running: self.runtime.transport.is_playing,
         }
     }
 
@@ -1424,7 +1582,11 @@ impl JamAppState {
         if let Some(mut capture) =
             capture_ref_from_action(&self.session, self.source_graph.as_ref(), action, boundary)
         {
-            self.persist_capture_audio_artifact(&mut capture);
+            if matches!(action.command, ActionCommand::PromoteResample) {
+                self.persist_w30_bus_print_artifact(&mut capture);
+            } else {
+                self.persist_capture_audio_artifact(&mut capture);
+            }
             self.session.runtime_state.lane_state.w30.last_capture =
                 Some(capture.capture_id.clone());
             self.session.captures.push(capture);
@@ -1511,7 +1673,7 @@ mod tests {
         },
         runtime::{
             AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, render_w30_preview_offline,
-            signal_metrics,
+            render_w30_resample_tap_offline, signal_metrics,
         },
         source_audio::SourceAudioCache,
         tr909::{
@@ -5987,6 +6149,142 @@ mod tests {
         );
         assert_eq!(state.runtime.w30_resample_tap.lineage_capture_count, 2);
         assert_eq!(state.runtime.w30_resample_tap.generation_depth, 2);
+    }
+
+    #[test]
+    fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
+        let tempdir = tempdir().expect("create resample artifact tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        let session_path = tempdir.path().join("session.json");
+        let graph_path = tempdir.path().join("source_graph.json");
+        write_pcm16_wave(&source_path, 48_000, 2, 8.0);
+
+        let mut graph = sample_graph();
+        graph.source.path = source_path.to_string_lossy().into_owned();
+        graph.source.duration_seconds = 8.0;
+        graph.source.sample_rate = 48_000;
+        graph.source.channel_count = 2;
+        let mut session = sample_session(&graph);
+        session.captures.clear();
+        session.runtime_state.lane_state.w30.last_capture = None;
+        session.runtime_state.macro_state.w30_grit = 0.73;
+        save_source_graph_json(&graph_path, &graph).expect("save source graph");
+        save_session_json(&session_path, &session).expect("save session");
+
+        let mut state =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+        state.queue_capture_bar(300);
+        let committed_capture = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+        assert_eq!(committed_capture.len(), 1);
+        let raw_capture_path = tempdir.path().join("captures/cap-01.wav");
+        let raw_artifact =
+            SourceAudioCache::load_pcm_wav(&raw_capture_path).expect("load raw capture artifact");
+
+        assert!(state.queue_promote_last_capture(410));
+        let committed_promotion = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        );
+        assert_eq!(committed_promotion.len(), 1);
+
+        assert_eq!(
+            state.queue_w30_internal_resample(650),
+            Some(QueueControlResult::Enqueued)
+        );
+        let committed_resample = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 32,
+                bar_index: 8,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        );
+        assert_eq!(committed_resample.len(), 1);
+
+        let capture = state
+            .session
+            .captures
+            .last()
+            .expect("new resample capture should exist");
+        assert_eq!(capture.capture_type, CaptureType::Resample);
+        assert_eq!(capture.capture_id, CaptureId::from("cap-02"));
+        assert_eq!(capture.source_window, None);
+        assert_eq!(
+            capture.lineage_capture_refs,
+            vec![CaptureId::from("cap-01")]
+        );
+        assert_eq!(capture.resample_generation_depth, 1);
+        assert!(
+            capture
+                .notes
+                .as_deref()
+                .is_some_and(|notes| notes.contains("bus print artifact written"))
+        );
+        assert!(
+            state
+                .capture_audio_cache
+                .contains_key(&CaptureId::from("cap-02"))
+        );
+
+        let printed_path = tempdir.path().join("captures/cap-02.wav");
+        assert!(printed_path.exists());
+        let printed =
+            SourceAudioCache::load_pcm_wav(&printed_path).expect("load printed resample artifact");
+        assert_eq!(printed.sample_rate, 48_000);
+        assert_eq!(printed.channel_count, 2);
+        assert_eq!(printed.frame_count(), raw_artifact.frame_count());
+        let printed_metrics = signal_metrics(printed.interleaved_samples());
+        assert!(
+            printed_metrics.active_samples > 1_000,
+            "printed W-30 bus artifact rendered too few active samples: {}",
+            printed_metrics.active_samples
+        );
+        assert!(
+            printed_metrics.rms > 0.001,
+            "printed W-30 bus artifact RMS too low: {}",
+            printed_metrics.rms
+        );
+
+        let compare_len = printed
+            .interleaved_samples()
+            .len()
+            .min(raw_artifact.interleaved_samples().len());
+        assert_recipe_buffers_differ(
+            "printed W-30 bus artifact vs raw capture artifact",
+            &printed.interleaved_samples()[..compare_len],
+            &raw_artifact.interleaved_samples()[..compare_len],
+            0.001,
+        );
+
+        let fallback = render_w30_resample_tap_offline(
+            &state.runtime.w30_resample_tap,
+            printed.sample_rate,
+            printed.channel_count,
+            printed.frame_count(),
+        );
+        assert_recipe_buffers_differ(
+            "printed W-30 bus artifact vs synthetic resample tap",
+            printed.interleaved_samples(),
+            &fallback,
+            0.001,
+        );
     }
 
     #[test]
