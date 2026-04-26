@@ -462,6 +462,7 @@ Today the repo already has:
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
+- a first offline MC-202 audio proof case in the lane recipe listening pack, covering follower-vs-answer contrast without claiming live TUI mixer integration
 
 Today the repo does not yet have a full official workflow for:
 
