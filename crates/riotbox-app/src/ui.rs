@@ -3823,7 +3823,13 @@ fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
 }
 
 fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let latest_promoted = latest_w30_promoted_capture_label(shell);
+    let latest_promoted = shell
+        .app
+        .jam_view
+        .capture
+        .latest_w30_promoted_capture_label
+        .as_deref()
+        .unwrap_or("none");
     let pending_w30 = w30_pending_cue_label(shell);
     let bank_or_pool_line = if w30_slice_pool_relevant(shell) {
         format!(
@@ -3953,22 +3959,6 @@ fn capture_heard_path_label(shell: &JamShellState) -> String {
             capture_handoff_readiness_label(shell)
         ),
     }
-}
-
-fn latest_w30_promoted_capture_label(shell: &JamShellState) -> String {
-    shell
-        .app
-        .session
-        .captures
-        .iter()
-        .rev()
-        .find_map(|capture| match capture.assigned_target.as_ref() {
-            Some(riotbox_core::session::CaptureTarget::W30Pad { bank_id, pad_id }) => {
-                Some(format!("{} -> {bank_id}/{pad_id}", capture.capture_id))
-            }
-            _ => None,
-        })
-        .unwrap_or_else(|| "none".into())
 }
 
 fn capture_or_recall_cue_label(shell: &JamShellState) -> String {
@@ -7879,7 +7869,16 @@ mod tests {
             rendered.contains("wait, then hear promoted preview"),
             "{rendered}"
         );
-        assert!(rendered.contains("latest promoted"));
+        assert_eq!(
+            shell
+                .app
+                .jam_view
+                .capture
+                .latest_w30_promoted_capture_label
+                .as_deref(),
+            Some("cap-01 -> bank-b/pad-03")
+        );
+        assert!(rendered.contains("latest promoted cap-01 ->"), "{rendered}");
         assert!(rendered.contains("cap-01"));
     }
 

@@ -420,6 +420,7 @@ impl JamViewModel {
                         }
                     })
                 }),
+                latest_w30_promoted_capture_label: latest_w30_promoted_capture_label(session),
                 pinned_capture_ids: session
                     .captures
                     .iter()
@@ -506,6 +507,19 @@ const fn capture_handoff_readiness_view(
     } else {
         CaptureHandoffReadinessView::Fallback
     }
+}
+
+fn latest_w30_promoted_capture_label(session: &SessionFile) -> Option<String> {
+    session
+        .captures
+        .iter()
+        .rev()
+        .find_map(|capture| match capture.assigned_target.as_ref() {
+            Some(crate::session::CaptureTarget::W30Pad { bank_id, pad_id }) => {
+                Some(format!("{} -> {bank_id}/{pad_id}", capture.capture_id))
+            }
+            _ => None,
+        })
 }
 
 trait SessionAccessors {
@@ -818,6 +832,7 @@ pub struct CaptureSummaryView {
     pub last_capture_origin_count: usize,
     pub last_capture_notes: Option<String>,
     pub last_promotion_result: Option<String>,
+    pub latest_w30_promoted_capture_label: Option<String>,
     pub pinned_capture_ids: Vec<String>,
 }
 
@@ -1266,6 +1281,10 @@ mod tests {
         assert_eq!(
             vm.capture.last_promotion_result.as_deref(),
             Some("promoted to pad bank-a/pad-01")
+        );
+        assert_eq!(
+            vm.capture.latest_w30_promoted_capture_label.as_deref(),
+            Some("cap-01 -> bank-a/pad-01")
         );
         assert!(vm.capture.pinned_capture_ids.is_empty());
         assert_eq!(vm.capture.pending_capture_items.len(), 2);
