@@ -286,13 +286,16 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
    - the current `live .../<energy> <> restore .../<energy>` contrast line
 5. press `2` after the jump lands
 6. on `Log`, confirm the scene result and note the `trail ...` cue
-7. press `1`
-8. on `Jam`, confirm the restore-ready cue now appears:
+7. still on `Log`, check the TR-909 render line:
+   - `... | <profile> / scene_target` means TR-909 source support is following the landed Scene target
+   - `... | <profile> / transport_bar` means TR-909 source support is still following the current transport bar's source section
+8. press `1`
+9. on `Jam`, confirm the restore-ready cue now appears:
    - `Scene: restore .../<energy> ready | rise/drop/hold | Y brings back .../<energy>`
    - `[Y] restore ... now`
-9. queue restore with `Y`
-10. before restore lands, read the same three `Jam` cues again
-11. press `2` after restore lands and confirm the new `trail ...` entry
+10. queue restore with `Y`
+11. before restore lands, read the same three `Jam` cues again
+12. press `2` after restore lands and confirm the new `trail ...` entry
 
 What to observe:
 
@@ -304,11 +307,14 @@ What to observe:
 - if Riotbox cannot infer the next launch target, the suggested jump cue falls back to the generic `[y] jump`; if it knows there are too few scenes, it says `[y] jump waits for 2 scenes`
 - if Riotbox cannot infer both energy sides, the restore-ready cue falls back to the older target-only shape without `rise/drop/hold`
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
+- `scene_target` is a render-state diagnostic, not a promise of a finished transition engine; it means the TR-909 support profile is now using the target Scene's projected source section
+- `transport_bar` is the safe fallback; it means the Scene id could not be mapped to a source section, so the TR-909 profile still follows the current bar
 
 What this teaches:
 
 - Scene Brain now has a real small readability stack, not just action ids
 - `Jam` is enough to follow the next scene move, while `Log` is enough to confirm what actually landed
+- TR-909 support can now be inspected as Scene-coupled or transport-bar-driven instead of guessed by ear
 - the current shell can already teach `jump -> restore` timing and role contrast, even though it is still not a finished visual timing instrument
 
 Low-energy contrast note:
