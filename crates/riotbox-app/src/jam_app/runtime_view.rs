@@ -8,7 +8,10 @@ use riotbox_audio::{
         W30ResampleTapSourceProfile, W30ResampleTapState,
     },
 };
-use riotbox_core::session::SessionFile;
+use riotbox_core::{
+    session::SessionFile, source_graph::SourceGraph,
+    tr909_policy::derive_tr909_source_support_reason,
+};
 
 use super::{AppRuntimeState, SidecarState};
 
@@ -24,6 +27,7 @@ pub struct JamRuntimeView {
     pub tr909_render_profile: String,
     pub tr909_render_support_context: String,
     pub tr909_render_support_accent: String,
+    pub tr909_render_support_reason: String,
     pub tr909_render_pattern_ref: Option<String>,
     pub tr909_render_pattern_adoption: String,
     pub tr909_render_phrase_variation: String,
@@ -52,7 +56,11 @@ pub struct JamRuntimeView {
 
 impl JamRuntimeView {
     #[must_use]
-    pub fn build(runtime: &AppRuntimeState, session: &SessionFile) -> Self {
+    pub fn build(
+        runtime: &AppRuntimeState,
+        session: &SessionFile,
+        source_graph: Option<&SourceGraph>,
+    ) -> Self {
         let (audio_status, audio_callback_count, audio_last_error) = match &runtime.audio {
             Some(health) => (
                 match health.lifecycle {
@@ -114,6 +122,12 @@ impl JamRuntimeView {
                 .map_or_else(|| "unset".into(), |context| context.label().into()),
             tr909_render_support_accent: tr909_render_support_accent_label(&runtime.tr909_render)
                 .into(),
+            tr909_render_support_reason: tr909_render_support_reason_label(
+                &runtime.tr909_render,
+                &runtime.transport,
+                session,
+                source_graph,
+            ),
             tr909_render_pattern_ref: runtime.tr909_render.pattern_ref.clone(),
             tr909_render_pattern_adoption: runtime
                 .tr909_render
@@ -257,6 +271,30 @@ fn tr909_render_support_accent_label(render: &Tr909RenderState) -> &'static str 
         (Tr909RenderMode::SourceSupport, None) => "off unset",
         _ => "off",
     }
+}
+
+fn tr909_render_support_reason_label(
+    render: &Tr909RenderState,
+    transport: &riotbox_core::transport::TransportClockState,
+    session: &SessionFile,
+    source_graph: Option<&SourceGraph>,
+) -> String {
+    if !matches!(render.mode, Tr909RenderMode::SourceSupport) {
+        return "unset".into();
+    }
+    if render.source_support_profile.is_none() || source_graph.is_none() {
+        return "unset".into();
+    }
+
+    let scene_context = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(session.runtime_state.transport.current_scene.as_ref());
+
+    derive_tr909_source_support_reason(source_graph, transport, scene_context)
+        .map_or_else(|| "section".into(), |reason| reason.cue_label().into())
 }
 
 fn tr909_render_alignment_label(render: &Tr909RenderState) -> &'static str {

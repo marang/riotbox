@@ -83,6 +83,27 @@ impl Tr909SourceSupportContextPolicy {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Tr909SourceSupportReasonPolicy {
+    FeralBreakLift,
+}
+
+impl Tr909SourceSupportReasonPolicy {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::FeralBreakLift => "feral_break_lift",
+        }
+    }
+
+    #[must_use]
+    pub const fn cue_label(self) -> &'static str {
+        match self {
+            Self::FeralBreakLift => "feral break lift",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Tr909TakeoverRenderProfilePolicy {
     ControlledPhrase,
     SceneLock,
@@ -221,6 +242,19 @@ pub fn derive_tr909_render_policy_with_scene_context(
     }
 }
 
+#[must_use]
+pub fn derive_tr909_source_support_reason(
+    source_graph: Option<&SourceGraph>,
+    transport: &TransportClockState,
+    scene_context: Option<&SceneId>,
+) -> Option<Tr909SourceSupportReasonPolicy> {
+    let graph = source_graph?;
+    let (current_section, _) = tr909_source_support_section(graph, transport, scene_context)?;
+    let profile = source_support_profile_for_section(current_section);
+    should_lift_feral_break_support(graph, profile)
+        .then_some(Tr909SourceSupportReasonPolicy::FeralBreakLift)
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 struct Tr909SourceSupportPolicy {
     profile: Tr909SourceSupportProfilePolicy,
@@ -233,7 +267,20 @@ fn derive_tr909_source_support(
     scene_context: Option<&SceneId>,
 ) -> Option<Tr909SourceSupportPolicy> {
     let graph = source_graph?;
-    let (current_section, context) = scene_context
+    let (current_section, context) = tr909_source_support_section(graph, transport, scene_context)?;
+
+    Some(Tr909SourceSupportPolicy {
+        profile: source_support_profile_for_graph_section(graph, current_section),
+        context,
+    })
+}
+
+fn tr909_source_support_section<'a>(
+    graph: &'a SourceGraph,
+    transport: &TransportClockState,
+    scene_context: Option<&SceneId>,
+) -> Option<(&'a Section, Tr909SourceSupportContextPolicy)> {
+    scene_context
         .and_then(|scene_id| {
             section_for_projected_scene(graph, scene_id)
                 .map(|section| (section, Tr909SourceSupportContextPolicy::SceneTarget))
@@ -241,12 +288,7 @@ fn derive_tr909_source_support(
         .or_else(|| {
             section_for_transport_bar(graph, transport)
                 .map(|section| (section, Tr909SourceSupportContextPolicy::TransportBar))
-        })?;
-
-    Some(Tr909SourceSupportPolicy {
-        profile: source_support_profile_for_graph_section(graph, current_section),
-        context,
-    })
+        })
 }
 
 fn source_support_profile_for_graph_section(
@@ -767,18 +809,32 @@ mod tests {
             Some(&hook_only_graph),
             None,
         );
+        let control_reason =
+            derive_tr909_source_support_reason(Some(&control_graph), &transport, None);
+        let feral_reason = derive_tr909_source_support_reason(Some(&feral_graph), &transport, None);
+        let hook_only_reason =
+            derive_tr909_source_support_reason(Some(&hook_only_graph), &transport, None);
 
         assert_eq!(
             control_policy.source_support_profile,
             Some(Tr909SourceSupportProfilePolicy::SteadyPulse)
         );
+        assert_eq!(control_reason, None);
         assert_eq!(
             feral_policy.source_support_profile,
             Some(Tr909SourceSupportProfilePolicy::BreakLift)
         );
         assert_eq!(
+            feral_reason,
+            Some(Tr909SourceSupportReasonPolicy::FeralBreakLift)
+        );
+        assert_eq!(
             hook_only_policy.source_support_profile,
             Some(Tr909SourceSupportProfilePolicy::BreakLift)
+        );
+        assert_eq!(
+            hook_only_reason,
+            Some(Tr909SourceSupportReasonPolicy::FeralBreakLift)
         );
         assert_eq!(
             feral_policy.source_support_context,
