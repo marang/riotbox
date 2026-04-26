@@ -150,6 +150,12 @@ Acceptance shape:
 - prove the restored buffer moves back toward the restore target instead of staying identical to the launched state
 - assert scene state, restore pointer, Jam view, and render diagnostics alongside the audio metrics
 
+Status:
+
+- closed by `RIOTBOX-325`
+- evidence: `scene_jump_restore_replay_proves_state_and_mixed_audio_path`
+- proof shape: renders before / launched / restored mixed TR-909 + MC-202 buffers, proves launch and restore signal-delta thresholds, and proves restore returns to the baseline render
+
 ### 2. Scene transition policy is still implicit
 
 Severity: major for P008 closeout.
@@ -174,6 +180,11 @@ Acceptance shape:
 - update the listening-pack note when sequence-level Scene Brain audio proof lands
 - do not overstate this before the mixed replay proof exists
 
+Status:
+
+- updated by `RIOTBOX-325`
+- the listening-pack note now reflects the mixed TR-909 + MC-202 Scene replay proof while keeping full transition-engine claims out of scope
+
 ## Recommended Next Slice
 
 Add a bounded Scene Brain recipe replay output regression.
@@ -193,4 +204,4 @@ If that proof is too weak with the current lane rules, the same slice should int
 
 ## Conclusion
 
-`P008 | Scene Brain` is structurally real but not exit-clean. Launch, restore, energy cues, and replay-safe state are in good shape. The remaining blocker is musical proof and transition intent: Scene Brain needs one sequence-level output regression and, likely, a small explicit transition policy before the phase can honestly claim that scene changes sound musical and the default arrangement no longer feels static.
+`P008 | Scene Brain` is structurally real but not exit-clean. Launch, restore, energy cues, replay-safe state, and the first mixed-lane `jump -> restore` output proof are in good shape. The remaining blocker is transition intent: Scene Brain still needs a small explicit transition policy before the phase can honestly claim that scene changes sound musical and the default arrangement no longer feels static.

@@ -1298,3 +1298,14 @@ Why: Scene Brain already has deterministic scene candidates, contrast target sel
 Evidence: `docs/reviews/scene_brain_mvp_gap_review_2026-04-26.md` re-audits P008 and records passing scene-filtered core, app, and audio tests. It identifies sequence-level output proof and explicit transition intent as the remaining blockers.
 Consequences: the next implementation should stay inside the existing Source Graph, Session, ActionQueue, Jam view, TR-909, and MC-202 render-state seams. If current lane rules do not produce a strong enough before/launched/restored contrast, add the smallest deterministic scene-transition policy needed instead of introducing a second arranger or shadow audio path.
 Status: accepted
+
+---
+
+Topic: Scene Brain jump-restore proof should compare mixed lane output, not isolated diagnostics
+Phase: Scene Brain / Audio QA
+Question: what proof is enough to close the first sequence-level output gap for the current Scene Brain flow?
+Decision: add an app-level regression that drives `scene.launch -> scene.restore`, renders mixed TR-909 + MC-202 output before launch, after launch, and after restore, and checks both control-path state and signal-delta audio behavior.
+Why: Scene Brain is a musician-facing transition flow. Proving only TR-909 support, only MC-202 contour, or only Jam/Log text would miss failures where the sequence lands in state but does not produce a meaningful audible result.
+Evidence: `scene_jump_restore_replay_proves_state_and_mixed_audio_path` keeps TR-909 source support and MC-202 follower active, verifies scene state, restore pointer, Jam scene view, TR-909 scene-target support context, MC-202 contour hints, non-silent mixed renders, launch/restore signal-delta thresholds, and baseline return after restore.
+Consequences: this closes the first output-proof gap from the Scene Brain MVP review. It does not close P008 by itself; a bounded explicit scene-transition policy is still needed before claiming the default arrangement no longer feels static or that scene transitions are musically intentional enough for MVP closeout.
+Status: accepted

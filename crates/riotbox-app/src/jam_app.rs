@@ -1672,8 +1672,9 @@ mod tests {
             Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
         },
         runtime::{
-            AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, render_w30_preview_offline,
-            render_w30_resample_tap_offline, signal_metrics,
+            AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, render_mc202_offline,
+            render_tr909_offline, render_w30_preview_offline, render_w30_resample_tap_offline,
+            signal_metrics,
         },
         source_audio::SourceAudioCache,
         tr909::{
@@ -3552,6 +3553,139 @@ mod tests {
             "scene_target"
         );
         assert_eq!(state.runtime_view.tr909_render_support_accent, "scene");
+    }
+
+    #[test]
+    fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
+        let graph = scene_regression_graph(&["drop".into(), "break".into()]);
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.position_beats = 32.0;
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.scene_state.restore_scene = None;
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-drop"),
+            SceneId::from("scene-02-break"),
+        ];
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::SourceSupport);
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-recipe-support".into());
+        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.phrase_variant = None;
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::SceneTarget)
+        );
+        assert_eq!(
+            state.runtime.mc202_render.contour_hint,
+            Mc202ContourHint::Drop
+        );
+        let before_jump = render_scene_recipe_mix_buffer(&state);
+
+        assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
+        let launched = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-01-drop")),
+            },
+            360,
+        );
+        assert_eq!(launched.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.session.runtime_state.scene_state.restore_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state.jam_view.scene.restore_scene.as_deref(),
+            Some("scene-01-drop")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::BreakLift)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::SceneTarget)
+        );
+        assert_eq!(
+            state.runtime.mc202_render.contour_hint,
+            Mc202ContourHint::Hold
+        );
+        let after_jump = render_scene_recipe_mix_buffer(&state);
+        assert_recipe_buffers_differ("scene launch mixed audio", &before_jump, &after_jump, 0.004);
+
+        assert_eq!(state.queue_scene_restore(420), QueueControlResult::Enqueued);
+        let restored = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            480,
+        );
+        assert_eq!(restored.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.session.runtime_state.scene_state.restore_scene,
+            Some(SceneId::from("scene-02-break"))
+        );
+        assert_eq!(
+            state.jam_view.scene.active_scene.as_deref(),
+            Some("scene-01-drop")
+        );
+        assert_eq!(
+            state.jam_view.scene.restore_scene.as_deref(),
+            Some("scene-02-break")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::SceneTarget)
+        );
+        assert_eq!(
+            state.runtime.mc202_render.contour_hint,
+            Mc202ContourHint::Drop
+        );
+        let after_restore = render_scene_recipe_mix_buffer(&state);
+
+        assert_recipe_buffers_differ(
+            "scene restore mixed audio leaves launched state",
+            &after_jump,
+            &after_restore,
+            0.004,
+        );
+        assert_recipe_buffers_match(
+            "scene restore returns to baseline render",
+            &before_jump,
+            &after_restore,
+            0.000_001,
+        );
     }
 
     #[test]
@@ -7062,6 +7196,24 @@ mod tests {
             "MC-202 recipe step rendered silence"
         );
         buffer
+    }
+
+    fn render_scene_recipe_mix_buffer(state: &JamAppState) -> Vec<f32> {
+        let frame_count = 44_100;
+        let mut tr909 = render_tr909_offline(&state.runtime.tr909_render, 44_100, 2, frame_count);
+        let mc202 = render_mc202_offline(&state.runtime.mc202_render, 44_100, 2, frame_count);
+
+        for (left, right) in tr909.iter_mut().zip(mc202.iter()) {
+            *left += *right;
+        }
+
+        let metrics = signal_metrics(&tr909);
+        assert!(
+            metrics.rms > 0.001,
+            "Scene Brain mixed render RMS too low: {}",
+            metrics.rms
+        );
+        tr909
     }
 
     fn assert_recipe_buffers_match(label: &str, left: &[f32], right: &[f32], max_delta: f32) {
