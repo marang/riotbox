@@ -26,10 +26,10 @@ pub enum SourceAudioError {
 }
 
 impl SourceAudioCache {
-    pub fn load_pcm16_wav(path: impl AsRef<Path>) -> Result<Self, SourceAudioError> {
+    pub fn load_pcm_wav(path: impl AsRef<Path>) -> Result<Self, SourceAudioError> {
         let path = path.as_ref();
         let bytes = fs::read(path).map_err(|error| SourceAudioError::Io(error.to_string()))?;
-        let decoded = decode_pcm16_wav(&bytes)?;
+        let decoded = decode_pcm_wav(&bytes)?;
 
         Ok(Self {
             path: path.to_path_buf(),
@@ -98,13 +98,13 @@ impl fmt::Display for SourceAudioError {
 impl Error for SourceAudioError {}
 
 #[derive(Debug)]
-struct DecodedPcm16Wave {
+struct DecodedPcmWave {
     sample_rate: u32,
     channel_count: u16,
     samples: Vec<f32>,
 }
 
-fn decode_pcm16_wav(bytes: &[u8]) -> Result<DecodedPcm16Wave, SourceAudioError> {
+fn decode_pcm_wav(bytes: &[u8]) -> Result<DecodedPcmWave, SourceAudioError> {
     if bytes.len() < 12 {
         return Err(SourceAudioError::InvalidWave(
             "header shorter than RIFF/WAVE".into(),
@@ -157,7 +157,7 @@ fn decode_pcm16_wav(bytes: &[u8]) -> Result<DecodedPcm16Wave, SourceAudioError> 
         .map(|bytes| decode_pcm_sample(bytes, format.bits_per_sample))
         .collect();
 
-    Ok(DecodedPcm16Wave {
+    Ok(DecodedPcmWave {
         sample_rate: format.sample_rate,
         channel_count: format.channel_count,
         samples,
@@ -274,7 +274,7 @@ mod tests {
         let path = tempdir.path().join("source.wav");
         write_pcm16_wave(&path, 44_100, 2, 0.25);
 
-        let cache = SourceAudioCache::load_pcm16_wav(&path).expect("load PCM WAV");
+        let cache = SourceAudioCache::load_pcm_wav(&path).expect("load PCM WAV");
 
         assert_eq!(cache.sample_rate, 44_100);
         assert_eq!(cache.channel_count, 2);
@@ -299,7 +299,7 @@ mod tests {
         )
         .expect("write PCM24 wave fixture");
 
-        let cache = SourceAudioCache::load_pcm16_wav(&path).expect("load PCM24 WAV");
+        let cache = SourceAudioCache::load_pcm_wav(&path).expect("load PCM24 WAV");
 
         assert_eq!(cache.sample_rate, 44_100);
         assert_eq!(cache.channel_count, 1);
@@ -315,7 +315,7 @@ mod tests {
         let tempdir = tempdir().expect("create tempdir");
         let path = tempdir.path().join("source.wav");
         write_pcm16_wave(&path, 1_000, 2, 1.0);
-        let cache = SourceAudioCache::load_pcm16_wav(&path).expect("load PCM WAV");
+        let cache = SourceAudioCache::load_pcm_wav(&path).expect("load PCM WAV");
 
         let window = cache.window_by_seconds(0.25, 0.50);
         let samples = cache.window_samples(window);
@@ -335,7 +335,7 @@ mod tests {
         let tempdir = tempdir().expect("create tempdir");
         let path = tempdir.path().join("source.wav");
         write_pcm16_wave(&path, 1_000, 1, 1.0);
-        let cache = SourceAudioCache::load_pcm16_wav(&path).expect("load PCM WAV");
+        let cache = SourceAudioCache::load_pcm_wav(&path).expect("load PCM WAV");
 
         let window = cache.window_by_seconds(0.90, 0.50);
         let samples = cache.window_samples(window);
@@ -355,7 +355,7 @@ mod tests {
         let mut bytes = pcm16_wave_bytes(44_100, 1, 1);
         bytes[34..36].copy_from_slice(&32_u16.to_le_bytes());
 
-        let error = decode_pcm16_wav(&bytes).expect_err("32-bit WAV should be rejected");
+        let error = decode_pcm_wav(&bytes).expect_err("32-bit WAV should be rejected");
 
         assert_eq!(
             error,
@@ -365,7 +365,7 @@ mod tests {
 
     #[test]
     fn rejects_non_wave_bytes() {
-        let error = decode_pcm16_wav(b"not a wav").expect_err("invalid data should fail");
+        let error = decode_pcm_wav(b"not a wav").expect_err("invalid data should fail");
 
         assert_eq!(
             error,

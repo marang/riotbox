@@ -1892,6 +1892,38 @@ mod tests {
         fs::write(path, bytes).expect("write PCM wave fixture");
     }
 
+    fn write_pcm24_wave(path: impl AsRef<Path>, sample_rate: u32, channel_count: u16) {
+        let path = path.as_ref();
+        let samples = [-8_388_608_i32, 0, 8_388_607, 4_194_304];
+        assert_eq!(samples.len() % usize::from(channel_count), 0);
+        let bits_per_sample = 24_u16;
+        let bytes_per_sample = u32::from(bits_per_sample / 8);
+        let byte_rate = sample_rate * u32::from(channel_count) * bytes_per_sample;
+        let block_align = channel_count * (bits_per_sample / 8);
+        let data_len = samples.len() as u32 * bytes_per_sample;
+
+        let mut bytes = Vec::with_capacity((44 + data_len) as usize);
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&(36 + data_len).to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16_u32.to_le_bytes());
+        bytes.extend_from_slice(&1_u16.to_le_bytes());
+        bytes.extend_from_slice(&channel_count.to_le_bytes());
+        bytes.extend_from_slice(&sample_rate.to_le_bytes());
+        bytes.extend_from_slice(&byte_rate.to_le_bytes());
+        bytes.extend_from_slice(&block_align.to_le_bytes());
+        bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_len.to_le_bytes());
+
+        for sample in samples {
+            bytes.extend_from_slice(&sample.to_le_bytes()[..3]);
+        }
+
+        fs::write(path, bytes).expect("write PCM24 wave fixture");
+    }
+
     #[test]
     fn builds_jam_app_state_from_parts() {
         let graph = sample_graph();
@@ -1978,6 +2010,39 @@ mod tests {
 
         assert_eq!(persisted_session.notes.as_deref(), Some("updated"));
         assert_eq!(persisted_graph, graph);
+    }
+
+    #[test]
+    fn loads_pcm24_source_audio_cache_from_app_files() {
+        let dir = tempdir().expect("create temp dir");
+        let session_path = dir.path().join("sessions").join("session.json");
+        let graph_path = dir.path().join("graphs").join("source-graph.json");
+        let source_path = dir.path().join("source24.wav");
+
+        write_pcm24_wave(&source_path, 48_000, 2);
+
+        let mut graph = sample_graph();
+        graph.source.path = source_path.to_string_lossy().into_owned();
+        graph.source.sample_rate = 48_000;
+        graph.source.channel_count = 2;
+        graph.source.duration_seconds = 2.0 / 48_000.0;
+        let session = sample_session(&graph);
+        save_session_json(&session_path, &session).expect("save session fixture");
+        save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
+
+        let state =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+        let cache = state
+            .source_audio_cache
+            .as_ref()
+            .expect("source audio cache");
+
+        assert_eq!(cache.sample_rate, 48_000);
+        assert_eq!(cache.channel_count, 2);
+        assert_eq!(cache.frame_count(), 2);
+        assert_eq!(cache.interleaved_samples()[0], -1.0);
+        assert_eq!(cache.interleaved_samples()[1], 0.0);
+        assert!((cache.interleaved_samples()[2] - 1.0).abs() < 0.000001);
     }
 
     #[test]
@@ -3631,7 +3696,7 @@ mod tests {
             end_frame: 48_000,
         });
         let source_audio_cache =
-            SourceAudioCache::load_pcm16_wav(&source_path).expect("load source audio cache");
+            SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
         state.source_audio_cache = Some(source_audio_cache);
 
@@ -3672,7 +3737,7 @@ mod tests {
                 end_frame: 48_000,
             });
             let source_audio_cache =
-                SourceAudioCache::load_pcm16_wav(&source_path).expect("load source audio cache");
+                SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");
             let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
             state.source_audio_cache = Some(source_audio_cache);
 
@@ -4912,7 +4977,7 @@ mod tests {
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
         let source_audio_cache =
-            SourceAudioCache::load_pcm16_wav(&source_path).expect("load source audio cache");
+            SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
         state.source_audio_cache = Some(source_audio_cache);
         state.refresh_view();

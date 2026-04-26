@@ -182,7 +182,7 @@ impl Args {
             return Ok(synthetic_source_window_preview());
         };
 
-        let cache = SourceAudioCache::load_pcm16_wav(source_path)?;
+        let cache = SourceAudioCache::load_pcm_wav(source_path)?;
         let window =
             cache.window_by_seconds(self.source_start_seconds, self.source_duration_seconds);
         let samples = cache.window_samples(window);

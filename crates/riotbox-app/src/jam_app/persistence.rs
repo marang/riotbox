@@ -19,7 +19,7 @@ impl JamAppState {
         let runtime_view = JamRuntimeView::build(&AppRuntimeState::default(), &session);
         let source_audio_cache = source_graph
             .as_ref()
-            .and_then(|graph| SourceAudioCache::load_pcm16_wav(&graph.source.path).ok());
+            .and_then(|graph| SourceAudioCache::load_pcm_wav(&graph.source.path).ok());
         let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
