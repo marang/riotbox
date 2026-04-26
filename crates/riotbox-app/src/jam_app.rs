@@ -19,15 +19,15 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, Quantization, TargetScope,
     },
-    ids::SourceId,
+    ids::{ActionId, SourceId},
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
     },
     queue::{ActionQueue, CommittedActionRef},
     session::{
-        CaptureTarget, GraphStorageMode, SessionFile, SourceGraphRef, SourceRef,
-        Tr909TakeoverProfileState,
+        CaptureTarget, GraphStorageMode, Mc202UndoSnapshotState, SessionFile, SourceGraphRef,
+        SourceRef, Tr909TakeoverProfileState,
     },
     source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
@@ -1195,25 +1195,40 @@ impl JamAppState {
     pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
         let next_undo_action_id = next_action_id_from_session(&self.session);
 
-        let undone = self
-            .session
-            .action_log
-            .actions
-            .iter_mut()
-            .rev()
-            .find(|action| {
-                action.status == ActionStatus::Committed
-                    && matches!(
-                        action.undo_policy,
-                        riotbox_core::action::UndoPolicy::Undoable
-                    )
-            })?;
+        let undone_index = self.session.action_log.actions.iter().rposition(|action| {
+            action.status == ActionStatus::Committed
+                && matches!(
+                    action.undo_policy,
+                    riotbox_core::action::UndoPolicy::Undoable
+                )
+        })?;
 
-        undone.status = ActionStatus::Undone;
-        undone.result = Some(ActionResult {
-            accepted: true,
-            summary: format!("undone by user at {requested_at}"),
-        });
+        let undone_action_id = self.session.action_log.actions[undone_index].id;
+        let undone_command = self.session.action_log.actions[undone_index].command;
+        let is_mc202_undo = is_mc202_phrase_action(undone_command);
+        let mc202_restored = if is_mc202_undo {
+            self.restore_mc202_undo_snapshot(undone_action_id)
+        } else {
+            false
+        };
+        if is_mc202_undo && !mc202_restored {
+            return None;
+        }
+
+        let undo_summary = if mc202_restored {
+            format!("undone by user at {requested_at}; restored MC-202 lane state")
+        } else {
+            format!("undone by user at {requested_at}")
+        };
+
+        {
+            let undone = &mut self.session.action_log.actions[undone_index];
+            undone.status = ActionStatus::Undone;
+            undone.result = Some(ActionResult {
+                accepted: true,
+                summary: undo_summary,
+            });
+        }
 
         let undo_action = Action {
             id: next_undo_action_id,
@@ -1245,6 +1260,27 @@ impl JamAppState {
         Some(undo_action)
     }
 
+    fn restore_mc202_undo_snapshot(&mut self, action_id: ActionId) -> bool {
+        let Some(snapshot_index) = self
+            .session
+            .runtime_state
+            .undo_state
+            .mc202_snapshots
+            .iter()
+            .rposition(|snapshot| snapshot.action_id == action_id)
+        else {
+            return false;
+        };
+        let snapshot = self
+            .session
+            .runtime_state
+            .undo_state
+            .mc202_snapshots
+            .remove(snapshot_index);
+        snapshot.apply_to_session(&mut self.session);
+        true
+    }
+
     pub fn commit_ready_actions(
         &mut self,
         boundary: CommitBoundaryState,
@@ -1272,6 +1308,12 @@ impl JamAppState {
         action: &Action,
         boundary: &CommitBoundaryState,
     ) {
+        if is_mc202_phrase_action(action.command) {
+            self.session.runtime_state.undo_state.mc202_snapshots.push(
+                Mc202UndoSnapshotState::from_session(action.id, &self.session),
+            );
+        }
+
         if let Some(capture) =
             capture_ref_from_action(&self.session, self.source_graph.as_ref(), action, boundary)
         {
@@ -1308,6 +1350,18 @@ impl JamAppState {
                 self.session.runtime_state.transport.current_scene.clone();
         }
     }
+}
+
+fn is_mc202_phrase_action(command: ActionCommand) -> bool {
+    matches!(
+        command,
+        ActionCommand::Mc202SetRole
+            | ActionCommand::Mc202GenerateFollower
+            | ActionCommand::Mc202GenerateAnswer
+            | ActionCommand::Mc202GeneratePressure
+            | ActionCommand::Mc202GenerateInstigator
+            | ActionCommand::Mc202MutatePhrase
+    )
 }
 
 fn next_action_id_from_session(session: &SessionFile) -> riotbox_core::ids::ActionId {
@@ -6248,6 +6302,84 @@ mod tests {
         assert_recipe_buffers_differ("mutation -> lower touch", &mutated, &lower_touch, 0.001);
     }
 
+    #[test]
+    fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_follower(300),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 1, 400);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Follower);
+        let follower_render = state.runtime.mc202_render;
+        let follower = render_mc202_recipe_buffer(&follower_render);
+
+        assert_eq!(
+            state.queue_mc202_generate_answer(500),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 2, 600);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
+        let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+        assert_recipe_buffers_differ("follower -> answer", &follower, &answer, 0.005);
+
+        let undo = state
+            .undo_last_action(700)
+            .expect("undo latest committed MC-202 phrase action");
+        assert_eq!(undo.command, ActionCommand::UndoLast);
+        let undone_answer = state
+            .session
+            .action_log
+            .actions
+            .iter()
+            .find(|action| action.command == ActionCommand::Mc202GenerateAnswer)
+            .expect("answer action remains in log");
+        assert_eq!(undone_answer.status, ActionStatus::Undone);
+        assert_eq!(state.runtime.mc202_render, follower_render);
+        assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
+        assert_eq!(
+            state.jam_view.lanes.mc202_phrase_ref.as_deref(),
+            Some("follower-scene-1")
+        );
+
+        let restored = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+        assert_recipe_buffers_match("undo -> previous follower", &follower, &restored, 0.00001);
+        assert_recipe_buffers_differ("answer -> undo", &answer, &restored, 0.005);
+    }
+
+    #[test]
+    fn undo_mc202_phrase_move_without_snapshot_does_not_claim_success() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_follower(300),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 1, 400);
+        state
+            .session
+            .runtime_state
+            .undo_state
+            .mc202_snapshots
+            .clear();
+
+        assert_eq!(state.undo_last_action(500), None);
+        let follower_action = state
+            .session
+            .action_log
+            .actions
+            .iter()
+            .find(|action| action.command == ActionCommand::Mc202GenerateFollower)
+            .expect("follower action remains in log");
+        assert_eq!(follower_action.status, ActionStatus::Committed);
+        assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
+    }
+
     fn commit_mc202_recipe_step(state: &mut JamAppState, phrase_index: u64, committed_at: u64) {
         let committed = state.commit_ready_actions(
             CommitBoundaryState {
@@ -6272,19 +6404,32 @@ mod tests {
         buffer
     }
 
+    fn assert_recipe_buffers_match(label: &str, left: &[f32], right: &[f32], max_delta: f32) {
+        let delta_rms = recipe_signal_delta_rms(left, right);
+
+        assert!(
+            delta_rms <= max_delta,
+            "{label} signal delta RMS {delta_rms} above {max_delta}"
+        );
+    }
+
     fn assert_recipe_buffers_differ(label: &str, left: &[f32], right: &[f32], min_delta: f32) {
-        let delta_rms = (left
-            .iter()
-            .zip(right.iter())
-            .map(|(left, right)| (left - right).powi(2))
-            .sum::<f32>()
-            / left.len() as f32)
-            .sqrt();
+        let delta_rms = recipe_signal_delta_rms(left, right);
 
         assert!(
             delta_rms >= min_delta,
             "{label} signal delta RMS {delta_rms} below {min_delta}"
         );
+    }
+
+    fn recipe_signal_delta_rms(left: &[f32], right: &[f32]) -> f32 {
+        (left
+            .iter()
+            .zip(right.iter())
+            .map(|(left, right)| (left - right).powi(2))
+            .sum::<f32>()
+            / left.len() as f32)
+            .sqrt()
     }
 
     #[test]

@@ -1200,6 +1200,7 @@ mod tests {
             scene_state: session.runtime_state.scene_state.clone(),
             lock_state: session.runtime_state.lock_state.clone(),
             pending_policy: session.runtime_state.pending_policy.clone(),
+            undo_state: session.runtime_state.undo_state.clone(),
         };
         session.captures.push(crate::session::CaptureRef {
             capture_id: "cap-01".into(),
