@@ -112,6 +112,10 @@ Done when:
 - captured material can be reused without leaving flow
 - provenance for captured material is not lost
 
+Current gap review:
+
+- `docs/reviews/w30_mvp_gap_review_2026-04-26.md`
+
 ---
 
 ## 9. Phase 6 - Scene Brain

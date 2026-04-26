@@ -1188,3 +1188,14 @@ Why: undo has to change the sounded lane state, not just mark a history row as u
 Evidence: `undo_mc202_phrase_move_restores_lane_state_and_audio_path` commits follower then answer, undoes answer, verifies the action log and Jam lane return to follower state, and proves the post-undo render buffer matches the previous follower buffer while differing from the undone answer buffer. `session_file_roundtrips_via_json` also covers persisted MC-202 undo snapshots.
 Consequences: future lane-specific undo should use the same pattern: capture bounded pre-state before applying committed side effects, restore it through session state, and prove the nearest audible seam changed back.
 Status: accepted
+
+---
+
+Topic: W-30 MVP exit requires real capture artifacts before pad-bank expansion
+Phase: W-30 MVP / Audio QA
+Question: after source-backed W-30 preview, focus-aware pad targets, loop-freeze lineage, and resample tap diagnostics exist, what is the next smallest blocker toward a musician-usable W-30 MVP?
+Decision: make committed W-30 capture paths write real source-backed capture WAV artifacts before widening the pad-bank or internal-bus resample engine. The current `CaptureRef.storage_path` contract should point to an actual artifact for normal source-window captures, while avoiding any file I/O in the realtime audio callback.
+Why: Phase 5 requires useful loops that can be captured and reused. Today W-30 has strong provenance and a proven preview seam, but capture storage is still metadata-only and pad playback is still one focused preview state. Real capture artifacts are the smallest foundation that improves musician trust and unlocks later pad playback and bus-print resampling.
+Evidence: `docs/reviews/w30_mvp_gap_review_2026-04-26.md` reviewed the current W-30 app/audio seams and found that `CaptureRef` materialization, source-window preview, and resample lineage are real, while `captures/*.wav` files are not written by the normal app capture path.
+Consequences: the next W-30 implementation slice should write source-window-backed PCM capture files for committed captures, prove those files are non-silent and source-derived, and keep realtime boundaries clean. Full pad-bank voices and internal-bus print resampling should build on that artifact seam instead of bypassing it.
+Status: accepted
