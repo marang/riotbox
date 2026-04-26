@@ -66,15 +66,19 @@ The current helper writes a candidate render:
 
 ```bash
 cargo run -p riotbox-audio --bin w30_preview_render -- \
-  --out artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/candidate.wav
+  --date 2026-04-26 \
+  --role candidate
 ```
 
 To create a local baseline manually, run the same helper against `baseline.wav` from a known-good commit:
 
 ```bash
 cargo run -p riotbox-audio --bin w30_preview_render -- \
-  --out artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/baseline.wav
+  --date 2026-04-26 \
+  --role baseline
 ```
+
+`--date` and `--role` derive the convention path. `--out PATH` remains available for ad hoc renders that should not use this directory shape.
 
 ## Current Limits
 

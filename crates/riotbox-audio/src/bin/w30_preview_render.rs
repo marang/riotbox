@@ -12,8 +12,9 @@ use riotbox_audio::{
     },
 };
 
-const DEFAULT_OUTPUT_PATH: &str =
-    "artifacts/audio_qa/local/w30-preview-smoke/raw_capture_source_window_preview/candidate.wav";
+const DEFAULT_DATE: &str = "local";
+const PACK_ID: &str = "w30-preview-smoke";
+const CASE_ID: &str = "raw_capture_source_window_preview";
 const SAMPLE_RATE: u32 = 44_100;
 const CHANNEL_COUNT: u16 = 2;
 const DEFAULT_DURATION_SECONDS: f32 = 2.0;
@@ -49,7 +50,39 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 struct Args {
     output_path: PathBuf,
     duration_seconds: f32,
+    date: String,
+    role: RenderRole,
     show_help: bool,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum RenderRole {
+    Baseline,
+    Candidate,
+}
+
+impl RenderRole {
+    fn parse(value: &str) -> Result<Self, String> {
+        match value {
+            "baseline" => Ok(Self::Baseline),
+            "candidate" => Ok(Self::Candidate),
+            other => Err(format!("unsupported role: {other}")),
+        }
+    }
+
+    const fn file_stem(self) -> &'static str {
+        match self {
+            Self::Baseline => "baseline",
+            Self::Candidate => "candidate",
+        }
+    }
+
+    const fn label(self) -> &'static str {
+        match self {
+            Self::Baseline => "baseline",
+            Self::Candidate => "candidate",
+        }
+    }
 }
 
 impl Args {
@@ -57,8 +90,10 @@ impl Args {
     where
         I: IntoIterator<Item = String>,
     {
-        let mut output_path = PathBuf::from(DEFAULT_OUTPUT_PATH);
+        let mut output_override = None;
         let mut duration_seconds = DEFAULT_DURATION_SECONDS;
+        let mut date = DEFAULT_DATE.to_string();
+        let mut role = RenderRole::Candidate;
         let mut show_help = false;
         let mut args = args.into_iter();
 
@@ -69,7 +104,19 @@ impl Args {
                     let Some(value) = args.next() else {
                         return Err("--out requires a path".into());
                     };
-                    output_path = PathBuf::from(value);
+                    output_override = Some(PathBuf::from(value));
+                }
+                "--date" => {
+                    let Some(value) = args.next() else {
+                        return Err("--date requires a value".into());
+                    };
+                    date = value;
+                }
+                "--role" => {
+                    let Some(value) = args.next() else {
+                        return Err("--role requires a value".into());
+                    };
+                    role = RenderRole::parse(&value)?;
                 }
                 "--duration-seconds" => {
                     let Some(value) = args.next() else {
@@ -86,9 +133,13 @@ impl Args {
             }
         }
 
+        let output_path = output_override.unwrap_or_else(|| convention_output_path(&date, role));
+
         Ok(Self {
             output_path,
             duration_seconds,
+            date,
+            role,
             show_help,
         })
     }
@@ -96,12 +147,22 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage: w30_preview_render [--out PATH] [--duration-seconds SECONDS]\n\
+        "Usage: w30_preview_render [--date YYYY-MM-DD|local] [--role baseline|candidate] [--out PATH] [--duration-seconds SECONDS]\n\
          \n\
          Renders the initial w30-preview-smoke source-window case to a PCM16 WAV\n\
-         plus a sibling candidate.metrics.md file. This is a local review helper,\n\
+         plus a sibling metrics Markdown file. This is a local review helper,\n\
          not a full listening-pack harness yet."
     );
+}
+
+fn convention_output_path(date: &str, role: RenderRole) -> PathBuf {
+    let mut path = PathBuf::from("artifacts");
+    path.push("audio_qa");
+    path.push(date);
+    path.push(PACK_ID);
+    path.push(CASE_ID);
+    path.push(format!("{}.wav", role.file_stem()));
+    path
 }
 
 fn source_window_smoke_state() -> W30PreviewRenderState {
@@ -201,7 +262,9 @@ fn write_metrics_markdown(
         path,
         format!(
             "# W-30 Preview Smoke Metrics\n\n\
-             - Case: `raw_capture_source_window_preview`\n\
+             - Pack: `{PACK_ID}`\n\
+             - Case: `{CASE_ID}`\n\
+             - Role: `{}`\n\
              - Output: `{}`\n\
              - Sample rate: `{SAMPLE_RATE}`\n\
              - Channels: `{CHANNEL_COUNT}`\n\
@@ -211,6 +274,7 @@ fn write_metrics_markdown(
              - Peak abs: `{:.6}`\n\
              - RMS: `{:.6}`\n\
              - Sum: `{:.6}`\n",
+            args.role.label(),
             args.output_path.display(),
             args.duration_seconds,
             metrics.active_samples,
@@ -230,8 +294,12 @@ mod tests {
         assert_eq!(
             Args::parse(Vec::<String>::new()).expect("parse args"),
             Args {
-                output_path: PathBuf::from(DEFAULT_OUTPUT_PATH),
+                output_path: PathBuf::from(
+                    "artifacts/audio_qa/local/w30-preview-smoke/raw_capture_source_window_preview/candidate.wav",
+                ),
                 duration_seconds: DEFAULT_DURATION_SECONDS,
+                date: DEFAULT_DATE.to_string(),
+                role: RenderRole::Candidate,
                 show_help: false,
             }
         );
@@ -243,6 +311,10 @@ mod tests {
             Args::parse([
                 "--out".to_string(),
                 "tmp/render.wav".to_string(),
+                "--date".to_string(),
+                "2026-04-26".to_string(),
+                "--role".to_string(),
+                "baseline".to_string(),
                 "--duration-seconds".to_string(),
                 "0.5".to_string(),
             ])
@@ -250,9 +322,33 @@ mod tests {
             Args {
                 output_path: PathBuf::from("tmp/render.wav"),
                 duration_seconds: 0.5,
+                date: "2026-04-26".to_string(),
+                role: RenderRole::Baseline,
                 show_help: false,
             }
         );
+    }
+
+    #[test]
+    fn derives_convention_path_from_date_and_role() {
+        assert_eq!(
+            Args::parse([
+                "--date".to_string(),
+                "2026-04-26".to_string(),
+                "--role".to_string(),
+                "baseline".to_string(),
+            ])
+            .expect("parse args")
+            .output_path,
+            PathBuf::from(
+                "artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/baseline.wav",
+            )
+        );
+    }
+
+    #[test]
+    fn rejects_unknown_roles() {
+        assert!(Args::parse(["--role".to_string(), "review".to_string()]).is_err());
     }
 
     #[test]

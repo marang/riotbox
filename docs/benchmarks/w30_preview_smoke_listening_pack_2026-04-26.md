@@ -42,9 +42,12 @@ Generated audio QA artifacts are intentionally ignored by Git. Preserve durable 
 
 ## Render Command
 
+Render a candidate into the convention path:
+
 ```bash
 cargo run -p riotbox-audio --bin w30_preview_render -- \
-  --out artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/candidate.wav
+  --date 2026-04-26 \
+  --role candidate
 ```
 
 The helper also writes:
@@ -52,6 +55,16 @@ The helper also writes:
 ```text
 artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/candidate.metrics.md
 ```
+
+Render a baseline from a known-good commit with the same date and `--role baseline`:
+
+```bash
+cargo run -p riotbox-audio --bin w30_preview_render -- \
+  --date 2026-04-26 \
+  --role baseline
+```
+
+Use `--out PATH` only when you need to override the convention path for an ad hoc render.
 
 ## Notes Template
 
