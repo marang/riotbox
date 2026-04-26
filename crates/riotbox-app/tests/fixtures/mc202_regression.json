@@ -85,5 +85,34 @@
         "mc202.generate_answer"
       ]
     }
+  },
+  {
+    "name": "pressure_generation_committed",
+    "initial_role": "follower",
+    "action": "generate_pressure",
+    "requested_at": 303,
+    "committed_at": 403,
+    "boundary": {
+      "kind": "phrase",
+      "beat_index": 36,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "role": "pressure",
+      "phrase_ref": "pressure-scene-1",
+      "touch": 0.84,
+      "result_summary": "generated MC-202 pressure phrase pressure-scene-1 at 0.84",
+      "jam_contains": [
+        "current voice pressure",
+        "current phrase pressure-scene-1"
+      ],
+      "log_contains": [
+        "role pressure",
+        "phrase pressure-scene-1",
+        "mc202.generate_pressure"
+      ]
+    }
   }
 ]

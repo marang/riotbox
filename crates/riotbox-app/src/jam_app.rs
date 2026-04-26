@@ -1459,6 +1459,7 @@ mod tests {
         SetRole,
         GenerateFollower,
         GenerateAnswer,
+        GeneratePressure,
     }
 
     #[derive(Debug, Deserialize)]
@@ -5985,6 +5986,9 @@ mod tests {
                 }
                 Mc202RegressionAction::GenerateAnswer => {
                     state.queue_mc202_generate_answer(fixture.requested_at)
+                }
+                Mc202RegressionAction::GeneratePressure => {
+                    state.queue_mc202_generate_pressure(fixture.requested_at)
                 }
             };
             assert_eq!(
