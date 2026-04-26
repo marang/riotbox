@@ -316,6 +316,8 @@ Minimum provenance:
 
 For committed source-backed captures loaded from a session file, `storage_path` should be backed by a real PCM WAV artifact relative to the session file directory unless it is absolute. Artifact writing belongs to the non-realtime app commit path; the audio callback must never write capture files.
 
+For internally printed W-30 resample captures, `storage_path` should point to the printed bus artifact rather than the source-window input artifact. Such captures should preserve input ownership through `lineage_capture_refs` and `resample_generation_depth`; `source_window` should be omitted unless the printed result is intentionally still a literal source-window copy. This keeps reload and later pad playback pointed at the exact printed audio instead of reconstructing it from source metadata.
+
 ---
 
 ## 12. Ghost State

@@ -1232,3 +1232,14 @@ Why: Phase 5 needs captured material to be reusable without leaving flow. If pad
 Evidence: `focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unavailable` commits a source-backed capture, removes the original source, disables the source cache, promotes/triggers the focused W-30 pad, then renders non-silent artifact-backed audio that differs from the synthetic fallback preview.
 Consequences: this is still one focused preview seam, not full pad-bank polyphony. Future W-30 work can widen from artifact-backed focused playback into richer pad voices and internal bus prints without changing the capture artifact contract.
 Status: accepted
+
+---
+
+Topic: W-30 internal bus print should start as a bounded offline artifact seam
+Phase: W-30 MVP / Audio QA
+Question: after source-backed capture artifacts exist, what is the smallest honest internal resample print that records reusable processed audio without adding a DAW-style recorder?
+Decision: define the first W-30 internal bus print as an offline app/control-plane operation for one committed W-30 capture. It should render a bounded processed result from the focused capture artifact through the existing W-30 preview / resample policy, write a new PCM16 WAV artifact, and materialize a `CaptureType::Resample` with explicit lineage and incremented generation depth.
+Why: Phase 5 requires internal bus resampling to create reusable material, not only lineage metadata or a diagnostic tap. Keeping the first version offline and single-capture preserves realtime safety while giving musicians a concrete "print the chaos" artifact that later pad playback can consume.
+Evidence: the W-30 MVP gap review identifies internal resampling as the remaining blocker after capture artifacts and focused artifact-backed playback. Existing `promote.resample`, `W30ResampleTapState`, and capture lineage fields already provide the control and provenance spine; the missing piece is a printed audio artifact and output comparison.
+Consequences: the implementation follow-up should prove queue -> commit -> printed capture -> artifact reload, and compare the printed result against raw capture/source and synthetic fallback controls. Full multitrack recording, live callback recording, and export workflows remain later slices.
+Status: accepted

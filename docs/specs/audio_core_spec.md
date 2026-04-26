@@ -209,6 +209,27 @@ Current limitation:
 - focused pad playback is still one bounded preview seam, but it now consumes capture artifacts when available instead of treating `storage_path` as decorative metadata
 - broader codec support and true W-30 sample playback remain separate implementation slices
 
+### 11.2 Bounded W-30 internal bus print seam
+
+The first real W-30 internal resample print should be an offline app/control-plane operation, not a realtime recorder.
+
+Smallest acceptable seam:
+
+- input: one committed W-30 capture selected by the current lane focus
+- source audio: prefer the committed capture artifact, then fall back to source-window projection only when no artifact exists
+- render policy: use the existing W-30 preview / resample-tap state as the audible processing policy, including music-bus level, grit, source profile, and generation depth
+- duration: bounded to the input capture duration or a documented maximum window for MVP safety
+- output: a new PCM16 WAV artifact at the derived resample capture `storage_path`
+- session result: a new `CaptureRef` with `CaptureType::Resample`, explicit `lineage_capture_refs`, incremented `resample_generation_depth`, and no direct `source_window` unless the printed artifact is still a literal source-window copy
+- realtime rule: the audio callback must never write files or perform offline bus prints
+
+Minimum QA gate:
+
+- control-path test for queue -> commit -> new resample capture -> lane focus
+- artifact test proving the printed WAV exists, reloads, has expected sample rate / channel count / bounded duration, and is not silent
+- comparison against raw source/capture artifact and synthetic fallback so the bus print cannot silently collapse to either control
+- docs or PR notes must state that full multitrack recording and export remain out of scope
+
 ---
 
 ## 12. Health Telemetry
