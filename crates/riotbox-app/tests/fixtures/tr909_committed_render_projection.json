@@ -30,6 +30,22 @@
     "expected_takeover_profile": null
   },
   {
+    "name": "scene_target_break_lift_source_support",
+    "transport_position_beats": 32.0,
+    "scene_context": "scene-02-break",
+    "reinforcement_mode": "source_support",
+    "takeover_enabled": false,
+    "takeover_profile": null,
+    "pattern_ref": "support-scene-02-break",
+    "expected_mode": "source_support",
+    "expected_routing": "drum_bus_support",
+    "expected_pattern_adoption": "support_pulse",
+    "expected_phrase_variation": "phrase_drive",
+    "expected_source_support_profile": "break_lift",
+    "expected_source_support_context": "scene_target",
+    "expected_takeover_profile": null
+  },
+  {
     "name": "controlled_phrase_takeover",
     "transport_position_beats": 32.0,
     "reinforcement_mode": "takeover",

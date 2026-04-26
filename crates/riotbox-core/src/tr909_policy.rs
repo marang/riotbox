@@ -435,6 +435,8 @@ mod tests {
     struct RenderProjectionFixture {
         name: String,
         transport_position_beats: f64,
+        #[serde(default)]
+        scene_context: Option<String>,
         reinforcement_mode: Tr909ReinforcementModeState,
         takeover_enabled: bool,
         takeover_profile: Option<Tr909TakeoverProfileState>,
@@ -517,7 +519,8 @@ mod tests {
         let graph = sample_graph();
         for fixture in fixtures {
             let transport = transport_state(fixture.transport_position_beats);
-            let policy = derive_tr909_render_policy(
+            let scene_context = fixture.scene_context.as_deref().map(SceneId::from);
+            let policy = derive_tr909_render_policy_with_scene_context(
                 &Tr909LaneState {
                     pattern_ref: fixture.pattern_ref.clone(),
                     takeover_enabled: fixture.takeover_enabled,
@@ -529,6 +532,7 @@ mod tests {
                 },
                 &transport,
                 Some(&graph),
+                scene_context.as_ref(),
             );
 
             assert_eq!(

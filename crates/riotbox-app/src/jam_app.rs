@@ -1274,6 +1274,8 @@ mod tests {
     struct RenderProjectionFixture {
         name: String,
         transport_position_beats: f64,
+        #[serde(default)]
+        scene_context: Option<String>,
         reinforcement_mode: Tr909ReinforcementModeState,
         takeover_enabled: bool,
         takeover_profile: Option<Tr909TakeoverProfileState>,
@@ -5918,10 +5920,26 @@ mod tests {
         ))
         .expect("parse committed render projection fixture");
 
-        let graph = sample_graph();
+        let mut graph = sample_graph();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-b"),
+            label_hint: SectionLabelHint::Break,
+            start_seconds: 16.0,
+            end_seconds: 32.0,
+            bar_start: 9,
+            bar_end: 16,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.85,
+            tags: vec!["break".into()],
+        });
         for fixture in fixtures {
             let mut session = sample_session(&graph);
             session.runtime_state.transport.position_beats = fixture.transport_position_beats;
+            if let Some(scene_context) = fixture.scene_context.as_deref() {
+                let scene_id = SceneId::from(scene_context);
+                session.runtime_state.scene_state.active_scene = Some(scene_id.clone());
+                session.runtime_state.transport.current_scene = Some(scene_id);
+            }
             session.runtime_state.lane_state.tr909.reinforcement_mode =
                 Some(fixture.reinforcement_mode);
             session.runtime_state.lane_state.tr909.takeover_enabled = fixture.takeover_enabled;
