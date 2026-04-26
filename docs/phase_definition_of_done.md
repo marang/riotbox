@@ -96,6 +96,10 @@ Done when:
 - the lane adds pressure without clutter
 - replay and undo remain intact
 
+Current exit review:
+
+- `docs/reviews/mc202_mvp_exit_review_2026-04-26.md`
+
 ---
 
 ## 8. Phase 5 - W-30 MVP
