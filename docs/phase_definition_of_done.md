@@ -134,7 +134,7 @@ Done when:
 Current review:
 
 - `docs/reviews/scene_brain_mvp_gap_review_2026-04-26.md`
-- status: not exit-clean yet; launch/restore/replay-safe state, first mixed-lane output proof, and typed transition-policy projection are real, but P008 still needs stronger arrangement movement before closeout
+- status: closed for bounded MVP on 2026-04-26 after `RIOTBOX-327` added replay-safe Scene movement state and bounded TR-909 / MC-202 render movement with mixed-output proof; this is not a full arranger or source-playback repositioner
 
 ---
 

@@ -345,6 +345,7 @@ impl JamViewModel {
                 next_scene_energy,
                 next_scene_policy,
                 restore_scene_policy,
+                last_movement: scene_movement_view(session),
                 scene_count: session.runtime_state.scene_state.scenes.len(),
             },
             macros: MacroStripView {
@@ -694,7 +695,21 @@ pub struct SceneSummaryView {
     pub next_scene_energy: Option<String>,
     pub next_scene_policy: Option<SceneTransitionPolicyView>,
     pub restore_scene_policy: Option<SceneTransitionPolicyView>,
+    pub last_movement: Option<SceneMovementView>,
     pub scene_count: usize,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SceneMovementView {
+    pub kind: String,
+    pub direction: String,
+    pub tr909_intent: String,
+    pub mc202_intent: String,
+    pub intensity: f32,
+    pub from_scene: Option<String>,
+    pub to_scene: String,
+    pub committed_bar_index: u64,
+    pub committed_phrase_index: u64,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -874,6 +889,21 @@ fn ordered_next_scene_candidates<'a>(
 
 fn known_scene_energy_label(scene_id: &str, graph: &SourceGraph) -> Option<String> {
     projected_scene_energy_label(Some(scene_id), false, graph).filter(|energy| energy != "unknown")
+}
+
+fn scene_movement_view(session: &SessionFile) -> Option<SceneMovementView> {
+    let movement = session.runtime_state.scene_state.last_movement.as_ref()?;
+    Some(SceneMovementView {
+        kind: movement.kind.label().into(),
+        direction: movement.direction.label().into(),
+        tr909_intent: movement.tr909_intent.label().into(),
+        mc202_intent: movement.mc202_intent.label().into(),
+        intensity: movement.intensity,
+        from_scene: movement.from_scene.as_ref().map(ToString::to_string),
+        to_scene: movement.to_scene.to_string(),
+        committed_bar_index: movement.committed_bar_index,
+        committed_phrase_index: movement.committed_phrase_index,
+    })
 }
 
 fn scene_transition_policy(

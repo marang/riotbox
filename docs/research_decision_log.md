@@ -1320,3 +1320,14 @@ Why: Scene Brain needs explicit transition intent, but a full Scene Graph or arr
 Evidence: core scene tests assert `drop` and contrast-target policy derivation; app scene tests assert `SceneTransitionPolicyView` during the mixed `jump -> restore` replay and UI tests show `policy rise/drop` plus `909`/`202` intents on pending scene cues.
 Consequences: the policy is read-only for now and intentionally does not create a new audio path. Later arrangement movement should consume this policy or widen it, not replace it with a shadow arranger.
 Status: accepted
+
+---
+
+Topic: Scene movement should be persisted as landed state before any full arranger exists
+Phase: Scene Brain / Audio QA
+Question: what is the smallest honest arrangement movement after typed Scene transition intent exists?
+Decision: store the last landed Scene movement in session scene state and let the existing render projections consume it. The movement records launch/restore kind, source scene, target scene, `rise/drop/hold` direction, bounded intensity, and TR-909 / MC-202 lane intent. TR-909 maps it to phrase variation plus a bounded slam floor; MC-202 maps it to contour/touch shaping.
+Why: P008 needs default Scene progression to stop feeling like static state labels, but a full arranger, source-playback repositioner, or Ghost/Feral scene planner would be too large and would risk a shadow architecture. A persisted movement record keeps replay deterministic and makes the audible seam inspectable.
+Evidence: `scene_jump_restore_replay_proves_state_and_mixed_audio_path` now asserts landed `SceneMovementState`, TR-909 phrase variation, MC-202 contour, non-silent mixed output, launch/restore signal deltas, and that restore keeps movement energy instead of collapsing back to the pre-launch baseline.
+Consequences: this closes P008 for the bounded MVP. It is not a finished arranger: automatic scene chains, source-position jumps, richer transition envelopes, and W-30 scene movement remain follow-up work on the same persisted movement seam.
+Status: accepted

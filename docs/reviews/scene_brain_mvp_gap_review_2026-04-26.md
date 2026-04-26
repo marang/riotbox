@@ -112,14 +112,14 @@ MVP implication:
 
 ### Default arrange no longer feels static
 
-Status: not satisfied.
+Status: satisfied for bounded MVP.
 
-Scene launch/restore changes active scene state and lane render context, but Riotbox does not yet have a real arrangement movement policy. It does not reposition source playback, schedule strip/build/slam cycles, or create a scene chain that continuously changes the performance beyond explicit user-triggered jumps.
+Scene launch/restore now records a replay-safe `last_movement` in session scene state. The movement names launch/restore kind, source scene, target scene, `rise/drop/hold` direction, bounded intensity, and TR-909 / MC-202 lane intent. The app render projection consumes that movement without creating a full arranger: TR-909 phrase variation and bounded slam floor follow the movement, while MC-202 contour/touch follows the same landed movement.
 
 MVP implication:
 
-- this remains a P008 blocker unless the phase scope is narrowed
-- the next implementation should improve musical movement through a bounded lane policy first, not jump directly to a full arranger
+- this closes the P008 default-arrange blocker for the current bounded MVP
+- full source playback repositioning, strip/build/slam scheduling, automatic scene chains, and a richer Scene Graph remain follow-up work
 
 ### Scene actions remain replay-safe
 
@@ -210,4 +210,6 @@ If that proof is too weak with the current lane rules, the same slice should int
 
 ## Conclusion
 
-`P008 | Scene Brain` is structurally real but not exit-clean. Launch, restore, energy cues, replay-safe state, the first mixed-lane `jump -> restore` output proof, and the first typed transition-policy projection are in good shape. The remaining blocker is arrangement movement: Scene Brain still needs a bounded way to make default scene progression feel less static before the phase can honestly close.
+`P008 | Scene Brain` is exit-clean for the current bounded MVP. Launch, restore, energy cues, replay-safe state, mixed-lane `jump -> restore` output proof, typed transition-policy projection, and replay-safe Scene movement state now all exist on the main Source Graph / Session / ActionQueue / Jam view / render-state spine.
+
+This does not mean Riotbox has a finished arranger. It means the MVP phase can close honestly because a Scene move now produces a persisted, inspected, and audibly verified movement instead of only changing labels or local diagnostics.

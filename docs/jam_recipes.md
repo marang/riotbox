@@ -347,6 +347,7 @@ What to observe:
 - `[y] jump <scene> (rise/drop/hold)` is a suggested next move; it is not yet queued
 - `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
 - `policy rise/drop/hold | 909 ... | 202 ...` tells you the bounded transition intent before it becomes a fuller arranger
+- after a Scene move lands, `move rise/drop/hold 909 ... 202 ...` tells you the replay-safe movement that is now shaping the landed Scene
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
 - the restore-ready cue is the positive mirror of the earlier `restore waits for one landed jump` state
@@ -355,6 +356,7 @@ What to observe:
 - `trail ...` on `Log` is the fastest way to reconstruct whether the last scene move was a jump or a restore
 - `scene_target` is a render-state diagnostic, not a promise of a finished transition engine; it means the TR-909 support profile is now using the target Scene's projected source section
 - `accent scene` is a small audible support lift tied to that `scene_target` context; after restore, the target is the restored Scene, not the previous live Scene
+- Scene movement now also shapes TR-909 phrase variation and MC-202 contour/touch, so restore is no longer expected to collapse exactly back to the pre-jump buffer
 - `transport_bar` is the safe fallback; it means the Scene id could not be mapped to a source section, so the TR-909 profile still follows the current bar
 
 What this teaches:
@@ -362,7 +364,7 @@ What this teaches:
 - Scene Brain now has a real small readability stack, not just action ids
 - `Jam` is enough to follow the next scene move, while `Log` is enough to confirm what actually landed
 - TR-909 support can now be inspected as Scene-coupled or transport-bar-driven instead of guessed by ear
-- Scene transition policy is now explicit in the Jam cue, but it is still a compact projection over current lane behavior, not a finished transition engine
+- Scene transition policy is now explicit before the move, and the landed movement is persisted after the move; this is still a bounded MVP movement seam, not a finished full arranger
 - the current shell can already teach `jump -> restore` timing and role contrast, even though it is still not a finished visual timing instrument
 
 Low-energy contrast note:

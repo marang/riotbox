@@ -1611,7 +1611,12 @@ impl JamAppState {
         apply_w30_side_effects(&mut self.session, action, Some(boundary));
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
-        apply_scene_side_effects(&mut self.session, action, Some(boundary));
+        apply_scene_side_effects(
+            &mut self.session,
+            action,
+            Some(boundary),
+            self.source_graph.as_ref(),
+        );
         if matches!(
             action.command,
             ActionCommand::SceneLaunch | ActionCommand::SceneRestore
@@ -1702,8 +1707,9 @@ mod tests {
         session::{
             CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, GhostBudgetState,
             GhostState, GhostSuggestionRecord, GraphStorageMode, Mc202PhraseVariantState,
-            SessionFile, Snapshot, SourceGraphRef, SourceRef, Tr909ReinforcementModeState,
-            Tr909TakeoverProfileState, W30PreviewModeState,
+            SceneMovementDirectionState, SceneMovementLaneIntentState, SessionFile, Snapshot,
+            SourceGraphRef, SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
+            W30PreviewModeState,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
@@ -3640,6 +3646,28 @@ mod tests {
             Some(Tr909SourceSupportContext::SceneTarget)
         );
         assert_eq!(
+            state
+                .session
+                .runtime_state
+                .scene_state
+                .last_movement
+                .as_ref()
+                .map(|movement| (
+                    movement.direction,
+                    movement.tr909_intent,
+                    movement.mc202_intent
+                )),
+            Some((
+                SceneMovementDirectionState::Drop,
+                SceneMovementLaneIntentState::Release,
+                SceneMovementLaneIntentState::Anchor,
+            ))
+        );
+        assert_eq!(
+            state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseRelease)
+        );
+        assert_eq!(
             state.runtime.mc202_render.contour_hint,
             Mc202ContourHint::Hold
         );
@@ -3693,8 +3721,30 @@ mod tests {
             Some(Tr909SourceSupportContext::SceneTarget)
         );
         assert_eq!(
+            state
+                .session
+                .runtime_state
+                .scene_state
+                .last_movement
+                .as_ref()
+                .map(|movement| (
+                    movement.direction,
+                    movement.tr909_intent,
+                    movement.mc202_intent
+                )),
+            Some((
+                SceneMovementDirectionState::Rise,
+                SceneMovementLaneIntentState::Drive,
+                SceneMovementLaneIntentState::Lift,
+            ))
+        );
+        assert_eq!(
+            state.runtime.tr909_render.phrase_variation,
+            Some(Tr909PhraseVariation::PhraseDrive)
+        );
+        assert_eq!(
             state.runtime.mc202_render.contour_hint,
-            Mc202ContourHint::Drop
+            Mc202ContourHint::Lift
         );
         let after_restore = render_scene_recipe_mix_buffer(&state);
 
@@ -3704,11 +3754,11 @@ mod tests {
             &after_restore,
             0.004,
         );
-        assert_recipe_buffers_match(
-            "scene restore returns to baseline render",
+        assert_recipe_buffers_differ(
+            "scene restore keeps movement energy instead of collapsing to baseline",
             &before_jump,
             &after_restore,
-            0.000_001,
+            0.002,
         );
     }
 

@@ -21,7 +21,10 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
     ids::{CaptureId, SceneId},
-    session::{Mc202PhraseVariantState, SessionFile, W30PreviewModeState},
+    session::{
+        Mc202PhraseVariantState, SceneMovementDirectionState, SceneMovementLaneIntentState,
+        SceneMovementState, SessionFile, W30PreviewModeState,
+    },
     source_graph::{
         EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
         section_for_transport_bar,
@@ -133,15 +136,50 @@ pub(super) fn build_tr909_render_state(
         source_support_context: audio_tr909_source_support_context(policy.source_support_context),
         pattern_ref: tr909.pattern_ref.clone(),
         pattern_adoption: audio_tr909_pattern_adoption(policy.pattern_adoption),
-        phrase_variation: audio_tr909_phrase_variation(policy.phrase_variation),
+        phrase_variation: scene_movement_tr909_variation(session)
+            .or_else(|| audio_tr909_phrase_variation(policy.phrase_variation)),
         takeover_profile: audio_tr909_takeover_profile(policy.takeover_profile),
         drum_bus_level: mixer.drum_level.clamp(0.0, 1.0),
-        slam_intensity: session.runtime_state.macro_state.tr909_slam.clamp(0.0, 1.0),
+        slam_intensity: scene_movement_tr909_slam(session)
+            .max(session.runtime_state.macro_state.tr909_slam)
+            .clamp(0.0, 1.0),
         is_transport_running: transport.is_playing,
         tempo_bpm,
         position_beats: transport.position_beats,
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
     }
+}
+
+fn active_scene_movement(session: &SessionFile) -> Option<&SceneMovementState> {
+    let movement = session.runtime_state.scene_state.last_movement.as_ref()?;
+    let active_scene = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(session.runtime_state.transport.current_scene.as_ref())?;
+    (movement.to_scene == *active_scene).then_some(movement)
+}
+
+fn scene_movement_tr909_variation(session: &SessionFile) -> Option<Tr909PhraseVariation> {
+    let movement = active_scene_movement(session)?;
+    Some(match movement.tr909_intent {
+        SceneMovementLaneIntentState::Drive => Tr909PhraseVariation::PhraseDrive,
+        SceneMovementLaneIntentState::Lift => Tr909PhraseVariation::PhraseLift,
+        SceneMovementLaneIntentState::Release => Tr909PhraseVariation::PhraseRelease,
+        SceneMovementLaneIntentState::Anchor => Tr909PhraseVariation::PhraseAnchor,
+    })
+}
+
+fn scene_movement_tr909_slam(session: &SessionFile) -> f32 {
+    active_scene_movement(session).map_or(0.0, |movement| {
+        let floor = match movement.direction {
+            SceneMovementDirectionState::Rise => 0.36,
+            SceneMovementDirectionState::Drop => 0.18,
+            SceneMovementDirectionState::Hold => 0.08,
+        };
+        movement.intensity * floor
+    })
 }
 
 pub(super) fn build_mc202_render_state(
@@ -175,18 +213,26 @@ pub(super) fn build_mc202_render_state(
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
 
+    let movement = active_scene_movement(session);
+    let touch = scene_movement_mc202_touch(
+        session
+            .runtime_state
+            .macro_state
+            .mc202_touch
+            .clamp(0.0, 1.0),
+        movement,
+    );
+    let contour_hint = scene_movement_mc202_contour(movement)
+        .unwrap_or_else(|| mc202_contour_hint(current_section));
+
     Mc202RenderState {
         mode,
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape,
         note_budget: mc202_note_budget_for_shape_and_hook_response(phrase_shape, hook_response),
-        contour_hint: mc202_contour_hint(current_section),
+        contour_hint,
         hook_response,
-        touch: session
-            .runtime_state
-            .macro_state
-            .mc202_touch
-            .clamp(0.0, 1.0),
+        touch,
         music_bus_level: session
             .runtime_state
             .mixer_state
@@ -195,6 +241,29 @@ pub(super) fn build_mc202_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
         is_transport_running: transport.is_playing,
+    }
+}
+
+fn scene_movement_mc202_contour(movement: Option<&SceneMovementState>) -> Option<Mc202ContourHint> {
+    let movement = movement?;
+    Some(match movement.mc202_intent {
+        SceneMovementLaneIntentState::Lift => Mc202ContourHint::Lift,
+        SceneMovementLaneIntentState::Drive => Mc202ContourHint::Drop,
+        SceneMovementLaneIntentState::Release => Mc202ContourHint::Hold,
+        SceneMovementLaneIntentState::Anchor => Mc202ContourHint::Hold,
+    })
+}
+
+fn scene_movement_mc202_touch(base_touch: f32, movement: Option<&SceneMovementState>) -> f32 {
+    let Some(movement) = movement else {
+        return base_touch;
+    };
+
+    match movement.mc202_intent {
+        SceneMovementLaneIntentState::Lift => base_touch.max(0.74 + movement.intensity * 0.18),
+        SceneMovementLaneIntentState::Drive => base_touch.max(0.70 + movement.intensity * 0.14),
+        SceneMovementLaneIntentState::Release => base_touch.min(0.62),
+        SceneMovementLaneIntentState::Anchor => base_touch.clamp(0.48, 0.72),
     }
 }
 
