@@ -1,6 +1,9 @@
 use crate::{
     queue::ActionQueue,
-    session::{SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
+    session::{
+        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState,
+    },
     source_graph::{EnergyClass, Section, SourceGraph},
 };
 
@@ -52,6 +55,12 @@ impl JamViewModel {
             matches!(
                 action.command,
                 crate::action::ActionCommand::Mc202GenerateAnswer
+            )
+        });
+        let mc202_pending_phrase_mutation = pending_actions.iter().any(|action| {
+            matches!(
+                action.command,
+                crate::action::ActionCommand::Mc202MutatePhrase
             )
         });
         let w30_pending_recall_target =
@@ -324,7 +333,15 @@ impl JamViewModel {
                 mc202_pending_role,
                 mc202_pending_follower_generation,
                 mc202_pending_answer_generation,
+                mc202_pending_phrase_mutation,
                 mc202_phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
+                mc202_phrase_variant: session
+                    .runtime_state
+                    .lane_state
+                    .mc202
+                    .phrase_variant
+                    .map(Mc202PhraseVariantState::label)
+                    .map(str::to_string),
                 w30_active_bank: session
                     .runtime_state
                     .lane_state
@@ -870,7 +887,9 @@ pub struct LaneSummaryView {
     pub mc202_pending_role: Option<String>,
     pub mc202_pending_follower_generation: bool,
     pub mc202_pending_answer_generation: bool,
+    pub mc202_pending_phrase_mutation: bool,
     pub mc202_phrase_ref: Option<String>,
+    pub mc202_phrase_variant: Option<String>,
     pub w30_active_bank: Option<String>,
     pub w30_focused_pad: Option<String>,
     pub w30_pending_trigger_target: Option<String>,

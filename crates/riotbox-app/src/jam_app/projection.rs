@@ -14,7 +14,7 @@ use riotbox_audio::{
 };
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
-    session::{SessionFile, W30PreviewModeState},
+    session::{Mc202PhraseVariantState, SessionFile, W30PreviewModeState},
     source_graph::SourceGraph,
     tr909_policy::{
         Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy, Tr909RenderModePolicy,
@@ -149,6 +149,10 @@ pub(super) fn build_mc202_render_state(
         "answer" => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
         "follower" => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
         _ => return Mc202RenderState::default(),
+    };
+    let phrase_shape = match mc202.phrase_variant {
+        Some(Mc202PhraseVariantState::MutatedDrive) => Mc202PhraseShape::MutatedDrive,
+        _ => phrase_shape,
     };
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)

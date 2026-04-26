@@ -1078,3 +1078,14 @@ Why: the musician needs one immediate performance parameter after a bass phrase 
 Evidence: `riotbox-app` now updates MC-202 touch through `JamAppState`, the shell maps `<` / `>` to that state refresh, app tests verify session/runtime-view projection, and `riotbox-audio` proves low-vs-high touch changes the same MC-202 phrase buffer metrics.
 Consequences: future MC-202 live controls should follow this pattern: persisted macro or lane state first, typed render projection second, callback consumption third, and an output-path regression proving the audible seam changed.
 Status: accepted
+
+---
+
+Topic: MC-202 phrase mutation should be quantized and render-state backed
+Phase: MC-202 MVP / Audio QA
+Question: after live touch control exists, how should Riotbox add the first MC-202 phrase mutation without opening a hidden sequencer or callback-only phrase path?
+Decision: add `mc202.mutate_phrase` as a bounded `NextPhrase` action on the existing queue / commit seam. Commit writes an explicit MC-202 phrase variant into session lane state, projects that variant into the typed `Mc202RenderState`, and keeps direct live touch as the only immediate MC-202 macro control for now.
+Why: Phase 4 requires quantized phrase mutation, but the safe first step is one replayable phrase variant, not a full phrase editor. Persisting the variant keeps replay/restore honest and lets audio QA prove the same lane state reaches the renderer.
+Evidence: `riotbox-core` exposes pending MC-202 mutation and persists `phrase_variant`, `riotbox-app` queues and commits `mc202.mutate_phrase` from `G`, Jam/Log diagnostics show the variant, and `riotbox-audio` verifies `mutated_drive` differs from follower-drive output via delta-RMS and max-sample thresholds.
+Consequences: future MC-202 phrase work should add richer variants or source-aware generation through the same committed lane-state seam before adding any editor or MIDI-style sequencer surface.
+Status: accepted

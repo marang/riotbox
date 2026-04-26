@@ -879,6 +879,7 @@ fn mc202_phrase_shape_to_u32(shape: Mc202PhraseShape) -> u32 {
         Mc202PhraseShape::RootPulse => 0,
         Mc202PhraseShape::FollowerDrive => 1,
         Mc202PhraseShape::AnswerHook => 2,
+        Mc202PhraseShape::MutatedDrive => 3,
     }
 }
 
@@ -886,6 +887,7 @@ fn mc202_phrase_shape_from_u32(value: u32) -> Mc202PhraseShape {
     match value {
         1 => Mc202PhraseShape::FollowerDrive,
         2 => Mc202PhraseShape::AnswerHook,
+        3 => Mc202PhraseShape::MutatedDrive,
         _ => Mc202PhraseShape::RootPulse,
     }
 }

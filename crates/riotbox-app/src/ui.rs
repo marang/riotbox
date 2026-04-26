@@ -102,6 +102,7 @@ pub enum ShellKeyOutcome {
     QueueMc202RoleToggle,
     QueueMc202GenerateFollower,
     QueueMc202GenerateAnswer,
+    QueueMc202MutatePhrase,
     QueueTr909Fill,
     QueueTr909Reinforce,
     QueueTr909Slam,
@@ -134,6 +135,7 @@ const GESTURE_RESTORE: &str = "restore";
 const GESTURE_VOICE: &str = "voice";
 const GESTURE_FOLLOW: &str = "follow";
 const GESTURE_ANSWER: &str = "answer";
+const GESTURE_PHRASE: &str = "phrase";
 const GESTURE_FILL: &str = "fill";
 const GESTURE_PUSH: &str = "push";
 const GESTURE_SLAM: &str = "slam";
@@ -158,6 +160,7 @@ const ADVANCED_GESTURES: &[(&str, &str)] = &[
     ("Y", GESTURE_RESTORE),
     ("a", GESTURE_ANSWER),
     ("b", GESTURE_VOICE),
+    ("G", GESTURE_PHRASE),
     ("d", GESTURE_PUSH),
     ("t", GESTURE_TAKEOVER),
     ("k", GESTURE_LOCK),
@@ -184,6 +187,7 @@ const HELP_ADVANCED_GESTURES_A: &[(&str, &str)] = &[
     ("a", GESTURE_ANSWER),
     ("m", GESTURE_MUTATE),
     ("b", GESTURE_VOICE),
+    ("G", GESTURE_PHRASE),
     ("d", GESTURE_PUSH),
 ];
 
@@ -342,6 +346,10 @@ impl JamShellState {
             KeyCode::Char('a') => {
                 self.status_message = queued_status_message(GESTURE_ANSWER, "next phrase");
                 ShellKeyOutcome::QueueMc202GenerateAnswer
+            }
+            KeyCode::Char('G') => {
+                self.status_message = queued_status_message(GESTURE_PHRASE, "next phrase");
+                ShellKeyOutcome::QueueMc202MutatePhrase
             }
             KeyCode::Char('f') => {
                 self.status_message = queued_status_message(GESTURE_FILL, "next bar");
@@ -1701,6 +1709,8 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         "next answer".into()
     } else if lanes.mc202_pending_follower_generation {
         "next follow".into()
+    } else if lanes.mc202_pending_phrase_mutation {
+        "next phrase mutation".into()
     } else {
         "next none".into()
     };
@@ -1714,6 +1724,10 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(format!(
             "current phrase {}",
             lanes.mc202_phrase_ref.as_deref().unwrap_or("unset")
+        )),
+        Line::from(format!(
+            "variant {}",
+            lanes.mc202_phrase_variant.as_deref().unwrap_or("base")
         )),
         Line::from(format!(
             "sound {} / {} | touch {:.2}",
@@ -2290,6 +2304,7 @@ fn jam_action_label(command: &str) -> String {
         "mc202.set_role" => GESTURE_VOICE.into(),
         "mc202.generate_follower" => GESTURE_FOLLOW.into(),
         "mc202.generate_answer" => GESTURE_ANSWER.into(),
+        "mc202.mutate_phrase" => GESTURE_PHRASE.into(),
         "tr909.fill_next" => GESTURE_FILL.into(),
         "tr909.reinforce_break" => GESTURE_PUSH.into(),
         "tr909.set_slam" => GESTURE_SLAM.into(),
@@ -2327,6 +2342,7 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 riotbox_core::action::ActionCommand::Mc202SetRole
                     | riotbox_core::action::ActionCommand::Mc202GenerateFollower
                     | riotbox_core::action::ActionCommand::Mc202GenerateAnswer
+                    | riotbox_core::action::ActionCommand::Mc202MutatePhrase
             )
         })
         .map(|action| action.command.to_string())
@@ -2339,12 +2355,15 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             lanes.mc202_pending_role.as_deref().unwrap_or("none")
         )),
         Line::from(format!(
-            "phrase {} | gen {}",
+            "phrase {} | variant {} | gen {}",
             lanes.mc202_phrase_ref.as_deref().unwrap_or("unset"),
+            lanes.mc202_phrase_variant.as_deref().unwrap_or("base"),
             if lanes.mc202_pending_answer_generation {
                 "queued answer"
             } else if lanes.mc202_pending_follower_generation {
                 "queued"
+            } else if lanes.mc202_pending_phrase_mutation {
+                "queued mutation"
             } else {
                 "idle"
             }
@@ -5513,7 +5532,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Advanced: Y restore | a answer | b voice | d push"),
+            rendered.contains("Advanced: Y restore | a answer | b voice | G phrase | d push"),
             "{rendered}"
         );
         assert!(!rendered.contains("Sections"), "{rendered}");
@@ -6882,6 +6901,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('a')),
             ShellKeyOutcome::QueueMc202GenerateAnswer
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('G')),
+            ShellKeyOutcome::QueueMc202MutatePhrase
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('f')),

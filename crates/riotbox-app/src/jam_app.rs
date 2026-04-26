@@ -344,6 +344,7 @@ impl JamAppState {
                 ActionCommand::Mc202SetRole
                     | ActionCommand::Mc202GenerateFollower
                     | ActionCommand::Mc202GenerateAnswer
+                    | ActionCommand::Mc202MutatePhrase
             )
         })
     }
@@ -375,6 +376,34 @@ impl JamAppState {
             target_id: Some(next_role.into()),
         };
         draft.explanation = Some(format!("set MC-202 role to {next_role} on next phrase"));
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
+    pub fn queue_mc202_mutate_phrase(&mut self, requested_at: TimestampMs) -> QueueControlResult {
+        if self.mc202_phrase_control_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+        if self.session.runtime_state.lane_state.mc202.role.is_none() {
+            return QueueControlResult::AlreadyInState;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Mc202MutatePhrase,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                object_id: Some("mutated_drive".into()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 0.88,
+            target_id: Some("mutated_drive".into()),
+        };
+        draft.explanation = Some("mutate MC-202 phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -1275,9 +1304,9 @@ mod tests {
         },
         session::{
             CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, GhostBudgetState,
-            GhostState, GhostSuggestionRecord, GraphStorageMode, SessionFile, Snapshot,
-            SourceGraphRef, SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
-            W30PreviewModeState,
+            GhostState, GhostSuggestionRecord, GraphStorageMode, Mc202PhraseVariantState,
+            SessionFile, Snapshot, SourceGraphRef, SourceRef, Tr909ReinforcementModeState,
+            Tr909TakeoverProfileState, W30PreviewModeState,
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
@@ -3108,6 +3137,10 @@ mod tests {
             state.queue_mc202_generate_follower(301),
             QueueControlResult::AlreadyPending
         );
+        assert_eq!(
+            state.queue_mc202_mutate_phrase(302),
+            QueueControlResult::AlreadyPending
+        );
 
         let pending = state.queue.pending_actions();
         assert_eq!(pending.len(), 1);
@@ -3139,6 +3172,41 @@ mod tests {
     }
 
     #[test]
+    fn queueing_mc202_phrase_mutation_requires_committed_voice_and_blocks_duplicates() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.mc202.role = None;
+        session.runtime_state.lane_state.mc202.phrase_ref = None;
+        let mut empty_state =
+            JamAppState::from_parts(session.clone(), Some(graph.clone()), ActionQueue::new());
+
+        assert_eq!(
+            empty_state.queue_mc202_mutate_phrase(299),
+            QueueControlResult::AlreadyInState
+        );
+
+        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_mutate_phrase(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_mutate_phrase(301),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Mc202MutatePhrase);
+        assert!(state.jam_view.lanes.mc202_pending_phrase_mutation);
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+    }
+
+    #[test]
     fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
         let graph = sample_graph();
         let session = sample_session(&graph);
@@ -3167,14 +3235,30 @@ mod tests {
             QueueControlResult::AlreadyPending
         );
 
-        let mut answer_state =
-            JamAppState::from_parts(sample_session(&graph), Some(graph), ActionQueue::new());
+        let mut answer_state = JamAppState::from_parts(
+            sample_session(&graph),
+            Some(graph.clone()),
+            ActionQueue::new(),
+        );
         assert_eq!(
             answer_state.queue_mc202_generate_answer(304),
             QueueControlResult::Enqueued
         );
         assert_eq!(
             answer_state.queue_mc202_role_toggle(305),
+            QueueControlResult::AlreadyPending
+        );
+
+        let mut mutation_session = sample_session(&graph);
+        mutation_session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        let mut mutation_state =
+            JamAppState::from_parts(mutation_session, Some(graph), ActionQueue::new());
+        assert_eq!(
+            mutation_state.queue_mc202_mutate_phrase(306),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            mutation_state.queue_mc202_generate_answer(307),
             QueueControlResult::AlreadyPending
         );
     }
@@ -5669,6 +5753,72 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("generated MC-202 answer phrase answer-scene-1 at 0.82")
+        );
+    }
+
+    #[test]
+    fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
+        session.runtime_state.macro_state.mc202_touch = 0.78;
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_mutate_phrase(300),
+            QueueControlResult::Enqueued
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 40,
+                bar_index: 10,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            Some("follower")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some("follower-mutated_drive-bar-10")
+        );
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.phrase_variant,
+            Some(Mc202PhraseVariantState::MutatedDrive)
+        );
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.88);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::MutatedDrive
+        );
+        assert_eq!(
+            state.runtime_view.mc202_render_phrase_shape,
+            "mutated_drive"
+        );
+        assert!(!state.jam_view.lanes.mc202_pending_phrase_mutation);
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("mutated MC-202 phrase follower-mutated_drive-bar-10 as mutated_drive")
         );
     }
 

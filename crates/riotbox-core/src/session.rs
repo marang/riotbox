@@ -147,6 +147,23 @@ pub struct LaneState {
 pub struct Mc202LaneState {
     pub role: Option<String>,
     pub phrase_ref: Option<String>,
+    #[serde(default)]
+    pub phrase_variant: Option<Mc202PhraseVariantState>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Mc202PhraseVariantState {
+    MutatedDrive,
+}
+
+impl Mc202PhraseVariantState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::MutatedDrive => "mutated_drive",
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

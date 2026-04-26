@@ -39,6 +39,7 @@ pub enum Mc202PhraseShape {
     RootPulse,
     FollowerDrive,
     AnswerHook,
+    MutatedDrive,
 }
 
 impl Mc202PhraseShape {
@@ -48,6 +49,7 @@ impl Mc202PhraseShape {
             Self::RootPulse => "root_pulse",
             Self::FollowerDrive => "follower_drive",
             Self::AnswerHook => "answer_hook",
+            Self::MutatedDrive => "mutated_drive",
         }
     }
 }
@@ -200,6 +202,24 @@ fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
             None,
             Some(12),
         ],
+        Mc202PhraseShape::MutatedDrive => &[
+            Some(0),
+            Some(7),
+            Some(3),
+            None,
+            Some(10),
+            Some(7),
+            None,
+            Some(5),
+            Some(12),
+            None,
+            Some(10),
+            Some(3),
+            Some(7),
+            Some(5),
+            Some(0),
+            Some(15),
+        ],
     };
     pattern[sixteenth % pattern.len()]
 }
@@ -308,6 +328,60 @@ mod tests {
             high_metrics.2
         );
         assert!(max_delta > 0.02, "max touch delta {max_delta}");
+    }
+
+    #[test]
+    fn mutated_phrase_differs_from_follower_drive() {
+        let mut follower = vec![0.0; 44_100 * 2];
+        let mut mutated = vec![0.0; 44_100 * 2];
+        let base = Mc202RenderState {
+            mode: Mc202RenderMode::Follower,
+            routing: Mc202RenderRouting::MusicBusBass,
+            touch: 0.78,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(
+            &mut follower,
+            44_100,
+            2,
+            &Mc202RenderState {
+                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                ..base
+            },
+        );
+        render_mc202_buffer(
+            &mut mutated,
+            44_100,
+            2,
+            &Mc202RenderState {
+                phrase_shape: Mc202PhraseShape::MutatedDrive,
+                ..base
+            },
+        );
+
+        let follower_metrics = metrics(&follower);
+        let mutated_metrics = metrics(&mutated);
+        let delta_rms = (follower
+            .iter()
+            .zip(mutated.iter())
+            .map(|(follower, mutated)| (follower - mutated).powi(2))
+            .sum::<f32>()
+            / follower.len() as f32)
+            .sqrt();
+        let max_delta = follower
+            .iter()
+            .zip(mutated.iter())
+            .map(|(follower, mutated)| (follower - mutated).abs())
+            .fold(0.0_f32, f32::max);
+
+        assert!(follower_metrics.0 > 10_000);
+        assert!(mutated_metrics.0 > 10_000);
+        assert!(delta_rms > 0.005, "mutated phrase delta RMS {delta_rms}");
+        assert!(max_delta > 0.02, "mutated phrase max delta {max_delta}");
     }
 
     #[test]

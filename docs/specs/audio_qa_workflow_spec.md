@@ -465,6 +465,7 @@ Today the repo already has:
 - a first offline MC-202 audio proof case in the lane recipe listening pack, covering follower-vs-answer contrast without claiming live TUI mixer integration
 - a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/answer state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam
 - a live MC-202 touch-control regression that proves the same committed phrase changes buffer energy when the performer raises or lowers touch
+- a quantized MC-202 phrase-mutation regression that proves a committed phrase variant changes the render buffer against the follower-drive control
 
 Today the repo does not yet have a full official workflow for:
 
