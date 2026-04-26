@@ -1650,7 +1650,16 @@ fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
         Some(Tr909PhraseVariation::PhraseDrive) => 0.06,
         Some(Tr909PhraseVariation::PhraseRelease) => -0.05,
     };
-    (base + profile_boost + pattern_boost + phrase_boost + (render.slam_intensity * 0.2))
+    let context_boost = match (render.mode, render.source_support_context) {
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportContext::SceneTarget)) => 0.035,
+        _ => 0.0,
+    };
+    (base
+        + profile_boost
+        + pattern_boost
+        + phrase_boost
+        + context_boost
+        + (render.slam_intensity * 0.2))
         .clamp(0.0, 0.8)
 }
 
@@ -1722,8 +1731,16 @@ fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         Some(Tr909PhraseVariation::PhraseDrive) => 1.14,
         Some(Tr909PhraseVariation::PhraseRelease) => 0.72,
     };
-    (routing_gain * pattern_gain * phrase_gain * render.drum_bus_level.clamp(0.0, 1.0))
-        .clamp(0.0, 0.25)
+    let context_gain = match (render.mode, render.source_support_context) {
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportContext::SceneTarget)) => 1.08,
+        _ => 1.0,
+    };
+    (routing_gain
+        * pattern_gain
+        * phrase_gain
+        * context_gain
+        * render.drum_bus_level.clamp(0.0, 1.0))
+    .clamp(0.0, 0.25)
 }
 
 fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
@@ -3240,6 +3257,59 @@ mod tests {
             .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
 
         assert!(drive_peak > steady_peak);
+    }
+
+    #[test]
+    fn scene_target_context_adds_bounded_support_accent() {
+        let mut transport_state = Tr909CallbackState::default();
+        let mut scene_state = Tr909CallbackState::default();
+        let mut transport = [0.0_f32; 512];
+        let mut scene_target = [0.0_f32; 512];
+        let base = RealtimeTr909RenderState {
+            mode: Tr909RenderMode::SourceSupport,
+            routing: Tr909RenderRouting::DrumBusSupport,
+            source_support_profile: Some(Tr909SourceSupportProfile::BreakLift),
+            source_support_context: Some(Tr909SourceSupportContext::TransportBar),
+            pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
+            phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
+            takeover_profile: None,
+            drum_bus_level: 0.8,
+            slam_intensity: 0.35,
+            is_transport_running: true,
+            tempo_bpm: 126.0,
+            position_beats: 0.0,
+        };
+
+        render_tr909_buffer(&mut transport, 44_100, 2, &base, &mut transport_state);
+
+        let mut scene_render = base;
+        scene_render.source_support_context = Some(Tr909SourceSupportContext::SceneTarget);
+        render_tr909_buffer(
+            &mut scene_target,
+            44_100,
+            2,
+            &scene_render,
+            &mut scene_state,
+        );
+
+        let transport_peak = transport
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let scene_peak = scene_target
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let transport_active = transport
+            .iter()
+            .filter(|sample| sample.abs() > 0.0001)
+            .count();
+        let scene_active = scene_target
+            .iter()
+            .filter(|sample| sample.abs() > 0.0001)
+            .count();
+
+        assert!(scene_peak > transport_peak);
+        assert!(scene_peak < transport_peak * 1.3);
+        assert_eq!(scene_active, transport_active);
     }
 
     #[test]
