@@ -1111,3 +1111,14 @@ Why: Phase 4 asks for pressure and identity without overplaying. A quantized pre
 Evidence: `riotbox-core` exposes the new action and pending cue, `riotbox-app` queues/commits `P` pressure through the existing MC-202 phrase-control path, and `riotbox-audio` plus the lane recipe listening pack prove `pressure_cell` differs from follower drive with signal delta RMS `0.009436`.
 Consequences: future pressure work should add note-budget/source-aware policy on top of this committed role seam rather than adding callback-only heuristics or a separate MC-202 phrase editor.
 Status: accepted
+
+---
+
+Topic: MC-202 instigator should be a quantized role phrase on the existing render seam
+Phase: MC-202 MVP / Audio QA
+Question: how should Riotbox add the missing `instigate` behavior from the feral addendum without opening a second MC-202 engine or free-running sequencer?
+Decision: add `mc202.generate_instigator` on the existing `NextPhrase` queue / commit seam. The commit stores role `instigator`, clears phrase variants, raises MC-202 touch to a bounded instigator value, and projects to a typed `Instigator` render mode with an `instigator_spike` phrase shape.
+Why: the MC-202 lane needs one sharper push gesture in addition to follower, answer, and pressure. Keeping it as a committed phrase role preserves replayability, pending/commit visibility, undo/log behavior, and the existing app-to-audio typed render path.
+Evidence: `riotbox-core` exposes the new action and pending cue, `riotbox-app` queues/commits `I` instigator through the existing MC-202 phrase-control path, app/UI fixtures cover committed state and shell output, and `riotbox-audio` plus the lane recipe listening pack prove `instigator_spike` differs from follower drive with signal-delta thresholds.
+Consequences: future instigator work should add note-budget and source-aware contour policy on top of this committed role seam, not as callback-only heuristics or a separate MC-202 phrase editor.
+Status: accepted

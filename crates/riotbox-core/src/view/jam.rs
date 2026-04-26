@@ -63,6 +63,12 @@ impl JamViewModel {
                 crate::action::ActionCommand::Mc202GeneratePressure
             )
         });
+        let mc202_pending_instigator_generation = pending_actions.iter().any(|action| {
+            matches!(
+                action.command,
+                crate::action::ActionCommand::Mc202GenerateInstigator
+            )
+        });
         let mc202_pending_phrase_mutation = pending_actions.iter().any(|action| {
             matches!(
                 action.command,
@@ -340,6 +346,7 @@ impl JamViewModel {
                 mc202_pending_follower_generation,
                 mc202_pending_answer_generation,
                 mc202_pending_pressure_generation,
+                mc202_pending_instigator_generation,
                 mc202_pending_phrase_mutation,
                 mc202_phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
                 mc202_phrase_variant: session
@@ -895,6 +902,7 @@ pub struct LaneSummaryView {
     pub mc202_pending_follower_generation: bool,
     pub mc202_pending_answer_generation: bool,
     pub mc202_pending_pressure_generation: bool,
+    pub mc202_pending_instigator_generation: bool,
     pub mc202_pending_phrase_mutation: bool,
     pub mc202_phrase_ref: Option<String>,
     pub mc202_phrase_variant: Option<String>,

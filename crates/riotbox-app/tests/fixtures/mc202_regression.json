@@ -114,5 +114,34 @@
         "mc202.generate_pressure"
       ]
     }
+  },
+  {
+    "name": "instigator_generation_committed",
+    "initial_role": "follower",
+    "action": "generate_instigator",
+    "requested_at": 304,
+    "committed_at": 404,
+    "boundary": {
+      "kind": "phrase",
+      "beat_index": 36,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "role": "instigator",
+      "phrase_ref": "instigator-scene-1",
+      "touch": 0.9,
+      "result_summary": "generated MC-202 instigator phrase instigator-scene-1 at 0.90",
+      "jam_contains": [
+        "current voice instigator",
+        "current phrase instigator-scene-1"
+      ],
+      "log_contains": [
+        "role instigator",
+        "phrase instigator-scene-1",
+        "mc202.generate_instigator"
+      ]
+    }
   }
 ]

@@ -5,6 +5,7 @@ pub enum Mc202RenderMode {
     Follower,
     Answer,
     Pressure,
+    Instigator,
 }
 
 impl Mc202RenderMode {
@@ -16,6 +17,7 @@ impl Mc202RenderMode {
             Self::Follower => "follower",
             Self::Answer => "answer",
             Self::Pressure => "pressure",
+            Self::Instigator => "instigator",
         }
     }
 }
@@ -43,6 +45,7 @@ pub enum Mc202PhraseShape {
     AnswerHook,
     MutatedDrive,
     PressureCell,
+    InstigatorSpike,
 }
 
 impl Mc202PhraseShape {
@@ -54,6 +57,7 @@ impl Mc202PhraseShape {
             Self::AnswerHook => "answer_hook",
             Self::MutatedDrive => "mutated_drive",
             Self::PressureCell => "pressure_cell",
+            Self::InstigatorSpike => "instigator_spike",
         }
     }
 }
@@ -115,6 +119,7 @@ pub fn render_mc202_buffer(
 
         let octave_drop = match render.mode {
             Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
+            Mc202RenderMode::Instigator => -2.0,
             _ => -5.0,
         };
         let frequency = 110.0_f64 * 2.0_f64.powf((semitone as f64 + octave_drop) / 12.0);
@@ -122,6 +127,7 @@ pub fn render_mc202_buffer(
         let gate_len = match render.phrase_shape {
             Mc202PhraseShape::AnswerHook => 0.42,
             Mc202PhraseShape::PressureCell => 0.50,
+            Mc202PhraseShape::InstigatorSpike => 0.30,
             _ => 0.62,
         };
         if step_phase > gate_len {
@@ -239,6 +245,24 @@ fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
             None,
             Some(5),
             Some(7),
+            None,
+        ],
+        Mc202PhraseShape::InstigatorSpike => &[
+            Some(12),
+            None,
+            Some(15),
+            Some(19),
+            None,
+            Some(12),
+            None,
+            Some(22),
+            Some(24),
+            Some(19),
+            None,
+            Some(15),
+            Some(12),
+            None,
+            Some(27),
             None,
         ],
     };
@@ -458,6 +482,61 @@ mod tests {
         assert!(pressure_metrics.0 > 10_000);
         assert!(delta_rms > 0.004, "pressure phrase delta RMS {delta_rms}");
         assert!(max_delta > 0.02, "pressure phrase max delta {max_delta}");
+    }
+
+    #[test]
+    fn instigator_spike_differs_from_follower_drive() {
+        let mut follower = vec![0.0; 44_100 * 2];
+        let mut instigator = vec![0.0; 44_100 * 2];
+        let base = Mc202RenderState {
+            routing: Mc202RenderRouting::MusicBusBass,
+            touch: 0.90,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(
+            &mut follower,
+            44_100,
+            2,
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Follower,
+                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                ..base
+            },
+        );
+        render_mc202_buffer(
+            &mut instigator,
+            44_100,
+            2,
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Instigator,
+                phrase_shape: Mc202PhraseShape::InstigatorSpike,
+                ..base
+            },
+        );
+
+        let follower_metrics = metrics(&follower);
+        let instigator_metrics = metrics(&instigator);
+        let delta_rms = (follower
+            .iter()
+            .zip(instigator.iter())
+            .map(|(follower, instigator)| (follower - instigator).powi(2))
+            .sum::<f32>()
+            / follower.len() as f32)
+            .sqrt();
+        let max_delta = follower
+            .iter()
+            .zip(instigator.iter())
+            .map(|(follower, instigator)| (follower - instigator).abs())
+            .fold(0.0_f32, f32::max);
+
+        assert!(follower_metrics.0 > 10_000);
+        assert!(instigator_metrics.0 > 8_000);
+        assert!(delta_rms > 0.010, "instigator phrase delta RMS {delta_rms}");
+        assert!(max_delta > 0.04, "instigator phrase max delta {max_delta}");
     }
 
     #[test]
