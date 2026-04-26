@@ -3484,7 +3484,7 @@ fn first_run_onramp_stage(shell: &JamShellState) -> Option<FirstRunOnrampStage> 
         .filter(|action| action.status == riotbox_core::action::ActionStatus::Committed)
         .count();
     let has_pending = !shell.app.jam_view.pending_actions.is_empty();
-    let capture_count = shell.app.session.captures.len();
+    let capture_count = shell.app.jam_view.capture.capture_count;
 
     if capture_count > 0 || committed_count > 1 {
         return None;
