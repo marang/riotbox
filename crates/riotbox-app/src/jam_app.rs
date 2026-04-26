@@ -1313,6 +1313,10 @@ mod tests {
         #[serde(default)]
         initial_restore_scene: Option<String>,
         #[serde(default)]
+        tr909_reinforcement_mode: Option<Tr909ReinforcementModeState>,
+        #[serde(default)]
+        tr909_pattern_ref: Option<String>,
+        #[serde(default)]
         requested_at: Option<TimestampMs>,
         #[serde(default)]
         committed_at: Option<TimestampMs>,
@@ -1361,6 +1365,12 @@ mod tests {
         restore_scene_energy: Option<String>,
         #[serde(default)]
         result_summary: Option<String>,
+        #[serde(default)]
+        tr909_render_profile: Option<String>,
+        #[serde(default)]
+        tr909_render_support_context: Option<String>,
+        #[serde(default)]
+        tr909_render_support_accent: Option<String>,
     }
 
     #[derive(Clone, Copy, Debug, Deserialize)]
@@ -1703,6 +1713,29 @@ mod tests {
         if let Some(restore_scene) = fixture.initial_restore_scene.as_deref() {
             state.session.runtime_state.scene_state.restore_scene =
                 Some(SceneId::from(restore_scene));
+        }
+        if let Some(reinforcement_mode) = fixture.tr909_reinforcement_mode {
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_enabled = false;
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_profile = None;
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .reinforcement_mode = Some(reinforcement_mode);
+        }
+        if let Some(pattern_ref) = fixture.tr909_pattern_ref.as_deref() {
+            state.session.runtime_state.lane_state.tr909.pattern_ref = Some(pattern_ref.into());
         }
         state.refresh_view();
     }
@@ -6456,6 +6489,28 @@ mod tests {
                         .map(|result| result.summary.as_str()),
                     Some(expected_summary.as_str()),
                     "{} result summary drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected_profile) = fixture.expected.tr909_render_profile.as_deref() {
+                assert_eq!(
+                    state.runtime_view.tr909_render_profile, expected_profile,
+                    "{} TR-909 profile drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected_context) = fixture.expected.tr909_render_support_context.as_deref()
+            {
+                assert_eq!(
+                    state.runtime_view.tr909_render_support_context, expected_context,
+                    "{} TR-909 support context drifted",
+                    fixture.name
+                );
+            }
+            if let Some(expected_accent) = fixture.expected.tr909_render_support_accent.as_deref() {
+                assert_eq!(
+                    state.runtime_view.tr909_render_support_accent, expected_accent,
+                    "{} TR-909 support accent drifted",
                     fixture.name
                 );
             }

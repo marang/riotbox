@@ -4381,6 +4381,10 @@ mod tests {
         #[serde(default)]
         initial_restore_scene: Option<String>,
         #[serde(default)]
+        tr909_reinforcement_mode: Option<Tr909ReinforcementModeState>,
+        #[serde(default)]
+        tr909_pattern_ref: Option<String>,
+        #[serde(default)]
         requested_at: Option<TimestampMs>,
         #[serde(default)]
         committed_at: Option<TimestampMs>,
@@ -4663,6 +4667,32 @@ mod tests {
         if let Some(restore_scene) = fixture.initial_restore_scene.as_deref() {
             shell.app.session.runtime_state.scene_state.restore_scene =
                 Some(SceneId::from(restore_scene));
+        }
+        if let Some(reinforcement_mode) = fixture.tr909_reinforcement_mode {
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_enabled = false;
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .takeover_profile = None;
+            shell
+                .app
+                .session
+                .runtime_state
+                .lane_state
+                .tr909
+                .reinforcement_mode = Some(reinforcement_mode);
+        }
+        if let Some(pattern_ref) = fixture.tr909_pattern_ref.as_deref() {
+            shell.app.session.runtime_state.lane_state.tr909.pattern_ref = Some(pattern_ref.into());
         }
         shell.app.refresh_view();
     }

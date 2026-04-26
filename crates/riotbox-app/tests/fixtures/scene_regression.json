@@ -63,6 +63,8 @@
     "initial_active_scene": "scene-02-drop",
     "initial_current_scene": "scene-02-drop",
     "initial_restore_scene": "scene-01-intro",
+    "tr909_reinforcement_mode": "source_support",
+    "tr909_pattern_ref": "restore-support",
     "requested_at": 520,
     "committed_at": 640,
     "boundary": {
@@ -80,6 +82,9 @@
       "restore_scene": "scene-02-drop",
       "restore_scene_energy": "high",
       "result_summary": "restored scene scene-01-intro at bar 10 / phrase 2",
+      "tr909_render_profile": "steady_pulse",
+      "tr909_render_support_context": "scene_target",
+      "tr909_render_support_accent": "scene",
       "jam_contains": [
         "scene-01-intro",
         "live intro/med <> restore drop/high",
@@ -87,6 +92,8 @@
       ],
       "log_contains": [
         "scene intro | medium",
+        "render source_support",
+        "accent scene",
         "trail restore intro",
         "result restored scene scene-01-intro",
         "at bar 10 / phrase 2"
