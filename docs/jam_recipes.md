@@ -83,25 +83,29 @@ What to observe:
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
 - if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
 
-## Recipe 3: Capture And Reuse
+## Recipe 3: Capture, Audition, Promote, Hit
 
-Goal: learn the `capture -> promote -> hit` loop.
+Goal: learn the first source-backed W-30 reuse loop.
 
 1. press `Space`
 2. press `f` or `g`
 3. wait for the result to land
 4. press `c`
 5. press `4` for `Capture`
-6. optionally press `o` if `Do Next` says `1 hear it: [o] audition raw ...`
-7. press `p`
-8. press `w`
-9. use `2` and `4` to watch both `Log` and `Capture`
+6. wait until the capture has committed; use `2` if unsure
+7. press `o` to audition the raw captured moment
+8. press `p` to promote the capture to the focused W-30 pad
+9. wait until promotion has committed; use `2` if unsure
+10. press `w` to hit the promoted pad
+11. use `1`, `2`, and `4` to compare `Jam`, `Log`, and `Capture`
 
 What to observe:
 
 - Riotbox is not only a mutation shell
 - captured material starts becoming reusable W-30 material
 - `Capture` is where the shell begins to feel sampler-like
+- do not rush `p` immediately after `c`; Riotbox first has to land the capture on a musical boundary
+- do not rush `w` immediately after `p`; the pad is only playable after promotion lands
 - `Do Next` is the fastest place to read the next capture/promote/hit step
 - `1 hear it: [o] audition raw ...` is the raw preview path; it is the quickest way to check that the stored moment is audible
 - `2 keep it: [p] promote ...` then `3 play it: [w] hit after promote (src/fallback)` is the reuse path
@@ -172,16 +176,20 @@ If you want one slightly longer practice run:
 4. press `2` and confirm the fill landed
 5. press `c`
 6. press `4`
-7. press `p`
-8. press `w`
-9. press `2`
-10. press `u`
+7. wait until `Capture` shows the stored capture
+8. press `o` to audition the raw capture
+9. press `p`
+10. wait until promotion lands
+11. press `w`
+12. press `2`
+13. press `u`
 
 What this teaches:
 
 - queue
 - commit
 - capture
+- audition
 - promote
 - reuse
 - undo
@@ -356,11 +364,13 @@ Then run this loop:
 3. wait for the result to land
 4. press `c`
 5. press `4` for `Capture`
-6. press `o` to audition the raw captured moment
-7. press `p` to promote the capture
-8. press `w` to hit the promoted W-30 pad
-9. press `2` for `Log`
-10. switch between `1`, `2`, and `4` to compare `Jam`, `Log`, and `Capture`
+6. wait until the capture has committed; `Do Next` should move from queued capture to raw audition / promote guidance
+7. press `o` to audition the raw captured moment
+8. press `p` to promote the capture
+9. wait until promotion has committed; `Do Next` should offer the promoted hit/audition path
+10. press `w` to hit the promoted W-30 pad
+11. press `2` for `Log`
+12. switch between `1`, `2`, and `4` to compare `Jam`, `Log`, and `Capture`
 
 What to observe:
 
@@ -377,6 +387,7 @@ What this teaches:
 - `[o]` is the quickest way to test the raw captured moment
 - `[p]` promotes the capture into the W-30 reuse path
 - `[w]` tests the promoted hit / recall path
+- if you press the next key before the current action commits, you are mostly testing queue state, not the audible result yet
 - Riotbox now exposes whether that path is source-backed, but it is still a bounded preview excerpt, not a full W-30 sampler engine
 
 ## Current Limits
