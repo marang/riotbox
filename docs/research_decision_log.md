@@ -1177,3 +1177,14 @@ Why: the phase definition explicitly requires replay and undo to remain intact. 
 Evidence: the current `undo_last_action` path marks the latest undoable action as undone and appends an undo marker, while MC-202 side effects are already committed into session lane state, macro touch, and typed render projection.
 Consequences: complete the rollback on the existing action/log/session/render seam. Do not introduce a second MC-202 history stack or callback-only undo path.
 Status: accepted
+
+---
+
+Topic: MC-202 undo should restore session-backed lane snapshots and audio output
+Phase: MC-202 MVP / Replay QA
+Question: what is the smallest undo implementation that makes MC-202 experimentation musically reversible without introducing a second phrase system?
+Decision: store bounded MC-202 undo snapshots in `runtime_state.undo_state` at commit time, keyed by action id. When undo targets an MC-202 phrase action, restore the previous role, phrase reference, phrase variant, and touch from that snapshot, then refresh the typed render projection.
+Why: undo has to change the sounded lane state, not just mark a history row as undone. Keeping the snapshot in session runtime state makes the rollback explicit and serializable while avoiding callback-local memory or a separate MC-202 history stack.
+Evidence: `undo_mc202_phrase_move_restores_lane_state_and_audio_path` commits follower then answer, undoes answer, verifies the action log and Jam lane return to follower state, and proves the post-undo render buffer matches the previous follower buffer while differing from the undone answer buffer. `session_file_roundtrips_via_json` also covers persisted MC-202 undo snapshots.
+Consequences: future lane-specific undo should use the same pattern: capture bounded pre-state before applying committed side effects, restore it through session state, and prove the nearest audible seam changed back.
+Status: accepted

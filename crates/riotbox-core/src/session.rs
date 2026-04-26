@@ -90,6 +90,44 @@ pub struct RuntimeState {
     pub scene_state: SceneState,
     pub lock_state: LockState,
     pub pending_policy: PendingPolicy,
+    #[serde(default)]
+    pub undo_state: UndoRuntimeState,
+}
+
+#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
+pub struct UndoRuntimeState {
+    #[serde(default)]
+    pub mc202_snapshots: Vec<Mc202UndoSnapshotState>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct Mc202UndoSnapshotState {
+    pub action_id: ActionId,
+    pub role: Option<String>,
+    pub phrase_ref: Option<String>,
+    #[serde(default)]
+    pub phrase_variant: Option<Mc202PhraseVariantState>,
+    pub touch: f32,
+}
+
+impl Mc202UndoSnapshotState {
+    #[must_use]
+    pub fn from_session(action_id: ActionId, session: &SessionFile) -> Self {
+        Self {
+            action_id,
+            role: session.runtime_state.lane_state.mc202.role.clone(),
+            phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
+            phrase_variant: session.runtime_state.lane_state.mc202.phrase_variant,
+            touch: session.runtime_state.macro_state.mc202_touch,
+        }
+    }
+
+    pub fn apply_to_session(&self, session: &mut SessionFile) {
+        session.runtime_state.lane_state.mc202.role = self.role.clone();
+        session.runtime_state.lane_state.mc202.phrase_ref = self.phrase_ref.clone();
+        session.runtime_state.lane_state.mc202.phrase_variant = self.phrase_variant;
+        session.runtime_state.macro_state.mc202_touch = self.touch;
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -430,6 +468,17 @@ mod tests {
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.macro_state.scene_aggression = 0.75;
         session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session
+            .runtime_state
+            .undo_state
+            .mc202_snapshots
+            .push(Mc202UndoSnapshotState {
+                action_id: ActionId(2),
+                role: Some("follower".into()),
+                phrase_ref: Some("follower-scene-1".into()),
+                phrase_variant: Some(Mc202PhraseVariantState::MutatedDrive),
+                touch: 0.78,
+            });
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));

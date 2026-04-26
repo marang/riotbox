@@ -161,6 +161,7 @@ RuntimeState {
   scene_state
   lock_state
   pending_policy
+  undo_state
 }
 ```
 
@@ -205,6 +206,21 @@ Per lane, store only the state required to reproduce behavior:
 
 - locked objects
 - lock owner or actor if relevant
+
+### 8.7 Undo state
+
+Undo state stores bounded restore snapshots for committed moves whose audible state must roll back.
+
+Current MVP use:
+
+- MC-202 commit-time lane snapshots keyed by action id
+- previous role, phrase reference, phrase variant, and touch
+
+Rules:
+
+- snapshots must be explicit session state, not callback-local memory
+- snapshots are only for undo restore, not a second arrangement or phrase system
+- undo must refresh the typed render projection after applying a snapshot
 
 ---
 
