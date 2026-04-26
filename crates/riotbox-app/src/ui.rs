@@ -122,6 +122,8 @@ pub enum ShellKeyOutcome {
     TogglePinLatestCapture,
     LowerDrumBusLevel,
     RaiseDrumBusLevel,
+    LowerMc202Touch,
+    RaiseMc202Touch,
     UndoLast,
     Quit,
 }
@@ -149,6 +151,7 @@ const GESTURE_FREEZE: &str = "freeze";
 const GESTURE_RECALL: &str = "recall";
 const GESTURE_AUDITION: &str = "audition";
 const GESTURE_RESAMPLE: &str = "resample";
+const GESTURE_TOUCH: &str = "touch";
 const GESTURE_UNDO: &str = "undo";
 
 const ADVANCED_GESTURES: &[(&str, &str)] = &[
@@ -161,6 +164,7 @@ const ADVANCED_GESTURES: &[(&str, &str)] = &[
 ];
 
 const LANE_GESTURES: &[(&str, &str)] = &[
+    ("< >", GESTURE_TOUCH),
     ("l", GESTURE_RECALL),
     ("o", GESTURE_AUDITION),
     ("z", GESTURE_FREEZE),
@@ -418,6 +422,14 @@ impl JamShellState {
             KeyCode::Char(']') => {
                 self.status_message = "raise drum bus level".into();
                 ShellKeyOutcome::RaiseDrumBusLevel
+            }
+            KeyCode::Char('<') => {
+                self.status_message = "lower MC-202 touch".into();
+                ShellKeyOutcome::LowerMc202Touch
+            }
+            KeyCode::Char('>') => {
+                self.status_message = "raise MC-202 touch".into();
+                ShellKeyOutcome::RaiseMc202Touch
             }
             KeyCode::Char('u') => {
                 self.status_message = "undo most recent action requested".into();
@@ -1603,7 +1615,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_B, ": ")),
         line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_C, ": ")),
         line_with_primary_key_prefixes(render_gesture_items(HELP_ADVANCED_GESTURES_D, ": ")),
-        line_with_primary_key_prefixes("[ / ]: lower or raise drum bus | v: pin latest"),
+        line_with_primary_key_prefixes("[ / ]: drum bus | < / >: MC-202 touch | v: pin latest"),
         Line::from(""),
         Line::from(format!("Current mode: {}", shell.launch_mode.label())),
         Line::from(format!("Jam view: {}", shell.jam_mode.label())),
@@ -1704,9 +1716,10 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             lanes.mc202_phrase_ref.as_deref().unwrap_or("unset")
         )),
         Line::from(format!(
-            "sound {} / {}",
+            "sound {} / {} | touch {:.2}",
             shell.app.runtime_view.mc202_render_mode,
-            shell.app.runtime_view.mc202_render_phrase_shape
+            shell.app.runtime_view.mc202_render_phrase_shape,
+            shell.app.runtime.mc202_render.touch
         )),
     ]
 }
@@ -6949,6 +6962,14 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char(']')),
             ShellKeyOutcome::RaiseDrumBusLevel
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('<')),
+            ShellKeyOutcome::LowerMc202Touch
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('>')),
+            ShellKeyOutcome::RaiseMc202Touch
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('u')),
