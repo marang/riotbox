@@ -1165,7 +1165,7 @@ impl JamAppState {
             return Some(QueueControlResult::AlreadyPending);
         }
 
-        let (bank_id, pad_id, capture_id) = self.next_w30_slice_pool_capture()?;
+        let target = self.next_w30_slice_pool_capture()?;
         if self
             .session
             .runtime_state
@@ -1173,7 +1173,7 @@ impl JamAppState {
             .w30
             .last_capture
             .as_ref()
-            == Some(&capture_id)
+            == Some(&target.capture_id)
         {
             return Some(QueueControlResult::AlreadyInState);
         }
@@ -1184,17 +1184,22 @@ impl JamAppState {
             Quantization::NextBeat,
             riotbox_core::action::ActionTarget {
                 scope: Some(TargetScope::LaneW30),
-                bank_id: Some(bank_id.clone()),
-                pad_id: Some(pad_id.clone()),
+                bank_id: Some(target.bank_id.clone()),
+                pad_id: Some(target.pad_id.clone()),
                 ..Default::default()
             },
         );
         draft.params = ActionParams::Mutation {
             intensity: 1.0,
-            target_id: Some(capture_id.to_string()),
+            target_id: Some(target.capture_id.to_string()),
+        };
+        let reason = match target.selection_reason {
+            w30_targets::W30SlicePoolSelectionReason::Cycle => "slice pool",
+            w30_targets::W30SlicePoolSelectionReason::FeralScorecard => "feral slice pool",
         };
         draft.explanation = Some(format!(
-            "browse W-30 slice pool to {capture_id} on {bank_id}/{pad_id} on next beat"
+            "browse W-30 {reason} to {} on {}/{} on next beat",
+            target.capture_id, target.bank_id, target.pad_id
         ));
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
@@ -2303,6 +2308,76 @@ mod tests {
         };
         session.notes = Some("keeper session".into());
         session
+    }
+
+    fn w30_slice_pool_state_with_source_windows(
+        graph: SourceGraph,
+        source_audio_cache: SourceAudioCache,
+    ) -> JamAppState {
+        let mut session = sample_session(&graph);
+        session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        });
+        session.captures[0].source_window = Some(CaptureSourceWindow {
+            source_id: graph.source.source_id.clone(),
+            start_seconds: 0.0,
+            end_seconds: 0.5,
+            start_frame: 0,
+            end_frame: 24_000,
+        });
+        session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-02"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-c".into()],
+            source_window: Some(CaptureSourceWindow {
+                source_id: graph.source.source_id.clone(),
+                start_seconds: 0.05,
+                end_seconds: 0.55,
+                start_frame: 2_400,
+                end_frame: 26_400,
+            }),
+            lineage_capture_refs: vec![CaptureId::from("cap-01")],
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-02.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            is_pinned: false,
+            notes: Some("cyclic slice".into()),
+        });
+        session.captures.push(CaptureRef {
+            capture_id: CaptureId::from("cap-03"),
+            capture_type: CaptureType::Pad,
+            source_origin_refs: vec!["asset-b".into()],
+            source_window: Some(CaptureSourceWindow {
+                source_id: graph.source.source_id.clone(),
+                start_seconds: 0.123,
+                end_seconds: 0.623,
+                start_frame: 5_904,
+                end_frame: 29_904,
+            }),
+            lineage_capture_refs: vec![CaptureId::from("cap-01")],
+            resample_generation_depth: 0,
+            created_from_action: None,
+            storage_path: "captures/cap-03.wav".into(),
+            assigned_target: Some(CaptureTarget::W30Pad {
+                bank_id: BankId::from("bank-a"),
+                pad_id: PadId::from("pad-01"),
+            }),
+            is_pinned: false,
+            notes: Some("feral hook slice".into()),
+        });
+        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
+        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
+        session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        state.source_audio_cache = Some(source_audio_cache);
+        state.refresh_view();
+        state
     }
 
     fn sidecar_script_path() -> PathBuf {
@@ -5387,6 +5462,132 @@ mod tests {
                 .w30_pending_slice_pool_target
                 .as_deref(),
             Some("bank-a/pad-01")
+        );
+    }
+
+    #[test]
+    fn queue_w30_browse_slice_pool_prefers_feral_capture_and_changes_preview_window() {
+        let tempdir = tempdir().expect("create source audio tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        write_pcm16_wave(&source_path, 48_000, 2, 2.0);
+        let source_audio_cache =
+            SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");
+
+        let mut control_graph = sample_graph();
+        control_graph.source.path = source_path.to_string_lossy().into_owned();
+        control_graph.source.duration_seconds = 2.0;
+        let mut feral_graph = control_graph.clone();
+        feral_graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-b"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 0.123,
+            end_seconds: 0.623,
+            start_bar: 1,
+            end_bar: 1,
+            confidence: 0.86,
+            tags: vec!["feral".into()],
+            source_refs: vec!["src-1".into()],
+        });
+        feral_graph.candidates.push(Candidate {
+            candidate_id: "candidate-feral-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: AssetId::from("asset-b"),
+            score: 0.92,
+            confidence: 0.84,
+            tags: vec!["feral".into()],
+            constraints: vec!["capture_first".into()],
+            provenance_refs: vec!["provider:fixture".into()],
+        });
+        feral_graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-b".into(),
+            to_id: "section-a".into(),
+            weight: 0.81,
+            notes: Some("feral hook supports rebuild".into()),
+        });
+        feral_graph.analysis_summary.hook_candidate_count = 1;
+        feral_graph.analysis_summary.warnings.clear();
+
+        let mut control_state =
+            w30_slice_pool_state_with_source_windows(control_graph, source_audio_cache.clone());
+        let mut feral_state =
+            w30_slice_pool_state_with_source_windows(feral_graph, source_audio_cache);
+
+        assert_eq!(
+            control_state.queue_w30_browse_slice_pool(629),
+            Some(QueueControlResult::Enqueued)
+        );
+        assert_eq!(
+            feral_state.queue_w30_browse_slice_pool(630),
+            Some(QueueControlResult::Enqueued)
+        );
+
+        let control_pending = control_state.queue.pending_actions();
+        let feral_pending = feral_state.queue.pending_actions();
+        assert!(matches!(
+            &control_pending[0].params,
+            ActionParams::Mutation {
+                target_id: Some(target_id),
+                ..
+            } if target_id == "cap-02"
+        ));
+        assert!(matches!(
+            &feral_pending[0].params,
+            ActionParams::Mutation {
+                target_id: Some(target_id),
+                ..
+            } if target_id == "cap-03"
+        ));
+        assert_eq!(
+            feral_pending[0].explanation.as_deref(),
+            Some("browse W-30 feral slice pool to cap-03 on bank-a/pad-01 on next beat")
+        );
+
+        let boundary = CommitBoundaryState {
+            kind: CommitBoundary::Beat,
+            beat_index: 42,
+            bar_index: 11,
+            phrase_index: 3,
+            scene_id: Some(SceneId::from("scene-1")),
+        };
+        assert_eq!(
+            control_state
+                .commit_ready_actions(boundary.clone(), 813)
+                .len(),
+            1
+        );
+        assert_eq!(feral_state.commit_ready_actions(boundary, 814).len(), 1);
+
+        let control_preview = control_state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .as_ref()
+            .expect("control source-window preview");
+        let feral_preview = feral_state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .as_ref()
+            .expect("feral source-window preview");
+
+        assert_eq!(control_preview.source_start_frame, 2_400);
+        assert_eq!(feral_preview.source_start_frame, 5_904);
+        assert!(
+            control_preview
+                .samples
+                .iter()
+                .any(|sample| sample.abs() > 0.001)
+        );
+        assert!(
+            feral_preview
+                .samples
+                .iter()
+                .any(|sample| sample.abs() > 0.001)
+        );
+        assert!(
+            recipe_signal_delta_rms(&control_preview.samples, &feral_preview.samples) > 0.01,
+            "feral W-30 preview should differ from cyclic slice-pool preview"
         );
     }
 

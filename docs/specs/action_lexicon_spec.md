@@ -176,6 +176,13 @@ Optional target references:
 - `tr909.scene_lock`
 - `tr909.release`
 
+`w30.browse_slice_pool` normally cycles through captures assigned to the
+current W-30 pad. A Feral-ready Source Graph may bias that choice toward a
+non-current capture whose `source_origin_refs` match a `CaptureCandidate` asset
+or supported `HookFragment`. This remains the same queued
+`w30.browse_slice_pool` action; Feral policy changes target selection, not the
+Action Lexicon or commit semantics.
+
 ### 6.6 Structural / safety
 
 - `lock.object`

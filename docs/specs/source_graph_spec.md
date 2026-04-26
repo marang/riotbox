@@ -319,6 +319,16 @@ Consumers should use this as a compact policy and UX hint. They must still keep
 audible behavior behind explicit Action Lexicon, queue / commit, and render
 contracts.
 
+Current bounded consumer:
+
+- `w30.browse_slice_pool` may use a high or supported Feral scorecard to prefer
+  a non-current capture whose `source_origin_refs` match a `CaptureCandidate`
+  asset or supported `HookFragment`.
+- The selected capture must still be queued and committed through the normal
+  W-30 action path.
+- If the preferred capture changes audible preview material, the slice needs a
+  downstream preview or buffer proof, not only a changed log line.
+
 ---
 
 ## 13. Provenance
