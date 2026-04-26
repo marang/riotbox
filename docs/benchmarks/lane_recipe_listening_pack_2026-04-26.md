@@ -7,7 +7,7 @@ Ticket: `RIOTBOX-299`
 
 This pack is the first local audio-output harness for documented Jam routines outside the W-30 source-preview path.
 
-It exists because the routine audit showed that W-30 now has source-vs-fallback proof, while TR-909, Scene Brain, and MC-202 still needed clearer audio-output accounting.
+It exists because the routine audit showed that W-30 now has source-vs-fallback proof, while TR-909, Scene Brain, and MC-202 still needed clearer audio-output accounting. The current pack now includes TR-909, Scene-coupled TR-909, and a first offline MC-202 follower-vs-answer render case.
 
 ## Command
 
@@ -64,12 +64,16 @@ Current cases:
   - baseline: transport-bar support
   - candidate: Scene-target support accent
   - covers Recipe 10's current TR-909 support-accent seam
+- `mc202-follower-to-answer`
+  - baseline: follower drive
+  - candidate: answer hook
+  - covers the first explicit MC-202 offline audio contrast for Recipe 2 and Recipe 5
 
 ## Current Limits
 
 This is not yet a full performance-recorder or TUI replay harness.
 
-MC-202 is intentionally documented as non-audible in this pack because the current implementation proves follower/answer state and phrase generation, not a dedicated MC-202 audio lane.
+MC-202 now has a bounded offline render case in this pack. It proves that follower and answer shapes can be rendered and compared as audio artifacts. It does not yet mean the live TUI callback mixes a finished MC-202 synth lane.
 
 Scene Brain is represented only through the existing TR-909 `scene_target` support-accent seam. This proves the bounded accent, not a finished Scene transition engine.
 

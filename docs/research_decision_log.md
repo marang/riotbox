@@ -1045,3 +1045,14 @@ Why: `src` / `fallback` is not only raw provenance; it changes the user's confid
 Evidence: `JamViewModel` now exposes `CaptureHandoffReadinessView`; Capture `Do Next` and heard-path copy render the existing `src` / `fallback` wording from that projection; focused core and TUI tests cover fallback and source-backed readiness.
 Consequences: this remains presentation-model state over the existing Capture model, not a persistence change or source-cache redesign. Future Capture confidence cues should prefer typed Jam view projections before adding more UI-side session inspection.
 Status: accepted
+
+---
+
+Topic: MC-202 audio proof should start as an offline render seam before live mixer integration
+Phase: MC-202 MVP / Audio QA
+Question: after the routine audio audit found MC-202 state-proven but not musician-audible, should the next slice jump straight into live callback integration?
+Decision: add a bounded offline MC-202 render seam and include one follower-vs-answer case in the lane recipe listening pack. Keep live TUI mixer integration out of this slice.
+Why: the current MC-202 lane already has replay-safe role, follower, and answer state, but no audio contract. A small offline render seam gives the QA layer a real WAV and metric target without pretending the live instrument mix is finished or adding a hidden callback path too early.
+Evidence: `riotbox-audio` now exposes `Mc202RenderState`, an offline render helper, unit coverage for distinct follower/answer output, and the lane recipe listening pack renders `mc202-follower-to-answer` with a minimum RMS delta.
+Consequences: later MC-202 work should wire this typed render state into the app/audio runtime deliberately, with live mixer controls and TUI cues, rather than growing the offline proof into a shadow synth architecture.
+Status: accepted

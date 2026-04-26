@@ -8,6 +8,7 @@ use std::{
     time::Instant,
 };
 
+use crate::mc202::{Mc202RenderState, render_mc202_buffer};
 use crate::tr909::{
     Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
     Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -198,6 +199,25 @@ pub fn render_tr909_offline(
         usize::from(channel_count),
         &shared_state.snapshot(),
         &mut callback_state,
+    );
+
+    buffer
+}
+
+#[must_use]
+pub fn render_mc202_offline(
+    render_state: &Mc202RenderState,
+    sample_rate: u32,
+    channel_count: u16,
+    frame_count: usize,
+) -> Vec<f32> {
+    let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
+
+    render_mc202_buffer(
+        &mut buffer,
+        sample_rate,
+        usize::from(channel_count),
+        render_state,
     );
 
     buffer
@@ -2116,6 +2136,7 @@ impl RuntimeTelemetry {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState};
     use crate::tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -3277,6 +3298,46 @@ mod tests {
         assert!(metrics.active_samples > 1_000);
         assert!(metrics.peak_abs > 0.001);
         assert!(metrics.rms > 0.001);
+    }
+
+    #[test]
+    fn offline_mc202_render_produces_distinct_follower_and_answer_metrics() {
+        let follower = render_mc202_offline(
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Follower,
+                routing: Mc202RenderRouting::MusicBusBass,
+                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                touch: 0.62,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+                ..Mc202RenderState::default()
+            },
+            44_100,
+            2,
+            44_100,
+        );
+        let answer = render_mc202_offline(
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Answer,
+                routing: Mc202RenderRouting::MusicBusBass,
+                phrase_shape: Mc202PhraseShape::AnswerHook,
+                touch: 0.78,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+                ..Mc202RenderState::default()
+            },
+            44_100,
+            2,
+            44_100,
+        );
+        let follower_metrics = signal_metrics(&follower);
+        let answer_metrics = signal_metrics(&answer);
+
+        assert!(follower_metrics.active_samples > 10_000);
+        assert!(answer_metrics.active_samples > 10_000);
+        assert!((follower_metrics.rms - answer_metrics.rms).abs() > 0.001);
     }
 
     #[test]

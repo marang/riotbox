@@ -4,7 +4,8 @@ use std::{
 };
 
 use riotbox_audio::{
-    runtime::{OfflineAudioMetrics, render_tr909_offline, signal_metrics},
+    mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
+    runtime::{OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, signal_metrics},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -115,8 +116,8 @@ fn print_help() {
     println!(
         "Usage: lane_recipe_pack [--date NAME] [--output-dir PATH] [--duration-seconds SECONDS]\n\
          \n\
-         Renders a local lane-level recipe listening pack with TR-909 and Scene-coupled\n\
-         support cases. Writes WAV, metrics, comparison reports, and pack-summary.md.\n\
+         Renders a local lane-level recipe listening pack with TR-909, MC-202, and\n\
+         Scene-coupled support cases. Writes WAV, metrics, comparison reports, and pack-summary.md.\n\
          This is a local QA helper; generated audio artifacts stay under artifacts/audio_qa/."
     );
 }
@@ -138,10 +139,21 @@ struct PackCase {
     recipe_refs: &'static str,
     baseline_label: &'static str,
     candidate_label: &'static str,
-    baseline: Tr909RenderState,
-    candidate: Tr909RenderState,
+    render_pair: RenderPair,
     min_rms_delta: f32,
     note: &'static str,
+}
+
+#[derive(Clone, Debug)]
+enum RenderPair {
+    Tr909 {
+        baseline: Tr909RenderState,
+        candidate: Tr909RenderState,
+    },
+    Mc202 {
+        baseline: Mc202RenderState,
+        candidate: Mc202RenderState,
+    },
 }
 
 #[derive(Debug)]
@@ -161,22 +173,24 @@ fn pack_cases() -> Vec<PackCase> {
             recipe_refs: "Recipe 2, Recipe 7",
             baseline_label: "steady source support",
             candidate_label: "fill with mainline drive",
-            baseline: tr909_support_state(
-                Tr909SourceSupportProfile::SteadyPulse,
-                Tr909SourceSupportContext::TransportBar,
-                Tr909PatternAdoption::SupportPulse,
-                Tr909PhraseVariation::PhraseAnchor,
-            ),
-            candidate: Tr909RenderState {
-                mode: Tr909RenderMode::Fill,
-                routing: Tr909RenderRouting::DrumBusSupport,
-                pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-                phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
-                drum_bus_level: 0.82,
-                is_transport_running: true,
-                tempo_bpm: 128.0,
-                position_beats: 32.0,
-                ..Tr909RenderState::default()
+            render_pair: RenderPair::Tr909 {
+                baseline: tr909_support_state(
+                    Tr909SourceSupportProfile::SteadyPulse,
+                    Tr909SourceSupportContext::TransportBar,
+                    Tr909PatternAdoption::SupportPulse,
+                    Tr909PhraseVariation::PhraseAnchor,
+                ),
+                candidate: Tr909RenderState {
+                    mode: Tr909RenderMode::Fill,
+                    routing: Tr909RenderRouting::DrumBusSupport,
+                    pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+                    phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
+                    drum_bus_level: 0.82,
+                    is_transport_running: true,
+                    tempo_bpm: 128.0,
+                    position_beats: 32.0,
+                    ..Tr909RenderState::default()
+                },
             },
             min_rms_delta: 0.001,
             note: "The fill candidate should be busier and more assertive than steady support.",
@@ -187,24 +201,26 @@ fn pack_cases() -> Vec<PackCase> {
             recipe_refs: "Recipe 2",
             baseline_label: "steady source support",
             candidate_label: "controlled phrase takeover",
-            baseline: tr909_support_state(
-                Tr909SourceSupportProfile::BreakLift,
-                Tr909SourceSupportContext::TransportBar,
-                Tr909PatternAdoption::SupportPulse,
-                Tr909PhraseVariation::PhraseAnchor,
-            ),
-            candidate: Tr909RenderState {
-                mode: Tr909RenderMode::Takeover,
-                routing: Tr909RenderRouting::DrumBusTakeover,
-                pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
-                phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
-                takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
-                drum_bus_level: 0.86,
-                slam_intensity: 0.3,
-                is_transport_running: true,
-                tempo_bpm: 128.0,
-                position_beats: 32.0,
-                ..Tr909RenderState::default()
+            render_pair: RenderPair::Tr909 {
+                baseline: tr909_support_state(
+                    Tr909SourceSupportProfile::BreakLift,
+                    Tr909SourceSupportContext::TransportBar,
+                    Tr909PatternAdoption::SupportPulse,
+                    Tr909PhraseVariation::PhraseAnchor,
+                ),
+                candidate: Tr909RenderState {
+                    mode: Tr909RenderMode::Takeover,
+                    routing: Tr909RenderRouting::DrumBusTakeover,
+                    pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
+                    phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
+                    takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
+                    drum_bus_level: 0.86,
+                    slam_intensity: 0.3,
+                    is_transport_running: true,
+                    tempo_bpm: 128.0,
+                    position_beats: 32.0,
+                    ..Tr909RenderState::default()
+                },
             },
             min_rms_delta: 0.004,
             note: "The takeover candidate should be more forward than support without implying a finished performance mix.",
@@ -215,20 +231,39 @@ fn pack_cases() -> Vec<PackCase> {
             recipe_refs: "Recipe 10",
             baseline_label: "transport-bar support",
             candidate_label: "scene-target support accent",
-            baseline: tr909_support_state(
-                Tr909SourceSupportProfile::BreakLift,
-                Tr909SourceSupportContext::TransportBar,
-                Tr909PatternAdoption::SupportPulse,
-                Tr909PhraseVariation::PhraseAnchor,
-            ),
-            candidate: tr909_support_state(
-                Tr909SourceSupportProfile::BreakLift,
-                Tr909SourceSupportContext::SceneTarget,
-                Tr909PatternAdoption::SupportPulse,
-                Tr909PhraseVariation::PhraseAnchor,
-            ),
+            render_pair: RenderPair::Tr909 {
+                baseline: tr909_support_state(
+                    Tr909SourceSupportProfile::BreakLift,
+                    Tr909SourceSupportContext::TransportBar,
+                    Tr909PatternAdoption::SupportPulse,
+                    Tr909PhraseVariation::PhraseAnchor,
+                ),
+                candidate: tr909_support_state(
+                    Tr909SourceSupportProfile::BreakLift,
+                    Tr909SourceSupportContext::SceneTarget,
+                    Tr909PatternAdoption::SupportPulse,
+                    Tr909PhraseVariation::PhraseAnchor,
+                ),
+            },
             min_rms_delta: 0.00005,
             note: "The Scene-target candidate is intentionally subtle; it proves the current TR-909 support-accent seam, not a finished Scene transition engine.",
+        },
+        PackCase {
+            id: "mc202-follower-to-answer",
+            title: "MC-202 follower -> answer",
+            recipe_refs: "Recipe 2, Recipe 5",
+            baseline_label: "follower drive",
+            candidate_label: "answer hook",
+            render_pair: RenderPair::Mc202 {
+                baseline: mc202_state(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.62,
+                ),
+                candidate: mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78),
+            },
+            min_rms_delta: 0.001,
+            note: "This is the first explicit MC-202 offline audio seam. It proves a renderable follower-vs-answer contrast, not live TUI mixer integration.",
         },
     ]
 }
@@ -256,6 +291,19 @@ fn tr909_support_state(
     }
 }
 
+fn mc202_state(mode: Mc202RenderMode, shape: Mc202PhraseShape, touch: f32) -> Mc202RenderState {
+    Mc202RenderState {
+        mode,
+        routing: Mc202RenderRouting::MusicBusBass,
+        phrase_shape: shape,
+        touch,
+        music_bus_level: 0.74,
+        is_transport_running: true,
+        tempo_bpm: 128.0,
+        position_beats: 32.0,
+    }
+}
+
 fn render_case(
     output_dir: &Path,
     case: PackCase,
@@ -265,8 +313,7 @@ fn render_case(
     let case_dir = output_dir.join(case.id);
     fs::create_dir_all(&case_dir)?;
 
-    let baseline = render_tr909_offline(&case.baseline, SAMPLE_RATE, CHANNEL_COUNT, frame_count);
-    let candidate = render_tr909_offline(&case.candidate, SAMPLE_RATE, CHANNEL_COUNT, frame_count);
+    let (baseline, candidate) = render_pair(&case.render_pair, frame_count);
     let baseline_metrics = signal_metrics(&baseline);
     let candidate_metrics = signal_metrics(&candidate);
     let report = CaseReport {
@@ -306,6 +353,25 @@ fn render_case(
     }
 
     Ok(report)
+}
+
+fn render_pair(render_pair: &RenderPair, frame_count: usize) -> (Vec<f32>, Vec<f32>) {
+    match render_pair {
+        RenderPair::Tr909 {
+            baseline,
+            candidate,
+        } => (
+            render_tr909_offline(baseline, SAMPLE_RATE, CHANNEL_COUNT, frame_count),
+            render_tr909_offline(candidate, SAMPLE_RATE, CHANNEL_COUNT, frame_count),
+        ),
+        RenderPair::Mc202 {
+            baseline,
+            candidate,
+        } => (
+            render_mc202_offline(baseline, SAMPLE_RATE, CHANNEL_COUNT, frame_count),
+            render_mc202_offline(candidate, SAMPLE_RATE, CHANNEL_COUNT, frame_count),
+        ),
+    }
 }
 
 fn render_metrics_markdown(
@@ -404,7 +470,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
          - Output dir: `{}`\n\
          - Duration seconds: `{:.3}`\n\n\
          This pack is the first local recipe-level audio proof outside the W-30 source-preview path.\n\
-         It renders bounded TR-909 and Scene-coupled support comparisons as WAV files plus sibling metrics.\n\n\
+         It renders bounded TR-909, MC-202, and Scene-coupled support comparisons as WAV files plus sibling metrics.\n\n\
          ## Cases\n\n\
          | Case | Active delta | Peak delta | RMS delta | Min RMS delta | Sum delta |\n\
          | --- | ---: | ---: | ---: | ---: | ---: |\n",
@@ -430,7 +496,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 follower/answer recipes are still state- and phrase-generation proven, but this pack does not render an MC-202 audio lane yet. Treat MC-202 as non-audible in this QA layer until a real audio seam or explicit listening case exists.\n\n\
+         MC-202 now has a first explicit offline audio case in this pack: `mc202-follower-to-answer`. This proves a bounded renderable follower-vs-answer contrast, not live TUI mixer integration or a finished synth engine.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );
@@ -475,7 +541,7 @@ fn write_pcm16_wav(
 
 #[cfg(test)]
 mod tests {
-    use super::{Args, PACK_ID, pack_cases, render_tr909_offline, signal_metrics};
+    use super::{Args, PACK_ID, pack_cases, render_pair, signal_metrics};
     use std::path::PathBuf;
 
     #[test]
@@ -518,10 +584,9 @@ mod tests {
     fn pack_cases_produce_distinct_audio_metrics() {
         let cases = pack_cases();
 
-        assert_eq!(cases.len(), 3);
+        assert_eq!(cases.len(), 4);
         for case in cases {
-            let baseline = render_tr909_offline(&case.baseline, 44_100, 2, 88_200);
-            let candidate = render_tr909_offline(&case.candidate, 44_100, 2, 88_200);
+            let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
             let baseline_metrics = signal_metrics(&baseline);
             let candidate_metrics = signal_metrics(&candidate);
 
