@@ -151,6 +151,66 @@
     }
   },
   {
+    "name": "trigger_pad_source_window_committed",
+    "action": "trigger_pad",
+    "capture_bank": "bank-b",
+    "capture_pad": "pad-03",
+    "capture_pinned": false,
+    "source_window": {
+      "source_id": "src-1",
+      "start_seconds": 1.25,
+      "end_seconds": 3.75,
+      "start_frame": 60000,
+      "end_frame": 180000
+    },
+    "initial_active_bank": "bank-b",
+    "initial_focused_pad": "pad-03",
+    "initial_last_capture": "cap-01",
+    "initial_preview_mode": "live_recall",
+    "requested_at": 623,
+    "committed_at": 703,
+    "boundary": {
+      "kind": "beat",
+      "beat_index": 33,
+      "bar_index": 9,
+      "phrase_index": 2,
+      "scene_id": "scene-1"
+    },
+    "expected": {
+      "active_bank": "bank-b",
+      "focused_pad": "pad-03",
+      "last_capture": "cap-01",
+      "w30_grit": 0.6888,
+      "preview_mode": "live_recall",
+      "preview_routing": "music_bus_preview",
+      "preview_profile": "promoted_recall",
+      "preview_capture": "cap-01",
+      "preview_music_bus_level": 0.64,
+      "preview_grit_level": 0.6888,
+      "preview_transport_running": true,
+      "result_summary": "triggered cap-01 on W-30 pad bank-b/pad-03 at beat 33 / phrase 2",
+      "jam_contains": [
+        "current pad bank-b/pad-03",
+        "current preview",
+        "recall/promoted/fallback"
+      ],
+      "capture_contains": [
+        "hear cap-01->pad bank-b/pad-03",
+        "[w]/[o] src",
+        "pending W-30 cue idle",
+        "latest promoted cap-01 ->"
+      ],
+      "log_contains": [
+        "W-30 Lane",
+        "win 1.25-3.75s src-1",
+        "triggered cap-01",
+        "bank-b",
+        "pad-03",
+        "prev recall/fallback"
+      ]
+    }
+  },
+  {
     "name": "bank_swap_committed",
     "action": "swap_bank",
     "capture_bank": "bank-a",

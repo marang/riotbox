@@ -1416,6 +1416,8 @@ mod tests {
         capture_bank: String,
         capture_pad: String,
         capture_pinned: bool,
+        #[serde(default)]
+        source_window: Option<W30RegressionSourceWindow>,
         #[serde(default = "default_true")]
         capture_assigned: bool,
         #[serde(default)]
@@ -1437,6 +1439,15 @@ mod tests {
     }
 
     #[derive(Debug, Deserialize)]
+    struct W30RegressionSourceWindow {
+        source_id: String,
+        start_seconds: f32,
+        end_seconds: f32,
+        start_frame: u64,
+        end_frame: u64,
+    }
+
+    #[derive(Debug, Deserialize)]
     struct W30RegressionCapture {
         capture_id: String,
         bank: String,
@@ -1452,6 +1463,7 @@ mod tests {
         LiveRecall,
         RawCaptureAudition,
         PromotedAudition,
+        TriggerPad,
         SwapBank,
         ApplyDamageProfile,
         LoopFreeze,
@@ -1576,6 +1588,7 @@ mod tests {
             W30RegressionAction::LiveRecall => ActionCommand::W30LiveRecall,
             W30RegressionAction::RawCaptureAudition => ActionCommand::W30AuditionRawCapture,
             W30RegressionAction::PromotedAudition => ActionCommand::W30AuditionPromoted,
+            W30RegressionAction::TriggerPad => ActionCommand::W30TriggerPad,
             W30RegressionAction::SwapBank => ActionCommand::W30SwapBank,
             W30RegressionAction::ApplyDamageProfile => ActionCommand::W30ApplyDamageProfile,
             W30RegressionAction::LoopFreeze => ActionCommand::W30LoopFreeze,
@@ -5490,6 +5503,17 @@ mod tests {
                     pad_id: PadId::from(fixture.capture_pad.clone()),
                 });
             session.captures[0].is_pinned = fixture.capture_pinned;
+            session.captures[0].source_window =
+                fixture
+                    .source_window
+                    .as_ref()
+                    .map(|source_window| CaptureSourceWindow {
+                        source_id: SourceId::from(source_window.source_id.clone()),
+                        start_seconds: source_window.start_seconds,
+                        end_seconds: source_window.end_seconds,
+                        start_frame: source_window.start_frame,
+                        end_frame: source_window.end_frame,
+                    });
             for extra in &fixture.extra_captures {
                 session.captures.push(CaptureRef {
                     capture_id: CaptureId::from(extra.capture_id.clone()),
@@ -5538,6 +5562,9 @@ mod tests {
                 }
                 W30RegressionAction::PromotedAudition => {
                     state.queue_w30_promoted_audition(fixture.requested_at)
+                }
+                W30RegressionAction::TriggerPad => {
+                    state.queue_w30_trigger_pad(fixture.requested_at)
                 }
                 W30RegressionAction::SwapBank => state.queue_w30_swap_bank(fixture.requested_at),
                 W30RegressionAction::ApplyDamageProfile => {

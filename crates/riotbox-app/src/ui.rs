@@ -4935,6 +4935,7 @@ mod tests {
         LiveRecall,
         RawCaptureAudition,
         PromotedAudition,
+        TriggerPad,
         SwapBank,
         ApplyDamageProfile,
         LoopFreeze,
@@ -6692,6 +6693,9 @@ mod tests {
             }
             W30RegressionAction::PromotedAudition => {
                 shell.app.queue_w30_promoted_audition(fixture.requested_at)
+            }
+            W30RegressionAction::TriggerPad => {
+                shell.app.queue_w30_trigger_pad(fixture.requested_at)
             }
             W30RegressionAction::SwapBank => shell.app.queue_w30_swap_bank(fixture.requested_at),
             W30RegressionAction::ApplyDamageProfile => shell
