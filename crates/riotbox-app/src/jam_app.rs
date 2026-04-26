@@ -2374,7 +2374,7 @@ mod tests {
         assert_eq!(state.runtime_view.mc202_render_phrase_shape, "answer_hook");
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.00 | touch 0.82"
+            "music bus 0.00 | touch 0.82 | budget balanced"
         );
         assert!(
             state
@@ -2498,7 +2498,7 @@ mod tests {
         assert!((state.runtime.mc202_render.touch - 0.64).abs() < f32::EPSILON);
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.64 | touch 0.64"
+            "music bus 0.64 | touch 0.64 | budget balanced"
         );
 
         let lowered = state.adjust_mc202_touch(-1.5);
@@ -2507,7 +2507,7 @@ mod tests {
         assert_eq!(state.runtime.mc202_render.touch, 0.0);
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.64 | touch 0.00"
+            "music bus 0.64 | touch 0.00 | budget balanced"
         );
     }
 
@@ -5963,6 +5963,10 @@ mod tests {
             Mc202PhraseShape::PressureCell
         );
         assert_eq!(
+            state.runtime.mc202_render.note_budget,
+            riotbox_audio::mc202::Mc202NoteBudget::Sparse
+        );
+        assert_eq!(
             state.runtime.mc202_render.routing,
             Mc202RenderRouting::MusicBusBass
         );
@@ -6026,6 +6030,10 @@ mod tests {
         assert_eq!(
             state.runtime.mc202_render.phrase_shape,
             Mc202PhraseShape::InstigatorSpike
+        );
+        assert_eq!(
+            state.runtime.mc202_render.note_budget,
+            riotbox_audio::mc202::Mc202NoteBudget::Push
         );
         assert_eq!(
             state.runtime.mc202_render.routing,

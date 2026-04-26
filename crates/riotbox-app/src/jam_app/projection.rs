@@ -1,5 +1,7 @@
 use riotbox_audio::{
-    mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
+    mc202::{
+        Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState,
+    },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -167,6 +169,7 @@ pub(super) fn build_mc202_render_state(
         mode,
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape,
+        note_budget: mc202_note_budget_for_shape(phrase_shape),
         touch: session
             .runtime_state
             .macro_state
@@ -180,6 +183,17 @@ pub(super) fn build_mc202_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
         is_transport_running: transport.is_playing,
+    }
+}
+
+fn mc202_note_budget_for_shape(shape: Mc202PhraseShape) -> Mc202NoteBudget {
+    match shape {
+        Mc202PhraseShape::PressureCell => Mc202NoteBudget::Sparse,
+        Mc202PhraseShape::InstigatorSpike => Mc202NoteBudget::Push,
+        Mc202PhraseShape::MutatedDrive => Mc202NoteBudget::Wide,
+        Mc202PhraseShape::RootPulse
+        | Mc202PhraseShape::FollowerDrive
+        | Mc202PhraseShape::AnswerHook => Mc202NoteBudget::Balanced,
     }
 }
 

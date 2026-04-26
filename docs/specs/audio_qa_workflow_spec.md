@@ -466,6 +466,7 @@ Today the repo already has:
 - a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/answer/pressure/instigator state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam
 - a live MC-202 touch-control regression that proves the same committed phrase changes buffer energy when the performer raises or lowers touch
 - a quantized MC-202 phrase-mutation regression that proves a committed phrase variant changes the render buffer against the follower-drive control
+- a first MC-202 note-budget regression that proves density can be reduced without silencing the phrase
 - an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, and Markdown comparisons for TR-909, Scene-coupled TR-909, and MC-202 cases
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
 

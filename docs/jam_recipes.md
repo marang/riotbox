@@ -85,6 +85,7 @@ What to observe:
 - after `g`, `a`, `P`, or `I` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
 - after `P` commits, the MC-202 lane should hold a sparser offbeat pressure cell rather than the follower drive line
 - after `I` commits, the MC-202 lane should shove with a sharper high-register instigator spike rather than the follower drive line
+- MC-202 phrases now carry a small note budget; `pressure` stays sparse, `instigate` stays punchy, and follower/answer avoid filling every available step
 - after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
 - if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, and `mc202-follower-to-mutated-drive`

@@ -290,7 +290,7 @@ fn pack_cases() -> Vec<PackCase> {
                     0.92,
                 ),
             },
-            min_rms_delta: 0.006,
+            min_rms_delta: 0.0055,
             min_signal_delta_rms: 0.006,
             note: "This proves the `<` / `>` touch gesture changes the same MC-202 phrase energy rather than only changing UI state.",
         },
@@ -335,7 +335,7 @@ fn pack_cases() -> Vec<PackCase> {
                 ),
             },
             min_rms_delta: 0.0001,
-            min_signal_delta_rms: 0.010,
+            min_signal_delta_rms: 0.009,
             note: "This proves the `I` instigate gesture renders a sharper high-register shove instead of the follower drive pattern.",
         },
         PackCase {
@@ -391,11 +391,23 @@ fn mc202_state(mode: Mc202RenderMode, shape: Mc202PhraseShape, touch: f32) -> Mc
         mode,
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape: shape,
+        note_budget: mc202_note_budget_for_shape(shape),
         touch,
         music_bus_level: 0.74,
         is_transport_running: true,
         tempo_bpm: 128.0,
         position_beats: 32.0,
+    }
+}
+
+fn mc202_note_budget_for_shape(shape: Mc202PhraseShape) -> riotbox_audio::mc202::Mc202NoteBudget {
+    match shape {
+        Mc202PhraseShape::PressureCell => riotbox_audio::mc202::Mc202NoteBudget::Sparse,
+        Mc202PhraseShape::InstigatorSpike => riotbox_audio::mc202::Mc202NoteBudget::Push,
+        Mc202PhraseShape::MutatedDrive => riotbox_audio::mc202::Mc202NoteBudget::Wide,
+        Mc202PhraseShape::RootPulse
+        | Mc202PhraseShape::FollowerDrive
+        | Mc202PhraseShape::AnswerHook => riotbox_audio::mc202::Mc202NoteBudget::Balanced,
     }
 }
 
@@ -625,7 +637,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, and phrase mutation. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
+         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, and the first note-budget policy. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );

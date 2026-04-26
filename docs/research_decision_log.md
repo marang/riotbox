@@ -1122,3 +1122,14 @@ Why: the MC-202 lane needs one sharper push gesture in addition to follower, ans
 Evidence: `riotbox-core` exposes the new action and pending cue, `riotbox-app` queues/commits `I` instigator through the existing MC-202 phrase-control path, app/UI fixtures cover committed state and shell output, and `riotbox-audio` plus the lane recipe listening pack prove `instigator_spike` differs from follower drive with signal-delta thresholds.
 Consequences: future instigator work should add note-budget and source-aware contour policy on top of this committed role seam, not as callback-only heuristics or a separate MC-202 phrase editor.
 Status: accepted
+
+---
+
+Topic: MC-202 anti-overplay should be a typed note budget on the render seam
+Phase: MC-202 MVP / Audio QA
+Question: what is the smallest note-budget policy that reduces MC-202 clutter without inventing a phrase editor, source-aware scorer, or callback-only heuristic?
+Decision: add `Mc202NoteBudget` to the typed MC-202 render state and derive it from the committed phrase shape. `pressure_cell` uses a sparse budget, `instigator_spike` uses a push budget, `mutated_drive` keeps a wider budget, and follower/answer/root phrases use a balanced budget.
+Why: the lane needs anti-overplay behavior, but the first policy should stay deterministic and replay-aligned. Putting the budget in render state makes it visible to app projection, shared audio runtime state, tests, and listening-pack metrics without creating a second phrase system.
+Evidence: `riotbox-audio` now caps active steps per 16-step cycle from `Mc202NoteBudget`, tests prove the balanced budget reduces density without silencing follower drive, `riotbox-app` projects the budget from committed phrase shape, and the lane recipe pack passes after recalibrating touch/instigator thresholds for the less-dense output.
+Consequences: future source-aware contour and phrase scoring work should choose or adjust this typed budget from analysis/scene context rather than bypassing it with ad hoc callback gating.
+Status: accepted
