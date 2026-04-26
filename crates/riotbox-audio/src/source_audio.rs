@@ -100,6 +100,23 @@ impl SourceAudioCache {
     }
 }
 
+pub fn write_interleaved_pcm16_wav(
+    path: impl AsRef<Path>,
+    sample_rate: u32,
+    channel_count: u16,
+    samples: &[f32],
+) -> Result<(), SourceAudioError> {
+    let path = path.as_ref();
+    if let Some(parent) = path.parent()
+        && !parent.as_os_str().is_empty()
+    {
+        fs::create_dir_all(parent).map_err(|error| SourceAudioError::Io(error.to_string()))?;
+    }
+
+    let bytes = pcm16_wave_bytes(sample_rate, channel_count, samples)?;
+    fs::write(path, bytes).map_err(|error| SourceAudioError::Io(error.to_string()))
+}
+
 impl fmt::Display for SourceAudioError {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

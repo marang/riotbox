@@ -1243,3 +1243,14 @@ Why: Phase 5 requires internal bus resampling to create reusable material, not o
 Evidence: the W-30 MVP gap review identifies internal resampling as the remaining blocker after capture artifacts and focused artifact-backed playback. Existing `promote.resample`, `W30ResampleTapState`, and capture lineage fields already provide the control and provenance spine; the missing piece is a printed audio artifact and output comparison.
 Consequences: the implementation follow-up should prove queue -> commit -> printed capture -> artifact reload, and compare the printed result against raw capture/source and synthetic fallback controls. Full multitrack recording, live callback recording, and export workflows remain later slices.
 Status: accepted
+
+---
+
+Topic: W-30 promote.resample should print a reusable bus artifact
+Phase: W-30 MVP / Audio QA
+Question: what is the smallest implementation that turns `promote.resample` from lineage metadata into a reusable audio result?
+Decision: when `promote.resample` commits, render a bounded offline bus print from the focused capture artifact plus the existing W-30 resample policy, write it to the new resample capture's `storage_path`, and cache that artifact for later focused-pad playback. Resample captures should omit `source_window` unless they are literal source copies.
+Why: musicians need resampling to "print the chaos" into material they can hear, reload, and reuse. Keeping the first print offline and single-capture preserves realtime safety while turning the existing action, lineage, and tap state into a real artifact.
+Evidence: `committed_w30_internal_resample_prints_reusable_bus_artifact` commits source capture -> promotion -> resample, verifies `captures/cap-02.wav` exists and reloads, asserts lineage/generation metadata, checks non-silent metrics, and compares the printed artifact against both raw capture audio and the synthetic resample-tap control.
+Consequences: the printed artifact is still a bounded MVP bus print, not full multitrack recording or export. Future W-30 work can improve the render policy and pad-bank playback while keeping the artifact/provenance contract stable.
+Status: accepted

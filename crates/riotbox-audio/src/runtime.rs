@@ -186,6 +186,28 @@ pub fn render_w30_preview_offline(
 }
 
 #[must_use]
+pub fn render_w30_resample_tap_offline(
+    render_state: &W30ResampleTapState,
+    sample_rate: u32,
+    channel_count: u16,
+    frame_count: usize,
+) -> Vec<f32> {
+    let shared_state = SharedW30ResampleTapState::new(render_state);
+    let mut callback_state = W30ResampleTapCallbackState::default();
+    let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
+
+    render_w30_resample_tap_buffer(
+        &mut buffer,
+        sample_rate,
+        usize::from(channel_count),
+        &shared_state.snapshot(),
+        &mut callback_state,
+    );
+
+    buffer
+}
+
+#[must_use]
 pub fn render_tr909_offline(
     render_state: &Tr909RenderState,
     sample_rate: u32,
