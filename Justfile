@@ -66,6 +66,9 @@ w30-smoke-source-diff source date="local-source-diff" start="0.0" source_duratio
 lane-recipe-pack date="local" duration="2.0":
     cargo run -p riotbox-audio --bin lane_recipe_pack -- --date "{{date}}" --duration-seconds "{{duration}}"
 
+feral-before-after source date="local" start="0.0" duration="2.0" source_window="1.0":
+    cargo run -p riotbox-audio --bin feral_before_after_pack -- --source "{{source}}" --date "{{date}}" --source-start-seconds "{{start}}" --duration-seconds "{{duration}}" --source-window-seconds "{{source_window}}"
+
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
