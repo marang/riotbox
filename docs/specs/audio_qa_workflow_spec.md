@@ -410,7 +410,7 @@ Today the repo already has:
 - an initial local-only W-30 preview render helper that writes one deterministic source-window smoke WAV plus sibling Markdown metrics
 - an initial W-30 preview smoke listening-pack convention under `docs/benchmarks/`
 - an initial local baseline-vs-candidate audio artifact convention under `docs/benchmarks/`
-- an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics
+- an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that also writes a local `comparison.md` report
 
 Today the repo does not yet have a full official workflow for:
 

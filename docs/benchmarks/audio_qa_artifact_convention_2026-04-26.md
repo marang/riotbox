@@ -25,6 +25,7 @@ artifacts/audio_qa/YYYY-MM-DD/<pack-id>/<case-id>/
   baseline.metrics.md
   candidate.wav
   candidate.metrics.md
+  comparison.md
   notes.md
 ```
 
@@ -36,6 +37,7 @@ artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_previe
   baseline.metrics.md
   candidate.wav
   candidate.metrics.md
+  comparison.md
   notes.md
 ```
 
@@ -45,6 +47,7 @@ artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_previe
 - `baseline.metrics.md`: metrics generated for `baseline.wav`.
 - `candidate.wav`: the newly rendered output from the current branch or commit.
 - `candidate.metrics.md`: metrics generated for `candidate.wav`.
+- `comparison.md`: local baseline-vs-candidate metrics comparison report.
 - `notes.md`: human listening notes and pass / concern / fail result.
 
 ## Git Rule
@@ -89,9 +92,11 @@ cargo run -p riotbox-audio --bin w30_preview_compare -- \
 
 The comparison helper is a local metrics drift check only. It does not compare waveforms, promote baselines, or create a CI gate.
 
+By default it writes the report to `comparison.md` beside the two metrics files. Use `--report PATH` for ad hoc output paths.
+
 ## Current Limits
 
 - There is no automated baseline lookup.
-- There is no baseline-vs-candidate diff engine.
+- There is no baseline-vs-candidate waveform or perceptual diff engine.
 - There is no CI gate for generated audio artifacts.
 - Baseline promotion is still a human workflow decision.

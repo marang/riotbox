@@ -37,6 +37,7 @@ artifacts/audio_qa/YYYY-MM-DD/w30-preview-smoke/raw_capture_source_window_previe
   baseline.metrics.md
   candidate.wav
   candidate.metrics.md
+  comparison.md
   notes.md
 ```
 
@@ -77,9 +78,11 @@ cargo run -p riotbox-audio --bin w30_preview_compare -- \
   --date 2026-04-26
 ```
 
-The comparison helper reads `baseline.metrics.md` and `candidate.metrics.md` from the convention path, prints active-sample / peak / RMS / sum deltas, and exits non-zero when the default drift limits are exceeded. This is a narrow local metrics helper, not a waveform diff or listening-pack CI gate.
+The comparison helper reads `baseline.metrics.md` and `candidate.metrics.md` from the convention path, prints active-sample / peak / RMS / sum deltas, writes the same report to `comparison.md`, and exits non-zero when the default drift limits are exceeded. This is a narrow local metrics helper, not a waveform diff or listening-pack CI gate.
 
 Use `--max-active-samples-delta`, `--max-peak-delta`, `--max-rms-delta`, or `--max-sum-delta` when a local branch intentionally changes the smoke render and you want to inspect bounded drift instead of requiring an exact match.
+
+Use `--report PATH` only when you need to write the comparison report outside the convention path.
 
 ## Notes Template
 
@@ -117,7 +120,7 @@ Create `notes.md` beside the rendered WAV when a human listens:
 ## Current Limits
 
 - This is not a generalized fixture-pack runner.
-- There is no baseline-vs-candidate comparison engine yet.
+- There is no baseline-vs-candidate waveform or perceptual comparison engine yet.
 - There is no committed WAV baseline in the repo.
 - There is no CI gate for generated audio artifacts.
 - The useful durable artifact today is the convention plus any follow-up ticket created from listening.

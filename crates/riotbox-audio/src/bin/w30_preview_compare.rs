@@ -22,15 +22,15 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let baseline = SmokeMetrics::read_from_path(&args.baseline_metrics_path)?;
     let candidate = SmokeMetrics::read_from_path(&args.candidate_metrics_path)?;
     let report = compare_metrics(&baseline, &candidate, &args.limits);
-
-    println!(
-        "{}",
-        render_report(
-            &args.baseline_metrics_path,
-            &args.candidate_metrics_path,
-            &report
-        )
+    let rendered_report = render_report(
+        &args.baseline_metrics_path,
+        &args.candidate_metrics_path,
+        &report,
     );
+
+    println!("{rendered_report}");
+    write_report_markdown(&args.report_path, &rendered_report)?;
+    println!("wrote {}", args.report_path.display());
 
     if report.has_failures() {
         process::exit(2);
@@ -43,6 +43,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 struct Args {
     baseline_metrics_path: PathBuf,
     candidate_metrics_path: PathBuf,
+    report_path: PathBuf,
     limits: DriftLimits,
     show_help: bool,
 }
@@ -74,6 +75,7 @@ impl Args {
         let mut date = DEFAULT_DATE.to_string();
         let mut baseline_override = None;
         let mut candidate_override = None;
+        let mut report_override = None;
         let mut limits = DriftLimits::default();
         let mut show_help = false;
         let mut args = args.into_iter();
@@ -98,6 +100,12 @@ impl Args {
                         return Err("--candidate requires a path".into());
                     };
                     candidate_override = Some(PathBuf::from(value));
+                }
+                "--report" => {
+                    let Some(value) = args.next() else {
+                        return Err("--report requires a path".into());
+                    };
+                    report_override = Some(PathBuf::from(value));
                 }
                 "--max-active-samples-delta" => {
                     let Some(value) = args.next() else {
@@ -133,10 +141,12 @@ impl Args {
             baseline_override.unwrap_or_else(|| convention_metrics_path(&date, "baseline"));
         let candidate_metrics_path =
             candidate_override.unwrap_or_else(|| convention_metrics_path(&date, "candidate"));
+        let report_path = report_override.unwrap_or_else(|| convention_report_path(&date));
 
         Ok(Self {
             baseline_metrics_path,
             candidate_metrics_path,
+            report_path,
             limits,
             show_help,
         })
@@ -155,7 +165,7 @@ fn parse_non_negative_float(flag: &str, value: &str) -> Result<f64, String> {
 
 fn print_help() {
     println!(
-        "Usage: w30_preview_compare [--date YYYY-MM-DD|local] [--baseline PATH] [--candidate PATH]\n\
+        "Usage: w30_preview_compare [--date YYYY-MM-DD|local] [--baseline PATH] [--candidate PATH] [--report PATH]\n\
          \n\
          Optional drift limits:\n\
            --max-active-samples-delta N\n\
@@ -176,6 +186,16 @@ fn convention_metrics_path(date: &str, role: &str) -> PathBuf {
     path.push(PACK_ID);
     path.push(CASE_ID);
     path.push(format!("{role}.metrics.md"));
+    path
+}
+
+fn convention_report_path(date: &str) -> PathBuf {
+    let mut path = PathBuf::from("artifacts");
+    path.push("audio_qa");
+    path.push(date);
+    path.push(PACK_ID);
+    path.push(CASE_ID);
+    path.push("comparison.md");
     path
 }
 
@@ -339,6 +359,13 @@ fn render_report(baseline_path: &Path, candidate_path: &Path, report: &Compariso
     )
 }
 
+fn write_report_markdown(path: &Path, report: &str) -> std::io::Result<()> {
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    fs::write(path, format!("{report}\n"))
+}
+
 const fn status_label(passed: bool) -> &'static str {
     if passed { "ok" } else { "drift" }
 }
@@ -375,6 +402,9 @@ mod tests {
                 candidate_metrics_path: PathBuf::from(
                     "artifacts/audio_qa/local/w30-preview-smoke/raw_capture_source_window_preview/candidate.metrics.md",
                 ),
+                report_path: PathBuf::from(
+                    "artifacts/audio_qa/local/w30-preview-smoke/raw_capture_source_window_preview/comparison.md",
+                ),
                 limits: DriftLimits::default(),
                 show_help: false,
             }
@@ -390,6 +420,8 @@ mod tests {
             "tmp/base.md".to_string(),
             "--candidate".to_string(),
             "tmp/candidate.md".to_string(),
+            "--report".to_string(),
+            "tmp/comparison.md".to_string(),
             "--max-active-samples-delta".to_string(),
             "2".to_string(),
             "--max-peak-delta".to_string(),
@@ -406,6 +438,7 @@ mod tests {
             args.candidate_metrics_path,
             PathBuf::from("tmp/candidate.md")
         );
+        assert_eq!(args.report_path, PathBuf::from("tmp/comparison.md"));
         assert_eq!(args.limits.max_active_samples_delta, 2);
         assert_eq!(args.limits.max_peak_delta, 0.01);
         assert_eq!(args.limits.max_rms_delta, 0.02);
@@ -420,6 +453,18 @@ mod tests {
                 .candidate_metrics_path,
             PathBuf::from(
                 "artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/candidate.metrics.md",
+            )
+        );
+    }
+
+    #[test]
+    fn derives_report_path_from_date() {
+        assert_eq!(
+            Args::parse(["--date".to_string(), "2026-04-26".to_string()])
+                .expect("parse args")
+                .report_path,
+            PathBuf::from(
+                "artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/comparison.md",
             )
         );
     }
