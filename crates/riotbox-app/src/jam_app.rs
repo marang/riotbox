@@ -9,7 +9,7 @@ use std::{
 use riotbox_audio::{
     mc202::Mc202RenderState,
     runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot},
-    source_audio::SourceAudioCache,
+    source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::Tr909RenderState,
     w30::{W30PreviewRenderState, W30ResampleTapState},
 };
@@ -26,8 +26,8 @@ use riotbox_core::{
     },
     queue::{ActionQueue, CommittedActionRef},
     session::{
-        CaptureTarget, GraphStorageMode, Mc202UndoSnapshotState, SessionFile, SourceGraphRef,
-        SourceRef, Tr909TakeoverProfileState,
+        CaptureRef, CaptureTarget, GraphStorageMode, Mc202UndoSnapshotState, SessionFile,
+        SourceGraphRef, SourceRef, Tr909TakeoverProfileState,
     },
     source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
@@ -259,6 +259,89 @@ impl JamAppState {
     pub fn set_sidecar_state(&mut self, state: SidecarState) {
         self.runtime.sidecar = state;
         self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
+    }
+
+    fn persist_capture_audio_artifact(&self, capture: &mut CaptureRef) {
+        match self.write_capture_audio_artifact(capture) {
+            Ok(Some(_path)) => append_capture_note(
+                capture,
+                &format!("audio artifact written {}", capture.storage_path),
+            ),
+            Ok(None) => {}
+            Err(reason) => {
+                append_capture_note(capture, &format!("audio artifact pending: {reason}"))
+            }
+        }
+    }
+
+    fn write_capture_audio_artifact(
+        &self,
+        capture: &CaptureRef,
+    ) -> Result<Option<PathBuf>, String> {
+        let Some(source_window) = capture.source_window.as_ref() else {
+            return Ok(None);
+        };
+        let Some(source_audio_cache) = self.source_audio_cache.as_ref() else {
+            return Ok(None);
+        };
+        if let Some(source_graph) = self.source_graph.as_ref()
+            && source_graph.source.source_id != source_window.source_id
+        {
+            return Err(format!(
+                "capture source {} does not match loaded source {}",
+                source_window.source_id, source_graph.source.source_id
+            ));
+        }
+        if let Some(source_graph) = self.source_graph.as_ref()
+            && (source_graph.source.sample_rate != source_audio_cache.sample_rate
+                || source_graph.source.channel_count != source_audio_cache.channel_count)
+        {
+            return Err(format!(
+                "source graph audio shape {} Hz/{} ch does not match decoded source {} Hz/{} ch",
+                source_graph.source.sample_rate,
+                source_graph.source.channel_count,
+                source_audio_cache.sample_rate,
+                source_audio_cache.channel_count
+            ));
+        }
+        let Some(path) = self.capture_audio_artifact_path(capture) else {
+            return Ok(None);
+        };
+
+        let frame_count = source_window
+            .end_frame
+            .saturating_sub(source_window.start_frame);
+        if frame_count == 0 {
+            return Err("source window is empty".into());
+        }
+
+        source_audio_cache
+            .write_window_pcm16_wav(
+                &path,
+                SourceAudioWindow {
+                    start_frame: usize::try_from(source_window.start_frame)
+                        .map_err(|_| "source window start frame exceeds usize".to_string())?,
+                    frame_count: usize::try_from(frame_count)
+                        .map_err(|_| "source window frame count exceeds usize".to_string())?,
+                },
+            )
+            .map_err(|error| error.to_string())?;
+
+        Ok(Some(path))
+    }
+
+    fn capture_audio_artifact_path(&self, capture: &CaptureRef) -> Option<PathBuf> {
+        let storage_path = Path::new(&capture.storage_path);
+        if storage_path.is_absolute() {
+            return Some(storage_path.to_path_buf());
+        }
+
+        let files = self.files.as_ref()?;
+        let session_dir = files
+            .session_path
+            .parent()
+            .unwrap_or_else(|| Path::new("."));
+        Some(session_dir.join(storage_path))
     }
 
     pub fn update_transport_clock(&mut self, clock: TransportClockState) {
@@ -1314,9 +1397,10 @@ impl JamAppState {
             );
         }
 
-        if let Some(capture) =
+        if let Some(mut capture) =
             capture_ref_from_action(&self.session, self.source_graph.as_ref(), action, boundary)
         {
+            self.persist_capture_audio_artifact(&mut capture);
             self.session.runtime_state.lane_state.w30.last_capture =
                 Some(capture.capture_id.clone());
             self.session.captures.push(capture);
@@ -1362,6 +1446,13 @@ fn is_mc202_phrase_action(command: ActionCommand) -> bool {
             | ActionCommand::Mc202GenerateInstigator
             | ActionCommand::Mc202MutatePhrase
     )
+}
+
+fn append_capture_note(capture: &mut CaptureRef, detail: &str) {
+    capture.notes = Some(match capture.notes.as_deref() {
+        Some(existing) if !existing.is_empty() => format!("{existing} | {detail}"),
+        _ => detail.into(),
+    });
 }
 
 fn next_action_id_from_session(session: &SessionFile) -> riotbox_core::ids::ActionId {
@@ -4304,6 +4395,82 @@ mod tests {
         assert!(preview.source_end_frame > preview.source_start_frame);
         assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
         assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
+    }
+
+    #[test]
+    fn committed_source_backed_capture_writes_wav_artifact() {
+        let tempdir = tempdir().expect("create capture artifact tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        let session_path = tempdir.path().join("session.json");
+        let graph_path = tempdir.path().join("source_graph.json");
+        write_pcm16_wave(&source_path, 48_000, 2, 8.0);
+
+        let mut graph = sample_graph();
+        graph.source.path = source_path.to_string_lossy().into_owned();
+        graph.source.duration_seconds = 8.0;
+        graph.source.sample_rate = 48_000;
+        graph.source.channel_count = 2;
+        let mut session = sample_session(&graph);
+        session.captures.clear();
+        session.runtime_state.lane_state.w30.last_capture = None;
+        save_source_graph_json(&graph_path, &graph).expect("save source graph");
+        save_session_json(&session_path, &session).expect("save session");
+
+        let mut state =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+        state.queue_capture_bar(300);
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(state.session.captures.len(), 1);
+        let capture = &state.session.captures[0];
+        assert_eq!(capture.storage_path, "captures/cap-01.wav");
+        let source_window = capture.source_window.as_ref().expect("source window");
+        let capture_path = tempdir.path().join(&capture.storage_path);
+        assert!(capture_path.exists());
+        assert!(
+            capture
+                .notes
+                .as_deref()
+                .is_some_and(|notes| notes.contains("audio artifact written"))
+        );
+
+        let artifact =
+            SourceAudioCache::load_pcm_wav(&capture_path).expect("load capture artifact");
+        let expected_frames = usize::try_from(
+            source_window
+                .end_frame
+                .saturating_sub(source_window.start_frame),
+        )
+        .expect("expected source-window frame count");
+        assert_eq!(artifact.sample_rate, 48_000);
+        assert_eq!(artifact.channel_count, 2);
+        assert_eq!(artifact.frame_count(), expected_frames);
+        assert!((artifact.duration_seconds() - 7.619).abs() < 0.02);
+        assert!(
+            artifact
+                .interleaved_samples()
+                .iter()
+                .any(|sample| sample.abs() > 0.01)
+        );
+
+        state.save().expect("save session with capture artifact");
+        let reloaded =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("reload app");
+        assert_eq!(
+            reloaded.session.captures[0].storage_path,
+            capture.storage_path
+        );
+        assert!(capture_path.exists());
     }
 
     #[test]

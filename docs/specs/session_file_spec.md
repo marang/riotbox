@@ -314,6 +314,8 @@ Minimum provenance:
 
 `source_window` is optional for backward compatibility and for captures that are derived from internal resampling rather than a direct source range. When present, it should preserve source id, start/end seconds, and start/end source frames so later raw playback can resolve audio without guessing from UI state.
 
+For committed source-backed captures loaded from a session file, `storage_path` should be backed by a real PCM WAV artifact relative to the session file directory unless it is absolute. Artifact writing belongs to the non-realtime app commit path; the audio callback must never write capture files.
+
 ---
 
 ## 12. Ghost State

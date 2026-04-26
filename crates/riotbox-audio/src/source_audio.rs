@@ -81,6 +81,23 @@ impl SourceAudioCache {
 
         &self.samples[start..end.max(start)]
     }
+
+    pub fn write_window_pcm16_wav(
+        &self,
+        path: impl AsRef<Path>,
+        window: SourceAudioWindow,
+    ) -> Result<(), SourceAudioError> {
+        let path = path.as_ref();
+        if let Some(parent) = path.parent()
+            && !parent.as_os_str().is_empty()
+        {
+            fs::create_dir_all(parent).map_err(|error| SourceAudioError::Io(error.to_string()))?;
+        }
+
+        let samples = self.window_samples(window);
+        let bytes = pcm16_wave_bytes(self.sample_rate, self.channel_count, samples)?;
+        fs::write(path, bytes).map_err(|error| SourceAudioError::Io(error.to_string()))
+    }
 }
 
 impl fmt::Display for SourceAudioError {
@@ -238,6 +255,62 @@ fn decode_pcm_sample(bytes: &[u8], bits_per_sample: u16) -> f32 {
     }
 }
 
+fn pcm16_wave_bytes(
+    sample_rate: u32,
+    channel_count: u16,
+    samples: &[f32],
+) -> Result<Vec<u8>, SourceAudioError> {
+    if channel_count == 0 {
+        return Err(SourceAudioError::InvalidWave(
+            "channel count is zero".into(),
+        ));
+    }
+    if !samples.len().is_multiple_of(usize::from(channel_count)) {
+        return Err(SourceAudioError::InvalidWave(
+            "sample count does not align to whole frames".into(),
+        ));
+    }
+
+    let bits_per_sample = 16_u16;
+    let bytes_per_sample = u32::from(bits_per_sample / 8);
+    let data_len = u32::try_from(samples.len())
+        .ok()
+        .and_then(|sample_count| sample_count.checked_mul(bytes_per_sample))
+        .ok_or_else(|| SourceAudioError::InvalidWave("PCM data too large".into()))?;
+    let riff_len = 36_u32
+        .checked_add(data_len)
+        .ok_or_else(|| SourceAudioError::InvalidWave("RIFF data too large".into()))?;
+    let byte_rate = sample_rate
+        .checked_mul(u32::from(channel_count))
+        .and_then(|value| value.checked_mul(bytes_per_sample))
+        .ok_or_else(|| SourceAudioError::InvalidWave("byte rate overflow".into()))?;
+    let block_align = channel_count * (bits_per_sample / 8);
+
+    let data_len_usize = usize::try_from(data_len)
+        .map_err(|_| SourceAudioError::InvalidWave("PCM data too large".into()))?;
+    let mut bytes = Vec::with_capacity(44 + data_len_usize);
+    bytes.extend_from_slice(b"RIFF");
+    bytes.extend_from_slice(&riff_len.to_le_bytes());
+    bytes.extend_from_slice(b"WAVE");
+    bytes.extend_from_slice(b"fmt ");
+    bytes.extend_from_slice(&16_u32.to_le_bytes());
+    bytes.extend_from_slice(&1_u16.to_le_bytes());
+    bytes.extend_from_slice(&channel_count.to_le_bytes());
+    bytes.extend_from_slice(&sample_rate.to_le_bytes());
+    bytes.extend_from_slice(&byte_rate.to_le_bytes());
+    bytes.extend_from_slice(&block_align.to_le_bytes());
+    bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+    bytes.extend_from_slice(b"data");
+    bytes.extend_from_slice(&data_len.to_le_bytes());
+
+    for sample in samples {
+        let pcm = (sample.clamp(-1.0, 1.0) * f32::from(i16::MAX)).round() as i16;
+        bytes.extend_from_slice(&pcm.to_le_bytes());
+    }
+
+    Ok(bytes)
+}
+
 fn seconds_to_frame(seconds: f32, sample_rate: u32) -> usize {
     if !seconds.is_finite() || seconds <= 0.0 {
         return 0;
@@ -348,6 +421,37 @@ mod tests {
             }
         );
         assert_eq!(samples.len(), 100);
+    }
+
+    #[test]
+    fn writes_source_window_as_pcm16_wav_artifact() {
+        let tempdir = tempdir().expect("create tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        let capture_path = tempdir.path().join("captures/cap-01.wav");
+        write_pcm16_wave(&source_path, 1_000, 2, 1.0);
+        let cache = SourceAudioCache::load_pcm_wav(&source_path).expect("load PCM WAV");
+
+        cache
+            .write_window_pcm16_wav(
+                &capture_path,
+                SourceAudioWindow {
+                    start_frame: 250,
+                    frame_count: 500,
+                },
+            )
+            .expect("write capture artifact");
+
+        let capture = SourceAudioCache::load_pcm_wav(&capture_path).expect("load capture artifact");
+        assert_eq!(capture.sample_rate, 1_000);
+        assert_eq!(capture.channel_count, 2);
+        assert_eq!(capture.frame_count(), 500);
+        assert!((capture.duration_seconds() - 0.5).abs() < 0.001);
+        assert!(
+            capture
+                .interleaved_samples()
+                .iter()
+                .any(|sample| sample.abs() > 0.01)
+        );
     }
 
     #[test]

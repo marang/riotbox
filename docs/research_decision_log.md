@@ -1199,3 +1199,14 @@ Why: Phase 5 requires useful loops that can be captured and reused. Today W-30 h
 Evidence: `docs/reviews/w30_mvp_gap_review_2026-04-26.md` reviewed the current W-30 app/audio seams and found that `CaptureRef` materialization, source-window preview, and resample lineage are real, while `captures/*.wav` files are not written by the normal app capture path.
 Consequences: the next W-30 implementation slice should write source-window-backed PCM capture files for committed captures, prove those files are non-silent and source-derived, and keep realtime boundaries clean. Full pad-bank voices and internal-bus print resampling should build on that artifact seam instead of bypassing it.
 Status: accepted
+
+---
+
+Topic: Source-backed W-30 captures should materialize session-relative WAV artifacts
+Phase: W-30 MVP / Audio QA
+Question: what is the smallest implementation that makes committed W-30 captures more than metadata while preserving realtime safety?
+Decision: when the app commits a capture with `CaptureRef.source_window`, a loaded `SourceAudioCache`, and a session file path, write a PCM16 WAV artifact to `CaptureRef.storage_path` relative to the session directory. Keep the write on the app commit path and never in the realtime audio callback.
+Why: musicians need captured loops to be concrete artifacts they can trust, inspect, reload, and later assign to pads. The first safe version can print the decoded source window without attempting internal-bus recording or full sampler playback yet.
+Evidence: `committed_source_backed_capture_writes_wav_artifact` loads a real PCM source, commits a W-30 capture, verifies `captures/cap-01.wav` exists, reloads it through `SourceAudioCache`, checks duration/sample-rate/channel-count and non-silence, then saves and reloads the session. `writes_source_window_as_pcm16_wav_artifact` covers the lower-level source-window writer.
+Consequences: future W-30 pad playback and internal bus print resampling should consume this artifact seam where appropriate instead of treating `storage_path` as decorative metadata.
+Status: accepted
