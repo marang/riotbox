@@ -92,9 +92,10 @@ Goal: learn the `capture -> promote -> hit` loop.
 3. wait for the result to land
 4. press `c`
 5. press `4` for `Capture`
-6. press `p`
-7. press `w`
-8. use `2` and `4` to watch both `Log` and `Capture`
+6. optionally press `o` if `Do Next` says `1 hear it: [o] audition raw ...`
+7. press `p`
+8. press `w`
+9. use `2` and `4` to watch both `Log` and `Capture`
 
 What to observe:
 
@@ -102,6 +103,9 @@ What to observe:
 - captured material starts becoming reusable W-30 material
 - `Capture` is where the shell begins to feel sampler-like
 - `Do Next` is the fastest place to read the next capture/promote/hit step
+- `1 hear it: [o] audition raw ...` is the raw preview path; it is the quickest way to check that the stored moment is audible
+- `2 keep it: [p] promote ...` then `3 play it: [w] hit after promote` is the reuse path
+- while an audition is queued, `Do Next` should say `wait, then hear raw preview` or `wait, then hear promoted preview`
 - `hear ... stored [o] raw or [p]->[w]` means the capture exists; `[o]` auditions the raw moment, while `[p]` then `[w]` promotes it into a playable W-30 hit
 - `.../src` means the W-30 preview is source-backed; `.../fallback` means Riotbox stayed on the safe synthetic preview
 - after promotion, `hear ... [w]/[o]` means you can trigger it with `w` or audition it with `o`
@@ -363,6 +367,7 @@ What to observe:
 - `audition raw/src` means raw audition is using captured source material
 - `audition/src` means promoted audition is source-backed
 - `recall/.../src` or `prev recall/src` means the promoted hit or recall path is source-backed
+- `Capture -> Do Next` should explain the audible handoff while actions are queued, for example `wait, then hear raw preview`
 - `Log` can also show `win 1.25-3.75s src-1`; that is the source excerpt backing the current W-30 cue
 - `.../fallback` means Riotbox is still using the safe synthetic preview for that path
 - `fallback` is not automatically a bug; it means the current session did not have a decoded source-window preview available for that cue
