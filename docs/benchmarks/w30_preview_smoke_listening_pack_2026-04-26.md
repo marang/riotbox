@@ -145,36 +145,13 @@ just w30-smoke-qa 2026-04-26
 
 ## Notes Template
 
-Create `notes.md` beside the rendered WAV when a human listens:
+Create `notes.md` beside the rendered WAV when a human listens. Prefer the shared template:
 
-```markdown
-# W-30 Preview Smoke Notes
-
-- Date:
-- Commit:
-- Case: `raw_capture_source_window_preview`
-- Listener:
-- Playback path:
-- Result: `pass` / `concern` / `fail`
-
-## Metrics Snapshot
-
-- Active samples:
-- Peak abs:
-- RMS:
-- Sum:
-
-## Listening Notes
-
-- Rhythmic clarity:
-- Source-window audibility:
-- Harshness / clipping:
-- Usefulness as a W-30 preview:
-
-## Follow-Up
-
-- None / ticket:
+```bash
+just audio-qa-notes artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/notes.md
 ```
+
+Template source: `docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md`.
 
 ## Current Limits
 

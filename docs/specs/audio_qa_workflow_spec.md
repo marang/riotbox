@@ -461,6 +461,7 @@ Today the repo already has:
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that also writes a local `comparison.md` report
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
+- a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
 
 Today the repo does not yet have a full official workflow for:
 
@@ -469,7 +470,7 @@ Today the repo does not yet have a full official workflow for:
 - automated baseline vs candidate WAV comparison
 - automated waveform or perceptual audio comparison
 - socket-backed host-session observation or monitored host audio capture
-- a standard listening rubric stored with benchmark artifacts
+- automated enforcement of human listening-review rubrics
 
 Those gaps should be treated as near-term QA work, not optional polish.
 
@@ -482,8 +483,8 @@ The next bounded audio QA slices should land in this order:
 1. widen signal metrics on the existing buffer regression fixtures
 2. add deterministic offline WAV render support for fixture-backed review cases
 3. add a first listening-pack manifest and output directory convention
-4. add a short listening-review template and archive path
-5. connect the most stable metric checks to CI while keeping listening review local-first
+4. connect the most stable metric checks to CI while keeping listening review local-first
+5. add broader recipe replay / observer correlation once the local notes workflow is proven
 
 ---
 

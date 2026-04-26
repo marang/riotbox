@@ -48,7 +48,7 @@ artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_previe
 - `candidate.wav`: the newly rendered output from the current branch or commit.
 - `candidate.metrics.md`: metrics generated for `candidate.wav`.
 - `comparison.md`: local baseline-vs-candidate metrics comparison report.
-- `notes.md`: human listening notes and pass / concern / fail result.
+- `notes.md`: human listening notes and pass / concern / fail result. Start from `docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md` or use `just audio-qa-notes <path>`.
 
 ## Git Rule
 
