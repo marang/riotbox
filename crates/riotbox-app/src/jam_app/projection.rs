@@ -1,6 +1,7 @@
 use riotbox_audio::{
     mc202::{
-        Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState,
+        Mc202ContourHint, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
+        Mc202RenderState,
     },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
@@ -16,8 +17,12 @@ use riotbox_audio::{
 };
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
+    ids::SceneId,
     session::{Mc202PhraseVariantState, SessionFile, W30PreviewModeState},
-    source_graph::SourceGraph,
+    source_graph::{
+        EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
+        section_for_transport_bar,
+    },
     tr909_policy::{
         Tr909PatternAdoptionPolicy, Tr909PhraseVariationPolicy, Tr909RenderModePolicy,
         Tr909RenderRoutingPolicy, Tr909SourceSupportContextPolicy, Tr909SourceSupportProfilePolicy,
@@ -170,6 +175,7 @@ pub(super) fn build_mc202_render_state(
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape,
         note_budget: mc202_note_budget_for_shape(phrase_shape),
+        contour_hint: mc202_contour_hint(source_graph, transport, scene_context(session)),
         touch: session
             .runtime_state
             .macro_state
@@ -183,6 +189,48 @@ pub(super) fn build_mc202_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
         is_transport_running: transport.is_playing,
+    }
+}
+
+fn mc202_contour_hint(
+    source_graph: Option<&SourceGraph>,
+    transport: &TransportClockState,
+    scene_context: Option<&SceneId>,
+) -> Mc202ContourHint {
+    let Some(graph) = source_graph else {
+        return Mc202ContourHint::Neutral;
+    };
+    let Some(section) = scene_context
+        .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
+        .or_else(|| section_for_transport_bar(graph, transport))
+    else {
+        return Mc202ContourHint::Neutral;
+    };
+
+    mc202_contour_hint_for_section(section)
+}
+
+fn scene_context(session: &SessionFile) -> Option<&SceneId> {
+    session
+        .runtime_state
+        .transport
+        .current_scene
+        .as_ref()
+        .or(session.runtime_state.scene_state.active_scene.as_ref())
+}
+
+fn mc202_contour_hint_for_section(section: &Section) -> Mc202ContourHint {
+    match (section.label_hint, section.energy_class) {
+        (SectionLabelHint::Build, _) => Mc202ContourHint::Lift,
+        (SectionLabelHint::Drop, EnergyClass::High | EnergyClass::Peak)
+        | (SectionLabelHint::Chorus, EnergyClass::High | EnergyClass::Peak) => {
+            Mc202ContourHint::Drop
+        }
+        (SectionLabelHint::Break | SectionLabelHint::Intro | SectionLabelHint::Outro, _) => {
+            Mc202ContourHint::Hold
+        }
+        (_, EnergyClass::Low) => Mc202ContourHint::Hold,
+        _ => Mc202ContourHint::Neutral,
     }
 }
 

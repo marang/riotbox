@@ -9,8 +9,8 @@ use std::{
 };
 
 use crate::mc202::{
-    Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState,
-    render_mc202_buffer,
+    Mc202ContourHint, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
+    Mc202RenderState, render_mc202_buffer,
 };
 use crate::tr909::{
     Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -758,6 +758,7 @@ struct RealtimeMc202RenderState {
     routing: Mc202RenderRouting,
     phrase_shape: Mc202PhraseShape,
     note_budget: Mc202NoteBudget,
+    contour_hint: Mc202ContourHint,
     touch: f32,
     music_bus_level: f32,
     tempo_bpm: f32,
@@ -772,6 +773,7 @@ impl From<RealtimeMc202RenderState> for Mc202RenderState {
             routing: render.routing,
             phrase_shape: render.phrase_shape,
             note_budget: render.note_budget,
+            contour_hint: render.contour_hint,
             touch: render.touch,
             music_bus_level: render.music_bus_level,
             tempo_bpm: render.tempo_bpm,
@@ -786,6 +788,7 @@ struct SharedMc202RenderState {
     routing: AtomicU32,
     phrase_shape: AtomicU32,
     note_budget: AtomicU32,
+    contour_hint: AtomicU32,
     touch_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     tempo_bpm_bits: AtomicU32,
@@ -800,6 +803,7 @@ impl SharedMc202RenderState {
             routing: AtomicU32::new(0),
             phrase_shape: AtomicU32::new(0),
             note_budget: AtomicU32::new(mc202_note_budget_to_u32(Mc202NoteBudget::Balanced)),
+            contour_hint: AtomicU32::new(mc202_contour_hint_to_u32(Mc202ContourHint::Neutral)),
             touch_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             tempo_bpm_bits: AtomicU32::new(0),
@@ -825,6 +829,10 @@ impl SharedMc202RenderState {
             mc202_note_budget_to_u32(render_state.note_budget),
             Ordering::Relaxed,
         );
+        self.contour_hint.store(
+            mc202_contour_hint_to_u32(render_state.contour_hint),
+            Ordering::Relaxed,
+        );
         self.touch_bits
             .store(render_state.touch.to_bits(), Ordering::Relaxed);
         self.music_bus_level_bits
@@ -843,6 +851,7 @@ impl SharedMc202RenderState {
             routing: mc202_routing_from_u32(self.routing.load(Ordering::Relaxed)),
             phrase_shape: mc202_phrase_shape_from_u32(self.phrase_shape.load(Ordering::Relaxed)),
             note_budget: mc202_note_budget_from_u32(self.note_budget.load(Ordering::Relaxed)),
+            contour_hint: mc202_contour_hint_from_u32(self.contour_hint.load(Ordering::Relaxed)),
             touch: f32::from_bits(self.touch_bits.load(Ordering::Relaxed)),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
@@ -925,6 +934,24 @@ fn mc202_note_budget_from_u32(value: u32) -> Mc202NoteBudget {
         2 => Mc202NoteBudget::Push,
         3 => Mc202NoteBudget::Wide,
         _ => Mc202NoteBudget::Balanced,
+    }
+}
+
+fn mc202_contour_hint_to_u32(hint: Mc202ContourHint) -> u32 {
+    match hint {
+        Mc202ContourHint::Neutral => 0,
+        Mc202ContourHint::Lift => 1,
+        Mc202ContourHint::Drop => 2,
+        Mc202ContourHint::Hold => 3,
+    }
+}
+
+fn mc202_contour_hint_from_u32(value: u32) -> Mc202ContourHint {
+    match value {
+        1 => Mc202ContourHint::Lift,
+        2 => Mc202ContourHint::Drop,
+        3 => Mc202ContourHint::Hold,
+        _ => Mc202ContourHint::Neutral,
     }
 }
 
@@ -2819,6 +2846,7 @@ mod tests {
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::InstigatorSpike,
             note_budget: Mc202NoteBudget::Push,
+            contour_hint: Mc202ContourHint::Lift,
             touch: 0.90,
             music_bus_level: 0.64,
             is_transport_running: true,
@@ -2833,6 +2861,7 @@ mod tests {
         assert_eq!(snapshot.routing, Mc202RenderRouting::MusicBusBass);
         assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::InstigatorSpike);
         assert_eq!(snapshot.note_budget, Mc202NoteBudget::Push);
+        assert_eq!(snapshot.contour_hint, Mc202ContourHint::Lift);
         assert_eq!(snapshot.touch, 0.90);
         assert_eq!(snapshot.music_bus_level, 0.64);
         assert!(snapshot.is_transport_running);
@@ -3545,6 +3574,7 @@ mod tests {
                 routing: Mc202RenderRouting::MusicBusBass,
                 phrase_shape: Mc202PhraseShape::FollowerDrive,
                 note_budget: Mc202NoteBudget::Balanced,
+                contour_hint: Mc202ContourHint::Neutral,
                 touch: 0.78,
                 music_bus_level: 0.64,
                 is_transport_running: true,
