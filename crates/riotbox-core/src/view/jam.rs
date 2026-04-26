@@ -67,20 +67,22 @@ impl JamViewModel {
                         .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
                     _ => None,
                 });
-        let w30_pending_audition_target =
+        let w30_pending_audition =
             pending_actions
                 .iter()
                 .rev()
                 .find_map(|action| match action.command {
-                    crate::action::ActionCommand::W30AuditionRawCapture
-                    | crate::action::ActionCommand::W30AuditionPromoted => action
-                        .target
-                        .bank_id
-                        .as_ref()
-                        .zip(action.target.pad_id.as_ref())
-                        .map(|(bank_id, pad_id)| format!("{bank_id}/{pad_id}")),
+                    crate::action::ActionCommand::W30AuditionRawCapture => {
+                        w30_pending_audition_view(action, W30PendingAuditionKind::RawCapture)
+                    }
+                    crate::action::ActionCommand::W30AuditionPromoted => {
+                        w30_pending_audition_view(action, W30PendingAuditionKind::Promoted)
+                    }
                     _ => None,
                 });
+        let w30_pending_audition_target = w30_pending_audition
+            .as_ref()
+            .map(|pending| pending.target.clone());
         let w30_pending_trigger_target =
             pending_actions
                 .iter()
@@ -339,6 +341,7 @@ impl JamViewModel {
                     .map(ToString::to_string),
                 w30_pending_trigger_target,
                 w30_pending_recall_target,
+                w30_pending_audition,
                 w30_pending_audition_target,
                 w30_pending_bank_swap_target,
                 w30_pending_slice_pool_target,
@@ -705,6 +708,22 @@ const fn section_energy_label(section: &Section) -> &'static str {
     }
 }
 
+fn w30_pending_audition_view(
+    action: &crate::action::Action,
+    kind: W30PendingAuditionKind,
+) -> Option<W30PendingAuditionView> {
+    action
+        .target
+        .bank_id
+        .as_ref()
+        .zip(action.target.pad_id.as_ref())
+        .map(|(bank_id, pad_id)| W30PendingAuditionView {
+            kind,
+            target: format!("{bank_id}/{pad_id}"),
+            quantization: action.quantization.to_string(),
+        })
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct MacroStripView {
     pub source_retain: f32,
@@ -725,6 +744,7 @@ pub struct LaneSummaryView {
     pub w30_focused_pad: Option<String>,
     pub w30_pending_trigger_target: Option<String>,
     pub w30_pending_recall_target: Option<String>,
+    pub w30_pending_audition: Option<W30PendingAuditionView>,
     pub w30_pending_audition_target: Option<String>,
     pub w30_pending_bank_swap_target: Option<String>,
     pub w30_pending_slice_pool_target: Option<String>,
@@ -741,6 +761,19 @@ pub struct LaneSummaryView {
     pub tr909_fill_armed_next_bar: bool,
     pub tr909_last_fill_bar: Option<u64>,
     pub tr909_reinforcement_mode: Option<Tr909ReinforcementModeState>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct W30PendingAuditionView {
+    pub kind: W30PendingAuditionKind,
+    pub target: String,
+    pub quantization: String,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum W30PendingAuditionKind {
+    RawCapture,
+    Promoted,
 }
 
 #[derive(Clone, Debug, PartialEq)]

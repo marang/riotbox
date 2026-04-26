@@ -1012,3 +1012,14 @@ Why: the repo review finding was not about missing features; it was about musica
 Evidence: `riotbox-audio` now owns a small shared transport control/state seam and publishes `AudioRuntimeTimingSnapshot` values from callback progress; `riotbox-app` consumes those snapshots in the event loop, removes the old `runtime.rs` pulse thread module, and keeps focused transport/commit tests green under the new path.
 Consequences: this does not yet finish the transport redesign. The app still reconstructs bar/phrase indices and still mirrors the current audio-owned beat position back into lane render state. Later hardening can push more of that contract into shared/core or audio-owned surfaces, but deeper audio QA and replay work now has one truthful live timing spine to build on.
 Status: accepted
+
+---
+
+Topic: W-30 pending audition intent belongs in the Jam view model
+Phase: W-30 MVP
+Question: after Capture started explaining raw and promoted auditions in musical next-step language, where should raw-vs-promoted pending audition intent live?
+Decision: project pending W-30 audition intent from the existing `ActionQueue` into `LaneSummaryView` as a typed view object containing kind, target, and quantization. The TUI may still render action ids in diagnostic surfaces, but Capture `Do Next` and compact lane cues should not reconstruct raw-vs-promoted audition state by scanning generic pending action command strings.
+Why: raw and promoted auditions share the same `[o]` gesture but need different user-facing guidance. Keeping that distinction only as command strings in the generic pending list made the Capture surface fragile and duplicated classification logic in `riotbox-app`.
+Evidence: `JamViewModel` now exposes `W30PendingAuditionView`; Capture `Do Next` renders queued raw/promoted audition guidance from that projection; focused tests cover raw and promoted pending audition kind, target, and quantization.
+Consequences: this remains a presentation-model projection over the existing action system, not a second queue or W-30 action path. Future W-30 pending cue details should prefer typed Jam view projections when the perform-facing UI needs semantic intent beyond a generic command label.
+Status: accepted
