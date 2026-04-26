@@ -4,9 +4,25 @@ use riotbox_core::{
     action::{ActionCommand, TargetScope},
     ids::{BankId, CaptureId, PadId},
     session::{CaptureRef, CaptureTarget},
+    source_graph::{AssetType, CandidateType, RelationshipType},
+    view::jam::FeralScorecardView,
 };
 
 use super::{JamAppState, capture_targets_specific_w30_pad, capture_targets_w30_pad};
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct W30SlicePoolTarget {
+    pub bank_id: BankId,
+    pub pad_id: PadId,
+    pub capture_id: CaptureId,
+    pub selection_reason: W30SlicePoolSelectionReason,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(super) enum W30SlicePoolSelectionReason {
+    Cycle,
+    FeralScorecard,
+}
 
 impl JamAppState {
     pub(super) fn focused_w30_capture(&self) -> Option<&CaptureRef> {
@@ -287,7 +303,7 @@ impl JamAppState {
             )
     }
 
-    pub(super) fn next_w30_slice_pool_capture(&self) -> Option<(BankId, PadId, CaptureId)> {
+    pub(super) fn next_w30_slice_pool_capture(&self) -> Option<W30SlicePoolTarget> {
         let (bank_id, pad_id) = self.current_w30_lane_target()?;
         let pool: Vec<&CaptureRef> = self
             .session
@@ -299,25 +315,93 @@ impl JamAppState {
             return None;
         }
 
-        let next_capture = self
+        let last_capture_id = self
             .session
             .runtime_state
             .lane_state
             .w30
             .last_capture
-            .as_ref()
-            .and_then(|last_capture_id| {
-                pool.iter()
-                    .position(|capture| capture.capture_id == *last_capture_id)
-                    .map(|index| pool[(index + 1) % pool.len()])
-            })
-            .unwrap_or_else(|| {
-                pool.last()
-                    .copied()
-                    .expect("non-empty slice pool should have a last capture")
-            });
+            .as_ref();
+        let feral_capture = self.feral_preferred_slice_pool_capture(&pool, last_capture_id);
+        let selection_reason = if feral_capture.is_some() {
+            W30SlicePoolSelectionReason::FeralScorecard
+        } else {
+            W30SlicePoolSelectionReason::Cycle
+        };
+        let next_capture = feral_capture.unwrap_or_else(|| {
+            last_capture_id
+                .and_then(|last_capture_id| {
+                    pool.iter()
+                        .position(|capture| capture.capture_id == *last_capture_id)
+                        .map(|index| pool[(index + 1) % pool.len()])
+                })
+                .unwrap_or_else(|| {
+                    pool.last()
+                        .copied()
+                        .expect("non-empty slice pool should have a last capture")
+                })
+        });
 
-        Some((bank_id, pad_id, next_capture.capture_id.clone()))
+        Some(W30SlicePoolTarget {
+            bank_id,
+            pad_id,
+            capture_id: next_capture.capture_id.clone(),
+            selection_reason,
+        })
+    }
+
+    fn feral_preferred_slice_pool_capture<'a>(
+        &self,
+        pool: &[&'a CaptureRef],
+        last_capture_id: Option<&CaptureId>,
+    ) -> Option<&'a CaptureRef> {
+        let graph = self.source_graph.as_ref()?;
+        let scorecard = FeralScorecardView::from_graph(graph);
+        if scorecard.break_rebuild_potential != "high"
+            && scorecard.break_support_count == 0
+            && scorecard.capture_candidate_count == 0
+        {
+            return None;
+        }
+
+        let mut preferred_asset_ids = graph
+            .candidates
+            .iter()
+            .filter(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate)
+            .map(|candidate| candidate.asset_ref.to_string())
+            .collect::<BTreeSet<_>>();
+        let break_support_ids = graph
+            .relationships
+            .iter()
+            .filter(|relationship| {
+                relationship.relation_type == RelationshipType::SupportsBreakRebuild
+            })
+            .map(|relationship| relationship.from_id.as_str())
+            .collect::<BTreeSet<_>>();
+
+        for asset in &graph.assets {
+            if asset.asset_type == AssetType::HookFragment
+                && (break_support_ids.is_empty()
+                    || break_support_ids.contains(asset.asset_id.as_str()))
+            {
+                preferred_asset_ids.insert(asset.asset_id.to_string());
+            }
+        }
+
+        if preferred_asset_ids.is_empty() {
+            return None;
+        }
+
+        pool.iter()
+            .rev()
+            .copied()
+            .filter(|capture| Some(&capture.capture_id) != last_capture_id)
+            .find(|capture| {
+                capture
+                    .source_origin_refs
+                    .iter()
+                    .any(|origin_ref| preferred_asset_ids.contains(origin_ref))
+            })
     }
 
     pub(super) fn w30_pad_cue_pending(&self) -> bool {
