@@ -151,9 +151,10 @@ fn decode_pcm16_wav(bytes: &[u8]) -> Result<DecodedPcm16Wave, SourceAudioError> 
         ));
     }
 
+    let bytes_per_sample = usize::from(format.bits_per_sample / 8);
     let samples = data
-        .chunks_exact(2)
-        .map(|bytes| i16::from_le_bytes([bytes[0], bytes[1]]) as f32 / i16::MAX as f32)
+        .chunks_exact(bytes_per_sample)
+        .map(|bytes| decode_pcm_sample(bytes, format.bits_per_sample))
         .collect();
 
     Ok(DecodedPcm16Wave {
@@ -203,7 +204,7 @@ fn validate_format(format: PcmFormatChunk) -> Result<(), SourceAudioError> {
     if format.sample_rate == 0 {
         return Err(SourceAudioError::InvalidWave("sample rate is zero".into()));
     }
-    if format.bits_per_sample != 16 {
+    if !matches!(format.bits_per_sample, 16 | 24) {
         return Err(SourceAudioError::UnsupportedWave(format!(
             "{} bits per sample is not supported",
             format.bits_per_sample
@@ -218,6 +219,23 @@ fn validate_format(format: PcmFormatChunk) -> Result<(), SourceAudioError> {
     }
 
     Ok(())
+}
+
+fn decode_pcm_sample(bytes: &[u8], bits_per_sample: u16) -> f32 {
+    match bits_per_sample {
+        16 => i16::from_le_bytes([bytes[0], bytes[1]]) as f32 / i16::MAX as f32,
+        24 => {
+            let unsigned =
+                i32::from(bytes[0]) | (i32::from(bytes[1]) << 8) | (i32::from(bytes[2]) << 16);
+            let signed = if unsigned & 0x80_0000 != 0 {
+                unsigned | !0xFF_FFFF
+            } else {
+                unsigned
+            };
+            (signed as f32 / 8_388_607.0).clamp(-1.0, 1.0)
+        }
+        _ => 0.0,
+    }
 }
 
 fn seconds_to_frame(seconds: f32, sample_rate: u32) -> usize {
@@ -272,6 +290,27 @@ mod tests {
     }
 
     #[test]
+    fn loads_pcm24_wav_into_interleaved_float_cache() {
+        let tempdir = tempdir().expect("create tempdir");
+        let path = tempdir.path().join("source24.wav");
+        fs::write(
+            &path,
+            pcm24_wave_bytes(44_100, 1, &[-8_388_608, 0, 8_388_607]),
+        )
+        .expect("write PCM24 wave fixture");
+
+        let cache = SourceAudioCache::load_pcm16_wav(&path).expect("load PCM24 WAV");
+
+        assert_eq!(cache.sample_rate, 44_100);
+        assert_eq!(cache.channel_count, 1);
+        assert_eq!(cache.frame_count(), 3);
+        assert_eq!(cache.interleaved_samples().len(), 3);
+        assert_eq!(cache.interleaved_samples()[0], -1.0);
+        assert_eq!(cache.interleaved_samples()[1], 0.0);
+        assert!((cache.interleaved_samples()[2] - 1.0).abs() < 0.000001);
+    }
+
+    #[test]
     fn returns_bounded_sample_window_by_seconds() {
         let tempdir = tempdir().expect("create tempdir");
         let path = tempdir.path().join("source.wav");
@@ -312,15 +351,15 @@ mod tests {
     }
 
     #[test]
-    fn rejects_non_pcm16_wav() {
+    fn rejects_unsupported_pcm_bit_depth() {
         let mut bytes = pcm16_wave_bytes(44_100, 1, 1);
-        bytes[34..36].copy_from_slice(&24_u16.to_le_bytes());
+        bytes[34..36].copy_from_slice(&32_u16.to_le_bytes());
 
-        let error = decode_pcm16_wav(&bytes).expect_err("24-bit WAV should be rejected");
+        let error = decode_pcm16_wav(&bytes).expect_err("32-bit WAV should be rejected");
 
         assert_eq!(
             error,
-            SourceAudioError::UnsupportedWave("24 bits per sample is not supported".into())
+            SourceAudioError::UnsupportedWave("32 bits per sample is not supported".into())
         );
     }
 
@@ -369,6 +408,39 @@ mod tests {
             for _ in 0..channel_count {
                 bytes.extend_from_slice(&sample.to_le_bytes());
             }
+        }
+
+        bytes
+    }
+
+    fn pcm24_wave_bytes(sample_rate: u32, channel_count: u16, samples: &[i32]) -> Vec<u8> {
+        assert_eq!(samples.len() % usize::from(channel_count), 0);
+
+        let bits_per_sample = 24_u16;
+        let bytes_per_sample = (bits_per_sample / 8) as u32;
+        let byte_rate = sample_rate * u32::from(channel_count) * bytes_per_sample;
+        let block_align = channel_count * (bits_per_sample / 8);
+        let data_len = samples.len() as u32 * bytes_per_sample;
+
+        let mut bytes = Vec::with_capacity((44 + data_len) as usize);
+        bytes.extend_from_slice(b"RIFF");
+        bytes.extend_from_slice(&(36 + data_len).to_le_bytes());
+        bytes.extend_from_slice(b"WAVE");
+        bytes.extend_from_slice(b"fmt ");
+        bytes.extend_from_slice(&16_u32.to_le_bytes());
+        bytes.extend_from_slice(&1_u16.to_le_bytes());
+        bytes.extend_from_slice(&channel_count.to_le_bytes());
+        bytes.extend_from_slice(&sample_rate.to_le_bytes());
+        bytes.extend_from_slice(&byte_rate.to_le_bytes());
+        bytes.extend_from_slice(&block_align.to_le_bytes());
+        bytes.extend_from_slice(&bits_per_sample.to_le_bytes());
+        bytes.extend_from_slice(b"data");
+        bytes.extend_from_slice(&data_len.to_le_bytes());
+
+        for &sample in samples {
+            let sample = sample.clamp(-8_388_608, 8_388_607);
+            let encoded = sample.to_le_bytes();
+            bytes.extend_from_slice(&encoded[..3]);
         }
 
         bytes

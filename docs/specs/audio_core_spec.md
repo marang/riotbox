@@ -200,7 +200,7 @@ The bounded early seam is a non-realtime source-audio cache:
 
 Current limitation:
 
-- the initial cache supports only PCM 16-bit WAV fixture input
+- the initial cache supports PCM 16-bit and PCM 24-bit WAV fixture input
 - the current raw, promoted, and recall preview paths use a bounded preview excerpt, not a full pad-bank sampler engine
 - broader codec support and true W-30 sample playback remain separate implementation slices
 
