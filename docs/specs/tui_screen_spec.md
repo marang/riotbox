@@ -85,6 +85,7 @@ It must expose:
 - Scene jump availability should come from the shared Jam view model, not be re-inferred separately by individual TUI surfaces
 - when section energy is known, the shared Scene launch target may prefer the first deterministic contrast candidate over the immediately adjacent same-energy scene
 - restore-ready Scene cues that name the target and, when known, whether restore is an energy `rise`, `drop`, or `hold`
+- post-commit Scene cues that keep a readable monochrome sentence while visually separating the live scene/result, restore target, compact support hints such as `909 lift`, and next perform keys
 
 ### 5.1 Jam goals
 
@@ -210,6 +211,13 @@ The first color/emphasis layer should stay small and semantic:
 - red + bold for warning labels, with yellow warning detail
 - green for clear/healthy confirmation
 - dark gray for lower-priority status diagnostics
+
+For Scene post-commit cues:
+
+- the current live scene/result may use green + bold as a positive landing confirmation
+- restore targets and compact Scene-support hints such as `909 lift` may use yellow without becoming new controls
+- next-action key tokens should use the same cyan + bold treatment as other primary perform controls
+- labels and separators should stay low-emphasis so the cue reads as an instrument line, not as a diagnostic tuple
 
 Do not use color as the only carrier of meaning. The text must still read correctly in monochrome snapshots and low-color terminals.
 
