@@ -1287,3 +1287,14 @@ Why: the phase definition is now satisfied without pretending Riotbox has a full
 Evidence: `RIOTBOX-317` writes source-backed capture artifacts, `RIOTBOX-318` makes focused playback prefer committed artifacts, `RIOTBOX-320` prints bounded resample artifacts, and `RIOTBOX-322` adds duration-aware focused pad playback with output-path proof. `docs/reviews/w30_mvp_exit_review_2026-04-26.md` records the blocker and its closure.
 Consequences: move the roadmap spine to the next phase after W-30 MVP. Later W-30 work should be scoped as sampler expansion, sound-design refinement, richer pad-bank behavior, or export/listening-pack work, not as a prerequisite for closing P007.
 Status: accepted
+
+---
+
+Topic: Scene Brain MVP needs sequence-level output proof before phase closeout
+Phase: Scene Brain / Audio QA
+Question: after W-30 MVP closes, what is the next smallest honest P008 blocker to address?
+Decision: require a bounded Scene Brain recipe replay output regression before treating P008 as exit-clean. The proof should drive the existing `scene.launch -> scene.restore` flow through queue/commit state, keep TR-909 source support and MC-202 follower active, render before/launched/restored mixed-lane buffers, and compare signal-delta metrics alongside scene state and diagnostics.
+Why: Scene Brain already has deterministic scene candidates, contrast target selection, restore pointers, Jam/Log readability, TR-909 scene-target support, and MC-202 scene/source contour. The remaining MVP risk is musical honesty: isolated lane hints are not enough to prove that a musician hears a meaningful scene transition.
+Evidence: `docs/reviews/scene_brain_mvp_gap_review_2026-04-26.md` re-audits P008 and records passing scene-filtered core, app, and audio tests. It identifies sequence-level output proof and explicit transition intent as the remaining blockers.
+Consequences: the next implementation should stay inside the existing Source Graph, Session, ActionQueue, Jam view, TR-909, and MC-202 render-state seams. If current lane rules do not produce a strong enough before/launched/restored contrast, add the smallest deterministic scene-transition policy needed instead of introducing a second arranger or shadow audio path.
+Status: accepted
