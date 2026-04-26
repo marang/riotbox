@@ -45,6 +45,13 @@ Generated audio QA artifacts are intentionally ignored by Git. Preserve durable 
 
 ## Render Command
 
+Use the short Justfile wrappers for the normal local path:
+
+```bash
+just w30-smoke-candidate 2026-04-26
+just w30-smoke-baseline 2026-04-26
+```
+
 Render a candidate into the convention path:
 
 ```bash
@@ -74,6 +81,12 @@ Use `--out PATH` only when you need to override the convention path for an ad ho
 After rendering both baseline and candidate metrics for the same date, compare their metric deltas:
 
 ```bash
+just w30-smoke-compare 2026-04-26
+```
+
+Equivalent direct command:
+
+```bash
 cargo run -p riotbox-audio --bin w30_preview_compare -- \
   --date 2026-04-26
 ```
@@ -83,6 +96,12 @@ The comparison helper reads `baseline.metrics.md` and `candidate.metrics.md` fro
 Use `--max-active-samples-delta`, `--max-peak-delta`, `--max-rms-delta`, or `--max-sum-delta` when a local branch intentionally changes the smoke render and you want to inspect bounded drift instead of requiring an exact match.
 
 Use `--report PATH` only when you need to write the comparison report outside the convention path.
+
+For a quick local smoke pack using the current commit for both roles:
+
+```bash
+just w30-smoke-qa 2026-04-26
+```
 
 ## Notes Template
 
