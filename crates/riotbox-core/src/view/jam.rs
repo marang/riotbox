@@ -304,6 +304,20 @@ impl JamViewModel {
             scene_jump_availability(session, next_scene.as_deref().is_some());
         let next_scene_energy = graph
             .and_then(|graph| projected_scene_energy_label(next_scene.as_deref(), false, graph));
+        let active_scene_energy =
+            graph.and_then(|graph| current_scene_energy_label(session, graph));
+        let restore_scene_energy =
+            graph.and_then(|graph| restore_scene_energy_label(session, graph));
+        let next_scene_policy = scene_transition_policy(
+            SceneTransitionKindView::Launch,
+            active_scene_energy.as_deref(),
+            next_scene_energy.as_deref(),
+        );
+        let restore_scene_policy = scene_transition_policy(
+            SceneTransitionKindView::Restore,
+            active_scene_energy.as_deref(),
+            restore_scene_energy.as_deref(),
+        );
 
         Self {
             transport: JamTransportView {
@@ -326,11 +340,11 @@ impl JamViewModel {
                     .map(ToString::to_string),
                 next_scene,
                 scene_jump_availability,
-                active_scene_energy: graph
-                    .and_then(|graph| current_scene_energy_label(session, graph)),
-                restore_scene_energy: graph
-                    .and_then(|graph| restore_scene_energy_label(session, graph)),
+                active_scene_energy,
+                restore_scene_energy,
                 next_scene_energy,
+                next_scene_policy,
+                restore_scene_policy,
                 scene_count: session.runtime_state.scene_state.scenes.len(),
             },
             macros: MacroStripView {
@@ -678,7 +692,72 @@ pub struct SceneSummaryView {
     pub active_scene_energy: Option<String>,
     pub restore_scene_energy: Option<String>,
     pub next_scene_energy: Option<String>,
+    pub next_scene_policy: Option<SceneTransitionPolicyView>,
+    pub restore_scene_policy: Option<SceneTransitionPolicyView>,
     pub scene_count: usize,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionKindView {
+    Launch,
+    Restore,
+}
+
+impl SceneTransitionKindView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Launch => "launch",
+            Self::Restore => "restore",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionDirectionView {
+    Rise,
+    Drop,
+    Hold,
+}
+
+impl SceneTransitionDirectionView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Rise => "rise",
+            Self::Drop => "drop",
+            Self::Hold => "hold",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum SceneTransitionLaneIntentView {
+    Drive,
+    Lift,
+    Release,
+    Anchor,
+}
+
+impl SceneTransitionLaneIntentView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Drive => "drive",
+            Self::Lift => "lift",
+            Self::Release => "release",
+            Self::Anchor => "anchor",
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SceneTransitionPolicyView {
+    pub kind: SceneTransitionKindView,
+    pub direction: SceneTransitionDirectionView,
+    pub tr909_intent: SceneTransitionLaneIntentView,
+    pub mc202_intent: SceneTransitionLaneIntentView,
+    pub intensity: f32,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -795,6 +874,73 @@ fn ordered_next_scene_candidates<'a>(
 
 fn known_scene_energy_label(scene_id: &str, graph: &SourceGraph) -> Option<String> {
     projected_scene_energy_label(Some(scene_id), false, graph).filter(|energy| energy != "unknown")
+}
+
+fn scene_transition_policy(
+    kind: SceneTransitionKindView,
+    from_energy: Option<&str>,
+    to_energy: Option<&str>,
+) -> Option<SceneTransitionPolicyView> {
+    let direction = scene_transition_direction(from_energy?, to_energy?)?;
+    Some(SceneTransitionPolicyView {
+        kind,
+        direction,
+        tr909_intent: tr909_transition_intent(direction),
+        mc202_intent: mc202_transition_intent(direction),
+        intensity: scene_transition_intensity(direction),
+    })
+}
+
+fn scene_transition_direction(
+    from_energy: &str,
+    to_energy: &str,
+) -> Option<SceneTransitionDirectionView> {
+    let from = energy_rank(from_energy)?;
+    let to = energy_rank(to_energy)?;
+
+    Some(match to.cmp(&from) {
+        std::cmp::Ordering::Greater => SceneTransitionDirectionView::Rise,
+        std::cmp::Ordering::Less => SceneTransitionDirectionView::Drop,
+        std::cmp::Ordering::Equal => SceneTransitionDirectionView::Hold,
+    })
+}
+
+fn tr909_transition_intent(
+    direction: SceneTransitionDirectionView,
+) -> SceneTransitionLaneIntentView {
+    match direction {
+        SceneTransitionDirectionView::Rise => SceneTransitionLaneIntentView::Drive,
+        SceneTransitionDirectionView::Drop => SceneTransitionLaneIntentView::Release,
+        SceneTransitionDirectionView::Hold => SceneTransitionLaneIntentView::Anchor,
+    }
+}
+
+fn mc202_transition_intent(
+    direction: SceneTransitionDirectionView,
+) -> SceneTransitionLaneIntentView {
+    match direction {
+        SceneTransitionDirectionView::Rise => SceneTransitionLaneIntentView::Lift,
+        SceneTransitionDirectionView::Drop => SceneTransitionLaneIntentView::Anchor,
+        SceneTransitionDirectionView::Hold => SceneTransitionLaneIntentView::Anchor,
+    }
+}
+
+const fn scene_transition_intensity(direction: SceneTransitionDirectionView) -> f32 {
+    match direction {
+        SceneTransitionDirectionView::Rise => 0.75,
+        SceneTransitionDirectionView::Drop => 0.55,
+        SceneTransitionDirectionView::Hold => 0.35,
+    }
+}
+
+fn energy_rank(label: &str) -> Option<u8> {
+    match label {
+        "low" => Some(0),
+        "medium" => Some(1),
+        "high" => Some(2),
+        "peak" => Some(3),
+        _ => None,
+    }
 }
 
 fn current_scene_energy_label(session: &SessionFile, graph: &SourceGraph) -> Option<String> {
@@ -1559,6 +1705,26 @@ mod tests {
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.scene.restore_scene_energy.as_deref(), Some("medium"));
         assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
+        assert_eq!(
+            vm.scene.next_scene_policy,
+            Some(SceneTransitionPolicyView {
+                kind: SceneTransitionKindView::Launch,
+                direction: SceneTransitionDirectionView::Drop,
+                tr909_intent: SceneTransitionLaneIntentView::Release,
+                mc202_intent: SceneTransitionLaneIntentView::Anchor,
+                intensity: 0.55,
+            })
+        );
+        assert_eq!(
+            vm.scene.restore_scene_policy,
+            Some(SceneTransitionPolicyView {
+                kind: SceneTransitionKindView::Restore,
+                direction: SceneTransitionDirectionView::Drop,
+                tr909_intent: SceneTransitionLaneIntentView::Release,
+                mc202_intent: SceneTransitionLaneIntentView::Anchor,
+                intensity: 0.55,
+            })
+        );
 
         session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
@@ -1572,6 +1738,7 @@ mod tests {
             SceneJumpAvailabilityView::WaitingForMoreScenes
         );
         assert_eq!(vm.scene.next_scene_energy, None);
+        assert_eq!(vm.scene.next_scene_policy, None);
     }
 
     #[test]
@@ -1642,6 +1809,18 @@ mod tests {
 
         assert_eq!(vm.scene.next_scene.as_deref(), Some("scene-03-intro"));
         assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
+        assert_eq!(
+            vm.scene.next_scene_policy.map(|policy| (
+                policy.direction,
+                policy.tr909_intent,
+                policy.mc202_intent
+            )),
+            Some((
+                SceneTransitionDirectionView::Drop,
+                SceneTransitionLaneIntentView::Release,
+                SceneTransitionLaneIntentView::Anchor,
+            ))
+        );
         assert_eq!(
             next_scene_launch_candidate_with_reason(&session, Some(&graph))
                 .map(|candidate| (candidate.scene_id.to_string(), candidate.reason,)),

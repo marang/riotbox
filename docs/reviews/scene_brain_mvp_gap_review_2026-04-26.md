@@ -169,6 +169,12 @@ Acceptance shape:
 - keep the policy read-only and deterministic
 - feed existing lane render seams instead of creating a new audio path
 
+Status:
+
+- closed for projection by `RIOTBOX-326`
+- evidence: `SceneTransitionPolicyView` derives launch/restore `rise`, `drop`, or `hold` from scene energy and names bounded `909` plus `202` lane intent
+- output proof remains covered by `RIOTBOX-325`; `RIOTBOX-326` keeps the policy on the existing Jam view and UI surface instead of adding a shadow audio path
+
 ### 3. Listening-pack wording is conservative but stale
 
 Severity: minor.
@@ -204,4 +210,4 @@ If that proof is too weak with the current lane rules, the same slice should int
 
 ## Conclusion
 
-`P008 | Scene Brain` is structurally real but not exit-clean. Launch, restore, energy cues, replay-safe state, and the first mixed-lane `jump -> restore` output proof are in good shape. The remaining blocker is transition intent: Scene Brain still needs a small explicit transition policy before the phase can honestly claim that scene changes sound musical and the default arrangement no longer feels static.
+`P008 | Scene Brain` is structurally real but not exit-clean. Launch, restore, energy cues, replay-safe state, the first mixed-lane `jump -> restore` output proof, and the first typed transition-policy projection are in good shape. The remaining blocker is arrangement movement: Scene Brain still needs a bounded way to make default scene progression feel less static before the phase can honestly close.

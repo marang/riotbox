@@ -1712,7 +1712,11 @@ mod tests {
             SourceGraphVersion,
         },
         transport::TransportClockState,
-        view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView, W30PendingAuditionKind},
+        view::jam::{
+            CaptureTargetKindView, SceneJumpAvailabilityView, SceneTransitionDirectionView,
+            SceneTransitionKindView, SceneTransitionLaneIntentView, SceneTransitionPolicyView,
+            W30PendingAuditionKind,
+        },
     };
     use riotbox_sidecar::client::ClientError as SidecarClientError;
 
@@ -3587,6 +3591,16 @@ mod tests {
             state.runtime.mc202_render.contour_hint,
             Mc202ContourHint::Drop
         );
+        assert_eq!(
+            state.jam_view.scene.next_scene_policy,
+            Some(SceneTransitionPolicyView {
+                kind: SceneTransitionKindView::Launch,
+                direction: SceneTransitionDirectionView::Drop,
+                tr909_intent: SceneTransitionLaneIntentView::Release,
+                mc202_intent: SceneTransitionLaneIntentView::Anchor,
+                intensity: 0.55,
+            })
+        );
         let before_jump = render_scene_recipe_mix_buffer(&state);
 
         assert_eq!(state.queue_scene_select(300), QueueControlResult::Enqueued);
@@ -3628,6 +3642,16 @@ mod tests {
         assert_eq!(
             state.runtime.mc202_render.contour_hint,
             Mc202ContourHint::Hold
+        );
+        assert_eq!(
+            state.jam_view.scene.restore_scene_policy,
+            Some(SceneTransitionPolicyView {
+                kind: SceneTransitionKindView::Restore,
+                direction: SceneTransitionDirectionView::Rise,
+                tr909_intent: SceneTransitionLaneIntentView::Drive,
+                mc202_intent: SceneTransitionLaneIntentView::Lift,
+                intensity: 0.75,
+            })
         );
         let after_jump = render_scene_recipe_mix_buffer(&state);
         assert_recipe_buffers_differ("scene launch mixed audio", &before_jump, &after_jump, 0.004);
