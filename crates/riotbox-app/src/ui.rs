@@ -1294,9 +1294,9 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         if let Some(scene_cue) = footer_scene_affordance_cue(shell) {
             lines.push(footer_scene_line(&scene_cue));
         } else {
-            lines.push(Line::from(format!(
-                "Advanced: {} | more in ? help",
-                render_gesture_items(ADVANCED_GESTURES, " ")
+            lines.push(footer_advanced_line(&render_gesture_items(
+                ADVANCED_GESTURES,
+                " ",
             )));
         }
     }
@@ -1374,10 +1374,19 @@ fn scene_jump_primary_label(shell: &JamShellState) -> &'static str {
 }
 
 fn footer_primary_line(gestures: &str) -> Line<'static> {
-    Line::from(vec![
+    let mut spans = vec![
         Span::styled("Primary:", style_primary_control()),
-        Span::raw(format!(" {gestures}")),
-    ])
+        Span::raw(" "),
+    ];
+    spans.extend(spans_with_primary_gesture_keys(gestures));
+    Line::from(spans)
+}
+
+fn footer_advanced_line(gestures: &str) -> Line<'static> {
+    let mut spans = vec![Span::raw("Advanced: ")];
+    spans.extend(spans_with_primary_gesture_keys(gestures));
+    spans.push(Span::raw(" | more in ? help"));
+    Line::from(spans)
 }
 
 fn footer_scene_line(scene_cue: &str) -> Line<'static> {
@@ -1400,6 +1409,26 @@ fn footer_warning_line(warning: &str) -> Line<'static> {
         Span::styled("Warning:", style_warning_label()),
         Span::styled(format!(" {warning}"), style_warning_detail()),
     ])
+}
+
+fn spans_with_primary_gesture_keys(gestures: &str) -> Vec<Span<'static>> {
+    let mut spans = Vec::new();
+
+    for (index, gesture) in gestures.split(" | ").enumerate() {
+        if index > 0 {
+            spans.push(Span::raw(" | "));
+        }
+
+        let Some((key, label)) = gesture.split_once(' ') else {
+            spans.push(Span::styled(gesture.to_owned(), style_primary_control()));
+            continue;
+        };
+
+        spans.push(Span::styled(key.to_owned(), style_primary_control()));
+        spans.push(Span::raw(format!(" {label}")));
+    }
+
+    spans
 }
 
 fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
@@ -4448,13 +4477,26 @@ mod tests {
 
     #[test]
     fn footer_line_styles_define_first_visual_hierarchy() {
-        let primary = footer_primary_line("[y] scene jump");
+        let primary = footer_primary_line("y scene jump | g follow | f fill");
+        let primary_text = primary
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(primary_text, "Primary: y scene jump | g follow | f fill");
         assert_eq!(primary.spans[0].content.as_ref(), "Primary:");
         assert_eq!(primary.spans[0].style.fg, Some(Color::Cyan));
         assert!(
             primary.spans[0].style.add_modifier.contains(Modifier::BOLD),
             "{primary:?}"
         );
+        assert_eq!(primary.spans[2].content.as_ref(), "y");
+        assert_eq!(primary.spans[2].style.fg, Some(Color::Cyan));
+        assert_eq!(primary.spans[5].content.as_ref(), "g");
+        assert_eq!(primary.spans[5].style.fg, Some(Color::Cyan));
+        assert_eq!(primary.spans[8].content.as_ref(), "f");
+        assert_eq!(primary.spans[8].style.fg, Some(Color::Cyan));
 
         let scene = footer_scene_line("launch drop @ next bar | rise [===>] | 2 trail");
         assert_eq!(scene.spans[0].content.as_ref(), "Scene:");
@@ -4479,6 +4521,29 @@ mod tests {
             "{warning:?}"
         );
         assert_eq!(warning.spans[1].style.fg, Some(Color::Yellow));
+    }
+
+    #[test]
+    fn footer_advanced_line_styles_gesture_key_prefixes() {
+        let line = footer_advanced_line("Y restore | a answer | b voice | d push");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(
+            rendered,
+            "Advanced: Y restore | a answer | b voice | d push | more in ? help"
+        );
+        assert_eq!(line.spans[1].content.as_ref(), "Y");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[4].content.as_ref(), "a");
+        assert_eq!(line.spans[4].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[7].content.as_ref(), "b");
+        assert_eq!(line.spans[7].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[10].content.as_ref(), "d");
+        assert_eq!(line.spans[10].style.fg, Some(Color::Cyan));
     }
 
     #[test]
