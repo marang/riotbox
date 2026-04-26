@@ -1281,10 +1281,10 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         } else {
             "i jam inspect"
         };
-    lines.push(Line::from(format!(
-        "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | {inspect_key_label} | space play/pause | [ ] drum | r {}",
+    lines.push(footer_keys_line(
+        inspect_key_label,
         shell.launch_mode.refresh_verb(),
-    )));
+    ));
     if shell.active_screen == ShellScreen::Jam && shell.jam_mode == JamViewMode::Inspect {
         lines.push(Line::from(
             "Inspect is read-only: use i to return, then queue actions from perform mode",
@@ -1373,6 +1373,15 @@ fn scene_jump_primary_label(shell: &JamShellState) -> &'static str {
     }
 }
 
+fn footer_keys_line(inspect_key_label: &str, refresh_verb: &str) -> Line<'static> {
+    let legend = format!(
+        "q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | {inspect_key_label} | space play/pause | [ ] drum | r {refresh_verb}",
+    );
+    let mut spans = vec![Span::raw("Keys: ")];
+    spans.extend(spans_with_primary_legend_keys(&legend));
+    Line::from(spans)
+}
+
 fn footer_primary_line(gestures: &str) -> Line<'static> {
     let mut spans = vec![
         Span::styled("Primary:", style_primary_control()),
@@ -1429,6 +1438,32 @@ fn spans_with_primary_gesture_keys(gestures: &str) -> Vec<Span<'static>> {
             spans.push(Span::styled(gesture.to_owned(), style_primary_control()));
             continue;
         };
+
+        spans.push(Span::styled(key.to_owned(), style_primary_control()));
+        spans.push(Span::raw(format!(" {label}")));
+    }
+
+    spans
+}
+
+fn spans_with_primary_legend_keys(legend: &str) -> Vec<Span<'static>> {
+    let mut spans = Vec::new();
+
+    for (index, item) in legend.split(" | ").enumerate() {
+        if index > 0 {
+            spans.push(Span::raw(" | "));
+        }
+
+        let Some((key, label)) = item.split_once(' ') else {
+            spans.push(Span::styled(item.to_owned(), style_primary_control()));
+            continue;
+        };
+
+        if key == "[" && label.starts_with("] ") {
+            spans.push(Span::styled("[ ]", style_primary_control()));
+            spans.push(Span::raw(label[1..].to_owned()));
+            continue;
+        }
 
         spans.push(Span::styled(key.to_owned(), style_primary_control()));
         spans.push(Span::raw(format!(" {label}")));
@@ -4480,6 +4515,35 @@ mod tests {
     use serde::Deserialize;
 
     use super::*;
+
+    #[test]
+    fn footer_keys_line_styles_top_legend_key_tokens() {
+        let line = footer_keys_line("i jam inspect", "re-ingest source");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(
+            rendered,
+            "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | i jam inspect | space play/pause | [ ] drum | r re-ingest source"
+        );
+        assert_eq!(line.spans[1].content.as_ref(), "q");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[4].content.as_ref(), "?");
+        assert_eq!(line.spans[4].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[19].content.as_ref(), "Tab");
+        assert_eq!(line.spans[19].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[22].content.as_ref(), "i");
+        assert_eq!(line.spans[22].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[25].content.as_ref(), "space");
+        assert_eq!(line.spans[25].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[28].content.as_ref(), "[ ]");
+        assert_eq!(line.spans[28].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[31].content.as_ref(), "r");
+        assert_eq!(line.spans[31].style.fg, Some(Color::Cyan));
+    }
 
     #[test]
     fn footer_line_styles_define_first_visual_hierarchy() {
