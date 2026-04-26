@@ -4460,6 +4460,7 @@ fn source_section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
 fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) => {
+            let scorecard = &shell.app.jam_view.source.feral_scorecard;
             let best_loop = graph
                 .candidates
                 .iter()
@@ -4478,6 +4479,25 @@ fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .max_by(|left, right| left.score.total_cmp(&right.score));
 
             vec![
+                Line::from(format!(
+                    "feral break {} | quote risk {}",
+                    scorecard.break_rebuild_potential, scorecard.quote_risk_count
+                )),
+                Line::from(format!(
+                    "hooks {} | capture {} | support {}",
+                    scorecard.hook_fragment_count,
+                    scorecard.capture_candidate_count,
+                    scorecard.break_support_count
+                )),
+                Line::from(format!("use {}", scorecard.top_reason)),
+                Line::from(format!(
+                    "feral warn {}",
+                    if scorecard.warnings.is_empty() {
+                        "none".into()
+                    } else {
+                        scorecard.warnings.join(", ")
+                    }
+                )),
                 Line::from(format!(
                     "loops {} | hooks {}",
                     graph.loop_candidate_count(),
@@ -4645,8 +4665,8 @@ mod tests {
         },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
-            DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Section, SectionLabelHint,
-            SourceDescriptor, SourceGraph,
+            DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Relationship,
+            RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
         },
         transport::CommitBoundaryState,
     };
@@ -5416,6 +5436,17 @@ mod tests {
             tags: vec!["loop".into()],
             source_refs: vec!["src-1".into()],
         });
+        graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-hook"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 4.0,
+            end_seconds: 5.0,
+            start_bar: 3,
+            end_bar: 3,
+            confidence: 0.81,
+            tags: vec!["hook".into()],
+            source_refs: vec!["src-1".into()],
+        });
         graph.candidates.push(Candidate {
             candidate_id: "cand-loop".into(),
             candidate_type: CandidateType::LoopCandidate,
@@ -5425,6 +5456,30 @@ mod tests {
             tags: vec!["decoded_wave".into()],
             constraints: vec!["bar_aligned".into()],
             provenance_refs: vec!["provider:decoded.wav_baseline".into()],
+        });
+        graph.candidates.push(Candidate {
+            candidate_id: "cand-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: AssetId::from("asset-hook"),
+            score: 0.79,
+            confidence: 0.74,
+            tags: vec!["feral".into()],
+            constraints: vec!["capture_first".into()],
+            provenance_refs: vec!["provider:decoded.wav_baseline".into()],
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-hook".into(),
+            to_id: "asset-a".into(),
+            weight: 0.78,
+            notes: Some("hook supports loop rebuild".into()),
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::HighQuoteRiskWith,
+            from_id: "asset-hook".into(),
+            to_id: "src-1".into(),
+            weight: 0.64,
+            notes: Some("recognizable hook".into()),
         });
         graph.analysis_summary = AnalysisSummary {
             overall_confidence: 0.74,
@@ -7247,7 +7302,7 @@ mod tests {
     }
 
     #[test]
-    fn renders_source_shell_snapshot_with_analysis_structure() {
+    fn renders_source_shell_snapshot_with_feral_scorecard() {
         let mut shell = sample_shell_state();
         shell.active_screen = ShellScreen::Source;
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -7259,6 +7314,9 @@ mod tests {
         assert!(rendered.contains("Candidates"));
         assert!(rendered.contains("Provenance"));
         assert!(rendered.contains("Source Graph Warnings"));
+        assert!(rendered.contains("feral break high"));
+        assert!(rendered.contains("quote risk 1"));
+        assert!(rendered.contains("use capture before quoting"));
         assert!(rendered.contains("decoded.wav_baseline"));
         assert!(rendered.contains("fixtures/input.wav"));
         assert!(rendered.contains("wav_baseline_only"));
