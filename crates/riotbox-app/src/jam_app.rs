@@ -1336,7 +1336,10 @@ mod tests {
     use tempfile::tempdir;
 
     use riotbox_audio::{
-        mc202::{Mc202ContourHint, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting},
+        mc202::{
+            Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode,
+            Mc202RenderRouting,
+        },
         runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
         source_audio::SourceAudioCache,
         tr909::{
@@ -2373,12 +2376,16 @@ mod tests {
             state.runtime.mc202_render.contour_hint,
             Mc202ContourHint::Drop
         );
+        assert_eq!(
+            state.runtime.mc202_render.hook_response,
+            Mc202HookResponse::Direct
+        );
         assert_eq!(state.runtime_view.mc202_render_mode, "answer");
         assert_eq!(state.runtime_view.mc202_render_routing, "music_bus_bass");
         assert_eq!(state.runtime_view.mc202_render_phrase_shape, "answer_hook");
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.00 | touch 0.82 | budget balanced | contour drop"
+            "music bus 0.00 | touch 0.82 | budget balanced | contour drop | hook direct"
         );
         assert!(
             state
@@ -2410,6 +2417,33 @@ mod tests {
                 .runtime_view
                 .mc202_render_mix_summary
                 .contains("contour lift")
+        );
+    }
+
+    #[test]
+    fn mc202_hook_section_uses_answer_space_guardrail() {
+        let mut graph = sample_graph();
+        graph.sections[0].label_hint = SectionLabelHint::Chorus;
+        graph.sections[0].energy_class = EnergyClass::High;
+        graph.sections[0].tags.push("hook".into());
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.mc202_render.hook_response,
+            Mc202HookResponse::AnswerSpace
+        );
+        assert_eq!(
+            state.runtime.mc202_render.note_budget,
+            riotbox_audio::mc202::Mc202NoteBudget::Sparse
+        );
+        assert!(
+            state
+                .runtime_view
+                .mc202_render_mix_summary
+                .contains("hook answer_space")
         );
     }
 
@@ -2524,7 +2558,7 @@ mod tests {
         assert!((state.runtime.mc202_render.touch - 0.64).abs() < f32::EPSILON);
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.64 | touch 0.64 | budget balanced | contour drop"
+            "music bus 0.64 | touch 0.64 | budget balanced | contour drop | hook direct"
         );
 
         let lowered = state.adjust_mc202_touch(-1.5);
@@ -2533,7 +2567,7 @@ mod tests {
         assert_eq!(state.runtime.mc202_render.touch, 0.0);
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.64 | touch 0.00 | budget balanced | contour drop"
+            "music bus 0.64 | touch 0.00 | budget balanced | contour drop | hook direct"
         );
     }
 

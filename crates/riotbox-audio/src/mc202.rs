@@ -111,6 +111,22 @@ impl Mc202ContourHint {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Mc202HookResponse {
+    Direct,
+    AnswerSpace,
+}
+
+impl Mc202HookResponse {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Direct => "direct",
+            Self::AnswerSpace => "answer_space",
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mc202RenderState {
     pub mode: Mc202RenderMode,
@@ -118,6 +134,7 @@ pub struct Mc202RenderState {
     pub phrase_shape: Mc202PhraseShape,
     pub note_budget: Mc202NoteBudget,
     pub contour_hint: Mc202ContourHint,
+    pub hook_response: Mc202HookResponse,
     pub touch: f32,
     pub music_bus_level: f32,
     pub tempo_bpm: f32,
@@ -133,6 +150,7 @@ impl Default for Mc202RenderState {
             phrase_shape: Mc202PhraseShape::RootPulse,
             note_budget: Mc202NoteBudget::Balanced,
             contour_hint: Mc202ContourHint::Neutral,
+            hook_response: Mc202HookResponse::Direct,
             touch: 0.4,
             music_bus_level: 0.72,
             tempo_bpm: 128.0,
@@ -172,7 +190,12 @@ pub fn render_mc202_buffer(
         if !within_note_budget(render.phrase_shape, render.note_budget, sixteenth) {
             continue;
         }
-        let semitone = semitone + contour_offset(render.contour_hint, sixteenth);
+        if !within_hook_response(render.hook_response, sixteenth) {
+            continue;
+        }
+        let semitone = semitone
+            + contour_offset(render.contour_hint, sixteenth)
+            + hook_response_offset(render.hook_response, sixteenth);
 
         let octave_drop = match render.mode {
             Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
@@ -364,6 +387,26 @@ fn contour_offset(hint: Mc202ContourHint, sixteenth: usize) -> i8 {
                 -5
             } else {
                 0
+            }
+        }
+    }
+}
+
+fn within_hook_response(response: Mc202HookResponse, sixteenth: usize) -> bool {
+    match response {
+        Mc202HookResponse::Direct => true,
+        Mc202HookResponse::AnswerSpace => matches!(sixteenth % 4, 1 | 3),
+    }
+}
+
+fn hook_response_offset(response: Mc202HookResponse, sixteenth: usize) -> i8 {
+    match response {
+        Mc202HookResponse::Direct => 0,
+        Mc202HookResponse::AnswerSpace => {
+            if sixteenth % 8 >= 4 {
+                12
+            } else {
+                7
             }
         }
     }
@@ -679,6 +722,50 @@ mod tests {
         assert!(neutral_metrics.0 > 10_000);
         assert!(lift_metrics.0 > 10_000);
         assert!(delta_rms > 0.004, "contour hint delta RMS {delta_rms}");
+    }
+
+    #[test]
+    fn hook_response_leaves_space_without_silencing_phrase() {
+        let mut direct = vec![0.0; 44_100 * 2 * 2];
+        let mut response = vec![0.0; 44_100 * 2 * 2];
+        let base = Mc202RenderState {
+            mode: Mc202RenderMode::Follower,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::FollowerDrive,
+            note_budget: Mc202NoteBudget::Balanced,
+            contour_hint: Mc202ContourHint::Neutral,
+            touch: 0.78,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(&mut direct, 44_100, 2, &base);
+        render_mc202_buffer(
+            &mut response,
+            44_100,
+            2,
+            &Mc202RenderState {
+                hook_response: Mc202HookResponse::AnswerSpace,
+                ..base
+            },
+        );
+
+        let direct_metrics = metrics(&direct);
+        let response_metrics = metrics(&response);
+        let delta_rms = (direct
+            .iter()
+            .zip(response.iter())
+            .map(|(direct, response)| (direct - response).powi(2))
+            .sum::<f32>()
+            / direct.len() as f32)
+            .sqrt();
+
+        assert!(direct_metrics.0 > 10_000);
+        assert!(response_metrics.0 > 5_000);
+        assert!(response_metrics.2 < direct_metrics.2);
+        assert!(delta_rms > 0.004, "hook-response delta RMS {delta_rms}");
     }
 
     #[test]

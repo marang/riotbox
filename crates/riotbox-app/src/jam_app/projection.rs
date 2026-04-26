@@ -1,7 +1,7 @@
 use riotbox_audio::{
     mc202::{
-        Mc202ContourHint, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
-        Mc202RenderState,
+        Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
+        Mc202RenderRouting, Mc202RenderState,
     },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
@@ -166,6 +166,8 @@ pub(super) fn build_mc202_render_state(
         Some(Mc202PhraseVariantState::MutatedDrive) => Mc202PhraseShape::MutatedDrive,
         _ => phrase_shape,
     };
+    let current_section = mc202_current_section(source_graph, transport, scene_context(session));
+    let hook_response = mc202_hook_response_for_role_and_section(role, current_section);
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
@@ -174,8 +176,9 @@ pub(super) fn build_mc202_render_state(
         mode,
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape,
-        note_budget: mc202_note_budget_for_shape(phrase_shape),
-        contour_hint: mc202_contour_hint(source_graph, transport, scene_context(session)),
+        note_budget: mc202_note_budget_for_shape_and_hook_response(phrase_shape, hook_response),
+        contour_hint: mc202_contour_hint(current_section),
+        hook_response,
         touch: session
             .runtime_state
             .macro_state
@@ -192,22 +195,21 @@ pub(super) fn build_mc202_render_state(
     }
 }
 
-fn mc202_contour_hint(
-    source_graph: Option<&SourceGraph>,
+fn mc202_current_section<'a>(
+    source_graph: Option<&'a SourceGraph>,
     transport: &TransportClockState,
     scene_context: Option<&SceneId>,
-) -> Mc202ContourHint {
-    let Some(graph) = source_graph else {
-        return Mc202ContourHint::Neutral;
-    };
-    let Some(section) = scene_context
+) -> Option<&'a Section> {
+    let graph = source_graph?;
+    scene_context
         .and_then(|scene_id| section_for_projected_scene(graph, scene_id))
         .or_else(|| section_for_transport_bar(graph, transport))
-    else {
-        return Mc202ContourHint::Neutral;
-    };
+}
 
-    mc202_contour_hint_for_section(section)
+fn mc202_contour_hint(section: Option<&Section>) -> Mc202ContourHint {
+    section
+        .map(mc202_contour_hint_for_section)
+        .unwrap_or(Mc202ContourHint::Neutral)
 }
 
 fn scene_context(session: &SessionFile) -> Option<&SceneId> {
@@ -234,7 +236,39 @@ fn mc202_contour_hint_for_section(section: &Section) -> Mc202ContourHint {
     }
 }
 
-fn mc202_note_budget_for_shape(shape: Mc202PhraseShape) -> Mc202NoteBudget {
+fn mc202_hook_response_for_role_and_section(
+    role: &str,
+    section: Option<&Section>,
+) -> Mc202HookResponse {
+    if !matches!(role, "follower" | "leader") {
+        return Mc202HookResponse::Direct;
+    }
+
+    let Some(section) = section else {
+        return Mc202HookResponse::Direct;
+    };
+
+    let is_hook_like = matches!(section.label_hint, SectionLabelHint::Chorus)
+        || section
+            .tags
+            .iter()
+            .any(|tag| matches!(tag.as_str(), "hook" | "chorus"));
+
+    if is_hook_like {
+        Mc202HookResponse::AnswerSpace
+    } else {
+        Mc202HookResponse::Direct
+    }
+}
+
+fn mc202_note_budget_for_shape_and_hook_response(
+    shape: Mc202PhraseShape,
+    hook_response: Mc202HookResponse,
+) -> Mc202NoteBudget {
+    if hook_response == Mc202HookResponse::AnswerSpace {
+        return Mc202NoteBudget::Sparse;
+    }
+
     match shape {
         Mc202PhraseShape::PressureCell => Mc202NoteBudget::Sparse,
         Mc202PhraseShape::InstigatorSpike => Mc202NoteBudget::Push,

@@ -1144,3 +1144,14 @@ Why: Phase 4 asks for contour following with feral simplification. A coarse sect
 Evidence: `riotbox-app` projects the hint from source sections into runtime diagnostics, `riotbox-audio` mirrors it through shared runtime state and changes phrase intervals in the renderer, and the lane recipe pack proves `mc202-neutral-to-lift-contour` differs from neutral follower drive with signal delta RMS `0.007847`.
 Consequences: later hook-response and source-aware phrase scoring should refine this typed hint instead of bypassing it with callback-only heuristics or full melody extraction.
 Status: accepted
+
+---
+
+Topic: MC-202 hook response should be explicit answer-space restraint
+Phase: MC-202 MVP / Audio QA
+Question: how should MC-202 avoid doubling hook-like sections without adding a phrase editor or Ghost-driven composition?
+Decision: add `Mc202HookResponse` to the typed render state and derive `answer_space` for follower/leader roles when the current source/scene section is hook-like, currently chorus labels or hook/chorus tags. `answer_space` uses a sparse note budget and offbeat response gating in the renderer.
+Why: the feral addendum asks for hook-response rules instead of hook doubling. Making the rule explicit in render state keeps it visible to TUI diagnostics, shared audio state, tests, and listening-pack metrics while avoiding callback-only heuristics.
+Evidence: `riotbox-app` projects chorus/hook context to `Mc202HookResponse::AnswerSpace`, `riotbox-audio` renders answer-space with lower density and offbeat offsets, and the lane recipe pack proves `mc202-direct-to-hook-response` differs from direct follower drive with signal delta RMS `0.008681` and RMS delta `0.004777`.
+Consequences: future source-aware phrase scoring can refine which sections are hook-like, but it should keep using the typed hook-response seam rather than hiding hook restraint in ad hoc phrase substitution.
+Status: accepted

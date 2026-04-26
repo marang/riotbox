@@ -133,11 +133,12 @@ impl JamRuntimeView {
             mc202_render_routing: runtime.mc202_render.routing.label().into(),
             mc202_render_phrase_shape: runtime.mc202_render.phrase_shape.label().into(),
             mc202_render_mix_summary: format!(
-                "music bus {:.2} | touch {:.2} | budget {} | contour {}",
+                "music bus {:.2} | touch {:.2} | budget {} | contour {} | hook {}",
                 runtime.mc202_render.music_bus_level,
                 runtime.mc202_render.touch,
                 runtime.mc202_render.note_budget.label(),
-                runtime.mc202_render.contour_hint.label()
+                runtime.mc202_render.contour_hint.label(),
+                runtime.mc202_render.hook_response.label()
             ),
             mc202_render_transport_summary: mc202_render_transport_summary(&runtime.mc202_render),
             w30_preview_mode: runtime.w30_preview.mode.label().into(),
