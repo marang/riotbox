@@ -29,7 +29,7 @@ Current benchmark artifacts:
 - [scene_restore_state_contrast_baseline_2026-04-18.md](./scene_restore_state_contrast_baseline_2026-04-18.md)
   First bounded readability baseline for the current `restore waits...` versus `restore ... ready` contrast on `Jam`.
 - [scene_post_landed_energy_cue_baseline_2026-04-25.md](./scene_post_landed_energy_cue_baseline_2026-04-25.md)
-  First bounded readability baseline for the post-landed Scene Brain cue using compact `scene/energy` labels.
+  Current bounded readability baseline for the post-landed Scene Brain cue using compact `scene/energy` and `909 lift` labels.
 - [scene_cue_ladder_baseline_2026-04-25.md](./scene_cue_ladder_baseline_2026-04-25.md)
   First bounded readability baseline for the complete Scene Brain cue ladder across queued, landed, ready, restore, and Log confirmation states.
 - [scene_footer_tick_readability_baseline_2026-04-25.md](./scene_footer_tick_readability_baseline_2026-04-25.md)

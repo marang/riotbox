@@ -146,7 +146,7 @@ docs/
 - `benchmarks/scene_guidance_stack_baseline_2026-04-18.md`: Scene Brain queued-guidance stack baseline captured
 - `benchmarks/scene_restore_ready_readability_baseline_2026-04-18.md`: Scene Brain restore-ready `scene/energy` readability baseline captured
 - `benchmarks/scene_restore_state_contrast_baseline_2026-04-18.md`: Scene Brain restore `waits` vs ready contrast baseline captured
-- `benchmarks/scene_post_landed_energy_cue_baseline_2026-04-25.md`: Scene Brain post-landed `scene/energy` cue baseline captured
+- `benchmarks/scene_post_landed_energy_cue_baseline_2026-04-25.md`: Scene Brain post-landed `scene/energy` and `909 lift` cue baseline refreshed
 - `benchmarks/scene_cue_ladder_baseline_2026-04-25.md`: Scene Brain full cue-ladder readability baseline captured
 - `benchmarks/scene_footer_tick_readability_baseline_2026-04-25.md`: Scene Brain footer timing tick readability baseline captured
 - `benchmarks/scene_contrast_launch_baseline_2026-04-25.md`: Scene Brain contrast launch target readability baseline captured
