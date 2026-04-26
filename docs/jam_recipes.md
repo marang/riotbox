@@ -422,6 +422,49 @@ What this teaches:
 - if you press the next key before the current action commits, you are mostly testing queue state, not the audible result yet
 - Riotbox now exposes whether that path is source-backed, but it is still a bounded preview excerpt, not a full W-30 sampler engine
 
+## Recipe 12: Follow The Feral-Ready Path
+
+Goal: learn the current Feral-ready cue without expecting a full break-rebuild engine yet.
+
+Use a local WAV example, preferably:
+
+- `Beat08_128BPM(Full).wav`
+- `Beat03_130BPM(Full).wav`
+
+Start with:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav"
+```
+
+Then:
+
+1. press `Space`
+2. stay on `Jam`
+3. read the header and `Suggested gestures`
+4. if you see `feral ready`, try one promoted gesture: `j`, `f`, `g`, `a`, or `c`
+5. wait for the queued action to land
+6. press `2` for `Log`
+7. press `3` for `Source`
+8. compare the `feral ready` / `feral needs support` line with what landed
+
+What to observe:
+
+- `feral ready` means the Source Graph has high break-rebuild potential plus supported hook or capture evidence
+- `feral needs support` means Riotbox sees promising material, but the shared `supports_break_rebuild` evidence is missing
+- on `Jam`, `feral ready` promotes existing keys such as `[j] browse`, `[f] fill`, `[g] follow`, `[a] answer`, and `[c] capture`
+- `j` exercises the current W-30 slice-pool preference path
+- `f` exercises the current TR-909 support/fill path
+- `g` and `a` exercise the current MC-202 follow/answer path
+- `c` captures the moment so you can reuse it through Recipe 11
+
+What this teaches:
+
+- Feral readiness is not a separate mode
+- it is a policy cue that steers existing W-30, TR-909, MC-202, and capture paths
+- this is still bounded prototype behavior, not full automatic feral composition
+- if it sounds too similar, use `Log` and `Source` to check whether you were in `ready`, `needs support`, or fallback territory before judging the gesture
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -435,6 +478,7 @@ So if two runs feel similar:
 - use `Recipe 8` if you want the first bounded Scene Brain flow instead of only lane gestures
 - use `Recipe 9` if you want to compare where Scene Brain is already more legible today
 - use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
+- use `Recipe 12` if you want to understand the new `feral ready` gesture path
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 
