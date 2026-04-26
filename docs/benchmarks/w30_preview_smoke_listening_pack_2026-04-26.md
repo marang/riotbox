@@ -82,6 +82,23 @@ To render the same smoke case from an existing PCM16 or PCM24 WAV source window 
 just w30-smoke-source-qa "data/test_audio/examples/Beat03_130BPM(Full).wav" 2026-04-26
 ```
 
+That command renders both roles from the same source-backed path, so it is useful as a determinism check.
+
+When the question is whether the current source-backed W-30 path is audibly different from the safe synthetic fallback, use the source-diff wrapper instead:
+
+```bash
+just w30-smoke-source-diff "data/test_audio/examples/Beat03_130BPM(Full).wav" 2026-04-26-source-diff
+```
+
+That command renders:
+
+```text
+baseline.wav  = synthetic fallback preview
+candidate.wav = source-backed preview from the WAV window
+```
+
+It then requires minimum RMS and sum deltas so the run fails if the source-backed candidate collapses back into the same fallback-like preview.
+
 Equivalent direct command:
 
 ```bash
@@ -94,6 +111,8 @@ cargo run -p riotbox-audio --bin w30_preview_render -- \
 ```
 
 The current source-backed helper uses the existing non-realtime WAV loader. Float, compressed, and non-PCM WAV support remain out of scope for this smoke path.
+
+Current W-30 preview renders use a bounded `2048`-sample mono source-window preview. This is intentionally larger than the first tiny callback-safe sketch, but it is still a short preview excerpt rather than full pad-bank sample streaming.
 
 ## Compare Command
 
@@ -113,6 +132,8 @@ cargo run -p riotbox-audio --bin w30_preview_compare -- \
 The comparison helper reads `baseline.metrics.md` and `candidate.metrics.md` from the convention path, prints active-sample / peak / RMS / sum deltas, writes the same report to `comparison.md`, and exits non-zero when the default drift limits are exceeded. This is a narrow local metrics helper, not a waveform diff or listening-pack CI gate.
 
 Use `--max-active-samples-delta`, `--max-peak-delta`, `--max-rms-delta`, or `--max-sum-delta` when a local branch intentionally changes the smoke render and you want to inspect bounded drift instead of requiring an exact match.
+
+Use `--min-active-samples-delta`, `--min-peak-delta`, `--min-rms-delta`, or `--min-sum-delta` when the branch must prove that a source-backed render differs from a fallback or control render.
 
 Use `--report PATH` only when you need to write the comparison report outside the convention path.
 

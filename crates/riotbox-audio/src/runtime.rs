@@ -2106,6 +2106,14 @@ mod tests {
     };
     use serde::Deserialize;
 
+    fn fill_positive_preview_ramp(samples: &mut [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN]) {
+        let denominator = W30_PREVIEW_SAMPLE_WINDOW_LEN.saturating_sub(1).max(1) as f32;
+        for (index, sample) in samples.iter_mut().enumerate() {
+            let progress = index as f32 / denominator;
+            *sample = 0.18 + progress * 0.12;
+        }
+    }
+
     #[derive(Debug, Deserialize)]
     struct AudioFixtureCase {
         name: String,
@@ -2298,11 +2306,7 @@ mod tests {
         fn to_realtime(&self) -> RealtimeW30PreviewSampleWindow {
             let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
             match self.sample_pattern.as_str() {
-                "positive_ramp" => {
-                    for (index, sample) in samples.iter_mut().enumerate() {
-                        *sample = 0.18 + index as f32 * 0.002;
-                    }
-                }
+                "positive_ramp" => fill_positive_preview_ramp(&mut samples),
                 other => panic!("unknown W-30 source-window sample pattern: {other}"),
             }
 
@@ -2765,8 +2769,8 @@ mod tests {
         let mut negative = [0.0_f32; 512];
         let mut positive_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
         let mut negative_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        fill_positive_preview_ramp(&mut positive_samples);
         for index in 0..W30_PREVIEW_SAMPLE_WINDOW_LEN {
-            positive_samples[index] = 0.2 + index as f32 * 0.002;
             negative_samples[index] = -positive_samples[index];
         }
 
@@ -2778,7 +2782,7 @@ mod tests {
             trigger_velocity: 0.0,
             source_window_preview: RealtimeW30PreviewSampleWindow {
                 source_start_frame: 0,
-                source_end_frame: 64,
+                source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
                 sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
                 samples: positive_samples,
             },
@@ -2818,8 +2822,8 @@ mod tests {
         let mut negative = [0.0_f32; 512];
         let mut positive_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
         let mut negative_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        fill_positive_preview_ramp(&mut positive_samples);
         for index in 0..W30_PREVIEW_SAMPLE_WINDOW_LEN {
-            positive_samples[index] = 0.2 + index as f32 * 0.002;
             negative_samples[index] = -positive_samples[index];
         }
 
@@ -2831,7 +2835,7 @@ mod tests {
             trigger_velocity: 0.0,
             source_window_preview: RealtimeW30PreviewSampleWindow {
                 source_start_frame: 0,
-                source_end_frame: 64,
+                source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
                 sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
                 samples: positive_samples,
             },
@@ -2871,8 +2875,8 @@ mod tests {
         let mut negative = [0.0_f32; 512];
         let mut positive_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
         let mut negative_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+        fill_positive_preview_ramp(&mut positive_samples);
         for index in 0..W30_PREVIEW_SAMPLE_WINDOW_LEN {
-            positive_samples[index] = 0.2 + index as f32 * 0.002;
             negative_samples[index] = -positive_samples[index];
         }
 
@@ -2884,7 +2888,7 @@ mod tests {
             trigger_velocity: 0.0,
             source_window_preview: RealtimeW30PreviewSampleWindow {
                 source_start_frame: 0,
-                source_end_frame: 64,
+                source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
                 sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
                 samples: positive_samples,
             },
@@ -3549,9 +3553,7 @@ mod tests {
     #[test]
     fn offline_w30_preview_render_produces_reviewable_metrics() {
         let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
-        for (index, sample) in samples.iter_mut().enumerate() {
-            *sample = 0.18 + index as f32 * 0.002;
-        }
+        fill_positive_preview_ramp(&mut samples);
 
         let buffer = render_w30_preview_offline(
             &W30PreviewRenderState {
@@ -3565,8 +3567,8 @@ mod tests {
                 trigger_velocity: 0.0,
                 source_window_preview: Some(W30PreviewSampleWindow {
                     source_start_frame: 0,
-                    source_end_frame: 64,
-                    sample_count: 64,
+                    source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
+                    sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
                     samples,
                 }),
                 music_bus_level: 0.64,
@@ -3589,7 +3591,7 @@ mod tests {
             metrics.active_samples
         );
         assert!(
-            (0.02..=0.04).contains(&metrics.rms),
+            (0.019..=0.04).contains(&metrics.rms),
             "unexpected RMS: got {}",
             metrics.rms
         );

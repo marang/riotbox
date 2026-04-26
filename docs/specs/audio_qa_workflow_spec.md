@@ -317,7 +317,8 @@ Not every fixture needs every pack, but the assignment must be explicit.
 An audio-producing change should not be considered complete without:
 
 - relevant unit and integration tests passing
-- relevant buffer regression cases passing
+- log, state, or action-history assertions proving that the intended action path landed
+- relevant buffer or offline-output regression cases proving that the rendered audio output changed or stayed stable as intended
 - the affected listening pack rendered locally
 - at least one human listening pass on candidate output
 - benchmark notes recorded when behavior changed materially
@@ -325,6 +326,15 @@ An audio-producing change should not be considered complete without:
 For small low-risk changes, the listening pass may be limited to the directly affected pack.
 
 For larger changes, a broader smoke pack is required.
+
+For every new or changed audio-producing function, the minimum test shape is:
+
+- one control-path assertion, such as action log, render-state, queue/commit, or provenance state
+- one output-path assertion, such as non-silence, peak/RMS range, source-vs-fallback metric delta, or a fixture-backed WAV artifact comparison
+
+If the function only prepares state and cannot produce audio by itself, the output assertion must cover the nearest downstream render seam that consumes that state.
+
+Do not accept "the log says it happened" as sufficient proof for audible behavior.
 
 ---
 
@@ -354,6 +364,8 @@ Every repeated failure should lead to at least one of:
 - a stronger metric threshold
 - a better profile or policy weight
 - a better listening-pack case
+
+When a user reports that two gestures sound the same, prefer adding or tightening a source-vs-control output comparison over adding only more UI/log assertions.
 
 ### 11.3 Improve policies, not hidden magic
 
@@ -396,6 +408,35 @@ Agents must not:
 
 This keeps Riotbox instrument-like, reproducible, and debuggable.
 
+### 12.1 Future user-session observer
+
+Riotbox should add an opt-in user-session observer when manual TUI/audio testing stays ambiguous.
+
+The observer should attach through an explicit local socket, debug endpoint, or equivalent host-session bridge and help distinguish:
+
+- user input timing errors
+- unclear TUI timing or commit feedback
+- control-path success with fallback-like audio output
+- audio device or output path failure
+- technically valid output that is musically weak
+
+Useful observer evidence includes:
+
+- exact launch command and source file
+- keypress/action timeline
+- queued and committed action timeline
+- transport position and boundary timeline
+- render-state snapshots
+- audio callback health
+- output metrics or monitored audio capture when available
+
+Guardrails:
+
+- require explicit user opt-in
+- keep observer and capture work outside the realtime audio callback
+- avoid storing unnecessary raw user audio when metrics or short deterministic artifacts are enough
+- record whether evidence came from sandbox, real user session, offline render, or host audio monitor
+
 ---
 
 ## 13. Current Repo Status
@@ -411,6 +452,7 @@ Today the repo already has:
 - an initial W-30 preview smoke listening-pack convention under `docs/benchmarks/`
 - an initial local baseline-vs-candidate audio artifact convention under `docs/benchmarks/`
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that also writes a local `comparison.md` report
+- a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 
 Today the repo does not yet have a full official workflow for:
 

@@ -19,6 +19,8 @@ It exists so work stays:
 
 This is a workflow note, not a product spec.
 
+When the local `riotbox-development` skill is available, use it for Riotbox implementation work. If a recurring Riotbox failure mode or better QA pattern is discovered, update that skill, validate it, re-read it, and mirror durable workflow rules back into this document or the relevant repo spec.
+
 ---
 
 ## 2. Core Rule
@@ -189,8 +191,14 @@ Minimum expectation today for an audio-producing slice:
 
 - relevant local formatter, test, and lint checks pass
 - relevant audio-facing regression or fixture checks pass when the seam already has them
+- action/log/state assertions prove that the intended user action or render state actually landed
+- output assertions prove the audible seam is not silent, not fallback-collapsed, and within expected metrics for the affected path
 - a local real-session listening pass is done when the slice materially changes behavior that can already be heard
 - the PR or working notes say when the slice could not yet use a fuller offline WAV / listening-pack harness because that harness is still future work
+
+Do not close an audio-producing slice with only UI/log proof. If the feature is supposed to sound different, include a buffer regression, offline render comparison, source-vs-control metric check, or documented reason why the output seam is not yet operational.
+
+When manual TUI/audio verification is ambiguous enough that user input timing, unclear commit feedback, audio-device failure, and fallback-like output cannot be separated reliably, track that as a product/QA feature in Linear instead of encoding imaginary observer behavior into the agent workflow. The planned direction is an explicit opt-in user-session/audio observer described in `docs/specs/audio_qa_workflow_spec.md`.
 
 As the repo gains the missing audio QA harnesses, tighten this section toward the stronger release gates defined in the audio QA workflow spec instead of leaving it as a light note.
 

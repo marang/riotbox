@@ -196,6 +196,7 @@ The bounded early seam is a non-realtime source-audio cache:
 - store normalized interleaved `f32` samples with explicit sample rate and channel count
 - expose bounded sample-window access for source-backed W-30 preview paths
 - project a small fixed-size preview window from `CaptureRef.source_window` into callback-safe W-30 preview state
+- current W-30 preview window size is `2048` mono samples, deliberately bounded so it can sound more like captured material without becoming full callback-side sample streaming
 - keep cache loading and source-window projection outside the realtime callback
 
 Current limitation:

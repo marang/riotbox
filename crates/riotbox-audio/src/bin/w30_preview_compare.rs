@@ -11,6 +11,10 @@ const DEFAULT_MAX_ACTIVE_SAMPLES_DELTA: usize = 0;
 const DEFAULT_MAX_PEAK_DELTA: f64 = 0.000001;
 const DEFAULT_MAX_RMS_DELTA: f64 = 0.000001;
 const DEFAULT_MAX_SUM_DELTA: f64 = 0.000001;
+const DEFAULT_MIN_ACTIVE_SAMPLES_DELTA: usize = 0;
+const DEFAULT_MIN_PEAK_DELTA: f64 = 0.0;
+const DEFAULT_MIN_RMS_DELTA: f64 = 0.0;
+const DEFAULT_MIN_SUM_DELTA: f64 = 0.0;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -50,18 +54,26 @@ struct Args {
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct DriftLimits {
+    min_active_samples_delta: usize,
     max_active_samples_delta: usize,
+    min_peak_delta: f64,
     max_peak_delta: f64,
+    min_rms_delta: f64,
     max_rms_delta: f64,
+    min_sum_delta: f64,
     max_sum_delta: f64,
 }
 
 impl Default for DriftLimits {
     fn default() -> Self {
         Self {
+            min_active_samples_delta: DEFAULT_MIN_ACTIVE_SAMPLES_DELTA,
             max_active_samples_delta: DEFAULT_MAX_ACTIVE_SAMPLES_DELTA,
+            min_peak_delta: DEFAULT_MIN_PEAK_DELTA,
             max_peak_delta: DEFAULT_MAX_PEAK_DELTA,
+            min_rms_delta: DEFAULT_MIN_RMS_DELTA,
             max_rms_delta: DEFAULT_MAX_RMS_DELTA,
+            min_sum_delta: DEFAULT_MIN_SUM_DELTA,
             max_sum_delta: DEFAULT_MAX_SUM_DELTA,
         }
     }
@@ -115,11 +127,25 @@ impl Args {
                         "--max-active-samples-delta must be a non-negative integer".to_string()
                     })?;
                 }
+                "--min-active-samples-delta" => {
+                    let Some(value) = args.next() else {
+                        return Err("--min-active-samples-delta requires a value".into());
+                    };
+                    limits.min_active_samples_delta = value.parse::<usize>().map_err(|_| {
+                        "--min-active-samples-delta must be a non-negative integer".to_string()
+                    })?;
+                }
                 "--max-peak-delta" => {
                     let Some(value) = args.next() else {
                         return Err("--max-peak-delta requires a value".into());
                     };
                     limits.max_peak_delta = parse_non_negative_float("--max-peak-delta", &value)?;
+                }
+                "--min-peak-delta" => {
+                    let Some(value) = args.next() else {
+                        return Err("--min-peak-delta requires a value".into());
+                    };
+                    limits.min_peak_delta = parse_non_negative_float("--min-peak-delta", &value)?;
                 }
                 "--max-rms-delta" => {
                     let Some(value) = args.next() else {
@@ -127,11 +153,23 @@ impl Args {
                     };
                     limits.max_rms_delta = parse_non_negative_float("--max-rms-delta", &value)?;
                 }
+                "--min-rms-delta" => {
+                    let Some(value) = args.next() else {
+                        return Err("--min-rms-delta requires a value".into());
+                    };
+                    limits.min_rms_delta = parse_non_negative_float("--min-rms-delta", &value)?;
+                }
                 "--max-sum-delta" => {
                     let Some(value) = args.next() else {
                         return Err("--max-sum-delta requires a value".into());
                     };
                     limits.max_sum_delta = parse_non_negative_float("--max-sum-delta", &value)?;
+                }
+                "--min-sum-delta" => {
+                    let Some(value) = args.next() else {
+                        return Err("--min-sum-delta requires a value".into());
+                    };
+                    limits.min_sum_delta = parse_non_negative_float("--min-sum-delta", &value)?;
                 }
                 other => return Err(format!("unknown argument: {other}")),
             }
@@ -168,9 +206,13 @@ fn print_help() {
         "Usage: w30_preview_compare [--date YYYY-MM-DD|local] [--baseline PATH] [--candidate PATH] [--report PATH]\n\
          \n\
          Optional drift limits:\n\
+           --min-active-samples-delta N\n\
            --max-active-samples-delta N\n\
+           --min-peak-delta FLOAT\n\
            --max-peak-delta FLOAT\n\
+           --min-rms-delta FLOAT\n\
            --max-rms-delta FLOAT\n\
+           --min-sum-delta FLOAT\n\
            --max-sum-delta FLOAT\n\
          \n\
          Compares W-30 preview smoke baseline and candidate metrics Markdown files\n\
@@ -269,7 +311,8 @@ struct MetricComparison<T> {
     baseline: T,
     candidate: T,
     delta: T,
-    limit: T,
+    min_delta: T,
+    max_delta: T,
     passed: bool,
 }
 
@@ -288,35 +331,46 @@ fn compare_metrics(
             baseline: baseline.active_samples,
             candidate: candidate.active_samples,
             delta: active_delta,
-            limit: limits.max_active_samples_delta,
-            passed: active_delta <= limits.max_active_samples_delta,
+            min_delta: limits.min_active_samples_delta,
+            max_delta: limits.max_active_samples_delta,
+            passed: active_delta >= limits.min_active_samples_delta
+                && active_delta <= limits.max_active_samples_delta,
         },
         peak_abs: MetricComparison {
             baseline: baseline.peak_abs,
             candidate: candidate.peak_abs,
             delta: peak_delta,
-            limit: limits.max_peak_delta,
-            passed: float_delta_within_limit(peak_delta, limits.max_peak_delta),
+            min_delta: limits.min_peak_delta,
+            max_delta: limits.max_peak_delta,
+            passed: float_delta_within_range(
+                peak_delta,
+                limits.min_peak_delta,
+                limits.max_peak_delta,
+            ),
         },
         rms: MetricComparison {
             baseline: baseline.rms,
             candidate: candidate.rms,
             delta: rms_delta,
-            limit: limits.max_rms_delta,
-            passed: float_delta_within_limit(rms_delta, limits.max_rms_delta),
+            min_delta: limits.min_rms_delta,
+            max_delta: limits.max_rms_delta,
+            passed: float_delta_within_range(rms_delta, limits.min_rms_delta, limits.max_rms_delta),
         },
         sum: MetricComparison {
             baseline: baseline.sum,
             candidate: candidate.sum,
             delta: sum_delta,
-            limit: limits.max_sum_delta,
-            passed: float_delta_within_limit(sum_delta, limits.max_sum_delta),
+            min_delta: limits.min_sum_delta,
+            max_delta: limits.max_sum_delta,
+            passed: float_delta_within_range(sum_delta, limits.min_sum_delta, limits.max_sum_delta),
         },
     }
 }
 
-fn float_delta_within_limit(delta: f64, limit: f64) -> bool {
-    delta <= limit || (delta - limit).abs() <= f64::EPSILON * 16.0
+fn float_delta_within_range(delta: f64, min_delta: f64, max_delta: f64) -> bool {
+    let epsilon = f64::EPSILON * 16.0;
+    (delta >= min_delta || (min_delta - delta).abs() <= epsilon)
+        && (delta <= max_delta || (delta - max_delta).abs() <= epsilon)
 }
 
 fn render_report(baseline_path: &Path, candidate_path: &Path, report: &ComparisonReport) -> String {
@@ -324,32 +378,36 @@ fn render_report(baseline_path: &Path, candidate_path: &Path, report: &Compariso
         "W-30 preview smoke metrics comparison\n\
          baseline: {}\n\
          candidate: {}\n\
-         active_samples: {} -> {} | delta {} | limit {} | {}\n\
-         peak_abs: {:.6} -> {:.6} | delta {:.6} | limit {:.6} | {}\n\
-         rms: {:.6} -> {:.6} | delta {:.6} | limit {:.6} | {}\n\
-         sum: {:.6} -> {:.6} | delta {:.6} | limit {:.6} | {}\n\
+         active_samples: {} -> {} | delta {} | min {} | max {} | {}\n\
+         peak_abs: {:.6} -> {:.6} | delta {:.6} | min {:.6} | max {:.6} | {}\n\
+         rms: {:.6} -> {:.6} | delta {:.6} | min {:.6} | max {:.6} | {}\n\
+         sum: {:.6} -> {:.6} | delta {:.6} | min {:.6} | max {:.6} | {}\n\
          result: {}",
         baseline_path.display(),
         candidate_path.display(),
         report.active_samples.baseline,
         report.active_samples.candidate,
         report.active_samples.delta,
-        report.active_samples.limit,
+        report.active_samples.min_delta,
+        report.active_samples.max_delta,
         status_label(report.active_samples.passed),
         report.peak_abs.baseline,
         report.peak_abs.candidate,
         report.peak_abs.delta,
-        report.peak_abs.limit,
+        report.peak_abs.min_delta,
+        report.peak_abs.max_delta,
         status_label(report.peak_abs.passed),
         report.rms.baseline,
         report.rms.candidate,
         report.rms.delta,
-        report.rms.limit,
+        report.rms.min_delta,
+        report.rms.max_delta,
         status_label(report.rms.passed),
         report.sum.baseline,
         report.sum.candidate,
         report.sum.delta,
-        report.sum.limit,
+        report.sum.min_delta,
+        report.sum.max_delta,
         status_label(report.sum.passed),
         if report.has_failures() {
             "fail"
@@ -424,12 +482,20 @@ mod tests {
             "tmp/comparison.md".to_string(),
             "--max-active-samples-delta".to_string(),
             "2".to_string(),
+            "--min-active-samples-delta".to_string(),
+            "1".to_string(),
             "--max-peak-delta".to_string(),
             "0.01".to_string(),
+            "--min-peak-delta".to_string(),
+            "0.001".to_string(),
             "--max-rms-delta".to_string(),
             "0.02".to_string(),
+            "--min-rms-delta".to_string(),
+            "0.002".to_string(),
             "--max-sum-delta".to_string(),
             "0.03".to_string(),
+            "--min-sum-delta".to_string(),
+            "0.003".to_string(),
         ])
         .expect("parse args");
 
@@ -439,9 +505,13 @@ mod tests {
             PathBuf::from("tmp/candidate.md")
         );
         assert_eq!(args.report_path, PathBuf::from("tmp/comparison.md"));
+        assert_eq!(args.limits.min_active_samples_delta, 1);
         assert_eq!(args.limits.max_active_samples_delta, 2);
+        assert_eq!(args.limits.min_peak_delta, 0.001);
         assert_eq!(args.limits.max_peak_delta, 0.01);
+        assert_eq!(args.limits.min_rms_delta, 0.002);
         assert_eq!(args.limits.max_rms_delta, 0.02);
+        assert_eq!(args.limits.min_sum_delta, 0.003);
         assert_eq!(args.limits.max_sum_delta, 0.03);
     }
 
@@ -520,13 +590,54 @@ mod tests {
             sum: 4.750001,
         };
         let limits = DriftLimits {
+            min_active_samples_delta: 0,
             max_active_samples_delta: 1,
+            min_peak_delta: 0.0,
             max_peak_delta: 0.000001,
+            min_rms_delta: 0.0,
             max_rms_delta: 0.000001,
+            min_sum_delta: 0.0,
             max_sum_delta: 0.000001,
         };
 
         assert!(!compare_metrics(&baseline, &candidate, &limits).has_failures());
+    }
+
+    #[test]
+    fn comparison_can_require_candidate_to_differ_from_baseline() {
+        let baseline = SmokeMetrics {
+            active_samples: 512,
+            peak_abs: 0.115204,
+            rms: 0.038331,
+            sum: 4.75,
+        };
+        let candidate = SmokeMetrics {
+            active_samples: 512,
+            peak_abs: 0.125204,
+            rms: 0.041331,
+            sum: 5.15,
+        };
+        let limits = DriftLimits {
+            min_active_samples_delta: 0,
+            max_active_samples_delta: 0,
+            min_peak_delta: 0.005,
+            max_peak_delta: 0.02,
+            min_rms_delta: 0.002,
+            max_rms_delta: 0.01,
+            min_sum_delta: 0.2,
+            max_sum_delta: 1.0,
+        };
+
+        assert!(!compare_metrics(&baseline, &candidate, &limits).has_failures());
+
+        let too_similar = SmokeMetrics {
+            peak_abs: 0.115304,
+            rms: 0.038431,
+            sum: 4.751,
+            ..candidate
+        };
+
+        assert!(compare_metrics(&baseline, &too_similar, &limits).has_failures());
     }
 
     #[test]

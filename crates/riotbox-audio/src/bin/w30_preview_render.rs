@@ -279,14 +279,16 @@ fn source_window_smoke_state(
 
 fn synthetic_source_window_preview() -> W30PreviewSampleWindow {
     let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+    let denominator = W30_PREVIEW_SAMPLE_WINDOW_LEN.saturating_sub(1).max(1) as f32;
     for (index, sample) in samples.iter_mut().enumerate() {
-        *sample = 0.18 + index as f32 * 0.002;
+        let progress = index as f32 / denominator;
+        *sample = 0.18 + progress * 0.12;
     }
 
     W30PreviewSampleWindow {
         source_start_frame: 0,
-        source_end_frame: 64,
-        sample_count: 64,
+        source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
+        sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
         samples,
     }
 }

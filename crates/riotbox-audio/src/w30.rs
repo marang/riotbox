@@ -1,4 +1,4 @@
-pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 64;
+pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 2_048;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum W30PreviewRenderMode {

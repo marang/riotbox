@@ -72,8 +72,8 @@
       "trigger_velocity": 0.0,
       "source_window_preview": {
         "source_start_frame": 0,
-        "source_end_frame": 64,
-        "sample_count": 64,
+        "source_end_frame": 2048,
+        "sample_count": 2048,
         "sample_pattern": "positive_ramp"
       },
       "music_bus_level": 0.64,
@@ -87,7 +87,7 @@
       "max_active_samples": 512,
       "min_peak_abs": 0.015,
       "max_peak_abs": 0.08,
-      "min_rms": 0.02,
+      "min_rms": 0.019,
       "max_rms": 0.04,
       "min_sum": 6.0,
       "max_sum": 18.0

@@ -8,6 +8,10 @@ Use this file as the local operating brief for coding agents working in the repo
 
 The goal is to keep implementation aligned with the planning documents and to prevent architecture drift during the first build slices.
 
+When the local `riotbox-development` skill is available, use it for Riotbox development work. It captures the current expectation that agents act as senior software engineers, senior audio engineers, and musician-users of the instrument.
+
+If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pattern, update that skill and then re-read it before relying on the new rule. Durable project rules still need to be mirrored into repo docs such as this file, `docs/workflow_conventions.md`, or the relevant spec.
+
 ---
 
 ## Current State
@@ -194,8 +198,11 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Until the fuller audio QA harnesses land, the minimum expectation for audio-producing slices is:
   - relevant unit and integration tests
   - relevant buffer regression coverage when the slice touches an existing audio seam
+  - action/log/state assertions proving the intended action path or render state actually landed
+  - output assertions proving the affected audible seam is not silent, not fallback-collapsed, and inside expected metrics
   - local manual listening against the real session when the behavior changed materially and can be heard today
   - explicit notes in the PR or working context when an audio QA layer from the spec is still aspirational rather than operational
+- Do not close an audio-producing slice with only UI/log proof. If the feature is supposed to sound different, include a buffer regression, offline render comparison, source-vs-control metric check, or documented reason why the output seam is not yet operational.
 - When the fuller harnesses do land, tighten this rule to use the spec's stronger release gates instead of treating them as future work.
 
 ### Periodic codebase review
@@ -354,6 +361,7 @@ just mem-status
 just mem-search "replay truth"
 just w30-smoke-qa local
 just w30-smoke-source-qa "data/test_audio/examples/Beat03_130BPM(Full).wav" local
+just w30-smoke-source-diff "data/test_audio/examples/Beat03_130BPM(Full).wav" local-source-diff
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
 scripts/linear_issue_delete.sh RIOTBOX-123

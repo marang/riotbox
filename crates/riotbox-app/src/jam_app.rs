@@ -305,6 +305,10 @@ impl JamAppState {
         timing: AudioRuntimeTimingSnapshot,
         committed_at: TimestampMs,
     ) -> Vec<CommittedActionRef> {
+        if self.runtime.transport.is_playing && !timing.is_transport_running {
+            return Vec::new();
+        }
+
         let previous = self.runtime.transport.clone();
         let next_clock = transport_clock_for_state(
             timing.position_beats,
@@ -1235,8 +1239,9 @@ mod tests {
             Tr909SourceSupportContext, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
         },
         w30::{
-            W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewSourceProfile,
-            W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
+            W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
+            W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
+            W30ResampleTapSourceProfile,
         },
     };
     use riotbox_core::{
@@ -3276,6 +3281,38 @@ mod tests {
     }
 
     #[test]
+    fn stale_stopped_audio_timing_snapshot_does_not_cancel_transport_start() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        state.update_transport_clock(TransportClockState {
+            is_playing: false,
+            position_beats: 32.0,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 1,
+            current_scene: Some(SceneId::from("scene-1")),
+        });
+        state.set_transport_playing(true);
+
+        let committed = state.apply_audio_timing_snapshot(
+            AudioRuntimeTimingSnapshot {
+                is_transport_running: false,
+                tempo_bpm: 124.0,
+                position_beats: 32.0,
+            },
+            2_500,
+        );
+
+        assert!(committed.is_empty());
+        assert!(state.runtime.transport.is_playing);
+        assert_eq!(state.runtime.transport.position_beats, 32.0);
+        assert!(state.jam_view.transport.is_playing);
+        assert_eq!(state.jam_view.transport.position_beats, 32.0);
+    }
+
+    #[test]
     fn committed_capture_actions_materialize_capture_refs() {
         let graph = sample_graph();
         let session = sample_session(&graph);
@@ -3710,7 +3747,7 @@ mod tests {
             .expect("source-window preview");
         assert_eq!(preview.source_start_frame, 0);
         assert_eq!(preview.source_end_frame, 48_000);
-        assert_eq!(preview.sample_count, 64);
+        assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
         assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
     }
 
@@ -3812,7 +3849,7 @@ mod tests {
             .expect("source-backed promoted audition preview");
         assert_eq!(preview.source_start_frame, 0);
         assert!(preview.source_end_frame > preview.source_start_frame);
-        assert_eq!(preview.sample_count, 64);
+        assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
         assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
     }
 
@@ -3853,7 +3890,7 @@ mod tests {
                 .expect("source-window preview");
             assert_eq!(preview.source_start_frame, 0);
             assert_eq!(preview.source_end_frame, 48_000);
-            assert_eq!(preview.sample_count, 64);
+            assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
             assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
         }
     }
@@ -5121,7 +5158,7 @@ mod tests {
             .expect("source-window preview");
         assert_eq!(preview.source_start_frame, 0);
         assert_eq!(preview.source_end_frame, 48_000);
-        assert_eq!(preview.sample_count, 64);
+        assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
         assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
     }
 
