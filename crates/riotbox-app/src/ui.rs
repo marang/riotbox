@@ -659,15 +659,9 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     .block(Block::default().title("Now").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
 
-    let next = Paragraph::new(vec![
-        Line::from(next_action_line(shell)),
-        scene_pending_line(shell),
-        latest_landed_line(shell),
-        queued_timing_rail_line(shell)
-            .unwrap_or_else(|| Line::from(format!("status {}", shell.status_message))),
-    ])
-    .block(Block::default().title("Next").borders(Borders::ALL))
-    .wrap(Wrap { trim: true });
+    let next = Paragraph::new(next_panel_lines(shell))
+        .block(Block::default().title("Next").borders(Borders::ALL))
+        .wrap(Wrap { trim: true });
 
     let trust = trust_summary(shell);
     let trust_panel = Paragraph::new(vec![
@@ -692,6 +686,21 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     frame.render_widget(now, columns[0]);
     frame.render_widget(next, columns[1]);
     frame.render_widget(trust_panel, columns[2]);
+}
+
+fn next_panel_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let mut lines = vec![
+        Line::from(next_action_line(shell)),
+        scene_pending_line(shell),
+    ];
+    if let Some(timing_rail) = queued_timing_rail_line(shell) {
+        lines.push(timing_rail);
+        lines.push(latest_landed_line(shell));
+    } else {
+        lines.push(latest_landed_line(shell));
+        lines.push(Line::from(format!("status {}", shell.status_message)));
+    }
+    lines
 }
 
 fn render_perform_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
@@ -5615,6 +5624,30 @@ mod tests {
             rendered.contains("Then try one more move: [y] jump or [g] follow."),
             "{rendered}"
         );
+    }
+
+    #[test]
+    fn next_panel_promotes_timing_rail_above_landed_history() {
+        let mut shell = first_result_shell_state();
+        shell.app.queue_tr909_fill(240);
+
+        let line_texts = next_panel_lines(&shell)
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>();
+
+        assert_eq!(line_texts[0], "user tr909.fill_next @ next_bar");
+        assert_eq!(line_texts[1], "scene transition idle");
+        assert!(
+            line_texts[2].starts_with("wait [===>] next bar"),
+            "{line_texts:?}"
+        );
+        assert_eq!(line_texts[3], "landed user fill");
     }
 
     #[test]
