@@ -4876,6 +4876,76 @@ mod tests {
     }
 
     #[test]
+    fn committed_w30_trigger_preserves_source_window_preview_samples() {
+        let tempdir = tempdir().expect("create source audio tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        write_pcm16_wave(&source_path, 48_000, 2, 1.0);
+
+        let mut graph = sample_graph();
+        graph.source.path = source_path.to_string_lossy().into_owned();
+        graph.source.duration_seconds = 1.0;
+        let mut session = sample_session(&graph);
+        session.captures[0].assigned_target = Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-b"),
+            pad_id: PadId::from("pad-03"),
+        });
+        session.captures[0].source_window = Some(CaptureSourceWindow {
+            source_id: graph.source.source_id.clone(),
+            start_seconds: 0.0,
+            end_seconds: 1.0,
+            start_frame: 0,
+            end_frame: 48_000,
+        });
+        session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-b"));
+        session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-03"));
+        let source_audio_cache =
+            SourceAudioCache::load_pcm16_wav(&source_path).expect("load source audio cache");
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        state.source_audio_cache = Some(source_audio_cache);
+        state.refresh_view();
+
+        assert_eq!(
+            state.queue_w30_trigger_pad(645),
+            Some(QueueControlResult::Enqueued)
+        );
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::LiveRecall
+        );
+        assert_eq!(
+            state.runtime.w30_preview.source_profile,
+            Some(W30PreviewSourceProfile::PromotedRecall)
+        );
+        assert_eq!(
+            state.runtime.w30_preview.capture_id.as_deref(),
+            Some("cap-01")
+        );
+        assert_eq!(state.runtime.w30_preview.trigger_revision, 2);
+        let preview = state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .as_ref()
+            .expect("source-window preview");
+        assert_eq!(preview.source_start_frame, 0);
+        assert_eq!(preview.source_end_frame, 48_000);
+        assert_eq!(preview.sample_count, 64);
+        assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
+    }
+
+    #[test]
     fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
         let graph = sample_graph();
         let session = sample_session(&graph);
