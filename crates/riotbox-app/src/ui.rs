@@ -703,6 +703,42 @@ fn next_panel_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     lines
 }
 
+fn style_primary_control() -> Style {
+    Style::default()
+        .fg(Color::Cyan)
+        .add_modifier(Modifier::BOLD)
+}
+
+fn style_pending_cue() -> Style {
+    Style::default()
+        .fg(Color::Yellow)
+        .add_modifier(Modifier::BOLD)
+}
+
+fn style_pending_detail() -> Style {
+    Style::default().fg(Color::Yellow)
+}
+
+fn style_confirmation() -> Style {
+    Style::default().fg(Color::Green)
+}
+
+fn style_confirmation_strong() -> Style {
+    style_confirmation().add_modifier(Modifier::BOLD)
+}
+
+fn style_warning_label() -> Style {
+    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+}
+
+fn style_warning_detail() -> Style {
+    Style::default().fg(Color::Yellow)
+}
+
+fn style_low_emphasis() -> Style {
+    Style::default().fg(Color::DarkGray)
+}
+
 fn render_perform_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let columns = Layout::default()
         .direction(Direction::Horizontal)
@@ -1339,54 +1375,30 @@ fn scene_jump_primary_label(shell: &JamShellState) -> &'static str {
 
 fn footer_primary_line(gestures: &str) -> Line<'static> {
     Line::from(vec![
-        Span::styled(
-            "Primary:",
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("Primary:", style_primary_control()),
         Span::raw(format!(" {gestures}")),
     ])
 }
 
 fn footer_scene_line(scene_cue: &str) -> Line<'static> {
     Line::from(vec![
-        Span::styled(
-            "Scene:",
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(
-            format!(" {scene_cue}"),
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("Scene:", style_pending_cue()),
+        Span::styled(format!(" {scene_cue}"), style_pending_cue()),
     ])
 }
 
 fn footer_status_line(status: &str) -> Line<'static> {
-    Line::from(Span::styled(
-        status.to_owned(),
-        Style::default().fg(Color::DarkGray),
-    ))
+    Line::from(Span::styled(status.to_owned(), style_low_emphasis()))
 }
 
 fn footer_ok_line(message: &str) -> Line<'static> {
-    Line::from(Span::styled(
-        message.to_owned(),
-        Style::default().fg(Color::Green),
-    ))
+    Line::from(Span::styled(message.to_owned(), style_confirmation()))
 }
 
 fn footer_warning_line(warning: &str) -> Line<'static> {
     Line::from(vec![
-        Span::styled(
-            "Warning:",
-            Style::default().fg(Color::Red).add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(format!(" {warning}"), Style::default().fg(Color::Yellow)),
+        Span::styled("Warning:", style_warning_label()),
+        Span::styled(format!(" {warning}"), style_warning_detail()),
     ])
 }
 
@@ -1752,35 +1764,22 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 fn latest_landed_line(shell: &JamShellState) -> Line<'static> {
     if let Some(action) = shell.app.jam_view.recent_actions.first() {
         let mut spans = vec![
-            Span::styled("landed ", Style::default().fg(Color::DarkGray)),
-            Span::styled(
-                format!("{} ", action.actor),
-                Style::default().fg(Color::DarkGray),
-            ),
+            Span::styled("landed ", style_low_emphasis()),
+            Span::styled(format!("{} ", action.actor), style_low_emphasis()),
             Span::styled(
                 jam_action_label(&action.command),
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
+                style_confirmation_strong(),
             ),
         ];
 
         if let Some(energy_delta) = landed_scene_energy_delta(shell, action.command.as_str()) {
-            spans.push(Span::styled(" | ", Style::default().fg(Color::DarkGray)));
-            spans.push(Span::styled(
-                energy_delta,
-                Style::default()
-                    .fg(Color::Green)
-                    .add_modifier(Modifier::BOLD),
-            ));
+            spans.push(Span::styled(" | ", style_low_emphasis()));
+            spans.push(Span::styled(energy_delta, style_confirmation_strong()));
         }
 
         Line::from(spans)
     } else {
-        Line::from(Span::styled(
-            "landed none yet",
-            Style::default().fg(Color::DarkGray),
-        ))
+        Line::from(Span::styled("landed none yet", style_low_emphasis()))
     }
 }
 
@@ -1868,37 +1867,22 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<Line<'static>> {
     };
 
     let mut spans = vec![
-        Span::styled("scene ", Style::default().fg(Color::DarkGray)),
-        Span::styled(
-            current_scene,
-            Style::default()
-                .fg(Color::Green)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(" | restore ", Style::default().fg(Color::DarkGray)),
-        Span::styled(restore_scene, Style::default().fg(Color::Yellow)),
+        Span::styled("scene ", style_low_emphasis()),
+        Span::styled(current_scene, style_confirmation_strong()),
+        Span::styled(" | restore ", style_low_emphasis()),
+        Span::styled(restore_scene, style_pending_detail()),
     ];
 
     if shell.app.runtime_view.tr909_render_support_accent == "scene" {
-        spans.push(Span::styled(" | ", Style::default().fg(Color::DarkGray)));
-        spans.push(Span::styled("909 lift", Style::default().fg(Color::Yellow)));
+        spans.push(Span::styled(" | ", style_low_emphasis()));
+        spans.push(Span::styled("909 lift", style_pending_detail()));
     }
 
     spans.extend([
-        Span::styled(" | next ", Style::default().fg(Color::DarkGray)),
-        Span::styled(
-            next_scene_key.0,
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        ),
+        Span::styled(" | next ", style_low_emphasis()),
+        Span::styled(next_scene_key.0, style_primary_control()),
         Span::raw(next_scene_key.1),
-        Span::styled(
-            "[c]",
-            Style::default()
-                .fg(Color::Cyan)
-                .add_modifier(Modifier::BOLD),
-        ),
+        Span::styled("[c]", style_primary_control()),
         Span::raw(" capture"),
     ]);
 
@@ -3192,41 +3176,23 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
 
 fn scene_pending_line(shell: &JamShellState) -> Line<'static> {
     let Some((label, scene_id, boundary)) = pending_scene_transition(shell) else {
-        return Line::from(Span::styled(
-            "scene transition idle",
-            Style::default().fg(Color::DarkGray),
-        ));
+        return Line::from(Span::styled("scene transition idle", style_low_emphasis()));
     };
 
     let mut spans = vec![
-        Span::styled(
-            label,
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
-        Span::styled(" -> ", Style::default().fg(Color::DarkGray)),
-        Span::styled(scene_id.clone(), Style::default().fg(Color::Yellow)),
-        Span::styled(" @ ", Style::default().fg(Color::DarkGray)),
-        Span::styled(
-            boundary,
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
+        Span::styled(label, style_pending_cue()),
+        Span::styled(" -> ", style_low_emphasis()),
+        Span::styled(scene_id.clone(), style_pending_detail()),
+        Span::styled(" @ ", style_low_emphasis()),
+        Span::styled(boundary, style_pending_cue()),
     ];
 
     if let Some(energy_delta) = energy_delta_label(
         shell.app.jam_view.scene.active_scene_energy.as_deref(),
         scene_energy_label_for_scene_id(shell, scene_id.as_str()),
     ) {
-        spans.push(Span::styled(" | ", Style::default().fg(Color::DarkGray)));
-        spans.push(Span::styled(
-            energy_delta,
-            Style::default()
-                .fg(Color::Green)
-                .add_modifier(Modifier::BOLD),
-        ));
+        spans.push(Span::styled(" | ", style_low_emphasis()));
+        spans.push(Span::styled(energy_delta, style_confirmation_strong()));
     }
 
     Line::from(spans)
@@ -3291,29 +3257,16 @@ fn timing_rail_line(
     tail: String,
 ) -> Line<'static> {
     let mut spans = vec![
-        Span::styled(format!("{prefix} "), Style::default().fg(Color::DarkGray)),
-        Span::styled(
-            countdown,
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ),
+        Span::styled(format!("{prefix} "), style_low_emphasis()),
+        Span::styled(countdown, style_pending_cue()),
     ];
 
     if let Some(boundary) = boundary {
-        spans.push(Span::styled(" ", Style::default().fg(Color::DarkGray)));
-        spans.push(Span::styled(
-            boundary,
-            Style::default()
-                .fg(Color::Yellow)
-                .add_modifier(Modifier::BOLD),
-        ));
+        spans.push(Span::styled(" ", style_low_emphasis()));
+        spans.push(Span::styled(boundary, style_pending_cue()));
     }
 
-    spans.push(Span::styled(
-        format!(" {tail}"),
-        Style::default().fg(Color::DarkGray),
-    ));
+    spans.push(Span::styled(format!(" {tail}"), style_low_emphasis()));
 
     Line::from(spans)
 }
@@ -3569,19 +3522,11 @@ fn pending_capture_do_next_lines(
 }
 
 fn capture_pending_intent_line(message: impl Into<String>) -> Line<'static> {
-    Line::from(Span::styled(
-        message.into(),
-        Style::default()
-            .fg(Color::Yellow)
-            .add_modifier(Modifier::BOLD),
-    ))
+    Line::from(Span::styled(message.into(), style_pending_cue()))
 }
 
 fn capture_pending_detail_line(message: impl Into<String>) -> Line<'static> {
-    Line::from(Span::styled(
-        message.into(),
-        Style::default().fg(Color::Yellow),
-    ))
+    Line::from(Span::styled(message.into(), style_pending_detail()))
 }
 
 fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
