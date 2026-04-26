@@ -137,6 +137,7 @@ Show:
 - promotion results
 - favorite or pinned captures
 - the audible handoff path from stored capture to raw audition, promoted pad, hit, promoted audition, or recall
+- compact `src` / `fallback` readiness on W-30 hit handoffs so the user can tell whether the path is source-backed or on the safe preview fallback
 - a primary next-step cue for capture, promote, hit, and audition before lower-level routing diagnostics
 
 MVP rule:
@@ -146,6 +147,7 @@ MVP rule:
 - first-action cues should outrank provenance and routing details on the default Capture surface
 - first-action cues should prefer pending capture or promotion intent over the last committed capture state when a capture-path action is queued
 - pending `Do Next` cues should carry semantic pending emphasis distinct from committed fallback guidance
+- when Capture suggests `[w] hit` or `[p]->[w]`, the handoff copy should preserve the `src` / `fallback` readiness cue without promoting it above the primary gesture
 - secondary pending-capture panels should show the most relevant queued capture-path action first and send overflow detail to `Log`
 - contextual help may point to `Do Next`, `hear ...`, and `Log` confirmation, but should not duplicate the full Capture screen
 
