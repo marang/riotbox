@@ -151,6 +151,7 @@ docs/
 - `benchmarks/scene_footer_tick_readability_baseline_2026-04-25.md`: Scene Brain footer timing tick readability baseline captured
 - `benchmarks/scene_contrast_launch_baseline_2026-04-25.md`: Scene Brain contrast launch target readability baseline captured
 - `benchmarks/scene_tr909_support_context_baseline_2026-04-26.md`: Scene Brain TR-909 support-context readability baseline captured
+- `benchmarks/scene_tr909_support_accent_audio_baseline_2026-04-26.md`: Scene Brain TR-909 support-accent audio-buffer baseline captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
 - `benchmarks/capture_do_next_readability_baseline_2026-04-25.md`: Capture `Do Next` readability baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
