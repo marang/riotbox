@@ -4,7 +4,9 @@ use crate::{
         Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
         Tr909TakeoverProfileState,
     },
-    source_graph::{EnergyClass, Section, SourceGraph},
+    source_graph::{
+        AssetType, CandidateType, EnergyClass, QualityClass, RelationshipType, Section, SourceGraph,
+    },
 };
 
 #[cfg(test)]
@@ -290,6 +292,7 @@ impl JamViewModel {
                 section_count: graph.sections.len(),
                 loop_candidate_count: graph.loop_candidate_count(),
                 hook_candidate_count: graph.hook_candidate_count(),
+                feral_scorecard: FeralScorecardView::from_graph(graph),
             },
             None => SourceSummaryView::default(),
         };
@@ -682,6 +685,137 @@ pub struct SourceSummaryView {
     pub section_count: usize,
     pub loop_candidate_count: usize,
     pub hook_candidate_count: usize,
+    pub feral_scorecard: FeralScorecardView,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct FeralScorecardView {
+    pub break_rebuild_potential: String,
+    pub hook_fragment_count: usize,
+    pub break_support_count: usize,
+    pub quote_risk_count: usize,
+    pub capture_candidate_count: usize,
+    pub top_reason: String,
+    pub warnings: Vec<String>,
+}
+
+impl Default for FeralScorecardView {
+    fn default() -> Self {
+        Self {
+            break_rebuild_potential: "unknown".into(),
+            hook_fragment_count: 0,
+            break_support_count: 0,
+            quote_risk_count: 0,
+            capture_candidate_count: 0,
+            top_reason: "no feral source graph".into(),
+            warnings: Vec::new(),
+        }
+    }
+}
+
+impl FeralScorecardView {
+    #[must_use]
+    pub fn from_graph(graph: &SourceGraph) -> Self {
+        let break_rebuild_potential =
+            quality_class_label(graph.analysis_summary.break_rebuild_potential).to_string();
+        let hook_fragment_count = graph
+            .assets
+            .iter()
+            .filter(|asset| asset.asset_type == AssetType::HookFragment)
+            .count();
+        let break_support_count = graph
+            .relationships
+            .iter()
+            .filter(|relationship| {
+                relationship.relation_type == RelationshipType::SupportsBreakRebuild
+            })
+            .count();
+        let quote_risk_count = graph
+            .relationships
+            .iter()
+            .filter(|relationship| {
+                relationship.relation_type == RelationshipType::HighQuoteRiskWith
+            })
+            .count();
+        let capture_candidate_count = graph
+            .candidates
+            .iter()
+            .filter(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate)
+            .count();
+        let top_reason = feral_top_reason(
+            graph.analysis_summary.break_rebuild_potential,
+            hook_fragment_count,
+            break_support_count,
+            quote_risk_count,
+            capture_candidate_count,
+        )
+        .to_string();
+        let warnings = feral_scorecard_warnings(graph, hook_fragment_count, quote_risk_count);
+
+        Self {
+            break_rebuild_potential,
+            hook_fragment_count,
+            break_support_count,
+            quote_risk_count,
+            capture_candidate_count,
+            top_reason,
+            warnings,
+        }
+    }
+}
+
+fn quality_class_label(quality: QualityClass) -> &'static str {
+    match quality {
+        QualityClass::Low => "low",
+        QualityClass::Medium => "medium",
+        QualityClass::High => "high",
+        QualityClass::Unknown => "unknown",
+    }
+}
+
+fn feral_top_reason(
+    break_rebuild_potential: QualityClass,
+    hook_fragment_count: usize,
+    break_support_count: usize,
+    quote_risk_count: usize,
+    capture_candidate_count: usize,
+) -> &'static str {
+    if quote_risk_count > 0 && capture_candidate_count > 0 {
+        "use capture before quoting"
+    } else if quote_risk_count > 0 {
+        "quote guard needed"
+    } else if break_rebuild_potential == QualityClass::High && break_support_count > 0 {
+        "break rebuild ready"
+    } else if capture_candidate_count > 0 {
+        "capture candidates ready"
+    } else if hook_fragment_count > 0 {
+        "hook fragments ready"
+    } else {
+        "feral evidence sparse"
+    }
+}
+
+fn feral_scorecard_warnings(
+    graph: &SourceGraph,
+    hook_fragment_count: usize,
+    quote_risk_count: usize,
+) -> Vec<String> {
+    let mut warnings = graph
+        .analysis_summary
+        .warnings
+        .iter()
+        .map(|warning| warning.code.clone())
+        .collect::<Vec<_>>();
+
+    if quote_risk_count > 0 {
+        warnings.push(format!("quote risk {quote_risk_count}"));
+    }
+
+    if hook_fragment_count == 0 {
+        warnings.push("no hook fragments".into());
+    }
+
+    warnings
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1195,8 +1329,9 @@ mod tests {
         queue::ActionQueue,
         session::{ActionLog, GhostSuggestionRecord, RuntimeState, SessionFile, SourceGraphRef},
         source_graph::{
-            AnalysisSummary, Asset, AssetType, Candidate, CandidateType, DecodeProfile,
-            GraphProvenance, QualityClass, SourceDescriptor, SourceGraph,
+            AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
+            DecodeProfile, GraphProvenance, QualityClass, Relationship, RelationshipType,
+            SourceDescriptor, SourceGraph,
         },
     };
 
@@ -1261,6 +1396,89 @@ mod tests {
     }
 
     #[test]
+    fn builds_feral_scorecard_from_source_graph_evidence() {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: "src-feral".into(),
+                path: "input.wav".into(),
+                content_hash: "hash-feral".into(),
+                duration_seconds: 32.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "0.1.0".into(),
+                provider_set: vec!["fixture".into()],
+                generated_at: "2026-04-26T13:20:00Z".into(),
+                source_hash: "hash-feral".into(),
+                analysis_seed: 329,
+                run_notes: None,
+            },
+        );
+        graph.assets.push(Asset {
+            asset_id: "asset-hook".into(),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 2.0,
+            start_bar: 1,
+            end_bar: 1,
+            confidence: 0.9,
+            tags: vec!["hook".into()],
+            source_refs: vec!["src-feral".into()],
+        });
+        graph.candidates.push(Candidate {
+            candidate_id: "candidate-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: "asset-hook".into(),
+            score: 0.87,
+            confidence: 0.81,
+            tags: vec!["feral".into()],
+            constraints: vec!["capture_first".into()],
+            provenance_refs: vec!["fixture".into()],
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-hook".into(),
+            to_id: "section-break".into(),
+            weight: 0.85,
+            notes: None,
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::HighQuoteRiskWith,
+            from_id: "asset-hook".into(),
+            to_id: "src-feral".into(),
+            weight: 0.7,
+            notes: None,
+        });
+        graph.analysis_summary = AnalysisSummary {
+            overall_confidence: 0.82,
+            timing_quality: QualityClass::High,
+            section_quality: QualityClass::Medium,
+            loop_candidate_count: 0,
+            hook_candidate_count: 0,
+            break_rebuild_potential: QualityClass::High,
+            warnings: vec![AnalysisWarning {
+                code: "fixture_warning".into(),
+                message: "fixture warning".into(),
+            }],
+        };
+
+        let scorecard = FeralScorecardView::from_graph(&graph);
+
+        assert_eq!(scorecard.break_rebuild_potential, "high");
+        assert_eq!(scorecard.hook_fragment_count, 1);
+        assert_eq!(scorecard.break_support_count, 1);
+        assert_eq!(scorecard.quote_risk_count, 1);
+        assert_eq!(scorecard.capture_candidate_count, 1);
+        assert_eq!(scorecard.top_reason, "use capture before quoting");
+        assert_eq!(
+            scorecard.warnings,
+            vec!["fixture_warning".to_string(), "quote risk 1".to_string()]
+        );
+    }
+
+    #[test]
     fn builds_minimal_jam_view_model() {
         let mut graph = SourceGraph::new(
             SourceDescriptor {
@@ -1303,6 +1521,17 @@ mod tests {
             tags: vec![],
             source_refs: vec![],
         });
+        graph.assets.push(Asset {
+            asset_id: "asset-hook".into(),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 4.0,
+            end_seconds: 5.0,
+            start_bar: 2,
+            end_bar: 2,
+            confidence: 0.82,
+            tags: vec!["hook".into()],
+            source_refs: vec!["asset-a".into()],
+        });
         graph.candidates.push(Candidate {
             candidate_id: "cand-loop".into(),
             candidate_type: CandidateType::LoopCandidate,
@@ -1322,6 +1551,30 @@ mod tests {
             tags: vec![],
             constraints: vec![],
             provenance_refs: vec![],
+        });
+        graph.candidates.push(Candidate {
+            candidate_id: "cand-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: "asset-hook".into(),
+            score: 0.86,
+            confidence: 0.77,
+            tags: vec!["feral".into()],
+            constraints: vec![],
+            provenance_refs: vec![],
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-hook".into(),
+            to_id: "asset-a".into(),
+            weight: 0.8,
+            notes: Some("hook supports loop rebuild".into()),
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::HighQuoteRiskWith,
+            from_id: "asset-hook".into(),
+            to_id: "src-1".into(),
+            weight: 0.6,
+            notes: Some("recognizable hook".into()),
         });
         graph.analysis_summary = AnalysisSummary {
             overall_confidence: 0.85,
@@ -1556,6 +1809,19 @@ mod tests {
         assert!(vm.transport.is_playing);
         assert_eq!(vm.source.loop_candidate_count, 1);
         assert_eq!(vm.source.hook_candidate_count, 1);
+        assert_eq!(vm.source.feral_scorecard.break_rebuild_potential, "high");
+        assert_eq!(vm.source.feral_scorecard.hook_fragment_count, 1);
+        assert_eq!(vm.source.feral_scorecard.break_support_count, 1);
+        assert_eq!(vm.source.feral_scorecard.quote_risk_count, 1);
+        assert_eq!(vm.source.feral_scorecard.capture_candidate_count, 1);
+        assert_eq!(
+            vm.source.feral_scorecard.top_reason,
+            "use capture before quoting"
+        );
+        assert_eq!(
+            vm.source.feral_scorecard.warnings,
+            vec!["quote risk 1".to_string()]
+        );
         assert_eq!(vm.scene.scene_count, 1);
         assert_eq!(vm.scene.restore_scene, None);
         assert_eq!(

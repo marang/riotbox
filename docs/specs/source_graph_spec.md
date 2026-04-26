@@ -290,6 +290,35 @@ AnalysisSummary {
 
 This is intentionally shallow. It is a summary surface, not a second graph.
 
+The Feral policy layer may project a read-only scorecard from this graph for
+TUI and policy consumers. That scorecard is not a second analysis model; it
+must derive from existing graph evidence such as:
+
+- `break_rebuild_potential`
+- `HookFragment` assets
+- `CaptureCandidate` candidates
+- `supports_break_rebuild` relationships
+- `high_quote_risk_with` relationships
+- analysis warning codes
+
+The current scorecard surface is:
+
+```text
+FeralScorecardView {
+  break_rebuild_potential
+  hook_fragment_count
+  break_support_count
+  quote_risk_count
+  capture_candidate_count
+  top_reason
+  warnings
+}
+```
+
+Consumers should use this as a compact policy and UX hint. They must still keep
+audible behavior behind explicit Action Lexicon, queue / commit, and render
+contracts.
+
 ---
 
 ## 13. Provenance
