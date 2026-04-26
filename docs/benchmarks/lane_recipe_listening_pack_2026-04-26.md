@@ -7,7 +7,7 @@ Ticket: `RIOTBOX-299`
 
 This pack is the first local audio-output harness for documented Jam routines outside the W-30 source-preview path.
 
-It exists because the routine audit showed that W-30 now has source-vs-fallback proof, while TR-909, Scene Brain, and MC-202 still needed clearer audio-output accounting. The current pack now includes TR-909, Scene-coupled TR-909, and explicit offline MC-202 render cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, note budget, and the first source-section contour hint.
+It exists because the routine audit showed that W-30 now has source-vs-fallback proof, while TR-909, Scene Brain, and MC-202 still needed clearer audio-output accounting. The current pack now includes TR-909, Scene-coupled TR-909, and explicit offline MC-202 render cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, note budget, source-section contour hints, and hook-response restraint.
 
 ## Command
 
@@ -96,12 +96,17 @@ Current cases:
   - candidate: the same follower role with lift contour
   - covers the first source-section contour hint on the MC-202 render seam
   - local `riotbox-310-local` metrics: signal delta RMS `0.007847`, RMS delta `0.000006`, result `pass`
+- `mc202-direct-to-hook-response`
+  - baseline: follower drive in direct mode
+  - candidate: the same follower phrase with `answer_space` hook response
+  - covers the first hook-response guardrail against doubling hook downbeats
+  - local `riotbox-311-local` metrics: signal delta RMS `0.008681`, RMS delta `0.004777`, result `pass`
 
 ## Current Limits
 
 This is not yet a full performance-recorder or TUI replay harness.
 
-MC-202 now has bounded offline render cases in this pack. They prove that follower/answer, touch, pressure, instigator, mutated phrase shapes, note budget, and the first source-section contour hint can be rendered and compared as audio artifacts. They do not mean the live TUI callback mixes a finished MC-202 synth engine or full source-aware bassline.
+MC-202 now has bounded offline render cases in this pack. They prove that follower/answer, touch, pressure, instigator, mutated phrase shapes, note budget, source-section contour hints, and hook-response restraint can be rendered and compared as audio artifacts. They do not mean the live TUI callback mixes a finished MC-202 synth engine or full source-aware bassline.
 
 Scene Brain is represented only through the existing TR-909 `scene_target` support-accent seam. This proves the bounded accent, not a finished Scene transition engine.
 

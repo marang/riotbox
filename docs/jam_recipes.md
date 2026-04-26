@@ -87,14 +87,15 @@ What to observe:
 - after `I` commits, the MC-202 lane should shove with a sharper high-register instigator spike rather than the follower drive line
 - MC-202 phrases now carry a small note budget; `pressure` stays sparse, `instigate` stays punchy, and follower/answer avoid filling every available step
 - when source sections are known, MC-202 also gets a first contour hint (`lift`, `drop`, or `hold`) from the current source/scene section; this is a small interval nudge, not full melody extraction
+- on hook-like chorus sections, follower/leader material uses `answer_space` response so MC-202 answers around the hook instead of doubling the hook downbeats
 - after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
-- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, `mc202-follower-to-mutated-drive`, and `mc202-neutral-to-lift-contour`
+- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, `mc202-follower-to-mutated-drive`, `mc202-neutral-to-lift-contour`, and `mc202-direct-to-hook-response`
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
 - if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
-- MC-202 is still not a finished synth engine; treat this as first follower/answer/pressure/instigator/contour bass feedback, not full sound design
+- MC-202 is still not a finished synth engine; treat this as first follower/answer/pressure/instigator/contour/hook-response bass feedback, not full sound design
 
 Current offline MC-202 proof:
 

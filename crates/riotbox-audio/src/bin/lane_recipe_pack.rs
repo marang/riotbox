@@ -5,7 +5,8 @@ use std::{
 
 use riotbox_audio::{
     mc202::{
-        Mc202ContourHint, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState,
+        Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
+        Mc202RenderState,
     },
     runtime::{OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, signal_metrics},
     tr909::{
@@ -386,6 +387,32 @@ fn pack_cases() -> Vec<PackCase> {
             min_signal_delta_rms: 0.004,
             note: "This proves the source-section contour hint changes the same MC-202 role at the render seam instead of only changing diagnostics.",
         },
+        PackCase {
+            id: "mc202-direct-to-hook-response",
+            title: "MC-202 direct -> hook response",
+            recipe_refs: "Recipe 2",
+            baseline_label: "follower direct",
+            candidate_label: "follower answer-space",
+            render_pair: RenderPair::Mc202 {
+                baseline: mc202_state_with_policy(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.78,
+                    Mc202ContourHint::Neutral,
+                    Mc202HookResponse::Direct,
+                ),
+                candidate: mc202_state_with_policy(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.78,
+                    Mc202ContourHint::Neutral,
+                    Mc202HookResponse::AnswerSpace,
+                ),
+            },
+            min_rms_delta: 0.001,
+            min_signal_delta_rms: 0.004,
+            note: "This proves hook-response mode leaves space against the same follower phrase instead of doubling the hook downbeats.",
+        },
     ]
 }
 
@@ -422,12 +449,23 @@ fn mc202_state_with_contour(
     touch: f32,
     contour_hint: Mc202ContourHint,
 ) -> Mc202RenderState {
+    mc202_state_with_policy(mode, shape, touch, contour_hint, Mc202HookResponse::Direct)
+}
+
+fn mc202_state_with_policy(
+    mode: Mc202RenderMode,
+    shape: Mc202PhraseShape,
+    touch: f32,
+    contour_hint: Mc202ContourHint,
+    hook_response: Mc202HookResponse,
+) -> Mc202RenderState {
     Mc202RenderState {
         mode,
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape: shape,
-        note_budget: mc202_note_budget_for_shape(shape),
+        note_budget: mc202_note_budget_for_shape_and_hook_response(shape, hook_response),
         contour_hint,
+        hook_response,
         touch,
         music_bus_level: 0.74,
         is_transport_running: true,
@@ -436,7 +474,14 @@ fn mc202_state_with_contour(
     }
 }
 
-fn mc202_note_budget_for_shape(shape: Mc202PhraseShape) -> riotbox_audio::mc202::Mc202NoteBudget {
+fn mc202_note_budget_for_shape_and_hook_response(
+    shape: Mc202PhraseShape,
+    hook_response: Mc202HookResponse,
+) -> riotbox_audio::mc202::Mc202NoteBudget {
+    if hook_response == Mc202HookResponse::AnswerSpace {
+        return riotbox_audio::mc202::Mc202NoteBudget::Sparse;
+    }
+
     match shape {
         Mc202PhraseShape::PressureCell => riotbox_audio::mc202::Mc202NoteBudget::Sparse,
         Mc202PhraseShape::InstigatorSpike => riotbox_audio::mc202::Mc202NoteBudget::Push,
@@ -673,7 +718,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, note budget, and the first source-section contour hint. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
+         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, note budget, source-section contour hints, and hook-response restraint. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );
@@ -761,7 +806,7 @@ mod tests {
     fn pack_cases_produce_distinct_audio_metrics() {
         let cases = pack_cases();
 
-        assert_eq!(cases.len(), 9);
+        assert_eq!(cases.len(), 10);
         for case in cases {
             let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
             let baseline_metrics = signal_metrics(&baseline);
