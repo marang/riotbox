@@ -1,4 +1,5 @@
 target/
+artifacts/audio_qa/
 .mempalace/cache/
 .mempalace/palace/
 .mempalace/palace-backup*/

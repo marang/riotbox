@@ -46,3 +46,5 @@ Current benchmark artifacts:
   First bounded readability baseline for the Capture `Do Next` hierarchy and audible handoff cues.
 - [capture_pending_do_next_readability_baseline_2026-04-25.md](./capture_pending_do_next_readability_baseline_2026-04-25.md)
   Bounded readability baseline for pending-aware Capture `Do Next` states before committed capture fallback guidance.
+- [w30_preview_smoke_listening_pack_2026-04-26.md](./w30_preview_smoke_listening_pack_2026-04-26.md)
+  Initial local-only W-30 preview listening-pack convention with one deterministic source-window smoke case.

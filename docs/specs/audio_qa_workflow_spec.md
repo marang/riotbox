@@ -408,11 +408,12 @@ Today the repo already has:
 - W-30 preview fixture checks for active samples, peak, and optional source-window sum / RMS ranges
 - focused app/runtime regressions for source-backed W-30 reuse, including the promoted `[w] hit` path that verifies `LiveRecall` keeps non-empty source-window preview samples when a decoded capture window is available
 - an initial local-only W-30 preview render helper that writes one deterministic source-window smoke WAV plus sibling Markdown metrics
+- an initial W-30 preview smoke listening-pack convention under `docs/benchmarks/`
 
 Today the repo does not yet have a full official workflow for:
 
 - general deterministic offline WAV render generation across fixture packs
-- listening-pack generation for manual review
+- generated listening packs beyond the first W-30 preview smoke convention
 - baseline vs candidate WAV review directories
 - a standard listening rubric stored with benchmark artifacts
 
