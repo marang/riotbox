@@ -188,6 +188,12 @@ evidence to choose a stronger bounded support profile, for example lifting
 neutral `steady_pulse` support into `break_lift`. This changes render policy
 only; it does not add a new drum action, arranger, or commit path.
 
+MC-202 follower / leader render projection may consume the same Feral Source
+Graph evidence to choose `answer_space` hook response and a sparser note budget
+when supported hook or capture material suggests room should be left for a
+break-rebuild move. This changes render policy only; it does not add a new
+MC-202 action or phrase-generation path.
+
 ### 6.6 Structural / safety
 
 - `lock.object`

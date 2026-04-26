@@ -208,7 +208,8 @@ pub(super) fn build_mc202_render_state(
         _ => phrase_shape,
     };
     let current_section = mc202_current_section(source_graph, transport, scene_context(session));
-    let hook_response = mc202_hook_response_for_role_and_section(role, current_section);
+    let hook_response =
+        mc202_hook_response_for_role_graph_and_section(role, source_graph, current_section);
     let tempo_bpm = source_graph
         .and_then(|graph| graph.timing.bpm_estimate)
         .unwrap_or(0.0);
@@ -308,25 +309,24 @@ fn mc202_contour_hint_for_section(section: &Section) -> Mc202ContourHint {
     }
 }
 
-fn mc202_hook_response_for_role_and_section(
+fn mc202_hook_response_for_role_graph_and_section(
     role: &str,
+    source_graph: Option<&SourceGraph>,
     section: Option<&Section>,
 ) -> Mc202HookResponse {
     if !matches!(role, "follower" | "leader") {
         return Mc202HookResponse::Direct;
     }
 
-    let Some(section) = section else {
-        return Mc202HookResponse::Direct;
-    };
+    let is_hook_like = section.is_some_and(|section| {
+        matches!(section.label_hint, SectionLabelHint::Chorus)
+            || section
+                .tags
+                .iter()
+                .any(|tag| matches!(tag.as_str(), "hook" | "chorus"))
+    });
 
-    let is_hook_like = matches!(section.label_hint, SectionLabelHint::Chorus)
-        || section
-            .tags
-            .iter()
-            .any(|tag| matches!(tag.as_str(), "hook" | "chorus"));
-
-    if is_hook_like {
+    if is_hook_like || source_graph.is_some_and(SourceGraph::has_feral_break_support_evidence) {
         Mc202HookResponse::AnswerSpace
     } else {
         Mc202HookResponse::Direct

@@ -2,8 +2,8 @@ use crate::{
     ids::SceneId,
     session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
     source_graph::{
-        AssetType, CandidateType, EnergyClass, QualityClass, RelationshipType, Section,
-        SectionLabelHint, SourceGraph, section_for_projected_scene, section_for_transport_bar,
+        EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
+        section_for_transport_bar,
     },
     transport::TransportClockState,
 };
@@ -320,29 +320,11 @@ fn should_lift_feral_break_support(
     graph: &SourceGraph,
     profile: Tr909SourceSupportProfilePolicy,
 ) -> bool {
-    if profile != Tr909SourceSupportProfilePolicy::SteadyPulse
-        || graph.analysis_summary.break_rebuild_potential != QualityClass::High
-    {
+    if profile != Tr909SourceSupportProfilePolicy::SteadyPulse {
         return false;
     }
 
-    let supports_break_rebuild = graph.relationships.iter().any(|relationship| {
-        relationship.relation_type == RelationshipType::SupportsBreakRebuild
-            && relationship.weight >= 0.5
-    });
-    let has_capture_candidate = graph
-        .candidates
-        .iter()
-        .any(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate);
-    let has_hook_fragment = graph
-        .assets
-        .iter()
-        .any(|asset| asset.asset_type == AssetType::HookFragment);
-    let has_hook_evidence = has_hook_fragment
-        || graph.analysis_summary.hook_candidate_count > 0
-        || graph.hook_candidate_count() > 0;
-
-    supports_break_rebuild && (has_capture_candidate || has_hook_evidence)
+    graph.has_feral_break_support_evidence()
 }
 
 fn derive_tr909_takeover_render_profile(

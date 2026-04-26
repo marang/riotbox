@@ -2873,6 +2873,126 @@ mod tests {
     }
 
     #[test]
+    fn feral_break_support_bias_changes_mc202_hook_response_output() {
+        let mut control_graph = sample_graph();
+        control_graph.sections.clear();
+        control_graph.sections.push(Section {
+            section_id: SectionId::from("section-steady"),
+            label_hint: SectionLabelHint::Verse,
+            start_seconds: 0.0,
+            end_seconds: 16.0,
+            bar_start: 1,
+            bar_end: 8,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.88,
+            tags: vec!["steady".into()],
+        });
+        control_graph.assets.clear();
+        control_graph.candidates.clear();
+        control_graph.relationships.clear();
+        control_graph.analysis_summary.break_rebuild_potential = QualityClass::High;
+        control_graph.analysis_summary.hook_candidate_count = 0;
+
+        let mut feral_graph = control_graph.clone();
+        feral_graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-feral-hook"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 3.0,
+            start_bar: 1,
+            end_bar: 2,
+            confidence: 0.9,
+            tags: vec!["feral".into()],
+            source_refs: vec!["src-1".into()],
+        });
+        feral_graph.candidates.push(Candidate {
+            candidate_id: "candidate-feral-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: AssetId::from("asset-feral-hook"),
+            score: 0.9,
+            confidence: 0.85,
+            tags: vec!["feral".into()],
+            constraints: vec!["capture_first".into()],
+            provenance_refs: vec!["provider:fixture".into()],
+        });
+        feral_graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-feral-hook".into(),
+            to_id: "section-steady".into(),
+            weight: 0.85,
+            notes: Some("feral hook supports rebuild".into()),
+        });
+        feral_graph.analysis_summary.hook_candidate_count = 1;
+
+        fn follower_session(graph: &SourceGraph) -> SessionFile {
+            let mut session = sample_session(graph);
+            session.runtime_state.lane_state.mc202.role = Some("follower".into());
+            session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-feral".into());
+            session.runtime_state.transport.position_beats = 4.0;
+            session
+        }
+
+        let control_state = JamAppState::from_parts(
+            follower_session(&control_graph),
+            Some(control_graph),
+            ActionQueue::new(),
+        );
+        let feral_state = JamAppState::from_parts(
+            follower_session(&feral_graph),
+            Some(feral_graph),
+            ActionQueue::new(),
+        );
+
+        assert_eq!(
+            control_state.runtime.mc202_render.hook_response,
+            Mc202HookResponse::Direct
+        );
+        assert_eq!(
+            control_state.runtime.mc202_render.note_budget,
+            riotbox_audio::mc202::Mc202NoteBudget::Balanced
+        );
+        assert_eq!(
+            feral_state.runtime.mc202_render.hook_response,
+            Mc202HookResponse::AnswerSpace
+        );
+        assert_eq!(
+            feral_state.runtime.mc202_render.note_budget,
+            riotbox_audio::mc202::Mc202NoteBudget::Sparse
+        );
+        assert!(
+            feral_state
+                .runtime_view
+                .mc202_render_mix_summary
+                .contains("hook answer_space")
+        );
+
+        let frame_count = 44_100;
+        let control_buffer =
+            render_mc202_offline(&control_state.runtime.mc202_render, 44_100, 2, frame_count);
+        let feral_buffer =
+            render_mc202_offline(&feral_state.runtime.mc202_render, 44_100, 2, frame_count);
+        let control_metrics = signal_metrics(&control_buffer);
+        let feral_metrics = signal_metrics(&feral_buffer);
+
+        assert!(
+            control_metrics.rms > 0.001,
+            "control MC-202 follower rendered silence: {}",
+            control_metrics.rms
+        );
+        assert!(
+            feral_metrics.rms > 0.001,
+            "Feral MC-202 hook-response render collapsed to silence: {}",
+            feral_metrics.rms
+        );
+        assert_recipe_buffers_differ(
+            "Feral MC-202 hook response",
+            &control_buffer,
+            &feral_buffer,
+            0.002,
+        );
+    }
+
+    #[test]
     fn runtime_view_surfaces_w30_resample_tap_diagnostics() {
         let graph = sample_graph();
         let mut session = sample_session(&graph);
