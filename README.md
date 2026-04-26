@@ -149,6 +149,7 @@ Best next moves from there:
 - `Recipe 9` if you want to compare which example source currently makes Scene Brain easiest to read
 - `Recipe 10` if you want to explicitly practice reading the current Scene Brain `boundary -> pulse -> live/restore energy -> trail` cues
 - `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
+- `Recipe 12` if you want to follow the new `feral ready` suggested gesture path
 - `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> audition -> promote -> hit -> undo
 
 If `just` is installed, the normal local check path is:
