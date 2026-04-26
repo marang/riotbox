@@ -582,12 +582,13 @@ fn render_header(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
     let paragraph = Paragraph::new(vec![
         Line::from("Riotbox Jam"),
         Line::from(format!(
-            "Mode {} | Screen {} | Source {} | {} | trust {}",
+            "Mode {} | Screen {} | Source {} | {} | trust {} | feral {}",
             shell.launch_mode.label(),
             screen_context_label(shell),
             source.source_id,
             bpm_text,
-            trust.headline
+            trust.headline,
+            source.feral_scorecard.readiness
         )),
         Line::from(format!(
             "Now {} | Next {}",
@@ -2272,9 +2273,10 @@ fn source_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     vec![
         Line::from(format!(
-            "tempo {:.1} | trust {}",
+            "tempo {:.1} | trust {} | feral {}",
             source.bpm_estimate.unwrap_or(0.0),
-            trust_summary(shell).headline
+            trust_summary(shell).headline,
+            source.feral_scorecard.readiness
         )),
         Line::from(format!(
             "sections {} | loops {} | hooks {}",
@@ -4538,14 +4540,16 @@ fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
             vec![
                 Line::from(format!(
-                    "feral break {} | quote risk {}",
-                    scorecard.break_rebuild_potential, scorecard.quote_risk_count
+                    "feral {} | break {}",
+                    scorecard.readiness, scorecard.break_rebuild_potential
                 )),
                 Line::from(format!(
-                    "hooks {} | capture {} | support {}",
-                    scorecard.hook_fragment_count,
-                    scorecard.capture_candidate_count,
-                    scorecard.break_support_count
+                    "quote risk {} | support {}",
+                    scorecard.quote_risk_count, scorecard.break_support_count
+                )),
+                Line::from(format!(
+                    "hooks {} | capture {}",
+                    scorecard.hook_fragment_count, scorecard.capture_candidate_count
                 )),
                 Line::from(format!("use {}", scorecard.top_reason)),
                 Line::from(format!(
@@ -7417,12 +7421,33 @@ mod tests {
         assert!(rendered.contains("Candidates"));
         assert!(rendered.contains("Provenance"));
         assert!(rendered.contains("Source Graph Warnings"));
-        assert!(rendered.contains("feral break high"));
+        assert!(rendered.contains("feral ready"));
+        assert!(rendered.contains("break high"));
         assert!(rendered.contains("quote risk 1"));
         assert!(rendered.contains("use capture before quoting"));
         assert!(rendered.contains("decoded.wav_baseline"));
         assert!(rendered.contains("fixtures/input.wav"));
         assert!(rendered.contains("wav_baseline_only"));
+    }
+
+    #[test]
+    fn renders_source_shell_snapshot_with_near_miss_feral_readiness() {
+        let mut shell = sample_shell_state();
+        let graph = shell
+            .app
+            .source_graph
+            .as_mut()
+            .expect("sample shell should include source graph");
+        graph.relationships.retain(|relationship| {
+            relationship.relation_type != RelationshipType::SupportsBreakRebuild
+        });
+        shell.app.refresh_view();
+        shell.active_screen = ShellScreen::Source;
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("feral needs support"), "{rendered}");
+        assert!(rendered.contains("quote risk 1 | support 0"), "{rendered}");
+        assert!(rendered.contains("hooks 1 | capture 1"), "{rendered}");
     }
 
     #[test]

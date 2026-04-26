@@ -709,6 +709,7 @@ pub struct SourceSummaryView {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct FeralScorecardView {
+    pub readiness: String,
     pub break_rebuild_potential: String,
     pub hook_fragment_count: usize,
     pub break_support_count: usize,
@@ -721,6 +722,7 @@ pub struct FeralScorecardView {
 impl Default for FeralScorecardView {
     fn default() -> Self {
         Self {
+            readiness: "unknown".into(),
             break_rebuild_potential: "unknown".into(),
             hook_fragment_count: 0,
             break_support_count: 0,
@@ -761,6 +763,13 @@ impl FeralScorecardView {
             .iter()
             .filter(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate)
             .count();
+        let readiness = feral_readiness(
+            graph,
+            hook_fragment_count,
+            break_support_count,
+            capture_candidate_count,
+        )
+        .to_string();
         let top_reason = feral_top_reason(
             graph.analysis_summary.break_rebuild_potential,
             hook_fragment_count,
@@ -772,6 +781,7 @@ impl FeralScorecardView {
         let warnings = feral_scorecard_warnings(graph, hook_fragment_count, quote_risk_count);
 
         Self {
+            readiness,
             break_rebuild_potential,
             hook_fragment_count,
             break_support_count,
@@ -780,6 +790,30 @@ impl FeralScorecardView {
             top_reason,
             warnings,
         }
+    }
+}
+
+fn feral_readiness(
+    graph: &SourceGraph,
+    hook_fragment_count: usize,
+    break_support_count: usize,
+    capture_candidate_count: usize,
+) -> &'static str {
+    if graph.has_feral_break_support_evidence() {
+        "ready"
+    } else if graph.analysis_summary.break_rebuild_potential == QualityClass::High
+        && break_support_count == 0
+    {
+        "needs support"
+    } else if graph.analysis_summary.break_rebuild_potential == QualityClass::High
+        && hook_fragment_count == 0
+        && capture_candidate_count == 0
+        && graph.analysis_summary.hook_candidate_count == 0
+        && graph.hook_candidate_count() == 0
+    {
+        "needs hook/capture"
+    } else {
+        "not ready"
     }
 }
 
@@ -1486,6 +1520,7 @@ mod tests {
 
         let scorecard = FeralScorecardView::from_graph(&graph);
 
+        assert_eq!(scorecard.readiness, "ready");
         assert_eq!(scorecard.break_rebuild_potential, "high");
         assert_eq!(scorecard.hook_fragment_count, 1);
         assert_eq!(scorecard.break_support_count, 1);
@@ -1496,6 +1531,66 @@ mod tests {
             scorecard.warnings,
             vec!["fixture_warning".to_string(), "quote risk 1".to_string()]
         );
+    }
+
+    #[test]
+    fn feral_scorecard_readiness_uses_shared_break_support_evidence() {
+        let mut graph = SourceGraph::new(
+            SourceDescriptor {
+                source_id: "src-feral".into(),
+                path: "input.wav".into(),
+                content_hash: "hash-feral".into(),
+                duration_seconds: 32.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "0.1.0".into(),
+                provider_set: vec!["fixture".into()],
+                generated_at: "2026-04-26T13:20:00Z".into(),
+                source_hash: "hash-feral".into(),
+                analysis_seed: 336,
+                run_notes: None,
+            },
+        );
+        graph.analysis_summary.break_rebuild_potential = QualityClass::High;
+        graph.assets.push(Asset {
+            asset_id: "asset-hook".into(),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 2.0,
+            start_bar: 1,
+            end_bar: 1,
+            confidence: 0.9,
+            tags: vec!["hook".into()],
+            source_refs: vec!["src-feral".into()],
+        });
+        graph.candidates.push(Candidate {
+            candidate_id: "candidate-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: "asset-hook".into(),
+            score: 0.87,
+            confidence: 0.81,
+            tags: vec!["feral".into()],
+            constraints: vec!["capture_first".into()],
+            provenance_refs: vec!["fixture".into()],
+        });
+
+        assert_eq!(
+            FeralScorecardView::from_graph(&graph).readiness,
+            "needs support"
+        );
+
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-hook".into(),
+            to_id: "section-break".into(),
+            weight: 0.85,
+            notes: None,
+        });
+
+        assert_eq!(FeralScorecardView::from_graph(&graph).readiness, "ready");
     }
 
     #[test]
@@ -1829,6 +1924,7 @@ mod tests {
         assert!(vm.transport.is_playing);
         assert_eq!(vm.source.loop_candidate_count, 1);
         assert_eq!(vm.source.hook_candidate_count, 1);
+        assert_eq!(vm.source.feral_scorecard.readiness, "ready");
         assert_eq!(vm.source.feral_scorecard.break_rebuild_potential, "high");
         assert_eq!(vm.source.feral_scorecard.hook_fragment_count, 1);
         assert_eq!(vm.source.feral_scorecard.break_support_count, 1);
