@@ -1265,3 +1265,14 @@ Why: musicians can now hear artifact-backed W-30 material, but the current seam 
 Evidence: `docs/reviews/w30_mvp_exit_review_2026-04-26.md` compares the Phase 5 criteria with current app/audio code and tests. It finds source-backed capture artifacts and bus-print artifacts satisfied for MVP, while focused pad playback still caps material through the fixed preview sample window.
 Consequences: the next W-30 implementation should stay narrow: one focused duration-aware pad voice, existing queue/commit actions, preloaded artifact data, no realtime file I/O, and output-path tests proving longer artifact playback differs from both fallback and the fixed-window preview.
 Status: accepted
+
+---
+
+Topic: Focused W-30 pad playback should use a bounded artifact-duration playback window
+Phase: W-30 MVP / Audio QA
+Question: what is the smallest implementation that makes focused W-30 pad hits more than a fixed preview-window replay?
+Decision: add a separate preloaded `W30PadPlaybackSampleWindow` to the W-30 preview render state. Build it from the committed capture artifact, cap it to a bounded `16_384` mono samples for the first MVP pass, loop it in the callback, and prefer it over the existing fixed `W30PreviewSampleWindow` when rendering focused pad audio.
+Why: Phase 5 needs pads to feel playable without jumping straight to full pad-bank polyphony. A bounded focused-pad playback window keeps callback input preloaded and deterministic, avoids realtime file I/O, and gives musicians audible material beyond the old `2048`-sample diagnostic preview.
+Evidence: `w30_pad_playback_uses_duration_window_beyond_fixed_preview_len` proves the callback reaches samples beyond the fixed preview window and differs from the fixed-preview control. `focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unavailable` proves the app path loads committed capture artifacts into the focused pad playback window, renders non-silent audio beyond the preview boundary, and differs from both fixed-preview and fallback controls.
+Consequences: this is still one focused W-30 pad voice, not full multi-pad sampler polyphony. Later work can widen the same artifact playback contract into richer pad-bank behavior without reopening capture storage or resample provenance.
+Status: accepted
