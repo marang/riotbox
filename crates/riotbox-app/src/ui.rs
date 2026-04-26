@@ -2127,6 +2127,14 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         ];
     }
 
+    if shell.app.jam_view.source.feral_scorecard.readiness == "ready" {
+        return vec![
+            line_with_primary_keys("feral ready: [j] browse  [f] fill"),
+            line_with_primary_keys("[g] follow  [a] answer"),
+            line_with_primary_keys("[c] capture if it bites"),
+        ];
+    }
+
     if !shell.app.jam_view.recent_actions.is_empty() {
         return vec![
             Line::from(format!("what changed: {}", latest_landed_text(shell))),
@@ -4916,6 +4924,63 @@ mod tests {
     }
 
     #[test]
+    fn suggested_gesture_lines_promote_feral_ready_moves() {
+        let mut shell = sample_shell_state();
+        shell.app.session.runtime_state.transport.is_playing = true;
+        shell.app.session.runtime_state.scene_state.scenes.clear();
+        shell.app.queue = ActionQueue::new();
+        shell.app.refresh_view();
+        let lines = suggested_gesture_lines(&shell);
+        let rendered = lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(rendered.contains("feral ready: [j] browse  [f] fill"));
+        assert!(rendered.contains("[g] follow  [a] answer"));
+        assert!(rendered.contains("[c] capture if it bites"));
+        assert_eq!(lines[0].spans[1].content.as_ref(), "[j]");
+        assert_eq!(lines[0].spans[1].style.fg, Some(Color::Cyan));
+    }
+
+    #[test]
+    fn suggested_gesture_lines_do_not_promote_near_miss_feral_moves() {
+        let mut shell = sample_shell_state();
+        shell.app.session.runtime_state.transport.is_playing = true;
+        shell.app.session.runtime_state.scene_state.scenes.clear();
+        shell.app.queue = ActionQueue::new();
+        let graph = shell
+            .app
+            .source_graph
+            .as_mut()
+            .expect("sample shell should include source graph");
+        graph.relationships.retain(|relationship| {
+            relationship.relation_type != RelationshipType::SupportsBreakRebuild
+        });
+        shell.app.refresh_view();
+        let lines = suggested_gesture_lines(&shell);
+        let rendered = lines
+            .iter()
+            .map(|line| {
+                line.spans
+                    .iter()
+                    .map(|span| span.content.as_ref())
+                    .collect::<String>()
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+
+        assert!(!rendered.contains("feral ready:"));
+        assert!(rendered.contains("what changed:"), "{rendered}");
+    }
+
+    #[test]
     fn help_key_prefixes_use_primary_control_style() {
         let line = line_with_primary_key_prefixes("space: play / pause | y: jump | Tab: next");
         let rendered = line
@@ -6219,18 +6284,13 @@ mod tests {
         shell.app.set_transport_playing(true);
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
+        assert!(rendered.contains("landed user fill"), "{rendered}");
         assert!(
-            rendered.contains("what changed: landed user fill"),
+            rendered.contains("feral ready: [j] browse  [f] fill"),
             "{rendered}"
         );
-        assert!(
-            rendered.contains("what next: [c] capture  [u] undo"),
-            "{rendered}"
-        );
-        assert!(
-            rendered.contains("then try: [y] jump intro (hold)"),
-            "{rendered}"
-        );
+        assert!(rendered.contains("[g] follow  [a] answer"), "{rendered}");
+        assert!(rendered.contains("[c] capture if it bites"), "{rendered}");
     }
 
     #[test]

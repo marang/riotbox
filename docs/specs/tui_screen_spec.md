@@ -88,6 +88,10 @@ It must expose:
 - post-commit Scene cues that keep a readable monochrome sentence while visually separating the live scene/result, restore target, compact support hints such as `909 lift`, and next perform keys
 - pending Scene cues may include typed transition policy intent such as `policy rise | 909 drive | 202 lift`; this is read-only intent, not a new control surface
 - post-commit Scene cues may include landed movement intent such as `move rise 909 drive 202 lift`; this names persisted session movement that is allowed to shape current render projections, not a separate arranger UI
+- when the shared Feral scorecard is `ready`, Suggested gestures may promote
+  existing bounded Feral paths such as W-30 browse, TR-909 fill, MC-202
+  follow / answer, and capture; this must not create new controls or bypass
+  action semantics
 
 ### 5.1 Jam goals
 
@@ -122,6 +126,8 @@ Show:
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings
+- the shared Feral readiness label, so a user can distinguish `ready` from
+  near-miss states such as `needs support`
 
 This screen helps build trust when the Jam surface behaves unexpectedly.
 
