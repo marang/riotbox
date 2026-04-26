@@ -1,6 +1,6 @@
 use riotbox_audio::{
     runtime::AudioRuntimeLifecycle,
-    tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState},
+    tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportContext},
     w30::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
         W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
@@ -22,6 +22,7 @@ pub struct JamRuntimeView {
     pub tr909_render_routing: String,
     pub tr909_render_profile: String,
     pub tr909_render_support_context: String,
+    pub tr909_render_support_accent: String,
     pub tr909_render_pattern_ref: Option<String>,
     pub tr909_render_pattern_adoption: String,
     pub tr909_render_phrase_variation: String,
@@ -104,6 +105,8 @@ impl JamRuntimeView {
                 .tr909_render
                 .source_support_context
                 .map_or_else(|| "unset".into(), |context| context.label().into()),
+            tr909_render_support_accent: tr909_render_support_accent_label(&runtime.tr909_render)
+                .into(),
             tr909_render_pattern_ref: runtime.tr909_render.pattern_ref.clone(),
             tr909_render_pattern_adoption: runtime
                 .tr909_render
@@ -223,6 +226,17 @@ fn tr909_render_profile_label(render: &Tr909RenderState) -> &'static str {
         (Some(profile), _) => profile.label(),
         (None, Some(profile)) => profile.label(),
         (None, None) => "unset",
+    }
+}
+
+fn tr909_render_support_accent_label(render: &Tr909RenderState) -> &'static str {
+    match (render.mode, render.source_support_context) {
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportContext::SceneTarget)) => "scene",
+        (Tr909RenderMode::SourceSupport, Some(Tr909SourceSupportContext::TransportBar)) => {
+            "off fallback"
+        }
+        (Tr909RenderMode::SourceSupport, None) => "off unset",
+        _ => "off",
     }
 }
 

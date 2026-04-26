@@ -2090,6 +2090,7 @@ mod tests {
         assert_eq!(state.runtime_view.tr909_render_routing, "drum_bus_takeover");
         assert_eq!(state.runtime_view.tr909_render_profile, "controlled_phrase");
         assert_eq!(state.runtime_view.tr909_render_support_context, "unset");
+        assert_eq!(state.runtime_view.tr909_render_support_accent, "off");
         assert_eq!(
             state.runtime_view.tr909_render_pattern_ref.as_deref(),
             Some("scene-1-main")
@@ -2704,6 +2705,7 @@ mod tests {
             state.runtime_view.tr909_render_support_context,
             "scene_target"
         );
+        assert_eq!(state.runtime_view.tr909_render_support_accent, "scene");
         assert_eq!(
             state.runtime.tr909_render.pattern_adoption,
             Some(Tr909PatternAdoption::SupportPulse)
@@ -5822,6 +5824,10 @@ mod tests {
             state.runtime_view.tr909_render_support_context,
             "transport_bar"
         );
+        assert_eq!(
+            state.runtime_view.tr909_render_support_accent,
+            "off fallback"
+        );
 
         session.runtime_state.transport.position_beats = 36.0;
         let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -5841,6 +5847,10 @@ mod tests {
         assert_eq!(
             state.runtime_view.tr909_render_support_context,
             "transport_bar"
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_support_accent,
+            "off fallback"
         );
         assert_eq!(
             state.runtime.tr909_render.pattern_adoption,

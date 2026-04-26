@@ -1014,8 +1014,12 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
                 .unwrap_or_else(|| "boundary none".into())
         )),
         Line::from(format!(
-            "render {} via {} | {} / {}",
+            "render {} | accent {}",
             shell.app.runtime_view.tr909_render_mode,
+            shell.app.runtime_view.tr909_render_support_accent
+        )),
+        Line::from(format!(
+            "via {} | {} / {}",
             shell.app.runtime_view.tr909_render_routing,
             shell.app.runtime_view.tr909_render_profile,
             shell.app.runtime_view.tr909_render_support_context
@@ -1675,9 +1679,10 @@ fn tr909_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             tr909_next_line(shell)
         )),
         Line::from(format!(
-            "profile {} | context {} | route {}",
+            "profile {} | context {} | accent {} | route {}",
             render.tr909_render_profile,
             render.tr909_render_support_context,
+            render.tr909_render_support_accent,
             render.tr909_render_routing
         )),
         Line::from(format!(
@@ -5056,6 +5061,7 @@ mod tests {
         assert!(rendered.contains("MC-202 detail"), "{rendered}");
         assert!(rendered.contains("W-30 detail"), "{rendered}");
         assert!(rendered.contains("TR-909 detail"), "{rendered}");
+        assert!(rendered.contains("accent off"), "{rendered}");
         assert!(rendered.contains("Source structure"), "{rendered}");
         assert!(rendered.contains("Material flow"), "{rendered}");
         assert!(rendered.contains("Diagnostics"), "{rendered}");
@@ -6284,6 +6290,7 @@ mod tests {
         assert!(rendered.contains("ghost"));
         assert!(rendered.contains("mutate.scene"));
         assert!(rendered.contains("TR-909 Render"));
+        assert!(rendered.contains("accent off"));
         assert!(rendered.contains("takeover"));
         assert!(rendered.contains("scene lock blocked ghost"));
         assert!(rendered.contains("undid most recent musical"));
