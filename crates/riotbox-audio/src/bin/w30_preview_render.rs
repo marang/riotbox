@@ -269,6 +269,7 @@ fn source_window_smoke_state(
         trigger_revision: 0,
         trigger_velocity: 0.0,
         source_window_preview: Some(source_window_preview),
+        pad_playback: None,
         music_bus_level: 0.64,
         grit_level: 0.0,
         is_transport_running: true,

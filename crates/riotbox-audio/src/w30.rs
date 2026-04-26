@@ -1,4 +1,5 @@
 pub const W30_PREVIEW_SAMPLE_WINDOW_LEN: usize = 2_048;
+pub const W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN: usize = 16_384;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum W30PreviewRenderMode {
@@ -119,6 +120,7 @@ pub struct W30PreviewRenderState {
     pub trigger_revision: u64,
     pub trigger_velocity: f32,
     pub source_window_preview: Option<W30PreviewSampleWindow>,
+    pub pad_playback: Option<W30PadPlaybackSampleWindow>,
     pub music_bus_level: f32,
     pub grit_level: f32,
     pub is_transport_running: bool,
@@ -134,6 +136,15 @@ pub struct W30PreviewSampleWindow {
     pub samples: [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct W30PadPlaybackSampleWindow {
+    pub source_start_frame: u64,
+    pub source_end_frame: u64,
+    pub sample_count: usize,
+    pub loop_enabled: bool,
+    pub samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+}
+
 impl Default for W30PreviewRenderState {
     fn default() -> Self {
         Self {
@@ -146,6 +157,7 @@ impl Default for W30PreviewRenderState {
             trigger_revision: 0,
             trigger_velocity: 0.0,
             source_window_preview: None,
+            pad_playback: None,
             music_bus_level: 0.0,
             grit_level: 0.0,
             is_transport_running: false,
