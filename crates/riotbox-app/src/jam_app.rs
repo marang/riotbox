@@ -2813,6 +2813,56 @@ mod tests {
     }
 
     #[test]
+    fn committed_scene_restore_projects_target_scene_into_tr909_source_support() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.transport.position_beats = 32.0;
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-break"));
+        session.runtime_state.scene_state.restore_scene = Some(SceneId::from("scene-01-drop"));
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::SourceSupport);
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("restore-support".into());
+
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+        assert_eq!(state.queue_scene_restore(300), QueueControlResult::Enqueued);
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: riotbox_core::action::CommitBoundary::Bar,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-02-break")),
+            },
+            420,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.scene_state.active_scene,
+            Some(SceneId::from("scene-01-drop"))
+        );
+        assert_eq!(
+            state.runtime.tr909_render.current_scene_id.as_deref(),
+            Some("scene-01-drop")
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_profile,
+            Some(Tr909SourceSupportProfile::DropDrive)
+        );
+        assert_eq!(
+            state.runtime.tr909_render.source_support_context,
+            Some(Tr909SourceSupportContext::SceneTarget)
+        );
+        assert_eq!(
+            state.runtime_view.tr909_render_support_context,
+            "scene_target"
+        );
+        assert_eq!(state.runtime_view.tr909_render_support_accent, "scene");
+    }
+
+    #[test]
     fn queueing_mc202_role_change_blocks_duplicate_pending_actions() {
         let graph = sample_graph();
         let session = sample_session(&graph);
