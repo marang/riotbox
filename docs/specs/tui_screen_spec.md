@@ -166,6 +166,12 @@ Rules:
 - action wording must use the Action Lexicon
 - timestamps and quantization targets should be visible
 - log noise must be controlled
+- TR-909 render diagnostics may show compact support context and accent cues, but must remain read-only diagnostics rather than new controls
+- `accent scene` means `scene_target` source support is getting the bounded Scene-target support accent
+- `accent off fallback` means source support fell back to `transport_bar` and no Scene-target accent is active
+- non-source-support modes should keep accent wording in an `off` state
+- Jam Inspect may show the same TR-909 profile / context / accent / route tuple for diagnosis, but the primary Jam surface should not require reading this tuple to play
+- the accent cue is not a transition-engine promise; it only names the current render diagnostic state
 
 ---
 
