@@ -2083,6 +2083,8 @@ mod tests {
         max_peak_abs: f32,
         min_sum: Option<f32>,
         max_sum: Option<f32>,
+        min_rms: Option<f32>,
+        max_rms: Option<f32>,
     }
 
     #[derive(Debug, Deserialize)]
@@ -3450,6 +3452,10 @@ mod tests {
             let peak_abs = buffer
                 .iter()
                 .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+            let sum = buffer.iter().sum::<f32>();
+            let rms = (buffer.iter().map(|sample| sample * sample).sum::<f32>()
+                / buffer.len() as f32)
+                .sqrt();
 
             assert!(
                 active_samples >= fixture.expected.min_active_samples,
@@ -3471,6 +3477,18 @@ mod tests {
                 "{} peak too high: got {peak_abs}",
                 fixture.name
             );
+            if let Some(min_sum) = fixture.expected.min_sum {
+                assert!(sum >= min_sum, "{} sum too low: got {sum}", fixture.name);
+            }
+            if let Some(max_sum) = fixture.expected.max_sum {
+                assert!(sum <= max_sum, "{} sum too high: got {sum}", fixture.name);
+            }
+            if let Some(min_rms) = fixture.expected.min_rms {
+                assert!(rms >= min_rms, "{} RMS too low: got {rms}", fixture.name);
+            }
+            if let Some(max_rms) = fixture.expected.max_rms {
+                assert!(rms <= max_rms, "{} RMS too high: got {rms}", fixture.name);
+            }
         }
     }
 
