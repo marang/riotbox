@@ -44,6 +44,8 @@ That is expected in the current prototype because:
 - the current build is still more about **quantized action flow** than about a wide expressive mixer/performance surface
 - Riotbox is deterministic enough that the same source plus the same first gesture often produces the same first feel
 
+MC-202 gestures are no longer only log/state cues: after a committed `g` follower or `a` answer, the current runtime can mix a bounded bass voice through the music bus. This is still a first audio seam, not a finished MC-202 synth engine or MIDI-controlled bassline editor.
+
 So the quickstart is useful for confirming:
 
 - transport is running

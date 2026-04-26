@@ -1,4 +1,5 @@
 use riotbox_audio::{
+    mc202::{Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
     runtime::AudioRuntimeLifecycle,
     tr909::{Tr909RenderMode, Tr909RenderRouting, Tr909RenderState, Tr909SourceSupportContext},
     w30::{
@@ -29,6 +30,11 @@ pub struct JamRuntimeView {
     pub tr909_render_mix_summary: String,
     pub tr909_render_alignment: String,
     pub tr909_render_transport_summary: String,
+    pub mc202_render_mode: String,
+    pub mc202_render_routing: String,
+    pub mc202_render_phrase_shape: String,
+    pub mc202_render_mix_summary: String,
+    pub mc202_render_transport_summary: String,
     pub w30_preview_mode: String,
     pub w30_preview_routing: String,
     pub w30_preview_profile: String,
@@ -86,6 +92,7 @@ impl JamRuntimeView {
         }
 
         runtime_warnings.extend(derive_tr909_render_warnings(&runtime.tr909_render, session));
+        runtime_warnings.extend(derive_mc202_render_warnings(&runtime.mc202_render, session));
         runtime_warnings.extend(derive_w30_preview_warnings(&runtime.w30_preview, session));
         runtime_warnings.extend(derive_w30_resample_tap_warnings(
             &runtime.w30_resample_tap,
@@ -122,6 +129,14 @@ impl JamRuntimeView {
             ),
             tr909_render_alignment: tr909_render_alignment_label(&runtime.tr909_render).into(),
             tr909_render_transport_summary: tr909_render_transport_summary(&runtime.tr909_render),
+            mc202_render_mode: runtime.mc202_render.mode.label().into(),
+            mc202_render_routing: runtime.mc202_render.routing.label().into(),
+            mc202_render_phrase_shape: runtime.mc202_render.phrase_shape.label().into(),
+            mc202_render_mix_summary: format!(
+                "music bus {:.2} | touch {:.2}",
+                runtime.mc202_render.music_bus_level, runtime.mc202_render.touch
+            ),
+            mc202_render_transport_summary: mc202_render_transport_summary(&runtime.mc202_render),
             w30_preview_mode: runtime.w30_preview.mode.label().into(),
             w30_preview_routing: runtime.w30_preview.routing.label().into(),
             w30_preview_profile: w30_preview_profile_label(&runtime.w30_preview).into(),
@@ -263,6 +278,23 @@ fn tr909_render_transport_summary(render: &Tr909RenderState) -> String {
     )
 }
 
+fn mc202_render_transport_summary(render: &Mc202RenderState) -> String {
+    if matches!(render.mode, Mc202RenderMode::Idle) {
+        return "bass idle".into();
+    }
+
+    format!(
+        "{} @ {:.1} beats | {:.1} BPM",
+        if render.is_transport_running {
+            "running"
+        } else {
+            "stopped"
+        },
+        render.position_beats,
+        render.tempo_bpm
+    )
+}
+
 fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile) -> Vec<String> {
     let mut warnings = Vec::new();
     let lane = &session.runtime_state.lane_state.tr909;
@@ -327,6 +359,28 @@ fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile
             || render.takeover_profile.is_some())
     {
         warnings.push("909 render has no pattern_ref while musical support is active".into());
+    }
+
+    warnings
+}
+
+fn derive_mc202_render_warnings(render: &Mc202RenderState, session: &SessionFile) -> Vec<String> {
+    if matches!(render.mode, Mc202RenderMode::Idle) {
+        return Vec::new();
+    }
+
+    let mut warnings = Vec::new();
+
+    if !matches!(render.routing, Mc202RenderRouting::MusicBusBass) {
+        warnings.push("MC-202 render is active but not routed to music_bus_bass".into());
+    }
+
+    if render.music_bus_level <= 0.0 {
+        warnings.push("MC-202 render is routed to the music bus at zero music level".into());
+    }
+
+    if session.runtime_state.lane_state.mc202.role.is_none() {
+        warnings.push("MC-202 render is active without a committed role".into());
     }
 
     warnings

@@ -8,7 +8,9 @@ use std::{
     time::Instant,
 };
 
-use crate::mc202::{Mc202RenderState, render_mc202_buffer};
+use crate::mc202::{
+    Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
+};
 use crate::tr909::{
     Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
     Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -253,6 +255,7 @@ pub struct AudioRuntimeShell {
     telemetry: Arc<RuntimeTelemetry>,
     transport: Arc<SharedTransportTimingState>,
     tr909_render: Arc<SharedTr909RenderState>,
+    mc202_render: Arc<SharedMc202RenderState>,
     w30_preview: Arc<SharedW30PreviewRenderState>,
     w30_resample_tap: Arc<SharedW30ResampleTapState>,
     stream: Option<cpal::Stream>,
@@ -262,6 +265,7 @@ impl AudioRuntimeShell {
     pub fn start_default_output() -> Result<Self, AudioRuntimeError> {
         Self::start_default_output_with_render_states(
             Tr909RenderState::default(),
+            Mc202RenderState::default(),
             W30PreviewRenderState::default(),
             W30ResampleTapState::default(),
         )
@@ -272,6 +276,7 @@ impl AudioRuntimeShell {
     ) -> Result<Self, AudioRuntimeError> {
         Self::start_default_output_with_render_states(
             render_state,
+            Mc202RenderState::default(),
             W30PreviewRenderState::default(),
             W30ResampleTapState::default(),
         )
@@ -279,6 +284,7 @@ impl AudioRuntimeShell {
 
     pub fn start_default_output_with_render_states(
         tr909_render_state: Tr909RenderState,
+        mc202_render_state: Mc202RenderState,
         w30_preview_render_state: W30PreviewRenderState,
         w30_resample_tap_state: W30ResampleTapState,
     ) -> Result<Self, AudioRuntimeError> {
@@ -324,6 +330,7 @@ impl AudioRuntimeShell {
             tr909_render_state.position_beats,
         ));
         let tr909_render = Arc::new(SharedTr909RenderState::new(&tr909_render_state));
+        let mc202_render = Arc::new(SharedMc202RenderState::new(&mc202_render_state));
         let w30_preview = Arc::new(SharedW30PreviewRenderState::new(&w30_preview_render_state));
         let w30_resample_tap = Arc::new(SharedW30ResampleTapState::new(&w30_resample_tap_state));
         let stream_config = default_config.config();
@@ -337,6 +344,7 @@ impl AudioRuntimeShell {
                     telemetry: Arc::clone(&telemetry),
                     transport: Arc::clone(&transport),
                     tr909_render: Arc::clone(&tr909_render),
+                    mc202_render: Arc::clone(&mc202_render),
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
                 },
@@ -349,6 +357,7 @@ impl AudioRuntimeShell {
                     telemetry: Arc::clone(&telemetry),
                     transport: Arc::clone(&transport),
                     tr909_render: Arc::clone(&tr909_render),
+                    mc202_render: Arc::clone(&mc202_render),
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
                 },
@@ -361,6 +370,7 @@ impl AudioRuntimeShell {
                     telemetry: Arc::clone(&telemetry),
                     transport: Arc::clone(&transport),
                     tr909_render: Arc::clone(&tr909_render),
+                    mc202_render: Arc::clone(&mc202_render),
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
                 },
@@ -394,6 +404,7 @@ impl AudioRuntimeShell {
             telemetry,
             transport,
             tr909_render,
+            mc202_render,
             w30_preview,
             w30_resample_tap,
             stream: Some(stream),
@@ -446,6 +457,10 @@ impl AudioRuntimeShell {
         self.tr909_render.update(render_state);
     }
 
+    pub fn update_mc202_render_state(&self, render_state: &Mc202RenderState) {
+        self.mc202_render.update(render_state);
+    }
+
     pub fn update_w30_preview_render_state(&self, render_state: &W30PreviewRenderState) {
         self.w30_preview.update(render_state);
     }
@@ -460,26 +475,31 @@ impl AudioRuntimeShell {
     }
 
     #[cfg(test)]
-    fn from_test_parts(
-        lifecycle: AudioRuntimeLifecycle,
-        output: Option<AudioOutputInfo>,
-        telemetry: Arc<RuntimeTelemetry>,
-        transport: Arc<SharedTransportTimingState>,
-        tr909_render_state: Arc<SharedTr909RenderState>,
-        w30_preview_state: Arc<SharedW30PreviewRenderState>,
-        w30_resample_tap_state: Arc<SharedW30ResampleTapState>,
-    ) -> Self {
+    fn from_test_parts(parts: AudioRuntimeShellTestParts) -> Self {
         Self {
-            lifecycle,
-            output,
-            telemetry,
-            transport,
-            tr909_render: tr909_render_state,
-            w30_preview: w30_preview_state,
-            w30_resample_tap: w30_resample_tap_state,
+            lifecycle: parts.lifecycle,
+            output: parts.output,
+            telemetry: parts.telemetry,
+            transport: parts.transport,
+            tr909_render: parts.tr909_render,
+            mc202_render: parts.mc202_render,
+            w30_preview: parts.w30_preview,
+            w30_resample_tap: parts.w30_resample_tap,
             stream: None,
         }
     }
+}
+
+#[cfg(test)]
+struct AudioRuntimeShellTestParts {
+    lifecycle: AudioRuntimeLifecycle,
+    output: Option<AudioOutputInfo>,
+    telemetry: Arc<RuntimeTelemetry>,
+    transport: Arc<SharedTransportTimingState>,
+    tr909_render: Arc<SharedTr909RenderState>,
+    mc202_render: Arc<SharedMc202RenderState>,
+    w30_preview: Arc<SharedW30PreviewRenderState>,
+    w30_resample_tap: Arc<SharedW30ResampleTapState>,
 }
 
 impl Drop for AudioRuntimeShell {
@@ -526,6 +546,10 @@ where
             tr909_render_state.is_transport_running = callback_timing.is_transport_running;
             tr909_render_state.tempo_bpm = callback_timing.tempo_bpm;
             tr909_render_state.position_beats = callback_timing.render_position_beats;
+            let mut mc202_render_state = shared.mc202_render.snapshot();
+            mc202_render_state.is_transport_running = callback_timing.is_transport_running;
+            mc202_render_state.tempo_bpm = callback_timing.tempo_bpm;
+            mc202_render_state.position_beats = callback_timing.render_position_beats;
             let mut w30_preview_render_state = shared.w30_preview.snapshot();
             w30_preview_render_state.is_transport_running = callback_timing.is_transport_running;
             w30_preview_render_state.tempo_bpm = callback_timing.tempo_bpm;
@@ -538,6 +562,7 @@ where
                 sample_rate,
                 channel_count,
                 &tr909_render_state,
+                &mc202_render_state,
                 &mut render_state,
                 &mut W30MixRenderState {
                     preview_render: &w30_preview_render_state,
@@ -565,6 +590,7 @@ struct AudioRuntimeSharedState {
     telemetry: Arc<RuntimeTelemetry>,
     transport: Arc<SharedTransportTimingState>,
     tr909_render: Arc<SharedTr909RenderState>,
+    mc202_render: Arc<SharedMc202RenderState>,
     w30_preview: Arc<SharedW30PreviewRenderState>,
     w30_resample_tap: Arc<SharedW30ResampleTapState>,
 }
@@ -722,6 +748,145 @@ impl SharedTr909RenderState {
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
             position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
         }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
+struct RealtimeMc202RenderState {
+    mode: Mc202RenderMode,
+    routing: Mc202RenderRouting,
+    phrase_shape: Mc202PhraseShape,
+    touch: f32,
+    music_bus_level: f32,
+    tempo_bpm: f32,
+    position_beats: f64,
+    is_transport_running: bool,
+}
+
+impl From<RealtimeMc202RenderState> for Mc202RenderState {
+    fn from(render: RealtimeMc202RenderState) -> Self {
+        Self {
+            mode: render.mode,
+            routing: render.routing,
+            phrase_shape: render.phrase_shape,
+            touch: render.touch,
+            music_bus_level: render.music_bus_level,
+            tempo_bpm: render.tempo_bpm,
+            position_beats: render.position_beats,
+            is_transport_running: render.is_transport_running,
+        }
+    }
+}
+
+struct SharedMc202RenderState {
+    mode: AtomicU32,
+    routing: AtomicU32,
+    phrase_shape: AtomicU32,
+    touch_bits: AtomicU32,
+    music_bus_level_bits: AtomicU32,
+    tempo_bpm_bits: AtomicU32,
+    position_beats_bits: AtomicU64,
+    is_transport_running: AtomicBool,
+}
+
+impl SharedMc202RenderState {
+    fn new(render_state: &Mc202RenderState) -> Self {
+        let shared = Self {
+            mode: AtomicU32::new(0),
+            routing: AtomicU32::new(0),
+            phrase_shape: AtomicU32::new(0),
+            touch_bits: AtomicU32::new(0),
+            music_bus_level_bits: AtomicU32::new(0),
+            tempo_bpm_bits: AtomicU32::new(0),
+            position_beats_bits: AtomicU64::new(0),
+            is_transport_running: AtomicBool::new(false),
+        };
+        shared.update(render_state);
+        shared
+    }
+
+    fn update(&self, render_state: &Mc202RenderState) {
+        self.mode
+            .store(mc202_mode_to_u32(render_state.mode), Ordering::Relaxed);
+        self.routing.store(
+            mc202_routing_to_u32(render_state.routing),
+            Ordering::Relaxed,
+        );
+        self.phrase_shape.store(
+            mc202_phrase_shape_to_u32(render_state.phrase_shape),
+            Ordering::Relaxed,
+        );
+        self.touch_bits
+            .store(render_state.touch.to_bits(), Ordering::Relaxed);
+        self.music_bus_level_bits
+            .store(render_state.music_bus_level.to_bits(), Ordering::Relaxed);
+        self.tempo_bpm_bits
+            .store(render_state.tempo_bpm.to_bits(), Ordering::Relaxed);
+        self.position_beats_bits
+            .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
+        self.is_transport_running
+            .store(render_state.is_transport_running, Ordering::Relaxed);
+    }
+
+    fn snapshot(&self) -> RealtimeMc202RenderState {
+        RealtimeMc202RenderState {
+            mode: mc202_mode_from_u32(self.mode.load(Ordering::Relaxed)),
+            routing: mc202_routing_from_u32(self.routing.load(Ordering::Relaxed)),
+            phrase_shape: mc202_phrase_shape_from_u32(self.phrase_shape.load(Ordering::Relaxed)),
+            touch: f32::from_bits(self.touch_bits.load(Ordering::Relaxed)),
+            music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
+            tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
+            position_beats: f64::from_bits(self.position_beats_bits.load(Ordering::Relaxed)),
+            is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
+        }
+    }
+}
+
+fn mc202_mode_to_u32(mode: Mc202RenderMode) -> u32 {
+    match mode {
+        Mc202RenderMode::Idle => 0,
+        Mc202RenderMode::Leader => 1,
+        Mc202RenderMode::Follower => 2,
+        Mc202RenderMode::Answer => 3,
+    }
+}
+
+fn mc202_mode_from_u32(value: u32) -> Mc202RenderMode {
+    match value {
+        1 => Mc202RenderMode::Leader,
+        2 => Mc202RenderMode::Follower,
+        3 => Mc202RenderMode::Answer,
+        _ => Mc202RenderMode::Idle,
+    }
+}
+
+fn mc202_routing_to_u32(routing: Mc202RenderRouting) -> u32 {
+    match routing {
+        Mc202RenderRouting::Silent => 0,
+        Mc202RenderRouting::MusicBusBass => 1,
+    }
+}
+
+fn mc202_routing_from_u32(value: u32) -> Mc202RenderRouting {
+    match value {
+        1 => Mc202RenderRouting::MusicBusBass,
+        _ => Mc202RenderRouting::Silent,
+    }
+}
+
+fn mc202_phrase_shape_to_u32(shape: Mc202PhraseShape) -> u32 {
+    match shape {
+        Mc202PhraseShape::RootPulse => 0,
+        Mc202PhraseShape::FollowerDrive => 1,
+        Mc202PhraseShape::AnswerHook => 2,
+    }
+}
+
+fn mc202_phrase_shape_from_u32(value: u32) -> Mc202PhraseShape {
+    match value {
+        1 => Mc202PhraseShape::FollowerDrive,
+        2 => Mc202PhraseShape::AnswerHook,
+        _ => Mc202PhraseShape::RootPulse,
     }
 }
 
@@ -1088,11 +1253,13 @@ fn render_mix_buffer(
     sample_rate: u32,
     channel_count: usize,
     tr909_render: &RealtimeTr909RenderState,
+    mc202_render: &RealtimeMc202RenderState,
     tr909_state: &mut Tr909CallbackState,
     w30: &mut W30MixRenderState<'_>,
 ) {
     data.fill(0.0);
     render_tr909_buffer(data, sample_rate, channel_count, tr909_render, tr909_state);
+    render_mc202_buffer(data, sample_rate, channel_count, &(*mc202_render).into());
     sync_w30_preview_state(w30.preview_render, w30.preview_state);
     render_w30_preview_buffer(
         data,
@@ -2428,6 +2595,8 @@ mod tests {
         let telemetry = Arc::new(RuntimeTelemetry::new());
         let tr909_render_state =
             Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
+        let mc202_render_state =
+            Arc::new(SharedMc202RenderState::new(&Mc202RenderState::default()));
         let w30_preview_state = Arc::new(SharedW30PreviewRenderState::new(
             &W30PreviewRenderState::default(),
         ));
@@ -2439,15 +2608,16 @@ mod tests {
         telemetry.record_callback_at(240, &sample_timing(12.25));
         telemetry.record_stream_error("stream stalled".into());
 
-        let shell = AudioRuntimeShell::from_test_parts(
-            AudioRuntimeLifecycle::Running,
-            Some(sample_output()),
+        let shell = AudioRuntimeShell::from_test_parts(AudioRuntimeShellTestParts {
+            lifecycle: AudioRuntimeLifecycle::Running,
+            output: Some(sample_output()),
             telemetry,
             transport,
-            tr909_render_state,
-            w30_preview_state,
-            w30_resample_tap_state,
-        );
+            tr909_render: tr909_render_state,
+            mc202_render: mc202_render_state,
+            w30_preview: w30_preview_state,
+            w30_resample_tap: w30_resample_tap_state,
+        });
 
         let snapshot = shell.health_snapshot();
 
@@ -2466,6 +2636,8 @@ mod tests {
         let telemetry = Arc::new(RuntimeTelemetry::new());
         let tr909_render_state =
             Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default()));
+        let mc202_render_state =
+            Arc::new(SharedMc202RenderState::new(&Mc202RenderState::default()));
         let w30_preview_state = Arc::new(SharedW30PreviewRenderState::new(
             &W30PreviewRenderState::default(),
         ));
@@ -2473,15 +2645,16 @@ mod tests {
             &W30ResampleTapState::default(),
         ));
         let transport = Arc::new(SharedTransportTimingState::new(false, 128.0, 0.0));
-        let mut shell = AudioRuntimeShell::from_test_parts(
-            AudioRuntimeLifecycle::Running,
-            Some(sample_output()),
+        let mut shell = AudioRuntimeShell::from_test_parts(AudioRuntimeShellTestParts {
+            lifecycle: AudioRuntimeLifecycle::Running,
+            output: Some(sample_output()),
             telemetry,
             transport,
-            tr909_render_state,
-            w30_preview_state,
-            w30_resample_tap_state,
-        );
+            tr909_render: tr909_render_state,
+            mc202_render: mc202_render_state,
+            w30_preview: w30_preview_state,
+            w30_resample_tap: w30_resample_tap_state,
+        });
 
         shell.stop();
 
@@ -2492,19 +2665,20 @@ mod tests {
     fn timing_snapshot_reflects_callback_owned_transport_progress() {
         let telemetry = Arc::new(RuntimeTelemetry::new());
         let transport = Arc::new(SharedTransportTimingState::new(true, 126.0, 32.0));
-        let shell = AudioRuntimeShell::from_test_parts(
-            AudioRuntimeLifecycle::Running,
-            Some(sample_output()),
-            Arc::clone(&telemetry),
-            Arc::clone(&transport),
-            Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default())),
-            Arc::new(SharedW30PreviewRenderState::new(
+        let shell = AudioRuntimeShell::from_test_parts(AudioRuntimeShellTestParts {
+            lifecycle: AudioRuntimeLifecycle::Running,
+            output: Some(sample_output()),
+            telemetry: Arc::clone(&telemetry),
+            transport: Arc::clone(&transport),
+            tr909_render: Arc::new(SharedTr909RenderState::new(&Tr909RenderState::default())),
+            mc202_render: Arc::new(SharedMc202RenderState::new(&Mc202RenderState::default())),
+            w30_preview: Arc::new(SharedW30PreviewRenderState::new(
                 &W30PreviewRenderState::default(),
             )),
-            Arc::new(SharedW30ResampleTapState::new(
+            w30_resample_tap: Arc::new(SharedW30ResampleTapState::new(
                 &W30ResampleTapState::default(),
             )),
-        );
+        });
 
         telemetry.record_callback_at(
             100,
@@ -2597,6 +2771,33 @@ mod tests {
 
         let unset = shared.snapshot();
         assert_eq!(unset.source_support_context, None);
+    }
+
+    #[test]
+    fn shared_mc202_render_state_tracks_updates() {
+        let shared = SharedMc202RenderState::new(&Mc202RenderState::default());
+        let render = Mc202RenderState {
+            mode: Mc202RenderMode::Answer,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::AnswerHook,
+            touch: 0.82,
+            music_bus_level: 0.64,
+            is_transport_running: true,
+            tempo_bpm: 130.0,
+            position_beats: 41.5,
+        };
+
+        shared.update(&render);
+
+        let snapshot = shared.snapshot();
+        assert_eq!(snapshot.mode, Mc202RenderMode::Answer);
+        assert_eq!(snapshot.routing, Mc202RenderRouting::MusicBusBass);
+        assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::AnswerHook);
+        assert_eq!(snapshot.touch, 0.82);
+        assert_eq!(snapshot.music_bus_level, 0.64);
+        assert!(snapshot.is_transport_running);
+        assert_eq!(snapshot.tempo_bpm, 130.0);
+        assert_eq!(snapshot.position_beats, 41.5);
     }
 
     #[test]
@@ -3272,6 +3473,76 @@ mod tests {
         );
 
         assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn render_mix_buffer_includes_live_mc202_bass_seam() {
+        let mut tr909_state = Tr909CallbackState::default();
+        let mut w30_preview_state = W30PreviewCallbackState::default();
+        let mut w30_resample_state = W30ResampleTapCallbackState::default();
+        let mut buffer = vec![0.0_f32; 44_100 * 2];
+
+        render_mix_buffer(
+            &mut buffer,
+            44_100,
+            2,
+            &RealtimeTr909RenderState {
+                mode: Tr909RenderMode::Idle,
+                routing: Tr909RenderRouting::SourceOnly,
+                source_support_profile: None,
+                source_support_context: None,
+                pattern_adoption: None,
+                phrase_variation: None,
+                takeover_profile: None,
+                drum_bus_level: 0.0,
+                slam_intensity: 0.0,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+            },
+            &RealtimeMc202RenderState {
+                mode: Mc202RenderMode::Follower,
+                routing: Mc202RenderRouting::MusicBusBass,
+                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                touch: 0.78,
+                music_bus_level: 0.64,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+            },
+            &mut tr909_state,
+            &mut W30MixRenderState {
+                preview_render: &RealtimeW30PreviewRenderState {
+                    mode: W30PreviewRenderMode::Idle,
+                    routing: W30PreviewRenderRouting::Silent,
+                    source_profile: None,
+                    trigger_revision: 0,
+                    trigger_velocity: 0.0,
+                    source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+                    music_bus_level: 0.0,
+                    grit_level: 0.0,
+                    is_transport_running: true,
+                    tempo_bpm: 128.0,
+                    position_beats: 32.0,
+                },
+                preview_state: &mut w30_preview_state,
+                resample_render: &RealtimeW30ResampleTapState {
+                    mode: W30ResampleTapMode::Idle,
+                    routing: W30ResampleTapRouting::Silent,
+                    source_profile: None,
+                    lineage_capture_count: 0,
+                    generation_depth: 0,
+                    music_bus_level: 0.0,
+                    grit_level: 0.0,
+                    is_transport_running: true,
+                },
+                resample_state: &mut w30_resample_state,
+            },
+        );
+
+        let metrics = signal_metrics(&buffer);
+        assert!(metrics.active_samples > 10_000);
+        assert!(metrics.rms > 0.001);
     }
 
     #[test]
