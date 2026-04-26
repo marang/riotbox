@@ -183,6 +183,11 @@ or supported `HookFragment`. This remains the same queued
 `w30.browse_slice_pool` action; Feral policy changes target selection, not the
 Action Lexicon or commit semantics.
 
+TR-909 source-support render projection may consume the same Feral Source Graph
+evidence to choose a stronger bounded support profile, for example lifting
+neutral `steady_pulse` support into `break_lift`. This changes render policy
+only; it does not add a new drum action, arranger, or commit path.
+
 ### 6.6 Structural / safety
 
 - `lock.object`

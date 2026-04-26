@@ -319,7 +319,7 @@ Consumers should use this as a compact policy and UX hint. They must still keep
 audible behavior behind explicit Action Lexicon, queue / commit, and render
 contracts.
 
-Current bounded consumer:
+Current bounded consumers:
 
 - `w30.browse_slice_pool` may use a high or supported Feral scorecard to prefer
   a non-current capture whose `source_origin_refs` match a `CaptureCandidate`
@@ -330,6 +330,15 @@ Current bounded consumer:
   for example `feral browse cap-03`.
 - If the preferred capture changes audible preview material, the slice needs a
   downstream preview or buffer proof, not only a changed log line.
+- TR-909 source support may use the same scorecard evidence to lift an
+  otherwise neutral `steady_pulse` support profile into `break_lift` when the
+  graph has high break-rebuild potential plus supported hook or capture
+  evidence.
+- That TR-909 bias must remain bounded to the existing source-support render
+  policy. It must not create a separate drum arranger, bypass queue / commit
+  state, or override explicit `drop_drive` / section-derived break support.
+- If the bias claims musical impact, tests need both render-state proof and an
+  audible buffer comparison against the non-Feral control path.
 
 ---
 
