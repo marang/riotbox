@@ -91,12 +91,33 @@ impl Mc202NoteBudget {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Mc202ContourHint {
+    Neutral,
+    Lift,
+    Drop,
+    Hold,
+}
+
+impl Mc202ContourHint {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Neutral => "neutral",
+            Self::Lift => "lift",
+            Self::Drop => "drop",
+            Self::Hold => "hold",
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mc202RenderState {
     pub mode: Mc202RenderMode,
     pub routing: Mc202RenderRouting,
     pub phrase_shape: Mc202PhraseShape,
     pub note_budget: Mc202NoteBudget,
+    pub contour_hint: Mc202ContourHint,
     pub touch: f32,
     pub music_bus_level: f32,
     pub tempo_bpm: f32,
@@ -111,6 +132,7 @@ impl Default for Mc202RenderState {
             routing: Mc202RenderRouting::Silent,
             phrase_shape: Mc202PhraseShape::RootPulse,
             note_budget: Mc202NoteBudget::Balanced,
+            contour_hint: Mc202ContourHint::Neutral,
             touch: 0.4,
             music_bus_level: 0.72,
             tempo_bpm: 128.0,
@@ -150,6 +172,7 @@ pub fn render_mc202_buffer(
         if !within_note_budget(render.phrase_shape, render.note_budget, sixteenth) {
             continue;
         }
+        let semitone = semitone + contour_offset(render.contour_hint, sixteenth);
 
         let octave_drop = match render.mode {
             Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
@@ -318,6 +341,32 @@ fn within_note_budget(shape: Mc202PhraseShape, budget: Mc202NoteBudget, sixteent
         .saturating_sub(1);
 
     active_index < budget.max_active_steps()
+}
+
+fn contour_offset(hint: Mc202ContourHint, sixteenth: usize) -> i8 {
+    let quarter = (sixteenth % 16) / 4;
+    match hint {
+        Mc202ContourHint::Neutral => 0,
+        Mc202ContourHint::Lift => match quarter {
+            0 => 0,
+            1 => 2,
+            2 => 5,
+            _ => 7,
+        },
+        Mc202ContourHint::Drop => match quarter {
+            0 => 7,
+            1 => 5,
+            2 => 2,
+            _ => 0,
+        },
+        Mc202ContourHint::Hold => {
+            if sixteenth % 4 >= 2 {
+                -5
+            } else {
+                0
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -588,6 +637,48 @@ mod tests {
             wide_metrics.2
         );
         assert!(delta_rms > 0.001, "note-budget delta RMS {delta_rms}");
+    }
+
+    #[test]
+    fn contour_hint_changes_phrase_without_silencing_it() {
+        let mut neutral = vec![0.0; 44_100 * 2];
+        let mut lift = vec![0.0; 44_100 * 2];
+        let base = Mc202RenderState {
+            mode: Mc202RenderMode::Follower,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::FollowerDrive,
+            note_budget: Mc202NoteBudget::Balanced,
+            touch: 0.78,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(&mut neutral, 44_100, 2, &base);
+        render_mc202_buffer(
+            &mut lift,
+            44_100,
+            2,
+            &Mc202RenderState {
+                contour_hint: Mc202ContourHint::Lift,
+                ..base
+            },
+        );
+
+        let neutral_metrics = metrics(&neutral);
+        let lift_metrics = metrics(&lift);
+        let delta_rms = (neutral
+            .iter()
+            .zip(lift.iter())
+            .map(|(neutral, lift)| (neutral - lift).powi(2))
+            .sum::<f32>()
+            / neutral.len() as f32)
+            .sqrt();
+
+        assert!(neutral_metrics.0 > 10_000);
+        assert!(lift_metrics.0 > 10_000);
+        assert!(delta_rms > 0.004, "contour hint delta RMS {delta_rms}");
     }
 
     #[test]

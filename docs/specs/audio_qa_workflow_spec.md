@@ -462,11 +462,12 @@ Today the repo already has:
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
-- MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, follower-vs-instigator, and follower-vs-mutated-drive contrasts without claiming a finished synth engine
+- MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, follower-vs-instigator, follower-vs-mutated-drive, and neutral-vs-lift contour contrasts without claiming a finished synth engine
 - a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/answer/pressure/instigator state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam
 - a live MC-202 touch-control regression that proves the same committed phrase changes buffer energy when the performer raises or lowers touch
 - a quantized MC-202 phrase-mutation regression that proves a committed phrase variant changes the render buffer against the follower-drive control
 - a first MC-202 note-budget regression that proves density can be reduced without silencing the phrase
+- a first MC-202 source-section contour regression that proves a section-derived contour hint changes the rendered phrase without relying on UI/log state alone
 - an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, and Markdown comparisons for TR-909, Scene-coupled TR-909, and MC-202 cases
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
 

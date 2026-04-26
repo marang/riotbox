@@ -1,7 +1,51 @@
-use crate::ids::{AssetId, CandidateId, SectionId, SourceId};
+use crate::{
+    ids::{AssetId, CandidateId, SceneId, SectionId, SourceId},
+    transport::TransportClockState,
+};
 use serde::{Deserialize, Serialize};
 
 pub type Confidence = f32;
+
+#[must_use]
+pub fn section_for_transport_bar<'a>(
+    graph: &'a SourceGraph,
+    transport: &TransportClockState,
+) -> Option<&'a Section> {
+    graph.sections.iter().find(|section| {
+        let bar_index = transport.bar_index as u32;
+        bar_index >= section.bar_start && bar_index <= section.bar_end
+    })
+}
+
+#[must_use]
+pub fn section_for_projected_scene<'a>(
+    graph: &'a SourceGraph,
+    scene_id: &SceneId,
+) -> Option<&'a Section> {
+    let scene_index = parse_projected_scene_index(scene_id.as_str())?;
+    let sections = sorted_sections(graph);
+    sections.get(scene_index).copied()
+}
+
+fn parse_projected_scene_index(scene_id: &str) -> Option<usize> {
+    let mut parts = scene_id.splitn(3, '-');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some("scene"), Some(index), Some(_label)) => index.parse::<usize>().ok()?.checked_sub(1),
+        _ => None,
+    }
+}
+
+#[must_use]
+pub fn sorted_sections(graph: &SourceGraph) -> Vec<&Section> {
+    let mut sections = graph.sections.iter().collect::<Vec<_>>();
+    sections.sort_by(|left, right| {
+        left.bar_start
+            .cmp(&right.bar_start)
+            .then(left.bar_end.cmp(&right.bar_end))
+            .then(left.section_id.as_str().cmp(right.section_id.as_str()))
+    });
+    sections
+}
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SourceGraphVersion {

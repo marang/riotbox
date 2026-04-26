@@ -4,7 +4,9 @@ use std::{
 };
 
 use riotbox_audio::{
-    mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
+    mc202::{
+        Mc202ContourHint, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState,
+    },
     runtime::{OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, signal_metrics},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -360,6 +362,30 @@ fn pack_cases() -> Vec<PackCase> {
             min_signal_delta_rms: 0.005,
             note: "This proves the `G` phrase mutation gesture produces a different rendered phrase, not an identical fallback tone at similar loudness.",
         },
+        PackCase {
+            id: "mc202-neutral-to-lift-contour",
+            title: "MC-202 neutral -> lift contour",
+            recipe_refs: "Recipe 2",
+            baseline_label: "follower neutral contour",
+            candidate_label: "follower lift contour",
+            render_pair: RenderPair::Mc202 {
+                baseline: mc202_state_with_contour(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.78,
+                    Mc202ContourHint::Neutral,
+                ),
+                candidate: mc202_state_with_contour(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.78,
+                    Mc202ContourHint::Lift,
+                ),
+            },
+            min_rms_delta: 0.0,
+            min_signal_delta_rms: 0.004,
+            note: "This proves the source-section contour hint changes the same MC-202 role at the render seam instead of only changing diagnostics.",
+        },
     ]
 }
 
@@ -387,11 +413,21 @@ fn tr909_support_state(
 }
 
 fn mc202_state(mode: Mc202RenderMode, shape: Mc202PhraseShape, touch: f32) -> Mc202RenderState {
+    mc202_state_with_contour(mode, shape, touch, Mc202ContourHint::Neutral)
+}
+
+fn mc202_state_with_contour(
+    mode: Mc202RenderMode,
+    shape: Mc202PhraseShape,
+    touch: f32,
+    contour_hint: Mc202ContourHint,
+) -> Mc202RenderState {
     Mc202RenderState {
         mode,
         routing: Mc202RenderRouting::MusicBusBass,
         phrase_shape: shape,
         note_budget: mc202_note_budget_for_shape(shape),
+        contour_hint,
         touch,
         music_bus_level: 0.74,
         is_transport_running: true,
@@ -637,7 +673,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, and the first note-budget policy. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
+         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, note budget, and the first source-section contour hint. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );
@@ -725,7 +761,7 @@ mod tests {
     fn pack_cases_produce_distinct_audio_metrics() {
         let cases = pack_cases();
 
-        assert_eq!(cases.len(), 8);
+        assert_eq!(cases.len(), 9);
         for case in cases {
             let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
             let baseline_metrics = signal_metrics(&baseline);

@@ -1336,7 +1336,7 @@ mod tests {
     use tempfile::tempdir;
 
     use riotbox_audio::{
-        mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting},
+        mc202::{Mc202ContourHint, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting},
         runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
         source_audio::SourceAudioCache,
         tr909::{
@@ -2369,12 +2369,16 @@ mod tests {
             state.runtime.mc202_render.phrase_shape,
             Mc202PhraseShape::AnswerHook
         );
+        assert_eq!(
+            state.runtime.mc202_render.contour_hint,
+            Mc202ContourHint::Drop
+        );
         assert_eq!(state.runtime_view.mc202_render_mode, "answer");
         assert_eq!(state.runtime_view.mc202_render_routing, "music_bus_bass");
         assert_eq!(state.runtime_view.mc202_render_phrase_shape, "answer_hook");
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.00 | touch 0.82 | budget balanced"
+            "music bus 0.00 | touch 0.82 | budget balanced | contour drop"
         );
         assert!(
             state
@@ -2385,6 +2389,28 @@ mod tests {
         assert!(state.runtime_view.runtime_warnings.iter().any(
             |warning| warning == "MC-202 render is routed to the music bus at zero music level"
         ));
+    }
+
+    #[test]
+    fn mc202_render_contour_hint_follows_source_section_context() {
+        let mut graph = sample_graph();
+        graph.sections[0].label_hint = SectionLabelHint::Build;
+        graph.sections[0].energy_class = EnergyClass::Medium;
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.runtime.mc202_render.contour_hint,
+            Mc202ContourHint::Lift
+        );
+        assert!(
+            state
+                .runtime_view
+                .mc202_render_mix_summary
+                .contains("contour lift")
+        );
     }
 
     #[test]
@@ -2498,7 +2524,7 @@ mod tests {
         assert!((state.runtime.mc202_render.touch - 0.64).abs() < f32::EPSILON);
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.64 | touch 0.64 | budget balanced"
+            "music bus 0.64 | touch 0.64 | budget balanced | contour drop"
         );
 
         let lowered = state.adjust_mc202_touch(-1.5);
@@ -2507,7 +2533,7 @@ mod tests {
         assert_eq!(state.runtime.mc202_render.touch, 0.0);
         assert_eq!(
             state.runtime_view.mc202_render_mix_summary,
-            "music bus 0.64 | touch 0.00 | budget balanced"
+            "music bus 0.64 | touch 0.00 | budget balanced | contour drop"
         );
     }
 

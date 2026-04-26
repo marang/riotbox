@@ -1133,3 +1133,14 @@ Why: the lane needs anti-overplay behavior, but the first policy should stay det
 Evidence: `riotbox-audio` now caps active steps per 16-step cycle from `Mc202NoteBudget`, tests prove the balanced budget reduces density without silencing follower drive, `riotbox-app` projects the budget from committed phrase shape, and the lane recipe pack passes after recalibrating touch/instigator thresholds for the less-dense output.
 Consequences: future source-aware contour and phrase scoring work should choose or adjust this typed budget from analysis/scene context rather than bypassing it with ad hoc callback gating.
 Status: accepted
+
+---
+
+Topic: MC-202 contour hints should be section-derived render state, not extracted melody
+Phase: MC-202 MVP / Audio QA
+Question: what is the smallest source-aware contour step that moves MC-202 beyond static phrase shapes without inventing pitch tracking or a phrase editor?
+Decision: add `Mc202ContourHint` to the typed render state and derive it from the current projected source/scene section. Build sections lift, high-energy drop/chorus sections drop, break/intro/outro or low-energy sections hold, and unknown sections stay neutral.
+Why: Phase 4 asks for contour following with feral simplification. A coarse section-derived hint gives the lane source awareness while preserving replayable committed roles, deterministic app projection, and callback-safe rendering.
+Evidence: `riotbox-app` projects the hint from source sections into runtime diagnostics, `riotbox-audio` mirrors it through shared runtime state and changes phrase intervals in the renderer, and the lane recipe pack proves `mc202-neutral-to-lift-contour` differs from neutral follower drive with signal delta RMS `0.007847`.
+Consequences: later hook-response and source-aware phrase scoring should refine this typed hint instead of bypassing it with callback-only heuristics or full melody extraction.
+Status: accepted
