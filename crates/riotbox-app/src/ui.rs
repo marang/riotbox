@@ -3587,7 +3587,8 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
 fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
-    if let Some(lines) = pending_capture_do_next_lines(capture) {
+    let handoff_readiness = capture_handoff_readiness_label(shell);
+    if let Some(lines) = pending_capture_do_next_lines(capture, handoff_readiness) {
         return lines;
     }
     if let Some(lines) = pending_w30_audition_do_next_lines(shell) {
@@ -3608,7 +3609,7 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         capture.last_capture_target.as_deref(),
     ) {
         (Some(CaptureTargetKindView::W30Pad), Some(target)) => vec![
-            Line::from(format!("hear now: [w] hit {target}")),
+            Line::from(format!("hear now: [w] hit {target} ({handoff_readiness})")),
             Line::from("or [o] audition same pad"),
             Line::from("[b]/[s] browse or swap"),
             Line::from(format!("source {last_capture_id}")),
@@ -3622,9 +3623,24 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         _ => vec![
             Line::from(format!("1 hear it: [o] audition raw {last_capture_id}")),
             Line::from(format!("2 keep it: [p] promote {last_capture_id}")),
-            Line::from("3 play it: [w] hit after promote"),
+            Line::from(format!(
+                "3 play it: [w] hit after promote ({handoff_readiness})"
+            )),
             Line::from("[2] confirm result"),
         ],
+    }
+}
+
+fn capture_handoff_readiness_label(shell: &JamShellState) -> &'static str {
+    match shell
+        .app
+        .session
+        .captures
+        .last()
+        .and_then(|capture| capture.source_window.as_ref())
+    {
+        Some(_) => "src",
+        None => "fallback",
     }
 }
 
@@ -3655,6 +3671,7 @@ fn pending_w30_audition_do_next_lines(shell: &JamShellState) -> Option<Vec<Line<
 
 fn pending_capture_do_next_lines(
     capture: &riotbox_core::view::jam::CaptureSummaryView,
+    handoff_readiness: &'static str,
 ) -> Option<Vec<Line<'static>>> {
     let pending = capture.pending_capture_items.first()?;
 
@@ -3673,7 +3690,9 @@ fn pending_capture_do_next_lines(
     if pending.command == "promote.capture_to_pad" {
         return Some(vec![
             capture_pending_intent_line(format!("queued [p] promote @ {}", pending.quantization)),
-            capture_pending_detail_line("wait, then hear with [w] hit"),
+            capture_pending_detail_line(format!(
+                "wait, then hear with [w] hit ({handoff_readiness})"
+            )),
             capture_pending_detail_line(format!("target {}", pending.target)),
             capture_pending_detail_line("[2] confirm promotion"),
         ]);
@@ -3923,13 +3942,19 @@ fn capture_heard_path_label(shell: &JamShellState) -> String {
         capture.last_capture_target.as_deref(),
     ) {
         (Some(CaptureTargetKindView::W30Pad), Some(target)) => {
-            format!("{last_capture_id}->{target} [w]/[o]")
+            format!(
+                "{last_capture_id}->{target} [w]/[o] {}",
+                capture_handoff_readiness_label(shell)
+            )
         }
         (Some(CaptureTargetKindView::Scene), Some(target)) => {
             format!("{last_capture_id}->{target} ready")
         }
         (_, Some(target)) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
-        _ => format!("{last_capture_id} stored [o] raw or [p]->[w]"),
+        _ => format!(
+            "{last_capture_id} stored {} [o] raw or [p]->[w]",
+            capture_handoff_readiness_label(shell)
+        ),
     }
 }
 
@@ -7110,7 +7135,7 @@ mod tests {
         );
         assert!(rendered.contains("pending W-30 cue idle"));
         assert!(
-            rendered.contains("hear cap-01 stored [o] raw or"),
+            rendered.contains("hear cap-01 stored fallback [o] raw"),
             "{rendered}"
         );
         assert!(rendered.contains("[p]->[w]"), "{rendered}");
@@ -7239,7 +7264,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("hear cap-01 stored [o] raw or [p]->[w]"),
+            rendered.contains("hear cap-01 stored fallback [o] raw or [p]->[w]"),
             "{rendered}"
         );
 
@@ -7880,6 +7905,39 @@ mod tests {
             "{rendered}"
         );
         assert!(rendered.contains("scene target scene drop-1"), "{rendered}");
+    }
+
+    #[test]
+    fn renders_capture_handoff_source_readiness_for_w30_targets() {
+        let mut shell = sample_shell_without_pending_queue();
+        shell.app.session.captures[0].assigned_target =
+            Some(riotbox_core::session::CaptureTarget::W30Pad {
+                bank_id: "bank-b".into(),
+                pad_id: "pad-03".into(),
+            });
+        shell.app.session.captures[0].source_window =
+            Some(riotbox_core::session::CaptureSourceWindow {
+                source_id: SourceId::from("src-1"),
+                start_seconds: 1.25,
+                end_seconds: 3.75,
+                start_frame: 60_000,
+                end_frame: 180_000,
+            });
+        shell.app.refresh_view();
+        shell.active_screen = ShellScreen::Capture;
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("hear cap-01->pad bank-b/pad-03"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("[w]/[o] src"), "{rendered}");
+        assert!(
+            rendered.contains("hear now: [w] hit pad bank-b/pad-03"),
+            "{rendered}"
+        );
+        assert!(rendered.contains("(src)"), "{rendered}");
     }
 
     #[test]
