@@ -1,5 +1,5 @@
 Riotbox Jam TR-909 Render Diagnostics Baseline
-Normalized terminal capture notes for `RIOTBOX-44`
+Normalized terminal capture notes for `RIOTBOX-44`, refreshed by `RIOTBOX-242`
 Source: `riotbox-app` shell state fixture
 Notes:
 - normalized from the current Jam and Log shell state fixture
@@ -16,9 +16,21 @@ Key shell cues after this slice:
   - `render takeover via drum_bus_takeover`
   - `controlled_phrase | scene-a-main`
   - `drum 0.82 | slam 0.90 | takeover aligned`
+- `Log -> TR-909 Render` source-support accent examples:
+  - `render source_support | accent scene`
+  - `via drum_bus_support | break_lift / scene_target`
+  - `render source_support | accent off fallback`
+  - `via drum_bus_support | drop_drive / transport_bar`
+- `Jam Inspect -> TR-909` may show the same compact tuple:
+  - `profile break_lift | context scene_target | accent scene | route drum_bus_support`
+  - `profile drop_drive | context transport_bar | accent off fallback | route drum_bus_support`
 
 Interpretation:
 
 - the Jam screen now exposes enough audible render state to understand what the lane is asking the audio seam to do
 - the Log screen now shows the same render contract in a compact diagnostic panel for troubleshooting and review
+- `accent scene` means the current Scene-target support context gets the bounded support lift
+- `accent off fallback` means source support stayed on the safer transport-bar fallback
+- non-source-support render modes keep the accent cue in an `off` state
 - diagnostics remain derived from committed lane state and the existing audio-facing render seam; no parallel TR-909 state path was introduced
+- the accent cue is not a transition engine or arranger promise; it names the current render diagnostic state only
