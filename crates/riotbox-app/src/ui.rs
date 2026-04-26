@@ -661,7 +661,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     let next = Paragraph::new(vec![
         Line::from(next_action_line(shell)),
-        Line::from(scene_pending_line(shell)),
+        scene_pending_line(shell),
         Line::from(latest_landed_line(shell)),
         queued_timing_rail_line(shell)
             .unwrap_or_else(|| Line::from(format!("status {}", shell.status_message))),
@@ -3146,20 +3146,46 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
         })
 }
 
-fn scene_pending_line(shell: &JamShellState) -> String {
-    pending_scene_transition(shell).map_or_else(
-        || "scene transition idle".into(),
-        |(label, scene_id, boundary)| {
-            let mut line = format!("{label} -> {scene_id} @ {boundary}");
-            if let Some(energy_delta) = energy_delta_label(
-                shell.app.jam_view.scene.active_scene_energy.as_deref(),
-                scene_energy_label_for_scene_id(shell, scene_id.as_str()),
-            ) {
-                line.push_str(&format!(" | {energy_delta}"));
-            }
-            line
-        },
-    )
+fn scene_pending_line(shell: &JamShellState) -> Line<'static> {
+    let Some((label, scene_id, boundary)) = pending_scene_transition(shell) else {
+        return Line::from(Span::styled(
+            "scene transition idle",
+            Style::default().fg(Color::DarkGray),
+        ));
+    };
+
+    let mut spans = vec![
+        Span::styled(
+            label,
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(" -> ", Style::default().fg(Color::DarkGray)),
+        Span::styled(scene_id.clone(), Style::default().fg(Color::Yellow)),
+        Span::styled(" @ ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            boundary,
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ];
+
+    if let Some(energy_delta) = energy_delta_label(
+        shell.app.jam_view.scene.active_scene_energy.as_deref(),
+        scene_energy_label_for_scene_id(shell, scene_id.as_str()),
+    ) {
+        spans.push(Span::styled(" | ", Style::default().fg(Color::DarkGray)));
+        spans.push(Span::styled(
+            energy_delta,
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ));
+    }
+
+    Line::from(spans)
 }
 
 fn landed_scene_energy_delta(shell: &JamShellState, command: &str) -> Option<&'static str> {
@@ -5218,6 +5244,59 @@ mod tests {
             "{rendered}"
         );
         assert!(rendered.contains("energy rise"), "{rendered}");
+    }
+
+    #[test]
+    fn scene_pending_line_styles_define_intent_hierarchy() {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Load,
+        );
+        assert_eq!(
+            shell.app.queue_scene_select(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let line = scene_pending_line(&shell);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "launch -> scene-02-drop @ next bar | energy rise");
+        assert_eq!(line.spans[0].content.as_ref(), "launch");
+        assert_eq!(line.spans[0].style.fg, Some(Color::Yellow));
+        assert!(
+            line.spans[0].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[2].content.as_ref(), "scene-02-drop");
+        assert_eq!(line.spans[2].style.fg, Some(Color::Yellow));
+        assert_eq!(line.spans[4].content.as_ref(), "next bar");
+        assert_eq!(line.spans[4].style.fg, Some(Color::Yellow));
+        assert!(
+            line.spans[4].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[6].content.as_ref(), "energy rise");
+        assert_eq!(line.spans[6].style.fg, Some(Color::Green));
+        assert!(
+            line.spans[6].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
     }
 
     #[test]
