@@ -1264,7 +1264,7 @@ mod tests {
             SourceGraphVersion,
         },
         transport::TransportClockState,
-        view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView},
+        view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView, W30PendingAuditionKind},
     };
     use riotbox_sidecar::client::ClientError as SidecarClientError;
 
@@ -3432,6 +3432,7 @@ mod tests {
             state.jam_view.lanes.w30_pending_recall_target.as_deref(),
             Some("bank-b/pad-04")
         );
+        assert_eq!(state.jam_view.lanes.w30_pending_audition, None);
         assert_eq!(state.jam_view.lanes.w30_pending_audition_target, None);
     }
 
@@ -3485,6 +3486,15 @@ mod tests {
             state.jam_view.lanes.w30_pending_audition_target.as_deref(),
             Some("bank-b/pad-04")
         );
+        let pending_audition = state
+            .jam_view
+            .lanes
+            .w30_pending_audition
+            .as_ref()
+            .expect("pending promoted audition projects into Jam view");
+        assert_eq!(pending_audition.kind, W30PendingAuditionKind::Promoted);
+        assert_eq!(pending_audition.target, "bank-b/pad-04");
+        assert_eq!(pending_audition.quantization, "next_bar");
         assert_eq!(state.jam_view.lanes.w30_pending_recall_target, None);
     }
 
@@ -3518,6 +3528,15 @@ mod tests {
             state.jam_view.lanes.w30_pending_audition_target.as_deref(),
             Some("bank-a/pad-01")
         );
+        let pending_audition = state
+            .jam_view
+            .lanes
+            .w30_pending_audition
+            .as_ref()
+            .expect("pending raw audition projects into Jam view");
+        assert_eq!(pending_audition.kind, W30PendingAuditionKind::RawCapture);
+        assert_eq!(pending_audition.target, "bank-a/pad-01");
+        assert_eq!(pending_audition.quantization, "next_bar");
     }
 
     #[test]

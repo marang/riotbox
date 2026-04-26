@@ -1023,3 +1023,14 @@ Why: display wording is allowed to change as the TUI becomes more musical. If be
 Evidence: `JamViewModel` now exposes `CaptureTargetKindView`; Capture `Do Next` and `capture_heard_path_label` branch on the typed kind while preserving the existing visible W-30 and Scene wording. Tests cover W-30 pad, Scene, and unassigned target projections.
 Consequences: this is still a view projection over the existing `CaptureTarget` model, not a persistence change. Future Capture routing surfaces should consume typed view intent first and render display labels second.
 Status: accepted
+
+---
+
+Topic: W-30 pending audition intent belongs in the Jam view model
+Phase: W-30 MVP
+Question: after Capture started explaining raw and promoted auditions in musical next-step language, where should raw-vs-promoted pending audition intent live?
+Decision: project pending W-30 audition intent from the existing `ActionQueue` into `LaneSummaryView` as a typed view object containing kind, target, and quantization. The TUI may still render action ids in diagnostic surfaces, but Capture `Do Next` and compact lane cues should not reconstruct raw-vs-promoted audition state by scanning generic pending action command strings.
+Why: raw and promoted auditions share the same `[o]` gesture but need different user-facing guidance. Keeping that distinction only as command strings in the generic pending list made the Capture surface fragile and duplicated classification logic in `riotbox-app`.
+Evidence: `JamViewModel` now exposes `W30PendingAuditionView`; Capture `Do Next` renders queued raw/promoted audition guidance from that projection; focused tests cover raw and promoted pending audition kind, target, and quantization.
+Consequences: this remains a presentation-model projection over the existing action system, not a second queue or W-30 action path. Future W-30 pending cue details should prefer typed Jam view projections when the perform-facing UI needs semantic intent beyond a generic command label.
+Status: accepted

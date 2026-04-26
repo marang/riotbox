@@ -13,7 +13,7 @@ use riotbox_core::source_graph::{
 };
 use riotbox_core::{
     action::{ActionCommand, ActionStatus},
-    view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView},
+    view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView, W30PendingAuditionKind},
 };
 
 use crate::jam_app::JamAppState;
@@ -3629,41 +3629,28 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn pending_w30_audition_do_next_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
-    let pending = shell.app.jam_view.pending_actions.iter().find(|action| {
-        matches!(
-            action.command.as_str(),
-            "w30.audition_raw_capture" | "w30.audition_promoted"
-        )
-    })?;
-    let target = shell
-        .app
-        .jam_view
-        .lanes
-        .w30_pending_audition_target
-        .as_deref()
-        .unwrap_or("current W-30 focus");
+    let pending = shell.app.jam_view.lanes.w30_pending_audition.as_ref()?;
 
-    if pending.command == "w30.audition_raw_capture" {
-        return Some(vec![
+    match pending.kind {
+        W30PendingAuditionKind::RawCapture => Some(vec![
             capture_pending_intent_line(format!(
                 "queued [o] audition raw @ {}",
                 pending.quantization
             )),
             capture_pending_detail_line("wait, then hear raw preview"),
-            capture_pending_detail_line(format!("target {target}")),
+            capture_pending_detail_line(format!("target {}", pending.target)),
             capture_pending_detail_line("[2] confirm audition"),
-        ]);
+        ]),
+        W30PendingAuditionKind::Promoted => Some(vec![
+            capture_pending_intent_line(format!(
+                "queued [o] audition pad @ {}",
+                pending.quantization
+            )),
+            capture_pending_detail_line("wait, then hear promoted preview"),
+            capture_pending_detail_line(format!("target {}", pending.target)),
+            capture_pending_detail_line("[2] confirm audition"),
+        ]),
     }
-
-    Some(vec![
-        capture_pending_intent_line(format!(
-            "queued [o] audition pad @ {}",
-            pending.quantization
-        )),
-        capture_pending_detail_line("wait, then hear promoted preview"),
-        capture_pending_detail_line(format!("target {target}")),
-        capture_pending_detail_line("[2] confirm audition"),
-    ])
 }
 
 fn pending_capture_do_next_lines(
@@ -4015,8 +4002,9 @@ fn w30_pending_cue_label(shell: &JamShellState) -> String {
         .app
         .jam_view
         .lanes
-        .w30_pending_audition_target
-        .as_deref()
+        .w30_pending_audition
+        .as_ref()
+        .map(|pending| pending.target.as_str())
     {
         format!("audition {target}")
     } else if let Some(target) = shell
