@@ -148,6 +148,10 @@ pub(super) fn build_mc202_render_state(
         "leader" => (Mc202RenderMode::Leader, Mc202PhraseShape::RootPulse),
         "answer" => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
         "pressure" => (Mc202RenderMode::Pressure, Mc202PhraseShape::PressureCell),
+        "instigator" => (
+            Mc202RenderMode::Instigator,
+            Mc202PhraseShape::InstigatorSpike,
+        ),
         "follower" => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
         _ => return Mc202RenderState::default(),
     };

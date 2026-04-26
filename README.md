@@ -45,7 +45,7 @@ That is expected in the current prototype because:
 - the current build is still more about **quantized action flow** than about a wide expressive mixer/performance surface
 - Riotbox is deterministic enough that the same source plus the same first gesture often produces the same first feel
 
-MC-202 gestures are no longer only log/state cues: after a committed `g` follower or `a` answer, the current runtime can mix a bounded bass voice through the music bus. This is still a first audio seam, not a finished MC-202 synth engine or MIDI-controlled bassline editor.
+MC-202 gestures are no longer only log/state cues: after a committed `g` follower, `a` answer, `P` pressure, or `I` instigator, the current runtime can mix a bounded bass voice through the music bus. This is still a first audio seam, not a finished MC-202 synth engine or MIDI-controlled bassline editor.
 
 So the quickstart is useful for confirming:
 
@@ -77,7 +77,7 @@ Today’s build already lets you:
 - queue actions that commit on **next beat**, **next bar**, or **next phrase**
 - drive early lane behavior for:
   - **TR-909**: fill, reinforce, slam, takeover, release, scene-lock
-  - **MC-202**: role, follower, answer
+  - **MC-202**: role, follower, answer, pressure, instigator, phrase mutation, touch
   - **W-30**: trigger, live recall, audition, bank swap, browse, damage, freeze, resample
 - capture, promote, pin, and reuse material in the W-30 flow
 - see pending, committed, rejected, and undone actions clearly
@@ -104,8 +104,9 @@ The honest status: **this is already playable as a prototype shell, but it is no
    - `y` scene select
    - `g` MC-202 follower
    - `P` MC-202 pressure
-   - `G` MC-202 phrase mutation after a follower, answer, or pressure phrase lands
-   - `<` / `>` MC-202 touch down / up after a follower, answer, or pressure phrase lands
+   - `I` MC-202 instigator
+   - `G` MC-202 phrase mutation after a follower, answer, pressure, or instigator phrase lands
+   - `<` / `>` MC-202 touch down / up after a follower, answer, pressure, or instigator phrase lands
    - `f` TR-909 fill
    - `c` capture
    - `w` W-30 trigger
@@ -263,6 +264,7 @@ The shell already has a broad action vocabulary, but these are the best first ke
 - `g` MC-202 follower
 - `a` MC-202 answer
 - `P` MC-202 pressure
+- `I` MC-202 instigator
 - `G` MC-202 phrase mutation
 - `<` / `>` lower / raise MC-202 touch
 - `f` TR-909 fill

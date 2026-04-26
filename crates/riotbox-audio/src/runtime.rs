@@ -849,6 +849,7 @@ fn mc202_mode_to_u32(mode: Mc202RenderMode) -> u32 {
         Mc202RenderMode::Follower => 2,
         Mc202RenderMode::Answer => 3,
         Mc202RenderMode::Pressure => 4,
+        Mc202RenderMode::Instigator => 5,
     }
 }
 
@@ -858,6 +859,7 @@ fn mc202_mode_from_u32(value: u32) -> Mc202RenderMode {
         2 => Mc202RenderMode::Follower,
         3 => Mc202RenderMode::Answer,
         4 => Mc202RenderMode::Pressure,
+        5 => Mc202RenderMode::Instigator,
         _ => Mc202RenderMode::Idle,
     }
 }
@@ -883,6 +885,7 @@ fn mc202_phrase_shape_to_u32(shape: Mc202PhraseShape) -> u32 {
         Mc202PhraseShape::AnswerHook => 2,
         Mc202PhraseShape::MutatedDrive => 3,
         Mc202PhraseShape::PressureCell => 4,
+        Mc202PhraseShape::InstigatorSpike => 5,
     }
 }
 
@@ -892,6 +895,7 @@ fn mc202_phrase_shape_from_u32(value: u32) -> Mc202PhraseShape {
         2 => Mc202PhraseShape::AnswerHook,
         3 => Mc202PhraseShape::MutatedDrive,
         4 => Mc202PhraseShape::PressureCell,
+        5 => Mc202PhraseShape::InstigatorSpike,
         _ => Mc202PhraseShape::RootPulse,
     }
 }
@@ -2783,10 +2787,10 @@ mod tests {
     fn shared_mc202_render_state_tracks_updates() {
         let shared = SharedMc202RenderState::new(&Mc202RenderState::default());
         let render = Mc202RenderState {
-            mode: Mc202RenderMode::Answer,
+            mode: Mc202RenderMode::Instigator,
             routing: Mc202RenderRouting::MusicBusBass,
-            phrase_shape: Mc202PhraseShape::AnswerHook,
-            touch: 0.82,
+            phrase_shape: Mc202PhraseShape::InstigatorSpike,
+            touch: 0.90,
             music_bus_level: 0.64,
             is_transport_running: true,
             tempo_bpm: 130.0,
@@ -2796,10 +2800,10 @@ mod tests {
         shared.update(&render);
 
         let snapshot = shared.snapshot();
-        assert_eq!(snapshot.mode, Mc202RenderMode::Answer);
+        assert_eq!(snapshot.mode, Mc202RenderMode::Instigator);
         assert_eq!(snapshot.routing, Mc202RenderRouting::MusicBusBass);
-        assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::AnswerHook);
-        assert_eq!(snapshot.touch, 0.82);
+        assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::InstigatorSpike);
+        assert_eq!(snapshot.touch, 0.90);
         assert_eq!(snapshot.music_bus_level, 0.64);
         assert!(snapshot.is_transport_running);
         assert_eq!(snapshot.tempo_bpm, 130.0);
@@ -3615,6 +3619,56 @@ mod tests {
         assert!(follower_metrics.active_samples > 10_000);
         assert!(answer_metrics.active_samples > 10_000);
         assert!((follower_metrics.rms - answer_metrics.rms).abs() > 0.001);
+    }
+
+    #[test]
+    fn offline_mc202_render_produces_distinct_instigator_metrics() {
+        let follower = render_mc202_offline(
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Follower,
+                routing: Mc202RenderRouting::MusicBusBass,
+                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                touch: 0.78,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+                ..Mc202RenderState::default()
+            },
+            44_100,
+            2,
+            44_100,
+        );
+        let instigator = render_mc202_offline(
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Instigator,
+                routing: Mc202RenderRouting::MusicBusBass,
+                phrase_shape: Mc202PhraseShape::InstigatorSpike,
+                touch: 0.90,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+                ..Mc202RenderState::default()
+            },
+            44_100,
+            2,
+            44_100,
+        );
+        let follower_metrics = signal_metrics(&follower);
+        let instigator_metrics = signal_metrics(&instigator);
+        let delta_rms = (follower
+            .iter()
+            .zip(instigator.iter())
+            .map(|(follower, instigator)| (follower - instigator).powi(2))
+            .sum::<f32>()
+            / follower.len() as f32)
+            .sqrt();
+
+        assert!(follower_metrics.active_samples > 10_000);
+        assert!(instigator_metrics.active_samples > 8_000);
+        assert!(
+            delta_rms > 0.010,
+            "instigator offline delta RMS {delta_rms}"
+        );
     }
 
     #[test]

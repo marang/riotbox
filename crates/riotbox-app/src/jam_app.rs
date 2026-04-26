@@ -345,6 +345,7 @@ impl JamAppState {
                     | ActionCommand::Mc202GenerateFollower
                     | ActionCommand::Mc202GenerateAnswer
                     | ActionCommand::Mc202GeneratePressure
+                    | ActionCommand::Mc202GenerateInstigator
                     | ActionCommand::Mc202MutatePhrase
             )
         })
@@ -486,6 +487,35 @@ impl JamAppState {
             target_id: Some("pressure".into()),
         };
         draft.explanation = Some("generate MC-202 pressure phrase on next phrase boundary".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
+    pub fn queue_mc202_generate_instigator(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> QueueControlResult {
+        if self.mc202_phrase_control_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Mc202GenerateInstigator,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                object_id: Some("instigator".into()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 0.90,
+            target_id: Some("instigator".into()),
+        };
+        draft.explanation =
+            Some("generate MC-202 instigator phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -1460,6 +1490,7 @@ mod tests {
         GenerateFollower,
         GenerateAnswer,
         GeneratePressure,
+        GenerateInstigator,
     }
 
     #[derive(Debug, Deserialize)]
@@ -3175,6 +3206,10 @@ mod tests {
             state.queue_mc202_generate_pressure(303),
             QueueControlResult::AlreadyPending
         );
+        assert_eq!(
+            state.queue_mc202_generate_instigator(304),
+            QueueControlResult::AlreadyPending
+        );
 
         let pending = state.queue.pending_actions();
         assert_eq!(pending.len(), 1);
@@ -3182,6 +3217,7 @@ mod tests {
         assert!(state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
         assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_instigator_generation);
     }
 
     #[test]
@@ -3205,6 +3241,7 @@ mod tests {
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(state.jam_view.lanes.mc202_pending_answer_generation);
         assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_instigator_generation);
     }
 
     #[test]
@@ -3225,6 +3262,10 @@ mod tests {
             state.queue_mc202_generate_answer(302),
             QueueControlResult::AlreadyPending
         );
+        assert_eq!(
+            state.queue_mc202_generate_instigator(303),
+            QueueControlResult::AlreadyPending
+        );
 
         let pending = state.queue.pending_actions();
         assert_eq!(pending.len(), 1);
@@ -3232,6 +3273,35 @@ mod tests {
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
         assert!(state.jam_view.lanes.mc202_pending_pressure_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_instigator_generation);
+    }
+
+    #[test]
+    fn queueing_mc202_instigator_generation_blocks_duplicate_pending_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_instigator(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_generate_instigator(301),
+            QueueControlResult::AlreadyPending
+        );
+        assert_eq!(
+            state.queue_mc202_generate_answer(302),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Mc202GenerateInstigator);
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
+        assert!(state.jam_view.lanes.mc202_pending_instigator_generation);
     }
 
     #[test]
@@ -3268,6 +3338,7 @@ mod tests {
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
         assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_instigator_generation);
     }
 
     #[test]
@@ -3327,16 +3398,30 @@ mod tests {
             QueueControlResult::AlreadyPending
         );
 
+        let mut instigator_state = JamAppState::from_parts(
+            sample_session(&graph),
+            Some(graph.clone()),
+            ActionQueue::new(),
+        );
+        assert_eq!(
+            instigator_state.queue_mc202_generate_instigator(308),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            instigator_state.queue_mc202_mutate_phrase(309),
+            QueueControlResult::AlreadyPending
+        );
+
         let mut mutation_session = sample_session(&graph);
         mutation_session.runtime_state.lane_state.mc202.role = Some("follower".into());
         let mut mutation_state =
             JamAppState::from_parts(mutation_session, Some(graph), ActionQueue::new());
         assert_eq!(
-            mutation_state.queue_mc202_mutate_phrase(308),
+            mutation_state.queue_mc202_mutate_phrase(310),
             QueueControlResult::Enqueued
         );
         assert_eq!(
-            mutation_state.queue_mc202_generate_answer(309),
+            mutation_state.queue_mc202_generate_answer(311),
             QueueControlResult::AlreadyPending
         );
     }
@@ -5900,6 +5985,74 @@ mod tests {
     }
 
     #[test]
+    fn committed_mc202_instigator_generation_updates_phrase_ref_touch_and_render_shape() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_instigator(300),
+            QueueControlResult::Enqueued
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            Some("instigator")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some("instigator-scene-1")
+        );
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.90);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Instigator);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::InstigatorSpike
+        );
+        assert_eq!(
+            state.runtime.mc202_render.routing,
+            Mc202RenderRouting::MusicBusBass
+        );
+        assert_eq!(
+            state.jam_view.lanes.mc202_role.as_deref(),
+            Some("instigator")
+        );
+        assert!(!state.jam_view.lanes.mc202_pending_instigator_generation);
+        assert_eq!(
+            state.jam_view.lanes.mc202_phrase_ref.as_deref(),
+            Some("instigator-scene-1")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("generated MC-202 instigator phrase instigator-scene-1 at 0.90")
+        );
+    }
+
+    #[test]
     fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
         let graph = sample_graph();
         let mut session = sample_session(&graph);
@@ -5990,6 +6143,9 @@ mod tests {
                 Mc202RegressionAction::GeneratePressure => {
                     state.queue_mc202_generate_pressure(fixture.requested_at)
                 }
+                Mc202RegressionAction::GenerateInstigator => {
+                    state.queue_mc202_generate_instigator(fixture.requested_at)
+                }
             };
             assert_eq!(
                 queue_result,
@@ -6057,6 +6213,16 @@ mod tests {
             assert!(
                 !state.jam_view.lanes.mc202_pending_answer_generation,
                 "{} left a pending answer-generation behind",
+                fixture.name
+            );
+            assert!(
+                !state.jam_view.lanes.mc202_pending_pressure_generation,
+                "{} left a pending pressure-generation behind",
+                fixture.name
+            );
+            assert!(
+                !state.jam_view.lanes.mc202_pending_instigator_generation,
+                "{} left a pending instigator-generation behind",
                 fixture.name
             );
 
