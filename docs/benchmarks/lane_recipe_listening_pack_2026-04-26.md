@@ -106,8 +106,13 @@ Current cases:
 
 This is not yet a full performance-recorder or TUI replay harness.
 
-MC-202 now has bounded offline render cases in this pack. They prove that follower/answer, touch, pressure, instigator, mutated phrase shapes, note budget, source-section contour hints, and hook-response restraint can be rendered and compared as audio artifacts. They do not mean the live TUI callback mixes a finished MC-202 synth engine or full source-aware bassline.
+MC-202 now has bounded offline render cases in this pack. They prove that follower/answer, touch, pressure, instigator, mutated phrase shapes, note budget, source-section contour hints, and hook-response restraint can be rendered and compared as audio artifacts. They do not mean Riotbox has a finished source-aware bassline engine.
 
-Scene Brain is represented only through the existing TR-909 `scene_target` support-accent seam. This proves the bounded accent, not a finished Scene transition engine.
+Scene Brain now has two bounded audio proof layers:
+
+- the listening pack still represents Scene Brain through the TR-909 `scene_target` support-accent case
+- `scene_jump_restore_replay_proves_state_and_mixed_audio_path` additionally proves the current app-level `jump -> restore` flow across mixed TR-909 + MC-202 output, including non-silence, signal-delta on launch/restore, and return to the baseline render after restore
+
+These prove the current Scene-coupled lane seams, not a finished Scene transition engine or full arranger.
 
 Generated WAVs remain local and untracked under `artifacts/audio_qa/`.
