@@ -1191,6 +1191,17 @@ Status: accepted
 
 ---
 
+Topic: MC-202 MVP can close after undo rollback proof
+Phase: MC-202 MVP / Project Closeout
+Question: is `P006 | MC-202 MVP` exit-clean after the MC-202 undo rollback slice merged?
+Decision: close `P006 | MC-202 MVP` as the first honest MC-202 MVP. The previous blocker is resolved by session-backed undo snapshots that restore lane state, typed render state, Jam view state, and the nearest audible render seam.
+Why: the phase definition requires usable follower basslines, live sound control, quantized mutation, pressure without clutter, and intact replay/undo. Those conditions now have explicit implementation and regression evidence.
+Evidence: `RIOTBOX-314` merged into `main` as `27fd2e5ebe7906ea2408c8532a571acdbe2f7464`; `undo_mc202_phrase_move_restores_lane_state_and_audio_path` proves the rollback path and rendered output behavior. The MC-202 exit review was updated on 2026-04-26 to mark the required follow-up closed.
+Consequences: future MC-202 work can continue as refinement, not MVP exit cleanup. The active product spine should move back to W-30 MVP and end-to-end playable audio QA unless a regression reopens MC-202.
+Status: accepted
+
+---
+
 Topic: W-30 MVP exit requires real capture artifacts before pad-bank expansion
 Phase: W-30 MVP / Audio QA
 Question: after source-backed W-30 preview, focus-aware pad targets, loop-freeze lineage, and resample tap diagnostics exist, what is the next smallest blocker toward a musician-usable W-30 MVP?

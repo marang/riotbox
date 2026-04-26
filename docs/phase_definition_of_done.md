@@ -99,6 +99,7 @@ Done when:
 Current exit review:
 
 - `docs/reviews/mc202_mvp_exit_review_2026-04-26.md`
+- status: closed for MVP on 2026-04-26 after `RIOTBOX-314` added MC-202 undo rollback with control-path and output-path proof
 
 ---
 

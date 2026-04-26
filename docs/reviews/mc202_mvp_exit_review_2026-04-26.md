@@ -11,7 +11,7 @@ Context:
 
 ## Summary
 
-The MC-202 lane is close to its first honest MVP, but it is not exit-clean until one replay/undo gap is closed.
+The MC-202 lane is exit-clean for its first honest MVP after `RIOTBOX-314` closed the replay/undo blocker identified by this review.
 
 What is now real:
 
@@ -22,14 +22,14 @@ What is now real:
 - pressure, instigator, mutation, contour, and hook-response behavior have output-path proof
 - musician-facing recipe replay proof landed in PR #302
 
-Blocking gap:
+Closed blocker:
 
-- `undo` currently marks the latest undoable action as undone and appends an undo marker, but it does not restore the previous MC-202 lane state or prove the audible render state rolls back
+- `RIOTBOX-314` implemented MC-202 undo rollback on the session-backed lane snapshot seam and proved the audible render state rolls back to the previous MC-202 phrase state
 
 Conclusion:
 
-- Phase 4 is musically and architecturally close.
-- Do not mark the MC-202 MVP fully done until MC-202 undo rollback is implemented with control-path and output-path proof.
+- Phase 4 is musically and architecturally complete for MVP.
+- Later MC-202 work should refine scoring, variants, and sound design, but those are no longer exit blockers for `P006 | MC-202 MVP`.
 
 ## Phase 4 Criteria
 
@@ -39,7 +39,7 @@ Conclusion:
 | sound parameters are live controllable | Satisfied for MVP | `<` / `>` update persisted `mc202_touch`, refresh render state, and have low-vs-high output proof | only touch exists as a live macro today |
 | phrase mutation is quantized | Satisfied for MVP | `mc202.mutate_phrase` queues for `NextPhrase`, commits `mutated_drive`, and has signal-delta proof | only one mutation variant exists |
 | the lane adds pressure without clutter | Satisfied for MVP | `pressure` role, sparse `pressure_cell`, note budget, hook `answer_space`, and listening-pack deltas | source-aware phrase scoring is still coarse |
-| replay and undo remain intact | Partially satisfied | committed MC-202 state survives JSON roundtrip and action-log replay fixtures; recipe replay proof is in PR #302 | undo does not yet roll back MC-202 lane/render/audio state |
+| replay and undo remain intact | Satisfied for MVP | committed MC-202 state survives JSON roundtrip and action-log replay fixtures; recipe replay proof is in PR #302; `RIOTBOX-314` restores MC-202 lane/render/audio state on undo | broader lane undo can follow the same snapshot pattern later |
 
 ## Feral Addendum Criteria
 
@@ -52,13 +52,13 @@ Conclusion:
 | contour follower with feral simplification | Satisfied for MVP | `Mc202ContourHint` from source/scene section context, render interval offsets, audio delta proof | no pitch tracking or extracted bassline yet |
 | note budget against overplay | Satisfied for MVP | typed `Mc202NoteBudget` projected into render state and renderer gating | budget is phrase-shape based, not adaptive yet |
 
-## Required Follow-Up
+## Closed Follow-Up
 
-Create one bounded follow-up before closing `P006 | MC-202 MVP`:
+`P006 | MC-202 MVP` can be closed because the required bounded follow-up shipped:
 
 - `RIOTBOX-314`: MC-202 undo rollback must restore the previous committed lane state, refresh the typed render state, and prove the rendered output returns to the previous audible seam.
 
-Suggested acceptance:
+Shipped acceptance:
 
 - queue and commit at least two MC-202 states, then undo
 - assert the action log contains the undone action and undo marker
