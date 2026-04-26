@@ -1300,9 +1300,9 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
             )));
         }
     }
-    lines.push(Line::from(format!(
-        "Lane ops: {}",
-        render_gesture_items(LANE_GESTURES, " ")
+    lines.push(footer_lane_ops_line(&render_gesture_items(
+        LANE_GESTURES,
+        " ",
     )));
     lines.push(footer_status_line(&format!(
         "Status: {} | jam {} | audio {} | sidecar {} | 909 render {} via {}",
@@ -1386,6 +1386,12 @@ fn footer_advanced_line(gestures: &str) -> Line<'static> {
     let mut spans = vec![Span::raw("Advanced: ")];
     spans.extend(spans_with_primary_gesture_keys(gestures));
     spans.push(Span::raw(" | more in ? help"));
+    Line::from(spans)
+}
+
+fn footer_lane_ops_line(gestures: &str) -> Line<'static> {
+    let mut spans = vec![Span::raw("Lane ops: ")];
+    spans.extend(spans_with_primary_gesture_keys(gestures));
     Line::from(spans)
 }
 
@@ -4543,6 +4549,26 @@ mod tests {
         assert_eq!(line.spans[7].content.as_ref(), "b");
         assert_eq!(line.spans[7].style.fg, Some(Color::Cyan));
         assert_eq!(line.spans[10].content.as_ref(), "d");
+        assert_eq!(line.spans[10].style.fg, Some(Color::Cyan));
+    }
+
+    #[test]
+    fn footer_lane_ops_line_styles_gesture_key_prefixes() {
+        let line = footer_lane_ops_line("t trigger | s step | x swap | z freeze");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "Lane ops: t trigger | s step | x swap | z freeze");
+        assert_eq!(line.spans[1].content.as_ref(), "t");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[4].content.as_ref(), "s");
+        assert_eq!(line.spans[4].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[7].content.as_ref(), "x");
+        assert_eq!(line.spans[7].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[10].content.as_ref(), "z");
         assert_eq!(line.spans[10].style.fg, Some(Color::Cyan));
     }
 
