@@ -141,6 +141,7 @@ struct PackCase {
     candidate_label: &'static str,
     render_pair: RenderPair,
     min_rms_delta: f32,
+    min_signal_delta_rms: f32,
     note: &'static str,
 }
 
@@ -161,7 +162,9 @@ struct CaseReport {
     id: &'static str,
     baseline_metrics: OfflineAudioMetrics,
     candidate_metrics: OfflineAudioMetrics,
+    signal_delta_metrics: OfflineAudioMetrics,
     min_rms_delta: f32,
+    min_signal_delta_rms: f32,
     passed: bool,
 }
 
@@ -193,6 +196,7 @@ fn pack_cases() -> Vec<PackCase> {
                 },
             },
             min_rms_delta: 0.001,
+            min_signal_delta_rms: 0.001,
             note: "The fill candidate should be busier and more assertive than steady support.",
         },
         PackCase {
@@ -223,6 +227,7 @@ fn pack_cases() -> Vec<PackCase> {
                 },
             },
             min_rms_delta: 0.004,
+            min_signal_delta_rms: 0.004,
             note: "The takeover candidate should be more forward than support without implying a finished performance mix.",
         },
         PackCase {
@@ -246,6 +251,7 @@ fn pack_cases() -> Vec<PackCase> {
                 ),
             },
             min_rms_delta: 0.00005,
+            min_signal_delta_rms: 0.00005,
             note: "The Scene-target candidate is intentionally subtle; it proves the current TR-909 support-accent seam, not a finished Scene transition engine.",
         },
         PackCase {
@@ -263,7 +269,52 @@ fn pack_cases() -> Vec<PackCase> {
                 candidate: mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78),
             },
             min_rms_delta: 0.001,
+            min_signal_delta_rms: 0.005,
             note: "This is the first explicit MC-202 offline audio seam. It proves a renderable follower-vs-answer contrast, not live TUI mixer integration.",
+        },
+        PackCase {
+            id: "mc202-touch-low-to-high",
+            title: "MC-202 touch low -> high",
+            recipe_refs: "Recipe 2",
+            baseline_label: "follower low touch",
+            candidate_label: "follower high touch",
+            render_pair: RenderPair::Mc202 {
+                baseline: mc202_state(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.12,
+                ),
+                candidate: mc202_state(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.92,
+                ),
+            },
+            min_rms_delta: 0.006,
+            min_signal_delta_rms: 0.006,
+            note: "This proves the `<` / `>` touch gesture changes the same MC-202 phrase energy rather than only changing UI state.",
+        },
+        PackCase {
+            id: "mc202-follower-to-mutated-drive",
+            title: "MC-202 follower -> mutated drive",
+            recipe_refs: "Recipe 2",
+            baseline_label: "follower drive",
+            candidate_label: "mutated drive",
+            render_pair: RenderPair::Mc202 {
+                baseline: mc202_state(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.78,
+                ),
+                candidate: mc202_state(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::MutatedDrive,
+                    0.88,
+                ),
+            },
+            min_rms_delta: 0.0001,
+            min_signal_delta_rms: 0.005,
+            note: "This proves the `G` phrase mutation gesture produces a different rendered phrase, not an identical fallback tone at similar loudness.",
         },
     ]
 }
@@ -316,12 +367,16 @@ fn render_case(
     let (baseline, candidate) = render_pair(&case.render_pair, frame_count);
     let baseline_metrics = signal_metrics(&baseline);
     let candidate_metrics = signal_metrics(&candidate);
+    let signal_delta_metrics = signal_delta_metrics(&baseline, &candidate);
     let report = CaseReport {
         id: case.id,
         baseline_metrics,
         candidate_metrics,
+        signal_delta_metrics,
         min_rms_delta: case.min_rms_delta,
-        passed: rms_delta(baseline_metrics, candidate_metrics) >= case.min_rms_delta,
+        min_signal_delta_rms: case.min_signal_delta_rms,
+        passed: rms_delta(baseline_metrics, candidate_metrics) >= case.min_rms_delta
+            && signal_delta_metrics.rms >= case.min_signal_delta_rms,
     };
 
     let baseline_path = case_dir.join("baseline.wav");
@@ -344,10 +399,12 @@ fn render_case(
 
     if !report.passed {
         return Err(format!(
-            "{} RMS delta {:.6} is below minimum {:.6}",
+            "{} output delta failed: RMS delta {:.6} / min {:.6}, signal delta RMS {:.6} / min {:.6}",
             report.id,
             rms_delta(report.baseline_metrics, report.candidate_metrics),
-            report.min_rms_delta
+            report.min_rms_delta,
+            report.signal_delta_metrics.rms,
+            report.min_signal_delta_rms
         )
         .into());
     }
@@ -417,6 +474,7 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
     let peak_delta = (baseline.peak_abs - candidate.peak_abs).abs();
     let rms_delta = rms_delta(baseline, candidate);
     let sum_delta = (baseline.sum - candidate.sum).abs();
+    let signal_delta = report.signal_delta_metrics;
 
     format!(
         "# Lane Recipe Listening Comparison\n\n\
@@ -427,6 +485,9 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
          - Baseline: `{}`\n\
          - Candidate: `{}`\n\
          - Minimum RMS delta: `{:.6}`\n\
+         - Signal delta RMS: `{:.6}`\n\
+         - Minimum signal delta RMS: `{:.6}`\n\
+         - Signal delta peak abs: `{:.6}`\n\
          - Result: `{}`\n\
          - Note: {}\n\n\
          | Metric | Baseline | Candidate | Delta |\n\
@@ -441,6 +502,9 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
         case.baseline_label,
         case.candidate_label,
         report.min_rms_delta,
+        signal_delta.rms,
+        report.min_signal_delta_rms,
+        signal_delta.peak_abs,
         if report.passed { "pass" } else { "fail" },
         case.note,
         baseline.active_samples,
@@ -462,6 +526,20 @@ fn rms_delta(baseline: OfflineAudioMetrics, candidate: OfflineAudioMetrics) -> f
     (baseline.rms - candidate.rms).abs()
 }
 
+fn signal_delta_metrics(baseline: &[f32], candidate: &[f32]) -> OfflineAudioMetrics {
+    debug_assert_eq!(
+        baseline.len(),
+        candidate.len(),
+        "baseline and candidate renders should use the same frame count"
+    );
+    let delta = baseline
+        .iter()
+        .zip(candidate.iter())
+        .map(|(baseline, candidate)| baseline - candidate)
+        .collect::<Vec<_>>();
+    signal_metrics(&delta)
+}
+
 fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -> String {
     let mut summary = format!(
         "# Lane Recipe Listening Pack\n\n\
@@ -472,8 +550,8 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
          This pack is the first local recipe-level audio proof outside the W-30 source-preview path.\n\
          It renders bounded TR-909, MC-202, and Scene-coupled support comparisons as WAV files plus sibling metrics.\n\n\
          ## Cases\n\n\
-         | Case | Active delta | Peak delta | RMS delta | Min RMS delta | Sum delta |\n\
-         | --- | ---: | ---: | ---: | ---: | ---: |\n",
+         | Case | Active delta | Peak delta | RMS delta | Min RMS delta | Signal delta RMS | Min signal delta RMS | Sum delta |\n\
+         | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n",
         args.date,
         output_dir.display(),
         args.duration_seconds
@@ -489,14 +567,21 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
         let rms_delta = rms_delta(report.baseline_metrics, report.candidate_metrics);
         let sum_delta = (report.baseline_metrics.sum - report.candidate_metrics.sum).abs();
         summary.push_str(&format!(
-            "| `{}` | {} | {:.6} | {:.6} | {:.6} | {:.6} |\n",
-            report.id, active_delta, peak_delta, rms_delta, report.min_rms_delta, sum_delta
+            "| `{}` | {} | {:.6} | {:.6} | {:.6} | {:.6} | {:.6} | {:.6} |\n",
+            report.id,
+            active_delta,
+            peak_delta,
+            rms_delta,
+            report.min_rms_delta,
+            report.signal_delta_metrics.rms,
+            report.min_signal_delta_rms,
+            sum_delta
         ));
     }
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 now has a first explicit offline audio case in this pack: `mc202-follower-to-answer`. This proves a bounded renderable follower-vs-answer contrast, not live TUI mixer integration or a finished synth engine.\n\n\
+         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, and phrase mutation. These cases prove bounded renderable contrasts for the current `g`, `a`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );
@@ -541,7 +626,7 @@ fn write_pcm16_wav(
 
 #[cfg(test)]
 mod tests {
-    use super::{Args, PACK_ID, pack_cases, render_pair, signal_metrics};
+    use super::{Args, PACK_ID, pack_cases, render_pair, signal_delta_metrics, signal_metrics};
     use std::path::PathBuf;
 
     #[test]
@@ -584,11 +669,12 @@ mod tests {
     fn pack_cases_produce_distinct_audio_metrics() {
         let cases = pack_cases();
 
-        assert_eq!(cases.len(), 4);
+        assert_eq!(cases.len(), 6);
         for case in cases {
             let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
             let baseline_metrics = signal_metrics(&baseline);
             let candidate_metrics = signal_metrics(&candidate);
+            let signal_delta_metrics = signal_delta_metrics(&baseline, &candidate);
 
             assert!(
                 baseline_metrics.active_samples > 0,
@@ -605,6 +691,12 @@ mod tests {
                 "{} did not produce required RMS delta {}",
                 case.id,
                 case.min_rms_delta
+            );
+            assert!(
+                signal_delta_metrics.rms >= case.min_signal_delta_rms,
+                "{} did not produce required signal delta RMS {}",
+                case.id,
+                case.min_signal_delta_rms
             );
         }
     }

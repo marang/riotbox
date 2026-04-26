@@ -1089,3 +1089,14 @@ Why: Phase 4 requires quantized phrase mutation, but the safe first step is one 
 Evidence: `riotbox-core` exposes pending MC-202 mutation and persists `phrase_variant`, `riotbox-app` queues and commits `mc202.mutate_phrase` from `G`, Jam/Log diagnostics show the variant, and `riotbox-audio` verifies `mutated_drive` differs from follower-drive output via delta-RMS and max-sample thresholds.
 Consequences: future MC-202 phrase work should add richer variants or source-aware generation through the same committed lane-state seam before adding any editor or MIDI-style sequencer surface.
 Status: accepted
+
+---
+
+Topic: MC-202 recipe proof should use signal-delta listening cases, not only loudness deltas
+Phase: MC-202 MVP / Audio QA
+Question: now that MC-202 has live touch and phrase mutation, how should the recipe-level QA pack prove those gestures are audible and not just visible in state/logs?
+Decision: extend the lane recipe listening pack with explicit `mc202-touch-low-to-high` and `mc202-follower-to-mutated-drive` cases, and require sample-by-sample signal delta RMS alongside normal RMS delta.
+Why: touch changes are partly loudness/energy changes, but phrase mutations can remain similarly loud while still being musically different. A plain RMS comparison can miss identical-output or fallback-collapse bugs when two phrases have similar energy. Signal-delta RMS catches actual waveform difference and writes the evidence beside the WAVs.
+Evidence: `lane_recipe_pack` now renders six cases, writes signal delta metrics into comparisons and pack summaries, and the local `riotbox-305-local` pack passed with MC-202 touch signal delta RMS `0.006608` and mutated-drive signal delta RMS `0.010100`.
+Consequences: future listening-pack cases should prefer paired signal-delta checks when the musical claim is "different phrase or gesture", and use plain RMS only as an additional energy sanity check.
+Status: accepted

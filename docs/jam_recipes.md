@@ -83,11 +83,24 @@ What to observe:
 - after `g` or `a` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
 - after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
+- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, and `mc202-follower-to-mutated-drive`
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
 - if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
 - MC-202 is still not a finished synth engine; treat this as first follower-vs-answer bass feedback, not full sound design
+
+Current offline MC-202 proof:
+
+```bash
+just lane-recipe-pack local-mc202
+```
+
+Listen to these files under `artifacts/audio_qa/local-mc202/lane-recipe-listening-pack/`:
+
+- `mc202-follower-to-answer/baseline.wav` vs `candidate.wav`
+- `mc202-touch-low-to-high/baseline.wav` vs `candidate.wav`
+- `mc202-follower-to-mutated-drive/baseline.wav` vs `candidate.wav`
 
 ## Recipe 3: Capture, Audition, Promote, Hit
 
