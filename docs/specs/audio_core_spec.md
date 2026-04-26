@@ -197,6 +197,7 @@ The bounded early seam is a non-realtime source-audio cache:
 - expose bounded sample-window access for source-backed W-30 preview paths
 - project a small fixed-size preview window from `CaptureRef.source_window` into callback-safe W-30 preview state
 - write committed source-window captures as PCM16 WAV artifacts outside the realtime callback when the app has a session path and decoded source cache
+- prefer loaded committed capture artifacts for focused W-30 pad preview / trigger state, falling back to source-window projection when no artifact is available
 - current W-30 preview window size is `2048` mono samples, deliberately bounded so it can sound more like captured material without becoming full callback-side sample streaming
 - keep cache loading and source-window projection outside the realtime callback
 
@@ -205,6 +206,7 @@ Current limitation:
 - the initial cache supports PCM 16-bit and PCM 24-bit WAV fixture input
 - committed source-backed capture artifacts are PCM16 WAV files for the first app path
 - the current raw, promoted, and recall preview paths use a bounded preview excerpt, not a full pad-bank sampler engine
+- focused pad playback is still one bounded preview seam, but it now consumes capture artifacts when available instead of treating `storage_path` as decorative metadata
 - broader codec support and true W-30 sample playback remain separate implementation slices
 
 ---

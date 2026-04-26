@@ -28,6 +28,7 @@ impl JamAppState {
             session,
             source_graph,
             source_audio_cache,
+            capture_audio_cache: Default::default(),
             queue,
             runtime: AppRuntimeState {
                 transport,
@@ -36,6 +37,7 @@ impl JamAppState {
             jam_view,
             runtime_view,
         };
+        state.refresh_capture_audio_cache();
         state.refresh_view();
         Ok(state)
     }

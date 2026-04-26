@@ -1,4 +1,5 @@
 use std::{
+    collections::BTreeMap,
     error::Error,
     fmt::{self, Display, Formatter},
     io,
@@ -19,7 +20,7 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, Quantization, TargetScope,
     },
-    ids::{ActionId, SourceId},
+    ids::{ActionId, CaptureId, SourceId},
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
         save_source_graph_json,
@@ -188,6 +189,7 @@ pub struct JamAppState {
     pub session: SessionFile,
     pub source_graph: Option<SourceGraph>,
     pub source_audio_cache: Option<SourceAudioCache>,
+    pub capture_audio_cache: BTreeMap<CaptureId, SourceAudioCache>,
     pub queue: ActionQueue,
     pub runtime: AppRuntimeState,
     pub jam_view: JamViewModel,
@@ -216,6 +218,7 @@ impl JamAppState {
             session,
             source_graph,
             source_audio_cache: None,
+            capture_audio_cache: BTreeMap::new(),
             queue,
             runtime: AppRuntimeState {
                 transport,
@@ -244,6 +247,7 @@ impl JamAppState {
             &self.runtime.transport,
             self.source_graph.as_ref(),
             self.source_audio_cache.as_ref(),
+            Some(&self.capture_audio_cache),
         );
         self.runtime.w30_resample_tap =
             build_w30_resample_tap_state(&self.session, &self.runtime.transport);
@@ -261,16 +265,36 @@ impl JamAppState {
         self.runtime_view = JamRuntimeView::build(&self.runtime, &self.session);
     }
 
-    fn persist_capture_audio_artifact(&self, capture: &mut CaptureRef) {
+    fn persist_capture_audio_artifact(&mut self, capture: &mut CaptureRef) {
         match self.write_capture_audio_artifact(capture) {
-            Ok(Some(_path)) => append_capture_note(
-                capture,
-                &format!("audio artifact written {}", capture.storage_path),
-            ),
+            Ok(Some(path)) => {
+                if let Ok(cache) = SourceAudioCache::load_pcm_wav(&path) {
+                    self.capture_audio_cache
+                        .insert(capture.capture_id.clone(), cache);
+                }
+                append_capture_note(
+                    capture,
+                    &format!("audio artifact written {}", capture.storage_path),
+                );
+            }
             Ok(None) => {}
             Err(reason) => {
                 append_capture_note(capture, &format!("audio artifact pending: {reason}"))
             }
+        }
+    }
+
+    fn refresh_capture_audio_cache(&mut self) {
+        self.capture_audio_cache.clear();
+        for capture in &self.session.captures {
+            let Some(path) = self.capture_audio_artifact_path(capture) else {
+                continue;
+            };
+            let Ok(cache) = SourceAudioCache::load_pcm_wav(path) else {
+                continue;
+            };
+            self.capture_audio_cache
+                .insert(capture.capture_id.clone(), cache);
         }
     }
 
@@ -1485,7 +1509,10 @@ mod tests {
             Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode,
             Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
         },
-        runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
+        runtime::{
+            AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, render_w30_preview_offline,
+            signal_metrics,
+        },
         source_audio::SourceAudioCache,
         tr909::{
             Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -4471,6 +4498,126 @@ mod tests {
             capture.storage_path
         );
         assert!(capture_path.exists());
+    }
+
+    #[test]
+    fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unavailable() {
+        let tempdir = tempdir().expect("create artifact-backed playback tempdir");
+        let source_path = tempdir.path().join("source.wav");
+        let session_path = tempdir.path().join("session.json");
+        let graph_path = tempdir.path().join("source_graph.json");
+        write_pcm16_wave(&source_path, 48_000, 2, 8.0);
+
+        let mut graph = sample_graph();
+        graph.source.path = source_path.to_string_lossy().into_owned();
+        graph.source.duration_seconds = 8.0;
+        graph.source.sample_rate = 48_000;
+        graph.source.channel_count = 2;
+        let mut session = sample_session(&graph);
+        session.captures.clear();
+        session.runtime_state.lane_state.w30.last_capture = None;
+        save_source_graph_json(&graph_path, &graph).expect("save source graph");
+        save_session_json(&session_path, &session).expect("save session");
+
+        let mut state =
+            JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+        state.queue_capture_bar(300);
+        let committed_capture = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 0,
+                bar_index: 1,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+        assert_eq!(committed_capture.len(), 1);
+
+        let capture_id = CaptureId::from("cap-01");
+        let capture_path = tempdir.path().join("captures/cap-01.wav");
+        let artifact =
+            SourceAudioCache::load_pcm_wav(&capture_path).expect("load capture artifact");
+        assert!(state.capture_audio_cache.contains_key(&capture_id));
+
+        state.source_audio_cache = None;
+        fs::remove_file(&source_path).expect("remove source to prove artifact-backed preview");
+
+        assert!(state.queue_promote_last_capture(410));
+        let committed_promotion = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index: 4,
+                bar_index: 2,
+                phrase_index: 0,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            500,
+        );
+        assert_eq!(committed_promotion.len(), 1);
+
+        assert_eq!(
+            state.queue_w30_trigger_pad(645),
+            Some(QueueControlResult::Enqueued)
+        );
+        let committed_trigger = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Beat,
+                beat_index: 33,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            740,
+        );
+        assert_eq!(committed_trigger.len(), 1);
+
+        assert_eq!(
+            state.runtime.w30_preview.mode,
+            W30PreviewRenderMode::LiveRecall
+        );
+        assert_eq!(
+            state.runtime.w30_preview.capture_id.as_deref(),
+            Some("cap-01")
+        );
+        assert_eq!(state.runtime.w30_preview.trigger_revision, 4);
+        let preview = state
+            .runtime
+            .w30_preview
+            .source_window_preview
+            .as_ref()
+            .expect("artifact-backed W-30 preview");
+        assert_eq!(preview.source_start_frame, 0);
+        assert_eq!(
+            preview.source_end_frame,
+            u64::try_from(artifact.frame_count()).expect("artifact frame count fits u64")
+        );
+        assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
+        assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
+
+        let artifact_buffer =
+            render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 2_048);
+        let artifact_metrics = signal_metrics(&artifact_buffer);
+        assert!(
+            artifact_metrics.active_samples > 1_000,
+            "artifact-backed W-30 pad playback rendered too few active samples: {}",
+            artifact_metrics.active_samples
+        );
+        assert!(
+            artifact_metrics.rms > 0.001,
+            "artifact-backed W-30 pad playback RMS too low: {}",
+            artifact_metrics.rms
+        );
+
+        let mut fallback_preview = state.runtime.w30_preview.clone();
+        fallback_preview.source_window_preview = None;
+        let fallback_buffer = render_w30_preview_offline(&fallback_preview, 48_000, 2, 2_048);
+        assert_recipe_buffers_differ(
+            "artifact-backed W-30 pad playback vs fallback preview",
+            &artifact_buffer,
+            &fallback_buffer,
+            0.001,
+        );
     }
 
     #[test]

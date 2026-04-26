@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use riotbox_audio::{
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
@@ -17,7 +19,7 @@ use riotbox_audio::{
 };
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
-    ids::SceneId,
+    ids::{CaptureId, SceneId},
     session::{Mc202PhraseVariantState, SessionFile, W30PreviewModeState},
     source_graph::{
         EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
@@ -284,6 +286,7 @@ pub(super) fn build_w30_preview_render_state(
     transport: &TransportClockState,
     source_graph: Option<&SourceGraph>,
     source_audio_cache: Option<&SourceAudioCache>,
+    capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
 ) -> W30PreviewRenderState {
     let w30 = &session.runtime_state.lane_state.w30;
     let has_lane_focus =
@@ -324,7 +327,9 @@ pub(super) fn build_w30_preview_render_state(
         .unwrap_or(0.0);
     let source_window_preview = if !matches!(mode, W30PreviewRenderMode::Idle) {
         capture.and_then(|capture| {
-            build_w30_source_window_preview(capture, source_graph, source_audio_cache)
+            build_w30_capture_artifact_preview(capture, capture_audio_cache).or_else(|| {
+                build_w30_source_window_preview(capture, source_graph, source_audio_cache)
+            })
         })
     } else {
         None
@@ -355,6 +360,19 @@ pub(super) fn build_w30_preview_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
     }
+}
+
+fn build_w30_capture_artifact_preview(
+    capture: &riotbox_core::session::CaptureRef,
+    capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
+) -> Option<W30PreviewSampleWindow> {
+    let cache = capture_audio_cache?.get(&capture.capture_id)?;
+    source_preview_from_interleaved(
+        cache.interleaved_samples(),
+        usize::from(cache.channel_count),
+        0,
+        cache.frame_count().try_into().unwrap_or(u64::MAX),
+    )
 }
 
 fn build_w30_source_window_preview(

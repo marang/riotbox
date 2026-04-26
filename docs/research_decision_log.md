@@ -1221,3 +1221,14 @@ Why: musicians need captured loops to be concrete artifacts they can trust, insp
 Evidence: `committed_source_backed_capture_writes_wav_artifact` loads a real PCM source, commits a W-30 capture, verifies `captures/cap-01.wav` exists, reloads it through `SourceAudioCache`, checks duration/sample-rate/channel-count and non-silence, then saves and reloads the session. `writes_source_window_as_pcm16_wav_artifact` covers the lower-level source-window writer.
 Consequences: future W-30 pad playback and internal bus print resampling should consume this artifact seam where appropriate instead of treating `storage_path` as decorative metadata.
 Status: accepted
+
+---
+
+Topic: focused W-30 pad playback should prefer committed capture artifacts
+Phase: W-30 MVP / Audio QA
+Question: after committed W-30 captures write real WAV artifacts, what is the smallest playback change that proves captured material is reusable without building a full sampler engine?
+Decision: cache committed capture artifacts in the app/control plane and let focused W-30 preview / trigger projection prefer that artifact audio over source-window projection. Source-window projection remains a fallback for legacy sessions or missing artifacts, and the realtime callback still receives only the bounded `W30PreviewSampleWindow`.
+Why: Phase 5 needs captured material to be reusable without leaving flow. If pad trigger continues to depend only on original source-window metadata, `captures/*.wav` becomes a trust artifact but not yet the playback source. Preferring the artifact proves the storage seam is musically active while staying smaller than independent multi-pad sample voices.
+Evidence: `focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unavailable` commits a source-backed capture, removes the original source, disables the source cache, promotes/triggers the focused W-30 pad, then renders non-silent artifact-backed audio that differs from the synthetic fallback preview.
+Consequences: this is still one focused preview seam, not full pad-bank polyphony. Future W-30 work can widen from artifact-backed focused playback into richer pad voices and internal bus prints without changing the capture artifact contract.
+Status: accepted
