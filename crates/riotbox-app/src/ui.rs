@@ -1892,44 +1892,44 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<Line<'static>> {
 fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if !shell.app.jam_view.transport.is_playing {
         return vec![
-            Line::from("[Space] play"),
-            Line::from(format!("{}  [f] fill", next_scene_jump_suggestion(shell))),
-            Line::from("[c] capture"),
+            line_with_primary_keys("[Space] play"),
+            line_with_primary_keys(format!("{}  [f] fill", next_scene_jump_suggestion(shell))),
+            line_with_primary_keys("[c] capture"),
         ];
     }
 
     if !shell.app.jam_view.pending_actions.is_empty() {
         return vec![
             Line::from("let it land"),
-            Line::from("[2] log  [u] undo"),
-            Line::from("[c] capture if good"),
+            line_with_primary_keys("[2] log  [u] undo"),
+            line_with_primary_keys("[c] capture if good"),
         ];
     }
 
     if show_restore_readiness_cue(shell) {
         return vec![
-            Line::from("[y] jump first"),
-            Line::from("[Y] restore waits for one landed jump"),
-            Line::from("[c] capture"),
+            line_with_primary_keys("[y] jump first"),
+            line_with_primary_keys("[Y] restore waits for one landed jump"),
+            line_with_primary_keys("[c] capture"),
         ];
     }
 
     if show_restore_ready_cue(shell) {
         return vec![
-            Line::from(format!(
+            line_with_primary_keys(format!(
                 "[Y] restore {}",
                 restore_scene_now_compact_label(shell)
             )),
-            Line::from("[y] jump  [c] capture"),
-            Line::from("[2] trail  [u] undo"),
+            line_with_primary_keys("[y] jump  [c] capture"),
+            line_with_primary_keys("[2] trail  [u] undo"),
         ];
     }
 
     if !shell.app.jam_view.recent_actions.is_empty() {
         return vec![
             Line::from(format!("what changed: {}", latest_landed_text(shell))),
-            Line::from("what next: [c] capture  [u] undo"),
-            Line::from(format!(
+            line_with_primary_keys("what next: [c] capture  [u] undo"),
+            line_with_primary_keys(format!(
                 "then try: {}  [g] follow",
                 next_scene_jump_suggestion(shell)
             )),
@@ -1937,10 +1937,38 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 
     vec![
-        Line::from(format!("{}  [g] follow", next_scene_jump_suggestion(shell))),
-        Line::from("[a] answer  [f] fill"),
-        Line::from("[c] capture  [w] hit"),
+        line_with_primary_keys(format!("{}  [g] follow", next_scene_jump_suggestion(shell))),
+        line_with_primary_keys("[a] answer  [f] fill"),
+        line_with_primary_keys("[c] capture  [w] hit"),
     ]
+}
+
+fn line_with_primary_keys(text: impl Into<String>) -> Line<'static> {
+    let text = text.into();
+    let mut spans = Vec::new();
+    let mut rest = text.as_str();
+
+    while let Some(start) = rest.find('[') {
+        let (prefix, key_and_tail) = rest.split_at(start);
+        if !prefix.is_empty() {
+            spans.push(Span::raw(prefix.to_owned()));
+        }
+
+        let Some(end) = key_and_tail.find(']') else {
+            spans.push(Span::raw(key_and_tail.to_owned()));
+            return Line::from(spans);
+        };
+        let key_end = end + 1;
+        let (key, tail) = key_and_tail.split_at(key_end);
+        spans.push(Span::styled(key.to_owned(), style_primary_control()));
+        rest = tail;
+    }
+
+    if !rest.is_empty() || spans.is_empty() {
+        spans.push(Span::raw(rest.to_owned()));
+    }
+
+    Line::from(spans)
 }
 
 fn show_restore_readiness_cue(shell: &JamShellState) -> bool {
@@ -4419,6 +4447,48 @@ mod tests {
             "{warning:?}"
         );
         assert_eq!(warning.spans[1].style.fg, Some(Color::Yellow));
+    }
+
+    #[test]
+    fn suggested_gesture_key_tokens_use_primary_control_style() {
+        let line = line_with_primary_keys("what next: [c] capture  [u] undo");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "what next: [c] capture  [u] undo");
+        assert_eq!(line.spans[0].content.as_ref(), "what next: ");
+        assert_eq!(line.spans[1].content.as_ref(), "[c]");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Cyan));
+        assert!(
+            line.spans[1].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[3].content.as_ref(), "[u]");
+        assert_eq!(line.spans[3].style.fg, Some(Color::Cyan));
+        assert!(
+            line.spans[3].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+    }
+
+    #[test]
+    fn suggested_gesture_lines_style_start_key_token() {
+        let shell = sample_shell_state();
+        let lines = suggested_gesture_lines(&shell);
+
+        assert_eq!(lines[0].spans[0].content.as_ref(), "[Space]");
+        assert_eq!(lines[0].spans[0].style.fg, Some(Color::Cyan));
+        assert!(
+            lines[0].spans[0]
+                .style
+                .add_modifier
+                .contains(Modifier::BOLD),
+            "{:?}",
+            lines[0]
+        );
     }
 
     #[test]
