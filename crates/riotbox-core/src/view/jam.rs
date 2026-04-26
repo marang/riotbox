@@ -159,6 +159,24 @@ impl JamViewModel {
                     },
                     _ => None,
                 });
+        let w30_pending_slice_pool_reason =
+            pending_actions
+                .iter()
+                .rev()
+                .find_map(|action| match action.command {
+                    crate::action::ActionCommand::W30BrowseSlicePool => action
+                        .explanation
+                        .as_deref()
+                        .map(|explanation| {
+                            if explanation.contains("feral slice pool") {
+                                "feral".to_string()
+                            } else {
+                                "cycle".to_string()
+                            }
+                        })
+                        .or_else(|| Some("cycle".into())),
+                    _ => None,
+                });
         let w30_pending_damage_profile_target =
             pending_actions
                 .iter()
@@ -395,6 +413,7 @@ impl JamViewModel {
                 w30_pending_bank_swap_target,
                 w30_pending_slice_pool_target,
                 w30_pending_slice_pool_capture_id,
+                w30_pending_slice_pool_reason,
                 w30_pending_damage_profile_target,
                 w30_pending_loop_freeze_target,
                 w30_pending_focus_step_target,
@@ -1225,6 +1244,7 @@ pub struct LaneSummaryView {
     pub w30_pending_bank_swap_target: Option<String>,
     pub w30_pending_slice_pool_target: Option<String>,
     pub w30_pending_slice_pool_capture_id: Option<String>,
+    pub w30_pending_slice_pool_reason: Option<String>,
     pub w30_pending_damage_profile_target: Option<String>,
     pub w30_pending_loop_freeze_target: Option<String>,
     pub w30_pending_focus_step_target: Option<String>,
@@ -1906,6 +1926,10 @@ mod tests {
         assert_eq!(
             vm.lanes.w30_pending_slice_pool_capture_id.as_deref(),
             Some("cap-02")
+        );
+        assert_eq!(
+            vm.lanes.w30_pending_slice_pool_reason.as_deref(),
+            Some("cycle")
         );
         assert_eq!(
             vm.lanes.w30_pending_damage_profile_target.as_deref(),
