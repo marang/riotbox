@@ -244,6 +244,7 @@ For perform guidance key tokens:
 
 - bracketed key tokens such as `[c]`, `[u]`, or `[Space]` may use cyan + bold when they name a primary perform control
 - Help-style `key: action` prefixes may use the same cyan + bold treatment for the key prefix only
+- footer top key legends such as `q quit`, `Tab switch`, `space play/pause`, or `[ ] drum` may use the same cyan + bold treatment for the key token only
 - explanatory labels and separators should stay plain text so Suggested gestures and Help remain readable in monochrome
 - key-token emphasis does not imply new keymap behavior, new gestures, or a layout change
 
