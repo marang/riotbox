@@ -107,6 +107,30 @@ impl SourceGraph {
             .map(|warning| warning.message.clone())
             .collect()
     }
+
+    #[must_use]
+    pub fn has_feral_break_support_evidence(&self) -> bool {
+        if self.analysis_summary.break_rebuild_potential != QualityClass::High {
+            return false;
+        }
+
+        let supports_break_rebuild = self.relationships.iter().any(|relationship| {
+            relationship.relation_type == RelationshipType::SupportsBreakRebuild
+                && relationship.weight >= 0.5
+        });
+        let has_hook_or_capture_evidence = self
+            .assets
+            .iter()
+            .any(|asset| asset.asset_type == AssetType::HookFragment)
+            || self
+                .candidates
+                .iter()
+                .any(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate)
+            || self.analysis_summary.hook_candidate_count > 0
+            || self.hook_candidate_count() > 0;
+
+        supports_break_rebuild && has_hook_or_capture_evidence
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
@@ -358,6 +382,79 @@ mod tests {
     }
 
     #[test]
+    fn feral_break_support_evidence_requires_scorecard_relationship_and_hook_or_capture() {
+        let mut graph = minimal_source_graph();
+        graph.analysis_summary.break_rebuild_potential = QualityClass::High;
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-hook".into(),
+            to_id: "section-break".into(),
+            weight: 0.85,
+            notes: Some("break can be rebuilt from hook".into()),
+        });
+        graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-hook"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 3.0,
+            start_bar: 1,
+            end_bar: 2,
+            confidence: 0.9,
+            tags: vec!["feral".into()],
+            source_refs: vec!["src-1".into()],
+        });
+
+        assert!(graph.has_feral_break_support_evidence());
+
+        graph.analysis_summary.break_rebuild_potential = QualityClass::Medium;
+        assert!(!graph.has_feral_break_support_evidence());
+    }
+
+    #[test]
+    fn feral_break_support_evidence_rejects_incomplete_scorecard() {
+        let mut graph = minimal_source_graph();
+        graph.analysis_summary.break_rebuild_potential = QualityClass::High;
+        graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-hook"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 3.0,
+            start_bar: 1,
+            end_bar: 2,
+            confidence: 0.9,
+            tags: vec!["feral".into()],
+            source_refs: vec!["src-1".into()],
+        });
+        assert!(!graph.has_feral_break_support_evidence());
+
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-hook".into(),
+            to_id: "section-break".into(),
+            weight: 0.49,
+            notes: Some("weak relationship stays below Feral threshold".into()),
+        });
+        assert!(!graph.has_feral_break_support_evidence());
+
+        graph.relationships[0].weight = 0.5;
+        graph.assets.clear();
+        graph.analysis_summary.hook_candidate_count = 0;
+        assert!(!graph.has_feral_break_support_evidence());
+
+        graph.candidates.push(Candidate {
+            candidate_id: CandidateId::from("candidate-capture"),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: AssetId::from("asset-hook"),
+            score: 0.9,
+            confidence: 0.85,
+            tags: vec!["capture".into()],
+            constraints: vec![],
+            provenance_refs: vec!["provider:fixture".into()],
+        });
+        assert!(graph.has_feral_break_support_evidence());
+    }
+
+    #[test]
     fn source_graph_roundtrips_via_json() {
         let mut graph = SourceGraph::new(
             SourceDescriptor {
@@ -434,5 +531,27 @@ mod tests {
         let decoded: SourceGraph = serde_json::from_str(&json).expect("deserialize source graph");
 
         assert_eq!(decoded, graph);
+    }
+
+    fn minimal_source_graph() -> SourceGraph {
+        SourceGraph::new(
+            SourceDescriptor {
+                source_id: SourceId::from("src-1"),
+                path: "break.wav".into(),
+                content_hash: "hash-1".into(),
+                duration_seconds: 180.0,
+                sample_rate: 48_000,
+                channel_count: 2,
+                decode_profile: DecodeProfile::NormalizedStereo,
+            },
+            GraphProvenance {
+                sidecar_version: "0.1.0".into(),
+                provider_set: vec!["beats".into()],
+                generated_at: "2026-04-12T18:00:00Z".into(),
+                source_hash: "hash-1".into(),
+                analysis_seed: 42,
+                run_notes: None,
+            },
+        )
     }
 }

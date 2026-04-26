@@ -337,6 +337,12 @@ Current bounded consumers:
 - That TR-909 bias must remain bounded to the existing source-support render
   policy. It must not create a separate drum arranger, bypass queue / commit
   state, or override explicit `drop_drive` / section-derived break support.
+- MC-202 follower / leader render projection may use the same high
+  break-rebuild plus supported hook or capture evidence to choose
+  `answer_space` hook response outside explicitly hook-like sections.
+- That MC-202 bias must remain bounded to existing render-state policy. It may
+  create more space for source-backed hooks by reducing note density, but it
+  must not create a second phrase generator or bypass role / section semantics.
 - If the bias claims musical impact, tests need both render-state proof and an
   audible buffer comparison against the non-Feral control path.
 
