@@ -46,3 +46,14 @@ w30-smoke-qa date="local" duration="2.0":
     just w30-smoke-baseline "{{date}}" "{{duration}}"
     just w30-smoke-candidate "{{date}}" "{{duration}}"
     just w30-smoke-compare "{{date}}"
+
+w30-smoke-source-candidate source date="local" start="0.0" source_duration="0.25" duration="2.0":
+    cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role candidate --duration-seconds "{{duration}}" --source "{{source}}" --source-start-seconds "{{start}}" --source-duration-seconds "{{source_duration}}"
+
+w30-smoke-source-baseline source date="local" start="0.0" source_duration="0.25" duration="2.0":
+    cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role baseline --duration-seconds "{{duration}}" --source "{{source}}" --source-start-seconds "{{start}}" --source-duration-seconds "{{source_duration}}"
+
+w30-smoke-source-qa source date="local" start="0.0" source_duration="0.25" duration="2.0":
+    just w30-smoke-source-baseline "{{source}}" "{{date}}" "{{start}}" "{{source_duration}}" "{{duration}}"
+    just w30-smoke-source-candidate "{{source}}" "{{date}}" "{{start}}" "{{source_duration}}" "{{duration}}"
+    just w30-smoke-compare "{{date}}"

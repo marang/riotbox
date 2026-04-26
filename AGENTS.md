@@ -353,6 +353,7 @@ just clippy
 just mem-status
 just mem-search "replay truth"
 just w30-smoke-qa local
+just w30-smoke-source-qa "data/test_audio/examples/Beat03_130BPM(Full).wav" local
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
 scripts/linear_issue_delete.sh RIOTBOX-123
