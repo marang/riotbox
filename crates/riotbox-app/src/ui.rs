@@ -662,7 +662,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     let next = Paragraph::new(vec![
         Line::from(next_action_line(shell)),
         scene_pending_line(shell),
-        Line::from(latest_landed_line(shell)),
+        latest_landed_line(shell),
         queued_timing_rail_line(shell)
             .unwrap_or_else(|| Line::from(format!("status {}", shell.status_message))),
     ])
@@ -733,7 +733,7 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
             Line::from("Then [2] confirm it in Log and decide: [c] capture it or [u] undo it."),
         ],
         Some(FirstRunOnrampStage::FirstResult) => vec![
-            Line::from(format!("What changed: {}", latest_landed_line(shell))),
+            Line::from(format!("What changed: {}", latest_landed_text(shell))),
             Line::from("What next: [c] capture it or [u] undo it if it missed."),
             Line::from("Then try one more move: [y] jump or [g] follow."),
         ],
@@ -1734,13 +1734,48 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     vec![
         Line::from(first_pending_line),
         Line::from(second_pending_line),
-        Line::from(latest_landed_line(shell)),
+        latest_landed_line(shell),
         scene_post_commit_cue_line(shell)
             .unwrap_or_else(|| Line::from(format!("status {}", shell.status_message))),
     ]
 }
 
-fn latest_landed_line(shell: &JamShellState) -> String {
+fn latest_landed_line(shell: &JamShellState) -> Line<'static> {
+    if let Some(action) = shell.app.jam_view.recent_actions.first() {
+        let mut spans = vec![
+            Span::styled("landed ", Style::default().fg(Color::DarkGray)),
+            Span::styled(
+                format!("{} ", action.actor),
+                Style::default().fg(Color::DarkGray),
+            ),
+            Span::styled(
+                jam_action_label(&action.command),
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ),
+        ];
+
+        if let Some(energy_delta) = landed_scene_energy_delta(shell, action.command.as_str()) {
+            spans.push(Span::styled(" | ", Style::default().fg(Color::DarkGray)));
+            spans.push(Span::styled(
+                energy_delta,
+                Style::default()
+                    .fg(Color::Green)
+                    .add_modifier(Modifier::BOLD),
+            ));
+        }
+
+        Line::from(spans)
+    } else {
+        Line::from(Span::styled(
+            "landed none yet",
+            Style::default().fg(Color::DarkGray),
+        ))
+    }
+}
+
+fn latest_landed_text(shell: &JamShellState) -> String {
     if let Some(action) = shell.app.jam_view.recent_actions.first() {
         let mut line = format!(
             "landed {} {}",
@@ -1899,7 +1934,7 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     if !shell.app.jam_view.recent_actions.is_empty() {
         return vec![
-            Line::from(format!("what changed: {}", latest_landed_line(shell))),
+            Line::from(format!("what changed: {}", latest_landed_text(shell))),
             Line::from("what next: [c] capture  [u] undo"),
             Line::from(format!(
                 "then try: {}  [g] follow",
@@ -5711,6 +5746,40 @@ mod tests {
         assert_eq!(line.spans[9].style.fg, Some(Color::Cyan));
         assert!(
             line.spans[9].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+    }
+
+    #[test]
+    fn latest_landed_line_styles_define_result_hierarchy() {
+        let shell = scene_post_commit_shell_state(
+            ActionCommand::SceneLaunch,
+            "scene-02-break",
+            "scene-01-drop",
+        );
+        let line = latest_landed_line(&shell);
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "landed user scene jump | energy rise");
+        assert_eq!(latest_landed_text(&shell), rendered);
+        assert_eq!(line.spans[0].content.as_ref(), "landed ");
+        assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
+        assert_eq!(line.spans[1].content.as_ref(), "user ");
+        assert_eq!(line.spans[1].style.fg, Some(Color::DarkGray));
+        assert_eq!(line.spans[2].content.as_ref(), "scene jump");
+        assert_eq!(line.spans[2].style.fg, Some(Color::Green));
+        assert!(
+            line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[4].content.as_ref(), "energy rise");
+        assert_eq!(line.spans[4].style.fg, Some(Color::Green));
+        assert!(
+            line.spans[4].style.add_modifier.contains(Modifier::BOLD),
             "{line:?}"
         );
     }
