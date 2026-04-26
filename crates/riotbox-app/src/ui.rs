@@ -2039,6 +2039,24 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<Line<'static>> {
         spans.push(Span::styled("909 lift", style_pending_detail()));
     }
 
+    if let Some(movement) = shell.app.jam_view.scene.last_movement.as_ref() {
+        spans.push(Span::styled(" | move ", style_low_emphasis()));
+        spans.push(Span::styled(
+            movement.direction.clone(),
+            style_confirmation_strong(),
+        ));
+        spans.push(Span::styled(" 909 ", style_low_emphasis()));
+        spans.push(Span::styled(
+            movement.tr909_intent.clone(),
+            style_pending_detail(),
+        ));
+        spans.push(Span::styled(" 202 ", style_low_emphasis()));
+        spans.push(Span::styled(
+            movement.mc202_intent.clone(),
+            style_pending_detail(),
+        ));
+    }
+
     spans.extend([
         Span::styled(" | next ", style_low_emphasis()),
         Span::styled(next_scene_key.0, style_primary_control()),
@@ -4620,7 +4638,11 @@ mod tests {
         },
         ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SourceId},
         queue::ActionQueue,
-        session::{SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
+        session::{
+            SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
+            SceneMovementState, SessionFile, Tr909ReinforcementModeState,
+            Tr909TakeoverProfileState,
+        },
         source_graph::{
             AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
             DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Section, SectionLabelHint,
@@ -6203,6 +6225,40 @@ mod tests {
         assert!(
             line.spans[9].style.add_modifier.contains(Modifier::BOLD),
             "{line:?}"
+        );
+    }
+
+    #[test]
+    fn scene_post_commit_cue_surfaces_landed_movement() {
+        let mut shell = scene_post_commit_shell_state(
+            ActionCommand::SceneLaunch,
+            "scene-02-break",
+            "scene-01-drop",
+        );
+        shell.app.session.runtime_state.scene_state.last_movement = Some(SceneMovementState {
+            action_id: ActionId(1),
+            from_scene: Some(SceneId::from("scene-01-drop")),
+            to_scene: SceneId::from("scene-02-break"),
+            kind: SceneMovementKindState::Launch,
+            direction: SceneMovementDirectionState::Rise,
+            tr909_intent: SceneMovementLaneIntentState::Drive,
+            mc202_intent: SceneMovementLaneIntentState::Lift,
+            intensity: 0.75,
+            committed_bar_index: 9,
+            committed_phrase_index: 2,
+        });
+        shell.app.refresh_view();
+
+        let rendered = scene_post_commit_cue_line(&shell)
+            .expect("scene post-commit cue")
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert!(
+            rendered.contains("move rise 909 drive 202 lift"),
+            "{rendered}"
         );
     }
 

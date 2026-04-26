@@ -87,6 +87,7 @@ It must expose:
 - restore-ready Scene cues that name the target and, when known, whether restore is an energy `rise`, `drop`, or `hold`
 - post-commit Scene cues that keep a readable monochrome sentence while visually separating the live scene/result, restore target, compact support hints such as `909 lift`, and next perform keys
 - pending Scene cues may include typed transition policy intent such as `policy rise | 909 drive | 202 lift`; this is read-only intent, not a new control surface
+- post-commit Scene cues may include landed movement intent such as `move rise 909 drive 202 lift`; this names persisted session movement that is allowed to shape current render projections, not a separate arranger UI
 
 ### 5.1 Jam goals
 

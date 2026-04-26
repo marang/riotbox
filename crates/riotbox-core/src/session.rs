@@ -283,6 +283,79 @@ pub struct SceneState {
     pub active_scene: Option<SceneId>,
     pub scenes: Vec<SceneId>,
     pub restore_scene: Option<SceneId>,
+    #[serde(default)]
+    pub last_movement: Option<SceneMovementState>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SceneMovementState {
+    pub action_id: ActionId,
+    pub from_scene: Option<SceneId>,
+    pub to_scene: SceneId,
+    pub kind: SceneMovementKindState,
+    pub direction: SceneMovementDirectionState,
+    pub tr909_intent: SceneMovementLaneIntentState,
+    pub mc202_intent: SceneMovementLaneIntentState,
+    pub intensity: f32,
+    pub committed_bar_index: u64,
+    pub committed_phrase_index: u64,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SceneMovementKindState {
+    Launch,
+    Restore,
+}
+
+impl SceneMovementKindState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Launch => "launch",
+            Self::Restore => "restore",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SceneMovementDirectionState {
+    Rise,
+    Drop,
+    Hold,
+}
+
+impl SceneMovementDirectionState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Rise => "rise",
+            Self::Drop => "drop",
+            Self::Hold => "hold",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SceneMovementLaneIntentState {
+    Drive,
+    Lift,
+    Release,
+    Anchor,
+}
+
+impl SceneMovementLaneIntentState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Drive => "drive",
+            Self::Lift => "lift",
+            Self::Release => "release",
+            Self::Anchor => "anchor",
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

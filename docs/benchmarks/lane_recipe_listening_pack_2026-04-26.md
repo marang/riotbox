@@ -111,8 +111,8 @@ MC-202 now has bounded offline render cases in this pack. They prove that follow
 Scene Brain now has two bounded audio proof layers:
 
 - the listening pack still represents Scene Brain through the TR-909 `scene_target` support-accent case
-- `scene_jump_restore_replay_proves_state_and_mixed_audio_path` additionally proves the current app-level `jump -> restore` flow across mixed TR-909 + MC-202 output, including non-silence, signal-delta on launch/restore, and return to the baseline render after restore
+- `scene_jump_restore_replay_proves_state_and_mixed_audio_path` additionally proves the current app-level `jump -> restore` flow across mixed TR-909 + MC-202 output, including non-silence, signal-delta on launch/restore, landed Scene movement state, and bounded movement shaping instead of fallback collapse
 
-These prove the current Scene-coupled lane seams, not a finished Scene transition engine or full arranger.
+These prove the current Scene-coupled lane seams and the first persisted movement seam, not a finished Scene transition engine or full arranger.
 
 Generated WAVs remain local and untracked under `artifacts/audio_qa/`.
