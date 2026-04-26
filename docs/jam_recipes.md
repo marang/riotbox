@@ -65,8 +65,9 @@ Restart the app with the same source and compare these one by one:
 - `y` scene jump
 - `g` MC-202 follow
 - `a` MC-202 answer
-- `G` MC-202 phrase mutation after `g` or `a` lands
-- `<` / `>` MC-202 touch lower / higher after `g` or `a` lands
+- `P` MC-202 pressure
+- `G` MC-202 phrase mutation after `g`, `a`, or `P` lands
+- `<` / `>` MC-202 touch lower / higher after `g`, `a`, or `P` lands
 - `f` TR-909 fill
 - `w` W-30 hit
 
@@ -80,10 +81,11 @@ For each run:
 What to observe:
 
 - each lane has a different feel
-- after `g` or `a` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
+- after `g`, `a`, or `P` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
+- after `P` commits, the MC-202 lane should hold a sparser offbeat pressure cell rather than the follower drive line
 - after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
-- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, and `mc202-follower-to-mutated-drive`
+- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, and `mc202-follower-to-mutated-drive`
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
@@ -100,6 +102,7 @@ Listen to these files under `artifacts/audio_qa/local-mc202/lane-recipe-listenin
 
 - `mc202-follower-to-answer/baseline.wav` vs `candidate.wav`
 - `mc202-touch-low-to-high/baseline.wav` vs `candidate.wav`
+- `mc202-follower-to-pressure/baseline.wav` vs `candidate.wav`
 - `mc202-follower-to-mutated-drive/baseline.wav` vs `candidate.wav`
 
 ## Recipe 3: Capture, Audition, Promote, Hit

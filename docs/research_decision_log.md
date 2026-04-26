@@ -1097,6 +1097,17 @@ Phase: MC-202 MVP / Audio QA
 Question: now that MC-202 has live touch and phrase mutation, how should the recipe-level QA pack prove those gestures are audible and not just visible in state/logs?
 Decision: extend the lane recipe listening pack with explicit `mc202-touch-low-to-high` and `mc202-follower-to-mutated-drive` cases, and require sample-by-sample signal delta RMS alongside normal RMS delta.
 Why: touch changes are partly loudness/energy changes, but phrase mutations can remain similarly loud while still being musically different. A plain RMS comparison can miss identical-output or fallback-collapse bugs when two phrases have similar energy. Signal-delta RMS catches actual waveform difference and writes the evidence beside the WAVs.
-Evidence: `lane_recipe_pack` now renders six cases, writes signal delta metrics into comparisons and pack summaries, and the local `riotbox-305-local` pack passed with MC-202 touch signal delta RMS `0.006608` and mutated-drive signal delta RMS `0.010100`.
+Evidence: `lane_recipe_pack` renders seven cases, writes signal delta metrics into comparisons and pack summaries, and the local packs passed with MC-202 touch signal delta RMS `0.006608`, pressure signal delta RMS `0.009436`, and mutated-drive signal delta RMS `0.010100`.
 Consequences: future listening-pack cases should prefer paired signal-delta checks when the musical claim is "different phrase or gesture", and use plain RMS only as an additional energy sanity check.
+Status: accepted
+
+---
+
+Topic: MC-202 pressure should be a quantized role phrase, not a free-running bass layer
+Phase: MC-202 MVP / Audio QA
+Question: how should Riotbox add the first explicit pressure behavior without turning the MC-202 lane into an unbounded sequencer?
+Decision: add `mc202.generate_pressure` on the existing `NextPhrase` queue / commit seam. The commit stores role `pressure`, clears phrase variants, raises MC-202 touch to a bounded pressure value, and projects to a typed `Pressure` render mode with a sparse `pressure_cell` phrase shape.
+Why: Phase 4 asks for pressure and identity without overplaying. A quantized pressure role gives the performer one clear gesture for offbeat pressure while preserving replayability, undo/log visibility, and the same render-state path as follower, answer, touch, and phrase mutation.
+Evidence: `riotbox-core` exposes the new action and pending cue, `riotbox-app` queues/commits `P` pressure through the existing MC-202 phrase-control path, and `riotbox-audio` plus the lane recipe listening pack prove `pressure_cell` differs from follower drive with signal delta RMS `0.009436`.
+Consequences: future pressure work should add note-budget/source-aware policy on top of this committed role seam rather than adding callback-only heuristics or a separate MC-202 phrase editor.
 Status: accepted

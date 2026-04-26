@@ -462,8 +462,8 @@ Today the repo already has:
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
-- MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, and follower-vs-mutated-drive contrasts without claiming a finished synth engine
-- a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/answer state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam
+- MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, and follower-vs-mutated-drive contrasts without claiming a finished synth engine
+- a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/answer/pressure state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam
 - a live MC-202 touch-control regression that proves the same committed phrase changes buffer energy when the performer raises or lowers touch
 - a quantized MC-202 phrase-mutation regression that proves a committed phrase variant changes the render buffer against the follower-drive control
 - an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, and Markdown comparisons for TR-909, Scene-coupled TR-909, and MC-202 cases

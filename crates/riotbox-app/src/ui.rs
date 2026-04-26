@@ -102,6 +102,7 @@ pub enum ShellKeyOutcome {
     QueueMc202RoleToggle,
     QueueMc202GenerateFollower,
     QueueMc202GenerateAnswer,
+    QueueMc202GeneratePressure,
     QueueMc202MutatePhrase,
     QueueTr909Fill,
     QueueTr909Reinforce,
@@ -135,6 +136,7 @@ const GESTURE_RESTORE: &str = "restore";
 const GESTURE_VOICE: &str = "voice";
 const GESTURE_FOLLOW: &str = "follow";
 const GESTURE_ANSWER: &str = "answer";
+const GESTURE_PRESSURE: &str = "pressure";
 const GESTURE_PHRASE: &str = "phrase";
 const GESTURE_FILL: &str = "fill";
 const GESTURE_PUSH: &str = "push";
@@ -160,6 +162,7 @@ const ADVANCED_GESTURES: &[(&str, &str)] = &[
     ("Y", GESTURE_RESTORE),
     ("a", GESTURE_ANSWER),
     ("b", GESTURE_VOICE),
+    ("P", GESTURE_PRESSURE),
     ("G", GESTURE_PHRASE),
     ("d", GESTURE_PUSH),
     ("t", GESTURE_TAKEOVER),
@@ -187,6 +190,7 @@ const HELP_ADVANCED_GESTURES_A: &[(&str, &str)] = &[
     ("a", GESTURE_ANSWER),
     ("m", GESTURE_MUTATE),
     ("b", GESTURE_VOICE),
+    ("P", GESTURE_PRESSURE),
     ("G", GESTURE_PHRASE),
     ("d", GESTURE_PUSH),
 ];
@@ -346,6 +350,10 @@ impl JamShellState {
             KeyCode::Char('a') => {
                 self.status_message = queued_status_message(GESTURE_ANSWER, "next phrase");
                 ShellKeyOutcome::QueueMc202GenerateAnswer
+            }
+            KeyCode::Char('P') => {
+                self.status_message = queued_status_message(GESTURE_PRESSURE, "next phrase");
+                ShellKeyOutcome::QueueMc202GeneratePressure
             }
             KeyCode::Char('G') => {
                 self.status_message = queued_status_message(GESTURE_PHRASE, "next phrase");
@@ -1707,6 +1715,8 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         format!("next voice {role}")
     } else if lanes.mc202_pending_answer_generation {
         "next answer".into()
+    } else if lanes.mc202_pending_pressure_generation {
+        "next pressure".into()
     } else if lanes.mc202_pending_follower_generation {
         "next follow".into()
     } else if lanes.mc202_pending_phrase_mutation {
@@ -2289,6 +2299,8 @@ fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {
         "voice queued"
     } else if shell.app.jam_view.lanes.mc202_pending_answer_generation {
         "answer queued"
+    } else if shell.app.jam_view.lanes.mc202_pending_pressure_generation {
+        "pressure queued"
     } else if shell.app.jam_view.lanes.mc202_pending_follower_generation {
         "follow queued"
     } else {
@@ -2304,6 +2316,7 @@ fn jam_action_label(command: &str) -> String {
         "mc202.set_role" => GESTURE_VOICE.into(),
         "mc202.generate_follower" => GESTURE_FOLLOW.into(),
         "mc202.generate_answer" => GESTURE_ANSWER.into(),
+        "mc202.generate_pressure" => GESTURE_PRESSURE.into(),
         "mc202.mutate_phrase" => GESTURE_PHRASE.into(),
         "tr909.fill_next" => GESTURE_FILL.into(),
         "tr909.reinforce_break" => GESTURE_PUSH.into(),
@@ -2342,6 +2355,7 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 riotbox_core::action::ActionCommand::Mc202SetRole
                     | riotbox_core::action::ActionCommand::Mc202GenerateFollower
                     | riotbox_core::action::ActionCommand::Mc202GenerateAnswer
+                    | riotbox_core::action::ActionCommand::Mc202GeneratePressure
                     | riotbox_core::action::ActionCommand::Mc202MutatePhrase
             )
         })
@@ -2360,6 +2374,8 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             lanes.mc202_phrase_variant.as_deref().unwrap_or("base"),
             if lanes.mc202_pending_answer_generation {
                 "queued answer"
+            } else if lanes.mc202_pending_pressure_generation {
+                "queued pressure"
             } else if lanes.mc202_pending_follower_generation {
                 "queued"
             } else if lanes.mc202_pending_phrase_mutation {
@@ -5532,7 +5548,7 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Advanced: Y restore | a answer | b voice | G phrase | d push"),
+            rendered.contains("Advanced: Y restore | a answer | b voice | P pressure | G phrase"),
             "{rendered}"
         );
         assert!(!rendered.contains("Sections"), "{rendered}");
@@ -5781,6 +5797,19 @@ mod tests {
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(rendered.contains("next answer"));
+    }
+
+    #[test]
+    fn renders_jam_shell_with_pending_mc202_pressure_generation() {
+        let mut shell = sample_shell_state();
+        assert_eq!(
+            shell.app.queue_mc202_generate_pressure(200),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(rendered.contains("next pressure"), "{rendered}");
     }
 
     #[test]
@@ -6901,6 +6930,10 @@ mod tests {
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('a')),
             ShellKeyOutcome::QueueMc202GenerateAnswer
+        );
+        assert_eq!(
+            shell.handle_key_code(KeyCode::Char('P')),
+            ShellKeyOutcome::QueueMc202GeneratePressure
         );
         assert_eq!(
             shell.handle_key_code(KeyCode::Char('G')),

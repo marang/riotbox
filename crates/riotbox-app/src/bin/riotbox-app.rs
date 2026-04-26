@@ -303,6 +303,21 @@ fn run_event_loop(
                         }
                     }
                 }
+                ShellKeyOutcome::QueueMc202GeneratePressure => {
+                    match shell.app.queue_mc202_generate_pressure(timestamp_now()) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued MC-202 pressure generation for next phrase",
+                            );
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("MC-202 pressure generation already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("MC-202 pressure already in state");
+                        }
+                    }
+                }
                 ShellKeyOutcome::QueueMc202MutatePhrase => {
                     match shell.app.queue_mc202_mutate_phrase(timestamp_now()) {
                         riotbox_app::jam_app::QueueControlResult::Enqueued => {
@@ -885,6 +900,7 @@ fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::QueueMc202RoleToggle => "queue_mc202_role_toggle",
         ShellKeyOutcome::QueueMc202GenerateFollower => "queue_mc202_generate_follower",
         ShellKeyOutcome::QueueMc202GenerateAnswer => "queue_mc202_generate_answer",
+        ShellKeyOutcome::QueueMc202GeneratePressure => "queue_mc202_generate_pressure",
         ShellKeyOutcome::QueueMc202MutatePhrase => "queue_mc202_mutate_phrase",
         ShellKeyOutcome::QueueTr909Fill => "queue_tr909_fill",
         ShellKeyOutcome::QueueTr909Reinforce => "queue_tr909_reinforce",
