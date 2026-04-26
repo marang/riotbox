@@ -1283,6 +1283,7 @@ mod tests {
         expected_pattern_adoption: Option<String>,
         expected_phrase_variation: Option<String>,
         expected_source_support_profile: Option<String>,
+        expected_source_support_context: Option<String>,
         expected_takeover_profile: Option<String>,
     }
 
@@ -5969,6 +5970,16 @@ mod tests {
                     .map(|profile| profile.label().to_string()),
                 fixture.expected_source_support_profile,
                 "{} support profile drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state
+                    .runtime
+                    .tr909_render
+                    .source_support_context
+                    .map(|context| context.label().to_string()),
+                fixture.expected_source_support_context,
+                "{} support context drifted",
                 fixture.name
             );
             assert_eq!(
