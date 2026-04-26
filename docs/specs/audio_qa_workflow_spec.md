@@ -405,6 +405,7 @@ Today the repo already has:
 - validation and benchmark guidance
 - fixture corpus guidance
 - callback-facing audio regression fixtures for `TR-909`, `W-30 preview`, and `W-30 resample`
+- focused app/runtime regressions for source-backed W-30 reuse, including the promoted `[w] hit` path that verifies `LiveRecall` keeps non-empty source-window preview samples when a decoded capture window is available
 
 Today the repo does not yet have a full official workflow for:
 
