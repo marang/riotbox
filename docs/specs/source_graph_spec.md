@@ -305,6 +305,7 @@ The current scorecard surface is:
 
 ```text
 FeralScorecardView {
+  readiness
   break_rebuild_potential
   hook_fragment_count
   break_support_count
@@ -318,6 +319,10 @@ FeralScorecardView {
 Consumers should use this as a compact policy and UX hint. They must still keep
 audible behavior behind explicit Action Lexicon, queue / commit, and render
 contracts.
+
+`readiness` should be a compact label derived from the same shared Source Graph
+evidence contract used by bounded lane consumers, not from separate UI-only
+count heuristics.
 
 Current bounded consumers:
 
