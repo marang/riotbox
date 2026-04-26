@@ -16,6 +16,8 @@ Do not use this directory for:
 
 Current benchmark artifacts:
 
+- [audio_qa_artifact_convention_2026-04-26.md](./audio_qa_artifact_convention_2026-04-26.md)
+  Initial local-only baseline-vs-candidate artifact convention for generated audio QA outputs.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)

@@ -140,6 +140,7 @@ docs/
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started
 - `benchmarks/README.md`: benchmark archive policy started
+- `benchmarks/audio_qa_artifact_convention_2026-04-26.md`: audio QA baseline-vs-candidate artifact convention captured
 - `benchmarks/jam_workflow_baseline_2026-04-17.md`: workflow benchmark baseline captured
 - `benchmarks/scene_jump_restore_workflow_baseline_2026-04-18.md`: Scene Brain workflow benchmark baseline captured
 - `benchmarks/scene_timing_readability_baseline_2026-04-18.md`: Scene Brain timing-readability baseline refreshed for energy-aware live/restore cues

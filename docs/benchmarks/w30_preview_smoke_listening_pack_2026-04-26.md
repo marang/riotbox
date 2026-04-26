@@ -7,6 +7,7 @@ Status: initial local-only convention
 Related:
 
 - `docs/specs/audio_qa_workflow_spec.md`
+- `docs/benchmarks/audio_qa_artifact_convention_2026-04-26.md`
 - `cargo run -p riotbox-audio --bin w30_preview_render`
 
 ## Purpose
@@ -30,12 +31,14 @@ Use this directory shape for generated local artifacts:
 
 ```text
 artifacts/audio_qa/YYYY-MM-DD/w30-preview-smoke/raw_capture_source_window_preview/
+  baseline.wav
+  baseline.metrics.md
   candidate.wav
   candidate.metrics.md
   notes.md
 ```
 
-Generated audio QA artifacts are intentionally ignored by Git. Preserve durable conclusions in `docs/benchmarks/`, not by committing generated WAV files.
+Generated audio QA artifacts are intentionally ignored by Git. Preserve durable conclusions in `docs/benchmarks/`, not by committing generated WAV files. See `audio_qa_artifact_convention_2026-04-26.md` for baseline-vs-candidate naming.
 
 ## Render Command
 
