@@ -1264,7 +1264,7 @@ mod tests {
             SourceGraphVersion,
         },
         transport::TransportClockState,
-        view::jam::SceneJumpAvailabilityView,
+        view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView},
     };
     use riotbox_sidecar::client::ClientError as SidecarClientError;
 
@@ -3235,6 +3235,7 @@ mod tests {
             Some("cap-02")
         );
         assert_eq!(state.jam_view.capture.last_capture_target.as_deref(), None);
+        assert_eq!(state.jam_view.capture.last_capture_target_kind, None);
         assert_eq!(state.jam_view.capture.last_capture_origin_count, 2);
         assert_eq!(state.jam_view.capture.unassigned_capture_count, 2);
         assert_eq!(state.jam_view.capture.promoted_capture_count, 0);
@@ -3289,6 +3290,10 @@ mod tests {
         assert_eq!(
             state.jam_view.capture.last_capture_target.as_deref(),
             Some("pad bank-a/pad-01")
+        );
+        assert_eq!(
+            state.jam_view.capture.last_capture_target_kind,
+            Some(CaptureTargetKindView::W30Pad)
         );
         assert_eq!(
             state.jam_view.capture.last_promotion_result.as_deref(),

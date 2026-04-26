@@ -13,7 +13,7 @@ use riotbox_core::source_graph::{
 };
 use riotbox_core::{
     action::{ActionCommand, ActionStatus},
-    view::jam::SceneJumpAvailabilityView,
+    view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView},
 };
 
 use crate::jam_app::JamAppState;
@@ -3603,14 +3603,17 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         ];
     };
 
-    match capture.last_capture_target.as_deref() {
-        Some(target) if target.starts_with("pad ") => vec![
+    match (
+        capture.last_capture_target_kind,
+        capture.last_capture_target.as_deref(),
+    ) {
+        (Some(CaptureTargetKindView::W30Pad), Some(target)) => vec![
             Line::from(format!("hear now: [w] hit {target}")),
             Line::from("or [o] audition same pad"),
             Line::from("[b]/[s] browse or swap"),
             Line::from(format!("source {last_capture_id}")),
         ],
-        Some(target) if target.starts_with("scene ") => vec![
+        (Some(CaptureTargetKindView::Scene), Some(target)) => vec![
             Line::from(format!("scene target {target}")),
             Line::from("use Jam scene controls"),
             Line::from("[2] confirm action trail"),
@@ -3928,14 +3931,17 @@ fn capture_heard_path_label(shell: &JamShellState) -> String {
         return "[c] first, then [p]->[w]".into();
     };
 
-    match capture.last_capture_target.as_deref() {
-        Some(target) if target.starts_with("pad ") => {
+    match (
+        capture.last_capture_target_kind,
+        capture.last_capture_target.as_deref(),
+    ) {
+        (Some(CaptureTargetKindView::W30Pad), Some(target)) => {
             format!("{last_capture_id}->{target} [w]/[o]")
         }
-        Some(target) if target.starts_with("scene ") => {
+        (Some(CaptureTargetKindView::Scene), Some(target)) => {
             format!("{last_capture_id}->{target} ready")
         }
-        Some(target) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
+        (_, Some(target)) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
         _ => format!("{last_capture_id} stored [o] raw or [p]->[w]"),
     }
 }
@@ -7875,6 +7881,10 @@ mod tests {
         shell.app.refresh_view();
         shell.active_screen = ShellScreen::Capture;
 
+        assert_eq!(
+            shell.app.jam_view.capture.last_capture_target_kind,
+            Some(CaptureTargetKindView::Scene)
+        );
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(

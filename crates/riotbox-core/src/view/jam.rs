@@ -389,6 +389,12 @@ impl JamViewModel {
                         }
                     })
                 }),
+                last_capture_target_kind: session.captures.last().and_then(|capture| {
+                    capture
+                        .assigned_target
+                        .as_ref()
+                        .map(capture_target_kind_view)
+                }),
                 last_capture_origin_count: session
                     .captures
                     .last()
@@ -475,6 +481,13 @@ fn capture_action_target_label(action: &crate::action::Action) -> String {
         Some(crate::action::TargetScope::Mixer) => "mixer".into(),
         Some(crate::action::TargetScope::Ghost) => "ghost".into(),
         Some(crate::action::TargetScope::Session) | None => "session".into(),
+    }
+}
+
+const fn capture_target_kind_view(target: &crate::session::CaptureTarget) -> CaptureTargetKindView {
+    match target {
+        crate::session::CaptureTarget::W30Pad { .. } => CaptureTargetKindView::W30Pad,
+        crate::session::CaptureTarget::Scene(_) => CaptureTargetKindView::Scene,
     }
 }
 
@@ -753,10 +766,17 @@ pub struct CaptureSummaryView {
     pub pending_capture_items: Vec<PendingCaptureActionView>,
     pub last_capture_id: Option<String>,
     pub last_capture_target: Option<String>,
+    pub last_capture_target_kind: Option<CaptureTargetKindView>,
     pub last_capture_origin_count: usize,
     pub last_capture_notes: Option<String>,
     pub last_promotion_result: Option<String>,
     pub pinned_capture_ids: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CaptureTargetKindView {
+    W30Pad,
+    Scene,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1180,6 +1200,10 @@ mod tests {
         assert_eq!(
             vm.capture.last_capture_target.as_deref(),
             Some("pad bank-a/pad-01")
+        );
+        assert_eq!(
+            vm.capture.last_capture_target_kind,
+            Some(CaptureTargetKindView::W30Pad)
         );
         assert_eq!(
             vm.capture.last_promotion_result.as_deref(),

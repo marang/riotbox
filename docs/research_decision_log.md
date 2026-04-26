@@ -1012,3 +1012,14 @@ Why: the repo review finding was not about missing features; it was about musica
 Evidence: `riotbox-audio` now owns a small shared transport control/state seam and publishes `AudioRuntimeTimingSnapshot` values from callback progress; `riotbox-app` consumes those snapshots in the event loop, removes the old `runtime.rs` pulse thread module, and keeps focused transport/commit tests green under the new path.
 Consequences: this does not yet finish the transport redesign. The app still reconstructs bar/phrase indices and still mirrors the current audio-owned beat position back into lane render state. Later hardening can push more of that contract into shared/core or audio-owned surfaces, but deeper audio QA and replay work now has one truthful live timing spine to build on.
 Status: accepted
+
+---
+
+Topic: Capture target routing should use typed Jam view intent, not display strings
+Phase: W-30 MVP
+Question: once Capture guidance started using different next-step wording for W-30 pad targets and Scene targets, should the TUI branch on formatted labels such as `pad bank-a/pad-01`?
+Decision: keep `CaptureSummaryView.last_capture_target` as the display label, but add a typed `last_capture_target_kind` projection for routing decisions. Capture `Do Next` and `hear ...` labels should branch on that kind and only use the display label for rendering.
+Why: display wording is allowed to change as the TUI becomes more musical. If behavior-level guidance depends on string prefixes, a wording cleanup can silently change whether Riotbox offers W-30 audition/hit guidance or Scene confirmation guidance.
+Evidence: `JamViewModel` now exposes `CaptureTargetKindView`; Capture `Do Next` and `capture_heard_path_label` branch on the typed kind while preserving the existing visible W-30 and Scene wording. Tests cover W-30 pad, Scene, and unassigned target projections.
+Consequences: this is still a view projection over the existing `CaptureTarget` model, not a persistence change. Future Capture routing surfaces should consume typed view intent first and render display labels second.
+Status: accepted
