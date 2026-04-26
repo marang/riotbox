@@ -1034,3 +1034,14 @@ Why: raw and promoted auditions share the same `[o]` gesture but need different 
 Evidence: `JamViewModel` now exposes `W30PendingAuditionView`; Capture `Do Next` renders queued raw/promoted audition guidance from that projection; focused tests cover raw and promoted pending audition kind, target, and quantization.
 Consequences: this remains a presentation-model projection over the existing action system, not a second queue or W-30 action path. Future W-30 pending cue details should prefer typed Jam view projections when the perform-facing UI needs semantic intent beyond a generic command label.
 Status: accepted
+
+---
+
+Topic: Capture handoff source readiness belongs in the Jam view model
+Phase: W-30 MVP
+Question: after Capture started showing compact `src` / `fallback` handoff cues, should the TUI derive that readiness by inspecting the latest session capture directly?
+Decision: project Capture handoff readiness into `CaptureSummaryView` as typed view state. The TUI may still show detailed provenance in Capture inspect areas, but perform-facing handoff copy should consume the Jam view projection instead of scanning `session.captures`.
+Why: `src` / `fallback` is not only raw provenance; it changes the user's confidence in `[w] hit` and `[p]->[w]` next steps. Keeping that decision in the view model keeps Capture guidance aligned with the typed projection pattern and prevents the TUI from accumulating more session-model branching.
+Evidence: `JamViewModel` now exposes `CaptureHandoffReadinessView`; Capture `Do Next` and heard-path copy render the existing `src` / `fallback` wording from that projection; focused core and TUI tests cover fallback and source-backed readiness.
+Consequences: this remains presentation-model state over the existing Capture model, not a persistence change or source-cache redesign. Future Capture confidence cues should prefer typed Jam view projections before adding more UI-side session inspection.
+Status: accepted

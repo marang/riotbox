@@ -13,7 +13,10 @@ use riotbox_core::source_graph::{
 };
 use riotbox_core::{
     action::{ActionCommand, ActionStatus},
-    view::jam::{CaptureTargetKindView, SceneJumpAvailabilityView, W30PendingAuditionKind},
+    view::jam::{
+        CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView,
+        W30PendingAuditionKind,
+    },
 };
 
 use crate::jam_app::JamAppState;
@@ -3632,15 +3635,9 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn capture_handoff_readiness_label(shell: &JamShellState) -> &'static str {
-    match shell
-        .app
-        .session
-        .captures
-        .last()
-        .and_then(|capture| capture.source_window.as_ref())
-    {
-        Some(_) => "src",
-        None => "fallback",
+    match shell.app.jam_view.capture.last_capture_handoff_readiness {
+        Some(CaptureHandoffReadinessView::Source) => "src",
+        Some(CaptureHandoffReadinessView::Fallback) | None => "fallback",
     }
 }
 
@@ -7926,6 +7923,10 @@ mod tests {
         shell.app.refresh_view();
         shell.active_screen = ShellScreen::Capture;
 
+        assert_eq!(
+            shell.app.jam_view.capture.last_capture_handoff_readiness,
+            Some(CaptureHandoffReadinessView::Source)
+        );
         let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
         assert!(

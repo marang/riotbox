@@ -398,6 +398,10 @@ impl JamViewModel {
                         .as_ref()
                         .map(capture_target_kind_view)
                 }),
+                last_capture_handoff_readiness: session
+                    .captures
+                    .last()
+                    .map(capture_handoff_readiness_view),
                 last_capture_origin_count: session
                     .captures
                     .last()
@@ -491,6 +495,16 @@ const fn capture_target_kind_view(target: &crate::session::CaptureTarget) -> Cap
     match target {
         crate::session::CaptureTarget::W30Pad { .. } => CaptureTargetKindView::W30Pad,
         crate::session::CaptureTarget::Scene(_) => CaptureTargetKindView::Scene,
+    }
+}
+
+const fn capture_handoff_readiness_view(
+    capture: &crate::session::CaptureRef,
+) -> CaptureHandoffReadinessView {
+    if capture.source_window.is_some() {
+        CaptureHandoffReadinessView::Source
+    } else {
+        CaptureHandoffReadinessView::Fallback
     }
 }
 
@@ -800,6 +814,7 @@ pub struct CaptureSummaryView {
     pub last_capture_id: Option<String>,
     pub last_capture_target: Option<String>,
     pub last_capture_target_kind: Option<CaptureTargetKindView>,
+    pub last_capture_handoff_readiness: Option<CaptureHandoffReadinessView>,
     pub last_capture_origin_count: usize,
     pub last_capture_notes: Option<String>,
     pub last_promotion_result: Option<String>,
@@ -810,6 +825,12 @@ pub struct CaptureSummaryView {
 pub enum CaptureTargetKindView {
     W30Pad,
     Scene,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum CaptureHandoffReadinessView {
+    Source,
+    Fallback,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -1237,6 +1258,10 @@ mod tests {
         assert_eq!(
             vm.capture.last_capture_target_kind,
             Some(CaptureTargetKindView::W30Pad)
+        );
+        assert_eq!(
+            vm.capture.last_capture_handoff_readiness,
+            Some(CaptureHandoffReadinessView::Fallback)
         );
         assert_eq!(
             vm.capture.last_promotion_result.as_deref(),
