@@ -102,6 +102,7 @@ The honest status: **this is already playable as a prototype shell, but it is no
 4. Try a few high-value gestures:
    - `y` scene select
    - `g` MC-202 follower
+   - `<` / `>` MC-202 touch down / up after a follower or answer lands
    - `f` TR-909 fill
    - `c` capture
    - `w` W-30 trigger
@@ -258,6 +259,7 @@ The shell already has a broad action vocabulary, but these are the best first ke
 - `y` scene select
 - `g` MC-202 follower
 - `a` MC-202 answer
+- `<` / `>` lower / raise MC-202 touch
 - `f` TR-909 fill
 - `t` TR-909 takeover
 - `c` capture

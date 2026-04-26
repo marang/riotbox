@@ -524,6 +524,14 @@ fn run_event_loop(
                     let level = shell.app.adjust_drum_bus_level(0.1);
                     shell.set_error_status(format!("drum bus level {:.2}", level));
                 }
+                ShellKeyOutcome::LowerMc202Touch => {
+                    let touch = shell.app.adjust_mc202_touch(-0.08);
+                    shell.set_error_status(format!("MC-202 touch {:.2}", touch));
+                }
+                ShellKeyOutcome::RaiseMc202Touch => {
+                    let touch = shell.app.adjust_mc202_touch(0.08);
+                    shell.set_error_status(format!("MC-202 touch {:.2}", touch));
+                }
                 ShellKeyOutcome::UndoLast => {
                     if shell.app.undo_last_action(timestamp_now()).is_some() {
                         shell.set_error_status("undid most recent action");
@@ -819,6 +827,7 @@ fn observer_snapshot(shell: &JamShellState) -> Value {
             "mc202_mode": runtime.mc202_render_mode,
             "mc202_routing": runtime.mc202_render_routing,
             "mc202_phrase_shape": runtime.mc202_render_phrase_shape,
+            "mc202_mix": runtime.mc202_render_mix_summary,
             "w30_preview_mode": runtime.w30_preview_mode,
             "w30_preview_target": runtime.w30_preview_target_summary,
             "w30_resample_tap_mode": runtime.w30_resample_tap_mode,
@@ -883,6 +892,8 @@ fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::TogglePinLatestCapture => "toggle_pin_latest_capture",
         ShellKeyOutcome::LowerDrumBusLevel => "lower_drum_bus_level",
         ShellKeyOutcome::RaiseDrumBusLevel => "raise_drum_bus_level",
+        ShellKeyOutcome::LowerMc202Touch => "lower_mc202_touch",
+        ShellKeyOutcome::RaiseMc202Touch => "raise_mc202_touch",
         ShellKeyOutcome::UndoLast => "undo_last",
         ShellKeyOutcome::Quit => "quit",
     }

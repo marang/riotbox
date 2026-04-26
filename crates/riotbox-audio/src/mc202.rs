@@ -259,6 +259,58 @@ mod tests {
     }
 
     #[test]
+    fn touch_changes_render_energy_on_same_phrase() {
+        let mut low_touch = vec![0.0; 44_100 * 2];
+        let mut high_touch = vec![0.0; 44_100 * 2];
+        let base = Mc202RenderState {
+            mode: Mc202RenderMode::Follower,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::FollowerDrive,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(
+            &mut low_touch,
+            44_100,
+            2,
+            &Mc202RenderState {
+                touch: 0.08,
+                ..base
+            },
+        );
+        render_mc202_buffer(
+            &mut high_touch,
+            44_100,
+            2,
+            &Mc202RenderState {
+                touch: 0.92,
+                ..base
+            },
+        );
+
+        let low_metrics = metrics(&low_touch);
+        let high_metrics = metrics(&high_touch);
+        let max_delta = low_touch
+            .iter()
+            .zip(high_touch.iter())
+            .map(|(low, high)| (low - high).abs())
+            .fold(0.0_f32, f32::max);
+
+        assert!(low_metrics.0 > 10_000);
+        assert!(high_metrics.0 > 10_000);
+        assert!(
+            high_metrics.2 > low_metrics.2 + 0.006,
+            "low RMS {:.6}, high RMS {:.6}",
+            low_metrics.2,
+            high_metrics.2
+        );
+        assert!(max_delta > 0.02, "max touch delta {max_delta}");
+    }
+
+    #[test]
     fn render_is_stable_across_callback_chunk_boundaries() {
         let render = Mc202RenderState {
             mode: Mc202RenderMode::Follower,

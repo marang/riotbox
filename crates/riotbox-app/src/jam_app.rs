@@ -1096,6 +1096,14 @@ impl JamAppState {
         next_level
     }
 
+    pub fn adjust_mc202_touch(&mut self, delta: f32) -> f32 {
+        let next_touch =
+            (self.session.runtime_state.macro_state.mc202_touch + delta).clamp(0.0, 1.0);
+        self.session.runtime_state.macro_state.mc202_touch = next_touch;
+        self.refresh_view();
+        next_touch
+    }
+
     pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
         let next_undo_action_id = next_action_id_from_session(&self.session);
 
@@ -2373,6 +2381,44 @@ mod tests {
             .runtime_warnings
             .iter()
             .any(|warning| warning == "909 render is routed to the drum bus at zero drum level"));
+    }
+
+    #[test]
+    fn adjusting_mc202_touch_updates_session_and_runtime_view() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
+        session.runtime_state.macro_state.mc202_touch = 0.40;
+        session.runtime_state.mixer_state.music_level = 0.64;
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        let raised = state.adjust_mc202_touch(0.24);
+        assert!((raised - 0.64).abs() < f32::EPSILON);
+        assert!((state.session.runtime_state.macro_state.mc202_touch - 0.64).abs() < f32::EPSILON);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Follower);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::FollowerDrive
+        );
+        assert_eq!(
+            state.runtime.mc202_render.routing,
+            Mc202RenderRouting::MusicBusBass
+        );
+        assert!((state.runtime.mc202_render.touch - 0.64).abs() < f32::EPSILON);
+        assert_eq!(
+            state.runtime_view.mc202_render_mix_summary,
+            "music bus 0.64 | touch 0.64"
+        );
+
+        let lowered = state.adjust_mc202_touch(-1.5);
+        assert_eq!(lowered, 0.0);
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.0);
+        assert_eq!(state.runtime.mc202_render.touch, 0.0);
+        assert_eq!(
+            state.runtime_view.mc202_render_mix_summary,
+            "music bus 0.64 | touch 0.00"
+        );
     }
 
     #[test]

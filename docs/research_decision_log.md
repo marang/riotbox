@@ -1067,3 +1067,14 @@ Why: the user-facing gap was that MC-202 gestures could be committed and logged 
 Evidence: `riotbox-app` now builds and exposes MC-202 render diagnostics from committed role/follower/answer state, `riotbox-audio` mirrors MC-202 render state through atomic shared runtime storage, and runtime tests prove the mixed buffer contains active MC-202 bass output.
 Consequences: this is still a bounded first bass seam, not a finished MC-202 engine. Later MC-202 work should improve sound design, phrase continuity, live controls, and source-aware bass behavior on this same render path.
 Status: accepted
+
+---
+
+Topic: MC-202 touch control should adjust the committed render seam directly
+Phase: MC-202 MVP / Audio QA
+Question: after MC-202 follower and answer state can be heard in the live mix, what is the smallest useful live control that does not create a second synth-control path?
+Decision: expose `<` and `>` as bounded Jam controls for `runtime_state.macro_state.mc202_touch`. The controls refresh the existing typed `Mc202RenderState`, surface the current touch value in MC-202 diagnostics, and keep phrase generation plus role selection on the existing queue / commit seam.
+Why: the musician needs one immediate performance parameter after a bass phrase lands, but Riotbox should not invent an ad hoc callback-only synth model. Touch is already persisted in session state and consumed by the renderer, so it is the safest first live control.
+Evidence: `riotbox-app` now updates MC-202 touch through `JamAppState`, the shell maps `<` / `>` to that state refresh, app tests verify session/runtime-view projection, and `riotbox-audio` proves low-vs-high touch changes the same MC-202 phrase buffer metrics.
+Consequences: future MC-202 live controls should follow this pattern: persisted macro or lane state first, typed render projection second, callback consumption third, and an output-path regression proving the audible seam changed.
+Status: accepted
