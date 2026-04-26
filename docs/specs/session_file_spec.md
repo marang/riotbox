@@ -184,7 +184,7 @@ Examples:
 
 Per lane, store only the state required to reproduce behavior:
 
-- MC-202 role and phrase references
+- MC-202 role, phrase references, and committed phrase variant
 - W-30 preview intent plus bank/pad focus and current capture reference
 - TR-909 takeover, pattern, and reinforcement state
 

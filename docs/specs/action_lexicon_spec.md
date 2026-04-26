@@ -155,6 +155,7 @@ Optional target references:
 
 - `mc202.generate_follower`
 - `mc202.generate_answer`
+- `mc202.mutate_phrase`
 - `mc202.set_role`
 - `w30.capture_to_pad`
 - `w30.live_recall`

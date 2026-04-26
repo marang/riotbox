@@ -2,7 +2,8 @@ use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
     ids::CaptureId,
     session::{
-        SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
+        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState, W30PreviewModeState,
     },
     transport::CommitBoundaryState,
 };
@@ -324,6 +325,7 @@ pub(super) fn apply_mc202_side_effects(
             session.runtime_state.lane_state.mc202.role = Some(role.clone());
             session.runtime_state.lane_state.mc202.phrase_ref =
                 Some(boundary_phrase_ref(boundary, &role));
+            session.runtime_state.lane_state.mc202.phrase_variant = None;
 
             let touch = match &action.params {
                 ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
@@ -355,6 +357,7 @@ pub(super) fn apply_mc202_side_effects(
 
             session.runtime_state.lane_state.mc202.role = Some(role.into());
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+            session.runtime_state.lane_state.mc202.phrase_variant = None;
             session.runtime_state.macro_state.mc202_touch =
                 session.runtime_state.macro_state.mc202_touch.max(touch);
 
@@ -384,6 +387,7 @@ pub(super) fn apply_mc202_side_effects(
 
             session.runtime_state.lane_state.mc202.role = Some(role.into());
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+            session.runtime_state.lane_state.mc202.phrase_variant = None;
             session.runtime_state.macro_state.mc202_touch =
                 session.runtime_state.macro_state.mc202_touch.max(touch);
 
@@ -400,6 +404,48 @@ pub(super) fn apply_mc202_side_effects(
                         "generated MC-202 answer phrase {phrase_ref} at {:.2}",
                         session.runtime_state.macro_state.mc202_touch
                     ),
+                });
+            }
+        }
+        ActionCommand::Mc202MutatePhrase => {
+            let current_role = session
+                .runtime_state
+                .lane_state
+                .mc202
+                .role
+                .clone()
+                .unwrap_or_else(|| "follower".into());
+            let variant = match &action.params {
+                ActionParams::Mutation {
+                    target_id: Some(target_id),
+                    ..
+                } if target_id == "mutated_drive" => target_id.clone(),
+                _ => "mutated_drive".into(),
+            };
+            let bar_index = boundary.map_or(0, |boundary| boundary.bar_index).max(1);
+            let phrase_ref = format!("{}-{variant}-bar-{}", current_role, bar_index);
+            let touch = match &action.params {
+                ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+                _ => 0.88,
+            };
+
+            session.runtime_state.lane_state.mc202.role = Some(current_role.clone());
+            session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+            session.runtime_state.lane_state.mc202.phrase_variant =
+                Some(Mc202PhraseVariantState::MutatedDrive);
+            session.runtime_state.macro_state.mc202_touch =
+                session.runtime_state.macro_state.mc202_touch.max(touch);
+
+            if let Some(logged_action) = session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: format!("mutated MC-202 phrase {phrase_ref} as {variant}"),
                 });
             }
         }

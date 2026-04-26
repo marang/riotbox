@@ -65,6 +65,7 @@ Restart the app with the same source and compare these one by one:
 - `y` scene jump
 - `g` MC-202 follow
 - `a` MC-202 answer
+- `G` MC-202 phrase mutation after `g` or `a` lands
 - `<` / `>` MC-202 touch lower / higher after `g` or `a` lands
 - `f` TR-909 fill
 - `w` W-30 hit
@@ -80,6 +81,7 @@ What to observe:
 
 - each lane has a different feel
 - after `g` or `a` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
+- after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
