@@ -1338,7 +1338,7 @@ mod tests {
     use riotbox_audio::{
         mc202::{
             Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode,
-            Mc202RenderRouting,
+            Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
         },
         runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
         source_audio::SourceAudioCache,
@@ -6183,6 +6183,107 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("mutated MC-202 phrase follower-mutated_drive-bar-10 as mutated_drive")
+        );
+    }
+
+    #[test]
+    fn mc202_recipe_replay_proves_control_and_audio_path() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_follower(300),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 1, 400);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Follower);
+        let follower = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+
+        assert_eq!(
+            state.queue_mc202_generate_answer(500),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 2, 600);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
+        let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+
+        assert_eq!(
+            state.queue_mc202_generate_pressure(700),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 3, 800);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Pressure);
+        let pressure = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+
+        assert_eq!(
+            state.queue_mc202_generate_instigator(900),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 4, 1_000);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Instigator);
+        let instigator = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+
+        assert_eq!(
+            state.queue_mc202_mutate_phrase(1_100),
+            QueueControlResult::Enqueued
+        );
+        commit_mc202_recipe_step(&mut state, 5, 1_200);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::MutatedDrive
+        );
+        let mutated = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+
+        let touch_before = state.runtime.mc202_render.touch;
+        state.adjust_mc202_touch(-0.24);
+        assert!(state.runtime.mc202_render.touch < touch_before);
+        let lower_touch = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+
+        assert!(state.session.action_log.actions.len() >= 5);
+        assert_recipe_buffers_differ("follower -> answer", &follower, &answer, 0.005);
+        assert_recipe_buffers_differ("answer -> pressure", &answer, &pressure, 0.004);
+        assert_recipe_buffers_differ("pressure -> instigator", &pressure, &instigator, 0.004);
+        assert_recipe_buffers_differ("instigator -> mutation", &instigator, &mutated, 0.004);
+        assert_recipe_buffers_differ("mutation -> lower touch", &mutated, &lower_touch, 0.001);
+    }
+
+    fn commit_mc202_recipe_step(state: &mut JamAppState, phrase_index: u64, committed_at: u64) {
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: phrase_index * 16,
+                bar_index: phrase_index * 4,
+                phrase_index,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            committed_at,
+        );
+        assert_eq!(committed.len(), 1);
+    }
+
+    fn render_mc202_recipe_buffer(render_state: &Mc202RenderState) -> Vec<f32> {
+        let mut buffer = vec![0.0; 44_100 * 2];
+        render_mc202_buffer(&mut buffer, 44_100, 2, render_state);
+        assert!(
+            buffer.iter().any(|sample| sample.abs() > 0.0001),
+            "MC-202 recipe step rendered silence"
+        );
+        buffer
+    }
+
+    fn assert_recipe_buffers_differ(label: &str, left: &[f32], right: &[f32], min_delta: f32) {
+        let delta_rms = (left
+            .iter()
+            .zip(right.iter())
+            .map(|(left, right)| (left - right).powi(2))
+            .sum::<f32>()
+            / left.len() as f32)
+            .sqrt();
+
+        assert!(
+            delta_rms >= min_delta,
+            "{label} signal delta RMS {delta_rms} below {min_delta}"
         );
     }
 

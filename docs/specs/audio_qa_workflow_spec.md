@@ -469,6 +469,7 @@ Today the repo already has:
 - a first MC-202 note-budget regression that proves density can be reduced without silencing the phrase
 - a first MC-202 source-section contour regression that proves a section-derived contour hint changes the rendered phrase without relying on UI/log state alone
 - a first MC-202 hook-response regression that proves hook-like sections can force answer-space restraint instead of doubling the same follower phrase
+- a first MC-202 recipe replay regression that drives the musician-facing follower/answer/pressure/instigator/mutation/touch flow through queue, commit, render state, and audio-buffer deltas
 - an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, and Markdown comparisons for TR-909, Scene-coupled TR-909, and MC-202 cases
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
 
