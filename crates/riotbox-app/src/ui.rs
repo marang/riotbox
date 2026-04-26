@@ -3590,6 +3590,9 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     if let Some(lines) = pending_capture_do_next_lines(capture) {
         return lines;
     }
+    if let Some(lines) = pending_w30_audition_do_next_lines(shell) {
+        return lines;
+    }
 
     let Some(last_capture_id) = capture.last_capture_id.as_deref() else {
         return vec![
@@ -3602,8 +3605,8 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     match capture.last_capture_target.as_deref() {
         Some(target) if target.starts_with("pad ") => vec![
-            Line::from(format!("now [w] hit {target}")),
-            Line::from("[o] audition same pad"),
+            Line::from(format!("hear now: [w] hit {target}")),
+            Line::from("or [o] audition same pad"),
             Line::from("[b]/[s] browse or swap"),
             Line::from(format!("source {last_capture_id}")),
         ],
@@ -3614,12 +3617,50 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             Line::from(format!("source {last_capture_id}")),
         ],
         _ => vec![
-            Line::from(format!("1 [o] audition raw {last_capture_id}")),
-            Line::from(format!("2 [p] promote {last_capture_id}")),
-            Line::from("3 [w] hit after promote"),
+            Line::from(format!("1 hear it: [o] audition raw {last_capture_id}")),
+            Line::from(format!("2 keep it: [p] promote {last_capture_id}")),
+            Line::from("3 play it: [w] hit after promote"),
             Line::from("[2] confirm result"),
         ],
     }
+}
+
+fn pending_w30_audition_do_next_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    let pending = shell.app.jam_view.pending_actions.iter().find(|action| {
+        matches!(
+            action.command.as_str(),
+            "w30.audition_raw_capture" | "w30.audition_promoted"
+        )
+    })?;
+    let target = shell
+        .app
+        .jam_view
+        .lanes
+        .w30_pending_audition_target
+        .as_deref()
+        .unwrap_or("current W-30 focus");
+
+    if pending.command == "w30.audition_raw_capture" {
+        return Some(vec![
+            capture_pending_intent_line(format!(
+                "queued [o] audition raw @ {}",
+                pending.quantization
+            )),
+            capture_pending_detail_line("wait, then hear raw preview"),
+            capture_pending_detail_line(format!("target {target}")),
+            capture_pending_detail_line("[2] confirm audition"),
+        ]);
+    }
+
+    Some(vec![
+        capture_pending_intent_line(format!(
+            "queued [o] audition pad @ {}",
+            pending.quantization
+        )),
+        capture_pending_detail_line("wait, then hear promoted preview"),
+        capture_pending_detail_line(format!("target {target}")),
+        capture_pending_detail_line("[2] confirm audition"),
+    ])
 }
 
 fn pending_capture_do_next_lines(
@@ -3634,7 +3675,7 @@ fn pending_capture_do_next_lines(
         return Some(vec![
             capture_pending_intent_line(format!("queued [c] capture @ {}", pending.quantization)),
             capture_pending_detail_line("wait for commit"),
-            capture_pending_detail_line("then [p] promote keeper"),
+            capture_pending_detail_line("then [o] audition raw or [p] promote"),
             capture_pending_detail_line("[2] confirm capture"),
         ]);
     }
@@ -3642,7 +3683,7 @@ fn pending_capture_do_next_lines(
     if pending.command == "promote.capture_to_pad" {
         return Some(vec![
             capture_pending_intent_line(format!("queued [p] promote @ {}", pending.quantization)),
-            capture_pending_detail_line("wait, then [w] hit"),
+            capture_pending_detail_line("wait, then hear with [w] hit"),
             capture_pending_detail_line(format!("target {}", pending.target)),
             capture_pending_detail_line("[2] confirm promotion"),
         ]);
@@ -7065,7 +7106,10 @@ mod tests {
             rendered.contains("queued [p] promote @ next_bar"),
             "{rendered}"
         );
-        assert!(rendered.contains("wait, then [w] hit"), "{rendered}");
+        assert!(
+            rendered.contains("wait, then hear with [w] hit"),
+            "{rendered}"
+        );
         assert!(
             rendered.contains("target lanew30:bank-a/pad-01"),
             "{rendered}"
@@ -7173,7 +7217,10 @@ mod tests {
             rendered.contains("queued [c] capture @ next_phrase"),
             "{rendered}"
         );
-        assert!(rendered.contains("then [p] promote keeper"), "{rendered}");
+        assert!(
+            rendered.contains("then [o] audition raw or [p] promote"),
+            "{rendered}"
+        );
         assert!(rendered.contains("[2] confirm capture"), "{rendered}");
     }
 
@@ -7192,6 +7239,11 @@ mod tests {
 
         assert!(rendered.contains("pending W-30 cue audition"), "{rendered}");
         assert!(rendered.contains("bank-a/pad-01"), "{rendered}");
+        assert!(rendered.contains("queued [o] audition raw @"), "{rendered}");
+        assert!(
+            rendered.contains("wait, then hear raw preview"),
+            "{rendered}"
+        );
         assert!(
             rendered.contains("hear cap-01 stored [o] raw or [p]->[w]"),
             "{rendered}"
@@ -7806,8 +7858,9 @@ mod tests {
         assert!(rendered.contains("pending W-30 cue"));
         assert!(rendered.contains("audition"));
         assert!(rendered.contains("[w]/[o]"), "{rendered}");
+        assert!(rendered.contains("queued [o] audition pad @"), "{rendered}");
         assert!(
-            rendered.contains("now [w] hit pad bank-b/pad-03"),
+            rendered.contains("wait, then hear promoted preview"),
             "{rendered}"
         );
         assert!(rendered.contains("latest promoted"));
