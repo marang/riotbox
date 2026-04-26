@@ -163,6 +163,7 @@ docs/
 - `reviews/periodic_codebase_review_2026-04-18.md`: review captured
 - `reviews/jam_first_use_feedback_2026-04-18.md`: first-use UX feedback captured
 - `reviews/scene_launch_audio_coupling_2026-04-25.md`: Scene launch to TR-909 audio-coupling audit captured
+- `reviews/routine_audio_output_audit_2026-04-26.md`: README and Jam recipe control/audio proof audit captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
