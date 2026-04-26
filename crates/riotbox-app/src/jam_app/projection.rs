@@ -1,4 +1,5 @@
 use riotbox_audio::{
+    mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -130,6 +131,46 @@ pub(super) fn build_tr909_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
         current_scene_id: transport.current_scene.as_ref().map(ToString::to_string),
+    }
+}
+
+pub(super) fn build_mc202_render_state(
+    session: &SessionFile,
+    transport: &TransportClockState,
+    source_graph: Option<&SourceGraph>,
+) -> Mc202RenderState {
+    let mc202 = &session.runtime_state.lane_state.mc202;
+    let Some(role) = mc202.role.as_deref() else {
+        return Mc202RenderState::default();
+    };
+
+    let (mode, phrase_shape) = match role {
+        "leader" => (Mc202RenderMode::Leader, Mc202PhraseShape::RootPulse),
+        "answer" => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
+        "follower" => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
+        _ => return Mc202RenderState::default(),
+    };
+    let tempo_bpm = source_graph
+        .and_then(|graph| graph.timing.bpm_estimate)
+        .unwrap_or(0.0);
+
+    Mc202RenderState {
+        mode,
+        routing: Mc202RenderRouting::MusicBusBass,
+        phrase_shape,
+        touch: session
+            .runtime_state
+            .macro_state
+            .mc202_touch
+            .clamp(0.0, 1.0),
+        music_bus_level: session
+            .runtime_state
+            .mixer_state
+            .music_level
+            .clamp(0.0, 1.0),
+        tempo_bpm,
+        position_beats: transport.position_beats,
+        is_transport_running: transport.is_playing,
     }
 }
 

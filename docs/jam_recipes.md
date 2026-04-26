@@ -78,10 +78,12 @@ For each run:
 What to observe:
 
 - each lane has a different feel
+- after `g` or `a` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
 - if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
+- MC-202 is still not a finished synth engine; treat this as first follower-vs-answer bass feedback, not full sound design
 
 ## Recipe 3: Capture, Audition, Promote, Hit
 

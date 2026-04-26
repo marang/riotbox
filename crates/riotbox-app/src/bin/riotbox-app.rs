@@ -95,6 +95,7 @@ fn run_terminal_ui(
     let mut terminal = ManagedTerminal::enter()?;
     let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states(
         shell.app.runtime.tr909_render.clone(),
+        shell.app.runtime.mc202_render,
         shell.app.runtime.w30_preview.clone(),
         shell.app.runtime.w30_resample_tap.clone(),
     ) {
@@ -194,6 +195,7 @@ fn run_event_loop(
                 shell.app.runtime.transport.position_beats,
             );
             audio_runtime.update_tr909_render_state(&shell.app.runtime.tr909_render);
+            audio_runtime.update_mc202_render_state(&shell.app.runtime.mc202_render);
             audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
             audio_runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
             shell.app.set_audio_health(audio_runtime.health_snapshot());
@@ -814,6 +816,9 @@ fn observer_snapshot(shell: &JamShellState) -> Value {
             "tr909_profile": runtime.tr909_render_profile,
             "tr909_support_context": runtime.tr909_render_support_context,
             "tr909_support_accent": runtime.tr909_render_support_accent,
+            "mc202_mode": runtime.mc202_render_mode,
+            "mc202_routing": runtime.mc202_render_routing,
+            "mc202_phrase_shape": runtime.mc202_render_phrase_shape,
             "w30_preview_mode": runtime.w30_preview_mode,
             "w30_preview_target": runtime.w30_preview_target_summary,
             "w30_resample_tap_mode": runtime.w30_resample_tap_mode,

@@ -7,6 +7,7 @@ use std::{
 };
 
 use riotbox_audio::{
+    mc202::Mc202RenderState,
     runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot},
     source_audio::SourceAudioCache,
     tr909::Tr909RenderState,
@@ -49,8 +50,8 @@ use capture_helpers::{
     capture_targets_specific_w30_pad, capture_targets_w30_pad,
 };
 use projection::{
-    build_tr909_render_state, build_w30_preview_render_state, build_w30_resample_tap_state,
-    normalize_w30_preview_mode,
+    build_mc202_render_state, build_tr909_render_state, build_w30_preview_render_state,
+    build_w30_resample_tap_state, normalize_w30_preview_mode,
 };
 pub use runtime_view::JamRuntimeView;
 use side_effects::{
@@ -132,6 +133,7 @@ pub struct AppRuntimeState {
     pub transport: TransportClockState,
     pub transport_driver: TransportDriverState,
     pub tr909_render: Tr909RenderState,
+    pub mc202_render: Mc202RenderState,
     pub w30_preview: W30PreviewRenderState,
     pub w30_resample_tap: W30ResampleTapState,
     pub last_commit_boundary: Option<CommitBoundaryState>,
@@ -145,6 +147,7 @@ impl Default for AppRuntimeState {
             transport: TransportClockState::default(),
             transport_driver: TransportDriverState::default(),
             tr909_render: Tr909RenderState::default(),
+            mc202_render: Mc202RenderState::default(),
             w30_preview: W30PreviewRenderState::default(),
             w30_resample_tap: W30ResampleTapState::default(),
             last_commit_boundary: None,
@@ -227,6 +230,11 @@ impl JamAppState {
 
     pub fn refresh_view(&mut self) {
         self.runtime.tr909_render = build_tr909_render_state(
+            &self.session,
+            &self.runtime.transport,
+            self.source_graph.as_ref(),
+        );
+        self.runtime.mc202_render = build_mc202_render_state(
             &self.session,
             &self.runtime.transport,
             self.source_graph.as_ref(),
@@ -1232,6 +1240,7 @@ mod tests {
     use tempfile::tempdir;
 
     use riotbox_audio::{
+        mc202::{Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting},
         runtime::{AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle},
         source_audio::SourceAudioCache,
         tr909::{
@@ -2241,6 +2250,43 @@ mod tests {
                 .iter()
                 .any(|warning| warning == "909 render is routed to the drum bus at zero drum level")
         );
+    }
+
+    #[test]
+    fn runtime_view_surfaces_mc202_render_diagnostics() {
+        let graph = sample_graph();
+        let mut session = sample_session(&graph);
+        session.runtime_state.lane_state.mc202.role = Some("answer".into());
+        session.runtime_state.lane_state.mc202.phrase_ref = Some("answer-scene-1".into());
+        session.runtime_state.macro_state.mc202_touch = 0.82;
+        session.runtime_state.mixer_state.music_level = 0.0;
+        let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
+        assert_eq!(
+            state.runtime.mc202_render.routing,
+            Mc202RenderRouting::MusicBusBass
+        );
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::AnswerHook
+        );
+        assert_eq!(state.runtime_view.mc202_render_mode, "answer");
+        assert_eq!(state.runtime_view.mc202_render_routing, "music_bus_bass");
+        assert_eq!(state.runtime_view.mc202_render_phrase_shape, "answer_hook");
+        assert_eq!(
+            state.runtime_view.mc202_render_mix_summary,
+            "music bus 0.00 | touch 0.82"
+        );
+        assert!(
+            state
+                .runtime_view
+                .mc202_render_transport_summary
+                .contains("running @ 32.0 beats")
+        );
+        assert!(state.runtime_view.runtime_warnings.iter().any(
+            |warning| warning == "MC-202 render is routed to the music bus at zero music level"
+        ));
     }
 
     #[test]
@@ -5486,6 +5532,15 @@ mod tests {
             Some("follower-scene-1")
         );
         assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.78);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Follower);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::FollowerDrive
+        );
+        assert_eq!(
+            state.runtime.mc202_render.routing,
+            Mc202RenderRouting::MusicBusBass
+        );
         assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
@@ -5543,6 +5598,15 @@ mod tests {
             Some("answer-scene-1")
         );
         assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.82);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::AnswerHook
+        );
+        assert_eq!(
+            state.runtime.mc202_render.routing,
+            Mc202RenderRouting::MusicBusBass
+        );
         assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("answer"));
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);

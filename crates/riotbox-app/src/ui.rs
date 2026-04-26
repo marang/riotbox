@@ -1703,6 +1703,11 @@ fn mc202_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             "current phrase {}",
             lanes.mc202_phrase_ref.as_deref().unwrap_or("unset")
         )),
+        Line::from(format!(
+            "sound {} / {}",
+            shell.app.runtime_view.mc202_render_mode,
+            shell.app.runtime_view.mc202_render_phrase_shape
+        )),
     ]
 }
 
@@ -2334,6 +2339,11 @@ fn mc202_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(format!(
             "touch {:.2} | last {}",
             shell.app.jam_view.macros.mc202_touch, last_mc202_action
+        )),
+        Line::from(format!(
+            "render {} | {}",
+            shell.app.runtime_view.mc202_render_routing,
+            shell.app.runtime_view.mc202_render_mix_summary
         )),
         Line::from(format!("diagnostic {}", mc202_pending_role_label(shell))),
     ]

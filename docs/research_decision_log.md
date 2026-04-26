@@ -1056,3 +1056,14 @@ Why: the current MC-202 lane already has replay-safe role, follower, and answer 
 Evidence: `riotbox-audio` now exposes `Mc202RenderState`, an offline render helper, unit coverage for distinct follower/answer output, and the lane recipe listening pack renders `mc202-follower-to-answer` with a minimum RMS delta.
 Consequences: later MC-202 work should wire this typed render state into the app/audio runtime deliberately, with live mixer controls and TUI cues, rather than growing the offline proof into a shadow synth architecture.
 Status: accepted
+
+---
+
+Topic: MC-202 live audio should consume the typed render seam instead of direct callback heuristics
+Phase: MC-202 MVP / Audio QA
+Question: once MC-202 has an offline render proof, what is the smallest honest step that lets a musician hear committed follower/answer state in the live Jam path?
+Decision: thread `Mc202RenderState` through `riotbox-app` runtime projection, `AudioRuntimeShell` shared callback state, and the existing mixbuffer. Derive mode, routing, phrase shape, touch, transport, and music-bus level from committed session/runtime state, then render the bounded MC-202 bass voice beside TR-909 and W-30 without adding a second audio subsystem.
+Why: the user-facing gap was that MC-202 gestures could be committed and logged while still not being part of the live sound. Reusing the typed render seam preserves queue/commit determinism and keeps the callback free of stringly role parsing or UI-only heuristics.
+Evidence: `riotbox-app` now builds and exposes MC-202 render diagnostics from committed role/follower/answer state, `riotbox-audio` mirrors MC-202 render state through atomic shared runtime storage, and runtime tests prove the mixed buffer contains active MC-202 bass output.
+Consequences: this is still a bounded first bass seam, not a finished MC-202 engine. Later MC-202 work should improve sound design, phrase continuity, live controls, and source-aware bass behavior on this same render path.
+Status: accepted

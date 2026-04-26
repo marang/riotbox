@@ -1,6 +1,7 @@
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mc202RenderMode {
     Idle,
+    Leader,
     Follower,
     Answer,
 }
@@ -10,6 +11,7 @@ impl Mc202RenderMode {
     pub const fn label(self) -> &'static str {
         match self {
             Self::Idle => "idle",
+            Self::Leader => "leader",
             Self::Follower => "follower",
             Self::Answer => "answer",
         }
@@ -96,7 +98,6 @@ pub fn render_mc202_buffer(
     let tempo_bpm = render.tempo_bpm.max(1.0) as f64;
     let touch = render.touch.clamp(0.0, 1.0);
     let gain = render.music_bus_level.clamp(0.0, 1.0) * (0.08 + touch * 0.08);
-    let mut phase = 0.0_f64;
 
     for frame in 0..buffer.len() / channel_count {
         let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
@@ -112,7 +113,6 @@ pub fn render_mc202_buffer(
             -5.0
         };
         let frequency = 110.0_f64 * 2.0_f64.powf((semitone as f64 + octave_drop) / 12.0);
-        phase = (phase + frequency / sample_rate).fract();
 
         let gate_len = if matches!(render.phrase_shape, Mc202PhraseShape::AnswerHook) {
             0.42
@@ -131,6 +131,8 @@ pub fn render_mc202_buffer(
         } else {
             0.82
         };
+        let note_seconds = f64::from(step_phase) * 60.0 / tempo_bpm / 4.0;
+        let phase = (note_seconds * frequency).fract();
         let saw = (phase as f32 * 2.0) - 1.0;
         let pulse = if phase < 0.42 { 1.0 } else { -1.0 };
         let bite = (saw * (0.58 + touch * 0.25)) + (pulse * (0.24 + touch * 0.18));
@@ -254,5 +256,38 @@ mod tests {
         assert!(follower_metrics.0 > 10_000);
         assert!(answer_metrics.0 > 10_000);
         assert!((follower_metrics.2 - answer_metrics.2).abs() > 0.001);
+    }
+
+    #[test]
+    fn render_is_stable_across_callback_chunk_boundaries() {
+        let render = Mc202RenderState {
+            mode: Mc202RenderMode::Follower,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::FollowerDrive,
+            touch: 0.78,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+        let mut whole = vec![0.0; 44_100 * 2];
+        let mut chunked = vec![0.0; 44_100 * 2];
+        let split_frames = 2_048;
+        let split_samples = split_frames * 2;
+
+        render_mc202_buffer(&mut whole, 44_100, 2, &render);
+        render_mc202_buffer(&mut chunked[..split_samples], 44_100, 2, &render);
+
+        let mut second_render = render;
+        second_render.position_beats +=
+            split_frames as f64 * f64::from(render.tempo_bpm) / 60.0 / 44_100.0;
+        render_mc202_buffer(&mut chunked[split_samples..], 44_100, 2, &second_render);
+
+        let max_delta = whole
+            .iter()
+            .zip(chunked.iter())
+            .map(|(whole, chunked)| (whole - chunked).abs())
+            .fold(0.0_f32, f32::max);
+        assert!(max_delta < 0.0001, "max chunk boundary delta {max_delta}");
     }
 }
