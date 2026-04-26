@@ -2,8 +2,8 @@ use crate::{
     ids::SceneId,
     session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
     source_graph::{
-        EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
-        section_for_transport_bar,
+        AssetType, CandidateType, EnergyClass, QualityClass, RelationshipType, Section,
+        SectionLabelHint, SourceGraph, section_for_projected_scene, section_for_transport_bar,
     },
     transport::TransportClockState,
 };
@@ -244,9 +244,21 @@ fn derive_tr909_source_support(
         })?;
 
     Some(Tr909SourceSupportPolicy {
-        profile: source_support_profile_for_section(current_section),
+        profile: source_support_profile_for_graph_section(graph, current_section),
         context,
     })
+}
+
+fn source_support_profile_for_graph_section(
+    graph: &SourceGraph,
+    section: &Section,
+) -> Tr909SourceSupportProfilePolicy {
+    let profile = source_support_profile_for_section(section);
+    if should_lift_feral_break_support(graph, profile) {
+        Tr909SourceSupportProfilePolicy::BreakLift
+    } else {
+        profile
+    }
 }
 
 fn source_support_profile_for_section(section: &Section) -> Tr909SourceSupportProfilePolicy {
@@ -260,6 +272,35 @@ fn source_support_profile_for_section(section: &Section) -> Tr909SourceSupportPr
         ) => Tr909SourceSupportProfilePolicy::DropDrive,
         _ => Tr909SourceSupportProfilePolicy::SteadyPulse,
     }
+}
+
+fn should_lift_feral_break_support(
+    graph: &SourceGraph,
+    profile: Tr909SourceSupportProfilePolicy,
+) -> bool {
+    if profile != Tr909SourceSupportProfilePolicy::SteadyPulse
+        || graph.analysis_summary.break_rebuild_potential != QualityClass::High
+    {
+        return false;
+    }
+
+    let supports_break_rebuild = graph.relationships.iter().any(|relationship| {
+        relationship.relation_type == RelationshipType::SupportsBreakRebuild
+            && relationship.weight >= 0.5
+    });
+    let has_capture_candidate = graph
+        .candidates
+        .iter()
+        .any(|candidate| candidate.candidate_type == CandidateType::CaptureCandidate);
+    let has_hook_fragment = graph
+        .assets
+        .iter()
+        .any(|asset| asset.asset_type == AssetType::HookFragment);
+    let has_hook_evidence = has_hook_fragment
+        || graph.analysis_summary.hook_candidate_count > 0
+        || graph.hook_candidate_count() > 0;
+
+    supports_break_rebuild && (has_capture_candidate || has_hook_evidence)
 }
 
 fn derive_tr909_takeover_render_profile(
@@ -388,9 +429,13 @@ mod tests {
     use serde::Deserialize;
 
     use crate::{
-        ids::{SceneId, SectionId, SourceId},
+        ids::{AssetId, SceneId, SectionId, SourceId},
         session::{Tr909LaneState, Tr909ReinforcementModeState, Tr909TakeoverProfileState},
-        source_graph::{DecodeProfile, GraphProvenance, Section, SourceDescriptor, SourceGraph},
+        source_graph::{
+            Asset, AssetType, Candidate, CandidateType, DecodeProfile, EnergyClass,
+            GraphProvenance, QualityClass, Relationship, RelationshipType, Section,
+            SectionLabelHint, SourceDescriptor, SourceGraph,
+        },
         transport::TransportClockState,
     };
 
@@ -458,6 +503,56 @@ mod tests {
             tags: vec!["break".into()],
         });
         graph
+    }
+
+    fn steady_section_graph() -> SourceGraph {
+        let mut graph = sample_graph();
+        graph.sections.clear();
+        graph.sections.push(Section {
+            section_id: SectionId::from("section-steady"),
+            label_hint: SectionLabelHint::Verse,
+            start_seconds: 0.0,
+            end_seconds: 16.0,
+            bar_start: 1,
+            bar_end: 8,
+            energy_class: EnergyClass::Medium,
+            confidence: 0.88,
+            tags: vec!["steady".into()],
+        });
+        graph
+    }
+
+    fn seed_feral_break_support(graph: &mut SourceGraph) {
+        graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-feral-hook"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 3.0,
+            start_bar: 1,
+            end_bar: 2,
+            confidence: 0.9,
+            tags: vec!["feral".into()],
+            source_refs: vec!["src-1".into()],
+        });
+        graph.candidates.push(Candidate {
+            candidate_id: "candidate-feral-capture".into(),
+            candidate_type: CandidateType::CaptureCandidate,
+            asset_ref: AssetId::from("asset-feral-hook"),
+            score: 0.9,
+            confidence: 0.85,
+            tags: vec!["feral".into()],
+            constraints: vec!["capture_first".into()],
+            provenance_refs: vec!["provider:fixture".into()],
+        });
+        graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-feral-hook".into(),
+            to_id: "section-steady".into(),
+            weight: 0.85,
+            notes: Some("feral hook supports rebuild".into()),
+        });
+        graph.analysis_summary.break_rebuild_potential = QualityClass::High;
+        graph.analysis_summary.hook_candidate_count = 1;
     }
 
     fn transport_state(position_beats: f64) -> TransportClockState {
@@ -615,6 +710,83 @@ mod tests {
         assert_eq!(
             policy.source_support_context,
             Some(Tr909SourceSupportContextPolicy::TransportBar)
+        );
+    }
+
+    #[test]
+    fn feral_break_support_lifts_steady_source_support_profile() {
+        let control_graph = steady_section_graph();
+        let mut feral_graph = control_graph.clone();
+        seed_feral_break_support(&mut feral_graph);
+        let mut hook_only_graph = control_graph.clone();
+        hook_only_graph.assets.push(Asset {
+            asset_id: AssetId::from("asset-feral-hook-only"),
+            asset_type: AssetType::HookFragment,
+            start_seconds: 1.0,
+            end_seconds: 3.0,
+            start_bar: 1,
+            end_bar: 2,
+            confidence: 0.9,
+            tags: vec!["feral".into()],
+            source_refs: vec!["src-1".into()],
+        });
+        hook_only_graph.relationships.push(Relationship {
+            relation_type: RelationshipType::SupportsBreakRebuild,
+            from_id: "asset-feral-hook-only".into(),
+            to_id: "section-steady".into(),
+            weight: 0.85,
+            notes: Some("feral hook supports rebuild".into()),
+        });
+        hook_only_graph.analysis_summary.break_rebuild_potential = QualityClass::High;
+        let transport = transport_state(4.0);
+        let tr909 = Tr909LaneState {
+            pattern_ref: Some("support-feral-break".into()),
+            takeover_enabled: false,
+            takeover_profile: None,
+            slam_enabled: false,
+            fill_armed_next_bar: false,
+            last_fill_bar: None,
+            reinforcement_mode: Some(Tr909ReinforcementModeState::SourceSupport),
+        };
+
+        let control_policy = derive_tr909_render_policy_with_scene_context(
+            &tr909,
+            &transport,
+            Some(&control_graph),
+            None,
+        );
+        let feral_policy = derive_tr909_render_policy_with_scene_context(
+            &tr909,
+            &transport,
+            Some(&feral_graph),
+            None,
+        );
+        let hook_only_policy = derive_tr909_render_policy_with_scene_context(
+            &tr909,
+            &transport,
+            Some(&hook_only_graph),
+            None,
+        );
+
+        assert_eq!(
+            control_policy.source_support_profile,
+            Some(Tr909SourceSupportProfilePolicy::SteadyPulse)
+        );
+        assert_eq!(
+            feral_policy.source_support_profile,
+            Some(Tr909SourceSupportProfilePolicy::BreakLift)
+        );
+        assert_eq!(
+            hook_only_policy.source_support_profile,
+            Some(Tr909SourceSupportProfilePolicy::BreakLift)
+        );
+        assert_eq!(
+            feral_policy.source_support_context,
+            Some(Tr909SourceSupportContextPolicy::TransportBar)
+        );
+        assert_eq!(
+            feral_policy.phrase_variation,
+            Some(Tr909PhraseVariationPolicy::PhraseLift)
         );
     }
 }
