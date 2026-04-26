@@ -1826,9 +1826,14 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<String> {
     } else {
         "[y] jump [c] capture"
     };
+    let tr909_lift = if shell.app.runtime_view.tr909_render_support_accent == "scene" {
+        " | 909 lift"
+    } else {
+        ""
+    };
 
     Some(format!(
-        "scene {current_scene} | restore {restore_scene} | next {next_step}"
+        "scene {current_scene} | restore {restore_scene}{tr909_lift} | next {next_step}"
     ))
 }
 
@@ -5018,6 +5023,11 @@ mod tests {
         session.runtime_state.transport.current_scene = Some(SceneId::from(active_scene));
         session.runtime_state.scene_state.active_scene = Some(SceneId::from(active_scene));
         session.runtime_state.scene_state.restore_scene = Some(SceneId::from(restore_scene));
+        session.runtime_state.lane_state.tr909.takeover_enabled = false;
+        session.runtime_state.lane_state.tr909.takeover_profile = None;
+        session.runtime_state.lane_state.tr909.reinforcement_mode =
+            Some(Tr909ReinforcementModeState::SourceSupport);
+        session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-support".into());
         session.action_log.actions.push(Action {
             id: ActionId(1),
             actor: ActorType::User,
@@ -5442,6 +5452,7 @@ mod tests {
             rendered.contains("landed user scene jump | energy rise"),
             "{rendered}"
         );
+        assert!(rendered.contains("909 lift"), "{rendered}");
         assert!(rendered.contains("next [Y]"), "{rendered}");
         assert!(rendered.contains("restore [c] capture"), "{rendered}");
         assert!(rendered.contains("[c] capture"), "{rendered}");
@@ -5468,9 +5479,35 @@ mod tests {
             rendered.contains("landed user restore | energy drop"),
             "{rendered}"
         );
+        assert!(rendered.contains("909 lift"), "{rendered}");
         assert!(rendered.contains("next [y]"), "{rendered}");
         assert!(rendered.contains("jump [c] capture"), "{rendered}");
         assert!(rendered.contains("[c] capture"), "{rendered}");
+    }
+
+    #[test]
+    fn omits_scene_post_commit_tr909_lift_without_scene_accent() {
+        let mut shell = scene_post_commit_shell_state(
+            ActionCommand::SceneRestore,
+            "scene-01-drop",
+            "scene-02-break",
+        );
+        shell
+            .app
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .reinforcement_mode = None;
+        shell.app.session.runtime_state.lane_state.tr909.pattern_ref = None;
+        shell.app.refresh_view();
+        let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+        assert!(
+            rendered.contains("scene drop/med | restore break/high | next"),
+            "{rendered}"
+        );
+        assert!(!rendered.contains("909 lift"), "{rendered}");
     }
 
     #[test]
