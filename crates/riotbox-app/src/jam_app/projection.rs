@@ -12,7 +12,8 @@ use riotbox_audio::{
         Tr909TakeoverRenderProfile,
     },
     w30::{
-        W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
+        W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,
+        W30PadPlaybackSampleWindow, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile, W30ResampleTapMode,
         W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
     },
@@ -334,6 +335,12 @@ pub(super) fn build_w30_preview_render_state(
     } else {
         None
     };
+    let pad_playback = if !matches!(mode, W30PreviewRenderMode::Idle) {
+        capture
+            .and_then(|capture| build_w30_capture_artifact_playback(capture, capture_audio_cache))
+    } else {
+        None
+    };
 
     W30PreviewRenderState {
         mode,
@@ -350,6 +357,7 @@ pub(super) fn build_w30_preview_render_state(
             })
             .unwrap_or(0.0),
         source_window_preview,
+        pad_playback,
         music_bus_level: session
             .runtime_state
             .mixer_state
@@ -360,6 +368,19 @@ pub(super) fn build_w30_preview_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
     }
+}
+
+fn build_w30_capture_artifact_playback(
+    capture: &riotbox_core::session::CaptureRef,
+    capture_audio_cache: Option<&BTreeMap<CaptureId, SourceAudioCache>>,
+) -> Option<W30PadPlaybackSampleWindow> {
+    let cache = capture_audio_cache?.get(&capture.capture_id)?;
+    pad_playback_from_interleaved(
+        cache.interleaved_samples(),
+        usize::from(cache.channel_count),
+        0,
+        cache.frame_count().try_into().unwrap_or(u64::MAX),
+    )
 }
 
 fn build_w30_capture_artifact_preview(
@@ -431,6 +452,35 @@ fn source_preview_from_interleaved(
         source_end_frame,
         sample_count,
         samples: preview,
+    })
+}
+
+fn pad_playback_from_interleaved(
+    samples: &[f32],
+    channel_count: usize,
+    source_start_frame: u64,
+    source_end_frame: u64,
+) -> Option<W30PadPlaybackSampleWindow> {
+    let channel_count = channel_count.max(1);
+    let frame_count = samples.len() / channel_count;
+    if frame_count == 0 {
+        return None;
+    }
+
+    let sample_count = frame_count.min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN);
+    let mut playback = [0.0; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN];
+    for (index, slot) in playback.iter_mut().take(sample_count).enumerate() {
+        let base = index * channel_count;
+        let sum: f32 = samples[base..base + channel_count].iter().sum();
+        *slot = sum / channel_count as f32;
+    }
+
+    Some(W30PadPlaybackSampleWindow {
+        source_start_frame,
+        source_end_frame,
+        sample_count,
+        loop_enabled: true,
+        samples: playback,
     })
 }
 

@@ -1681,9 +1681,9 @@ mod tests {
             Tr909SourceSupportContext, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
         },
         w30::{
-            W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
-            W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
-            W30ResampleTapSourceProfile,
+            W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN,
+            W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewSourceProfile,
+            W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile,
         },
     };
     use riotbox_core::{
@@ -4756,9 +4756,37 @@ mod tests {
         );
         assert_eq!(preview.sample_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
         assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
+        let pad_playback = state
+            .runtime
+            .w30_preview
+            .pad_playback
+            .as_ref()
+            .expect("artifact-backed W-30 pad playback");
+        assert_eq!(pad_playback.source_start_frame, 0);
+        assert_eq!(
+            pad_playback.source_end_frame,
+            u64::try_from(artifact.frame_count()).expect("artifact frame count fits u64")
+        );
+        assert!(pad_playback.loop_enabled);
+        assert_eq!(
+            pad_playback.sample_count,
+            artifact
+                .frame_count()
+                .min(W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN)
+        );
+        assert!(pad_playback.sample_count > W30_PREVIEW_SAMPLE_WINDOW_LEN);
+        assert!(
+            pad_playback.samples[..pad_playback.sample_count]
+                .iter()
+                .any(|sample| sample.abs() > 0.001)
+        );
 
-        let artifact_buffer =
-            render_w30_preview_offline(&state.runtime.w30_preview, 48_000, 2, 2_048);
+        let artifact_buffer = render_w30_preview_offline(
+            &state.runtime.w30_preview,
+            48_000,
+            2,
+            pad_playback.sample_count,
+        );
         let artifact_metrics = signal_metrics(&artifact_buffer);
         assert!(
             artifact_metrics.active_samples > 1_000,
@@ -4770,10 +4798,30 @@ mod tests {
             "artifact-backed W-30 pad playback RMS too low: {}",
             artifact_metrics.rms
         );
+        let late_playback_start = W30_PREVIEW_SAMPLE_WINDOW_LEN * 2;
+        assert!(
+            artifact_buffer[late_playback_start..]
+                .iter()
+                .any(|sample| sample.abs() > 0.001),
+            "artifact-backed W-30 pad playback should remain audible beyond the fixed preview window"
+        );
+
+        let mut fixed_preview_only = state.runtime.w30_preview.clone();
+        fixed_preview_only.pad_playback = None;
+        let fixed_preview_buffer =
+            render_w30_preview_offline(&fixed_preview_only, 48_000, 2, pad_playback.sample_count);
+        assert_recipe_buffers_differ(
+            "duration-aware W-30 pad playback vs fixed preview window",
+            &artifact_buffer,
+            &fixed_preview_buffer,
+            0.001,
+        );
 
         let mut fallback_preview = state.runtime.w30_preview.clone();
         fallback_preview.source_window_preview = None;
-        let fallback_buffer = render_w30_preview_offline(&fallback_preview, 48_000, 2, 2_048);
+        fallback_preview.pad_playback = None;
+        let fallback_buffer =
+            render_w30_preview_offline(&fallback_preview, 48_000, 2, pad_playback.sample_count);
         assert_recipe_buffers_differ(
             "artifact-backed W-30 pad playback vs fallback preview",
             &artifact_buffer,
