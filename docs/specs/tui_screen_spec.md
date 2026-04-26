@@ -233,6 +233,13 @@ For pending Scene intent cues:
 - energy direction such as `energy rise`, `energy drop`, or `energy hold` may use green + bold when it confirms the musical direction of the queued move
 - the line should still read as one monochrome sentence, for example `launch -> scene-02-drop @ next bar | energy rise`
 
+For latest-landed result cues:
+
+- the committed command may use green + bold to mark that the queued action actually landed
+- Scene energy direction may use the same green + bold treatment when it confirms the resulting musical direction
+- actor labels and separators should stay low-emphasis context
+- the line should remain readable as plain text, for example `landed user scene jump | energy rise`
+
 Do not use color as the only carrier of meaning. The text must still read correctly in monochrome snapshots and low-color terminals.
 
 ---
