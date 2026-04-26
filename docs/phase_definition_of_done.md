@@ -131,6 +131,11 @@ Done when:
 - default arrange no longer feels like a static 8-bar loop
 - scene actions remain replay-safe
 
+Current review:
+
+- `docs/reviews/scene_brain_mvp_gap_review_2026-04-26.md`
+- status: not exit-clean yet; launch/restore/replay-safe state is real, but P008 still needs sequence-level output proof and stronger transition intent before closeout
+
 ---
 
 ## 10. Phase 7 - Ghost / AI Assist
