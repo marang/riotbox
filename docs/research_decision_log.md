@@ -1331,3 +1331,14 @@ Why: P008 needs default Scene progression to stop feeling like static state labe
 Evidence: `scene_jump_restore_replay_proves_state_and_mixed_audio_path` now asserts landed `SceneMovementState`, TR-909 phrase variation, MC-202 contour, non-silent mixed output, launch/restore signal deltas, and that restore keeps movement energy instead of collapsing back to the pre-launch baseline.
 Consequences: this closes P008 for the bounded MVP. It is not a finished arranger: automatic scene chains, source-position jumps, richer transition envelopes, and W-30 scene movement remain follow-up work on the same persisted movement seam.
 Status: accepted
+
+---
+
+Topic: Start Feral policy with a visible scorecard projection, not a new engine
+Phase: Feral Policy Layer
+Question: what is the smallest safe first P009 slice after Scene Brain MVP closes?
+Decision: start with a bounded `FeralScorecardView` projection over existing Source Graph assets, candidates, relationships, and analysis summary. Surface it through an existing TUI consumer before any feral score becomes behavior.
+Why: the feral addendum says new scores need consumers, and the current Source Graph already has enough break, hook, quote-risk, and candidate vocabulary to produce a useful first scorecard without adding a second graph, sampler, arranger, or Ghost path.
+Evidence: `docs/reviews/feral_policy_entry_audit_2026-04-26.md` maps current Source Graph, W-30, TR-909, MC-202, and Scene Brain seams against the feral addendum and recommends scorecard-first implementation.
+Consequences: the next implementation should add visible scorecard projection and tests. Audio-producing feral behavior should wait until one existing action path consumes that scorecard with output-path proof.
+Status: accepted

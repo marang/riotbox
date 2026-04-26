@@ -173,6 +173,11 @@ The feral layer is done for MVP purposes when:
 - resample reuse is real, not decorative
 - feral scorecard metrics can be generated
 
+Current review:
+
+- `docs/reviews/feral_policy_entry_audit_2026-04-26.md`
+- status: active; first recommended P009 slice is a bounded Feral scorecard projection with a visible Source/Jam consumer, not a new arranger, Ghost path, or break-rebuild engine
+
 ---
 
 ## 13. Final Product Readiness
