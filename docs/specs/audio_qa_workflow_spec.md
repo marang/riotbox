@@ -473,6 +473,7 @@ Today the repo already has:
 - a first MC-202 undo rollback regression that restores committed lane state from session undo state and proves the rendered buffer returns to the previous audible seam
 - an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, and Markdown comparisons for TR-909, Scene-coupled TR-909, and MC-202 cases
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
+- a first local Feral before/after render pack that writes a source excerpt, Riotbox-transformed after render, before-then-after listening file, W-30 / TR-909 / MC-202 stems, metrics, comparison report, and README for a source WAV without committing generated audio
 
 Today the repo does not yet have a full official workflow for:
 
