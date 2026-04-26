@@ -252,7 +252,7 @@ Use `Beat08_128BPM(Full).wav` or `DH_RushArp_120_A.wav`.
 
 What to observe:
 
-- the suggested `y` cue is the pre-queue hint; `launch -> ... @ next ...` is the queued action once you press `y`
+- the suggested `y` cue is the pre-queue hint; `launch -> ... @ next ... | policy ...` is the queued action once you press `y`
 - before the first landed jump, `Y` explicitly waits for one landed jump
 - after the jump lands, `Jam` shows that restore is actually ready and names the current restore target
 - when both current and restore energies are known, the cue also names whether restore is an energy `rise`, `drop`, or `hold`
@@ -321,7 +321,7 @@ Use `DH_RushArp_120_A.wav` if you want the clearest contrast, or `Beat08_128BPM(
    - `[y] jump <scene> (rise/drop/hold)`
 3. queue that jump with `y`
 4. before it lands, look for all three of these cues:
-   - `launch -> ... @ next ...`
+   - `launch -> ... @ next ... | policy ...`
    - `pulse [..>.] ...`
    - the current `live .../<energy> <> restore .../<energy>` contrast line
 5. press `2` after the jump lands
@@ -346,6 +346,7 @@ What to observe:
 
 - `[y] jump <scene> (rise/drop/hold)` is a suggested next move; it is not yet queued
 - `launch -> ... @ next ...` tells you the boundary the queued scene action is waiting for
+- `policy rise/drop/hold | 909 ... | 202 ...` tells you the bounded transition intent before it becomes a fuller arranger
 - `pulse [..>.] ...` is the compact countdown cue toward that boundary
 - `live .../<energy> <> restore .../<energy>` tells you which scene is active, which scene `Y` would return to, and whether restore means going up, down, or sideways in energy
 - the restore-ready cue is the positive mirror of the earlier `restore waits for one landed jump` state
@@ -361,6 +362,7 @@ What this teaches:
 - Scene Brain now has a real small readability stack, not just action ids
 - `Jam` is enough to follow the next scene move, while `Log` is enough to confirm what actually landed
 - TR-909 support can now be inspected as Scene-coupled or transport-bar-driven instead of guessed by ear
+- Scene transition policy is now explicit in the Jam cue, but it is still a compact projection over current lane behavior, not a finished transition engine
 - the current shell can already teach `jump -> restore` timing and role contrast, even though it is still not a finished visual timing instrument
 
 Low-energy contrast note:

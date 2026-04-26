@@ -1309,3 +1309,14 @@ Why: Scene Brain is a musician-facing transition flow. Proving only TR-909 suppo
 Evidence: `scene_jump_restore_replay_proves_state_and_mixed_audio_path` keeps TR-909 source support and MC-202 follower active, verifies scene state, restore pointer, Jam scene view, TR-909 scene-target support context, MC-202 contour hints, non-silent mixed renders, launch/restore signal-delta thresholds, and baseline return after restore.
 Consequences: this closes the first output-proof gap from the Scene Brain MVP review. It does not close P008 by itself; a bounded explicit scene-transition policy is still needed before claiming the default arrangement no longer feels static or that scene transitions are musically intentional enough for MVP closeout.
 Status: accepted
+
+---
+
+Topic: Scene transition intent should be a typed Jam-view policy before becoming an arranger
+Phase: Scene Brain
+Question: what is the smallest explicit Scene Brain transition policy after the mixed jump-restore output proof?
+Decision: add `SceneTransitionPolicyView` to the core Jam view for launch and restore targets. Derive action kind, direction (`rise`, `drop`, `hold`), TR-909 intent, MC-202 intent, and a bounded intensity from current and target scene energy. Surface that policy on Jam pending/footer cues.
+Why: Scene Brain needs explicit transition intent, but a full Scene Graph or arranger would be too early. The existing Source Graph, session scene state, launch/restore actions, TR-909 scene-target support, and MC-202 contour seams already provide enough information for a deterministic first policy projection.
+Evidence: core scene tests assert `drop` and contrast-target policy derivation; app scene tests assert `SceneTransitionPolicyView` during the mixed `jump -> restore` replay and UI tests show `policy rise/drop` plus `909`/`202` intents on pending scene cues.
+Consequences: the policy is read-only for now and intentionally does not create a new audio path. Later arrangement movement should consume this policy or widen it, not replace it with a shadow arranger.
+Status: accepted

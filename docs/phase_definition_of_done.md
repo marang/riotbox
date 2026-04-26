@@ -134,7 +134,7 @@ Done when:
 Current review:
 
 - `docs/reviews/scene_brain_mvp_gap_review_2026-04-26.md`
-- status: not exit-clean yet; launch/restore/replay-safe state and first mixed-lane output proof are real, but P008 still needs stronger transition intent before closeout
+- status: not exit-clean yet; launch/restore/replay-safe state, first mixed-lane output proof, and typed transition-policy projection are real, but P008 still needs stronger arrangement movement before closeout
 
 ---
 

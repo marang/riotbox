@@ -86,6 +86,7 @@ It must expose:
 - when section energy is known, the shared Scene launch target may prefer the first deterministic contrast candidate over the immediately adjacent same-energy scene
 - restore-ready Scene cues that name the target and, when known, whether restore is an energy `rise`, `drop`, or `hold`
 - post-commit Scene cues that keep a readable monochrome sentence while visually separating the live scene/result, restore target, compact support hints such as `909 lift`, and next perform keys
+- pending Scene cues may include typed transition policy intent such as `policy rise | 909 drive | 202 lift`; this is read-only intent, not a new control surface
 
 ### 5.1 Jam goals
 
@@ -234,7 +235,7 @@ For pending Scene intent cues:
 - the pending Scene verb may use yellow + bold to mark that a live gesture is armed
 - target Scene ids and boundary labels should be visually scannable without adding diagnostic fields
 - energy direction such as `energy rise`, `energy drop`, or `energy hold` may use green + bold when it confirms the musical direction of the queued move
-- the line should still read as one monochrome sentence, for example `launch -> scene-02-drop @ next bar | energy rise`
+- the line should still read as one monochrome sentence, for example `launch -> scene-02-drop @ next bar | policy rise | 909 drive | 202 lift`
 
 For latest-landed result cues:
 

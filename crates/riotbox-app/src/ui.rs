@@ -15,7 +15,7 @@ use riotbox_core::{
     action::{ActionCommand, ActionStatus},
     view::jam::{
         CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView,
-        W30PendingAuditionKind,
+        SceneTransitionKindView, SceneTransitionPolicyView, W30PendingAuditionKind,
     },
 };
 
@@ -1534,9 +1534,17 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
         return None;
     }
 
-    if let Some((label, scene_id, boundary)) = pending_scene_transition(shell) {
+    if let Some((kind, label, scene_id, boundary)) = pending_scene_transition(shell) {
         let scene = compact_scene_label(scene_id.as_str());
         let tick = scene_countdown_cue(shell.app.runtime.transport.beat_index);
+        if let Some(policy) = pending_scene_transition_policy(shell, kind) {
+            return Some(format!(
+                "{label} {scene} @ {boundary} | {} {tick} | 909 {} | 202 {} | 2 trail",
+                policy.direction.label(),
+                policy.tr909_intent.label(),
+                policy.mc202_intent.label()
+            ));
+        }
         if let Some(direction) = compact_energy_delta_label(
             shell.app.jam_view.scene.active_scene_energy.as_deref(),
             scene_energy_label_for_scene_id(shell, scene_id.as_str()),
@@ -1656,7 +1664,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 }
 
 fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
-    let (label, scene_id, boundary) = pending_scene_transition(shell)?;
+    let (_kind, label, scene_id, boundary) = pending_scene_transition(shell)?;
     let scene = compact_scene_label(scene_id.as_str());
 
     Some(vec![
@@ -3349,7 +3357,9 @@ fn quantization_boundary_label(quantization: riotbox_core::action::Quantization)
     }
 }
 
-fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, String, String)> {
+fn pending_scene_transition(
+    shell: &JamShellState,
+) -> Option<(SceneTransitionKindView, &'static str, String, String)> {
     shell
         .app
         .queue
@@ -3363,9 +3373,13 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
             )
         })
         .and_then(|action| {
-            let label = match action.command {
-                riotbox_core::action::ActionCommand::SceneLaunch => "launch",
-                riotbox_core::action::ActionCommand::SceneRestore => "restore",
+            let (kind, label) = match action.command {
+                riotbox_core::action::ActionCommand::SceneLaunch => {
+                    (SceneTransitionKindView::Launch, "launch")
+                }
+                riotbox_core::action::ActionCommand::SceneRestore => {
+                    (SceneTransitionKindView::Restore, "restore")
+                }
                 _ => unreachable!("scene transition scan only matches launch and restore"),
             };
             action
@@ -3381,6 +3395,7 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
                 })
                 .map(|scene_id| {
                     (
+                        kind,
                         label,
                         scene_id,
                         quantization_boundary_label(action.quantization).into(),
@@ -3390,7 +3405,7 @@ fn pending_scene_transition(shell: &JamShellState) -> Option<(&'static str, Stri
 }
 
 fn scene_pending_line(shell: &JamShellState) -> Line<'static> {
-    let Some((label, scene_id, boundary)) = pending_scene_transition(shell) else {
+    let Some((kind, label, scene_id, boundary)) = pending_scene_transition(shell) else {
         return Line::from(Span::styled("scene transition idle", style_low_emphasis()));
     };
 
@@ -3402,7 +3417,23 @@ fn scene_pending_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(boundary, style_pending_cue()),
     ];
 
-    if let Some(energy_delta) = energy_delta_label(
+    if let Some(policy) = pending_scene_transition_policy(shell, kind) {
+        spans.push(Span::styled(" | policy ", style_low_emphasis()));
+        spans.push(Span::styled(
+            policy.direction.label(),
+            style_confirmation_strong(),
+        ));
+        spans.push(Span::styled(" | 909 ", style_low_emphasis()));
+        spans.push(Span::styled(
+            policy.tr909_intent.label(),
+            style_pending_detail(),
+        ));
+        spans.push(Span::styled(" | 202 ", style_low_emphasis()));
+        spans.push(Span::styled(
+            policy.mc202_intent.label(),
+            style_pending_detail(),
+        ));
+    } else if let Some(energy_delta) = energy_delta_label(
         shell.app.jam_view.scene.active_scene_energy.as_deref(),
         scene_energy_label_for_scene_id(shell, scene_id.as_str()),
     ) {
@@ -3411,6 +3442,16 @@ fn scene_pending_line(shell: &JamShellState) -> Line<'static> {
     }
 
     Line::from(spans)
+}
+
+fn pending_scene_transition_policy(
+    shell: &JamShellState,
+    kind: SceneTransitionKindView,
+) -> Option<SceneTransitionPolicyView> {
+    match kind {
+        SceneTransitionKindView::Launch => shell.app.jam_view.scene.next_scene_policy,
+        SceneTransitionKindView::Restore => shell.app.jam_view.scene.restore_scene_policy,
+    }
 }
 
 fn landed_scene_energy_delta(shell: &JamShellState, command: &str) -> Option<&'static str> {
@@ -5631,10 +5672,12 @@ mod tests {
             "{rendered}"
         );
         assert!(
-            rendered.contains("Scene: launch drop @ next bar | rise [===>] | 2 trail"),
+            rendered.contains(
+                "Scene: launch drop @ next bar | rise [===>] | 909 drive | 202 lift | 2 trail"
+            ),
             "{rendered}"
         );
-        assert!(rendered.contains("energy rise"), "{rendered}");
+        assert!(rendered.contains("policy rise"), "{rendered}");
     }
 
     #[test]
@@ -5667,7 +5710,10 @@ mod tests {
             .map(|span| span.content.as_ref())
             .collect::<String>();
 
-        assert_eq!(rendered, "launch -> scene-02-drop @ next bar | energy rise");
+        assert_eq!(
+            rendered,
+            "launch -> scene-02-drop @ next bar | policy rise | 909 drive | 202 lift"
+        );
         assert_eq!(line.spans[0].content.as_ref(), "launch");
         assert_eq!(line.spans[0].style.fg, Some(Color::Yellow));
         assert!(
@@ -5682,12 +5728,14 @@ mod tests {
             line.spans[4].style.add_modifier.contains(Modifier::BOLD),
             "{line:?}"
         );
-        assert_eq!(line.spans[6].content.as_ref(), "energy rise");
+        assert_eq!(line.spans[6].content.as_ref(), "rise");
         assert_eq!(line.spans[6].style.fg, Some(Color::Green));
         assert!(
             line.spans[6].style.add_modifier.contains(Modifier::BOLD),
             "{line:?}"
         );
+        assert_eq!(line.spans[8].content.as_ref(), "drive");
+        assert_eq!(line.spans[10].content.as_ref(), "lift");
     }
 
     #[test]
@@ -5729,13 +5777,15 @@ mod tests {
             rendered.contains("restore -> scene-02-intro @ next bar"),
             "{rendered}"
         );
-        assert!(rendered.contains("energy rise"), "{rendered}");
+        assert!(rendered.contains("policy rise"), "{rendered}");
         assert!(
             rendered.contains("pulse [===>] b32 | b8 | p1"),
             "{rendered}"
         );
         assert!(
-            rendered.contains("restore intro @ next bar | rise [===>] | 2 trail"),
+            rendered.contains(
+                "restore intro @ next bar | rise [===>] | 909 drive | 202 lift | 2 trail"
+            ),
             "{rendered}"
         );
     }
