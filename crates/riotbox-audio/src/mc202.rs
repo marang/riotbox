@@ -62,11 +62,41 @@ impl Mc202PhraseShape {
     }
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum Mc202NoteBudget {
+    Sparse,
+    Balanced,
+    Push,
+    Wide,
+}
+
+impl Mc202NoteBudget {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Sparse => "sparse",
+            Self::Balanced => "balanced",
+            Self::Push => "push",
+            Self::Wide => "wide",
+        }
+    }
+
+    const fn max_active_steps(self) -> usize {
+        match self {
+            Self::Sparse => 7,
+            Self::Balanced => 10,
+            Self::Push => 8,
+            Self::Wide => 12,
+        }
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mc202RenderState {
     pub mode: Mc202RenderMode,
     pub routing: Mc202RenderRouting,
     pub phrase_shape: Mc202PhraseShape,
+    pub note_budget: Mc202NoteBudget,
     pub touch: f32,
     pub music_bus_level: f32,
     pub tempo_bpm: f32,
@@ -80,6 +110,7 @@ impl Default for Mc202RenderState {
             mode: Mc202RenderMode::Idle,
             routing: Mc202RenderRouting::Silent,
             phrase_shape: Mc202PhraseShape::RootPulse,
+            note_budget: Mc202NoteBudget::Balanced,
             touch: 0.4,
             music_bus_level: 0.72,
             tempo_bpm: 128.0,
@@ -116,6 +147,9 @@ pub fn render_mc202_buffer(
         let Some(semitone) = step_semitone(render.phrase_shape, sixteenth) else {
             continue;
         };
+        if !within_note_budget(render.phrase_shape, render.note_budget, sixteenth) {
+            continue;
+        }
 
         let octave_drop = match render.mode {
             Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
@@ -156,7 +190,12 @@ pub fn render_mc202_buffer(
 }
 
 fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
-    let pattern = match shape {
+    let pattern = pattern_for_shape(shape);
+    pattern[sixteenth % pattern.len()]
+}
+
+fn pattern_for_shape(shape: Mc202PhraseShape) -> &'static [Option<i8>; 16] {
+    match shape {
         Mc202PhraseShape::RootPulse => &[
             Some(0),
             None,
@@ -265,8 +304,20 @@ fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
             Some(27),
             None,
         ],
-    };
-    pattern[sixteenth % pattern.len()]
+    }
+}
+
+fn within_note_budget(shape: Mc202PhraseShape, budget: Mc202NoteBudget, sixteenth: usize) -> bool {
+    let pattern = pattern_for_shape(shape);
+    let step = sixteenth % pattern.len();
+    let active_index = pattern
+        .iter()
+        .take(step + 1)
+        .filter(|semitone| semitone.is_some())
+        .count()
+        .saturating_sub(1);
+
+    active_index < budget.max_active_steps()
 }
 
 #[cfg(test)]
@@ -482,6 +533,61 @@ mod tests {
         assert!(pressure_metrics.0 > 10_000);
         assert!(delta_rms > 0.004, "pressure phrase delta RMS {delta_rms}");
         assert!(max_delta > 0.02, "pressure phrase max delta {max_delta}");
+    }
+
+    #[test]
+    fn note_budget_reduces_density_without_silencing_phrase() {
+        let mut wide = vec![0.0; 44_100 * 2 * 2];
+        let mut balanced = vec![0.0; 44_100 * 2 * 2];
+        let base = Mc202RenderState {
+            mode: Mc202RenderMode::Follower,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::FollowerDrive,
+            touch: 0.78,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(
+            &mut wide,
+            44_100,
+            2,
+            &Mc202RenderState {
+                note_budget: Mc202NoteBudget::Wide,
+                ..base
+            },
+        );
+        render_mc202_buffer(
+            &mut balanced,
+            44_100,
+            2,
+            &Mc202RenderState {
+                note_budget: Mc202NoteBudget::Balanced,
+                ..base
+            },
+        );
+
+        let wide_metrics = metrics(&wide);
+        let balanced_metrics = metrics(&balanced);
+        let delta_rms = (wide
+            .iter()
+            .zip(balanced.iter())
+            .map(|(wide, balanced)| (wide - balanced).powi(2))
+            .sum::<f32>()
+            / wide.len() as f32)
+            .sqrt();
+
+        assert!(wide_metrics.0 > 10_000);
+        assert!(balanced_metrics.0 > 10_000);
+        assert!(
+            balanced_metrics.2 < wide_metrics.2,
+            "balanced RMS {} should stay below wide RMS {}",
+            balanced_metrics.2,
+            wide_metrics.2
+        );
+        assert!(delta_rms > 0.001, "note-budget delta RMS {delta_rms}");
     }
 
     #[test]

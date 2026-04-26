@@ -9,7 +9,8 @@ use std::{
 };
 
 use crate::mc202::{
-    Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
+    Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting, Mc202RenderState,
+    render_mc202_buffer,
 };
 use crate::tr909::{
     Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
@@ -756,6 +757,7 @@ struct RealtimeMc202RenderState {
     mode: Mc202RenderMode,
     routing: Mc202RenderRouting,
     phrase_shape: Mc202PhraseShape,
+    note_budget: Mc202NoteBudget,
     touch: f32,
     music_bus_level: f32,
     tempo_bpm: f32,
@@ -769,6 +771,7 @@ impl From<RealtimeMc202RenderState> for Mc202RenderState {
             mode: render.mode,
             routing: render.routing,
             phrase_shape: render.phrase_shape,
+            note_budget: render.note_budget,
             touch: render.touch,
             music_bus_level: render.music_bus_level,
             tempo_bpm: render.tempo_bpm,
@@ -782,6 +785,7 @@ struct SharedMc202RenderState {
     mode: AtomicU32,
     routing: AtomicU32,
     phrase_shape: AtomicU32,
+    note_budget: AtomicU32,
     touch_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     tempo_bpm_bits: AtomicU32,
@@ -795,6 +799,7 @@ impl SharedMc202RenderState {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             phrase_shape: AtomicU32::new(0),
+            note_budget: AtomicU32::new(mc202_note_budget_to_u32(Mc202NoteBudget::Balanced)),
             touch_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             tempo_bpm_bits: AtomicU32::new(0),
@@ -816,6 +821,10 @@ impl SharedMc202RenderState {
             mc202_phrase_shape_to_u32(render_state.phrase_shape),
             Ordering::Relaxed,
         );
+        self.note_budget.store(
+            mc202_note_budget_to_u32(render_state.note_budget),
+            Ordering::Relaxed,
+        );
         self.touch_bits
             .store(render_state.touch.to_bits(), Ordering::Relaxed);
         self.music_bus_level_bits
@@ -833,6 +842,7 @@ impl SharedMc202RenderState {
             mode: mc202_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: mc202_routing_from_u32(self.routing.load(Ordering::Relaxed)),
             phrase_shape: mc202_phrase_shape_from_u32(self.phrase_shape.load(Ordering::Relaxed)),
+            note_budget: mc202_note_budget_from_u32(self.note_budget.load(Ordering::Relaxed)),
             touch: f32::from_bits(self.touch_bits.load(Ordering::Relaxed)),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
@@ -897,6 +907,24 @@ fn mc202_phrase_shape_from_u32(value: u32) -> Mc202PhraseShape {
         4 => Mc202PhraseShape::PressureCell,
         5 => Mc202PhraseShape::InstigatorSpike,
         _ => Mc202PhraseShape::RootPulse,
+    }
+}
+
+fn mc202_note_budget_to_u32(budget: Mc202NoteBudget) -> u32 {
+    match budget {
+        Mc202NoteBudget::Sparse => 0,
+        Mc202NoteBudget::Balanced => 1,
+        Mc202NoteBudget::Push => 2,
+        Mc202NoteBudget::Wide => 3,
+    }
+}
+
+fn mc202_note_budget_from_u32(value: u32) -> Mc202NoteBudget {
+    match value {
+        0 => Mc202NoteBudget::Sparse,
+        2 => Mc202NoteBudget::Push,
+        3 => Mc202NoteBudget::Wide,
+        _ => Mc202NoteBudget::Balanced,
     }
 }
 
@@ -2790,6 +2818,7 @@ mod tests {
             mode: Mc202RenderMode::Instigator,
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::InstigatorSpike,
+            note_budget: Mc202NoteBudget::Push,
             touch: 0.90,
             music_bus_level: 0.64,
             is_transport_running: true,
@@ -2803,6 +2832,7 @@ mod tests {
         assert_eq!(snapshot.mode, Mc202RenderMode::Instigator);
         assert_eq!(snapshot.routing, Mc202RenderRouting::MusicBusBass);
         assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::InstigatorSpike);
+        assert_eq!(snapshot.note_budget, Mc202NoteBudget::Push);
         assert_eq!(snapshot.touch, 0.90);
         assert_eq!(snapshot.music_bus_level, 0.64);
         assert!(snapshot.is_transport_running);
@@ -3514,6 +3544,7 @@ mod tests {
                 mode: Mc202RenderMode::Follower,
                 routing: Mc202RenderRouting::MusicBusBass,
                 phrase_shape: Mc202PhraseShape::FollowerDrive,
+                note_budget: Mc202NoteBudget::Balanced,
                 touch: 0.78,
                 music_bus_level: 0.64,
                 is_transport_running: true,
