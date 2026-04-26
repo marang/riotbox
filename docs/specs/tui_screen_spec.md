@@ -226,6 +226,13 @@ For queued timing rails:
 - transport counters such as beat, bar, and phrase indices should stay low-emphasis context rather than competing with the snap point
 - this hierarchy does not imply new scheduler behavior or a separate timing visualization widget
 
+For pending Scene intent cues:
+
+- the pending Scene verb may use yellow + bold to mark that a live gesture is armed
+- target Scene ids and boundary labels should be visually scannable without adding diagnostic fields
+- energy direction such as `energy rise`, `energy drop`, or `energy hold` may use green + bold when it confirms the musical direction of the queued move
+- the line should still read as one monochrome sentence, for example `launch -> scene-02-drop @ next bar | energy rise`
+
 Do not use color as the only carrier of meaning. The text must still read correctly in monochrome snapshots and low-color terminals.
 
 ---
