@@ -1737,10 +1737,8 @@ fn jam_pending_landed_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(first_pending_line),
         Line::from(second_pending_line),
         Line::from(latest_landed_line(shell)),
-        Line::from(
-            scene_post_commit_cue_line(shell)
-                .unwrap_or_else(|| format!("status {}", shell.status_message)),
-        ),
+        scene_post_commit_cue_line(shell)
+            .unwrap_or_else(|| Line::from(format!("status {}", shell.status_message))),
     ]
 }
 
@@ -1813,7 +1811,7 @@ fn latest_landed_command(shell: &JamShellState) -> Option<&str> {
         .map(|action| action.command.as_str())
 }
 
-fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<String> {
+fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<Line<'static>> {
     let command = latest_landed_command(shell)?;
     if !matches!(command, "scene.launch" | "scene.restore") {
         return None;
@@ -1821,20 +1819,48 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<String> {
 
     let current_scene = current_scene_target_compact_label(shell);
     let restore_scene = restore_scene_target_compact_label(shell);
-    let next_step = if command == "scene.launch" {
-        "[Y] restore [c] capture"
+    let next_scene_key = if command == "scene.launch" {
+        ("[Y]", " restore ")
     } else {
-        "[y] jump [c] capture"
-    };
-    let tr909_lift = if shell.app.runtime_view.tr909_render_support_accent == "scene" {
-        " | 909 lift"
-    } else {
-        ""
+        ("[y]", " jump ")
     };
 
-    Some(format!(
-        "scene {current_scene} | restore {restore_scene}{tr909_lift} | next {next_step}"
-    ))
+    let mut spans = vec![
+        Span::styled("scene ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            current_scene,
+            Style::default()
+                .fg(Color::Green)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::styled(" | restore ", Style::default().fg(Color::DarkGray)),
+        Span::styled(restore_scene, Style::default().fg(Color::Yellow)),
+    ];
+
+    if shell.app.runtime_view.tr909_render_support_accent == "scene" {
+        spans.push(Span::styled(" | ", Style::default().fg(Color::DarkGray)));
+        spans.push(Span::styled("909 lift", Style::default().fg(Color::Yellow)));
+    }
+
+    spans.extend([
+        Span::styled(" | next ", Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            next_scene_key.0,
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(next_scene_key.1),
+        Span::styled(
+            "[c]",
+            Style::default()
+                .fg(Color::Cyan)
+                .add_modifier(Modifier::BOLD),
+        ),
+        Span::raw(" capture"),
+    ]);
+
+    Some(Line::from(spans))
 }
 
 fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -5456,6 +5482,49 @@ mod tests {
         assert!(rendered.contains("next [Y]"), "{rendered}");
         assert!(rendered.contains("restore [c] capture"), "{rendered}");
         assert!(rendered.contains("[c] capture"), "{rendered}");
+    }
+
+    #[test]
+    fn scene_post_commit_cue_styles_define_performance_hierarchy() {
+        let shell = scene_post_commit_shell_state(
+            ActionCommand::SceneLaunch,
+            "scene-02-break",
+            "scene-01-drop",
+        );
+        let line = scene_post_commit_cue_line(&shell).expect("scene post-commit cue");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(
+            rendered,
+            "scene break/high | restore drop/med | 909 lift | next [Y] restore [c] capture"
+        );
+        assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
+        assert_eq!(line.spans[1].content.as_ref(), "break/high");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Green));
+        assert!(
+            line.spans[1].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[3].content.as_ref(), "drop/med");
+        assert_eq!(line.spans[3].style.fg, Some(Color::Yellow));
+        assert_eq!(line.spans[5].content.as_ref(), "909 lift");
+        assert_eq!(line.spans[5].style.fg, Some(Color::Yellow));
+        assert_eq!(line.spans[7].content.as_ref(), "[Y]");
+        assert_eq!(line.spans[7].style.fg, Some(Color::Cyan));
+        assert!(
+            line.spans[7].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[9].content.as_ref(), "[c]");
+        assert_eq!(line.spans[9].style.fg, Some(Color::Cyan));
+        assert!(
+            line.spans[9].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
     }
 
     #[test]
