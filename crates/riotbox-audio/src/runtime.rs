@@ -182,6 +182,28 @@ pub fn render_w30_preview_offline(
 }
 
 #[must_use]
+pub fn render_tr909_offline(
+    render_state: &Tr909RenderState,
+    sample_rate: u32,
+    channel_count: u16,
+    frame_count: usize,
+) -> Vec<f32> {
+    let shared_state = SharedTr909RenderState::new(render_state);
+    let mut callback_state = Tr909CallbackState::default();
+    let mut buffer = vec![0.0; frame_count.saturating_mul(usize::from(channel_count))];
+
+    render_tr909_buffer(
+        &mut buffer,
+        sample_rate,
+        usize::from(channel_count),
+        &shared_state.snapshot(),
+        &mut callback_state,
+    );
+
+    buffer
+}
+
+#[must_use]
 pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
     let active_samples = samples
         .iter()
@@ -3229,6 +3251,32 @@ mod tests {
         );
 
         assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    }
+
+    #[test]
+    fn offline_tr909_render_produces_reviewable_metrics_for_fill() {
+        let buffer = render_tr909_offline(
+            &Tr909RenderState {
+                mode: Tr909RenderMode::Fill,
+                routing: Tr909RenderRouting::DrumBusSupport,
+                pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
+                phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
+                drum_bus_level: 0.82,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+                ..Tr909RenderState::default()
+            },
+            44_100,
+            2,
+            44_100,
+        );
+
+        let metrics = signal_metrics(&buffer);
+
+        assert!(metrics.active_samples > 1_000);
+        assert!(metrics.peak_abs > 0.001);
+        assert!(metrics.rms > 0.001);
     }
 
     #[test]
