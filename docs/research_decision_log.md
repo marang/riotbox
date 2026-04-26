@@ -1254,3 +1254,14 @@ Why: musicians need resampling to "print the chaos" into material they can hear,
 Evidence: `committed_w30_internal_resample_prints_reusable_bus_artifact` commits source capture -> promotion -> resample, verifies `captures/cap-02.wav` exists and reloads, asserts lineage/generation metadata, checks non-silent metrics, and compares the printed artifact against both raw capture audio and the synthetic resample-tap control.
 Consequences: the printed artifact is still a bounded MVP bus print, not full multitrack recording or export. Future W-30 work can improve the render policy and pad-bank playback while keeping the artifact/provenance contract stable.
 Status: accepted
+
+---
+
+Topic: W-30 MVP exit remains blocked on duration-aware focused pad playback
+Phase: W-30 MVP / Audio QA
+Question: after capture artifacts, artifact-backed focused playback, and bounded bus-print resampling exist, is `P007 | W-30 MVP` exit-clean?
+Decision: do not close W-30 MVP yet. The storage and resample blockers are resolved, but the pad playback criterion still needs one bounded implementation slice: focused W-30 pad playback should render from the committed artifact over a duration/loop policy instead of only through the fixed `W30_PREVIEW_SAMPLE_WINDOW_LEN` preview window.
+Why: musicians can now hear artifact-backed W-30 material, but the current seam is still a diagnostic preview voice, not a convincing loop-length pad playback path. Closing the phase here would overstate the playable sampler behavior.
+Evidence: `docs/reviews/w30_mvp_exit_review_2026-04-26.md` compares the Phase 5 criteria with current app/audio code and tests. It finds source-backed capture artifacts and bus-print artifacts satisfied for MVP, while focused pad playback still caps material through the fixed preview sample window.
+Consequences: the next W-30 implementation should stay narrow: one focused duration-aware pad voice, existing queue/commit actions, preloaded artifact data, no realtime file I/O, and output-path tests proving longer artifact playback differs from both fallback and the fixed-window preview.
+Status: accepted
