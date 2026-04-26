@@ -1276,3 +1276,14 @@ Why: Phase 5 needs pads to feel playable without jumping straight to full pad-ba
 Evidence: `w30_pad_playback_uses_duration_window_beyond_fixed_preview_len` proves the callback reaches samples beyond the fixed preview window and differs from the fixed-preview control. `focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unavailable` proves the app path loads committed capture artifacts into the focused pad playback window, renders non-silent audio beyond the preview boundary, and differs from both fixed-preview and fallback controls.
 Consequences: this is still one focused W-30 pad voice, not full multi-pad sampler polyphony. Later work can widen the same artifact playback contract into richer pad-bank behavior without reopening capture storage or resample provenance.
 Status: accepted
+
+---
+
+Topic: Close P007 W-30 MVP after focused artifact playback lands
+Phase: W-30 MVP
+Question: after `RIOTBOX-322`, is the W-30 MVP phase exit-clean?
+Decision: close `P007 | W-30 MVP` as the first honest W-30 MVP. Useful source-window captures write real artifacts, focused W-30 pads can play committed artifacts beyond the old fixed preview window, internal bus resampling prints reusable artifacts, reuse stays inside the queue/commit Jam flow, and provenance remains explicit.
+Why: the phase definition is now satisfied without pretending Riotbox has a full sampler engine. The remaining W-30 work is expansion and polish, not an MVP blocker.
+Evidence: `RIOTBOX-317` writes source-backed capture artifacts, `RIOTBOX-318` makes focused playback prefer committed artifacts, `RIOTBOX-320` prints bounded resample artifacts, and `RIOTBOX-322` adds duration-aware focused pad playback with output-path proof. `docs/reviews/w30_mvp_exit_review_2026-04-26.md` records the blocker and its closure.
+Consequences: move the roadmap spine to the next phase after W-30 MVP. Later W-30 work should be scoped as sampler expansion, sound-design refinement, richer pad-bank behavior, or export/listening-pack work, not as a prerequisite for closing P007.
+Status: accepted

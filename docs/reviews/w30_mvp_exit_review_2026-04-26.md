@@ -103,6 +103,16 @@ Acceptance shape:
 - prove control path plus output path with source-vs-fallback and short-vs-duration-aware buffer comparisons
 - keep realtime callback input bounded and preloaded; do not perform file I/O in the callback
 
+Status:
+
+- closed by `RIOTBOX-322`
+- PR: `https://github.com/marang/riotbox/pull/312`
+- merge commit: `9c05ebec8f184c3e23d7f5a306293ec108b45d70`
+- evidence:
+  - `w30_pad_playback_uses_duration_window_beyond_fixed_preview_len`
+  - `focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unavailable`
+  - `just ci`
+
 ## Non-Blocking Follow-Ups
 
 These should not block the first W-30 MVP exit once focused duration-aware pad playback lands:
@@ -116,4 +126,4 @@ These should not block the first W-30 MVP exit once focused duration-aware pad p
 
 ## Conclusion
 
-W-30 has crossed the important line from "logs and lineage" into reusable audio artifacts. The remaining MVP blocker is narrower and concrete: the focused pad path must stop being only a fixed-size preview window and become a duration-aware artifact playback seam. After that, P007 can likely be closed as a first honest W-30 MVP, with full sampler expansion moved to later phases.
+W-30 has crossed the important line from "logs and lineage" into reusable audio artifacts. After `RIOTBOX-322`, the focused pad path is no longer only a fixed-size preview window; it has a bounded duration-aware artifact playback seam. `P007 | W-30 MVP` can be treated as closed for the first honest W-30 MVP, with full sampler expansion moved to later phases.

@@ -117,6 +117,7 @@ Current reviews:
 
 - `docs/reviews/w30_mvp_gap_review_2026-04-26.md`
 - `docs/reviews/w30_mvp_exit_review_2026-04-26.md`
+- status: closed for MVP on 2026-04-26 after `RIOTBOX-322` added duration-aware focused W-30 pad playback from committed capture artifacts with control-path and output-path proof
 
 ---
 
