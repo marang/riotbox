@@ -10,7 +10,8 @@ use std::{
 
 use crate::tr909::{
     Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-    Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+    Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+    Tr909TakeoverRenderProfile,
 };
 use crate::w30::{
     W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
@@ -517,6 +518,7 @@ struct RealtimeTr909RenderState {
     mode: Tr909RenderMode,
     routing: Tr909RenderRouting,
     source_support_profile: Option<Tr909SourceSupportProfile>,
+    source_support_context: Option<Tr909SourceSupportContext>,
     pattern_adoption: Option<Tr909PatternAdoption>,
     phrase_variation: Option<Tr909PhraseVariation>,
     takeover_profile: Option<Tr909TakeoverRenderProfile>,
@@ -531,6 +533,7 @@ struct SharedTr909RenderState {
     mode: AtomicU32,
     routing: AtomicU32,
     source_support_profile: AtomicU32,
+    source_support_context: AtomicU32,
     pattern_adoption: AtomicU32,
     phrase_variation: AtomicU32,
     takeover_profile: AtomicU32,
@@ -547,6 +550,7 @@ impl SharedTr909RenderState {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
             source_support_profile: AtomicU32::new(0),
+            source_support_context: AtomicU32::new(0),
             pattern_adoption: AtomicU32::new(0),
             phrase_variation: AtomicU32::new(0),
             takeover_profile: AtomicU32::new(0),
@@ -567,6 +571,10 @@ impl SharedTr909RenderState {
             .store(routing_to_u32(render_state.routing), Ordering::Relaxed);
         self.source_support_profile.store(
             support_profile_to_u32(render_state.source_support_profile),
+            Ordering::Relaxed,
+        );
+        self.source_support_context.store(
+            support_context_to_u32(render_state.source_support_context),
             Ordering::Relaxed,
         );
         self.pattern_adoption.store(
@@ -599,6 +607,9 @@ impl SharedTr909RenderState {
             routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
             source_support_profile: support_profile_from_u32(
                 self.source_support_profile.load(Ordering::Relaxed),
+            ),
+            source_support_context: support_context_from_u32(
+                self.source_support_context.load(Ordering::Relaxed),
             ),
             pattern_adoption: pattern_adoption_from_u32(
                 self.pattern_adoption.load(Ordering::Relaxed),
@@ -1799,6 +1810,22 @@ const fn support_profile_from_u32(value: u32) -> Option<Tr909SourceSupportProfil
     }
 }
 
+const fn support_context_to_u32(context: Option<Tr909SourceSupportContext>) -> u32 {
+    match context {
+        None => 0,
+        Some(Tr909SourceSupportContext::SceneTarget) => 1,
+        Some(Tr909SourceSupportContext::TransportBar) => 2,
+    }
+}
+
+const fn support_context_from_u32(value: u32) -> Option<Tr909SourceSupportContext> {
+    match value {
+        1 => Some(Tr909SourceSupportContext::SceneTarget),
+        2 => Some(Tr909SourceSupportContext::TransportBar),
+        _ => None,
+    }
+}
+
 const fn pattern_adoption_to_u32(pattern: Option<Tr909PatternAdoption>) -> u32 {
     match pattern {
         None => 0,
@@ -1998,7 +2025,8 @@ mod tests {
     use super::*;
     use crate::tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState, Tr909SourceSupportProfile, Tr909TakeoverRenderProfile,
+        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
+        Tr909TakeoverRenderProfile,
     };
     use crate::w30::{
         W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState,
@@ -2019,6 +2047,7 @@ mod tests {
         mode: String,
         routing: String,
         source_support_profile: Option<String>,
+        source_support_context: Option<String>,
         pattern_adoption: Option<String>,
         phrase_variation: Option<String>,
         takeover_profile: Option<String>,
@@ -2111,6 +2140,13 @@ mod tests {
                         "drop_drive" => Tr909SourceSupportProfile::DropDrive,
                         "steady_pulse" => Tr909SourceSupportProfile::SteadyPulse,
                         other => panic!("unknown TR-909 fixture source support profile: {other}"),
+                    }
+                }),
+                source_support_context: self.source_support_context.as_deref().map(|context| {
+                    match context {
+                        "scene_target" => Tr909SourceSupportContext::SceneTarget,
+                        "transport_bar" => Tr909SourceSupportContext::TransportBar,
+                        other => panic!("unknown TR-909 fixture source support context: {other}"),
                     }
                 }),
                 pattern_adoption: self
@@ -2392,6 +2428,7 @@ mod tests {
             snapshot.takeover_profile,
             Some(Tr909TakeoverRenderProfile::ControlledPhrase)
         );
+        assert_eq!(snapshot.source_support_context, None);
         assert_eq!(snapshot.pattern_adoption, None);
         assert_eq!(snapshot.phrase_variation, None);
         assert_eq!(snapshot.tempo_bpm, 128.0);
@@ -2400,6 +2437,7 @@ mod tests {
         state.mode = Tr909RenderMode::SourceSupport;
         state.routing = Tr909RenderRouting::DrumBusSupport;
         state.source_support_profile = Some(Tr909SourceSupportProfile::DropDrive);
+        state.source_support_context = Some(Tr909SourceSupportContext::SceneTarget);
         state.pattern_adoption = Some(Tr909PatternAdoption::MainlineDrive);
         state.phrase_variation = Some(Tr909PhraseVariation::PhraseDrive);
         state.takeover_profile = None;
@@ -2413,6 +2451,10 @@ mod tests {
             Some(Tr909SourceSupportProfile::DropDrive)
         );
         assert_eq!(
+            updated.source_support_context,
+            Some(Tr909SourceSupportContext::SceneTarget)
+        );
+        assert_eq!(
             updated.pattern_adoption,
             Some(Tr909PatternAdoption::MainlineDrive)
         );
@@ -2420,6 +2462,21 @@ mod tests {
             updated.phrase_variation,
             Some(Tr909PhraseVariation::PhraseDrive)
         );
+
+        state.source_support_context = Some(Tr909SourceSupportContext::TransportBar);
+        shared.update(&state);
+
+        let transport_fallback = shared.snapshot();
+        assert_eq!(
+            transport_fallback.source_support_context,
+            Some(Tr909SourceSupportContext::TransportBar)
+        );
+
+        state.source_support_context = None;
+        shared.update(&state);
+
+        let unset = shared.snapshot();
+        assert_eq!(unset.source_support_context, None);
     }
 
     #[test]
@@ -2527,6 +2584,7 @@ mod tests {
                 mode: Tr909RenderMode::Idle,
                 routing: Tr909RenderRouting::SourceOnly,
                 source_support_profile: None,
+                source_support_context: None,
                 pattern_adoption: None,
                 phrase_variation: None,
                 takeover_profile: None,
@@ -3080,6 +3138,7 @@ mod tests {
                 mode: Tr909RenderMode::BreakReinforce,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: None,
+                source_support_context: None,
                 pattern_adoption: None,
                 phrase_variation: None,
                 takeover_profile: None,
@@ -3108,6 +3167,7 @@ mod tests {
                 mode: Tr909RenderMode::BreakReinforce,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: None,
+                source_support_context: None,
                 pattern_adoption: None,
                 phrase_variation: None,
                 takeover_profile: None,
@@ -3138,6 +3198,7 @@ mod tests {
                 mode: Tr909RenderMode::SourceSupport,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
+                source_support_context: Some(Tr909SourceSupportContext::TransportBar),
                 pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
                 takeover_profile: None,
@@ -3158,6 +3219,7 @@ mod tests {
                 mode: Tr909RenderMode::SourceSupport,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
+                source_support_context: Some(Tr909SourceSupportContext::SceneTarget),
                 pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
                 takeover_profile: None,
@@ -3195,6 +3257,7 @@ mod tests {
                 mode: Tr909RenderMode::Takeover,
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
+                source_support_context: None,
                 pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseLift),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
@@ -3215,6 +3278,7 @@ mod tests {
                 mode: Tr909RenderMode::Takeover,
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
+                source_support_context: None,
                 pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::SceneLock),
@@ -3404,6 +3468,7 @@ mod tests {
                 mode: Tr909RenderMode::SourceSupport,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::SteadyPulse),
+                source_support_context: Some(Tr909SourceSupportContext::TransportBar),
                 pattern_adoption: Some(Tr909PatternAdoption::SupportPulse),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
                 takeover_profile: None,
@@ -3424,6 +3489,7 @@ mod tests {
                 mode: Tr909RenderMode::SourceSupport,
                 routing: Tr909RenderRouting::DrumBusSupport,
                 source_support_profile: Some(Tr909SourceSupportProfile::DropDrive),
+                source_support_context: Some(Tr909SourceSupportContext::SceneTarget),
                 pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
                 takeover_profile: None,
@@ -3444,6 +3510,7 @@ mod tests {
                 mode: Tr909RenderMode::Takeover,
                 routing: Tr909RenderRouting::DrumBusTakeover,
                 source_support_profile: None,
+                source_support_context: None,
                 pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
                 phrase_variation: Some(Tr909PhraseVariation::PhraseRelease),
                 takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
@@ -3484,6 +3551,7 @@ mod tests {
             mode: Tr909RenderMode::Takeover,
             routing: Tr909RenderRouting::DrumBusTakeover,
             source_support_profile: None,
+            source_support_context: None,
             pattern_adoption: Some(Tr909PatternAdoption::TakeoverGrid),
             phrase_variation: Some(Tr909PhraseVariation::PhraseAnchor),
             takeover_profile: Some(Tr909TakeoverRenderProfile::ControlledPhrase),
