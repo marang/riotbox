@@ -39,6 +39,15 @@ The pack root also writes:
 
 - `pack-summary.md`
 
+For local human listening notes, create `notes.md` beside either the pack root or a specific case:
+
+```bash
+just audio-qa-notes artifacts/audio_qa/<date>/lane-recipe-listening-pack/notes.md
+just audio-qa-notes artifacts/audio_qa/<date>/lane-recipe-listening-pack/tr909-support-to-fill/notes.md
+```
+
+Template source: `docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md`.
+
 ## Covered Cases
 
 Current cases:

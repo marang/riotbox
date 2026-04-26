@@ -150,6 +150,12 @@ If `just` is installed, the normal local check path is:
 just ci
 ```
 
+If you render local audio QA packs and want to capture a listening verdict, start a structured ignored note with:
+
+```bash
+just audio-qa-notes artifacts/audio_qa/local/notes.md
+```
+
 If `just` is not installed, the direct equivalents are:
 
 ```bash
