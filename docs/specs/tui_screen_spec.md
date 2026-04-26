@@ -240,6 +240,13 @@ For latest-landed result cues:
 - actor labels and separators should stay low-emphasis context
 - the line should remain readable as plain text, for example `landed user scene jump | energy rise`
 
+For perform guidance key tokens:
+
+- bracketed key tokens such as `[c]`, `[u]`, or `[Space]` may use cyan + bold when they name a primary perform control
+- Help-style `key: action` prefixes may use the same cyan + bold treatment for the key prefix only
+- explanatory labels and separators should stay plain text so Suggested gestures and Help remain readable in monochrome
+- key-token emphasis does not imply new keymap behavior, new gestures, or a layout change
+
 Do not use color as the only carrier of meaning. The text must still read correctly in monochrome snapshots and low-color terminals.
 
 ---
