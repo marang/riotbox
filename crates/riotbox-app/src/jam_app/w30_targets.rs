@@ -5,7 +5,6 @@ use riotbox_core::{
     ids::{BankId, CaptureId, PadId},
     session::{CaptureRef, CaptureTarget},
     source_graph::{AssetType, CandidateType, RelationshipType},
-    view::jam::FeralScorecardView,
 };
 
 use super::{JamAppState, capture_targets_specific_w30_pad, capture_targets_w30_pad};
@@ -356,11 +355,7 @@ impl JamAppState {
         last_capture_id: Option<&CaptureId>,
     ) -> Option<&'a CaptureRef> {
         let graph = self.source_graph.as_ref()?;
-        let scorecard = FeralScorecardView::from_graph(graph);
-        if scorecard.break_rebuild_potential != "high"
-            && scorecard.break_support_count == 0
-            && scorecard.capture_candidate_count == 0
-        {
+        if !graph.has_feral_break_support_evidence() {
             return None;
         }
 
