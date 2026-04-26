@@ -407,7 +407,7 @@ Today the repo already has:
 - callback-facing audio regression fixtures for `TR-909`, `W-30 preview`, and `W-30 resample`
 - W-30 preview fixture checks for active samples, peak, and optional source-window sum / RMS ranges
 - focused app/runtime regressions for source-backed W-30 reuse, including the promoted `[w] hit` path that verifies `LiveRecall` keeps non-empty source-window preview samples when a decoded capture window is available
-- an initial local-only W-30 preview render helper that writes one deterministic source-window smoke WAV plus sibling Markdown metrics
+- an initial local-only W-30 preview render helper that writes one deterministic source-window smoke WAV plus sibling Markdown metrics, with optional PCM16 WAV source-window input
 - an initial W-30 preview smoke listening-pack convention under `docs/benchmarks/`
 - an initial local baseline-vs-candidate audio artifact convention under `docs/benchmarks/`
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that also writes a local `comparison.md` report

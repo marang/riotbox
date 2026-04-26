@@ -76,6 +76,19 @@ cargo run -p riotbox-audio --bin w30_preview_render -- \
 
 Use `--out PATH` only when you need to override the convention path for an ad hoc render.
 
+To render the same smoke case from an existing PCM16 WAV source window instead of the deterministic synthetic window, pass `--source` plus a bounded source window:
+
+```bash
+cargo run -p riotbox-audio --bin w30_preview_render -- \
+  --date 2026-04-26 \
+  --role candidate \
+  --source "data/test_audio/examples/DH_BeatC_120-01.wav" \
+  --source-start-seconds 0.0 \
+  --source-duration-seconds 0.25
+```
+
+The current source-backed helper uses the existing PCM16 WAV loader. 24-bit WAV support remains out of scope for this smoke path.
+
 ## Compare Command
 
 After rendering both baseline and candidate metrics for the same date, compare their metric deltas:

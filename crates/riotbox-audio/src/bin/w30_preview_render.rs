@@ -6,6 +6,7 @@ use std::{
 
 use riotbox_audio::{
     runtime::{render_w30_preview_offline, signal_metrics},
+    source_audio::SourceAudioCache,
     w30::{
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
         W30PreviewRenderState, W30PreviewSampleWindow, W30PreviewSourceProfile,
@@ -18,6 +19,8 @@ const CASE_ID: &str = "raw_capture_source_window_preview";
 const SAMPLE_RATE: u32 = 44_100;
 const CHANNEL_COUNT: u16 = 2;
 const DEFAULT_DURATION_SECONDS: f32 = 2.0;
+const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;
+const DEFAULT_SOURCE_DURATION_SECONDS: f32 = 0.25;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -27,8 +30,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let frame_count = (SAMPLE_RATE as f32 * args.duration_seconds).round() as usize;
+    let source_window_preview = args.source_window_preview()?;
     let samples = render_w30_preview_offline(
-        &source_window_smoke_state(),
+        &source_window_smoke_state(source_window_preview),
         SAMPLE_RATE,
         CHANNEL_COUNT,
         frame_count,
@@ -52,6 +56,9 @@ struct Args {
     duration_seconds: f32,
     date: String,
     role: RenderRole,
+    source_path: Option<PathBuf>,
+    source_start_seconds: f32,
+    source_duration_seconds: f32,
     show_help: bool,
 }
 
@@ -94,6 +101,9 @@ impl Args {
         let mut duration_seconds = DEFAULT_DURATION_SECONDS;
         let mut date = DEFAULT_DATE.to_string();
         let mut role = RenderRole::Candidate;
+        let mut source_path = None;
+        let mut source_start_seconds = DEFAULT_SOURCE_START_SECONDS;
+        let mut source_duration_seconds = DEFAULT_SOURCE_DURATION_SECONDS;
         let mut show_help = false;
         let mut args = args.into_iter();
 
@@ -118,6 +128,26 @@ impl Args {
                     };
                     role = RenderRole::parse(&value)?;
                 }
+                "--source" => {
+                    let Some(value) = args.next() else {
+                        return Err("--source requires a path".into());
+                    };
+                    source_path = Some(PathBuf::from(value));
+                }
+                "--source-start-seconds" => {
+                    let Some(value) = args.next() else {
+                        return Err("--source-start-seconds requires a value".into());
+                    };
+                    source_start_seconds =
+                        parse_non_negative_seconds("--source-start-seconds", &value)?;
+                }
+                "--source-duration-seconds" => {
+                    let Some(value) = args.next() else {
+                        return Err("--source-duration-seconds requires a value".into());
+                    };
+                    source_duration_seconds =
+                        parse_positive_seconds("--source-duration-seconds", &value)?;
+                }
                 "--duration-seconds" => {
                     let Some(value) = args.next() else {
                         return Err("--duration-seconds requires a value".into());
@@ -140,14 +170,55 @@ impl Args {
             duration_seconds,
             date,
             role,
+            source_path,
+            source_start_seconds,
+            source_duration_seconds,
             show_help,
         })
+    }
+
+    fn source_window_preview(&self) -> Result<W30PreviewSampleWindow, Box<dyn std::error::Error>> {
+        let Some(source_path) = self.source_path.as_ref() else {
+            return Ok(synthetic_source_window_preview());
+        };
+
+        let cache = SourceAudioCache::load_pcm16_wav(source_path)?;
+        let window =
+            cache.window_by_seconds(self.source_start_seconds, self.source_duration_seconds);
+        let samples = cache.window_samples(window);
+
+        source_preview_from_interleaved(
+            samples,
+            usize::from(cache.channel_count),
+            u64::try_from(window.start_frame).unwrap_or(u64::MAX),
+            u64::try_from(window.start_frame.saturating_add(window.frame_count))
+                .unwrap_or(u64::MAX),
+        )
+        .ok_or_else(|| {
+            format!(
+                "source window {} + {}s produced no samples",
+                self.source_start_seconds, self.source_duration_seconds
+            )
+            .into()
+        })
+    }
+
+    fn source_input_label(&self) -> String {
+        self.source_path
+            .as_ref()
+            .map(|path| path.display().to_string())
+            .unwrap_or_else(|| "synthetic".to_string())
     }
 }
 
 fn print_help() {
     println!(
         "Usage: w30_preview_render [--date YYYY-MM-DD|local] [--role baseline|candidate] [--out PATH] [--duration-seconds SECONDS]\n\
+         \n\
+         Optional source-backed preview input:\n\
+           --source PATH\n\
+           --source-start-seconds SECONDS\n\
+           --source-duration-seconds SECONDS\n\
          \n\
          Renders the initial w30-preview-smoke source-window case to a PCM16 WAV\n\
          plus a sibling metrics Markdown file. This is a local review helper,\n\
@@ -165,12 +236,29 @@ fn convention_output_path(date: &str, role: RenderRole) -> PathBuf {
     path
 }
 
-fn source_window_smoke_state() -> W30PreviewRenderState {
-    let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
-    for (index, sample) in samples.iter_mut().enumerate() {
-        *sample = 0.18 + index as f32 * 0.002;
+fn parse_non_negative_seconds(flag: &str, value: &str) -> Result<f32, String> {
+    let parsed = value
+        .parse::<f32>()
+        .map_err(|_| format!("{flag} must be a non-negative number"))?;
+    if !parsed.is_finite() || parsed < 0.0 {
+        return Err(format!("{flag} must be a non-negative number"));
     }
+    Ok(parsed)
+}
 
+fn parse_positive_seconds(flag: &str, value: &str) -> Result<f32, String> {
+    let parsed = value
+        .parse::<f32>()
+        .map_err(|_| format!("{flag} must be greater than zero"))?;
+    if !parsed.is_finite() || parsed <= 0.0 {
+        return Err(format!("{flag} must be greater than zero"));
+    }
+    Ok(parsed)
+}
+
+fn source_window_smoke_state(
+    source_window_preview: W30PreviewSampleWindow,
+) -> W30PreviewRenderState {
     W30PreviewRenderState {
         mode: W30PreviewRenderMode::RawCaptureAudition,
         routing: W30PreviewRenderRouting::MusicBusPreview,
@@ -180,18 +268,58 @@ fn source_window_smoke_state() -> W30PreviewRenderState {
         capture_id: Some("cap-01".into()),
         trigger_revision: 0,
         trigger_velocity: 0.0,
-        source_window_preview: Some(W30PreviewSampleWindow {
-            source_start_frame: 0,
-            source_end_frame: 64,
-            sample_count: 64,
-            samples,
-        }),
+        source_window_preview: Some(source_window_preview),
         music_bus_level: 0.64,
         grit_level: 0.0,
         is_transport_running: true,
         tempo_bpm: 126.0,
         position_beats: 32.0,
     }
+}
+
+fn synthetic_source_window_preview() -> W30PreviewSampleWindow {
+    let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+    for (index, sample) in samples.iter_mut().enumerate() {
+        *sample = 0.18 + index as f32 * 0.002;
+    }
+
+    W30PreviewSampleWindow {
+        source_start_frame: 0,
+        source_end_frame: 64,
+        sample_count: 64,
+        samples,
+    }
+}
+
+fn source_preview_from_interleaved(
+    samples: &[f32],
+    channel_count: usize,
+    source_start_frame: u64,
+    source_end_frame: u64,
+) -> Option<W30PreviewSampleWindow> {
+    let channel_count = channel_count.max(1);
+    let frame_count = samples.len() / channel_count;
+    if frame_count == 0 {
+        return None;
+    }
+
+    let sample_count = frame_count.min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+    let stride = (frame_count / sample_count).max(1);
+    let mut preview = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+
+    for (index, slot) in preview.iter_mut().take(sample_count).enumerate() {
+        let frame_index = (index * stride).min(frame_count - 1);
+        let base = frame_index * channel_count;
+        let sum: f32 = samples[base..base + channel_count].iter().sum();
+        *slot = sum / channel_count as f32;
+    }
+
+    Some(W30PreviewSampleWindow {
+        source_start_frame,
+        source_end_frame,
+        sample_count,
+        samples: preview,
+    })
 }
 
 fn write_pcm16_wav(
@@ -265,6 +393,7 @@ fn write_metrics_markdown(
              - Pack: `{PACK_ID}`\n\
              - Case: `{CASE_ID}`\n\
              - Role: `{}`\n\
+             - Source input: `{}`\n\
              - Output: `{}`\n\
              - Sample rate: `{SAMPLE_RATE}`\n\
              - Channels: `{CHANNEL_COUNT}`\n\
@@ -275,6 +404,7 @@ fn write_metrics_markdown(
              - RMS: `{:.6}`\n\
              - Sum: `{:.6}`\n",
             args.role.label(),
+            args.source_input_label(),
             args.output_path.display(),
             args.duration_seconds,
             metrics.active_samples,
@@ -300,6 +430,9 @@ mod tests {
                 duration_seconds: DEFAULT_DURATION_SECONDS,
                 date: DEFAULT_DATE.to_string(),
                 role: RenderRole::Candidate,
+                source_path: None,
+                source_start_seconds: DEFAULT_SOURCE_START_SECONDS,
+                source_duration_seconds: DEFAULT_SOURCE_DURATION_SECONDS,
                 show_help: false,
             }
         );
@@ -315,6 +448,12 @@ mod tests {
                 "2026-04-26".to_string(),
                 "--role".to_string(),
                 "baseline".to_string(),
+                "--source".to_string(),
+                "data/test_audio/examples/DH_BeatC_120-01.wav".to_string(),
+                "--source-start-seconds".to_string(),
+                "0.25".to_string(),
+                "--source-duration-seconds".to_string(),
+                "0.75".to_string(),
                 "--duration-seconds".to_string(),
                 "0.5".to_string(),
             ])
@@ -324,6 +463,11 @@ mod tests {
                 duration_seconds: 0.5,
                 date: "2026-04-26".to_string(),
                 role: RenderRole::Baseline,
+                source_path: Some(PathBuf::from(
+                    "data/test_audio/examples/DH_BeatC_120-01.wav"
+                )),
+                source_start_seconds: 0.25,
+                source_duration_seconds: 0.75,
                 show_help: false,
             }
         );
@@ -349,6 +493,24 @@ mod tests {
     #[test]
     fn rejects_unknown_roles() {
         assert!(Args::parse(["--role".to_string(), "review".to_string()]).is_err());
+    }
+
+    #[test]
+    fn rejects_invalid_source_window_seconds() {
+        assert!(Args::parse(["--source-start-seconds".to_string(), "-0.1".to_string()]).is_err());
+        assert!(Args::parse(["--source-duration-seconds".to_string(), "0".to_string()]).is_err());
+    }
+
+    #[test]
+    fn averages_interleaved_source_frames_into_preview() {
+        let preview =
+            source_preview_from_interleaved(&[1.0, 3.0, 5.0, 7.0], 2, 10, 12).expect("preview");
+
+        assert_eq!(preview.source_start_frame, 10);
+        assert_eq!(preview.source_end_frame, 12);
+        assert_eq!(preview.sample_count, 2);
+        assert_eq!(preview.samples[0], 2.0);
+        assert_eq!(preview.samples[1], 6.0);
     }
 
     #[test]
