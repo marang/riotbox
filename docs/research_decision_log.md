@@ -1155,3 +1155,14 @@ Why: the feral addendum asks for hook-response rules instead of hook doubling. M
 Evidence: `riotbox-app` projects chorus/hook context to `Mc202HookResponse::AnswerSpace`, `riotbox-audio` renders answer-space with lower density and offbeat offsets, and the lane recipe pack proves `mc202-direct-to-hook-response` differs from direct follower drive with signal delta RMS `0.008681` and RMS delta `0.004777`.
 Consequences: future source-aware phrase scoring can refine which sections are hook-like, but it should keep using the typed hook-response seam rather than hiding hook restraint in ad hoc phrase substitution.
 Status: accepted
+
+---
+
+Topic: MC-202 recipe QA should replay the musician flow, not only isolated pairs
+Phase: MC-202 MVP / Audio QA
+Question: after individual MC-202 gestures have output proofs, what is the smallest test that proves the documented recipe path works as a sequence?
+Decision: add an app-level recipe replay regression that queues and commits follower, answer, pressure, instigator, phrase mutation, and touch adjustment, then renders each landed `Mc202RenderState` through the audio seam and compares successive buffers.
+Why: isolated pair tests can pass while the musician-facing flow still breaks through ordering, queue/commit state, or render projection drift. A bounded replay test catches sequence-level regressions without requiring full TUI automation or realtime device capture.
+Evidence: `mc202_recipe_replay_proves_control_and_audio_path` verifies queue/commit state, landed render modes/shapes, non-silent MC-202 buffers, and signal-delta thresholds across the current Recipe 2 gesture chain.
+Consequences: broader recipe replay and observer correlation should build from this pattern: drive the same actions a musician performs, assert the control path, then prove the nearest audio seam changed.
+Status: accepted
