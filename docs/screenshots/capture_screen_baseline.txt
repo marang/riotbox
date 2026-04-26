@@ -28,7 +28,7 @@
 │                                    ││                           ││                      ││                           │
 └────────────────────────────────────┘└───────────────────────────┘└──────────────────────┘└───────────────────────────┘
 ┌Footer────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | r re-ingest source     │
+│Keys: q quit | ? help | 1-4 screens | Tab switch | i inspect | space play/pause | [ ] drum | r re-ingest              │
 │Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | p promote capture | v pin latest | u undo │
 │Status: ingested source into Jam shell | audio unknown | sidecar unknown                                              │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘

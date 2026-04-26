@@ -26,7 +26,7 @@
 │                                    ││                           ││                      ││                           │
 └────────────────────────────────────┘└───────────────────────────┘└──────────────────────┘└───────────────────────────┘
 ┌Footer────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | space play/pause | r re-ingest source    │
+│Keys: q quit | ? help | 1-4 screens | Tab switch | i inspect | space play/pause | [ ] drum | r re-ingest             │
 │Actions: m mutate scene | b 202 role | g 202 follower | f 909 fill | d 909 reinforce | t 909 takeover | x 909 release│
 │| c capture phrase                                                                                                    │
 │p promote capture | l W-30 recall | v pin latest | u undo                                                             │
