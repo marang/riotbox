@@ -1375,11 +1375,29 @@ fn scene_jump_primary_label(shell: &JamShellState) -> &'static str {
 
 fn footer_keys_line(inspect_key_label: &str, refresh_verb: &str) -> Line<'static> {
     let legend = format!(
-        "q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | {inspect_key_label} | space play/pause | [ ] drum | r {refresh_verb}",
+        "q quit | ? help | 1-4 screens | Tab switch | {} | space play/pause | [ ] drum | r {}",
+        compact_inspect_key_label(inspect_key_label),
+        compact_refresh_verb(refresh_verb),
     );
     let mut spans = vec![Span::raw("Keys: ")];
     spans.extend(spans_with_primary_legend_keys(&legend));
     Line::from(spans)
+}
+
+fn compact_inspect_key_label(inspect_key_label: &str) -> &str {
+    match inspect_key_label {
+        "i jam inspect" => "i inspect",
+        "i return to perform" => "i perform",
+        _ => inspect_key_label,
+    }
+}
+
+fn compact_refresh_verb(refresh_verb: &str) -> &str {
+    match refresh_verb {
+        "re-ingest source" => "re-ingest",
+        "reload session" => "reload",
+        _ => refresh_verb,
+    }
 }
 
 fn footer_primary_line(gestures: &str) -> Line<'static> {
@@ -4527,22 +4545,39 @@ mod tests {
 
         assert_eq!(
             rendered,
-            "Keys: q quit | ? help | 1 jam | 2 log | 3 source | 4 capture | Tab switch | i jam inspect | space play/pause | [ ] drum | r re-ingest source"
+            "Keys: q quit | ? help | 1-4 screens | Tab switch | i inspect | space play/pause | [ ] drum | r re-ingest"
         );
         assert_eq!(line.spans[1].content.as_ref(), "q");
         assert_eq!(line.spans[1].style.fg, Some(Color::Cyan));
         assert_eq!(line.spans[4].content.as_ref(), "?");
         assert_eq!(line.spans[4].style.fg, Some(Color::Cyan));
-        assert_eq!(line.spans[19].content.as_ref(), "Tab");
+        assert_eq!(line.spans[7].content.as_ref(), "1-4");
+        assert_eq!(line.spans[7].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[10].content.as_ref(), "Tab");
+        assert_eq!(line.spans[10].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[13].content.as_ref(), "i");
+        assert_eq!(line.spans[13].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[16].content.as_ref(), "space");
+        assert_eq!(line.spans[16].style.fg, Some(Color::Cyan));
+        assert_eq!(line.spans[19].content.as_ref(), "[ ]");
         assert_eq!(line.spans[19].style.fg, Some(Color::Cyan));
-        assert_eq!(line.spans[22].content.as_ref(), "i");
+        assert_eq!(line.spans[22].content.as_ref(), "r");
         assert_eq!(line.spans[22].style.fg, Some(Color::Cyan));
-        assert_eq!(line.spans[25].content.as_ref(), "space");
-        assert_eq!(line.spans[25].style.fg, Some(Color::Cyan));
-        assert_eq!(line.spans[28].content.as_ref(), "[ ]");
-        assert_eq!(line.spans[28].style.fg, Some(Color::Cyan));
-        assert_eq!(line.spans[31].content.as_ref(), "r");
-        assert_eq!(line.spans[31].style.fg, Some(Color::Cyan));
+    }
+
+    #[test]
+    fn footer_keys_line_compacts_load_mode_labels() {
+        let line = footer_keys_line("i return to perform", "reload session");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(
+            rendered,
+            "Keys: q quit | ? help | 1-4 screens | Tab switch | i perform | space play/pause | [ ] drum | r reload"
+        );
     }
 
     #[test]

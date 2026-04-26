@@ -93,6 +93,7 @@ It must expose:
 - readable at a glance
 - safe for live use
 - not flooded by low-level parameters
+- keep always-visible footer copy compact; detailed key explanations belong in Help
 
 ### 5.2 Jam regions
 
