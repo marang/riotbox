@@ -7,7 +7,7 @@ Ticket: `RIOTBOX-299`
 
 This pack is the first local audio-output harness for documented Jam routines outside the W-30 source-preview path.
 
-It exists because the routine audit showed that W-30 now has source-vs-fallback proof, while TR-909, Scene Brain, and MC-202 still needed clearer audio-output accounting. The current pack now includes TR-909, Scene-coupled TR-909, and a first offline MC-202 follower-vs-answer render case.
+It exists because the routine audit showed that W-30 now has source-vs-fallback proof, while TR-909, Scene Brain, and MC-202 still needed clearer audio-output accounting. The current pack now includes TR-909, Scene-coupled TR-909, and explicit offline MC-202 render cases for follower-vs-answer, touch energy, and phrase mutation.
 
 ## Command
 
@@ -34,6 +34,11 @@ Each case writes:
 - `baseline.metrics.md`
 - `candidate.metrics.md`
 - `comparison.md`
+
+Each comparison checks both:
+
+- normal RMS difference between the two rendered files
+- sample-by-sample signal delta RMS, so a phrase change with similar loudness cannot silently collapse into the same fallback output
 
 The pack root also writes:
 
@@ -68,12 +73,20 @@ Current cases:
   - baseline: follower drive
   - candidate: answer hook
   - covers the first explicit MC-202 offline audio contrast for Recipe 2 and Recipe 5
+- `mc202-touch-low-to-high`
+  - baseline: follower drive with low touch
+  - candidate: the same follower phrase with high touch
+  - covers the `<` / `>` touch-energy gesture from Recipe 2
+- `mc202-follower-to-mutated-drive`
+  - baseline: follower drive
+  - candidate: mutated drive
+  - covers the `G` phrase-mutation gesture from Recipe 2
 
 ## Current Limits
 
 This is not yet a full performance-recorder or TUI replay harness.
 
-MC-202 now has a bounded offline render case in this pack. It proves that follower and answer shapes can be rendered and compared as audio artifacts. It does not yet mean the live TUI callback mixes a finished MC-202 synth lane.
+MC-202 now has bounded offline render cases in this pack. They prove that follower/answer, touch, and mutated phrase shapes can be rendered and compared as audio artifacts. They do not mean the live TUI callback mixes a finished MC-202 synth engine or source-aware bassline.
 
 Scene Brain is represented only through the existing TR-909 `scene_target` support-accent seam. This proves the bounded accent, not a finished Scene transition engine.
 

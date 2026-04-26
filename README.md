@@ -32,6 +32,7 @@ If that first loop works, do not keep repeating only it. Move straight to:
 
 - [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 2` to compare different first gestures
 - [`docs/jam_recipes.md`](docs/jam_recipes.md) `Recipe 5` to compare different example sources
+- [`docs/benchmarks/lane_recipe_listening_pack_2026-04-26.md`](docs/benchmarks/lane_recipe_listening_pack_2026-04-26.md) if you want offline WAV proof for the current TR-909 and MC-202 recipe contrasts
 
 ## What To Expect Right Now
 
