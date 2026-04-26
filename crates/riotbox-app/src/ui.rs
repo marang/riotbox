@@ -663,10 +663,8 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         Line::from(next_action_line(shell)),
         Line::from(scene_pending_line(shell)),
         Line::from(latest_landed_line(shell)),
-        Line::from(
-            queued_timing_rail_line(shell)
-                .unwrap_or_else(|| format!("status {}", shell.status_message)),
-        ),
+        queued_timing_rail_line(shell)
+            .unwrap_or_else(|| Line::from(format!("status {}", shell.status_message))),
     ])
     .block(Block::default().title("Next").borders(Borders::ALL))
     .wrap(Wrap { trim: true });
@@ -3175,18 +3173,23 @@ fn landed_scene_energy_delta(shell: &JamShellState, command: &str) -> Option<&'s
     )
 }
 
-fn scene_commit_pulse_line(shell: &JamShellState) -> Option<String> {
+fn scene_commit_pulse_line(shell: &JamShellState) -> Option<Line<'static>> {
     pending_scene_transition(shell)?;
     let transport = &shell.app.runtime.transport;
     let countdown = scene_countdown_cue(transport.beat_index);
 
-    Some(format!(
-        "pulse {countdown} b{} | b{} | p{}",
-        transport.beat_index, transport.bar_index, transport.phrase_index
+    Some(timing_rail_line(
+        "pulse",
+        countdown,
+        None,
+        format!(
+            "b{} | b{} | p{}",
+            transport.beat_index, transport.bar_index, transport.phrase_index
+        ),
     ))
 }
 
-fn queued_timing_rail_line(shell: &JamShellState) -> Option<String> {
+fn queued_timing_rail_line(shell: &JamShellState) -> Option<Line<'static>> {
     if let Some(scene_line) = scene_commit_pulse_line(shell) {
         return Some(scene_line);
     }
@@ -3200,13 +3203,49 @@ fn queued_timing_rail_line(shell: &JamShellState) -> Option<String> {
         transport.bar_index,
     );
 
-    Some(format!(
-        "wait {countdown} {} | b{} | bar{} | p{}",
-        quantization_boundary_label(action.quantization),
-        transport.beat_index,
-        transport.bar_index,
-        transport.phrase_index
+    Some(timing_rail_line(
+        "wait",
+        countdown,
+        Some(quantization_boundary_label(action.quantization)),
+        format!(
+            "| b{} | bar{} | p{}",
+            transport.beat_index, transport.bar_index, transport.phrase_index
+        ),
     ))
+}
+
+fn timing_rail_line(
+    prefix: &'static str,
+    countdown: String,
+    boundary: Option<&'static str>,
+    tail: String,
+) -> Line<'static> {
+    let mut spans = vec![
+        Span::styled(format!("{prefix} "), Style::default().fg(Color::DarkGray)),
+        Span::styled(
+            countdown,
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ),
+    ];
+
+    if let Some(boundary) = boundary {
+        spans.push(Span::styled(" ", Style::default().fg(Color::DarkGray)));
+        spans.push(Span::styled(
+            boundary,
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        ));
+    }
+
+    spans.push(Span::styled(
+        format!(" {tail}"),
+        Style::default().fg(Color::DarkGray),
+    ));
+
+    Line::from(spans)
 }
 
 fn scene_countdown_cue(beat_index: u64) -> String {
@@ -5343,6 +5382,76 @@ mod tests {
             quantization_countdown_cue(Quantization::NextPhrase, 32, 8),
             "[=======>]"
         );
+    }
+
+    #[test]
+    fn queued_timing_rail_styles_define_boundary_hierarchy() {
+        let shell = sample_shell_state();
+        let line = queued_timing_rail_line(&shell).expect("queued timing rail");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "wait [===>] next bar | b32 | bar8 | p1");
+        assert_eq!(line.spans[0].content.as_ref(), "wait ");
+        assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
+        assert_eq!(line.spans[1].content.as_ref(), "[===>]");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
+        assert!(
+            line.spans[1].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[3].content.as_ref(), "next bar");
+        assert_eq!(line.spans[3].style.fg, Some(Color::Yellow));
+        assert!(
+            line.spans[3].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[4].style.fg, Some(Color::DarkGray));
+    }
+
+    #[test]
+    fn queued_scene_timing_rail_styles_pulse_hierarchy() {
+        let sample_shell = sample_shell_state();
+        let mut session = sample_shell.app.session.clone();
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(
+                session,
+                sample_shell.app.source_graph.clone(),
+                ActionQueue::new(),
+            ),
+            ShellLaunchMode::Load,
+        );
+        assert_eq!(
+            shell.app.queue_scene_select(300),
+            crate::jam_app::QueueControlResult::Enqueued
+        );
+
+        let line = queued_timing_rail_line(&shell).expect("scene timing rail");
+        let rendered = line
+            .spans
+            .iter()
+            .map(|span| span.content.as_ref())
+            .collect::<String>();
+
+        assert_eq!(rendered, "pulse [===>] b32 | b8 | p1");
+        assert_eq!(line.spans[0].content.as_ref(), "pulse ");
+        assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
+        assert_eq!(line.spans[1].content.as_ref(), "[===>]");
+        assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
+        assert!(
+            line.spans[1].style.add_modifier.contains(Modifier::BOLD),
+            "{line:?}"
+        );
+        assert_eq!(line.spans[2].style.fg, Some(Color::DarkGray));
     }
 
     #[test]
