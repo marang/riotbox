@@ -12,6 +12,7 @@
     "expected_phrase_variation": "phrase_lift",
     "expected_source_support_profile": "drop_drive",
     "expected_source_support_context": "transport_bar",
+    "expected_support_accent": "off fallback",
     "expected_takeover_profile": null
   },
   {
@@ -27,6 +28,7 @@
     "expected_phrase_variation": "phrase_release",
     "expected_source_support_profile": "drop_drive",
     "expected_source_support_context": "transport_bar",
+    "expected_support_accent": "off fallback",
     "expected_takeover_profile": null
   },
   {
@@ -43,6 +45,7 @@
     "expected_phrase_variation": "phrase_drive",
     "expected_source_support_profile": "break_lift",
     "expected_source_support_context": "scene_target",
+    "expected_support_accent": "scene",
     "expected_takeover_profile": null
   },
   {
@@ -58,6 +61,7 @@
     "expected_phrase_variation": "phrase_lift",
     "expected_source_support_profile": null,
     "expected_source_support_context": null,
+    "expected_support_accent": "off",
     "expected_takeover_profile": "controlled_phrase"
   },
   {
@@ -73,6 +77,7 @@
     "expected_phrase_variation": "phrase_drive",
     "expected_source_support_profile": null,
     "expected_source_support_context": null,
+    "expected_support_accent": "off",
     "expected_takeover_profile": "scene_lock"
   },
   {
@@ -88,6 +93,7 @@
     "expected_phrase_variation": "phrase_drive",
     "expected_source_support_profile": null,
     "expected_source_support_context": null,
+    "expected_support_accent": "off",
     "expected_takeover_profile": null
   },
   {
@@ -103,6 +109,7 @@
     "expected_phrase_variation": "phrase_lift",
     "expected_source_support_profile": null,
     "expected_source_support_context": null,
+    "expected_support_accent": "off",
     "expected_takeover_profile": null
   }
 ]

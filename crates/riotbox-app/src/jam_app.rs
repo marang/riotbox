@@ -1286,6 +1286,7 @@ mod tests {
         expected_phrase_variation: Option<String>,
         expected_source_support_profile: Option<String>,
         expected_source_support_context: Option<String>,
+        expected_support_accent: String,
         expected_takeover_profile: Option<String>,
     }
 
@@ -6008,6 +6009,11 @@ mod tests {
                     .map(|context| context.label().to_string()),
                 fixture.expected_source_support_context,
                 "{} support context drifted",
+                fixture.name
+            );
+            assert_eq!(
+                state.runtime_view.tr909_render_support_accent, fixture.expected_support_accent,
+                "{} support accent drifted",
                 fixture.name
             );
             assert_eq!(
