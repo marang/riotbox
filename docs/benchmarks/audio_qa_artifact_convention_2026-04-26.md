@@ -80,6 +80,15 @@ cargo run -p riotbox-audio --bin w30_preview_render -- \
 
 `--date` and `--role` derive the convention path. `--out PATH` remains available for ad hoc renders that should not use this directory shape.
 
+Compare the resulting sibling metrics files:
+
+```bash
+cargo run -p riotbox-audio --bin w30_preview_compare -- \
+  --date 2026-04-26
+```
+
+The comparison helper is a local metrics drift check only. It does not compare waveforms, promote baselines, or create a CI gate.
+
 ## Current Limits
 
 - There is no automated baseline lookup.

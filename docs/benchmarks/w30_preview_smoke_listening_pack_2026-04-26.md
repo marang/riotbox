@@ -9,6 +9,7 @@ Related:
 - `docs/specs/audio_qa_workflow_spec.md`
 - `docs/benchmarks/audio_qa_artifact_convention_2026-04-26.md`
 - `cargo run -p riotbox-audio --bin w30_preview_render`
+- `cargo run -p riotbox-audio --bin w30_preview_compare`
 
 ## Purpose
 
@@ -21,6 +22,7 @@ It gives agents and humans one stable case ID, output path, command, and note sh
 - Pack ID: `w30-preview-smoke`
 - Case ID: `raw_capture_source_window_preview`
 - Render helper: `cargo run -p riotbox-audio --bin w30_preview_render`
+- Metrics comparison helper: `cargo run -p riotbox-audio --bin w30_preview_compare`
 - Render type: deterministic local candidate WAV
 - Review type: manual listening plus sibling metrics
 - CI status: local-only, not a CI gate
@@ -65,6 +67,19 @@ cargo run -p riotbox-audio --bin w30_preview_render -- \
 ```
 
 Use `--out PATH` only when you need to override the convention path for an ad hoc render.
+
+## Compare Command
+
+After rendering both baseline and candidate metrics for the same date, compare their metric deltas:
+
+```bash
+cargo run -p riotbox-audio --bin w30_preview_compare -- \
+  --date 2026-04-26
+```
+
+The comparison helper reads `baseline.metrics.md` and `candidate.metrics.md` from the convention path, prints active-sample / peak / RMS / sum deltas, and exits non-zero when the default drift limits are exceeded. This is a narrow local metrics helper, not a waveform diff or listening-pack CI gate.
+
+Use `--max-active-samples-delta`, `--max-peak-delta`, `--max-rms-delta`, or `--max-sum-delta` when a local branch intentionally changes the smoke render and you want to inspect bounded drift instead of requiring an exact match.
 
 ## Notes Template
 

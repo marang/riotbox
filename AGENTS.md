@@ -353,6 +353,7 @@ just clippy
 just mem-status
 just mem-search "replay truth"
 cargo run -p riotbox-audio --bin w30_preview_render
+cargo run -p riotbox-audio --bin w30_preview_compare
 scripts/linear_issue_delete.sh RIOTBOX-123
 ```
 

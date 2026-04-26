@@ -410,12 +410,14 @@ Today the repo already has:
 - an initial local-only W-30 preview render helper that writes one deterministic source-window smoke WAV plus sibling Markdown metrics
 - an initial W-30 preview smoke listening-pack convention under `docs/benchmarks/`
 - an initial local baseline-vs-candidate audio artifact convention under `docs/benchmarks/`
+- an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics
 
 Today the repo does not yet have a full official workflow for:
 
 - general deterministic offline WAV render generation across fixture packs
 - generated listening packs beyond the first W-30 preview smoke convention
 - automated baseline vs candidate WAV comparison
+- automated waveform or perceptual audio comparison
 - a standard listening rubric stored with benchmark artifacts
 
 Those gaps should be treated as near-term QA work, not optional polish.
