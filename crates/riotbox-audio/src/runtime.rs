@@ -848,6 +848,7 @@ fn mc202_mode_to_u32(mode: Mc202RenderMode) -> u32 {
         Mc202RenderMode::Leader => 1,
         Mc202RenderMode::Follower => 2,
         Mc202RenderMode::Answer => 3,
+        Mc202RenderMode::Pressure => 4,
     }
 }
 
@@ -856,6 +857,7 @@ fn mc202_mode_from_u32(value: u32) -> Mc202RenderMode {
         1 => Mc202RenderMode::Leader,
         2 => Mc202RenderMode::Follower,
         3 => Mc202RenderMode::Answer,
+        4 => Mc202RenderMode::Pressure,
         _ => Mc202RenderMode::Idle,
     }
 }
@@ -880,6 +882,7 @@ fn mc202_phrase_shape_to_u32(shape: Mc202PhraseShape) -> u32 {
         Mc202PhraseShape::FollowerDrive => 1,
         Mc202PhraseShape::AnswerHook => 2,
         Mc202PhraseShape::MutatedDrive => 3,
+        Mc202PhraseShape::PressureCell => 4,
     }
 }
 
@@ -888,6 +891,7 @@ fn mc202_phrase_shape_from_u32(value: u32) -> Mc202PhraseShape {
         1 => Mc202PhraseShape::FollowerDrive,
         2 => Mc202PhraseShape::AnswerHook,
         3 => Mc202PhraseShape::MutatedDrive,
+        4 => Mc202PhraseShape::PressureCell,
         _ => Mc202PhraseShape::RootPulse,
     }
 }

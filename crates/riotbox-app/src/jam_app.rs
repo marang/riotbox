@@ -344,6 +344,7 @@ impl JamAppState {
                 ActionCommand::Mc202SetRole
                     | ActionCommand::Mc202GenerateFollower
                     | ActionCommand::Mc202GenerateAnswer
+                    | ActionCommand::Mc202GeneratePressure
                     | ActionCommand::Mc202MutatePhrase
             )
         })
@@ -457,6 +458,34 @@ impl JamAppState {
             target_id: Some("answer".into()),
         };
         draft.explanation = Some("generate MC-202 answer phrase on next phrase boundary".into());
+        self.queue.enqueue(draft, requested_at);
+        self.refresh_view();
+        QueueControlResult::Enqueued
+    }
+
+    pub fn queue_mc202_generate_pressure(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> QueueControlResult {
+        if self.mc202_phrase_control_pending() {
+            return QueueControlResult::AlreadyPending;
+        }
+
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::Mc202GeneratePressure,
+            Quantization::NextPhrase,
+            riotbox_core::action::ActionTarget {
+                scope: Some(TargetScope::LaneMc202),
+                object_id: Some("pressure".into()),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::Mutation {
+            intensity: 0.84,
+            target_id: Some("pressure".into()),
+        };
+        draft.explanation = Some("generate MC-202 pressure phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -3141,12 +3170,17 @@ mod tests {
             state.queue_mc202_mutate_phrase(302),
             QueueControlResult::AlreadyPending
         );
+        assert_eq!(
+            state.queue_mc202_generate_pressure(303),
+            QueueControlResult::AlreadyPending
+        );
 
         let pending = state.queue.pending_actions();
         assert_eq!(pending.len(), 1);
         assert_eq!(pending[0].command, ActionCommand::Mc202GenerateFollower);
         assert!(state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
     }
 
     #[test]
@@ -3169,6 +3203,34 @@ mod tests {
         assert_eq!(pending[0].command, ActionCommand::Mc202GenerateAnswer);
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(state.jam_view.lanes.mc202_pending_answer_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
+    }
+
+    #[test]
+    fn queueing_mc202_pressure_generation_blocks_duplicate_pending_actions() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_pressure(300),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            state.queue_mc202_generate_pressure(301),
+            QueueControlResult::AlreadyPending
+        );
+        assert_eq!(
+            state.queue_mc202_generate_answer(302),
+            QueueControlResult::AlreadyPending
+        );
+
+        let pending = state.queue.pending_actions();
+        assert_eq!(pending.len(), 1);
+        assert_eq!(pending[0].command, ActionCommand::Mc202GeneratePressure);
+        assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+        assert!(state.jam_view.lanes.mc202_pending_pressure_generation);
     }
 
     #[test]
@@ -3204,6 +3266,7 @@ mod tests {
         assert!(state.jam_view.lanes.mc202_pending_phrase_mutation);
         assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
         assert!(!state.jam_view.lanes.mc202_pending_answer_generation);
+        assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
     }
 
     #[test]
@@ -3249,16 +3312,30 @@ mod tests {
             QueueControlResult::AlreadyPending
         );
 
+        let mut pressure_state = JamAppState::from_parts(
+            sample_session(&graph),
+            Some(graph.clone()),
+            ActionQueue::new(),
+        );
+        assert_eq!(
+            pressure_state.queue_mc202_generate_pressure(306),
+            QueueControlResult::Enqueued
+        );
+        assert_eq!(
+            pressure_state.queue_mc202_generate_follower(307),
+            QueueControlResult::AlreadyPending
+        );
+
         let mut mutation_session = sample_session(&graph);
         mutation_session.runtime_state.lane_state.mc202.role = Some("follower".into());
         let mut mutation_state =
             JamAppState::from_parts(mutation_session, Some(graph), ActionQueue::new());
         assert_eq!(
-            mutation_state.queue_mc202_mutate_phrase(306),
+            mutation_state.queue_mc202_mutate_phrase(308),
             QueueControlResult::Enqueued
         );
         assert_eq!(
-            mutation_state.queue_mc202_generate_answer(307),
+            mutation_state.queue_mc202_generate_answer(309),
             QueueControlResult::AlreadyPending
         );
     }
@@ -5753,6 +5830,71 @@ mod tests {
                 .and_then(|action| action.result.as_ref())
                 .map(|result| result.summary.as_str()),
             Some("generated MC-202 answer phrase answer-scene-1 at 0.82")
+        );
+    }
+
+    #[test]
+    fn committed_mc202_pressure_generation_updates_phrase_ref_touch_and_render_shape() {
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+        assert_eq!(
+            state.queue_mc202_generate_pressure(300),
+            QueueControlResult::Enqueued
+        );
+
+        let committed = state.commit_ready_actions(
+            CommitBoundaryState {
+                kind: CommitBoundary::Phrase,
+                beat_index: 36,
+                bar_index: 9,
+                phrase_index: 2,
+                scene_id: Some(SceneId::from("scene-1")),
+            },
+            400,
+        );
+
+        assert_eq!(committed.len(), 1);
+        assert_eq!(
+            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            Some("pressure")
+        );
+        assert_eq!(
+            state
+                .session
+                .runtime_state
+                .lane_state
+                .mc202
+                .phrase_ref
+                .as_deref(),
+            Some("pressure-scene-1")
+        );
+        assert_eq!(state.session.runtime_state.macro_state.mc202_touch, 0.84);
+        assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Pressure);
+        assert_eq!(
+            state.runtime.mc202_render.phrase_shape,
+            Mc202PhraseShape::PressureCell
+        );
+        assert_eq!(
+            state.runtime.mc202_render.routing,
+            Mc202RenderRouting::MusicBusBass
+        );
+        assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("pressure"));
+        assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);
+        assert_eq!(
+            state.jam_view.lanes.mc202_phrase_ref.as_deref(),
+            Some("pressure-scene-1")
+        );
+        assert_eq!(
+            state
+                .session
+                .action_log
+                .actions
+                .last()
+                .and_then(|action| action.result.as_ref())
+                .map(|result| result.summary.as_str()),
+            Some("generated MC-202 pressure phrase pressure-scene-1 at 0.84")
         );
     }
 

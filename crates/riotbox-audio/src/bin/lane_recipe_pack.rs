@@ -295,6 +295,28 @@ fn pack_cases() -> Vec<PackCase> {
             note: "This proves the `<` / `>` touch gesture changes the same MC-202 phrase energy rather than only changing UI state.",
         },
         PackCase {
+            id: "mc202-follower-to-pressure",
+            title: "MC-202 follower -> pressure",
+            recipe_refs: "Recipe 2",
+            baseline_label: "follower drive",
+            candidate_label: "pressure cell",
+            render_pair: RenderPair::Mc202 {
+                baseline: mc202_state(
+                    Mc202RenderMode::Follower,
+                    Mc202PhraseShape::FollowerDrive,
+                    0.78,
+                ),
+                candidate: mc202_state(
+                    Mc202RenderMode::Pressure,
+                    Mc202PhraseShape::PressureCell,
+                    0.84,
+                ),
+            },
+            min_rms_delta: 0.0001,
+            min_signal_delta_rms: 0.004,
+            note: "This proves the `P` pressure gesture renders a sparse offbeat pressure cell instead of the follower drive pattern.",
+        },
+        PackCase {
             id: "mc202-follower-to-mutated-drive",
             title: "MC-202 follower -> mutated drive",
             recipe_refs: "Recipe 2",
@@ -581,7 +603,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, and phrase mutation. These cases prove bounded renderable contrasts for the current `g`, `a`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
+         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, and phrase mutation. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );
@@ -669,7 +691,7 @@ mod tests {
     fn pack_cases_produce_distinct_audio_metrics() {
         let cases = pack_cases();
 
-        assert_eq!(cases.len(), 6);
+        assert_eq!(cases.len(), 7);
         for case in cases {
             let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
             let baseline_metrics = signal_metrics(&baseline);

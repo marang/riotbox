@@ -147,6 +147,7 @@ pub(super) fn build_mc202_render_state(
     let (mode, phrase_shape) = match role {
         "leader" => (Mc202RenderMode::Leader, Mc202PhraseShape::RootPulse),
         "answer" => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
+        "pressure" => (Mc202RenderMode::Pressure, Mc202PhraseShape::PressureCell),
         "follower" => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
         _ => return Mc202RenderState::default(),
     };

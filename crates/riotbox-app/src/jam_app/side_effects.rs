@@ -407,6 +407,36 @@ pub(super) fn apply_mc202_side_effects(
                 });
             }
         }
+        ActionCommand::Mc202GeneratePressure => {
+            let role = "pressure";
+            let phrase_ref = boundary_phrase_ref(boundary, role);
+            let touch = match &action.params {
+                ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+                _ => 0.84,
+            };
+
+            session.runtime_state.lane_state.mc202.role = Some(role.into());
+            session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
+            session.runtime_state.lane_state.mc202.phrase_variant = None;
+            session.runtime_state.macro_state.mc202_touch =
+                session.runtime_state.macro_state.mc202_touch.max(touch);
+
+            if let Some(logged_action) = session
+                .action_log
+                .actions
+                .iter_mut()
+                .rev()
+                .find(|logged_action| logged_action.id == action.id)
+            {
+                logged_action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: format!(
+                        "generated MC-202 pressure phrase {phrase_ref} at {:.2}",
+                        session.runtime_state.macro_state.mc202_touch
+                    ),
+                });
+            }
+        }
         ActionCommand::Mc202MutatePhrase => {
             let current_role = session
                 .runtime_state

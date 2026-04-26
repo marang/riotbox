@@ -4,6 +4,7 @@ pub enum Mc202RenderMode {
     Leader,
     Follower,
     Answer,
+    Pressure,
 }
 
 impl Mc202RenderMode {
@@ -14,6 +15,7 @@ impl Mc202RenderMode {
             Self::Leader => "leader",
             Self::Follower => "follower",
             Self::Answer => "answer",
+            Self::Pressure => "pressure",
         }
     }
 }
@@ -40,6 +42,7 @@ pub enum Mc202PhraseShape {
     FollowerDrive,
     AnswerHook,
     MutatedDrive,
+    PressureCell,
 }
 
 impl Mc202PhraseShape {
@@ -50,6 +53,7 @@ impl Mc202PhraseShape {
             Self::FollowerDrive => "follower_drive",
             Self::AnswerHook => "answer_hook",
             Self::MutatedDrive => "mutated_drive",
+            Self::PressureCell => "pressure_cell",
         }
     }
 }
@@ -109,17 +113,16 @@ pub fn render_mc202_buffer(
             continue;
         };
 
-        let octave_drop = if matches!(render.mode, Mc202RenderMode::Follower) {
-            -12.0
-        } else {
-            -5.0
+        let octave_drop = match render.mode {
+            Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
+            _ => -5.0,
         };
         let frequency = 110.0_f64 * 2.0_f64.powf((semitone as f64 + octave_drop) / 12.0);
 
-        let gate_len = if matches!(render.phrase_shape, Mc202PhraseShape::AnswerHook) {
-            0.42
-        } else {
-            0.62
+        let gate_len = match render.phrase_shape {
+            Mc202PhraseShape::AnswerHook => 0.42,
+            Mc202PhraseShape::PressureCell => 0.50,
+            _ => 0.62,
         };
         if step_phase > gate_len {
             continue;
@@ -219,6 +222,24 @@ fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
             Some(5),
             Some(0),
             Some(15),
+        ],
+        Mc202PhraseShape::PressureCell => &[
+            None,
+            Some(0),
+            None,
+            Some(0),
+            None,
+            Some(7),
+            None,
+            Some(0),
+            Some(10),
+            None,
+            Some(7),
+            None,
+            None,
+            Some(5),
+            Some(7),
+            None,
         ],
     };
     pattern[sixteenth % pattern.len()]
@@ -382,6 +403,61 @@ mod tests {
         assert!(mutated_metrics.0 > 10_000);
         assert!(delta_rms > 0.005, "mutated phrase delta RMS {delta_rms}");
         assert!(max_delta > 0.02, "mutated phrase max delta {max_delta}");
+    }
+
+    #[test]
+    fn pressure_cell_differs_from_follower_drive() {
+        let mut follower = vec![0.0; 44_100 * 2];
+        let mut pressure = vec![0.0; 44_100 * 2];
+        let base = Mc202RenderState {
+            routing: Mc202RenderRouting::MusicBusBass,
+            touch: 0.84,
+            is_transport_running: true,
+            tempo_bpm: 128.0,
+            position_beats: 32.0,
+            ..Mc202RenderState::default()
+        };
+
+        render_mc202_buffer(
+            &mut follower,
+            44_100,
+            2,
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Follower,
+                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                ..base
+            },
+        );
+        render_mc202_buffer(
+            &mut pressure,
+            44_100,
+            2,
+            &Mc202RenderState {
+                mode: Mc202RenderMode::Pressure,
+                phrase_shape: Mc202PhraseShape::PressureCell,
+                ..base
+            },
+        );
+
+        let follower_metrics = metrics(&follower);
+        let pressure_metrics = metrics(&pressure);
+        let delta_rms = (follower
+            .iter()
+            .zip(pressure.iter())
+            .map(|(follower, pressure)| (follower - pressure).powi(2))
+            .sum::<f32>()
+            / follower.len() as f32)
+            .sqrt();
+        let max_delta = follower
+            .iter()
+            .zip(pressure.iter())
+            .map(|(follower, pressure)| (follower - pressure).abs())
+            .fold(0.0_f32, f32::max);
+
+        assert!(follower_metrics.0 > 10_000);
+        assert!(pressure_metrics.0 > 10_000);
+        assert!(delta_rms > 0.004, "pressure phrase delta RMS {delta_rms}");
+        assert!(max_delta > 0.02, "pressure phrase max delta {max_delta}");
     }
 
     #[test]
