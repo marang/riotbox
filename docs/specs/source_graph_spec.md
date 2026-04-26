@@ -326,6 +326,8 @@ Current bounded consumer:
   asset or supported `HookFragment`.
 - The selected capture must still be queued and committed through the normal
   W-30 action path.
+- TUI surfaces should preserve the reason in compact musician-facing language,
+  for example `feral browse cap-03`.
 - If the preferred capture changes audible preview material, the slice needs a
   downstream preview or buffer proof, not only a changed log line.
 
