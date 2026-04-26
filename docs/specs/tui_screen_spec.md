@@ -219,6 +219,13 @@ For Scene post-commit cues:
 - next-action key tokens should use the same cyan + bold treatment as other primary perform controls
 - labels and separators should stay low-emphasis so the cue reads as an instrument line, not as a diagnostic tuple
 
+For queued timing rails:
+
+- countdown glyphs such as `[===>]` may use yellow + bold as the active snap-point cue
+- boundary labels such as `next bar` or `next phrase` may use the same yellow + bold emphasis when the rail is waiting on that boundary
+- transport counters such as beat, bar, and phrase indices should stay low-emphasis context rather than competing with the snap point
+- this hierarchy does not imply new scheduler behavior or a separate timing visualization widget
+
 Do not use color as the only carrier of meaning. The text must still read correctly in monochrome snapshots and low-color terminals.
 
 ---
