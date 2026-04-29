@@ -201,10 +201,28 @@ struct ListeningPackManifest {
     source_start_seconds: f32,
     source_window_seconds: f32,
     artifacts: Vec<ManifestArtifact>,
+    feral_scorecard: ManifestFeralScorecard,
     thresholds: ManifestThresholds,
     metrics: ManifestPackMetrics,
     verification_command: String,
     result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestFeralScorecard {
+    readiness: &'static str,
+    break_rebuild_potential: &'static str,
+    hook_fragment_count: u32,
+    break_support_count: u32,
+    quote_risk_count: u32,
+    capture_candidate_count: u32,
+    top_reason: &'static str,
+    source_backed: bool,
+    generated: bool,
+    fallback_like: bool,
+    lane_gestures: [&'static str; 3],
+    material_sources: [&'static str; 3],
+    warnings: [&'static str; 1],
 }
 
 #[derive(Serialize)]

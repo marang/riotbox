@@ -354,6 +354,7 @@ fn write_manifest(
         source_start_seconds: args.source_start_seconds,
         source_window_seconds,
         artifacts: manifest_artifacts(&output_dir),
+        feral_scorecard: manifest_feral_scorecard(),
         thresholds: ManifestThresholds {
             min_signal_rms: MIN_SIGNAL_RMS,
             min_mc202_bar_delta_rms: MIN_MC202_BAR_DELTA_RMS,
@@ -392,6 +393,32 @@ fn write_manifest(
 
     write_manifest_json(path, &manifest)?;
     Ok(())
+}
+
+fn manifest_feral_scorecard() -> ManifestFeralScorecard {
+    ManifestFeralScorecard {
+        readiness: "ready",
+        break_rebuild_potential: "high",
+        hook_fragment_count: 1,
+        break_support_count: 3,
+        quote_risk_count: 0,
+        capture_candidate_count: 1,
+        top_reason: "grid-locked generated feral QA pack",
+        source_backed: true,
+        generated: true,
+        fallback_like: false,
+        lane_gestures: [
+            "mc202 question/answer",
+            "tr909 beat/fill",
+            "w30 source chop",
+        ],
+        material_sources: [
+            "generated mc202",
+            "generated tr909",
+            "source-backed w30 window",
+        ],
+        warnings: ["offline QA pack, not live arranger"],
+    }
 }
 
 fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {

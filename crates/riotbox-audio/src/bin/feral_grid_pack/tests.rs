@@ -161,6 +161,24 @@ mod tests {
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["bars"], 2);
+        assert_eq!(manifest["feral_scorecard"]["readiness"], "ready");
+        assert_eq!(
+            manifest["feral_scorecard"]["break_rebuild_potential"],
+            "high"
+        );
+        assert_eq!(manifest["feral_scorecard"]["source_backed"], true);
+        assert_eq!(manifest["feral_scorecard"]["fallback_like"], false);
+        assert_eq!(
+            manifest["feral_scorecard"]["top_reason"],
+            "grid-locked generated feral QA pack"
+        );
+        assert_eq!(
+            manifest["feral_scorecard"]["lane_gestures"]
+                .as_array()
+                .expect("lane gestures")
+                .len(),
+            3
+        );
         assert_manifest_f32(
             &manifest["thresholds"]["min_signal_rms"],
             MIN_SIGNAL_RMS,
