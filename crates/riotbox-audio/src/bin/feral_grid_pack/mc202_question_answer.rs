@@ -134,6 +134,7 @@ fn render_metrics(samples: &[f32], grid: &Grid) -> RenderMetrics {
             grid.beats_per_bar,
         ),
         bar_variation: bar_variation_metrics(samples, grid),
+        spectral_energy: spectral_energy_metrics(samples),
     }
 }
 
@@ -275,12 +276,12 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - Full mix low-band RMS: `{:.6}`\n\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
              - Result: `pass`\n\n\
-             | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run |\n\
-             | --- | ---: | ---: | ---: | ---: | ---: | ---: |\n\
-             | MC-202 question/answer | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} |\n\
-             | TR-909 beat/fill | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} |\n\
-             | W-30 Feral source chop | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} |\n\
-             | Full grid mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} |\n",
+             | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run | Low energy | Mid energy | High energy |\n\
+             | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n\
+             | MC-202 question/answer | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
+             | TR-909 beat/fill | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
+             | W-30 Feral source chop | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
+             | Full grid mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n",
             args.source_path.display(),
             grid.bpm,
             grid.bars,
@@ -296,24 +297,36 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             report.mc202.signal.active_samples,
             report.mc202.bar_variation.bar_similarity,
             report.mc202.bar_variation.identical_bar_run_length,
+            report.mc202.spectral_energy.low_band_energy_ratio,
+            report.mc202.spectral_energy.mid_band_energy_ratio,
+            report.mc202.spectral_energy.high_band_energy_ratio,
             report.tr909.signal.rms,
             report.tr909.signal.peak_abs,
             report.tr909.low_band.rms,
             report.tr909.signal.active_samples,
             report.tr909.bar_variation.bar_similarity,
             report.tr909.bar_variation.identical_bar_run_length,
+            report.tr909.spectral_energy.low_band_energy_ratio,
+            report.tr909.spectral_energy.mid_band_energy_ratio,
+            report.tr909.spectral_energy.high_band_energy_ratio,
             report.w30.signal.rms,
             report.w30.signal.peak_abs,
             report.w30.low_band.rms,
             report.w30.signal.active_samples,
             report.w30.bar_variation.bar_similarity,
             report.w30.bar_variation.identical_bar_run_length,
+            report.w30.spectral_energy.low_band_energy_ratio,
+            report.w30.spectral_energy.mid_band_energy_ratio,
+            report.w30.spectral_energy.high_band_energy_ratio,
             report.full_mix.signal.rms,
             report.full_mix.signal.peak_abs,
             report.full_mix.low_band.rms,
             report.full_mix.signal.active_samples,
             report.full_mix.bar_variation.bar_similarity,
-            report.full_mix.bar_variation.identical_bar_run_length
+            report.full_mix.bar_variation.identical_bar_run_length,
+            report.full_mix.spectral_energy.low_band_energy_ratio,
+            report.full_mix.spectral_energy.mid_band_energy_ratio,
+            report.full_mix.spectral_energy.high_band_energy_ratio
         ),
     )
 }
@@ -356,6 +369,12 @@ fn write_manifest(
                 tr909_beat_fill: report.tr909.bar_variation,
                 w30_feral_source_chop: report.w30.bar_variation,
                 full_grid_mix: report.full_mix.bar_variation,
+            },
+            spectral_energy: ManifestSpectralEnergyMetrics {
+                mc202_question_answer: report.mc202.spectral_energy,
+                tr909_beat_fill: report.tr909.spectral_energy,
+                w30_feral_source_chop: report.w30.spectral_energy,
+                full_grid_mix: report.full_mix.spectral_energy,
             },
             mc202_question_answer_delta: report.mc202_question_answer_delta.into(),
         },
