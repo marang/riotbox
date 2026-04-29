@@ -1,12 +1,12 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
     ids::CaptureId,
+    replay::derive_scene_movement_state,
     session::{
-        Mc202PhraseVariantState, SceneMovementDirectionState, SceneMovementKindState,
-        SceneMovementLaneIntentState, SceneMovementState, SessionFile, Tr909ReinforcementModeState,
+        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
         Tr909TakeoverProfileState, W30PreviewModeState,
     },
-    source_graph::{EnergyClass, SourceGraph, section_for_projected_scene},
+    source_graph::SourceGraph,
     transport::CommitBoundaryState,
 };
 

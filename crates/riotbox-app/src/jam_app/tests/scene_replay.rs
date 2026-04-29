@@ -1,5 +1,5 @@
 #[test]
-fn scene_replay_executor_updates_downstream_projection_without_movement_hydration() {
+fn graph_aware_scene_replay_matches_committed_movement_projection() {
     let graph = scene_regression_graph(&["drop".into(), "break".into()]);
     let mut session = sample_session(&graph);
     session.runtime_state.transport.position_beats = 32.0;
@@ -40,6 +40,7 @@ fn scene_replay_executor_updates_downstream_projection_without_movement_hydratio
         360,
     );
     assert_eq!(committed.len(), 1);
+    let committed_scene = render_scene_recipe_mix_buffer(&committed_state);
 
     let plan = riotbox_core::replay::build_committed_replay_plan(
         &committed_state.session.action_log,
@@ -47,8 +48,12 @@ fn scene_replay_executor_updates_downstream_projection_without_movement_hydratio
     .expect("committed scene action log builds replay plan");
     let mut replayed_session = base_session;
     replayed_session.action_log = committed_state.session.action_log.clone();
-    let report = riotbox_core::replay::apply_replay_plan_to_session(&mut replayed_session, &plan)
-        .expect("Scene replay executor applies launch subset");
+    let report = riotbox_core::replay::apply_graph_aware_replay_plan_to_session(
+        &mut replayed_session,
+        &plan,
+        &graph,
+    )
+    .expect("graph-aware Scene replay applies launch subset");
     let replayed_state = JamAppState::from_parts(replayed_session, Some(graph), ActionQueue::new());
     let replayed_scene = render_scene_recipe_mix_buffer(&replayed_state);
 
@@ -79,8 +84,21 @@ fn scene_replay_executor_updates_downstream_projection_without_movement_hydratio
     );
     assert_eq!(
         replayed_state.session.runtime_state.scene_state.last_movement,
-        None,
-        "core replay intentionally does not hydrate graph-derived scene movement yet"
+        committed_state.session.runtime_state.scene_state.last_movement
+    );
+    assert_eq!(
+        replayed_state.runtime.tr909_render,
+        committed_state.runtime.tr909_render
+    );
+    assert_eq!(
+        replayed_state.runtime.mc202_render,
+        committed_state.runtime.mc202_render
+    );
+    assert_recipe_buffers_match(
+        "graph-aware scene replay -> committed scene movement",
+        &replayed_scene,
+        &committed_scene,
+        0.00001,
     );
     assert_recipe_buffers_differ(
         "scene replay projected output leaves previous scene",

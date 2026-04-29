@@ -1,11 +1,16 @@
 use std::cmp::Ordering;
 
 mod executor;
+mod scene_movement;
 mod summary;
 
 pub use executor::{
     ReplayExecutionError, ReplayExecutionReport, apply_replay_entry_to_session,
     apply_replay_plan_to_session, replay_supported_action_commands,
+};
+pub use scene_movement::{
+    apply_graph_aware_replay_plan_to_session, derive_scene_movement_for_replay_entry,
+    derive_scene_movement_state,
 };
 pub use summary::{
     LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary,

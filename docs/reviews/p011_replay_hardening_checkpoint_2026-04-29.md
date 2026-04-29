@@ -1,7 +1,7 @@
 # P011 Replay Hardening Checkpoint
 
 Date: 2026-04-29
-Scope: P011 Pro Hardening replay / restore / QA-gate work after RIOTBOX-426 through RIOTBOX-449.
+Scope: P011 Pro Hardening replay / restore / QA-gate work after RIOTBOX-426 through RIOTBOX-461.
 
 ## Verdict
 
@@ -20,7 +20,7 @@ The restore spine is now substantially safer than it was at P011 entry:
 
 This is enough to treat commit-record metadata as a serious replay seam. It is not enough to claim full deterministic replay, crash recovery, or stage-run hardening.
 
-After RIOTBOX-445 through RIOTBOX-449, P011 also has bounded evidence for stage-style audio QA, latest-snapshot replay planning, partial-session failure behavior, and offline-render reproducibility. These are real hardening gains, but most remain summary-level or smoke-level gates. They should narrow the next work, not be mistaken for full replay execution, full crash recovery, or full export.
+After RIOTBOX-445 through RIOTBOX-461, P011 also has bounded evidence for stage-style audio QA, latest-snapshot replay planning, partial-session failure behavior, offline-render reproducibility, and graph-aware Scene movement replay. These are real hardening gains, but most remain command-family or smoke-level gates. They should narrow the next work, not be mistaken for full replay execution, full crash recovery, or full export.
 
 ## Evidence
 
@@ -34,7 +34,7 @@ After RIOTBOX-445 through RIOTBOX-449, P011 also has bounded evidence for stage-
 - Stage-style Jam probe adds a longer generated W-30 source-diff output plus observer/audio correlation gate: `scripts/validate_stage_style_jam_probe.sh`.
 - Partial-session load regression proves truncated JSON fails explicitly and leaves adjacent valid session data loadable: `crates/riotbox-core/src/persistence.rs`.
 - Offline-render reproducibility smoke proves a deterministic source-backed W-30 render emits byte-stable WAV output: `scripts/validate_offline_render_reproducibility.sh`.
-- MC-202, TR-909, the first W-30 cue, and the first active/restore Scene replay executor slices now include app-level render or preview checks, proving replayed state feeds downstream audible projection for those bounded action families.
+- MC-202, TR-909, the first W-30 cue, and the first Scene launch/restore replay slices now include app-level render or preview checks, proving replayed state feeds downstream audible projection for those bounded action families.
 
 ## What Is Now Strong
 
@@ -49,14 +49,14 @@ After RIOTBOX-445 through RIOTBOX-449, P011 also has bounded evidence for stage-
 ## Remaining P011 Gaps
 
 - **Full replay runner is not implemented**: Riotbox still hydrates from persisted runtime state plus validation rather than replaying every action from origin into a reconstructed state.
-- **Snapshot convergence is partially execution-proven**: current helpers prove selected anchor and suffix scope. The safe structural replay subset, MC-202 phrase-family subset, first TR-909 support-move subset, first W-30 cue subset, and first active/restore Scene subset now compare origin replay against materialized anchor-plus-suffix replay. Real snapshot payload hydration, graph-derived Scene movement hydration, and broader W-30 / scene replay are still open.
+- **Snapshot convergence is partially execution-proven**: current helpers prove selected anchor and suffix scope. The safe structural replay subset, MC-202 phrase-family subset, first TR-909 support-move subset, first W-30 cue subset, and first Scene launch/restore subset now compare origin replay against materialized anchor-plus-suffix replay. Graph-aware Scene movement hydration now exists for the launch/restore subset. Real snapshot payload hydration and broader W-30 / scene replay are still open.
 - **Crash recovery is bounded, not complete**: saves are serialize-then-temp-rename and truncated JSON fails safely. MVP policy rejects hidden automatic repair, and a non-mutating scanner plus app-facing manual recovery surface can now report canonical, orphan-temp, and autosave candidates with validation status and trust hints. There is still no interactive guided TUI fallback prompt, automatic fallback selection, journal, or interrupted multi-file recovery.
 - **Export reproducibility is only a smoke gate**: current evidence proves one deterministic offline W-30 render is byte-stable, not full arrangement export, stems, recording, or manifest normalization.
 - **Long-run/stage-run hardening is still bounded**: `just stage-style-jam-probe` is a longer CI probe, not a soak test or extended live-session simulation.
 
 ## Recommended Next Slices
 
-1. Continue expanding replay-from-origin vs latest-snapshot convergence one replay-safe musical action family at a time, with output-path proof where audible state is affected. MC-202 phrase replay, the first TR-909 support-move family, the first W-30 cue subset, and the first active/restore Scene subset are now covered; W-30 artifact-producing behavior and graph-derived Scene movement hydration remain open.
+1. Continue expanding replay-from-origin vs latest-snapshot convergence one replay-safe musical action family at a time, with output-path proof where audible state is affected. MC-202 phrase replay, the first TR-909 support-move family, the first W-30 cue subset, and graph-aware Scene launch/restore movement replay are now covered; W-30 artifact-producing behavior and broader Scene behavior remain open.
 2. Add an interactive guided TUI/manual recovery prompt on top of the existing recovery surface without adding automatic fallback selection.
 3. Keep replay executor expansion command-bounded; do not jump from MC-202 phrase replay to full lexicon replay without family-level convergence and output proof.
 4. Expand stage-style QA only where it catches new risk: multi-boundary observer fixtures, longer action sequences, or real user-session observer correlation.
