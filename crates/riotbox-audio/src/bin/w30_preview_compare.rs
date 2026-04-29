@@ -4,6 +4,12 @@ use std::{
     process,
 };
 
+use serde::Serialize;
+
+use riotbox_audio::listening_manifest::{
+    ListeningPackArtifact as ManifestArtifact, write_manifest_json,
+};
+
 const DEFAULT_DATE: &str = "local";
 const PACK_ID: &str = "w30-preview-smoke";
 const CASE_ID: &str = "raw_capture_source_window_preview";
@@ -35,6 +41,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     println!("{rendered_report}");
     write_report_markdown(&args.report_path, &rendered_report)?;
     println!("wrote {}", args.report_path.display());
+    write_manifest(&args, baseline, candidate, &report)?;
+    println!(
+        "wrote {}",
+        manifest_path_for_report_path(&args.report_path).display()
+    );
 
     if report.has_failures() {
         process::exit(2);
@@ -52,7 +63,7 @@ struct Args {
     show_help: bool,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 struct DriftLimits {
     min_active_samples_delta: usize,
     max_active_samples_delta: usize,
@@ -216,8 +227,9 @@ fn print_help() {
            --max-sum-delta FLOAT\n\
          \n\
          Compares W-30 preview smoke baseline and candidate metrics Markdown files\n\
-         from the local audio QA artifact convention. This is a narrow metrics\n\
-         helper, not a waveform diff or listening-pack gate."
+         from the local audio QA artifact convention, writes comparison.md and\n\
+         manifest.json, and verifies that referenced local artifacts exist. This\n\
+         is still a narrow metrics helper, not a waveform diff."
     );
 }
 
@@ -241,8 +253,34 @@ fn convention_report_path(date: &str) -> PathBuf {
     path
 }
 
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Serialize)]
 struct SmokeMetrics {
+    active_samples: usize,
+    peak_abs: f64,
+    rms: f64,
+    sum: f64,
+}
+
+#[derive(Serialize)]
+struct W30PreviewSmokeManifest {
+    schema_version: u32,
+    pack_id: &'static str,
+    case_id: &'static str,
+    artifacts: Vec<ManifestArtifact>,
+    limits: DriftLimits,
+    metrics: ManifestMetrics,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestMetrics {
+    baseline: SmokeMetrics,
+    candidate: SmokeMetrics,
+    deltas: ManifestMetricDeltas,
+}
+
+#[derive(Serialize)]
+struct ManifestMetricDeltas {
     active_samples: usize,
     peak_abs: f64,
     rms: f64,
@@ -424,6 +462,106 @@ fn write_report_markdown(path: &Path, report: &str) -> std::io::Result<()> {
     fs::write(path, format!("{report}\n"))
 }
 
+fn write_manifest(
+    args: &Args,
+    baseline: SmokeMetrics,
+    candidate: SmokeMetrics,
+    report: &ComparisonReport,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let manifest_path = manifest_path_for_report_path(&args.report_path);
+    let artifacts = manifest_artifacts(
+        &args.baseline_metrics_path,
+        &args.candidate_metrics_path,
+        &args.report_path,
+    );
+    ensure_manifest_artifacts_exist(&artifacts)?;
+
+    let manifest = W30PreviewSmokeManifest {
+        schema_version: 1,
+        pack_id: PACK_ID,
+        case_id: CASE_ID,
+        artifacts,
+        limits: args.limits,
+        metrics: ManifestMetrics {
+            baseline,
+            candidate,
+            deltas: ManifestMetricDeltas {
+                active_samples: report.active_samples.delta,
+                peak_abs: report.peak_abs.delta,
+                rms: report.rms.delta,
+                sum: report.sum.delta,
+            },
+        },
+        result: if report.has_failures() {
+            "fail"
+        } else {
+            "pass"
+        },
+    };
+
+    write_manifest_json(&manifest_path, &manifest)?;
+    Ok(())
+}
+
+fn manifest_path_for_report_path(report_path: &Path) -> PathBuf {
+    report_path.with_file_name("manifest.json")
+}
+
+fn manifest_artifacts(
+    baseline_metrics_path: &Path,
+    candidate_metrics_path: &Path,
+    report_path: &Path,
+) -> Vec<ManifestArtifact> {
+    let baseline_audio_path = audio_path_for_metrics_path(baseline_metrics_path);
+    let candidate_audio_path = audio_path_for_metrics_path(candidate_metrics_path);
+    vec![
+        ManifestArtifact::audio_wav(
+            "baseline",
+            &baseline_audio_path,
+            Some(baseline_metrics_path),
+        ),
+        ManifestArtifact::audio_wav(
+            "candidate",
+            &candidate_audio_path,
+            Some(candidate_metrics_path),
+        ),
+        ManifestArtifact::markdown_report("comparison", report_path),
+    ]
+}
+
+fn audio_path_for_metrics_path(metrics_path: &Path) -> PathBuf {
+    let mut audio_path = metrics_path.to_path_buf();
+    let stem = metrics_path
+        .file_stem()
+        .and_then(|stem| stem.to_str())
+        .and_then(|stem| stem.strip_suffix(".metrics").or(Some(stem)))
+        .unwrap_or("audio");
+    audio_path.set_file_name(format!("{stem}.wav"));
+    audio_path
+}
+
+fn ensure_manifest_artifacts_exist(
+    artifacts: &[ManifestArtifact],
+) -> Result<(), Box<dyn std::error::Error>> {
+    for artifact in artifacts {
+        let path = Path::new(&artifact.path);
+        if !path.is_file() {
+            return Err(format!("manifest artifact does not exist: {}", path.display()).into());
+        }
+        if let Some(metrics_path) = artifact.metrics_path.as_deref() {
+            let metrics_path = Path::new(metrics_path);
+            if !metrics_path.is_file() {
+                return Err(format!(
+                    "manifest metrics artifact does not exist: {}",
+                    metrics_path.display()
+                )
+                .into());
+            }
+        }
+    }
+    Ok(())
+}
+
 const fn status_label(passed: bool) -> &'static str {
     if passed { "ok" } else { "drift" }
 }
@@ -536,6 +674,14 @@ mod tests {
             PathBuf::from(
                 "artifacts/audio_qa/2026-04-26/w30-preview-smoke/raw_capture_source_window_preview/comparison.md",
             )
+        );
+    }
+
+    #[test]
+    fn derives_audio_path_from_metrics_path() {
+        assert_eq!(
+            audio_path_for_metrics_path(Path::new("out/baseline.metrics.md")),
+            PathBuf::from("out/baseline.wav")
         );
     }
 
@@ -656,5 +802,85 @@ mod tests {
         };
 
         assert!(compare_metrics(&baseline, &candidate, &DriftLimits::default()).has_failures());
+    }
+
+    #[test]
+    fn writes_manifest_for_existing_smoke_artifacts() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let case_dir = temp.path().join(CASE_ID);
+        fs::create_dir_all(&case_dir).expect("case dir");
+        let baseline_metrics_path = case_dir.join("baseline.metrics.md");
+        let candidate_metrics_path = case_dir.join("candidate.metrics.md");
+        let report_path = case_dir.join("comparison.md");
+        fs::write(case_dir.join("baseline.wav"), b"baseline").expect("baseline wav");
+        fs::write(case_dir.join("candidate.wav"), b"candidate").expect("candidate wav");
+        fs::write(&baseline_metrics_path, METRICS_MARKDOWN).expect("baseline metrics");
+        fs::write(
+            &candidate_metrics_path,
+            METRICS_MARKDOWN.replace("candidate", "baseline"),
+        )
+        .expect("candidate metrics");
+
+        let args = Args {
+            baseline_metrics_path,
+            candidate_metrics_path,
+            report_path,
+            limits: DriftLimits::default(),
+            show_help: false,
+        };
+        let baseline = SmokeMetrics::read_from_path(&args.baseline_metrics_path).expect("baseline");
+        let candidate =
+            SmokeMetrics::read_from_path(&args.candidate_metrics_path).expect("candidate");
+        let report = compare_metrics(&baseline, &candidate, &args.limits);
+        write_report_markdown(
+            &args.report_path,
+            &render_report(
+                &args.baseline_metrics_path,
+                &args.candidate_metrics_path,
+                &report,
+            ),
+        )
+        .expect("report");
+
+        write_manifest(&args, baseline, candidate, &report).expect("manifest");
+
+        let manifest =
+            fs::read_to_string(manifest_path_for_report_path(&args.report_path)).expect("manifest");
+        let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
+        assert_eq!(manifest["schema_version"], 1);
+        assert_eq!(manifest["pack_id"], PACK_ID);
+        assert_eq!(manifest["case_id"], CASE_ID);
+        assert_eq!(manifest["result"], "pass");
+        assert_eq!(
+            manifest["artifacts"].as_array().expect("artifacts").len(),
+            3
+        );
+        assert_eq!(manifest["metrics"]["baseline"]["rms"], 0.038331);
+        assert_eq!(manifest["metrics"]["deltas"]["rms"], 0.0);
+    }
+
+    #[test]
+    fn manifest_rejects_missing_audio_artifacts() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let case_dir = temp.path().join(CASE_ID);
+        fs::create_dir_all(&case_dir).expect("case dir");
+        let baseline_metrics_path = case_dir.join("baseline.metrics.md");
+        let candidate_metrics_path = case_dir.join("candidate.metrics.md");
+        let report_path = case_dir.join("comparison.md");
+        fs::write(&baseline_metrics_path, METRICS_MARKDOWN).expect("baseline metrics");
+        fs::write(&candidate_metrics_path, METRICS_MARKDOWN).expect("candidate metrics");
+        fs::write(&report_path, "comparison").expect("report");
+
+        let args = Args {
+            baseline_metrics_path,
+            candidate_metrics_path,
+            report_path,
+            limits: DriftLimits::default(),
+            show_help: false,
+        };
+        let metrics = SmokeMetrics::read_from_path(&args.baseline_metrics_path).expect("metrics");
+        let report = compare_metrics(&metrics, &metrics, &args.limits);
+
+        assert!(write_manifest(&args, metrics, metrics, &report).is_err());
     }
 }
