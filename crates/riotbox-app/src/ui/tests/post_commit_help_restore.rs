@@ -340,7 +340,11 @@ fn renders_help_overlay_with_capture_path_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("hear ... stored means [p] promote, then [w] hit"),
+        rendered.contains("src means source-backed; fallback is safe preview"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("hear fallback: [o] raw, then [p]->[w]"),
         "{rendered}"
     );
     assert!(
@@ -438,4 +442,3 @@ fn renders_jam_shell_with_restore_ready_cue() {
         "{rendered}"
     );
 }
-
