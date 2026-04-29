@@ -141,6 +141,13 @@ fn strict_evidence_rejects_missing_output_metrics() {
     let error = validate_required_evidence(&summary).expect_err("missing output evidence");
 
     assert!(error.to_string().contains("output-path manifest evidence"));
+    assert!(error.to_string().contains("full_mix_rms=missing"));
+    assert!(error.to_string().contains("full_mix_low_band_rms=missing"));
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_question_answer_delta_rms=missing")
+    );
 }
 
 #[test]
@@ -155,6 +162,8 @@ fn strict_evidence_rejects_collapsed_output_metrics() {
     let error = validate_required_evidence(&summary).expect_err("collapsed output evidence");
 
     assert!(error.to_string().contains("output-path manifest evidence"));
+    assert!(error.to_string().contains("full_mix_rms=0.000000"));
+    assert!(error.to_string().contains("floor 0.000001"));
 }
 
 fn synthetic_observer() -> String {
