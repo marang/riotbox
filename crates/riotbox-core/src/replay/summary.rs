@@ -1,7 +1,10 @@
 use crate::{
     action::ActionCommand,
     ids::ActionId,
-    replay::{ReplayPlanError, ReplayTargetPlan, build_replay_target_plan},
+    replay::{
+        ReplayPlanEntry, ReplayPlanError, ReplayTargetPlan, build_replay_target_plan,
+        replay_supported_action_commands,
+    },
     session::{ActionLog, Snapshot},
 };
 
@@ -15,6 +18,12 @@ pub struct ReplayTargetDryRunSummary {
     pub anchor_action_cursor: Option<usize>,
     pub suffix_action_ids: Vec<ActionId>,
     pub suffix_commands: Vec<ActionCommand>,
+    pub origin_unsupported_action_count: usize,
+    pub origin_unsupported_action_ids: Vec<ActionId>,
+    pub origin_unsupported_commands: Vec<ActionCommand>,
+    pub suffix_unsupported_action_count: usize,
+    pub suffix_unsupported_action_ids: Vec<ActionId>,
+    pub suffix_unsupported_commands: Vec<ActionCommand>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -36,12 +45,23 @@ pub struct LatestSnapshotReplayConvergenceSummary {
     pub needs_full_replay: bool,
     pub suffix_action_ids: Vec<ActionId>,
     pub suffix_commands: Vec<ActionCommand>,
+    /// Unsupported committed entries in the full origin plan.
+    pub origin_unsupported_action_count: usize,
+    pub origin_unsupported_action_ids: Vec<ActionId>,
+    pub origin_unsupported_commands: Vec<ActionCommand>,
+    /// Unsupported committed entries that would be replayed after the selected anchor.
+    pub suffix_unsupported_action_count: usize,
+    pub suffix_unsupported_action_ids: Vec<ActionId>,
+    pub suffix_unsupported_commands: Vec<ActionCommand>,
 }
 
 #[must_use]
 pub fn build_replay_target_dry_run_summary(
     plan: &ReplayTargetPlan<'_>,
 ) -> ReplayTargetDryRunSummary {
+    let origin_unsupported = unsupported_replay_entries(&plan.origin);
+    let suffix_unsupported = unsupported_replay_entries(&plan.suffix);
+
     ReplayTargetDryRunSummary {
         target_action_cursor: plan.target_action_cursor,
         origin_action_count: plan.origin.len(),
@@ -54,6 +74,24 @@ pub fn build_replay_target_dry_run_summary(
         suffix_action_ids: plan.suffix.iter().map(|entry| entry.action.id).collect(),
         suffix_commands: plan
             .suffix
+            .iter()
+            .map(|entry| entry.action.command)
+            .collect(),
+        origin_unsupported_action_count: origin_unsupported.len(),
+        origin_unsupported_action_ids: origin_unsupported
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect(),
+        origin_unsupported_commands: origin_unsupported
+            .iter()
+            .map(|entry| entry.action.command)
+            .collect(),
+        suffix_unsupported_action_count: suffix_unsupported.len(),
+        suffix_unsupported_action_ids: suffix_unsupported
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect(),
+        suffix_unsupported_commands: suffix_unsupported
             .iter()
             .map(|entry| entry.action.command)
             .collect(),
@@ -80,7 +118,22 @@ pub fn build_latest_snapshot_replay_convergence_summary(
         needs_full_replay: plan.anchor.is_none() && !plan.origin.is_empty(),
         suffix_action_ids: dry_run_summary.suffix_action_ids,
         suffix_commands: dry_run_summary.suffix_commands,
+        origin_unsupported_action_count: dry_run_summary.origin_unsupported_action_count,
+        origin_unsupported_action_ids: dry_run_summary.origin_unsupported_action_ids,
+        origin_unsupported_commands: dry_run_summary.origin_unsupported_commands,
+        suffix_unsupported_action_count: dry_run_summary.suffix_unsupported_action_count,
+        suffix_unsupported_action_ids: dry_run_summary.suffix_unsupported_action_ids,
+        suffix_unsupported_commands: dry_run_summary.suffix_unsupported_commands,
     })
+}
+
+fn unsupported_replay_entries<'a>(entries: &[ReplayPlanEntry<'a>]) -> Vec<ReplayPlanEntry<'a>> {
+    let supported = replay_supported_action_commands();
+    entries
+        .iter()
+        .filter(|entry| !supported.contains(&entry.action.command))
+        .cloned()
+        .collect()
 }
 
 #[cfg(test)]
@@ -283,6 +336,40 @@ mod tests {
                 ActionCommand::Tr909FillNext,
                 ActionCommand::Mc202GenerateAnswer
             ]
+        );
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_reports_unsupported_replay_commands() {
+        let mut action_log = action_log();
+        action_log
+            .actions
+            .push(action(4, ActionCommand::W30LoopFreeze, 400));
+        action_log
+            .commit_records
+            .push(commit_record(4, 16, 4, 1, 400));
+        let snapshots = vec![snapshot("snap-before-artifact", 3)];
+
+        let summary = build_latest_snapshot_replay_convergence_summary(&action_log, &snapshots)
+            .expect("valid convergence summary");
+
+        assert_eq!(summary.origin_action_count, 4);
+        assert_eq!(summary.origin_replay_entry_count, 4);
+        assert_eq!(summary.origin_unsupported_action_count, 2);
+        assert_eq!(
+            summary.origin_unsupported_action_ids,
+            vec![ActionId(1), ActionId(4)]
+        );
+        assert_eq!(
+            summary.origin_unsupported_commands,
+            vec![ActionCommand::MutateScene, ActionCommand::W30LoopFreeze]
+        );
+        assert_eq!(summary.suffix_action_count, 1);
+        assert_eq!(summary.suffix_unsupported_action_count, 1);
+        assert_eq!(summary.suffix_unsupported_action_ids, vec![ActionId(4)]);
+        assert_eq!(
+            summary.suffix_unsupported_commands,
+            vec![ActionCommand::W30LoopFreeze]
         );
     }
 
