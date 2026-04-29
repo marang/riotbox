@@ -7,7 +7,7 @@ use serde::Serialize;
 
 use riotbox_audio::{
     listening_manifest::{
-        ListeningPackArtifact as ManifestArtifact,
+        LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
         ListeningPackRenderMetrics as ManifestRenderMetrics,
         ListeningPackSignalMetrics as ManifestSignalMetrics, write_manifest_json,
     },
@@ -712,7 +712,7 @@ fn write_manifest(
     let output_dir = args.output_dir();
     let source_window_seconds = args.source_window_seconds.min(grid.duration_seconds());
     let manifest = ListeningPackManifest {
-        schema_version: 1,
+        schema_version: LISTENING_MANIFEST_SCHEMA_VERSION,
         pack_id: PACK_ID,
         source: args.source_path.display().to_string(),
         sample_rate: SAMPLE_RATE,
@@ -948,7 +948,10 @@ mod tests {
     }
 
     fn assert_manifest_smoke_gate(manifest: &serde_json::Value, output_dir: &Path) {
-        assert_eq!(manifest["schema_version"], 1);
+        assert_eq!(
+            manifest["schema_version"],
+            LISTENING_MANIFEST_SCHEMA_VERSION
+        );
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["bars"], 2);

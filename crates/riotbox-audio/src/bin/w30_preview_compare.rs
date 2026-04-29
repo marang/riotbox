@@ -7,7 +7,8 @@ use std::{
 use serde::Serialize;
 
 use riotbox_audio::listening_manifest::{
-    ListeningPackArtifact as ManifestArtifact, write_manifest_json,
+    LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
+    write_manifest_json,
 };
 
 const DEFAULT_DATE: &str = "local";
@@ -477,7 +478,7 @@ fn write_manifest(
     ensure_manifest_artifacts_exist(&artifacts)?;
 
     let manifest = W30PreviewSmokeManifest {
-        schema_version: 1,
+        schema_version: LISTENING_MANIFEST_SCHEMA_VERSION,
         pack_id: PACK_ID,
         case_id: CASE_ID,
         artifacts,
@@ -847,7 +848,10 @@ mod tests {
         let manifest =
             fs::read_to_string(manifest_path_for_report_path(&args.report_path)).expect("manifest");
         let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
-        assert_eq!(manifest["schema_version"], 1);
+        assert_eq!(
+            manifest["schema_version"],
+            LISTENING_MANIFEST_SCHEMA_VERSION
+        );
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["case_id"], CASE_ID);
         assert_eq!(manifest["result"], "pass");

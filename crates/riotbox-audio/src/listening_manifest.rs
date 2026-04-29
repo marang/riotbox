@@ -4,6 +4,15 @@ use serde::Serialize;
 
 use crate::runtime::OfflineAudioMetrics;
 
+/// Current local audio QA manifest schema version.
+///
+/// Version 1 freezes the stable top-level contract shared by all generated
+/// Riotbox audio QA manifests: `schema_version`, `pack_id`, `artifacts`, and
+/// `result`. Pack-specific fields such as thresholds, metrics, source windows,
+/// grid settings, and case details may vary while the local pack conventions are
+/// still evolving.
+pub const LISTENING_MANIFEST_SCHEMA_VERSION: u32 = 1;
+
 #[derive(Clone, Debug, PartialEq, Serialize)]
 pub struct ListeningPackArtifact {
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -93,6 +102,11 @@ pub fn write_manifest_json(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn current_schema_version_stays_at_v1_until_the_contract_changes() {
+        assert_eq!(LISTENING_MANIFEST_SCHEMA_VERSION, 1);
+    }
 
     #[test]
     fn artifact_without_case_id_omits_case_id_field() {
