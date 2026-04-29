@@ -121,6 +121,15 @@ fn source_backed_raw_capture_audition_compact_label_uses_src_cue() {
 
     assert_eq!(w30_preview_mode_profile_compact(&shell), "audition raw/src");
     assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
+
+    shell.active_screen = ShellScreen::Jam;
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("current preview audition raw/src"), "{rendered}");
+    assert!(
+        !rendered.contains("fallback: ["),
+        "source-backed W-30 preview should not show fallback action cue\n{rendered}"
+    );
 }
 
 #[test]
