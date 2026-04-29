@@ -344,7 +344,7 @@ fn renders_help_overlay_with_capture_path_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("hear fallback: [o] raw, then [p]->[w]"),
+        rendered.contains("hear src/fallback: [o] raw, [p] promote, [w] hit"),
         "{rendered}"
     );
     assert!(

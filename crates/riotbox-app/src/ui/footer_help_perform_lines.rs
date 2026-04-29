@@ -244,7 +244,7 @@ fn capture_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         Line::from("Capture path"),
         Line::from("Do Next: read capture -> promote -> hit"),
         line_with_primary_keys("src means source-backed; fallback is safe preview"),
-        line_with_primary_keys("hear fallback: [o] raw, then [p]->[w]"),
+        line_with_primary_keys("hear src/fallback: [o] raw, [p] promote, [w] hit"),
         line_with_primary_key_prefixes("2: confirm promote, hit, and audition results in Log"),
     ])
 }
