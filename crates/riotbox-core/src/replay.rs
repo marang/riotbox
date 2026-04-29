@@ -1,5 +1,9 @@
 use std::cmp::Ordering;
 
+mod summary;
+
+pub use summary::{ReplayTargetDryRunSummary, build_replay_target_dry_run_summary};
+
 use crate::{
     TimestampMs,
     action::{Action, ActionStatus, CommitBoundary},
