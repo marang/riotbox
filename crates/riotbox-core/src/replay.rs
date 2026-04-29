@@ -34,6 +34,10 @@ pub enum ReplayPlanError {
         action_cursor: usize,
         action_count: usize,
     },
+    ReplayTargetCursorOutOfBounds {
+        target_action_cursor: usize,
+        action_count: usize,
+    },
     CommittedAtMismatch {
         action_id: ActionId,
         record_committed_at: TimestampMs,
@@ -161,6 +165,47 @@ pub fn build_snapshot_replay_plan_comparison<'a>(
     })
 }
 
+pub fn select_replay_snapshot_anchor(
+    snapshots: &[Snapshot],
+    target_action_cursor: usize,
+    action_count: usize,
+) -> Result<Option<&Snapshot>, ReplayPlanError> {
+    if target_action_cursor > action_count {
+        return Err(ReplayPlanError::ReplayTargetCursorOutOfBounds {
+            target_action_cursor,
+            action_count,
+        });
+    }
+
+    let mut selected: Option<(usize, &Snapshot)> = None;
+    for (index, snapshot) in snapshots.iter().enumerate() {
+        if snapshot.action_cursor > action_count {
+            return Err(ReplayPlanError::SnapshotCursorOutOfBounds {
+                action_cursor: snapshot.action_cursor,
+                action_count,
+            });
+        }
+
+        if snapshot.action_cursor > target_action_cursor {
+            continue;
+        }
+
+        let should_select = match selected {
+            Some((selected_index, selected_snapshot)) => {
+                snapshot.action_cursor > selected_snapshot.action_cursor
+                    || (snapshot.action_cursor == selected_snapshot.action_cursor
+                        && index > selected_index)
+            }
+            None => true,
+        };
+        if should_select {
+            selected = Some((index, snapshot));
+        }
+    }
+
+    Ok(selected.map(|(_, snapshot)| snapshot))
+}
+
 fn compare_replay_entries(left: &ReplayPlanEntry<'_>, right: &ReplayPlanEntry<'_>) -> Ordering {
     compare_commit_records(left.commit_record, right.commit_record)
         .then_with(|| left.action.id.cmp(&right.action.id))
@@ -245,8 +290,12 @@ mod tests {
     }
 
     fn snapshot(action_cursor: usize) -> Snapshot {
+        snapshot_with_id("snapshot-1", action_cursor)
+    }
+
+    fn snapshot_with_id(snapshot_id: &str, action_cursor: usize) -> Snapshot {
         Snapshot {
-            snapshot_id: SnapshotId::from("snapshot-1"),
+            snapshot_id: SnapshotId::from(snapshot_id),
             created_at: "2026-04-29T19:00:00Z".into(),
             label: "test snapshot".into(),
             action_cursor,
@@ -474,6 +523,94 @@ mod tests {
             ReplayPlanError::SnapshotCursorOutOfBounds {
                 action_cursor: 2,
                 action_count: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn snapshot_anchor_selects_exact_target_cursor() {
+        let snapshots = vec![snapshot_with_id("snap-1", 1), snapshot_with_id("snap-3", 3)];
+
+        let selected =
+            select_replay_snapshot_anchor(&snapshots, 3, 4).expect("valid snapshot anchors");
+
+        assert_eq!(
+            selected.map(|snapshot| snapshot.snapshot_id.as_str()),
+            Some("snap-3")
+        );
+    }
+
+    #[test]
+    fn snapshot_anchor_selects_nearest_prior_cursor() {
+        let snapshots = vec![
+            snapshot_with_id("snap-1", 1),
+            snapshot_with_id("snap-2", 2),
+            snapshot_with_id("snap-5", 5),
+        ];
+
+        let selected =
+            select_replay_snapshot_anchor(&snapshots, 4, 5).expect("valid snapshot anchors");
+
+        assert_eq!(
+            selected.map(|snapshot| snapshot.snapshot_id.as_str()),
+            Some("snap-2")
+        );
+    }
+
+    #[test]
+    fn snapshot_anchor_prefers_latest_snapshot_for_same_cursor() {
+        let snapshots = vec![
+            snapshot_with_id("snap-2-a", 2),
+            snapshot_with_id("snap-2-b", 2),
+        ];
+
+        let selected =
+            select_replay_snapshot_anchor(&snapshots, 2, 2).expect("valid snapshot anchors");
+
+        assert_eq!(
+            selected.map(|snapshot| snapshot.snapshot_id.as_str()),
+            Some("snap-2-b")
+        );
+    }
+
+    #[test]
+    fn snapshot_anchor_returns_none_without_prior_snapshot() {
+        let snapshots = vec![snapshot_with_id("snap-2", 2)];
+
+        let selected =
+            select_replay_snapshot_anchor(&snapshots, 1, 2).expect("valid snapshot anchors");
+
+        assert!(selected.is_none());
+    }
+
+    #[test]
+    fn snapshot_anchor_rejects_snapshot_cursor_beyond_action_log() {
+        let snapshots = vec![snapshot_with_id("bad-snap", 3)];
+
+        let error =
+            select_replay_snapshot_anchor(&snapshots, 1, 2).expect_err("anchor should fail");
+
+        assert_eq!(
+            error,
+            ReplayPlanError::SnapshotCursorOutOfBounds {
+                action_cursor: 3,
+                action_count: 2,
+            }
+        );
+    }
+
+    #[test]
+    fn snapshot_anchor_rejects_target_cursor_beyond_action_log() {
+        let snapshots = vec![snapshot_with_id("snap-1", 1)];
+
+        let error =
+            select_replay_snapshot_anchor(&snapshots, 3, 2).expect_err("anchor should fail");
+
+        assert_eq!(
+            error,
+            ReplayPlanError::ReplayTargetCursorOutOfBounds {
+                target_action_cursor: 3,
+                action_count: 2,
             }
         );
     }
