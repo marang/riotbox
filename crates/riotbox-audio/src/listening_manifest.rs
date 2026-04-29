@@ -115,6 +115,66 @@ pub fn write_manifest_json(
     Ok(())
 }
 
+pub fn validate_manifest_envelope(manifest: &serde_json::Value) -> Result<(), String> {
+    if manifest["schema_version"].as_u64() != Some(u64::from(LISTENING_MANIFEST_SCHEMA_VERSION)) {
+        return Err("manifest schema_version must match current listening manifest schema".into());
+    }
+
+    require_non_empty_string(manifest, "pack_id")?;
+
+    match manifest["result"].as_str() {
+        Some("pass" | "fail") => {}
+        _ => return Err("manifest result must be pass or fail".into()),
+    }
+
+    let artifacts = manifest["artifacts"]
+        .as_array()
+        .ok_or_else(|| "manifest artifacts must be an array".to_string())?;
+    if artifacts.is_empty() {
+        return Err("manifest artifacts must not be empty".into());
+    }
+
+    for (index, artifact) in artifacts.iter().enumerate() {
+        require_artifact_string(artifact, index, "role")?;
+        require_artifact_string(artifact, index, "kind")?;
+        require_artifact_string(artifact, index, "path")?;
+
+        if !artifact["metrics_path"].is_null() && artifact["metrics_path"].as_str().is_none() {
+            return Err(format!(
+                "manifest artifact {index} metrics_path must be null or a string"
+            ));
+        }
+
+        if !artifact["case_id"].is_null() && artifact["case_id"].as_str().is_none() {
+            return Err(format!(
+                "manifest artifact {index} case_id must be null or a string"
+            ));
+        }
+    }
+
+    Ok(())
+}
+
+fn require_non_empty_string(manifest: &serde_json::Value, field: &str) -> Result<(), String> {
+    match manifest[field].as_str() {
+        Some(value) if !value.trim().is_empty() => Ok(()),
+        _ => Err(format!("manifest {field} must be a non-empty string")),
+    }
+}
+
+fn require_artifact_string(
+    artifact: &serde_json::Value,
+    index: usize,
+    field: &str,
+) -> Result<(), String> {
+    match artifact[field].as_str() {
+        Some(value) if !value.trim().is_empty() => Ok(()),
+        _ => Err(format!(
+            "manifest artifact {index} {field} must be a non-empty string"
+        )),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -155,5 +215,61 @@ mod tests {
         assert_eq!(json["role"], "comparison");
         assert_eq!(json["kind"], "markdown_report");
         assert_eq!(json["metrics_path"], serde_json::Value::Null);
+    }
+
+    #[test]
+    fn manifest_envelope_accepts_current_producer_shapes() {
+        for manifest in [
+            minimal_manifest("w30-preview-smoke", "baseline", None),
+            minimal_manifest(
+                "lane-recipe-listening-pack",
+                "candidate",
+                Some("mc202-answer"),
+            ),
+            minimal_manifest("feral-before-after", "riotbox_after", None),
+            minimal_manifest("feral-grid-demo", "full_grid_mix", None),
+        ] {
+            validate_manifest_envelope(&manifest).expect("valid manifest envelope");
+        }
+    }
+
+    #[test]
+    fn manifest_envelope_rejects_missing_stable_fields() {
+        let mut manifest = minimal_manifest("feral-grid-demo", "full_grid_mix", None);
+        manifest["pack_id"] = serde_json::Value::Null;
+
+        let error = validate_manifest_envelope(&manifest).expect_err("missing pack id");
+
+        assert!(error.contains("pack_id"));
+    }
+
+    #[test]
+    fn manifest_envelope_rejects_invalid_artifact_records() {
+        let mut manifest = minimal_manifest("feral-grid-demo", "full_grid_mix", None);
+        manifest["artifacts"][0]["metrics_path"] = serde_json::json!(42);
+
+        let error = validate_manifest_envelope(&manifest).expect_err("invalid metrics path");
+
+        assert!(error.contains("metrics_path"));
+    }
+
+    fn minimal_manifest(
+        pack_id: &'static str,
+        artifact_role: &'static str,
+        case_id: Option<&'static str>,
+    ) -> serde_json::Value {
+        serde_json::json!({
+            "schema_version": LISTENING_MANIFEST_SCHEMA_VERSION,
+            "pack_id": pack_id,
+            "result": "pass",
+            "artifacts": [{
+                "case_id": case_id,
+                "role": artifact_role,
+                "kind": "audio_wav",
+                "path": format!("out/{artifact_role}.wav"),
+                "metrics_path": format!("out/{artifact_role}.metrics.md")
+            }],
+            "metrics": {}
+        })
     }
 }
