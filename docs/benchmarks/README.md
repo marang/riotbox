@@ -22,6 +22,8 @@ Current benchmark artifacts:
   Local human listening-review template for `notes.md` files beside generated audio QA artifacts.
 - [observer_audio_correlation_template_2026-04-29.md](./observer_audio_correlation_template_2026-04-29.md)
   Local template for correlating `riotbox-app --observer` control-path evidence with generated audio QA `manifest.json` output evidence, with an optional generated Markdown summary helper.
+- [observer_audio_summary_json_contract_2026-04-29.md](./observer_audio_summary_json_contract_2026-04-29.md)
+  Schema marker and compatibility contract for `observer_audio_correlate --json` summaries.
 - [listening_manifest_schema_policy_2026-04-29.md](./listening_manifest_schema_policy_2026-04-29.md)
   Schema version and compatibility policy for local audio QA `manifest.json` files.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
