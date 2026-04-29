@@ -76,6 +76,18 @@ mod tests {
     }
 
     #[test]
+    fn spectral_energy_metrics_distinguish_low_and_high_content() {
+        let low = tone_samples(80.0, SAMPLE_RATE as usize / 2);
+        let high = tone_samples(4_200.0, SAMPLE_RATE as usize / 2);
+
+        let low_metrics = spectral_energy_metrics(&low);
+        let high_metrics = spectral_energy_metrics(&high);
+
+        assert!(low_metrics.low_band_energy_ratio > high_metrics.low_band_energy_ratio);
+        assert!(high_metrics.high_band_energy_ratio > low_metrics.high_band_energy_ratio);
+    }
+
+    #[test]
     fn renders_grid_pack_files_and_noncollapsed_audio() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source_path = temp.path().join("source.wav");
@@ -246,6 +258,15 @@ mod tests {
                 .expect("identical bar run")
                 >= 1
         );
+        let spectral = &manifest["metrics"]["spectral_energy"]["full_grid_mix"];
+        let spectral_sum = spectral["low_band_energy_ratio"]
+            .as_f64()
+            .expect("low energy")
+            + spectral["mid_band_energy_ratio"].as_f64().expect("mid energy")
+            + spectral["high_band_energy_ratio"]
+                .as_f64()
+                .expect("high energy");
+        assert!((spectral_sum - 1.0).abs() < 0.000_001);
     }
 
     fn assert_manifest_artifact(
@@ -319,6 +340,17 @@ mod tests {
                 samples.push(sample);
                 samples.push(sample);
             }
+        }
+        samples
+    }
+
+    fn tone_samples(frequency_hz: f32, frame_count: usize) -> Vec<f32> {
+        let mut samples = Vec::with_capacity(frame_count * usize::from(CHANNEL_COUNT));
+        for frame in 0..frame_count {
+            let phase = frame as f32 / SAMPLE_RATE as f32;
+            let sample = (phase * frequency_hz * std::f32::consts::TAU).sin() * 0.5;
+            samples.push(sample);
+            samples.push(sample);
         }
         samples
     }

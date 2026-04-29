@@ -173,6 +173,7 @@ struct RenderMetrics {
     signal: OfflineAudioMetrics,
     low_band: OfflineAudioMetrics,
     bar_variation: BarVariationMetrics,
+    spectral_energy: SpectralEnergyMetrics,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -220,6 +221,7 @@ struct ManifestPackMetrics {
     w30_feral_source_chop: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
     bar_variation: ManifestBarVariationMetrics,
+    spectral_energy: ManifestSpectralEnergyMetrics,
     mc202_question_answer_delta: ManifestSignalMetrics,
 }
 
@@ -229,6 +231,14 @@ struct ManifestBarVariationMetrics {
     tr909_beat_fill: BarVariationMetrics,
     w30_feral_source_chop: BarVariationMetrics,
     full_grid_mix: BarVariationMetrics,
+}
+
+#[derive(Serialize)]
+struct ManifestSpectralEnergyMetrics {
+    mc202_question_answer: SpectralEnergyMetrics,
+    tr909_beat_fill: SpectralEnergyMetrics,
+    w30_feral_source_chop: SpectralEnergyMetrics,
+    full_grid_mix: SpectralEnergyMetrics,
 }
 
 fn print_help() {
