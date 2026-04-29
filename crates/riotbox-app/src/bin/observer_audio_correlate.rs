@@ -6,6 +6,8 @@ use std::{
 use riotbox_audio::listening_manifest::validate_manifest_envelope;
 use serde_json::Value;
 
+const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
     if args.show_help {
@@ -294,9 +296,13 @@ fn control_path_present(summary: &CorrelationSummary) -> bool {
 
 fn output_path_present(summary: &CorrelationSummary) -> bool {
     summary.manifest_result == "pass"
-        && summary.full_mix_rms.is_some()
-        && summary.full_mix_low_band_rms.is_some()
-        && summary.mc202_question_answer_delta_rms.is_some()
+        && metric_is_noncollapsed(summary.full_mix_rms)
+        && metric_is_noncollapsed(summary.full_mix_low_band_rms)
+        && metric_is_noncollapsed(summary.mc202_question_answer_delta_rms)
+}
+
+fn metric_is_noncollapsed(metric: Option<f64>) -> bool {
+    metric.is_some_and(|value| value > STRICT_OUTPUT_METRIC_FLOOR)
 }
 
 fn yes_no(value: bool) -> &'static str {
