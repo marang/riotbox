@@ -3,7 +3,13 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::Serialize;
+
 use riotbox_audio::{
+    listening_manifest::{
+        ListeningPackArtifact as ManifestArtifact,
+        ListeningPackSignalMetrics as ManifestSignalMetrics, write_manifest_json,
+    },
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
         Mc202RenderRouting, Mc202RenderState,
@@ -31,6 +37,9 @@ const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;
 const DEFAULT_DURATION_SECONDS: f32 = 2.0;
 const DEFAULT_SOURCE_WINDOW_SECONDS: f32 = 1.0;
 const SILENCE_SECONDS: f32 = 0.75;
+const MIN_SOURCE_RMS: f32 = 0.001;
+const MIN_AFTER_RMS: f32 = 0.001;
+const MIN_DELTA_RMS: f32 = 0.005;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -243,6 +252,9 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let source_metrics = signal_metrics(&source_samples);
     let after_metrics = signal_metrics(&after);
     let delta_metrics = signal_delta_metrics(&source_samples, &after);
+    let w30_metrics = signal_metrics(&w30);
+    let tr909_metrics = signal_metrics(&tr909);
+    let mc202_metrics = signal_metrics(&mc202);
     write_metrics_markdown(
         &output_dir.join("01_source_excerpt.metrics.md"),
         source_metrics,
@@ -255,19 +267,33 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )?;
     write_readme(&output_dir, args, &source_excerpt_path)?;
 
-    if source_metrics.rms <= 0.001 {
+    if source_metrics.rms <= MIN_SOURCE_RMS {
         return Err("source excerpt rendered near silence".into());
     }
-    if after_metrics.rms <= 0.001 {
+    if after_metrics.rms <= MIN_AFTER_RMS {
         return Err("Riotbox Feral after render produced near silence".into());
     }
-    if delta_metrics.rms <= 0.005 {
+    if delta_metrics.rms <= MIN_DELTA_RMS {
         return Err(format!(
             "Riotbox Feral after render is too similar to source: delta RMS {:.6}",
             delta_metrics.rms
         )
         .into());
     }
+
+    write_manifest(
+        &output_dir.join("manifest.json"),
+        args,
+        &output_dir,
+        ManifestMetrics {
+            source_excerpt: source_metrics.into(),
+            riotbox_after: after_metrics.into(),
+            source_after_delta: delta_metrics.into(),
+            w30_source_chop: w30_metrics.into(),
+            tr909_fill: tr909_metrics.into(),
+            mc202_instigator: mc202_metrics.into(),
+        },
+    )?;
 
     Ok(())
 }
@@ -456,7 +482,8 @@ fn write_comparison_markdown(
             source.peak_abs,
             after.peak_abs,
             delta.peak_abs,
-            if source.rms > 0.001 && after.rms > 0.001 && delta.rms > 0.005 {
+            if source.rms > MIN_SOURCE_RMS && after.rms > MIN_AFTER_RMS && delta.rms > MIN_DELTA_RMS
+            {
                 "pass"
             } else {
                 "fail"
@@ -479,6 +506,7 @@ fn write_readme(output_dir: &Path, args: &Args, source_excerpt_path: &Path) -> s
              - `02_riotbox_feral_changed.wav`: Riotbox-rendered Feral preview mix.\n\
              - `03_before_then_after.wav`: source excerpt, short silence, then Riotbox after render.\n\
              - `comparison.md`: source-vs-after metrics.\n\n\
+             - `manifest.json`: machine-readable artifact paths, thresholds, and metrics.\n\n\
              ## Stems\n\n\
              - `stems/w30_source_chop.wav`: source-backed W-30 preview render.\n\
              - `stems/tr909_fill.wav`: TR-909 fill render.\n\
@@ -494,6 +522,95 @@ fn write_readme(output_dir: &Path, args: &Args, source_excerpt_path: &Path) -> s
             source_excerpt_path.display()
         ),
     )
+}
+
+#[derive(Serialize)]
+struct ListeningPackManifest {
+    schema_version: u32,
+    pack_id: &'static str,
+    source: String,
+    sample_rate: u32,
+    channel_count: u16,
+    duration_seconds: f32,
+    source_start_seconds: f32,
+    source_window_seconds: f32,
+    silence_seconds: f32,
+    artifacts: Vec<ManifestArtifact>,
+    thresholds: ManifestThresholds,
+    metrics: ManifestMetrics,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestThresholds {
+    min_source_rms: f32,
+    min_after_rms: f32,
+    min_delta_rms: f32,
+}
+
+#[derive(Clone, Copy, Serialize)]
+struct ManifestMetrics {
+    source_excerpt: ManifestSignalMetrics,
+    riotbox_after: ManifestSignalMetrics,
+    source_after_delta: ManifestSignalMetrics,
+    w30_source_chop: ManifestSignalMetrics,
+    tr909_fill: ManifestSignalMetrics,
+    mc202_instigator: ManifestSignalMetrics,
+}
+
+fn write_manifest(
+    path: &Path,
+    args: &Args,
+    output_dir: &Path,
+    metrics: ManifestMetrics,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let manifest = ListeningPackManifest {
+        schema_version: 1,
+        pack_id: PACK_ID,
+        source: args.source_path.display().to_string(),
+        sample_rate: SAMPLE_RATE,
+        channel_count: CHANNEL_COUNT,
+        duration_seconds: args.duration_seconds,
+        source_start_seconds: args.source_start_seconds,
+        source_window_seconds: args.source_window_seconds.min(args.duration_seconds),
+        silence_seconds: SILENCE_SECONDS,
+        artifacts: manifest_artifacts(output_dir),
+        thresholds: ManifestThresholds {
+            min_source_rms: MIN_SOURCE_RMS,
+            min_after_rms: MIN_AFTER_RMS,
+            min_delta_rms: MIN_DELTA_RMS,
+        },
+        metrics,
+        result: "pass",
+    };
+
+    write_manifest_json(path, &manifest)?;
+    Ok(())
+}
+
+fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
+    let source_path = output_dir.join("01_source_excerpt.wav");
+    let source_metrics_path = output_dir.join("01_source_excerpt.metrics.md");
+    let after_path = output_dir.join("02_riotbox_feral_changed.wav");
+    let after_metrics_path = metrics_path_for(&after_path);
+    let before_after_path = output_dir.join("03_before_then_after.wav");
+    let w30_path = output_dir.join("stems/w30_source_chop.wav");
+    let w30_metrics_path = metrics_path_for(&w30_path);
+    let tr909_path = output_dir.join("stems/tr909_fill.wav");
+    let tr909_metrics_path = metrics_path_for(&tr909_path);
+    let mc202_path = output_dir.join("stems/mc202_instigator.wav");
+    let mc202_metrics_path = metrics_path_for(&mc202_path);
+
+    vec![
+        ManifestArtifact::audio_wav("source_excerpt", &source_path, Some(&source_metrics_path)),
+        ManifestArtifact::audio_wav("riotbox_after", &after_path, Some(&after_metrics_path)),
+        ManifestArtifact::audio_wav("before_then_after", &before_after_path, None),
+        ManifestArtifact::audio_wav("w30_source_chop", &w30_path, Some(&w30_metrics_path)),
+        ManifestArtifact::audio_wav("tr909_fill", &tr909_path, Some(&tr909_metrics_path)),
+        ManifestArtifact::audio_wav("mc202_instigator", &mc202_path, Some(&mc202_metrics_path)),
+        ManifestArtifact::markdown_report("comparison", &output_dir.join("comparison.md")),
+        ManifestArtifact::markdown_readme("readme", &output_dir.join("README.md")),
+    ]
 }
 
 #[cfg(test)]
@@ -557,6 +674,7 @@ mod tests {
         assert!(output_dir.join("stems/tr909_fill.wav").is_file());
         assert!(output_dir.join("stems/mc202_instigator.wav").is_file());
         assert!(output_dir.join("comparison.md").is_file());
+        assert!(output_dir.join("manifest.json").is_file());
 
         let source = SourceAudioCache::load_pcm_wav(output_dir.join("01_source_excerpt.wav"))
             .expect("load source");
@@ -569,6 +687,36 @@ mod tests {
         assert!(source_metrics.rms > 0.001);
         assert!(after_metrics.rms > 0.001);
         assert!(delta.rms > 0.005);
+
+        let manifest = fs::read_to_string(output_dir.join("manifest.json")).expect("manifest");
+        let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
+        assert_eq!(manifest["schema_version"], 1);
+        assert_eq!(manifest["pack_id"], PACK_ID);
+        assert_eq!(manifest["result"], "pass");
+        assert_eq!(
+            manifest["artifacts"].as_array().expect("artifacts").len(),
+            8
+        );
+        assert!(
+            manifest["metrics"]["riotbox_after"]["rms"]
+                .as_f64()
+                .expect("after rms")
+                > f64::from(MIN_AFTER_RMS)
+        );
+        assert!(
+            manifest["metrics"]["source_after_delta"]["rms"]
+                .as_f64()
+                .expect("delta rms")
+                > f64::from(MIN_DELTA_RMS)
+        );
+        for artifact in manifest["artifacts"].as_array().expect("artifacts") {
+            let path = PathBuf::from(artifact["path"].as_str().expect("artifact path"));
+            assert!(path.is_file(), "{} missing", path.display());
+            if let Some(metrics_path) = artifact["metrics_path"].as_str() {
+                let metrics_path = PathBuf::from(metrics_path);
+                assert!(metrics_path.is_file(), "{} missing", metrics_path.display());
+            }
+        }
     }
 
     fn synthetic_break_source(frame_count: usize) -> Vec<f32> {
