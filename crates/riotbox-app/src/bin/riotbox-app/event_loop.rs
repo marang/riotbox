@@ -444,7 +444,14 @@ fn accept_current_ghost_suggestion(shell: &mut JamShellState, requested_at: u64)
             ));
         }
         riotbox_app::jam_app::GhostSuggestionQueueResult::Rejected { reason } => {
-            shell.set_error_status(format!("ghost accept ignored: {reason}"));
+            if reason == riotbox_app::jam_app::NO_CURRENT_GHOST_SUGGESTION_REASON
+                && shell.app.refresh_current_ghost_suggestion_from_jam_state()
+                && let Some(suggestion) = shell.app.runtime.current_ghost_suggestion.as_ref()
+            {
+                shell.set_error_status(format!("ghost suggestion ready: {}", suggestion.summary));
+            } else {
+                shell.set_error_status(format!("ghost accept ignored: {reason}"));
+            }
         }
     }
 }

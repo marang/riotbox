@@ -8,6 +8,8 @@ use riotbox_core::{
 
 use super::JamAppState;
 
+pub const NO_CURRENT_GHOST_SUGGESTION_REASON: &str = "no current ghost suggestion";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum GhostSuggestionQueueResult {
     Enqueued(ActionId),
@@ -44,7 +46,7 @@ impl JamAppState {
     ) -> GhostSuggestionQueueResult {
         let Some(suggestion) = self.runtime.current_ghost_suggestion.clone() else {
             return GhostSuggestionQueueResult::Rejected {
-                reason: "no current ghost suggestion".into(),
+                reason: NO_CURRENT_GHOST_SUGGESTION_REASON.into(),
             };
         };
 
