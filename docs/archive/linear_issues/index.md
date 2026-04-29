@@ -226,6 +226,26 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split the remaining safe Rust hotspots with mechanical behavior-preserving include shards.
 - [RIOTBOX-356.md](./RIOTBOX-356.md)
   Split remaining app orchestration hotspots with semantic responsibility modules.
+- [RIOTBOX-369.md](./RIOTBOX-369.md)
+  Added shared audio QA manifest v1 envelope compatibility validation.
+- [RIOTBOX-370.md](./RIOTBOX-370.md)
+  Used manifest envelope validation before strict observer/audio output evidence.
+- [RIOTBOX-371.md](./RIOTBOX-371.md)
+  Rejected collapsed zero-level metrics in strict observer/audio evidence.
+- [RIOTBOX-372.md](./RIOTBOX-372.md)
+  Reported missing or collapsed metric names in strict observer/audio failures.
+- [RIOTBOX-373.md](./RIOTBOX-373.md)
+  Surfaced observer/audio output evidence issues in Markdown summaries.
+- [RIOTBOX-374.md](./RIOTBOX-374.md)
+  Added opt-in machine-readable observer/audio correlation summary output.
+- [RIOTBOX-375.md](./RIOTBOX-375.md)
+  Added the Justfile helper for observer/audio JSON summaries.
+- [RIOTBOX-376.md](./RIOTBOX-376.md)
+  Added the committed-fixture observer/audio JSON summary smoke to audio QA CI.
+- [RIOTBOX-377.md](./RIOTBOX-377.md)
+  Added a stable schema marker to observer/audio JSON summaries.
+- [RIOTBOX-378.md](./RIOTBOX-378.md)
+  Required control-path evidence in the observer/audio JSON fixture smoke.
 - [2026-04.md](./2026-04.md#riotbox-328-audit-feral-policy-entry-constraints)
   Grouped archive entries for the P009 Feral policy batch `RIOTBOX-328` through `RIOTBOX-338` plus the `RIOTBOX-339` Feral before/after audio QA pack.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
