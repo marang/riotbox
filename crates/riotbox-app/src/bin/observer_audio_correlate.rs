@@ -295,10 +295,40 @@ fn control_path_present(summary: &CorrelationSummary) -> bool {
 }
 
 fn output_path_present(summary: &CorrelationSummary) -> bool {
-    summary.manifest_result == "pass"
-        && metric_is_noncollapsed(summary.full_mix_rms)
-        && metric_is_noncollapsed(summary.full_mix_low_band_rms)
-        && metric_is_noncollapsed(summary.mc202_question_answer_delta_rms)
+    output_path_evidence_failures(summary).is_empty()
+}
+
+fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    if summary.manifest_result != "pass" {
+        failures.push(format!("manifest_result={}", summary.manifest_result));
+    }
+
+    for (name, metric) in [
+        ("full_mix_rms", summary.full_mix_rms),
+        ("full_mix_low_band_rms", summary.full_mix_low_band_rms),
+        (
+            "mc202_question_answer_delta_rms",
+            summary.mc202_question_answer_delta_rms,
+        ),
+    ] {
+        if let Some(failure) = output_metric_failure(name, metric) {
+            failures.push(failure);
+        }
+    }
+
+    failures
+}
+
+fn output_metric_failure(name: &str, metric: Option<f64>) -> Option<String> {
+    match metric {
+        Some(_) if metric_is_noncollapsed(metric) => None,
+        Some(value) => Some(format!(
+            "{name}={value:.6} <= floor {STRICT_OUTPUT_METRIC_FLOOR:.6}"
+        )),
+        None => Some(format!("{name}=missing")),
+    }
 }
 
 fn metric_is_noncollapsed(metric: Option<f64>) -> bool {
@@ -317,10 +347,14 @@ fn validate_required_evidence(summary: &CorrelationSummary) -> Result<(), io::Er
         ));
     }
 
-    if !output_path_present(summary) {
+    let output_failures = output_path_evidence_failures(summary);
+    if !output_failures.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
-            "observer/audio correlation is missing passing output-path manifest evidence",
+            format!(
+                "observer/audio correlation is missing passing output-path manifest evidence: {}",
+                output_failures.join(", ")
+            ),
         ));
     }
 
