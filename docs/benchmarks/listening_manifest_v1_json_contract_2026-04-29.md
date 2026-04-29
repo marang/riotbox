@@ -24,7 +24,9 @@ top-level fields:
 | `artifacts` | array | yes | Generated artifacts that make the run inspectable. Must not be empty. |
 
 Readers should treat additional top-level fields as pack-specific data unless a
-future schema version explicitly promotes them into the shared contract.
+future schema version explicitly promotes them into the shared contract. The
+repo validator may still validate named optional QA contracts when a producer
+emits them.
 
 ## Artifact Records
 
@@ -55,6 +57,26 @@ Schema version `1` intentionally keeps these fields pack-specific:
 
 Pack-specific fields should stay deterministic and machine-readable, but adding
 or extending them does not require a schema version bump.
+
+## Named Optional QA Contracts
+
+These fields are not part of the required stable envelope, but the repo-local
+validator checks them when present so automation does not accept malformed known
+QA evidence.
+
+### `feral_scorecard`
+
+The Feral grid pack may emit a top-level `feral_scorecard` object. When present,
+it must include:
+
+- non-empty string fields: `readiness`, `break_rebuild_potential`, `top_reason`
+- non-negative integer fields: `hook_fragment_count`, `break_support_count`,
+  `quote_risk_count`, `capture_candidate_count`
+- boolean fields: `source_backed`, `generated`, `fallback_like`
+- non-empty string arrays: `lane_gestures`, `material_sources`, `warnings`
+
+This keeps the Feral QA explanation machine-readable without making every
+schema version `1` listening pack emit Feral-specific fields.
 
 ## Current Producers
 

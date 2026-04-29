@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [
+    {
+      "role": "full_grid_mix",
+      "kind": "audio_wav",
+      "path": "04_full_grid_mix.wav",
+      "metrics_path": "04_full_grid_mix.metrics.md"
+    }
+  ],
+  "feral_scorecard": {
+    "readiness": "ready",
+    "break_rebuild_potential": "high",
+    "hook_fragment_count": 1,
+    "break_support_count": 3,
+    "quote_risk_count": 0,
+    "capture_candidate_count": 1,
+    "top_reason": "grid-locked generated feral QA pack",
+    "source_backed": true,
+    "generated": true,
+    "fallback_like": false,
+    "lane_gestures": "mc202 question/answer",
+    "material_sources": [
+      "generated mc202",
+      "generated tr909",
+      "source-backed w30 window"
+    ],
+    "warnings": [
+      "offline QA pack, not live arranger"
+    ]
+  }
+}
