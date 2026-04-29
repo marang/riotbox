@@ -1,6 +1,6 @@
 use riotbox_core::{
     TimestampMs,
-    action::{ActionStatus, ActorType, GhostMode},
+    action::{ActionCommand, ActionStatus, ActorType, GhostMode},
     ghost::{GhostSuggestionDraftError, GhostWatchSuggestion},
     ids::ActionId,
     session::GhostSuggestionStatus,
@@ -124,6 +124,12 @@ impl JamAppState {
             };
         }
 
+        if !self.ghost_destructive_scene_budget_available(draft.command) {
+            return GhostSuggestionQueueResult::Rejected {
+                reason: "ghost destructive scene budget exceeded".into(),
+            };
+        }
+
         if !self
             .session
             .ghost_state
@@ -192,6 +198,70 @@ impl JamAppState {
 
         committed_ghost_actions_in_phrase + pending_ghost_actions < max_actions
     }
+
+    fn ghost_destructive_scene_budget_available(&self, command: ActionCommand) -> bool {
+        if !ghost_action_is_destructive(command) {
+            return true;
+        }
+
+        let max_actions = usize::from(
+            self.session
+                .ghost_state
+                .budgets
+                .max_destructive_actions_per_scene,
+        );
+        let current_scene = self.runtime.transport.current_scene.as_ref().or(self
+            .session
+            .runtime_state
+            .scene_state
+            .active_scene
+            .as_ref());
+        let committed_destructive_ghost_actions_in_scene = self
+            .session
+            .action_log
+            .commit_records
+            .iter()
+            .filter(|record| record.boundary.scene_id.as_ref() == current_scene)
+            .filter(|record| {
+                self.session.action_log.actions.iter().any(|action| {
+                    action.id == record.action_id
+                        && action.actor == ActorType::Ghost
+                        && action.status == ActionStatus::Committed
+                        && ghost_action_is_destructive(action.command)
+                })
+            })
+            .count();
+        let pending_destructive_ghost_actions = self
+            .queue
+            .pending_actions()
+            .iter()
+            .filter(|action| {
+                action.actor == ActorType::Ghost && ghost_action_is_destructive(action.command)
+            })
+            .count();
+
+        committed_destructive_ghost_actions_in_scene + pending_destructive_ghost_actions
+            < max_actions
+    }
+}
+
+fn ghost_action_is_destructive(command: ActionCommand) -> bool {
+    matches!(
+        command,
+        ActionCommand::MutateScene
+            | ActionCommand::MutateLane
+            | ActionCommand::MutateLoop
+            | ActionCommand::MutatePattern
+            | ActionCommand::MutateHook
+            | ActionCommand::SceneRegenerate
+            | ActionCommand::SceneReinterpret
+            | ActionCommand::Mc202MutatePhrase
+            | ActionCommand::W30ApplyDamageProfile
+            | ActionCommand::W30LoopFreeze
+            | ActionCommand::PromoteResample
+            | ActionCommand::Tr909Takeover
+            | ActionCommand::Tr909SceneLock
+    )
 }
 
 fn ghost_queue_rejection_reason(error: GhostSuggestionDraftError) -> String {

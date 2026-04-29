@@ -196,6 +196,84 @@ fn queue_accepted_ghost_suggestion_respects_phrase_budget() {
 }
 
 #[test]
+fn queue_accepted_ghost_suggestion_respects_destructive_scene_budget() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.ghost_state.mode = GhostMode::Assist;
+    session.ghost_state.budgets.max_actions_per_phrase = 2;
+    session.ghost_state.budgets.max_pending_actions = 2;
+    session
+        .ghost_state
+        .budgets
+        .max_destructive_actions_per_scene = 1;
+    session.ghost_state.suggestion_history.clear();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: 64.0,
+        beat_index: 64,
+        bar_index: 16,
+        phrase_index: 4,
+        current_scene: Some(SceneId::from("scene-a")),
+    });
+    let first = ghost_destructive_takeover_suggestion("ghost-takeover-1");
+    let second = ghost_destructive_takeover_suggestion("ghost-takeover-2");
+
+    assert!(matches!(
+        state.queue_accepted_ghost_suggestion(&first, 1_000),
+        GhostSuggestionQueueResult::Enqueued(_)
+    ));
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 64,
+            bar_index: 16,
+            phrase_index: 4,
+            scene_id: Some(SceneId::from("scene-a")),
+        },
+        1_500,
+    );
+    assert_eq!(committed.len(), 1);
+
+    let over_budget = state.queue_accepted_ghost_suggestion(&second, 1_501);
+
+    assert_eq!(
+        over_budget,
+        GhostSuggestionQueueResult::Rejected {
+            reason: "ghost destructive scene budget exceeded".into()
+        }
+    );
+    assert_eq!(state.queue.pending_actions().len(), 0);
+    assert!(
+        state
+            .session
+            .ghost_state
+            .suggestion_history
+            .iter()
+            .all(|record| record.proposal_id != "ghost-takeover-2")
+    );
+}
+
+#[test]
+fn queue_accepted_ghost_suggestion_does_not_spend_destructive_budget_for_fill() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.ghost_state.mode = GhostMode::Assist;
+    session
+        .ghost_state
+        .budgets
+        .max_destructive_actions_per_scene = 0;
+    session.ghost_state.suggestion_history.clear();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert!(matches!(
+        state.queue_accepted_ghost_suggestion(&ghost_fill_suggestion(), 1_000),
+        GhostSuggestionQueueResult::Enqueued(_)
+    ));
+    assert_eq!(state.queue.pending_actions().len(), 1);
+}
+
+#[test]
 fn current_ghost_suggestion_slot_archives_and_clears_without_queueing() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
@@ -475,6 +553,24 @@ fn ghost_fill_suggestion() -> GhostWatchSuggestion {
         blockers: Vec::new(),
         created_at: "2026-04-29T17:00:00Z".into(),
     }
+}
+
+fn ghost_destructive_takeover_suggestion(proposal_id: &str) -> GhostWatchSuggestion {
+    let mut suggestion = ghost_fill_suggestion();
+    suggestion.proposal_id = proposal_id.into();
+    suggestion.tool_name = GhostWatchTool::SuggestSceneMutation;
+    suggestion.summary = "take over the current scene".into();
+    suggestion.rationale = "TR-909 can safely carry the next phrase".into();
+    suggestion.suggested_action = Some(GhostSuggestedAction {
+        command: ActionCommand::Tr909Takeover,
+        target: ActionTarget {
+            scope: Some(TargetScope::LaneTr909),
+            ..Default::default()
+        },
+        quantization: Quantization::NextPhrase,
+        intent: "take over the next phrase with TR-909".into(),
+    });
+    suggestion
 }
 
 fn ghost_capture_candidate_graph() -> SourceGraph {

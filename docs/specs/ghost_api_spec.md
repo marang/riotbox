@@ -290,7 +290,7 @@ Current session budget fields and MVP defaults:
 | Field | Default | Applies to | Current enforcement |
 | --- | --- | --- | --- |
 | `max_actions_per_phrase` | `2` | Accepted Ghost actions within the current phrase window | Enforced when an Assist suggestion is accepted into the normal action queue, using structured action-log commit records plus current pending Ghost actions |
-| `max_destructive_actions_per_scene` | `1` | Destructive accepted Ghost actions within a scene | Contracted; destructive scene-window enforcement is a follow-up |
+| `max_destructive_actions_per_scene` | `1` | Destructive accepted Ghost actions within the current scene window | Enforced when an Assist suggestion is accepted into the normal action queue, using structured action-log commit records plus current pending destructive Ghost actions |
 | `max_pending_actions` | `2` | Simultaneous pending `ActorType::Ghost` actions | Enforced when an Assist suggestion is accepted into the normal action queue |
 
 Rules:
@@ -300,6 +300,15 @@ Rules:
 - over-budget suggestions must be rejected with an explicit reason and must not mark the proposal as accepted.
 - budget enforcement must happen at normal action queue boundaries, not through a hidden Ghost queue.
 - phrase budget enforcement must use structured commit metadata from the session action log, not parse human-readable action result summaries.
+- destructive scene budget enforcement uses the current scene id when known; sessions with no active scene use the implicit no-scene session window.
+
+MVP destructive Ghost action classification:
+
+- mutation family: `mutate.scene`, `mutate.lane`, `mutate.loop`, `mutate.pattern`, `mutate.hook`
+- scene rebuild family: `scene.regenerate`, `scene.reinterpret`
+- phrase rewrite family: `mc202.mutate_phrase`
+- W-30 destructive/rebake family: `w30.apply_damage_profile`, `w30.loop_freeze`, `promote.resample`
+- TR-909 takeover family: `tr909.takeover`, `tr909.scene_lock`
 
 ### 11.2 Locks
 
@@ -394,5 +403,4 @@ Required validation:
 
 This draft should be followed by:
 
-1. destructive scene-window budget enforcement
-2. escalation path for future `perform` mode
+1. escalation path for future `perform` mode
