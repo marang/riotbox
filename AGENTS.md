@@ -360,6 +360,7 @@ Current useful commands:
 cargo fmt
 cargo test
 just ci
+just audio-qa-ci
 just check
 just clippy
 just mem-status

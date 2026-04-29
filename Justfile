@@ -16,7 +16,12 @@ clippy:
 ci:
     cargo fmt --check
     cargo test
+    just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
+
+audio-qa-ci:
+    cargo test -p riotbox-audio --bin w30_preview_render --bin w30_preview_compare --bin lane_recipe_pack --bin feral_before_after_pack --bin feral_grid_pack
+    cargo test -p riotbox-app --bin observer_audio_correlate
 
 mem-init:
     ./scripts/mempalace.sh init
