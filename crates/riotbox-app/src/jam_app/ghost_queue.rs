@@ -15,6 +15,72 @@ pub enum GhostSuggestionQueueResult {
 }
 
 impl JamAppState {
+    pub fn set_current_ghost_suggestion(&mut self, suggestion: GhostWatchSuggestion) {
+        if !self
+            .session
+            .ghost_state
+            .suggestion_history
+            .iter()
+            .any(|record| record.proposal_id == suggestion.proposal_id)
+        {
+            self.session
+                .ghost_state
+                .suggestion_history
+                .push(suggestion.archive_record());
+        }
+
+        self.runtime.current_ghost_suggestion = Some(suggestion);
+        self.refresh_view();
+    }
+
+    pub fn clear_current_ghost_suggestion(&mut self) {
+        self.runtime.current_ghost_suggestion = None;
+        self.refresh_view();
+    }
+
+    pub fn accept_current_ghost_suggestion(
+        &mut self,
+        requested_at: TimestampMs,
+    ) -> GhostSuggestionQueueResult {
+        let Some(suggestion) = self.runtime.current_ghost_suggestion.clone() else {
+            return GhostSuggestionQueueResult::Rejected {
+                reason: "no current ghost suggestion".into(),
+            };
+        };
+
+        let result = self.queue_accepted_ghost_suggestion(&suggestion, requested_at);
+        if matches!(result, GhostSuggestionQueueResult::Enqueued(_)) {
+            self.runtime.current_ghost_suggestion = None;
+        }
+        result
+    }
+
+    pub fn reject_current_ghost_suggestion(&mut self) -> bool {
+        let Some(suggestion) = self.runtime.current_ghost_suggestion.take() else {
+            return false;
+        };
+
+        if !self
+            .session
+            .ghost_state
+            .suggestion_history
+            .iter()
+            .any(|record| record.proposal_id == suggestion.proposal_id)
+        {
+            self.session
+                .ghost_state
+                .suggestion_history
+                .push(suggestion.archive_record());
+        }
+
+        let rejected = self
+            .session
+            .ghost_state
+            .reject_suggestion(&suggestion.proposal_id);
+        self.refresh_view();
+        rejected
+    }
+
     pub fn queue_accepted_ghost_suggestion(
         &mut self,
         suggestion: &GhostWatchSuggestion,

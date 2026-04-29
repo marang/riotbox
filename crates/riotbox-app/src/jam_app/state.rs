@@ -73,6 +73,7 @@ pub struct AppRuntimeState {
     pub mc202_render: Mc202RenderState,
     pub w30_preview: W30PreviewRenderState,
     pub w30_resample_tap: W30ResampleTapState,
+    pub current_ghost_suggestion: Option<GhostWatchSuggestion>,
     pub last_commit_boundary: Option<CommitBoundaryState>,
 }
 
@@ -87,6 +88,7 @@ impl Default for AppRuntimeState {
             mc202_render: Mc202RenderState::default(),
             w30_preview: W30PreviewRenderState::default(),
             w30_resample_tap: W30ResampleTapState::default(),
+            current_ghost_suggestion: None,
             last_commit_boundary: None,
         }
     }

@@ -23,6 +23,7 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, Quantization, TargetScope,
     },
+    ghost::GhostWatchSuggestion,
     ids::{ActionId, CaptureId, SourceId},
     persistence::{
         PersistenceError, load_session_json, load_source_graph_json, save_session_json,
