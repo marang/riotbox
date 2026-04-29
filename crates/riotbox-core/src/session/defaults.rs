@@ -31,6 +31,83 @@ pub struct GhostSuggestionRecord {
     pub proposal_id: String,
     pub summary: String,
     pub accepted: bool,
+    #[serde(default)]
+    pub rejected: bool,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GhostSuggestionStatus {
+    Suggested,
+    Accepted,
+    Rejected,
+}
+
+impl GhostSuggestionStatus {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Suggested => "suggested",
+            Self::Accepted => "accepted",
+            Self::Rejected => "rejected",
+        }
+    }
+}
+
+impl GhostSuggestionRecord {
+    #[must_use]
+    pub const fn status(&self) -> GhostSuggestionStatus {
+        if self.rejected {
+            GhostSuggestionStatus::Rejected
+        } else if self.accepted {
+            GhostSuggestionStatus::Accepted
+        } else {
+            GhostSuggestionStatus::Suggested
+        }
+    }
+
+    pub fn mark_accepted(&mut self) {
+        self.accepted = true;
+        self.rejected = false;
+    }
+
+    pub fn mark_rejected(&mut self) {
+        self.accepted = false;
+        self.rejected = true;
+    }
+}
+
+impl GhostState {
+    pub fn accept_suggestion(&mut self, proposal_id: &str) -> bool {
+        if !matches!(self.mode, GhostMode::Assist) {
+            return false;
+        }
+
+        let Some(record) = self
+            .suggestion_history
+            .iter_mut()
+            .rev()
+            .find(|record| record.proposal_id == proposal_id)
+        else {
+            return false;
+        };
+
+        record.mark_accepted();
+        true
+    }
+
+    pub fn reject_suggestion(&mut self, proposal_id: &str) -> bool {
+        let Some(record) = self
+            .suggestion_history
+            .iter_mut()
+            .rev()
+            .find(|record| record.proposal_id == proposal_id)
+        else {
+            return false;
+        };
+
+        record.mark_rejected();
+        true
+    }
 }
 
 #[cfg(test)]
@@ -164,6 +241,7 @@ mod tests {
                 proposal_id: "gp-1".into(),
                 summary: "capture next bar".into(),
                 accepted: false,
+                rejected: false,
             }],
             lock_awareness_enabled: true,
         };
@@ -173,6 +251,81 @@ mod tests {
         let decoded: SessionFile = serde_json::from_str(&json).expect("deserialize session");
 
         assert_eq!(decoded, session);
+    }
+
+    #[test]
+    fn assist_accepts_suggestion_without_implicit_musical_state_change() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:45:00Z");
+        session.ghost_state.mode = GhostMode::Assist;
+        session
+            .ghost_state
+            .suggestion_history
+            .push(GhostSuggestionRecord {
+                proposal_id: "ghost-proposal-1".into(),
+                summary: "fill next bar".into(),
+                accepted: false,
+                rejected: false,
+            });
+        let before_log = session.action_log.actions.len();
+        let before_scene = session.runtime_state.scene_state.clone();
+
+        assert!(session
+            .ghost_state
+            .accept_suggestion("ghost-proposal-1"));
+
+        let record = &session.ghost_state.suggestion_history[0];
+        assert_eq!(record.status(), GhostSuggestionStatus::Accepted);
+        assert!(record.accepted);
+        assert!(!record.rejected);
+        assert_eq!(session.action_log.actions.len(), before_log);
+        assert_eq!(session.runtime_state.scene_state, before_scene);
+    }
+
+    #[test]
+    fn watch_accept_does_not_mutate_suggestion_state() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:46:00Z");
+        session.ghost_state.mode = GhostMode::Watch;
+        session
+            .ghost_state
+            .suggestion_history
+            .push(GhostSuggestionRecord {
+                proposal_id: "ghost-proposal-1".into(),
+                summary: "fill next bar".into(),
+                accepted: false,
+                rejected: false,
+            });
+
+        assert!(!session
+            .ghost_state
+            .accept_suggestion("ghost-proposal-1"));
+
+        let record = &session.ghost_state.suggestion_history[0];
+        assert_eq!(record.status(), GhostSuggestionStatus::Suggested);
+        assert!(!record.accepted);
+        assert!(!record.rejected);
+    }
+
+    #[test]
+    fn rejected_suggestion_is_distinct_from_unaccepted_suggestion() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:47:00Z");
+        session
+            .ghost_state
+            .suggestion_history
+            .push(GhostSuggestionRecord {
+                proposal_id: "ghost-proposal-1".into(),
+                summary: "fill next bar".into(),
+                accepted: false,
+                rejected: false,
+            });
+
+        assert!(session
+            .ghost_state
+            .reject_suggestion("ghost-proposal-1"));
+
+        let record = &session.ghost_state.suggestion_history[0];
+        assert_eq!(record.status(), GhostSuggestionStatus::Rejected);
+        assert!(!record.accepted);
+        assert!(record.rejected);
     }
 
     #[test]

@@ -36,6 +36,7 @@ impl GhostWatchSuggestion {
             proposal_id: self.proposal_id.clone(),
             summary: self.summary.clone(),
             accepted: false,
+            rejected: false,
         }
     }
 }
@@ -153,6 +154,7 @@ mod tests {
         assert_eq!(record.proposal_id, "ghost-watch-1");
         assert_eq!(record.summary, "capture the current source-backed hit");
         assert!(!record.accepted);
+        assert!(!record.rejected);
         assert!(record_json.get("command").is_none());
         assert!(record_json.get("status").is_none());
         assert!(record_json.get("quantization").is_none());

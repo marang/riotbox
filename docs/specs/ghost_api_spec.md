@@ -216,6 +216,8 @@ Canonical MVP flow:
 Rules:
 
 - no silent auto-commit in `watch`
+- accepting a suggestion is only effective in `assist`; `watch` remains read-only
+- rejecting a suggestion only marks that proposal as rejected
 - `assist` may prepare actions, but acceptance remains explicit for MVP-critical changes
 
 ---
@@ -281,7 +283,10 @@ Ghost-relevant session state should include:
 - current mode
 - active budgets
 - lock-aware status where relevant
-- accepted suggestion history when needed for continuity
+- suggestion history when needed for continuity
+- each suggestion's explicit decision state: suggested, accepted, or rejected
+
+Accepted suggestion state is only a durable intent marker until the accepted action enters the normal Action Lexicon queue. Rejected suggestion state is a durable user decision and must not mutate musical runtime state.
 
 Do not persist raw internal reasoning traces unless they are deliberately promoted into user-facing logs.
 
@@ -313,7 +318,7 @@ Required validation:
 
 - Ghost cannot bypass locks
 - accepted Ghost actions serialize into the action log correctly
-- rejected Ghost actions do not mutate durable state
+- rejected Ghost actions do not mutate durable musical state beyond the suggestion decision marker
 - Ghost suggestions render clearly in the TUI
 - Ghost action replay remains deterministic
 

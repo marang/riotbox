@@ -432,13 +432,7 @@ fn ghost_status_view(session: &SessionFile) -> GhostStatusView {
         is_read_only: matches!(session.ghost_state.mode, crate::action::GhostMode::Watch),
         latest_proposal_id: latest.map(|suggestion| suggestion.proposal_id.clone()),
         latest_summary: latest.map(|suggestion| suggestion.summary.clone()),
-        latest_status: latest.map(|suggestion| {
-            if suggestion.accepted {
-                "accepted".into()
-            } else {
-                "suggested".into()
-            }
-        }),
+        latest_status: latest.map(|suggestion| suggestion.status().label().into()),
         safety: if is_blocked {
             "blocked".into()
         } else {

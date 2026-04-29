@@ -275,6 +275,7 @@ mod tests {
                 proposal_id: "gp-1".into(),
                 summary: "capture next bar".into(),
                 accepted: false,
+                rejected: false,
             }],
             lock_awareness_enabled: true,
         };

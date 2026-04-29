@@ -168,6 +168,7 @@ impl JamAppState {
             Some(boundary),
             self.source_graph.as_ref(),
         );
+        apply_ghost_side_effects(&mut self.session, action);
         if matches!(
             action.command,
             ActionCommand::SceneLaunch | ActionCommand::SceneRestore

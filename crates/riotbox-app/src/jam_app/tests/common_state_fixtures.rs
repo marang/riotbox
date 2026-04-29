@@ -217,6 +217,7 @@ fn sample_session(graph: &SourceGraph) -> SessionFile {
             proposal_id: "gp-1".into(),
             summary: "capture next bar".into(),
             accepted: false,
+            rejected: false,
         }],
         lock_awareness_enabled: true,
     };
@@ -433,4 +434,3 @@ fn derives_scene_candidates_from_source_sections_when_session_is_empty() {
         Some("scene-01-drop")
     );
 }
-

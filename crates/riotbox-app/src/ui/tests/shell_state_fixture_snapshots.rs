@@ -405,6 +405,7 @@ fn renders_ghost_watch_summary_and_blocker_status() {
         proposal_id: "ghost-watch-1".into(),
         summary: "capture the source-backed hit".into(),
         accepted: false,
+        rejected: false,
     }];
     shell
         .app

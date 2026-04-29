@@ -155,6 +155,7 @@ fn session_with_committed_jam_state(graph: &SourceGraph) -> SessionFile {
         proposal_id: "gp-1".into(),
         summary: "capture next bar".into(),
         accepted: false,
+        rejected: false,
     }];
     session.action_log = ActionLog {
         actions: vec![],

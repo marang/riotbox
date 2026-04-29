@@ -175,6 +175,7 @@ fn projects_blocked_watch_suggestion_into_jam_view() {
         proposal_id: "ghost-watch-1".into(),
         summary: "capture the source-backed hit".into(),
         accepted: false,
+        rejected: false,
     }];
     session
         .runtime_state
@@ -195,4 +196,20 @@ fn projects_blocked_watch_suggestion_into_jam_view() {
         Some("capture the source-backed hit")
     );
     assert_eq!(vm.ghost.latest_status.as_deref(), Some("suggested"));
+}
+
+#[test]
+fn projects_rejected_ghost_suggestion_into_jam_view() {
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:05:00Z");
+    session.ghost_state.mode = GhostMode::Watch;
+    session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
+        proposal_id: "ghost-watch-1".into(),
+        summary: "capture the source-backed hit".into(),
+        accepted: false,
+        rejected: true,
+    }];
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), None);
+
+    assert_eq!(vm.ghost.latest_status.as_deref(), Some("rejected"));
 }
