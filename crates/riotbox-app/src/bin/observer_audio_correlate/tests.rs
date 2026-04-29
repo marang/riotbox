@@ -143,6 +143,20 @@ fn strict_evidence_rejects_missing_output_metrics() {
     assert!(error.to_string().contains("output-path manifest evidence"));
 }
 
+#[test]
+fn strict_evidence_rejects_collapsed_output_metrics() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(&manifest_path, synthetic_manifest_with_collapsed_metrics()).expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("collapsed output evidence");
+
+    assert!(error.to_string().contains("output-path manifest evidence"));
+}
+
 fn synthetic_observer() -> String {
     [
         r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest"}}"#,
@@ -187,6 +201,22 @@ fn synthetic_manifest_without_metrics() -> String {
   "result": "pass",
   "artifacts": [{}, {}, {}, {}, {}, {}],
   "metrics": {}
+}"#
+    .to_string()
+}
+
+fn synthetic_manifest_with_collapsed_metrics() -> String {
+    r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}, {}],
+  "metrics": {
+    "full_grid_mix": {
+      "signal": { "rms": 0.0 },
+      "low_band": { "rms": 0.0 }
+    },
+    "mc202_question_answer_delta": { "rms": 0.0 }
+  }
 }"#
     .to_string()
 }
