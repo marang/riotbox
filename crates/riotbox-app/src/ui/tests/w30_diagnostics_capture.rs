@@ -389,6 +389,35 @@ fn renders_capture_handoff_source_readiness_for_w30_targets() {
 }
 
 #[test]
+fn renders_capture_handoff_fallback_as_actionable_w30_cue() {
+    let mut shell = sample_shell_without_pending_queue();
+    shell.app.session.captures[0].assigned_target =
+        Some(riotbox_core::session::CaptureTarget::W30Pad {
+            bank_id: "bank-b".into(),
+            pad_id: "pad-03".into(),
+        });
+    shell.app.refresh_view();
+    shell.active_screen = ShellScreen::Capture;
+
+    assert_eq!(
+        shell.app.jam_view.capture.last_capture_handoff_readiness,
+        Some(CaptureHandoffReadinessView::Fallback)
+    );
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(
+        rendered.contains("fallback: [w]/[o] safe pad"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("bank-b/pad-03"), "{rendered}");
+    assert!(rendered.contains("[3] Source shows why"), "{rendered}");
+    assert!(
+        rendered.contains("[c] new capture can become src"),
+        "{rendered}"
+    );
+}
+
+#[test]
 fn renders_capture_shell_snapshot_with_w30_resample_cue() {
     let mut shell = sample_shell_state();
     shell.app.session.captures[0].assigned_target =
@@ -413,4 +442,3 @@ fn renders_capture_shell_snapshot_with_w30_resample_cue() {
     assert!(rendered.contains("resample"));
     assert!(rendered.contains("cap-01"));
 }
-

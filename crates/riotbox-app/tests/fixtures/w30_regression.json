@@ -89,7 +89,7 @@
       ],
       "capture_contains": [
         "pending W-30 cue idle",
-        "hear cap-01 stored fallback [o] raw",
+        "hear cap-01 fallback: [o] raw",
         "[p]->[w]",
         "preview",
         "raw_capture_audition |",

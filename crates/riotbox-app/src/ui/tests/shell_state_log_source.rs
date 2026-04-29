@@ -377,7 +377,7 @@ fn renders_capture_shell_snapshot_with_capture_context() {
     );
     assert!(rendered.contains("pending W-30 cue idle"));
     assert!(
-        rendered.contains("hear cap-01 stored fallback [o] raw"),
+        rendered.contains("hear cap-01 fallback: [o] raw"),
         "{rendered}"
     );
     assert!(rendered.contains("[p]->[w]"), "{rendered}");
@@ -443,4 +443,3 @@ fn source_window_formatters_keep_surface_shapes_stable() {
         "win 1.25-3.75s src-1"
     );
 }
-

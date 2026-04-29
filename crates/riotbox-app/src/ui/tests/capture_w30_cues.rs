@@ -58,7 +58,7 @@ fn renders_capture_shell_snapshot_with_raw_capture_audition_cue() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("hear cap-01 stored fallback [o] raw or [p]->[w]"),
+        rendered.contains("hear cap-01 fallback: [o] raw -> [p]->[w]"),
         "{rendered}"
     );
 
@@ -415,4 +415,3 @@ fn renders_capture_shell_snapshot_with_feral_w30_slice_pool_browse_cue() {
         "{rendered}"
     );
 }
-

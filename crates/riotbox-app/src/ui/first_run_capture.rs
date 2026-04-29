@@ -146,12 +146,23 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         capture.last_capture_target_kind,
         capture.last_capture_target.as_deref(),
     ) {
-        (Some(CaptureTargetKindView::W30Pad), Some(target)) => vec![
-            Line::from(format!("hear now: [w] hit {target} ({handoff_readiness})")),
-            Line::from("or [o] audition same pad"),
-            Line::from("[b]/[s] browse or swap"),
-            Line::from(format!("source {last_capture_id}")),
-        ],
+        (Some(CaptureTargetKindView::W30Pad), Some(target)) => {
+            if handoff_readiness == "fallback" {
+                vec![
+                    Line::from(format!("fallback: [w]/[o] safe {target}")),
+                    Line::from("[3] Source shows why"),
+                    Line::from("[c] new capture can become src"),
+                    Line::from(format!("source {last_capture_id}")),
+                ]
+            } else {
+                vec![
+                    Line::from(format!("hear now: [w] hit {target} ({handoff_readiness})")),
+                    Line::from("or [o] audition same pad"),
+                    Line::from("[b]/[s] browse or swap"),
+                    Line::from(format!("source {last_capture_id}")),
+                ]
+            }
+        }
         (Some(CaptureTargetKindView::Scene), Some(target)) => vec![
             Line::from(format!("scene target {target}")),
             Line::from("use Jam scene controls"),
@@ -159,12 +170,14 @@ fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             Line::from(format!("source {last_capture_id}")),
         ],
         _ => vec![
-            Line::from(format!("1 hear it: [o] audition raw {last_capture_id}")),
+            Line::from(format!(
+                "1 hear it: [o] raw {last_capture_id} ({handoff_readiness})"
+            )),
             Line::from(format!("2 keep it: [p] promote {last_capture_id}")),
             Line::from(format!(
                 "3 play it: [w] hit after promote ({handoff_readiness})"
             )),
-            Line::from("[2] confirm result"),
+            Line::from(capture_handoff_help_line(handoff_readiness)),
         ],
     }
 }
@@ -173,6 +186,14 @@ fn capture_handoff_readiness_label(shell: &JamShellState) -> &'static str {
     match shell.app.jam_view.capture.last_capture_handoff_readiness {
         Some(CaptureHandoffReadinessView::Source) => "src",
         Some(CaptureHandoffReadinessView::Fallback) | None => "fallback",
+    }
+}
+
+fn capture_handoff_help_line(handoff_readiness: &str) -> &'static str {
+    if handoff_readiness == "fallback" {
+        "if still fallback: [3] Source"
+    } else {
+        "[2] confirm result"
     }
 }
 
@@ -435,10 +456,13 @@ fn capture_heard_path_label(shell: &JamShellState) -> String {
             format!("{last_capture_id}->{target} ready")
         }
         (_, Some(target)) if target != "unassigned" => format!("{last_capture_id}->{target} ready"),
-        _ => format!(
-            "{last_capture_id} stored {} [o] raw or [p]->[w]",
-            capture_handoff_readiness_label(shell)
-        ),
+        _ => {
+            let readiness = capture_handoff_readiness_label(shell);
+            if readiness == "fallback" {
+                format!("{last_capture_id} fallback: [o] raw -> [p]->[w]")
+            } else {
+                format!("{last_capture_id} src: [o] raw -> [p]->[w]")
+            }
+        }
     }
 }
-
