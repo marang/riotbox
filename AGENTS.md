@@ -165,10 +165,11 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Prefer small enums and structs over stringly behavior
 - Keep tests close to the modules they validate
 - Avoid unnecessary dependencies during early model stabilization
-- Keep every Rust file, including tests and bin helpers, at or below roughly 500 lines whenever practical.
-- Treat any `.rs` file over 500 lines as a refactor candidate; split by responsibility instead of letting production or test hotspots grow.
-- Do not hide context cost in giant `tests.rs` files. If a test module grows past the budget, split it by behavior area, fixture family, screen, lane, or helper responsibility.
-- Name split Rust shards after their responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`; avoid durable `01_...rs`, `02_...rs` numbering except as a short-lived mechanical migration step.
+- Treat roughly 500 lines per Rust file, including tests and bin helpers, as a soft review/context budget, not a hard rule.
+- Treat any `.rs` file over that budget as a refactor candidate, but never split files mechanically just to satisfy line count.
+- Split only when the resulting modules have clearer semantic responsibility, lower review cost, and lower agent context cost.
+- Do not hide context cost in giant `tests.rs` files. If a test module grows past the budget, split it by behavior area, fixture family, screen, lane, or helper responsibility only when that creates clearer ownership.
+- Name split Rust shards after their responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`; do not use durable `01_...rs`, `02_...rs` numbering.
 
 ### Documentation
 

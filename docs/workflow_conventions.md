@@ -155,7 +155,7 @@ If the `code-review` skill is not available in the current session:
 
 ## 7.1.1 Rust File-Size Budget
 
-Riotbox treats every `.rs` file over roughly 500 lines as a refactor candidate.
+Riotbox treats every `.rs` file over roughly 500 lines as a soft refactor candidate, not a hard limit.
 
 This applies to:
 
@@ -166,12 +166,14 @@ This applies to:
 
 The goal is not strict line-count aesthetics. The goal is lower review cost, lower agent context cost, and easier navigation. Large test files are still a problem because they consume context whenever a test area must be inspected.
 
+Never split files mechanically just to satisfy the line budget. A split is useful only when the new files have clear semantic ownership and make future work easier to inspect.
+
 Preferred response when a Rust file crosses the budget:
 
-- split by responsibility, screen, lane, fixture family, command family, or render seam
-- keep the split mechanical when possible
+- split by responsibility, screen, lane, fixture family, command family, or render seam when that boundary is real
+- keep the extraction behavior-preserving when possible, but do not create arbitrary shards
 - use semantic shard names that describe responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`
-- avoid durable `01_...rs`, `02_...rs` numbering except as a short-lived mechanical migration step when it materially reduces refactor risk
+- avoid durable `01_...rs`, `02_...rs` numbering; numbered shards are not an acceptable final structure
 - avoid mixing behavior changes with file-size cleanup
 - create a follow-up ticket if the split is too large for the current branch
 
