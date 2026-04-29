@@ -8,7 +8,7 @@ impl JamAppState {
         let session_path = session_path.as_ref().to_path_buf();
         let mut session = load_session_json(&session_path)?;
         normalize_w30_preview_mode(&mut session);
-        validate_mvp_single_source_session(&session)?;
+        validate_mvp_session_restore_contracts(&session)?;
         let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
         let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
         normalize_scene_candidates(&mut session, source_graph.as_ref());
@@ -125,7 +125,7 @@ fn resolve_source_graph(
     }
 }
 
-fn validate_mvp_single_source_session(session: &SessionFile) -> Result<(), JamAppError> {
+fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), JamAppError> {
     if session.source_refs.len() > 1 {
         return Err(JamAppError::InvalidSession(
             "Riotbox MVP currently supports exactly one source reference per session".into(),
@@ -147,6 +147,16 @@ fn validate_mvp_single_source_session(session: &SessionFile) -> Result<(), JamAp
             "source ref {} does not match source graph ref {}",
             source_ref.source_id, graph_ref.source_id
         )));
+    }
+
+    let action_count = session.action_log.actions.len();
+    for snapshot in &session.snapshots {
+        if snapshot.action_cursor > action_count {
+            return Err(JamAppError::InvalidSession(format!(
+                "snapshot {} action cursor {} exceeds action log length {}",
+                snapshot.snapshot_id, snapshot.action_cursor, action_count
+            )));
+        }
     }
 
     Ok(())

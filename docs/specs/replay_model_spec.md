@@ -204,6 +204,7 @@ Recommended restore algorithm:
 - every snapshot must reference an action cursor
 - snapshots should be taken at stable musical points
 - snapshots must not contain hidden state that the action log cannot eventually explain
+- session restore must reject snapshots whose action cursor points beyond the persisted action log
 
 ### 9.2 Runtime state relation
 

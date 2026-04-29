@@ -147,6 +147,27 @@ fn rejects_session_with_mismatched_single_source_and_graph_refs() {
 }
 
 #[test]
+fn rejects_session_with_snapshot_cursor_beyond_action_log() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.snapshots[0].action_cursor = session.action_log.actions.len() + 1;
+    save_session_json(&session_path, &session).expect("save bad snapshot cursor session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("snapshot snap-1 action cursor 2"));
+            assert!(message.contains("exceeds action log length 1"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn runtime_view_updates_from_audio_and_sidecar_state() {
     let graph = sample_graph();
     let session = sample_session(&graph);
@@ -346,4 +367,3 @@ fn mc202_hook_section_uses_answer_space_guardrail() {
             .contains("hook answer_space")
     );
 }
-
