@@ -221,6 +221,7 @@ Smallest acceptable seam:
 - duration: bounded to the input capture duration or a documented maximum window for MVP safety
 - output: a new PCM16 WAV artifact at the derived resample capture `storage_path`
 - session result: a new `CaptureRef` with `CaptureType::Resample`, explicit `lineage_capture_refs`, incremented `resample_generation_depth`, and no direct `source_window` unless the printed artifact is still a literal source-window copy
+- Feral policy cue: when the loaded source graph has Feral break-support evidence and the resample keeps explicit lineage, the committed action result and capture note should expose this as a lineage-safe W-30 Feral rebake / reuse decision
 - realtime rule: the audio callback must never write files or perform offline bus prints
 
 Minimum QA gate:

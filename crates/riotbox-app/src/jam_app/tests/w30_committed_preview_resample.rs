@@ -231,7 +231,35 @@ fn committed_w30_trigger_preserves_source_window_preview_samples() {
 
 #[test]
 fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
-    let graph = sample_graph();
+    let mut graph = sample_graph();
+    graph.assets.push(Asset {
+        asset_id: AssetId::from("asset-hook"),
+        asset_type: AssetType::HookFragment,
+        start_seconds: 4.0,
+        end_seconds: 5.0,
+        start_bar: 3,
+        end_bar: 3,
+        confidence: 0.88,
+        tags: vec!["feral".into()],
+        source_refs: vec!["src-1".into()],
+    });
+    graph.candidates.push(Candidate {
+        candidate_id: "candidate-capture".into(),
+        candidate_type: CandidateType::CaptureCandidate,
+        asset_ref: "asset-hook".into(),
+        score: 0.86,
+        confidence: 0.84,
+        tags: vec!["capture_first".into()],
+        constraints: vec!["lineage_safe".into()],
+        provenance_refs: vec!["test".into()],
+    });
+    graph.relationships.push(Relationship {
+        relation_type: RelationshipType::SupportsBreakRebuild,
+        from_id: "asset-hook".into(),
+        to_id: "section-a".into(),
+        weight: 0.82,
+        notes: Some("feral support".into()),
+    });
     let session = sample_session(&graph);
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -277,6 +305,27 @@ fn committed_w30_internal_resample_materializes_lineage_safe_capture() {
     );
     assert_eq!(capture.resample_generation_depth, 2);
     assert_eq!(capture.assigned_target, None);
+    assert!(
+        capture.notes.as_deref().is_some_and(|notes| {
+            notes.contains("feral rebake approved: lineage-safe W-30 reuse")
+        }),
+        "resample capture notes should expose the Feral rebake policy decision: {:?}",
+        capture.notes
+    );
+    assert_eq!(
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .and_then(|action| action.result.as_ref())
+            .map(|result| result.summary.as_str()),
+        Some("feral rebake approved: lineage-safe W-30 reuse, gen 2, lineage 2")
+    );
+    assert_eq!(
+        state.jam_view.capture.last_capture_notes.as_deref(),
+        capture.notes.as_deref()
+    );
     assert_eq!(
         state.session.runtime_state.lane_state.w30.last_capture,
         Some(CaptureId::from("cap-02"))
@@ -424,4 +473,3 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         0.001,
     );
 }
-

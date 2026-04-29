@@ -1,4 +1,5 @@
 use super::*;
+use crate::jam_app::helpers::append_capture_note;
 
 impl JamAppState {
     pub fn undo_last_action(&mut self, requested_at: TimestampMs) -> Option<Action> {
@@ -128,6 +129,12 @@ impl JamAppState {
         {
             if matches!(action.command, ActionCommand::PromoteResample) {
                 self.persist_w30_bus_print_artifact(&mut capture);
+                if let Some(summary) =
+                    feral_resample_policy_summary(action, &capture, self.source_graph.as_ref())
+                {
+                    append_capture_note(&mut capture, &summary);
+                    update_logged_action_result(&mut self.session, action.id, summary);
+                }
             } else {
                 self.persist_capture_audio_artifact(&mut capture);
             }
@@ -168,5 +175,44 @@ impl JamAppState {
             self.runtime.transport.current_scene =
                 self.session.runtime_state.transport.current_scene.clone();
         }
+    }
+}
+
+fn feral_resample_policy_summary(
+    action: &Action,
+    capture: &CaptureRef,
+    source_graph: Option<&SourceGraph>,
+) -> Option<String> {
+    if !matches!(action.command, ActionCommand::PromoteResample)
+        || capture.capture_type != riotbox_core::session::CaptureType::Resample
+        || capture.lineage_capture_refs.is_empty()
+        || !source_graph.is_some_and(SourceGraph::has_feral_break_support_evidence)
+    {
+        return None;
+    }
+
+    Some(format!(
+        "feral rebake approved: lineage-safe W-30 reuse, gen {}, lineage {}",
+        capture.resample_generation_depth,
+        capture.lineage_capture_refs.len()
+    ))
+}
+
+fn update_logged_action_result(
+    session: &mut SessionFile,
+    action_id: ActionId,
+    summary: impl Into<String>,
+) {
+    if let Some(logged_action) = session
+        .action_log
+        .actions
+        .iter_mut()
+        .rev()
+        .find(|logged_action| logged_action.id == action_id)
+    {
+        logged_action.result = Some(ActionResult {
+            accepted: true,
+            summary: summary.into(),
+        });
     }
 }
