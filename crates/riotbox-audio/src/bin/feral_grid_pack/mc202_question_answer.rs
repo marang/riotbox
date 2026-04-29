@@ -117,10 +117,22 @@ fn assert_grid_len(name: &str, samples: &[f32], grid: &Grid) {
     );
 }
 
-fn render_metrics(samples: &[f32]) -> RenderMetrics {
+fn render_metrics(samples: &[f32], grid: &Grid) -> RenderMetrics {
     RenderMetrics {
-        signal: signal_metrics(samples),
-        low_band: signal_metrics(&one_pole_lowpass(samples, 165.0)),
+        signal: signal_metrics_with_grid(
+            samples,
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            grid.bpm,
+            grid.beats_per_bar,
+        ),
+        low_band: signal_metrics_with_grid(
+            &one_pole_lowpass(samples, 165.0),
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            grid.bpm,
+            grid.beats_per_bar,
+        ),
     }
 }
 
@@ -147,7 +159,13 @@ fn mc202_first_question_answer_delta(mc202: &[f32], grid: &Grid) -> OfflineAudio
         .zip(answer.iter())
         .map(|(question, answer)| question - answer)
         .collect::<Vec<_>>();
-    signal_metrics(&delta)
+    signal_metrics_with_grid(
+        &delta,
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        grid.bpm,
+        grid.beats_per_bar,
+    )
 }
 
 fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>> {
@@ -181,9 +199,13 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
     Ok(())
 }
 
-fn write_audio_with_metrics(path: &Path, samples: &[f32]) -> Result<(), SourceAudioError> {
+fn write_audio_with_metrics(
+    path: &Path,
+    samples: &[f32],
+    grid: &Grid,
+) -> Result<(), SourceAudioError> {
     write_interleaved_pcm16_wav(path, SAMPLE_RATE, CHANNEL_COUNT, samples)?;
-    write_metrics_markdown(&metrics_path_for(path), render_metrics(samples))
+    write_metrics_markdown(&metrics_path_for(path), render_metrics(samples, grid))
         .map_err(|error| SourceAudioError::Io(error.to_string()))
 }
 
@@ -212,6 +234,8 @@ fn write_metrics_markdown(path: &Path, metrics: RenderMetrics) -> std::io::Resul
              - Active sample ratio: `{:.6}`\n\
              - Silence ratio: `{:.6}`\n\
              - DC offset: `{:.6}`\n\
+             - Onset count: `{}`\n\
+             - Event density per bar: `{:.6}`\n\
              - Low-band peak abs: `{:.6}`\n\
              - Low-band RMS: `{:.6}`\n",
             metrics.signal.peak_abs,
@@ -224,6 +248,8 @@ fn write_metrics_markdown(path: &Path, metrics: RenderMetrics) -> std::io::Resul
             metrics.signal.active_sample_ratio,
             metrics.signal.silence_ratio,
             metrics.signal.dc_offset,
+            metrics.signal.onset_count,
+            metrics.signal.event_density_per_bar,
             metrics.low_band.peak_abs,
             metrics.low_band.rms
         ),

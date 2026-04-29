@@ -411,7 +411,9 @@ fn write_metrics_markdown(
              - Crest factor: `{:.6}`\n\
              - Active sample ratio: `{:.6}`\n\
              - Silence ratio: `{:.6}`\n\
-             - DC offset: `{:.6}`\n",
+             - DC offset: `{:.6}`\n\
+             - Onset count: `{}`\n\
+             - Event density per bar: `{:.6}`\n",
             args.role.label(),
             args.source_input_label(),
             args.output_path.display(),
@@ -425,7 +427,9 @@ fn write_metrics_markdown(
             metrics.crest_factor,
             metrics.active_sample_ratio,
             metrics.silence_ratio,
-            metrics.dc_offset
+            metrics.dc_offset,
+            metrics.onset_count,
+            metrics.event_density_per_bar
         ),
     )
 }

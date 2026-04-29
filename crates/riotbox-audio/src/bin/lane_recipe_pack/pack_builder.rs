@@ -14,7 +14,10 @@ use riotbox_audio::{
         Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
         Mc202RenderState,
     },
-    runtime::{OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, signal_metrics},
+    runtime::{
+        OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, signal_metrics,
+        signal_metrics_with_grid,
+    },
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -24,6 +27,8 @@ use riotbox_audio::{
 
 const SAMPLE_RATE: u32 = 44_100;
 const CHANNEL_COUNT: u16 = 2;
+const DEFAULT_BPM: f32 = 128.0;
+const BEATS_PER_BAR: u32 = 4;
 const DEFAULT_DURATION_SECONDS: f32 = 2.0;
 const PACK_ID: &str = "lane-recipe-listening-pack";
 
@@ -437,4 +442,3 @@ fn pack_cases() -> Vec<PackCase> {
         },
     ]
 }
-

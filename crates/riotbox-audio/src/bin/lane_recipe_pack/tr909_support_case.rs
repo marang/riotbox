@@ -84,8 +84,15 @@ fn render_case(
     fs::create_dir_all(&case_dir)?;
 
     let (baseline, candidate) = render_pair(&case.render_pair, frame_count);
-    let baseline_metrics = signal_metrics(&baseline);
-    let candidate_metrics = signal_metrics(&candidate);
+    let baseline_metrics =
+        signal_metrics_with_grid(&baseline, SAMPLE_RATE, CHANNEL_COUNT, DEFAULT_BPM, BEATS_PER_BAR);
+    let candidate_metrics = signal_metrics_with_grid(
+        &candidate,
+        SAMPLE_RATE,
+        CHANNEL_COUNT,
+        DEFAULT_BPM,
+        BEATS_PER_BAR,
+    );
     let signal_delta_metrics = signal_delta_metrics(&baseline, &candidate);
     let report = CaseReport {
         id: case.id,
@@ -183,9 +190,11 @@ fn render_metrics_markdown(
          - Mean abs: `{:.6}`\n\
          - Zero crossings: `{}`\n\
          - Crest factor: `{:.6}`\n\
-         - Active sample ratio: `{:.6}`\n\
-         - Silence ratio: `{:.6}`\n\
-         - DC offset: `{:.6}`\n",
+             - Active sample ratio: `{:.6}`\n\
+             - Silence ratio: `{:.6}`\n\
+             - DC offset: `{:.6}`\n\
+             - Onset count: `{}`\n\
+             - Event density per bar: `{:.6}`\n",
         case.id,
         case.title,
         case.recipe_refs,
@@ -198,7 +207,9 @@ fn render_metrics_markdown(
         metrics.crest_factor,
         metrics.active_sample_ratio,
         metrics.silence_ratio,
-        metrics.dc_offset
+        metrics.dc_offset,
+        metrics.onset_count,
+        metrics.event_density_per_bar
     )
 }
 
@@ -216,6 +227,9 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
         (baseline.active_sample_ratio - candidate.active_sample_ratio).abs();
     let silence_ratio_delta = (baseline.silence_ratio - candidate.silence_ratio).abs();
     let dc_offset_delta = (baseline.dc_offset - candidate.dc_offset).abs();
+    let onset_count_delta = baseline.onset_count.abs_diff(candidate.onset_count);
+    let event_density_delta =
+        (baseline.event_density_per_bar - candidate.event_density_per_bar).abs();
     let signal_delta = report.signal_delta_metrics;
 
     format!(
@@ -243,7 +257,9 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
          | crest_factor | {:.6} | {:.6} | {:.6} |\n\
          | active_sample_ratio | {:.6} | {:.6} | {:.6} |\n\
          | silence_ratio | {:.6} | {:.6} | {:.6} |\n\
-         | dc_offset | {:.6} | {:.6} | {:.6} |\n",
+         | dc_offset | {:.6} | {:.6} | {:.6} |\n\
+         | onset_count | {} | {} | {} |\n\
+         | event_density_per_bar | {:.6} | {:.6} | {:.6} |\n",
         case.id,
         case.title,
         case.recipe_refs,
@@ -284,7 +300,13 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
         silence_ratio_delta,
         baseline.dc_offset,
         candidate.dc_offset,
-        dc_offset_delta
+        dc_offset_delta,
+        baseline.onset_count,
+        candidate.onset_count,
+        onset_count_delta,
+        baseline.event_density_per_bar,
+        candidate.event_density_per_bar,
+        event_density_delta
     )
 }
 

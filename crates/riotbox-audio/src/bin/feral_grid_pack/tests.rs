@@ -1,6 +1,7 @@
 #[cfg(test)]
 mod tests {
     use super::*;
+    use riotbox_audio::runtime::signal_metrics;
 
     #[test]
     fn parses_grid_controls() {
@@ -193,6 +194,12 @@ mod tests {
                 .as_f64()
                 .expect("full mix rms")
                 > f64::from(MIN_SIGNAL_RMS)
+        );
+        assert!(
+            manifest["metrics"]["full_grid_mix"]["signal"]["event_density_per_bar"]
+                .as_f64()
+                .expect("full mix event density")
+                > 0.0
         );
         assert!(
             manifest["metrics"]["full_grid_mix"]["low_band"]["rms"]

@@ -84,6 +84,8 @@ pub struct ListeningPackSignalMetrics {
     pub active_sample_ratio: f32,
     pub silence_ratio: f32,
     pub dc_offset: f32,
+    pub onset_count: usize,
+    pub event_density_per_bar: f32,
 }
 
 impl From<OfflineAudioMetrics> for ListeningPackSignalMetrics {
@@ -99,6 +101,8 @@ impl From<OfflineAudioMetrics> for ListeningPackSignalMetrics {
             active_sample_ratio: metrics.active_sample_ratio,
             silence_ratio: metrics.silence_ratio,
             dc_offset: metrics.dc_offset,
+            onset_count: metrics.onset_count,
+            event_density_per_bar: metrics.event_density_per_bar,
         }
     }
 }

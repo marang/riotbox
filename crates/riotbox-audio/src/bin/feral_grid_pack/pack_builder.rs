@@ -17,7 +17,7 @@ use riotbox_audio::{
     },
     runtime::{
         OfflineAudioMetrics, render_mc202_offline, render_tr909_offline,
-        render_w30_preview_offline, signal_metrics,
+        render_w30_preview_offline, signal_metrics_with_grid,
     },
     source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},
     tr909::{
@@ -308,16 +308,20 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     assert_grid_len("w30", &w30, &grid);
     assert_grid_len("full_mix", &full_mix, &grid);
 
-    write_audio_with_metrics(&stems_dir.join("01_mc202_question_answer.wav"), &mc202)?;
-    write_audio_with_metrics(&stems_dir.join("02_tr909_beat_fill.wav"), &tr909)?;
-    write_audio_with_metrics(&stems_dir.join("03_w30_feral_source_chop.wav"), &w30)?;
-    write_audio_with_metrics(&output_dir.join("04_riotbox_grid_feral_mix.wav"), &full_mix)?;
+    write_audio_with_metrics(&stems_dir.join("01_mc202_question_answer.wav"), &mc202, &grid)?;
+    write_audio_with_metrics(&stems_dir.join("02_tr909_beat_fill.wav"), &tr909, &grid)?;
+    write_audio_with_metrics(&stems_dir.join("03_w30_feral_source_chop.wav"), &w30, &grid)?;
+    write_audio_with_metrics(
+        &output_dir.join("04_riotbox_grid_feral_mix.wav"),
+        &full_mix,
+        &grid,
+    )?;
 
     let report = PackReport {
-        mc202: render_metrics(&mc202),
-        tr909: render_metrics(&tr909),
-        w30: render_metrics(&w30),
-        full_mix: render_metrics(&full_mix),
+        mc202: render_metrics(&mc202, &grid),
+        tr909: render_metrics(&tr909, &grid),
+        w30: render_metrics(&w30, &grid),
+        full_mix: render_metrics(&full_mix, &grid),
         mc202_question_answer_delta: mc202_first_question_answer_delta(&mc202, &grid),
     };
     validate_report(&report)?;
@@ -430,4 +434,3 @@ fn render_mc202_question_answer(grid: &Grid) -> Vec<f32> {
     }
     output
 }
-

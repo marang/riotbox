@@ -10,6 +10,8 @@ struct SmokeMetrics {
     active_sample_ratio: f64,
     silence_ratio: f64,
     dc_offset: f64,
+    onset_count: usize,
+    event_density_per_bar: f64,
 }
 
 #[derive(Serialize)]
@@ -42,6 +44,8 @@ struct ManifestMetricDeltas {
     active_sample_ratio: f64,
     silence_ratio: f64,
     dc_offset: f64,
+    onset_count: usize,
+    event_density_per_bar: f64,
 }
 
 impl SmokeMetrics {
@@ -68,6 +72,10 @@ impl SmokeMetrics {
             active_sample_ratio: parse_finite_metric(contents, "Active sample ratio")?,
             silence_ratio: parse_finite_metric(contents, "Silence ratio")?,
             dc_offset: parse_finite_metric(contents, "DC offset")?,
+            onset_count: parse_metric_value(contents, "Onset count")?
+                .parse::<usize>()
+                .map_err(|_| "Onset count must be an integer".to_string())?,
+            event_density_per_bar: parse_finite_metric(contents, "Event density per bar")?,
         })
     }
 }
@@ -107,6 +115,8 @@ struct ComparisonReport {
     active_sample_ratio: DiagnosticMetric<f64>,
     silence_ratio: DiagnosticMetric<f64>,
     dc_offset: DiagnosticMetric<f64>,
+    onset_count: DiagnosticMetric<usize>,
+    event_density_per_bar: DiagnosticMetric<f64>,
 }
 
 impl ComparisonReport {
@@ -180,6 +190,15 @@ fn compare_metrics(
         ),
         silence_ratio: diagnostic_float_metric(baseline.silence_ratio, candidate.silence_ratio),
         dc_offset: diagnostic_float_metric(baseline.dc_offset, candidate.dc_offset),
+        onset_count: DiagnosticMetric {
+            baseline: baseline.onset_count,
+            candidate: candidate.onset_count,
+            delta: baseline.onset_count.abs_diff(candidate.onset_count),
+        },
+        event_density_per_bar: diagnostic_float_metric(
+            baseline.event_density_per_bar,
+            candidate.event_density_per_bar,
+        ),
     }
 }
 
