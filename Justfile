@@ -75,3 +75,7 @@ feral-grid-pack source date="local" bpm="128.0" bars="8" source_window="1.0" sta
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
+
+observer-audio-correlation-notes target="artifacts/audio_qa/local/observer_audio_correlation.md":
+    mkdir -p "$(dirname "{{target}}")"
+    cp docs/benchmarks/observer_audio_correlation_template_2026-04-29.md "{{target}}"
