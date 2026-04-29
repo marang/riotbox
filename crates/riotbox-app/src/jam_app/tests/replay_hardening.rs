@@ -282,3 +282,64 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     assert!(latest_snapshot_convergence.suffix_action_ids.is_empty());
     assert!(latest_snapshot_convergence.suffix_commands.is_empty());
 }
+
+#[test]
+fn restored_runtime_view_warns_about_unsupported_replay_commands() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    let unsupported_action = Action {
+        id: ActionId(77),
+        actor: ActorType::User,
+        command: ActionCommand::W30LoopFreeze,
+        params: ActionParams::Mutation {
+            intensity: 0.8,
+            target_id: Some("cap-01".into()),
+        },
+        target: ActionTarget {
+            scope: Some(TargetScope::LaneW30),
+            bank_id: Some(BankId::from("bank-a")),
+            pad_id: Some(PadId::from("pad-01")),
+            ..Default::default()
+        },
+        requested_at: 490,
+        quantization: Quantization::NextBar,
+        status: ActionStatus::Committed,
+        committed_at: Some(500),
+        result: Some(ActionResult {
+            accepted: true,
+            summary: "loop-freeze committed".into(),
+        }),
+        undo_policy: UndoPolicy::Undoable,
+        explanation: Some("artifact-producing W-30 action".into()),
+    };
+    session.action_log.actions.push(unsupported_action);
+    session.action_log.commit_records.push(ActionCommitRecord {
+        action_id: ActionId(77),
+        boundary: CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 40,
+            bar_index: 10,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        commit_sequence: 1,
+        committed_at: 500,
+    });
+    session.snapshots = vec![Snapshot {
+        snapshot_id: SnapshotId::from("before-artifact"),
+        created_at: "2026-04-29T22:10:00Z".into(),
+        label: "before artifact action".into(),
+        action_cursor: 0,
+    }];
+
+    let tempdir = tempdir().expect("create unsupported replay warning tempdir");
+    let session_path = tempdir.path().join("unsupported-replay-session.json");
+    save_session_json(&session_path, &session).expect("save unsupported replay fixture");
+
+    let restored =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
+
+    assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
+        warning == "replay cannot cover 1 unsupported command(s) after snapshot: w30.loop_freeze"
+    }));
+}

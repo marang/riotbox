@@ -13,7 +13,9 @@ use riotbox_core::{
     tr909_policy::derive_tr909_source_support_reason,
 };
 
-use super::{AppRuntimeState, SidecarState};
+use super::{
+    AppRuntimeState, SidecarState, runtime_replay_warnings::derive_replay_summary_warnings,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JamRuntimeView {
@@ -106,6 +108,7 @@ impl JamRuntimeView {
             &runtime.w30_resample_tap,
             session,
         ));
+        runtime_warnings.extend(derive_replay_summary_warnings(session));
 
         Self {
             audio_status,

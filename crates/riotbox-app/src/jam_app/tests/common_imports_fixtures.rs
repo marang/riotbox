@@ -39,8 +39,9 @@ use riotbox_core::{
         load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
     },
     session::{
-        CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, GhostBudgetState, GhostState,
-        GhostSuggestionRecord, GraphStorageMode, Mc202PhraseVariantState,
+        ActionCommitRecord, CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType,
+        GhostBudgetState, GhostState, GhostSuggestionRecord, GraphStorageMode,
+        Mc202PhraseVariantState,
         SceneMovementDirectionState, SceneMovementLaneIntentState, SessionFile, Snapshot,
         SourceGraphRef, SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
         W30PreviewModeState,
