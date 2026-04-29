@@ -3,6 +3,7 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use riotbox_audio::listening_manifest::validate_manifest_envelope;
 use serde_json::Value;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -10,6 +11,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.show_help {
         print_help();
         return Ok(());
+    }
+
+    if args.require_evidence {
+        validate_manifest_envelope_file(&args.manifest_path)?;
     }
 
     let summary = build_summary(&args.observer_path, &args.manifest_path)?;
@@ -120,8 +125,9 @@ fn print_help() {
          then emits a compact Markdown correlation summary. This is local-first\n\
          QA bookkeeping, not a live host-session monitor.\n\
          \n\
-         Pass --require-evidence to fail when committed control-path evidence\n\
-         or passing output-path manifest evidence is missing."
+         Pass --require-evidence to fail when the manifest envelope is unstable,\n\
+         committed control-path evidence is missing, or passing output-path\n\
+         manifest evidence is missing."
     );
 }
 
@@ -130,7 +136,7 @@ fn build_summary(
     manifest_path: &Path,
 ) -> Result<CorrelationSummary, Box<dyn std::error::Error>> {
     let observer_events = read_observer_events(observer_path)?;
-    let manifest: Value = serde_json::from_str(&fs::read_to_string(manifest_path)?)?;
+    let manifest = read_manifest(manifest_path)?;
 
     let launch = observer_events
         .iter()
@@ -199,6 +205,26 @@ fn read_observer_events(path: &Path) -> Result<Vec<Value>, Box<dyn std::error::E
             })
         })
         .collect()
+}
+
+fn validate_manifest_envelope_file(path: &Path) -> Result<(), io::Error> {
+    let manifest = read_manifest(path)?;
+    validate_manifest_envelope(&manifest).map_err(|error| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("invalid audio QA manifest envelope: {error}"),
+        )
+    })
+}
+
+fn read_manifest(path: &Path) -> Result<Value, io::Error> {
+    let contents = fs::read_to_string(path)?;
+    serde_json::from_str(&contents).map_err(|error| {
+        io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("invalid audio QA manifest JSON: {error}"),
+        )
+    })
 }
 
 fn string_field(event: &Value, field: &str) -> String {
