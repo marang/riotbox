@@ -44,6 +44,7 @@ mod capture_artifacts;
 mod capture_helpers;
 mod commit;
 mod controls;
+mod ghost_queue;
 mod helpers;
 mod lifecycle;
 mod mc202_queue;
@@ -63,6 +64,7 @@ use capture_helpers::{
     apply_capture_promotion_side_effects, capture_promotion_summary, capture_ref_from_action,
     capture_targets_specific_w30_pad, capture_targets_w30_pad,
 };
+pub use ghost_queue::GhostSuggestionQueueResult;
 use helpers::{is_mc202_phrase_action, max_action_id, next_action_id_from_session};
 use projection::{
     build_mc202_render_state, build_tr909_render_state, build_w30_preview_render_state,

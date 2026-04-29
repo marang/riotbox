@@ -6,6 +6,7 @@ include!("tests/persistence_runtime_view.rs");
 include!("tests/feral_support_runtime_controls.rs");
 include!("tests/transport_scene_select.rs");
 include!("tests/scene_restore_mc202_queue_start.rs");
+include!("tests/ghost_assist_queue.rs");
 include!("tests/mc202_queue_timing.rs");
 include!("tests/capture_w30_audition.rs");
 include!("tests/w30_source_window_previews.rs");

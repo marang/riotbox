@@ -91,6 +91,10 @@ impl GhostState {
             return false;
         };
 
+        if record.rejected {
+            return false;
+        }
+
         record.mark_accepted();
         true
     }
@@ -326,6 +330,31 @@ mod tests {
         assert_eq!(record.status(), GhostSuggestionStatus::Rejected);
         assert!(!record.accepted);
         assert!(record.rejected);
+    }
+
+    #[test]
+    fn rejected_suggestion_cannot_be_accepted_later_without_new_proposal() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:48:00Z");
+        session.ghost_state.mode = GhostMode::Assist;
+        session
+            .ghost_state
+            .suggestion_history
+            .push(GhostSuggestionRecord {
+                proposal_id: "ghost-proposal-1".into(),
+                summary: "fill next bar".into(),
+                accepted: false,
+                rejected: false,
+            });
+
+        assert!(session
+            .ghost_state
+            .reject_suggestion("ghost-proposal-1"));
+        assert!(!session
+            .ghost_state
+            .accept_suggestion("ghost-proposal-1"));
+
+        let record = &session.ghost_state.suggestion_history[0];
+        assert_eq!(record.status(), GhostSuggestionStatus::Rejected);
     }
 
     #[test]

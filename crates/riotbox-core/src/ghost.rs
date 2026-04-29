@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    action::{ActionCommand, ActionTarget, GhostMode, Quantization},
+    action::{ActionCommand, ActionDraft, ActionTarget, ActorType, GhostMode, Quantization},
     session::GhostSuggestionRecord,
 };
 
@@ -39,6 +39,29 @@ impl GhostWatchSuggestion {
             rejected: false,
         }
     }
+
+    pub fn accepted_action_draft(
+        &self,
+        current_mode: GhostMode,
+    ) -> Result<ActionDraft, GhostSuggestionDraftError> {
+        if !matches!(current_mode, GhostMode::Assist) {
+            return Err(GhostSuggestionDraftError::AssistModeRequired);
+        }
+        if self.is_blocked() {
+            return Err(GhostSuggestionDraftError::Blocked);
+        }
+
+        let Some(suggested_action) = &self.suggested_action else {
+            return Err(GhostSuggestionDraftError::MissingSuggestedAction);
+        };
+
+        let mut draft = suggested_action.to_action_draft();
+        draft.explanation = Some(format!(
+            "ghost accepted {}: {}",
+            self.proposal_id, suggested_action.intent
+        ));
+        Ok(draft)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -60,6 +83,27 @@ pub struct GhostSuggestedAction {
     pub target: ActionTarget,
     pub quantization: Quantization,
     pub intent: String,
+}
+
+impl GhostSuggestedAction {
+    #[must_use]
+    pub fn to_action_draft(&self) -> ActionDraft {
+        let mut draft = ActionDraft::new(
+            ActorType::Ghost,
+            self.command,
+            self.quantization,
+            self.target.clone(),
+        );
+        draft.explanation = Some(self.intent.clone());
+        draft
+    }
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum GhostSuggestionDraftError {
+    AssistModeRequired,
+    Blocked,
+    MissingSuggestedAction,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -158,6 +202,47 @@ mod tests {
         assert!(record_json.get("command").is_none());
         assert!(record_json.get("status").is_none());
         assert!(record_json.get("quantization").is_none());
+    }
+
+    #[test]
+    fn accepted_assist_suggestion_converts_to_normal_ghost_action_draft() {
+        let suggestion = source_backed_capture_suggestion();
+
+        let draft = suggestion
+            .accepted_action_draft(GhostMode::Assist)
+            .expect("accepted draft");
+
+        assert_eq!(draft.actor, ActorType::Ghost);
+        assert_eq!(draft.command, ActionCommand::CaptureNow);
+        assert_eq!(draft.quantization, Quantization::NextBar);
+        assert_eq!(draft.target.scope, Some(TargetScope::LaneW30));
+        assert_eq!(
+            draft.explanation.as_deref(),
+            Some("ghost accepted ghost-watch-1: store a reusable W-30 pad candidate")
+        );
+    }
+
+    #[test]
+    fn accepted_suggestion_requires_assist_and_unblocked_action_shape() {
+        let mut suggestion = source_backed_capture_suggestion();
+
+        assert_eq!(
+            suggestion.accepted_action_draft(GhostMode::Watch),
+            Err(GhostSuggestionDraftError::AssistModeRequired)
+        );
+
+        suggestion.safety = GhostSuggestionSafety::Blocked;
+        assert_eq!(
+            suggestion.accepted_action_draft(GhostMode::Assist),
+            Err(GhostSuggestionDraftError::Blocked)
+        );
+
+        suggestion.safety = GhostSuggestionSafety::SafeToSuggest;
+        suggestion.suggested_action = None;
+        assert_eq!(
+            suggestion.accepted_action_draft(GhostMode::Assist),
+            Err(GhostSuggestionDraftError::MissingSuggestedAction)
+        );
     }
 
     fn source_backed_capture_suggestion() -> GhostWatchSuggestion {

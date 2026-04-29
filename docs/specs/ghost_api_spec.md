@@ -209,9 +209,10 @@ Canonical MVP flow:
 2. Ghost emits a proposal.
 3. User sees summary and rationale.
 4. User accepts or rejects.
-5. Accepted actions enter the normal queue.
-6. Commit occurs on the normal quantized boundary.
-7. Result appears in log and replay state.
+5. Accepted suggestions with a safe `suggested_action` become normal `ActionDraft`s with `ActorType::Ghost`.
+6. Accepted actions enter the normal queue.
+7. Commit occurs on the normal quantized boundary.
+8. Result appears in log and replay state.
 
 Rules:
 
@@ -219,6 +220,7 @@ Rules:
 - accepting a suggestion is only effective in `assist`; `watch` remains read-only
 - rejecting a suggestion only marks that proposal as rejected
 - `assist` may prepare actions, but acceptance remains explicit for MVP-critical changes
+- accepted suggestions must use the existing Action Queue; no Ghost-specific commit path may mutate musical state directly
 
 ---
 

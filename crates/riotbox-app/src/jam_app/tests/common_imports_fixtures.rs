@@ -30,6 +30,10 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, CommitBoundary, GhostMode, Quantization, TargetScope, UndoPolicy,
     },
+    ghost::{
+        GhostSuggestedAction, GhostSuggestionBlocker, GhostSuggestionBlockerKind,
+        GhostSuggestionConfidence, GhostSuggestionSafety, GhostWatchSuggestion, GhostWatchTool,
+    },
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SnapshotId, SourceId},
     persistence::{
         load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
