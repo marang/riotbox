@@ -100,7 +100,19 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Needs human listening: `yes`"));
+    validate_manifest_envelope_file(&manifest_path).expect("fixture manifest envelope");
     validate_required_evidence(&summary).expect("fixture evidence");
+}
+
+#[test]
+fn strict_evidence_rejects_invalid_manifest_envelope() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&manifest_path, synthetic_manifest()).expect("write manifest");
+
+    let error = validate_manifest_envelope_file(&manifest_path).expect_err("invalid envelope");
+
+    assert!(error.to_string().contains("schema_version"));
 }
 
 #[test]
