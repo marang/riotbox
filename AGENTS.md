@@ -188,6 +188,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - architecture drift against `docs/` contracts
   - missing tests for new behavior
   - workflow/documentation gaps introduced by the slice
+  - growth of already-large Rust files or new large inline test modules that should be split into focused modules
 - If the review finds a real issue, fix it on the branch before creating the PR when feasible
 
 ### Audio-producing slices
