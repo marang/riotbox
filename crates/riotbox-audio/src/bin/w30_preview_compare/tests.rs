@@ -17,7 +17,22 @@ mod tests {
 - Peak abs: `0.115204`
 - RMS: `0.038331`
 - Sum: `4.750000`
+- Mean abs: `0.021000`
+- Zero crossings: `128`
+- Crest factor: `3.005000`
 ";
+
+    const fn sample_metrics() -> SmokeMetrics {
+        SmokeMetrics {
+            active_samples: 512,
+            peak_abs: 0.115204,
+            rms: 0.038331,
+            sum: 4.75,
+            mean_abs: 0.021,
+            zero_crossings: 128,
+            crest_factor: 3.005,
+        }
+    }
 
     #[test]
     fn parses_default_args() {
@@ -137,6 +152,9 @@ mod tests {
                 peak_abs: 0.115204,
                 rms: 0.038331,
                 sum: 4.75,
+                mean_abs: 0.021,
+                zero_crossings: 128,
+                crest_factor: 3.005,
             }
         );
     }
@@ -160,12 +178,16 @@ mod tests {
             peak_abs: 0.115204,
             rms: 0.038331,
             sum: 4.75,
+            ..sample_metrics()
         };
         let candidate = SmokeMetrics {
             active_samples: 513,
             peak_abs: 0.115205,
             rms: 0.038330,
             sum: 4.750001,
+            mean_abs: 0.021001,
+            zero_crossings: 130,
+            crest_factor: 3.004,
         };
         let limits = DriftLimits {
             min_active_samples_delta: 0,
@@ -188,12 +210,16 @@ mod tests {
             peak_abs: 0.115204,
             rms: 0.038331,
             sum: 4.75,
+            ..sample_metrics()
         };
         let candidate = SmokeMetrics {
             active_samples: 512,
             peak_abs: 0.125204,
             rms: 0.041331,
             sum: 5.15,
+            mean_abs: 0.024,
+            zero_crossings: 150,
+            crest_factor: 3.21,
         };
         let limits = DriftLimits {
             min_active_samples_delta: 0,
@@ -225,12 +251,16 @@ mod tests {
             peak_abs: 0.115204,
             rms: 0.038331,
             sum: 4.75,
+            ..sample_metrics()
         };
         let candidate = SmokeMetrics {
             active_samples: 514,
             peak_abs: 0.2,
             rms: 0.1,
             sum: 6.0,
+            mean_abs: 0.07,
+            zero_crossings: 160,
+            crest_factor: 2.0,
         };
 
         assert!(compare_metrics(&baseline, &candidate, &DriftLimits::default()).has_failures());
@@ -291,7 +321,9 @@ mod tests {
             3
         );
         assert_eq!(manifest["metrics"]["baseline"]["rms"], 0.038331);
+        assert_eq!(manifest["metrics"]["baseline"]["zero_crossings"], 128);
         assert_eq!(manifest["metrics"]["deltas"]["rms"], 0.0);
+        assert_eq!(manifest["metrics"]["deltas"]["zero_crossings"], 0);
     }
 
     #[test]

@@ -170,6 +170,8 @@ Preferred response when a Rust file crosses the budget:
 
 - split by responsibility, screen, lane, fixture family, command family, or render seam
 - keep the split mechanical when possible
+- use semantic shard names that describe responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`
+- avoid durable `01_...rs`, `02_...rs` numbering except as a short-lived mechanical migration step when it materially reduces refactor risk
 - avoid mixing behavior changes with file-size cleanup
 - create a follow-up ticket if the split is too large for the current branch
 

@@ -131,6 +131,7 @@ fn mc202_first_question_answer_delta(mc202: &[f32], grid: &Grid) -> OfflineAudio
             peak_abs: 0.0,
             rms: 0.0,
             sum: 0.0,
+            ..OfflineAudioMetrics::default()
         };
     }
 
@@ -392,4 +393,3 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
         ),
     )
 }
-
