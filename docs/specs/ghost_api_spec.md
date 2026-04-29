@@ -145,6 +145,10 @@ Rules:
 
 ## 8. Initial MVP Tool Families
 
+The canonical registry id is the durable contract. Rust proposal JSON stores the
+short `tool_name` enum in `snake_case`; code must be able to map that enum back
+to the canonical registry id.
+
 ### 8.1 Observation tools
 
 - `ghost.inspect_jam_state`
@@ -168,6 +172,32 @@ Rules:
 MVP rule:
 
 - direct multi-step autonomous tools are out of scope
+
+### 8.4 MVP Registry
+
+| Registry id | Rust proposal `tool_name` | Family | Allowed modes | Side-effect policy | Action mapping |
+| --- | --- | --- | --- | --- | --- |
+| `ghost.inspect_jam_state` | `inspect_jam_state` | Observation | `watch`, `assist` | Read-only | None |
+| `ghost.inspect_source_summary` | `inspect_source_summary` | Observation | `watch`, `assist` | Read-only | None |
+| `ghost.inspect_recent_actions` | `inspect_recent_actions` | Observation | `watch`, `assist` | Read-only | None |
+| `ghost.inspect_health` | `inspect_health` | Observation | `watch`, `assist` | Read-only | None |
+| `ghost.suggest_capture` | `suggest_capture` | Suggestion | `watch`, `assist` | Emits proposal only; accepted in `assist` through the normal action queue | `capture.now` |
+| `ghost.suggest_scene_mutation` | `suggest_scene_mutation` | Suggestion | `watch`, `assist` | Emits proposal only; accepted in `assist` through the normal action queue | `scene.mutate` |
+| `ghost.suggest_macro_shift` | `suggest_macro_shift` | Suggestion | `watch`, `assist` | Emits proposal only; accepted in `assist` through the normal action queue | Lane or mixer action from proposal payload |
+| `ghost.suggest_restore` | `suggest_restore` | Suggestion | `watch`, `assist` | Emits proposal only; accepted in `assist` through the normal action queue | `scene.restore` |
+| `ghost.request_action` | n/a | Execution request | `assist` | Creates a normal `ActionDraft` only after explicit approval and safety checks | Any allowed Action Lexicon command carried by the approved request |
+| `ghost.accept_suggested_action` | n/a | Decision | `assist` | Marks the proposal accepted and queues the mapped action; no direct musical mutation | Action mapped by the accepted proposal |
+| `ghost.reject_suggested_action` | n/a | Decision | `watch`, `assist` | Marks the proposal rejected; no musical mutation | None |
+
+Registry rules:
+
+- proposal `tool_name` values must remain stable because they persist into
+  sessions and review artifacts
+- execution registry ids do not currently appear as `GhostWatchTool` variants
+  because they are host/app control operations around proposals, not proposal
+  producers
+- adding a new Ghost tool requires updating this registry, the Rust mapping, and
+  at least one serialization or UI/control-path regression
 
 ---
 

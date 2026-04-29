@@ -77,6 +77,22 @@ pub enum GhostWatchTool {
     SuggestRestore,
 }
 
+impl GhostWatchTool {
+    #[must_use]
+    pub const fn registry_id(self) -> &'static str {
+        match self {
+            Self::InspectJamState => "ghost.inspect_jam_state",
+            Self::InspectSourceSummary => "ghost.inspect_source_summary",
+            Self::InspectRecentActions => "ghost.inspect_recent_actions",
+            Self::InspectHealth => "ghost.inspect_health",
+            Self::SuggestCapture => "ghost.suggest_capture",
+            Self::SuggestSceneMutation => "ghost.suggest_scene_mutation",
+            Self::SuggestMacroShift => "ghost.suggest_macro_shift",
+            Self::SuggestRestore => "ghost.suggest_restore",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct GhostSuggestedAction {
     pub command: ActionCommand,
@@ -164,6 +180,42 @@ mod tests {
                 .expect("suggested action")
                 .command,
             ActionCommand::CaptureNow
+        );
+    }
+
+    #[test]
+    fn ghost_tool_registry_ids_stay_stable() {
+        assert_eq!(
+            GhostWatchTool::InspectJamState.registry_id(),
+            "ghost.inspect_jam_state"
+        );
+        assert_eq!(
+            GhostWatchTool::InspectSourceSummary.registry_id(),
+            "ghost.inspect_source_summary"
+        );
+        assert_eq!(
+            GhostWatchTool::InspectRecentActions.registry_id(),
+            "ghost.inspect_recent_actions"
+        );
+        assert_eq!(
+            GhostWatchTool::InspectHealth.registry_id(),
+            "ghost.inspect_health"
+        );
+        assert_eq!(
+            GhostWatchTool::SuggestCapture.registry_id(),
+            "ghost.suggest_capture"
+        );
+        assert_eq!(
+            GhostWatchTool::SuggestSceneMutation.registry_id(),
+            "ghost.suggest_scene_mutation"
+        );
+        assert_eq!(
+            GhostWatchTool::SuggestMacroShift.registry_id(),
+            "ghost.suggest_macro_shift"
+        );
+        assert_eq!(
+            GhostWatchTool::SuggestRestore.registry_id(),
+            "ghost.suggest_restore"
         );
     }
 
