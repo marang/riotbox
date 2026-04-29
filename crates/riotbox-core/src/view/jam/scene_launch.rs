@@ -410,6 +410,7 @@ pub struct GhostStatusView {
     pub latest_proposal_id: Option<String>,
     pub latest_summary: Option<String>,
     pub latest_status: Option<String>,
+    pub decision_hint: Option<String>,
     pub safety: String,
     pub active_blocker: Option<String>,
 }
@@ -433,6 +434,19 @@ fn ghost_status_view(session: &SessionFile) -> GhostStatusView {
         latest_proposal_id: latest.map(|suggestion| suggestion.proposal_id.clone()),
         latest_summary: latest.map(|suggestion| suggestion.summary.clone()),
         latest_status: latest.map(|suggestion| suggestion.status().label().into()),
+        decision_hint: latest.map(|suggestion| {
+            if is_blocked {
+                "blocked".into()
+            } else if suggestion.rejected {
+                "rejected".into()
+            } else if suggestion.accepted {
+                "queued intent".into()
+            } else if matches!(session.ghost_state.mode, crate::action::GhostMode::Assist) {
+                "accept/reject".into()
+            } else {
+                "assist required".into()
+            }
+        }),
         safety: if is_blocked {
             "blocked".into()
         } else {

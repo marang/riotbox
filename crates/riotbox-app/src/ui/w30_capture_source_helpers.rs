@@ -442,8 +442,12 @@ fn ghost_label(shell: &JamShellState) -> String {
         .as_deref()
         .map_or_else(|| ghost.safety.clone(), |blocker| format!("blocked {blocker}"));
 
-    match ghost.latest_summary.as_deref() {
-        Some(summary) => format!("{blocker} | {mode} | {summary}"),
-        None => format!("{blocker} | {mode}"),
+    let status = ghost.latest_status.as_deref().unwrap_or("idle");
+    let decision = ghost.decision_hint.as_deref().unwrap_or("no suggestion");
+
+    if ghost.is_blocked {
+        format!("{blocker} | {status}")
+    } else {
+        format!("{mode} {decision} | {status}")
     }
 }

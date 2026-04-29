@@ -163,6 +163,10 @@ fn projects_pending_actions_and_assist_ghost_summary() {
     assert_eq!(vm.ghost.latest_proposal_id.as_deref(), Some("gp-1"));
     assert_eq!(vm.ghost.latest_summary.as_deref(), Some("capture next bar"));
     assert_eq!(vm.ghost.latest_status.as_deref(), Some("suggested"));
+    assert_eq!(
+        vm.ghost.decision_hint.as_deref(),
+        Some("accept/reject")
+    );
     assert_eq!(vm.ghost.safety, "clear");
     assert_eq!(vm.ghost.active_blocker, None);
 }
@@ -196,6 +200,7 @@ fn projects_blocked_watch_suggestion_into_jam_view() {
         Some("capture the source-backed hit")
     );
     assert_eq!(vm.ghost.latest_status.as_deref(), Some("suggested"));
+    assert_eq!(vm.ghost.decision_hint.as_deref(), Some("blocked"));
 }
 
 #[test]
@@ -212,4 +217,5 @@ fn projects_rejected_ghost_suggestion_into_jam_view() {
     let vm = JamViewModel::build(&session, &ActionQueue::new(), None);
 
     assert_eq!(vm.ghost.latest_status.as_deref(), Some("rejected"));
+    assert_eq!(vm.ghost.decision_hint.as_deref(), Some("rejected"));
 }

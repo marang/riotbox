@@ -418,8 +418,25 @@ fn renders_ghost_watch_summary_and_blocker_status() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("watch ro"));
+    assert!(rendered.contains("blocked"));
     assert!(rendered.contains("blocked ghost.main"));
+}
+
+#[test]
+fn renders_ghost_assist_decision_hint() {
+    let mut shell = sample_shell_state();
+    shell.app.session.ghost_state.mode = GhostMode::Assist;
+    shell.app.session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
+        proposal_id: "ghost-assist-1".into(),
+        summary: "trigger next-bar drum fill".into(),
+        accepted: false,
+        rejected: false,
+    }];
+    shell.app.refresh_view();
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("accept/reject"), "{rendered}");
 }
 
 #[test]
