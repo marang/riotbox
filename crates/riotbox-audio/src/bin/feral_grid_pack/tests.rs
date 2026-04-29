@@ -55,6 +55,27 @@ mod tests {
     }
 
     #[test]
+    fn bar_variation_metrics_distinguish_identical_and_alternating_bars() {
+        let grid = Grid::new(120.0, 4, 3).expect("grid");
+        let identical = bar_pattern_samples(&grid, |_, frame, bar_frames| frame < bar_frames / 8);
+        let alternating = bar_pattern_samples(&grid, |bar, frame, bar_frames| {
+            if bar.is_multiple_of(2) {
+                frame < bar_frames / 8
+            } else {
+                frame > bar_frames / 2 && frame < bar_frames / 2 + bar_frames / 8
+            }
+        });
+
+        let identical_metrics = bar_variation_metrics(&identical, &grid);
+        let alternating_metrics = bar_variation_metrics(&alternating, &grid);
+
+        assert!(identical_metrics.bar_similarity > 0.999);
+        assert_eq!(identical_metrics.identical_bar_run_length, 3);
+        assert!(alternating_metrics.bar_similarity < 0.25);
+        assert_eq!(alternating_metrics.identical_bar_run_length, 1);
+    }
+
+    #[test]
     fn renders_grid_pack_files_and_noncollapsed_audio() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source_path = temp.path().join("source.wav");
@@ -213,6 +234,18 @@ mod tests {
                 .expect("delta rms")
                 > f64::from(MIN_MC202_BAR_DELTA_RMS)
         );
+        assert!(
+            manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
+                .as_f64()
+                .expect("bar similarity")
+                <= 1.0
+        );
+        assert!(
+            manifest["metrics"]["bar_variation"]["full_grid_mix"]["identical_bar_run_length"]
+                .as_u64()
+                .expect("identical bar run")
+                >= 1
+        );
     }
 
     fn assert_manifest_artifact(
@@ -266,6 +299,26 @@ mod tests {
             let sample = kick + grit;
             samples.push(sample);
             samples.push(sample * 0.97);
+        }
+        samples
+    }
+
+    fn bar_pattern_samples(
+        grid: &Grid,
+        is_active_frame: impl Fn(u32, usize, usize) -> bool,
+    ) -> Vec<f32> {
+        let mut samples = Vec::with_capacity(grid.total_frames * usize::from(CHANNEL_COUNT));
+        for bar in 0..grid.bars {
+            let bar_frames = grid.bar_frame_count(bar);
+            for frame in 0..bar_frames {
+                let sample = if is_active_frame(bar, frame, bar_frames) {
+                    0.5
+                } else {
+                    0.0
+                };
+                samples.push(sample);
+                samples.push(sample);
+            }
         }
         samples
     }
