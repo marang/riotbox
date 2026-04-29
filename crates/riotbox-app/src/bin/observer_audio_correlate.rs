@@ -337,11 +337,7 @@ mod tests {
         assert_eq!(summary.manifest_result, "pass");
         assert_eq!(summary.artifact_count, 6);
         assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
-        assert!(
-            summary
-                .full_mix_low_band_rms
-                .is_some_and(|rms| rms > 0.01)
-        );
+        assert!(summary.full_mix_low_band_rms.is_some_and(|rms| rms > 0.01));
         assert!(
             summary
                 .mc202_question_answer_delta_rms
