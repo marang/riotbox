@@ -379,6 +379,7 @@ just observer-audio-correlate-json-fixture
 just listening-manifest-validator-fixtures
 just listening-manifest-validate-generated-packs
 just observer-audio-correlate-generated-feral-grid
+just first-playable-jam-probe
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
 cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav" --observer artifacts/audio_qa/local/user-session/events.ndjson

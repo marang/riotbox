@@ -59,6 +59,9 @@ def validate_summary(summary: Any) -> None:
     require_optional_number(metrics, "full_mix_rms")
     require_optional_number(metrics, "full_mix_low_band_rms")
     require_optional_number(metrics, "mc202_question_answer_delta_rms")
+    require_optional_number(metrics, "w30_candidate_rms")
+    require_optional_number(metrics, "w30_candidate_active_sample_ratio")
+    require_optional_number(metrics, "w30_rms_delta")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:

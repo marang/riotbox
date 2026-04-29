@@ -461,6 +461,7 @@ Today the repo already has:
 - an initial local W-30 preview smoke metrics comparison helper for baseline-vs-candidate Markdown metrics that writes local `comparison.md` and `manifest.json` reports
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - a CI-safe generated W-30 source-vs-fallback smoke that uses deterministic synthetic source material, checks minimum source-vs-fallback deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`
+- a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-fallback output evidence, and a committed observer fixture for the current `space -> capture -> raw audition -> promote -> W-30 recall` user path
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
 - MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, follower-vs-instigator, follower-vs-mutated-drive, neutral-vs-lift contour, and direct-vs-hook-response contrasts without claiming a finished synth engine
@@ -502,6 +503,7 @@ Today the repo already has:
 - optional Feral scorecard validation inside the shared manifest v1 validator, so generated Feral grid manifests must carry well-typed scorecard evidence when they emit a `feral_scorecard` block
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
 - observer/audio strict Markdown and JSON correlation is smoke-tested against a freshly generated Feral grid manifest built from a deterministic synthetic break WAV
+- observer/audio strict JSON correlation also accepts W-30 preview source-diff manifests as output-path evidence, using candidate RMS, active-sample ratio, and RMS delta to reject silent or fallback-collapsed first-playable output
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
 - `just audio-qa-ci` validates freshly generated W-30 preview, lane recipe, Feral before/after, and Feral grid manifests against the listening manifest v1 envelope

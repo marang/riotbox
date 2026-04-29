@@ -128,6 +128,9 @@ struct CorrelationSummary {
     full_mix_rms: Option<f64>,
     full_mix_low_band_rms: Option<f64>,
     mc202_question_answer_delta_rms: Option<f64>,
+    w30_candidate_rms: Option<f64>,
+    w30_candidate_active_sample_ratio: Option<f64>,
+    w30_rms_delta: Option<f64>,
 }
 
 fn print_help() {
@@ -200,6 +203,10 @@ fn build_summary(
         full_mix_low_band_rms: manifest["metrics"]["full_grid_mix"]["low_band"]["rms"].as_f64(),
         mc202_question_answer_delta_rms: manifest["metrics"]["mc202_question_answer_delta"]["rms"]
             .as_f64(),
+        w30_candidate_rms: manifest["metrics"]["candidate"]["rms"].as_f64(),
+        w30_candidate_active_sample_ratio: manifest["metrics"]["candidate"]["active_sample_ratio"]
+            .as_f64(),
+        w30_rms_delta: manifest["metrics"]["deltas"]["rms"].as_f64(),
     })
 }
 
@@ -273,6 +280,9 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Full mix RMS: `{}`\n\
          - Full mix low-band RMS: `{}`\n\
          - MC-202 question/answer delta RMS: `{}`\n\n\
+         - W-30 candidate RMS: `{}`\n\
+         - W-30 candidate active-sample ratio: `{}`\n\
+         - W-30 RMS delta: `{}`\n\n\
          ## Correlation Verdict\n\n\
          - Control path present: `{}`\n\
          - Output path present: `{}`\n\
@@ -293,6 +303,9 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
         format_optional_f64(summary.mc202_question_answer_delta_rms),
+        format_optional_f64(summary.w30_candidate_rms),
+        format_optional_f64(summary.w30_candidate_active_sample_ratio),
+        format_optional_f64(summary.w30_rms_delta),
         yes_no(control_path_present(summary)),
         yes_no(output_path_present(summary)),
         format_output_path_issues(summary)
@@ -321,6 +334,9 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "full_mix_rms": summary.full_mix_rms,
                 "full_mix_low_band_rms": summary.full_mix_low_band_rms,
                 "mc202_question_answer_delta_rms": summary.mc202_question_answer_delta_rms,
+                "w30_candidate_rms": summary.w30_candidate_rms,
+                "w30_candidate_active_sample_ratio": summary.w30_candidate_active_sample_ratio,
+                "w30_rms_delta": summary.w30_rms_delta,
             },
         },
         "needs_human_listening": true,
@@ -356,14 +372,41 @@ fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
         failures.push(format!("manifest_result={}", summary.manifest_result));
     }
 
-    for (name, metric) in [
+    let metric_failures = if summary.pack_id == "w30-preview-smoke" {
+        w30_source_preview_metric_failures(summary)
+    } else {
+        feral_grid_metric_failures(summary)
+    };
+    failures.extend(metric_failures);
+
+    failures
+}
+
+fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
+    metric_failures([
         ("full_mix_rms", summary.full_mix_rms),
         ("full_mix_low_band_rms", summary.full_mix_low_band_rms),
         (
             "mc202_question_answer_delta_rms",
             summary.mc202_question_answer_delta_rms,
         ),
-    ] {
+    ])
+}
+
+fn w30_source_preview_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
+    metric_failures([
+        ("w30_candidate_rms", summary.w30_candidate_rms),
+        (
+            "w30_candidate_active_sample_ratio",
+            summary.w30_candidate_active_sample_ratio,
+        ),
+        ("w30_rms_delta", summary.w30_rms_delta),
+    ])
+}
+
+fn metric_failures(metrics: impl IntoIterator<Item = (&'static str, Option<f64>)>) -> Vec<String> {
+    let mut failures = Vec::new();
+    for (name, metric) in metrics {
         if let Some(failure) = output_metric_failure(name, metric) {
             failures.push(failure);
         }

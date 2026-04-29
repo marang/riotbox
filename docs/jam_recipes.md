@@ -524,6 +524,35 @@ What this teaches:
 - the current source-backed W-30 path is a short preview excerpt, not full sample streaming
 - use this recipe before judging W-30 by a confusing first TUI run
 
+## Recipe 14: Probe The First-Playable Jam Path
+
+Goal: run one CI-safe control-plus-output check for the first source-backed Jam loop without relying on a live audio device.
+
+Run:
+
+```bash
+just first-playable-jam-probe
+```
+
+Expected result:
+
+- the probe renders W-30 fallback baseline and source-backed candidate WAVs from deterministic synthetic material
+- it validates the generated `manifest.json`
+- it correlates that output with an observer fixture for `space`, `c`, `o`, `p`, and `w`
+- it fails if the output is silent, missing, or collapsed back to the fallback-like source-diff metrics
+
+What this proves:
+
+- the current first-playable path has committed control evidence
+- raw audition / promote / recall intent is present in observer evidence
+- the W-30 output seam is source-backed enough to produce measurable candidate audio and source-vs-fallback delta
+
+What it does not prove yet:
+
+- full live TUI usability
+- device-level playback on the host
+- finished sampler/sequencer behavior
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -539,6 +568,7 @@ So if two runs feel similar:
 - use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
 - use `Recipe 12` if you want to understand the new `feral ready` gesture path
 - use `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the live TUI path
+- use `Recipe 14` if you want a CI-safe first-playable control-plus-output probe
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 

@@ -83,6 +83,7 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert_eq!(summary.manifest_result, "pass");
     assert_eq!(summary.artifact_count, 6);
     assert_eq!(summary.full_mix_rms, Some(0.1));
+    assert_eq!(summary.w30_candidate_rms, None);
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
@@ -137,6 +138,42 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Needs human listening: `yes`"));
     validate_manifest_envelope_file(&manifest_path).expect("fixture manifest envelope");
     validate_required_evidence(&summary).expect("fixture evidence");
+}
+
+#[test]
+fn summarizes_first_playable_w30_source_diff_manifest() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, first_playable_observer()).expect("write observer");
+    fs::write(&manifest_path, w30_source_diff_manifest()).expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let markdown = render_markdown(&summary);
+
+    assert_eq!(summary.pack_id, "w30-preview-smoke");
+    assert_eq!(summary.manifest_result, "pass");
+    assert_eq!(summary.artifact_count, 3);
+    assert_eq!(
+        summary.key_outcomes,
+        [
+            "space -> transport started",
+            "c -> capture queued",
+            "o -> audition raw/src",
+            "p -> promote queued",
+            "w -> recall/src"
+        ]
+    );
+    assert!(summary.w30_candidate_rms.is_some_and(|rms| rms > 0.001));
+    assert!(
+        summary
+            .w30_candidate_active_sample_ratio
+            .is_some_and(|ratio| ratio > 0.1)
+    );
+    assert!(summary.w30_rms_delta.is_some_and(|delta| delta > 0.001));
+    assert!(markdown.contains("W-30 candidate RMS: `0.006986`"));
+    assert!(markdown.contains("Output path present: `yes`"));
+    validate_required_evidence(&summary).expect("first playable evidence");
 }
 
 #[test]
@@ -277,4 +314,28 @@ fn fixture_observer() -> &'static str {
 
 fn fixture_manifest() -> &'static str {
     include_str!("../../../tests/fixtures/observer_audio_correlation/manifest.json")
+}
+
+fn first_playable_observer() -> &'static str {
+    include_str!("../../../tests/fixtures/first_playable_jam_probe/events.ndjson")
+}
+
+fn w30_source_diff_manifest() -> String {
+    r#"{
+  "schema_version": 1,
+  "pack_id": "w30-preview-smoke",
+  "case_id": "raw_capture_source_window_preview",
+  "result": "pass",
+  "artifacts": [{}, {}, {}],
+  "metrics": {
+    "candidate": {
+      "rms": 0.006986,
+      "active_sample_ratio": 0.900499
+    },
+    "deltas": {
+      "rms": 0.001073
+    }
+  }
+}"#
+    .to_string()
 }

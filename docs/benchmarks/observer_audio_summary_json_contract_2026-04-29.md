@@ -39,6 +39,15 @@ The `output_path` object should include:
 - `artifact_count`: number of manifest artifacts.
 - `metrics`: object containing the currently required output metric fields; values may be numbers or `null` when evidence is missing.
 
+The current stable metric keys are:
+
+- `full_mix_rms`
+- `full_mix_low_band_rms`
+- `mc202_question_answer_delta_rms`
+- `w30_candidate_rms`
+- `w30_candidate_active_sample_ratio`
+- `w30_rms_delta`
+
 ## Compatibility Rule
 
 Do not bump `schema_version` for additive fields that do not change the meaning of existing fields.
@@ -63,6 +72,7 @@ The committed fixture JSON smoke currently requires:
 - `output_path.issues` is empty
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
 - validator fixtures cover a valid failure summary with `null` metrics and a rejected invalid schema marker
+- `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 
 ## Current Non-Goals
 

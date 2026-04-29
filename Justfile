@@ -29,6 +29,7 @@ audio-qa-ci:
     just listening-manifest-validate-generated-packs
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
+    just first-playable-jam-probe
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -127,3 +128,6 @@ observer-audio-correlate-fixture:
 
 observer-audio-correlate-generated-feral-grid:
     scripts/correlate_generated_feral_grid_observer.sh
+
+first-playable-jam-probe:
+    scripts/validate_first_playable_jam_probe.sh
