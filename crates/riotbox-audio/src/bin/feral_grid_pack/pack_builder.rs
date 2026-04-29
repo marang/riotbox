@@ -172,6 +172,7 @@ struct Grid {
 struct RenderMetrics {
     signal: OfflineAudioMetrics,
     low_band: OfflineAudioMetrics,
+    bar_variation: BarVariationMetrics,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -218,7 +219,16 @@ struct ManifestPackMetrics {
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
+    bar_variation: ManifestBarVariationMetrics,
     mc202_question_answer_delta: ManifestSignalMetrics,
+}
+
+#[derive(Serialize)]
+struct ManifestBarVariationMetrics {
+    mc202_question_answer: BarVariationMetrics,
+    tr909_beat_fill: BarVariationMetrics,
+    w30_feral_source_chop: BarVariationMetrics,
+    full_grid_mix: BarVariationMetrics,
 }
 
 fn print_help() {
