@@ -508,6 +508,7 @@ Today the repo already has:
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
 - `just audio-qa-ci` validates freshly generated W-30 preview, lane recipe, Feral before/after, and Feral grid manifests against the listening manifest v1 envelope
 - generated-pack manifest validation can require referenced artifact and metrics files to exist via `--require-existing-artifacts`
+- `just offline-render-reproducibility-smoke` is a CI-safe bounded reproducibility check that renders the same deterministic source-backed W-30 output twice and compares WAV hashes; it is an offline render smoke, not the full export workflow
 
 Today the repo does not yet have a full official workflow for:
 

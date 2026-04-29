@@ -31,6 +31,7 @@ audio-qa-ci:
     just observer-audio-correlate-generated-feral-grid
     just first-playable-jam-probe
     just stage-style-jam-probe
+    just offline-render-reproducibility-smoke
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -135,3 +136,6 @@ first-playable-jam-probe:
 
 stage-style-jam-probe:
     scripts/validate_stage_style_jam_probe.sh
+
+offline-render-reproducibility-smoke:
+    scripts/validate_offline_render_reproducibility.sh
