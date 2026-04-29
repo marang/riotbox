@@ -376,6 +376,7 @@ fn compact_restore_replay_label(label: &str) -> String {
         .replace("suffix 1 action(s): ", "suffix ")
         .replace("unsupported suffix 1: ", "unsupported suffix ")
         .replace("unsupported origin 1: ", "unsupported origin ")
+        .replace("suffix none | target cursor ", "suffix none@")
         .replace(" action(s)", "")
         .replace(" @ cursor ", "@");
     compact

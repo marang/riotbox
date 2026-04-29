@@ -50,6 +50,10 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         "{rendered}"
     );
     assert!(
+        rendered.contains("Restore replay: no replay entries"),
+        "{rendered}"
+    );
+    assert!(
         rendered.contains("autosave file | parseable session JSON | review before manual recovery"),
         "{rendered}"
     );

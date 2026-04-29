@@ -25,6 +25,11 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         Line::from(surface.headline.clone()),
         Line::from(surface.safety_note.clone()),
         Line::from("No candidate is selected here; reload an explicit reviewed path manually."),
+        Line::from(format!(
+            "Restore replay: {} | {}",
+            compact_restore_replay_label(&shell.app.runtime_view.replay_restore_status),
+            restore_replay_help_scope_label(shell),
+        )),
     ];
 
     lines.extend(
@@ -47,6 +52,15 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
     );
 
     Some(lines)
+}
+
+fn restore_replay_help_scope_label(shell: &JamShellState) -> String {
+    let runtime = &shell.app.runtime_view;
+    if runtime.replay_restore_unsupported != "unsupported none" {
+        return compact_restore_replay_label(&runtime.replay_restore_unsupported);
+    }
+
+    compact_restore_replay_label(&runtime.replay_restore_suffix)
 }
 
 fn recovery_candidate_file_label(path: &Path) -> String {
