@@ -475,11 +475,13 @@ Today the repo already has:
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
 - a first local Feral before/after render pack that writes a source excerpt, Riotbox-transformed after render, before-then-after listening file, W-30 / TR-909 / MC-202 stems, metrics, comparison report, and README for a source WAV without committing generated audio
 - a first local grid-locked Feral demo render pack that writes MC-202 question/answer, TR-909 beat/fill, W-30/Feral source-chop, and combined mix WAVs from one shared beat/bar/frame grid, then checks stem activity, MC-202 question-vs-answer signal delta, and low-band support
+- a first machine-readable `manifest.json` beside the Feral grid demo pack output, recording pack metadata, artifact paths, thresholds, key metrics, pass status, and the reproduction command
 
 Today the repo does not yet have a full official workflow for:
 
 - general deterministic offline WAV render generation across fixture packs
 - generated listening packs beyond the W-30 preview smoke, lane recipe, Feral before/after, and Feral grid-demo conventions
+- a shared manifest schema across all local listening-pack helpers
 - CI-gated grid-locked multi-lane Feral demo rendering across the full fixture corpus
 - broad automated baseline vs candidate WAV comparison outside the current bounded helper cases
 - automated waveform or perceptual audio comparison
@@ -496,7 +498,7 @@ The next bounded audio QA slices should land in this order:
 
 1. widen signal metrics on the existing buffer regression fixtures
 2. add deterministic offline WAV render support for fixture-backed review cases
-3. add a first listening-pack manifest and output directory convention
+3. generalize the first listening-pack manifest into a shared helper/schema across local pack runners
 4. connect the most stable metric checks to CI while keeping listening review local-first
 5. add broader recipe replay / observer correlation once the local notes workflow is proven
 

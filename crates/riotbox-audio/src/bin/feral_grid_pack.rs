@@ -3,6 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::Serialize;
+
 use riotbox_audio::{
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
@@ -176,6 +178,66 @@ struct PackReport {
     mc202_question_answer_delta: OfflineAudioMetrics,
 }
 
+#[derive(Serialize)]
+struct ListeningPackManifest {
+    schema_version: u32,
+    pack_id: &'static str,
+    source: String,
+    sample_rate: u32,
+    channel_count: u16,
+    bpm: f32,
+    beats_per_bar: u32,
+    bars: u32,
+    total_beats: u32,
+    total_frames: usize,
+    duration_seconds: f32,
+    source_start_seconds: f32,
+    source_window_seconds: f32,
+    artifacts: Vec<ManifestArtifact>,
+    thresholds: ManifestThresholds,
+    metrics: ManifestPackMetrics,
+    verification_command: String,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestArtifact {
+    role: &'static str,
+    kind: &'static str,
+    path: String,
+    metrics_path: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ManifestThresholds {
+    min_signal_rms: f32,
+    min_mc202_bar_delta_rms: f32,
+    min_low_band_rms: f32,
+}
+
+#[derive(Serialize)]
+struct ManifestPackMetrics {
+    mc202_question_answer: ManifestRenderMetrics,
+    tr909_beat_fill: ManifestRenderMetrics,
+    w30_feral_source_chop: ManifestRenderMetrics,
+    full_grid_mix: ManifestRenderMetrics,
+    mc202_question_answer_delta: ManifestSignalMetrics,
+}
+
+#[derive(Serialize)]
+struct ManifestRenderMetrics {
+    signal: ManifestSignalMetrics,
+    low_band: ManifestSignalMetrics,
+}
+
+#[derive(Serialize)]
+struct ManifestSignalMetrics {
+    active_samples: usize,
+    peak_abs: f32,
+    rms: f32,
+    sum: f32,
+}
+
 fn print_help() {
     println!(
         "Usage: feral_grid_pack --source PATH [--date NAME] [--output-dir PATH]\n\
@@ -277,6 +339,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     };
     validate_report(&report)?;
     write_report(&output_dir.join("grid-report.md"), args, &grid, report)?;
+    write_manifest(&output_dir.join("manifest.json"), args, &grid, report)?;
     write_readme(&output_dir, args, &grid)?;
 
     Ok(())
@@ -657,6 +720,119 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
     )
 }
 
+fn write_manifest(
+    path: &Path,
+    args: &Args,
+    grid: &Grid,
+    report: PackReport,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let output_dir = args.output_dir();
+    let source_window_seconds = args.source_window_seconds.min(grid.duration_seconds());
+    let manifest = ListeningPackManifest {
+        schema_version: 1,
+        pack_id: PACK_ID,
+        source: args.source_path.display().to_string(),
+        sample_rate: SAMPLE_RATE,
+        channel_count: CHANNEL_COUNT,
+        bpm: grid.bpm,
+        beats_per_bar: grid.beats_per_bar,
+        bars: grid.bars,
+        total_beats: grid.total_beats,
+        total_frames: grid.total_frames,
+        duration_seconds: grid.duration_seconds(),
+        source_start_seconds: args.source_start_seconds,
+        source_window_seconds,
+        artifacts: manifest_artifacts(&output_dir),
+        thresholds: ManifestThresholds {
+            min_signal_rms: MIN_SIGNAL_RMS,
+            min_mc202_bar_delta_rms: MIN_MC202_BAR_DELTA_RMS,
+            min_low_band_rms: MIN_LOW_BAND_RMS,
+        },
+        metrics: ManifestPackMetrics {
+            mc202_question_answer: report.mc202.into(),
+            tr909_beat_fill: report.tr909.into(),
+            w30_feral_source_chop: report.w30.into(),
+            full_grid_mix: report.full_mix.into(),
+            mc202_question_answer_delta: report.mc202_question_answer_delta.into(),
+        },
+        verification_command: format!(
+            "just feral-grid-pack \"{}\" {} {:.3} {} {:.3} {:.3}",
+            args.source_path.display(),
+            args.date,
+            grid.bpm,
+            grid.bars,
+            source_window_seconds,
+            args.source_start_seconds
+        ),
+        result: "pass",
+    };
+
+    fs::write(path, serde_json::to_string_pretty(&manifest)? + "\n")?;
+    Ok(())
+}
+
+fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
+    vec![
+        manifest_audio_artifact(
+            "mc202_question_answer",
+            output_dir.join("stems/01_mc202_question_answer.wav"),
+        ),
+        manifest_audio_artifact(
+            "tr909_beat_fill",
+            output_dir.join("stems/02_tr909_beat_fill.wav"),
+        ),
+        manifest_audio_artifact(
+            "w30_feral_source_chop",
+            output_dir.join("stems/03_w30_feral_source_chop.wav"),
+        ),
+        manifest_audio_artifact(
+            "full_grid_mix",
+            output_dir.join("04_riotbox_grid_feral_mix.wav"),
+        ),
+        ManifestArtifact {
+            role: "grid_report",
+            kind: "markdown_report",
+            path: output_dir.join("grid-report.md").display().to_string(),
+            metrics_path: None,
+        },
+        ManifestArtifact {
+            role: "readme",
+            kind: "markdown_readme",
+            path: output_dir.join("README.md").display().to_string(),
+            metrics_path: None,
+        },
+    ]
+}
+
+fn manifest_audio_artifact(role: &'static str, path: PathBuf) -> ManifestArtifact {
+    ManifestArtifact {
+        role,
+        kind: "audio_wav",
+        metrics_path: Some(metrics_path_for(&path).display().to_string()),
+        path: path.display().to_string(),
+    }
+}
+
+impl From<RenderMetrics> for ManifestRenderMetrics {
+    fn from(metrics: RenderMetrics) -> Self {
+        Self {
+            signal: metrics.signal.into(),
+            low_band: metrics.low_band.into(),
+        }
+    }
+}
+
+impl From<OfflineAudioMetrics> for ManifestSignalMetrics {
+    fn from(metrics: OfflineAudioMetrics) -> Self {
+        Self {
+            active_samples: metrics.active_samples,
+            peak_abs: metrics.peak_abs,
+            rms: metrics.rms,
+            sum: metrics.sum,
+        }
+    }
+}
+
 fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<()> {
     fs::write(
         output_dir.join("README.md"),
@@ -677,7 +853,9 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              - `stems/02_tr909_beat_fill.wav`: TR-909 beat/fill support rendered on the same grid.\n\
              - `stems/03_w30_feral_source_chop.wav`: W-30 source-backed Feral chop rendered on the same grid.\n\
              - `04_riotbox_grid_feral_mix.wav`: combined grid-locked listening mix with low-end support.\n\
-             - `grid-report.md`: timing and output metrics.\n\n\
+             - `grid-report.md`: timing and output metrics.\n\
+             - `manifest.json`: machine-readable pack metadata, artifact paths, thresholds, and key metrics.\n\
+\n\
              ## Current Limit\n\n\
              This is an offline QA/listening pack. It proves the render seams can align musically,\n\
              but it does not yet mean the live TUI mixer exposes this whole arrangement path directly.\n",
@@ -786,6 +964,7 @@ mod tests {
         );
         assert!(output_dir.join("04_riotbox_grid_feral_mix.wav").is_file());
         assert!(output_dir.join("grid-report.md").is_file());
+        assert!(output_dir.join("manifest.json").is_file());
 
         let mc202 =
             SourceAudioCache::load_pcm_wav(output_dir.join("stems/01_mc202_question_answer.wav"))
@@ -805,6 +984,23 @@ mod tests {
         assert!(
             signal_metrics(&one_pole_lowpass(full_mix.interleaved_samples(), 165.0)).rms
                 > MIN_LOW_BAND_RMS
+        );
+
+        let manifest = fs::read_to_string(output_dir.join("manifest.json")).expect("manifest");
+        let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
+        assert_eq!(manifest["schema_version"], 1);
+        assert_eq!(manifest["pack_id"], PACK_ID);
+        assert_eq!(manifest["result"], "pass");
+        assert_eq!(manifest["bars"], 2);
+        assert_eq!(
+            manifest["artifacts"].as_array().expect("artifacts").len(),
+            6
+        );
+        assert!(
+            manifest["metrics"]["mc202_question_answer_delta"]["rms"]
+                .as_f64()
+                .expect("delta rms")
+                > f64::from(MIN_MC202_BAR_DELTA_RMS)
         );
     }
 
