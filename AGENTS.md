@@ -168,6 +168,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Keep every Rust file, including tests and bin helpers, at or below roughly 500 lines whenever practical.
 - Treat any `.rs` file over 500 lines as a refactor candidate; split by responsibility instead of letting production or test hotspots grow.
 - Do not hide context cost in giant `tests.rs` files. If a test module grows past the budget, split it by behavior area, fixture family, screen, lane, or helper responsibility.
+- Name split Rust shards after their responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`; avoid durable `01_...rs`, `02_...rs` numbering except as a short-lived mechanical migration step.
 
 ### Documentation
 

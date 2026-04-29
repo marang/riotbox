@@ -260,6 +260,9 @@ struct SmokeMetrics {
     peak_abs: f64,
     rms: f64,
     sum: f64,
+    mean_abs: f64,
+    zero_crossings: usize,
+    crest_factor: f64,
 }
 
 #[derive(Serialize)]
@@ -286,6 +289,9 @@ struct ManifestMetricDeltas {
     peak_abs: f64,
     rms: f64,
     sum: f64,
+    mean_abs: f64,
+    zero_crossings: usize,
+    crest_factor: f64,
 }
 
 impl SmokeMetrics {
@@ -304,6 +310,11 @@ impl SmokeMetrics {
             peak_abs: parse_finite_metric(contents, "Peak abs")?,
             rms: parse_finite_metric(contents, "RMS")?,
             sum: parse_finite_metric(contents, "Sum")?,
+            mean_abs: parse_finite_metric(contents, "Mean abs")?,
+            zero_crossings: parse_metric_value(contents, "Zero crossings")?
+                .parse::<usize>()
+                .map_err(|_| "Zero crossings must be an integer".to_string())?,
+            crest_factor: parse_finite_metric(contents, "Crest factor")?,
         })
     }
 }
@@ -337,11 +348,44 @@ struct ComparisonReport {
     peak_abs: MetricComparison<f64>,
     rms: MetricComparison<f64>,
     sum: MetricComparison<f64>,
+    mean_abs_baseline: f64,
+    mean_abs_candidate: f64,
+    mean_abs_delta: f64,
+    zero_crossings_baseline: usize,
+    zero_crossings_candidate: usize,
+    zero_crossings_delta: usize,
+    crest_factor_baseline: f64,
+    crest_factor_candidate: f64,
+    crest_factor_delta: f64,
 }
 
 impl ComparisonReport {
     fn has_failures(&self) -> bool {
         !self.active_samples.passed || !self.peak_abs.passed || !self.rms.passed || !self.sum.passed
+    }
+
+    const fn mean_abs_baseline(&self) -> f64 {
+        self.mean_abs_baseline
+    }
+
+    const fn mean_abs_candidate(&self) -> f64 {
+        self.mean_abs_candidate
+    }
+
+    const fn zero_crossings_baseline(&self) -> usize {
+        self.zero_crossings_baseline
+    }
+
+    const fn zero_crossings_candidate(&self) -> usize {
+        self.zero_crossings_candidate
+    }
+
+    const fn crest_factor_baseline(&self) -> f64 {
+        self.crest_factor_baseline
+    }
+
+    const fn crest_factor_candidate(&self) -> f64 {
+        self.crest_factor_candidate
     }
 }
 
@@ -364,6 +408,9 @@ fn compare_metrics(
     let peak_delta = (baseline.peak_abs - candidate.peak_abs).abs();
     let rms_delta = (baseline.rms - candidate.rms).abs();
     let sum_delta = (baseline.sum - candidate.sum).abs();
+    let mean_abs_delta = (baseline.mean_abs - candidate.mean_abs).abs();
+    let zero_crossings_delta = baseline.zero_crossings.abs_diff(candidate.zero_crossings);
+    let crest_factor_delta = (baseline.crest_factor - candidate.crest_factor).abs();
 
     ComparisonReport {
         active_samples: MetricComparison {
@@ -403,6 +450,15 @@ fn compare_metrics(
             max_delta: limits.max_sum_delta,
             passed: float_delta_within_range(sum_delta, limits.min_sum_delta, limits.max_sum_delta),
         },
+        mean_abs_baseline: baseline.mean_abs,
+        mean_abs_candidate: candidate.mean_abs,
+        mean_abs_delta,
+        zero_crossings_baseline: baseline.zero_crossings,
+        zero_crossings_candidate: candidate.zero_crossings,
+        zero_crossings_delta,
+        crest_factor_baseline: baseline.crest_factor,
+        crest_factor_candidate: candidate.crest_factor,
+        crest_factor_delta,
     }
 }
 
@@ -411,4 +467,3 @@ fn float_delta_within_range(delta: f64, min_delta: f64, max_delta: f64) -> bool 
     (delta >= min_delta || (min_delta - delta).abs() <= epsilon)
         && (delta <= max_delta || (delta - max_delta).abs() <= epsilon)
 }
-

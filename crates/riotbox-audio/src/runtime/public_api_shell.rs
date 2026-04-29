@@ -54,12 +54,15 @@ pub struct AudioRuntimeHealth {
     pub last_stream_error: Option<String>,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq)]
+#[derive(Copy, Clone, Debug, Default, PartialEq)]
 pub struct OfflineAudioMetrics {
     pub active_samples: usize,
     pub peak_abs: f32,
     pub rms: f32,
     pub sum: f32,
+    pub mean_abs: f32,
+    pub zero_crossings: usize,
+    pub crest_factor: f32,
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -259,18 +262,44 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
         .iter()
         .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
     let sum = samples.iter().sum::<f32>();
+    let mean_abs = if samples.is_empty() {
+        0.0
+    } else {
+        samples.iter().map(|sample| sample.abs()).sum::<f32>() / samples.len() as f32
+    };
     let rms = if samples.is_empty() {
         0.0
     } else {
         (samples.iter().map(|sample| sample * sample).sum::<f32>() / samples.len() as f32).sqrt()
     };
+    let zero_crossings = samples
+        .windows(2)
+        .filter(|window| {
+            let left = window[0];
+            let right = window[1];
+            (left > 0.0 && right < 0.0) || (left < 0.0 && right > 0.0)
+        })
+        .count();
+    let crest_factor = if rms > 0.0 { peak_abs / rms } else { 0.0 };
 
     OfflineAudioMetrics {
         active_samples,
         peak_abs,
         rms,
         sum,
+        mean_abs,
+        zero_crossings,
+        crest_factor,
     }
+}
+
+#[must_use]
+pub fn signal_delta_metrics(left: &[f32], right: &[f32]) -> OfflineAudioMetrics {
+    let sample_count = left.len().max(right.len());
+    let delta = (0..sample_count)
+        .map(|index| left.get(index).copied().unwrap_or(0.0) - right.get(index).copied().unwrap_or(0.0))
+        .collect::<Vec<_>>();
+    signal_metrics(&delta)
 }
 
 pub struct AudioRuntimeShell {
@@ -284,4 +313,3 @@ pub struct AudioRuntimeShell {
     w30_resample_tap: Arc<SharedW30ResampleTapState>,
     stream: Option<cpal::Stream>,
 }
-

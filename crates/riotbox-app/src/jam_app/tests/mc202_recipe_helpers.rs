@@ -319,30 +319,36 @@ fn render_scene_recipe_mix_buffer(state: &JamAppState) -> Vec<f32> {
 }
 
 fn assert_recipe_buffers_match(label: &str, left: &[f32], right: &[f32], max_delta: f32) {
-    let delta_rms = recipe_signal_delta_rms(left, right);
+    let delta = signal_delta_metrics(left, right);
 
     assert!(
-        delta_rms <= max_delta,
-        "{label} signal delta RMS {delta_rms} above {max_delta}"
+        delta.rms <= max_delta,
+        "{label} signal delta RMS {} above {max_delta}; peak {}, active {}, zero crossings {}",
+        delta.rms,
+        delta.peak_abs,
+        delta.active_samples,
+        delta.zero_crossings
     );
 }
 
 fn assert_recipe_buffers_differ(label: &str, left: &[f32], right: &[f32], min_delta: f32) {
-    let delta_rms = recipe_signal_delta_rms(left, right);
+    let delta = signal_delta_metrics(left, right);
 
     assert!(
-        delta_rms >= min_delta,
-        "{label} signal delta RMS {delta_rms} below {min_delta}"
+        delta.rms >= min_delta,
+        "{label} signal delta RMS {} below {min_delta}; peak {}, active {}, zero crossings {}",
+        delta.rms,
+        delta.peak_abs,
+        delta.active_samples,
+        delta.zero_crossings
+    );
+    assert!(
+        delta.peak_abs > 0.001,
+        "{label} signal delta peak too low: {}",
+        delta.peak_abs
     );
 }
 
 fn recipe_signal_delta_rms(left: &[f32], right: &[f32]) -> f32 {
-    (left
-        .iter()
-        .zip(right.iter())
-        .map(|(left, right)| (left - right).powi(2))
-        .sum::<f32>()
-        / left.len() as f32)
-        .sqrt()
+    signal_delta_metrics(left, right).rms
 }
-

@@ -7,6 +7,9 @@ fn render_report(baseline_path: &Path, candidate_path: &Path, report: &Compariso
          peak_abs: {:.6} -> {:.6} | delta {:.6} | min {:.6} | max {:.6} | {}\n\
          rms: {:.6} -> {:.6} | delta {:.6} | min {:.6} | max {:.6} | {}\n\
          sum: {:.6} -> {:.6} | delta {:.6} | min {:.6} | max {:.6} | {}\n\
+         mean_abs: {:.6} -> {:.6} | delta {:.6} | diagnostic\n\
+         zero_crossings: {} -> {} | delta {} | diagnostic\n\
+         crest_factor: {:.6} -> {:.6} | delta {:.6} | diagnostic\n\
          result: {}",
         baseline_path.display(),
         candidate_path.display(),
@@ -34,6 +37,15 @@ fn render_report(baseline_path: &Path, candidate_path: &Path, report: &Compariso
         report.sum.min_delta,
         report.sum.max_delta,
         status_label(report.sum.passed),
+        report.mean_abs_baseline(),
+        report.mean_abs_candidate(),
+        report.mean_abs_delta,
+        report.zero_crossings_baseline(),
+        report.zero_crossings_candidate(),
+        report.zero_crossings_delta,
+        report.crest_factor_baseline(),
+        report.crest_factor_candidate(),
+        report.crest_factor_delta,
         if report.has_failures() {
             "fail"
         } else {
@@ -77,6 +89,9 @@ fn write_manifest(
                 peak_abs: report.peak_abs.delta,
                 rms: report.rms.delta,
                 sum: report.sum.delta,
+                mean_abs: report.mean_abs_delta,
+                zero_crossings: report.zero_crossings_delta,
+                crest_factor: report.crest_factor_delta,
             },
         },
         result: if report.has_failures() {
@@ -152,4 +167,3 @@ fn ensure_manifest_artifacts_exist(
 const fn status_label(passed: bool) -> &'static str {
     if passed { "ok" } else { "drift" }
 }
-

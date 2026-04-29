@@ -12,7 +12,7 @@ use riotbox_audio::{
     runtime::{
         AudioOutputInfo, AudioRuntimeHealth, AudioRuntimeLifecycle, render_mc202_offline,
         render_tr909_offline, render_w30_preview_offline, render_w30_resample_tap_offline,
-        signal_metrics,
+        signal_delta_metrics, signal_metrics,
     },
     source_audio::SourceAudioCache,
     tr909::{
@@ -404,4 +404,3 @@ fn sample_audio_health(lifecycle: AudioRuntimeLifecycle) -> AudioRuntimeHealth {
             .then(|| "stream stalled".into()),
     }
 }
-

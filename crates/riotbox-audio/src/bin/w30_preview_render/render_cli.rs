@@ -405,7 +405,10 @@ fn write_metrics_markdown(
              - Active samples: `{}`\n\
              - Peak abs: `{:.6}`\n\
              - RMS: `{:.6}`\n\
-             - Sum: `{:.6}`\n",
+             - Sum: `{:.6}`\n\
+             - Mean abs: `{:.6}`\n\
+             - Zero crossings: `{}`\n\
+             - Crest factor: `{:.6}`\n",
             args.role.label(),
             args.source_input_label(),
             args.output_path.display(),
@@ -413,8 +416,10 @@ fn write_metrics_markdown(
             metrics.active_samples,
             metrics.peak_abs,
             metrics.rms,
-            metrics.sum
+            metrics.sum,
+            metrics.mean_abs,
+            metrics.zero_crossings,
+            metrics.crest_factor
         ),
     )
 }
-

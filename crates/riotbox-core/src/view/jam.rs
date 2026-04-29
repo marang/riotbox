@@ -1,6 +1,6 @@
 // Textual includes keep this large file split mechanical and behavior-preserving.
-include!("jam/01_jamviewmodel.rs");
-include!("jam/02_build.rs");
-include!("jam/03_is_capture_command.rs");
-include!("jam/04_scenejumpavailabilityview.rs");
-include!("jam/05_tests.rs");
+include!("jam/view_model_types.rs");
+include!("jam/build_view_model.rs");
+include!("jam/capture_actions.rs");
+include!("jam/scene_launch.rs");
+include!("jam/tests.rs");
