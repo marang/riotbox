@@ -214,6 +214,18 @@ This index tracks archived Linear ticket history that has been removed from the 
   One compact post-landing Scene Brain cue on the default Jam surface after `jump` or `restore` lands.
 - [RIOTBOX-142.md](./RIOTBOX-142.md)
   Restored lightweight workflow reminder sidecar with 30-second tmux-only nudges and no extra feed/log churn.
+- [RIOTBOX-351.md](./RIOTBOX-351.md)
+  Documented the 500-line Rust file budget across production, tests, fixtures, and bin helpers.
+- [RIOTBOX-352.md](./RIOTBOX-352.md)
+  Split the large Jam app test module into behavior-area files below the Rust file-size budget.
+- [RIOTBOX-353.md](./RIOTBOX-353.md)
+  Split TUI production and test files into focused files below the Rust file-size budget.
+- [RIOTBOX-354.md](./RIOTBOX-354.md)
+  Split audio runtime production and test files into focused files below the Rust file-size budget.
+- [RIOTBOX-355.md](./RIOTBOX-355.md)
+  Split the remaining safe Rust hotspots with mechanical behavior-preserving include shards.
+- [RIOTBOX-356.md](./RIOTBOX-356.md)
+  Split remaining app orchestration hotspots with semantic responsibility modules.
 - [2026-04.md](./2026-04.md#riotbox-328-audit-feral-policy-entry-constraints)
   Grouped archive entries for the P009 Feral policy batch `RIOTBOX-328` through `RIOTBOX-338` plus the `RIOTBOX-339` Feral before/after audio QA pack.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
