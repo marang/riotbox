@@ -14,6 +14,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let summary = build_summary(&args.observer_path, &args.manifest_path)?;
     let markdown = render_markdown(&summary);
+    if args.require_evidence {
+        validate_required_evidence(&summary)?;
+    }
 
     match args.output_path {
         Some(path) => {
@@ -35,6 +38,7 @@ struct Args {
     observer_path: PathBuf,
     manifest_path: PathBuf,
     output_path: Option<PathBuf>,
+    require_evidence: bool,
     show_help: bool,
 }
 
@@ -43,12 +47,14 @@ impl Args {
         let mut observer_path = None;
         let mut manifest_path = None;
         let mut output_path = None;
+        let mut require_evidence = false;
         let mut show_help = false;
         let mut args = args.into_iter();
 
         while let Some(arg) = args.next() {
             match arg.as_str() {
                 "--help" | "-h" => show_help = true,
+                "--require-evidence" => require_evidence = true,
                 "--observer" => {
                     observer_path = Some(PathBuf::from(
                         args.next()
@@ -76,6 +82,7 @@ impl Args {
                 observer_path: PathBuf::new(),
                 manifest_path: PathBuf::new(),
                 output_path,
+                require_evidence,
                 show_help,
             });
         }
@@ -84,6 +91,7 @@ impl Args {
             observer_path: observer_path.ok_or_else(|| "--observer is required".to_string())?,
             manifest_path: manifest_path.ok_or_else(|| "--manifest is required".to_string())?,
             output_path,
+            require_evidence,
             show_help,
         })
     }
@@ -110,7 +118,10 @@ fn print_help() {
          \n\
          Reads a riotbox-app observer NDJSON file and an audio QA manifest.json,\n\
          then emits a compact Markdown correlation summary. This is local-first\n\
-         QA bookkeeping, not a live host-session monitor."
+         QA bookkeeping, not a live host-session monitor.\n\
+         \n\
+         Pass --require-evidence to fail when committed control-path evidence\n\
+         or passing output-path manifest evidence is missing."
     );
 }
 
@@ -242,21 +253,46 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
         format_optional_f64(summary.mc202_question_answer_delta_rms),
-        if summary.first_commit == "none" {
-            "no"
-        } else {
-            "yes"
-        },
-        if summary.manifest_result == "pass" {
-            "yes"
-        } else {
-            "no"
-        }
+        yes_no(control_path_present(summary)),
+        yes_no(output_path_present(summary))
     )
 }
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
+}
+
+fn control_path_present(summary: &CorrelationSummary) -> bool {
+    summary.first_commit != "none"
+}
+
+fn output_path_present(summary: &CorrelationSummary) -> bool {
+    summary.manifest_result == "pass"
+        && summary.full_mix_rms.is_some()
+        && summary.full_mix_low_band_rms.is_some()
+        && summary.mc202_question_answer_delta_rms.is_some()
+}
+
+fn yes_no(value: bool) -> &'static str {
+    if value { "yes" } else { "no" }
+}
+
+fn validate_required_evidence(summary: &CorrelationSummary) -> Result<(), io::Error> {
+    if !control_path_present(summary) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "observer/audio correlation is missing committed control-path evidence",
+        ));
+    }
+
+    if !output_path_present(summary) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "observer/audio correlation is missing passing output-path manifest evidence",
+        ));
+    }
+
+    Ok(())
 }
 
 #[cfg(test)]
@@ -278,6 +314,21 @@ mod tests {
         assert_eq!(parsed.observer_path, PathBuf::from("events.ndjson"));
         assert_eq!(parsed.manifest_path, PathBuf::from("manifest.json"));
         assert_eq!(parsed.output_path, Some(PathBuf::from("summary.md")));
+        assert!(!parsed.require_evidence);
+    }
+
+    #[test]
+    fn parses_strict_evidence_flag() {
+        let parsed = Args::parse([
+            "--observer".to_string(),
+            "events.ndjson".to_string(),
+            "--manifest".to_string(),
+            "manifest.json".to_string(),
+            "--require-evidence".to_string(),
+        ])
+        .expect("parse args");
+
+        assert!(parsed.require_evidence);
     }
 
     #[test]
@@ -347,6 +398,35 @@ mod tests {
         assert!(markdown.contains("Control path present: `yes`"));
         assert!(markdown.contains("Output path present: `yes`"));
         assert!(markdown.contains("Needs human listening: `yes`"));
+        validate_required_evidence(&summary).expect("fixture evidence");
+    }
+
+    #[test]
+    fn strict_evidence_rejects_missing_commit() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let observer_path = temp.path().join("events.ndjson");
+        let manifest_path = temp.path().join("manifest.json");
+        fs::write(&observer_path, synthetic_observer_without_commit()).expect("write observer");
+        fs::write(&manifest_path, synthetic_manifest()).expect("write manifest");
+
+        let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+        let error = validate_required_evidence(&summary).expect_err("missing control evidence");
+
+        assert!(error.to_string().contains("control-path evidence"));
+    }
+
+    #[test]
+    fn strict_evidence_rejects_missing_output_metrics() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let observer_path = temp.path().join("events.ndjson");
+        let manifest_path = temp.path().join("manifest.json");
+        fs::write(&observer_path, synthetic_observer()).expect("write observer");
+        fs::write(&manifest_path, synthetic_manifest_without_metrics()).expect("write manifest");
+
+        let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+        let error = validate_required_evidence(&summary).expect_err("missing output evidence");
+
+        assert!(error.to_string().contains("output-path manifest evidence"));
     }
 
     fn synthetic_observer() -> String {
@@ -356,6 +436,16 @@ mod tests {
             r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
             r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,
             r#"{"event":"transport_commit","committed":[{"action_id":2,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}"#,
+        ]
+        .join("\n")
+            + "\n"
+    }
+
+    fn synthetic_observer_without_commit() -> String {
+        [
+            r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest"}}"#,
+            r#"{"event":"audio_runtime","status":"started"}"#,
+            r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         ]
         .join("\n")
             + "\n"
@@ -373,6 +463,16 @@ mod tests {
     },
     "mc202_question_answer_delta": { "rms": 0.01 }
   }
+}"#
+        .to_string()
+    }
+
+    fn synthetic_manifest_without_metrics() -> String {
+        r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}, {}],
+  "metrics": {}
 }"#
         .to_string()
     }
