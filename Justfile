@@ -25,6 +25,7 @@ audio-qa-ci:
     just observer-audio-correlate-fixture
     just observer-audio-correlate-json-fixture
     just observer-audio-summary-validator-fixtures
+    just listening-manifest-validator-fixtures
     just observer-audio-correlate-generated-feral-grid
 
 mem-init:
@@ -101,6 +102,13 @@ observer-audio-correlate-json-fixture:
 observer-audio-summary-validator-fixtures:
     python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_valid_failure.json
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_schema.json; then echo "expected invalid observer/audio summary fixture to fail" >&2; exit 1; fi
+
+listening-manifest-validator-fixtures:
+    python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_valid.json
+    python3 scripts/validate_listening_manifest_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json
+    if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_schema_version.json; then echo "expected invalid listening manifest schema fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_boolean_schema_version.json; then echo "expected boolean listening manifest schema fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_artifact.json; then echo "expected invalid listening manifest artifact fixture to fail" >&2; exit 1; fi
 
 observer-audio-correlate-fixture:
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence

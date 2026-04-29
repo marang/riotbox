@@ -501,6 +501,7 @@ Today the repo already has:
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
 - observer/audio strict correlation is smoke-tested against a freshly generated Feral grid manifest built from a deterministic synthetic break WAV
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
+- a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
 
 Today the repo does not yet have a full official workflow for:
 

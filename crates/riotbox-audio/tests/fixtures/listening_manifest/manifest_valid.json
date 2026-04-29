@@ -1,0 +1,29 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [
+    {
+      "role": "full_grid_mix",
+      "kind": "audio_wav",
+      "path": "04_full_grid_mix.wav",
+      "metrics_path": "04_full_grid_mix.metrics.md"
+    },
+    {
+      "role": "grid_report",
+      "kind": "markdown_report",
+      "path": "grid-report.md",
+      "metrics_path": null
+    }
+  ],
+  "thresholds": {
+    "min_signal_rms": 0.01
+  },
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.099076
+      }
+    }
+  }
+}

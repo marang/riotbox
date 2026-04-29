@@ -376,6 +376,7 @@ just observer-audio-correlation-notes artifacts/audio_qa/local/observer_audio_co
 just observer-audio-correlate artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.md
 just observer-audio-correlate-json artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.json
 just observer-audio-correlate-json-fixture
+just listening-manifest-validator-fixtures
 just observer-audio-correlate-generated-feral-grid
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
