@@ -477,6 +477,7 @@ Today the repo already has:
 - a first local grid-locked Feral demo render pack that writes MC-202 question/answer, TR-909 beat/fill, W-30/Feral source-chop, and combined mix WAVs from one shared beat/bar/frame grid, then checks stem activity, MC-202 question-vs-answer signal delta, and low-band support
 - a first machine-readable `manifest.json` beside the Feral grid demo pack output, recording pack metadata, artifact paths, thresholds, key metrics, pass status, and the reproduction command
 - a CI-safe Feral grid manifest smoke gate that renders from synthetic input and asserts manifest schema version, artifact roles and files, metrics files, thresholds, pass status, and non-collapsed output metrics without depending on ignored local example audio
+- a local observer/audio correlation notes template and `just observer-audio-correlation-notes <path>` helper for pairing `riotbox-app --observer <events.ndjson>` control-path evidence with generated audio QA `manifest.json` output evidence
 
 Today the repo does not yet have a full official workflow for:
 
@@ -487,6 +488,7 @@ Today the repo does not yet have a full official workflow for:
 - broad automated baseline vs candidate WAV comparison outside the current bounded helper cases
 - automated waveform or perceptual audio comparison
 - socket-backed host-session observation or monitored host audio capture
+- automated observer-vs-audio-manifest correlation
 - automated enforcement of human listening-review rubrics
 
 Those gaps should be treated as near-term QA work, not optional polish.
@@ -501,7 +503,7 @@ The next bounded audio QA slices should land in this order:
 2. add deterministic offline WAV render support for fixture-backed review cases
 3. generalize the first listening-pack manifest into a shared helper/schema across local pack runners
 4. connect the most stable metric checks to CI while keeping listening review local-first
-5. add broader recipe replay / observer correlation once the local notes workflow is proven
+5. automate recipe replay / observer correlation once the local notes workflow is proven
 
 ---
 
