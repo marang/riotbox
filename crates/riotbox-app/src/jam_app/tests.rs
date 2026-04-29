@@ -13,6 +13,7 @@ include!("tests/w30_queue_core.rs");
 include!("tests/w30_queue_conflicts_live_recall.rs");
 include!("tests/w30_committed_bank_damage.rs");
 include!("tests/w30_committed_preview_resample.rs");
+include!("tests/w30_feral_rebake_policy.rs");
 include!("tests/w30_backfill_mc202_commits.rs");
 include!("tests/mc202_recipe_helpers.rs");
 include!("tests/fixture_regressions_tr909_slam.rs");

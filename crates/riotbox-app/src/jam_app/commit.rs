@@ -183,12 +183,30 @@ fn feral_resample_policy_summary(
     capture: &CaptureRef,
     source_graph: Option<&SourceGraph>,
 ) -> Option<String> {
+    let source_graph = source_graph?;
     if !matches!(action.command, ActionCommand::PromoteResample)
         || capture.capture_type != riotbox_core::session::CaptureType::Resample
         || capture.lineage_capture_refs.is_empty()
-        || !source_graph.is_some_and(SourceGraph::has_feral_break_support_evidence)
+        || !source_graph.has_feral_break_support_evidence()
     {
         return None;
+    }
+
+    let quote_risk_count = source_graph
+        .relationships
+        .iter()
+        .filter(|relationship| {
+            relationship.relation_type
+                == riotbox_core::source_graph::RelationshipType::HighQuoteRiskWith
+        })
+        .count();
+    if quote_risk_count > 0 {
+        return Some(format!(
+            "feral rebake held: quote risk {}, lineage-safe W-30 reuse, gen {}, lineage {}",
+            quote_risk_count,
+            capture.resample_generation_depth,
+            capture.lineage_capture_refs.len()
+        ));
     }
 
     Some(format!(
