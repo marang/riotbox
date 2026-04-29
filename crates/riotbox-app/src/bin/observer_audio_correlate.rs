@@ -265,6 +265,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          ## Correlation Verdict\n\n\
          - Control path present: `{}`\n\
          - Output path present: `{}`\n\
+         - Output path issues: `{}`\n\
          - Needs human listening: `yes`\n",
         summary.observer_schema,
         summary.launch_mode,
@@ -282,12 +283,22 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_optional_f64(summary.full_mix_low_band_rms),
         format_optional_f64(summary.mc202_question_answer_delta_rms),
         yes_no(control_path_present(summary)),
-        yes_no(output_path_present(summary))
+        yes_no(output_path_present(summary)),
+        format_output_path_issues(summary)
     )
 }
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
+}
+
+fn format_output_path_issues(summary: &CorrelationSummary) -> String {
+    let failures = output_path_evidence_failures(summary);
+    if failures.is_empty() {
+        "none".to_string()
+    } else {
+        failures.join(", ")
+    }
 }
 
 fn control_path_present(summary: &CorrelationSummary) -> bool {
