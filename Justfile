@@ -30,6 +30,7 @@ audio-qa-ci:
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
     just first-playable-jam-probe
+    just stage-style-jam-probe
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -131,3 +132,6 @@ observer-audio-correlate-generated-feral-grid:
 
 first-playable-jam-probe:
     scripts/validate_first_playable_jam_probe.sh
+
+stage-style-jam-probe:
+    scripts/validate_stage_style_jam_probe.sh
