@@ -185,6 +185,7 @@ Rules:
 - Whole-plan application is all-or-nothing: if any entry fails, the session passed to the executor is not mutated.
 - Single-entry application may mutate the passed session and should be used only when the caller already accepts that boundary.
 - This executor does not perform audio rendering, capture artifact creation, W-30/TR-909/MC-202 side effects, Ghost reasoning, source analysis, or snapshot hydration.
+- Current convergence coverage materializes a snapshot anchor by replaying the safe prefix in tests, then applies the selected suffix and compares the resulting structural state against origin replay; this proves the executor path, not real snapshot payload hydration.
 - Broader musical replay must expand this allowlist command by command with tests that prove both control-path and output-path behavior where audible state is affected.
 
 ---
