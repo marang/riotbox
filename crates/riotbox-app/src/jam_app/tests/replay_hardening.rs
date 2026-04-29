@@ -207,4 +207,78 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         Some("after-ghost")
     );
     assert!(target_plan_from_after.suffix.is_empty());
+
+    let no_snapshot_convergence =
+        riotbox_core::replay::build_latest_snapshot_replay_convergence_summary(
+            &reloaded.action_log,
+            &[],
+        )
+        .expect("no-snapshot convergence summary");
+    assert_eq!(
+        no_snapshot_convergence.target_action_cursor,
+        reloaded.action_log.actions.len()
+    );
+    assert_eq!(
+        no_snapshot_convergence.origin_action_count,
+        reloaded.action_log.actions.len()
+    );
+    assert_eq!(no_snapshot_convergence.origin_replay_entry_count, 1);
+    assert_eq!(no_snapshot_convergence.snapshot_count, 0);
+    assert_eq!(no_snapshot_convergence.anchor_snapshot_id, None);
+    assert_eq!(no_snapshot_convergence.suffix_action_count, 1);
+    assert!(no_snapshot_convergence.needs_replay);
+    assert!(no_snapshot_convergence.needs_full_replay);
+
+    let before_snapshot_convergence =
+        riotbox_core::replay::build_latest_snapshot_replay_convergence_summary(
+            &reloaded.action_log,
+            std::slice::from_ref(before_snapshot),
+        )
+        .expect("before-snapshot convergence summary");
+    assert_eq!(
+        before_snapshot_convergence.anchor_snapshot_id.as_deref(),
+        Some("before-ghost")
+    );
+    assert_eq!(before_snapshot_convergence.anchor_action_cursor, Some(0));
+    assert_eq!(before_snapshot_convergence.suffix_action_count, 1);
+    assert!(before_snapshot_convergence.needs_replay);
+    assert!(!before_snapshot_convergence.needs_full_replay);
+    assert_eq!(
+        before_snapshot_convergence.suffix_action_ids,
+        vec![target_plan_from_before.suffix[0].action.id]
+    );
+    assert_eq!(
+        before_snapshot_convergence.suffix_commands,
+        vec![ActionCommand::Tr909FillNext]
+    );
+
+    let latest_snapshot_convergence =
+        riotbox_core::replay::build_latest_snapshot_replay_convergence_summary(
+            &reloaded.action_log,
+            &reloaded.snapshots,
+        )
+        .expect("latest-snapshot convergence summary");
+    assert_eq!(
+        latest_snapshot_convergence.target_action_cursor,
+        reloaded.action_log.actions.len()
+    );
+    assert_eq!(
+        latest_snapshot_convergence.origin_action_count,
+        reloaded.action_log.actions.len()
+    );
+    assert_eq!(latest_snapshot_convergence.origin_replay_entry_count, 1);
+    assert_eq!(latest_snapshot_convergence.snapshot_count, 2);
+    assert_eq!(
+        latest_snapshot_convergence.anchor_snapshot_id.as_deref(),
+        Some("after-ghost")
+    );
+    assert_eq!(
+        latest_snapshot_convergence.anchor_action_cursor,
+        Some(reloaded.action_log.actions.len())
+    );
+    assert_eq!(latest_snapshot_convergence.suffix_action_count, 0);
+    assert!(!latest_snapshot_convergence.needs_replay);
+    assert!(!latest_snapshot_convergence.needs_full_replay);
+    assert!(latest_snapshot_convergence.suffix_action_ids.is_empty());
+    assert!(latest_snapshot_convergence.suffix_commands.is_empty());
 }
