@@ -406,5 +406,44 @@ pub struct GhostStatusView {
     pub mode: String,
     pub suggestion_count: usize,
     pub is_blocked: bool,
+    pub is_read_only: bool,
+    pub latest_proposal_id: Option<String>,
+    pub latest_summary: Option<String>,
+    pub latest_status: Option<String>,
+    pub safety: String,
+    pub active_blocker: Option<String>,
 }
 
+fn ghost_status_view(session: &SessionFile) -> GhostStatusView {
+    let latest = session.ghost_state.suggestion_history.last();
+    let active_blocker = session
+        .runtime_state
+        .lock_state
+        .locked_object_ids
+        .iter()
+        .find(|lock| lock.contains("ghost"))
+        .cloned();
+    let is_blocked = active_blocker.is_some();
+
+    GhostStatusView {
+        mode: session.ghost_state.mode.to_string(),
+        suggestion_count: session.ghost_state.suggestion_history.len(),
+        is_blocked,
+        is_read_only: matches!(session.ghost_state.mode, crate::action::GhostMode::Watch),
+        latest_proposal_id: latest.map(|suggestion| suggestion.proposal_id.clone()),
+        latest_summary: latest.map(|suggestion| suggestion.summary.clone()),
+        latest_status: latest.map(|suggestion| {
+            if suggestion.accepted {
+                "accepted".into()
+            } else {
+                "suggested".into()
+            }
+        }),
+        safety: if is_blocked {
+            "blocked".into()
+        } else {
+            "clear".into()
+        },
+        active_blocker,
+    }
+}

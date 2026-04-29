@@ -460,5 +460,41 @@
         );
         assert_eq!(vm.pending_actions.len(), 11);
         assert_eq!(vm.ghost.mode, "assist");
+        assert_eq!(vm.ghost.suggestion_count, 1);
+        assert!(!vm.ghost.is_read_only);
+        assert_eq!(vm.ghost.latest_proposal_id.as_deref(), Some("gp-1"));
+        assert_eq!(vm.ghost.latest_summary.as_deref(), Some("capture next bar"));
+        assert_eq!(vm.ghost.latest_status.as_deref(), Some("suggested"));
+        assert_eq!(vm.ghost.safety, "clear");
+        assert_eq!(vm.ghost.active_blocker, None);
     }
 
+    #[test]
+    fn projects_blocked_watch_suggestion_into_jam_view() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:00:00Z");
+        session.ghost_state.mode = GhostMode::Watch;
+        session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
+            proposal_id: "ghost-watch-1".into(),
+            summary: "capture the source-backed hit".into(),
+            accepted: false,
+        }];
+        session
+            .runtime_state
+            .lock_state
+            .locked_object_ids
+            .push("ghost.main".into());
+
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), None);
+
+        assert_eq!(vm.ghost.mode, "watch");
+        assert_eq!(vm.ghost.suggestion_count, 1);
+        assert!(vm.ghost.is_read_only);
+        assert!(vm.ghost.is_blocked);
+        assert_eq!(vm.ghost.safety, "blocked");
+        assert_eq!(vm.ghost.active_blocker.as_deref(), Some("ghost.main"));
+        assert_eq!(
+            vm.ghost.latest_summary.as_deref(),
+            Some("capture the source-backed hit")
+        );
+        assert_eq!(vm.ghost.latest_status.as_deref(), Some("suggested"));
+    }

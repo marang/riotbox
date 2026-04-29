@@ -398,6 +398,30 @@ fn renders_more_musical_jam_shell_snapshot() {
 }
 
 #[test]
+fn renders_ghost_watch_summary_and_blocker_status() {
+    let mut shell = sample_shell_state();
+    shell.app.session.ghost_state.mode = GhostMode::Watch;
+    shell.app.session.ghost_state.suggestion_history = vec![GhostSuggestionRecord {
+        proposal_id: "ghost-watch-1".into(),
+        summary: "capture the source-backed hit".into(),
+        accepted: false,
+    }];
+    shell
+        .app
+        .session
+        .runtime_state
+        .lock_state
+        .locked_object_ids
+        .push("ghost.main".into());
+    shell.app.refresh_view();
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("watch ro"));
+    assert!(rendered.contains("blocked ghost.main"));
+}
+
+#[test]
 fn renders_jam_shell_inspect_snapshot() {
     let mut shell = sample_shell_state();
     shell.jam_mode = JamViewMode::Inspect;
@@ -413,4 +437,3 @@ fn renders_jam_shell_inspect_snapshot() {
     assert!(rendered.contains("Diagnostics"), "{rendered}");
     assert!(!rendered.contains("Suggested gestures"), "{rendered}");
 }
-

@@ -474,18 +474,8 @@ impl JamViewModel {
             },
             pending_actions,
             recent_actions,
-            ghost: GhostStatusView {
-                mode: session.ghost_state.mode.to_string(),
-                suggestion_count: session.ghost_state.suggestion_history.len(),
-                is_blocked: session
-                    .runtime_state
-                    .lock_state
-                    .locked_object_ids
-                    .iter()
-                    .any(|lock| lock.contains("ghost")),
-            },
+            ghost: ghost_status_view(session),
             warnings,
         }
     }
 }
-

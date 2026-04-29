@@ -8,8 +8,9 @@ use riotbox_core::{
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SourceId},
     queue::ActionQueue,
     session::{
-        SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
-        SceneMovementState, SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
+        GhostSuggestionRecord, SceneMovementDirectionState, SceneMovementKindState,
+        SceneMovementLaneIntentState, SceneMovementState, SessionFile, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState,
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
@@ -444,4 +445,3 @@ struct Mc202RegressionExpected {
     jam_contains: Vec<String>,
     log_contains: Vec<String>,
 }
-

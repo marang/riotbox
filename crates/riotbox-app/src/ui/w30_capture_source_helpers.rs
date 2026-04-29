@@ -431,14 +431,19 @@ fn transport_label(shell: &JamShellState) -> &'static str {
 }
 
 fn ghost_label(shell: &JamShellState) -> String {
-    format!(
-        "{} ({})",
-        shell.app.jam_view.ghost.mode,
-        if shell.app.jam_view.ghost.is_blocked {
-            "blocked"
-        } else {
-            "clear"
-        }
-    )
-}
+    let ghost = &shell.app.jam_view.ghost;
+    let mode = if ghost.is_read_only {
+        format!("{} ro", ghost.mode)
+    } else {
+        ghost.mode.clone()
+    };
+    let blocker = ghost
+        .active_blocker
+        .as_deref()
+        .map_or_else(|| ghost.safety.clone(), |blocker| format!("blocked {blocker}"));
 
+    match ghost.latest_summary.as_deref() {
+        Some(summary) => format!("{blocker} | {mode} | {summary}"),
+        None => format!("{blocker} | {mode}"),
+    }
+}
