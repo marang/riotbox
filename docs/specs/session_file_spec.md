@@ -467,6 +467,8 @@ Current implementation:
 - the scanner is read-only and does not load, replace, delete, or choose a recovery candidate
 - `JamAppState::scan_session_recovery_surface` converts scanner output into TUI/CLI-facing labels, trust levels, details, and action hints
 - the recovery surface keeps `selected_candidate` empty and states that Riotbox did not choose, load, replace, or delete any candidate
+- load-mode TUI may attach a recovery surface when the requested canonical session loads successfully but adjacent manual candidates exist
+- the TUI recovery prompt is guidance only: it must not select, load, replace, delete, or promote a candidate
 
 ---
 
@@ -510,5 +512,5 @@ This draft should be followed by:
 1. exact on-disk layout
 2. session migration policy
 3. snapshot frequency policy
-4. interactive guided manual recovery prompt using the existing scanner/surface contract
+4. recovery prompt for failed canonical loads, likely as a CLI/manual report before the full TUI can start
 5. autosave strategy after the format stabilizes

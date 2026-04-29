@@ -8,6 +8,7 @@ mod tests {
             GhostWatchSuggestion, GhostWatchTool,
         },
         ids::{AssetId, SceneId, SourceId},
+        persistence::save_session_json,
         queue::ActionQueue,
         session::SessionFile,
         source_graph::{
@@ -119,6 +120,79 @@ mod tests {
             launch.observer_path,
             Some(PathBuf::from("artifacts/audio_qa/live/events.ndjson"))
         );
+    }
+
+    #[test]
+    fn load_mode_collects_manual_recovery_surface_without_selecting_candidate() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let session_path = temp.path().join("session.json");
+        let autosave_path = temp.path().join("session.autosave.2026-04-29T211500Z.json");
+        save_session_json(
+            &session_path,
+            &SessionFile::new("canonical", "0.1.0", "2026-04-29T21:15:00Z"),
+        )
+        .expect("save canonical session");
+        save_session_json(
+            &autosave_path,
+            &SessionFile::new("autosave", "0.1.0", "2026-04-29T21:15:01Z"),
+        )
+        .expect("save autosave session");
+
+        let surface = recovery_surface_for_launch(&LaunchMode::Load {
+            session_path,
+            source_graph_path: None,
+        })
+        .expect("load mode scans recovery candidates");
+
+        assert!(surface.has_manual_candidates());
+        assert_eq!(surface.selected_candidate, None);
+        assert!(
+            surface
+                .candidates
+                .iter()
+                .any(|candidate| candidate.path == autosave_path)
+        );
+    }
+
+    #[test]
+    fn loaded_shell_attaches_and_refreshes_manual_recovery_surface() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let session_path = temp.path().join("session.json");
+        let autosave_path = temp.path().join("session.autosave.2026-04-29T211501Z.json");
+        save_session_json(
+            &session_path,
+            &SessionFile::new("canonical", "0.1.0", "2026-04-29T21:15:00Z"),
+        )
+        .expect("save canonical session");
+        save_session_json(
+            &autosave_path,
+            &SessionFile::new("autosave", "0.1.0", "2026-04-29T21:15:01Z"),
+        )
+        .expect("save autosave session");
+        let mode = LaunchMode::Load {
+            session_path,
+            source_graph_path: None,
+        };
+
+        let mut shell = shell_for_loaded_state(
+            JamAppState::from_parts(
+                SessionFile::new("session-1", "0.1.0", "2026-04-29T21:15:00Z"),
+                None,
+                ActionQueue::new(),
+            ),
+            &mode,
+        );
+        assert!(
+            shell
+                .recovery_surface
+                .as_ref()
+                .is_some_and(SessionRecoverySurface::has_manual_candidates)
+        );
+
+        fs::remove_file(autosave_path).expect("remove autosave");
+        refresh_recovery_surface_for_launch(&mut shell, &mode);
+
+        assert!(shell.recovery_surface.is_none());
     }
 
     #[test]

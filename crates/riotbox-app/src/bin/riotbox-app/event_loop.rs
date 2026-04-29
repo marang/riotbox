@@ -418,7 +418,10 @@ fn run_event_loop(
                     }
                 }
                 ShellKeyOutcome::RequestRefresh => match load_state(launch.mode.clone()) {
-                    Ok(state) => shell.replace_app_state(state),
+                    Ok(state) => {
+                        shell.replace_app_state(state);
+                        refresh_recovery_surface_for_launch(&mut shell, &launch.mode);
+                    }
                     Err(error) => shell.set_error_status(format!("refresh failed: {error}")),
                 },
             }

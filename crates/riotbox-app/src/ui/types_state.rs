@@ -19,7 +19,7 @@ use riotbox_core::{
     },
 };
 
-use crate::jam_app::JamAppState;
+use crate::jam_app::{JamAppState, SessionRecoverySurface};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ShellScreen {
@@ -241,6 +241,7 @@ pub struct JamShellState {
     pub launch_mode: ShellLaunchMode,
     pub active_screen: ShellScreen,
     pub jam_mode: JamViewMode,
+    pub recovery_surface: Option<SessionRecoverySurface>,
     pub first_run_onramp: bool,
     pub show_help: bool,
     pub status_message: String,

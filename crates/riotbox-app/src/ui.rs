@@ -4,6 +4,7 @@ include!("ui/types_state.rs");
 include!("ui/shell_render_root.rs");
 include!("ui/jam_perform_layout.rs");
 include!("ui/screen_bodies_footer_start.rs");
+include!("ui/recovery_prompt.rs");
 include!("ui/footer_help_perform_lines.rs");
 include!("ui/jam_landed_warnings_source.rs");
 include!("ui/diagnostics_mc202_w30_logs.rs");

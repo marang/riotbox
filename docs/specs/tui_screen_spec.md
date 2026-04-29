@@ -207,6 +207,7 @@ Show:
 - audio health metrics
 - sidecar status
 - session file status
+- manual recovery candidates when the shell was launched from a load path that has orphan temp or autosave siblings
 - current versions or schema status where relevant
 - degraded-mode warnings
 
@@ -221,6 +222,10 @@ Highest-priority information:
 3. available live controls
 4. important confidence or failure warnings
 5. history and diagnostics
+
+Manual session recovery prompts are warning-level guidance, not controls. They may
+list candidate kind, parse status, and action hint, but must state that Riotbox did
+not choose, load, replace, or delete a candidate.
 
 This ordering should control layout decisions and keybinding design.
 

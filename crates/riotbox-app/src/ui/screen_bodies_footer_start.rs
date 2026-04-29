@@ -333,7 +333,10 @@ fn render_footer(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         shell.app.runtime_view.tr909_render_routing
     )));
 
-    if shell.app.runtime_view.runtime_warnings.is_empty() && shell.app.jam_view.warnings.is_empty()
+    if let Some(recovery_warning) = recovery_warning_line(shell) {
+        lines.push(footer_warning_line(&recovery_warning));
+    } else if shell.app.runtime_view.runtime_warnings.is_empty()
+        && shell.app.jam_view.warnings.is_empty()
     {
         lines.push(footer_ok_line(
             "Warnings clear | source trust stable enough for shell work",
@@ -447,4 +450,3 @@ fn footer_scene_line(scene_cue: &str) -> Line<'static> {
         Span::styled(format!(" {scene_cue}"), style_pending_cue()),
     ])
 }
-

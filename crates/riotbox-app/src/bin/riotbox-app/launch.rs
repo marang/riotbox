@@ -13,7 +13,7 @@ use crossterm::{
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
 use riotbox_app::{
-    jam_app::{JamAppError, JamAppState},
+    jam_app::{JamAppError, JamAppState, SessionRecoverySurface},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 use riotbox_audio::runtime::AudioRuntimeShell;
@@ -43,8 +43,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let raw_args = env::args().collect::<Vec<_>>();
     let launch = parse_args(raw_args.iter().skip(1).cloned())?;
     let state = load_state(launch.mode.clone())?;
+    let shell = shell_for_loaded_state(state, &launch.mode);
     run_terminal_ui(
-        JamShellState::new(state, launch.mode.shell_launch_mode()),
+        shell,
         launch,
         &raw_args,
     )?;
@@ -55,6 +56,29 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 struct AppLaunch {
     mode: LaunchMode,
     observer_path: Option<PathBuf>,
+}
+
+fn shell_for_loaded_state(state: JamAppState, mode: &LaunchMode) -> JamShellState {
+    let mut shell = JamShellState::new(state, mode.shell_launch_mode());
+    refresh_recovery_surface_for_launch(&mut shell, mode);
+    shell
+}
+
+fn refresh_recovery_surface_for_launch(shell: &mut JamShellState, mode: &LaunchMode) {
+    shell.clear_recovery_surface();
+    if let Some(recovery_surface) = recovery_surface_for_launch(mode) {
+        shell.set_recovery_surface(recovery_surface);
+    }
+}
+
+fn recovery_surface_for_launch(mode: &LaunchMode) -> Option<SessionRecoverySurface> {
+    let LaunchMode::Load { session_path, .. } = mode else {
+        return None;
+    };
+
+    JamAppState::scan_session_recovery_surface(session_path)
+        .ok()
+        .filter(SessionRecoverySurface::has_manual_candidates)
 }
 
 fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
@@ -168,4 +192,3 @@ impl Drop for ManagedTerminal {
         let _ = self.terminal.show_cursor();
     }
 }
-

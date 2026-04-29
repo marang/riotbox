@@ -436,6 +436,10 @@ fn jam_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn primary_warning_line(shell: &JamShellState) -> String {
+    if let Some(recovery) = recovery_warning_line(shell) {
+        return recovery;
+    }
+
     shell
         .app
         .runtime_view

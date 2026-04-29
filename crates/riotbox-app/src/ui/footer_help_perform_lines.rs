@@ -147,6 +147,9 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         }
     }
 
+    if let Some(recovery_help_lines) = recovery_help_lines(shell) {
+        lines.extend(recovery_help_lines);
+    }
     if let Some(scene_help_lines) = pending_scene_help_lines(shell) {
         lines.extend(scene_help_lines);
     }

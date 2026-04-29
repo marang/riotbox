@@ -14,6 +14,7 @@ impl JamShellState {
             launch_mode,
             active_screen: ShellScreen::Jam,
             jam_mode: JamViewMode::Perform,
+            recovery_surface: None,
             first_run_onramp,
             show_help: false,
             status_message,
@@ -238,6 +239,14 @@ impl JamShellState {
 
     pub fn set_error_status(&mut self, message: impl Into<String>) {
         self.status_message = message.into();
+    }
+
+    pub fn set_recovery_surface(&mut self, surface: SessionRecoverySurface) {
+        self.recovery_surface = Some(surface);
+    }
+
+    pub fn clear_recovery_surface(&mut self) {
+        self.recovery_surface = None;
     }
 }
 
