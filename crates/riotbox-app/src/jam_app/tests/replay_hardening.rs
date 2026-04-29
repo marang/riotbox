@@ -158,4 +158,33 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         before_comparison.snapshot_suffix[0].action.id
     );
     assert!(after_comparison.snapshot_suffix.is_empty());
+
+    let target_plan_from_before = riotbox_core::replay::build_replay_target_plan(
+        &reloaded.action_log,
+        std::slice::from_ref(before_snapshot),
+        reloaded.action_log.actions.len(),
+    )
+    .expect("before snapshot target replay plan");
+    let target_plan_from_after = riotbox_core::replay::build_replay_target_plan(
+        &reloaded.action_log,
+        &reloaded.snapshots,
+        reloaded.action_log.actions.len(),
+    )
+    .expect("after snapshot target replay plan");
+
+    assert_eq!(
+        target_plan_from_before
+            .anchor
+            .map(|snapshot| snapshot.snapshot_id.as_str()),
+        Some("before-ghost")
+    );
+    assert_eq!(target_plan_from_before.suffix.len(), 1);
+    assert_eq!(target_plan_from_before.suffix[0].action.actor, ActorType::Ghost);
+    assert_eq!(
+        target_plan_from_after
+            .anchor
+            .map(|snapshot| snapshot.snapshot_id.as_str()),
+        Some("after-ghost")
+    );
+    assert!(target_plan_from_after.suffix.is_empty());
 }
