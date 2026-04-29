@@ -408,7 +408,10 @@ fn write_metrics_markdown(
              - Sum: `{:.6}`\n\
              - Mean abs: `{:.6}`\n\
              - Zero crossings: `{}`\n\
-             - Crest factor: `{:.6}`\n",
+             - Crest factor: `{:.6}`\n\
+             - Active sample ratio: `{:.6}`\n\
+             - Silence ratio: `{:.6}`\n\
+             - DC offset: `{:.6}`\n",
             args.role.label(),
             args.source_input_label(),
             args.output_path.display(),
@@ -419,7 +422,10 @@ fn write_metrics_markdown(
             metrics.sum,
             metrics.mean_abs,
             metrics.zero_crossings,
-            metrics.crest_factor
+            metrics.crest_factor,
+            metrics.active_sample_ratio,
+            metrics.silence_ratio,
+            metrics.dc_offset
         ),
     )
 }

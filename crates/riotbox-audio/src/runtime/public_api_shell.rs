@@ -63,6 +63,9 @@ pub struct OfflineAudioMetrics {
     pub mean_abs: f32,
     pub zero_crossings: usize,
     pub crest_factor: f32,
+    pub active_sample_ratio: f32,
+    pub silence_ratio: f32,
+    pub dc_offset: f32,
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -254,9 +257,11 @@ pub fn render_mc202_offline(
 
 #[must_use]
 pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
+    const ACTIVE_THRESHOLD: f32 = 0.0001;
+
     let active_samples = samples
         .iter()
-        .filter(|sample| sample.abs() > 0.0001)
+        .filter(|sample| sample.abs() > ACTIVE_THRESHOLD)
         .count();
     let peak_abs = samples
         .iter()
@@ -266,6 +271,21 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
         0.0
     } else {
         samples.iter().map(|sample| sample.abs()).sum::<f32>() / samples.len() as f32
+    };
+    let dc_offset = if samples.is_empty() {
+        0.0
+    } else {
+        sum / samples.len() as f32
+    };
+    let active_sample_ratio = if samples.is_empty() {
+        0.0
+    } else {
+        active_samples as f32 / samples.len() as f32
+    };
+    let silence_ratio = if samples.is_empty() {
+        0.0
+    } else {
+        1.0 - active_sample_ratio
     };
     let rms = if samples.is_empty() {
         0.0
@@ -290,6 +310,9 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
         mean_abs,
         zero_crossings,
         crest_factor,
+        active_sample_ratio,
+        silence_ratio,
+        dc_offset,
     }
 }
 

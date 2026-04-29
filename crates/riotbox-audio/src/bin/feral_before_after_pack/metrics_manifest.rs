@@ -6,8 +6,23 @@ fn write_metrics_markdown(path: &Path, metrics: OfflineAudioMetrics) -> std::io:
              - Peak abs: `{:.6}`\n\
              - RMS: `{:.6}`\n\
              - Active samples: `{}`\n\
-             - Sum: `{:.6}`\n",
-            metrics.peak_abs, metrics.rms, metrics.active_samples, metrics.sum
+             - Sum: `{:.6}`\n\
+             - Mean abs: `{:.6}`\n\
+             - Zero crossings: `{}`\n\
+             - Crest factor: `{:.6}`\n\
+             - Active sample ratio: `{:.6}`\n\
+             - Silence ratio: `{:.6}`\n\
+             - DC offset: `{:.6}`\n",
+            metrics.peak_abs,
+            metrics.rms,
+            metrics.active_samples,
+            metrics.sum,
+            metrics.mean_abs,
+            metrics.zero_crossings,
+            metrics.crest_factor,
+            metrics.active_sample_ratio,
+            metrics.silence_ratio,
+            metrics.dc_offset
         ),
     )
 }

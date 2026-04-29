@@ -206,12 +206,24 @@ fn write_metrics_markdown(path: &Path, metrics: RenderMetrics) -> std::io::Resul
              - RMS: `{:.6}`\n\
              - Active samples: `{}`\n\
              - Sum: `{:.6}`\n\
+             - Mean abs: `{:.6}`\n\
+             - Zero crossings: `{}`\n\
+             - Crest factor: `{:.6}`\n\
+             - Active sample ratio: `{:.6}`\n\
+             - Silence ratio: `{:.6}`\n\
+             - DC offset: `{:.6}`\n\
              - Low-band peak abs: `{:.6}`\n\
              - Low-band RMS: `{:.6}`\n",
             metrics.signal.peak_abs,
             metrics.signal.rms,
             metrics.signal.active_samples,
             metrics.signal.sum,
+            metrics.signal.mean_abs,
+            metrics.signal.zero_crossings,
+            metrics.signal.crest_factor,
+            metrics.signal.active_sample_ratio,
+            metrics.signal.silence_ratio,
+            metrics.signal.dc_offset,
             metrics.low_band.peak_abs,
             metrics.low_band.rms
         ),
