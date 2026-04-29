@@ -7,6 +7,8 @@ use riotbox_audio::listening_manifest::validate_manifest_envelope;
 use serde_json::Value;
 
 const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
+const SUMMARY_SCHEMA: &str = "riotbox.observer_audio_summary.v1";
+const SUMMARY_SCHEMA_VERSION: u32 = 1;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -299,6 +301,8 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
 
 fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error> {
     serde_json::to_string_pretty(&serde_json::json!({
+        "schema": SUMMARY_SCHEMA,
+        "schema_version": SUMMARY_SCHEMA_VERSION,
         "control_path": {
             "present": control_path_present(summary),
             "observer_schema": &summary.observer_schema,

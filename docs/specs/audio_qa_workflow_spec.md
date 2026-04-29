@@ -492,6 +492,7 @@ Today the repo already has:
 - observer/audio correlation can emit opt-in JSON summaries for machine-readable QA verdicts and metric inspection
 - a `just observer-audio-correlate-json <events.ndjson> <manifest.json> <summary.json>` helper exposes the machine-readable summary path
 - the committed-fixture JSON summary path is smoke-tested in `just audio-qa-ci` and the named GitHub Actions audio QA step
+- observer/audio JSON summaries include a top-level `schema` and `schema_version` marker so automation can reject unexpected summary shapes before making QA decisions
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
 
