@@ -76,3 +76,86 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
 
     assert_eq!(next_id, ActionId(4));
 }
+
+#[test]
+fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.ghost_state.mode = GhostMode::Assist;
+    session.ghost_state.suggestion_history.clear();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: 32.0,
+        beat_index: 32,
+        bar_index: 8,
+        phrase_index: 2,
+        current_scene: Some(SceneId::from("scene-a")),
+    });
+    state.set_current_ghost_suggestion(ghost_fill_suggestion());
+
+    assert!(matches!(
+        state.accept_current_ghost_suggestion(1_000),
+        GhostSuggestionQueueResult::Enqueued(_)
+    ));
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-a")),
+        },
+        1_500,
+    );
+    assert_eq!(committed.len(), 1);
+    state.session.snapshots = vec![
+        Snapshot {
+            snapshot_id: SnapshotId::from("before-ghost"),
+            created_at: "2026-04-29T19:12:00Z".into(),
+            label: "before ghost fill".into(),
+            action_cursor: 0,
+        },
+        Snapshot {
+            snapshot_id: SnapshotId::from("after-ghost"),
+            created_at: "2026-04-29T19:12:01Z".into(),
+            label: "after ghost fill".into(),
+            action_cursor: state.session.action_log.actions.len(),
+        },
+    ];
+
+    let tempdir = tempdir().expect("create ghost snapshot replay tempdir");
+    let session_path = tempdir.path().join("ghost-snapshot-replay-session.json");
+    save_session_json(&session_path, &state.session).expect("save ghost replay session");
+    let reloaded = load_session_json(&session_path).expect("reload ghost replay session");
+
+    let before_snapshot = reloaded
+        .snapshots
+        .iter()
+        .find(|snapshot| snapshot.snapshot_id.as_str() == "before-ghost")
+        .expect("before snapshot restored");
+    let after_snapshot = reloaded
+        .snapshots
+        .iter()
+        .find(|snapshot| snapshot.snapshot_id.as_str() == "after-ghost")
+        .expect("after snapshot restored");
+    let before_comparison = riotbox_core::replay::build_snapshot_replay_plan_comparison(
+        &reloaded.action_log,
+        before_snapshot,
+    )
+    .expect("before snapshot replay plan");
+    let after_comparison =
+        riotbox_core::replay::build_snapshot_replay_plan_comparison(&reloaded.action_log, after_snapshot)
+            .expect("after snapshot replay plan");
+
+    assert_eq!(before_comparison.origin.len(), 1);
+    let ghost_entry = &before_comparison.origin[0];
+    assert_eq!(ghost_entry.action.actor, ActorType::Ghost);
+    assert_eq!(ghost_entry.action.command, ActionCommand::Tr909FillNext);
+    assert_eq!(before_comparison.snapshot_suffix.len(), 1);
+    assert_eq!(
+        ghost_entry.commit_record.action_id,
+        before_comparison.snapshot_suffix[0].action.id
+    );
+    assert!(after_comparison.snapshot_suffix.is_empty());
+}
