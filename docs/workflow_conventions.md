@@ -146,11 +146,32 @@ Minimum branch-level review expectations:
 - drift against the active specs in `docs/`
 - whether new behavior is adequately covered by tests
 - whether docs or workflow notes need to move with the code
+- whether any Rust file, including tests and bin helpers, grows beyond the repo's roughly 500-line file budget
 
 If the `code-review` skill is not available in the current session:
 
 - state that clearly in the working notes or PR context
 - fall back to the normal self-review pass instead of skipping review entirely
+
+## 7.1.1 Rust File-Size Budget
+
+Riotbox treats every `.rs` file over roughly 500 lines as a refactor candidate.
+
+This applies to:
+
+- production modules
+- `tests.rs` files
+- bin helpers
+- fixture/test-support modules
+
+The goal is not strict line-count aesthetics. The goal is lower review cost, lower agent context cost, and easier navigation. Large test files are still a problem because they consume context whenever a test area must be inspected.
+
+Preferred response when a Rust file crosses the budget:
+
+- split by responsibility, screen, lane, fixture family, command family, or render seam
+- keep the split mechanical when possible
+- avoid mixing behavior changes with file-size cleanup
+- create a follow-up ticket if the split is too large for the current branch
 
 ## 7.2 CI Check After PR Open
 

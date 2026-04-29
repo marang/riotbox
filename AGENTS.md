@@ -165,6 +165,9 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Prefer small enums and structs over stringly behavior
 - Keep tests close to the modules they validate
 - Avoid unnecessary dependencies during early model stabilization
+- Keep every Rust file, including tests and bin helpers, at or below roughly 500 lines whenever practical.
+- Treat any `.rs` file over 500 lines as a refactor candidate; split by responsibility instead of letting production or test hotspots grow.
+- Do not hide context cost in giant `tests.rs` files. If a test module grows past the budget, split it by behavior area, fixture family, screen, lane, or helper responsibility.
 
 ### Documentation
 
@@ -188,7 +191,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - architecture drift against `docs/` contracts
   - missing tests for new behavior
   - workflow/documentation gaps introduced by the slice
-  - growth of already-large Rust files or new large inline test modules that should be split into focused modules
+  - growth of any Rust file beyond the 500-line budget, including production, tests, fixtures, and bin helpers
 - If the review finds a real issue, fix it on the branch before creating the PR when feasible
 
 ### Audio-producing slices
