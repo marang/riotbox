@@ -199,6 +199,85 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
 }
 
 #[test]
+fn mc202_replay_executor_matches_committed_app_state_and_audio_path() {
+    let graph = sample_graph();
+    let base_session = sample_session(&graph);
+    let mut committed_state =
+        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+
+    assert_eq!(
+        committed_state.queue_mc202_generate_follower(300),
+        QueueControlResult::Enqueued
+    );
+    commit_mc202_recipe_step(&mut committed_state, 1, 400);
+    let follower = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+
+    assert_eq!(
+        committed_state.queue_mc202_generate_answer(500),
+        QueueControlResult::Enqueued
+    );
+    commit_mc202_recipe_step(&mut committed_state, 2, 600);
+    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+
+    assert_eq!(
+        committed_state.queue_mc202_generate_pressure(700),
+        QueueControlResult::Enqueued
+    );
+    commit_mc202_recipe_step(&mut committed_state, 3, 800);
+    let pressure = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+
+    assert_eq!(
+        committed_state.queue_mc202_generate_instigator(900),
+        QueueControlResult::Enqueued
+    );
+    commit_mc202_recipe_step(&mut committed_state, 4, 1_000);
+    let instigator = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+
+    assert_eq!(
+        committed_state.queue_mc202_mutate_phrase(1_100),
+        QueueControlResult::Enqueued
+    );
+    commit_mc202_recipe_step(&mut committed_state, 5, 1_200);
+    let committed_mutation = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+
+    let plan = riotbox_core::replay::build_committed_replay_plan(
+        &committed_state.session.action_log,
+    )
+    .expect("committed MC-202 action log builds a replay plan");
+    let mut replayed_session = base_session;
+    let report = riotbox_core::replay::apply_replay_plan_to_session(&mut replayed_session, &plan)
+        .expect("MC-202 replay executor applies committed phrase family");
+    let replayed_state = JamAppState::from_parts(replayed_session, Some(graph), ActionQueue::new());
+    let replayed_mutation = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
+
+    assert_eq!(report.applied_action_ids.len(), 5);
+    assert_eq!(
+        replayed_state.session.runtime_state.lane_state.mc202,
+        committed_state.session.runtime_state.lane_state.mc202
+    );
+    assert_eq!(
+        replayed_state.session.runtime_state.macro_state.mc202_touch,
+        committed_state.session.runtime_state.macro_state.mc202_touch
+    );
+    assert_eq!(replayed_state.runtime.mc202_render, committed_state.runtime.mc202_render);
+    assert_recipe_buffers_match(
+        "replayed MC-202 mutation -> committed MC-202 mutation",
+        &replayed_mutation,
+        &committed_mutation,
+        0.00001,
+    );
+    assert_recipe_buffers_differ("follower -> committed answer", &follower, &committed_answer, 0.005);
+    assert_recipe_buffers_differ("answer -> pressure", &committed_answer, &pressure, 0.004);
+    assert_recipe_buffers_differ("pressure -> instigator", &pressure, &instigator, 0.004);
+    assert_recipe_buffers_differ(
+        "instigator -> replayed mutation",
+        &instigator,
+        &replayed_mutation,
+        0.004,
+    );
+}
+
+#[test]
 fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
     let graph = sample_graph();
     let session = sample_session(&graph);

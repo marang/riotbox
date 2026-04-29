@@ -165,9 +165,9 @@ Current implementation:
 
 ### 7.3 Minimal replay executor boundary
 
-The first replay executor is intentionally narrow. It applies only deterministic, non-audio structural actions from committed replay-plan entries.
+The replay executor is intentionally narrow. It applies only deterministic actions from committed replay-plan entries whose state mutation is explicit enough to replay without consulting UI summaries or log text.
 
-Initial supported commands:
+Current supported structural commands:
 
 - `transport.play`
 - `transport.pause`
@@ -177,6 +177,15 @@ Initial supported commands:
 - `unlock.object`
 - `ghost.set_mode`
 
+Current supported musical commands:
+
+- `mc202.set_role`
+- `mc202.generate_follower`
+- `mc202.generate_answer`
+- `mc202.generate_pressure`
+- `mc202.generate_instigator`
+- `mc202.mutate_phrase`
+
 Rules:
 
 - The executor consumes replay-plan entries, not UI summaries or parsed log text.
@@ -184,9 +193,10 @@ Rules:
 - Invalid params fail explicitly instead of guessing defaults.
 - Whole-plan application is all-or-nothing: if any entry fails, the session passed to the executor is not mutated.
 - Single-entry application may mutate the passed session and should be used only when the caller already accepts that boundary.
-- This executor does not perform audio rendering, capture artifact creation, W-30/TR-909/MC-202 side effects, Ghost reasoning, source analysis, or snapshot hydration.
+- This executor does not perform audio rendering, capture artifact creation, W-30/TR-909 side effects, Ghost reasoning, source analysis, or snapshot hydration.
+- MC-202 replay currently covers the deterministic phrase-lane state needed by downstream projection: role, phrase reference, phrase variant, and MC-202 touch.
 - Current convergence coverage materializes a snapshot anchor by replaying the safe prefix in tests, then applies the selected suffix and compares the resulting structural state against origin replay; this proves the executor path, not real snapshot payload hydration.
-- Broader musical replay must expand this allowlist command by command with tests that prove both control-path and output-path behavior where audible state is affected.
+- Broader musical replay must expand this allowlist command by command with tests that prove both control-path and output-path behavior where audible state is affected. The first MC-202 expansion includes app-level render parity proving replayed MC-202 state projects to the same audible render as the committed app path and differs from the preceding phrase.
 
 ---
 

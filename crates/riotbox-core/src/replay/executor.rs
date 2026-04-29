@@ -2,7 +2,7 @@ use crate::{
     action::{ActionCommand, ActionParams},
     ids::ActionId,
     replay::ReplayPlanEntry,
-    session::SessionFile,
+    session::{Mc202PhraseVariantState, SessionFile},
 };
 
 const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
@@ -13,6 +13,12 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::LockObject,
     ActionCommand::UnlockObject,
     ActionCommand::GhostSetMode,
+    ActionCommand::Mc202SetRole,
+    ActionCommand::Mc202GenerateFollower,
+    ActionCommand::Mc202GenerateAnswer,
+    ActionCommand::Mc202GeneratePressure,
+    ActionCommand::Mc202GenerateInstigator,
+    ActionCommand::Mc202MutatePhrase,
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -115,6 +121,66 @@ pub fn apply_replay_entry_to_session(
             };
             session.ghost_state.mode = mode;
         }
+        ActionCommand::Mc202SetRole => {
+            let role = action
+                .target
+                .object_id
+                .clone()
+                .or_else(|| match &action.params {
+                    ActionParams::Mutation { target_id, .. } => target_id.clone(),
+                    _ => None,
+                })
+                .ok_or(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionTarget::object_id or ActionParams::Mutation { target_id: Some(_) }",
+                })?;
+
+            apply_mc202_role(
+                session,
+                entry,
+                &role,
+                mc202_touch_or(action, if role == "leader" { 0.85 } else { 0.65 }),
+            );
+        }
+        ActionCommand::Mc202GenerateFollower => {
+            apply_mc202_role(session, entry, "follower", mc202_touch_or(action, 0.78));
+        }
+        ActionCommand::Mc202GenerateAnswer => {
+            apply_mc202_role(session, entry, "answer", mc202_touch_or(action, 0.82));
+        }
+        ActionCommand::Mc202GeneratePressure => {
+            apply_mc202_role(session, entry, "pressure", mc202_touch_or(action, 0.84));
+        }
+        ActionCommand::Mc202GenerateInstigator => {
+            apply_mc202_role(session, entry, "instigator", mc202_touch_or(action, 0.90));
+        }
+        ActionCommand::Mc202MutatePhrase => {
+            let current_role = session
+                .runtime_state
+                .lane_state
+                .mc202
+                .role
+                .clone()
+                .unwrap_or_else(|| "follower".into());
+            let variant = match &action.params {
+                ActionParams::Mutation {
+                    target_id: Some(target_id),
+                    ..
+                } if target_id == "mutated_drive" => target_id.clone(),
+                _ => "mutated_drive".into(),
+            };
+            let bar_index = entry.commit_record.boundary.bar_index.max(1);
+            let phrase_ref = format!("{current_role}-{variant}-bar-{bar_index}");
+            let touch = mc202_touch_or(action, 0.88);
+
+            session.runtime_state.lane_state.mc202.role = Some(current_role);
+            session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref);
+            session.runtime_state.lane_state.mc202.phrase_variant =
+                Some(Mc202PhraseVariantState::MutatedDrive);
+            session.runtime_state.macro_state.mc202_touch =
+                session.runtime_state.macro_state.mc202_touch.max(touch);
+        }
         command => {
             return Err(ReplayExecutionError::UnsupportedAction {
                 action_id: action.id,
@@ -124,6 +190,39 @@ pub fn apply_replay_entry_to_session(
     }
 
     Ok(())
+}
+
+fn apply_mc202_role(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+    role: &str,
+    touch: f32,
+) {
+    session.runtime_state.lane_state.mc202.role = Some(role.into());
+    session.runtime_state.lane_state.mc202.phrase_ref =
+        Some(mc202_boundary_phrase_ref(entry, role));
+    session.runtime_state.lane_state.mc202.phrase_variant = None;
+    session.runtime_state.macro_state.mc202_touch =
+        session.runtime_state.macro_state.mc202_touch.max(touch);
+}
+
+fn mc202_touch_or(action: &crate::action::Action, fallback: f32) -> f32 {
+    match &action.params {
+        ActionParams::Mutation { intensity, .. } => intensity.clamp(0.0, 1.0),
+        _ => fallback,
+    }
+}
+
+fn mc202_boundary_phrase_ref(entry: &ReplayPlanEntry<'_>, role: &str) -> String {
+    entry.commit_record.boundary.scene_id.as_ref().map_or_else(
+        || {
+            format!(
+                "{role}-phrase-{}",
+                entry.commit_record.boundary.phrase_index
+            )
+        },
+        |scene_id| format!("{role}-{scene_id}"),
+    )
 }
 
 pub fn apply_replay_plan_to_session(
