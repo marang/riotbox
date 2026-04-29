@@ -1,4 +1,5 @@
 pub mod action;
+pub mod ghost;
 pub mod ids;
 pub mod persistence;
 pub mod queue;

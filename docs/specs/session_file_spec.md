@@ -336,6 +336,8 @@ GhostState {
 MVP rule:
 
 - persist accepted or active constraints
+- Watch-mode suggestions are read-only proposal objects until a later Assist flow accepts them.
+- Session `suggestion_history` should store compact user-facing records for continuity, not raw Ghost reasoning or queue/action objects.
 - do not persist opaque internal deliberation blobs
 
 ---

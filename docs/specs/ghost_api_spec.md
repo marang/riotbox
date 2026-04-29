@@ -176,13 +176,15 @@ MVP rule:
 Ghost suggestions must use one explicit proposal shape.
 
 ```text
-GhostProposal {
+GhostWatchSuggestion {
   proposal_id
   mode
+  tool_name
   summary
   rationale
-  suggested_actions[]
+  suggested_action
   confidence
+  safety
   blockers
   created_at
 }
@@ -190,9 +192,11 @@ GhostProposal {
 
 Rules:
 
+- `watch` suggestions are read-only comments; they must not queue or execute actions
 - `summary` must be short enough for the Jam screen
 - `rationale` must be explainable in plain language
-- `suggested_actions` must already conform to the Action Lexicon shape
+- `suggested_action`, when present, must name an Action Lexicon command, target, quantization, and plain-language intent, but it is still only an intent until accepted by a later Assist flow
+- `safety` must distinguish safe suggestions, suggestions that need Assist acceptance, and blocked suggestions
 - blockers such as locks or low-confidence conditions must be explicit
 
 ---
