@@ -179,14 +179,26 @@ fn render_metrics_markdown(
          - Active samples: `{}`\n\
          - Peak abs: `{:.6}`\n\
          - RMS: `{:.6}`\n\
-         - Sum: `{:.6}`\n",
+         - Sum: `{:.6}`\n\
+         - Mean abs: `{:.6}`\n\
+         - Zero crossings: `{}`\n\
+         - Crest factor: `{:.6}`\n\
+         - Active sample ratio: `{:.6}`\n\
+         - Silence ratio: `{:.6}`\n\
+         - DC offset: `{:.6}`\n",
         case.id,
         case.title,
         case.recipe_refs,
         metrics.active_samples,
         metrics.peak_abs,
         metrics.rms,
-        metrics.sum
+        metrics.sum,
+        metrics.mean_abs,
+        metrics.zero_crossings,
+        metrics.crest_factor,
+        metrics.active_sample_ratio,
+        metrics.silence_ratio,
+        metrics.dc_offset
     )
 }
 
@@ -197,6 +209,13 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
     let peak_delta = (baseline.peak_abs - candidate.peak_abs).abs();
     let rms_delta = rms_delta(baseline, candidate);
     let sum_delta = (baseline.sum - candidate.sum).abs();
+    let mean_abs_delta = (baseline.mean_abs - candidate.mean_abs).abs();
+    let zero_crossings_delta = baseline.zero_crossings.abs_diff(candidate.zero_crossings);
+    let crest_factor_delta = (baseline.crest_factor - candidate.crest_factor).abs();
+    let active_ratio_delta =
+        (baseline.active_sample_ratio - candidate.active_sample_ratio).abs();
+    let silence_ratio_delta = (baseline.silence_ratio - candidate.silence_ratio).abs();
+    let dc_offset_delta = (baseline.dc_offset - candidate.dc_offset).abs();
     let signal_delta = report.signal_delta_metrics;
 
     format!(
@@ -218,7 +237,13 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
          | active_samples | {} | {} | {} |\n\
          | peak_abs | {:.6} | {:.6} | {:.6} |\n\
          | rms | {:.6} | {:.6} | {:.6} |\n\
-         | sum | {:.6} | {:.6} | {:.6} |\n",
+         | sum | {:.6} | {:.6} | {:.6} |\n\
+         | mean_abs | {:.6} | {:.6} | {:.6} |\n\
+         | zero_crossings | {} | {} | {} |\n\
+         | crest_factor | {:.6} | {:.6} | {:.6} |\n\
+         | active_sample_ratio | {:.6} | {:.6} | {:.6} |\n\
+         | silence_ratio | {:.6} | {:.6} | {:.6} |\n\
+         | dc_offset | {:.6} | {:.6} | {:.6} |\n",
         case.id,
         case.title,
         case.recipe_refs,
@@ -241,7 +266,25 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
         rms_delta,
         baseline.sum,
         candidate.sum,
-        sum_delta
+        sum_delta,
+        baseline.mean_abs,
+        candidate.mean_abs,
+        mean_abs_delta,
+        baseline.zero_crossings,
+        candidate.zero_crossings,
+        zero_crossings_delta,
+        baseline.crest_factor,
+        candidate.crest_factor,
+        crest_factor_delta,
+        baseline.active_sample_ratio,
+        candidate.active_sample_ratio,
+        active_ratio_delta,
+        baseline.silence_ratio,
+        candidate.silence_ratio,
+        silence_ratio_delta,
+        baseline.dc_offset,
+        candidate.dc_offset,
+        dc_offset_delta
     )
 }
 
@@ -432,4 +475,3 @@ impl From<&CaseReport> for ManifestCase {
         }
     }
 }
-

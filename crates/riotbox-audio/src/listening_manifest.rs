@@ -81,6 +81,9 @@ pub struct ListeningPackSignalMetrics {
     pub mean_abs: f32,
     pub zero_crossings: usize,
     pub crest_factor: f32,
+    pub active_sample_ratio: f32,
+    pub silence_ratio: f32,
+    pub dc_offset: f32,
 }
 
 impl From<OfflineAudioMetrics> for ListeningPackSignalMetrics {
@@ -93,6 +96,9 @@ impl From<OfflineAudioMetrics> for ListeningPackSignalMetrics {
             mean_abs: metrics.mean_abs,
             zero_crossings: metrics.zero_crossings,
             crest_factor: metrics.crest_factor,
+            active_sample_ratio: metrics.active_sample_ratio,
+            silence_ratio: metrics.silence_ratio,
+            dc_offset: metrics.dc_offset,
         }
     }
 }
