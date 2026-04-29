@@ -180,8 +180,12 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     );
     assert_eq!(target_plan_from_before.suffix.len(), 1);
     assert_eq!(target_plan_from_before.suffix[0].action.actor, ActorType::Ghost);
-    let dry_run_summary =
-        riotbox_core::replay::build_replay_target_dry_run_summary(&target_plan_from_before);
+    let mut before_only_session = reloaded.clone();
+    before_only_session.snapshots = vec![before_snapshot.clone()];
+    let before_only_state = JamAppState::from_parts(before_only_session, None, ActionQueue::new());
+    let dry_run_summary = before_only_state
+        .restore_target_dry_run_summary(reloaded.action_log.actions.len())
+        .expect("app dry-run summary for before snapshot");
 
     assert_eq!(
         dry_run_summary.target_action_cursor,
@@ -207,6 +211,17 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         Some("after-ghost")
     );
     assert!(target_plan_from_after.suffix.is_empty());
+    let restored_state =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore ghost replay");
+    let exact_anchor_summary = restored_state
+        .restore_target_dry_run_summary(reloaded.action_log.actions.len())
+        .expect("app dry-run summary for exact anchor");
+    assert_eq!(
+        exact_anchor_summary.anchor_snapshot_id.as_deref(),
+        Some("after-ghost")
+    );
+    assert_eq!(exact_anchor_summary.suffix_action_count, 0);
+    assert!(!exact_anchor_summary.needs_replay);
 
     let no_snapshot_convergence =
         riotbox_core::replay::build_latest_snapshot_replay_convergence_summary(
@@ -359,6 +374,19 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     assert_eq!(
         session, original_session,
         "unsupported target suffix must not partially mutate restored state"
+    );
+    let diagnostic_state = JamAppState::from_parts(session.clone(), Some(graph), ActionQueue::new());
+    let dry_run_summary = diagnostic_state
+        .restore_target_dry_run_summary(unsupported_action_cursor)
+        .expect("unsupported replay dry-run summary");
+    assert_eq!(dry_run_summary.suffix_unsupported_action_count, 1);
+    assert_eq!(
+        dry_run_summary.suffix_unsupported_action_ids,
+        vec![ActionId(77)]
+    );
+    assert_eq!(
+        dry_run_summary.suffix_unsupported_commands,
+        vec![ActionCommand::W30LoopFreeze]
     );
 
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");

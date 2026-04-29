@@ -1,11 +1,25 @@
 use riotbox_core::replay::{
-    ReplayTargetExecutionError, ReplayTargetExecutionReport, apply_replay_target_suffix_to_session,
+    ReplayPlanError, ReplayTargetDryRunSummary, ReplayTargetExecutionError,
+    ReplayTargetExecutionReport, apply_replay_target_suffix_to_session,
+    build_replay_target_dry_run_summary, build_replay_target_plan,
 };
 
 use super::lifecycle::latest_commit_boundary_from_log;
 use super::*;
 
 impl JamAppState {
+    pub fn restore_target_dry_run_summary(
+        &self,
+        target_action_cursor: usize,
+    ) -> Result<ReplayTargetDryRunSummary, ReplayPlanError> {
+        let plan = build_replay_target_plan(
+            &self.session.action_log,
+            &self.session.snapshots,
+            target_action_cursor,
+        )?;
+        Ok(build_replay_target_dry_run_summary(&plan))
+    }
+
     pub fn apply_restore_target_suffix(
         &mut self,
         target_action_cursor: usize,
