@@ -92,6 +92,12 @@ It must expose:
   existing bounded Feral paths such as W-30 browse, TR-909 fill, MC-202
   follow / answer, and capture; this must not create new controls or bypass
   action semantics
+- W-30 perform-card preview cues must distinguish source-backed and fallback-backed
+  playback affordances: `src:` cues such as `src: [o] raw source | 4 Capture`
+  mean the next audition / hit uses decoded source-window material, while
+  `fallback:` cues such as `fallback: [o] raw safe | 4 Capture` mean the
+  action is safe to try but still uses the synthetic preview fallback; these
+  cue families are mutually exclusive
 
 ### 5.1 Jam goals
 
