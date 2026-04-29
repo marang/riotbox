@@ -1,6 +1,6 @@
 use riotbox_core::{
     TimestampMs,
-    action::GhostMode,
+    action::{ActorType, GhostMode},
     ghost::{GhostSuggestionDraftError, GhostWatchSuggestion},
     ids::ActionId,
     session::GhostSuggestionStatus,
@@ -112,6 +112,12 @@ impl JamAppState {
             }
         };
 
+        if !self.ghost_pending_action_budget_available() {
+            return GhostSuggestionQueueResult::Rejected {
+                reason: "ghost pending action budget exceeded".into(),
+            };
+        }
+
         if !self
             .session
             .ghost_state
@@ -141,6 +147,17 @@ impl JamAppState {
         let action_id = self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         GhostSuggestionQueueResult::Enqueued(action_id)
+    }
+
+    fn ghost_pending_action_budget_available(&self) -> bool {
+        let max_pending = usize::from(self.session.ghost_state.budgets.max_pending_actions);
+        let pending_ghost_actions = self
+            .queue
+            .pending_actions()
+            .iter()
+            .filter(|action| action.actor == ActorType::Ghost)
+            .count();
+        pending_ghost_actions < max_pending
     }
 }
 

@@ -99,6 +99,42 @@ fn queue_accepted_ghost_suggestion_does_not_enqueue_decided_proposal_twice() {
 }
 
 #[test]
+fn queue_accepted_ghost_suggestion_respects_pending_budget() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.ghost_state.mode = GhostMode::Assist;
+    session.ghost_state.budgets.max_pending_actions = 1;
+    session.ghost_state.suggestion_history.clear();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    let first = ghost_fill_suggestion();
+    let mut second = ghost_fill_suggestion();
+    second.proposal_id = "ghost-fill-2".into();
+
+    assert!(matches!(
+        state.queue_accepted_ghost_suggestion(&first, 1_000),
+        GhostSuggestionQueueResult::Enqueued(_)
+    ));
+
+    let over_budget = state.queue_accepted_ghost_suggestion(&second, 1_001);
+
+    assert_eq!(
+        over_budget,
+        GhostSuggestionQueueResult::Rejected {
+            reason: "ghost pending action budget exceeded".into()
+        }
+    );
+    assert_eq!(state.queue.pending_actions().len(), 1);
+    assert!(
+        state
+            .session
+            .ghost_state
+            .suggestion_history
+            .iter()
+            .all(|record| record.proposal_id != "ghost-fill-2")
+    );
+}
+
+#[test]
 fn current_ghost_suggestion_slot_archives_and_clears_without_queueing() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);

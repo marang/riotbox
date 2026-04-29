@@ -285,12 +285,20 @@ Ghost must respect explicit safety controls.
 
 ### 11.1 Budgets
 
-Examples:
+Current session budget fields and MVP defaults:
 
-- max actions per phrase
-- max destructive actions per scene
-- max capture promotions per window
-- max simultaneous pending Ghost actions
+| Field | Default | Applies to | Current enforcement |
+| --- | --- | --- | --- |
+| `max_actions_per_phrase` | `2` | Accepted Ghost actions within a phrase | Contracted; full phrase-window enforcement is a follow-up |
+| `max_destructive_actions_per_scene` | `1` | Destructive accepted Ghost actions within a scene | Contracted; destructive scene-window enforcement is a follow-up |
+| `max_pending_actions` | `2` | Simultaneous pending `ActorType::Ghost` actions | Enforced when an Assist suggestion is accepted into the normal action queue |
+
+Rules:
+
+- `watch` mode is read-only and therefore consumes no action budget.
+- `assist` mode may queue only while the relevant budget allows it.
+- over-budget suggestions must be rejected with an explicit reason and must not mark the proposal as accepted.
+- budget enforcement must happen at normal action queue boundaries, not through a hidden Ghost queue.
 
 ### 11.2 Locks
 
@@ -385,5 +393,5 @@ Required validation:
 
 This draft should be followed by:
 
-1. budget defaults per mode
+1. phrase-window and destructive scene-window budget enforcement
 2. escalation path for future `perform` mode
