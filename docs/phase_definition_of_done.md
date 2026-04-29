@@ -148,6 +148,11 @@ Done when:
 - Ghost actions are logged and explainable
 - accepted Ghost actions remain undoable and replayable
 
+Current review:
+
+- `docs/reviews/p010_ghost_watch_assist_exit_review_2026-04-29.md`
+- status: closed for bounded Watch / Assist MVP on 2026-04-29 after Ghost proposals, explicit accept/reject, lock awareness, pending/phrase/destructive budgets, normal action-queue commit, and structured commit metadata landed; autonomous `perform` mode remains a future escalation, not part of this phase exit
+
 ---
 
 ## 11. Phase 8 - Pro Hardening
