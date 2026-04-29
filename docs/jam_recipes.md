@@ -411,9 +411,13 @@ What to observe:
 - `audition raw/src` means raw audition is using captured source material
 - `audition/src` means promoted audition is source-backed
 - `recall/.../src` or `prev recall/src` means the promoted hit or recall path is source-backed
+- on `Jam`, a source-backed raw audition can show `src: [o] raw source | 4 Capture`
+- on `Jam`, a source-backed promoted audition can show `src: [o] source | 4 Capture`
+- on `Jam`, a source-backed live recall can show `src: [w] source | 4 Capture`
 - `Capture -> Do Next` should explain the audible handoff while actions are queued, for example `wait, then hear raw preview`
 - `Log` can also show `win 1.25-3.75s src-1`; that is the source excerpt backing the current W-30 cue
 - `.../fallback` means Riotbox is still using the safe synthetic preview for that path
+- `fallback: [o] raw safe | 4 Capture` and similar `fallback:` Jam cues mean the action is still playable, but it is using the safe preview instead of decoded source-window material
 - `fallback` is not automatically a bug; it means the current session did not have a decoded source-window preview available for that cue
 
 What this teaches:
@@ -516,6 +520,7 @@ How to interpret it:
 What this teaches:
 
 - `src` / `fallback` is not only UI language; there is now an output-path check for it
+- the Jam `src:` cue is the fast live check; Recipe 13 is the offline proof when the live path still sounds suspicious
 - the current source-backed W-30 path is a short preview excerpt, not full sample streaming
 - use this recipe before judging W-30 by a confusing first TUI run
 
