@@ -159,6 +159,20 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
         }
     }
 
+    for commit_record in &session.action_log.commit_records {
+        if !session
+            .action_log
+            .actions
+            .iter()
+            .any(|action| action.id == commit_record.action_id)
+        {
+            return Err(JamAppError::InvalidSession(format!(
+                "commit record references missing action {}",
+                commit_record.action_id
+            )));
+        }
+    }
+
     Ok(())
 }
 

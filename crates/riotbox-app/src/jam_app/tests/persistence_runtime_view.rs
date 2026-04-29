@@ -168,6 +168,73 @@ fn rejects_session_with_snapshot_cursor_beyond_action_log() {
 }
 
 #[test]
+fn loads_session_with_commit_record_referencing_persisted_action() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.action_log.commit_records.push(ActionCommitRecord {
+        action_id: ActionId(1),
+        boundary: CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 8,
+            bar_index: 2,
+            phrase_index: 0,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        commit_sequence: 1,
+        committed_at: 200,
+    });
+    save_session_json(&session_path, &session).expect("save valid commit-record session");
+
+    let restored =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("load should pass");
+
+    assert_eq!(restored.session.action_log.commit_records.len(), 1);
+    assert_eq!(
+        restored.runtime.last_commit_boundary,
+        Some(CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 8,
+            bar_index: 2,
+            phrase_index: 0,
+            scene_id: Some(SceneId::from("scene-1")),
+        })
+    );
+}
+
+#[test]
+fn rejects_session_with_commit_record_for_missing_action() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.action_log.commit_records.push(ActionCommitRecord {
+        action_id: ActionId(999),
+        boundary: CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 8,
+            bar_index: 2,
+            phrase_index: 0,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        commit_sequence: 1,
+        committed_at: 200,
+    });
+    save_session_json(&session_path, &session).expect("save orphan commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("commit record references missing action a-0999"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn runtime_view_updates_from_audio_and_sidecar_state() {
     let graph = sample_graph();
     let session = sample_session(&graph);
