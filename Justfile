@@ -114,7 +114,7 @@ listening-manifest-validator-fixtures:
     if python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_missing_artifact_file.json; then echo "expected missing listening manifest artifact file fixture to fail" >&2; exit 1; fi
 
 listening-manifest-validate-generated-packs:
-    tmpdir="$(mktemp -d)" && trap 'rm -rf "$tmpdir"' EXIT && python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0 && cargo run -p riotbox-audio --bin lane_recipe_pack -- --output-dir "$tmpdir/lane-recipe" --duration-seconds 2.0 && python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts "$tmpdir/lane-recipe/manifest.json" && cargo run -p riotbox-audio --bin feral_before_after_pack -- --source "$tmpdir/source.wav" --output-dir "$tmpdir/feral-before-after" --duration-seconds 1.0 --source-window-seconds 0.5 && python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts "$tmpdir/feral-before-after/manifest.json"
+    scripts/validate_generated_listening_manifests.sh
 
 observer-audio-correlate-fixture:
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence

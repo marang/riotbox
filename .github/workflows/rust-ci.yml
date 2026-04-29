@@ -68,13 +68,10 @@ jobs:
             echo "expected missing listening manifest artifact file fixture to fail" >&2
             exit 1
           fi
+          scripts/validate_generated_listening_manifests.sh
           generated_tmpdir="$(mktemp -d)"
           trap 'rm -rf "$generated_tmpdir"' EXIT
           python3 scripts/write_synthetic_break_wav.py "$generated_tmpdir/source.wav" 4.0
-          cargo run -p riotbox-audio --bin lane_recipe_pack -- --output-dir "$generated_tmpdir/lane-recipe" --duration-seconds 2.0
-          python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts "$generated_tmpdir/lane-recipe/manifest.json"
-          cargo run -p riotbox-audio --bin feral_before_after_pack -- --source "$generated_tmpdir/source.wav" --output-dir "$generated_tmpdir/feral-before-after" --duration-seconds 1.0 --source-window-seconds 0.5
-          python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts "$generated_tmpdir/feral-before-after/manifest.json"
           cargo run -p riotbox-audio --bin feral_grid_pack -- --source "$generated_tmpdir/source.wav" --output-dir "$generated_tmpdir/feral-grid" --bars 2 --source-window-seconds 0.5
           python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts "$generated_tmpdir/feral-grid/manifest.json"
           cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest "$generated_tmpdir/feral-grid/manifest.json" --require-evidence
