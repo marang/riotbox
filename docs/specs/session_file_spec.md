@@ -417,6 +417,12 @@ Load must validate:
 
 Load may degrade only when the resulting state remains honest and usable.
 
+Current MVP crash-recovery boundary:
+
+- truncated or partial session JSON must fail with an explicit parse error
+- load must not silently repair or replace the requested file with guessed state
+- adjacent valid session files can still be loaded manually, but automatic fallback selection is not part of MVP yet
+
 ---
 
 ## 17. MVP Requirements

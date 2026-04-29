@@ -380,4 +380,29 @@ mod tests {
             "existing session"
         );
     }
+
+    #[test]
+    fn truncated_session_json_load_fails_without_replacing_adjacent_valid_session() {
+        let dir = tempdir().expect("create temp dir");
+        let graph = sample_graph();
+        let session = sample_session(&graph);
+        let valid_path = dir.path().join("session-valid.json");
+        let truncated_path = dir.path().join("session.json");
+
+        save_session_json(&valid_path, &session).expect("save adjacent valid session");
+        let valid_json = fs::read_to_string(&valid_path).expect("read valid session");
+        let truncated_json = &valid_json[..valid_json.len() / 2];
+        fs::write(&truncated_path, truncated_json).expect("write truncated session");
+
+        let error = load_session_json(&truncated_path).expect_err("truncated load should fail");
+
+        assert!(matches!(&error, PersistenceError::Json(json_error) if json_error.is_eof()));
+        assert_eq!(
+            fs::read_to_string(&truncated_path).expect("read truncated session"),
+            truncated_json
+        );
+        let adjacent_valid =
+            load_session_json(&valid_path).expect("adjacent valid session stays loadable");
+        assert_eq!(adjacent_valid, session);
+    }
 }
