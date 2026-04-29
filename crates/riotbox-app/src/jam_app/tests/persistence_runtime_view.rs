@@ -316,6 +316,34 @@ fn rejects_session_with_duplicate_commit_record_sequence_for_boundary() {
 }
 
 #[test]
+fn rejects_session_with_duplicate_commit_record_for_same_action() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 1));
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 2));
+    save_session_json(&session_path, &session)
+        .expect("save duplicate-action commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("commit record is duplicated for action a-0001"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn runtime_view_updates_from_audio_and_sidecar_state() {
     let graph = sample_graph();
     let session = sample_session(&graph);

@@ -189,6 +189,13 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
 
     for (index, commit_record) in session.action_log.commit_records.iter().enumerate() {
         for previous in &session.action_log.commit_records[..index] {
+            if previous.action_id == commit_record.action_id {
+                return Err(JamAppError::InvalidSession(format!(
+                    "commit record is duplicated for action {}",
+                    commit_record.action_id
+                )));
+            }
+
             if previous.boundary == commit_record.boundary
                 && previous.commit_sequence == commit_record.commit_sequence
             {
