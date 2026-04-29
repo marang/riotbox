@@ -22,6 +22,7 @@ ci:
 audio-qa-ci:
     cargo test -p riotbox-audio --bin w30_preview_render --bin w30_preview_compare --bin lane_recipe_pack --bin feral_before_after_pack --bin feral_grid_pack
     cargo test -p riotbox-app --bin observer_audio_correlate
+    just observer-audio-correlate-fixture
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -87,3 +88,6 @@ observer-audio-correlation-notes target="artifacts/audio_qa/local/observer_audio
 
 observer-audio-correlate observer manifest output="artifacts/audio_qa/local/observer_audio_summary.md":
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer "{{observer}}" --manifest "{{manifest}}" --output "{{output}}"
+
+observer-audio-correlate-fixture:
+    cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence
