@@ -160,6 +160,7 @@ Current implementation:
 - Snapshot anchor selection should pick the latest valid snapshot at or before the target action cursor and reject out-of-range cursors instead of silently falling back.
 - Target replay planning may combine the origin plan, selected snapshot anchor, and target-limited suffix, but execution and runtime hydration remain separate responsibilities.
 - Target replay dry-run summaries may expose selected anchor metadata, target cursor, and suffix action scope for QA and future UI/debug seams, but they must not execute actions or mutate runtime state.
+- Latest-snapshot replay convergence summaries may compare the full committed origin against the latest snapshot-to-end suffix for QA, including whether no snapshot forces full replay, but they must remain summary-only until a real replay executor exists.
 - Session restore rebuilds the app-runtime `last_commit_boundary` from the latest structured commit record so fresh app state does not lose the most recent musical boundary context.
 
 ---

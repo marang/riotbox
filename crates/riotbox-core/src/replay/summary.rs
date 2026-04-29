@@ -1,4 +1,9 @@
-use crate::{action::ActionCommand, ids::ActionId, replay::ReplayTargetPlan};
+use crate::{
+    action::ActionCommand,
+    ids::ActionId,
+    replay::{ReplayPlanError, ReplayTargetPlan, build_replay_target_plan},
+    session::{ActionLog, Snapshot},
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct ReplayTargetDryRunSummary {
@@ -8,6 +13,27 @@ pub struct ReplayTargetDryRunSummary {
     pub needs_replay: bool,
     pub anchor_snapshot_id: Option<String>,
     pub anchor_action_cursor: Option<usize>,
+    pub suffix_action_ids: Vec<ActionId>,
+    pub suffix_commands: Vec<ActionCommand>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LatestSnapshotReplayConvergenceSummary {
+    /// End-of-log cursor targeted by the latest-snapshot convergence check.
+    pub target_action_cursor: usize,
+    /// Total persisted actions, including non-committed diagnostic or queued entries.
+    pub origin_action_count: usize,
+    /// Committed replay entries that form the deterministic origin plan.
+    pub origin_replay_entry_count: usize,
+    /// Persisted snapshots considered while selecting the latest valid anchor.
+    pub snapshot_count: usize,
+    pub anchor_snapshot_id: Option<String>,
+    pub anchor_action_cursor: Option<usize>,
+    /// Committed entries that must replay after the selected snapshot anchor.
+    pub suffix_action_count: usize,
+    pub needs_replay: bool,
+    /// True when no snapshot anchor exists and replay must start from origin.
+    pub needs_full_replay: bool,
     pub suffix_action_ids: Vec<ActionId>,
     pub suffix_commands: Vec<ActionCommand>,
 }
@@ -32,6 +58,29 @@ pub fn build_replay_target_dry_run_summary(
             .map(|entry| entry.action.command)
             .collect(),
     }
+}
+
+pub fn build_latest_snapshot_replay_convergence_summary(
+    action_log: &ActionLog,
+    snapshots: &[Snapshot],
+) -> Result<LatestSnapshotReplayConvergenceSummary, ReplayPlanError> {
+    let target_action_cursor = action_log.actions.len();
+    let plan = build_replay_target_plan(action_log, snapshots, target_action_cursor)?;
+    let dry_run_summary = build_replay_target_dry_run_summary(&plan);
+
+    Ok(LatestSnapshotReplayConvergenceSummary {
+        target_action_cursor,
+        origin_action_count: action_log.actions.len(),
+        origin_replay_entry_count: plan.origin.len(),
+        snapshot_count: snapshots.len(),
+        anchor_snapshot_id: dry_run_summary.anchor_snapshot_id,
+        anchor_action_cursor: dry_run_summary.anchor_action_cursor,
+        suffix_action_count: dry_run_summary.suffix_action_count,
+        needs_replay: dry_run_summary.needs_replay,
+        needs_full_replay: plan.anchor.is_none() && !plan.origin.is_empty(),
+        suffix_action_ids: dry_run_summary.suffix_action_ids,
+        suffix_commands: dry_run_summary.suffix_commands,
+    })
 }
 
 #[cfg(test)]
@@ -151,5 +200,129 @@ mod tests {
         assert_eq!(summary.anchor_action_cursor, Some(2));
         assert!(summary.suffix_action_ids.is_empty());
         assert!(summary.suffix_commands.is_empty());
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_reports_full_replay_when_no_snapshot_exists() {
+        let action_log = action_log();
+
+        let summary = build_latest_snapshot_replay_convergence_summary(&action_log, &[])
+            .expect("valid convergence summary");
+
+        assert_eq!(summary.target_action_cursor, 3);
+        assert_eq!(summary.origin_action_count, 3);
+        assert_eq!(summary.origin_replay_entry_count, 3);
+        assert_eq!(summary.snapshot_count, 0);
+        assert_eq!(summary.anchor_snapshot_id, None);
+        assert_eq!(summary.anchor_action_cursor, None);
+        assert_eq!(summary.suffix_action_count, 3);
+        assert!(summary.needs_replay);
+        assert!(summary.needs_full_replay);
+        assert_eq!(
+            summary.suffix_action_ids,
+            vec![ActionId(1), ActionId(2), ActionId(3)]
+        );
+        assert_eq!(
+            summary.suffix_commands,
+            vec![
+                ActionCommand::MutateScene,
+                ActionCommand::Tr909FillNext,
+                ActionCommand::Mc202GenerateAnswer
+            ]
+        );
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_distinguishes_log_count_from_replay_count() {
+        let mut action_log = action_log();
+        action_log.actions.push(Action {
+            id: ActionId(4),
+            actor: ActorType::User,
+            command: ActionCommand::SceneLaunch,
+            params: ActionParams::Empty,
+            target: ActionTarget::default(),
+            requested_at: 400,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Queued,
+            committed_at: None,
+            result: None,
+            undo_policy: UndoPolicy::Undoable,
+            explanation: None,
+        });
+
+        let summary = build_latest_snapshot_replay_convergence_summary(&action_log, &[])
+            .expect("valid convergence summary");
+
+        assert_eq!(summary.target_action_cursor, 4);
+        assert_eq!(summary.origin_action_count, 4);
+        assert_eq!(summary.origin_replay_entry_count, 3);
+        assert_eq!(summary.suffix_action_count, 3);
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_reports_partial_suffix_after_snapshot() {
+        let action_log = action_log();
+        let snapshots = vec![snapshot("snap-1", 1)];
+
+        let summary = build_latest_snapshot_replay_convergence_summary(&action_log, &snapshots)
+            .expect("valid convergence summary");
+
+        assert_eq!(summary.target_action_cursor, 3);
+        assert_eq!(summary.origin_action_count, 3);
+        assert_eq!(summary.origin_replay_entry_count, 3);
+        assert_eq!(summary.snapshot_count, 1);
+        assert_eq!(summary.anchor_snapshot_id.as_deref(), Some("snap-1"));
+        assert_eq!(summary.anchor_action_cursor, Some(1));
+        assert_eq!(summary.suffix_action_count, 2);
+        assert!(summary.needs_replay);
+        assert!(!summary.needs_full_replay);
+        assert_eq!(summary.suffix_action_ids, vec![ActionId(2), ActionId(3)]);
+        assert_eq!(
+            summary.suffix_commands,
+            vec![
+                ActionCommand::Tr909FillNext,
+                ActionCommand::Mc202GenerateAnswer
+            ]
+        );
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_uses_latest_valid_snapshot() {
+        let action_log = action_log();
+        let snapshots = vec![
+            snapshot("snap-1", 1),
+            snapshot("snap-3a", 3),
+            snapshot("snap-3b", 3),
+        ];
+
+        let summary = build_latest_snapshot_replay_convergence_summary(&action_log, &snapshots)
+            .expect("valid convergence summary");
+
+        assert_eq!(summary.target_action_cursor, 3);
+        assert_eq!(summary.snapshot_count, 3);
+        assert_eq!(summary.anchor_snapshot_id.as_deref(), Some("snap-3b"));
+        assert_eq!(summary.anchor_action_cursor, Some(3));
+        assert_eq!(summary.suffix_action_count, 0);
+        assert!(!summary.needs_replay);
+        assert!(!summary.needs_full_replay);
+        assert!(summary.suffix_action_ids.is_empty());
+        assert!(summary.suffix_commands.is_empty());
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_rejects_out_of_bounds_snapshot() {
+        let action_log = action_log();
+        let snapshots = vec![snapshot("snap-invalid", 4)];
+
+        let error = build_latest_snapshot_replay_convergence_summary(&action_log, &snapshots)
+            .expect_err("invalid snapshot cursor should fail");
+
+        assert_eq!(
+            error,
+            ReplayPlanError::SnapshotCursorOutOfBounds {
+                action_cursor: 4,
+                action_count: 3
+            }
+        );
     }
 }

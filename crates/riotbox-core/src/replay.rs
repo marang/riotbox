@@ -2,7 +2,10 @@ use std::cmp::Ordering;
 
 mod summary;
 
-pub use summary::{ReplayTargetDryRunSummary, build_replay_target_dry_run_summary};
+pub use summary::{
+    LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary,
+    build_latest_snapshot_replay_convergence_summary, build_replay_target_dry_run_summary,
+};
 
 use crate::{
     TimestampMs,
