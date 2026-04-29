@@ -476,13 +476,14 @@ Today the repo already has:
 - a first local Feral before/after render pack that writes a source excerpt, Riotbox-transformed after render, before-then-after listening file, W-30 / TR-909 / MC-202 stems, metrics, comparison report, and README for a source WAV without committing generated audio
 - a first local grid-locked Feral demo render pack that writes MC-202 question/answer, TR-909 beat/fill, W-30/Feral source-chop, and combined mix WAVs from one shared beat/bar/frame grid, then checks stem activity, MC-202 question-vs-answer signal delta, and low-band support
 - a first machine-readable `manifest.json` beside the Feral grid demo pack output, recording pack metadata, artifact paths, thresholds, key metrics, pass status, and the reproduction command
+- a CI-safe Feral grid manifest smoke gate that renders from synthetic input and asserts manifest schema version, artifact roles and files, metrics files, thresholds, pass status, and non-collapsed output metrics without depending on ignored local example audio
 
 Today the repo does not yet have a full official workflow for:
 
 - general deterministic offline WAV render generation across fixture packs
 - generated listening packs beyond the W-30 preview smoke, lane recipe, Feral before/after, and Feral grid-demo conventions
 - a shared manifest schema across all local listening-pack helpers
-- CI-gated grid-locked multi-lane Feral demo rendering across the full fixture corpus
+- CI-gated grid-locked multi-lane Feral demo rendering across the full fixture corpus beyond the current synthetic manifest smoke gate
 - broad automated baseline vs candidate WAV comparison outside the current bounded helper cases
 - automated waveform or perceptual audio comparison
 - socket-backed host-session observation or monitored host audio capture

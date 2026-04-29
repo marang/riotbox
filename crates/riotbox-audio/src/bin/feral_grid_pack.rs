@@ -988,19 +988,128 @@ mod tests {
 
         let manifest = fs::read_to_string(output_dir.join("manifest.json")).expect("manifest");
         let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
+        assert_manifest_smoke_gate(&manifest, &output_dir);
+    }
+
+    fn assert_manifest_smoke_gate(manifest: &serde_json::Value, output_dir: &Path) {
         assert_eq!(manifest["schema_version"], 1);
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["bars"], 2);
-        assert_eq!(
-            manifest["artifacts"].as_array().expect("artifacts").len(),
-            6
+        assert_manifest_f32(
+            &manifest["thresholds"]["min_signal_rms"],
+            MIN_SIGNAL_RMS,
+            "min_signal_rms",
+        );
+        assert_manifest_f32(
+            &manifest["thresholds"]["min_mc202_bar_delta_rms"],
+            MIN_MC202_BAR_DELTA_RMS,
+            "min_mc202_bar_delta_rms",
+        );
+        assert_manifest_f32(
+            &manifest["thresholds"]["min_low_band_rms"],
+            MIN_LOW_BAND_RMS,
+            "min_low_band_rms",
+        );
+
+        let artifacts = manifest["artifacts"].as_array().expect("artifacts");
+        assert_eq!(artifacts.len(), 6);
+        assert_manifest_artifact(
+            artifacts,
+            "mc202_question_answer",
+            "audio_wav",
+            output_dir.join("stems/01_mc202_question_answer.wav"),
+            Some(output_dir.join("stems/01_mc202_question_answer.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "tr909_beat_fill",
+            "audio_wav",
+            output_dir.join("stems/02_tr909_beat_fill.wav"),
+            Some(output_dir.join("stems/02_tr909_beat_fill.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "w30_feral_source_chop",
+            "audio_wav",
+            output_dir.join("stems/03_w30_feral_source_chop.wav"),
+            Some(output_dir.join("stems/03_w30_feral_source_chop.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "full_grid_mix",
+            "audio_wav",
+            output_dir.join("04_riotbox_grid_feral_mix.wav"),
+            Some(output_dir.join("04_riotbox_grid_feral_mix.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "grid_report",
+            "markdown_report",
+            output_dir.join("grid-report.md"),
+            None,
+        );
+        assert_manifest_artifact(
+            artifacts,
+            "readme",
+            "markdown_readme",
+            output_dir.join("README.md"),
+            None,
+        );
+
+        assert!(
+            manifest["metrics"]["full_grid_mix"]["signal"]["rms"]
+                .as_f64()
+                .expect("full mix rms")
+                > f64::from(MIN_SIGNAL_RMS)
+        );
+        assert!(
+            manifest["metrics"]["full_grid_mix"]["low_band"]["rms"]
+                .as_f64()
+                .expect("low-band rms")
+                > f64::from(MIN_LOW_BAND_RMS)
         );
         assert!(
             manifest["metrics"]["mc202_question_answer_delta"]["rms"]
                 .as_f64()
                 .expect("delta rms")
                 > f64::from(MIN_MC202_BAR_DELTA_RMS)
+        );
+    }
+
+    fn assert_manifest_artifact(
+        artifacts: &[serde_json::Value],
+        role: &str,
+        kind: &str,
+        path: PathBuf,
+        metrics_path: Option<PathBuf>,
+    ) {
+        let artifact = artifacts
+            .iter()
+            .find(|artifact| artifact["role"] == role)
+            .unwrap_or_else(|| panic!("missing artifact role {role}"));
+
+        assert_eq!(artifact["kind"], kind);
+        assert_eq!(artifact["path"], path.display().to_string());
+        assert!(path.is_file(), "manifest artifact should exist: {path:?}");
+
+        match metrics_path {
+            Some(metrics_path) => {
+                assert_eq!(artifact["metrics_path"], metrics_path.display().to_string());
+                assert!(
+                    metrics_path.is_file(),
+                    "manifest metrics artifact should exist: {metrics_path:?}"
+                );
+            }
+            None => assert!(artifact["metrics_path"].is_null()),
+        }
+    }
+
+    fn assert_manifest_f32(value: &serde_json::Value, expected: f32, name: &str) {
+        let actual = value.as_f64().unwrap_or_else(|| panic!("{name} missing"));
+        assert!(
+            (actual - f64::from(expected)).abs() < 0.000_001,
+            "{name} expected {expected}, got {actual}"
         );
     }
 
