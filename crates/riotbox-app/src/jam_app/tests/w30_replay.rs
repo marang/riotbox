@@ -98,6 +98,128 @@ fn w30_replay_executor_matches_committed_app_state_and_preview_output() {
     );
 }
 
+#[test]
+fn w30_target_suffix_replay_helper_matches_committed_app_preview_output() {
+    let tempdir = tempdir().expect("create source audio tempdir");
+    let source_path = tempdir.path().join("source.wav");
+    write_pcm16_wave(&source_path, 48_000, 2, 2.0);
+    let source_audio_cache =
+        SourceAudioCache::load_pcm_wav(&source_path).expect("load source audio cache");
+
+    let mut graph = sample_graph();
+    graph.source.path = source_path.to_string_lossy().into_owned();
+    graph.source.duration_seconds = 2.0;
+    let mut committed_state =
+        w30_slice_pool_state_with_source_windows(graph.clone(), source_audio_cache.clone());
+    let cap_02 = committed_state
+        .session
+        .captures
+        .iter_mut()
+        .find(|capture| capture.capture_id == CaptureId::from("cap-02"))
+        .expect("cap-02 fixture");
+    cap_02.source_window = Some(CaptureSourceWindow {
+        source_id: graph.source.source_id.clone(),
+        start_seconds: 0.0625,
+        end_seconds: 0.5625,
+        start_frame: 3_000,
+        end_frame: 27_000,
+    });
+    committed_state.refresh_view();
+    let replay_base_session = committed_state.session.clone();
+
+    assert_eq!(
+        committed_state.queue_w30_browse_slice_pool(300),
+        Some(QueueControlResult::Enqueued)
+    );
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 33, 9, 2, 400);
+    let committed_browse = render_w30_replay_buffer(&committed_state);
+
+    assert_eq!(
+        committed_state.queue_w30_trigger_pad(500),
+        Some(QueueControlResult::Enqueued)
+    );
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 34, 9, 2, 600);
+    let committed_trigger = render_w30_replay_buffer(&committed_state);
+
+    let full_action_log = committed_state.session.action_log.clone();
+    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
+        .expect("committed W-30 action log builds replay plan");
+    assert_eq!(committed_plan.len(), 2);
+    let browse_action_id = committed_plan[0].action.id;
+    let trigger_action_id = committed_plan[1].action.id;
+    let browse_action_cursor = full_action_log
+        .actions
+        .iter()
+        .position(|action| action.id == browse_action_id)
+        .expect("browse action exists in action log")
+        + 1;
+    let trigger_action_cursor = full_action_log
+        .actions
+        .iter()
+        .position(|action| action.id == trigger_action_id)
+        .expect("trigger action exists in action log")
+        + 1;
+
+    let mut hydrated_anchor_session = replay_base_session;
+    hydrated_anchor_session.action_log = full_action_log.clone();
+    hydrated_anchor_session.snapshots = vec![Snapshot {
+        snapshot_id: SnapshotId::from("snap-after-w30-browse"),
+        created_at: "2026-04-29T22:45:00Z".into(),
+        label: "after W-30 browse".into(),
+        action_cursor: browse_action_cursor,
+    }];
+    let anchor_report = riotbox_core::replay::apply_replay_plan_to_session(
+        &mut hydrated_anchor_session,
+        &committed_plan[..1],
+    )
+    .expect("W-30 browse anchor materializes");
+    assert_eq!(anchor_report.applied_action_ids, vec![browse_action_id]);
+
+    let suffix_report = riotbox_core::replay::apply_replay_target_suffix_to_session(
+        &mut hydrated_anchor_session,
+        trigger_action_cursor,
+        None,
+    )
+    .expect("target replay suffix applies W-30 trigger");
+    let mut replayed_state =
+        JamAppState::from_parts(hydrated_anchor_session, Some(graph), ActionQueue::new());
+    replayed_state.source_audio_cache = Some(source_audio_cache);
+    replayed_state.refresh_view();
+    let replayed_trigger = render_w30_replay_buffer(&replayed_state);
+
+    assert_eq!(suffix_report.target_action_cursor, trigger_action_cursor);
+    assert_eq!(
+        suffix_report.anchor_snapshot_id.as_deref(),
+        Some("snap-after-w30-browse")
+    );
+    assert_eq!(
+        suffix_report.anchor_action_cursor,
+        Some(browse_action_cursor)
+    );
+    assert_eq!(suffix_report.applied_action_ids, vec![trigger_action_id]);
+    assert_eq!(
+        replayed_state.session.runtime_state.lane_state.w30,
+        committed_state.session.runtime_state.lane_state.w30
+    );
+    assert_eq!(
+        replayed_state.runtime.w30_preview,
+        committed_state.runtime.w30_preview
+    );
+    assert_recipe_buffers_match(
+        "target suffix replay W-30 trigger -> committed trigger",
+        &replayed_trigger,
+        &committed_trigger,
+        0.00001,
+    );
+    assert_w30_replay_buffers_differ(
+        "target suffix replay W-30 browse -> trigger",
+        &committed_browse,
+        &replayed_trigger,
+        0.0001,
+        0.0001,
+    );
+}
+
 fn commit_w30_replay_step(
     state: &mut JamAppState,
     kind: CommitBoundary,
