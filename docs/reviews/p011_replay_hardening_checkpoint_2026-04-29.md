@@ -49,7 +49,7 @@ After RIOTBOX-445 through RIOTBOX-449, P011 also has bounded evidence for stage-
 
 - **Full replay runner is not implemented**: Riotbox still hydrates from persisted runtime state plus validation rather than replaying every action from origin into a reconstructed state.
 - **Snapshot convergence is partially execution-proven**: current helpers prove selected anchor and suffix scope, and the safe structural replay subset now compares origin replay against materialized anchor-plus-suffix replay. Musical lane replay, real snapshot payload hydration, and audible convergence are still open.
-- **Crash recovery is bounded, not complete**: saves are serialize-then-temp-rename and truncated JSON fails safely. MVP policy now rejects hidden automatic repair and defines manual recovery boundaries for orphan temp files and future autosaves, but there is still no journal, recovery-candidate scanner, guided TUI fallback prompt, automatic fallback selection, or interrupted multi-file recovery.
+- **Crash recovery is bounded, not complete**: saves are serialize-then-temp-rename and truncated JSON fails safely. MVP policy rejects hidden automatic repair, and a non-mutating scanner can now report canonical, orphan-temp, and autosave candidates with validation status. There is still no journal, guided TUI fallback prompt, automatic fallback selection, or interrupted multi-file recovery.
 - **Export reproducibility is only a smoke gate**: current evidence proves one deterministic offline W-30 render is byte-stable, not full arrangement export, stems, recording, or manifest normalization.
 - **Long-run/stage-run hardening is still bounded**: `just stage-style-jam-probe` is a longer CI probe, not a soak test or extended live-session simulation.
 
@@ -57,7 +57,7 @@ After RIOTBOX-445 through RIOTBOX-449, P011 also has bounded evidence for stage-
 
 1. Define and implement the smallest replay executor contract that can apply a safe subset of committed actions into a reconstructed state without reading UI/log summaries.
 2. Expand replay-from-origin vs latest-snapshot convergence from the safe structural executor subset into the next replay-safe musical action family, with output-path proof where audible state is affected.
-3. Implement a non-mutating recovery-candidate scanner for orphan temp files and future explicit autosaves before adding any guided TUI recovery prompt.
+3. Wire the recovery-candidate scanner into an explicit guided TUI/manual recovery surface without adding automatic fallback selection.
 4. Expand stage-style QA only where it catches new risk: multi-boundary observer fixtures, longer action sequences, or real user-session observer correlation.
 5. Grow export reproducibility only when a product export surface exists; until then, keep offline render hash checks scoped and clearly labeled.
 

@@ -460,6 +460,12 @@ First implementation seam:
 - keep the scanner separate from `load_session_json` so normal load remains deterministic and side-effect free
 - only after that scanner is covered should the TUI add a guided manual recovery prompt
 
+Current implementation:
+
+- `scan_session_recovery_candidates` reports the canonical target plus matching hidden temp and autosave siblings
+- candidates are parse-checked as missing, parseable session JSON, invalid session JSON, or unreadable
+- the scanner is read-only and does not load, replace, delete, or choose a recovery candidate
+
 ---
 
 ## 17. MVP Requirements
@@ -502,5 +508,5 @@ This draft should be followed by:
 1. exact on-disk layout
 2. session migration policy
 3. snapshot frequency policy
-4. recovery-candidate scanner for orphan temp and future autosave files
+4. guided manual recovery prompt after the scanner is wired into app/UI surfaces
 5. autosave strategy after the format stabilizes

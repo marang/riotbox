@@ -8,6 +8,13 @@ use std::{
 
 use crate::{session::SessionFile, source_graph::SourceGraph};
 
+mod recovery;
+
+pub use recovery::{
+    SessionRecoveryCandidate, SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus,
+    SessionRecoveryScan, scan_session_recovery_candidates,
+};
+
 #[derive(Debug)]
 pub enum PersistenceError {
     Io(io::Error),
