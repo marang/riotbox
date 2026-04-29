@@ -175,16 +175,12 @@ fn w30_target_suffix_replay_helper_matches_committed_app_preview_output() {
     .expect("W-30 browse anchor materializes");
     assert_eq!(anchor_report.applied_action_ids, vec![browse_action_id]);
 
-    let suffix_report = riotbox_core::replay::apply_replay_target_suffix_to_session(
-        &mut hydrated_anchor_session,
-        trigger_action_cursor,
-        None,
-    )
-    .expect("target replay suffix applies W-30 trigger");
     let mut replayed_state =
         JamAppState::from_parts(hydrated_anchor_session, Some(graph), ActionQueue::new());
     replayed_state.source_audio_cache = Some(source_audio_cache);
-    replayed_state.refresh_view();
+    let suffix_report = replayed_state
+        .apply_restore_target_suffix(trigger_action_cursor)
+        .expect("target replay suffix applies W-30 trigger");
     let replayed_trigger = render_w30_replay_buffer(&replayed_state);
 
     assert_eq!(suffix_report.target_action_cursor, trigger_action_cursor);

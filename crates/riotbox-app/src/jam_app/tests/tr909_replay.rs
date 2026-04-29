@@ -118,14 +118,11 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
     .expect("fill anchor materializes");
     assert_eq!(anchor_report.applied_action_ids, vec![fill_action_id]);
 
-    let suffix_report = riotbox_core::replay::apply_replay_target_suffix_to_session(
-        &mut hydrated_anchor_session,
-        slam_action_cursor,
-        None,
-    )
-    .expect("target replay suffix applies slam");
-    let replayed_state =
+    let mut replayed_state =
         JamAppState::from_parts(hydrated_anchor_session, Some(graph), ActionQueue::new());
+    let suffix_report = replayed_state
+        .apply_restore_target_suffix(slam_action_cursor)
+        .expect("target replay suffix applies slam");
     let replayed_slam = render_tr909_replay_buffer(&replayed_state);
 
     assert_eq!(suffix_report.target_action_cursor, slam_action_cursor);

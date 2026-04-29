@@ -54,6 +54,7 @@ mod mc202_queue;
 mod persistence;
 mod projection;
 mod recovery;
+mod restore_replay;
 mod runtime_replay_warnings;
 mod runtime_view;
 mod scene_ops;
