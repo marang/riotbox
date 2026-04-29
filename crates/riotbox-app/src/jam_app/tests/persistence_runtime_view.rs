@@ -261,6 +261,58 @@ fn rejects_session_with_commit_record_for_uncommitted_action() {
 }
 
 #[test]
+fn rejects_session_with_commit_record_for_action_without_committed_at() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.action_log.actions[0].committed_at = None;
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 1));
+    save_session_json(&session_path, &session)
+        .expect("save missing action committed_at commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(
+                message.contains("commit record references action a-0001 without committed_at")
+            );
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_session_with_commit_record_committed_at_mismatch() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    let mut commit_record = sample_commit_record(ActionId(1), 1);
+    commit_record.committed_at = 201;
+    session.action_log.commit_records.push(commit_record);
+    save_session_json(&session_path, &session)
+        .expect("save mismatched committed_at commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains(
+                "commit record for action a-0001 has committed_at 201 but action has committed_at 200"
+            ));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn rejects_session_with_zero_commit_record_sequence() {
     let dir = tempdir().expect("create temp dir");
     let session_path = dir.path().join("jam-session.json");

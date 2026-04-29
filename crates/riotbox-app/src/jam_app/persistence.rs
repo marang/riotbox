@@ -179,6 +179,20 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
             )));
         }
 
+        let Some(action_committed_at) = action.committed_at else {
+            return Err(JamAppError::InvalidSession(format!(
+                "commit record references action {} without committed_at timestamp",
+                commit_record.action_id
+            )));
+        };
+
+        if commit_record.committed_at != action_committed_at {
+            return Err(JamAppError::InvalidSession(format!(
+                "commit record for action {} has committed_at {} but action has committed_at {}",
+                commit_record.action_id, commit_record.committed_at, action_committed_at
+            )));
+        }
+
         if commit_record.commit_sequence == 0 {
             return Err(JamAppError::InvalidSession(format!(
                 "commit record for action {} has invalid sequence 0",
