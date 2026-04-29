@@ -544,3 +544,4 @@ Do not assume `localhost` refers to the host. In the sandbox it is container-loc
 - Prefer the contract that preserves replayability
 - Prefer the implementation that keeps realtime boundaries clean
 - Prefer updating docs over leaving hidden assumptions in code
+- If a user message mixes product feedback, ideas for later, and possible implementation requests, ask one concise clarifying question before choosing a work lane unless the intended next action is already explicit.

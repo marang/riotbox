@@ -58,7 +58,17 @@ This is the default unless the user explicitly asks for something else.
 
 ---
 
-## 4. Branch Naming
+## 4. Ambiguous Feedback Handling
+
+Product feedback, later ideas, and immediate implementation requests can arrive together.
+
+When the intended next action is ambiguous, ask one concise clarifying question before choosing a work lane. Do not silently turn open-ended feedback into implementation work, and do not silently park an urgent implementation request as a future note.
+
+If the user labels something as later work, capture it as a ticket, repo note, or roadmap item. If the user asks to continue implementation, proceed with the next bounded roadmap-aligned ticket.
+
+---
+
+## 5. Branch Naming
 
 Preferred branch pattern:
 
@@ -80,7 +90,7 @@ If Linear is configured to generate branch names, it should use the same repo co
 
 ---
 
-## 5. Commit Scope
+## 6. Commit Scope
 
 Preferred commit style:
 
@@ -97,7 +107,7 @@ Avoid mixing unrelated cleanup into the same commit unless it is required for th
 
 ---
 
-## 6. Pull Request Rules
+## 7. Pull Request Rules
 
 Every completed ticket should normally open a PR.
 
@@ -117,7 +127,7 @@ Do not write PR descriptions as changelogs only.
 
 ---
 
-## 7. Review Boundary
+## 8. Review Boundary
 
 Once a PR is open for a ticket:
 
@@ -132,7 +142,7 @@ Once a PR is open for a ticket:
 
 This keeps review history and Linear issue history aligned.
 
-## 7.1 Branch-Level Review Before PR
+## 8.1 Branch-Level Review Before PR
 
 Before opening a PR for a finished feature branch:
 
@@ -153,7 +163,7 @@ If the `code-review` skill is not available in the current session:
 - state that clearly in the working notes or PR context
 - fall back to the normal self-review pass instead of skipping review entirely
 
-## 7.1.1 Rust File-Size Budget
+## 8.1.1 Rust File-Size Budget
 
 Riotbox treats every `.rs` file over roughly 500 lines as a soft refactor candidate, not a hard limit.
 
@@ -177,7 +187,7 @@ Preferred response when a Rust file crosses the budget:
 - avoid mixing behavior changes with file-size cleanup
 - create a follow-up ticket if the split is too large for the current branch
 
-## 7.2 CI Check After PR Open
+## 8.2 CI Check After PR Open
 
 After opening a PR, explicitly inspect the GitHub Actions / CI status.
 
@@ -198,7 +208,7 @@ Rules:
 - do not fall back into standalone status-only updates when there is no blocker
 - if a progress update is necessary, pair it with the next concrete action already being taken
 
-## 7.2.1 Audio-Producing Slice Check
+## 8.2.1 Audio-Producing Slice Check
 
 For audio-producing changes, also consult:
 
@@ -233,7 +243,7 @@ That observer records launch, keypress, queue / commit, transport, and runtime e
 
 As the repo gains the missing audio QA harnesses, tighten this section toward the stronger release gates defined in the audio QA workflow spec instead of leaving it as a light note.
 
-## 7.3 Periodic Whole-Codebase Review
+## 8.3 Periodic Whole-Codebase Review
 
 Branch-level review is not enough on its own.
 
@@ -259,7 +269,7 @@ If the `review-codebase` skill is not available in the current session, fall bac
 
 ---
 
-## 8. Linear Updates
+## 9. Linear Updates
 
 Two update layers are expected:
 
@@ -287,7 +297,7 @@ Also add a short entry to the `Riotbox Project Updates` Linear document when:
 
 This is the reviewable cross-ticket history.
 
-## 8.2.1 Parallel Workflow Lane
+## 9.2.1 Parallel Workflow Lane
 
 When delegation is available, workflow upkeep may run in parallel with implementation instead of waiting until the end.
 
@@ -313,7 +323,7 @@ Rules:
 - the main coordinating agent still owns correctness, final review, and final integration
 - delegation should reduce workflow drift, not hide responsibility for it
 
-## 8.3 Backlog Horizon
+## 9.3 Backlog Horizon
 
 Linear should not hold only the current ticket.
 
@@ -342,7 +352,7 @@ Rules:
 - prefer a small, honest backlog over a large speculative ticket tree
 - derive backlog tickets from the roadmap, active specs, and current repo state
 
-## 8.3.1 Automatic Next-Ticket Continuation
+## 9.3.1 Automatic Next-Ticket Continuation
 
 If a ticket loop is fully closed, the agent may continue directly with the next-best backlog ticket without waiting for a new user prompt.
 
@@ -355,7 +365,7 @@ Conditions:
 
 This is meant to preserve momentum, not to bypass roadmap discipline. The agent should still prefer the smallest coherent next slice that advances the current phase instead of opening a new side path.
 
-## 8.4 Retention And Cleanup
+## 9.4 Retention And Cleanup
 
 Linear is the active execution surface, not the canonical long-term archive.
 
@@ -476,7 +486,7 @@ Label rule:
 
 ---
 
-## 9. Automatic vs Manual Behavior
+## 10. Automatic vs Manual Behavior
 
 Current practical split:
 
@@ -503,7 +513,7 @@ Because of that, the safe rule is:
 
 ---
 
-## 10. Direct Push To `main`
+## 11. Direct Push To `main`
 
 Normal slice work should not go directly to `main`.
 
@@ -527,7 +537,7 @@ Examples that should still use a PR:
 
 ---
 
-## 11. Local Sync After Merge
+## 12. Local Sync After Merge
 
 After a PR is merged:
 
@@ -539,7 +549,7 @@ Do not continue new ticket work on stale local `main`.
 
 ---
 
-## 12. Issue Lifecycle Notes
+## 13. Issue Lifecycle Notes
 
 Use these workflow states consistently:
 
@@ -555,7 +565,7 @@ For the current Riotbox Linear setup:
 
 ---
 
-## 13. Current Standing Exceptions
+## 14. Current Standing Exceptions
 
 Current known practical exceptions:
 
@@ -565,7 +575,7 @@ Current known practical exceptions:
 
 ---
 
-## 14. Choosing The Next Ticket
+## 15. Choosing The Next Ticket
 
 The next ticket should not be chosen ad hoc.
 
@@ -592,7 +602,7 @@ Useful check questions:
 
 ---
 
-## 15. Short Version
+## 16. Short Version
 
 If unsure, do this:
 
