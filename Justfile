@@ -24,6 +24,7 @@ audio-qa-ci:
     cargo test -p riotbox-app --bin observer_audio_correlate
     just observer-audio-correlate-fixture
     just observer-audio-correlate-json-fixture
+    just observer-audio-summary-validator-fixtures
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -95,6 +96,10 @@ observer-audio-correlate-json observer manifest output="artifacts/audio_qa/local
 
 observer-audio-correlate-json-fixture:
     tmp="$(mktemp)" && cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --output "$tmp" --json && jq -e '.schema == "riotbox.observer_audio_summary.v1" and .schema_version == 1 and .control_path.present == true and .output_path.present == true and (.output_path.issues | length == 0)' "$tmp" && python3 scripts/validate_observer_audio_summary_json.py "$tmp" && rm "$tmp"
+
+observer-audio-summary-validator-fixtures:
+    python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_valid_failure.json
+    if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_schema.json; then echo "expected invalid observer/audio summary fixture to fail" >&2; exit 1; fi
 
 observer-audio-correlate-fixture:
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence

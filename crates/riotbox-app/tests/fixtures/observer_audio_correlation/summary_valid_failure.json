@@ -1,0 +1,31 @@
+{
+  "schema": "riotbox.observer_audio_summary.v1",
+  "schema_version": 1,
+  "control_path": {
+    "present": false,
+    "observer_schema": "riotbox.user_session_observer.v1",
+    "launch_mode": "ingest",
+    "audio_runtime_status": "started",
+    "key_outcomes": [
+      "space -> transport started"
+    ],
+    "first_commit": "none"
+  },
+  "output_path": {
+    "present": false,
+    "issues": [
+      "full_mix_rms=missing",
+      "full_mix_low_band_rms=missing",
+      "mc202_question_answer_delta_rms=missing"
+    ],
+    "pack_id": "feral-grid-demo",
+    "manifest_result": "pass",
+    "artifact_count": 6,
+    "metrics": {
+      "full_mix_rms": null,
+      "full_mix_low_band_rms": null,
+      "mc202_question_answer_delta_rms": null
+    }
+  },
+  "needs_human_listening": true
+}

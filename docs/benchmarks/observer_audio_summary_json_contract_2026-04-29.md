@@ -62,6 +62,7 @@ The committed fixture JSON smoke currently requires:
 - `output_path.present == true`
 - `output_path.issues` is empty
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
+- validator fixtures cover a valid failure summary with `null` metrics and a rejected invalid schema marker
 
 ## Current Non-Goals
 

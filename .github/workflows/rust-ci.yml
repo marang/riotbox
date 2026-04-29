@@ -44,6 +44,11 @@ jobs:
           jq -e '.schema == "riotbox.observer_audio_summary.v1" and .schema_version == 1 and .control_path.present == true and .output_path.present == true and (.output_path.issues | length == 0)' "$tmp"
           python3 scripts/validate_observer_audio_summary_json.py "$tmp"
           rm "$tmp"
+          python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_valid_failure.json
+          if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_schema.json; then
+            echo "expected invalid observer/audio summary fixture to fail" >&2
+            exit 1
+          fi
 
       - name: cargo clippy
         run: cargo clippy --all-targets --all-features -- -D warnings
