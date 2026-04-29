@@ -12,7 +12,9 @@ fn write_metrics_markdown(path: &Path, metrics: OfflineAudioMetrics) -> std::io:
              - Crest factor: `{:.6}`\n\
              - Active sample ratio: `{:.6}`\n\
              - Silence ratio: `{:.6}`\n\
-             - DC offset: `{:.6}`\n",
+             - DC offset: `{:.6}`\n\
+             - Onset count: `{}`\n\
+             - Event density per bar: `{:.6}`\n",
             metrics.peak_abs,
             metrics.rms,
             metrics.active_samples,
@@ -22,7 +24,9 @@ fn write_metrics_markdown(path: &Path, metrics: OfflineAudioMetrics) -> std::io:
             metrics.crest_factor,
             metrics.active_sample_ratio,
             metrics.silence_ratio,
-            metrics.dc_offset
+            metrics.dc_offset,
+            metrics.onset_count,
+            metrics.event_density_per_bar
         ),
     )
 }

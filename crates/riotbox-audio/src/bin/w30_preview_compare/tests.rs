@@ -23,6 +23,8 @@ mod tests {
 - Active sample ratio: `0.058050`
 - Silence ratio: `0.941950`
 - DC offset: `0.000539`
+- Onset count: `8`
+- Event density per bar: `16.000000`
 ";
 
     const fn sample_metrics() -> SmokeMetrics {
@@ -37,6 +39,8 @@ mod tests {
             active_sample_ratio: 0.05805,
             silence_ratio: 0.94195,
             dc_offset: 0.000539,
+            onset_count: 8,
+            event_density_per_bar: 16.0,
         }
     }
 
@@ -164,6 +168,8 @@ mod tests {
                 active_sample_ratio: 0.05805,
                 silence_ratio: 0.94195,
                 dc_offset: 0.000539,
+                onset_count: 8,
+                event_density_per_bar: 16.0,
             }
         );
     }
@@ -200,6 +206,8 @@ mod tests {
             active_sample_ratio: 0.058163,
             silence_ratio: 0.941837,
             dc_offset: 0.000538,
+            onset_count: 9,
+            event_density_per_bar: 18.0,
         };
         let limits = DriftLimits {
             min_active_samples_delta: 0,
@@ -235,6 +243,8 @@ mod tests {
             active_sample_ratio: 0.061,
             silence_ratio: 0.939,
             dc_offset: 0.001,
+            onset_count: 10,
+            event_density_per_bar: 20.0,
         };
         let limits = DriftLimits {
             min_active_samples_delta: 0,
@@ -279,6 +289,8 @@ mod tests {
             active_sample_ratio: 0.07,
             silence_ratio: 0.93,
             dc_offset: 0.01,
+            onset_count: 12,
+            event_density_per_bar: 24.0,
         };
 
         assert!(compare_metrics(&baseline, &candidate, &DriftLimits::default()).has_failures());
@@ -341,9 +353,11 @@ mod tests {
         assert_eq!(manifest["metrics"]["baseline"]["rms"], 0.038331);
         assert_eq!(manifest["metrics"]["baseline"]["zero_crossings"], 128);
         assert_eq!(manifest["metrics"]["baseline"]["active_sample_ratio"], 0.05805);
+        assert_eq!(manifest["metrics"]["baseline"]["onset_count"], 8);
         assert_eq!(manifest["metrics"]["deltas"]["rms"], 0.0);
         assert_eq!(manifest["metrics"]["deltas"]["zero_crossings"], 0);
         assert_eq!(manifest["metrics"]["deltas"]["dc_offset"], 0.0);
+        assert_eq!(manifest["metrics"]["deltas"]["event_density_per_bar"], 0.0);
     }
 
     #[test]

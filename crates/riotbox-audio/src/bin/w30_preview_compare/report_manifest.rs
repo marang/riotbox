@@ -13,6 +13,8 @@ fn render_report(baseline_path: &Path, candidate_path: &Path, report: &Compariso
          active_sample_ratio: {:.6} -> {:.6} | delta {:.6} | diagnostic\n\
          silence_ratio: {:.6} -> {:.6} | delta {:.6} | diagnostic\n\
          dc_offset: {:.6} -> {:.6} | delta {:.6} | diagnostic\n\
+         onset_count: {} -> {} | delta {} | diagnostic\n\
+         event_density_per_bar: {:.6} -> {:.6} | delta {:.6} | diagnostic\n\
          result: {}",
         baseline_path.display(),
         candidate_path.display(),
@@ -58,6 +60,12 @@ fn render_report(baseline_path: &Path, candidate_path: &Path, report: &Compariso
         report.dc_offset.baseline,
         report.dc_offset.candidate,
         report.dc_offset.delta,
+        report.onset_count.baseline,
+        report.onset_count.candidate,
+        report.onset_count.delta,
+        report.event_density_per_bar.baseline,
+        report.event_density_per_bar.candidate,
+        report.event_density_per_bar.delta,
         if report.has_failures() {
             "fail"
         } else {
@@ -107,6 +115,8 @@ fn write_manifest(
                 active_sample_ratio: report.active_sample_ratio.delta,
                 silence_ratio: report.silence_ratio.delta,
                 dc_offset: report.dc_offset.delta,
+                onset_count: report.onset_count.delta,
+                event_density_per_bar: report.event_density_per_bar.delta,
             },
         },
         result: if report.has_failures() {

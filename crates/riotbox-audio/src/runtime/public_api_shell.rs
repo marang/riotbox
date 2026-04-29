@@ -66,6 +66,8 @@ pub struct OfflineAudioMetrics {
     pub active_sample_ratio: f32,
     pub silence_ratio: f32,
     pub dc_offset: f32,
+    pub onset_count: usize,
+    pub event_density_per_bar: f32,
 }
 
 #[derive(Copy, Clone, Debug, Default, PartialEq)]
@@ -257,8 +259,6 @@ pub fn render_mc202_offline(
 
 #[must_use]
 pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
-    const ACTIVE_THRESHOLD: f32 = 0.0001;
-
     let active_samples = samples
         .iter()
         .filter(|sample| sample.abs() > ACTIVE_THRESHOLD)
@@ -301,6 +301,7 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
         })
         .count();
     let crest_factor = if rms > 0.0 { peak_abs / rms } else { 0.0 };
+    let onset_count = count_onsets(samples, 1);
 
     OfflineAudioMetrics {
         active_samples,
@@ -313,7 +314,30 @@ pub fn signal_metrics(samples: &[f32]) -> OfflineAudioMetrics {
         active_sample_ratio,
         silence_ratio,
         dc_offset,
+        onset_count,
+        event_density_per_bar: 0.0,
     }
+}
+
+#[must_use]
+pub fn signal_metrics_with_grid(
+    samples: &[f32],
+    sample_rate: u32,
+    channel_count: u16,
+    tempo_bpm: f32,
+    beats_per_bar: u32,
+) -> OfflineAudioMetrics {
+    let mut metrics = signal_metrics(samples);
+    metrics.onset_count = count_onsets(samples, usize::from(channel_count));
+    metrics.event_density_per_bar = event_density_per_bar(
+        metrics.onset_count,
+        samples.len(),
+        sample_rate,
+        channel_count,
+        tempo_bpm,
+        beats_per_bar,
+    );
+    metrics
 }
 
 #[must_use]
@@ -323,6 +347,68 @@ pub fn signal_delta_metrics(left: &[f32], right: &[f32]) -> OfflineAudioMetrics 
         .map(|index| left.get(index).copied().unwrap_or(0.0) - right.get(index).copied().unwrap_or(0.0))
         .collect::<Vec<_>>();
     signal_metrics(&delta)
+}
+
+const ACTIVE_THRESHOLD: f32 = 0.0001;
+
+fn count_onsets(samples: &[f32], channel_count: usize) -> usize {
+    if samples.is_empty() || channel_count == 0 {
+        return 0;
+    }
+
+    let mut onsets = 0;
+    let mut was_active = false;
+
+    for frame in samples.chunks(channel_count) {
+        let frame_peak = frame
+            .iter()
+            .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
+        let is_active = frame_peak > ACTIVE_THRESHOLD;
+        if is_active && !was_active {
+            onsets += 1;
+        }
+        was_active = is_active;
+    }
+
+    onsets
+}
+
+fn event_density_per_bar(
+    onset_count: usize,
+    sample_count: usize,
+    sample_rate: u32,
+    channel_count: u16,
+    tempo_bpm: f32,
+    beats_per_bar: u32,
+) -> f32 {
+    if onset_count == 0
+        || sample_count == 0
+        || sample_rate == 0
+        || channel_count == 0
+        || tempo_bpm <= 0.0
+        || !tempo_bpm.is_finite()
+        || beats_per_bar == 0
+    {
+        return 0.0;
+    }
+
+    let frame_count = sample_count / usize::from(channel_count);
+    if frame_count == 0 {
+        return 0.0;
+    }
+
+    let duration_seconds = frame_count as f32 / sample_rate as f32;
+    let seconds_per_bar = 60.0 / tempo_bpm * beats_per_bar as f32;
+    if seconds_per_bar <= 0.0 || !seconds_per_bar.is_finite() {
+        return 0.0;
+    }
+
+    let bars = duration_seconds / seconds_per_bar;
+    if bars > 0.0 {
+        onset_count as f32 / bars
+    } else {
+        0.0
+    }
 }
 
 pub struct AudioRuntimeShell {

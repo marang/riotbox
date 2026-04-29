@@ -36,8 +36,9 @@ fn write_pcm16_wav(
 #[cfg(test)]
 mod tests {
     use super::{
-        Args, LISTENING_MANIFEST_SCHEMA_VERSION, PACK_ID, pack_cases, render_pack, render_pair,
-        signal_delta_metrics, signal_metrics,
+        Args, BEATS_PER_BAR, CHANNEL_COUNT, DEFAULT_BPM, LISTENING_MANIFEST_SCHEMA_VERSION, PACK_ID,
+        SAMPLE_RATE, pack_cases, render_pack, render_pair, signal_delta_metrics,
+        signal_metrics_with_grid,
     };
     use std::{fs, path::PathBuf};
 
@@ -84,8 +85,20 @@ mod tests {
         assert_eq!(cases.len(), 10);
         for case in cases {
             let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
-            let baseline_metrics = signal_metrics(&baseline);
-            let candidate_metrics = signal_metrics(&candidate);
+            let baseline_metrics = signal_metrics_with_grid(
+                &baseline,
+                SAMPLE_RATE,
+                CHANNEL_COUNT,
+                DEFAULT_BPM,
+                BEATS_PER_BAR,
+            );
+            let candidate_metrics = signal_metrics_with_grid(
+                &candidate,
+                SAMPLE_RATE,
+                CHANNEL_COUNT,
+                DEFAULT_BPM,
+                BEATS_PER_BAR,
+            );
             let signal_delta_metrics = signal_delta_metrics(&baseline, &candidate);
 
             assert!(
@@ -109,6 +122,16 @@ mod tests {
                 "{} did not produce required signal delta RMS {}",
                 case.id,
                 case.min_signal_delta_rms
+            );
+            assert!(
+                baseline_metrics.onset_count > 0,
+                "{} baseline has no detected onsets",
+                case.id
+            );
+            assert!(
+                candidate_metrics.event_density_per_bar > 0.0,
+                "{} candidate has no event density",
+                case.id
             );
         }
     }
@@ -156,6 +179,12 @@ mod tests {
             first_case["metrics"]["candidate"]["rms"]
                 .as_f64()
                 .expect("candidate rms")
+                > 0.0
+        );
+        assert!(
+            first_case["metrics"]["candidate"]["event_density_per_bar"]
+                .as_f64()
+                .expect("candidate event density")
                 > 0.0
         );
         assert!(
