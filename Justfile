@@ -25,6 +25,7 @@ audio-qa-ci:
     just observer-audio-correlate-fixture
     just observer-audio-correlate-json-fixture
     just observer-audio-summary-validator-fixtures
+    just observer-audio-correlate-generated-feral-grid
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -103,3 +104,6 @@ observer-audio-summary-validator-fixtures:
 
 observer-audio-correlate-fixture:
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence
+
+observer-audio-correlate-generated-feral-grid:
+    tmpdir="$(mktemp -d)" && trap 'rm -rf "$tmpdir"' EXIT && python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0 && cargo run -p riotbox-audio --bin feral_grid_pack -- --source "$tmpdir/source.wav" --output-dir "$tmpdir/feral-grid" --bars 2 --source-window-seconds 0.5 && cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest "$tmpdir/feral-grid/manifest.json" --require-evidence

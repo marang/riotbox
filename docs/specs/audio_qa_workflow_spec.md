@@ -499,6 +499,7 @@ Today the repo already has:
 - validator fixtures cover both a valid failure summary with `null` metrics and a rejected invalid schema marker
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
+- observer/audio strict correlation is smoke-tested against a freshly generated Feral grid manifest built from a deterministic synthetic break WAV
 
 Today the repo does not yet have a full official workflow for:
 
