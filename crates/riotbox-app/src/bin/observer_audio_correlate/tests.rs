@@ -17,6 +17,7 @@ fn parses_required_paths_and_output() {
     assert_eq!(parsed.manifest_path, PathBuf::from("manifest.json"));
     assert_eq!(parsed.output_path, Some(PathBuf::from("summary.md")));
     assert!(!parsed.require_evidence);
+    assert!(!parsed.json_output);
 }
 
 #[test]
@@ -31,6 +32,20 @@ fn parses_strict_evidence_flag() {
     .expect("parse args");
 
     assert!(parsed.require_evidence);
+}
+
+#[test]
+fn parses_json_output_flag() {
+    let parsed = Args::parse([
+        "--observer".to_string(),
+        "events.ndjson".to_string(),
+        "--manifest".to_string(),
+        "manifest.json".to_string(),
+        "--json".to_string(),
+    ])
+    .expect("parse args");
+
+    assert!(parsed.json_output);
 }
 
 #[test]
@@ -71,6 +86,20 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
+    let json: Value = serde_json::from_str(&render_json(&summary).expect("json")).expect("json");
+    assert_eq!(json["control_path"]["present"], true);
+    assert_eq!(json["output_path"]["present"], true);
+    assert_eq!(
+        json["output_path"]["issues"]
+            .as_array()
+            .expect("issues")
+            .len(),
+        0
+    );
+    assert_eq!(
+        json["output_path"]["metrics"]["full_mix_rms"].as_f64(),
+        Some(0.1)
+    );
 }
 
 #[test]

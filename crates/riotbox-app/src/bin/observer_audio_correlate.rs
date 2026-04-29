@@ -20,7 +20,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     let summary = build_summary(&args.observer_path, &args.manifest_path)?;
-    let markdown = render_markdown(&summary);
+    let output = if args.json_output {
+        render_json(&summary)?
+    } else {
+        render_markdown(&summary)
+    };
     if args.require_evidence {
         validate_required_evidence(&summary)?;
     }
@@ -32,9 +36,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             {
                 fs::create_dir_all(parent)?;
             }
-            fs::write(path, markdown)?;
+            fs::write(path, output)?;
         }
-        None => print!("{markdown}"),
+        None => print!("{output}"),
     }
 
     Ok(())
@@ -46,6 +50,7 @@ struct Args {
     manifest_path: PathBuf,
     output_path: Option<PathBuf>,
     require_evidence: bool,
+    json_output: bool,
     show_help: bool,
 }
 
@@ -55,6 +60,7 @@ impl Args {
         let mut manifest_path = None;
         let mut output_path = None;
         let mut require_evidence = false;
+        let mut json_output = false;
         let mut show_help = false;
         let mut args = args.into_iter();
 
@@ -62,6 +68,7 @@ impl Args {
             match arg.as_str() {
                 "--help" | "-h" => show_help = true,
                 "--require-evidence" => require_evidence = true,
+                "--json" => json_output = true,
                 "--observer" => {
                     observer_path = Some(PathBuf::from(
                         args.next()
@@ -90,6 +97,7 @@ impl Args {
                 manifest_path: PathBuf::new(),
                 output_path,
                 require_evidence,
+                json_output,
                 show_help,
             });
         }
@@ -99,6 +107,7 @@ impl Args {
             manifest_path: manifest_path.ok_or_else(|| "--manifest is required".to_string())?,
             output_path,
             require_evidence,
+            json_output,
             show_help,
         })
     }
@@ -121,11 +130,11 @@ struct CorrelationSummary {
 
 fn print_help() {
     println!(
-        "Usage: observer_audio_correlate --observer PATH --manifest PATH [--output PATH]\n\
+        "Usage: observer_audio_correlate --observer PATH --manifest PATH [--output PATH] [--json]\n\
          \n\
          Reads a riotbox-app observer NDJSON file and an audio QA manifest.json,\n\
-         then emits a compact Markdown correlation summary. This is local-first\n\
-         QA bookkeeping, not a live host-session monitor.\n\
+         then emits a compact Markdown correlation summary, or JSON with --json.\n\
+         This is local-first QA bookkeeping, not a live host-session monitor.\n\
          \n\
          Pass --require-evidence to fail when the manifest envelope is unstable,\n\
          committed control-path evidence is missing, or passing output-path\n\
@@ -286,6 +295,33 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         yes_no(output_path_present(summary)),
         format_output_path_issues(summary)
     )
+}
+
+fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error> {
+    serde_json::to_string_pretty(&serde_json::json!({
+        "control_path": {
+            "present": control_path_present(summary),
+            "observer_schema": &summary.observer_schema,
+            "launch_mode": &summary.launch_mode,
+            "audio_runtime_status": &summary.audio_runtime_status,
+            "key_outcomes": &summary.key_outcomes,
+            "first_commit": &summary.first_commit,
+        },
+        "output_path": {
+            "present": output_path_present(summary),
+            "issues": output_path_evidence_failures(summary),
+            "pack_id": &summary.pack_id,
+            "manifest_result": &summary.manifest_result,
+            "artifact_count": summary.artifact_count,
+            "metrics": {
+                "full_mix_rms": summary.full_mix_rms,
+                "full_mix_low_band_rms": summary.full_mix_low_band_rms,
+                "mc202_question_answer_delta_rms": summary.mc202_question_answer_delta_rms,
+            },
+        },
+        "needs_human_listening": true,
+    }))
+    .map(|json| json + "\n")
 }
 
 fn format_optional_f64(value: Option<f64>) -> String {
