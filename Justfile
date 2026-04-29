@@ -89,5 +89,8 @@ observer-audio-correlation-notes target="artifacts/audio_qa/local/observer_audio
 observer-audio-correlate observer manifest output="artifacts/audio_qa/local/observer_audio_summary.md":
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer "{{observer}}" --manifest "{{manifest}}" --output "{{output}}"
 
+observer-audio-correlate-json observer manifest output="artifacts/audio_qa/local/observer_audio_summary.json":
+    cargo run -p riotbox-app --bin observer_audio_correlate -- --observer "{{observer}}" --manifest "{{manifest}}" --output "{{output}}" --json
+
 observer-audio-correlate-fixture:
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence
