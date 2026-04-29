@@ -182,6 +182,58 @@ fn w30_step_focus_rejects_unexpected_params_without_mutating_session() {
 }
 
 #[test]
+fn w30_artifact_producing_actions_reject_without_partial_mutation() {
+    let artifact_actions = vec![
+        (
+            ActionCommand::W30LoopFreeze,
+            w30_capture_params("cap-01", 0.74),
+        ),
+        (
+            ActionCommand::PromoteResample,
+            w30_capture_params("cap-01", 0.86),
+        ),
+        (
+            ActionCommand::W30CaptureToPad,
+            ActionParams::Capture { bars: Some(2) },
+        ),
+        (
+            ActionCommand::CaptureBarGroup,
+            ActionParams::Capture { bars: Some(4) },
+        ),
+    ];
+
+    for (command, params) in artifact_actions {
+        let action_log = action_log(vec![
+            w30_action(
+                1,
+                ActionCommand::W30LiveRecall,
+                w30_capture_params("cap-01", 0.62),
+                100,
+            ),
+            w30_action(2, command, params, 200),
+        ]);
+        let plan = build_replay_target_plan(&action_log, &[], 2).expect("origin plan");
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T21:35:00Z");
+        let original_session = session.clone();
+
+        let error = apply_replay_plan_to_session(&mut session, &plan.suffix)
+            .expect_err("artifact-producing W-30 actions stay outside replay subset");
+
+        assert_eq!(
+            error,
+            ReplayExecutionError::UnsupportedAction {
+                action_id: ActionId(2),
+                command,
+            }
+        );
+        assert_eq!(
+            session, original_session,
+            "{command:?} must not leave the supported recall partially applied"
+        );
+    }
+}
+
+#[test]
 fn w30_damage_profile_preserves_existing_preview_mode() {
     let action_log = action_log(vec![
         w30_action(
