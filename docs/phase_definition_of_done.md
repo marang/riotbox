@@ -176,7 +176,8 @@ The feral layer is done for MVP purposes when:
 Current review:
 
 - `docs/reviews/feral_policy_entry_audit_2026-04-26.md`
-- status: active; first recommended P009 slice is a bounded Feral scorecard projection with a visible Source/Jam consumer, not a new arranger, Ghost path, or break-rebuild engine
+- `docs/reviews/p009_feral_policy_exit_review_2026-04-29.md`
+- status: MVP-exit-clean for the bounded Feral policy layer; future autonomous promotion or quote-risk expansion must reuse the existing scorecard, lineage, action/result, and audio-QA seams rather than adding a separate Feral architecture
 
 ---
 
