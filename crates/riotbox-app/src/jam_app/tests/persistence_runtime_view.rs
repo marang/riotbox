@@ -234,6 +234,33 @@ fn rejects_session_with_commit_record_for_missing_action() {
 }
 
 #[test]
+fn rejects_session_with_commit_record_for_uncommitted_action() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.action_log.actions[0].status = ActionStatus::Queued;
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 1));
+    save_session_json(&session_path, &session)
+        .expect("save non-committed commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains(
+                "commit record references action a-0001 with non-committed status Queued"
+            ));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn rejects_session_with_zero_commit_record_sequence() {
     let dir = tempdir().expect("create temp dir");
     let session_path = dir.path().join("jam-session.json");

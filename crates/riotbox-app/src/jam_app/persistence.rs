@@ -160,15 +160,22 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
     }
 
     for commit_record in &session.action_log.commit_records {
-        if !session
+        let Some(action) = session
             .action_log
             .actions
             .iter()
-            .any(|action| action.id == commit_record.action_id)
-        {
+            .find(|action| action.id == commit_record.action_id)
+        else {
             return Err(JamAppError::InvalidSession(format!(
                 "commit record references missing action {}",
                 commit_record.action_id
+            )));
+        };
+
+        if action.status != ActionStatus::Committed {
+            return Err(JamAppError::InvalidSession(format!(
+                "commit record references action {} with non-committed status {:?}",
+                commit_record.action_id, action.status
             )));
         }
 
