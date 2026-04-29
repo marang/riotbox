@@ -155,6 +155,7 @@ Current implementation:
 - `ActionLog.commit_records` stores one structured commit record per committed action.
 - Each commit record is keyed by action id and stores the commit boundary plus commit sequence within that boundary.
 - Replay and budget logic should consume these structured commit records instead of parsing result summaries or relying only on incidental action vector order.
+- Session restore rebuilds the app-runtime `last_commit_boundary` from the latest structured commit record so fresh app state does not lose the most recent musical boundary context.
 
 ---
 
@@ -303,6 +304,7 @@ The replay model should drive future validation:
 - save / load should preserve state identity
 - replay from latest snapshot and full replay from origin should converge
 - accepted Ghost actions must replay identically to user actions
+- restore-from-zero fixtures should prove commit records, latest boundary context, and future action-id reservation survive fresh app startup
 - changed provider availability should not change restore of existing sessions
 
 ---

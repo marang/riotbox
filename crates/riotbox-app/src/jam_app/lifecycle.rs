@@ -11,6 +11,7 @@ impl JamAppState {
         normalize_scene_candidates(&mut session, source_graph.as_ref());
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
+        let last_commit_boundary = latest_commit_boundary_from_log(&session);
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime_view =
             JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
@@ -23,6 +24,7 @@ impl JamAppState {
             queue,
             runtime: AppRuntimeState {
                 transport,
+                last_commit_boundary,
                 ..AppRuntimeState::default()
             },
             jam_view,
@@ -68,4 +70,14 @@ impl JamAppState {
         self.runtime_view =
             JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
     }
+}
+
+pub(in crate::jam_app) fn latest_commit_boundary_from_log(
+    session: &SessionFile,
+) -> Option<CommitBoundaryState> {
+    session
+        .action_log
+        .commit_records
+        .last()
+        .map(|record| record.boundary.clone())
 }

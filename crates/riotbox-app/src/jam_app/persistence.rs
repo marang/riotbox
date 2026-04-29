@@ -1,4 +1,4 @@
-use super::*;
+use super::{lifecycle::latest_commit_boundary_from_log, *};
 
 impl JamAppState {
     pub fn from_json_files(
@@ -15,6 +15,7 @@ impl JamAppState {
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
         let transport = transport_clock_from_state(&session, source_graph.as_ref());
+        let last_commit_boundary = latest_commit_boundary_from_log(&session);
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime_view =
             JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
@@ -33,6 +34,7 @@ impl JamAppState {
             queue,
             runtime: AppRuntimeState {
                 transport,
+                last_commit_boundary,
                 ..AppRuntimeState::default()
             },
             jam_view,
