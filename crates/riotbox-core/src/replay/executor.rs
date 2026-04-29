@@ -16,6 +16,8 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::LockObject,
     ActionCommand::UnlockObject,
     ActionCommand::GhostSetMode,
+    ActionCommand::SceneLaunch,
+    ActionCommand::SceneRestore,
     ActionCommand::Mc202SetRole,
     ActionCommand::Mc202GenerateFollower,
     ActionCommand::Mc202GenerateAnswer,
@@ -137,6 +139,37 @@ pub fn apply_replay_entry_to_session(
                 });
             };
             session.ghost_state.mode = mode;
+        }
+        ActionCommand::SceneLaunch | ActionCommand::SceneRestore => {
+            let scene_id = action
+                .target
+                .scene_id
+                .clone()
+                .or_else(|| match &action.params {
+                    ActionParams::Scene {
+                        scene_id: Some(scene_id),
+                    } => Some(scene_id.clone()),
+                    _ => None,
+                })
+                .ok_or(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionTarget { scene_id: Some(_) } or ActionParams::Scene { scene_id: Some(_) }",
+                })?;
+            let previous_scene = session
+                .runtime_state
+                .scene_state
+                .active_scene
+                .clone()
+                .or_else(|| session.runtime_state.transport.current_scene.clone());
+
+            session.runtime_state.scene_state.active_scene = Some(scene_id.clone());
+            session.runtime_state.transport.current_scene = Some(scene_id.clone());
+            session.runtime_state.scene_state.restore_scene = previous_scene
+                .as_ref()
+                .filter(|previous_scene| **previous_scene != scene_id)
+                .cloned();
+            session.runtime_state.scene_state.last_movement = None;
         }
         ActionCommand::Mc202SetRole => {
             let role = action

@@ -269,6 +269,8 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::LockObject,
             ActionCommand::UnlockObject,
             ActionCommand::GhostSetMode,
+            ActionCommand::SceneLaunch,
+            ActionCommand::SceneRestore,
             ActionCommand::Mc202SetRole,
             ActionCommand::Mc202GenerateFollower,
             ActionCommand::Mc202GenerateAnswer,
