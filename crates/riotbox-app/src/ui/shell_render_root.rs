@@ -209,6 +209,14 @@ impl JamShellState {
                 self.status_message = "raise MC-202 touch".into();
                 ShellKeyOutcome::RaiseMc202Touch
             }
+            KeyCode::Enter => {
+                self.status_message = "accept ghost suggestion requested".into();
+                ShellKeyOutcome::AcceptCurrentGhostSuggestion
+            }
+            KeyCode::Char('N') => {
+                self.status_message = "reject ghost suggestion requested".into();
+                ShellKeyOutcome::RejectCurrentGhostSuggestion
+            }
             KeyCode::Char('u') => {
                 self.status_message = "undo most recent action requested".into();
                 ShellKeyOutcome::UndoLast
@@ -409,4 +417,3 @@ fn render_screen_tabs(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
 
     frame.render_widget(paragraph, area);
 }
-

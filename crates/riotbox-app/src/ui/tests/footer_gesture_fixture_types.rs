@@ -5,6 +5,10 @@ use riotbox_core::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
         ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
     },
+    ghost::{
+        GhostSuggestedAction, GhostSuggestionConfidence, GhostSuggestionSafety,
+        GhostWatchSuggestion, GhostWatchTool,
+    },
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SourceId},
     queue::ActionQueue,
     session::{

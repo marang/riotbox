@@ -156,6 +156,9 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(capture_help_lines) = capture_help_lines(shell) {
         lines.extend(capture_help_lines);
     }
+    if let Some(ghost_help_lines) = ghost_suggestion_help_lines(shell) {
+        lines.extend(ghost_help_lines);
+    }
 
     lines.extend([
         Line::from(""),
@@ -246,6 +249,27 @@ fn capture_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         line_with_primary_keys("src means source-backed; fallback is safe preview"),
         line_with_primary_keys("hear src/fallback: [o] raw, [p] promote, [w] hit"),
         line_with_primary_key_prefixes("2: confirm promote, hit, and audition results in Log"),
+    ])
+}
+
+fn ghost_suggestion_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+    let suggestion = shell.app.runtime.current_ghost_suggestion.as_ref()?;
+    let accept_line = if !matches!(shell.app.session.ghost_state.mode, GhostMode::Assist) {
+        "Enter: accept only works in Assist mode"
+    } else if suggestion.is_blocked() {
+        "Enter: blocked by Ghost safety"
+    } else if suggestion.suggested_action.is_none() {
+        "Enter: no queueable Ghost action"
+    } else {
+        "Enter: accept and queue the Ghost move"
+    };
+
+    Some(vec![
+        Line::from(""),
+        Line::from("Ghost suggestion"),
+        Line::from(format!("current: {}", suggestion.summary)),
+        line_with_primary_key_prefixes(accept_line),
+        line_with_primary_key_prefixes("N: reject and clear the suggestion"),
     ])
 }
 

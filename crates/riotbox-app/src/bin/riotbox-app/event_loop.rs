@@ -404,6 +404,12 @@ fn run_event_loop(
                     let touch = shell.app.adjust_mc202_touch(0.08);
                     shell.set_error_status(format!("MC-202 touch {:.2}", touch));
                 }
+                ShellKeyOutcome::AcceptCurrentGhostSuggestion => {
+                    accept_current_ghost_suggestion(&mut shell, timestamp_now());
+                }
+                ShellKeyOutcome::RejectCurrentGhostSuggestion => {
+                    reject_current_ghost_suggestion(&mut shell);
+                }
                 ShellKeyOutcome::UndoLast => {
                     if shell.app.undo_last_action(timestamp_now()).is_some() {
                         shell.set_error_status("undid most recent action");
@@ -429,6 +435,28 @@ fn run_event_loop(
     }
 }
 
+fn accept_current_ghost_suggestion(shell: &mut JamShellState, requested_at: u64) {
+    match shell.app.accept_current_ghost_suggestion(requested_at) {
+        riotbox_app::jam_app::GhostSuggestionQueueResult::Enqueued(action_id) => {
+            shell.set_error_status(format!(
+                "accepted ghost suggestion | queued action {}",
+                action_id.0
+            ));
+        }
+        riotbox_app::jam_app::GhostSuggestionQueueResult::Rejected { reason } => {
+            shell.set_error_status(format!("ghost accept ignored: {reason}"));
+        }
+    }
+}
+
+fn reject_current_ghost_suggestion(shell: &mut JamShellState) {
+    if shell.app.reject_current_ghost_suggestion() {
+        shell.set_error_status("rejected current ghost suggestion");
+    } else {
+        shell.set_error_status("ghost reject ignored: no current ghost suggestion");
+    }
+}
+
 fn timestamp_now() -> u64 {
     SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -444,4 +472,3 @@ fn scene_select_unavailable_status(shell: &JamShellState) -> &'static str {
         }
     }
 }
-

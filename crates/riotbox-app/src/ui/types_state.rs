@@ -12,7 +12,7 @@ use riotbox_core::source_graph::{
     DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint,
 };
 use riotbox_core::{
-    action::{ActionCommand, ActionStatus},
+    action::{ActionCommand, ActionStatus, GhostMode},
     view::jam::{
         CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView,
         SceneTransitionKindView, SceneTransitionPolicyView, W30PendingAuditionKind,
@@ -127,6 +127,8 @@ pub enum ShellKeyOutcome {
     RaiseDrumBusLevel,
     LowerMc202Touch,
     RaiseMc202Touch,
+    AcceptCurrentGhostSuggestion,
+    RejectCurrentGhostSuggestion,
     UndoLast,
     Quit,
 }
@@ -243,4 +245,3 @@ pub struct JamShellState {
     pub show_help: bool,
     pub status_message: String,
 }
-

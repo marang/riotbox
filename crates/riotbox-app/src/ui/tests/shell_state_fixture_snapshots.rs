@@ -440,6 +440,63 @@ fn renders_ghost_assist_decision_hint() {
 }
 
 #[test]
+fn renders_current_ghost_suggestion_controls_in_jam() {
+    let mut shell = sample_shell_state();
+    shell
+        .app
+        .set_current_ghost_suggestion(sample_ghost_fill_suggestion(GhostMode::Assist));
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("ghost: add a next-bar drum answer"), "{rendered}");
+    assert!(rendered.contains("[Enter] accept  [N] reject"), "{rendered}");
+}
+
+#[test]
+fn help_explains_current_ghost_suggestion_controls() {
+    let mut shell = sample_shell_state();
+    shell
+        .app
+        .set_current_ghost_suggestion(sample_ghost_fill_suggestion(GhostMode::Assist));
+    shell.show_help = true;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 40);
+
+    assert!(rendered.contains("Ghost suggestion"), "{rendered}");
+    assert!(
+        rendered.contains("Enter: accept and queue the Ghost move"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("N: reject and clear the suggestion"),
+        "{rendered}"
+    );
+}
+
+fn sample_ghost_fill_suggestion(mode: GhostMode) -> GhostWatchSuggestion {
+    GhostWatchSuggestion {
+        proposal_id: "ghost-fill-1".into(),
+        mode,
+        tool_name: GhostWatchTool::SuggestMacroShift,
+        summary: "add a next-bar drum answer".into(),
+        rationale: "the current loop has room before the next scene move".into(),
+        suggested_action: Some(GhostSuggestedAction {
+            command: ActionCommand::Tr909FillNext,
+            target: ActionTarget {
+                scope: Some(TargetScope::LaneTr909),
+                ..Default::default()
+            },
+            quantization: Quantization::NextBar,
+            intent: "add a next-bar drum answer".into(),
+        }),
+        confidence: GhostSuggestionConfidence::Medium,
+        safety: GhostSuggestionSafety::NeedsAssistAcceptance,
+        blockers: Vec::new(),
+        created_at: "2026-04-29T17:00:00Z".into(),
+    }
+}
+
+#[test]
 fn renders_jam_shell_inspect_snapshot() {
     let mut shell = sample_shell_state();
     shell.jam_mode = JamViewMode::Inspect;

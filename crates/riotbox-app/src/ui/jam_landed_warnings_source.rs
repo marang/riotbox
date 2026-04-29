@@ -238,6 +238,24 @@ fn scene_post_commit_cue_line(shell: &JamShellState) -> Option<Line<'static>> {
 }
 
 fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    if let Some(suggestion) = shell.app.runtime.current_ghost_suggestion.as_ref() {
+        let ghost_action_line = if !matches!(shell.app.session.ghost_state.mode, GhostMode::Assist)
+        {
+            "[Enter] needs Assist  [N] reject"
+        } else if suggestion.is_blocked() {
+            "[Enter] blocked  [N] reject"
+        } else if suggestion.suggested_action.is_none() {
+            "[Enter] no action  [N] reject"
+        } else {
+            "[Enter] accept  [N] reject"
+        };
+        return vec![
+            Line::from(format!("ghost: {}", suggestion.summary)),
+            line_with_primary_keys(ghost_action_line),
+            line_with_primary_keys("[2] log  [?] help"),
+        ];
+    }
+
     if !shell.app.jam_view.transport.is_playing {
         return vec![
             line_with_primary_keys("[Space] play"),
@@ -444,4 +462,3 @@ fn source_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             .unwrap_or_else(|| Line::from("warnings clear")),
     ]
 }
-

@@ -322,8 +322,9 @@ fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::RaiseDrumBusLevel => "raise_drum_bus_level",
         ShellKeyOutcome::LowerMc202Touch => "lower_mc202_touch",
         ShellKeyOutcome::RaiseMc202Touch => "raise_mc202_touch",
+        ShellKeyOutcome::AcceptCurrentGhostSuggestion => "accept_current_ghost_suggestion",
+        ShellKeyOutcome::RejectCurrentGhostSuggestion => "reject_current_ghost_suggestion",
         ShellKeyOutcome::UndoLast => "undo_last",
         ShellKeyOutcome::Quit => "quit",
     }
 }
-

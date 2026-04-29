@@ -187,6 +187,14 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::RaiseMc202Touch
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Enter),
+        ShellKeyOutcome::AcceptCurrentGhostSuggestion
+    );
+    assert_eq!(
+        shell.handle_key_code(KeyCode::Char('N')),
+        ShellKeyOutcome::RejectCurrentGhostSuggestion
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('u')),
         ShellKeyOutcome::UndoLast
     );

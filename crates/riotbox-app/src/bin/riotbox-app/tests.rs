@@ -1,7 +1,16 @@
 #[cfg(test)]
 mod tests {
     use super::*;
-    use riotbox_core::{ids::SceneId, queue::ActionQueue, session::SessionFile};
+    use riotbox_core::{
+        action::{ActionCommand, ActionTarget, GhostMode, Quantization, TargetScope},
+        ghost::{
+            GhostSuggestedAction, GhostSuggestionConfidence, GhostSuggestionSafety,
+            GhostWatchSuggestion, GhostWatchTool,
+        },
+        ids::SceneId,
+        queue::ActionQueue,
+        session::SessionFile,
+    };
 
     #[test]
     fn parse_args_builds_ingest_mode() {
@@ -172,5 +181,87 @@ mod tests {
             scene_select_unavailable_status(&shell),
             "scene jump waits for 2 scenes"
         );
+    }
+
+    #[test]
+    fn ghost_accept_control_reports_queue_or_read_only_status() {
+        let mut assist_shell = ghost_shell(GhostMode::Assist);
+
+        accept_current_ghost_suggestion(&mut assist_shell, 123);
+
+        assert!(
+            assist_shell
+                .status_message
+                .starts_with("accepted ghost suggestion | queued action "),
+            "{}",
+            assist_shell.status_message
+        );
+        assert!(assist_shell.app.runtime.current_ghost_suggestion.is_none());
+        assert_eq!(assist_shell.app.queue.pending_actions().len(), 1);
+
+        let mut watch_shell = ghost_shell(GhostMode::Watch);
+
+        accept_current_ghost_suggestion(&mut watch_shell, 123);
+
+        assert_eq!(
+            watch_shell.status_message,
+            "ghost accept ignored: ghost accept requires assist mode"
+        );
+        assert!(watch_shell.app.runtime.current_ghost_suggestion.is_some());
+        assert!(watch_shell.app.queue.pending_actions().is_empty());
+    }
+
+    #[test]
+    fn ghost_reject_control_reports_clear_or_noop_status() {
+        let mut shell = ghost_shell(GhostMode::Assist);
+
+        reject_current_ghost_suggestion(&mut shell);
+
+        assert_eq!(shell.status_message, "rejected current ghost suggestion");
+        assert!(shell.app.runtime.current_ghost_suggestion.is_none());
+        assert!(shell.app.session.ghost_state.suggestion_history[0].rejected);
+
+        reject_current_ghost_suggestion(&mut shell);
+
+        assert_eq!(
+            shell.status_message,
+            "ghost reject ignored: no current ghost suggestion"
+        );
+    }
+
+    fn ghost_shell(mode: GhostMode) -> JamShellState {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T00:00:00Z");
+        session.ghost_state.mode = mode;
+        let mut shell = JamShellState::new(
+            JamAppState::from_parts(session, None, ActionQueue::new()),
+            ShellLaunchMode::Load,
+        );
+        shell
+            .app
+            .set_current_ghost_suggestion(sample_ghost_fill_suggestion(mode));
+        shell
+    }
+
+    fn sample_ghost_fill_suggestion(mode: GhostMode) -> GhostWatchSuggestion {
+        GhostWatchSuggestion {
+            proposal_id: "ghost-fill-1".into(),
+            mode,
+            tool_name: GhostWatchTool::SuggestMacroShift,
+            summary: "add a next-bar drum answer".into(),
+            rationale: "the current loop has room before the next scene move".into(),
+            suggested_action: Some(GhostSuggestedAction {
+                command: ActionCommand::Tr909FillNext,
+                target: ActionTarget {
+                    scope: Some(TargetScope::LaneTr909),
+                    ..Default::default()
+                },
+                quantization: Quantization::NextBar,
+                intent: "add a next-bar drum answer".into(),
+            }),
+            confidence: GhostSuggestionConfidence::Medium,
+            safety: GhostSuggestionSafety::NeedsAssistAcceptance,
+            blockers: Vec::new(),
+            created_at: "2026-04-29T17:00:00Z".into(),
+        }
     }
 }
