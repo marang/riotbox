@@ -45,6 +45,7 @@ mod capture_artifacts;
 mod capture_helpers;
 mod commit;
 mod controls;
+mod ghost_candidates;
 mod ghost_queue;
 mod helpers;
 mod lifecycle;
