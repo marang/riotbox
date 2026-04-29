@@ -332,3 +332,11 @@ What is still not done:
 - [`docs/specs/tui_screen_spec.md`](docs/specs/tui_screen_spec.md)
 - [`docs/specs/action_lexicon_spec.md`](docs/specs/action_lexicon_spec.md)
 - [`plan/riotbox_masterplan.md`](plan/riotbox_masterplan.md)
+
+## License
+
+Feral Riotbox is source-available, not open source. You may inspect, build, and
+run it locally for personal evaluation under the terms in [`LICENSE`](LICENSE).
+
+Publishing forks, distributing modified versions, commercial use, and use of the
+Feral Riotbox name or logo require prior written permission.

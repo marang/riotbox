@@ -1,0 +1,53 @@
+Feral Riotbox Source-Available License
+Version 1.0
+
+Copyright (c) 2026 Markus
+
+Feral Riotbox is made available for personal evaluation, local development,
+research, and private non-commercial use under the terms below.
+
+For this license, "Feral Riotbox" means the project in this repository,
+including its source code, documentation, assets, package names, binaries, and
+related materials.
+
+1. Permissions
+
+You may:
+
+- read and inspect the source code;
+- clone or download the repository for personal evaluation;
+- build and run Feral Riotbox locally for private non-commercial use;
+- make private local modifications solely for your own evaluation.
+
+2. Restrictions
+
+Unless you have prior written permission from the copyright holder, you may not:
+
+- publish, distribute, sublicense, sell, rent, host, or otherwise make Feral
+  Riotbox or modified versions of Feral Riotbox available to others;
+- publish or distribute forks, derivative works, patches, or modified builds;
+- use Feral Riotbox or modified versions of Feral Riotbox commercially;
+- remove or alter copyright, license, or attribution notices;
+- use the Feral Riotbox name, logo, brand assets, or confusingly similar marks
+  for a fork, derivative work, product, service, or public distribution.
+
+3. Contributions
+
+Contributions are accepted only with maintainer approval. By submitting a
+contribution, you agree that the copyright holder may use, modify, and
+distribute that contribution as part of Feral Riotbox under this license or
+another license chosen by the copyright holder, unless a separate written
+agreement states otherwise.
+
+4. No Warranty
+
+Feral Riotbox is provided "as is", without warranty of any kind, express or
+implied, including but not limited to warranties of merchantability, fitness for
+a particular purpose, and non-infringement. In no event shall the copyright
+holder be liable for any claim, damages, or other liability arising from use of
+Feral Riotbox.
+
+5. Other Rights
+
+All rights not expressly granted by this license are reserved by the copyright
+holder.

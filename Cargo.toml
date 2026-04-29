@@ -9,5 +9,5 @@ resolver = "2"
 
 [workspace.package]
 edition = "2024"
-license = "MIT"
+license-file = "LICENSE"
 version = "0.1.0"
