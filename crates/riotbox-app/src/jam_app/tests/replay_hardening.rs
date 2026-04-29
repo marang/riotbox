@@ -332,6 +332,35 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         action_cursor: 0,
     }];
 
+    let unsupported_action_cursor = session
+        .action_log
+        .actions
+        .iter()
+        .position(|action| action.id == ActionId(77))
+        .expect("unsupported action exists in action log")
+        + 1;
+    let original_session = session.clone();
+    let error =
+        riotbox_core::replay::apply_replay_target_suffix_to_session(
+            &mut session,
+            unsupported_action_cursor,
+            None,
+        )
+        .expect_err("unsupported W-30 suffix should reject");
+    assert!(matches!(
+        error,
+        riotbox_core::replay::ReplayTargetExecutionError::Execution(
+            riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
+                action_id: ActionId(77),
+                command: ActionCommand::W30LoopFreeze,
+            }
+        )
+    ));
+    assert_eq!(
+        session, original_session,
+        "unsupported target suffix must not partially mutate restored state"
+    );
+
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
     save_session_json(&session_path, &session).expect("save unsupported replay fixture");
