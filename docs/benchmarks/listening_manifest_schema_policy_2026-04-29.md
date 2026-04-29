@@ -8,6 +8,8 @@ Riotbox local audio QA packs write `manifest.json` files beside generated WAV, m
 
 This policy freezes the small shared contract for schema version `1` while leaving pack-specific metrics and thresholds flexible enough for the current local-first QA phase.
 
+The field-level contract is documented in [listening_manifest_v1_json_contract_2026-04-29.md](./listening_manifest_v1_json_contract_2026-04-29.md).
+
 ## Schema Version 1 Stable Fields
 
 Every generated audio QA manifest should include these top-level fields:

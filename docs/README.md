@@ -157,6 +157,7 @@ docs/
 - `benchmarks/lane_recipe_listening_pack_2026-04-26.md`: lane-level recipe listening-pack harness captured
 - `benchmarks/w30_preview_smoke_listening_pack_2026-04-26.md`: W-30 preview local listening-pack convention captured
 - `benchmarks/listening_manifest_schema_policy_2026-04-29.md`: audio QA manifest schema policy captured
+- `benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`: audio QA manifest v1 field-level JSON contract captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
 - `benchmarks/capture_do_next_readability_baseline_2026-04-25.md`: Capture `Do Next` readability baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured

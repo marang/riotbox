@@ -26,6 +26,8 @@ Current benchmark artifacts:
   Schema marker and compatibility contract for `observer_audio_correlate --json` summaries.
 - [listening_manifest_schema_policy_2026-04-29.md](./listening_manifest_schema_policy_2026-04-29.md)
   Schema version and compatibility policy for local audio QA `manifest.json` files.
+- [listening_manifest_v1_json_contract_2026-04-29.md](./listening_manifest_v1_json_contract_2026-04-29.md)
+  Field-level JSON contract for local audio QA listening manifest schema version 1.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
