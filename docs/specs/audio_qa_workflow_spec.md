@@ -490,6 +490,7 @@ Today the repo already has:
 - strict observer/audio output failures report the missing or collapsed metric names and the active metric floor
 - observer/audio Markdown summaries surface the same output-evidence issue list for non-strict local QA review
 - observer/audio correlation can emit opt-in JSON summaries for machine-readable QA verdicts and metric inspection
+- a `just observer-audio-correlate-json <events.ndjson> <manifest.json> <summary.json>` helper exposes the machine-readable summary path
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
 
