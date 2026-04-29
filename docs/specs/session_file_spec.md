@@ -401,6 +401,7 @@ MVP expectation:
 - one session save path
 - one clear artifact layout
 - no hidden autosave complexity before the format is stable
+- current JSON saves serialize first, write beside the target, then rename into place; this is the MVP crash-safety seam, not a full multi-file transaction
 
 ---
 

@@ -2,7 +2,8 @@ use std::{
     error::Error,
     fmt::{self, Display, Formatter},
     fs, io,
-    path::Path,
+    path::{Path, PathBuf},
+    time::{SystemTime, UNIX_EPOCH},
 };
 
 use crate::{session::SessionFile, source_graph::SourceGraph};
@@ -70,15 +71,37 @@ where
     T: serde::Serialize,
 {
     let path = path.as_ref();
+    let json = serde_json::to_string_pretty(value)?;
+
     if let Some(parent) = path.parent()
         && !parent.as_os_str().is_empty()
     {
         fs::create_dir_all(parent)?;
     }
 
-    let json = serde_json::to_string_pretty(value)?;
-    fs::write(path, json)?;
+    let temp_path = atomic_save_temp_path(path);
+    if temp_path.exists() {
+        fs::remove_file(&temp_path)?;
+    }
+
+    fs::write(&temp_path, json)?;
+    if let Err(error) = fs::rename(&temp_path, path) {
+        let _ = fs::remove_file(&temp_path);
+        return Err(error.into());
+    }
+
     Ok(())
+}
+
+fn atomic_save_temp_path(path: &Path) -> PathBuf {
+    let file_name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .unwrap_or("riotbox.json");
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_nanos());
+    path.with_file_name(format!(".{file_name}.tmp-{}-{nonce}", std::process::id()))
 }
 
 fn load_json<T>(path: impl AsRef<Path>) -> Result<T, PersistenceError>
@@ -312,5 +335,49 @@ mod tests {
 
         let json = fs::read_to_string(path).expect("read session file");
         assert!(json.contains("\"session_version\""));
+    }
+
+    #[test]
+    fn save_json_replaces_existing_file_after_successful_serialization() {
+        let dir = tempdir().expect("create temp dir");
+        let path = dir.path().join("session.json");
+        let graph = sample_graph();
+        let old_session = sample_session(&graph);
+        let mut new_session = sample_session(&graph);
+        new_session.notes = Some("replacement session".into());
+
+        save_session_json(&path, &old_session).expect("save old session");
+        save_session_json(&path, &new_session).expect("replace session");
+
+        let loaded = load_session_json(&path).expect("load replaced session");
+        assert_eq!(loaded.notes.as_deref(), Some("replacement session"));
+    }
+
+    #[test]
+    fn save_json_serialization_failure_does_not_clobber_existing_file() {
+        struct FailingSerialize;
+
+        impl serde::Serialize for FailingSerialize {
+            fn serialize<S>(&self, _serializer: S) -> Result<S::Ok, S::Error>
+            where
+                S: serde::Serializer,
+            {
+                Err(<S::Error as serde::ser::Error>::custom(
+                    "intentional serialization failure",
+                ))
+            }
+        }
+
+        let dir = tempdir().expect("create temp dir");
+        let path = dir.path().join("session.json");
+        fs::write(&path, "existing session").expect("write existing session");
+
+        let error = save_json(&path, &FailingSerialize).expect_err("save should fail");
+
+        assert!(matches!(error, PersistenceError::Json(_)));
+        assert_eq!(
+            fs::read_to_string(&path).expect("read existing session"),
+            "existing session"
+        );
     }
 }
