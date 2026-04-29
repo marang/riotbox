@@ -166,6 +166,11 @@ Done when:
 - benchmark regressions are visible
 - a stage-style end-to-end run completes reliably
 
+Current review:
+
+- `docs/reviews/p011_replay_hardening_checkpoint_2026-04-29.md`
+- status: active after restore and commit-record validation hardening; not exit-ready because full replay execution, snapshot convergence, crash recovery, export reproducibility, and long-run/stage-run gates remain open
+
 ---
 
 ## 12. Feral Layer Done Criteria
