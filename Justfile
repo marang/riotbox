@@ -79,3 +79,6 @@ audio-qa-notes target="artifacts/audio_qa/local/notes.md":
 observer-audio-correlation-notes target="artifacts/audio_qa/local/observer_audio_correlation.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/observer_audio_correlation_template_2026-04-29.md "{{target}}"
+
+observer-audio-correlate observer manifest output="artifacts/audio_qa/local/observer_audio_summary.md":
+    cargo run -p riotbox-app --bin observer_audio_correlate -- --observer "{{observer}}" --manifest "{{manifest}}" --output "{{output}}"

@@ -367,6 +367,7 @@ just feral-before-after "data/test_audio/examples/Beat03_130BPM(Full).wav" local
 just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local 130.0 8 1.0
 just audio-qa-notes artifacts/audio_qa/local/notes.md
 just observer-audio-correlation-notes artifacts/audio_qa/local/observer_audio_correlation.md
+just observer-audio-correlate artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.md
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
 cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav" --observer artifacts/audio_qa/local/user-session/events.ndjson

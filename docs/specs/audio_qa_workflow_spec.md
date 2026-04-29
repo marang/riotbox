@@ -478,6 +478,7 @@ Today the repo already has:
 - a first machine-readable `manifest.json` beside the Feral grid demo pack output, recording pack metadata, artifact paths, thresholds, key metrics, pass status, and the reproduction command
 - a CI-safe Feral grid manifest smoke gate that renders from synthetic input and asserts manifest schema version, artifact roles and files, metrics files, thresholds, pass status, and non-collapsed output metrics without depending on ignored local example audio
 - a local observer/audio correlation notes template and `just observer-audio-correlation-notes <path>` helper for pairing `riotbox-app --observer <events.ndjson>` control-path evidence with generated audio QA `manifest.json` output evidence
+- a local observer/audio correlation summary helper, `just observer-audio-correlate <events.ndjson> <manifest.json> <summary.md>`, that extracts launch mode, audio-runtime status, key outcomes, first commit boundary, pack result, artifact count, and key output metrics into Markdown
 
 Today the repo does not yet have a full official workflow for:
 
@@ -488,7 +489,7 @@ Today the repo does not yet have a full official workflow for:
 - broad automated baseline vs candidate WAV comparison outside the current bounded helper cases
 - automated waveform or perceptual audio comparison
 - socket-backed host-session observation or monitored host audio capture
-- automated observer-vs-audio-manifest correlation
+- live or CI-wide observer-vs-audio-manifest correlation across documented recipes
 - automated enforcement of human listening-review rubrics
 
 Those gaps should be treated as near-term QA work, not optional polish.

@@ -37,6 +37,12 @@ Audio output evidence:
 just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local 130.0 8 1.0 0.0
 ```
 
+Optional generated summary:
+
+```bash
+just observer-audio-correlate artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.md
+```
+
 ## Observer Evidence
 
 - Observer schema:
@@ -89,4 +95,3 @@ just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local 13
 - Safe to trust this flow for current docs: `yes` / `no`
 - Needs new ticket: `no` / `RIOTBOX-`
 - Durable summary to copy into repo docs or Linear:
-
