@@ -319,6 +319,40 @@ mod tests {
         assert!(markdown.contains("Output path present: `yes`"));
     }
 
+    #[test]
+    fn summarizes_committed_fixture_observer_and_manifest() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let observer_path = temp.path().join("events.ndjson");
+        let manifest_path = temp.path().join("manifest.json");
+        fs::write(&observer_path, fixture_observer()).expect("write observer");
+        fs::write(&manifest_path, fixture_manifest()).expect("write manifest");
+
+        let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+        let markdown = render_markdown(&summary);
+
+        assert_eq!(summary.observer_schema, "riotbox.user_session_observer.v1");
+        assert_eq!(summary.launch_mode, "ingest");
+        assert_eq!(summary.audio_runtime_status, "started");
+        assert_eq!(summary.pack_id, "feral-grid-demo");
+        assert_eq!(summary.manifest_result, "pass");
+        assert_eq!(summary.artifact_count, 6);
+        assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
+        assert!(
+            summary
+                .full_mix_low_band_rms
+                .is_some_and(|rms| rms > 0.01)
+        );
+        assert!(
+            summary
+                .mc202_question_answer_delta_rms
+                .is_some_and(|rms| rms > 0.001)
+        );
+        assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
+        assert!(markdown.contains("Control path present: `yes`"));
+        assert!(markdown.contains("Output path present: `yes`"));
+        assert!(markdown.contains("Needs human listening: `yes`"));
+    }
+
     fn synthetic_observer() -> String {
         [
             r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest"}}"#,
@@ -345,5 +379,13 @@ mod tests {
   }
 }"#
         .to_string()
+    }
+
+    fn fixture_observer() -> &'static str {
+        include_str!("../../tests/fixtures/observer_audio_correlation/events.ndjson")
+    }
+
+    fn fixture_manifest() -> &'static str {
+        include_str!("../../tests/fixtures/observer_audio_correlation/manifest.json")
     }
 }

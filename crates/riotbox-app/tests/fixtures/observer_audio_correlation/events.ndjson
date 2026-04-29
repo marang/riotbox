@@ -1,0 +1,5 @@
+{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"data/test_audio/examples/Beat08_128BPM(Full).wav"}}
+{"event":"audio_runtime","status":"started","host":"Alsa"}
+{"event":"key_outcome","key":"space","outcome":"transport started"}
+{"event":"key_outcome","key":"f","outcome":"queued"}
+{"event":"transport_commit","committed":[{"action_id":42,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":7}]}
