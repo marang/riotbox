@@ -69,6 +69,7 @@ jobs:
             exit 1
           fi
           scripts/validate_generated_listening_manifests.sh
+          scripts/validate_generated_w30_source_diff.sh
           scripts/correlate_generated_feral_grid_observer.sh
 
       - name: cargo clippy
