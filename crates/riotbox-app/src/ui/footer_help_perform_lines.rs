@@ -304,14 +304,32 @@ fn w30_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         format!("next {}", w30_operation_status_compact(shell))
     };
 
-    vec![
+    let mut lines = vec![
         Line::from(format!("current pad {}", w30_target_compact(shell))),
         Line::from(format!(
             "current preview {}",
             w30_preview_mode_profile_compact(shell)
         )),
         Line::from(next),
-    ]
+    ];
+    if let Some(fallback_cue) = w30_perform_fallback_cue(shell) {
+        lines.push(Line::from(fallback_cue));
+    }
+    lines
+}
+
+fn w30_perform_fallback_cue(shell: &JamShellState) -> Option<&'static str> {
+    let render = &shell.app.runtime.w30_preview;
+    if matches!(render.mode, W30PreviewRenderMode::Idle) || render.source_window_preview.is_some() {
+        return None;
+    }
+
+    match render.mode {
+        W30PreviewRenderMode::RawCaptureAudition => Some("fallback: [o] raw safe | 4 Capture"),
+        W30PreviewRenderMode::PromotedAudition => Some("fallback: [o] safe | 4 Capture"),
+        W30PreviewRenderMode::LiveRecall => Some("fallback: [w] safe | 4 Capture"),
+        W30PreviewRenderMode::Idle => None,
+    }
 }
 
 fn tr909_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {

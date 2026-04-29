@@ -95,6 +95,10 @@ fn committed_raw_capture_audition_surfaces_source_fallback_readiness() {
 
     assert!(rendered.contains("current preview audition"), "{rendered}");
     assert!(rendered.contains("raw/fallback"), "{rendered}");
+    assert!(
+        rendered.contains("fallback: [o] raw safe | 4 Capture"),
+        "{rendered}"
+    );
 
     shell.active_screen = ShellScreen::Capture;
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
