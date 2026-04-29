@@ -3,6 +3,8 @@ use std::{
     path::{Path, PathBuf},
 };
 
+use serde::Serialize;
+
 use riotbox_audio::{
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
@@ -28,6 +30,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    render_pack(&args)?;
+    println!("wrote {}", args.output_dir().display());
+
+    Ok(())
+}
+
+fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = args.output_dir();
     fs::create_dir_all(&output_dir)?;
 
@@ -43,11 +52,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?);
     }
 
-    let summary = render_pack_summary(&args, &output_dir, &reports);
+    let summary = render_pack_summary(args, &output_dir, &reports);
     let summary_path = output_dir.join("pack-summary.md");
     fs::write(&summary_path, summary)?;
+    write_manifest(
+        &output_dir.join("manifest.json"),
+        args,
+        &output_dir,
+        &reports,
+    )?;
 
-    println!("wrote {}", output_dir.display());
     println!("wrote {}", summary_path.display());
 
     Ok(())
@@ -163,6 +177,10 @@ enum RenderPair {
 #[derive(Debug)]
 struct CaseReport {
     id: &'static str,
+    title: &'static str,
+    recipe_refs: &'static str,
+    baseline_label: &'static str,
+    candidate_label: &'static str,
     baseline_metrics: OfflineAudioMetrics,
     candidate_metrics: OfflineAudioMetrics,
     signal_delta_metrics: OfflineAudioMetrics,
@@ -507,6 +525,10 @@ fn render_case(
     let signal_delta_metrics = signal_delta_metrics(&baseline, &candidate);
     let report = CaseReport {
         id: case.id,
+        title: case.title,
+        recipe_refs: case.recipe_refs,
+        baseline_label: case.baseline_label,
+        candidate_label: case.candidate_label,
         baseline_metrics,
         candidate_metrics,
         signal_delta_metrics,
@@ -685,7 +707,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
          - Output dir: `{}`\n\
          - Duration seconds: `{:.3}`\n\n\
          This pack is the first local recipe-level audio proof outside the W-30 source-preview path.\n\
-         It renders bounded TR-909, MC-202, and Scene-coupled support comparisons as WAV files plus sibling metrics.\n\n\
+         It renders bounded TR-909, MC-202, and Scene-coupled support comparisons as WAV files plus sibling metrics and `manifest.json`.\n\n\
          ## Cases\n\n\
          | Case | Active delta | Peak delta | RMS delta | Min RMS delta | Signal delta RMS | Min signal delta RMS | Sum delta |\n\
          | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n",
@@ -726,6 +748,156 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
     summary
 }
 
+#[derive(Serialize)]
+struct ListeningPackManifest {
+    schema_version: u32,
+    pack_id: &'static str,
+    date: String,
+    sample_rate: u32,
+    channel_count: u16,
+    duration_seconds: f32,
+    case_count: usize,
+    artifacts: Vec<ManifestArtifact>,
+    cases: Vec<ManifestCase>,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestArtifact {
+    case_id: &'static str,
+    role: &'static str,
+    kind: &'static str,
+    path: String,
+    metrics_path: Option<String>,
+}
+
+#[derive(Serialize)]
+struct ManifestCase {
+    id: &'static str,
+    title: &'static str,
+    recipe_refs: &'static str,
+    baseline_label: &'static str,
+    candidate_label: &'static str,
+    thresholds: ManifestThresholds,
+    metrics: ManifestCaseMetrics,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestThresholds {
+    min_rms_delta: f32,
+    min_signal_delta_rms: f32,
+}
+
+#[derive(Serialize)]
+struct ManifestCaseMetrics {
+    baseline: ManifestSignalMetrics,
+    candidate: ManifestSignalMetrics,
+    signal_delta: ManifestSignalMetrics,
+    rms_delta: f32,
+}
+
+#[derive(Serialize)]
+struct ManifestSignalMetrics {
+    active_samples: usize,
+    peak_abs: f32,
+    rms: f32,
+    sum: f32,
+}
+
+fn write_manifest(
+    path: &Path,
+    args: &Args,
+    output_dir: &Path,
+    reports: &[CaseReport],
+) -> Result<(), Box<dyn std::error::Error>> {
+    let manifest = ListeningPackManifest {
+        schema_version: 1,
+        pack_id: PACK_ID,
+        date: args.date.clone(),
+        sample_rate: SAMPLE_RATE,
+        channel_count: CHANNEL_COUNT,
+        duration_seconds: args.duration_seconds,
+        case_count: reports.len(),
+        artifacts: manifest_artifacts(output_dir, reports),
+        cases: reports.iter().map(ManifestCase::from).collect(),
+        result: "pass",
+    };
+
+    fs::write(path, serde_json::to_string_pretty(&manifest)? + "\n")?;
+    Ok(())
+}
+
+fn manifest_artifacts(output_dir: &Path, reports: &[CaseReport]) -> Vec<ManifestArtifact> {
+    let mut artifacts = Vec::new();
+    for report in reports {
+        let case_dir = output_dir.join(report.id);
+        artifacts.push(ManifestArtifact {
+            case_id: report.id,
+            role: "baseline",
+            kind: "audio_wav",
+            path: case_dir.join("baseline.wav").display().to_string(),
+            metrics_path: Some(case_dir.join("baseline.metrics.md").display().to_string()),
+        });
+        artifacts.push(ManifestArtifact {
+            case_id: report.id,
+            role: "candidate",
+            kind: "audio_wav",
+            path: case_dir.join("candidate.wav").display().to_string(),
+            metrics_path: Some(case_dir.join("candidate.metrics.md").display().to_string()),
+        });
+        artifacts.push(ManifestArtifact {
+            case_id: report.id,
+            role: "comparison",
+            kind: "markdown_report",
+            path: case_dir.join("comparison.md").display().to_string(),
+            metrics_path: None,
+        });
+    }
+    artifacts.push(ManifestArtifact {
+        case_id: "pack",
+        role: "summary",
+        kind: "markdown_report",
+        path: output_dir.join("pack-summary.md").display().to_string(),
+        metrics_path: None,
+    });
+    artifacts
+}
+
+impl From<&CaseReport> for ManifestCase {
+    fn from(report: &CaseReport) -> Self {
+        Self {
+            id: report.id,
+            title: report.title,
+            recipe_refs: report.recipe_refs,
+            baseline_label: report.baseline_label,
+            candidate_label: report.candidate_label,
+            thresholds: ManifestThresholds {
+                min_rms_delta: report.min_rms_delta,
+                min_signal_delta_rms: report.min_signal_delta_rms,
+            },
+            metrics: ManifestCaseMetrics {
+                baseline: report.baseline_metrics.into(),
+                candidate: report.candidate_metrics.into(),
+                signal_delta: report.signal_delta_metrics.into(),
+                rms_delta: rms_delta(report.baseline_metrics, report.candidate_metrics),
+            },
+            result: if report.passed { "pass" } else { "fail" },
+        }
+    }
+}
+
+impl From<OfflineAudioMetrics> for ManifestSignalMetrics {
+    fn from(metrics: OfflineAudioMetrics) -> Self {
+        Self {
+            active_samples: metrics.active_samples,
+            peak_abs: metrics.peak_abs,
+            rms: metrics.rms,
+            sum: metrics.sum,
+        }
+    }
+}
+
 fn write_pcm16_wav(
     path: &Path,
     sample_rate: u32,
@@ -763,8 +935,10 @@ fn write_pcm16_wav(
 
 #[cfg(test)]
 mod tests {
-    use super::{Args, PACK_ID, pack_cases, render_pair, signal_delta_metrics, signal_metrics};
-    use std::path::PathBuf;
+    use super::{
+        Args, PACK_ID, pack_cases, render_pack, render_pair, signal_delta_metrics, signal_metrics,
+    };
+    use std::{fs, path::PathBuf};
 
     #[test]
     fn parses_default_args() {
@@ -835,6 +1009,69 @@ mod tests {
                 case.id,
                 case.min_signal_delta_rms
             );
+        }
+    }
+
+    #[test]
+    fn render_pack_writes_machine_readable_manifest() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let output_dir = temp.path().join("lane-pack");
+        let args = Args {
+            date: "manifest-smoke".into(),
+            output_dir: Some(output_dir.clone()),
+            duration_seconds: 2.0,
+            show_help: false,
+        };
+
+        render_pack(&args).expect("render pack");
+
+        assert!(output_dir.join("pack-summary.md").is_file());
+        assert!(output_dir.join("manifest.json").is_file());
+
+        let manifest = fs::read_to_string(output_dir.join("manifest.json")).expect("manifest");
+        let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
+
+        assert_eq!(manifest["schema_version"], 1);
+        assert_eq!(manifest["pack_id"], PACK_ID);
+        assert_eq!(manifest["date"], "manifest-smoke");
+        assert_eq!(manifest["result"], "pass");
+        assert_eq!(manifest["case_count"], 10);
+
+        let cases = manifest["cases"].as_array().expect("cases");
+        assert_eq!(cases.len(), 10);
+        let first_case = &cases[0];
+        assert_eq!(first_case["id"], "tr909-support-to-fill");
+        assert_eq!(first_case["result"], "pass");
+        assert!(
+            first_case["metrics"]["baseline"]["rms"]
+                .as_f64()
+                .expect("baseline rms")
+                > 0.0
+        );
+        assert!(
+            first_case["metrics"]["candidate"]["rms"]
+                .as_f64()
+                .expect("candidate rms")
+                > 0.0
+        );
+        assert!(
+            first_case["metrics"]["signal_delta"]["rms"]
+                .as_f64()
+                .expect("signal delta rms")
+                >= first_case["thresholds"]["min_signal_delta_rms"]
+                    .as_f64()
+                    .expect("min signal delta")
+        );
+
+        let artifacts = manifest["artifacts"].as_array().expect("artifacts");
+        assert_eq!(artifacts.len(), 31);
+        for artifact in artifacts {
+            let path = PathBuf::from(artifact["path"].as_str().expect("artifact path"));
+            assert!(path.is_file(), "{} missing", path.display());
+            if let Some(metrics_path) = artifact["metrics_path"].as_str() {
+                let metrics_path = PathBuf::from(metrics_path);
+                assert!(metrics_path.is_file(), "{} missing", metrics_path.display());
+            }
         }
     }
 }

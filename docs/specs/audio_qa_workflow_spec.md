@@ -471,11 +471,11 @@ Today the repo already has:
 - a first MC-202 hook-response regression that proves hook-like sections can force answer-space restraint instead of doubling the same follower phrase
 - a first MC-202 recipe replay regression that drives the musician-facing follower/answer/pressure/instigator/mutation/touch flow through queue, commit, render state, and audio-buffer deltas
 - a first MC-202 undo rollback regression that restores committed lane state from session undo state and proves the rendered buffer returns to the previous audible seam
-- an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, and Markdown comparisons for TR-909, Scene-coupled TR-909, and MC-202 cases
+- an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, Markdown comparisons, pack summary, and `manifest.json` for TR-909, Scene-coupled TR-909, and MC-202 cases
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
 - a first local Feral before/after render pack that writes a source excerpt, Riotbox-transformed after render, before-then-after listening file, W-30 / TR-909 / MC-202 stems, metrics, comparison report, and README for a source WAV without committing generated audio
 - a first local grid-locked Feral demo render pack that writes MC-202 question/answer, TR-909 beat/fill, W-30/Feral source-chop, and combined mix WAVs from one shared beat/bar/frame grid, then checks stem activity, MC-202 question-vs-answer signal delta, and low-band support
-- a first machine-readable `manifest.json` beside the Feral grid demo pack output, recording pack metadata, artifact paths, thresholds, key metrics, pass status, and the reproduction command
+- first machine-readable `manifest.json` files beside the Feral grid demo and lane recipe pack outputs, recording pack metadata, artifact paths, thresholds, key metrics, and pass status
 - a CI-safe Feral grid manifest smoke gate that renders from synthetic input and asserts manifest schema version, artifact roles and files, metrics files, thresholds, pass status, and non-collapsed output metrics without depending on ignored local example audio
 - a local observer/audio correlation notes template and `just observer-audio-correlation-notes <path>` helper for pairing `riotbox-app --observer <events.ndjson>` control-path evidence with generated audio QA `manifest.json` output evidence
 - a local observer/audio correlation summary helper, `just observer-audio-correlate <events.ndjson> <manifest.json> <summary.md>`, that extracts launch mode, audio-runtime status, key outcomes, first commit boundary, pack result, artifact count, and key output metrics into Markdown

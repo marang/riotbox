@@ -111,6 +111,8 @@ Listen to these files under `artifacts/audio_qa/local-mc202/lane-recipe-listenin
 - `mc202-follower-to-instigator/baseline.wav` vs `candidate.wav`
 - `mc202-follower-to-mutated-drive/baseline.wav` vs `candidate.wav`
 
+For machine-readable QA, inspect the generated `manifest.json` in the same directory. It records every recipe case, its baseline/candidate artifacts, comparison report, thresholds, and output metrics, so the listening check is tied to concrete non-silent/non-collapsed audio evidence.
+
 ## Recipe 3: Capture, Audition, Promote, Hit
 
 Goal: learn the first source-backed W-30 reuse loop.
