@@ -70,6 +70,7 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert_eq!(summary.full_mix_rms, Some(0.1));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
+    assert!(markdown.contains("Output path issues: `none`"));
 }
 
 #[test]
@@ -148,6 +149,9 @@ fn strict_evidence_rejects_missing_output_metrics() {
             .to_string()
             .contains("mc202_question_answer_delta_rms=missing")
     );
+    let markdown = render_markdown(&summary);
+    assert!(markdown.contains("Output path present: `no`"));
+    assert!(markdown.contains("full_mix_rms=missing"));
 }
 
 #[test]
@@ -164,6 +168,9 @@ fn strict_evidence_rejects_collapsed_output_metrics() {
     assert!(error.to_string().contains("output-path manifest evidence"));
     assert!(error.to_string().contains("full_mix_rms=0.000000"));
     assert!(error.to_string().contains("floor 0.000001"));
+    let markdown = render_markdown(&summary);
+    assert!(markdown.contains("Output path present: `no`"));
+    assert!(markdown.contains("full_mix_rms=0.000000"));
 }
 
 fn synthetic_observer() -> String {

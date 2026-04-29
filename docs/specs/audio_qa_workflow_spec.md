@@ -488,6 +488,7 @@ Today the repo already has:
 - a strict committed-fixture CLI smoke, `just observer-audio-correlate-fixture`, wired into `just audio-qa-ci` and the named GitHub Actions audio QA step without writing local artifacts
 - strict observer/audio output evidence now rejects collapsed zero-level metrics even if a manifest incorrectly reports `result: pass`
 - strict observer/audio output failures report the missing or collapsed metric names and the active metric floor
+- observer/audio Markdown summaries surface the same output-evidence issue list for non-strict local QA review
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
 
