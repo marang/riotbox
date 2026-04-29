@@ -246,6 +246,12 @@ This index tracks archived Linear ticket history that has been removed from the 
   Added a stable schema marker to observer/audio JSON summaries.
 - [RIOTBOX-378.md](./RIOTBOX-378.md)
   Required control-path evidence in the observer/audio JSON fixture smoke.
+- [RIOTBOX-379.md](./RIOTBOX-379.md)
+  Documented the observer/audio JSON summary v1 contract.
+- [RIOTBOX-380.md](./RIOTBOX-380.md)
+  Added a dependency-free observer/audio JSON summary shape validator.
+- [RIOTBOX-381.md](./RIOTBOX-381.md)
+  Added positive and negative validator fixtures for observer/audio JSON summaries.
 - [2026-04.md](./2026-04.md#riotbox-328-audit-feral-policy-entry-constraints)
   Grouped archive entries for the P009 Feral policy batch `RIOTBOX-328` through `RIOTBOX-338` plus the `RIOTBOX-339` Feral before/after audio QA pack.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
