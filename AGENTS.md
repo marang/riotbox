@@ -364,6 +364,7 @@ just w30-smoke-source-qa "data/test_audio/examples/Beat03_130BPM(Full).wav" loca
 just w30-smoke-source-diff "data/test_audio/examples/Beat03_130BPM(Full).wav" local-source-diff
 just lane-recipe-pack local 2.0
 just feral-before-after "data/test_audio/examples/Beat03_130BPM(Full).wav" local
+just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local 130.0 8 1.0
 just audio-qa-notes artifacts/audio_qa/local/notes.md
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
