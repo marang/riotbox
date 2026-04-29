@@ -1,0 +1,229 @@
+use crate::{
+    ids::ActionId,
+    replay::{
+        ReplayExecutionError, ReplayPlanError, apply_graph_aware_replay_plan_to_session,
+        apply_replay_plan_to_session, build_replay_target_plan,
+    },
+    session::SessionFile,
+    source_graph::SourceGraph,
+};
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum ReplayTargetExecutionError {
+    Plan(ReplayPlanError),
+    Execution(ReplayExecutionError),
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReplayTargetExecutionReport {
+    pub target_action_cursor: usize,
+    pub anchor_snapshot_id: Option<String>,
+    pub anchor_action_cursor: Option<usize>,
+    pub applied_action_ids: Vec<ActionId>,
+}
+
+pub fn apply_replay_target_suffix_to_session(
+    session: &mut SessionFile,
+    target_action_cursor: usize,
+    source_graph: Option<&SourceGraph>,
+) -> Result<ReplayTargetExecutionReport, ReplayTargetExecutionError> {
+    let action_log = session.action_log.clone();
+    let snapshots = session.snapshots.clone();
+    let plan = build_replay_target_plan(&action_log, &snapshots, target_action_cursor)
+        .map_err(ReplayTargetExecutionError::Plan)?;
+    let anchor_snapshot_id = plan
+        .anchor
+        .map(|snapshot| snapshot.snapshot_id.as_str().to_owned());
+    let anchor_action_cursor = plan.anchor.map(|snapshot| snapshot.action_cursor);
+
+    let execution_report = match source_graph {
+        Some(source_graph) => {
+            apply_graph_aware_replay_plan_to_session(session, &plan.suffix, source_graph)
+        }
+        None => apply_replay_plan_to_session(session, &plan.suffix),
+    }
+    .map_err(ReplayTargetExecutionError::Execution)?;
+
+    Ok(ReplayTargetExecutionReport {
+        target_action_cursor,
+        anchor_snapshot_id,
+        anchor_action_cursor,
+        applied_action_ids: execution_report.applied_action_ids,
+    })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::{
+        TimestampMs,
+        action::{
+            Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget,
+            ActorType, CommitBoundary, Quantization, UndoPolicy,
+        },
+        ids::SnapshotId,
+        session::{ActionCommitRecord, ActionLog, ReplayPolicy, Snapshot},
+        transport::CommitBoundaryState,
+    };
+
+    fn action(
+        id: u64,
+        command: ActionCommand,
+        params: ActionParams,
+        committed_at: TimestampMs,
+    ) -> Action {
+        Action {
+            id: ActionId(id),
+            actor: ActorType::User,
+            command,
+            params,
+            target: ActionTarget::default(),
+            requested_at: committed_at - 10,
+            quantization: Quantization::NextBar,
+            status: ActionStatus::Committed,
+            committed_at: Some(committed_at),
+            result: Some(ActionResult {
+                accepted: true,
+                summary: "committed".into(),
+            }),
+            undo_policy: UndoPolicy::Undoable,
+            explanation: None,
+        }
+    }
+
+    fn commit_record(
+        action_id: u64,
+        beat_index: u64,
+        commit_sequence: u32,
+        committed_at: TimestampMs,
+    ) -> ActionCommitRecord {
+        ActionCommitRecord {
+            action_id: ActionId(action_id),
+            boundary: CommitBoundaryState {
+                kind: CommitBoundary::Bar,
+                beat_index,
+                bar_index: beat_index / 4,
+                phrase_index: beat_index / 16,
+                scene_id: None,
+            },
+            commit_sequence,
+            committed_at,
+        }
+    }
+
+    fn action_log(actions: Vec<Action>) -> ActionLog {
+        let commit_records = actions
+            .iter()
+            .enumerate()
+            .map(|(index, action)| {
+                commit_record(
+                    action.id.0,
+                    ((index + 1) * 4) as u64,
+                    1,
+                    action.committed_at.expect("test action committed"),
+                )
+            })
+            .collect();
+
+        ActionLog {
+            actions,
+            commit_records,
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        }
+    }
+
+    fn snapshot(snapshot_id: &str, action_cursor: usize) -> Snapshot {
+        Snapshot {
+            snapshot_id: SnapshotId::from(snapshot_id),
+            created_at: "2026-04-29T22:20:00Z".into(),
+            label: "test snapshot".into(),
+            action_cursor,
+        }
+    }
+
+    fn session_with_log(action_log: ActionLog, snapshots: Vec<Snapshot>) -> SessionFile {
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T22:20:00Z");
+        session.action_log = action_log;
+        session.snapshots = snapshots;
+        session
+    }
+
+    #[test]
+    fn target_suffix_execution_is_noop_when_anchor_matches_target() {
+        let action_log = action_log(vec![action(
+            1,
+            ActionCommand::TransportPlay,
+            ActionParams::Empty,
+            100,
+        )]);
+        let mut session = session_with_log(action_log, vec![snapshot("snap-after-play", 1)]);
+        session.runtime_state.transport.is_playing = true;
+        let original_session = session.clone();
+
+        let report = apply_replay_target_suffix_to_session(&mut session, 1, None)
+            .expect("exact anchor suffix succeeds");
+
+        assert_eq!(
+            report,
+            ReplayTargetExecutionReport {
+                target_action_cursor: 1,
+                anchor_snapshot_id: Some("snap-after-play".into()),
+                anchor_action_cursor: Some(1),
+                applied_action_ids: Vec::new(),
+            }
+        );
+        assert_eq!(session, original_session);
+    }
+
+    #[test]
+    fn target_suffix_execution_applies_supported_suffix_to_hydrated_anchor_state() {
+        let action_log = action_log(vec![
+            action(1, ActionCommand::TransportPlay, ActionParams::Empty, 100),
+            action(
+                2,
+                ActionCommand::TransportSeek,
+                ActionParams::Transport {
+                    position_beats: Some(16),
+                },
+                200,
+            ),
+        ]);
+        let mut session = session_with_log(action_log, vec![snapshot("snap-after-play", 1)]);
+        session.runtime_state.transport.is_playing = true;
+
+        let report = apply_replay_target_suffix_to_session(&mut session, 2, None)
+            .expect("supported suffix succeeds");
+
+        assert_eq!(
+            report.anchor_snapshot_id.as_deref(),
+            Some("snap-after-play")
+        );
+        assert_eq!(report.anchor_action_cursor, Some(1));
+        assert_eq!(report.applied_action_ids, vec![ActionId(2)]);
+        assert!(session.runtime_state.transport.is_playing);
+        assert_eq!(session.runtime_state.transport.position_beats, 16.0);
+    }
+
+    #[test]
+    fn target_suffix_execution_rejects_unsupported_suffix_without_mutating_session() {
+        let action_log = action_log(vec![
+            action(1, ActionCommand::TransportPlay, ActionParams::Empty, 100),
+            action(2, ActionCommand::MutateScene, ActionParams::Empty, 200),
+        ]);
+        let mut session = session_with_log(action_log, vec![snapshot("snap-after-play", 1)]);
+        session.runtime_state.transport.is_playing = true;
+        let original_session = session.clone();
+
+        let error = apply_replay_target_suffix_to_session(&mut session, 2, None)
+            .expect_err("unsupported suffix should reject");
+
+        assert_eq!(
+            error,
+            ReplayTargetExecutionError::Execution(ReplayExecutionError::UnsupportedAction {
+                action_id: ActionId(2),
+                command: ActionCommand::MutateScene,
+            })
+        );
+        assert_eq!(session, original_session);
+    }
+}

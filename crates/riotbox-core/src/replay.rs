@@ -3,6 +3,7 @@ use std::cmp::Ordering;
 mod executor;
 mod scene_movement;
 mod summary;
+mod target_execution;
 
 pub use executor::{
     ReplayExecutionError, ReplayExecutionReport, apply_replay_entry_to_session,
@@ -15,6 +16,9 @@ pub use scene_movement::{
 pub use summary::{
     LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary,
     build_latest_snapshot_replay_convergence_summary, build_replay_target_dry_run_summary,
+};
+pub use target_execution::{
+    ReplayTargetExecutionError, ReplayTargetExecutionReport, apply_replay_target_suffix_to_session,
 };
 
 use crate::{
