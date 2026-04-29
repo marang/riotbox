@@ -1,6 +1,6 @@
 use riotbox_core::{
     TimestampMs,
-    action::{ActorType, GhostMode},
+    action::{ActionStatus, ActorType, GhostMode},
     ghost::{GhostSuggestionDraftError, GhostWatchSuggestion},
     ids::ActionId,
     session::GhostSuggestionStatus,
@@ -118,6 +118,12 @@ impl JamAppState {
             };
         }
 
+        if !self.ghost_phrase_action_budget_available() {
+            return GhostSuggestionQueueResult::Rejected {
+                reason: "ghost phrase action budget exceeded".into(),
+            };
+        }
+
         if !self
             .session
             .ghost_state
@@ -158,6 +164,33 @@ impl JamAppState {
             .filter(|action| action.actor == ActorType::Ghost)
             .count();
         pending_ghost_actions < max_pending
+    }
+
+    fn ghost_phrase_action_budget_available(&self) -> bool {
+        let max_actions = usize::from(self.session.ghost_state.budgets.max_actions_per_phrase);
+        let current_phrase = self.runtime.transport.phrase_index;
+        let committed_ghost_actions_in_phrase = self
+            .session
+            .action_log
+            .commit_records
+            .iter()
+            .filter(|record| record.boundary.phrase_index == current_phrase)
+            .filter(|record| {
+                self.session.action_log.actions.iter().any(|action| {
+                    action.id == record.action_id
+                        && action.actor == ActorType::Ghost
+                        && action.status == ActionStatus::Committed
+                })
+            })
+            .count();
+        let pending_ghost_actions = self
+            .queue
+            .pending_actions()
+            .iter()
+            .filter(|action| action.actor == ActorType::Ghost)
+            .count();
+
+        committed_ghost_actions_in_phrase + pending_ghost_actions < max_actions
     }
 }
 

@@ -231,6 +231,7 @@ The session must persist the replay-relevant action history.
 ```text
 ActionLog {
   actions[]
+  commit_records[]
   replay_policy
 }
 ```
@@ -250,10 +251,24 @@ Minimum stored fields:
 - committed time if committed
 - undo payload or undo reference
 
+Commit records preserve replay-relevant musical boundary metadata separately
+from human-readable result summaries:
+
+- action ID
+- boundary kind
+- beat index
+- bar index
+- phrase index
+- scene ID when known
+- commit sequence within that boundary
+- committed timestamp
+
 Rules:
 
 - uncommitted or transient UI noise does not belong in the durable log by default
 - committed musical state changes do
+- budget and replay logic must consume structured commit records, not parse
+  result-summary strings
 
 ---
 

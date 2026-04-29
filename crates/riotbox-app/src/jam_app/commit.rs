@@ -104,6 +104,15 @@ impl JamAppState {
             if let Some(action) = self.queue.history_action(committed_ref.action_id) {
                 let action = action.clone();
                 self.session.action_log.actions.push(action.clone());
+                self.session
+                    .action_log
+                    .commit_records
+                    .push(ActionCommitRecord {
+                        action_id: committed_ref.action_id,
+                        boundary: committed_ref.boundary.clone(),
+                        commit_sequence: committed_ref.commit_sequence,
+                        committed_at,
+                    });
                 self.apply_committed_action_side_effects(&action, &boundary);
             }
         }

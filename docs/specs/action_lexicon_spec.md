@@ -58,6 +58,11 @@ Action {
 }
 ```
 
+Commit-boundary metadata is not inferred from result text. When an action
+commits, the session `ActionLog` records a structured commit record keyed by
+action id with the musical boundary, commit sequence within that boundary, and
+commit timestamp.
+
 ### 3.1 Actor types
 
 - `user`

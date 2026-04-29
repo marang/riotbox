@@ -159,6 +159,7 @@ fn session_with_committed_jam_state(graph: &SourceGraph) -> SessionFile {
     }];
     session.action_log = ActionLog {
         actions: vec![],
+        commit_records: vec![],
         replay_policy: crate::session::ReplayPolicy::DeterministicPreferred,
     };
     session.source_graph_refs = vec![SourceGraphRef {

@@ -4,6 +4,8 @@ use crate::{
     action::{Action, GhostMode},
     ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
     source_graph::{GraphProvenance, SourceGraph, SourceGraphVersion},
+    transport::CommitBoundaryState,
+    TimestampMs,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -381,7 +383,17 @@ impl Default for PendingPolicy {
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct ActionLog {
     pub actions: Vec<Action>,
+    #[serde(default)]
+    pub commit_records: Vec<ActionCommitRecord>,
     pub replay_policy: ReplayPolicy,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ActionCommitRecord {
+    pub action_id: ActionId,
+    pub boundary: CommitBoundaryState,
+    pub commit_sequence: u32,
+    pub committed_at: TimestampMs,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -446,4 +458,3 @@ pub struct GhostState {
     pub suggestion_history: Vec<GhostSuggestionRecord>,
     pub lock_awareness_enabled: bool,
 }
-

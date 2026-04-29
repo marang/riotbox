@@ -135,6 +135,67 @@ fn queue_accepted_ghost_suggestion_respects_pending_budget() {
 }
 
 #[test]
+fn queue_accepted_ghost_suggestion_respects_phrase_budget() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.ghost_state.mode = GhostMode::Assist;
+    session.ghost_state.budgets.max_actions_per_phrase = 1;
+    session.ghost_state.budgets.max_pending_actions = 2;
+    session.ghost_state.suggestion_history.clear();
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.update_transport_clock(TransportClockState {
+        is_playing: true,
+        position_beats: 48.0,
+        beat_index: 48,
+        bar_index: 12,
+        phrase_index: 3,
+        current_scene: None,
+    });
+    let first = ghost_fill_suggestion();
+    let mut second = ghost_fill_suggestion();
+    second.proposal_id = "ghost-fill-2".into();
+
+    assert!(matches!(
+        state.queue_accepted_ghost_suggestion(&first, 1_000),
+        GhostSuggestionQueueResult::Enqueued(_)
+    ));
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 48,
+            bar_index: 12,
+            phrase_index: 3,
+            scene_id: None,
+        },
+        1_500,
+    );
+    assert_eq!(committed.len(), 1);
+
+    let over_budget = state.queue_accepted_ghost_suggestion(&second, 1_501);
+
+    assert_eq!(
+        over_budget,
+        GhostSuggestionQueueResult::Rejected {
+            reason: "ghost phrase action budget exceeded".into()
+        }
+    );
+    assert_eq!(state.queue.pending_actions().len(), 0);
+    assert_eq!(state.session.action_log.commit_records.len(), 1);
+    assert_eq!(
+        state.session.action_log.commit_records[0].boundary.phrase_index,
+        3
+    );
+    assert!(
+        state
+            .session
+            .ghost_state
+            .suggestion_history
+            .iter()
+            .all(|record| record.proposal_id != "ghost-fill-2")
+    );
+}
+
+#[test]
 fn current_ghost_suggestion_slot_archives_and_clears_without_queueing() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
