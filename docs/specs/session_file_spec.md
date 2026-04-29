@@ -458,13 +458,15 @@ First implementation seam:
 
 - add a non-mutating recovery-candidate scanner that reports canonical target status, orphan temp files, and explicit autosave candidates
 - keep the scanner separate from `load_session_json` so normal load remains deterministic and side-effect free
-- only after that scanner is covered should the TUI add a guided manual recovery prompt
+- project scanner results into an explicit manual recovery surface before adding any automatic recovery action
 
 Current implementation:
 
 - `scan_session_recovery_candidates` reports the canonical target plus matching hidden temp and autosave siblings
 - candidates are parse-checked as missing, parseable session JSON, invalid session JSON, or unreadable
 - the scanner is read-only and does not load, replace, delete, or choose a recovery candidate
+- `JamAppState::scan_session_recovery_surface` converts scanner output into TUI/CLI-facing labels, trust levels, details, and action hints
+- the recovery surface keeps `selected_candidate` empty and states that Riotbox did not choose, load, replace, or delete any candidate
 
 ---
 
@@ -508,5 +510,5 @@ This draft should be followed by:
 1. exact on-disk layout
 2. session migration policy
 3. snapshot frequency policy
-4. guided manual recovery prompt after the scanner is wired into app/UI surfaces
+4. interactive guided manual recovery prompt using the existing scanner/surface contract
 5. autosave strategy after the format stabilizes

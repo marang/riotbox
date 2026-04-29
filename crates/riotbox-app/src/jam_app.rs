@@ -26,8 +26,9 @@ use riotbox_core::{
     ghost::GhostWatchSuggestion,
     ids::{ActionId, CaptureId, SourceId},
     persistence::{
-        PersistenceError, load_session_json, load_source_graph_json, save_session_json,
-        save_source_graph_json,
+        PersistenceError, SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus,
+        load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
+        scan_session_recovery_candidates,
     },
     queue::{ActionQueue, CommittedActionRef},
     session::{
@@ -52,6 +53,7 @@ mod lifecycle;
 mod mc202_queue;
 mod persistence;
 mod projection;
+mod recovery;
 mod runtime_view;
 mod scene_ops;
 mod side_effects;
@@ -72,6 +74,7 @@ use projection::{
     build_mc202_render_state, build_tr909_render_state, build_w30_preview_render_state,
     build_w30_resample_tap_state, normalize_w30_preview_mode,
 };
+pub use recovery::{RecoveryCandidateTrust, SessionRecoveryCandidateView, SessionRecoverySurface};
 pub use runtime_view::JamRuntimeView;
 use side_effects::{
     apply_ghost_side_effects, apply_mc202_side_effects, apply_scene_side_effects,
