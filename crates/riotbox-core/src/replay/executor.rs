@@ -4,7 +4,7 @@ use crate::{
     replay::ReplayPlanEntry,
     session::{
         Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
-        Tr909TakeoverProfileState,
+        Tr909TakeoverProfileState, W30PreviewModeState,
     },
 };
 
@@ -28,6 +28,14 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::Tr909Takeover,
     ActionCommand::Tr909SceneLock,
     ActionCommand::Tr909Release,
+    ActionCommand::W30LiveRecall,
+    ActionCommand::W30TriggerPad,
+    ActionCommand::W30AuditionRawCapture,
+    ActionCommand::W30AuditionPromoted,
+    ActionCommand::W30SwapBank,
+    ActionCommand::W30BrowseSlicePool,
+    ActionCommand::W30StepFocus,
+    ActionCommand::W30ApplyDamageProfile,
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -249,6 +257,14 @@ pub fn apply_replay_entry_to_session(
                     Some(Tr909ReinforcementModeState::SourceSupport);
             }
         }
+        ActionCommand::W30LiveRecall
+        | ActionCommand::W30TriggerPad
+        | ActionCommand::W30AuditionRawCapture
+        | ActionCommand::W30AuditionPromoted
+        | ActionCommand::W30SwapBank
+        | ActionCommand::W30BrowseSlicePool
+        | ActionCommand::W30StepFocus
+        | ActionCommand::W30ApplyDamageProfile => apply_w30_cue(session, entry)?,
         command => {
             return Err(ReplayExecutionError::UnsupportedAction {
                 action_id: action.id,
@@ -303,6 +319,103 @@ fn tr909_boundary_pattern_ref(entry: &ReplayPlanEntry<'_>, prefix: &str) -> Stri
         },
         |scene_id| format!("{prefix}-{scene_id}"),
     )
+}
+
+fn apply_w30_cue(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<(), ReplayExecutionError> {
+    let action = entry.action;
+    let bank_id = action
+        .target
+        .bank_id
+        .clone()
+        .ok_or(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
+        })?;
+    let pad_id = action
+        .target
+        .pad_id
+        .clone()
+        .ok_or(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
+        })?;
+
+    let preview_mode = match action.command {
+        ActionCommand::W30AuditionRawCapture => W30PreviewModeState::RawCaptureAudition,
+        ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
+        ActionCommand::W30ApplyDamageProfile => session
+            .runtime_state
+            .lane_state
+            .w30
+            .preview_mode
+            .unwrap_or(W30PreviewModeState::LiveRecall),
+        ActionCommand::W30LiveRecall
+        | ActionCommand::W30TriggerPad
+        | ActionCommand::W30SwapBank
+        | ActionCommand::W30BrowseSlicePool
+        | ActionCommand::W30StepFocus => W30PreviewModeState::LiveRecall,
+        _ => unreachable!("checked by caller"),
+    };
+
+    let capture_id = match &action.params {
+        ActionParams::Empty if action.command == ActionCommand::W30StepFocus => None,
+        _ if action.command == ActionCommand::W30StepFocus => {
+            return Err(ReplayExecutionError::InvalidParams {
+                action_id: action.id,
+                command: action.command,
+                expected: "ActionParams::Empty",
+            });
+        }
+        ActionParams::Mutation {
+            target_id: Some(target_id),
+            ..
+        } => Some(crate::ids::CaptureId::from(target_id.clone())),
+        _ => {
+            return Err(ReplayExecutionError::InvalidParams {
+                action_id: action.id,
+                command: action.command,
+                expected: "ActionParams::Mutation { target_id: Some(_), .. }",
+            });
+        }
+    };
+
+    session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
+    session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
+    session.runtime_state.lane_state.w30.preview_mode = Some(preview_mode);
+    if let Some(capture_id) = capture_id {
+        session.runtime_state.lane_state.w30.last_capture = Some(capture_id);
+    }
+
+    if matches!(
+        action.command,
+        ActionCommand::W30AuditionRawCapture
+            | ActionCommand::W30AuditionPromoted
+            | ActionCommand::W30TriggerPad
+            | ActionCommand::W30ApplyDamageProfile
+    ) {
+        session.runtime_state.macro_state.w30_grit = session
+            .runtime_state
+            .macro_state
+            .w30_grit
+            .max(w30_grit_or(action, 0.68));
+    }
+
+    Ok(())
+}
+
+fn w30_grit_or(action: &crate::action::Action, fallback: f32) -> f32 {
+    match &action.params {
+        ActionParams::Mutation { intensity, .. } => match action.command {
+            ActionCommand::W30TriggerPad => (intensity * 0.82).clamp(0.0, 1.0),
+            _ => intensity.clamp(0.0, 1.0),
+        },
+        _ => fallback,
+    }
 }
 
 pub fn apply_replay_plan_to_session(

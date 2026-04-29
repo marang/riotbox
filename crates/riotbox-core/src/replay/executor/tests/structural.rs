@@ -281,6 +281,14 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::Tr909Takeover,
             ActionCommand::Tr909SceneLock,
             ActionCommand::Tr909Release,
+            ActionCommand::W30LiveRecall,
+            ActionCommand::W30TriggerPad,
+            ActionCommand::W30AuditionRawCapture,
+            ActionCommand::W30AuditionPromoted,
+            ActionCommand::W30SwapBank,
+            ActionCommand::W30BrowseSlicePool,
+            ActionCommand::W30StepFocus,
+            ActionCommand::W30ApplyDamageProfile,
         ]
     );
 }
