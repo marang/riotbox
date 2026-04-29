@@ -180,6 +180,26 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     );
     assert_eq!(target_plan_from_before.suffix.len(), 1);
     assert_eq!(target_plan_from_before.suffix[0].action.actor, ActorType::Ghost);
+    let dry_run_summary =
+        riotbox_core::replay::build_replay_target_dry_run_summary(&target_plan_from_before);
+
+    assert_eq!(
+        dry_run_summary.target_action_cursor,
+        reloaded.action_log.actions.len()
+    );
+    assert_eq!(dry_run_summary.origin_action_count, 1);
+    assert_eq!(dry_run_summary.suffix_action_count, 1);
+    assert!(dry_run_summary.needs_replay);
+    assert_eq!(dry_run_summary.anchor_snapshot_id.as_deref(), Some("before-ghost"));
+    assert_eq!(dry_run_summary.anchor_action_cursor, Some(0));
+    assert_eq!(
+        dry_run_summary.suffix_action_ids,
+        vec![target_plan_from_before.suffix[0].action.id]
+    );
+    assert_eq!(
+        dry_run_summary.suffix_commands,
+        vec![ActionCommand::Tr909FillNext]
+    );
     assert_eq!(
         target_plan_from_after
             .anchor
