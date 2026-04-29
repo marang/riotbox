@@ -156,12 +156,36 @@ Current implementation:
 - Each commit record is keyed by action id and stores the commit boundary plus commit sequence within that boundary.
 - Replay and budget logic should consume these structured commit records instead of parsing result summaries or relying only on incidental action vector order.
 - A replay-plan builder may consume the existing action log and commit records to produce deterministic committed-order entries, but it must not become a second action, persistence, or repair system.
-- Snapshot-vs-origin replay-plan comparisons may select a suffix from the origin plan by using the existing snapshot `action_cursor`; they must stay comparison scaffolding until a real replay executor exists.
+- Snapshot-vs-origin replay-plan comparisons may select a suffix from the origin plan by using the existing snapshot `action_cursor`.
 - Snapshot anchor selection should pick the latest valid snapshot at or before the target action cursor and reject out-of-range cursors instead of silently falling back.
 - Target replay planning may combine the origin plan, selected snapshot anchor, and target-limited suffix, but execution and runtime hydration remain separate responsibilities.
 - Target replay dry-run summaries may expose selected anchor metadata, target cursor, and suffix action scope for QA and future UI/debug seams, but they must not execute actions or mutate runtime state.
-- Latest-snapshot replay convergence summaries may compare the full committed origin against the latest snapshot-to-end suffix for QA, including whether no snapshot forces full replay, but they must remain summary-only until a real replay executor exists.
+- Latest-snapshot replay convergence summaries may compare the full committed origin against the latest snapshot-to-end suffix for QA, including whether no snapshot forces full replay.
 - Session restore rebuilds the app-runtime `last_commit_boundary` from the latest structured commit record so fresh app state does not lose the most recent musical boundary context.
+
+### 7.3 Minimal replay executor boundary
+
+The first replay executor is intentionally narrow. It applies only deterministic, non-audio structural actions from committed replay-plan entries.
+
+Initial supported commands:
+
+- `transport.play`
+- `transport.pause`
+- `transport.stop`
+- `transport.seek`
+- `lock.object`
+- `unlock.object`
+- `ghost.set_mode`
+
+Rules:
+
+- The executor consumes replay-plan entries, not UI summaries or parsed log text.
+- Unsupported commands fail explicitly instead of being silently ignored.
+- Invalid params fail explicitly instead of guessing defaults.
+- Whole-plan application is all-or-nothing: if any entry fails, the session passed to the executor is not mutated.
+- Single-entry application may mutate the passed session and should be used only when the caller already accepts that boundary.
+- This executor does not perform audio rendering, capture artifact creation, W-30/TR-909/MC-202 side effects, Ghost reasoning, source analysis, or snapshot hydration.
+- Broader musical replay must expand this allowlist command by command with tests that prove both control-path and output-path behavior where audible state is affected.
 
 ---
 

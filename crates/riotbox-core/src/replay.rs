@@ -1,7 +1,12 @@
 use std::cmp::Ordering;
 
+mod executor;
 mod summary;
 
+pub use executor::{
+    ReplayExecutionError, ReplayExecutionReport, apply_replay_entry_to_session,
+    apply_replay_plan_to_session, replay_supported_action_commands,
+};
 pub use summary::{
     LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary,
     build_latest_snapshot_replay_convergence_summary, build_replay_target_dry_run_summary,
