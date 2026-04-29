@@ -150,7 +150,11 @@ Decision:
 
 If two actions commit in the same musical window, their stored order must remain stable.
 
-This means the system should eventually expose an explicit commit sequence or durable ordering guarantee instead of relying on incidental vector order alone.
+Current implementation:
+
+- `ActionLog.commit_records` stores one structured commit record per committed action.
+- Each commit record is keyed by action id and stores the commit boundary plus commit sequence within that boundary.
+- Replay and budget logic should consume these structured commit records instead of parsing result summaries or relying only on incidental action vector order.
 
 ---
 
@@ -170,7 +174,7 @@ Helpful but secondary metadata:
 
 Implication:
 
-Future runtime work should preserve enough metadata to say:
+Runtime work must preserve enough metadata to say:
 
 - this action committed on bar N or phrase N
 - and it committed in sequence position K within that boundary
@@ -285,11 +289,10 @@ This is the best tradeoff between:
 
 This spike implies the following future changes or clarifications:
 
-1. `Action` should eventually gain explicit replay-order metadata beyond incidental array order.
-2. snapshot representation should become more explicit than the current lightweight placeholder.
-3. future runtime code should expose stable musical boundary identity for commits.
-4. capture persistence should remain artifact-first, not recompute-first.
-5. validation should include replay-from-snapshot and replay-from-zero-path checks.
+1. snapshot representation should become more explicit than the current lightweight placeholder.
+2. capture persistence should remain artifact-first, not recompute-first.
+3. validation should include replay-from-snapshot and replay-from-zero-path checks.
+4. Ghost accepted-action fixtures should continue proving that accepted Ghost actions persist as normal actions plus structured commit records.
 
 ---
 
