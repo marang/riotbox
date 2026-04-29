@@ -6,6 +6,10 @@ use std::{
 use serde::Serialize;
 
 use riotbox_audio::{
+    listening_manifest::{
+        ListeningPackArtifact as ManifestArtifact,
+        ListeningPackSignalMetrics as ManifestSignalMetrics, write_manifest_json,
+    },
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
         Mc202RenderState,
@@ -763,15 +767,6 @@ struct ListeningPackManifest {
 }
 
 #[derive(Serialize)]
-struct ManifestArtifact {
-    case_id: &'static str,
-    role: &'static str,
-    kind: &'static str,
-    path: String,
-    metrics_path: Option<String>,
-}
-
-#[derive(Serialize)]
 struct ManifestCase {
     id: &'static str,
     title: &'static str,
@@ -797,14 +792,6 @@ struct ManifestCaseMetrics {
     rms_delta: f32,
 }
 
-#[derive(Serialize)]
-struct ManifestSignalMetrics {
-    active_samples: usize,
-    peak_abs: f32,
-    rms: f32,
-    sum: f32,
-}
-
 fn write_manifest(
     path: &Path,
     args: &Args,
@@ -824,7 +811,7 @@ fn write_manifest(
         result: "pass",
     };
 
-    fs::write(path, serde_json::to_string_pretty(&manifest)? + "\n")?;
+    write_manifest_json(path, &manifest)?;
     Ok(())
 }
 
@@ -832,35 +819,34 @@ fn manifest_artifacts(output_dir: &Path, reports: &[CaseReport]) -> Vec<Manifest
     let mut artifacts = Vec::new();
     for report in reports {
         let case_dir = output_dir.join(report.id);
-        artifacts.push(ManifestArtifact {
-            case_id: report.id,
-            role: "baseline",
-            kind: "audio_wav",
-            path: case_dir.join("baseline.wav").display().to_string(),
-            metrics_path: Some(case_dir.join("baseline.metrics.md").display().to_string()),
-        });
-        artifacts.push(ManifestArtifact {
-            case_id: report.id,
-            role: "candidate",
-            kind: "audio_wav",
-            path: case_dir.join("candidate.wav").display().to_string(),
-            metrics_path: Some(case_dir.join("candidate.metrics.md").display().to_string()),
-        });
-        artifacts.push(ManifestArtifact {
-            case_id: report.id,
-            role: "comparison",
-            kind: "markdown_report",
-            path: case_dir.join("comparison.md").display().to_string(),
-            metrics_path: None,
-        });
+        let baseline_path = case_dir.join("baseline.wav");
+        let baseline_metrics_path = case_dir.join("baseline.metrics.md");
+        let candidate_path = case_dir.join("candidate.wav");
+        let candidate_metrics_path = case_dir.join("candidate.metrics.md");
+        let comparison_path = case_dir.join("comparison.md");
+        artifacts.push(ManifestArtifact::case_audio_wav(
+            report.id,
+            "baseline",
+            &baseline_path,
+            Some(&baseline_metrics_path),
+        ));
+        artifacts.push(ManifestArtifact::case_audio_wav(
+            report.id,
+            "candidate",
+            &candidate_path,
+            Some(&candidate_metrics_path),
+        ));
+        artifacts.push(ManifestArtifact::case_markdown_report(
+            report.id,
+            "comparison",
+            &comparison_path,
+        ));
     }
-    artifacts.push(ManifestArtifact {
-        case_id: "pack",
-        role: "summary",
-        kind: "markdown_report",
-        path: output_dir.join("pack-summary.md").display().to_string(),
-        metrics_path: None,
-    });
+    artifacts.push(ManifestArtifact::case_markdown_report(
+        "pack",
+        "summary",
+        &output_dir.join("pack-summary.md"),
+    ));
     artifacts
 }
 
@@ -883,17 +869,6 @@ impl From<&CaseReport> for ManifestCase {
                 rms_delta: rms_delta(report.baseline_metrics, report.candidate_metrics),
             },
             result: if report.passed { "pass" } else { "fail" },
-        }
-    }
-}
-
-impl From<OfflineAudioMetrics> for ManifestSignalMetrics {
-    fn from(metrics: OfflineAudioMetrics) -> Self {
-        Self {
-            active_samples: metrics.active_samples,
-            peak_abs: metrics.peak_abs,
-            rms: metrics.rms,
-            sum: metrics.sum,
         }
     }
 }

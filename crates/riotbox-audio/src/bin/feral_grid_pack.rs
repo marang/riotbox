@@ -6,6 +6,11 @@ use std::{
 use serde::Serialize;
 
 use riotbox_audio::{
+    listening_manifest::{
+        ListeningPackArtifact as ManifestArtifact,
+        ListeningPackRenderMetrics as ManifestRenderMetrics,
+        ListeningPackSignalMetrics as ManifestSignalMetrics, write_manifest_json,
+    },
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
         Mc202RenderRouting, Mc202RenderState,
@@ -201,14 +206,6 @@ struct ListeningPackManifest {
 }
 
 #[derive(Serialize)]
-struct ManifestArtifact {
-    role: &'static str,
-    kind: &'static str,
-    path: String,
-    metrics_path: Option<String>,
-}
-
-#[derive(Serialize)]
 struct ManifestThresholds {
     min_signal_rms: f32,
     min_mc202_bar_delta_rms: f32,
@@ -222,20 +219,6 @@ struct ManifestPackMetrics {
     w30_feral_source_chop: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
     mc202_question_answer_delta: ManifestSignalMetrics,
-}
-
-#[derive(Serialize)]
-struct ManifestRenderMetrics {
-    signal: ManifestSignalMetrics,
-    low_band: ManifestSignalMetrics,
-}
-
-#[derive(Serialize)]
-struct ManifestSignalMetrics {
-    active_samples: usize,
-    peak_abs: f32,
-    rms: f32,
-    sum: f32,
 }
 
 fn print_help() {
@@ -749,10 +732,10 @@ fn write_manifest(
             min_low_band_rms: MIN_LOW_BAND_RMS,
         },
         metrics: ManifestPackMetrics {
-            mc202_question_answer: report.mc202.into(),
-            tr909_beat_fill: report.tr909.into(),
-            w30_feral_source_chop: report.w30.into(),
-            full_grid_mix: report.full_mix.into(),
+            mc202_question_answer: manifest_render_metrics(report.mc202),
+            tr909_beat_fill: manifest_render_metrics(report.tr909),
+            w30_feral_source_chop: manifest_render_metrics(report.w30),
+            full_grid_mix: manifest_render_metrics(report.full_mix),
             mc202_question_answer_delta: report.mc202_question_answer_delta.into(),
         },
         verification_command: format!(
@@ -767,7 +750,7 @@ fn write_manifest(
         result: "pass",
     };
 
-    fs::write(path, serde_json::to_string_pretty(&manifest)? + "\n")?;
+    write_manifest_json(path, &manifest)?;
     Ok(())
 }
 
@@ -789,47 +772,20 @@ fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
             "full_grid_mix",
             output_dir.join("04_riotbox_grid_feral_mix.wav"),
         ),
-        ManifestArtifact {
-            role: "grid_report",
-            kind: "markdown_report",
-            path: output_dir.join("grid-report.md").display().to_string(),
-            metrics_path: None,
-        },
-        ManifestArtifact {
-            role: "readme",
-            kind: "markdown_readme",
-            path: output_dir.join("README.md").display().to_string(),
-            metrics_path: None,
-        },
+        ManifestArtifact::markdown_report("grid_report", &output_dir.join("grid-report.md")),
+        ManifestArtifact::markdown_readme("readme", &output_dir.join("README.md")),
     ]
 }
 
 fn manifest_audio_artifact(role: &'static str, path: PathBuf) -> ManifestArtifact {
-    ManifestArtifact {
-        role,
-        kind: "audio_wav",
-        metrics_path: Some(metrics_path_for(&path).display().to_string()),
-        path: path.display().to_string(),
-    }
+    let metrics_path = metrics_path_for(&path);
+    ManifestArtifact::audio_wav(role, &path, Some(&metrics_path))
 }
 
-impl From<RenderMetrics> for ManifestRenderMetrics {
-    fn from(metrics: RenderMetrics) -> Self {
-        Self {
-            signal: metrics.signal.into(),
-            low_band: metrics.low_band.into(),
-        }
-    }
-}
-
-impl From<OfflineAudioMetrics> for ManifestSignalMetrics {
-    fn from(metrics: OfflineAudioMetrics) -> Self {
-        Self {
-            active_samples: metrics.active_samples,
-            peak_abs: metrics.peak_abs,
-            rms: metrics.rms,
-            sum: metrics.sum,
-        }
+fn manifest_render_metrics(metrics: RenderMetrics) -> ManifestRenderMetrics {
+    ManifestRenderMetrics {
+        signal: metrics.signal.into(),
+        low_band: metrics.low_band.into(),
     }
 }
 
