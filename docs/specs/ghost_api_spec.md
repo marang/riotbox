@@ -229,6 +229,31 @@ Rules:
 - `safety` must distinguish safe suggestions, suggestions that need Assist acceptance, and blocked suggestions
 - blockers such as locks or low-confidence conditions must be explicit
 
+### 9.1 Proposal To Jam View Contract
+
+Ghost proposal fields must project into musician-facing surfaces without exposing
+internal reasoning dumps.
+
+| Proposal field | Jam / Help surface | Log / archive surface | Rule |
+| --- | --- | --- | --- |
+| `proposal_id` | Not shown on the main Jam perform surface unless needed for diagnostics | Preserved in suggestion history and accepted-action explanation | Required for deterministic accept/reject and replay evidence |
+| `mode` | Reflected through Ghost mode/status copy such as watch, assist, or assist-required | Preserved by the session Ghost state | `watch` stays read-only; `assist` may queue only after explicit acceptance |
+| `tool_name` | May be summarized by musical intent rather than raw registry name | Preserved as the stable proposal tool enum / registry id when serialized or reviewed | Must map to the MVP registry in section 8.4 |
+| `summary` | Primary Jam text for current suggestions, for example `ghost: <summary>` | Preserved in suggestion history | Must be short, musical, and safe to display in the narrow Suggested gestures panel |
+| `rationale` | Help, inspect, or future detail surfaces; not required in the compact Jam row | Preserved when a richer proposal archive is introduced | Must explain why the suggestion matters in plain language |
+| `suggested_action` | Rendered as acceptability controls such as `[Enter] accept`, blocked, or no-action copy | Accepted action becomes a normal `ActionDraft` / action-log entry | Never mutates musical state until accepted and queued |
+| `confidence` | Optional compact trust/detail cue; not required in the primary Jam row | Preserved in proposal payloads | Low confidence should not masquerade as a primary command |
+| `safety` and `blockers` | Must surface blocked/assist-required/no-action feedback | Rejection or blocked reason must remain inspectable | Ghost must show the reason instead of retrying invisibly |
+| `created_at` | Not required in Jam perform view | Preserved for audit/replay context | Use ISO timestamps |
+
+Current TUI priority rules:
+
+- First-run guidance outranks Ghost Assist request cues.
+- Pending-action timing and post-commit keep/undo guidance outrank Ghost Assist request cues.
+- A current Ghost suggestion outranks the passive Assist request cue and must show accept/reject controls.
+- The passive Assist request cue may appear only when the app can actually create a suggestion from the current Jam state.
+- Log and archive views may stay more technical than Jam perform view.
+
 ---
 
 ## 10. Execution Flow
@@ -360,7 +385,5 @@ Required validation:
 
 This draft should be followed by:
 
-1. exact Ghost tool registry
-2. proposal-to-view-model contract
-3. budget defaults per mode
-4. escalation path for future `perform` mode
+1. budget defaults per mode
+2. escalation path for future `perform` mode
