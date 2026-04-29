@@ -58,6 +58,14 @@ pub struct SnapshotReplayPlanComparison<'a> {
     pub snapshot_action_cursor: usize,
 }
 
+#[derive(Clone, Debug, PartialEq)]
+pub struct ReplayTargetPlan<'a> {
+    pub origin: Vec<ReplayPlanEntry<'a>>,
+    pub suffix: Vec<ReplayPlanEntry<'a>>,
+    pub anchor: Option<&'a Snapshot>,
+    pub target_action_cursor: usize,
+}
+
 pub fn build_committed_replay_plan(
     action_log: &ActionLog,
 ) -> Result<Vec<ReplayPlanEntry<'_>>, ReplayPlanError> {
@@ -204,6 +212,42 @@ pub fn select_replay_snapshot_anchor(
     }
 
     Ok(selected.map(|(_, snapshot)| snapshot))
+}
+
+pub fn build_replay_target_plan<'a>(
+    action_log: &'a ActionLog,
+    snapshots: &'a [Snapshot],
+    target_action_cursor: usize,
+) -> Result<ReplayTargetPlan<'a>, ReplayPlanError> {
+    let anchor =
+        select_replay_snapshot_anchor(snapshots, target_action_cursor, action_log.actions.len())?;
+    let origin = build_committed_replay_plan(action_log)?;
+    let anchor_cursor = anchor.map_or(0, |snapshot| snapshot.action_cursor);
+    let skipped_action_ids: Vec<ActionId> = action_log
+        .actions
+        .iter()
+        .take(anchor_cursor)
+        .map(|action| action.id)
+        .collect();
+    let target_action_ids: Vec<ActionId> = action_log
+        .actions
+        .iter()
+        .take(target_action_cursor)
+        .map(|action| action.id)
+        .collect();
+    let suffix = origin
+        .iter()
+        .filter(|entry| target_action_ids.contains(&entry.action.id))
+        .filter(|entry| !skipped_action_ids.contains(&entry.action.id))
+        .cloned()
+        .collect();
+
+    Ok(ReplayTargetPlan {
+        origin,
+        suffix,
+        anchor,
+        target_action_cursor,
+    })
 }
 
 fn compare_replay_entries(left: &ReplayPlanEntry<'_>, right: &ReplayPlanEntry<'_>) -> Ordering {
@@ -611,6 +655,125 @@ mod tests {
             ReplayPlanError::ReplayTargetCursorOutOfBounds {
                 target_action_cursor: 3,
                 action_count: 2,
+            }
+        );
+    }
+
+    #[test]
+    fn replay_target_plan_without_anchor_replays_from_origin_to_target() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200), action(2, 210), action(3, 300)],
+            commit_records: vec![
+                commit_record(3, 12, 3, 1, 300),
+                commit_record(2, 8, 2, 2, 210),
+                commit_record(1, 8, 2, 1, 200),
+            ],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+
+        let target_plan = build_replay_target_plan(&action_log, &[], 2).expect("valid target plan");
+        let suffix_ids: Vec<ActionId> = target_plan
+            .suffix
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect();
+
+        assert!(target_plan.anchor.is_none());
+        assert_eq!(target_plan.origin.len(), 3);
+        assert_eq!(suffix_ids, vec![ActionId(1), ActionId(2)]);
+    }
+
+    #[test]
+    fn replay_target_plan_with_prior_anchor_replays_suffix_to_target() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200), action(2, 210), action(3, 300)],
+            commit_records: vec![
+                commit_record(3, 12, 3, 1, 300),
+                commit_record(2, 8, 2, 2, 210),
+                commit_record(1, 8, 2, 1, 200),
+            ],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+        let snapshots = vec![snapshot_with_id("snap-1", 1)];
+
+        let target_plan =
+            build_replay_target_plan(&action_log, &snapshots, 3).expect("valid target plan");
+        let suffix_ids: Vec<ActionId> = target_plan
+            .suffix
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect();
+
+        assert_eq!(
+            target_plan
+                .anchor
+                .map(|snapshot| snapshot.snapshot_id.as_str()),
+            Some("snap-1")
+        );
+        assert_eq!(suffix_ids, vec![ActionId(2), ActionId(3)]);
+    }
+
+    #[test]
+    fn replay_target_plan_with_exact_anchor_has_empty_suffix() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200), action(2, 210)],
+            commit_records: vec![
+                commit_record(2, 8, 2, 2, 210),
+                commit_record(1, 8, 2, 1, 200),
+            ],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+        let snapshots = vec![snapshot_with_id("snap-2", 2)];
+
+        let target_plan =
+            build_replay_target_plan(&action_log, &snapshots, 2).expect("valid target plan");
+
+        assert_eq!(
+            target_plan
+                .anchor
+                .map(|snapshot| snapshot.snapshot_id.as_str()),
+            Some("snap-2")
+        );
+        assert!(target_plan.suffix.is_empty());
+    }
+
+    #[test]
+    fn replay_target_plan_rejects_target_cursor_beyond_action_log() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200)],
+            commit_records: vec![commit_record(1, 8, 2, 1, 200)],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+
+        let error =
+            build_replay_target_plan(&action_log, &[], 2).expect_err("target plan should fail");
+
+        assert_eq!(
+            error,
+            ReplayPlanError::ReplayTargetCursorOutOfBounds {
+                target_action_cursor: 2,
+                action_count: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn replay_target_plan_rejects_snapshot_cursor_beyond_action_log() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200)],
+            commit_records: vec![commit_record(1, 8, 2, 1, 200)],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+        let snapshots = vec![snapshot_with_id("bad-snap", 2)];
+
+        let error = build_replay_target_plan(&action_log, &snapshots, 1)
+            .expect_err("target plan should fail");
+
+        assert_eq!(
+            error,
+            ReplayPlanError::SnapshotCursorOutOfBounds {
+                action_cursor: 2,
+                action_count: 1,
             }
         );
     }
