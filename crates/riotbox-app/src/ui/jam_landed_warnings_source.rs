@@ -273,10 +273,12 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 
     if show_restore_readiness_cue(shell) {
+        let third_line =
+            ghost_assist_request_line(shell).unwrap_or_else(|| line_with_primary_keys("[c] capture"));
         return vec![
             line_with_primary_keys("[y] jump first"),
             line_with_primary_keys("[Y] restore waits for one landed jump"),
-            line_with_primary_keys("[c] capture"),
+            third_line,
         ];
     }
 
@@ -292,10 +294,12 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 
     if shell.app.jam_view.source.feral_scorecard.readiness == "ready" {
+        let third_line = ghost_assist_request_line(shell)
+            .unwrap_or_else(|| line_with_primary_keys("[c] capture if it bites"));
         return vec![
             line_with_primary_keys("feral ready: [j] browse  [f] fill"),
             line_with_primary_keys("[g] follow  [a] answer"),
-            line_with_primary_keys("[c] capture if it bites"),
+            third_line,
         ];
     }
 
@@ -310,11 +314,28 @@ fn suggested_gesture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         ];
     }
 
+    let third_line =
+        ghost_assist_request_line(shell).unwrap_or_else(|| line_with_primary_keys("[c] capture  [w] hit"));
+
     vec![
         line_with_primary_keys(format!("{}  [g] follow", next_scene_jump_suggestion(shell))),
         line_with_primary_keys("[a] answer  [f] fill"),
-        line_with_primary_keys("[c] capture  [w] hit"),
+        third_line,
     ]
+}
+
+fn ghost_assist_request_line(shell: &JamShellState) -> Option<Line<'static>> {
+    ghost_assist_request_is_useful(shell)
+        .then(|| line_with_primary_keys("ghost assist: [Enter] ask"))
+}
+
+fn ghost_assist_request_is_useful(shell: &JamShellState) -> bool {
+    shell.active_screen == ShellScreen::Jam
+        && first_run_onramp_stage(shell).is_none()
+        && shell.app.jam_view.transport.is_playing
+        && shell.app.jam_view.pending_actions.is_empty()
+        && shell.app.jam_view.recent_actions.is_empty()
+        && shell.app.can_refresh_current_ghost_suggestion_from_jam_state()
 }
 
 fn line_with_primary_keys(text: impl Into<String>) -> Line<'static> {

@@ -12,22 +12,14 @@ use riotbox_core::{
 use super::JamAppState;
 
 impl JamAppState {
-    pub fn refresh_current_ghost_suggestion_from_jam_state(&mut self) -> bool {
-        if self.runtime.current_ghost_suggestion.is_some() {
-            return false;
-        }
+    pub fn can_refresh_current_ghost_suggestion_from_jam_state(&self) -> bool {
+        self.next_jam_state_ghost_suggestion().is_some()
+    }
 
-        let Some(suggestion) = source_backed_capture_suggestion(
-            &self.session,
-            &self.queue,
-            self.source_graph.as_ref(),
-        ) else {
+    pub fn refresh_current_ghost_suggestion_from_jam_state(&mut self) -> bool {
+        let Some(suggestion) = self.next_jam_state_ghost_suggestion() else {
             return false;
         };
-
-        if ghost_suggestion_is_decided(&self.session, &suggestion.proposal_id) {
-            return false;
-        }
 
         if !self
             .session
@@ -45,6 +37,24 @@ impl JamAppState {
         self.runtime.current_ghost_suggestion = Some(suggestion);
         self.refresh_view();
         true
+    }
+
+    fn next_jam_state_ghost_suggestion(&self) -> Option<GhostWatchSuggestion> {
+        if self.runtime.current_ghost_suggestion.is_some() {
+            return None;
+        }
+
+        let suggestion = source_backed_capture_suggestion(
+            &self.session,
+            &self.queue,
+            self.source_graph.as_ref(),
+        )?;
+
+        if ghost_suggestion_is_decided(&self.session, &suggestion.proposal_id) {
+            return None;
+        }
+
+        Some(suggestion)
     }
 }
 

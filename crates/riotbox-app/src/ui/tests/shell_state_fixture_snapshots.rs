@@ -453,6 +453,26 @@ fn renders_current_ghost_suggestion_controls_in_jam() {
 }
 
 #[test]
+fn renders_ghost_assist_request_when_useful() {
+    let shell = ghost_assist_ready_shell_state();
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("ghost assist: [Enter] ask"), "{rendered}");
+}
+
+#[test]
+fn hides_ghost_assist_request_during_first_run() {
+    let mut shell = first_run_shell_state();
+    shell.app.set_transport_playing(true);
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("Start Here"), "{rendered}");
+    assert!(!rendered.contains("ghost assist: [Enter] ask"), "{rendered}");
+}
+
+#[test]
 fn help_explains_current_ghost_suggestion_controls() {
     let mut shell = sample_shell_state();
     shell
@@ -471,6 +491,28 @@ fn help_explains_current_ghost_suggestion_controls() {
         rendered.contains("N: reject and clear the suggestion"),
         "{rendered}"
     );
+}
+
+#[test]
+fn help_explains_ghost_assist_request_when_useful() {
+    let mut shell = ghost_assist_ready_shell_state();
+    shell.show_help = true;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 40);
+
+    assert!(rendered.contains("Ghost Assist"), "{rendered}");
+    assert!(
+        rendered.contains("Enter: ask Ghost for the current best move"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("Enter again: queue it"), "{rendered}");
+}
+
+fn ghost_assist_ready_shell_state() -> JamShellState {
+    let mut shell = first_run_shell_state();
+    shell.first_run_onramp = false;
+    shell.app.set_transport_playing(true);
+    shell
 }
 
 fn sample_ghost_fill_suggestion(mode: GhostMode) -> GhostWatchSuggestion {
