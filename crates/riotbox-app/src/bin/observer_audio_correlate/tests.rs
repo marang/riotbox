@@ -87,6 +87,11 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
     let json: Value = serde_json::from_str(&render_json(&summary).expect("json")).expect("json");
+    assert_eq!(json["schema"], SUMMARY_SCHEMA);
+    assert_eq!(
+        json["schema_version"].as_u64(),
+        Some(u64::from(SUMMARY_SCHEMA_VERSION))
+    );
     assert_eq!(json["control_path"]["present"], true);
     assert_eq!(json["output_path"]["present"], true);
     assert_eq!(
