@@ -205,6 +205,22 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         vec![ActionCommand::Tr909FillNext]
     );
     assert_eq!(
+        before_only_state.runtime_view.replay_restore_status,
+        "ready: replay 1 suffix action(s)"
+    );
+    assert_eq!(
+        before_only_state.runtime_view.replay_restore_anchor,
+        "anchor before-ghost @ cursor 0"
+    );
+    assert_eq!(
+        before_only_state.runtime_view.replay_restore_suffix,
+        "suffix 1 action(s): tr909.fill_next"
+    );
+    assert_eq!(
+        before_only_state.runtime_view.replay_restore_unsupported,
+        "unsupported none"
+    );
+    assert_eq!(
         target_plan_from_after
             .anchor
             .map(|snapshot| snapshot.snapshot_id.as_str()),
@@ -222,6 +238,25 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     );
     assert_eq!(exact_anchor_summary.suffix_action_count, 0);
     assert!(!exact_anchor_summary.needs_replay);
+    assert_eq!(
+        restored_state.runtime_view.replay_restore_status,
+        "ready: snapshot current"
+    );
+    assert_eq!(
+        restored_state.runtime_view.replay_restore_anchor,
+        format!("anchor after-ghost @ cursor {}", reloaded.action_log.actions.len())
+    );
+    assert_eq!(
+        restored_state.runtime_view.replay_restore_suffix,
+        format!(
+            "suffix none | target cursor {}",
+            reloaded.action_log.actions.len()
+        )
+    );
+    assert_eq!(
+        restored_state.runtime_view.replay_restore_unsupported,
+        "unsupported none"
+    );
 
     let no_snapshot_convergence =
         riotbox_core::replay::build_latest_snapshot_replay_convergence_summary(
@@ -387,6 +422,22 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
         vec![ActionCommand::W30LoopFreeze]
+    );
+    assert_eq!(
+        diagnostic_state.runtime_view.replay_restore_status,
+        "blocked: 1 unsupported suffix action(s)"
+    );
+    assert_eq!(
+        diagnostic_state.runtime_view.replay_restore_anchor,
+        "anchor before-artifact @ cursor 0"
+    );
+    assert_eq!(
+        diagnostic_state.runtime_view.replay_restore_suffix,
+        "suffix 1 action(s): w30.loop_freeze"
+    );
+    assert_eq!(
+        diagnostic_state.runtime_view.replay_restore_unsupported,
+        "unsupported suffix 1: w30.loop_freeze"
     );
 
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");

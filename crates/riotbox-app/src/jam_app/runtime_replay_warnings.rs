@@ -3,6 +3,96 @@ use riotbox_core::{
     session::SessionFile,
 };
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(super) struct ReplayReadinessLabels {
+    pub status: String,
+    pub anchor: String,
+    pub suffix: String,
+    pub unsupported: String,
+}
+
+pub(super) fn derive_replay_readiness_labels(session: &SessionFile) -> ReplayReadinessLabels {
+    let Ok(summary) =
+        build_latest_snapshot_replay_convergence_summary(&session.action_log, &session.snapshots)
+    else {
+        return ReplayReadinessLabels {
+            status: "restore replay unavailable".into(),
+            anchor: "anchor invalid".into(),
+            suffix: "suffix unknown".into(),
+            unsupported: "unsupported unknown".into(),
+        };
+    };
+
+    let status = if summary.suffix_unsupported_action_count > 0 {
+        format!(
+            "blocked: {} unsupported suffix action(s)",
+            summary.suffix_unsupported_action_count
+        )
+    } else if summary.origin_unsupported_action_count > 0 {
+        format!(
+            "blocked: {} unsupported origin action(s)",
+            summary.origin_unsupported_action_count
+        )
+    } else if !summary.needs_replay {
+        "ready: snapshot current".into()
+    } else if summary.needs_full_replay {
+        format!(
+            "ready: full replay {} action(s)",
+            summary.suffix_action_count
+        )
+    } else {
+        format!(
+            "ready: replay {} suffix action(s)",
+            summary.suffix_action_count
+        )
+    };
+
+    let anchor = match (
+        summary.anchor_snapshot_id.as_deref(),
+        summary.anchor_action_cursor,
+    ) {
+        (Some(snapshot_id), Some(cursor)) => format!("anchor {snapshot_id} @ cursor {cursor}"),
+        (Some(snapshot_id), None) => format!("anchor {snapshot_id}"),
+        (None, _) => "anchor none | full replay".into(),
+    };
+
+    let suffix = if summary.suffix_action_count == 0 {
+        format!(
+            "suffix none | target cursor {}",
+            summary.target_action_cursor
+        )
+    } else {
+        format!(
+            "suffix {} action(s): {}",
+            summary.suffix_action_count,
+            replay_command_list(&summary.suffix_commands)
+        )
+    };
+
+    let unsupported = if summary.suffix_unsupported_action_count > 0 {
+        format!(
+            "unsupported suffix {}: {}",
+            summary.suffix_unsupported_action_count,
+            replay_command_list(&summary.suffix_unsupported_commands)
+        )
+    } else if summary.origin_unsupported_action_count > 0 {
+        format!(
+            "unsupported origin {}: {}",
+            summary.origin_unsupported_action_count,
+            replay_command_list(&summary.origin_unsupported_commands)
+        )
+    } else {
+        "unsupported none".into()
+    };
+
+    ReplayReadinessLabels {
+        status,
+        anchor,
+        suffix,
+        unsupported,
+    }
+}
+
 pub(super) fn derive_replay_summary_warnings(session: &SessionFile) -> Vec<String> {
     let Ok(summary) =
         build_latest_snapshot_replay_convergence_summary(&session.action_log, &session.snapshots)

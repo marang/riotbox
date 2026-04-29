@@ -14,7 +14,8 @@ use riotbox_core::{
 };
 
 use super::{
-    AppRuntimeState, SidecarState, runtime_replay_warnings::derive_replay_summary_warnings,
+    AppRuntimeState, SidecarState,
+    runtime_replay_warnings::{derive_replay_readiness_labels, derive_replay_summary_warnings},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -53,6 +54,10 @@ pub struct JamRuntimeView {
     pub w30_resample_tap_profile: String,
     pub w30_resample_tap_source_summary: String,
     pub w30_resample_tap_mix_summary: String,
+    pub replay_restore_status: String,
+    pub replay_restore_anchor: String,
+    pub replay_restore_suffix: String,
+    pub replay_restore_unsupported: String,
     pub runtime_warnings: Vec<String>,
 }
 
@@ -109,6 +114,7 @@ impl JamRuntimeView {
             session,
         ));
         runtime_warnings.extend(derive_replay_summary_warnings(session));
+        let replay_readiness = derive_replay_readiness_labels(session);
 
         Self {
             audio_status,
@@ -179,6 +185,10 @@ impl JamRuntimeView {
                 "music bus {:.2} | grit {:.2}",
                 runtime.w30_resample_tap.music_bus_level, runtime.w30_resample_tap.grit_level
             ),
+            replay_restore_status: replay_readiness.status,
+            replay_restore_anchor: replay_readiness.anchor,
+            replay_restore_suffix: replay_readiness.suffix,
+            replay_restore_unsupported: replay_readiness.unsupported,
             runtime_warnings,
         }
     }
