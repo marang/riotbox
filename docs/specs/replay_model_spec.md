@@ -185,6 +185,12 @@ Current supported musical commands:
 - `mc202.generate_pressure`
 - `mc202.generate_instigator`
 - `mc202.mutate_phrase`
+- `tr909.set_slam`
+- `tr909.fill_next`
+- `tr909.reinforce_break`
+- `tr909.takeover`
+- `tr909.scene_lock`
+- `tr909.release`
 
 Rules:
 
@@ -195,8 +201,9 @@ Rules:
 - Single-entry application may mutate the passed session and should be used only when the caller already accepts that boundary.
 - This executor does not perform audio rendering, capture artifact creation, W-30/TR-909 side effects, Ghost reasoning, source analysis, or snapshot hydration.
 - MC-202 replay currently covers the deterministic phrase-lane state needed by downstream projection: role, phrase reference, phrase variant, and MC-202 touch.
+- TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Current convergence coverage materializes a snapshot anchor by replaying the safe prefix in tests, then applies the selected suffix and compares the resulting structural state against origin replay; this proves the executor path, not real snapshot payload hydration.
-- Broader musical replay must expand this allowlist command by command with tests that prove both control-path and output-path behavior where audible state is affected. The first MC-202 expansion includes app-level render parity proving replayed MC-202 state projects to the same audible render as the committed app path and differs from the preceding phrase.
+- Broader musical replay must expand this allowlist command by command with tests that prove both control-path and output-path behavior where audible state is affected. The MC-202 expansion includes app-level render parity proving replayed MC-202 state projects to the same audible render as the committed app path and differs from the preceding phrase. The first TR-909 expansion includes app-level render parity proving replayed TR-909 state projects to the same audible render as the committed app path and that fill, slam, takeover, and release remain distinguishable at the output seam.
 
 ---
 

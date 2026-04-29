@@ -118,7 +118,7 @@ fn plan_executor_handles_stop_unlock_and_duplicate_lock_deterministically() {
 fn plan_executor_rejects_unsupported_actions_without_mutating_session() {
     let action_log = action_log(vec![
         action(1, ActionCommand::TransportPlay, ActionParams::Empty, 100),
-        action(2, ActionCommand::Tr909FillNext, ActionParams::Empty, 200),
+        action(2, ActionCommand::MutateScene, ActionParams::Empty, 200),
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
@@ -130,7 +130,7 @@ fn plan_executor_rejects_unsupported_actions_without_mutating_session() {
         error,
         ReplayExecutionError::UnsupportedAction {
             action_id: ActionId(2),
-            command: ActionCommand::Tr909FillNext
+            command: ActionCommand::MutateScene
         }
     );
     assert_eq!(session, original_session);
@@ -275,6 +275,12 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::Mc202GeneratePressure,
             ActionCommand::Mc202GenerateInstigator,
             ActionCommand::Mc202MutatePhrase,
+            ActionCommand::Tr909SetSlam,
+            ActionCommand::Tr909FillNext,
+            ActionCommand::Tr909ReinforceBreak,
+            ActionCommand::Tr909Takeover,
+            ActionCommand::Tr909SceneLock,
+            ActionCommand::Tr909Release,
         ]
     );
 }

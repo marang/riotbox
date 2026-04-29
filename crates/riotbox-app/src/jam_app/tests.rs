@@ -22,5 +22,6 @@ include!("tests/w30_backfill_mc202_commits.rs");
 include!("tests/mc202_recipe_helpers.rs");
 include!("tests/fixture_regressions_tr909_slam.rs");
 include!("tests/tr909_takeover_source_support.rs");
+include!("tests/tr909_replay.rs");
 include!("tests/tr909_policy_undo_ingest.rs");
 include!("tests/scene_fixture_regression.rs");

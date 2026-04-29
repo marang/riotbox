@@ -2,7 +2,10 @@ use crate::{
     action::{ActionCommand, ActionParams},
     ids::ActionId,
     replay::ReplayPlanEntry,
-    session::{Mc202PhraseVariantState, SessionFile},
+    session::{
+        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState,
+    },
 };
 
 const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
@@ -19,6 +22,12 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::Mc202GeneratePressure,
     ActionCommand::Mc202GenerateInstigator,
     ActionCommand::Mc202MutatePhrase,
+    ActionCommand::Tr909SetSlam,
+    ActionCommand::Tr909FillNext,
+    ActionCommand::Tr909ReinforceBreak,
+    ActionCommand::Tr909Takeover,
+    ActionCommand::Tr909SceneLock,
+    ActionCommand::Tr909Release,
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -181,6 +190,65 @@ pub fn apply_replay_entry_to_session(
             session.runtime_state.macro_state.mc202_touch =
                 session.runtime_state.macro_state.mc202_touch.max(touch);
         }
+        ActionCommand::Tr909SetSlam => {
+            let ActionParams::Mutation { intensity, .. } = &action.params else {
+                return Err(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionParams::Mutation { intensity, .. }",
+                });
+            };
+            let intensity = intensity.clamp(0.0, 1.0);
+            session.runtime_state.macro_state.tr909_slam = intensity;
+            session.runtime_state.lane_state.tr909.slam_enabled = intensity > 0.0;
+        }
+        ActionCommand::Tr909FillNext => {
+            session.runtime_state.lane_state.tr909.fill_armed_next_bar = false;
+            session.runtime_state.lane_state.tr909.last_fill_bar =
+                Some(entry.commit_record.boundary.bar_index);
+            session.runtime_state.lane_state.tr909.pattern_ref = Some(format!(
+                "fill-bar-{}",
+                entry.commit_record.boundary.bar_index
+            ));
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::Fills);
+        }
+        ActionCommand::Tr909ReinforceBreak => {
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::BreakReinforce);
+            session.runtime_state.lane_state.tr909.pattern_ref =
+                Some(tr909_boundary_pattern_ref(entry, "reinforce"));
+        }
+        ActionCommand::Tr909Takeover => {
+            session.runtime_state.lane_state.tr909.takeover_enabled = true;
+            session.runtime_state.lane_state.tr909.takeover_profile =
+                Some(Tr909TakeoverProfileState::ControlledPhraseTakeover);
+            session.runtime_state.lane_state.tr909.pattern_ref =
+                Some(tr909_boundary_pattern_ref(entry, "takeover"));
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::Takeover);
+        }
+        ActionCommand::Tr909SceneLock => {
+            session.runtime_state.lane_state.tr909.takeover_enabled = true;
+            session.runtime_state.lane_state.tr909.takeover_profile =
+                Some(Tr909TakeoverProfileState::SceneLockTakeover);
+            session.runtime_state.lane_state.tr909.pattern_ref =
+                Some(tr909_boundary_pattern_ref(entry, "lock"));
+            session.runtime_state.lane_state.tr909.reinforcement_mode =
+                Some(Tr909ReinforcementModeState::Takeover);
+        }
+        ActionCommand::Tr909Release => {
+            session.runtime_state.lane_state.tr909.takeover_enabled = false;
+            session.runtime_state.lane_state.tr909.takeover_profile = None;
+            session.runtime_state.lane_state.tr909.pattern_ref =
+                Some(tr909_boundary_pattern_ref(entry, "release"));
+            if session.runtime_state.lane_state.tr909.reinforcement_mode
+                == Some(Tr909ReinforcementModeState::Takeover)
+            {
+                session.runtime_state.lane_state.tr909.reinforcement_mode =
+                    Some(Tr909ReinforcementModeState::SourceSupport);
+            }
+        }
         command => {
             return Err(ReplayExecutionError::UnsupportedAction {
                 action_id: action.id,
@@ -222,6 +290,18 @@ fn mc202_boundary_phrase_ref(entry: &ReplayPlanEntry<'_>, role: &str) -> String 
             )
         },
         |scene_id| format!("{role}-{scene_id}"),
+    )
+}
+
+fn tr909_boundary_pattern_ref(entry: &ReplayPlanEntry<'_>, prefix: &str) -> String {
+    entry.commit_record.boundary.scene_id.as_ref().map_or_else(
+        || {
+            format!(
+                "{prefix}-phrase-{}",
+                entry.commit_record.boundary.phrase_index
+            )
+        },
+        |scene_id| format!("{prefix}-{scene_id}"),
     )
 }
 
