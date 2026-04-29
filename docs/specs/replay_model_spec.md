@@ -156,6 +156,7 @@ Current implementation:
 - Each commit record is keyed by action id and stores the commit boundary plus commit sequence within that boundary.
 - Replay and budget logic should consume these structured commit records instead of parsing result summaries or relying only on incidental action vector order.
 - A replay-plan builder may consume the existing action log and commit records to produce deterministic committed-order entries, but it must not become a second action, persistence, or repair system.
+- Snapshot-vs-origin replay-plan comparisons may select a suffix from the origin plan by using the existing snapshot `action_cursor`; they must stay comparison scaffolding until a real replay executor exists.
 - Session restore rebuilds the app-runtime `last_commit_boundary` from the latest structured commit record so fresh app state does not lose the most recent musical boundary context.
 
 ---

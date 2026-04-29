@@ -4,7 +4,7 @@ use crate::{
     TimestampMs,
     action::{Action, ActionStatus, CommitBoundary},
     ids::ActionId,
-    session::{ActionCommitRecord, ActionLog},
+    session::{ActionCommitRecord, ActionLog, Snapshot},
     transport::CommitBoundaryState,
 };
 
@@ -30,6 +30,10 @@ pub enum ReplayPlanError {
         boundary: CommitBoundaryState,
         commit_sequence: u32,
     },
+    SnapshotCursorOutOfBounds {
+        action_cursor: usize,
+        action_count: usize,
+    },
     CommittedAtMismatch {
         action_id: ActionId,
         record_committed_at: TimestampMs,
@@ -41,6 +45,13 @@ pub enum ReplayPlanError {
 pub struct ReplayPlanEntry<'a> {
     pub action: &'a Action,
     pub commit_record: &'a ActionCommitRecord,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SnapshotReplayPlanComparison<'a> {
+    pub origin: Vec<ReplayPlanEntry<'a>>,
+    pub snapshot_suffix: Vec<ReplayPlanEntry<'a>>,
+    pub snapshot_action_cursor: usize,
 }
 
 pub fn build_committed_replay_plan(
@@ -119,6 +130,37 @@ pub fn build_committed_replay_plan(
     Ok(entries)
 }
 
+pub fn build_snapshot_replay_plan_comparison<'a>(
+    action_log: &'a ActionLog,
+    snapshot: &Snapshot,
+) -> Result<SnapshotReplayPlanComparison<'a>, ReplayPlanError> {
+    if snapshot.action_cursor > action_log.actions.len() {
+        return Err(ReplayPlanError::SnapshotCursorOutOfBounds {
+            action_cursor: snapshot.action_cursor,
+            action_count: action_log.actions.len(),
+        });
+    }
+
+    let origin = build_committed_replay_plan(action_log)?;
+    let applied_action_ids: Vec<ActionId> = action_log
+        .actions
+        .iter()
+        .take(snapshot.action_cursor)
+        .map(|action| action.id)
+        .collect();
+    let snapshot_suffix = origin
+        .iter()
+        .filter(|entry| !applied_action_ids.contains(&entry.action.id))
+        .cloned()
+        .collect();
+
+    Ok(SnapshotReplayPlanComparison {
+        origin,
+        snapshot_suffix,
+        snapshot_action_cursor: snapshot.action_cursor,
+    })
+}
+
 fn compare_replay_entries(left: &ReplayPlanEntry<'_>, right: &ReplayPlanEntry<'_>) -> Ordering {
     compare_commit_records(left.commit_record, right.commit_record)
         .then_with(|| left.action.id.cmp(&right.action.id))
@@ -156,6 +198,7 @@ mod tests {
             UndoPolicy,
         },
         ids::SceneId,
+        ids::SnapshotId,
         session::ReplayPolicy,
         transport::CommitBoundaryState,
     };
@@ -198,6 +241,15 @@ mod tests {
             },
             commit_sequence,
             committed_at,
+        }
+    }
+
+    fn snapshot(action_cursor: usize) -> Snapshot {
+        Snapshot {
+            snapshot_id: SnapshotId::from("snapshot-1"),
+            created_at: "2026-04-29T19:00:00Z".into(),
+            label: "test snapshot".into(),
+            action_cursor,
         }
     }
 
@@ -333,6 +385,95 @@ mod tests {
             ReplayPlanError::DuplicateCommitSequence {
                 boundary: duplicated_boundary,
                 commit_sequence: 1,
+            }
+        );
+    }
+
+    #[test]
+    fn snapshot_comparison_keeps_origin_and_selects_suffix_after_cursor() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200), action(2, 210), action(3, 300)],
+            commit_records: vec![
+                commit_record(3, 12, 3, 1, 300),
+                commit_record(2, 8, 2, 2, 210),
+                commit_record(1, 8, 2, 1, 200),
+            ],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+
+        let comparison =
+            build_snapshot_replay_plan_comparison(&action_log, &snapshot(2)).expect("valid plan");
+        let origin_ids: Vec<ActionId> = comparison
+            .origin
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect();
+        let suffix_ids: Vec<ActionId> = comparison
+            .snapshot_suffix
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect();
+
+        assert_eq!(origin_ids, vec![ActionId(1), ActionId(2), ActionId(3)]);
+        assert_eq!(suffix_ids, vec![ActionId(3)]);
+        assert_eq!(comparison.snapshot_action_cursor, 2);
+    }
+
+    #[test]
+    fn snapshot_comparison_with_zero_cursor_replays_full_origin() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200), action(2, 210)],
+            commit_records: vec![
+                commit_record(2, 8, 2, 2, 210),
+                commit_record(1, 8, 2, 1, 200),
+            ],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+
+        let comparison =
+            build_snapshot_replay_plan_comparison(&action_log, &snapshot(0)).expect("valid plan");
+        let suffix_ids: Vec<ActionId> = comparison
+            .snapshot_suffix
+            .iter()
+            .map(|entry| entry.action.id)
+            .collect();
+
+        assert_eq!(suffix_ids, vec![ActionId(1), ActionId(2)]);
+    }
+
+    #[test]
+    fn snapshot_comparison_at_log_end_has_empty_suffix() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200), action(2, 210)],
+            commit_records: vec![
+                commit_record(2, 8, 2, 2, 210),
+                commit_record(1, 8, 2, 1, 200),
+            ],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+
+        let comparison =
+            build_snapshot_replay_plan_comparison(&action_log, &snapshot(2)).expect("valid plan");
+
+        assert!(comparison.snapshot_suffix.is_empty());
+    }
+
+    #[test]
+    fn snapshot_comparison_rejects_cursor_beyond_action_log() {
+        let action_log = ActionLog {
+            actions: vec![action(1, 200)],
+            commit_records: vec![commit_record(1, 8, 2, 1, 200)],
+            replay_policy: ReplayPolicy::DeterministicPreferred,
+        };
+
+        let error = build_snapshot_replay_plan_comparison(&action_log, &snapshot(2))
+            .expect_err("plan should fail");
+
+        assert_eq!(
+            error,
+            ReplayPlanError::SnapshotCursorOutOfBounds {
+                action_cursor: 2,
+                action_count: 1,
             }
         );
     }
