@@ -37,7 +37,7 @@ The `output_path` object should include:
 - `pack_id`: source audio QA pack id.
 - `manifest_result`: source manifest result.
 - `artifact_count`: number of manifest artifacts.
-- `metrics`: object containing the currently required output metrics.
+- `metrics`: object containing the currently required output metric fields; values may be numbers or `null` when evidence is missing.
 
 ## Compatibility Rule
 
@@ -61,6 +61,7 @@ The committed fixture JSON smoke currently requires:
 - `control_path.present == true`
 - `output_path.present == true`
 - `output_path.issues` is empty
+- `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
 
 ## Current Non-Goals
 
