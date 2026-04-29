@@ -23,6 +23,7 @@ audio-qa-ci:
     cargo test -p riotbox-audio --bin w30_preview_render --bin w30_preview_compare --bin lane_recipe_pack --bin feral_before_after_pack --bin feral_grid_pack
     cargo test -p riotbox-app --bin observer_audio_correlate
     just observer-audio-correlate-fixture
+    just observer-audio-correlate-json-fixture
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -91,6 +92,9 @@ observer-audio-correlate observer manifest output="artifacts/audio_qa/local/obse
 
 observer-audio-correlate-json observer manifest output="artifacts/audio_qa/local/observer_audio_summary.json":
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer "{{observer}}" --manifest "{{manifest}}" --output "{{output}}" --json
+
+observer-audio-correlate-json-fixture:
+    tmp="$(mktemp)" && cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --output "$tmp" --json && jq -e '.output_path.present == true and (.output_path.issues | length == 0)' "$tmp" && rm "$tmp"
 
 observer-audio-correlate-fixture:
     cargo run -p riotbox-app --bin observer_audio_correlate -- --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson --manifest crates/riotbox-app/tests/fixtures/observer_audio_correlation/manifest.json --require-evidence
