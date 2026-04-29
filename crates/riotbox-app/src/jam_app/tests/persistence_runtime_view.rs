@@ -167,14 +167,9 @@ fn rejects_session_with_snapshot_cursor_beyond_action_log() {
     }
 }
 
-#[test]
-fn loads_session_with_commit_record_referencing_persisted_action() {
-    let dir = tempdir().expect("create temp dir");
-    let session_path = dir.path().join("jam-session.json");
-    let graph = sample_graph();
-    let mut session = sample_session(&graph);
-    session.action_log.commit_records.push(ActionCommitRecord {
-        action_id: ActionId(1),
+fn sample_commit_record(action_id: ActionId, commit_sequence: u32) -> ActionCommitRecord {
+    ActionCommitRecord {
+        action_id,
         boundary: CommitBoundaryState {
             kind: CommitBoundary::Bar,
             beat_index: 8,
@@ -182,9 +177,21 @@ fn loads_session_with_commit_record_referencing_persisted_action() {
             phrase_index: 0,
             scene_id: Some(SceneId::from("scene-1")),
         },
-        commit_sequence: 1,
+        commit_sequence,
         committed_at: 200,
-    });
+    }
+}
+
+#[test]
+fn loads_session_with_commit_record_referencing_persisted_action() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 1));
     save_session_json(&session_path, &session).expect("save valid commit-record session");
 
     let restored =
@@ -209,18 +216,10 @@ fn rejects_session_with_commit_record_for_missing_action() {
     let session_path = dir.path().join("jam-session.json");
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.action_log.commit_records.push(ActionCommitRecord {
-        action_id: ActionId(999),
-        boundary: CommitBoundaryState {
-            kind: CommitBoundary::Bar,
-            beat_index: 8,
-            bar_index: 2,
-            phrase_index: 0,
-            scene_id: Some(SceneId::from("scene-1")),
-        },
-        commit_sequence: 1,
-        committed_at: 200,
-    });
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(999), 1));
     save_session_json(&session_path, &session).expect("save orphan commit-record session");
 
     let error =
@@ -229,6 +228,61 @@ fn rejects_session_with_commit_record_for_missing_action() {
     match error {
         JamAppError::InvalidSession(message) => {
             assert!(message.contains("commit record references missing action a-0999"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_session_with_zero_commit_record_sequence() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 0));
+    save_session_json(&session_path, &session).expect("save zero-sequence commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("commit record for action a-0001 has invalid sequence 0"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_session_with_duplicate_commit_record_sequence_for_boundary() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    let mut second_action = session.action_log.actions[0].clone();
+    second_action.id = ActionId(2);
+    session.action_log.actions.push(second_action);
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(1), 1));
+    session
+        .action_log
+        .commit_records
+        .push(sample_commit_record(ActionId(2), 1));
+    save_session_json(&session_path, &session)
+        .expect("save duplicate-sequence commit-record session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("commit record sequence 1 is duplicated"));
+            assert!(message.contains("boundary Bar beat 8 bar 2 phrase 0"));
         }
         other => panic!("unexpected error: {other}"),
     }

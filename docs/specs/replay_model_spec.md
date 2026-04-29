@@ -206,6 +206,7 @@ Recommended restore algorithm:
 - snapshots must not contain hidden state that the action log cannot eventually explain
 - session restore must reject snapshots whose action cursor points beyond the persisted action log
 - session restore must reject commit records whose action id does not exist in the persisted action log
+- session restore must reject zero or duplicate commit-record sequence numbers within the same commit boundary
 
 ### 9.2 Runtime state relation
 

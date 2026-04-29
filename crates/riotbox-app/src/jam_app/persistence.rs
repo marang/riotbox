@@ -171,6 +171,30 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
                 commit_record.action_id
             )));
         }
+
+        if commit_record.commit_sequence == 0 {
+            return Err(JamAppError::InvalidSession(format!(
+                "commit record for action {} has invalid sequence 0",
+                commit_record.action_id
+            )));
+        }
+    }
+
+    for (index, commit_record) in session.action_log.commit_records.iter().enumerate() {
+        for previous in &session.action_log.commit_records[..index] {
+            if previous.boundary == commit_record.boundary
+                && previous.commit_sequence == commit_record.commit_sequence
+            {
+                return Err(JamAppError::InvalidSession(format!(
+                    "commit record sequence {} is duplicated within boundary {:?} beat {} bar {} phrase {}",
+                    commit_record.commit_sequence,
+                    commit_record.boundary.kind,
+                    commit_record.boundary.beat_index,
+                    commit_record.boundary.bar_index,
+                    commit_record.boundary.phrase_index
+                )));
+            }
+        }
     }
 
     Ok(())
