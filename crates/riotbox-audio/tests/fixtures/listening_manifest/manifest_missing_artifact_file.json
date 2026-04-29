@@ -1,0 +1,13 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [
+    {
+      "role": "full_grid_mix",
+      "kind": "audio_wav",
+      "path": "missing-full-grid-mix.wav",
+      "metrics_path": null
+    }
+  ]
+}

@@ -18,20 +18,45 @@ SCHEMA_VERSION = 1
 
 
 def main() -> int:
-    if len(sys.argv) != 2:
-        print("usage: validate_listening_manifest_json.py <manifest.json>", file=sys.stderr)
+    try:
+        path, require_existing_artifacts = parse_args(sys.argv[1:])
+    except ValueError as error:
+        print(error, file=sys.stderr)
+        print(
+            "usage: validate_listening_manifest_json.py [--require-existing-artifacts] <manifest.json>",
+            file=sys.stderr,
+        )
         return 2
 
-    path = Path(sys.argv[1])
     try:
         manifest = json.loads(path.read_text())
         validate_manifest(manifest)
+        if require_existing_artifacts:
+            validate_artifact_paths(manifest, path.parent)
     except (OSError, ValueError, TypeError) as error:
         print(f"invalid listening manifest JSON: {error}", file=sys.stderr)
         return 1
 
     print(f"valid riotbox listening manifest v{SCHEMA_VERSION}: {path}")
     return 0
+
+
+def parse_args(args: list[str]) -> tuple[Path, bool]:
+    require_existing_artifacts = False
+    paths: list[str] = []
+
+    for arg in args:
+        if arg == "--require-existing-artifacts":
+            require_existing_artifacts = True
+        elif arg.startswith("-"):
+            raise ValueError(f"unknown option: {arg}")
+        else:
+            paths.append(arg)
+
+    if len(paths) != 1:
+        raise ValueError("expected exactly one manifest path")
+
+    return Path(paths[0]), require_existing_artifacts
 
 
 def validate_manifest(manifest: Any) -> None:
@@ -55,6 +80,19 @@ def validate_artifact(artifact: Any, index: int) -> None:
     require_string(artifact, "path", f"artifact {index} path")
     require_optional_string_or_null(artifact, "metrics_path", f"artifact {index} metrics_path")
     require_optional_string_or_null(artifact, "case_id", f"artifact {index} case_id")
+
+
+def validate_artifact_paths(manifest: dict[str, Any], manifest_dir: Path) -> None:
+    for index, artifact in enumerate(manifest["artifacts"]):
+        require_file(manifest_dir / artifact["path"], f"artifact {index} path")
+        metrics_path = artifact.get("metrics_path")
+        if metrics_path is not None:
+            require_file(manifest_dir / metrics_path, f"artifact {index} metrics_path")
+
+
+def require_file(path: Path, name: str) -> None:
+    if not path.is_file():
+        raise ValueError(f"{name} does not exist: {path}")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
