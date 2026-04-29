@@ -6,7 +6,7 @@ use riotbox_core::{
     transport::CommitBoundaryState,
 };
 
-pub(super) fn capture_ref_from_action(
+pub(in crate::jam_app) fn capture_ref_from_action(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
     action: &Action,
@@ -174,7 +174,7 @@ fn seconds_to_frame(seconds: f32, sample_rate: u32) -> u64 {
     (seconds.max(0.0) * sample_rate as f32).floor() as u64
 }
 
-pub(super) fn apply_capture_promotion_side_effects(
+pub(in crate::jam_app) fn apply_capture_promotion_side_effects(
     session: &mut SessionFile,
     action: &Action,
 ) -> bool {
@@ -279,7 +279,10 @@ fn promotion_note(target: &CaptureTarget) -> String {
     }
 }
 
-pub(super) fn capture_promotion_summary(session: &SessionFile, action: &Action) -> Option<String> {
+pub(in crate::jam_app) fn capture_promotion_summary(
+    session: &SessionFile,
+    action: &Action,
+) -> Option<String> {
     let capture_id = promotion_capture_id(session, action)?;
     let capture = session
         .captures
@@ -302,11 +305,11 @@ fn updated_capture_note(existing_notes: Option<&str>, target: &CaptureTarget) ->
     }
 }
 
-pub(super) fn capture_targets_w30_pad(capture: &CaptureRef) -> bool {
+pub(in crate::jam_app) fn capture_targets_w30_pad(capture: &CaptureRef) -> bool {
     matches!(capture.assigned_target, Some(CaptureTarget::W30Pad { .. }))
 }
 
-pub(super) fn capture_targets_specific_w30_pad(
+pub(in crate::jam_app) fn capture_targets_specific_w30_pad(
     capture: &CaptureRef,
     bank_id: &BankId,
     pad_id: &PadId,

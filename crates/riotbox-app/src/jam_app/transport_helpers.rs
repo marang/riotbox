@@ -5,7 +5,7 @@ use riotbox_core::{
     transport::{CommitBoundaryState, TransportClockState},
 };
 
-pub(super) fn normalize_scene_candidates(
+pub(in crate::jam_app) fn normalize_scene_candidates(
     session: &mut SessionFile,
     source_graph: Option<&SourceGraph>,
 ) {
@@ -69,7 +69,7 @@ const fn section_label_slug(label: SectionLabelHint) -> &'static str {
     }
 }
 
-pub(super) fn transport_clock_from_state(
+pub(in crate::jam_app) fn transport_clock_from_state(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
 ) -> TransportClockState {
@@ -81,7 +81,7 @@ pub(super) fn transport_clock_from_state(
     )
 }
 
-pub(super) fn transport_clock_for_state(
+pub(in crate::jam_app) fn transport_clock_for_state(
     position_beats: f64,
     is_playing: bool,
     current_scene: Option<SceneId>,
@@ -126,7 +126,7 @@ pub(super) fn transport_clock_for_state(
     }
 }
 
-pub(super) fn crossed_commit_boundary(
+pub(in crate::jam_app) fn crossed_commit_boundary(
     previous: &TransportClockState,
     next: &TransportClockState,
 ) -> Option<CommitBoundaryState> {

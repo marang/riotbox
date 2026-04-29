@@ -10,7 +10,7 @@ use riotbox_core::{
 use super::{JamAppState, capture_targets_specific_w30_pad, capture_targets_w30_pad};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct W30SlicePoolTarget {
+pub(in crate::jam_app) struct W30SlicePoolTarget {
     pub bank_id: BankId,
     pub pad_id: PadId,
     pub capture_id: CaptureId,
@@ -18,13 +18,13 @@ pub(super) struct W30SlicePoolTarget {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) enum W30SlicePoolSelectionReason {
+pub(in crate::jam_app) enum W30SlicePoolSelectionReason {
     Cycle,
     FeralScorecard,
 }
 
 impl JamAppState {
-    pub(super) fn focused_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn focused_w30_capture(&self) -> Option<&CaptureRef> {
         let w30 = &self.session.runtime_state.lane_state.w30;
         let (bank_id, pad_id) = w30.active_bank.as_ref().zip(w30.focused_pad.as_ref())?;
 
@@ -35,7 +35,7 @@ impl JamAppState {
             .find(|capture| capture_targets_specific_w30_pad(capture, bank_id, pad_id))
     }
 
-    pub(super) fn w30_focus_targets(&self) -> Vec<(BankId, PadId)> {
+    pub(in crate::jam_app) fn w30_focus_targets(&self) -> Vec<(BankId, PadId)> {
         self.session
             .captures
             .iter()
@@ -50,7 +50,7 @@ impl JamAppState {
             .collect()
     }
 
-    pub(super) fn next_w30_focus_target(&self) -> Option<(BankId, PadId)> {
+    pub(in crate::jam_app) fn next_w30_focus_target(&self) -> Option<(BankId, PadId)> {
         let targets = self.w30_focus_targets();
         let current_focus = self
             .session
@@ -81,7 +81,7 @@ impl JamAppState {
         targets.first().cloned()
     }
 
-    pub(super) fn next_w30_bank_target(&self) -> Option<(BankId, PadId, CaptureId)> {
+    pub(in crate::jam_app) fn next_w30_bank_target(&self) -> Option<(BankId, PadId, CaptureId)> {
         let current_bank = self
             .session
             .runtime_state
@@ -143,7 +143,7 @@ impl JamAppState {
         Some((target_bank, target_pad, capture_id))
     }
 
-    pub(super) fn recallable_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn recallable_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
             .runtime_state
@@ -176,7 +176,7 @@ impl JamAppState {
             })
     }
 
-    pub(super) fn auditionable_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn auditionable_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
             .runtime_state
@@ -202,7 +202,7 @@ impl JamAppState {
             .find(|capture| capture_targets_w30_pad(capture))
     }
 
-    pub(super) fn raw_auditionable_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn raw_auditionable_capture(&self) -> Option<&CaptureRef> {
         self.session
             .captures
             .iter()
@@ -210,7 +210,7 @@ impl JamAppState {
             .find(|capture| capture.assigned_target.is_none())
     }
 
-    pub(super) fn triggerable_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn triggerable_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
             .runtime_state
@@ -244,15 +244,15 @@ impl JamAppState {
             .or_else(|| self.recallable_w30_capture())
     }
 
-    pub(super) fn damage_profile_ready_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn damage_profile_ready_w30_capture(&self) -> Option<&CaptureRef> {
         self.triggerable_w30_capture()
     }
 
-    pub(super) fn loop_freeze_ready_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn loop_freeze_ready_w30_capture(&self) -> Option<&CaptureRef> {
         self.triggerable_w30_capture()
     }
 
-    pub(super) fn resample_ready_w30_capture(&self) -> Option<&CaptureRef> {
+    pub(in crate::jam_app) fn resample_ready_w30_capture(&self) -> Option<&CaptureRef> {
         if self
             .session
             .runtime_state
@@ -285,7 +285,7 @@ impl JamAppState {
             })
     }
 
-    pub(super) fn current_w30_lane_target(&self) -> Option<(BankId, PadId)> {
+    pub(in crate::jam_app) fn current_w30_lane_target(&self) -> Option<(BankId, PadId)> {
         self.session
             .runtime_state
             .lane_state
@@ -302,7 +302,7 @@ impl JamAppState {
             )
     }
 
-    pub(super) fn next_w30_slice_pool_capture(&self) -> Option<W30SlicePoolTarget> {
+    pub(in crate::jam_app) fn next_w30_slice_pool_capture(&self) -> Option<W30SlicePoolTarget> {
         let (bank_id, pad_id) = self.current_w30_lane_target()?;
         let pool: Vec<&CaptureRef> = self
             .session
@@ -399,7 +399,7 @@ impl JamAppState {
             })
     }
 
-    pub(super) fn w30_pad_cue_pending(&self) -> bool {
+    pub(in crate::jam_app) fn w30_pad_cue_pending(&self) -> bool {
         self.queue.pending_actions().into_iter().any(|action| {
             matches!(
                 action.command,
@@ -416,7 +416,7 @@ impl JamAppState {
         })
     }
 
-    pub(super) fn w30_phrase_capture_cue_pending(&self) -> bool {
+    pub(in crate::jam_app) fn w30_phrase_capture_cue_pending(&self) -> bool {
         self.queue.pending_actions().into_iter().any(|action| {
             matches!(
                 action.command,
