@@ -33,6 +33,8 @@ pub(super) fn derive_replay_readiness_labels(session: &SessionFile) -> ReplayRea
             "blocked: {} unsupported origin action(s)",
             summary.origin_unsupported_action_count
         )
+    } else if summary.origin_replay_entry_count == 0 && summary.anchor_snapshot_id.is_none() {
+        "ready: no replay entries".into()
     } else if !summary.needs_replay {
         "ready: snapshot current".into()
     } else if summary.needs_full_replay {

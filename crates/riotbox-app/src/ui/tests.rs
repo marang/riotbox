@@ -6,6 +6,7 @@ include!("tests/shell_state_fixture_snapshots.rs");
 include!("tests/jam_scene_pending_onramp.rs");
 include!("tests/post_commit_help_restore.rs");
 include!("tests/recovery_prompt.rs");
+include!("tests/restore_replay_readiness.rs");
 include!("tests/regression_fixture_shells.rs");
 include!("tests/shell_state_log_source.rs");
 include!("tests/capture_w30_cues.rs");

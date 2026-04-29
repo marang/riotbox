@@ -104,7 +104,11 @@ fn render_log_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
 
     let warnings = log_warning_lines(shell);
     let warnings_panel = Paragraph::new(warnings)
-        .block(Block::default().title("Warnings").borders(Borders::ALL))
+        .block(
+            Block::default()
+                .title("Warnings / Restore")
+                .borders(Borders::ALL),
+        )
         .wrap(Wrap { trim: true });
 
     frame.render_widget(counts, summary_columns[0]);

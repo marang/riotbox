@@ -9,12 +9,14 @@ use riotbox_core::{
         GhostSuggestedAction, GhostSuggestionConfidence, GhostSuggestionSafety,
         GhostWatchSuggestion, GhostWatchTool,
     },
-    ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SourceId},
+    ids::{
+        ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SnapshotId, SourceId,
+    },
     queue::ActionQueue,
     session::{
-        GhostSuggestionRecord, SceneMovementDirectionState, SceneMovementKindState,
-        SceneMovementLaneIntentState, SceneMovementState, SessionFile, Tr909ReinforcementModeState,
-        Tr909TakeoverProfileState,
+        ActionCommitRecord, GhostSuggestionRecord, SceneMovementDirectionState,
+        SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
+        Snapshot, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,

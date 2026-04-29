@@ -328,17 +328,57 @@ fn log_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         .runtime_warnings
         .iter()
         .chain(shell.app.jam_view.warnings.iter())
-        .take(3)
+        .take(2)
         .cloned()
         .collect();
-    if warnings.is_empty() {
+    let restore_lines = restore_replay_log_lines(shell);
+    if warnings.is_empty() && restore_lines.is_empty() {
         return vec![Line::from("no active runtime or trust warnings")];
     }
 
-    warnings
+    let mut lines = restore_lines;
+    lines.extend(warnings
         .into_iter()
         .map(|warning| Line::from(format!("warning {warning}")))
-        .collect()
+    );
+    lines
+}
+
+fn restore_replay_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let runtime = &shell.app.runtime_view;
+    if runtime.replay_restore_status == "ready: no replay entries" {
+        return Vec::new();
+    }
+
+    let mut lines = vec![
+        Line::from(compact_restore_replay_label(
+            &runtime.replay_restore_status,
+        )),
+        Line::from(compact_restore_replay_label(
+            &runtime.replay_restore_anchor,
+        )),
+    ];
+    if runtime.replay_restore_unsupported != "unsupported none" {
+        lines.push(Line::from(compact_restore_replay_label(
+            &runtime.replay_restore_unsupported,
+        )));
+    } else {
+        lines.push(Line::from(compact_restore_replay_label(
+            &runtime.replay_restore_suffix,
+        )));
+    }
+    lines
+}
+
+fn compact_restore_replay_label(label: &str) -> String {
+    let mut compact = label.strip_prefix("ready: ").unwrap_or(label).to_owned();
+    compact = compact
+        .replace("suffix 1 action(s): ", "suffix ")
+        .replace("unsupported suffix 1: ", "unsupported suffix ")
+        .replace("unsupported origin 1: ", "unsupported origin ")
+        .replace(" action(s)", "")
+        .replace(" @ cursor ", "@");
+    compact
 }
 
 fn source_identity_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -442,4 +482,3 @@ fn source_section_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
         None => vec![ListItem::new("no source graph loaded")],
     }
 }
-
