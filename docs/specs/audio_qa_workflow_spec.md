@@ -485,6 +485,7 @@ Today the repo already has:
 - an explicit CI-safe `just audio-qa-ci` smoke gate, mirrored as a named GitHub Actions step, that runs the stable W-30 preview, lane recipe, Feral before/after, Feral grid, and observer/audio-correlation helper tests without generating or committing local listening artifacts
 - a committed synthetic observer/audio correlation fixture smoke that proves the summary helper reads both control-path observer events and output-path manifest metrics without depending on ignored local artifacts
 - an optional strict `observer_audio_correlate --require-evidence` mode that fails when committed control-path evidence or passing output-path manifest metrics are missing
+- a strict committed-fixture CLI smoke, `just observer-audio-correlate-fixture`, wired into `just audio-qa-ci` and the named GitHub Actions audio QA step without writing local artifacts
 
 Today the repo does not yet have a full official workflow for:
 
