@@ -1342,3 +1342,14 @@ Why: the feral addendum says new scores need consumers, and the current Source G
 Evidence: `docs/reviews/feral_policy_entry_audit_2026-04-26.md` maps current Source Graph, W-30, TR-909, MC-202, and Scene Brain seams against the feral addendum and recommends scorecard-first implementation.
 Consequences: the next implementation should add visible scorecard projection and tests. Audio-producing feral behavior should wait until one existing action path consumes that scorecard with output-path proof.
 Status: accepted
+
+---
+
+Topic: MVP crash recovery should be explicit manual recovery before automatic repair
+Phase: Pro Hardening
+Question: after safe temp-write/rename saves and truncated JSON failure tests exist, what crash recovery behavior is honest enough for MVP without hiding replay truth?
+Decision: keep normal session load deterministic and side-effect free. Treat orphan hidden temp files as interrupted-write clues, not authoritative recovery inputs. Do not add automatic autosave fallback yet. Future autosave files must have explicit sibling names and must never overwrite the canonical session without user action.
+Why: deterministic replay depends on knowing exactly which session file was loaded. Silent fallback to a nearby file could make a corrupted or stale replay truth look valid and would make debugging user reports harder. Manual recovery is less magical but safer until recovery-candidate scanning and UI prompts are covered.
+Evidence: `crates/riotbox-core/src/persistence.rs` serializes before writing, writes a hidden sibling temp file, then renames into place. `truncated_session_json_load_fails_without_replacing_adjacent_valid_session` proves partial JSON fails explicitly while adjacent valid files remain manually loadable. `docs/specs/session_file_spec.md` now records the orphan-temp, autosave, and manual fallback boundary.
+Consequences: the next recovery implementation should add a non-mutating recovery-candidate scanner before any guided TUI prompt. `load_session_json` should not learn automatic fallback behavior.
+Status: accepted

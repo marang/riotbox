@@ -423,6 +423,43 @@ Current MVP crash-recovery boundary:
 - load must not silently repair or replace the requested file with guessed state
 - adjacent valid session files can still be loaded manually, but automatic fallback selection is not part of MVP yet
 
+### 16.1 MVP crash recovery policy
+
+The MVP recovery model is explicit manual recovery, not hidden automatic repair.
+
+Current save behavior:
+
+- session JSON is serialized before touching the target path
+- the serialized payload is written to a hidden sibling temp file named like `.<target-file-name>.tmp-<pid>-<nonce>`
+- the temp file is renamed over the target only after the write succeeds
+- if rename fails, the temp file is best-effort removed and the existing target remains the authority
+
+Orphan temp-file policy:
+
+- hidden sibling files matching `.<target-file-name>.tmp-*` are treated as interrupted writes for that target
+- load must not choose an orphan temp file automatically
+- UI or CLI diagnostics may list orphan temp files as recovery clues, but they must be clearly marked as untrusted candidates
+- deleting orphan temp files is safe only after the user has confirmed the canonical target and any desired manual backup have been inspected
+
+Autosave policy:
+
+- autosave is not automatic in MVP
+- when autosave lands, it should use an explicit sibling name such as `session.autosave.json` or timestamped `session.autosave.<ISO-UTC>.json`
+- autosave files must use the same schema validation and replay/commit-record checks as normal session files
+- autosave must not overwrite the canonical session without explicit user action
+
+Manual fallback selection:
+
+- if the requested session fails to parse or validate, Riotbox should fail the load with the concrete path and error
+- a user may explicitly retry another candidate path, such as a manual backup or future autosave file
+- the app must not silently fall back to an adjacent file because that would hide which replay truth was actually loaded
+
+First implementation seam:
+
+- add a non-mutating recovery-candidate scanner that reports canonical target status, orphan temp files, and explicit autosave candidates
+- keep the scanner separate from `load_session_json` so normal load remains deterministic and side-effect free
+- only after that scanner is covered should the TUI add a guided manual recovery prompt
+
 ---
 
 ## 17. MVP Requirements
@@ -465,4 +502,5 @@ This draft should be followed by:
 1. exact on-disk layout
 2. session migration policy
 3. snapshot frequency policy
-4. autosave strategy after the format stabilizes
+4. recovery-candidate scanner for orphan temp and future autosave files
+5. autosave strategy after the format stabilizes
