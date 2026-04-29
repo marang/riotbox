@@ -56,7 +56,7 @@ So the quickstart is useful for confirming:
 
 But it is **not** enough on its own to understand the whole shell.
 
-For W-30 capture reuse, the current source-backed path is intentionally bounded: Riotbox can preview short source-window excerpts and marks them with `.../src`, while `.../fallback` means it is using the safe synthetic preview. Use [`Recipe 11`](docs/jam_recipes.md#recipe-11-check-source-backed-w-30-reuse) for the current smoke test. This is not yet a full W-30 sampler engine.
+For W-30 capture reuse, the current source-backed path is intentionally bounded: Riotbox can preview short source-window excerpts and marks them with `.../src`, while `.../fallback` means it is using the safe synthetic preview. Use [`Recipe 11`](docs/jam_recipes.md#recipe-11-check-source-backed-w-30-reuse) for the current TUI smoke test and [`Recipe 13`](docs/jam_recipes.md#recipe-13-prove-w-30-source-backed-audio-is-not-fallback) for the offline source-vs-fallback proof. This is not yet a full W-30 sampler engine.
 
 ## What Riotbox Is
 
@@ -150,6 +150,7 @@ Best next moves from there:
 - `Recipe 10` if you want to explicitly practice reading the current Scene Brain `boundary -> pulse -> live/restore energy -> trail` cues
 - `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
 - `Recipe 12` if you want to follow the new `feral ready` suggested gesture path
+- `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the TUI by ear
 - `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> audition -> promote -> hit -> undo
 
 If `just` is installed, the normal local check path is:

@@ -467,6 +467,58 @@ What this teaches:
 - this is still bounded prototype behavior, not full automatic feral composition
 - if it sounds too similar, use `Log` and `Source` to check whether you were in `ready`, `needs support`, or fallback territory before judging the gesture
 
+## Recipe 13: Prove W-30 Source-Backed Audio Is Not Fallback
+
+Goal: get one quick offline proof that the W-30 source-backed preview can differ from the safe synthetic fallback.
+
+This is not an interactive TUI recipe. Use it when you are unsure whether a W-30 result is really using source material or only the fallback preview.
+
+Run the CI-safe generated check:
+
+```bash
+just w30-smoke-generated-source-diff
+```
+
+Expected result:
+
+- the command renders a synthetic fallback `baseline.wav`
+- it renders a source-backed `candidate.wav` from deterministic generated source material
+- it compares both metrics and fails if the RMS / sum deltas are too small
+- it validates the generated `manifest.json` and all referenced artifact paths
+
+What to look for in the output:
+
+- `result: pass`
+- `rms ... delta` at or above `0.001000`
+- `sum ... delta` at or above `1.000000`
+- `valid riotbox listening manifest v1`
+
+If you want a local listening file from one of the downloaded example WAVs, use the source-diff wrapper with an explicit date label:
+
+```bash
+just w30-smoke-source-diff "data/test_audio/examples/Beat03_130BPM(Full).wav" local-w30-source-diff
+```
+
+Then listen to:
+
+```text
+artifacts/audio_qa/local-w30-source-diff/w30-preview-smoke/raw_capture_source_window_preview/baseline.wav
+artifacts/audio_qa/local-w30-source-diff/w30-preview-smoke/raw_capture_source_window_preview/candidate.wav
+```
+
+How to interpret it:
+
+- `baseline.wav` is the safe fallback preview
+- `candidate.wav` is the source-backed preview
+- if they sound identical and the command still passes, create a follow-up with the metrics and source file
+- if the command fails, Riotbox may have collapsed to fallback or the source window may not be useful enough for the current threshold
+
+What this teaches:
+
+- `src` / `fallback` is not only UI language; there is now an output-path check for it
+- the current source-backed W-30 path is a short preview excerpt, not full sample streaming
+- use this recipe before judging W-30 by a confusing first TUI run
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -481,6 +533,7 @@ So if two runs feel similar:
 - use `Recipe 9` if you want to compare where Scene Brain is already more legible today
 - use `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
 - use `Recipe 12` if you want to understand the new `feral ready` gesture path
+- use `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the live TUI path
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 

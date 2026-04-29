@@ -25,7 +25,7 @@ It gives agents and humans one stable case ID, output path, command, and note sh
 - Metrics comparison helper: `cargo run -p riotbox-audio --bin w30_preview_compare`
 - Render type: deterministic local candidate WAV
 - Review type: manual listening plus sibling metrics
-- CI status: local-only, not a CI gate
+- CI status: source-vs-fallback generated smoke is CI-gated via `just w30-smoke-generated-source-diff`; broader listening notes remain local-first
 
 ## Output Convention
 
@@ -99,6 +99,14 @@ candidate.wav = source-backed preview from the WAV window
 
 It then requires minimum RMS and sum deltas so the run fails if the source-backed candidate collapses back into the same fallback-like preview.
 
+For the CI-safe generated version of this same collapse check, use:
+
+```bash
+just w30-smoke-generated-source-diff
+```
+
+That command keeps artifacts in a temporary directory, uses deterministic generated source material, validates the generated `manifest.json`, and is wired into `just audio-qa-ci`.
+
 Equivalent direct command:
 
 ```bash
@@ -158,5 +166,5 @@ Template source: `docs/benchmarks/audio_qa_listening_review_template_2026-04-26.
 - This is not a generalized fixture-pack runner.
 - There is no baseline-vs-candidate waveform or perceptual comparison engine yet.
 - There is no committed WAV baseline in the repo.
-- There is no CI gate for generated audio artifacts.
+- The generated source-vs-fallback W-30 smoke is CI-gated, but broader human listening review still remains local-first.
 - The useful durable artifact today is the convention plus any follow-up ticket created from listening.
