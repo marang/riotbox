@@ -312,23 +312,32 @@ fn w30_perform_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         )),
         Line::from(next),
     ];
-    if let Some(fallback_cue) = w30_perform_fallback_cue(shell) {
-        lines.push(Line::from(fallback_cue));
+    if let Some(action_cue) = w30_perform_action_cue(shell) {
+        lines.push(Line::from(action_cue));
     }
     lines
 }
 
-fn w30_perform_fallback_cue(shell: &JamShellState) -> Option<&'static str> {
+fn w30_perform_action_cue(shell: &JamShellState) -> Option<&'static str> {
     let render = &shell.app.runtime.w30_preview;
-    if matches!(render.mode, W30PreviewRenderMode::Idle) || render.source_window_preview.is_some() {
+    if matches!(render.mode, W30PreviewRenderMode::Idle) {
         return None;
     }
 
-    match render.mode {
-        W30PreviewRenderMode::RawCaptureAudition => Some("fallback: [o] raw safe | 4 Capture"),
-        W30PreviewRenderMode::PromotedAudition => Some("fallback: [o] safe | 4 Capture"),
-        W30PreviewRenderMode::LiveRecall => Some("fallback: [w] safe | 4 Capture"),
-        W30PreviewRenderMode::Idle => None,
+    if render.source_window_preview.is_some() {
+        match render.mode {
+            W30PreviewRenderMode::RawCaptureAudition => Some("src: [o] raw source | 4 Capture"),
+            W30PreviewRenderMode::PromotedAudition => Some("src: [o] source | 4 Capture"),
+            W30PreviewRenderMode::LiveRecall => Some("src: [w] source | 4 Capture"),
+            W30PreviewRenderMode::Idle => None,
+        }
+    } else {
+        match render.mode {
+            W30PreviewRenderMode::RawCaptureAudition => Some("fallback: [o] raw safe | 4 Capture"),
+            W30PreviewRenderMode::PromotedAudition => Some("fallback: [o] safe | 4 Capture"),
+            W30PreviewRenderMode::LiveRecall => Some("fallback: [w] safe | 4 Capture"),
+            W30PreviewRenderMode::Idle => None,
+        }
     }
 }
 

@@ -127,6 +127,10 @@ fn source_backed_raw_capture_audition_compact_label_uses_src_cue() {
 
     assert!(rendered.contains("current preview audition raw/src"), "{rendered}");
     assert!(
+        rendered.contains("src: [o] raw source | 4 Capture"),
+        "{rendered}"
+    );
+    assert!(
         !rendered.contains("fallback: ["),
         "source-backed W-30 preview should not show fallback action cue\n{rendered}"
     );
@@ -151,6 +155,14 @@ fn source_backed_promoted_and_recall_compact_labels_use_src_cue() {
     assert_eq!(w30_preview_log_compact(&shell), "audition/src");
     assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
 
+    shell.active_screen = ShellScreen::Jam;
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+    assert!(rendered.contains("src: [o] source | 4 Capture"), "{rendered}");
+    assert!(
+        !rendered.contains("fallback: ["),
+        "source-backed promoted audition should not show fallback action cue\n{rendered}"
+    );
+
     shell.app.runtime.w30_preview.mode = W30PreviewRenderMode::LiveRecall;
     shell.app.runtime.w30_preview.source_profile =
         Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall);
@@ -162,6 +174,13 @@ fn source_backed_promoted_and_recall_compact_labels_use_src_cue() {
     );
     assert_eq!(w30_preview_log_compact(&shell), "recall/src");
     assert_eq!(w30_preview_source_readiness(&shell), Some("source-backed"));
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+    assert!(rendered.contains("src: [w] source | 4 Capture"), "{rendered}");
+    assert!(
+        !rendered.contains("fallback: ["),
+        "source-backed live recall should not show fallback action cue\n{rendered}"
+    );
 }
 
 #[test]
