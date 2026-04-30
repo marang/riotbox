@@ -303,7 +303,10 @@ mod tests {
         assert_eq!(autosave["trust"], "RecoverableClue");
         assert_eq!(autosave["artifact_availability"], "artifacts ready: 1 capture(s)");
         assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
-        assert_eq!(autosave["replay_unsupported"], "unsupported suffix 1: w30.loop_freeze");
+        assert_eq!(
+            autosave["replay_unsupported"],
+            "unsupported suffix 1: promote.resample"
+        );
         assert_eq!(
             autosave["guidance"],
             "ArtifactReadyReplayHydrationBlocked"
@@ -362,10 +365,10 @@ mod tests {
         session.action_log.actions.push(riotbox_core::action::Action {
             id: ActionId(88),
             actor: riotbox_core::action::ActorType::User,
-            command: ActionCommand::W30LoopFreeze,
+            command: ActionCommand::PromoteResample,
             params: riotbox_core::action::ActionParams::Promotion {
                 capture_id: Some(CaptureId::from("cap-01")),
-                destination: Some("w30:loop_freeze".into()),
+                destination: Some("w30:resample".into()),
             },
             target: ActionTarget {
                 scope: Some(TargetScope::LaneW30),

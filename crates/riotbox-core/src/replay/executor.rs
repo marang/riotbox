@@ -1,9 +1,11 @@
 use crate::{
     action::{ActionCommand, ActionParams},
-    ids::ActionId,
-    replay::ReplayPlanEntry,
+    ids::{ActionId, BankId, PadId},
+    replay::{
+        ReplayPlanEntry, W30ArtifactReplayHydrationError, plan_w30_artifact_replay_hydration,
+    },
     session::{
-        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
+        CaptureTarget, Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
         Tr909TakeoverProfileState, W30PreviewModeState,
     },
 };
@@ -38,6 +40,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::W30BrowseSlicePool,
     ActionCommand::W30StepFocus,
     ActionCommand::W30ApplyDamageProfile,
+    ActionCommand::W30LoopFreeze,
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -50,6 +53,11 @@ pub enum ReplayExecutionError {
         action_id: ActionId,
         command: ActionCommand,
         expected: &'static str,
+    },
+    ArtifactHydration {
+        action_id: ActionId,
+        command: ActionCommand,
+        reason: W30ArtifactReplayHydrationError,
     },
 }
 
@@ -298,6 +306,7 @@ pub fn apply_replay_entry_to_session(
         | ActionCommand::W30BrowseSlicePool
         | ActionCommand::W30StepFocus
         | ActionCommand::W30ApplyDamageProfile => apply_w30_cue(session, entry)?,
+        ActionCommand::W30LoopFreeze => apply_w30_artifact_hydrated_cue(session, entry)?,
         command => {
             return Err(ReplayExecutionError::UnsupportedAction {
                 action_id: action.id,
@@ -307,6 +316,71 @@ pub fn apply_replay_entry_to_session(
     }
 
     Ok(())
+}
+
+fn apply_w30_artifact_hydrated_cue(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<(), ReplayExecutionError> {
+    let action = entry.action;
+    let hydration = plan_w30_artifact_replay_hydration(session, entry).map_err(|reason| {
+        ReplayExecutionError::ArtifactHydration {
+            action_id: action.id,
+            command: action.command,
+            reason,
+        }
+    })?;
+    let capture = session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == hydration.produced_capture_id)
+        .ok_or(ReplayExecutionError::ArtifactHydration {
+            action_id: action.id,
+            command: action.command,
+            reason: W30ArtifactReplayHydrationError::MissingProducedCapture {
+                action_id: action.id,
+                command: action.command,
+            },
+        })?;
+    let (bank_id, pad_id) = w30_artifact_target(capture, action)?;
+
+    session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
+    session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
+    session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+    session.runtime_state.lane_state.w30.last_capture = Some(hydration.produced_capture_id);
+    session.runtime_state.macro_state.w30_grit = session
+        .runtime_state
+        .macro_state
+        .w30_grit
+        .max(w30_grit_or(action, 0.78));
+
+    Ok(())
+}
+
+fn w30_artifact_target(
+    capture: &crate::session::CaptureRef,
+    action: &crate::action::Action,
+) -> Result<(BankId, PadId), ReplayExecutionError> {
+    if let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.as_ref() {
+        return Ok((bank_id.clone(), pad_id.clone()));
+    }
+
+    let Some(bank_id) = action.target.bank_id.clone() else {
+        return Err(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "CaptureTarget::W30Pad or ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
+        });
+    };
+    let Some(pad_id) = action.target.pad_id.clone() else {
+        return Err(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "CaptureTarget::W30Pad or ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
+        });
+    };
+
+    Ok((bank_id, pad_id))
 }
 
 fn apply_mc202_role(

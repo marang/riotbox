@@ -201,6 +201,7 @@ Current supported musical commands:
 - `w30.browse_slice_pool`
 - `w30.step_focus`
 - `w30.apply_damage_profile`
+- `w30.loop_freeze` for explicitly persisted artifact-backed captures
 
 Rules:
 
@@ -213,7 +214,9 @@ Rules:
 - MC-202 replay currently covers the deterministic phrase-lane state needed by downstream projection: role, phrase reference, phrase variant, and MC-202 touch.
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, and restore pointer while deliberately staying Source Graph-free. A separate graph-aware replay boundary can hydrate `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context.
-- W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only; it does not recreate capture artifacts, loop-freeze products, resamples, or source analysis. Artifact-producing W-30 / capture / promote actions remain intentionally unsupported and must reject without leaving partially applied state.
+- W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.
+- `w30.loop_freeze` is the first artifact-backed W-30 replay suffix allowed through the executor. It may only hydrate from explicit persisted capture identity: source capture target, exactly one produced capture, stable storage path, and valid lineage. Replay points `last_capture` at the produced artifact capture so app projection can use the existing cached WAV artifact; it does not regenerate capture audio.
+- Other artifact-producing W-30 / capture / promote actions remain intentionally unsupported and must reject without leaving partially applied state.
 - Current convergence coverage materializes a snapshot anchor by replaying the safe prefix in tests, then applies the selected suffix and compares the resulting structural state against origin replay; this proves the executor path, not real snapshot payload hydration.
 - Replay dry-run and latest-snapshot convergence summaries expose unsupported committed commands for both full-origin and selected-suffix scope so QA can distinguish "needs replay" from "cannot replay this command family yet" without executing or mutating state.
 - App runtime diagnostics surface unsupported replay commands as read-only warnings so restore/debug views can explain replay incompleteness without executing unsupported actions.
@@ -400,8 +403,10 @@ Current implementation boundary:
   in the same session, requires a non-empty `storage_path`, and requires
   source-window identity for source-backed captures or lineage/depth identity for
   resample-derived captures
-- the existing replay executor still rejects artifact-producing W-30 actions
-  until a later slice wires a real artifact loader through this contract
+- the replay executor can hydrate the first narrow artifact-backed suffix,
+  `w30.loop_freeze`, by using the contract to point W-30 state at the persisted
+  produced capture; other artifact-producing W-30 / capture / promote actions
+  remain unsupported until they get their own explicit hydrator
 
 ---
 

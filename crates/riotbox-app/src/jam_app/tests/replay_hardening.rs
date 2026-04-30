@@ -385,7 +385,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let unsupported_action = Action {
         id: ActionId(77),
         actor: ActorType::User,
-        command: ActionCommand::W30LoopFreeze,
+        command: ActionCommand::PromoteResample,
         params: ActionParams::Mutation {
             intensity: 0.8,
             target_id: Some("cap-01".into()),
@@ -402,7 +402,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "loop-freeze committed".into(),
+            summary: "promote-resample committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: Some("artifact-producing W-30 action".into()),
@@ -442,13 +442,13 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
             unsupported_action_cursor,
             None,
         )
-        .expect_err("unsupported W-30 suffix should reject");
+        .expect_err("unsupported artifact suffix should reject");
     assert!(matches!(
         error,
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
             riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(77),
-                command: ActionCommand::W30LoopFreeze,
+                command: ActionCommand::PromoteResample,
             }
         )
     ));
@@ -467,7 +467,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
-        vec![ActionCommand::W30LoopFreeze]
+        vec![ActionCommand::PromoteResample]
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_status,
@@ -479,11 +479,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_suffix,
-        "suffix 1 action(s): w30.loop_freeze"
+        "suffix 1 action(s): promote.resample"
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: w30.loop_freeze"
+        "unsupported suffix 1: promote.resample"
     );
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
@@ -491,6 +491,6 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: w30.loop_freeze"
+        warning == "replay cannot cover 1 unsupported command(s) after snapshot: promote.resample"
     }));
 }

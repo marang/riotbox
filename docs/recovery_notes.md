@@ -39,22 +39,24 @@ These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
 
 When artifacts are ready but replay is blocked by an artifact-producing W-30
-command such as `w30.loop_freeze` or `promote.resample`, the manual recovery UI
-may say that audio artifacts are present while replay remains blocked until W-30
-artifact hydration lands. That hint is explanatory only; it must not select a
-candidate or silently hydrate/repair the session.
+command such as `promote.resample`, the manual recovery UI may say that audio
+artifacts are present while replay remains blocked until that command has an
+explicit artifact hydrator. That hint is explanatory only; it must not select a
+candidate or silently repair the session.
 
 ## Artifact Hydration Preflight
 
-Before a future W-30 artifact hydrator can use a `CaptureRef`, the app-level
-preflight must reject missing storage identity, unavailable session-relative
-paths, missing files, unreadable paths, and paths that are not files.
+Before a W-30 artifact hydrator can use a `CaptureRef`, the app-level preflight
+must reject missing storage identity, unavailable session-relative paths,
+missing files, unreadable paths, and paths that are not files.
 
 The current app preflight only proves the file boundary and keeps cache refresh
 aligned with it. The core replay contract seam is
 `plan_w30_artifact_replay_hydration`; it validates explicit session identity for
-artifact-producing W-30 actions before any file is loaded. It does not decode the
-artifact into replay state or synthesize a replacement.
+artifact-producing W-30 actions before any file is loaded. `w30.loop_freeze` can
+now use that identity through the replay executor to point W-30 state at an
+already persisted artifact; it still does not recreate capture audio or
+synthesize a replacement.
 
 Recovery artifact-availability labels should use this same preflight classifier
 so UI diagnostics and future hydration gates cannot drift.
@@ -84,9 +86,9 @@ be blocked if the action suffix after the snapshot contains commands the replay
 executor cannot safely apply yet.
 
 Current unsupported examples include artifact-producing W-30 actions such as
-`w30.loop_freeze`. These must reject without partially mutating the app session.
-That is intentional until capture/resample artifact hydration has a durable
-replay boundary.
+`promote.resample`. These must reject without partially mutating the app session.
+`w30.loop_freeze` is the first narrow artifact-backed suffix that can hydrate
+from explicit persisted capture identity.
 
 ## Current Verification Seams
 
@@ -100,6 +102,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app committed_w30_internal_resample_prints_reusable_bus_artifact -- --nocapture`
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
+- `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
 - `just ci`
 
@@ -108,10 +111,12 @@ unsupported suffixes. The second verifies the visible diagnostic labels. The
 third verifies the current save-time producer boundary for latest explicit
 snapshots. The W-30 probe verifies payload-backed restore can hydrate a
 source-backed W-30 anchor, apply a safe suffix, and match committed preview
-output. The internal-resample probe verifies the explicit `promote.capture_to_pad`
-gesture can assign a printed resample artifact to a W-30 pad before source-less
-reload and artifact-backed playback. The core probe verifies the lower-level
-hydration contract.
+output. The loop-freeze artifact probe verifies replay can reload a session from
+JSON, hydrate the persisted loop-freeze WAV artifact, and avoid fallback
+oscillator collapse. The internal-resample probe verifies the explicit
+`promote.capture_to_pad` gesture can assign a printed resample artifact to a W-30
+pad before source-less reload and artifact-backed playback. The core probe
+verifies the lower-level hydration contract.
 
 ## Out Of Scope Today
 
