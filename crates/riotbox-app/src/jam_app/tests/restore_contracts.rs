@@ -65,6 +65,60 @@ fn rejects_session_with_snapshot_cursor_beyond_action_log() {
     }
 }
 
+#[test]
+fn rejects_session_with_snapshot_payload_id_mismatch() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.snapshots[0].payload = Some(riotbox_core::session::SnapshotPayload {
+        payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
+        snapshot_id: SnapshotId::from("snap-other"),
+        action_cursor: session.snapshots[0].action_cursor,
+        runtime_state: session.runtime_state.clone(),
+    });
+    save_session_json(&session_path, &session).expect("save bad payload id session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains(
+                "snapshot snap-1 payload snapshot id snap-other does not match owning snapshot"
+            ));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_session_with_snapshot_payload_cursor_mismatch() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.snapshots[0].payload = Some(riotbox_core::session::SnapshotPayload {
+        payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
+        snapshot_id: session.snapshots[0].snapshot_id.clone(),
+        action_cursor: 0,
+        runtime_state: session.runtime_state.clone(),
+    });
+    save_session_json(&session_path, &session).expect("save bad payload cursor session");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains(
+                "snapshot snap-1 payload action cursor 0 does not match snapshot action cursor 1"
+            ));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
 fn sample_commit_record(action_id: ActionId, commit_sequence: u32) -> ActionCommitRecord {
     ActionCommitRecord {
         action_id,

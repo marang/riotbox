@@ -158,6 +158,24 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
                 snapshot.snapshot_id, snapshot.action_cursor, action_count
             )));
         }
+
+        let Some(payload) = snapshot.payload.as_ref() else {
+            continue;
+        };
+
+        if payload.snapshot_id != snapshot.snapshot_id {
+            return Err(JamAppError::InvalidSession(format!(
+                "snapshot {} payload snapshot id {} does not match owning snapshot",
+                snapshot.snapshot_id, payload.snapshot_id
+            )));
+        }
+
+        if payload.action_cursor != snapshot.action_cursor {
+            return Err(JamAppError::InvalidSession(format!(
+                "snapshot {} payload action cursor {} does not match snapshot action cursor {}",
+                snapshot.snapshot_id, payload.action_cursor, snapshot.action_cursor
+            )));
+        }
     }
 
     for commit_record in &session.action_log.commit_records {
