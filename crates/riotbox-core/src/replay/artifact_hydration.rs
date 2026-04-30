@@ -56,6 +56,9 @@ pub enum W30ArtifactReplayHydrationError {
     InvalidPadCaptureIdentity {
         capture_id: CaptureId,
     },
+    InvalidLoopCaptureIdentity {
+        capture_id: CaptureId,
+    },
     InvalidResampleIdentity {
         capture_id: CaptureId,
     },
@@ -132,6 +135,53 @@ pub fn plan_source_window_pad_capture_replay_hydration(
         return Err(W30ArtifactReplayHydrationError::InvalidPadCaptureIdentity {
             capture_id: produced_capture.capture_id.clone(),
         });
+    }
+
+    Ok(W30SourceCaptureReplayHydrationPlan {
+        action_id: action.id,
+        command: action.command,
+        produced_capture_id: produced_capture.capture_id.clone(),
+        capture_type: produced_capture.capture_type,
+        storage_path: produced_capture.storage_path.clone(),
+    })
+}
+
+pub fn plan_source_window_loop_capture_replay_hydration(
+    session: &SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<W30SourceCaptureReplayHydrationPlan, W30ArtifactReplayHydrationError> {
+    let action = entry.action;
+    if !matches!(
+        action.command,
+        ActionCommand::CaptureNow | ActionCommand::CaptureLoop
+    ) {
+        return Err(
+            W30ArtifactReplayHydrationError::NotArtifactProducingW30Action {
+                action_id: action.id,
+                command: action.command,
+            },
+        );
+    }
+
+    let produced_capture = produced_capture_for_action(session, action.id, action.command)?;
+    if produced_capture.storage_path.trim().is_empty() {
+        return Err(W30ArtifactReplayHydrationError::MissingStoragePath {
+            capture_id: produced_capture.capture_id.clone(),
+        });
+    }
+    if produced_capture.source_window.is_none() {
+        return Err(
+            W30ArtifactReplayHydrationError::MissingSourceWindowForSourceBackedCapture {
+                capture_id: produced_capture.capture_id.clone(),
+            },
+        );
+    }
+    if produced_capture.capture_type != CaptureType::Loop {
+        return Err(
+            W30ArtifactReplayHydrationError::InvalidLoopCaptureIdentity {
+                capture_id: produced_capture.capture_id.clone(),
+            },
+        );
     }
 
     Ok(W30SourceCaptureReplayHydrationPlan {

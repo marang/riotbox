@@ -385,10 +385,13 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let unsupported_action = Action {
         id: ActionId(77),
         actor: ActorType::User,
-        command: ActionCommand::CaptureNow,
-        params: ActionParams::Capture { bars: Some(1) },
+        command: ActionCommand::MutateScene,
+        params: ActionParams::Mutation {
+            intensity: 0.5,
+            target_id: Some("scene-a".into()),
+        },
         target: ActionTarget {
-            scope: Some(TargetScope::LaneW30),
+            scope: Some(TargetScope::Scene),
             ..Default::default()
         },
         requested_at: 490,
@@ -397,10 +400,10 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture now committed".into(),
+            summary: "scene mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("unsupported immediate capture-producing action".into()),
+        explanation: Some("unsupported scene mutation action".into()),
     };
     session.action_log.actions.push(unsupported_action);
     session.action_log.commit_records.push(ActionCommitRecord {
@@ -443,7 +446,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
             riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(77),
-                command: ActionCommand::CaptureNow,
+                command: ActionCommand::MutateScene,
             }
         )
     ));
@@ -462,7 +465,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
-        vec![ActionCommand::CaptureNow]
+        vec![ActionCommand::MutateScene]
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_status,
@@ -474,11 +477,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_suffix,
-        "suffix 1 action(s): capture.now"
+        "suffix 1 action(s): mutate.scene"
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: capture.now"
+        "unsupported suffix 1: mutate.scene"
     );
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
@@ -486,6 +489,6 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: capture.now"
+        warning == "replay cannot cover 1 unsupported command(s) after snapshot: mutate.scene"
     }));
 }

@@ -190,8 +190,11 @@ fn w30_step_focus_rejects_unexpected_params_without_mutating_session() {
 #[test]
 fn w30_artifact_producing_actions_reject_without_partial_mutation() {
     let artifact_actions = vec![(
-        ActionCommand::CaptureNow,
-        ActionParams::Capture { bars: Some(1) },
+        ActionCommand::MutateScene,
+        ActionParams::Mutation {
+            intensity: 0.5,
+            target_id: Some("scene-a".into()),
+        },
     )];
 
     for (command, params) in artifact_actions {
@@ -407,6 +410,68 @@ fn w30_capture_to_pad_replay_hydrates_persisted_source_window_capture() {
         session.runtime_state.lane_state.w30.preview_mode,
         Some(W30PreviewModeState::LiveRecall)
     );
+}
+
+#[test]
+fn capture_now_and_loop_replay_hydrate_persisted_source_window_captures() {
+    for (action_id, command, bars) in [
+        (2, ActionCommand::CaptureNow, 1),
+        (3, ActionCommand::CaptureLoop, 2),
+    ] {
+        let action_log = action_log(vec![w30_action(
+            action_id,
+            command,
+            ActionParams::Capture { bars: Some(bars) },
+            200,
+        )]);
+        let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T12:05:00Z");
+        session.captures.push(loop_capture_for_action(action_id));
+
+        let report = apply_replay_plan_to_session(&mut session, &plan.suffix)
+            .expect("source-window loop capture hydrates persisted artifact");
+
+        assert_eq!(report.applied_action_ids, vec![ActionId(action_id)]);
+        assert_eq!(
+            session.runtime_state.lane_state.w30.last_capture,
+            Some(CaptureId::from("cap-02"))
+        );
+        assert_eq!(
+            session.runtime_state.lane_state.w30.preview_mode,
+            Some(W30PreviewModeState::LiveRecall)
+        );
+    }
+}
+
+#[test]
+fn capture_loop_replay_rejects_non_loop_capture_without_mutation() {
+    let action_log = action_log(vec![w30_action(
+        2,
+        ActionCommand::CaptureLoop,
+        ActionParams::Capture { bars: Some(2) },
+        200,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T12:05:00Z");
+    let mut capture = loop_capture_for_action(2);
+    capture.capture_type = CaptureType::Pad;
+    session.captures.push(capture);
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect_err("capture.loop requires loop capture identity");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::ArtifactHydration {
+            action_id: ActionId(2),
+            command: ActionCommand::CaptureLoop,
+            reason: W30ArtifactReplayHydrationError::InvalidLoopCaptureIdentity {
+                capture_id: CaptureId::from("cap-02"),
+            },
+        }
+    );
+    assert_eq!(session, original_session);
 }
 
 #[test]
@@ -896,6 +961,14 @@ fn capture_bar_group_capture_for_action(action_id: u64) -> CaptureRef {
     let mut capture = w30_capture_to_pad_capture_for_action(action_id);
     capture.assigned_target = None;
     capture.notes = Some("captured bar group".into());
+    capture
+}
+
+fn loop_capture_for_action(action_id: u64) -> CaptureRef {
+    let mut capture = w30_capture_to_pad_capture_for_action(action_id);
+    capture.capture_type = CaptureType::Loop;
+    capture.assigned_target = None;
+    capture.notes = Some("captured loop".into());
     capture
 }
 

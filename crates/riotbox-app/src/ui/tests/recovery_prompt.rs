@@ -105,10 +105,13 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(55),
         actor: ActorType::User,
-        command: ActionCommand::CaptureNow,
-        params: ActionParams::Capture { bars: Some(1) },
+        command: ActionCommand::MutateScene,
+        params: ActionParams::Mutation {
+            intensity: 0.5,
+            target_id: Some("scene-a".into()),
+        },
         target: ActionTarget {
-            scope: Some(TargetScope::LaneW30),
+            scope: Some(TargetScope::Scene),
             ..Default::default()
         },
         requested_at: 700,
@@ -117,7 +120,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture now committed".into(),
+            summary: "scene mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -153,7 +156,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         rendered.contains("Restore replay: blocked: 1 unsupported suffix"),
         "{rendered}"
     );
-    assert!(rendered.contains("capture.now"), "{rendered}");
+    assert!(rendered.contains("mutate.scene"), "{rendered}");
     assert!(
         rendered.contains("autosave file | decision multi-blocked | artifacts blocked: 1 of 1"),
         "{rendered}"
@@ -201,10 +204,13 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(56),
         actor: ActorType::User,
-        command: ActionCommand::CaptureNow,
-        params: ActionParams::Capture { bars: Some(1) },
+        command: ActionCommand::MutateScene,
+        params: ActionParams::Mutation {
+            intensity: 0.5,
+            target_id: Some("scene-a".into()),
+        },
         target: ActionTarget {
-            scope: Some(TargetScope::LaneW30),
+            scope: Some(TargetScope::Scene),
             ..Default::default()
         },
         requested_at: 700,
@@ -213,7 +219,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture now committed".into(),
+            summary: "scene mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -255,15 +261,11 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("unsupported suffix capture.now"),
+        rendered.contains("unsupported suffix mutate.scene"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("Artifact note: audio present"),
-        "{rendered}"
-    );
-    assert!(
-        rendered.contains("not built yet"),
+        !rendered.contains("Artifact note: audio present"),
         "{rendered}"
     );
     assert!(rendered.contains("No candidate is selected here"), "{rendered}");
