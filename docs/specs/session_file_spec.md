@@ -490,6 +490,7 @@ Current implementation:
 - the recovery surface keeps `selected_candidate` empty and states that Riotbox did not choose, load, replace, or delete any candidate
 - load-mode TUI may attach a recovery surface when the requested canonical session loads successfully but adjacent manual candidates exist
 - the TUI recovery prompt is guidance only: it must not select, load, replace, delete, or promote a candidate
+- operator-facing snapshot-payload and unsupported-suffix label guidance lives in `docs/recovery_notes.md`
 
 ---
 
