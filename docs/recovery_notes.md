@@ -54,13 +54,16 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
 - `cargo test -p riotbox-app runtime_view_surfaces_snapshot_payload_readiness -- --nocapture`
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
+- `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
 - `just ci`
 
 The first probe verifies app-level failure paths for missing payloads and
 unsupported suffixes. The second verifies the visible diagnostic labels. The
 third verifies the current save-time producer boundary for latest explicit
-snapshots. The core probe verifies the lower-level hydration contract.
+snapshots. The W-30 probe verifies payload-backed restore can hydrate a
+source-backed W-30 anchor, apply a safe suffix, and match committed preview
+output. The core probe verifies the lower-level hydration contract.
 
 ## Out Of Scope Today
 
