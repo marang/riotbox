@@ -51,6 +51,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   replay specs before any future artifact-producing replay support is added.
 - Manual recovery candidates can report capture artifact availability as
   read-only diagnostics before any future hydration path uses those artifacts.
+- The app has a W-30 capture artifact hydration preflight that rejects missing
+  storage identity or missing artifact files before decoding or cache use.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the

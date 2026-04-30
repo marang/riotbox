@@ -38,6 +38,16 @@ Manual recovery candidates may also show W-30/capture artifact availability:
 These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
 
+## Artifact Hydration Preflight
+
+Before a future W-30 artifact hydrator can use a `CaptureRef`, the app-level
+preflight must reject missing storage identity, unavailable session-relative
+paths, missing files, unreadable paths, and paths that are not files.
+
+The current preflight only proves the boundary and keeps cache refresh aligned
+with it. It does not decode the artifact into replay state or synthesize a
+replacement.
+
 ## Snapshot Payload Labels
 
 The app runtime view may show these labels:
@@ -74,6 +84,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
 - `cargo test -p riotbox-app runtime_view_surfaces_snapshot_payload_readiness -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_capture_artifact_availability_for_parseable_candidates -- --nocapture`
+- `cargo test -p riotbox-app capture_artifact_hydration_preflight -- --nocapture`
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
