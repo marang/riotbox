@@ -32,6 +32,7 @@ pub struct SessionRecoveryCandidateView {
     pub payload_readiness_label: String,
     pub replay_suffix_label: String,
     pub replay_unsupported_label: String,
+    pub decision_label: String,
     pub guidance: Option<RecoveryCandidateGuidance>,
     pub trust: RecoveryCandidateTrust,
     pub detail: String,
@@ -89,6 +90,8 @@ fn recovery_candidate_view(
     let trust = recovery_candidate_trust(&candidate.kind, &candidate.status);
     let replay_labels = recovery_replay_readiness_labels(candidate);
     let artifact_availability_label = recovery_artifact_availability_label(candidate);
+    let decision_label =
+        recovery_decision_label(trust, &artifact_availability_label, &replay_labels);
     let guidance = recovery_candidate_guidance(&artifact_availability_label, &replay_labels);
     SessionRecoveryCandidateView {
         kind: candidate.kind.clone(),
@@ -100,6 +103,7 @@ fn recovery_candidate_view(
         payload_readiness_label: replay_labels.payload,
         replay_suffix_label: replay_labels.suffix,
         replay_unsupported_label: replay_labels.unsupported,
+        decision_label,
         guidance,
         trust,
         detail: recovery_detail(&candidate.kind, &candidate.status),
@@ -307,6 +311,35 @@ fn recovery_detail(
         }
         (_, SessionRecoveryCandidateStatus::Missing) => {
             "Candidate path is missing; no recovery action is available.".into()
+        }
+    }
+}
+
+fn recovery_decision_label(
+    trust: RecoveryCandidateTrust,
+    artifact_availability_label: &str,
+    replay_labels: &runtime_replay_warnings::ReplayReadinessLabels,
+) -> String {
+    match trust {
+        RecoveryCandidateTrust::NormalLoadTarget => "decision: normal load path".into(),
+        RecoveryCandidateTrust::BrokenClue => "decision: broken candidate".into(),
+        RecoveryCandidateTrust::MissingTarget => "decision: normal target missing".into(),
+        RecoveryCandidateTrust::RecoverableClue => {
+            let replay_blocked = is_actionable_replay_unsupported(&replay_labels.unsupported);
+            let artifacts_blocked = artifact_availability_label.starts_with("artifacts blocked:");
+            if replay_blocked && artifacts_blocked {
+                return "decision: blocked | replay and artifacts".into();
+            }
+            if replay_blocked {
+                return "decision: blocked | replay unsupported".into();
+            }
+            if artifacts_blocked {
+                return "decision: blocked | artifacts unavailable".into();
+            }
+            if replay_labels.payload.starts_with("payload missing") {
+                return "decision: reviewable | full replay required".into();
+            }
+            "decision: reviewable | explicit user choice required".into()
         }
     }
 }

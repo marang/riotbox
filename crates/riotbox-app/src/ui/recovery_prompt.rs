@@ -60,10 +60,13 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
 
         lines.push(Line::from(format!(
             "{} | {} | {}",
-            candidate.kind_label, candidate.status_label, candidate.artifact_availability_label,
+            candidate.kind_label,
+            compact_recovery_decision_label(&candidate.decision_label),
+            candidate.artifact_availability_label,
         )));
         lines.push(Line::from(format!(
-            "  {} | {} | {}",
+            "  {} | {} | {} | {}",
+            candidate.status_label,
             replay_parts.join(" | "),
             candidate.action_hint,
             recovery_candidate_file_label(candidate.path.as_path())
@@ -84,6 +87,20 @@ fn restore_replay_help_scope_label(shell: &JamShellState) -> String {
 
 fn is_actionable_replay_unsupported(label: &str) -> bool {
     label.starts_with("unsupported suffix") || label.starts_with("unsupported origin")
+}
+
+fn compact_recovery_decision_label(label: &str) -> &str {
+    match label {
+        "decision: normal load path" => "decision normal",
+        "decision: broken candidate" => "decision broken",
+        "decision: normal target missing" => "decision missing",
+        "decision: blocked | replay unsupported" => "decision replay-blocked",
+        "decision: blocked | artifacts unavailable" => "decision artifact-blocked",
+        "decision: blocked | replay and artifacts" => "decision multi-blocked",
+        "decision: reviewable | full replay required" => "decision full-replay",
+        "decision: reviewable | explicit user choice required" => "decision reviewable",
+        _ => label,
+    }
 }
 
 fn recovery_candidate_file_label(path: &Path) -> String {
