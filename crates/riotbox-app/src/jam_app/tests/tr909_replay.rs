@@ -260,6 +260,80 @@ fn tr909_snapshot_payload_restore_hydrates_takeover_release_projection() {
     );
 }
 
+#[test]
+fn tr909_snapshot_payload_restore_hydrates_reinforce_scene_lock_projection() {
+    let graph = sample_graph();
+    let base_session = sample_session(&graph);
+    let mut committed_state =
+        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+
+    committed_state.queue_tr909_reinforce(300);
+    commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 16, 4, 1, 400);
+    let committed_reinforce = render_tr909_replay_buffer(&committed_state);
+
+    assert_eq!(
+        committed_state.queue_tr909_scene_lock(500),
+        QueueControlResult::Enqueued
+    );
+    commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 32, 8, 2, 600);
+    let committed_scene_lock = render_tr909_replay_buffer(&committed_state);
+
+    let replayed_state = run_snapshot_payload_restore_probe(
+        base_session,
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed TR-909 reinforce/scene-lock action log builds replay plan",
+            snapshot_id: "snap-after-tr909-reinforce",
+            snapshot_label: "after TR-909 reinforce before scene lock",
+            snapshot_created_at: "2026-04-30T16:35:00Z",
+            expected_plan_len: 2,
+            anchor_plan_len: 1,
+            target_plan_index: 1,
+            anchor_label: "TR-909 reinforce anchor materializes",
+            restore_expectation: "snapshot payload restore applies TR-909 scene-lock suffix",
+        },
+        |_| {},
+    );
+    let replayed_scene_lock = render_tr909_replay_buffer(&replayed_state);
+
+    assert_eq!(
+        replayed_state.session.runtime_state,
+        committed_state.session.runtime_state
+    );
+    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_eq!(
+        replayed_state
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .takeover_profile,
+        Some(Tr909TakeoverProfileState::SceneLockTakeover)
+    );
+    assert_eq!(
+        replayed_state
+            .session
+            .runtime_state
+            .lane_state
+            .tr909
+            .reinforcement_mode,
+        Some(Tr909ReinforcementModeState::Takeover)
+    );
+    assert_recipe_buffers_match(
+        "snapshot payload restore TR-909 scene lock -> committed scene lock",
+        &replayed_scene_lock,
+        &committed_scene_lock,
+        0.00001,
+    );
+    assert_recipe_buffers_differ(
+        "snapshot payload restore TR-909 reinforce -> scene lock",
+        &committed_reinforce,
+        &replayed_scene_lock,
+        0.001,
+    );
+}
+
 fn commit_tr909_replay_step(
     state: &mut JamAppState,
     kind: CommitBoundary,
