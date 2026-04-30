@@ -126,6 +126,11 @@ listening-pack manifest. It proves the expected key-dispatch / queue / commit
 control path and the current MC-202 Recipe 2 output cases, not a live
 host-session recording.
 
+The generated observer stream uses the same snapshot envelope and outcome label
+helpers as the live `riotbox-app --observer` path. The gate rejects Recipe 2
+observer output that omits transport, queue, runtime, or recovery snapshots, so
+control-path proof stays comparable to interactive terminal recordings.
+
 ## Recipe 3: Capture, Audition, Promote, Hit
 
 Goal: learn the first source-backed W-30 reuse loop.

@@ -7,13 +7,12 @@ use std::{
 use crossterm::event::KeyCode;
 use riotbox_app::{
     jam_app::JamAppState,
+    observer::{compact_commit, key_code_label, observer_snapshot, shell_key_outcome_label},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode},
 };
+use riotbox_audio::runtime::{AudioRuntimeHealth, AudioRuntimeLifecycle};
 use riotbox_core::{
-    action::CommitBoundary,
-    ids::SceneId,
-    queue::{ActionQueue, CommittedActionRef},
-    session::SessionFile,
+    action::CommitBoundary, ids::SceneId, queue::ActionQueue, session::SessionFile,
     transport::CommitBoundaryState,
 };
 use serde_json::{Value, json};
@@ -97,16 +96,38 @@ fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
     writer.record(json!({
         "event": "observer_started",
         "schema": "riotbox.user_session_observer.v1",
+        "timestamp_ms": 0,
+        "opt_in": true,
+        "capture_context": "headless_probe",
+        "raw_audio_recording": false,
+        "realtime_callback_io": false,
+        "argv": [
+            "user_session_observer_probe",
+            "--probe",
+            "recipe2-mc202",
+            "--observer",
+            path.display().to_string(),
+        ],
         "launch": {
             "mode": "ingest",
-            "source": "synthetic-recipe2-mc202-probe.wav",
+            "source_path": "synthetic-recipe2-mc202-probe.wav",
+            "session_path": "headless-recipe2-session.json",
+            "source_graph_path": null,
+            "sidecar_script_path": null,
+            "analysis_seed": 19,
+            "observer_path": path.display().to_string(),
             "probe": "recipe2-mc202",
         },
+        "snapshot": observer_snapshot(&shell),
     }))?;
+    shell.app.set_audio_health(headless_audio_health());
     writer.record(json!({
         "event": "audio_runtime",
+        "timestamp_ms": 10,
         "status": "started",
+        "error": null,
         "host": "headless-probe",
+        "snapshot": observer_snapshot(&shell),
     }))?;
 
     apply_recipe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
@@ -234,9 +255,10 @@ fn apply_recipe_key(
     writer.record(json!({
         "event": "key_outcome",
         "timestamp_ms": timestamp_ms,
-        "key": key_label(key),
-        "outcome": outcome_label(outcome),
+        "key": key_code_label(key),
+        "outcome": shell_key_outcome_label(outcome),
         "status": shell.status_message,
+        "snapshot": observer_snapshot(shell),
     }))
 }
 
@@ -270,39 +292,18 @@ fn commit_phrase(
         "event": "transport_commit",
         "timestamp_ms": timestamp_ms,
         "committed": committed.iter().map(compact_commit).collect::<Vec<_>>(),
+        "snapshot": observer_snapshot(shell),
     }))
 }
 
-fn compact_commit(committed: &CommittedActionRef) -> Value {
-    json!({
-        "action_id": committed.action_id.0,
-        "boundary": format!("{:?}", committed.boundary.kind),
-        "beat_index": committed.boundary.beat_index,
-        "bar_index": committed.boundary.bar_index,
-        "phrase_index": committed.boundary.phrase_index,
-        "scene_id": committed.boundary.scene_id.as_ref().map(ToString::to_string),
-        "commit_sequence": committed.commit_sequence,
-    })
-}
-
-fn key_label(key: KeyCode) -> String {
-    match key {
-        KeyCode::Char(' ') => "space".into(),
-        KeyCode::Char(character) => character.to_string(),
-        other => format!("{other:?}"),
-    }
-}
-
-fn outcome_label(outcome: ShellKeyOutcome) -> &'static str {
-    match outcome {
-        ShellKeyOutcome::ToggleTransport => "toggle_transport",
-        ShellKeyOutcome::QueueMc202GenerateFollower => "queue_mc202_generate_follower",
-        ShellKeyOutcome::QueueMc202GenerateAnswer => "queue_mc202_generate_answer",
-        ShellKeyOutcome::QueueMc202GeneratePressure => "queue_mc202_generate_pressure",
-        ShellKeyOutcome::QueueMc202GenerateInstigator => "queue_mc202_generate_instigator",
-        ShellKeyOutcome::QueueMc202MutatePhrase => "queue_mc202_mutate_phrase",
-        ShellKeyOutcome::RaiseMc202Touch => "raise_mc202_touch",
-        _ => "unexpected",
+fn headless_audio_health() -> AudioRuntimeHealth {
+    AudioRuntimeHealth {
+        lifecycle: AudioRuntimeLifecycle::Running,
+        output: None,
+        callback_count: 0,
+        max_callback_gap_micros: None,
+        stream_error_count: 0,
+        last_stream_error: None,
     }
 }
 
@@ -363,6 +364,12 @@ mod tests {
 
         let events = fs::read_to_string(path).expect("read observer");
         assert!(events.contains(r#""schema":"riotbox.user_session_observer.v1""#));
+        assert!(events.contains(r#""capture_context":"headless_probe""#));
+        assert!(events.contains(r#""snapshot":{"#));
+        assert!(events.contains(r#""transport":{"#));
+        assert!(events.contains(r#""queue":{"#));
+        assert!(events.contains(r#""runtime":{"#));
+        assert!(events.contains(r#""recovery":{"#));
         assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
         assert!(events.contains(r#""outcome":"queue_mc202_generate_answer""#));
         assert!(events.contains(r#""outcome":"queue_mc202_generate_pressure""#));

@@ -68,6 +68,8 @@ evidence streams.
 
 The gate currently requires the MC-202 Recipe 2 cases to be present, passing,
 non-collapsed, and above their signal-delta thresholds.
+It also requires the generated observer stream to include the live-observer
+snapshot envelope on launch, runtime, key-outcome, and commit events.
 
 ## Covered Cases
 
