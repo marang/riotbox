@@ -1,9 +1,21 @@
-use std::{io, path::Path};
+use std::{fs, io, path::Path};
 
 use crossterm::event::KeyCode;
-use riotbox_core::action::CommitBoundary;
+use riotbox_app::{
+    jam_app::JamAppState,
+    observer::observer_snapshot,
+    ui::{JamShellState, ShellLaunchMode},
+};
+use riotbox_core::{
+    action::CommitBoundary, persistence::save_session_json, queue::ActionQueue,
+    session::SessionFile,
+};
+use serde_json::json;
 
-use super::{NdjsonWriter, apply_probe_key, commit_boundary, probe_shell, record_probe_start};
+use super::{
+    NdjsonWriter, apply_probe_key, commit_boundary, headless_audio_health, probe_shell,
+    record_probe_start,
+};
 
 pub(super) fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;
@@ -151,6 +163,105 @@ pub(super) fn write_stage_style_restore_diversity_observer(path: &Path) -> io::R
         1,
     )?;
     apply_probe_key(&mut shell, &mut writer, 2_700, KeyCode::Char('>'))?;
+
+    Ok(())
+}
+
+pub(super) fn write_interrupted_session_recovery_observer(path: &Path) -> io::Result<()> {
+    let probe_dir = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."))
+        .join("interrupted-session-recovery");
+    fs::create_dir_all(&probe_dir)?;
+
+    let session_path = probe_dir.join("session.json");
+    let temp_path = probe_dir.join(".session.json.tmp-1776359400");
+    let autosave_path = probe_dir.join("session.autosave.2026-04-30T171500Z.json");
+
+    save_session_json(
+        &session_path,
+        &SessionFile::new("canonical", "0.1.0", "2026-04-30T17:15:00Z"),
+    )
+    .map_err(io::Error::other)?;
+    fs::write(&temp_path, "{ truncated interrupted session")?;
+    save_session_json(
+        &autosave_path,
+        &SessionFile::new("autosave", "0.1.0", "2026-04-30T17:15:01Z"),
+    )
+    .map_err(io::Error::other)?;
+
+    let session_before = fs::read(&session_path)?;
+    let temp_before = fs::read(&temp_path)?;
+    let autosave_before = fs::read(&autosave_path)?;
+
+    let mut shell = JamShellState::new(
+        JamAppState::from_parts(
+            SessionFile::new("loaded", "0.1.0", "2026-04-30T17:15:02Z"),
+            None,
+            ActionQueue::new(),
+        ),
+        ShellLaunchMode::Load,
+    );
+    let recovery_surface =
+        JamAppState::scan_session_recovery_surface(&session_path).map_err(io::Error::other)?;
+    shell.set_recovery_surface(recovery_surface);
+
+    let mut writer = NdjsonWriter::open(path)?;
+    writer.record(json!({
+        "event": "observer_started",
+        "schema": "riotbox.user_session_observer.v1",
+        "timestamp_ms": 0,
+        "opt_in": true,
+        "capture_context": "headless_probe",
+        "raw_audio_recording": false,
+        "realtime_callback_io": false,
+        "argv": [
+            "user_session_observer_probe",
+            "--probe",
+            "interrupted-session-recovery",
+            "--observer",
+            path.display().to_string(),
+        ],
+        "launch": {
+            "mode": "load",
+            "session_path": session_path,
+            "source_graph_path": null,
+            "observer_path": path.display().to_string(),
+            "probe": "interrupted-session-recovery",
+            "drill": {
+                "temp_path": temp_path,
+                "autosave_path": autosave_path,
+            },
+        },
+        "snapshot": observer_snapshot(&shell),
+    }))?;
+
+    shell.app.set_audio_health(headless_audio_health());
+    writer.record(json!({
+        "event": "audio_runtime",
+        "timestamp_ms": 10,
+        "status": "started",
+        "error": null,
+        "host": "headless-probe",
+        "snapshot": observer_snapshot(&shell),
+    }))?;
+
+    if fs::read(&session_path)? != session_before {
+        return Err(io::Error::other(
+            "canonical session changed during recovery drill",
+        ));
+    }
+    if fs::read(&temp_path)? != temp_before {
+        return Err(io::Error::other(
+            "temp recovery candidate changed during recovery drill",
+        ));
+    }
+    if fs::read(&autosave_path)? != autosave_before {
+        return Err(io::Error::other(
+            "autosave recovery candidate changed during recovery drill",
+        ));
+    }
 
     Ok(())
 }

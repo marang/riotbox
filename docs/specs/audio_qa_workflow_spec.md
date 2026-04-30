@@ -464,6 +464,7 @@ Today the repo already has:
 - a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-fallback output evidence, and a generated app-level observer probe for the current `space -> capture -> raw audition -> promote -> W-30 hit` user path
 - a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses generated app-level multi-boundary observer evidence, generated W-30 source-vs-fallback output evidence, and summary-level commit boundary assertions for `Phrase`, `Bar`, and `Beat`
 - a bounded repeated stage-style stability smoke, `just stage-style-stability-smoke`, that runs the generated stage-style restore-diversity observer/audio path multiple times, validates observer and summary contracts for every run, rejects collapsed output metrics, and requires the generated full-grid mix WAV hash to remain stable across repetitions
+- a CI-safe interrupted-session recovery probe, `just interrupted-session-recovery-probe`, that creates real adjacent session/temp/autosave files, emits the same recovery observer envelope, validates it, and proves the drill remains read-only with no selected restore candidate
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
 - MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, follower-vs-instigator, follower-vs-mutated-drive, neutral-vs-lift contour, and direct-vs-hook-response contrasts without claiming a finished synth engine
@@ -515,6 +516,7 @@ Today the repo already has:
 - `just recipe2-observer-audio-gate` correlates a headless app-level documented Recipe 2 MC-202 observer path with a freshly generated lane recipe listening-pack manifest, and requires that the generated observer stream carries the same transport / queue / runtime / recovery snapshot envelope used by the live `riotbox-app --observer` path
 - generated-pack manifest validation can require referenced artifact and metrics files to exist via `--require-existing-artifacts`
 - `just offline-render-reproducibility-smoke` is a CI-safe bounded reproducibility check that renders the same deterministic source-backed W-30 output twice and compares WAV hashes; it is an offline render smoke, not the full export workflow
+- `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just stage-style-stability-smoke` is a CI-safe repeated-run smoke around the generated stage-style restore-diversity path; it catches obvious intermittent observer/audio collapse and full-mix nondeterminism, but remains a bounded smoke rather than a real host-audio soak or multi-hour endurance test
 
 Today the repo does not yet have a full official workflow for:

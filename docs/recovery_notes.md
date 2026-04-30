@@ -179,6 +179,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_bar_group_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
+- `just interrupted-session-recovery-probe`
 - `just ci`
 
 The first probe verifies app-level failure paths for missing payloads and
@@ -202,6 +203,9 @@ verifies payload-backed restore converges on committed W-30 grit and preview
 output after a source-backed browse anchor. The internal-resample probe verifies
 that same gesture can assign a printed resample artifact to a W-30 pad before
 source-less reload. The core probe verifies the lower-level hydration contract.
+The interrupted-session recovery probe verifies a generated adjacent
+temp/autosave file set reaches the observer recovery envelope without selecting
+or mutating any recovery candidate.
 
 ## Out Of Scope Today
 
