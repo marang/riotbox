@@ -130,6 +130,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - A bounded interrupted-save drill now covers a broken requested session path
   with parseable adjacent temp/autosave candidates and proves the recovery
   surface still selects nothing and mutates no candidate file.
+- Recovery observer evidence now has CI-safe file-backed startup drills for
+  interrupted temp/autosave files and missing canonical session paths, both
+  preserving the read-only manual recovery boundary.
 - Stage-style QA now includes bounded output-path evidence plus a payload
   readiness guard.
 - Offline render reproducibility has one CI-safe smoke gate.
@@ -156,6 +159,26 @@ not a full P011 exit declaration.
 Coverage remains intentionally command-family based. The matrix should grow one
 bounded replay-safe family at a time rather than becoming a speculative feature
 list.
+
+## Recovery Observer Drill Coverage Matrix
+
+This matrix is the current P011 recovery-observer coverage index. It documents
+startup evidence shapes only; it is not a promise that Riotbox can automatically
+choose or restore any candidate.
+
+| Shape | Proof | Evidence | Explicit boundary |
+| --- | --- | --- | --- |
+| Normal recovery scan with adjacent clues | `cargo test -p riotbox-app recovery_surface -- --nocapture` | read-only candidate list, no selected candidate, no file mutation | surface diagnostics only, no observer stream required |
+| Manual choice dry-run | `cargo test -p riotbox-app recovery_surface_dry_runs_manual_choice_without_selecting_or_mutating_files -- --nocapture` | candidate labels mirrored into a dry-run result with `selected_for_restore == false` | preflight only, no restore execution |
+| App-invalid autosave candidate | `cargo test -p riotbox-app --bin riotbox-app recovery_observer -- --nocapture` | observer snapshot reports `app-invalid session`, `BrokenClue`, and no dry-run candidate | broken clue only, no repair or payload rewrite |
+| Recoverable autosave observer evidence | `cargo test -p riotbox-app --bin riotbox-app recovery_observer -- --nocapture` | observer snapshot includes `manual_choice_dry_run` for a recoverable autosave clue | dry-run inspection only, no automatic selection |
+| Interrupted temp/autosave file set | `just interrupted-session-recovery-probe` | generated canonical session, invalid temp file, parseable autosave, validated observer stream | file-backed drill only, not a real host crash/kill soak |
+| Missing normal session target | `just missing-target-recovery-probe` | generated missing canonical path plus parseable autosave clue, validated observer stream | autosave remains a manual clue, not a fallback load target |
+
+These drills are intentionally narrow. They make startup recovery evidence
+auditable for CI and future TUI work, but automatic startup recovery,
+user-confirmed restore execution, and real interrupted-host-session rehearsal
+remain open P011 work.
 
 ## Still Not Proven
 
