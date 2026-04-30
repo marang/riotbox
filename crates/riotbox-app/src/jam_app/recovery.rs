@@ -27,7 +27,9 @@ pub struct SessionRecoveryCandidateView {
     pub path: PathBuf,
     pub kind_label: &'static str,
     pub status_label: &'static str,
+    pub replay_readiness_label: String,
     pub payload_readiness_label: String,
+    pub replay_unsupported_label: String,
     pub trust: RecoveryCandidateTrust,
     pub detail: String,
     pub action_hint: &'static str,
@@ -66,12 +68,15 @@ fn recovery_candidate_view(
     candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
 ) -> SessionRecoveryCandidateView {
     let trust = recovery_candidate_trust(&candidate.kind, &candidate.status);
+    let replay_labels = recovery_replay_readiness_labels(candidate);
     SessionRecoveryCandidateView {
         kind: candidate.kind.clone(),
         path: candidate.path.clone(),
         kind_label: recovery_kind_label(&candidate.kind),
         status_label: recovery_status_label(&candidate.status),
-        payload_readiness_label: recovery_payload_readiness_label(candidate),
+        replay_readiness_label: replay_labels.status,
+        payload_readiness_label: replay_labels.payload,
+        replay_unsupported_label: replay_labels.unsupported,
         trust,
         detail: recovery_detail(&candidate.kind, &candidate.status),
         action_hint: recovery_action_hint(trust),
@@ -133,19 +138,31 @@ fn recovery_candidate_trust(
     }
 }
 
-fn recovery_payload_readiness_label(
+fn recovery_replay_readiness_labels(
     candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
-) -> String {
+) -> runtime_replay_warnings::ReplayReadinessLabels {
     if !matches!(
         candidate.status,
         SessionRecoveryCandidateStatus::ParseableSession
     ) {
-        return "payload unchecked".into();
+        return runtime_replay_warnings::ReplayReadinessLabels {
+            status: "replay unchecked".into(),
+            anchor: "anchor unchecked".into(),
+            payload: "payload unchecked".into(),
+            suffix: "suffix unchecked".into(),
+            unsupported: "unsupported unchecked".into(),
+        };
     }
 
     match load_session_json(&candidate.path) {
-        Ok(session) => runtime_replay_warnings::derive_replay_readiness_labels(&session).payload,
-        Err(_) => "payload unreadable".into(),
+        Ok(session) => runtime_replay_warnings::derive_replay_readiness_labels(&session),
+        Err(_) => runtime_replay_warnings::ReplayReadinessLabels {
+            status: "replay unreadable".into(),
+            anchor: "anchor unreadable".into(),
+            payload: "payload unreadable".into(),
+            suffix: "suffix unreadable".into(),
+            unsupported: "unsupported unreadable".into(),
+        },
     }
 }
 
