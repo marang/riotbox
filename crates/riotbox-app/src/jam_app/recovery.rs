@@ -1,5 +1,9 @@
 use super::*;
 
+mod hydration_guidance;
+
+use hydration_guidance::supported_artifact_replay_hydration_blocker;
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SessionRecoverySurface {
     pub target_path: PathBuf,
@@ -39,17 +43,17 @@ pub struct SessionRecoveryCandidateView {
     pub action_hint: &'static str,
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RecoveryCandidateGuidance {
-    ArtifactReadyReplayHydrationBlocked,
+    SupportedArtifactReplayHydrationBlocked { detail: String },
 }
 
 impl RecoveryCandidateGuidance {
     #[must_use]
-    pub const fn help_label(self) -> &'static str {
+    pub fn help_label(&self) -> String {
         match self {
-            Self::ArtifactReadyReplayHydrationBlocked => {
-                "Artifact note: audio present, but W-30 artifact replay hydration is not built yet"
+            Self::SupportedArtifactReplayHydrationBlocked { detail } => {
+                format!("Replay hydration note: {detail}")
             }
         }
     }
@@ -90,9 +94,13 @@ fn recovery_candidate_view(
     let trust = recovery_candidate_trust(&candidate.kind, &candidate.status);
     let replay_labels = recovery_replay_readiness_labels(candidate);
     let artifact_availability_label = recovery_artifact_availability_label(candidate);
-    let decision_label =
-        recovery_decision_label(trust, &artifact_availability_label, &replay_labels);
-    let guidance = recovery_candidate_guidance(&artifact_availability_label, &replay_labels);
+    let guidance = recovery_candidate_guidance(candidate);
+    let decision_label = recovery_decision_label(
+        trust,
+        &artifact_availability_label,
+        &replay_labels,
+        guidance.as_ref(),
+    );
     SessionRecoveryCandidateView {
         kind: candidate.kind.clone(),
         path: candidate.path.clone(),
@@ -183,18 +191,10 @@ fn recovery_artifact_availability_label(
 }
 
 fn recovery_candidate_guidance(
-    artifact_availability_label: &str,
-    replay_labels: &runtime_replay_warnings::ReplayReadinessLabels,
+    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
 ) -> Option<RecoveryCandidateGuidance> {
-    let unsupported_artifact_command = replay_labels.unsupported.contains("w30.loop_freeze")
-        || replay_labels.unsupported.contains("capture.now")
-        || replay_labels.unsupported.contains("capture.loop")
-        || replay_labels.unsupported.contains("capture.bar_group");
-    if artifact_availability_label.starts_with("artifacts ready:")
-        && is_actionable_replay_unsupported(&replay_labels.unsupported)
-        && unsupported_artifact_command
-    {
-        return Some(RecoveryCandidateGuidance::ArtifactReadyReplayHydrationBlocked);
+    if let Some(detail) = supported_artifact_replay_hydration_blocker(candidate) {
+        return Some(RecoveryCandidateGuidance::SupportedArtifactReplayHydrationBlocked { detail });
     }
 
     None
@@ -321,14 +321,25 @@ fn recovery_decision_label(
     trust: RecoveryCandidateTrust,
     artifact_availability_label: &str,
     replay_labels: &runtime_replay_warnings::ReplayReadinessLabels,
+    guidance: Option<&RecoveryCandidateGuidance>,
 ) -> String {
     match trust {
         RecoveryCandidateTrust::NormalLoadTarget => "decision: normal load path".into(),
         RecoveryCandidateTrust::BrokenClue => "decision: broken candidate".into(),
         RecoveryCandidateTrust::MissingTarget => "decision: normal target missing".into(),
         RecoveryCandidateTrust::RecoverableClue => {
+            let hydration_blocked = matches!(
+                guidance,
+                Some(RecoveryCandidateGuidance::SupportedArtifactReplayHydrationBlocked { .. })
+            );
             let replay_blocked = is_actionable_replay_unsupported(&replay_labels.unsupported);
             let artifacts_blocked = artifact_availability_label.starts_with("artifacts blocked:");
+            if hydration_blocked && artifacts_blocked {
+                return "decision: blocked | replay hydration and artifacts".into();
+            }
+            if hydration_blocked {
+                return "decision: blocked | replay hydration".into();
+            }
             if replay_blocked && artifacts_blocked {
                 return "decision: blocked | replay and artifacts".into();
             }

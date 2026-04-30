@@ -35,7 +35,7 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
     if let Some(guidance) = surface
         .candidates
         .iter()
-        .find_map(|candidate| candidate.guidance)
+        .find_map(|candidate| candidate.guidance.as_ref())
     {
         lines.push(Line::from(guidance.help_label()));
     }
@@ -95,6 +95,8 @@ fn compact_recovery_decision_label(label: &str) -> &str {
         "decision: broken candidate" => "decision broken",
         "decision: normal target missing" => "decision missing",
         "decision: blocked | replay unsupported" => "decision replay-blocked",
+        "decision: blocked | replay hydration" => "decision hydration-blocked",
+        "decision: blocked | replay hydration and artifacts" => "decision hydration+artifact",
         "decision: blocked | artifacts unavailable" => "decision artifact-blocked",
         "decision: blocked | replay and artifacts" => "decision multi-blocked",
         "decision: reviewable | full replay required" => "decision full-replay",
