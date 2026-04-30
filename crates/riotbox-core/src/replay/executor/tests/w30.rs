@@ -188,8 +188,8 @@ fn w30_step_focus_rejects_unexpected_params_without_mutating_session() {
 fn w30_artifact_producing_actions_reject_without_partial_mutation() {
     let artifact_actions = vec![
         (
-            ActionCommand::PromoteResample,
-            w30_capture_params("cap-01", 0.86),
+            ActionCommand::PromoteCaptureToScene,
+            w30_promotion_params("cap-01", "scene:scene-1"),
         ),
         (
             ActionCommand::W30CaptureToPad,
@@ -216,7 +216,7 @@ fn w30_artifact_producing_actions_reject_without_partial_mutation() {
         let original_session = session.clone();
 
         let error = apply_replay_plan_to_session(&mut session, &plan.suffix)
-            .expect_err("artifact-producing W-30 actions stay outside replay subset");
+            .expect_err("unsupported artifact-producing actions stay outside replay subset");
 
         assert_eq!(
             error,
@@ -308,16 +308,25 @@ fn w30_artifact_replay_hydration_contract_accepts_explicit_resample_artifact() {
             w30_capture_params("cap-01", 0.62),
             100,
         ),
-        w30_action(
+        targeted_action(
             2,
             ActionCommand::PromoteResample,
             w30_promotion_params("cap-01", "w30:resample"),
+            ActionTarget {
+                scope: Some(TargetScope::LaneW30),
+                ..Default::default()
+            },
             200,
         ),
     ]);
     let plan = build_replay_target_plan(&action_log, &[], 2).expect("origin plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T09:55:00Z");
-    session.captures.push(source_capture("cap-01"));
+    let mut source_capture = source_capture("cap-01");
+    source_capture.assigned_target = Some(crate::session::CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-b"),
+        pad_id: PadId::from("pad-03"),
+    });
+    session.captures.push(source_capture);
     session.captures.push(resample_capture_for_action(2));
 
     let hydration_plan = plan_w30_artifact_replay_hydration(&session, &plan.suffix[1])
@@ -334,18 +343,44 @@ fn w30_artifact_replay_hydration_contract_accepts_explicit_resample_artifact() {
     assert_eq!(hydration_plan.storage_path, "captures/cap-02.wav");
     assert_eq!(hydration_plan.resample_generation_depth, 1);
 
-    let mut replay_session = session.clone();
-    let original_session = replay_session.clone();
-    let error = apply_replay_plan_to_session(&mut replay_session, &plan.suffix)
-        .expect_err("contract planning must not make replay execution implicit");
+    let report = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect("promote.resample replay hydrates explicit artifact identity");
+    assert_eq!(report.applied_action_ids, vec![ActionId(1), ActionId(2)]);
     assert_eq!(
-        error,
-        ReplayExecutionError::UnsupportedAction {
-            action_id: ActionId(2),
-            command: ActionCommand::PromoteResample,
-        }
+        session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .as_ref()
+            .map(ToString::to_string),
+        Some("bank-b".into())
     );
-    assert_eq!(replay_session, original_session);
+    assert_eq!(
+        session
+            .runtime_state
+            .lane_state
+            .w30
+            .focused_pad
+            .as_ref()
+            .map(ToString::to_string),
+        Some("pad-03".into())
+    );
+    assert_eq!(
+        session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture
+            .as_ref()
+            .map(ToString::to_string),
+        Some("cap-02".into())
+    );
+    assert_eq!(
+        session.runtime_state.lane_state.w30.preview_mode,
+        Some(W30PreviewModeState::LiveRecall)
+    );
+    assert!((session.runtime_state.macro_state.w30_grit - 0.78).abs() < f32::EPSILON);
 }
 
 #[test]
