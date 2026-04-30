@@ -274,6 +274,109 @@ fn w30_snapshot_payload_restore_runner_matches_committed_app_preview_output() {
     );
 }
 
+#[test]
+fn w30_snapshot_payload_restore_hydrates_damage_profile_preview_output() {
+    let (_tempdir, graph, source_audio_cache, mut committed_state) =
+        w30_source_backed_replay_state();
+    let replay_base_session = committed_state.session.clone();
+
+    assert_eq!(
+        committed_state.queue_w30_browse_slice_pool(300),
+        Some(QueueControlResult::Enqueued)
+    );
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 33, 9, 2, 400);
+    let committed_browse = render_w30_replay_buffer(&committed_state);
+
+    assert_eq!(
+        committed_state.queue_w30_apply_damage_profile(500),
+        Some(QueueControlResult::Enqueued)
+    );
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Bar, 36, 10, 2, 600);
+    let committed_damage = render_w30_replay_buffer(&committed_state);
+
+    let full_action_log = committed_state.session.action_log.clone();
+    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
+        .expect("committed W-30 damage action log builds replay plan");
+    assert_eq!(committed_plan.len(), 2);
+    let browse_action_id = committed_plan[0].action.id;
+    let damage_action_id = committed_plan[1].action.id;
+    let browse_action_cursor = full_action_log
+        .actions
+        .iter()
+        .position(|action| action.id == browse_action_id)
+        .expect("browse action exists in action log")
+        + 1;
+    let damage_action_cursor = full_action_log
+        .actions
+        .iter()
+        .position(|action| action.id == damage_action_id)
+        .expect("damage action exists in action log")
+        + 1;
+
+    let mut anchor_session = replay_base_session;
+    anchor_session.action_log = full_action_log.clone();
+    let anchor_report =
+        riotbox_core::replay::apply_replay_plan_to_session(&mut anchor_session, &committed_plan[..1])
+            .expect("W-30 browse anchor materializes before damage");
+    assert_eq!(anchor_report.applied_action_ids, vec![browse_action_id]);
+
+    let snapshot_id = SnapshotId::from("snap-after-w30-browse");
+    let mut restore_session = committed_state.session.clone();
+    restore_session.runtime_state = Default::default();
+    restore_session.snapshots = vec![Snapshot {
+        snapshot_id: snapshot_id.clone(),
+        created_at: "2026-04-30T13:00:00Z".into(),
+        label: "after W-30 browse before damage".into(),
+        action_cursor: browse_action_cursor,
+        payload: Some(riotbox_core::session::SnapshotPayload {
+            payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
+            snapshot_id,
+            action_cursor: browse_action_cursor,
+            runtime_state: anchor_session.runtime_state.clone(),
+        }),
+    }];
+
+    let mut replayed_state =
+        JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
+    replayed_state.source_audio_cache = Some(source_audio_cache);
+    let replay_report = replayed_state
+        .apply_restore_target_from_snapshot_payload(damage_action_cursor)
+        .expect("snapshot payload restore applies W-30 damage suffix");
+    let replayed_damage = render_w30_replay_buffer(&replayed_state);
+
+    assert_eq!(replay_report.target_action_cursor, damage_action_cursor);
+    assert_eq!(
+        replay_report.anchor_snapshot_id.as_deref(),
+        Some("snap-after-w30-browse")
+    );
+    assert_eq!(
+        replay_report.anchor_action_cursor,
+        Some(browse_action_cursor)
+    );
+    assert_eq!(replay_report.applied_action_ids, vec![damage_action_id]);
+    assert_eq!(
+        replayed_state.session.runtime_state.macro_state.w30_grit,
+        committed_state.session.runtime_state.macro_state.w30_grit
+    );
+    assert_eq!(
+        replayed_state.runtime.w30_preview,
+        committed_state.runtime.w30_preview
+    );
+    assert_recipe_buffers_match(
+        "snapshot payload restore W-30 damage -> committed damage",
+        &replayed_damage,
+        &committed_damage,
+        0.00001,
+    );
+    assert_w30_replay_buffers_differ(
+        "snapshot payload restore W-30 browse -> damage",
+        &committed_browse,
+        &replayed_damage,
+        0.0001,
+        0.0001,
+    );
+}
+
 fn w30_source_backed_replay_state() -> (
     tempfile::TempDir,
     SourceGraph,

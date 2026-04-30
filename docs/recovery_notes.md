@@ -162,6 +162,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_artifact -- --nocapture`
+- `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_damage_profile_preview_output -- --nocapture`
 - `cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_bar_group_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
@@ -179,10 +180,11 @@ explicit `[p]` gesture can be replayed for a printed resample artifact and still
 drive artifact-backed W-30 playback. The capture-bar-group probe verifies a
 persisted source-window capture can be replayed into W-30 `last_capture` /
 live-recall state without recreating audio. The capture-loop probe covers the
-same persisted-artifact path for loop captures. The internal-resample probe
-verifies that same gesture can assign a printed resample artifact to a W-30 pad
-before source-less reload. The core probe verifies the lower-level hydration
-contract.
+same persisted-artifact path for loop captures. The damage-profile probe
+verifies payload-backed restore converges on committed W-30 grit and preview
+output after a source-backed browse anchor. The internal-resample probe verifies
+that same gesture can assign a printed resample artifact to a W-30 pad before
+source-less reload. The core probe verifies the lower-level hydration contract.
 
 ## Out Of Scope Today
 

@@ -34,6 +34,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
   Proves a source-backed W-30 snapshot payload can hydrate an anchor, apply a
   safe trigger suffix, and match committed preview output.
+- `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_damage_profile_preview_output -- --nocapture`
+  Proves a source-backed W-30 snapshot payload can hydrate a browse anchor,
+  apply a damage-profile suffix, and match committed grit/preview output.
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
   Proves the core snapshot-payload hydration boundary and rejection paths.
 
@@ -75,6 +78,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `capture.bar_group` can replay a persisted source-window-backed pad capture
   artifact into W-30 `last_capture` / live-recall state and drive
   artifact-backed W-30 playback without source audio.
+- W-30 damage-profile suffix replay can converge through snapshot-payload
+  restore on the same committed grit state and preview output as the normal app
+  commit path.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
