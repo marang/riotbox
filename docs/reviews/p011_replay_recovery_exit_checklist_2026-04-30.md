@@ -143,7 +143,7 @@ not a full P011 exit declaration.
 | --- | --- | --- | --- |
 | Core hydration boundary | payload clone, cursor/identity rejection, target suffix execution | `crates/riotbox-core/src/replay/target_execution.rs` | state convergence and explicit rejection paths |
 | App failure boundary | missing payload, unsupported suffix, invalid payload identity | `crates/riotbox-app/src/jam_app/tests/snapshot_payload_restore_failures.rs` | non-mutating rejection proof |
-| W-30 cue path | browse anchor -> trigger suffix | `crates/riotbox-app/src/jam_app/tests/w30_replay.rs` | committed preview buffer parity and browse-vs-trigger delta |
+| W-30 cue path | browse anchor -> trigger suffix, browse anchor -> promoted audition suffix | `crates/riotbox-app/src/jam_app/tests/w30_replay.rs` | committed preview buffer parity and browse-vs-trigger / browse-vs-audition deltas |
 | W-30 damage path | browse anchor -> damage-profile suffix | `crates/riotbox-app/src/jam_app/tests/w30_replay.rs` | committed grit/preview parity and browse-vs-damage delta |
 | W-30 artifact path | loop-freeze, promote.resample, promote.capture_to_pad for resample artifacts | `crates/riotbox-app/src/jam_app/tests/w30_loop_freeze_artifact_replay.rs`, `w30_resample_artifact_replay.rs`, `w30_resample_promotion_replay.rs` | artifact-backed preview/pad buffer parity and fallback-collapse controls |
 | Capture artifact path | capture.now, capture.loop, capture.bar_group, w30.capture_to_pad | `crates/riotbox-app/src/jam_app/tests/w30_capture_now_replay.rs`, `w30_capture_loop_replay.rs`, `w30_capture_bar_group_replay.rs`, `w30_capture_to_pad_replay.rs` | artifact-backed W-30 preview/live-recall/pad output parity |
