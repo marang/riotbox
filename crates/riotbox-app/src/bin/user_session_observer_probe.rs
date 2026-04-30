@@ -28,9 +28,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "recipe2-mc202" => write_recipe2_mc202_observer(&args.observer_path)?,
         "first-playable-jam" => write_first_playable_jam_observer(&args.observer_path)?,
         "stage-style-jam" => write_stage_style_jam_observer(&args.observer_path)?,
+        "feral-grid-jam" => write_feral_grid_jam_observer(&args.observer_path)?,
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, feral-grid-jam"
             )
             .into());
         }
@@ -90,7 +91,7 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam> --observer <events.ndjson>"
+        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|feral-grid-jam> --observer <events.ndjson>"
     );
 }
 
@@ -174,6 +175,27 @@ fn write_stage_style_jam_observer(path: &Path) -> io::Result<()> {
     apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('g'))?;
     commit_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Phrase, 5, 1)?;
 
+    Ok(())
+}
+
+fn write_feral_grid_jam_observer(path: &Path) -> io::Result<()> {
+    let mut writer = NdjsonWriter::open(path)?;
+    let mut shell = probe_shell("feral-grid-jam-probe");
+
+    record_probe_start(
+        &mut writer,
+        &mut shell,
+        path,
+        "feral-grid-jam",
+        "synthetic-feral-grid-source.wav",
+        "headless-feral-grid-session.json",
+    )?;
+
+    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
+    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('f'))?;
+    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Bar, 1, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('g'))?;
+    commit_boundary(&mut shell, &mut writer, 500, CommitBoundary::Phrase, 2, 1)?;
     Ok(())
 }
 
