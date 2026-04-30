@@ -354,6 +354,15 @@ For committed source-backed captures loaded from a session file, `storage_path` 
 
 For internally printed W-30 resample captures, `storage_path` should point to the printed bus artifact rather than the source-window input artifact. Such captures should preserve input ownership through `lineage_capture_refs` and `resample_generation_depth`; `source_window` should be omitted unless the printed result is intentionally still a literal source-window copy. This keeps reload and later pad playback pointed at the exact printed audio instead of reconstructing it from source metadata.
 
+Artifact-hydration identity boundary:
+
+- `capture_id` is the stable session identity for the captured material
+- `storage_path` is the durable audio artifact locator and must point at the exact WAV to hydrate
+- `created_from_action` links the artifact to the committed action that created or printed it
+- direct source-backed captures should keep `source_window` so the source range remains auditable
+- internally derived W-30 captures should keep `lineage_capture_refs` and `resample_generation_depth` so ownership and derivation depth survive reload
+- future replay or recovery hydration must validate this identity before using an artifact; it must not silently reconstruct a different artifact from UI state or source-window guesses
+
 ---
 
 ## 12. Ghost State
