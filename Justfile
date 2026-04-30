@@ -38,6 +38,7 @@ audio-qa-ci:
     just stage-style-stability-smoke
     just recipe2-observer-audio-gate
     just offline-render-reproducibility-smoke
+    just full-grid-export-reproducibility-smoke
 
 mem-init:
     ./scripts/mempalace.sh init
@@ -171,3 +172,6 @@ recipe2-observer-audio-gate:
 
 offline-render-reproducibility-smoke:
     scripts/validate_offline_render_reproducibility.sh
+
+full-grid-export-reproducibility-smoke:
+    scripts/validate_full_grid_export_reproducibility.sh
