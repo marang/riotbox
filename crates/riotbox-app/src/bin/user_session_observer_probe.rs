@@ -27,9 +27,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     match args.probe.as_str() {
         "recipe2-mc202" => write_recipe2_mc202_observer(&args.observer_path)?,
         "first-playable-jam" => write_first_playable_jam_observer(&args.observer_path)?,
+        "stage-style-jam" => write_stage_style_jam_observer(&args.observer_path)?,
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam"
             )
             .into());
         }
@@ -89,7 +90,7 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam> --observer <events.ndjson>"
+        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam> --observer <events.ndjson>"
     );
 }
 
@@ -143,6 +144,35 @@ fn write_first_playable_jam_observer(path: &Path) -> io::Result<()> {
     commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 2, 2)?;
     apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
     commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 3, 1)?;
+
+    Ok(())
+}
+
+fn write_stage_style_jam_observer(path: &Path) -> io::Result<()> {
+    let mut writer = NdjsonWriter::open(path)?;
+    let mut shell = probe_shell("stage-style-jam-probe");
+
+    record_probe_start(
+        &mut writer,
+        &mut shell,
+        path,
+        "stage-style-jam",
+        "synthetic-stage-style-source.wav",
+        "headless-stage-style-session.json",
+    )?;
+
+    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
+    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('c'))?;
+    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Phrase, 1, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('o'))?;
+    apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('p'))?;
+    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 2, 2)?;
+    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
+    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 3, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('f'))?;
+    commit_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Bar, 4, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('g'))?;
+    commit_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Phrase, 5, 1)?;
 
     Ok(())
 }
@@ -286,6 +316,10 @@ fn apply_probe_key(
                     shell.set_error_status("set an MC-202 voice before mutating phrase");
                 }
             }
+        }
+        ShellKeyOutcome::QueueTr909Fill => {
+            shell.app.queue_tr909_fill(timestamp_ms);
+            shell.set_error_status("queued TR-909 fill for next bar");
         }
         ShellKeyOutcome::QueueCaptureBar => {
             shell.app.queue_capture_bar(timestamp_ms);
@@ -440,63 +474,5 @@ impl NdjsonWriter {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn parses_required_probe_args() {
-        let args = Args::parse([
-            "--probe".into(),
-            "recipe2-mc202".into(),
-            "--observer".into(),
-            "events.ndjson".into(),
-        ])
-        .expect("parse args");
-
-        assert_eq!(args.probe, "recipe2-mc202");
-        assert_eq!(args.observer_path, PathBuf::from("events.ndjson"));
-        assert!(!args.show_help);
-    }
-
-    #[test]
-    fn writes_recipe2_mc202_observer_stream() {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let path = temp.path().join("events.ndjson");
-
-        write_recipe2_mc202_observer(&path).expect("write observer");
-
-        let events = fs::read_to_string(path).expect("read observer");
-        assert!(events.contains(r#""schema":"riotbox.user_session_observer.v1""#));
-        assert!(events.contains(r#""capture_context":"headless_probe""#));
-        assert!(events.contains(r#""snapshot":{"#));
-        assert!(events.contains(r#""transport":{"#));
-        assert!(events.contains(r#""queue":{"#));
-        assert!(events.contains(r#""runtime":{"#));
-        assert!(events.contains(r#""recovery":{"#));
-        assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
-        assert!(events.contains(r#""outcome":"queue_mc202_generate_answer""#));
-        assert!(events.contains(r#""outcome":"queue_mc202_generate_pressure""#));
-        assert!(events.contains(r#""outcome":"queue_mc202_generate_instigator""#));
-        assert!(events.contains(r#""outcome":"queue_mc202_mutate_phrase""#));
-        assert!(events.contains(r#""outcome":"raise_mc202_touch""#));
-        assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 5);
-    }
-
-    #[test]
-    fn writes_first_playable_jam_observer_stream() {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let path = temp.path().join("events.ndjson");
-
-        write_first_playable_jam_observer(&path).expect("write observer");
-
-        let events = fs::read_to_string(path).expect("read observer");
-        assert!(events.contains(r#""probe":"first-playable-jam""#));
-        assert!(events.contains(r#""outcome":"queue_capture_bar""#));
-        assert!(events.contains(r#""outcome":"queue_w30_audition""#));
-        assert!(events.contains(r#""outcome":"promote_last_capture""#));
-        assert!(events.contains(r#""outcome":"queue_w30_trigger_pad""#));
-        assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
-        assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 2);
-        assert_eq!(events.matches(r#""boundary":"Beat""#).count(), 1);
-    }
-}
+#[path = "user_session_observer_probe/tests.rs"]
+mod tests;

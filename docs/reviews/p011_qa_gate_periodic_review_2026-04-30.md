@@ -59,9 +59,9 @@ proves a missing metric key is rejected.
 
 ## Positive Checks
 
-- `scripts/validate_stage_style_jam_probe.sh:49` asserts the stage-style summary
-  includes the expected key outcomes, `commit_count >= 4`, and `NextBar`,
-  `NextBeat`, plus `NextPhrase` boundary coverage before accepting output
+- `scripts/validate_stage_style_jam_probe.sh` asserts the stage-style summary
+  includes the expected generated key outcomes, `commit_count >= 6`, and
+  `Phrase`, `Bar`, plus `Beat` boundary coverage before accepting output
   evidence.
 - `docs/specs/audio_qa_workflow_spec.md:487` correctly describes the current
   observer/audio helper as a correlation gate that extracts launch, runtime,
