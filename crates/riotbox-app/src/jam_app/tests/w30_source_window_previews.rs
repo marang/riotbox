@@ -381,6 +381,114 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
 }
 
 #[test]
+fn reloaded_session_uses_capture_artifact_cache_without_source_audio() {
+    let tempdir = tempdir().expect("create artifact restore tempdir");
+    let source_path = tempdir.path().join("source.wav");
+    let session_path = tempdir.path().join("session.json");
+    let graph_path = tempdir.path().join("source_graph.json");
+    write_pcm16_wave(&source_path, 48_000, 2, 8.0);
+
+    let mut graph = sample_graph();
+    graph.source.path = source_path.to_string_lossy().into_owned();
+    graph.source.duration_seconds = 8.0;
+    graph.source.sample_rate = 48_000;
+    graph.source.channel_count = 2;
+    let mut session = sample_session(&graph);
+    session.captures.clear();
+    session.runtime_state.lane_state.w30.last_capture = None;
+    save_source_graph_json(&graph_path, &graph).expect("save source graph");
+    save_session_json(&session_path, &session).expect("save session");
+
+    let mut state =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+    state.queue_capture_bar(300);
+    let committed_capture = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 0,
+            bar_index: 1,
+            phrase_index: 0,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+    assert_eq!(committed_capture.len(), 1);
+    assert!(state.queue_promote_last_capture(410));
+    let committed_promotion = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 4,
+            bar_index: 2,
+            phrase_index: 0,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        500,
+    );
+    assert_eq!(committed_promotion.len(), 1);
+
+    let capture_id = CaptureId::from("cap-01");
+    let capture_path = tempdir.path().join("captures/cap-01.wav");
+    assert!(capture_path.is_file());
+    state.save().expect("save artifact-backed session");
+    fs::remove_file(&source_path).expect("remove source to prove reload uses artifact");
+
+    let mut reloaded =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("reload app state");
+    assert!(reloaded.source_audio_cache.is_none());
+    assert!(reloaded.capture_audio_cache.contains_key(&capture_id));
+    let capture = reloaded
+        .session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == capture_id)
+        .expect("reloaded capture")
+        .clone();
+    assert_eq!(
+        reloaded
+            .require_capture_artifact_for_hydration(&capture)
+            .expect("artifact preflight passes after reload"),
+        capture_path
+    );
+
+    assert_eq!(
+        reloaded.queue_w30_trigger_pad(645),
+        Some(QueueControlResult::Enqueued)
+    );
+    let committed_trigger = reloaded.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Beat,
+            beat_index: 33,
+            bar_index: 9,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        740,
+    );
+    assert_eq!(committed_trigger.len(), 1);
+
+    let pad_playback = reloaded
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .expect("artifact-backed W-30 pad playback after reload");
+    assert!(pad_playback.sample_count > W30_PREVIEW_SAMPLE_WINDOW_LEN);
+    assert!(
+        pad_playback.samples[..pad_playback.sample_count]
+            .iter()
+            .any(|sample| sample.abs() > 0.001)
+    );
+
+    let buffer = render_w30_preview_offline(&reloaded.runtime.w30_preview, 48_000, 2, 48_000);
+    let metrics = signal_metrics(&buffer);
+    assert!(
+        metrics.rms > 0.001,
+        "artifact-backed restore render RMS too low: {}",
+        metrics.rms
+    );
+}
+
+#[test]
 fn promoted_and_recall_w30_previews_project_source_window_preview_samples() {
     for preview_mode in [
         W30PreviewModeState::PromotedAudition,
@@ -421,4 +529,3 @@ fn promoted_and_recall_w30_previews_project_source_window_preview_samples() {
         assert!(preview.samples.iter().any(|sample| sample.abs() > 0.001));
     }
 }
-
