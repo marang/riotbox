@@ -46,6 +46,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 candidate.payload_readiness_label.as_str(),
                 candidate.replay_suffix_label.as_str(),
                 candidate.replay_unsupported_label.as_str(),
+                candidate.decision_label.as_str(),
                 candidate.trust,
                 candidate.action_hint,
             ))
@@ -59,6 +60,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "payload none | full replay",
                 "suffix none | target cursor 0",
                 "unsupported none",
+                "decision: normal load path",
                 RecoveryCandidateTrust::NormalLoadTarget,
                 "load normally",
             ),
@@ -70,6 +72,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "payload unchecked",
                 "suffix unchecked",
                 "unsupported unchecked",
+                "decision: broken candidate",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
             ),
@@ -81,6 +84,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "payload none | full replay",
                 "suffix none | target cursor 0",
                 "unsupported none",
+                "decision: reviewable | explicit user choice required",
                 RecoveryCandidateTrust::RecoverableClue,
                 "review before manual recovery",
             ),
@@ -92,6 +96,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "payload unchecked",
                 "suffix unchecked",
                 "unsupported unchecked",
+                "decision: broken candidate",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
             ),
@@ -155,6 +160,20 @@ fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidat
         ]
     );
     assert_eq!(surface.selected_candidate, None);
+    let decision_labels = surface
+        .candidates
+        .iter()
+        .filter(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .map(|candidate| candidate.decision_label.as_str())
+        .collect::<Vec<_>>();
+    assert_eq!(
+        decision_labels,
+        vec![
+            "decision: blocked | artifacts unavailable",
+            "decision: blocked | artifacts unavailable",
+            "decision: reviewable | full replay required",
+        ]
+    );
 }
 
 #[test]
@@ -284,6 +303,10 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
         blocked_candidate.replay_unsupported_label,
         "unsupported suffix 1: capture.bar_group"
     );
+    assert_eq!(
+        blocked_candidate.decision_label,
+        "decision: blocked | replay and artifacts"
+    );
     assert_eq!(blocked_candidate.guidance, None);
     assert_eq!(surface.selected_candidate, None);
 }
@@ -343,6 +366,10 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
     assert_eq!(
         blocked_candidate.guidance,
         Some(RecoveryCandidateGuidance::ArtifactReadyReplayHydrationBlocked)
+    );
+    assert_eq!(
+        blocked_candidate.decision_label,
+        "decision: blocked | replay unsupported"
     );
     assert_eq!(surface.selected_candidate, None);
 }

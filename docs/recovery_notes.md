@@ -38,6 +38,34 @@ Manual recovery candidates may also show W-30/capture artifact availability:
 These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
 
+## Candidate Decision Labels
+
+Manual recovery candidates may show a compact decision diagnostic:
+
+- `decision: normal load path`
+  The candidate is the requested session path and can be loaded normally.
+- `decision: reviewable | explicit user choice required`
+  The candidate is parseable and not blocked by replay or artifact checks, but
+  still must not be selected automatically.
+- `decision: reviewable | full replay required`
+  The candidate is parseable, but snapshot-payload restore is unavailable and a
+  future recovery action would need full replay.
+- `decision: blocked | artifacts unavailable`
+  The candidate references capture artifacts that are missing, unreadable, or
+  missing storage identity.
+- `decision: blocked | replay unsupported`
+  The candidate contains an unsupported replay origin or suffix command.
+- `decision: blocked | replay and artifacts`
+  The candidate has both an unsupported replay command and unavailable capture
+  artifacts.
+- `decision: broken candidate`
+  The candidate is unreadable or invalid session JSON.
+- `decision: normal target missing`
+  The requested normal session path does not exist.
+
+These decision labels are deliberately read-only. They summarize why a candidate
+needs manual review and must not choose, repair, or replace a session file.
+
 When artifacts are ready but replay is blocked by an artifact-producing command
 such as `capture.bar_group`, the manual recovery UI may say that audio
 artifacts are present while replay remains blocked until that command has an
