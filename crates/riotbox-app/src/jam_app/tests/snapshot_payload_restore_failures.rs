@@ -1,14 +1,40 @@
-fn unsupported_promote_capture_to_scene_action(id: u64) -> Action {
+fn unsupported_w30_capture_to_pad_action(id: u64) -> Action {
+    Action {
+        id: ActionId(id),
+        actor: ActorType::User,
+        command: ActionCommand::W30CaptureToPad,
+        params: ActionParams::Capture { bars: Some(2) },
+        target: ActionTarget {
+            scope: Some(TargetScope::LaneW30),
+            bank_id: Some(BankId::from("bank-a")),
+            pad_id: Some(PadId::from("pad-01")),
+            ..Default::default()
+        },
+        requested_at: 480,
+        quantization: Quantization::NextBar,
+        status: ActionStatus::Committed,
+        committed_at: Some(500),
+        result: Some(ActionResult {
+            accepted: true,
+            summary: "capture to W-30 pad committed".into(),
+        }),
+        undo_policy: UndoPolicy::Undoable,
+        explanation: Some("unsupported capture-producing action".into()),
+    }
+}
+
+fn promote_capture_to_scene_action(id: u64, scene_id: &str) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
         command: ActionCommand::PromoteCaptureToScene,
         params: ActionParams::Promotion {
             capture_id: Some(CaptureId::from("cap-01")),
-            destination: Some("scene:scene-1".into()),
+            destination: Some(format!("scene:{scene_id}")),
         },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
+            scene_id: Some(SceneId::from(scene_id)),
             ..Default::default()
         },
         requested_at: 480,
@@ -20,7 +46,7 @@ fn unsupported_promote_capture_to_scene_action(id: u64) -> Action {
             summary: "promote capture to scene committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("unsupported artifact-producing action".into()),
+        explanation: Some("promote capture to scene".into()),
     }
 }
 
@@ -81,7 +107,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     session
         .action_log
         .actions
-        .push(unsupported_promote_capture_to_scene_action(77));
+        .push(unsupported_w30_capture_to_pad_action(77));
     session
         .action_log
         .commit_records
@@ -102,7 +128,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
             riotbox_core::replay::ReplayTargetExecutionError::Execution(
                 riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                     action_id: ActionId(77),
-                    command: ActionCommand::PromoteCaptureToScene,
+                    command: ActionCommand::W30CaptureToPad,
                 }
             )
         )
@@ -122,8 +148,60 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     );
     assert_eq!(
         state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: promote.capture_to_scene"
+        "unsupported suffix 1: w30.capture_to_pad"
     );
+}
+
+#[test]
+fn app_snapshot_payload_restore_replays_promote_capture_to_scene() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    let snapshot = session.snapshots[0].clone();
+    session.snapshots[0].payload = Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+        &snapshot.snapshot_id,
+        snapshot.action_cursor,
+        &session.runtime_state,
+    ));
+    session
+        .action_log
+        .actions
+        .push(promote_capture_to_scene_action(77, "drop-1"));
+    session
+        .action_log
+        .commit_records
+        .push(loop_freeze_commit_record(77));
+
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    let target_cursor = state.session.action_log.actions.len();
+
+    let report = state
+        .apply_restore_target_from_snapshot_payload(target_cursor)
+        .expect("promote.capture_to_scene suffix should replay from payload anchor");
+
+    assert_eq!(report.applied_action_ids, vec![ActionId(77)]);
+    let capture = state
+        .session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == CaptureId::from("cap-01"))
+        .expect("promoted capture");
+    assert_eq!(
+        capture.assigned_target,
+        Some(CaptureTarget::Scene(SceneId::from("drop-1")))
+    );
+    assert_eq!(
+        capture.notes.as_deref(),
+        Some("keeper | promoted to scene drop-1")
+    );
+    assert_eq!(
+        state.session.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-01"))
+    );
+    assert_eq!(
+        state.runtime_view.replay_restore_status,
+        "ready: replay 1 suffix action(s)"
+    );
+    assert_eq!(state.runtime_view.replay_restore_unsupported, "unsupported none");
 }
 
 #[test]

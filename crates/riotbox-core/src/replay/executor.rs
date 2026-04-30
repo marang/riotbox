@@ -10,7 +10,10 @@ use crate::{
 
 mod w30;
 
-use w30::{apply_promote_capture_to_w30_pad, apply_w30_artifact_hydrated_cue, apply_w30_cue};
+use w30::{
+    apply_promote_capture_to_scene, apply_promote_capture_to_w30_pad,
+    apply_w30_artifact_hydrated_cue, apply_w30_cue,
+};
 
 const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::TransportPlay,
@@ -23,6 +26,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::SceneLaunch,
     ActionCommand::SceneRestore,
     ActionCommand::PromoteCaptureToPad,
+    ActionCommand::PromoteCaptureToScene,
     ActionCommand::Mc202SetRole,
     ActionCommand::Mc202GenerateFollower,
     ActionCommand::Mc202GenerateAnswer,
@@ -184,6 +188,7 @@ pub fn apply_replay_entry_to_session(
             session.runtime_state.scene_state.last_movement = None;
         }
         ActionCommand::PromoteCaptureToPad => apply_promote_capture_to_w30_pad(session, entry)?,
+        ActionCommand::PromoteCaptureToScene => apply_promote_capture_to_scene(session, entry)?,
         ActionCommand::Mc202SetRole => {
             let role = action
                 .target
