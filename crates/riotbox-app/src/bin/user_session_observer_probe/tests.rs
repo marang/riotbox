@@ -78,6 +78,34 @@ fn writes_stage_style_jam_observer_stream() {
 }
 
 #[test]
+fn writes_stage_style_restore_diversity_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_stage_style_restore_diversity_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"stage-style-restore-diversity""#));
+    assert!(events.contains(r#""outcome":"queue_capture_bar""#));
+    assert!(events.contains(r#""outcome":"queue_w30_audition""#));
+    assert!(events.contains(r#""outcome":"promote_last_capture""#));
+    assert!(events.contains(r#""outcome":"queue_w30_trigger_pad""#));
+    assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
+    assert!(events.contains(r#""outcome":"queue_tr909_reinforce""#));
+    assert!(events.contains(r#""outcome":"queue_tr909_scene_lock""#));
+    assert!(events.contains(r#""outcome":"queue_tr909_release""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_generate_answer""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_generate_pressure""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_generate_instigator""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_mutate_phrase""#));
+    assert!(events.contains(r#""outcome":"raise_mc202_touch""#));
+    assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 9);
+    assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 3);
+    assert_eq!(events.matches(r#""boundary":"Beat""#).count(), 1);
+}
+
+#[test]
 fn writes_feral_grid_jam_observer_stream() {
     let temp = tempfile::tempdir().expect("tempdir");
     let path = temp.path().join("events.ndjson");

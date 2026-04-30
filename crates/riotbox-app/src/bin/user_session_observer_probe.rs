@@ -17,6 +17,14 @@ use riotbox_core::{
 };
 use serde_json::{Value, json};
 
+#[path = "user_session_observer_probe/probe_scenarios.rs"]
+mod probe_scenarios;
+
+use probe_scenarios::{
+    write_feral_grid_jam_observer, write_first_playable_jam_observer, write_recipe2_mc202_observer,
+    write_stage_style_jam_observer, write_stage_style_restore_diversity_observer,
+};
+
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(std::env::args().skip(1))?;
     if args.show_help {
@@ -28,10 +36,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "recipe2-mc202" => write_recipe2_mc202_observer(&args.observer_path)?,
         "first-playable-jam" => write_first_playable_jam_observer(&args.observer_path)?,
         "stage-style-jam" => write_stage_style_jam_observer(&args.observer_path)?,
+        "stage-style-restore-diversity" => {
+            write_stage_style_restore_diversity_observer(&args.observer_path)?
+        }
         "feral-grid-jam" => write_feral_grid_jam_observer(&args.observer_path)?,
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, feral-grid-jam"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, feral-grid-jam"
             )
             .into());
         }
@@ -91,112 +102,8 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|feral-grid-jam> --observer <events.ndjson>"
+        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|feral-grid-jam> --observer <events.ndjson>"
     );
-}
-
-fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
-    let mut writer = NdjsonWriter::open(path)?;
-    let mut shell = probe_shell("recipe2-mc202-probe");
-
-    record_probe_start(
-        &mut writer,
-        &mut shell,
-        path,
-        "recipe2-mc202",
-        "synthetic-recipe2-mc202-probe.wav",
-        "headless-recipe2-session.json",
-    )?;
-
-    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
-    apply_probe_key(&mut shell, &mut writer, 300, KeyCode::Char('g'))?;
-    commit_boundary(&mut shell, &mut writer, 400, CommitBoundary::Phrase, 1, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('a'))?;
-    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Phrase, 2, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('P'))?;
-    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Phrase, 3, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('I'))?;
-    commit_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Phrase, 4, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('G'))?;
-    commit_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Phrase, 5, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 1_300, KeyCode::Char('>'))?;
-
-    Ok(())
-}
-
-fn write_first_playable_jam_observer(path: &Path) -> io::Result<()> {
-    let mut writer = NdjsonWriter::open(path)?;
-    let mut shell = probe_shell("first-playable-jam-probe");
-
-    record_probe_start(
-        &mut writer,
-        &mut shell,
-        path,
-        "first-playable-jam",
-        "synthetic-first-playable-source.wav",
-        "headless-first-playable-session.json",
-    )?;
-
-    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
-    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('c'))?;
-    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Phrase, 1, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('o'))?;
-    apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('p'))?;
-    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 2, 2)?;
-    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
-    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 3, 1)?;
-
-    Ok(())
-}
-
-fn write_stage_style_jam_observer(path: &Path) -> io::Result<()> {
-    let mut writer = NdjsonWriter::open(path)?;
-    let mut shell = probe_shell("stage-style-jam-probe");
-
-    record_probe_start(
-        &mut writer,
-        &mut shell,
-        path,
-        "stage-style-jam",
-        "synthetic-stage-style-source.wav",
-        "headless-stage-style-session.json",
-    )?;
-
-    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
-    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('c'))?;
-    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Phrase, 1, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('o'))?;
-    apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('p'))?;
-    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 2, 2)?;
-    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
-    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 3, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('f'))?;
-    commit_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Bar, 4, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('g'))?;
-    commit_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Phrase, 5, 1)?;
-
-    Ok(())
-}
-
-fn write_feral_grid_jam_observer(path: &Path) -> io::Result<()> {
-    let mut writer = NdjsonWriter::open(path)?;
-    let mut shell = probe_shell("feral-grid-jam-probe");
-
-    record_probe_start(
-        &mut writer,
-        &mut shell,
-        path,
-        "feral-grid-jam",
-        "synthetic-feral-grid-source.wav",
-        "headless-feral-grid-session.json",
-    )?;
-
-    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
-    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('f'))?;
-    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Bar, 1, 1)?;
-    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('g'))?;
-    commit_boundary(&mut shell, &mut writer, 500, CommitBoundary::Phrase, 2, 1)?;
-    Ok(())
 }
 
 fn probe_shell(session_id: &str) -> JamShellState {
@@ -343,6 +250,34 @@ fn apply_probe_key(
             shell.app.queue_tr909_fill(timestamp_ms);
             shell.set_error_status("queued TR-909 fill for next bar");
         }
+        ShellKeyOutcome::QueueTr909Reinforce => {
+            shell.app.queue_tr909_reinforce(timestamp_ms);
+            shell.set_error_status("queued TR-909 reinforcement for next phrase");
+        }
+        ShellKeyOutcome::QueueTr909SceneLock => {
+            match shell.app.queue_tr909_scene_lock(timestamp_ms) {
+                riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                    shell.set_error_status("queued TR-909 scene lock for next phrase");
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                    shell.set_error_status("TR-909 takeover change already queued");
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                    shell.set_error_status("TR-909 scene lock already in state");
+                }
+            }
+        }
+        ShellKeyOutcome::QueueTr909Release => match shell.app.queue_tr909_release(timestamp_ms) {
+            riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                shell.set_error_status("queued TR-909 release for next phrase");
+            }
+            riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                shell.set_error_status("TR-909 takeover change already queued");
+            }
+            riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                shell.set_error_status("TR-909 takeover already released");
+            }
+        },
         ShellKeyOutcome::QueueCaptureBar => {
             shell.app.queue_capture_bar(timestamp_ms);
             shell.set_error_status("queued capture for next phrase");

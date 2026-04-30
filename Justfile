@@ -32,6 +32,7 @@ audio-qa-ci:
     just observer-audio-correlate-generated-feral-grid
     just first-playable-jam-probe
     just stage-style-jam-probe
+    just stage-style-restore-diversity-probe
     just recipe2-observer-audio-gate
     just offline-render-reproducibility-smoke
 
@@ -145,6 +146,9 @@ first-playable-jam-probe:
 
 stage-style-jam-probe:
     scripts/validate_stage_style_jam_probe.sh
+
+stage-style-restore-diversity-probe:
+    scripts/validate_stage_style_restore_diversity_probe.sh
 
 recipe2-observer-audio-gate:
     scripts/validate_recipe2_observer_audio_gate.sh
