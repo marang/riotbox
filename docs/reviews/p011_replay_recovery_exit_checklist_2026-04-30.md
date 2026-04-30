@@ -47,6 +47,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   the existing target-suffix executor.
 - Source-backed W-30 snapshot-payload restore has a bounded preview parity
   probe for the browse-anchor plus trigger-suffix path.
+- W-30 artifact hydration has an explicit identity boundary in the session and
+  replay specs before any future artifact-producing replay support is added.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the

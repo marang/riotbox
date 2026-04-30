@@ -385,6 +385,11 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         .expect("new resample capture should exist");
     assert_eq!(capture.capture_type, CaptureType::Resample);
     assert_eq!(capture.capture_id, CaptureId::from("cap-02"));
+    assert_eq!(
+        capture.created_from_action,
+        Some(committed_resample[0].action_id)
+    );
+    assert_eq!(capture.storage_path, "captures/cap-02.wav");
     assert_eq!(capture.source_window, None);
     assert_eq!(
         capture.lineage_capture_refs,
