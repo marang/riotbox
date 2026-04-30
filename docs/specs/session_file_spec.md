@@ -305,6 +305,9 @@ Rules:
   `action_cursor` before using the payload as an anchor
 - snapshot payload hydration should happen before the existing replay suffix
   executor runs; the payload must not execute actions itself
+- the current save path may fill missing payloads only for existing snapshots at
+  the latest action cursor, because the top-level `runtime_state` represents only
+  latest materialized state
 
 ---
 

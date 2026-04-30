@@ -101,6 +101,41 @@ fn save_persists_embedded_graph_into_session_file() {
 }
 
 #[test]
+fn save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    save_session_json(&session_path, &session).expect("save embedded session fixture");
+
+    let state =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
+    assert!(state.session.snapshots[0].payload.is_none());
+
+    state.save().expect("save app state");
+
+    let persisted_session = load_session_json(&session_path).expect("reload session");
+    let payload = persisted_session.snapshots[0]
+        .payload
+        .as_ref()
+        .expect("latest explicit snapshot gets payload");
+    assert_eq!(payload.snapshot_id, persisted_session.snapshots[0].snapshot_id);
+    assert_eq!(payload.action_cursor, persisted_session.snapshots[0].action_cursor);
+    assert_eq!(payload.runtime_state, state.session.runtime_state);
+
+    let mut restored =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("reload app state");
+    restored.session.runtime_state = Default::default();
+    let report = restored
+        .apply_restore_target_from_snapshot_payload(persisted_session.action_log.actions.len())
+        .expect("produced snapshot payload hydrates through app restore");
+
+    assert_eq!(report.applied_action_ids, Vec::<ActionId>::new());
+    assert_eq!(restored.session.runtime_state, state.session.runtime_state);
+}
+
+#[test]
 fn runtime_view_updates_from_audio_and_sidecar_state() {
     let graph = sample_graph();
     let session = sample_session(&graph);

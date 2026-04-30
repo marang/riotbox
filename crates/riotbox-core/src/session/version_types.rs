@@ -416,6 +416,22 @@ pub struct SnapshotPayload {
     pub runtime_state: RuntimeState,
 }
 
+impl SnapshotPayload {
+    #[must_use]
+    pub fn from_runtime_state(
+        snapshot_id: &SnapshotId,
+        action_cursor: usize,
+        runtime_state: &RuntimeState,
+    ) -> Self {
+        Self {
+            payload_version: SnapshotPayloadVersion::V1,
+            snapshot_id: snapshot_id.clone(),
+            action_cursor,
+            runtime_state: runtime_state.clone(),
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
     pub snapshot_id: SnapshotId,

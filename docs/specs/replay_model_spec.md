@@ -330,6 +330,14 @@ versioned snapshot payload and prove that latest-runtime restore and
 snapshot-payload-plus-suffix restore converge for one replay-safe session. Broader
 capture/resample artifact hydration remains out of scope for that first slice.
 
+Current producer boundary:
+
+- saving a session may materialize payloads only for existing explicit snapshots
+  whose `action_cursor` equals the current action-log length
+- save must not invent new snapshots or choose snapshot frequency policy
+- older snapshots whose cursor predates the latest runtime state must keep their
+  existing payload state instead of receiving the current `runtime_state`
+
 ---
 
 ## 10. Non-Determinism Sources

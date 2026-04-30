@@ -77,6 +77,7 @@ impl JamAppState {
     pub fn save(&self) -> Result<(), JamAppError> {
         if let Some(files) = &self.files {
             let mut session_to_save = self.session.clone();
+            sync_latest_snapshot_payloads(&mut session_to_save);
             sync_graph_refs_with_state(
                 &mut session_to_save,
                 self.source_graph.as_ref(),
@@ -226,6 +227,23 @@ fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), J
     }
 
     Ok(())
+}
+
+fn sync_latest_snapshot_payloads(session: &mut SessionFile) {
+    let latest_action_cursor = session.action_log.actions.len();
+    let runtime_state = session.runtime_state.clone();
+
+    for snapshot in &mut session.snapshots {
+        if snapshot.action_cursor != latest_action_cursor || snapshot.payload.is_some() {
+            continue;
+        }
+
+        snapshot.payload = Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &runtime_state,
+        ));
+    }
 }
 
 fn sync_graph_refs_with_state(
