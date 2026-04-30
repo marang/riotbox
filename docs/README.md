@@ -35,8 +35,9 @@ This directory holds implementation-facing specifications derived from the strat
 13. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
 14. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
 15. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
-16. [Phase Definition of Done](./phase_definition_of_done.md)
-17. [Research / Decision Log](./research_decision_log.md)
+16. [Recovery Notes](./recovery_notes.md)
+17. [Phase Definition of Done](./phase_definition_of_done.md)
+18. [Research / Decision Log](./research_decision_log.md)
 
 ## Why This Order
 
@@ -67,6 +68,7 @@ docs/
   prd_v1.md
   execution_roadmap.md
   workflow_conventions.md
+  recovery_notes.md
   phase_definition_of_done.md
   research_decision_log.md
   archive/
@@ -121,6 +123,7 @@ docs/
 - `execution_roadmap.md`: draft started
 - `workflow_conventions.md`: draft started
 - `jam_recipes.md`: learning-path guide captured
+- `recovery_notes.md`: current manual recovery and snapshot-payload label guidance captured
 - `specs/technology_stack_spec.md`: draft started
 - `specs/rust_engineering_guidelines.md`: draft started
 - `specs/source_graph_spec.md`: draft started
