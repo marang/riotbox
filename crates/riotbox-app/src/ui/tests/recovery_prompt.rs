@@ -88,6 +88,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         created_at: "2026-04-29T23:10:00Z".into(),
         label: "before unsupported freeze".into(),
         action_cursor: 0,
+        payload: None,
     }];
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(55),

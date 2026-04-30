@@ -110,6 +110,7 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
         created_at: "2026-04-29T22:30:00Z".into(),
         label: "after fill".into(),
         action_cursor: fill_action_cursor,
+        payload: None,
     }];
     let anchor_report = riotbox_core::replay::apply_replay_plan_to_session(
         &mut hydrated_anchor_session,

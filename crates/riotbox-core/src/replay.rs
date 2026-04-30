@@ -22,5 +22,7 @@ pub use summary::{
     build_latest_snapshot_replay_convergence_summary, build_replay_target_dry_run_summary,
 };
 pub use target_execution::{
-    ReplayTargetExecutionError, ReplayTargetExecutionReport, apply_replay_target_suffix_to_session,
+    ReplayTargetExecutionError, ReplayTargetExecutionReport, SnapshotPayloadHydrationError,
+    SnapshotPayloadHydrationReport, apply_replay_target_suffix_to_session,
+    hydrate_replay_target_from_snapshot_payload,
 };
