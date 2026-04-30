@@ -32,6 +32,15 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
             restore_replay_help_scope_label(shell),
         )),
     ];
+    if surface
+        .candidates
+        .iter()
+        .any(has_artifact_backed_replay_blocker_hint)
+    {
+        lines.push(Line::from(
+            "Artifact note: audio present, but W-30 artifact replay hydration is not built yet",
+        ));
+    }
 
     for candidate in surface
         .candidates
@@ -77,6 +86,18 @@ fn restore_replay_help_scope_label(shell: &JamShellState) -> String {
 
 fn is_actionable_replay_unsupported(label: &str) -> bool {
     label.starts_with("unsupported suffix") || label.starts_with("unsupported origin")
+}
+
+fn has_artifact_backed_replay_blocker_hint(
+    candidate: &crate::jam_app::SessionRecoveryCandidateView,
+) -> bool {
+    let unsupported_artifact_command = candidate.replay_unsupported_label.contains("w30.loop_freeze")
+        || candidate
+            .replay_unsupported_label
+            .contains("promote.resample");
+    candidate.artifact_availability_label.starts_with("artifacts ready:")
+        && is_actionable_replay_unsupported(&candidate.replay_unsupported_label)
+        && unsupported_artifact_command
 }
 
 fn recovery_candidate_file_label(path: &Path) -> String {

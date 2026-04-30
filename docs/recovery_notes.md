@@ -38,6 +38,12 @@ Manual recovery candidates may also show W-30/capture artifact availability:
 These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
 
+When artifacts are ready but replay is blocked by an artifact-producing W-30
+command such as `w30.loop_freeze` or `promote.resample`, the manual recovery UI
+may say that audio artifacts are present while replay remains blocked until W-30
+artifact hydration lands. That hint is explanatory only; it must not select a
+candidate or silently hydrate/repair the session.
+
 ## Artifact Hydration Preflight
 
 Before a future W-30 artifact hydrator can use a `CaptureRef`, the app-level
