@@ -289,6 +289,9 @@ mod tests {
         assert_eq!(recovery["candidate_count"], 2);
 
         let candidates = recovery["candidates"].as_array().expect("candidate array");
+        assert_eq!(candidates[0]["kind"], "normal session path");
+        assert_eq!(candidates[0]["trust"], "NormalLoadTarget");
+        assert_eq!(candidates[1]["kind"], "autosave file");
         let autosave = candidates
             .iter()
             .find(|candidate| {
