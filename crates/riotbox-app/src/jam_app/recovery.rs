@@ -97,9 +97,20 @@ impl JamAppState {
 fn recovery_candidate_view(
     candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
 ) -> SessionRecoveryCandidateView {
-    let trust = recovery_candidate_trust(&candidate.kind, &candidate.status);
     let replay_labels = recovery_replay_readiness_labels(candidate);
-    let artifact_availability_label = recovery_artifact_availability_label(candidate);
+    let payload_invalid = replay_labels
+        .payload
+        .starts_with("payload invalid | snapshot restore blocked");
+    let trust = if payload_invalid {
+        RecoveryCandidateTrust::BrokenClue
+    } else {
+        recovery_candidate_trust(&candidate.kind, &candidate.status)
+    };
+    let artifact_availability_label = if payload_invalid {
+        "artifacts unchecked".into()
+    } else {
+        recovery_artifact_availability_label(candidate)
+    };
     let guidance = recovery_candidate_guidance(candidate);
     let decision_label = recovery_decision_label(
         trust,
@@ -120,7 +131,7 @@ fn recovery_candidate_view(
         decision_label,
         guidance,
         trust,
-        detail: recovery_detail(&candidate.kind, &candidate.status),
+        detail: recovery_detail(&candidate.kind, &candidate.status, payload_invalid),
         action_hint: recovery_action_hint(trust),
     }
 }
@@ -299,7 +310,13 @@ fn recovery_replay_readiness_labels(
 fn recovery_detail(
     kind: &SessionRecoveryCandidateKind,
     status: &SessionRecoveryCandidateStatus,
+    payload_invalid: bool,
 ) -> String {
+    if payload_invalid {
+        return "Snapshot payload identity is invalid; normal app load rejects this candidate."
+            .into();
+    }
+
     match (kind, status) {
         (
             SessionRecoveryCandidateKind::CanonicalTarget,

@@ -107,7 +107,8 @@ The app runtime view may show these labels:
   target suffix.
 - `payload invalid | snapshot restore blocked`
   The selected anchor's payload identity does not match the owning snapshot.
-  Persisted sessions with this mismatch should already be rejected during load.
+  Persisted sessions with this mismatch should already be rejected during load
+  and shown as broken recovery clues rather than recoverable manual candidates.
 
 ## Unsupported Suffix Labels
 
@@ -134,6 +135,8 @@ Candidates with `payload missing | snapshot restore blocked` may also show a
 snapshot-payload note. That note means the candidate is still read-only and
 manual-only; Riotbox is explaining that a future recovery action would need
 full replay from the action log rather than snapshot-payload hydration.
+Candidates with invalid snapshot payload identity should not reach this guidance
+path from disk; they stay at the session validation boundary.
 
 ## Current Verification Seams
 
@@ -144,6 +147,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app recovery_surface_reports_capture_artifact_availability_for_parseable_candidates -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_supported_artifact_hydration_blocker_guidance -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_missing_snapshot_payload_guidance_without_mutating_candidate -- --nocapture`
+- `cargo test -p riotbox-app recovery_surface_classifies_invalid_snapshot_payload_candidate_as_broken_clue -- --nocapture`
 - `cargo test -p riotbox-app capture_artifact_hydration_preflight -- --nocapture`
 - `cargo test -p riotbox-app reloaded_session_uses_capture_artifact_cache_without_source_audio -- --nocapture`
 - `cargo test -p riotbox-app committed_w30_internal_resample_prints_reusable_bus_artifact -- --nocapture`
