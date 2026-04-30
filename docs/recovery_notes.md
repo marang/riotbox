@@ -76,6 +76,10 @@ it keeps `selected_candidate` empty and reports that the candidate was not
 selected for restore. It is a preflight for a future explicit user choice, not
 an automatic recovery path.
 
+The TUI may surface this as a `Preview only` / `inspect` affordance for one
+recoverable clue. That affordance is still read-only: it exists to make manual
+choice intent visible, not to execute recovery or select the candidate.
+
 The user-session observer mirrors these recovery labels in its startup snapshot,
 including the compact `decision` field. This keeps automated session probes
 aligned with the same read-only recovery boundary shown by the app surface.

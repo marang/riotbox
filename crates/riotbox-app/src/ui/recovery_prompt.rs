@@ -25,13 +25,16 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         Line::from(surface.headline.clone()),
         Line::from(surface.safety_note.clone()),
         Line::from("No candidate is selected here; reload an explicit reviewed path manually."),
-        Line::from(format!(
-            "Restore replay: {} | {} | {}",
-            compact_restore_replay_label(&shell.app.runtime_view.replay_restore_status),
-            compact_restore_replay_label(&shell.app.runtime_view.replay_restore_payload),
-            restore_replay_help_scope_label(shell),
-        )),
     ];
+    if let Some(preview_line) = recovery_preview_line(surface) {
+        lines.push(Line::from(preview_line));
+    }
+    lines.push(Line::from(format!(
+        "Restore replay: {} | {} | {}",
+        compact_restore_replay_label(&shell.app.runtime_view.replay_restore_status),
+        compact_restore_replay_label(&shell.app.runtime_view.replay_restore_payload),
+        restore_replay_help_scope_label(shell),
+    )));
     if let Some(guidance) = surface
         .candidates
         .iter()
@@ -74,6 +77,20 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
     }
 
     Some(lines)
+}
+
+fn recovery_preview_line(surface: &crate::jam_app::SessionRecoverySurface) -> Option<String> {
+    let candidate = surface
+        .candidates
+        .iter()
+        .find(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))?;
+    let dry_run = surface.dry_run_manual_choice(&candidate.path)?;
+
+    Some(format!(
+        "Preview only: inspect {} | {} | no restore selected",
+        recovery_candidate_file_label(dry_run.candidate_path.as_path()),
+        compact_recovery_decision_label(&dry_run.decision_label),
+    ))
 }
 
 fn restore_replay_help_scope_label(shell: &JamShellState) -> String {
