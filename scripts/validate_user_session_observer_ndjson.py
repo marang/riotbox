@@ -118,6 +118,9 @@ def validate_recovery(recovery: dict[str, Any]) -> None:
     candidates = require_list(recovery, "candidates")
     if recovery["candidate_count"] != len(candidates):
         raise ValueError("candidate_count must match candidates length")
+    dry_run = recovery.get("manual_choice_dry_run")
+    if dry_run is not None:
+        validate_manual_choice_dry_run(require_object(dry_run, "manual_choice_dry_run"))
 
     for index, item in enumerate(candidates):
         candidate = require_object(item, f"recovery.candidates[{index}]")
@@ -135,6 +138,25 @@ def validate_recovery(recovery: dict[str, Any]) -> None:
         if guidance is not None and not isinstance(guidance, str):
             raise TypeError(f"recovery.candidates[{index}].guidance must be a string or null")
         require_string(candidate, "decision")
+
+
+def validate_manual_choice_dry_run(dry_run: dict[str, Any]) -> None:
+    require_string(dry_run, "candidate_path")
+    require_string(dry_run, "decision")
+    require_string(dry_run, "artifact_availability")
+    require_string(dry_run, "replay_readiness")
+    require_string(dry_run, "payload_readiness")
+    require_string(dry_run, "replay_suffix")
+    require_string(dry_run, "replay_unsupported")
+    guidance = dry_run.get("guidance")
+    if guidance is not None and not isinstance(guidance, str):
+        raise TypeError("manual_choice_dry_run.guidance must be a string or null")
+    require_string(dry_run, "trust")
+    require_string(dry_run, "action_hint")
+    require_bool(dry_run, "selected_for_restore")
+    if dry_run["selected_for_restore"]:
+        raise ValueError("manual_choice_dry_run.selected_for_restore must stay false")
+    require_string(dry_run, "safety_note")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
