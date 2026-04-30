@@ -281,8 +281,8 @@ Snapshot {
   snapshot_id
   created_at
   label
-  state_ref
   action_cursor
+  payload?
 }
 ```
 
@@ -290,6 +290,14 @@ Rules:
 
 - snapshots should not replace the action log
 - snapshots accelerate restore and allow safer rollback
+- snapshot payloads, when present, should be typed and versioned rather than
+  external state dumps
+- the first payload boundary should carry replay-relevant `RuntimeState` at the
+  snapshot cursor and no separate action, lane, or arrangement model
+- snapshot restore must validate payload version, `snapshot_id`, and
+  `action_cursor` before using the payload as an anchor
+- snapshot payload hydration should happen before the existing replay suffix
+  executor runs; the payload must not execute actions itself
 
 ---
 

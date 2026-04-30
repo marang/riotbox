@@ -287,6 +287,49 @@ Practical consequence:
 
 `runtime_state` and the latest snapshot should not drift semantically.
 
+### 9.3 Snapshot payload hydration boundary
+
+The smallest safe implementation boundary for real snapshot hydration is a typed
+payload that carries replay-relevant `RuntimeState` at the snapshot's
+`action_cursor`.
+
+This boundary must stay data-first:
+
+- a snapshot payload is an accelerator, not a new replay truth
+- the action log and structured commit records remain canonical
+- hydration must not parse UI text, result summaries, log lines, or TUI labels
+- hydration must not run Ghost, rerun source analysis, or recreate capture audio
+- hydration must not apply a target suffix itself
+
+Minimal restore flow:
+
+1. load and validate the `SessionFile`
+2. build the target replay plan and select the latest valid snapshot anchor
+3. validate the selected snapshot payload
+4. clone the session and replace only `runtime_state` with the payload runtime state
+5. apply the existing target-suffix executor to that hydrated clone
+6. rebuild derived app/runtime/TUI projection only after suffix application succeeds
+
+Payload validation must reject:
+
+- missing payloads for restore paths that require a snapshot anchor
+- payload schema versions the runtime does not support
+- payload `snapshot_id` or `action_cursor` mismatches
+- snapshot cursors beyond the persisted action log
+- runtime payloads that claim state after the snapshot cursor
+- referenced capture or source graph ids that cannot be resolved from the same session
+
+The caller owns anchor hydration. The existing target-suffix helper remains a
+suffix executor for already-hydrated anchor state. If snapshot payload hydration
+fails, the runtime may surface a read-only recovery/debug prompt, but it must not
+silently fall back to a different anchor or repair the session without an
+explicit recovery path.
+
+The first implementation should copy the current `RuntimeState` shape into a
+versioned snapshot payload and prove that latest-runtime restore and
+snapshot-payload-plus-suffix restore converge for one replay-safe session. Broader
+capture/resample artifact hydration remains out of scope for that first slice.
+
 ---
 
 ## 10. Non-Determinism Sources
