@@ -122,6 +122,8 @@ struct CorrelationSummary {
     audio_runtime_status: String,
     key_outcomes: Vec<String>,
     first_commit: String,
+    commit_count: usize,
+    commit_boundaries: Vec<String>,
     pack_id: String,
     manifest_result: String,
     artifact_count: usize,
@@ -177,6 +179,7 @@ fn build_summary(
         .find(|event| event["event"] == "transport_commit")
         .and_then(format_first_commit)
         .unwrap_or_else(|| "none".to_string());
+    let (commit_count, commit_boundaries) = collect_commit_summary(&observer_events);
 
     Ok(CorrelationSummary {
         observer_schema: launch
@@ -193,6 +196,8 @@ fn build_summary(
             .to_string(),
         key_outcomes,
         first_commit,
+        commit_count,
+        commit_boundaries,
         pack_id: manifest["pack_id"]
             .as_str()
             .unwrap_or("unknown")
@@ -264,6 +269,26 @@ fn format_first_commit(event: &Value) -> Option<String> {
     ))
 }
 
+fn collect_commit_summary(events: &[Value]) -> (usize, Vec<String>) {
+    let mut count = 0;
+    let mut boundaries = Vec::new();
+
+    for commit in events
+        .iter()
+        .filter(|event| event["event"] == "transport_commit")
+        .filter_map(|event| event["committed"].as_array())
+        .flatten()
+    {
+        count += 1;
+        let boundary = commit["boundary"].as_str().unwrap_or("unknown").to_string();
+        if !boundaries.contains(&boundary) {
+            boundaries.push(boundary);
+        }
+    }
+
+    (count, boundaries)
+}
+
 fn render_markdown(summary: &CorrelationSummary) -> String {
     format!(
         "# Observer / Audio QA Correlation Summary\n\n\
@@ -273,6 +298,8 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Audio runtime status: `{}`\n\
          - Key outcomes: `{}`\n\
          - First commit: `{}`\n\n\
+         - Commit count: `{}`\n\
+         - Commit boundaries: `{}`\n\n\
          ## Output Path\n\n\
          - Pack id: `{}`\n\
          - Manifest result: `{}`\n\
@@ -297,6 +324,12 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
             summary.key_outcomes.join(", ")
         },
         summary.first_commit,
+        summary.commit_count,
+        if summary.commit_boundaries.is_empty() {
+            "none".to_string()
+        } else {
+            summary.commit_boundaries.join(", ")
+        },
         summary.pack_id,
         summary.manifest_result,
         summary.artifact_count,
@@ -323,6 +356,8 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "audio_runtime_status": &summary.audio_runtime_status,
             "key_outcomes": &summary.key_outcomes,
             "first_commit": &summary.first_commit,
+            "commit_count": summary.commit_count,
+            "commit_boundaries": &summary.commit_boundaries,
         },
         "output_path": {
             "present": output_path_present(summary),

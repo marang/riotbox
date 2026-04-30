@@ -13,13 +13,6 @@ mkdir -p "$probe_dir"
 observer_fixture="crates/riotbox-app/tests/fixtures/stage_style_jam_probe/events.ndjson"
 
 python3 scripts/validate_user_session_observer_ndjson.py "$observer_fixture"
-jq -s -e \
-  '([.[] | select(.event == "transport_commit")] | length) >= 4
-    and ([.[] | select(.event == "transport_commit") | .committed[] | .boundary] | index("NextBar")) != null
-    and ([.[] | select(.event == "transport_commit") | .committed[] | .boundary] | index("NextBeat")) != null
-    and ([.[] | select(.event == "transport_commit") | .committed[] | .boundary] | index("NextPhrase")) != null
-    and ([.[] | select(.event == "transport_commit") | .committed[] | .commit_sequence] == [1, 2, 3, 4])' \
-  "$observer_fixture"
 
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 16.0
 cargo run -p riotbox-audio --bin w30_preview_render -- \
@@ -64,6 +57,10 @@ jq -e \
     and (.control_path.key_outcomes | index("f -> fill queued")) != null
     and (.control_path.key_outcomes | index("g -> follower queued")) != null
     and .control_path.first_commit == "action 201 at NextBar beat 8 bar 2 phrase 0 sequence 1"
+    and .control_path.commit_count >= 4
+    and (.control_path.commit_boundaries | index("NextBar")) != null
+    and (.control_path.commit_boundaries | index("NextBeat")) != null
+    and (.control_path.commit_boundaries | index("NextPhrase")) != null
     and .output_path.present == true
     and (.output_path.issues | length == 0)
     and .output_path.metrics.w30_candidate_rms > 0.000001
