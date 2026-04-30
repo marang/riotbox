@@ -50,6 +50,12 @@ The current stable metric keys are:
 - `w30_candidate_active_sample_ratio`
 - `w30_rms_delta`
 
+Pack-specific output evidence may still be validated from the source
+`manifest.json` outside these stable summary metric keys. For example, the
+current lane recipe correlation accepts `lane-recipe-listening-pack` output only
+when its required MC-202 Recipe 2 cases are present, passing, non-collapsed, and
+above their signal-delta thresholds.
+
 ## Compatibility Rule
 
 Do not bump `schema_version` for additive fields that do not change the meaning of existing fields.
