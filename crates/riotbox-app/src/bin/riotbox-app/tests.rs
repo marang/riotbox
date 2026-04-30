@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
         assert_eq!(
             autosave["replay_unsupported"],
-            "unsupported suffix 1: w30.capture_to_pad"
+            "unsupported suffix 1: capture.bar_group"
         );
         assert_eq!(
             autosave["guidance"],
@@ -365,8 +365,8 @@ mod tests {
         session.action_log.actions.push(riotbox_core::action::Action {
             id: ActionId(88),
             actor: riotbox_core::action::ActorType::User,
-            command: ActionCommand::W30CaptureToPad,
-            params: riotbox_core::action::ActionParams::Capture { bars: Some(2) },
+            command: ActionCommand::CaptureBarGroup,
+            params: riotbox_core::action::ActionParams::Capture { bars: Some(4) },
             target: ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(BankId::from("bank-a")),

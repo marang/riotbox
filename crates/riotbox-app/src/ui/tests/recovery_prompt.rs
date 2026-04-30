@@ -106,8 +106,8 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(55),
         actor: ActorType::User,
-        command: ActionCommand::W30CaptureToPad,
-        params: ActionParams::Capture { bars: Some(2) },
+        command: ActionCommand::CaptureBarGroup,
+        params: ActionParams::Capture { bars: Some(4) },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
             bank_id: Some(BankId::from("bank-a")),
@@ -120,7 +120,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture to W-30 pad committed".into(),
+            summary: "capture bar group committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -156,7 +156,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         rendered.contains("Restore replay: blocked: 1 unsupported suffix"),
         "{rendered}"
     );
-    assert!(rendered.contains("w30.capture_to_pad"), "{rendered}");
+    assert!(rendered.contains("capture.bar_group"), "{rendered}");
     assert!(
         rendered.contains("autosave file | parseable session JSON | artifacts blocked: 1 of 1"),
         "{rendered}"
@@ -200,8 +200,8 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(56),
         actor: ActorType::User,
-        command: ActionCommand::W30CaptureToPad,
-        params: ActionParams::Capture { bars: Some(2) },
+        command: ActionCommand::CaptureBarGroup,
+        params: ActionParams::Capture { bars: Some(4) },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
             bank_id: Some(BankId::from("bank-a")),
@@ -214,7 +214,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture to W-30 pad committed".into(),
+            summary: "capture bar group committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -256,7 +256,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("unsupported suffix w30.capture_to_pad"),
+        rendered.contains("unsupported suffix capture.bar_group"),
         "{rendered}"
     );
     assert!(

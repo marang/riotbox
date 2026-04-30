@@ -27,6 +27,7 @@ include!("tests/tr909_takeover_source_support.rs");
 include!("tests/tr909_replay.rs");
 include!("tests/w30_replay.rs");
 include!("tests/w30_artifact_replay.rs");
+include!("tests/w30_capture_to_pad_replay.rs");
 include!("tests/scene_replay.rs");
 include!("tests/tr909_policy_undo_ingest.rs");
 include!("tests/scene_fixture_regression.rs");

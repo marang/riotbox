@@ -17,6 +17,15 @@ pub struct W30ArtifactReplayHydrationPlan {
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
+pub struct W30SourceCaptureReplayHydrationPlan {
+    pub action_id: ActionId,
+    pub command: ActionCommand,
+    pub produced_capture_id: CaptureId,
+    pub capture_type: CaptureType,
+    pub storage_path: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub enum W30ArtifactReplayHydrationError {
     NotArtifactProducingW30Action {
         action_id: ActionId,
@@ -42,6 +51,9 @@ pub enum W30ArtifactReplayHydrationError {
         capture_id: CaptureId,
     },
     MissingSourceWindowForSourceBackedCapture {
+        capture_id: CaptureId,
+    },
+    InvalidPadCaptureIdentity {
         capture_id: CaptureId,
     },
     InvalidResampleIdentity {
@@ -83,6 +95,48 @@ pub fn plan_w30_artifact_replay_hydration(
         capture_type: produced_capture.capture_type,
         storage_path: produced_capture.storage_path.clone(),
         resample_generation_depth: produced_capture.resample_generation_depth,
+    })
+}
+
+pub fn plan_w30_capture_to_pad_replay_hydration(
+    session: &SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<W30SourceCaptureReplayHydrationPlan, W30ArtifactReplayHydrationError> {
+    let action = entry.action;
+    if action.command != ActionCommand::W30CaptureToPad {
+        return Err(
+            W30ArtifactReplayHydrationError::NotArtifactProducingW30Action {
+                action_id: action.id,
+                command: action.command,
+            },
+        );
+    }
+
+    let produced_capture = produced_capture_for_action(session, action.id, action.command)?;
+    if produced_capture.storage_path.trim().is_empty() {
+        return Err(W30ArtifactReplayHydrationError::MissingStoragePath {
+            capture_id: produced_capture.capture_id.clone(),
+        });
+    }
+    if produced_capture.source_window.is_none() {
+        return Err(
+            W30ArtifactReplayHydrationError::MissingSourceWindowForSourceBackedCapture {
+                capture_id: produced_capture.capture_id.clone(),
+            },
+        );
+    }
+    if produced_capture.capture_type != CaptureType::Pad {
+        return Err(W30ArtifactReplayHydrationError::InvalidPadCaptureIdentity {
+            capture_id: produced_capture.capture_id.clone(),
+        });
+    }
+
+    Ok(W30SourceCaptureReplayHydrationPlan {
+        action_id: action.id,
+        command: action.command,
+        produced_capture_id: produced_capture.capture_id.clone(),
+        capture_type: produced_capture.capture_type,
+        storage_path: produced_capture.storage_path.clone(),
     })
 }
 

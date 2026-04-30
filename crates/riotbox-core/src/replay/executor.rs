@@ -12,7 +12,7 @@ mod w30;
 
 use w30::{
     apply_promote_capture_to_scene, apply_promote_capture_to_w30_pad,
-    apply_w30_artifact_hydrated_cue, apply_w30_cue,
+    apply_w30_artifact_hydrated_cue, apply_w30_capture_to_pad_hydrated_cue, apply_w30_cue,
 };
 
 const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
@@ -47,6 +47,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::W30BrowseSlicePool,
     ActionCommand::W30StepFocus,
     ActionCommand::W30ApplyDamageProfile,
+    ActionCommand::W30CaptureToPad,
     ActionCommand::W30LoopFreeze,
     ActionCommand::PromoteResample,
 ];
@@ -316,6 +317,7 @@ pub fn apply_replay_entry_to_session(
         | ActionCommand::W30BrowseSlicePool
         | ActionCommand::W30StepFocus
         | ActionCommand::W30ApplyDamageProfile => apply_w30_cue(session, entry)?,
+        ActionCommand::W30CaptureToPad => apply_w30_capture_to_pad_hydrated_cue(session, entry)?,
         ActionCommand::W30LoopFreeze | ActionCommand::PromoteResample => {
             apply_w30_artifact_hydrated_cue(session, entry)?
         }
