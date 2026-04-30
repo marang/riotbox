@@ -126,6 +126,15 @@ fn save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it() 
 
     let mut restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("reload app state");
+    assert_eq!(
+        restored.runtime_view.replay_restore_payload,
+        "payload ready | snapshot restore ok"
+    );
+    assert_eq!(
+        restored.runtime_view.replay_restore_status,
+        "ready: snapshot current"
+    );
+
     restored.session.runtime_state = Default::default();
     let report = restored
         .apply_restore_target_from_snapshot_payload(persisted_session.action_log.actions.len())
