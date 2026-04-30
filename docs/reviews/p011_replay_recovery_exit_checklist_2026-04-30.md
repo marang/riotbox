@@ -22,6 +22,10 @@ bounded. It proves important seams, not complete product-grade recovery.
   multi-boundary observer evidence, summary-level commit boundary assertions,
   observer/audio correlation, and the current latest-explicit-snapshot payload
   readiness check.
+- `just stage-style-snapshot-convergence-smoke`
+  Proves a supported Scene / MC-202 / TR-909 stage-style sequence can restore
+  from a mid-run snapshot payload and converge to the same final mixed buffer
+  as the originally committed path.
 - `just offline-render-reproducibility-smoke`
   Proves one deterministic source-backed W-30 render emits byte-stable WAV
   output for the same generated source.
@@ -119,6 +123,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Scene restore can converge through graph-aware snapshot-payload restore on
   committed active/restore scene state, Jam scene projection, TR-909 / MC-202
   render state, and mixed output.
+- A supported stage-style Scene / MC-202 / TR-909 sequence can now converge
+  from a mid-run snapshot payload through the latest-snapshot summary path with
+  no unsupported suffix commands and final mixed-output parity.
 - App test helpers now include a graph-aware snapshot restore anchor path so
   Scene-family parity proofs do not have to hand-roll anchor runtime state.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
@@ -153,6 +160,7 @@ not a full P011 exit declaration.
 | TR-909 support path | fill -> slam, takeover -> release, reinforce -> scene lock | `crates/riotbox-app/src/jam_app/tests/tr909_replay.rs` | committed drum render parity and pre/post movement delta |
 | MC-202 phrase path | follower -> answer -> pressure -> instigator -> phrase mutation | `crates/riotbox-app/src/jam_app/tests/mc202_restore_replay.rs` | committed bass render parity and adjacent phrase-shape deltas |
 | Scene Brain movement path | scene.launch anchor -> scene.restore suffix | `crates/riotbox-app/src/jam_app/tests/scene_replay.rs` | Scene/Jam/runtime convergence plus mixed-output parity and launch/restore deltas |
+| Stage-style supported seam | scene.launch + MC-202 answer anchor -> TR-909 fill/slam + scene.restore suffix | `crates/riotbox-app/src/jam_app/tests/stage_style_snapshot_convergence.rs` | latest-snapshot readiness, unsupported-count zero, final mixed-output parity, and initial/anchor deltas |
 | Save / reload payload readiness | latest explicit snapshot payload materialization | `crates/riotbox-app/src/jam_app/tests/persistence_runtime_view.rs` | reload readiness and app restore usability |
 | Recovery diagnostics | missing artifact identity, app-invalid payload candidates, read-only candidate status | `crates/riotbox-app/src/jam_app/tests/recovery_*` and `artifact_hydration_preflight.rs` | user-facing guidance and non-mutating scans |
 
