@@ -82,7 +82,6 @@ fn run_snapshot_payload_restore_probe(
     spec: SnapshotPayloadRestoreSpec<'_>,
     configure_replayed_state: impl FnOnce(&mut JamAppState),
 ) -> JamAppState {
-    assert!(spec.anchor_plan_len > 0, "anchor prefix cannot be empty");
     assert!(
         spec.target_plan_index >= spec.anchor_plan_len,
         "target action must be after the snapshot anchor"
@@ -101,23 +100,66 @@ fn run_snapshot_payload_restore_probe(
         .iter()
         .map(|entry| entry.action.id)
         .collect::<Vec<_>>();
-    let anchor_action_id = *anchor_action_ids
-        .last()
-        .expect("validated anchor prefix has a final action");
+    let (anchor_action_cursor, anchor_session) = if let Some(anchor_action_id) =
+        anchor_action_ids.last().copied()
+    {
+        (
+            action_cursor_for(&full_action_log, anchor_action_id, "anchor"),
+            materialize_replay_anchor_session(
+                replay_base_session,
+                full_action_log.clone(),
+                &committed_plan[..spec.anchor_plan_len],
+                anchor_action_ids.clone(),
+                spec.anchor_label,
+            ),
+        )
+    } else {
+        let mut anchor_session = replay_base_session;
+        anchor_session.action_log = full_action_log.clone();
+        anchor_session.runtime_state = Default::default();
+        (0, anchor_session)
+    };
+
+    run_snapshot_payload_restore_probe_from_anchor_runtime(
+        committed_state,
+        graph,
+        spec,
+        anchor_action_cursor,
+        &anchor_session.runtime_state,
+        configure_replayed_state,
+    )
+}
+
+fn run_snapshot_payload_restore_probe_from_anchor_runtime(
+    committed_state: &JamAppState,
+    graph: SourceGraph,
+    spec: SnapshotPayloadRestoreSpec<'_>,
+    anchor_action_cursor: usize,
+    anchor_runtime_state: &riotbox_core::session::RuntimeState,
+    configure_replayed_state: impl FnOnce(&mut JamAppState),
+) -> JamAppState {
+    let full_action_log = committed_state.session.action_log.clone();
+    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
+        .unwrap_or_else(|error| panic!("{}: {error:?}", spec.plan_label));
+    assert_eq!(committed_plan.len(), spec.expected_plan_len);
+    assert!(
+        spec.target_plan_index < committed_plan.len(),
+        "target action index outside committed replay plan"
+    );
+    assert!(
+        spec.target_plan_index >= spec.anchor_plan_len,
+        "target action must be after the snapshot anchor"
+    );
+
     let suffix_action_ids = committed_plan[spec.anchor_plan_len..=spec.target_plan_index]
         .iter()
         .map(|entry| entry.action.id)
         .collect::<Vec<_>>();
     let target_action_id = committed_plan[spec.target_plan_index].action.id;
-    let anchor_action_cursor = action_cursor_for(&full_action_log, anchor_action_id, "anchor");
     let target_action_cursor = action_cursor_for(&full_action_log, target_action_id, "target");
-
-    let anchor_session = materialize_replay_anchor_session(
-        replay_base_session,
-        full_action_log.clone(),
-        &committed_plan[..spec.anchor_plan_len],
-        anchor_action_ids.clone(),
-        spec.anchor_label,
+    assert!(
+        anchor_action_cursor <= target_action_cursor,
+        "snapshot payload anchor cursor must not be after the target cursor"
     );
 
     let mut restore_session = committed_state.session.clone();
@@ -127,7 +169,7 @@ fn run_snapshot_payload_restore_probe(
         spec.snapshot_label,
         spec.snapshot_created_at,
         anchor_action_cursor,
-        &anchor_session.runtime_state,
+        anchor_runtime_state,
     )];
 
     let mut replayed_state = JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
