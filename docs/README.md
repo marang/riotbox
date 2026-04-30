@@ -173,6 +173,7 @@ docs/
 - `reviews/routine_audio_output_audit_2026-04-26.md`: README and Jam recipe control/audio proof audit captured
 - `reviews/w30_mvp_gap_review_2026-04-26.md`: W-30 MVP gap review captured
 - `reviews/w30_mvp_exit_review_2026-04-26.md`: W-30 MVP exit review captured
+- `reviews/p011_replay_recovery_exit_checklist_2026-04-30.md`: P011 replay/recovery exit checklist captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
