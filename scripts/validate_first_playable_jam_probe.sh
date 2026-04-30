@@ -10,8 +10,26 @@ trap 'rm -rf "$tmpdir"' EXIT
 
 probe_dir="$tmpdir/first-playable-jam"
 mkdir -p "$probe_dir"
+observer_fixture="$probe_dir/events.ndjson"
 
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0
+cargo run -p riotbox-app --bin user_session_observer_probe -- \
+  --probe first-playable-jam \
+  --observer "$observer_fixture"
+python3 scripts/validate_user_session_observer_ndjson.py "$observer_fixture"
+jq -s -e \
+  'length >= 10
+    and .[0].event == "observer_started"
+    and .[0].launch.probe == "first-playable-jam"
+    and all(.[]; has("snapshot"))
+    and all(.[]; .snapshot.transport | type == "object")
+    and all(.[]; .snapshot.queue | type == "object")
+    and all(.[]; .snapshot.runtime | type == "object")
+    and all(.[]; .snapshot.recovery | type == "object")
+    and any(.[]; .event == "key_outcome" and .key == "c" and .snapshot.queue.pending_count >= 1)
+    and any(.[]; .event == "transport_commit" and .snapshot.queue.session_log_count >= 1)
+    and any(.[]; .event == "key_outcome" and .key == "w" and .outcome == "queue_w30_trigger_pad")' \
+  "$observer_fixture"
 cargo run -p riotbox-audio --bin w30_preview_render -- \
   --role baseline \
   --out "$probe_dir/baseline.wav" \
@@ -38,7 +56,7 @@ python3 scripts/validate_listening_manifest_json.py \
 
 summary="$probe_dir/observer-audio-summary.json"
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
-  --observer crates/riotbox-app/tests/fixtures/first_playable_jam_probe/events.ndjson \
+  --observer "$observer_fixture" \
   --manifest "$probe_dir/manifest.json" \
   --output "$summary" \
   --json \
@@ -46,11 +64,15 @@ cargo run -p riotbox-app --bin observer_audio_correlate -- \
 jq -e \
   '.schema == "riotbox.observer_audio_summary.v1"
     and .control_path.present == true
-    and (.control_path.key_outcomes | index("space -> transport started")) != null
-    and (.control_path.key_outcomes | index("c -> capture queued")) != null
-    and (.control_path.key_outcomes | index("o -> audition raw/src")) != null
-    and (.control_path.key_outcomes | index("p -> promote queued")) != null
-    and (.control_path.key_outcomes | index("w -> recall/src")) != null
+    and (.control_path.key_outcomes | index("space -> toggle_transport")) != null
+    and (.control_path.key_outcomes | index("c -> queue_capture_bar")) != null
+    and (.control_path.key_outcomes | index("o -> queue_w30_audition")) != null
+    and (.control_path.key_outcomes | index("p -> promote_last_capture")) != null
+    and (.control_path.key_outcomes | index("w -> queue_w30_trigger_pad")) != null
+    and .control_path.commit_count >= 4
+    and (.control_path.commit_boundaries | index("Phrase")) != null
+    and (.control_path.commit_boundaries | index("Bar")) != null
+    and (.control_path.commit_boundaries | index("Beat")) != null
     and .output_path.present == true
     and (.output_path.issues | length == 0)
     and .output_path.metrics.w30_candidate_rms > 0.000001

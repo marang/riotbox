@@ -26,8 +26,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     match args.probe.as_str() {
         "recipe2-mc202" => write_recipe2_mc202_observer(&args.observer_path)?,
+        "first-playable-jam" => write_first_playable_jam_observer(&args.observer_path)?,
         other => {
-            return Err(format!("unknown probe {other:?}; supported probes: recipe2-mc202").into());
+            return Err(format!(
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam"
+            )
+            .into());
         }
     }
 
@@ -85,14 +89,83 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage:\n  user_session_observer_probe --probe recipe2-mc202 --observer <events.ndjson>"
+        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam> --observer <events.ndjson>"
     );
 }
 
 fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;
-    let mut shell = recipe_probe_shell();
+    let mut shell = probe_shell("recipe2-mc202-probe");
 
+    record_probe_start(
+        &mut writer,
+        &mut shell,
+        path,
+        "recipe2-mc202",
+        "synthetic-recipe2-mc202-probe.wav",
+        "headless-recipe2-session.json",
+    )?;
+
+    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
+    apply_probe_key(&mut shell, &mut writer, 300, KeyCode::Char('g'))?;
+    commit_boundary(&mut shell, &mut writer, 400, CommitBoundary::Phrase, 1, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('a'))?;
+    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Phrase, 2, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('P'))?;
+    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Phrase, 3, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 900, KeyCode::Char('I'))?;
+    commit_boundary(&mut shell, &mut writer, 1_000, CommitBoundary::Phrase, 4, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('G'))?;
+    commit_boundary(&mut shell, &mut writer, 1_200, CommitBoundary::Phrase, 5, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 1_300, KeyCode::Char('>'))?;
+
+    Ok(())
+}
+
+fn write_first_playable_jam_observer(path: &Path) -> io::Result<()> {
+    let mut writer = NdjsonWriter::open(path)?;
+    let mut shell = probe_shell("first-playable-jam-probe");
+
+    record_probe_start(
+        &mut writer,
+        &mut shell,
+        path,
+        "first-playable-jam",
+        "synthetic-first-playable-source.wav",
+        "headless-first-playable-session.json",
+    )?;
+
+    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
+    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('c'))?;
+    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Phrase, 1, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('o'))?;
+    apply_probe_key(&mut shell, &mut writer, 500, KeyCode::Char('p'))?;
+    commit_boundary(&mut shell, &mut writer, 600, CommitBoundary::Bar, 2, 2)?;
+    apply_probe_key(&mut shell, &mut writer, 700, KeyCode::Char('w'))?;
+    commit_boundary(&mut shell, &mut writer, 800, CommitBoundary::Beat, 3, 1)?;
+
+    Ok(())
+}
+
+fn probe_shell(session_id: &str) -> JamShellState {
+    let mut session = SessionFile::new(session_id, "0.1.0", "2026-04-30T00:00:00Z");
+    session.runtime_state.lane_state.w30.active_bank = Some("bank-a".into());
+    session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
+
+    JamShellState::new(
+        JamAppState::from_parts(session, None, ActionQueue::new()),
+        ShellLaunchMode::Ingest,
+    )
+}
+
+fn record_probe_start(
+    writer: &mut NdjsonWriter,
+    shell: &mut JamShellState,
+    path: &Path,
+    probe: &str,
+    source_path: &str,
+    session_path: &str,
+) -> io::Result<()> {
     writer.record(json!({
         "event": "observer_started",
         "schema": "riotbox.user_session_observer.v1",
@@ -104,21 +177,21 @@ fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
         "argv": [
             "user_session_observer_probe",
             "--probe",
-            "recipe2-mc202",
+            probe,
             "--observer",
             path.display().to_string(),
         ],
         "launch": {
             "mode": "ingest",
-            "source_path": "synthetic-recipe2-mc202-probe.wav",
-            "session_path": "headless-recipe2-session.json",
+            "source_path": source_path,
+            "session_path": session_path,
             "source_graph_path": null,
             "sidecar_script_path": null,
             "analysis_seed": 19,
             "observer_path": path.display().to_string(),
-            "probe": "recipe2-mc202",
+            "probe": probe,
         },
-        "snapshot": observer_snapshot(&shell),
+        "snapshot": observer_snapshot(shell),
     }))?;
     shell.app.set_audio_health(headless_audio_health());
     writer.record(json!({
@@ -127,37 +200,11 @@ fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
         "status": "started",
         "error": null,
         "host": "headless-probe",
-        "snapshot": observer_snapshot(&shell),
-    }))?;
-
-    apply_recipe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
-    apply_recipe_key(&mut shell, &mut writer, 300, KeyCode::Char('g'))?;
-    commit_phrase(&mut shell, &mut writer, 400, 1)?;
-    apply_recipe_key(&mut shell, &mut writer, 500, KeyCode::Char('a'))?;
-    commit_phrase(&mut shell, &mut writer, 600, 2)?;
-    apply_recipe_key(&mut shell, &mut writer, 700, KeyCode::Char('P'))?;
-    commit_phrase(&mut shell, &mut writer, 800, 3)?;
-    apply_recipe_key(&mut shell, &mut writer, 900, KeyCode::Char('I'))?;
-    commit_phrase(&mut shell, &mut writer, 1_000, 4)?;
-    apply_recipe_key(&mut shell, &mut writer, 1_100, KeyCode::Char('G'))?;
-    commit_phrase(&mut shell, &mut writer, 1_200, 5)?;
-    apply_recipe_key(&mut shell, &mut writer, 1_300, KeyCode::Char('>'))?;
-
-    Ok(())
+        "snapshot": observer_snapshot(shell),
+    }))
 }
 
-fn recipe_probe_shell() -> JamShellState {
-    JamShellState::new(
-        JamAppState::from_parts(
-            SessionFile::new("recipe2-mc202-probe", "0.1.0", "2026-04-30T00:00:00Z"),
-            None,
-            ActionQueue::new(),
-        ),
-        ShellLaunchMode::Ingest,
-    )
-}
-
-fn apply_recipe_key(
+fn apply_probe_key(
     shell: &mut JamShellState,
     writer: &mut NdjsonWriter,
     timestamp_ms: u64,
@@ -240,6 +287,60 @@ fn apply_recipe_key(
                 }
             }
         }
+        ShellKeyOutcome::QueueCaptureBar => {
+            shell.app.queue_capture_bar(timestamp_ms);
+            shell.set_error_status("queued capture for next phrase");
+        }
+        ShellKeyOutcome::PromoteLastCapture => {
+            if shell.app.queue_promote_last_capture(timestamp_ms) {
+                shell.set_error_status("queued promotion for latest capture");
+            } else {
+                shell.set_error_status("no promotable capture or W-30 target available");
+            }
+        }
+        ShellKeyOutcome::QueueW30Audition => match shell.app.queue_w30_audition(timestamp_ms) {
+            Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                shell.set_error_status("queued W-30 audition for next bar");
+            }
+            Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                shell.set_error_status("W-30 pad cue already queued");
+            }
+            Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                shell.set_error_status("W-30 audition already in state");
+            }
+            None => shell.set_error_status("no W-30 or raw capture available to audition"),
+        },
+        ShellKeyOutcome::QueueW30LiveRecall => {
+            match shell.app.queue_w30_live_recall(timestamp_ms) {
+                Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                    shell.set_error_status("queued W-30 live recall for next bar");
+                }
+                Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                    shell.set_error_status("W-30 live recall already queued");
+                }
+                Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                    shell.set_error_status("W-30 live recall already in state");
+                }
+                None => {
+                    shell
+                        .set_error_status("no pinned or promoted W-30 capture available to recall");
+                }
+            }
+        }
+        ShellKeyOutcome::QueueW30TriggerPad => {
+            match shell.app.queue_w30_trigger_pad(timestamp_ms) {
+                Some(riotbox_app::jam_app::QueueControlResult::Enqueued) => {
+                    shell.set_error_status("queued W-30 pad trigger for next beat");
+                }
+                Some(riotbox_app::jam_app::QueueControlResult::AlreadyPending) => {
+                    shell.set_error_status("W-30 pad cue already queued");
+                }
+                Some(riotbox_app::jam_app::QueueControlResult::AlreadyInState) => {
+                    shell.set_error_status("W-30 pad trigger already in state");
+                }
+                None => shell.set_error_status("no committed W-30 pad available to trigger"),
+            }
+        }
         ShellKeyOutcome::RaiseMc202Touch => {
             let touch = shell.app.adjust_mc202_touch(0.08);
             shell.set_error_status(format!("MC-202 touch {touch:.2}"));
@@ -262,27 +363,29 @@ fn apply_recipe_key(
     }))
 }
 
-fn commit_phrase(
+fn commit_boundary(
     shell: &mut JamShellState,
     writer: &mut NdjsonWriter,
     timestamp_ms: u64,
-    phrase_index: u64,
+    kind: CommitBoundary,
+    index: u64,
+    expected_count: usize,
 ) -> io::Result<()> {
     let committed = shell.app.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
-            beat_index: phrase_index * 16,
-            bar_index: phrase_index * 4,
-            phrase_index,
+            kind,
+            beat_index: index * 16,
+            bar_index: index * 4,
+            phrase_index: index,
             scene_id: Some(SceneId::from("scene-1")),
         },
         timestamp_ms,
     );
-    if committed.len() != 1 {
+    if committed.len() != expected_count {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             format!(
-                "expected one committed Recipe 2 action at phrase {phrase_index}, got {}",
+                "expected {expected_count} committed action(s) at {kind:?} index {index}, got {}",
                 committed.len()
             ),
         ));
@@ -377,5 +480,23 @@ mod tests {
         assert!(events.contains(r#""outcome":"queue_mc202_mutate_phrase""#));
         assert!(events.contains(r#""outcome":"raise_mc202_touch""#));
         assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 5);
+    }
+
+    #[test]
+    fn writes_first_playable_jam_observer_stream() {
+        let temp = tempfile::tempdir().expect("tempdir");
+        let path = temp.path().join("events.ndjson");
+
+        write_first_playable_jam_observer(&path).expect("write observer");
+
+        let events = fs::read_to_string(path).expect("read observer");
+        assert!(events.contains(r#""probe":"first-playable-jam""#));
+        assert!(events.contains(r#""outcome":"queue_capture_bar""#));
+        assert!(events.contains(r#""outcome":"queue_w30_audition""#));
+        assert!(events.contains(r#""outcome":"promote_last_capture""#));
+        assert!(events.contains(r#""outcome":"queue_w30_trigger_pad""#));
+        assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
+        assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 2);
+        assert_eq!(events.matches(r#""boundary":"Beat""#).count(), 1);
     }
 }

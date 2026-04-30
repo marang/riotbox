@@ -1,9 +1,0 @@
-{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic-first-playable-source.wav"}}
-{"event":"audio_runtime","status":"started","host":"offline"}
-{"event":"key_outcome","key":"space","outcome":"transport started"}
-{"event":"key_outcome","key":"c","outcome":"capture queued"}
-{"event":"transport_commit","committed":[{"action_id":101,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}
-{"event":"key_outcome","key":"o","outcome":"audition raw/src"}
-{"event":"key_outcome","key":"p","outcome":"promote queued"}
-{"event":"transport_commit","committed":[{"action_id":102,"boundary":"NextBar","beat_index":12,"bar_index":3,"phrase_index":0,"commit_sequence":2}]}
-{"event":"key_outcome","key":"w","outcome":"recall/src"}

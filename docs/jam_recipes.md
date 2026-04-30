@@ -564,13 +564,14 @@ Expected result:
 
 - the probe renders W-30 fallback baseline and source-backed candidate WAVs from deterministic synthetic material
 - it validates the generated `manifest.json`
-- it correlates that output with an observer fixture for `space`, `c`, `o`, `p`, and `w`
+- it generates and validates an app-level observer probe for `space`, `c`, `o`, `p`, and `w`
+- it correlates that generated control evidence with the W-30 output evidence
 - it fails if the output is silent, missing, or collapsed back to the fallback-like source-diff metrics
 
 What this proves:
 
 - the current first-playable path has committed control evidence
-- raw audition / promote / recall intent is present in observer evidence
+- capture / raw audition / promote / promoted hit intent is present in generated observer evidence
 - the W-30 output seam is source-backed enough to produce measurable candidate audio and source-vs-fallback delta
 
 What it does not prove yet:

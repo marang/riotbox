@@ -163,15 +163,15 @@ fn summarizes_first_playable_w30_source_diff_manifest() {
     assert_eq!(
         summary.key_outcomes,
         [
-            "space -> transport started",
-            "c -> capture queued",
-            "o -> audition raw/src",
-            "p -> promote queued",
-            "w -> recall/src"
+            "space -> toggle_transport",
+            "c -> queue_capture_bar",
+            "o -> queue_w30_audition",
+            "p -> promote_last_capture",
+            "w -> queue_w30_trigger_pad"
         ]
     );
-    assert_eq!(summary.commit_count, 2);
-    assert_eq!(summary.commit_boundaries, ["NextBar"]);
+    assert_eq!(summary.commit_count, 4);
+    assert_eq!(summary.commit_boundaries, ["Phrase", "Bar", "Beat"]);
     assert!(summary.w30_candidate_rms.is_some_and(|rms| rms > 0.001));
     assert!(
         summary
@@ -389,7 +389,28 @@ fn fixture_manifest() -> &'static str {
 }
 
 fn first_playable_observer() -> &'static str {
-    include_str!("../../../tests/fixtures/first_playable_jam_probe/events.ndjson")
+    concat!(
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic-first-playable-source.wav"}}"#,
+        "\n",
+        r#"{"event":"audio_runtime","status":"started","host":"headless-probe"}"#,
+        "\n",
+        r#"{"event":"key_outcome","key":"space","outcome":"toggle_transport"}"#,
+        "\n",
+        r#"{"event":"key_outcome","key":"c","outcome":"queue_capture_bar"}"#,
+        "\n",
+        r#"{"event":"transport_commit","committed":[{"action_id":101,"boundary":"Phrase","beat_index":16,"bar_index":4,"phrase_index":1,"commit_sequence":1}]}"#,
+        "\n",
+        r#"{"event":"key_outcome","key":"o","outcome":"queue_w30_audition"}"#,
+        "\n",
+        r#"{"event":"key_outcome","key":"p","outcome":"promote_last_capture"}"#,
+        "\n",
+        r#"{"event":"transport_commit","committed":[{"action_id":102,"boundary":"Bar","beat_index":32,"bar_index":8,"phrase_index":2,"commit_sequence":1},{"action_id":103,"boundary":"Bar","beat_index":32,"bar_index":8,"phrase_index":2,"commit_sequence":2}]}"#,
+        "\n",
+        r#"{"event":"key_outcome","key":"w","outcome":"queue_w30_trigger_pad"}"#,
+        "\n",
+        r#"{"event":"transport_commit","committed":[{"action_id":104,"boundary":"Beat","beat_index":48,"bar_index":12,"phrase_index":3,"commit_sequence":1}]}"#,
+        "\n",
+    )
 }
 
 fn w30_source_diff_manifest() -> String {
