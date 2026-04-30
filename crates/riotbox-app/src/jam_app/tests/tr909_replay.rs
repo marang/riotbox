@@ -152,6 +152,89 @@ fn tr909_target_suffix_replay_helper_matches_committed_app_projection() {
     );
 }
 
+#[test]
+fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
+    let graph = sample_graph();
+    let base_session = sample_session(&graph);
+    let mut committed_state =
+        JamAppState::from_parts(base_session.clone(), Some(graph.clone()), ActionQueue::new());
+
+    committed_state.queue_tr909_fill(300);
+    commit_tr909_replay_step(&mut committed_state, CommitBoundary::Bar, 8, 2, 0, 400);
+
+    assert!(committed_state.queue_tr909_slam_toggle(500));
+    commit_tr909_replay_step(&mut committed_state, CommitBoundary::Beat, 9, 2, 0, 600);
+    let committed_slam = render_tr909_replay_buffer(&committed_state);
+
+    let full_action_log = committed_state.session.action_log.clone();
+    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
+        .expect("committed TR-909 action log builds replay plan");
+    assert_eq!(committed_plan.len(), 2);
+    let fill_action_id = committed_plan[0].action.id;
+    let slam_action_id = committed_plan[1].action.id;
+    let fill_action_cursor = full_action_log
+        .actions
+        .iter()
+        .position(|action| action.id == fill_action_id)
+        .expect("fill action exists in action log")
+        + 1;
+    let slam_action_cursor = full_action_log
+        .actions
+        .iter()
+        .position(|action| action.id == slam_action_id)
+        .expect("slam action exists in action log")
+        + 1;
+
+    let mut anchor_session = base_session;
+    anchor_session.action_log = full_action_log.clone();
+    let anchor_report =
+        riotbox_core::replay::apply_replay_plan_to_session(&mut anchor_session, &committed_plan[..1])
+            .expect("fill anchor materializes");
+    assert_eq!(anchor_report.applied_action_ids, vec![fill_action_id]);
+
+    let snapshot_id = SnapshotId::from("snap-after-fill");
+    let mut restore_session = committed_state.session.clone();
+    restore_session.runtime_state = Default::default();
+    restore_session.snapshots = vec![Snapshot {
+        snapshot_id: snapshot_id.clone(),
+        created_at: "2026-04-30T07:30:00Z".into(),
+        label: "after fill".into(),
+        action_cursor: fill_action_cursor,
+        payload: Some(riotbox_core::session::SnapshotPayload {
+            payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
+            snapshot_id,
+            action_cursor: fill_action_cursor,
+            runtime_state: anchor_session.runtime_state.clone(),
+        }),
+    }];
+
+    let mut replayed_state =
+        JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
+    let replay_report = replayed_state
+        .apply_restore_target_from_snapshot_payload(slam_action_cursor)
+        .expect("snapshot payload restore applies slam suffix");
+    let replayed_slam = render_tr909_replay_buffer(&replayed_state);
+
+    assert_eq!(replay_report.target_action_cursor, slam_action_cursor);
+    assert_eq!(
+        replay_report.anchor_snapshot_id.as_deref(),
+        Some("snap-after-fill")
+    );
+    assert_eq!(replay_report.anchor_action_cursor, Some(fill_action_cursor));
+    assert_eq!(replay_report.applied_action_ids, vec![slam_action_id]);
+    assert_eq!(
+        replayed_state.session.runtime_state,
+        committed_state.session.runtime_state
+    );
+    assert_eq!(replayed_state.runtime.tr909_render, committed_state.runtime.tr909_render);
+    assert_recipe_buffers_match(
+        "snapshot payload restore TR-909 slam -> committed slam",
+        &replayed_slam,
+        &committed_slam,
+        0.00001,
+    );
+}
+
 fn commit_tr909_replay_step(
     state: &mut JamAppState,
     kind: CommitBoundary,
