@@ -25,6 +25,7 @@ audio-qa-ci:
     just observer-audio-correlate-fixture
     just observer-audio-correlate-json-fixture
     just observer-audio-summary-validator-fixtures
+    just user-session-observer-validator-fixtures
     just listening-manifest-validator-fixtures
     just listening-manifest-validate-generated-packs
     just w30-smoke-generated-source-diff
@@ -110,6 +111,13 @@ observer-audio-correlate-json-fixture:
 observer-audio-summary-validator-fixtures:
     python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_valid_failure.json
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_schema.json; then echo "expected invalid observer/audio summary fixture to fail" >&2; exit 1; fi
+
+user-session-observer-validator-fixtures:
+    python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson
+    python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/first_playable_jam_probe/events.ndjson
+    python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_valid_recovery.ndjson
+    if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_schema.ndjson; then echo "expected invalid user-session observer fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_recovery_decision.ndjson; then echo "expected missing recovery decision fixture to fail" >&2; exit 1; fi
 
 listening-manifest-validator-fixtures:
     python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_valid.json
