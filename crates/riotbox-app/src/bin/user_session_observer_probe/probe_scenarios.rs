@@ -10,7 +10,7 @@ use riotbox_core::{
     action::CommitBoundary, persistence::save_session_json, queue::ActionQueue,
     session::SessionFile,
 };
-use serde_json::json;
+use serde_json::{Value, json};
 
 use super::{
     NdjsonWriter, apply_probe_key, commit_boundary, headless_audio_health, probe_shell,
@@ -195,57 +195,24 @@ pub(super) fn write_interrupted_session_recovery_observer(path: &Path) -> io::Re
     let temp_before = fs::read(&temp_path)?;
     let autosave_before = fs::read(&autosave_path)?;
 
-    let mut shell = JamShellState::new(
-        JamAppState::from_parts(
-            SessionFile::new("loaded", "0.1.0", "2026-04-30T17:15:02Z"),
-            None,
-            ActionQueue::new(),
-        ),
-        ShellLaunchMode::Load,
-    );
-    let recovery_surface =
-        JamAppState::scan_session_recovery_surface(&session_path).map_err(io::Error::other)?;
-    shell.set_recovery_surface(recovery_surface);
+    let mut shell = recovery_probe_shell(
+        &session_path,
+        SessionFile::new("loaded", "0.1.0", "2026-04-30T17:15:02Z"),
+    )?;
 
     let mut writer = NdjsonWriter::open(path)?;
-    writer.record(json!({
-        "event": "observer_started",
-        "schema": "riotbox.user_session_observer.v1",
-        "timestamp_ms": 0,
-        "opt_in": true,
-        "capture_context": "headless_probe",
-        "raw_audio_recording": false,
-        "realtime_callback_io": false,
-        "argv": [
-            "user_session_observer_probe",
-            "--probe",
-            "interrupted-session-recovery",
-            "--observer",
-            path.display().to_string(),
-        ],
-        "launch": {
-            "mode": "load",
-            "session_path": session_path,
-            "source_graph_path": null,
-            "observer_path": path.display().to_string(),
-            "probe": "interrupted-session-recovery",
-            "drill": {
-                "temp_path": temp_path,
-                "autosave_path": autosave_path,
-            },
-        },
-        "snapshot": observer_snapshot(&shell),
-    }))?;
-
-    shell.app.set_audio_health(headless_audio_health());
-    writer.record(json!({
-        "event": "audio_runtime",
-        "timestamp_ms": 10,
-        "status": "started",
-        "error": null,
-        "host": "headless-probe",
-        "snapshot": observer_snapshot(&shell),
-    }))?;
+    record_recovery_probe_start(
+        &mut writer,
+        path,
+        "interrupted-session-recovery",
+        &session_path,
+        json!({
+            "temp_path": temp_path,
+            "autosave_path": autosave_path,
+        }),
+        &shell,
+    )?;
+    record_recovery_probe_audio_runtime(&mut writer, &mut shell)?;
 
     if fs::read(&session_path)? != session_before {
         return Err(io::Error::other(
@@ -264,6 +231,121 @@ pub(super) fn write_interrupted_session_recovery_observer(path: &Path) -> io::Re
     }
 
     Ok(())
+}
+
+pub(super) fn write_missing_target_recovery_observer(path: &Path) -> io::Result<()> {
+    let probe_dir = path
+        .parent()
+        .filter(|parent| !parent.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."))
+        .join("missing-target-recovery");
+    fs::create_dir_all(&probe_dir)?;
+
+    let session_path = probe_dir.join("session.json");
+    let autosave_path = probe_dir.join("session.autosave.2026-04-30T172000Z.json");
+    let _ = fs::remove_file(&session_path);
+    save_session_json(
+        &autosave_path,
+        &SessionFile::new("autosave", "0.1.0", "2026-04-30T17:20:01Z"),
+    )
+    .map_err(io::Error::other)?;
+
+    let autosave_before = fs::read(&autosave_path)?;
+
+    let mut shell = recovery_probe_shell(
+        &session_path,
+        SessionFile::new("loaded-empty", "0.1.0", "2026-04-30T17:20:02Z"),
+    )?;
+
+    let mut writer = NdjsonWriter::open(path)?;
+    record_recovery_probe_start(
+        &mut writer,
+        path,
+        "missing-target-recovery",
+        &session_path,
+        json!({
+            "autosave_path": autosave_path,
+        }),
+        &shell,
+    )?;
+    record_recovery_probe_audio_runtime(&mut writer, &mut shell)?;
+
+    if session_path.exists() {
+        return Err(io::Error::other(
+            "missing target session was created during recovery drill",
+        ));
+    }
+    if fs::read(&autosave_path)? != autosave_before {
+        return Err(io::Error::other(
+            "autosave recovery candidate changed during recovery drill",
+        ));
+    }
+
+    Ok(())
+}
+
+fn recovery_probe_shell(
+    session_path: &Path,
+    loaded_session: SessionFile,
+) -> io::Result<JamShellState> {
+    let mut shell = JamShellState::new(
+        JamAppState::from_parts(loaded_session, None, ActionQueue::new()),
+        ShellLaunchMode::Load,
+    );
+    let recovery_surface =
+        JamAppState::scan_session_recovery_surface(session_path).map_err(io::Error::other)?;
+    shell.set_recovery_surface(recovery_surface);
+    Ok(shell)
+}
+
+fn record_recovery_probe_start(
+    writer: &mut NdjsonWriter,
+    path: &Path,
+    probe: &str,
+    session_path: &Path,
+    drill: Value,
+    shell: &JamShellState,
+) -> io::Result<()> {
+    writer.record(json!({
+        "event": "observer_started",
+        "schema": "riotbox.user_session_observer.v1",
+        "timestamp_ms": 0,
+        "opt_in": true,
+        "capture_context": "headless_probe",
+        "raw_audio_recording": false,
+        "realtime_callback_io": false,
+        "argv": [
+            "user_session_observer_probe",
+            "--probe",
+            probe,
+            "--observer",
+            path.display().to_string(),
+        ],
+        "launch": {
+            "mode": "load",
+            "session_path": session_path,
+            "source_graph_path": null,
+            "observer_path": path.display().to_string(),
+            "probe": probe,
+            "drill": drill,
+        },
+        "snapshot": observer_snapshot(shell),
+    }))
+}
+
+fn record_recovery_probe_audio_runtime(
+    writer: &mut NdjsonWriter,
+    shell: &mut JamShellState,
+) -> io::Result<()> {
+    shell.app.set_audio_health(headless_audio_health());
+    writer.record(json!({
+        "event": "audio_runtime",
+        "timestamp_ms": 10,
+        "status": "started",
+        "error": null,
+        "host": "headless-probe",
+        "snapshot": observer_snapshot(shell),
+    }))
 }
 
 pub(super) fn write_feral_grid_jam_observer(path: &Path) -> io::Result<()> {

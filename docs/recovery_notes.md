@@ -180,6 +180,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
 - `just interrupted-session-recovery-probe`
+- `just missing-target-recovery-probe`
 - `just ci`
 
 The first probe verifies app-level failure paths for missing payloads and
@@ -206,6 +207,8 @@ source-less reload. The core probe verifies the lower-level hydration contract.
 The interrupted-session recovery probe verifies a generated adjacent
 temp/autosave file set reaches the observer recovery envelope without selecting
 or mutating any recovery candidate.
+The missing-target recovery probe verifies a missing normal session path can be
+reported beside a parseable autosave clue without silently choosing that clue.
 
 ## Out Of Scope Today
 
