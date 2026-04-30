@@ -88,6 +88,9 @@ bounded. It proves important seams, not complete product-grade recovery.
   artifact-backed W-30 playback without source audio.
 - App-level snapshot-payload restore now proves the immediate `capture.now`
   variant against committed W-30 preview output and fallback-collapse controls.
+- Recovery scanning now reports broken immediate `capture.now` artifact suffixes
+  as read-only, non-selected candidates with explicit missing artifact identity
+  guidance instead of silently falling back.
 - `capture.bar_group` can replay a persisted source-window-backed pad capture
   artifact into W-30 `last_capture` / live-recall state and drive
   artifact-backed W-30 playback without source audio.
