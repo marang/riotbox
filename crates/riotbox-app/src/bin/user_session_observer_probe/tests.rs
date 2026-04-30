@@ -106,6 +106,39 @@ fn writes_stage_style_restore_diversity_observer_stream() {
 }
 
 #[test]
+fn writes_interrupted_session_recovery_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_interrupted_session_recovery_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"interrupted-session-recovery""#));
+    assert!(events.contains(r#""mode":"load""#));
+    assert!(events.contains(r#""kind":"orphan temp file""#));
+    assert!(events.contains(r#""status":"invalid session JSON""#));
+    assert!(events.contains(r#""kind":"autosave file""#));
+    assert!(events.contains(r#""trust":"RecoverableClue""#));
+    assert!(events.contains(r#""manual_choice_dry_run":{"#));
+    assert!(events.contains(r#""selected_for_restore":false"#));
+    assert!(
+        temp.path()
+            .join("interrupted-session-recovery/session.json")
+            .is_file()
+    );
+    assert!(
+        temp.path()
+            .join("interrupted-session-recovery/.session.json.tmp-1776359400")
+            .is_file()
+    );
+    assert!(
+        temp.path()
+            .join("interrupted-session-recovery/session.autosave.2026-04-30T171500Z.json")
+            .is_file()
+    );
+}
+
+#[test]
 fn writes_feral_grid_jam_observer_stream() {
     let temp = tempfile::tempdir().expect("tempdir");
     let path = temp.path().join("events.ndjson");
