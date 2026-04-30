@@ -6,7 +6,10 @@ use crate::{
         W30ArtifactReplayHydrationError, build_replay_target_plan,
         plan_w30_artifact_replay_hydration,
     },
-    session::{CaptureRef, CaptureTarget, CaptureType, SessionFile, W30PreviewModeState},
+    session::{
+        CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, SessionFile,
+        W30PreviewModeState,
+    },
 };
 
 #[test]
@@ -186,16 +189,10 @@ fn w30_step_focus_rejects_unexpected_params_without_mutating_session() {
 
 #[test]
 fn w30_artifact_producing_actions_reject_without_partial_mutation() {
-    let artifact_actions = vec![
-        (
-            ActionCommand::W30CaptureToPad,
-            ActionParams::Capture { bars: Some(2) },
-        ),
-        (
-            ActionCommand::CaptureBarGroup,
-            ActionParams::Capture { bars: Some(4) },
-        ),
-    ];
+    let artifact_actions = vec![(
+        ActionCommand::CaptureBarGroup,
+        ActionParams::Capture { bars: Some(4) },
+    )];
 
     for (command, params) in artifact_actions {
         let action_log = action_log(vec![
@@ -371,6 +368,104 @@ fn promote_capture_to_scene_replay_rejects_missing_scene_target_without_mutation
             action_id: ActionId(2),
             command: ActionCommand::PromoteCaptureToScene,
             expected: "ActionTarget { scene_id: Some(_) }",
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
+fn w30_capture_to_pad_replay_hydrates_persisted_source_window_capture() {
+    let action_log = action_log(vec![w30_action(
+        2,
+        ActionCommand::W30CaptureToPad,
+        ActionParams::Capture { bars: Some(2) },
+        200,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T12:05:00Z");
+    session
+        .captures
+        .push(w30_capture_to_pad_capture_for_action(2));
+
+    let report = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect("w30.capture_to_pad hydrates persisted capture artifact");
+
+    assert_eq!(report.applied_action_ids, vec![ActionId(2)]);
+    assert_eq!(
+        session.runtime_state.lane_state.w30.active_bank,
+        Some(BankId::from("bank-a"))
+    );
+    assert_eq!(
+        session.runtime_state.lane_state.w30.focused_pad,
+        Some(PadId::from("pad-01"))
+    );
+    assert_eq!(
+        session.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-02"))
+    );
+    assert_eq!(
+        session.runtime_state.lane_state.w30.preview_mode,
+        Some(W30PreviewModeState::LiveRecall)
+    );
+}
+
+#[test]
+fn w30_capture_to_pad_replay_rejects_missing_source_window_without_mutation() {
+    let action_log = action_log(vec![w30_action(
+        2,
+        ActionCommand::W30CaptureToPad,
+        ActionParams::Capture { bars: Some(2) },
+        200,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T12:05:00Z");
+    let mut capture = w30_capture_to_pad_capture_for_action(2);
+    capture.source_window = None;
+    session.captures.push(capture);
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect_err("w30.capture_to_pad requires source-window identity");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::ArtifactHydration {
+            action_id: ActionId(2),
+            command: ActionCommand::W30CaptureToPad,
+            reason: W30ArtifactReplayHydrationError::MissingSourceWindowForSourceBackedCapture {
+                capture_id: CaptureId::from("cap-02"),
+            },
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
+fn w30_capture_to_pad_replay_rejects_non_pad_capture_without_mutation() {
+    let action_log = action_log(vec![w30_action(
+        2,
+        ActionCommand::W30CaptureToPad,
+        ActionParams::Capture { bars: Some(2) },
+        200,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T12:05:00Z");
+    let mut capture = w30_capture_to_pad_capture_for_action(2);
+    capture.capture_type = CaptureType::Resample;
+    session.captures.push(capture);
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect_err("w30.capture_to_pad requires a pad capture identity");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::ArtifactHydration {
+            action_id: ActionId(2),
+            command: ActionCommand::W30CaptureToPad,
+            reason: W30ArtifactReplayHydrationError::InvalidPadCaptureIdentity {
+                capture_id: CaptureId::from("cap-02"),
+            },
         }
     );
     assert_eq!(session, original_session);
@@ -706,6 +801,31 @@ fn resample_capture_for_action(action_id: u64) -> CaptureRef {
         created_from_action: Some(ActionId(action_id)),
         storage_path: "captures/cap-02.wav".into(),
         assigned_target: None,
+        is_pinned: false,
+        notes: None,
+    }
+}
+
+fn w30_capture_to_pad_capture_for_action(action_id: u64) -> CaptureRef {
+    CaptureRef {
+        capture_id: CaptureId::from("cap-02"),
+        capture_type: CaptureType::Pad,
+        source_origin_refs: vec!["source-1".into()],
+        source_window: Some(CaptureSourceWindow {
+            source_id: "source-1".into(),
+            start_seconds: 1.0,
+            end_seconds: 3.0,
+            start_frame: 48_000,
+            end_frame: 144_000,
+        }),
+        lineage_capture_refs: Vec::new(),
+        resample_generation_depth: 0,
+        created_from_action: Some(ActionId(action_id)),
+        storage_path: "captures/cap-02.wav".into(),
+        assigned_target: Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        }),
         is_pinned: false,
         notes: None,
     }

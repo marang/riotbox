@@ -1,9 +1,9 @@
-fn unsupported_w30_capture_to_pad_action(id: u64) -> Action {
+fn unsupported_capture_bar_group_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
-        command: ActionCommand::W30CaptureToPad,
-        params: ActionParams::Capture { bars: Some(2) },
+        command: ActionCommand::CaptureBarGroup,
+        params: ActionParams::Capture { bars: Some(4) },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
             bank_id: Some(BankId::from("bank-a")),
@@ -16,7 +16,7 @@ fn unsupported_w30_capture_to_pad_action(id: u64) -> Action {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture to W-30 pad committed".into(),
+            summary: "capture bar group committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: Some("unsupported capture-producing action".into()),
@@ -107,7 +107,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     session
         .action_log
         .actions
-        .push(unsupported_w30_capture_to_pad_action(77));
+        .push(unsupported_capture_bar_group_action(77));
     session
         .action_log
         .commit_records
@@ -128,7 +128,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
             riotbox_core::replay::ReplayTargetExecutionError::Execution(
                 riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                     action_id: ActionId(77),
-                    command: ActionCommand::W30CaptureToPad,
+                    command: ActionCommand::CaptureBarGroup,
                 }
             )
         )
@@ -148,7 +148,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     );
     assert_eq!(
         state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: w30.capture_to_pad"
+        "unsupported suffix 1: capture.bar_group"
     );
 }
 

@@ -67,6 +67,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   a snapshot suffix.
 - `promote.capture_to_scene` can replay metadata-only assignment for an existing
   capture and explicit scene target without creating or regenerating audio.
+- `w30.capture_to_pad` can replay a persisted source-window-backed pad capture
+  artifact and drive artifact-backed W-30 playback without source audio.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
@@ -85,7 +87,7 @@ bounded. It proves important seams, not complete product-grade recovery.
   confirmation.
 - Remaining artifact hydration for broader artifact-producing W-30 /
   capture / promote actions beyond `w30.loop_freeze`, `promote.resample`, and
-  metadata-only capture promotion, such as `w30.capture_to_pad`.
+  bounded `w30.capture_to_pad`, such as generic `capture.bar_group`.
 - Full arrangement export, stems, recording, or manifest-normalized export
   reproducibility.
 - Long-run soak behavior over extended live sessions.

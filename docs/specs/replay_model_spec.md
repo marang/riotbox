@@ -203,6 +203,7 @@ Current supported musical commands:
 - `w30.browse_slice_pool`
 - `w30.step_focus`
 - `w30.apply_damage_profile`
+- `w30.capture_to_pad` for explicitly persisted source-window-backed pad captures
 - `w30.loop_freeze` for explicitly persisted artifact-backed captures
 - `promote.resample` for explicitly persisted artifact-backed resample captures
 
@@ -218,6 +219,7 @@ Rules:
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, and restore pointer while deliberately staying Source Graph-free. A separate graph-aware replay boundary can hydrate `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context.
 - W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.
+- `w30.capture_to_pad` replay hydrates an already persisted source-window-backed pad capture produced by the committed action and points W-30 focus/last-capture/live-recall state at it. It does not regenerate capture audio from the Source Graph.
 - `promote.capture_to_pad` replay assigns an existing `CaptureRef` to an explicit W-30 pad target and updates W-30 lane focus. It does not create or regenerate capture audio.
 - `promote.capture_to_scene` replay assigns an existing `CaptureRef` to an explicit scene target and updates the latest W-30 capture pointer. It does not create or regenerate capture audio, launch a scene, or change scene audio rendering.
 - `w30.loop_freeze` and `promote.resample` are the first artifact-backed W-30 replay suffixes allowed through the executor. They may only hydrate from explicit persisted capture identity: source capture target, exactly one produced capture, stable storage path, and valid source-window or lineage/depth identity. Replay points `last_capture` at the produced artifact capture so app projection can use the existing cached WAV artifact; it does not regenerate capture audio.
@@ -414,6 +416,9 @@ Current implementation boundary:
 - `promote.capture_to_pad` and `promote.capture_to_scene` can replay existing
   capture assignment metadata when the target is explicit; they do not create or
   regenerate capture audio
+- `w30.capture_to_pad` can replay an existing produced `CaptureRef` when it has
+  `created_from_action`, non-empty storage identity, source-window identity, and
+  an explicit W-30 pad target; it does not recreate the capture
 - other artifact-producing W-30 / capture / promote actions remain unsupported
   until they get their own explicit hydrator
 

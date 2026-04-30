@@ -385,8 +385,8 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let unsupported_action = Action {
         id: ActionId(77),
         actor: ActorType::User,
-        command: ActionCommand::W30CaptureToPad,
-        params: ActionParams::Capture { bars: Some(2) },
+        command: ActionCommand::CaptureBarGroup,
+        params: ActionParams::Capture { bars: Some(4) },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
             bank_id: Some(BankId::from("bank-a")),
@@ -399,7 +399,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture to W-30 pad committed".into(),
+            summary: "capture bar group committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: Some("unsupported capture-producing W-30 action".into()),
@@ -445,7 +445,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
             riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(77),
-                command: ActionCommand::W30CaptureToPad,
+                command: ActionCommand::CaptureBarGroup,
             }
         )
     ));
@@ -464,7 +464,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
-        vec![ActionCommand::W30CaptureToPad]
+        vec![ActionCommand::CaptureBarGroup]
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_status,
@@ -476,11 +476,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_suffix,
-        "suffix 1 action(s): w30.capture_to_pad"
+        "suffix 1 action(s): capture.bar_group"
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: w30.capture_to_pad"
+        "unsupported suffix 1: capture.bar_group"
     );
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
@@ -488,6 +488,6 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: w30.capture_to_pad"
+        warning == "replay cannot cover 1 unsupported command(s) after snapshot: capture.bar_group"
     }));
 }

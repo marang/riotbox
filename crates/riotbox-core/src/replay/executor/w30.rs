@@ -4,6 +4,7 @@ use crate::{
     ids::{BankId, PadId},
     replay::{
         ReplayPlanEntry, W30ArtifactReplayHydrationError, plan_w30_artifact_replay_hydration,
+        plan_w30_capture_to_pad_replay_hydration,
     },
     session::{CaptureTarget, SessionFile, W30PreviewModeState},
 };
@@ -154,6 +155,40 @@ pub(super) fn apply_w30_artifact_hydrated_cue(
     Ok(())
 }
 
+pub(super) fn apply_w30_capture_to_pad_hydrated_cue(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<(), ReplayExecutionError> {
+    let action = entry.action;
+    let hydration = plan_w30_capture_to_pad_replay_hydration(session, entry).map_err(|reason| {
+        ReplayExecutionError::ArtifactHydration {
+            action_id: action.id,
+            command: action.command,
+            reason,
+        }
+    })?;
+    let capture = session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == hydration.produced_capture_id)
+        .ok_or(ReplayExecutionError::ArtifactHydration {
+            action_id: action.id,
+            command: action.command,
+            reason: W30ArtifactReplayHydrationError::MissingProducedCapture {
+                action_id: action.id,
+                command: action.command,
+            },
+        })?;
+    let (bank_id, pad_id) = w30_capture_to_pad_target(capture, action)?;
+
+    session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
+    session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
+    session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+    session.runtime_state.lane_state.w30.last_capture = Some(hydration.produced_capture_id);
+
+    Ok(())
+}
+
 pub(super) fn apply_w30_cue(
     session: &mut SessionFile,
     entry: &ReplayPlanEntry<'_>,
@@ -239,6 +274,27 @@ pub(super) fn apply_w30_cue(
     }
 
     Ok(())
+}
+
+fn w30_capture_to_pad_target(
+    capture: &crate::session::CaptureRef,
+    action: &crate::action::Action,
+) -> Result<(BankId, PadId), ReplayExecutionError> {
+    if let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.as_ref() {
+        return Ok((bank_id.clone(), pad_id.clone()));
+    }
+
+    if let (Some(bank_id), Some(pad_id)) =
+        (action.target.bank_id.clone(), action.target.pad_id.clone())
+    {
+        return Ok((bank_id, pad_id));
+    }
+
+    Err(ReplayExecutionError::InvalidParams {
+        action_id: action.id,
+        command: action.command,
+        expected: "produced CaptureTarget::W30Pad or ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
+    })
 }
 
 fn w30_artifact_target(
