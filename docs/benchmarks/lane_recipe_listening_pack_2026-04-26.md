@@ -61,9 +61,10 @@ The current CI-safe Recipe 2 correlation gate is:
 just recipe2-observer-audio-gate
 ```
 
-It validates a committed Recipe 2 observer fixture, generates a fresh lane recipe
-listening pack, validates the listening manifest, and then runs
-`observer_audio_correlate --require-evidence` against both evidence streams.
+It generates and validates a headless app-level Recipe 2 observer stream,
+generates a fresh lane recipe listening pack, validates the listening manifest,
+and then runs `observer_audio_correlate --require-evidence` against both
+evidence streams.
 
 The gate currently requires the MC-202 Recipe 2 cases to be present, passing,
 non-collapsed, and above their signal-delta thresholds.
