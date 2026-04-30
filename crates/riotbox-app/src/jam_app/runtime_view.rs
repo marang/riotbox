@@ -1,3 +1,7 @@
+use super::{
+    AppRuntimeState, SidecarState,
+    runtime_replay_warnings::{derive_replay_readiness_labels, derive_replay_summary_warnings},
+};
 use riotbox_audio::{
     mc202::{Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
     runtime::AudioRuntimeLifecycle,
@@ -12,12 +16,6 @@ use riotbox_core::{
     session::SessionFile, source_graph::SourceGraph,
     tr909_policy::derive_tr909_source_support_reason,
 };
-
-use super::{
-    AppRuntimeState, SidecarState,
-    runtime_replay_warnings::{derive_replay_readiness_labels, derive_replay_summary_warnings},
-};
-
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct JamRuntimeView {
     pub audio_status: String,
@@ -56,6 +54,7 @@ pub struct JamRuntimeView {
     pub w30_resample_tap_mix_summary: String,
     pub replay_restore_status: String,
     pub replay_restore_anchor: String,
+    pub replay_restore_payload: String,
     pub replay_restore_suffix: String,
     pub replay_restore_unsupported: String,
     pub runtime_warnings: Vec<String>,
@@ -81,7 +80,6 @@ impl JamRuntimeView {
             ),
             None => ("unknown".into(), 0, None),
         };
-
         let (sidecar_status, sidecar_version) = match &runtime.sidecar {
             SidecarState::Unknown => ("unknown".into(), None),
             SidecarState::Ready { version, .. } => ("ready".into(), version.clone()),
@@ -187,6 +185,7 @@ impl JamRuntimeView {
             ),
             replay_restore_status: replay_readiness.status,
             replay_restore_anchor: replay_readiness.anchor,
+            replay_restore_payload: replay_readiness.payload,
             replay_restore_suffix: replay_readiness.suffix,
             replay_restore_unsupported: replay_readiness.unsupported,
             runtime_warnings,

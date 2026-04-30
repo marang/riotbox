@@ -26,8 +26,9 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         Line::from(surface.safety_note.clone()),
         Line::from("No candidate is selected here; reload an explicit reviewed path manually."),
         Line::from(format!(
-            "Restore replay: {} | {}",
+            "Restore replay: {} | {} | {}",
             compact_restore_replay_label(&shell.app.runtime_view.replay_restore_status),
+            compact_restore_replay_label(&shell.app.runtime_view.replay_restore_payload),
             restore_replay_help_scope_label(shell),
         )),
     ];
