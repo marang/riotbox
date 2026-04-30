@@ -197,41 +197,26 @@ fn w30_snapshot_payload_restore_runner_matches_committed_app_preview_output() {
     assert_eq!(committed_plan.len(), 2);
     let browse_action_id = committed_plan[0].action.id;
     let trigger_action_id = committed_plan[1].action.id;
-    let browse_action_cursor = full_action_log
-        .actions
-        .iter()
-        .position(|action| action.id == browse_action_id)
-        .expect("browse action exists in action log")
-        + 1;
-    let trigger_action_cursor = full_action_log
-        .actions
-        .iter()
-        .position(|action| action.id == trigger_action_id)
-        .expect("trigger action exists in action log")
-        + 1;
+    let browse_action_cursor = action_cursor_for(&full_action_log, browse_action_id, "browse");
+    let trigger_action_cursor = action_cursor_for(&full_action_log, trigger_action_id, "trigger");
 
-    let mut anchor_session = replay_base_session;
-    anchor_session.action_log = full_action_log.clone();
-    let anchor_report =
-        riotbox_core::replay::apply_replay_plan_to_session(&mut anchor_session, &committed_plan[..1])
-            .expect("W-30 browse anchor materializes");
-    assert_eq!(anchor_report.applied_action_ids, vec![browse_action_id]);
+    let anchor_session = materialize_replay_anchor_session(
+        replay_base_session,
+        full_action_log.clone(),
+        &committed_plan[..1],
+        vec![browse_action_id],
+        "W-30 browse anchor materializes",
+    );
 
-    let snapshot_id = SnapshotId::from("snap-after-w30-browse");
     let mut restore_session = committed_state.session.clone();
     restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![Snapshot {
-        snapshot_id: snapshot_id.clone(),
-        created_at: "2026-04-30T08:25:00Z".into(),
-        label: "after W-30 browse".into(),
-        action_cursor: browse_action_cursor,
-        payload: Some(riotbox_core::session::SnapshotPayload {
-            payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
-            snapshot_id,
-            action_cursor: browse_action_cursor,
-            runtime_state: anchor_session.runtime_state.clone(),
-        }),
-    }];
+    restore_session.snapshots = vec![snapshot_payload_for_anchor(
+        "snap-after-w30-browse",
+        "after W-30 browse",
+        "2026-04-30T08:25:00Z",
+        browse_action_cursor,
+        &anchor_session.runtime_state,
+    )];
 
     let mut replayed_state =
         JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
@@ -241,16 +226,13 @@ fn w30_snapshot_payload_restore_runner_matches_committed_app_preview_output() {
         .expect("snapshot payload restore applies W-30 trigger suffix");
     let replayed_trigger = render_w30_replay_buffer(&replayed_state);
 
-    assert_eq!(replay_report.target_action_cursor, trigger_action_cursor);
-    assert_eq!(
-        replay_report.anchor_snapshot_id.as_deref(),
-        Some("snap-after-w30-browse")
+    assert_restore_report_identity(
+        &replay_report,
+        trigger_action_cursor,
+        "snap-after-w30-browse",
+        browse_action_cursor,
+        vec![trigger_action_id],
     );
-    assert_eq!(
-        replay_report.anchor_action_cursor,
-        Some(browse_action_cursor)
-    );
-    assert_eq!(replay_report.applied_action_ids, vec![trigger_action_id]);
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30,
         committed_state.session.runtime_state.lane_state.w30
@@ -300,41 +282,26 @@ fn w30_snapshot_payload_restore_hydrates_damage_profile_preview_output() {
     assert_eq!(committed_plan.len(), 2);
     let browse_action_id = committed_plan[0].action.id;
     let damage_action_id = committed_plan[1].action.id;
-    let browse_action_cursor = full_action_log
-        .actions
-        .iter()
-        .position(|action| action.id == browse_action_id)
-        .expect("browse action exists in action log")
-        + 1;
-    let damage_action_cursor = full_action_log
-        .actions
-        .iter()
-        .position(|action| action.id == damage_action_id)
-        .expect("damage action exists in action log")
-        + 1;
+    let browse_action_cursor = action_cursor_for(&full_action_log, browse_action_id, "browse");
+    let damage_action_cursor = action_cursor_for(&full_action_log, damage_action_id, "damage");
 
-    let mut anchor_session = replay_base_session;
-    anchor_session.action_log = full_action_log.clone();
-    let anchor_report =
-        riotbox_core::replay::apply_replay_plan_to_session(&mut anchor_session, &committed_plan[..1])
-            .expect("W-30 browse anchor materializes before damage");
-    assert_eq!(anchor_report.applied_action_ids, vec![browse_action_id]);
+    let anchor_session = materialize_replay_anchor_session(
+        replay_base_session,
+        full_action_log.clone(),
+        &committed_plan[..1],
+        vec![browse_action_id],
+        "W-30 browse anchor materializes before damage",
+    );
 
-    let snapshot_id = SnapshotId::from("snap-after-w30-browse");
     let mut restore_session = committed_state.session.clone();
     restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![Snapshot {
-        snapshot_id: snapshot_id.clone(),
-        created_at: "2026-04-30T13:00:00Z".into(),
-        label: "after W-30 browse before damage".into(),
-        action_cursor: browse_action_cursor,
-        payload: Some(riotbox_core::session::SnapshotPayload {
-            payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
-            snapshot_id,
-            action_cursor: browse_action_cursor,
-            runtime_state: anchor_session.runtime_state.clone(),
-        }),
-    }];
+    restore_session.snapshots = vec![snapshot_payload_for_anchor(
+        "snap-after-w30-browse",
+        "after W-30 browse before damage",
+        "2026-04-30T13:00:00Z",
+        browse_action_cursor,
+        &anchor_session.runtime_state,
+    )];
 
     let mut replayed_state =
         JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
@@ -344,16 +311,13 @@ fn w30_snapshot_payload_restore_hydrates_damage_profile_preview_output() {
         .expect("snapshot payload restore applies W-30 damage suffix");
     let replayed_damage = render_w30_replay_buffer(&replayed_state);
 
-    assert_eq!(replay_report.target_action_cursor, damage_action_cursor);
-    assert_eq!(
-        replay_report.anchor_snapshot_id.as_deref(),
-        Some("snap-after-w30-browse")
+    assert_restore_report_identity(
+        &replay_report,
+        damage_action_cursor,
+        "snap-after-w30-browse",
+        browse_action_cursor,
+        vec![damage_action_id],
     );
-    assert_eq!(
-        replay_report.anchor_action_cursor,
-        Some(browse_action_cursor)
-    );
-    assert_eq!(replay_report.applied_action_ids, vec![damage_action_id]);
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.w30_grit,
         committed_state.session.runtime_state.macro_state.w30_grit

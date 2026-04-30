@@ -2,6 +2,7 @@
 // names and shared helpers while avoiding one token-heavy 7k-line test file.
 include!("tests/common_imports_fixtures.rs");
 include!("tests/common_state_fixtures.rs");
+include!("tests/restore_parity_helpers.rs");
 include!("tests/restore_contracts.rs");
 include!("tests/persistence_runtime_view.rs");
 include!("tests/replay_hardening.rs");
