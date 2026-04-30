@@ -291,6 +291,7 @@ fn recovery_observer_snapshot(shell: &JamShellState) -> Value {
                 "payload_readiness": candidate.payload_readiness_label,
                 "replay_suffix": candidate.replay_suffix_label,
                 "replay_unsupported": candidate.replay_unsupported_label,
+                "decision": candidate.decision_label,
                 "guidance": candidate.guidance.as_ref().map(|guidance| guidance.help_label()),
                 "trust": format!("{:?}", candidate.trust),
                 "action_hint": candidate.action_hint,
