@@ -18,8 +18,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   correlation probes, stage-style probe, offline render reproducibility smoke,
   and clippy.
 - `just stage-style-jam-probe`
-  Exercises a longer generated W-30 source-diff output, a dedicated
-  multi-boundary observer fixture, summary-level commit boundary assertions,
+  Exercises a longer generated W-30 source-diff output, generated app-level
+  multi-boundary observer evidence, summary-level commit boundary assertions,
   observer/audio correlation, and the current latest-explicit-snapshot payload
   readiness check.
 - `just offline-render-reproducibility-smoke`
@@ -138,7 +138,7 @@ P011 should not be called exit-ready until these are true:
   hiding replay truth.
 - Long-run and stage-style probes include enough action diversity to catch
   drift beyond the current smoke-level W-30 source-diff run. The current
-  stage-style probe asserts `NextBar`, `NextBeat`, and `NextPhrase` boundary
+  stage-style probe asserts `Phrase`, `Bar`, and `Beat` boundary
   coverage through observer/audio summary JSON, but is still not a soak test.
 - Export reproducibility exists for the real export surface, not only a helper
   render.
