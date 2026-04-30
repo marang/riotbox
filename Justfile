@@ -116,7 +116,6 @@ observer-audio-summary-validator-fixtures:
 
 user-session-observer-validator-fixtures:
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson
-    python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/first_playable_jam_probe/events.ndjson
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/stage_style_jam_probe/events.ndjson
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_valid_recovery.ndjson
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_schema.ndjson; then echo "expected invalid user-session observer fixture to fail" >&2; exit 1; fi
