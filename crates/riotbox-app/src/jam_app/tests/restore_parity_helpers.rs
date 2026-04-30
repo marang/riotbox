@@ -25,6 +25,22 @@ fn materialize_replay_anchor_session(
     base_session
 }
 
+fn materialize_graph_aware_replay_anchor_session(
+    mut base_session: SessionFile,
+    full_action_log: riotbox_core::session::ActionLog,
+    prefix: &[riotbox_core::replay::ReplayPlanEntry<'_>],
+    graph: &SourceGraph,
+    expected_action_ids: Vec<ActionId>,
+    label: &str,
+) -> SessionFile {
+    base_session.action_log = full_action_log;
+    let anchor_report =
+        riotbox_core::replay::apply_graph_aware_replay_plan_to_session(&mut base_session, prefix, graph)
+            .unwrap_or_else(|error| panic!("{label}: {error:?}"));
+    assert_eq!(anchor_report.applied_action_ids, expected_action_ids);
+    base_session
+}
+
 fn snapshot_payload_for_anchor(
     snapshot_id: &str,
     label: &str,
@@ -109,6 +125,62 @@ fn run_snapshot_payload_restore_probe(
                 replay_base_session,
                 full_action_log.clone(),
                 &committed_plan[..spec.anchor_plan_len],
+                anchor_action_ids.clone(),
+                spec.anchor_label,
+            ),
+        )
+    } else {
+        let mut anchor_session = replay_base_session;
+        anchor_session.action_log = full_action_log.clone();
+        anchor_session.runtime_state = Default::default();
+        (0, anchor_session)
+    };
+
+    run_snapshot_payload_restore_probe_from_anchor_runtime(
+        committed_state,
+        graph,
+        spec,
+        anchor_action_cursor,
+        &anchor_session.runtime_state,
+        configure_replayed_state,
+    )
+}
+
+fn run_graph_aware_snapshot_payload_restore_probe(
+    replay_base_session: SessionFile,
+    committed_state: &JamAppState,
+    graph: SourceGraph,
+    spec: SnapshotPayloadRestoreSpec<'_>,
+    configure_replayed_state: impl FnOnce(&mut JamAppState),
+) -> JamAppState {
+    assert!(
+        spec.target_plan_index >= spec.anchor_plan_len,
+        "target action must be after the snapshot anchor"
+    );
+
+    let full_action_log = committed_state.session.action_log.clone();
+    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
+        .unwrap_or_else(|error| panic!("{}: {error:?}", spec.plan_label));
+    assert_eq!(committed_plan.len(), spec.expected_plan_len);
+    assert!(
+        spec.target_plan_index < committed_plan.len(),
+        "target action index outside committed replay plan"
+    );
+
+    let anchor_action_ids = committed_plan[..spec.anchor_plan_len]
+        .iter()
+        .map(|entry| entry.action.id)
+        .collect::<Vec<_>>();
+    let (anchor_action_cursor, anchor_session) = if let Some(anchor_action_id) =
+        anchor_action_ids.last().copied()
+    {
+        (
+            action_cursor_for(&full_action_log, anchor_action_id, "anchor"),
+            materialize_graph_aware_replay_anchor_session(
+                replay_base_session,
+                full_action_log.clone(),
+                &committed_plan[..spec.anchor_plan_len],
+                &graph,
                 anchor_action_ids.clone(),
                 spec.anchor_label,
             ),
