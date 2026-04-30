@@ -61,8 +61,9 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         rendered.contains("payload none | full replay"),
         "{rendered}"
     );
+    assert!(rendered.contains("suffix none@0"), "{rendered}");
     assert!(
-        rendered.contains("review before manual recovery"),
+        rendered.contains("review before manual"),
         "{rendered}"
     );
     assert!(

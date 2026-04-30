@@ -43,6 +43,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 candidate.status_label,
                 candidate.replay_readiness_label.as_str(),
                 candidate.payload_readiness_label.as_str(),
+                candidate.replay_suffix_label.as_str(),
                 candidate.replay_unsupported_label.as_str(),
                 candidate.trust,
                 candidate.action_hint,
@@ -54,6 +55,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "parseable session JSON",
                 "ready: no replay entries",
                 "payload none | full replay",
+                "suffix none | target cursor 0",
                 "unsupported none",
                 RecoveryCandidateTrust::NormalLoadTarget,
                 "load normally",
@@ -63,6 +65,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "invalid session JSON",
                 "replay unchecked",
                 "payload unchecked",
+                "suffix unchecked",
                 "unsupported unchecked",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
@@ -72,6 +75,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "parseable session JSON",
                 "ready: no replay entries",
                 "payload none | full replay",
+                "suffix none | target cursor 0",
                 "unsupported none",
                 RecoveryCandidateTrust::RecoverableClue,
                 "review before manual recovery",
@@ -81,6 +85,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
                 "invalid session JSON",
                 "replay unchecked",
                 "payload unchecked",
+                "suffix unchecked",
                 "unsupported unchecked",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
@@ -215,6 +220,10 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
     assert_eq!(
         blocked_candidate.payload_readiness_label,
         "payload ready | snapshot restore ok"
+    );
+    assert_eq!(
+        blocked_candidate.replay_suffix_label,
+        "suffix 1 action(s): w30.loop_freeze"
     );
     assert_eq!(
         blocked_candidate.replay_unsupported_label,

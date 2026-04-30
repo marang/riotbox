@@ -50,6 +50,9 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
                     replay_parts.push(compact_restore_replay_label(
                         &candidate.replay_unsupported_label,
                     ));
+                } else {
+                    replay_parts
+                        .push(compact_restore_replay_label(&candidate.replay_suffix_label));
                 }
                 Line::from(format!(
                     "{} | {} | {} | {} | {}",
