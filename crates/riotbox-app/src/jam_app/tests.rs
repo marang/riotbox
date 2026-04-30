@@ -34,6 +34,8 @@ include!("tests/w30_loop_freeze_artifact_replay.rs");
 include!("tests/w30_resample_artifact_replay.rs");
 include!("tests/w30_resample_promotion_replay.rs");
 include!("tests/w30_capture_to_pad_replay.rs");
+include!("tests/w30_capture_bar_group_replay.rs");
+include!("tests/w30_capture_loop_replay.rs");
 include!("tests/w30_capture_now_replay.rs");
 include!("tests/scene_replay.rs");
 include!("tests/tr909_policy_undo_ingest.rs");
