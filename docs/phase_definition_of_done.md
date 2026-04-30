@@ -171,7 +171,7 @@ Current review:
 - `docs/reviews/p011_replay_hardening_checkpoint_2026-04-29.md`
 - `docs/reviews/p011_replay_recovery_exit_checklist_2026-04-30.md`
 - status: active after restore and commit-record validation hardening; not exit-ready because full replay execution, snapshot convergence, crash recovery, export reproducibility, and long-run/stage-run gates remain open
-- current stage-style gate: `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence with summary-level commit boundary assertions; this is a bounded CI probe, not a long-run soak test
+- current stage-style gates: `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence, while `just stage-style-restore-diversity-probe` adds a richer replay-safe W-30 / TR-909 / MC-202 control path correlated with generated full-grid output evidence; these are bounded CI probes, not long-run soak tests
 - current offline-render reproducibility gate: `just offline-render-reproducibility-smoke` proves an existing deterministic source-backed render helper emits byte-stable WAV output for the same generated source; this is not full arrangement or DAW export
 
 ---
