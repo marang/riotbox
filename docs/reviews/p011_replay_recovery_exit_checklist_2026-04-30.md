@@ -18,8 +18,10 @@ bounded. It proves important seams, not complete product-grade recovery.
   correlation probes, stage-style probe, offline render reproducibility smoke,
   and clippy.
 - `just stage-style-jam-probe`
-  Exercises a longer generated W-30 source-diff output, observer/audio
-  correlation, and the current latest-explicit-snapshot payload readiness check.
+  Exercises a longer generated W-30 source-diff output, a dedicated
+  multi-boundary observer fixture, summary-level commit boundary assertions,
+  observer/audio correlation, and the current latest-explicit-snapshot payload
+  readiness check.
 - `just offline-render-reproducibility-smoke`
   Proves one deterministic source-backed W-30 render emits byte-stable WAV
   output for the same generated source.
@@ -135,7 +137,9 @@ P011 should not be called exit-ready until these are true:
 - Manual recovery can guide a user through an explicit candidate choice without
   hiding replay truth.
 - Long-run and stage-style probes include enough action diversity to catch
-  drift beyond the current smoke-level W-30 source-diff run.
+  drift beyond the current smoke-level W-30 source-diff run. The current
+  stage-style probe asserts `NextBar`, `NextBeat`, and `NextPhrase` boundary
+  coverage through observer/audio summary JSON, but is still not a soak test.
 - Export reproducibility exists for the real export surface, not only a helper
   render.
 
