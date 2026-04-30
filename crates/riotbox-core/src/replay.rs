@@ -18,7 +18,7 @@ pub use scene_movement::{
     derive_scene_movement_state,
 };
 pub use summary::{
-    LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary,
+    LatestSnapshotReplayConvergenceSummary, ReplayTargetDryRunSummary, SnapshotPayloadReadiness,
     build_latest_snapshot_replay_convergence_summary, build_replay_target_dry_run_summary,
 };
 pub use target_execution::{

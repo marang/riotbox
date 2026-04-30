@@ -1,5 +1,6 @@
 use riotbox_core::{
-    action::ActionCommand, replay::build_latest_snapshot_replay_convergence_summary,
+    action::ActionCommand,
+    replay::{SnapshotPayloadReadiness, build_latest_snapshot_replay_convergence_summary},
     session::SessionFile,
 };
 
@@ -60,31 +61,11 @@ pub(super) fn derive_replay_readiness_labels(session: &SessionFile) -> ReplayRea
         (None, _) => "anchor none | full replay".into(),
     };
 
-    let payload = match (
-        summary.anchor_snapshot_id.as_deref(),
-        summary.anchor_action_cursor,
-    ) {
-        (Some(snapshot_id), Some(cursor)) => session
-            .snapshots
-            .iter()
-            .find(|snapshot| {
-                snapshot.snapshot_id.as_str() == snapshot_id && snapshot.action_cursor == cursor
-            })
-            .and_then(|snapshot| snapshot.payload.as_ref().map(|payload| (snapshot, payload)))
-            .map_or_else(
-                || "payload missing | snapshot restore blocked".into(),
-                |(snapshot, payload)| {
-                    if payload.snapshot_id == snapshot.snapshot_id
-                        && payload.action_cursor == snapshot.action_cursor
-                    {
-                        "payload ready | snapshot restore ok".into()
-                    } else {
-                        "payload invalid | snapshot restore blocked".into()
-                    }
-                },
-            ),
-        (Some(_), None) => "payload unknown | anchor cursor missing".into(),
-        (None, _) => "payload none | full replay".into(),
+    let payload = match summary.anchor_payload_readiness {
+        SnapshotPayloadReadiness::NoAnchor => "payload none | full replay".into(),
+        SnapshotPayloadReadiness::Missing => "payload missing | snapshot restore blocked".into(),
+        SnapshotPayloadReadiness::Ready => "payload ready | snapshot restore ok".into(),
+        SnapshotPayloadReadiness::Invalid => "payload invalid | snapshot restore blocked".into(),
     };
 
     let suffix = if summary.suffix_action_count == 0 {

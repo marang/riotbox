@@ -26,6 +26,14 @@ pub struct ReplayTargetDryRunSummary {
     pub suffix_unsupported_commands: Vec<ActionCommand>,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum SnapshotPayloadReadiness {
+    NoAnchor,
+    Missing,
+    Ready,
+    Invalid,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct LatestSnapshotReplayConvergenceSummary {
     /// End-of-log cursor targeted by the latest-snapshot convergence check.
@@ -38,6 +46,7 @@ pub struct LatestSnapshotReplayConvergenceSummary {
     pub snapshot_count: usize,
     pub anchor_snapshot_id: Option<String>,
     pub anchor_action_cursor: Option<usize>,
+    pub anchor_payload_readiness: SnapshotPayloadReadiness,
     /// Committed entries that must replay after the selected snapshot anchor.
     pub suffix_action_count: usize,
     pub needs_replay: bool,
@@ -113,6 +122,7 @@ pub fn build_latest_snapshot_replay_convergence_summary(
         snapshot_count: snapshots.len(),
         anchor_snapshot_id: dry_run_summary.anchor_snapshot_id,
         anchor_action_cursor: dry_run_summary.anchor_action_cursor,
+        anchor_payload_readiness: anchor_payload_readiness(&plan),
         suffix_action_count: dry_run_summary.suffix_action_count,
         needs_replay: dry_run_summary.needs_replay,
         needs_full_replay: plan.anchor.is_none() && !plan.origin.is_empty(),
@@ -125,6 +135,22 @@ pub fn build_latest_snapshot_replay_convergence_summary(
         suffix_unsupported_action_ids: dry_run_summary.suffix_unsupported_action_ids,
         suffix_unsupported_commands: dry_run_summary.suffix_unsupported_commands,
     })
+}
+
+fn anchor_payload_readiness(plan: &ReplayTargetPlan<'_>) -> SnapshotPayloadReadiness {
+    let Some(anchor) = plan.anchor else {
+        return SnapshotPayloadReadiness::NoAnchor;
+    };
+
+    let Some(payload) = anchor.payload.as_ref() else {
+        return SnapshotPayloadReadiness::Missing;
+    };
+
+    if payload.snapshot_id == anchor.snapshot_id && payload.action_cursor == anchor.action_cursor {
+        SnapshotPayloadReadiness::Ready
+    } else {
+        SnapshotPayloadReadiness::Invalid
+    }
 }
 
 fn unsupported_replay_entries<'a>(entries: &[ReplayPlanEntry<'a>]) -> Vec<ReplayPlanEntry<'a>> {
@@ -147,7 +173,9 @@ mod tests {
         },
         ids::{SceneId, SnapshotId},
         replay::build_replay_target_plan,
-        session::{ActionCommitRecord, ActionLog, ReplayPolicy, Snapshot},
+        session::{
+            ActionCommitRecord, ActionLog, ReplayPolicy, RuntimeState, Snapshot, SnapshotPayload,
+        },
         transport::CommitBoundaryState,
     };
 
@@ -200,6 +228,16 @@ mod tests {
             action_cursor,
             payload: None,
         }
+    }
+
+    fn snapshot_with_payload(snapshot_id: &str, action_cursor: usize) -> Snapshot {
+        let mut snapshot = snapshot(snapshot_id, action_cursor);
+        snapshot.payload = Some(SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &RuntimeState::default(),
+        ));
+        snapshot
     }
 
     fn action_log() -> ActionLog {
@@ -269,6 +307,10 @@ mod tests {
         assert_eq!(summary.snapshot_count, 0);
         assert_eq!(summary.anchor_snapshot_id, None);
         assert_eq!(summary.anchor_action_cursor, None);
+        assert_eq!(
+            summary.anchor_payload_readiness,
+            SnapshotPayloadReadiness::NoAnchor
+        );
         assert_eq!(summary.suffix_action_count, 3);
         assert!(summary.needs_replay);
         assert!(summary.needs_full_replay);
@@ -327,6 +369,10 @@ mod tests {
         assert_eq!(summary.snapshot_count, 1);
         assert_eq!(summary.anchor_snapshot_id.as_deref(), Some("snap-1"));
         assert_eq!(summary.anchor_action_cursor, Some(1));
+        assert_eq!(
+            summary.anchor_payload_readiness,
+            SnapshotPayloadReadiness::Missing
+        );
         assert_eq!(summary.suffix_action_count, 2);
         assert!(summary.needs_replay);
         assert!(!summary.needs_full_replay);
@@ -337,6 +383,41 @@ mod tests {
                 ActionCommand::Tr909FillNext,
                 ActionCommand::Mc202GenerateAnswer
             ]
+        );
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_reports_payload_readiness() {
+        let action_log = action_log();
+        let snapshots = vec![snapshot_with_payload("snap-3", 3)];
+
+        let summary = build_latest_snapshot_replay_convergence_summary(&action_log, &snapshots)
+            .expect("valid convergence summary");
+
+        assert_eq!(summary.anchor_snapshot_id.as_deref(), Some("snap-3"));
+        assert_eq!(
+            summary.anchor_payload_readiness,
+            SnapshotPayloadReadiness::Ready
+        );
+    }
+
+    #[test]
+    fn latest_snapshot_convergence_summary_reports_invalid_payload_readiness() {
+        let action_log = action_log();
+        let mut invalid_snapshot = snapshot_with_payload("snap-3", 3);
+        invalid_snapshot
+            .payload
+            .as_mut()
+            .expect("payload exists")
+            .action_cursor = 2;
+
+        let summary =
+            build_latest_snapshot_replay_convergence_summary(&action_log, &[invalid_snapshot])
+                .expect("valid convergence summary");
+
+        assert_eq!(
+            summary.anchor_payload_readiness,
+            SnapshotPayloadReadiness::Invalid
         );
     }
 
