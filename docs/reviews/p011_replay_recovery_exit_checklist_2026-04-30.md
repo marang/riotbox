@@ -31,6 +31,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
   Proves the current save path materializes payloads for latest explicit
   snapshots and reload reports payload readiness as ready.
+- `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
+  Proves a source-backed W-30 snapshot payload can hydrate an anchor, apply a
+  safe trigger suffix, and match committed preview output.
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
   Proves the core snapshot-payload hydration boundary and rejection paths.
 
@@ -42,6 +45,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   selected-anchor payload readiness without mutating runtime state.
 - Snapshot-payload hydration exists as an explicit helper: payload first, then
   the existing target-suffix executor.
+- Source-backed W-30 snapshot-payload restore has a bounded preview parity
+  probe for the browse-anchor plus trigger-suffix path.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
