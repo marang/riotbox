@@ -7,6 +7,7 @@ include!("tests/persistence_runtime_view.rs");
 include!("tests/replay_hardening.rs");
 include!("tests/snapshot_payload_restore_failures.rs");
 include!("tests/recovery_surface.rs");
+include!("tests/artifact_hydration_preflight.rs");
 include!("tests/feral_support_runtime_controls.rs");
 include!("tests/transport_scene_select.rs");
 include!("tests/scene_restore_mc202_queue_start.rs");

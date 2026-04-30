@@ -3,7 +3,66 @@ use super::*;
 
 use super::state::W30BusPrintInput;
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(in crate::jam_app) enum CaptureArtifactHydrationPreflightError {
+    MissingStoragePath {
+        capture_id: CaptureId,
+    },
+    MissingSessionFileSet {
+        capture_id: CaptureId,
+    },
+    MissingArtifact {
+        capture_id: CaptureId,
+        path: PathBuf,
+    },
+    UnreadableArtifact {
+        capture_id: CaptureId,
+        path: PathBuf,
+        reason: String,
+    },
+    NotFile {
+        capture_id: CaptureId,
+        path: PathBuf,
+    },
+}
+
 impl JamAppState {
+    pub(in crate::jam_app) fn require_capture_artifact_for_hydration(
+        &self,
+        capture: &CaptureRef,
+    ) -> Result<PathBuf, CaptureArtifactHydrationPreflightError> {
+        if capture.storage_path.trim().is_empty() {
+            return Err(CaptureArtifactHydrationPreflightError::MissingStoragePath {
+                capture_id: capture.capture_id.clone(),
+            });
+        }
+
+        let path = self.capture_audio_artifact_path(capture).ok_or_else(|| {
+            CaptureArtifactHydrationPreflightError::MissingSessionFileSet {
+                capture_id: capture.capture_id.clone(),
+            }
+        })?;
+
+        match std::fs::metadata(&path) {
+            Ok(metadata) if metadata.is_file() => Ok(path),
+            Ok(_) => Err(CaptureArtifactHydrationPreflightError::NotFile {
+                capture_id: capture.capture_id.clone(),
+                path,
+            }),
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                Err(CaptureArtifactHydrationPreflightError::MissingArtifact {
+                    capture_id: capture.capture_id.clone(),
+                    path,
+                })
+            }
+            Err(error) => Err(CaptureArtifactHydrationPreflightError::UnreadableArtifact {
+                capture_id: capture.capture_id.clone(),
+                path,
+                reason: error.to_string(),
+            }),
+        }
+    }
+
     pub(in crate::jam_app) fn persist_capture_audio_artifact(&mut self, capture: &mut CaptureRef) {
         match self.write_capture_audio_artifact(capture) {
             Ok(Some(path)) => {
@@ -175,7 +234,7 @@ impl JamAppState {
     pub(in crate::jam_app) fn refresh_capture_audio_cache(&mut self) {
         self.capture_audio_cache.clear();
         for capture in &self.session.captures {
-            let Some(path) = self.capture_audio_artifact_path(capture) else {
+            let Ok(path) = self.require_capture_artifact_for_hydration(capture) else {
                 continue;
             };
             let Ok(cache) = SourceAudioCache::load_pcm_wav(path) else {
