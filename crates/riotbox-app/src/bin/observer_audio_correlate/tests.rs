@@ -210,6 +210,48 @@ fn strict_evidence_rejects_missing_commit() {
 }
 
 #[test]
+fn strict_evidence_rejects_invalid_observer_schema() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    fs::write(&observer_path, synthetic_observer_with_invalid_schema()).expect("write observer");
+
+    let events = read_observer_events(&observer_path).expect("observer events");
+    let error = validate_user_session_observer_events(&events).expect_err("invalid observer");
+
+    assert!(
+        error
+            .to_string()
+            .contains("riotbox.user_session_observer.v1")
+    );
+}
+
+#[test]
+fn strict_evidence_rejects_invalid_observer_launch_shape() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    fs::write(&observer_path, synthetic_observer_without_launch_source()).expect("write observer");
+
+    let events = read_observer_events(&observer_path).expect("observer events");
+    let error = validate_user_session_observer_events(&events).expect_err("invalid observer");
+
+    assert!(error.to_string().contains("requires source_path or source"));
+}
+
+#[test]
+fn non_strict_summary_still_reports_malformed_observer_for_local_inspection() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer_with_invalid_schema()).expect("write observer");
+    fs::write(&manifest_path, synthetic_manifest()).expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+
+    assert_eq!(summary.observer_schema, "riotbox.unknown_observer.v1");
+    assert!(control_path_present(&summary));
+}
+
+#[test]
 fn strict_evidence_rejects_missing_output_metrics() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -254,7 +296,7 @@ fn strict_evidence_rejects_collapsed_output_metrics() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest"}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,
@@ -266,9 +308,31 @@ fn synthetic_observer() -> String {
 
 fn synthetic_observer_without_commit() -> String {
     [
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
+        r#"{"event":"audio_runtime","status":"started"}"#,
+        r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
+    ]
+    .join("\n")
+        + "\n"
+}
+
+fn synthetic_observer_with_invalid_schema() -> String {
+    [
+        r#"{"event":"observer_started","schema":"riotbox.unknown_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
+        r#"{"event":"audio_runtime","status":"started"}"#,
+        r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
+        r#"{"event":"transport_commit","committed":[{"action_id":2,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}"#,
+    ]
+    .join("\n")
+        + "\n"
+}
+
+fn synthetic_observer_without_launch_source() -> String {
+    [
         r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest"}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
+        r#"{"event":"transport_commit","committed":[{"action_id":2,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}"#,
     ]
     .join("\n")
         + "\n"

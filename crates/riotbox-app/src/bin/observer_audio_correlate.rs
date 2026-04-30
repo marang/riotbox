@@ -6,6 +6,11 @@ use std::{
 use riotbox_audio::listening_manifest::validate_manifest_envelope;
 use serde_json::Value;
 
+#[path = "observer_audio_correlate/observer_validation.rs"]
+mod observer_validation;
+
+use observer_validation::validate_user_session_observer_events;
+
 const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
 const SUMMARY_SCHEMA: &str = "riotbox.observer_audio_summary.v1";
 const SUMMARY_SCHEMA_VERSION: u32 = 1;
@@ -17,11 +22,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         return Ok(());
     }
 
+    let observer_events = read_observer_events(&args.observer_path)?;
     if args.require_evidence {
+        validate_user_session_observer_events(&observer_events)?;
         validate_manifest_envelope_file(&args.manifest_path)?;
     }
 
-    let summary = build_summary(&args.observer_path, &args.manifest_path)?;
+    let summary = build_summary_from_events(&observer_events, &args.manifest_path)?;
     let output = if args.json_output {
         render_json(&summary)?
     } else {
@@ -143,17 +150,25 @@ fn print_help() {
          then emits a compact Markdown correlation summary, or JSON with --json.\n\
          This is local-first QA bookkeeping, not a live host-session monitor.\n\
          \n\
-         Pass --require-evidence to fail when the manifest envelope is unstable,\n\
-         committed control-path evidence is missing, or passing output-path\n\
-         manifest evidence is missing."
+         Pass --require-evidence to fail when the observer stream is malformed,\n\
+         the manifest envelope is unstable, committed control-path evidence is\n\
+         missing, or passing output-path manifest evidence is missing."
     );
 }
 
+#[cfg(test)]
 fn build_summary(
     observer_path: &Path,
     manifest_path: &Path,
 ) -> Result<CorrelationSummary, Box<dyn std::error::Error>> {
     let observer_events = read_observer_events(observer_path)?;
+    build_summary_from_events(&observer_events, manifest_path)
+}
+
+fn build_summary_from_events(
+    observer_events: &[Value],
+    manifest_path: &Path,
+) -> Result<CorrelationSummary, Box<dyn std::error::Error>> {
     let manifest = read_manifest(manifest_path)?;
 
     let launch = observer_events
@@ -179,7 +194,7 @@ fn build_summary(
         .find(|event| event["event"] == "transport_commit")
         .and_then(format_first_commit)
         .unwrap_or_else(|| "none".to_string());
-    let (commit_count, commit_boundaries) = collect_commit_summary(&observer_events);
+    let (commit_count, commit_boundaries) = collect_commit_summary(observer_events);
 
     Ok(CorrelationSummary {
         observer_schema: launch
