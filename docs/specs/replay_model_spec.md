@@ -195,6 +195,8 @@ Current supported musical commands:
 - `scene.restore`
 - `promote.capture_to_pad` for existing captures and explicit W-30 pad targets
 - `promote.capture_to_scene` for existing captures and explicit scene targets
+- `capture.now` for explicitly persisted source-window-backed loop captures
+- `capture.loop` for explicitly persisted source-window-backed loop captures
 - `capture.bar_group` for explicitly persisted source-window-backed pad captures
 - `w30.live_recall`
 - `w30.trigger_pad`
@@ -220,6 +222,7 @@ Rules:
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, and restore pointer while deliberately staying Source Graph-free. A separate graph-aware replay boundary can hydrate `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context.
 - W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.
+- `capture.now` and `capture.loop` replay hydrate an already persisted source-window-backed loop capture produced by the committed action and point W-30 `last_capture` / live-recall preview state at it. They do not regenerate capture audio from the Source Graph.
 - `capture.bar_group` replay hydrates an already persisted source-window-backed pad capture produced by the committed action and points W-30 `last_capture` / live-recall preview state at it. It does not regenerate capture audio from the Source Graph or assign it to a pad.
 - `w30.capture_to_pad` replay hydrates an already persisted source-window-backed pad capture produced by the committed action and points W-30 focus/last-capture/live-recall state at it. It does not regenerate capture audio from the Source Graph.
 - `promote.capture_to_pad` replay assigns an existing `CaptureRef` to an explicit W-30 pad target and updates W-30 lane focus. It does not create or regenerate capture audio.
@@ -418,6 +421,10 @@ Current implementation boundary:
 - `promote.capture_to_pad` and `promote.capture_to_scene` can replay existing
   capture assignment metadata when the target is explicit; they do not create or
   regenerate capture audio
+- `capture.now` and `capture.loop` can replay existing produced `CaptureRef`
+  values when they have `created_from_action`, non-empty storage identity,
+  source-window identity, and `CaptureType::Loop`; they do not recreate capture
+  audio
 - `capture.bar_group` can replay an existing produced `CaptureRef` when it has
   `created_from_action`, non-empty storage identity, source-window identity, and
   `CaptureType::Pad`; it does not recreate the capture or assign it to a pad

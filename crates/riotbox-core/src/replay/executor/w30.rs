@@ -4,6 +4,7 @@ use crate::{
     ids::{BankId, PadId},
     replay::{
         ReplayPlanEntry, W30ArtifactReplayHydrationError,
+        plan_source_window_loop_capture_replay_hydration,
         plan_source_window_pad_capture_replay_hydration, plan_w30_artifact_replay_hydration,
     },
     session::{CaptureTarget, SessionFile, W30PreviewModeState},
@@ -197,6 +198,26 @@ pub(super) fn apply_capture_bar_group_hydrated_cue(
     let action = entry.action;
     let hydration =
         plan_source_window_pad_capture_replay_hydration(session, entry).map_err(|reason| {
+            ReplayExecutionError::ArtifactHydration {
+                action_id: action.id,
+                command: action.command,
+                reason,
+            }
+        })?;
+
+    session.runtime_state.lane_state.w30.last_capture = Some(hydration.produced_capture_id);
+    session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
+
+    Ok(())
+}
+
+pub(super) fn apply_capture_loop_hydrated_cue(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<(), ReplayExecutionError> {
+    let action = entry.action;
+    let hydration =
+        plan_source_window_loop_capture_replay_hydration(session, entry).map_err(|reason| {
             ReplayExecutionError::ArtifactHydration {
                 action_id: action.id,
                 command: action.command,

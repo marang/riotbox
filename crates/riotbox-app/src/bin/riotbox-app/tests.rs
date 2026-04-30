@@ -305,11 +305,11 @@ mod tests {
         assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
         assert_eq!(
             autosave["replay_unsupported"],
-            "unsupported suffix 1: capture.now"
+            "unsupported suffix 1: mutate.scene"
         );
         assert_eq!(
             autosave["guidance"],
-            "ArtifactReadyReplayHydrationBlocked"
+            serde_json::Value::Null
         );
         assert!(session_path.exists());
         assert!(autosave_path.exists());
@@ -365,10 +365,13 @@ mod tests {
         session.action_log.actions.push(riotbox_core::action::Action {
             id: ActionId(88),
             actor: riotbox_core::action::ActorType::User,
-            command: ActionCommand::CaptureNow,
-            params: riotbox_core::action::ActionParams::Capture { bars: Some(1) },
+            command: ActionCommand::MutateScene,
+            params: riotbox_core::action::ActionParams::Mutation {
+                intensity: 0.5,
+                target_id: Some("scene-a".into()),
+            },
             target: ActionTarget {
-                scope: Some(TargetScope::LaneW30),
+                scope: Some(TargetScope::Scene),
                 ..Default::default()
             },
             requested_at: 480,
@@ -377,7 +380,7 @@ mod tests {
             committed_at: Some(500),
             result: None,
             undo_policy: riotbox_core::action::UndoPolicy::Undoable,
-            explanation: Some("unsupported immediate capture-producing action".into()),
+            explanation: Some("unsupported scene mutation action".into()),
         });
         session.action_log.commit_records.push(ActionCommitRecord {
             action_id: ActionId(88),

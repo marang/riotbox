@@ -353,7 +353,7 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
     blocked_session
         .action_log
         .actions
-        .push(unsupported_capture_now_action(88));
+        .push(unsupported_mutate_scene_action(88));
     blocked_session
         .action_log
         .commit_records
@@ -379,11 +379,11 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
     );
     assert_eq!(
         blocked_candidate.replay_suffix_label,
-        "suffix 1 action(s): capture.now"
+        "suffix 1 action(s): mutate.scene"
     );
     assert_eq!(
         blocked_candidate.replay_unsupported_label,
-        "unsupported suffix 1: capture.now"
+        "unsupported suffix 1: mutate.scene"
     );
     assert_eq!(
         blocked_candidate.decision_label,
@@ -417,7 +417,7 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
     blocked_session
         .action_log
         .actions
-        .push(unsupported_capture_now_action(89));
+        .push(unsupported_mutate_scene_action(89));
     blocked_session
         .action_log
         .commit_records
@@ -443,11 +443,11 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
     );
     assert_eq!(
         blocked_candidate.replay_unsupported_label,
-        "unsupported suffix 1: capture.now"
+        "unsupported suffix 1: mutate.scene"
     );
     assert_eq!(
         blocked_candidate.guidance,
-        Some(RecoveryCandidateGuidance::ArtifactReadyReplayHydrationBlocked)
+        None
     );
     assert_eq!(
         blocked_candidate.decision_label,

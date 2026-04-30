@@ -1,11 +1,14 @@
-fn unsupported_capture_now_action(id: u64) -> Action {
+fn unsupported_mutate_scene_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
-        command: ActionCommand::CaptureNow,
-        params: ActionParams::Capture { bars: Some(1) },
+        command: ActionCommand::MutateScene,
+        params: ActionParams::Mutation {
+            intensity: 0.5,
+            target_id: Some("scene-a".into()),
+        },
         target: ActionTarget {
-            scope: Some(TargetScope::LaneW30),
+            scope: Some(TargetScope::Scene),
             ..Default::default()
         },
         requested_at: 480,
@@ -14,10 +17,10 @@ fn unsupported_capture_now_action(id: u64) -> Action {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture now committed".into(),
+            summary: "scene mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("unsupported immediate capture-producing action".into()),
+        explanation: Some("unsupported scene mutation action".into()),
     }
 }
 
@@ -105,7 +108,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     session
         .action_log
         .actions
-        .push(unsupported_capture_now_action(77));
+        .push(unsupported_mutate_scene_action(77));
     session
         .action_log
         .commit_records
@@ -126,7 +129,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
             riotbox_core::replay::ReplayTargetExecutionError::Execution(
                 riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                     action_id: ActionId(77),
-                    command: ActionCommand::CaptureNow,
+                    command: ActionCommand::MutateScene,
                 }
             )
         )
@@ -146,7 +149,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     );
     assert_eq!(
         state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: capture.now"
+        "unsupported suffix 1: mutate.scene"
     );
 }
 
