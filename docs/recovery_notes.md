@@ -158,6 +158,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app reloaded_session_uses_capture_artifact_cache_without_source_audio -- --nocapture`
 - `cargo test -p riotbox-app committed_w30_internal_resample_prints_reusable_bus_artifact -- --nocapture`
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
+- `cargo test -p riotbox-app tr909_snapshot_payload_restore_hydrates_takeover_release_projection -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output -- --nocapture`
@@ -173,12 +174,14 @@ unsupported suffixes. The second verifies the visible diagnostic labels. The
 third verifies the current save-time producer boundary for latest explicit
 snapshots. The W-30 probe verifies payload-backed restore can hydrate a
 source-backed W-30 anchor, apply a safe suffix, and match committed preview
-output. The loop-freeze and promote-resample artifact probes verify replay can
-reload a session from JSON, hydrate persisted W-30 WAV artifacts, and avoid
-fallback oscillator collapse. The promote-capture-to-pad probe verifies the
-explicit `[p]` gesture can be replayed for a printed resample artifact and still
-drive artifact-backed W-30 playback. The capture-bar-group probe verifies a
-persisted source-window capture can be replayed into W-30 `last_capture` /
+output. The TR-909 takeover/release probe verifies payload-backed restore can
+hydrate a takeover anchor, apply the release suffix, and match committed drum
+render output. The loop-freeze and promote-resample artifact probes verify
+replay can reload a session from JSON, hydrate persisted W-30 WAV artifacts, and
+avoid fallback oscillator collapse. The promote-capture-to-pad probe verifies
+the explicit `[p]` gesture can be replayed for a printed resample artifact and
+still drive artifact-backed W-30 playback. The capture-bar-group probe verifies
+a persisted source-window capture can be replayed into W-30 `last_capture` /
 live-recall state without recreating audio. The capture-loop probe covers the
 same persisted-artifact path for loop captures. The damage-profile probe
 verifies payload-backed restore converges on committed W-30 grit and preview

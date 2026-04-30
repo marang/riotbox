@@ -31,6 +31,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
   Proves the current save path materializes payloads for latest explicit
   snapshots and reload reports payload readiness as ready.
+- `cargo test -p riotbox-app tr909_snapshot_payload_restore_hydrates_takeover_release_projection -- --nocapture`
+  Proves a TR-909 snapshot payload can hydrate a takeover anchor, apply a
+  release suffix, and match committed drum render output.
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
   Proves a source-backed W-30 snapshot payload can hydrate an anchor, apply a
   safe trigger suffix, and match committed preview output.
@@ -81,6 +84,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - W-30 damage-profile suffix replay can converge through snapshot-payload
   restore on the same committed grit state and preview output as the normal app
   commit path.
+- TR-909 takeover/release suffix replay can converge through snapshot-payload
+  restore on the same committed support/takeover state and drum render output
+  as the normal app commit path.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
