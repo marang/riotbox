@@ -451,19 +451,46 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         0.001,
     );
 
-    let resample_capture = state
+    assert!(state.queue_promote_last_capture(780));
+    let committed_resample_promotion = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 36,
+            bar_index: 9,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        820,
+    );
+    assert_eq!(committed_resample_promotion.len(), 1);
+    let promotion_action = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.id == committed_resample_promotion[0].action_id)
+        .expect("resample promotion action should be logged");
+    assert_eq!(promotion_action.command, ActionCommand::PromoteCaptureToPad);
+    let promoted_resample_capture = state
         .session
         .captures
-        .iter_mut()
+        .iter()
         .find(|capture| capture.capture_id == CaptureId::from("cap-02"))
-        .expect("resample capture for pad assignment");
-    resample_capture.assigned_target = Some(CaptureTarget::W30Pad {
-        bank_id: BankId::from("bank-a"),
-        pad_id: PadId::from("pad-02"),
-    });
-    state.session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
-    state.session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-02"));
-    state.refresh_view();
+        .expect("resample capture after explicit pad promotion");
+    assert_eq!(
+        promoted_resample_capture.assigned_target,
+        Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        })
+    );
+    assert!(
+        promoted_resample_capture
+            .notes
+            .as_deref()
+            .is_some_and(|notes| notes.contains("bus print artifact written")
+                && notes.contains("promoted to pad bank-a/pad-01"))
+    );
     state.save().expect("save printed resample artifact session");
     fs::remove_file(&source_path).expect("remove source to prove resample artifact reload");
 
@@ -489,6 +516,13 @@ fn committed_w30_internal_resample_prints_reusable_bus_artifact() {
         vec![CaptureId::from("cap-01")]
     );
     assert_eq!(reloaded_capture.resample_generation_depth, 1);
+    assert_eq!(
+        reloaded_capture.assigned_target,
+        Some(CaptureTarget::W30Pad {
+            bank_id: BankId::from("bank-a"),
+            pad_id: PadId::from("pad-01"),
+        })
+    );
     assert_eq!(
         reloaded
             .require_capture_artifact_for_hydration(&reloaded_capture)

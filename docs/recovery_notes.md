@@ -100,7 +100,10 @@ unsupported suffixes. The second verifies the visible diagnostic labels. The
 third verifies the current save-time producer boundary for latest explicit
 snapshots. The W-30 probe verifies payload-backed restore can hydrate a
 source-backed W-30 anchor, apply a safe suffix, and match committed preview
-output. The core probe verifies the lower-level hydration contract.
+output. The internal-resample probe verifies the explicit `promote.capture_to_pad`
+gesture can assign a printed resample artifact to a W-30 pad before source-less
+reload and artifact-backed playback. The core probe verifies the lower-level
+hydration contract.
 
 ## Out Of Scope Today
 
