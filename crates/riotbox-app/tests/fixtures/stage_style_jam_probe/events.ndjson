@@ -1,0 +1,13 @@
+{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic-stage-style-source.wav"}}
+{"event":"audio_runtime","status":"started","host":"offline"}
+{"event":"key_outcome","key":"space","outcome":"transport started"}
+{"event":"key_outcome","key":"c","outcome":"capture queued"}
+{"event":"transport_commit","committed":[{"action_id":201,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}
+{"event":"key_outcome","key":"o","outcome":"audition raw/src"}
+{"event":"key_outcome","key":"p","outcome":"promote queued"}
+{"event":"transport_commit","committed":[{"action_id":202,"boundary":"NextBeat","beat_index":9,"bar_index":2,"phrase_index":0,"commit_sequence":2}]}
+{"event":"key_outcome","key":"w","outcome":"recall/src"}
+{"event":"key_outcome","key":"f","outcome":"fill queued"}
+{"event":"transport_commit","committed":[{"action_id":203,"boundary":"NextBar","beat_index":16,"bar_index":4,"phrase_index":1,"commit_sequence":3}]}
+{"event":"key_outcome","key":"g","outcome":"follower queued"}
+{"event":"transport_commit","committed":[{"action_id":204,"boundary":"NextPhrase","beat_index":32,"bar_index":8,"phrase_index":2,"commit_sequence":4}]}
