@@ -39,5 +39,6 @@ include!("tests/w30_capture_bar_group_replay.rs");
 include!("tests/w30_capture_loop_replay.rs");
 include!("tests/w30_capture_now_replay.rs");
 include!("tests/scene_replay.rs");
+include!("tests/stage_style_snapshot_convergence.rs");
 include!("tests/tr909_policy_undo_ingest.rs");
 include!("tests/scene_fixture_regression.rs");

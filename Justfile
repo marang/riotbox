@@ -33,6 +33,7 @@ audio-qa-ci:
     just first-playable-jam-probe
     just stage-style-jam-probe
     just stage-style-restore-diversity-probe
+    just stage-style-snapshot-convergence-smoke
     just interrupted-session-recovery-probe
     just missing-target-recovery-probe
     just stage-style-stability-smoke
@@ -154,6 +155,9 @@ stage-style-jam-probe:
 
 stage-style-restore-diversity-probe:
     scripts/validate_stage_style_restore_diversity_probe.sh
+
+stage-style-snapshot-convergence-smoke:
+    cargo test -p riotbox-app stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix -- --nocapture
 
 interrupted-session-recovery-probe:
     scripts/validate_interrupted_session_recovery_probe.sh

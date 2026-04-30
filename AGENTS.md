@@ -382,6 +382,7 @@ just listening-manifest-validator-fixtures
 just listening-manifest-validate-generated-packs
 just observer-audio-correlate-generated-feral-grid
 just first-playable-jam-probe
+just stage-style-snapshot-convergence-smoke
 just full-grid-export-reproducibility-smoke
 cargo run -p riotbox-audio --bin w30_preview_render
 cargo run -p riotbox-audio --bin w30_preview_compare
