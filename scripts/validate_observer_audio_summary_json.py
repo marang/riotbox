@@ -46,6 +46,8 @@ def validate_summary(summary: Any) -> None:
     require_string(control_path, "launch_mode")
     require_string(control_path, "audio_runtime_status")
     require_string(control_path, "first_commit")
+    require_int(control_path, "commit_count")
+    require_string_list(control_path, "commit_boundaries")
     require_string_list(control_path, "key_outcomes")
 
     output_path = require_object_field(summary, "output_path")

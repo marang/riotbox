@@ -79,6 +79,8 @@ fn summarizes_synthetic_observer_and_manifest() {
         ["space -> transport started", "f -> queued"]
     );
     assert!(summary.first_commit.contains("action 2 at NextBar"));
+    assert_eq!(summary.commit_count, 1);
+    assert_eq!(summary.commit_boundaries, ["NextBar"]);
     assert_eq!(summary.pack_id, "feral-grid-demo");
     assert_eq!(summary.manifest_result, "pass");
     assert_eq!(summary.artifact_count, 6);
@@ -94,6 +96,8 @@ fn summarizes_synthetic_observer_and_manifest() {
         Some(u64::from(SUMMARY_SCHEMA_VERSION))
     );
     assert_eq!(json["control_path"]["present"], true);
+    assert_eq!(json["control_path"]["commit_count"], 1);
+    assert_eq!(json["control_path"]["commit_boundaries"][0], "NextBar");
     assert_eq!(json["output_path"]["present"], true);
     assert_eq!(
         json["output_path"]["issues"]
@@ -125,6 +129,8 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert_eq!(summary.pack_id, "feral-grid-demo");
     assert_eq!(summary.manifest_result, "pass");
     assert_eq!(summary.artifact_count, 6);
+    assert_eq!(summary.commit_count, 1);
+    assert_eq!(summary.commit_boundaries, ["NextBar"]);
     assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
     assert!(summary.full_mix_low_band_rms.is_some_and(|rms| rms > 0.01));
     assert!(
@@ -164,6 +170,8 @@ fn summarizes_first_playable_w30_source_diff_manifest() {
             "w -> recall/src"
         ]
     );
+    assert_eq!(summary.commit_count, 2);
+    assert_eq!(summary.commit_boundaries, ["NextBar"]);
     assert!(summary.w30_candidate_rms.is_some_and(|rms| rms > 0.001));
     assert!(
         summary

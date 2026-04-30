@@ -9,7 +9,9 @@
     "key_outcomes": [
       "space -> transport started"
     ],
-    "first_commit": "none"
+    "first_commit": "none",
+    "commit_count": 0,
+    "commit_boundaries": []
   },
   "output_path": {
     "present": false,

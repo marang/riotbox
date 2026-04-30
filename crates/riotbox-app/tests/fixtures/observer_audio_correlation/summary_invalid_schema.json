@@ -9,7 +9,9 @@
     "key_outcomes": [
       "space -> transport started"
     ],
-    "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7"
+    "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
+    "commit_count": 1,
+    "commit_boundaries": ["NextBar"]
   },
   "output_path": {
     "present": true,
