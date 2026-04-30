@@ -25,41 +25,26 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
     assert_eq!(committed_plan.len(), 2);
     let follower_action_id = committed_plan[0].action.id;
     let answer_action_id = committed_plan[1].action.id;
-    let follower_action_cursor = full_action_log
-        .actions
-        .iter()
-        .position(|action| action.id == follower_action_id)
-        .expect("follower action exists in action log")
-        + 1;
-    let answer_action_cursor = full_action_log
-        .actions
-        .iter()
-        .position(|action| action.id == answer_action_id)
-        .expect("answer action exists in action log")
-        + 1;
+    let follower_action_cursor = action_cursor_for(&full_action_log, follower_action_id, "follower");
+    let answer_action_cursor = action_cursor_for(&full_action_log, answer_action_id, "answer");
 
-    let mut anchor_session = base_session;
-    anchor_session.action_log = full_action_log.clone();
-    let anchor_report =
-        riotbox_core::replay::apply_replay_plan_to_session(&mut anchor_session, &committed_plan[..1])
-            .expect("MC-202 follower anchor materializes");
-    assert_eq!(anchor_report.applied_action_ids, vec![follower_action_id]);
+    let anchor_session = materialize_replay_anchor_session(
+        base_session,
+        full_action_log.clone(),
+        &committed_plan[..1],
+        vec![follower_action_id],
+        "MC-202 follower anchor materializes",
+    );
 
-    let snapshot_id = SnapshotId::from("snap-after-mc202-follower");
     let mut restore_session = committed_state.session.clone();
     restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![Snapshot {
-        snapshot_id: snapshot_id.clone(),
-        created_at: "2026-04-30T13:20:00Z".into(),
-        label: "after MC-202 follower before answer".into(),
-        action_cursor: follower_action_cursor,
-        payload: Some(riotbox_core::session::SnapshotPayload {
-            payload_version: riotbox_core::session::SnapshotPayloadVersion::V1,
-            snapshot_id,
-            action_cursor: follower_action_cursor,
-            runtime_state: anchor_session.runtime_state.clone(),
-        }),
-    }];
+    restore_session.snapshots = vec![snapshot_payload_for_anchor(
+        "snap-after-mc202-follower",
+        "after MC-202 follower before answer",
+        "2026-04-30T13:20:00Z",
+        follower_action_cursor,
+        &anchor_session.runtime_state,
+    )];
 
     let mut replayed_state =
         JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
@@ -68,16 +53,13 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         .expect("snapshot payload restore applies MC-202 answer suffix");
     let replayed_answer = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
 
-    assert_eq!(replay_report.target_action_cursor, answer_action_cursor);
-    assert_eq!(
-        replay_report.anchor_snapshot_id.as_deref(),
-        Some("snap-after-mc202-follower")
+    assert_restore_report_identity(
+        &replay_report,
+        answer_action_cursor,
+        "snap-after-mc202-follower",
+        follower_action_cursor,
+        vec![answer_action_id],
     );
-    assert_eq!(
-        replay_report.anchor_action_cursor,
-        Some(follower_action_cursor)
-    );
-    assert_eq!(replay_report.applied_action_ids, vec![answer_action_id]);
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.mc202,
         committed_state.session.runtime_state.lane_state.mc202
