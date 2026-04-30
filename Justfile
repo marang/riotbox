@@ -33,6 +33,7 @@ audio-qa-ci:
     just first-playable-jam-probe
     just stage-style-jam-probe
     just stage-style-restore-diversity-probe
+    just stage-style-stability-smoke
     just recipe2-observer-audio-gate
     just offline-render-reproducibility-smoke
 
@@ -149,6 +150,9 @@ stage-style-jam-probe:
 
 stage-style-restore-diversity-probe:
     scripts/validate_stage_style_restore_diversity_probe.sh
+
+stage-style-stability-smoke:
+    scripts/validate_stage_style_stability_smoke.sh
 
 recipe2-observer-audio-gate:
     scripts/validate_recipe2_observer_audio_gate.sh
