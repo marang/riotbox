@@ -32,9 +32,26 @@ pub struct SessionRecoveryCandidateView {
     pub payload_readiness_label: String,
     pub replay_suffix_label: String,
     pub replay_unsupported_label: String,
+    pub guidance: Option<RecoveryCandidateGuidance>,
     pub trust: RecoveryCandidateTrust,
     pub detail: String,
     pub action_hint: &'static str,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum RecoveryCandidateGuidance {
+    ArtifactReadyReplayHydrationBlocked,
+}
+
+impl RecoveryCandidateGuidance {
+    #[must_use]
+    pub const fn help_label(self) -> &'static str {
+        match self {
+            Self::ArtifactReadyReplayHydrationBlocked => {
+                "Artifact note: audio present, but W-30 artifact replay hydration is not built yet"
+            }
+        }
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -71,16 +88,19 @@ fn recovery_candidate_view(
 ) -> SessionRecoveryCandidateView {
     let trust = recovery_candidate_trust(&candidate.kind, &candidate.status);
     let replay_labels = recovery_replay_readiness_labels(candidate);
+    let artifact_availability_label = recovery_artifact_availability_label(candidate);
+    let guidance = recovery_candidate_guidance(&artifact_availability_label, &replay_labels);
     SessionRecoveryCandidateView {
         kind: candidate.kind.clone(),
         path: candidate.path.clone(),
         kind_label: recovery_kind_label(&candidate.kind),
         status_label: recovery_status_label(&candidate.status),
-        artifact_availability_label: recovery_artifact_availability_label(candidate),
+        artifact_availability_label,
         replay_readiness_label: replay_labels.status,
         payload_readiness_label: replay_labels.payload,
         replay_suffix_label: replay_labels.suffix,
         replay_unsupported_label: replay_labels.unsupported,
+        guidance,
         trust,
         detail: recovery_detail(&candidate.kind, &candidate.status),
         action_hint: recovery_action_hint(trust),
@@ -156,6 +176,26 @@ fn recovery_artifact_availability_label(
         capture_count,
         blockers.join(", ")
     )
+}
+
+fn recovery_candidate_guidance(
+    artifact_availability_label: &str,
+    replay_labels: &runtime_replay_warnings::ReplayReadinessLabels,
+) -> Option<RecoveryCandidateGuidance> {
+    let unsupported_artifact_command = replay_labels.unsupported.contains("w30.loop_freeze")
+        || replay_labels.unsupported.contains("promote.resample");
+    if artifact_availability_label.starts_with("artifacts ready:")
+        && is_actionable_replay_unsupported(&replay_labels.unsupported)
+        && unsupported_artifact_command
+    {
+        return Some(RecoveryCandidateGuidance::ArtifactReadyReplayHydrationBlocked);
+    }
+
+    None
+}
+
+fn is_actionable_replay_unsupported(label: &str) -> bool {
+    label.starts_with("unsupported suffix") || label.starts_with("unsupported origin")
 }
 
 fn recovery_headline(candidates: &[SessionRecoveryCandidateView]) -> String {

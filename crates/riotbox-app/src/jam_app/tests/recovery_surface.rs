@@ -284,5 +284,65 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
         blocked_candidate.replay_unsupported_label,
         "unsupported suffix 1: w30.loop_freeze"
     );
+    assert_eq!(blocked_candidate.guidance, None);
+    assert_eq!(surface.selected_candidate, None);
+}
+
+#[test]
+fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let blocked_autosave_path = dir.path().join("session.autosave.artifact-ready-blocked.json");
+
+    save_session_json(
+        &target_path,
+        &SessionFile::new("canonical", "riotbox-test", "2026-04-30T09:38:00Z"),
+    )
+    .expect("save canonical session");
+
+    let graph = sample_graph();
+    let mut blocked_session = sample_session(&graph);
+    let snapshot = blocked_session.snapshots[0].clone();
+    blocked_session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &blocked_session.runtime_state,
+        ));
+    blocked_session
+        .action_log
+        .actions
+        .push(unsupported_loop_freeze_action(89));
+    blocked_session
+        .action_log
+        .commit_records
+        .push(loop_freeze_commit_record(89));
+    save_session_json(&blocked_autosave_path, &blocked_session)
+        .expect("save blocked autosave session");
+    let captures_dir = dir.path().join("captures");
+    fs::create_dir_all(&captures_dir).expect("create capture artifacts dir");
+    fs::write(captures_dir.join("cap-01.wav"), [0u8; 44])
+        .expect("write ready capture artifact");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+    let blocked_candidate = surface
+        .candidates
+        .iter()
+        .find(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .expect("blocked autosave candidate");
+
+    assert_eq!(
+        blocked_candidate.artifact_availability_label,
+        "artifacts ready: 1 capture(s)"
+    );
+    assert_eq!(
+        blocked_candidate.replay_unsupported_label,
+        "unsupported suffix 1: w30.loop_freeze"
+    );
+    assert_eq!(
+        blocked_candidate.guidance,
+        Some(RecoveryCandidateGuidance::ArtifactReadyReplayHydrationBlocked)
+    );
     assert_eq!(surface.selected_candidate, None);
 }

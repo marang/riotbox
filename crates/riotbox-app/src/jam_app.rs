@@ -76,7 +76,10 @@ use projection::{
     build_mc202_render_state, build_tr909_render_state, build_w30_preview_render_state,
     build_w30_resample_tap_state, normalize_w30_preview_mode,
 };
-pub use recovery::{RecoveryCandidateTrust, SessionRecoveryCandidateView, SessionRecoverySurface};
+pub use recovery::{
+    RecoveryCandidateGuidance, RecoveryCandidateTrust, SessionRecoveryCandidateView,
+    SessionRecoverySurface,
+};
 pub use runtime_view::JamRuntimeView;
 use side_effects::{
     apply_ghost_side_effects, apply_mc202_side_effects, apply_scene_side_effects,
