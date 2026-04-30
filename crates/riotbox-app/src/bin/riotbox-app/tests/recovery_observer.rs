@@ -35,6 +35,24 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
     assert_eq!(recovery["has_manual_candidates"], true);
     assert_eq!(recovery["selected_candidate"], serde_json::Value::Null);
     assert_eq!(recovery["candidate_count"], 2);
+    let dry_run = &recovery["manual_choice_dry_run"];
+    assert!(
+        dry_run["candidate_path"]
+            .as_str()
+            .expect("dry-run candidate path")
+            .ends_with("session.autosave.artifact-ready-blocked.json")
+    );
+    assert_eq!(dry_run["selected_for_restore"], false);
+    assert_eq!(
+        dry_run["safety_note"],
+        "Dry-run only: candidate inspected, not selected for restore."
+    );
+    assert_eq!(dry_run["decision"], "decision: blocked | replay unsupported");
+    assert_eq!(dry_run["artifact_availability"], "artifacts ready: 1 capture(s)");
+    assert_eq!(
+        dry_run["payload_readiness"],
+        "payload ready | snapshot restore ok"
+    );
 
     let candidates = recovery["candidates"].as_array().expect("candidate array");
     assert_eq!(candidates[0]["kind"], "normal session path");
@@ -93,6 +111,10 @@ fn observer_snapshot_reports_app_invalid_recovery_candidate_as_broken() {
     assert_eq!(recovery["has_manual_candidates"], false);
     assert_eq!(recovery["selected_candidate"], serde_json::Value::Null);
     assert_eq!(recovery["candidate_count"], 2);
+    assert_eq!(
+        recovery["manual_choice_dry_run"],
+        serde_json::Value::Null
+    );
 
     let candidates = recovery["candidates"].as_array().expect("candidate array");
     let autosave = candidates

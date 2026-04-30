@@ -79,6 +79,9 @@ an automatic recovery path.
 The user-session observer mirrors these recovery labels in its startup snapshot,
 including the compact `decision` field. This keeps automated session probes
 aligned with the same read-only recovery boundary shown by the app surface.
+When a recoverable non-canonical candidate exists, the observer may also include
+a `manual_choice_dry_run` object that mirrors the same read-only dry-run
+diagnostics and must keep `selected_for_restore` false.
 
 When artifacts are ready but replay is blocked by an unsupported
 artifact-producing command, the manual recovery UI may say that audio artifacts

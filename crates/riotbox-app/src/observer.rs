@@ -1,7 +1,10 @@
 use crossterm::event::KeyCode;
-use riotbox_core::{action::Action, queue::CommittedActionRef};
+use riotbox_core::{
+    action::Action, persistence::SessionRecoveryCandidateKind, queue::CommittedActionRef,
+};
 use serde_json::{Value, json};
 
+use crate::jam_app::{RecoveryCandidateTrust, SessionRecoverySurface};
 use crate::ui::{JamShellState, ShellKeyOutcome};
 
 pub fn observer_snapshot(shell: &JamShellState) -> Value {
@@ -125,6 +128,7 @@ fn recovery_observer_snapshot(shell: &JamShellState) -> Value {
             "selected_candidate": null,
             "candidate_count": 0,
             "candidates": [],
+            "manual_choice_dry_run": null,
         });
     };
 
@@ -136,6 +140,7 @@ fn recovery_observer_snapshot(shell: &JamShellState) -> Value {
         "has_manual_candidates": surface.has_manual_candidates(),
         "selected_candidate": surface.selected_candidate,
         "candidate_count": surface.candidates.len(),
+        "manual_choice_dry_run": recovery_manual_choice_dry_run_snapshot(surface),
         "candidates": surface.candidates.iter().map(|candidate| {
             json!({
                 "path": candidate.path,
@@ -153,6 +158,31 @@ fn recovery_observer_snapshot(shell: &JamShellState) -> Value {
             })
         }).collect::<Vec<_>>(),
     })
+}
+
+fn recovery_manual_choice_dry_run_snapshot(surface: &SessionRecoverySurface) -> Option<Value> {
+    let candidate = surface.candidates.iter().find(|candidate| {
+        !matches!(
+            candidate.kind,
+            SessionRecoveryCandidateKind::CanonicalTarget
+        ) && matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue)
+    })?;
+    let dry_run = surface.dry_run_manual_choice(&candidate.path)?;
+
+    Some(json!({
+        "candidate_path": dry_run.candidate_path,
+        "decision": dry_run.decision_label,
+        "artifact_availability": dry_run.artifact_availability_label,
+        "replay_readiness": dry_run.replay_readiness_label,
+        "payload_readiness": dry_run.payload_readiness_label,
+        "replay_suffix": dry_run.replay_suffix_label,
+        "replay_unsupported": dry_run.replay_unsupported_label,
+        "guidance": dry_run.guidance_label,
+        "trust": format!("{:?}", dry_run.trust),
+        "action_hint": dry_run.action_hint,
+        "selected_for_restore": dry_run.selected_for_restore,
+        "safety_note": dry_run.safety_note,
+    }))
 }
 
 fn compact_action(action: &Action) -> Value {
