@@ -163,6 +163,9 @@ missing-target-recovery-probe:
 stage-style-stability-smoke:
     scripts/validate_stage_style_stability_smoke.sh
 
+stage-style-stability-gate:
+    RIOTBOX_STAGE_STYLE_STABILITY_REPETITIONS=3 RIOTBOX_STAGE_STYLE_STABILITY_BARS=8 RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_SECONDS=16.0 RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_WINDOW_SECONDS=2.0 scripts/validate_stage_style_stability_smoke.sh
+
 recipe2-observer-audio-gate:
     scripts/validate_recipe2_observer_audio_gate.sh
 

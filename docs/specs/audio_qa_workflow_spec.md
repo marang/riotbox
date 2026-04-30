@@ -464,6 +464,7 @@ Today the repo already has:
 - a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-fallback output evidence, and a generated app-level observer probe for the current `space -> capture -> raw audition -> promote -> W-30 hit` user path
 - a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses generated app-level multi-boundary observer evidence, generated W-30 source-vs-fallback output evidence, and summary-level commit boundary assertions for `Phrase`, `Bar`, and `Beat`
 - a bounded repeated stage-style stability smoke, `just stage-style-stability-smoke`, that runs the generated stage-style restore-diversity observer/audio path multiple times, validates observer and summary contracts for every run, rejects collapsed output metrics, and requires the generated full-grid mix WAV hash to remain stable across repetitions
+- an explicit stronger stage-style stability gate, `just stage-style-stability-gate`, that reuses the same generated observer/audio path with more repetitions and a longer generated source/grid budget; it is still CI-safe and deterministic, but is a bounded gate rather than a real host-audio soak
 - a CI-safe interrupted-session recovery probe, `just interrupted-session-recovery-probe`, that creates real adjacent session/temp/autosave files, emits the same recovery observer envelope, validates it, and proves the drill remains read-only with no selected restore candidate
 - a CI-safe missing-target recovery probe, `just missing-target-recovery-probe`, that covers a missing requested session path plus adjacent autosave clue without silently choosing the autosave
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
@@ -520,6 +521,7 @@ Today the repo already has:
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
 - `just stage-style-stability-smoke` is a CI-safe repeated-run smoke around the generated stage-style restore-diversity path; it catches obvious intermittent observer/audio collapse and full-mix nondeterminism, but remains a bounded smoke rather than a real host-audio soak or multi-hour endurance test
+- `just stage-style-stability-gate` is the stronger bounded version of the same path. It defaults to three repeated runs, eight generated bars, and a longer generated source window while preserving the same observer/audio correlation and stable full-mix hash assertions. It is suitable for PRs that touch P011 stability gates, but it is not a substitute for future live-device soak testing.
 
 Today the repo does not yet have a full official workflow for:
 
