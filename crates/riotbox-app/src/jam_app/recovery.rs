@@ -187,6 +187,8 @@ fn recovery_candidate_guidance(
     replay_labels: &runtime_replay_warnings::ReplayReadinessLabels,
 ) -> Option<RecoveryCandidateGuidance> {
     let unsupported_artifact_command = replay_labels.unsupported.contains("w30.loop_freeze")
+        || replay_labels.unsupported.contains("capture.now")
+        || replay_labels.unsupported.contains("capture.loop")
         || replay_labels.unsupported.contains("capture.bar_group");
     if artifact_availability_label.starts_with("artifacts ready:")
         && is_actionable_replay_unsupported(&replay_labels.unsupported)

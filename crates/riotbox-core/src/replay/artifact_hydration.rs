@@ -98,12 +98,15 @@ pub fn plan_w30_artifact_replay_hydration(
     })
 }
 
-pub fn plan_w30_capture_to_pad_replay_hydration(
+pub fn plan_source_window_pad_capture_replay_hydration(
     session: &SessionFile,
     entry: &ReplayPlanEntry<'_>,
 ) -> Result<W30SourceCaptureReplayHydrationPlan, W30ArtifactReplayHydrationError> {
     let action = entry.action;
-    if action.command != ActionCommand::W30CaptureToPad {
+    if !matches!(
+        action.command,
+        ActionCommand::CaptureBarGroup | ActionCommand::W30CaptureToPad
+    ) {
         return Err(
             W30ArtifactReplayHydrationError::NotArtifactProducingW30Action {
                 action_id: action.id,

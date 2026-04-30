@@ -426,7 +426,7 @@ mod tests {
         let mut action_log = action_log();
         action_log
             .actions
-            .push(action(4, ActionCommand::CaptureBarGroup, 400));
+            .push(action(4, ActionCommand::CaptureNow, 400));
         action_log
             .commit_records
             .push(commit_record(4, 16, 4, 1, 400));
@@ -444,14 +444,14 @@ mod tests {
         );
         assert_eq!(
             summary.origin_unsupported_commands,
-            vec![ActionCommand::MutateScene, ActionCommand::CaptureBarGroup]
+            vec![ActionCommand::MutateScene, ActionCommand::CaptureNow]
         );
         assert_eq!(summary.suffix_action_count, 1);
         assert_eq!(summary.suffix_unsupported_action_count, 1);
         assert_eq!(summary.suffix_unsupported_action_ids, vec![ActionId(4)]);
         assert_eq!(
             summary.suffix_unsupported_commands,
-            vec![ActionCommand::CaptureBarGroup]
+            vec![ActionCommand::CaptureNow]
         );
     }
 

@@ -68,11 +68,11 @@ Manual recovery candidates may show a compact decision diagnostic:
 These decision labels are deliberately read-only. They summarize why a candidate
 needs manual review and must not choose, repair, or replace a session file.
 
-When artifacts are ready but replay is blocked by an artifact-producing command
-such as `capture.bar_group`, the manual recovery UI may say that audio
-artifacts are present while replay remains blocked until that command has an
-explicit artifact hydrator. That hint is explanatory only; it must not select a
-candidate or silently repair the session.
+When artifacts are ready but replay is blocked by an unsupported
+artifact-producing command such as `capture.now` or `capture.loop`, the manual
+recovery UI may say that audio artifacts are present while replay remains
+blocked until that command has an explicit artifact hydrator. That hint is
+explanatory only; it must not select a candidate or silently repair the session.
 
 ## Artifact Hydration Preflight
 
@@ -116,10 +116,11 @@ be blocked if the action suffix after the snapshot contains commands the replay
 executor cannot safely apply yet.
 
 Current unsupported examples include broader artifact-producing capture actions
-such as `capture.bar_group`. These must reject without partially mutating the
-app session. `w30.capture_to_pad`, `w30.loop_freeze`, `promote.resample`, and
-metadata-only capture promotion suffixes have bounded replay support when
-explicit persisted identity is present.
+such as `capture.now` and `capture.loop`. These must reject without partially
+mutating the app session. `capture.bar_group`, `w30.capture_to_pad`,
+`w30.loop_freeze`, `promote.resample`, and metadata-only capture promotion
+suffixes have bounded replay support when explicit persisted identity is
+present.
 
 ## Current Verification Seams
 
@@ -136,6 +137,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_artifact -- --nocapture`
+- `cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_bar_group_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
 - `just ci`
 
@@ -148,8 +150,10 @@ output. The loop-freeze and promote-resample artifact probes verify replay can
 reload a session from JSON, hydrate persisted W-30 WAV artifacts, and avoid
 fallback oscillator collapse. The promote-capture-to-pad probe verifies the
 explicit `[p]` gesture can be replayed for a printed resample artifact and still
-drive artifact-backed W-30 playback. The internal-resample probe verifies that
-same gesture can assign a printed resample artifact to a W-30 pad before
+drive artifact-backed W-30 playback. The capture-bar-group probe verifies a
+persisted source-window capture can be replayed into W-30 `last_capture` /
+live-recall state without recreating audio. The internal-resample probe verifies
+that same gesture can assign a printed resample artifact to a W-30 pad before
 source-less reload. The core probe verifies the lower-level hydration contract.
 
 ## Out Of Scope Today

@@ -69,6 +69,9 @@ bounded. It proves important seams, not complete product-grade recovery.
   capture and explicit scene target without creating or regenerating audio.
 - `w30.capture_to_pad` can replay a persisted source-window-backed pad capture
   artifact and drive artifact-backed W-30 playback without source audio.
+- `capture.bar_group` can replay a persisted source-window-backed pad capture
+  artifact into W-30 `last_capture` / live-recall state and drive
+  artifact-backed W-30 playback without source audio.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
@@ -89,8 +92,8 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Interactive guided recovery that can safely choose a candidate with user
   confirmation.
 - Remaining artifact hydration for broader artifact-producing W-30 /
-  capture / promote actions beyond `w30.loop_freeze`, `promote.resample`, and
-  bounded `w30.capture_to_pad`, such as generic `capture.bar_group`.
+  capture / promote actions beyond `w30.loop_freeze`, `promote.resample`,
+  bounded `w30.capture_to_pad`, and bounded `capture.bar_group`.
 - Full arrangement export, stems, recording, or manifest-normalized export
   reproducibility.
 - Long-run soak behavior over extended live sessions.

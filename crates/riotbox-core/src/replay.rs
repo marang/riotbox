@@ -7,8 +7,8 @@ mod target_execution;
 
 pub use artifact_hydration::{
     W30ArtifactReplayHydrationError, W30ArtifactReplayHydrationPlan,
-    W30SourceCaptureReplayHydrationPlan, plan_w30_artifact_replay_hydration,
-    plan_w30_capture_to_pad_replay_hydration,
+    W30SourceCaptureReplayHydrationPlan, plan_source_window_pad_capture_replay_hydration,
+    plan_w30_artifact_replay_hydration,
 };
 pub use executor::{
     ReplayExecutionError, ReplayExecutionReport, apply_replay_entry_to_session,

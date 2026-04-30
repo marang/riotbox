@@ -1,13 +1,11 @@
-fn unsupported_capture_bar_group_action(id: u64) -> Action {
+fn unsupported_capture_now_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
-        command: ActionCommand::CaptureBarGroup,
-        params: ActionParams::Capture { bars: Some(4) },
+        command: ActionCommand::CaptureNow,
+        params: ActionParams::Capture { bars: Some(1) },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
-            bank_id: Some(BankId::from("bank-a")),
-            pad_id: Some(PadId::from("pad-01")),
             ..Default::default()
         },
         requested_at: 480,
@@ -16,10 +14,10 @@ fn unsupported_capture_bar_group_action(id: u64) -> Action {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture bar group committed".into(),
+            summary: "capture now committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("unsupported capture-producing action".into()),
+        explanation: Some("unsupported immediate capture-producing action".into()),
     }
 }
 
@@ -107,7 +105,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     session
         .action_log
         .actions
-        .push(unsupported_capture_bar_group_action(77));
+        .push(unsupported_capture_now_action(77));
     session
         .action_log
         .commit_records
@@ -128,7 +126,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
             riotbox_core::replay::ReplayTargetExecutionError::Execution(
                 riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                     action_id: ActionId(77),
-                    command: ActionCommand::CaptureBarGroup,
+                    command: ActionCommand::CaptureNow,
                 }
             )
         )
@@ -148,7 +146,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     );
     assert_eq!(
         state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: capture.bar_group"
+        "unsupported suffix 1: capture.now"
     );
 }
 
