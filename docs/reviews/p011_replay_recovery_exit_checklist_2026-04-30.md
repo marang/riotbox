@@ -49,6 +49,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   probe for the browse-anchor plus trigger-suffix path.
 - W-30 artifact hydration has an explicit identity boundary in the session and
   replay specs before any future artifact-producing replay support is added.
+- Manual recovery candidates can report capture artifact availability as
+  read-only diagnostics before any future hydration path uses those artifacts.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the

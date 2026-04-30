@@ -18,6 +18,26 @@ If Riotbox says a session is parseable or a payload is ready, that is evidence
 for a possible recovery path. It is not permission to silently replace the
 requested session file or skip replay validation.
 
+## Artifact Availability Labels
+
+Manual recovery candidates may also show W-30/capture artifact availability:
+
+- `artifacts n/a | no captures`
+  The parseable session does not reference persisted capture artifacts.
+- `artifacts ready: N capture(s)`
+  Every referenced capture `storage_path` resolves to a file next to the
+  candidate session or through an absolute path.
+- `artifacts blocked: X of N | ...`
+  One or more referenced captures have missing identity, missing files, or
+  unreadable/non-file paths. Recovery must report this as a blocker before any
+  future artifact hydration path can use those captures.
+- `artifacts unchecked`
+  The candidate is not parseable session JSON, so artifact availability was not
+  inspected.
+
+These labels are diagnostics only. They do not hydrate, regenerate, repair, or
+choose artifacts.
+
 ## Snapshot Payload Labels
 
 The app runtime view may show these labels:
@@ -53,6 +73,7 @@ Use these probes when changing recovery behavior:
 
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
 - `cargo test -p riotbox-app runtime_view_surfaces_snapshot_payload_readiness -- --nocapture`
+- `cargo test -p riotbox-app recovery_surface_reports_capture_artifact_availability_for_parseable_candidates -- --nocapture`
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`

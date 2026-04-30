@@ -33,37 +33,35 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         )),
     ];
 
-    lines.extend(
-        surface
-            .candidates
-            .iter()
-            .filter(|candidate| {
-                !matches!(candidate.trust, RecoveryCandidateTrust::NormalLoadTarget)
-            })
-            .take(3)
-            .map(|candidate| {
-                let mut replay_parts = vec![
-                    candidate.replay_readiness_label.clone(),
-                    candidate.payload_readiness_label.clone(),
-                ];
-                if is_actionable_replay_unsupported(&candidate.replay_unsupported_label) {
-                    replay_parts.push(compact_restore_replay_label(
-                        &candidate.replay_unsupported_label,
-                    ));
-                } else {
-                    replay_parts
-                        .push(compact_restore_replay_label(&candidate.replay_suffix_label));
-                }
-                Line::from(format!(
-                    "{} | {} | {} | {} | {}",
-                    candidate.kind_label,
-                    candidate.status_label,
-                    replay_parts.join(" | "),
-                    candidate.action_hint,
-                    recovery_candidate_file_label(candidate.path.as_path())
-                ))
-            }),
-    );
+    for candidate in surface
+        .candidates
+        .iter()
+        .filter(|candidate| !matches!(candidate.trust, RecoveryCandidateTrust::NormalLoadTarget))
+        .take(3)
+    {
+        let mut replay_parts = vec![
+            candidate.replay_readiness_label.clone(),
+            candidate.payload_readiness_label.clone(),
+        ];
+        if is_actionable_replay_unsupported(&candidate.replay_unsupported_label) {
+            replay_parts.push(compact_restore_replay_label(
+                &candidate.replay_unsupported_label,
+            ));
+        } else {
+            replay_parts.push(compact_restore_replay_label(&candidate.replay_suffix_label));
+        }
+
+        lines.push(Line::from(format!(
+            "{} | {} | {}",
+            candidate.kind_label, candidate.status_label, candidate.artifact_availability_label,
+        )));
+        lines.push(Line::from(format!(
+            "  {} | {} | {}",
+            replay_parts.join(" | "),
+            candidate.action_hint,
+            recovery_candidate_file_label(candidate.path.as_path())
+        )));
+    }
 
     Some(lines)
 }

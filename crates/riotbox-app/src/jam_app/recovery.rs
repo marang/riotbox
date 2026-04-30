@@ -27,6 +27,7 @@ pub struct SessionRecoveryCandidateView {
     pub path: PathBuf,
     pub kind_label: &'static str,
     pub status_label: &'static str,
+    pub artifact_availability_label: String,
     pub replay_readiness_label: String,
     pub payload_readiness_label: String,
     pub replay_suffix_label: String,
@@ -75,6 +76,7 @@ fn recovery_candidate_view(
         path: candidate.path.clone(),
         kind_label: recovery_kind_label(&candidate.kind),
         status_label: recovery_status_label(&candidate.status),
+        artifact_availability_label: recovery_artifact_availability_label(candidate),
         replay_readiness_label: replay_labels.status,
         payload_readiness_label: replay_labels.payload,
         replay_suffix_label: replay_labels.suffix,
@@ -83,6 +85,76 @@ fn recovery_candidate_view(
         detail: recovery_detail(&candidate.kind, &candidate.status),
         action_hint: recovery_action_hint(trust),
     }
+}
+
+fn recovery_artifact_availability_label(
+    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
+) -> String {
+    if !matches!(
+        candidate.status,
+        SessionRecoveryCandidateStatus::ParseableSession
+    ) {
+        return "artifacts unchecked".into();
+    }
+
+    let Ok(session) = load_session_json(&candidate.path) else {
+        return "artifacts unreadable".into();
+    };
+
+    let capture_count = session.captures.len();
+    if capture_count == 0 {
+        return "artifacts n/a | no captures".into();
+    }
+
+    let base_dir = candidate.path.parent().unwrap_or_else(|| Path::new("."));
+    let mut ready = 0usize;
+    let mut missing = 0usize;
+    let mut unreadable = 0usize;
+    let mut missing_identity = 0usize;
+
+    for capture in &session.captures {
+        let storage_path = capture.storage_path.trim();
+        if storage_path.is_empty() {
+            missing_identity += 1;
+            continue;
+        }
+
+        let artifact_path = Path::new(storage_path);
+        let artifact_path = if artifact_path.is_absolute() {
+            artifact_path.to_path_buf()
+        } else {
+            base_dir.join(artifact_path)
+        };
+
+        match std::fs::metadata(&artifact_path) {
+            Ok(metadata) if metadata.is_file() => ready += 1,
+            Ok(_) => unreadable += 1,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => missing += 1,
+            Err(_) => unreadable += 1,
+        }
+    }
+
+    if ready == capture_count {
+        return format!("artifacts ready: {capture_count} capture(s)");
+    }
+
+    let mut blockers = Vec::new();
+    if missing_identity > 0 {
+        blockers.push(format!("{missing_identity} missing identity"));
+    }
+    if missing > 0 {
+        blockers.push(format!("{missing} missing"));
+    }
+    if unreadable > 0 {
+        blockers.push(format!("{unreadable} unreadable"));
+    }
+
+    format!(
+        "artifacts blocked: {} of {} | {}",
+        capture_count - ready,
+        capture_count,
+        blockers.join(", ")
+    )
 }
 
 fn recovery_headline(candidates: &[SessionRecoveryCandidateView]) -> String {

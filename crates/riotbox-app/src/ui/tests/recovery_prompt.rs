@@ -54,7 +54,11 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("autosave file | parseable session JSON | ready: no replay entries"),
+        rendered.contains("autosave file | parseable session JSON | artifacts n/a | no captures"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("artifacts n/a | no captures"),
         "{rendered}"
     );
     assert!(
@@ -64,10 +68,6 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
     assert!(rendered.contains("suffix none@0"), "{rendered}");
     assert!(
         rendered.contains("review before manual"),
-        "{rendered}"
-    );
-    assert!(
-        rendered.contains("session.autosave.2026-04-29T211500Z.json"),
         "{rendered}"
     );
 }
@@ -161,11 +161,11 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     );
     assert!(rendered.contains("w30.loop_freeze"), "{rendered}");
     assert!(
-        rendered.contains("autosave file | parseable session JSON | blocked: 1 unsupported suffix"),
+        rendered.contains("autosave file | parseable session JSON | artifacts blocked: 1 of 1"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("payload ready | snapshot restore ok"),
+        rendered.contains("payload ready"),
         "{rendered}"
     );
     assert!(

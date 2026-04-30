@@ -41,6 +41,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             .map(|candidate| (
                 candidate.kind_label,
                 candidate.status_label,
+                candidate.artifact_availability_label.as_str(),
                 candidate.replay_readiness_label.as_str(),
                 candidate.payload_readiness_label.as_str(),
                 candidate.replay_suffix_label.as_str(),
@@ -53,6 +54,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             (
                 "normal session path",
                 "parseable session JSON",
+                "artifacts n/a | no captures",
                 "ready: no replay entries",
                 "payload none | full replay",
                 "suffix none | target cursor 0",
@@ -63,6 +65,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             (
                 "orphan temp file",
                 "invalid session JSON",
+                "artifacts unchecked",
                 "replay unchecked",
                 "payload unchecked",
                 "suffix unchecked",
@@ -73,6 +76,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             (
                 "autosave file",
                 "parseable session JSON",
+                "artifacts n/a | no captures",
                 "ready: no replay entries",
                 "payload none | full replay",
                 "suffix none | target cursor 0",
@@ -83,6 +87,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             (
                 "autosave file",
                 "invalid session JSON",
+                "artifacts unchecked",
                 "replay unchecked",
                 "payload unchecked",
                 "suffix unchecked",
@@ -100,6 +105,50 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
     assert!(temp_path.exists());
     assert!(autosave_path.exists());
     assert!(invalid_autosave_path.exists());
+}
+
+#[test]
+fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidates() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let ready_path = dir.path().join("session.autosave.ready-artifact.json");
+    let missing_path = dir.path().join("session.autosave.missing-artifact.json");
+    let captures_dir = dir.path().join("captures");
+
+    fs::create_dir(&captures_dir).expect("create captures dir");
+    fs::write(captures_dir.join("cap-01.wav"), [0u8; 44]).expect("write ready artifact");
+    save_session_json(
+        &target_path,
+        &SessionFile::new("canonical", "riotbox-test", "2026-04-30T08:50:00Z"),
+    )
+    .expect("save canonical session");
+
+    let graph = sample_graph();
+    let mut ready_session = sample_session(&graph);
+    ready_session.captures.truncate(1);
+    save_session_json(&ready_path, &ready_session).expect("save ready autosave session");
+
+    let mut missing_session = ready_session.clone();
+    missing_session.captures[0].storage_path = "captures/missing-cap.wav".into();
+    save_session_json(&missing_path, &missing_session).expect("save missing autosave session");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+    let artifact_labels = surface
+        .candidates
+        .iter()
+        .filter(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .map(|candidate| candidate.artifact_availability_label.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        artifact_labels,
+        vec![
+            "artifacts blocked: 1 of 1 | 1 missing",
+            "artifacts ready: 1 capture(s)",
+        ]
+    );
+    assert_eq!(surface.selected_candidate, None);
 }
 
 #[test]
