@@ -8,6 +8,7 @@ include!("tests/replay_hardening.rs");
 include!("tests/snapshot_payload_restore_failures.rs");
 include!("tests/recovery_surface.rs");
 include!("tests/recovery_hydration_guidance.rs");
+include!("tests/recovery_payload_guidance.rs");
 include!("tests/artifact_hydration_preflight.rs");
 include!("tests/feral_support_runtime_controls.rs");
 include!("tests/transport_scene_select.rs");
