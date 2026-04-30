@@ -34,8 +34,9 @@ Manual recovery candidates may also show W-30/capture artifact availability:
   unreadable/non-file paths. Recovery must report this as a blocker before any
   future artifact hydration path can use those captures.
 - `artifacts unchecked`
-  The candidate is not parseable session JSON, so artifact availability was not
-  inspected.
+  The candidate is not usable for app-level recovery inspection, either because
+  it is not parseable session JSON or because app validation already rejected
+  its snapshot payload identity.
 
 These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
@@ -67,6 +68,10 @@ Manual recovery candidates may show a compact decision diagnostic:
 
 These decision labels are deliberately read-only. They summarize why a candidate
 needs manual review and must not choose, repair, or replace a session file.
+
+The user-session observer mirrors these recovery labels in its startup snapshot,
+including the compact `decision` field. This keeps automated session probes
+aligned with the same read-only recovery boundary shown by the app surface.
 
 When artifacts are ready but replay is blocked by an unsupported
 artifact-producing command, the manual recovery UI may say that audio artifacts

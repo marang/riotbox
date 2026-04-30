@@ -78,7 +78,7 @@ fn recovery_surface_for_launch(mode: &LaunchMode) -> Option<SessionRecoverySurfa
 
     JamAppState::scan_session_recovery_surface(session_path)
         .ok()
-        .filter(SessionRecoverySurface::has_manual_candidates)
+        .filter(SessionRecoverySurface::has_non_canonical_clues)
 }
 
 fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {

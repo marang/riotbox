@@ -25,6 +25,16 @@ impl SessionRecoverySurface {
             ) && matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue)
         })
     }
+
+    #[must_use]
+    pub fn has_non_canonical_clues(&self) -> bool {
+        self.candidates.iter().any(|candidate| {
+            !matches!(
+                candidate.kind,
+                SessionRecoveryCandidateKind::CanonicalTarget
+            )
+        })
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
