@@ -39,7 +39,7 @@ These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
 
 When artifacts are ready but replay is blocked by an artifact-producing command
-such as `promote.capture_to_scene`, the manual recovery UI may say that audio
+such as `w30.capture_to_pad` or `capture.bar_group`, the manual recovery UI may say that audio
 artifacts are present while replay remains blocked until that command has an
 explicit artifact hydrator. That hint is explanatory only; it must not select a
 candidate or silently repair the session.
@@ -85,11 +85,11 @@ Payload readiness is not the whole recovery decision. A ready payload can still
 be blocked if the action suffix after the snapshot contains commands the replay
 executor cannot safely apply yet.
 
-Current unsupported examples include artifact-producing promote/capture actions
-such as `promote.capture_to_scene`. These must reject without partially mutating
-the app session. `w30.loop_freeze` and `promote.resample` are the first narrow
-artifact-backed suffixes that can hydrate from explicit persisted capture
-identity.
+Current unsupported examples include artifact-producing capture actions such as
+`w30.capture_to_pad` and `capture.bar_group`. These must reject without
+partially mutating the app session. `w30.loop_freeze`, `promote.resample`, and
+the metadata-only `promote.capture_to_scene` suffix have bounded replay support
+when explicit persisted identity is present.
 
 ## Current Verification Seams
 

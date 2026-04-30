@@ -68,6 +68,52 @@ pub(super) fn apply_promote_capture_to_w30_pad(
     Ok(())
 }
 
+pub(super) fn apply_promote_capture_to_scene(
+    session: &mut SessionFile,
+    entry: &ReplayPlanEntry<'_>,
+) -> Result<(), ReplayExecutionError> {
+    let action = entry.action;
+    let ActionParams::Promotion {
+        capture_id: Some(capture_id),
+        ..
+    } = &action.params
+    else {
+        return Err(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "ActionParams::Promotion { capture_id: Some(_) }",
+        });
+    };
+    let Some(scene_id) = action.target.scene_id.clone() else {
+        return Err(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "ActionTarget { scene_id: Some(_) }",
+        });
+    };
+    let Some(capture) = session
+        .captures
+        .iter_mut()
+        .find(|capture| capture.capture_id == *capture_id)
+    else {
+        return Err(ReplayExecutionError::InvalidParams {
+            action_id: action.id,
+            command: action.command,
+            expected: "existing CaptureRef for ActionParams::Promotion.capture_id",
+        });
+    };
+
+    let target = CaptureTarget::Scene(scene_id);
+    capture.assigned_target = Some(target.clone());
+    capture.notes = Some(updated_capture_promotion_note(
+        capture.notes.as_deref(),
+        &target,
+    ));
+    session.runtime_state.lane_state.w30.last_capture = Some(capture_id.clone());
+
+    Ok(())
+}
+
 pub(super) fn apply_w30_artifact_hydrated_cue(
     session: &mut SessionFile,
     entry: &ReplayPlanEntry<'_>,

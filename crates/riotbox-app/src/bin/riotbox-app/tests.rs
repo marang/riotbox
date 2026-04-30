@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
         assert_eq!(
             autosave["replay_unsupported"],
-            "unsupported suffix 1: promote.capture_to_scene"
+            "unsupported suffix 1: w30.capture_to_pad"
         );
         assert_eq!(
             autosave["guidance"],
@@ -365,11 +365,8 @@ mod tests {
         session.action_log.actions.push(riotbox_core::action::Action {
             id: ActionId(88),
             actor: riotbox_core::action::ActorType::User,
-            command: ActionCommand::PromoteCaptureToScene,
-            params: riotbox_core::action::ActionParams::Promotion {
-                capture_id: Some(CaptureId::from("cap-01")),
-                destination: Some("scene:scene-1".into()),
-            },
+            command: ActionCommand::W30CaptureToPad,
+            params: riotbox_core::action::ActionParams::Capture { bars: Some(2) },
             target: ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(BankId::from("bank-a")),
@@ -382,7 +379,7 @@ mod tests {
             committed_at: Some(500),
             result: None,
             undo_policy: riotbox_core::action::UndoPolicy::Undoable,
-            explanation: Some("artifact-producing W-30 action".into()),
+            explanation: Some("unsupported capture-producing W-30 action".into()),
         });
         session.action_log.commit_records.push(ActionCommitRecord {
             action_id: ActionId(88),
