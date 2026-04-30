@@ -54,7 +54,11 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("autosave file | parseable session JSON | review before manual recovery"),
+        rendered.contains("autosave file | parseable session JSON | payload none | full replay"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("review before manual recovery"),
         "{rendered}"
     );
     assert!(
@@ -147,7 +151,11 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     );
     assert!(rendered.contains("w30.loop_freeze"), "{rendered}");
     assert!(
-        rendered.contains("autosave file | parseable session JSON | review before manual recovery"),
+        rendered.contains("autosave file | parseable session JSON | payload none | full replay"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("review before manual recovery"),
         "{rendered}"
     );
 }
