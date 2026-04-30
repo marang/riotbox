@@ -28,6 +28,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
   Proves app-level snapshot-payload restore failure paths are explicit and
   non-mutating.
+- `cargo test -p riotbox-app snapshot_payload_restore -- --nocapture`
+  Proves the current app-level snapshot-payload restore parity suite across
+  W-30, TR-909, MC-202, Scene Brain, and failure-path seams.
 - `cargo test -p riotbox-app runtime_view_surfaces_snapshot_payload_readiness -- --nocapture`
   Proves the app runtime view surfaces selected-anchor payload readiness labels.
 - `cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture`
@@ -36,6 +39,12 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `cargo test -p riotbox-app mc202_snapshot_payload_restore_hydrates_answer_projection -- --nocapture`
   Proves an MC-202 snapshot payload can hydrate a follower phrase anchor, apply
   an answer suffix, and match committed bass render output.
+- `cargo test -p riotbox-app mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection -- --nocapture`
+  Proves the current MC-202 snapshot-payload restore chain reaches the
+  phrase-mutation suffix with committed bass render parity.
+- `cargo test -p riotbox-app scene_restore_snapshot_payload_restore_matches_committed_movement_projection -- --nocapture`
+  Proves graph-aware Scene restore snapshot-payload hydration converges across
+  Scene state, Jam projection, TR-909 / MC-202 render state, and mixed output.
 - `cargo test -p riotbox-app tr909_snapshot_payload_restore_hydrates_takeover_release_projection -- --nocapture`
   Proves a TR-909 snapshot payload can hydrate a takeover anchor, apply a
   release suffix, and match committed drum render output.
@@ -103,6 +112,15 @@ bounded. It proves important seams, not complete product-grade recovery.
 - MC-202 answer suffix replay can converge through snapshot-payload restore on
   the same committed phrase lane state and bass render output as the normal app
   commit path.
+- MC-202 pressure, instigator, and phrase-mutation suffixes can now also
+  converge through snapshot-payload restore on committed lane state and bass
+  render output, giving the current MC-202 recipe chain app-level restore
+  parity coverage.
+- Scene restore can converge through graph-aware snapshot-payload restore on
+  committed active/restore scene state, Jam scene projection, TR-909 / MC-202
+  render state, and mixed output.
+- App test helpers now include a graph-aware snapshot restore anchor path so
+  Scene-family parity proofs do not have to hand-roll anchor runtime state.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
@@ -115,6 +133,29 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Stage-style QA now includes bounded output-path evidence plus a payload
   readiness guard.
 - Offline render reproducibility has one CI-safe smoke gate.
+
+## Snapshot Restore Parity Coverage Matrix
+
+This matrix is the current P011 snapshot-payload restore coverage index. It is
+not a full P011 exit declaration.
+
+| Area | Covered suffix / family | Proof file | Output proof |
+| --- | --- | --- | --- |
+| Core hydration boundary | payload clone, cursor/identity rejection, target suffix execution | `crates/riotbox-core/src/replay/target_execution.rs` | state convergence and explicit rejection paths |
+| App failure boundary | missing payload, unsupported suffix, invalid payload identity | `crates/riotbox-app/src/jam_app/tests/snapshot_payload_restore_failures.rs` | non-mutating rejection proof |
+| W-30 cue path | browse anchor -> trigger suffix | `crates/riotbox-app/src/jam_app/tests/w30_replay.rs` | committed preview buffer parity and browse-vs-trigger delta |
+| W-30 damage path | browse anchor -> damage-profile suffix | `crates/riotbox-app/src/jam_app/tests/w30_replay.rs` | committed grit/preview parity and browse-vs-damage delta |
+| W-30 artifact path | loop-freeze, promote.resample, promote.capture_to_pad for resample artifacts | `crates/riotbox-app/src/jam_app/tests/w30_loop_freeze_artifact_replay.rs`, `w30_resample_artifact_replay.rs`, `w30_resample_promotion_replay.rs` | artifact-backed preview/pad buffer parity and fallback-collapse controls |
+| Capture artifact path | capture.now, capture.loop, capture.bar_group, w30.capture_to_pad | `crates/riotbox-app/src/jam_app/tests/w30_capture_now_replay.rs`, `w30_capture_loop_replay.rs`, `w30_capture_bar_group_replay.rs`, `w30_capture_to_pad_replay.rs` | artifact-backed W-30 preview/live-recall/pad output parity |
+| TR-909 support path | fill -> slam, takeover -> release | `crates/riotbox-app/src/jam_app/tests/tr909_replay.rs` | committed drum render parity and pre/post movement delta |
+| MC-202 phrase path | follower -> answer -> pressure -> instigator -> phrase mutation | `crates/riotbox-app/src/jam_app/tests/mc202_restore_replay.rs` | committed bass render parity and adjacent phrase-shape deltas |
+| Scene Brain movement path | scene.launch anchor -> scene.restore suffix | `crates/riotbox-app/src/jam_app/tests/scene_replay.rs` | Scene/Jam/runtime convergence plus mixed-output parity and launch/restore deltas |
+| Save / reload payload readiness | latest explicit snapshot payload materialization | `crates/riotbox-app/src/jam_app/tests/persistence_runtime_view.rs` | reload readiness and app restore usability |
+| Recovery diagnostics | missing artifact identity, app-invalid payload candidates, read-only candidate status | `crates/riotbox-app/src/jam_app/tests/recovery_*` and `artifact_hydration_preflight.rs` | user-facing guidance and non-mutating scans |
+
+Coverage remains intentionally command-family based. The matrix should grow one
+bounded replay-safe family at a time rather than becoming a speculative feature
+list.
 
 ## Still Not Proven
 
