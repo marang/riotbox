@@ -1,0 +1,156 @@
+#[test]
+fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output() {
+    let tempdir = tempdir().expect("create resample replay tempdir");
+    let source_path = tempdir.path().join("source.wav");
+    let session_path = tempdir.path().join("session.json");
+    let graph_path = tempdir.path().join("source_graph.json");
+    write_pcm16_wave(&source_path, 48_000, 2, 8.0);
+
+    let mut graph = sample_graph();
+    graph.source.path = source_path.to_string_lossy().into_owned();
+    graph.source.duration_seconds = 8.0;
+    graph.source.sample_rate = 48_000;
+    graph.source.channel_count = 2;
+    let mut session = sample_session(&graph);
+    session.captures.clear();
+    session.runtime_state.lane_state.w30.last_capture = None;
+    session.runtime_state.macro_state.w30_grit = 0.73;
+    save_source_graph_json(&graph_path, &graph).expect("save replay source graph");
+    save_session_json(&session_path, &session).expect("save replay session");
+
+    let mut committed_state =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+    committed_state.queue_capture_bar(300);
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 0, 1, 0, 400);
+    assert!(committed_state.queue_promote_last_capture(410));
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Bar, 4, 2, 0, 500);
+
+    let pre_resample_action_cursor = committed_state.session.action_log.actions.len();
+    let pre_resample_runtime = committed_state.session.runtime_state.clone();
+    assert_eq!(
+        committed_state.session.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-01"))
+    );
+
+    assert_eq!(
+        committed_state.queue_w30_internal_resample(650),
+        Some(QueueControlResult::Enqueued)
+    );
+    commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 32, 8, 2, 740);
+    let produced_capture_id = CaptureId::from("cap-02");
+    let produced_capture = committed_state
+        .session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == produced_capture_id)
+        .expect("resample produced capture metadata");
+    assert_eq!(produced_capture.capture_type, CaptureType::Resample);
+    assert_eq!(produced_capture.storage_path, "captures/cap-02.wav");
+    assert!(
+        committed_state
+            .capture_audio_cache
+            .contains_key(&produced_capture_id),
+        "resample commit should write and cache the produced artifact"
+    );
+    assert_eq!(
+        committed_state.session.runtime_state.lane_state.w30.last_capture,
+        Some(produced_capture_id.clone())
+    );
+    let produced_artifact_path = tempdir.path().join(&produced_capture.storage_path);
+    assert!(
+        produced_artifact_path.is_file(),
+        "resample commit should persist a reloadable WAV artifact at {}",
+        produced_artifact_path.display()
+    );
+    let committed_pad_playback = committed_state
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .expect("committed resample artifact playback");
+    let committed_buffer = render_w30_preview_offline(
+        &committed_state.runtime.w30_preview,
+        48_000,
+        2,
+        committed_pad_playback.sample_count,
+    );
+
+    let full_action_log = committed_state.session.action_log.clone();
+    let target_action_cursor = full_action_log.actions.len();
+    let resample_action_id = full_action_log
+        .actions
+        .last()
+        .expect("resample action")
+        .id;
+    let mut restore_session = committed_state.session.clone();
+    restore_session.runtime_state = Default::default();
+    restore_session.snapshots = vec![snapshot_payload_for_anchor(
+        "snap-before-promote-resample",
+        "before promote resample",
+        "2026-04-30T11:20:00Z",
+        pre_resample_action_cursor,
+        &pre_resample_runtime,
+    )];
+
+    save_session_json(&session_path, &restore_session).expect("save resample replay session");
+    let mut replayed_state = JamAppState::from_json_files(&session_path, Some(&graph_path))
+        .expect("reload replay session");
+    let report = replayed_state
+        .apply_restore_target_from_snapshot_payload(target_action_cursor)
+        .expect("snapshot payload restore hydrates promote.resample artifact suffix");
+    let replayed_pad_playback = replayed_state
+        .runtime
+        .w30_preview
+        .pad_playback
+        .as_ref()
+        .expect("replayed resample artifact playback");
+    let replayed_buffer = render_w30_preview_offline(
+        &replayed_state.runtime.w30_preview,
+        48_000,
+        2,
+        replayed_pad_playback.sample_count,
+    );
+
+    assert_restore_report_identity(
+        &report,
+        target_action_cursor,
+        "snap-before-promote-resample",
+        pre_resample_action_cursor,
+        vec![resample_action_id],
+    );
+    assert_eq!(
+        replayed_state.session.runtime_state.lane_state.w30,
+        committed_state.session.runtime_state.lane_state.w30
+    );
+    assert_eq!(
+        replayed_state.runtime.w30_preview.capture_id,
+        committed_state.runtime.w30_preview.capture_id
+    );
+    assert_eq!(
+        replayed_state.runtime.w30_preview.source_profile,
+        committed_state.runtime.w30_preview.source_profile
+    );
+    assert_recipe_buffers_match(
+        "snapshot payload restore promote.resample artifact -> committed resample",
+        &replayed_buffer,
+        &committed_buffer,
+        0.0015,
+    );
+
+    let mut fallback_preview = replayed_state.runtime.w30_preview.clone();
+    fallback_preview.source_window_preview = None;
+    fallback_preview.pad_playback = None;
+    let fallback_buffer = render_w30_preview_offline(
+        &fallback_preview,
+        48_000,
+        2,
+        replayed_pad_playback.sample_count,
+    );
+    assert_w30_replay_buffers_differ(
+        "promote.resample artifact playback -> fallback oscillator",
+        &replayed_buffer,
+        &fallback_buffer,
+        0.0005,
+        0.001,
+    );
+}
