@@ -1,9 +1,14 @@
+mod artifact_hydration;
 mod executor;
 mod plan;
 mod scene_movement;
 mod summary;
 mod target_execution;
 
+pub use artifact_hydration::{
+    W30ArtifactReplayHydrationError, W30ArtifactReplayHydrationPlan,
+    plan_w30_artifact_replay_hydration,
+};
 pub use executor::{
     ReplayExecutionError, ReplayExecutionReport, apply_replay_entry_to_session,
     apply_replay_plan_to_session, replay_supported_action_commands,

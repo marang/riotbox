@@ -2,8 +2,11 @@ use super::*;
 use crate::{
     action::{ActionTarget, TargetScope},
     ids::{BankId, CaptureId, PadId},
-    replay::build_replay_target_plan,
-    session::{SessionFile, W30PreviewModeState},
+    replay::{
+        W30ArtifactReplayHydrationError, build_replay_target_plan,
+        plan_w30_artifact_replay_hydration,
+    },
+    session::{CaptureRef, CaptureType, SessionFile, W30PreviewModeState},
 };
 
 #[test]
@@ -234,6 +237,135 @@ fn w30_artifact_producing_actions_reject_without_partial_mutation() {
 }
 
 #[test]
+fn w30_artifact_replay_hydration_contract_accepts_explicit_resample_artifact() {
+    let action_log = action_log(vec![
+        w30_action(
+            1,
+            ActionCommand::W30LiveRecall,
+            w30_capture_params("cap-01", 0.62),
+            100,
+        ),
+        w30_action(
+            2,
+            ActionCommand::PromoteResample,
+            w30_promotion_params("cap-01", "w30:resample"),
+            200,
+        ),
+    ]);
+    let plan = build_replay_target_plan(&action_log, &[], 2).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T09:55:00Z");
+    session.captures.push(source_capture("cap-01"));
+    session.captures.push(resample_capture_for_action(2));
+
+    let hydration_plan = plan_w30_artifact_replay_hydration(&session, &plan.suffix[1])
+        .expect("explicit artifact identity is accepted");
+
+    assert_eq!(hydration_plan.action_id, ActionId(2));
+    assert_eq!(hydration_plan.command, ActionCommand::PromoteResample);
+    assert_eq!(
+        hydration_plan.produced_capture_id,
+        CaptureId::from("cap-02")
+    );
+    assert_eq!(hydration_plan.source_capture_id, CaptureId::from("cap-01"));
+    assert_eq!(hydration_plan.capture_type, CaptureType::Resample);
+    assert_eq!(hydration_plan.storage_path, "captures/cap-02.wav");
+    assert_eq!(hydration_plan.resample_generation_depth, 1);
+
+    let mut replay_session = session.clone();
+    let original_session = replay_session.clone();
+    let error = apply_replay_plan_to_session(&mut replay_session, &plan.suffix)
+        .expect_err("contract planning must not make replay execution implicit");
+    assert_eq!(
+        error,
+        ReplayExecutionError::UnsupportedAction {
+            action_id: ActionId(2),
+            command: ActionCommand::PromoteResample,
+        }
+    );
+    assert_eq!(replay_session, original_session);
+}
+
+#[test]
+fn w30_artifact_replay_hydration_contract_rejects_missing_artifact_identity() {
+    let action_log = action_log(vec![w30_action(
+        7,
+        ActionCommand::PromoteResample,
+        w30_promotion_params("cap-01", "w30:resample"),
+        700,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T09:55:00Z");
+    let mut capture = resample_capture_for_action(7);
+    capture.storage_path.clear();
+    session.captures.push(source_capture("cap-01"));
+    session.captures.push(capture);
+
+    let error = plan_w30_artifact_replay_hydration(&session, &plan.suffix[0])
+        .expect_err("missing artifact path blocks hydration planning");
+
+    assert_eq!(
+        error,
+        W30ArtifactReplayHydrationError::MissingStoragePath {
+            capture_id: CaptureId::from("cap-02"),
+        }
+    );
+}
+
+#[test]
+fn w30_artifact_replay_hydration_contract_rejects_ambiguous_produced_capture() {
+    let action_log = action_log(vec![w30_action(
+        8,
+        ActionCommand::W30LoopFreeze,
+        w30_promotion_params("cap-01", "w30:loop_freeze"),
+        800,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T09:55:00Z");
+    let mut first = loop_freeze_capture_for_action(8, "cap-02");
+    let mut second = loop_freeze_capture_for_action(8, "cap-03");
+    first.storage_path = "captures/cap-02.wav".into();
+    second.storage_path = "captures/cap-03.wav".into();
+    session.captures.push(source_capture("cap-01"));
+    session.captures.push(first);
+    session.captures.push(second);
+
+    let error = plan_w30_artifact_replay_hydration(&session, &plan.suffix[0])
+        .expect_err("one action may not hydrate from multiple produced captures");
+
+    assert_eq!(
+        error,
+        W30ArtifactReplayHydrationError::AmbiguousProducedCapture {
+            action_id: ActionId(8),
+            command: ActionCommand::W30LoopFreeze,
+            capture_count: 2,
+        }
+    );
+}
+
+#[test]
+fn w30_artifact_replay_hydration_contract_rejects_missing_source_capture() {
+    let action_log = action_log(vec![w30_action(
+        9,
+        ActionCommand::PromoteResample,
+        w30_promotion_params("cap-missing", "w30:resample"),
+        900,
+    )]);
+    let plan = build_replay_target_plan(&action_log, &[], 1).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T09:55:00Z");
+    session.captures.push(resample_capture_for_action(9));
+
+    let error = plan_w30_artifact_replay_hydration(&session, &plan.suffix[0])
+        .expect_err("missing source capture blocks hydration planning");
+
+    assert_eq!(
+        error,
+        W30ArtifactReplayHydrationError::MissingSourceCapture {
+            capture_id: CaptureId::from("cap-missing"),
+        }
+    );
+}
+
+#[test]
 fn w30_damage_profile_preserves_existing_preview_mode() {
     let action_log = action_log(vec![
         w30_action(
@@ -295,5 +427,60 @@ fn w30_capture_params(capture_id: &str, intensity: f32) -> ActionParams {
     ActionParams::Mutation {
         intensity,
         target_id: Some(CaptureId::from(capture_id).to_string()),
+    }
+}
+
+fn w30_promotion_params(capture_id: &str, destination: &str) -> ActionParams {
+    ActionParams::Promotion {
+        capture_id: Some(CaptureId::from(capture_id)),
+        destination: Some(destination.into()),
+    }
+}
+
+fn source_capture(capture_id: &str) -> CaptureRef {
+    CaptureRef {
+        capture_id: CaptureId::from(capture_id),
+        capture_type: CaptureType::Pad,
+        source_origin_refs: vec!["source-1".into()],
+        source_window: None,
+        lineage_capture_refs: Vec::new(),
+        resample_generation_depth: 0,
+        created_from_action: None,
+        storage_path: format!("captures/{capture_id}.wav"),
+        assigned_target: None,
+        is_pinned: false,
+        notes: None,
+    }
+}
+
+fn resample_capture_for_action(action_id: u64) -> CaptureRef {
+    CaptureRef {
+        capture_id: CaptureId::from("cap-02"),
+        capture_type: CaptureType::Resample,
+        source_origin_refs: vec!["source-1".into()],
+        source_window: None,
+        lineage_capture_refs: vec![CaptureId::from("cap-01")],
+        resample_generation_depth: 1,
+        created_from_action: Some(ActionId(action_id)),
+        storage_path: "captures/cap-02.wav".into(),
+        assigned_target: None,
+        is_pinned: false,
+        notes: None,
+    }
+}
+
+fn loop_freeze_capture_for_action(action_id: u64, capture_id: &str) -> CaptureRef {
+    CaptureRef {
+        capture_id: CaptureId::from(capture_id),
+        capture_type: CaptureType::Pad,
+        source_origin_refs: vec!["source-1".into()],
+        source_window: None,
+        lineage_capture_refs: vec![CaptureId::from("cap-01")],
+        resample_generation_depth: 0,
+        created_from_action: Some(ActionId(action_id)),
+        storage_path: format!("captures/{capture_id}.wav"),
+        assigned_target: None,
+        is_pinned: true,
+        notes: None,
     }
 }

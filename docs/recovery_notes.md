@@ -50,9 +50,11 @@ Before a future W-30 artifact hydrator can use a `CaptureRef`, the app-level
 preflight must reject missing storage identity, unavailable session-relative
 paths, missing files, unreadable paths, and paths that are not files.
 
-The current preflight only proves the boundary and keeps cache refresh aligned
-with it. It does not decode the artifact into replay state or synthesize a
-replacement.
+The current app preflight only proves the file boundary and keeps cache refresh
+aligned with it. The core replay contract seam is
+`plan_w30_artifact_replay_hydration`; it validates explicit session identity for
+artifact-producing W-30 actions before any file is loaded. It does not decode the
+artifact into replay state or synthesize a replacement.
 
 Recovery artifact-availability labels should use this same preflight classifier
 so UI diagnostics and future hydration gates cannot drift.

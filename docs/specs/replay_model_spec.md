@@ -388,6 +388,21 @@ Decision:
 - W-30 artifact hydration may only use an artifact when the session identity is explicit: `capture_id`, `storage_path`, `created_from_action`, direct `source_window` for source-backed captures, and lineage/depth fields for internally derived captures
 - if that identity is missing, ambiguous, or points at an unavailable artifact, replay/recovery should reject with a clear unsupported or missing-artifact diagnostic rather than synthesize a replacement silently
 
+Current implementation boundary:
+
+- `plan_w30_artifact_replay_hydration` is the core contract seam for
+  artifact-producing W-30 replay actions such as `w30.loop_freeze` and
+  `promote.resample`
+- it only plans hydration from explicit session identity; it does not read files,
+  decode WAV data, mutate runtime state, or apply the replay suffix
+- it locates the produced capture through `created_from_action`, rejects missing
+  or ambiguous produced captures, requires the referenced source capture to exist
+  in the same session, requires a non-empty `storage_path`, and requires
+  source-window identity for source-backed captures or lineage/depth identity for
+  resample-derived captures
+- the existing replay executor still rejects artifact-producing W-30 actions
+  until a later slice wires a real artifact loader through this contract
+
 ---
 
 ## 11. MVP Replay Recommendation
