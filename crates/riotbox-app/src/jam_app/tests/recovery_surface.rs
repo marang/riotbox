@@ -113,6 +113,88 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
 }
 
 #[test]
+fn recovery_surface_drills_interrupted_save_without_selecting_or_mutating_files() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let temp_path = dir.path().join(".session.json.tmp-900-1200");
+    let autosave_path = dir.path().join("session.autosave.2026-04-30T114500Z.json");
+    let captures_dir = dir.path().join("captures");
+
+    fs::create_dir(&captures_dir).expect("create captures dir");
+    fs::write(captures_dir.join("cap-01.wav"), [0u8; 44]).expect("write autosave artifact");
+    fs::write(&target_path, "{ interrupted canonical write")
+        .expect("write interrupted canonical session");
+
+    let temp_session = SessionFile::new("temp-recovery", "riotbox-test", "2026-04-30T11:45:00Z");
+    save_session_json(&temp_path, &temp_session).expect("save parseable temp candidate");
+
+    let graph = sample_graph();
+    let autosave_session = sample_session(&graph);
+    save_session_json(&autosave_path, &autosave_session)
+        .expect("save parseable autosave candidate");
+
+    let target_before = fs::read(&target_path).expect("read target before scan");
+    let temp_before = fs::read(&temp_path).expect("read temp before scan");
+    let autosave_before = fs::read(&autosave_path).expect("read autosave before scan");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+
+    assert_eq!(surface.selected_candidate, None);
+    assert_eq!(
+        surface.headline,
+        "2 manual recovery candidate(s) need explicit review"
+    );
+    assert!(surface.has_manual_candidates());
+    assert_eq!(
+        surface
+            .candidates
+            .iter()
+            .map(|candidate| (
+                candidate.kind_label,
+                candidate.status_label,
+                candidate.decision_label.as_str(),
+                candidate.artifact_availability_label.as_str(),
+                candidate.action_hint,
+            ))
+            .collect::<Vec<_>>(),
+        vec![
+            (
+                "normal session path",
+                "invalid session JSON",
+                "decision: broken candidate",
+                "artifacts unchecked",
+                "do not recover automatically",
+            ),
+            (
+                "orphan temp file",
+                "parseable session JSON",
+                "decision: reviewable | explicit user choice required",
+                "artifacts n/a | no captures",
+                "review before manual recovery",
+            ),
+            (
+                "autosave file",
+                "parseable session JSON",
+                "decision: reviewable | full replay required",
+                "artifacts ready: 1 capture(s)",
+                "review before manual recovery",
+            ),
+        ]
+    );
+
+    assert_eq!(
+        fs::read(&target_path).expect("read target after scan"),
+        target_before
+    );
+    assert_eq!(fs::read(&temp_path).expect("read temp after scan"), temp_before);
+    assert_eq!(
+        fs::read(&autosave_path).expect("read autosave after scan"),
+        autosave_before
+    );
+}
+
+#[test]
 fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidates() {
     let dir = tempdir().expect("create temp dir");
     let target_path = dir.path().join("session.json");

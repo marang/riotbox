@@ -75,6 +75,9 @@ bounded. It proves important seams, not complete product-grade recovery.
   latest action cursor.
 - Manual recovery scanning is read-only and does not choose, load, replace,
   delete, or repair candidates.
+- A bounded interrupted-save drill now covers a broken requested session path
+  with parseable adjacent temp/autosave candidates and proves the recovery
+  surface still selects nothing and mutates no candidate file.
 - Stage-style QA now includes bounded output-path evidence plus a payload
   readiness guard.
 - Offline render reproducibility has one CI-safe smoke gate.
@@ -91,7 +94,7 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Full arrangement export, stems, recording, or manifest-normalized export
   reproducibility.
 - Long-run soak behavior over extended live sessions.
-- Real user-session recovery drills after an interrupted multi-file save.
+- Real user-session recovery drills against an actual interrupted host run.
 
 ## Exit-Ready Requirements
 
