@@ -53,6 +53,7 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
         dry_run["payload_readiness"],
         "payload ready | snapshot restore ok"
     );
+    assert_eq!(dry_run["replay_family"], "families Scene | suffix 1");
 
     let candidates = recovery["candidates"].as_array().expect("candidate array");
     assert_eq!(candidates[0]["kind"], "normal session path");
@@ -73,6 +74,7 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
         autosave["replay_unsupported"],
         "unsupported suffix 1: mutate.scene"
     );
+    assert_eq!(autosave["replay_family"], "families Scene | suffix 1");
     assert_eq!(autosave["guidance"], serde_json::Value::Null);
     assert!(session_path.exists());
     assert!(autosave_path.exists());
@@ -133,6 +135,7 @@ fn observer_snapshot_reports_app_invalid_recovery_candidate_as_broken() {
         autosave["payload_readiness"],
         "payload invalid | snapshot restore blocked"
     );
+    assert_eq!(autosave["replay_family"], "families unchecked");
     assert_eq!(autosave["decision"], "decision: broken candidate");
     assert_eq!(autosave["guidance"], serde_json::Value::Null);
     assert_eq!(autosave["action_hint"], "do not recover automatically");

@@ -57,6 +57,7 @@ pub struct ManualRecoveryChoiceDryRun {
     pub replay_readiness_label: String,
     pub payload_readiness_label: String,
     pub replay_suffix_label: String,
+    pub replay_family_label: String,
     pub replay_unsupported_label: String,
     pub guidance_label: Option<String>,
     pub trust: RecoveryCandidateTrust,
@@ -74,6 +75,7 @@ impl ManualRecoveryChoiceDryRun {
             replay_readiness_label: candidate.replay_readiness_label.clone(),
             payload_readiness_label: candidate.payload_readiness_label.clone(),
             replay_suffix_label: candidate.replay_suffix_label.clone(),
+            replay_family_label: candidate.replay_family_label.clone(),
             replay_unsupported_label: candidate.replay_unsupported_label.clone(),
             guidance_label: candidate
                 .guidance
@@ -97,6 +99,7 @@ pub struct SessionRecoveryCandidateView {
     pub replay_readiness_label: String,
     pub payload_readiness_label: String,
     pub replay_suffix_label: String,
+    pub replay_family_label: String,
     pub replay_unsupported_label: String,
     pub decision_label: String,
     pub guidance: Option<RecoveryCandidateGuidance>,
@@ -171,6 +174,11 @@ fn recovery_candidate_view(
     } else {
         recovery_artifact_availability_label(candidate)
     };
+    let replay_family_label = if payload_invalid {
+        "families unchecked".into()
+    } else {
+        replay_labels.family.clone()
+    };
     let guidance = recovery_candidate_guidance(candidate);
     let decision_label = recovery_decision_label(
         trust,
@@ -191,6 +199,7 @@ fn recovery_candidate_view(
         replay_readiness_label: replay_labels.status,
         payload_readiness_label: replay_labels.payload,
         replay_suffix_label: replay_labels.suffix,
+        replay_family_label,
         replay_unsupported_label: replay_labels.unsupported,
         decision_label,
         guidance,
@@ -355,6 +364,7 @@ fn recovery_replay_readiness_labels(
             anchor: "anchor unchecked".into(),
             payload: "payload unchecked".into(),
             suffix: "suffix unchecked".into(),
+            family: "families unchecked".into(),
             unsupported: "unsupported unchecked".into(),
         };
     }
@@ -366,6 +376,7 @@ fn recovery_replay_readiness_labels(
             anchor: "anchor unreadable".into(),
             payload: "payload unreadable".into(),
             suffix: "suffix unreadable".into(),
+            family: "families unreadable".into(),
             unsupported: "unsupported unreadable".into(),
         },
     }

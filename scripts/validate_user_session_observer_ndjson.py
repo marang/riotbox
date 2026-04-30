@@ -131,6 +131,7 @@ def validate_recovery(recovery: dict[str, Any]) -> None:
         require_string(candidate, "replay_readiness")
         require_string(candidate, "payload_readiness")
         require_string(candidate, "replay_suffix")
+        require_replay_family(candidate, "replay_family")
         require_string(candidate, "replay_unsupported")
         require_string(candidate, "trust")
         require_string(candidate, "action_hint")
@@ -147,6 +148,7 @@ def validate_manual_choice_dry_run(dry_run: dict[str, Any]) -> None:
     require_string(dry_run, "replay_readiness")
     require_string(dry_run, "payload_readiness")
     require_string(dry_run, "replay_suffix")
+    require_replay_family(dry_run, "replay_family")
     require_string(dry_run, "replay_unsupported")
     guidance = dry_run.get("guidance")
     if guidance is not None and not isinstance(guidance, str):
@@ -197,6 +199,13 @@ def require_string(parent: dict[str, Any], field: str) -> str:
     value = parent.get(field)
     if not isinstance(value, str) or not value:
         raise TypeError(f"{field} must be a non-empty string")
+    return value
+
+
+def require_replay_family(parent: dict[str, Any], field: str) -> str:
+    value = require_string(parent, field)
+    if not value.startswith("families "):
+        raise ValueError(f"{field} must start with 'families ', got {value!r}")
     return value
 
 
