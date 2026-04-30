@@ -462,6 +462,7 @@ Today the repo already has:
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - a CI-safe generated W-30 source-vs-fallback smoke that uses deterministic synthetic source material, checks minimum source-vs-fallback deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`
 - a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-fallback output evidence, and a committed observer fixture for the current `space -> capture -> raw audition -> promote -> W-30 recall` user path
+- a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses a dedicated multi-boundary observer fixture, generated W-30 source-vs-fallback output evidence, and summary-level commit boundary assertions for `NextBar`, `NextBeat`, and `NextPhrase`
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
 - MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, follower-vs-instigator, follower-vs-mutated-drive, neutral-vs-lift contour, and direct-vs-hook-response contrasts without claiming a finished synth engine
@@ -483,7 +484,7 @@ Today the repo already has:
 - a schema version 1 compatibility policy for generated audio QA manifests, captured in `docs/benchmarks/listening_manifest_schema_policy_2026-04-29.md`
 - a CI-safe Feral grid manifest smoke gate that renders from synthetic input and asserts manifest schema version, artifact roles and files, metrics files, thresholds, pass status, and non-collapsed output metrics without depending on ignored local example audio
 - a local observer/audio correlation notes template and `just observer-audio-correlation-notes <path>` helper for pairing `riotbox-app --observer <events.ndjson>` control-path evidence with generated audio QA `manifest.json` output evidence
-- a local observer/audio correlation summary helper, `just observer-audio-correlate <events.ndjson> <manifest.json> <summary.md>`, that extracts launch mode, audio-runtime status, key outcomes, first commit boundary, pack result, artifact count, and key output metrics into Markdown
+- a local observer/audio correlation summary helper, `just observer-audio-correlate <events.ndjson> <manifest.json> <summary.md>`, that extracts launch mode, audio-runtime status, key outcomes, first commit boundary, commit count, commit boundary coverage, pack result, artifact count, and key output metrics into Markdown
 - an explicit CI-safe `just audio-qa-ci` smoke gate, mirrored as a named GitHub Actions step, that runs the stable W-30 preview, lane recipe, Feral before/after, Feral grid, and observer/audio-correlation helper tests without generating or committing local listening artifacts
 - a committed synthetic observer/audio correlation fixture smoke that proves the summary helper reads both control-path observer events and output-path manifest metrics without depending on ignored local artifacts
 - an optional strict `observer_audio_correlate --require-evidence` mode that fails when committed control-path evidence or passing output-path manifest metrics are missing
@@ -494,7 +495,7 @@ Today the repo already has:
 - observer/audio correlation can emit opt-in JSON summaries for machine-readable QA verdicts and metric inspection
 - a `just observer-audio-correlate-json <events.ndjson> <manifest.json> <summary.json>` helper exposes the machine-readable summary path
 - the committed-fixture JSON summary path is smoke-tested in `just audio-qa-ci` and the named GitHub Actions audio QA step
-- observer/audio JSON summaries include a top-level `schema` and `schema_version` marker so automation can reject unexpected summary shapes before making QA decisions
+- observer/audio JSON summaries include a top-level `schema` and `schema_version` marker plus control-path `commit_count` and `commit_boundaries` fields so automation can reject unexpected summary shapes and assert boundary coverage before making QA decisions
 - the committed-fixture JSON smoke requires both `control_path.present` and `output_path.present`, keeping the machine-readable path aligned with the control-plus-output proof rule
 - the observer/audio JSON summary v1 contract is documented in `docs/benchmarks/observer_audio_summary_json_contract_2026-04-29.md`
 - the observer/audio JSON fixture smoke also runs the repo-local `scripts/validate_observer_audio_summary_json.py` contract validator without adding an external schema dependency
