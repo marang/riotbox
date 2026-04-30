@@ -385,12 +385,10 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let unsupported_action = Action {
         id: ActionId(77),
         actor: ActorType::User,
-        command: ActionCommand::CaptureBarGroup,
-        params: ActionParams::Capture { bars: Some(4) },
+        command: ActionCommand::CaptureNow,
+        params: ActionParams::Capture { bars: Some(1) },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
-            bank_id: Some(BankId::from("bank-a")),
-            pad_id: Some(PadId::from("pad-01")),
             ..Default::default()
         },
         requested_at: 490,
@@ -399,10 +397,10 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "capture bar group committed".into(),
+            summary: "capture now committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("unsupported capture-producing W-30 action".into()),
+        explanation: Some("unsupported immediate capture-producing action".into()),
     };
     session.action_log.actions.push(unsupported_action);
     session.action_log.commit_records.push(ActionCommitRecord {
@@ -445,7 +443,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
             riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(77),
-                command: ActionCommand::CaptureBarGroup,
+                command: ActionCommand::CaptureNow,
             }
         )
     ));
@@ -464,7 +462,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
-        vec![ActionCommand::CaptureBarGroup]
+        vec![ActionCommand::CaptureNow]
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_status,
@@ -476,11 +474,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_suffix,
-        "suffix 1 action(s): capture.bar_group"
+        "suffix 1 action(s): capture.now"
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: capture.bar_group"
+        "unsupported suffix 1: capture.now"
     );
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
@@ -488,6 +486,6 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: capture.bar_group"
+        warning == "replay cannot cover 1 unsupported command(s) after snapshot: capture.now"
     }));
 }

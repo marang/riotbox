@@ -305,7 +305,7 @@ mod tests {
         assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
         assert_eq!(
             autosave["replay_unsupported"],
-            "unsupported suffix 1: capture.bar_group"
+            "unsupported suffix 1: capture.now"
         );
         assert_eq!(
             autosave["guidance"],
@@ -365,12 +365,10 @@ mod tests {
         session.action_log.actions.push(riotbox_core::action::Action {
             id: ActionId(88),
             actor: riotbox_core::action::ActorType::User,
-            command: ActionCommand::CaptureBarGroup,
-            params: riotbox_core::action::ActionParams::Capture { bars: Some(4) },
+            command: ActionCommand::CaptureNow,
+            params: riotbox_core::action::ActionParams::Capture { bars: Some(1) },
             target: ActionTarget {
                 scope: Some(TargetScope::LaneW30),
-                bank_id: Some(BankId::from("bank-a")),
-                pad_id: Some(PadId::from("pad-01")),
                 ..Default::default()
             },
             requested_at: 480,
@@ -379,7 +377,7 @@ mod tests {
             committed_at: Some(500),
             result: None,
             undo_policy: riotbox_core::action::UndoPolicy::Undoable,
-            explanation: Some("unsupported capture-producing W-30 action".into()),
+            explanation: Some("unsupported immediate capture-producing action".into()),
         });
         session.action_log.commit_records.push(ActionCommitRecord {
             action_id: ActionId(88),
