@@ -191,48 +191,27 @@ fn w30_snapshot_payload_restore_runner_matches_committed_app_preview_output() {
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Beat, 34, 9, 2, 600);
     let committed_trigger = render_w30_replay_buffer(&committed_state);
 
-    let full_action_log = committed_state.session.action_log.clone();
-    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
-        .expect("committed W-30 action log builds replay plan");
-    assert_eq!(committed_plan.len(), 2);
-    let browse_action_id = committed_plan[0].action.id;
-    let trigger_action_id = committed_plan[1].action.id;
-    let browse_action_cursor = action_cursor_for(&full_action_log, browse_action_id, "browse");
-    let trigger_action_cursor = action_cursor_for(&full_action_log, trigger_action_id, "trigger");
-
-    let anchor_session = materialize_replay_anchor_session(
+    let replayed_state = run_snapshot_payload_restore_probe(
         replay_base_session,
-        full_action_log.clone(),
-        &committed_plan[..1],
-        vec![browse_action_id],
-        "W-30 browse anchor materializes",
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed W-30 action log builds replay plan",
+            snapshot_id: "snap-after-w30-browse",
+            snapshot_label: "after W-30 browse",
+            snapshot_created_at: "2026-04-30T08:25:00Z",
+            expected_plan_len: 2,
+            anchor_plan_len: 1,
+            target_plan_index: 1,
+            anchor_label: "W-30 browse anchor materializes",
+            restore_expectation: "snapshot payload restore applies W-30 trigger suffix",
+        },
+        |state| {
+            state.source_audio_cache = Some(source_audio_cache);
+        },
     );
-
-    let mut restore_session = committed_state.session.clone();
-    restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![snapshot_payload_for_anchor(
-        "snap-after-w30-browse",
-        "after W-30 browse",
-        "2026-04-30T08:25:00Z",
-        browse_action_cursor,
-        &anchor_session.runtime_state,
-    )];
-
-    let mut replayed_state =
-        JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
-    replayed_state.source_audio_cache = Some(source_audio_cache);
-    let replay_report = replayed_state
-        .apply_restore_target_from_snapshot_payload(trigger_action_cursor)
-        .expect("snapshot payload restore applies W-30 trigger suffix");
     let replayed_trigger = render_w30_replay_buffer(&replayed_state);
 
-    assert_restore_report_identity(
-        &replay_report,
-        trigger_action_cursor,
-        "snap-after-w30-browse",
-        browse_action_cursor,
-        vec![trigger_action_id],
-    );
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30,
         committed_state.session.runtime_state.lane_state.w30
