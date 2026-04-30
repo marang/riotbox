@@ -166,47 +166,25 @@ fn tr909_snapshot_payload_restore_runner_matches_committed_app_projection() {
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Beat, 9, 2, 0, 600);
     let committed_slam = render_tr909_replay_buffer(&committed_state);
 
-    let full_action_log = committed_state.session.action_log.clone();
-    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
-        .expect("committed TR-909 action log builds replay plan");
-    assert_eq!(committed_plan.len(), 2);
-    let fill_action_id = committed_plan[0].action.id;
-    let slam_action_id = committed_plan[1].action.id;
-    let fill_action_cursor = action_cursor_for(&full_action_log, fill_action_id, "fill");
-    let slam_action_cursor = action_cursor_for(&full_action_log, slam_action_id, "slam");
-
-    let anchor_session = materialize_replay_anchor_session(
+    let replayed_state = run_snapshot_payload_restore_probe(
         base_session,
-        full_action_log.clone(),
-        &committed_plan[..1],
-        vec![fill_action_id],
-        "fill anchor materializes",
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed TR-909 action log builds replay plan",
+            snapshot_id: "snap-after-fill",
+            snapshot_label: "after fill",
+            snapshot_created_at: "2026-04-30T07:30:00Z",
+            expected_plan_len: 2,
+            anchor_plan_len: 1,
+            target_plan_index: 1,
+            anchor_label: "fill anchor materializes",
+            restore_expectation: "snapshot payload restore applies slam suffix",
+        },
+        |_| {},
     );
-
-    let mut restore_session = committed_state.session.clone();
-    restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![snapshot_payload_for_anchor(
-        "snap-after-fill",
-        "after fill",
-        "2026-04-30T07:30:00Z",
-        fill_action_cursor,
-        &anchor_session.runtime_state,
-    )];
-
-    let mut replayed_state =
-        JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
-    let replay_report = replayed_state
-        .apply_restore_target_from_snapshot_payload(slam_action_cursor)
-        .expect("snapshot payload restore applies slam suffix");
     let replayed_slam = render_tr909_replay_buffer(&replayed_state);
 
-    assert_restore_report_identity(
-        &replay_report,
-        slam_action_cursor,
-        "snap-after-fill",
-        fill_action_cursor,
-        vec![slam_action_id],
-    );
     assert_eq!(
         replayed_state.session.runtime_state,
         committed_state.session.runtime_state
@@ -244,48 +222,25 @@ fn tr909_snapshot_payload_restore_hydrates_takeover_release_projection() {
     commit_tr909_replay_step(&mut committed_state, CommitBoundary::Phrase, 32, 8, 2, 800);
     let committed_release = render_tr909_replay_buffer(&committed_state);
 
-    let full_action_log = committed_state.session.action_log.clone();
-    let committed_plan = riotbox_core::replay::build_committed_replay_plan(&full_action_log)
-        .expect("committed TR-909 takeover/release action log builds replay plan");
-    assert_eq!(committed_plan.len(), 3);
-    let takeover_action_id = committed_plan[1].action.id;
-    let release_action_id = committed_plan[2].action.id;
-    let takeover_action_cursor =
-        action_cursor_for(&full_action_log, takeover_action_id, "takeover");
-    let release_action_cursor = action_cursor_for(&full_action_log, release_action_id, "release");
-
-    let anchor_session = materialize_replay_anchor_session(
+    let replayed_state = run_snapshot_payload_restore_probe(
         base_session,
-        full_action_log.clone(),
-        &committed_plan[..2],
-        vec![committed_plan[0].action.id, takeover_action_id],
-        "TR-909 takeover anchor materializes",
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed TR-909 takeover/release action log builds replay plan",
+            snapshot_id: "snap-after-tr909-takeover",
+            snapshot_label: "after TR-909 takeover before release",
+            snapshot_created_at: "2026-04-30T13:10:00Z",
+            expected_plan_len: 3,
+            anchor_plan_len: 2,
+            target_plan_index: 2,
+            anchor_label: "TR-909 takeover anchor materializes",
+            restore_expectation: "snapshot payload restore applies TR-909 release suffix",
+        },
+        |_| {},
     );
-
-    let mut restore_session = committed_state.session.clone();
-    restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![snapshot_payload_for_anchor(
-        "snap-after-tr909-takeover",
-        "after TR-909 takeover before release",
-        "2026-04-30T13:10:00Z",
-        takeover_action_cursor,
-        &anchor_session.runtime_state,
-    )];
-
-    let mut replayed_state =
-        JamAppState::from_parts(restore_session, Some(graph), ActionQueue::new());
-    let replay_report = replayed_state
-        .apply_restore_target_from_snapshot_payload(release_action_cursor)
-        .expect("snapshot payload restore applies TR-909 release suffix");
     let replayed_release = render_tr909_replay_buffer(&replayed_state);
 
-    assert_restore_report_identity(
-        &replay_report,
-        release_action_cursor,
-        "snap-after-tr909-takeover",
-        takeover_action_cursor,
-        vec![release_action_id],
-    );
     assert_eq!(
         replayed_state.session.runtime_state,
         committed_state.session.runtime_state
