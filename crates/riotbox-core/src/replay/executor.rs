@@ -1,14 +1,16 @@
 use crate::{
     action::{ActionCommand, ActionParams},
-    ids::{ActionId, BankId, PadId},
-    replay::{
-        ReplayPlanEntry, W30ArtifactReplayHydrationError, plan_w30_artifact_replay_hydration,
-    },
+    ids::ActionId,
+    replay::{ReplayPlanEntry, W30ArtifactReplayHydrationError},
     session::{
-        CaptureTarget, Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
-        Tr909TakeoverProfileState, W30PreviewModeState,
+        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState,
     },
 };
+
+mod w30;
+
+use w30::{apply_promote_capture_to_w30_pad, apply_w30_artifact_hydrated_cue, apply_w30_cue};
 
 const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::TransportPlay,
@@ -20,6 +22,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::GhostSetMode,
     ActionCommand::SceneLaunch,
     ActionCommand::SceneRestore,
+    ActionCommand::PromoteCaptureToPad,
     ActionCommand::Mc202SetRole,
     ActionCommand::Mc202GenerateFollower,
     ActionCommand::Mc202GenerateAnswer,
@@ -180,6 +183,7 @@ pub fn apply_replay_entry_to_session(
                 .cloned();
             session.runtime_state.scene_state.last_movement = None;
         }
+        ActionCommand::PromoteCaptureToPad => apply_promote_capture_to_w30_pad(session, entry)?,
         ActionCommand::Mc202SetRole => {
             let role = action
                 .target
@@ -321,90 +325,6 @@ pub fn apply_replay_entry_to_session(
     Ok(())
 }
 
-fn apply_w30_artifact_hydrated_cue(
-    session: &mut SessionFile,
-    entry: &ReplayPlanEntry<'_>,
-) -> Result<(), ReplayExecutionError> {
-    let action = entry.action;
-    let hydration = plan_w30_artifact_replay_hydration(session, entry).map_err(|reason| {
-        ReplayExecutionError::ArtifactHydration {
-            action_id: action.id,
-            command: action.command,
-            reason,
-        }
-    })?;
-    let source_capture_id = hydration.source_capture_id.clone();
-    let capture = session
-        .captures
-        .iter()
-        .find(|capture| capture.capture_id == hydration.produced_capture_id)
-        .ok_or(ReplayExecutionError::ArtifactHydration {
-            action_id: action.id,
-            command: action.command,
-            reason: W30ArtifactReplayHydrationError::MissingProducedCapture {
-                action_id: action.id,
-                command: action.command,
-            },
-        })?;
-    let (bank_id, pad_id) = w30_artifact_target(session, capture, action, &source_capture_id)?;
-
-    session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
-    session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
-    session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
-    session.runtime_state.lane_state.w30.last_capture = Some(hydration.produced_capture_id);
-    session.runtime_state.macro_state.w30_grit = session
-        .runtime_state
-        .macro_state
-        .w30_grit
-        .max(w30_grit_or(action, 0.78));
-
-    Ok(())
-}
-
-fn w30_artifact_target(
-    session: &SessionFile,
-    capture: &crate::session::CaptureRef,
-    action: &crate::action::Action,
-    source_capture_id: &crate::ids::CaptureId,
-) -> Result<(BankId, PadId), ReplayExecutionError> {
-    if let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.as_ref() {
-        return Ok((bank_id.clone(), pad_id.clone()));
-    }
-
-    if let (Some(bank_id), Some(pad_id)) =
-        (action.target.bank_id.clone(), action.target.pad_id.clone())
-    {
-        return Ok((bank_id, pad_id));
-    }
-
-    if let Some((bank_id, pad_id)) = session
-        .captures
-        .iter()
-        .find(|capture| capture.capture_id == *source_capture_id)
-        .and_then(|capture| match capture.assigned_target.as_ref() {
-            Some(CaptureTarget::W30Pad { bank_id, pad_id }) => {
-                Some((bank_id.clone(), pad_id.clone()))
-            }
-            _ => None,
-        })
-    {
-        return Ok((bank_id, pad_id));
-    }
-
-    if let (Some(bank_id), Some(pad_id)) = (
-        session.runtime_state.lane_state.w30.active_bank.clone(),
-        session.runtime_state.lane_state.w30.focused_pad.clone(),
-    ) {
-        return Ok((bank_id, pad_id));
-    }
-
-    Err(ReplayExecutionError::InvalidParams {
-        action_id: action.id,
-        command: action.command,
-        expected: "produced/source CaptureTarget::W30Pad, ActionTarget { bank_id: Some(_), pad_id: Some(_) }, or existing W-30 focus",
-    })
-}
-
 fn apply_mc202_role(
     session: &mut SessionFile,
     entry: &ReplayPlanEntry<'_>,
@@ -448,103 +368,6 @@ fn tr909_boundary_pattern_ref(entry: &ReplayPlanEntry<'_>, prefix: &str) -> Stri
         },
         |scene_id| format!("{prefix}-{scene_id}"),
     )
-}
-
-fn apply_w30_cue(
-    session: &mut SessionFile,
-    entry: &ReplayPlanEntry<'_>,
-) -> Result<(), ReplayExecutionError> {
-    let action = entry.action;
-    let bank_id = action
-        .target
-        .bank_id
-        .clone()
-        .ok_or(ReplayExecutionError::InvalidParams {
-            action_id: action.id,
-            command: action.command,
-            expected: "ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
-        })?;
-    let pad_id = action
-        .target
-        .pad_id
-        .clone()
-        .ok_or(ReplayExecutionError::InvalidParams {
-            action_id: action.id,
-            command: action.command,
-            expected: "ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
-        })?;
-
-    let preview_mode = match action.command {
-        ActionCommand::W30AuditionRawCapture => W30PreviewModeState::RawCaptureAudition,
-        ActionCommand::W30AuditionPromoted => W30PreviewModeState::PromotedAudition,
-        ActionCommand::W30ApplyDamageProfile => session
-            .runtime_state
-            .lane_state
-            .w30
-            .preview_mode
-            .unwrap_or(W30PreviewModeState::LiveRecall),
-        ActionCommand::W30LiveRecall
-        | ActionCommand::W30TriggerPad
-        | ActionCommand::W30SwapBank
-        | ActionCommand::W30BrowseSlicePool
-        | ActionCommand::W30StepFocus => W30PreviewModeState::LiveRecall,
-        _ => unreachable!("checked by caller"),
-    };
-
-    let capture_id = match &action.params {
-        ActionParams::Empty if action.command == ActionCommand::W30StepFocus => None,
-        _ if action.command == ActionCommand::W30StepFocus => {
-            return Err(ReplayExecutionError::InvalidParams {
-                action_id: action.id,
-                command: action.command,
-                expected: "ActionParams::Empty",
-            });
-        }
-        ActionParams::Mutation {
-            target_id: Some(target_id),
-            ..
-        } => Some(crate::ids::CaptureId::from(target_id.clone())),
-        _ => {
-            return Err(ReplayExecutionError::InvalidParams {
-                action_id: action.id,
-                command: action.command,
-                expected: "ActionParams::Mutation { target_id: Some(_), .. }",
-            });
-        }
-    };
-
-    session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
-    session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
-    session.runtime_state.lane_state.w30.preview_mode = Some(preview_mode);
-    if let Some(capture_id) = capture_id {
-        session.runtime_state.lane_state.w30.last_capture = Some(capture_id);
-    }
-
-    if matches!(
-        action.command,
-        ActionCommand::W30AuditionRawCapture
-            | ActionCommand::W30AuditionPromoted
-            | ActionCommand::W30TriggerPad
-            | ActionCommand::W30ApplyDamageProfile
-    ) {
-        session.runtime_state.macro_state.w30_grit = session
-            .runtime_state
-            .macro_state
-            .w30_grit
-            .max(w30_grit_or(action, 0.68));
-    }
-
-    Ok(())
-}
-
-fn w30_grit_or(action: &crate::action::Action, fallback: f32) -> f32 {
-    match &action.params {
-        ActionParams::Mutation { intensity, .. } => match action.command {
-            ActionCommand::W30TriggerPad => (intensity * 0.82).clamp(0.0, 1.0),
-            _ => intensity.clamp(0.0, 1.0),
-        },
-        _ => fallback,
-    }
 }
 
 pub fn apply_replay_plan_to_session(
