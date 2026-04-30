@@ -34,6 +34,7 @@ audio-qa-ci:
     just stage-style-jam-probe
     just stage-style-restore-diversity-probe
     just interrupted-session-recovery-probe
+    just missing-target-recovery-probe
     just stage-style-stability-smoke
     just recipe2-observer-audio-gate
     just offline-render-reproducibility-smoke
@@ -155,6 +156,9 @@ stage-style-restore-diversity-probe:
 
 interrupted-session-recovery-probe:
     scripts/validate_interrupted_session_recovery_probe.sh
+
+missing-target-recovery-probe:
+    scripts/validate_missing_target_recovery_probe.sh
 
 stage-style-stability-smoke:
     scripts/validate_stage_style_stability_smoke.sh

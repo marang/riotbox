@@ -139,6 +139,36 @@ fn writes_interrupted_session_recovery_observer_stream() {
 }
 
 #[test]
+fn writes_missing_target_recovery_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_missing_target_recovery_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"missing-target-recovery""#));
+    assert!(events.contains(r#""mode":"load""#));
+    assert!(events.contains(r#""kind":"normal session path""#));
+    assert!(events.contains(r#""status":"missing""#));
+    assert!(events.contains(r#""trust":"MissingTarget""#));
+    assert!(events.contains(r#""kind":"autosave file""#));
+    assert!(events.contains(r#""trust":"RecoverableClue""#));
+    assert!(events.contains(r#""manual_choice_dry_run":{"#));
+    assert!(events.contains(r#""selected_for_restore":false"#));
+    assert!(
+        !temp
+            .path()
+            .join("missing-target-recovery/session.json")
+            .exists()
+    );
+    assert!(
+        temp.path()
+            .join("missing-target-recovery/session.autosave.2026-04-30T172000Z.json")
+            .is_file()
+    );
+}
+
+#[test]
 fn writes_feral_grid_jam_observer_stream() {
     let temp = tempfile::tempdir().expect("tempdir");
     let path = temp.path().join("events.ndjson");
