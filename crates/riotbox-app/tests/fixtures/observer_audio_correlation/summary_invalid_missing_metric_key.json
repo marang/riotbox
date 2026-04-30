@@ -28,8 +28,7 @@
       "full_mix_low_band_rms": null,
       "mc202_question_answer_delta_rms": null,
       "w30_candidate_rms": null,
-      "w30_candidate_active_sample_ratio": null,
-      "w30_rms_delta": null
+      "w30_candidate_active_sample_ratio": null
     }
   },
   "needs_human_listening": true

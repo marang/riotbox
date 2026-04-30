@@ -29,6 +29,8 @@ The `control_path` object should include:
 - `audio_runtime_status`: latest observed audio runtime status.
 - `key_outcomes`: array of compact key outcome strings.
 - `first_commit`: compact description of the first committed transport action, or `none`.
+- `commit_count`: integer count of committed actions seen in the observer stream.
+- `commit_boundaries`: array of unique commit boundary labels seen in committed actions.
 
 The `output_path` object should include:
 
@@ -37,7 +39,7 @@ The `output_path` object should include:
 - `pack_id`: source audio QA pack id.
 - `manifest_result`: source manifest result.
 - `artifact_count`: number of manifest artifacts.
-- `metrics`: object containing the currently required output metric fields; values may be numbers or `null` when evidence is missing.
+- `metrics`: object containing every currently required output metric field; values may be numbers or `null` when evidence is missing.
 
 The current stable metric keys are:
 
@@ -68,10 +70,13 @@ The committed fixture JSON smoke currently requires:
 - `schema == "riotbox.observer_audio_summary.v1"`
 - `schema_version == 1`
 - `control_path.present == true`
+- `control_path.commit_count` is an integer
+- `control_path.commit_boundaries` is an array of strings
 - `output_path.present == true`
 - `output_path.issues` is empty
+- every stable metric key is present, with a number or `null` value
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
-- validator fixtures cover a valid failure summary with `null` metrics and a rejected invalid schema marker
+- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, and a rejected missing metric key
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 
 ## Current Non-Goals

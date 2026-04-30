@@ -106,6 +106,8 @@ def require_int(parent: dict[str, Any], field: str) -> None:
 
 
 def require_optional_number(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as a number or null")
     value = parent.get(field)
     if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
         raise TypeError(f"{field} must be a number or null")
