@@ -188,10 +188,6 @@ fn w30_step_focus_rejects_unexpected_params_without_mutating_session() {
 fn w30_artifact_producing_actions_reject_without_partial_mutation() {
     let artifact_actions = vec![
         (
-            ActionCommand::W30LoopFreeze,
-            w30_capture_params("cap-01", 0.74),
-        ),
-        (
             ActionCommand::PromoteResample,
             w30_capture_params("cap-01", 0.86),
         ),
@@ -234,6 +230,73 @@ fn w30_artifact_producing_actions_reject_without_partial_mutation() {
             "{command:?} must not leave the supported recall partially applied"
         );
     }
+}
+
+#[test]
+fn w30_loop_freeze_replay_hydrates_persisted_artifact_capture() {
+    let action_log = action_log(vec![
+        w30_action(
+            1,
+            ActionCommand::W30LiveRecall,
+            w30_capture_params("cap-01", 0.62),
+            100,
+        ),
+        w30_action(
+            2,
+            ActionCommand::W30LoopFreeze,
+            w30_promotion_params("cap-01", "w30:loop_freeze"),
+            200,
+        ),
+    ]);
+    let plan = build_replay_target_plan(&action_log, &[], 2).expect("origin plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-30T10:20:00Z");
+    let mut loop_freeze = loop_freeze_capture_for_action(2, "cap-02");
+    loop_freeze.assigned_target = Some(crate::session::CaptureTarget::W30Pad {
+        bank_id: BankId::from("bank-b"),
+        pad_id: PadId::from("pad-05"),
+    });
+    session.captures.push(source_capture("cap-01"));
+    session.captures.push(loop_freeze);
+
+    let report = apply_replay_plan_to_session(&mut session, &plan.suffix)
+        .expect("W-30 loop-freeze replay hydrates artifact capture");
+
+    assert_eq!(report.applied_action_ids, vec![ActionId(1), ActionId(2)]);
+    assert_eq!(
+        session
+            .runtime_state
+            .lane_state
+            .w30
+            .active_bank
+            .as_ref()
+            .map(ToString::to_string),
+        Some("bank-b".into())
+    );
+    assert_eq!(
+        session
+            .runtime_state
+            .lane_state
+            .w30
+            .focused_pad
+            .as_ref()
+            .map(ToString::to_string),
+        Some("pad-05".into())
+    );
+    assert_eq!(
+        session
+            .runtime_state
+            .lane_state
+            .w30
+            .last_capture
+            .as_ref()
+            .map(ToString::to_string),
+        Some("cap-02".into())
+    );
+    assert_eq!(
+        session.runtime_state.lane_state.w30.preview_mode,
+        Some(W30PreviewModeState::LiveRecall)
+    );
+    assert!((session.runtime_state.macro_state.w30_grit - 0.78).abs() < f32::EPSILON);
 }
 
 #[test]

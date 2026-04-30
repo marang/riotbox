@@ -1,8 +1,8 @@
-fn unsupported_loop_freeze_action(id: u64) -> Action {
+fn unsupported_promote_resample_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
-        command: ActionCommand::W30LoopFreeze,
+        command: ActionCommand::PromoteResample,
         params: ActionParams::Empty,
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
@@ -14,10 +14,10 @@ fn unsupported_loop_freeze_action(id: u64) -> Action {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "loop-freeze committed".into(),
+            summary: "promote-resample committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("artifact-producing W-30 action".into()),
+        explanation: Some("unsupported artifact-producing action".into()),
     }
 }
 
@@ -78,7 +78,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     session
         .action_log
         .actions
-        .push(unsupported_loop_freeze_action(77));
+        .push(unsupported_promote_resample_action(77));
     session
         .action_log
         .commit_records
@@ -99,7 +99,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
             riotbox_core::replay::ReplayTargetExecutionError::Execution(
                 riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                     action_id: ActionId(77),
-                    command: ActionCommand::W30LoopFreeze,
+                    command: ActionCommand::PromoteResample,
                 }
             )
         )
@@ -119,12 +119,12 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     );
     assert_eq!(
         state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: w30.loop_freeze"
+        "unsupported suffix 1: promote.resample"
     );
 }
 
 #[test]
-fn app_snapshot_payload_restore_stays_read_only_for_plannable_w30_artifact_suffix() {
+fn app_snapshot_payload_restore_hydrates_plannable_w30_artifact_suffix() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
     let snapshot = session.snapshots[0].clone();
@@ -161,28 +161,21 @@ fn app_snapshot_payload_restore_stays_read_only_for_plannable_w30_artifact_suffi
     assert_eq!(hydration_plan.produced_capture_id, CaptureId::from("cap-02"));
     assert_eq!(hydration_plan.source_capture_id, CaptureId::from("cap-01"));
 
-    let original_session = state.session.clone();
-    let original_runtime_view = state.runtime_view.clone();
-    let error = state
+    let report = state
         .apply_restore_target_from_snapshot_payload(target_cursor)
-        .expect_err("planned artifact hydration must not execute implicitly");
+        .expect("planned loop-freeze artifact suffix hydrates W-30 preview state");
 
-    assert!(matches!(
-        error,
-        riotbox_core::replay::SnapshotPayloadHydrationError::Execution(
-            riotbox_core::replay::ReplayTargetExecutionError::Execution(
-                riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
-                    action_id: ActionId(78),
-                    command: ActionCommand::W30LoopFreeze,
-                }
-            )
-        )
-    ));
     assert_eq!(
-        state.session, original_session,
-        "plannable artifact suffix must remain read-only until a real hydrator is wired"
+        report.applied_action_ids,
+        vec![ActionId(78)],
+        "restore must execute only the loop-freeze suffix"
     );
-    assert_eq!(state.runtime_view, original_runtime_view);
+    assert_eq!(
+        state.session.runtime_state.lane_state.w30.last_capture,
+        Some(CaptureId::from("cap-02"))
+    );
+    assert_eq!(state.runtime_view.w30_preview_mode, "live_recall");
+    assert_eq!(state.runtime_view.w30_preview_profile, "pinned_recall");
 }
 
 fn unsupported_loop_freeze_promotion_action(id: u64) -> Action {

@@ -252,7 +252,7 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
     blocked_session
         .action_log
         .actions
-        .push(unsupported_loop_freeze_action(88));
+        .push(unsupported_promote_resample_action(88));
     blocked_session
         .action_log
         .commit_records
@@ -278,11 +278,11 @@ fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
     );
     assert_eq!(
         blocked_candidate.replay_suffix_label,
-        "suffix 1 action(s): w30.loop_freeze"
+        "suffix 1 action(s): promote.resample"
     );
     assert_eq!(
         blocked_candidate.replay_unsupported_label,
-        "unsupported suffix 1: w30.loop_freeze"
+        "unsupported suffix 1: promote.resample"
     );
     assert_eq!(blocked_candidate.guidance, None);
     assert_eq!(surface.selected_candidate, None);
@@ -312,7 +312,7 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
     blocked_session
         .action_log
         .actions
-        .push(unsupported_loop_freeze_action(89));
+        .push(unsupported_promote_resample_action(89));
     blocked_session
         .action_log
         .commit_records
@@ -338,7 +338,7 @@ fn recovery_surface_projects_artifact_ready_replay_blocker_guidance() {
     );
     assert_eq!(
         blocked_candidate.replay_unsupported_label,
-        "unsupported suffix 1: w30.loop_freeze"
+        "unsupported suffix 1: promote.resample"
     );
     assert_eq!(
         blocked_candidate.guidance,
