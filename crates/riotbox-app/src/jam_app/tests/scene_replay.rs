@@ -126,7 +126,9 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     session.runtime_state.lane_state.mc202.role = Some("follower".into());
     session.runtime_state.lane_state.mc202.phrase_variant = None;
 
-    let mut committed_state = JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
+    let base_session = session.clone();
+    let mut committed_state =
+        JamAppState::from_parts(session, Some(graph.clone()), ActionQueue::new());
     let before_launch = render_scene_recipe_mix_buffer(&committed_state);
 
     assert_eq!(
@@ -145,7 +147,6 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     );
     assert_eq!(launched.len(), 1);
     let after_launch = render_scene_recipe_mix_buffer(&committed_state);
-    let anchor_runtime_state = committed_state.session.runtime_state.clone();
 
     assert_eq!(
         committed_state.queue_scene_restore(420),
@@ -164,20 +165,8 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     assert_eq!(restored.len(), 1);
     let committed_restore = render_scene_recipe_mix_buffer(&committed_state);
 
-    let launch_action_id = committed_state
-        .session
-        .action_log
-        .actions
-        .iter()
-        .find(|action| action.command == ActionCommand::SceneLaunch)
-        .expect("scene launch action exists in action log")
-        .id;
-    let launch_action_cursor = action_cursor_for(
-        &committed_state.session.action_log,
-        launch_action_id,
-        "scene launch anchor",
-    );
-    let replayed_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
+    let replayed_state = run_graph_aware_snapshot_payload_restore_probe(
+        base_session,
         &committed_state,
         graph,
         SnapshotPayloadRestoreSpec {
@@ -191,8 +180,6 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
             anchor_label: "Scene launch anchor materializes before restore",
             restore_expectation: "snapshot payload restore applies Scene restore suffix",
         },
-        launch_action_cursor,
-        &anchor_runtime_state,
         |_| {},
     );
     let replayed_restore = render_scene_recipe_mix_buffer(&replayed_state);
