@@ -122,7 +122,11 @@ fn recovery_candidate_view(
         kind: candidate.kind.clone(),
         path: candidate.path.clone(),
         kind_label: recovery_kind_label(&candidate.kind),
-        status_label: recovery_status_label(&candidate.status),
+        status_label: if payload_invalid {
+            "app-invalid session"
+        } else {
+            recovery_status_label(&candidate.status)
+        },
         artifact_availability_label,
         replay_readiness_label: replay_labels.status,
         payload_readiness_label: replay_labels.payload,

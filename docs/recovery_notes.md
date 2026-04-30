@@ -108,7 +108,8 @@ The app runtime view may show these labels:
 - `payload invalid | snapshot restore blocked`
   The selected anchor's payload identity does not match the owning snapshot.
   Persisted sessions with this mismatch should already be rejected during load
-  and shown as broken recovery clues rather than recoverable manual candidates.
+  and shown as `app-invalid session` broken recovery clues rather than
+  recoverable manual candidates.
 
 ## Unsupported Suffix Labels
 

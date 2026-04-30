@@ -86,7 +86,7 @@ fn recovery_surface_classifies_invalid_snapshot_payload_candidate_as_broken_clue
     assert_eq!(surface.selected_candidate, None);
     assert!(!surface.has_manual_candidates());
     assert_eq!(candidate.kind_label, "autosave file");
-    assert_eq!(candidate.status_label, "parseable session JSON");
+    assert_eq!(candidate.status_label, "app-invalid session");
     assert_eq!(candidate.artifact_availability_label, "artifacts unchecked");
     assert_eq!(
         candidate.payload_readiness_label,
