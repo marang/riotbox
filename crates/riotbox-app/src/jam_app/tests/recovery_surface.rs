@@ -112,6 +112,7 @@ fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidat
     let dir = tempdir().expect("create temp dir");
     let target_path = dir.path().join("session.json");
     let ready_path = dir.path().join("session.autosave.ready-artifact.json");
+    let identity_path = dir.path().join("session.autosave.identity-artifact.json");
     let missing_path = dir.path().join("session.autosave.missing-artifact.json");
     let captures_dir = dir.path().join("captures");
 
@@ -132,6 +133,10 @@ fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidat
     missing_session.captures[0].storage_path = "captures/missing-cap.wav".into();
     save_session_json(&missing_path, &missing_session).expect("save missing autosave session");
 
+    let mut identity_session = ready_session.clone();
+    identity_session.captures[0].storage_path = " ".into();
+    save_session_json(&identity_path, &identity_session).expect("save missing-identity session");
+
     let surface =
         JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
     let artifact_labels = surface
@@ -144,6 +149,7 @@ fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidat
     assert_eq!(
         artifact_labels,
         vec![
+            "artifacts blocked: 1 of 1 | 1 missing identity",
             "artifacts blocked: 1 of 1 | 1 missing",
             "artifacts ready: 1 capture(s)",
         ]

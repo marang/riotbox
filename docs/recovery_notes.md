@@ -48,6 +48,9 @@ The current preflight only proves the boundary and keeps cache refresh aligned
 with it. It does not decode the artifact into replay state or synthesize a
 replacement.
 
+Recovery artifact-availability labels should use this same preflight classifier
+so UI diagnostics and future hydration gates cannot drift.
+
 ## Snapshot Payload Labels
 
 The app runtime view may show these labels:
