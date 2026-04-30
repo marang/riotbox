@@ -24,7 +24,7 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
             .expect("scan recovery surface"),
     );
 
-    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+    let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
     assert!(
         rendered.contains("recovery: 1 manual recovery"),
@@ -38,7 +38,7 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
     assert!(!rendered.contains("Warnings clear"), "{rendered}");
 
     shell.show_help = true;
-    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+    let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
     assert!(rendered.contains("Session recovery"), "{rendered}");
     assert!(
@@ -47,6 +47,18 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
     );
     assert!(
         rendered.contains("No candidate is selected here; reload an explicit reviewed path"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Preview only: inspect session.autosave.2026-04-29T211500Z.json"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("no restore selected"), "{rendered}");
+    assert!(
+        shell
+            .recovery_surface
+            .as_ref()
+            .is_some_and(|surface| surface.selected_candidate.is_none()),
         "{rendered}"
     );
     assert!(
@@ -150,7 +162,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     );
     shell.show_help = true;
 
-    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+    let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
     assert!(
         rendered.contains("Restore replay: blocked: 1 unsupported suffix"),
@@ -254,7 +266,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
     );
     shell.show_help = true;
 
-    let rendered = render_jam_shell_snapshot(&shell, 120, 36);
+    let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
     assert!(
         rendered.contains("autosave file | decision replay-blocked | artifacts ready: 1"),
