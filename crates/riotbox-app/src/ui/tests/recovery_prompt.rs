@@ -66,7 +66,7 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("autosave file | decision reviewable | artifacts n/a | no captures"),
+        rendered.contains("autosave file | decision reviewable | families none | no replay"),
         "{rendered}"
     );
     assert!(
@@ -74,12 +74,11 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         "{rendered}"
     );
     assert!(rendered.contains("payload none"), "{rendered}");
-    assert!(rendered.contains("full replay"), "{rendered}");
+    assert!(rendered.contains("families none"), "{rendered}");
     assert!(
         rendered.contains("decision reviewable"),
         "{rendered}"
     );
-    assert!(rendered.contains("suffix none@0"), "{rendered}");
     assert!(rendered.contains("parseable session JSON"), "{rendered}");
 }
 
@@ -170,7 +169,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     );
     assert!(rendered.contains("mutate.scene"), "{rendered}");
     assert!(
-        rendered.contains("autosave file | decision multi-blocked | artifacts blocked: 1 of 1"),
+        rendered.contains("autosave file | decision multi-blocked | families Scene | suffix 1"),
         "{rendered}"
     );
     assert!(
@@ -181,6 +180,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         rendered.contains("unsupported suffix"),
         "{rendered}"
     );
+    assert!(rendered.contains("families Scene"), "{rendered}");
     assert!(
         rendered.contains("decision multi-blocked"),
         "{rendered}"
@@ -269,7 +269,11 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
     assert!(
-        rendered.contains("autosave file | decision replay-blocked | artifacts ready: 1"),
+        rendered.contains("autosave file | decision replay-blocked | families Scene | suffix 1"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("artifacts ready: 1"),
         "{rendered}"
     );
     assert!(

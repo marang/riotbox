@@ -10,6 +10,7 @@ pub(super) struct ReplayReadinessLabels {
     pub anchor: String,
     pub payload: String,
     pub suffix: String,
+    pub family: String,
     pub unsupported: String,
 }
 
@@ -22,6 +23,7 @@ pub(super) fn derive_replay_readiness_labels(session: &SessionFile) -> ReplayRea
             anchor: "anchor invalid".into(),
             payload: "payload unknown".into(),
             suffix: "suffix unknown".into(),
+            family: "families unknown".into(),
             unsupported: "unsupported unknown".into(),
         };
     };
@@ -97,11 +99,31 @@ pub(super) fn derive_replay_readiness_labels(session: &SessionFile) -> ReplayRea
         "unsupported none".into()
     };
 
+    let family = if summary.suffix_action_count == 0 {
+        if summary.origin_replay_entry_count == 0 {
+            "families none | no replay".into()
+        } else if !summary.needs_replay {
+            "families none | snapshot current".into()
+        } else {
+            format!(
+                "families none | target cursor {}",
+                summary.target_action_cursor
+            )
+        }
+    } else {
+        format!(
+            "families {} | suffix {}",
+            replay_command_family_list(&summary.suffix_commands),
+            summary.suffix_action_count
+        )
+    };
+
     ReplayReadinessLabels {
         status,
         anchor,
         payload,
         suffix,
+        family,
         unsupported,
     }
 }
@@ -142,4 +164,73 @@ fn replay_command_list(commands: &[ActionCommand]) -> String {
         labels.push("...");
     }
     labels.join(", ")
+}
+
+fn replay_command_family_list(commands: &[ActionCommand]) -> String {
+    let mut labels = Vec::new();
+    for command in commands {
+        let family = replay_command_family(*command);
+        if !labels.contains(&family) {
+            labels.push(family);
+        }
+    }
+    if labels.is_empty() {
+        "none".into()
+    } else {
+        labels.join(", ")
+    }
+}
+
+const fn replay_command_family(command: ActionCommand) -> &'static str {
+    match command {
+        ActionCommand::SceneLaunch
+        | ActionCommand::SceneRestore
+        | ActionCommand::SceneRegenerate
+        | ActionCommand::SceneReinterpret
+        | ActionCommand::MutateScene
+        | ActionCommand::PromoteCaptureToScene => "Scene",
+        ActionCommand::Mc202GenerateFollower
+        | ActionCommand::Mc202GenerateAnswer
+        | ActionCommand::Mc202GeneratePressure
+        | ActionCommand::Mc202GenerateInstigator
+        | ActionCommand::Mc202MutatePhrase
+        | ActionCommand::Mc202SetRole => "MC-202",
+        ActionCommand::Tr909FillNext
+        | ActionCommand::Tr909SetSlam
+        | ActionCommand::Tr909ReinforceBreak
+        | ActionCommand::Tr909Takeover
+        | ActionCommand::Tr909SceneLock
+        | ActionCommand::Tr909Release => "TR-909",
+        ActionCommand::CaptureNow
+        | ActionCommand::CaptureLoop
+        | ActionCommand::CaptureBarGroup
+        | ActionCommand::PromoteCaptureToPad
+        | ActionCommand::PromoteResample
+        | ActionCommand::W30CaptureToPad
+        | ActionCommand::W30LiveRecall
+        | ActionCommand::W30TriggerPad
+        | ActionCommand::W30AuditionRawCapture
+        | ActionCommand::W30AuditionPromoted
+        | ActionCommand::W30SwapBank
+        | ActionCommand::W30BrowseSlicePool
+        | ActionCommand::W30StepFocus
+        | ActionCommand::W30ApplyDamageProfile
+        | ActionCommand::W30LoopFreeze => "W-30",
+        ActionCommand::TransportPlay
+        | ActionCommand::TransportPause
+        | ActionCommand::TransportStop
+        | ActionCommand::TransportSeek => "Transport",
+        ActionCommand::GhostSetMode
+        | ActionCommand::GhostAcceptSuggestion
+        | ActionCommand::GhostRejectSuggestion
+        | ActionCommand::GhostExecuteTool => "Ghost",
+        ActionCommand::LockObject | ActionCommand::UnlockObject => "Lock",
+        ActionCommand::SnapshotSave | ActionCommand::SnapshotLoad => "Snapshot",
+        ActionCommand::UndoLast | ActionCommand::RedoLast => "Undo",
+        ActionCommand::RestoreSource => "Source",
+        ActionCommand::MutateLane
+        | ActionCommand::MutateLoop
+        | ActionCommand::MutatePattern
+        | ActionCommand::MutateHook => "Mutation",
+    }
 }

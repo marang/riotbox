@@ -140,6 +140,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Recovery observer evidence now has CI-safe file-backed startup drills for
   interrupted temp/autosave files and missing canonical session paths, both
   preserving the read-only manual recovery boundary.
+- Recovery candidate diagnostics now expose a compact replay-family label, so
+  read-only startup and help surfaces can distinguish no-replay, Scene,
+  MC-202, TR-909, W-30, and mixed suffix candidates without executing restore.
 - Stage-style QA now includes bounded output-path evidence plus a payload
   readiness guard.
 - Offline render reproducibility has one CI-safe smoke gate.
@@ -162,7 +165,7 @@ not a full P011 exit declaration.
 | Scene Brain movement path | scene.launch anchor -> scene.restore suffix | `crates/riotbox-app/src/jam_app/tests/scene_replay.rs` | Scene/Jam/runtime convergence plus mixed-output parity and launch/restore deltas |
 | Stage-style supported seam | scene.launch + MC-202 answer anchor -> TR-909 fill/slam + scene.restore suffix | `crates/riotbox-app/src/jam_app/tests/stage_style_snapshot_convergence.rs` | latest-snapshot readiness, unsupported-count zero, final mixed-output parity, and initial/anchor deltas |
 | Save / reload payload readiness | latest explicit snapshot payload materialization | `crates/riotbox-app/src/jam_app/tests/persistence_runtime_view.rs` | reload readiness and app restore usability |
-| Recovery diagnostics | missing artifact identity, app-invalid payload candidates, read-only candidate status | `crates/riotbox-app/src/jam_app/tests/recovery_*` and `artifact_hydration_preflight.rs` | user-facing guidance and non-mutating scans |
+| Recovery diagnostics | missing artifact identity, app-invalid payload candidates, replay-family labels, read-only candidate status | `crates/riotbox-app/src/jam_app/tests/recovery_*` and `artifact_hydration_preflight.rs` | user-facing guidance and non-mutating scans |
 
 Coverage remains intentionally command-family based. The matrix should grow one
 bounded replay-safe family at a time rather than becoming a speculative feature

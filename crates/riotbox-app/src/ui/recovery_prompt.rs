@@ -62,9 +62,10 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         }
 
         lines.push(Line::from(format!(
-            "{} | {} | {}",
+            "{} | {} | {} | {}",
             candidate.kind_label,
             compact_recovery_decision_label(&candidate.decision_label),
+            compact_restore_replay_label(&candidate.replay_family_label),
             candidate.artifact_availability_label,
         )));
         lines.push(Line::from(format!(

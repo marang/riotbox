@@ -120,6 +120,7 @@ fn writes_interrupted_session_recovery_observer_stream() {
     assert!(events.contains(r#""kind":"autosave file""#));
     assert!(events.contains(r#""trust":"RecoverableClue""#));
     assert!(events.contains(r#""manual_choice_dry_run":{"#));
+    assert!(events.contains(r#""replay_family":"families"#));
     assert!(events.contains(r#""selected_for_restore":false"#));
     assert!(
         temp.path()
@@ -154,6 +155,7 @@ fn writes_missing_target_recovery_observer_stream() {
     assert!(events.contains(r#""kind":"autosave file""#));
     assert!(events.contains(r#""trust":"RecoverableClue""#));
     assert!(events.contains(r#""manual_choice_dry_run":{"#));
+    assert!(events.contains(r#""replay_family":"families"#));
     assert!(events.contains(r#""selected_for_restore":false"#));
     assert!(
         !temp
