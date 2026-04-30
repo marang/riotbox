@@ -16,6 +16,24 @@ cargo run -p riotbox-app --bin user_session_observer_probe -- \
   --probe recipe2-mc202 \
   --observer "$observer_fixture"
 python3 scripts/validate_user_session_observer_ndjson.py "$observer_fixture"
+jq -s -e \
+  'length >= 9
+    and .[0].event == "observer_started"
+    and .[0].opt_in == true
+    and .[0].capture_context == "headless_probe"
+    and .[0].raw_audio_recording == false
+    and .[0].realtime_callback_io == false
+    and .[0].launch.mode == "ingest"
+    and .[0].launch.probe == "recipe2-mc202"
+    and all(.[]; has("snapshot"))
+    and all(.[]; .snapshot.transport | type == "object")
+    and all(.[]; .snapshot.queue | type == "object")
+    and all(.[]; .snapshot.runtime | type == "object")
+    and all(.[]; .snapshot.recovery | type == "object")
+    and any(.[]; .event == "audio_runtime" and .status == "started" and .snapshot.runtime.audio_status == "running")
+    and any(.[]; .event == "key_outcome" and .key == "g" and .snapshot.queue.pending_count >= 1)
+    and any(.[]; .event == "transport_commit" and .snapshot.queue.session_log_count >= 1)' \
+  "$observer_fixture"
 
 cargo run -p riotbox-audio --bin lane_recipe_pack -- \
   --output-dir "$pack_dir" \

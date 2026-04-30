@@ -7,13 +7,14 @@ use std::{
 };
 
 use crossterm::{
-    event::{self, Event, KeyCode},
+    event::{self, Event},
     execute,
     terminal::{EnterAlternateScreen, LeaveAlternateScreen, disable_raw_mode, enable_raw_mode},
 };
 use ratatui::{Terminal, backend::CrosstermBackend};
 use riotbox_app::{
     jam_app::{JamAppError, JamAppState, SessionRecoverySurface},
+    observer::{compact_commit, key_code_label, observer_snapshot, shell_key_outcome_label},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 use riotbox_audio::runtime::AudioRuntimeShell;
