@@ -424,7 +424,13 @@ Operational path:
 - use `just mem-init` for the first setup
 - use `just mem-status` and `just mem-search "..."` for normal use
 - the wrapper script uses rootless Podman with pinned `python:3.12`
-- the wrapper automatically re-mines when `docs/`, `plan/`, `crates/`, or `AGENTS.md` changed
+- the wrapper automatically re-mines when mined repo sources changed
+- the wrapper uses a repo-local lock so multiple MemPalace commands do not mine concurrently
+- the wrapper owns the generated room structure; do not hand-edit `.mempalace/corpus/mempalace.yaml`
+- the wrapper syncs selected live repo sources into room-specific folders instead of mirroring the whole repo layout
+- the active rooms are `specs`, `workflow`, `reviews`, `audio_qa`, `plan`, `decisions`, `code`, `documentation`, and `general`
+- if the room structure changes, the wrapper rebuilds the palace index on the next mine/status/search
+- the wrapper rebuilds the MemPalace container image only when its compose/container files change
 
 Do not store new canonical decisions only in MemPalace. If something matters, it still needs to be written into repo docs or Linear.
 

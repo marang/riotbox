@@ -44,6 +44,31 @@ Repo tooling now exists for this:
 
 The wrapper script automatically:
 
-- syncs `docs/`, `plan/`, `crates/`, and `AGENTS.md` into `.mempalace/corpus/`
+- syncs selected live repo sources into room-specific folders under `.mempalace/corpus/`
 - excludes `docs/archive/linear_issues/` from the mined corpus so ticket-history cleanup does not dominate retrieval
+- writes the Riotbox room structure into the generated corpus before mining
 - re-mines the corpus if those sources changed since the last successful index
+- serializes operations with a repo-local lock so multiple status/search calls do not mine concurrently
+- rebuilds the palace index when the room structure changes
+- rebuilds the MemPalace container image only when `Containerfile.mempalace` or `compose.mempalace.yaml` changes
+
+Current rooms:
+
+- `specs`
+  Product, architecture, runtime, audio, and workflow specs under `docs/specs/`
+- `workflow`
+  Agent, GitHub, Linear, MemPalace, and repository operating conventions
+- `reviews`
+  Codebase, seam, MVP exit, and periodic review artifacts
+- `audio_qa`
+  Audio QA, listening packs, benchmarks, probes, manifests, and output-proof material
+- `plan`
+  Strategy, roadmap, masterplan, and phase planning material
+- `decisions`
+  Decision logs, spikes, research notes, and frozen technical choices
+- `code`
+  Rust crate source and test implementation details
+- `documentation`
+  Product-facing docs, recipes, README material, and general documentation
+- `general`
+  Files that do not fit a more specific Riotbox room

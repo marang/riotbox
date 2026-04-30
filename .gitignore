@@ -6,6 +6,7 @@ artifacts/audio_qa/
 .mempalace/results/
 .mempalace/corpus/
 .mempalace/*.sha256
+.mempalace/*.lock
 !.mempalace/README.md
 data/**
 !data/**/
