@@ -215,6 +215,10 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
         "anchor before-ghost @ cursor 0"
     );
     assert_eq!(
+        before_only_state.runtime_view.replay_restore_payload,
+        "payload missing | snapshot restore blocked"
+    );
+    assert_eq!(
         before_only_state.runtime_view.replay_restore_suffix,
         "suffix 1 action(s): tr909.fill_next"
     );
@@ -247,6 +251,10 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     assert_eq!(
         restored_state.runtime_view.replay_restore_anchor,
         format!("anchor after-ghost @ cursor {}", reloaded.action_log.actions.len())
+    );
+    assert_eq!(
+        restored_state.runtime_view.replay_restore_payload,
+        "payload missing | snapshot restore blocked"
     );
     assert_eq!(
         restored_state.runtime_view.replay_restore_suffix,
@@ -335,6 +343,41 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
     assert!(latest_snapshot_convergence.suffix_commands.is_empty());
 }
 
+#[test]
+fn runtime_view_surfaces_snapshot_payload_readiness() {
+    let graph = sample_graph();
+    let mut no_anchor_session = sample_session(&graph);
+    no_anchor_session.snapshots.clear();
+    let no_anchor_state =
+        JamAppState::from_parts(no_anchor_session, Some(graph.clone()), ActionQueue::new());
+    assert_eq!(
+        no_anchor_state.runtime_view.replay_restore_payload,
+        "payload none | full replay"
+    );
+    let missing_payload_session = sample_session(&graph);
+    let missing_payload_state = JamAppState::from_parts(
+        missing_payload_session,
+        Some(graph.clone()),
+        ActionQueue::new(),
+    );
+    assert_eq!(
+        missing_payload_state.runtime_view.replay_restore_payload,
+        "payload missing | snapshot restore blocked"
+    );
+    let mut ready_payload_session = sample_session(&graph);
+    ready_payload_session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &ready_payload_session.snapshots[0].snapshot_id,
+            ready_payload_session.snapshots[0].action_cursor,
+            &ready_payload_session.runtime_state,
+        ));
+    let ready_payload_state =
+        JamAppState::from_parts(ready_payload_session, Some(graph), ActionQueue::new());
+    assert_eq!(
+        ready_payload_state.runtime_view.replay_restore_payload,
+        "payload ready | snapshot restore ok"
+    );
+}
 #[test]
 fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let graph = sample_graph();
@@ -442,14 +485,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         diagnostic_state.runtime_view.replay_restore_unsupported,
         "unsupported suffix 1: w30.loop_freeze"
     );
-
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
     save_session_json(&session_path, &session).expect("save unsupported replay fixture");
-
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
-
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
         warning == "replay cannot cover 1 unsupported command(s) after snapshot: w30.loop_freeze"
     }));

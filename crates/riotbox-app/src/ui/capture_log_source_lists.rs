@@ -357,6 +357,9 @@ fn restore_replay_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Line::from(compact_restore_replay_label(
             &runtime.replay_restore_anchor,
         )),
+        Line::from(compact_restore_replay_label(
+            &runtime.replay_restore_payload,
+        )),
     ];
     if runtime.replay_restore_unsupported != "unsupported none" {
         lines.push(Line::from(compact_restore_replay_label(
@@ -377,6 +380,12 @@ fn compact_restore_replay_label(label: &str) -> String {
         .replace("unsupported suffix 1: ", "unsupported suffix ")
         .replace("unsupported origin 1: ", "unsupported origin ")
         .replace("suffix none | target cursor ", "suffix none@")
+        .replace("payload ready | snapshot restore ok", "payload ready")
+        .replace(
+            "payload missing | snapshot restore blocked",
+            "payload missing",
+        )
+        .replace("payload none | full replay", "payload none")
         .replace(" action(s)", "")
         .replace(" @ cursor ", "@");
     compact

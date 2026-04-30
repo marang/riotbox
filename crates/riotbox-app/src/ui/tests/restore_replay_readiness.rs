@@ -55,6 +55,7 @@ fn renders_log_shell_with_restore_replay_readiness_cues() {
     assert!(rendered.contains("Warnings / Restore"), "{rendered}");
     assert!(rendered.contains("replay 1 suffix"), "{rendered}");
     assert!(rendered.contains("anchor before-fill@0"), "{rendered}");
+    assert!(rendered.contains("payload missing"), "{rendered}");
     assert!(
         rendered.contains("suffix tr909.fill_next"),
         "{rendered}"
