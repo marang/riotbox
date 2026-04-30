@@ -58,3 +58,5 @@ jq -e \
     and .output_path.metrics.w30_rms_delta > 0.000001' \
   "$summary"
 python3 scripts/validate_observer_audio_summary_json.py "$summary"
+
+cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture
