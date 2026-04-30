@@ -193,6 +193,7 @@ Current supported musical commands:
 - `tr909.release`
 - `scene.launch`
 - `scene.restore`
+- `promote.capture_to_pad` for existing captures and explicit W-30 pad targets
 - `w30.live_recall`
 - `w30.trigger_pad`
 - `w30.audition_raw_capture`
@@ -216,6 +217,7 @@ Rules:
 - TR-909 replay currently covers the deterministic support-lane state needed by downstream projection: slam, fill, reinforce, takeover, scene-lock, release, pattern references, reinforcement mode, and takeover profile.
 - Scene replay currently covers the deterministic active-scene / restore-scene state carried by committed scene launch and restore actions. The minimal executor updates transport current scene, scene active scene, and restore pointer while deliberately staying Source Graph-free. A separate graph-aware replay boundary can hydrate `last_movement` from the pre-action scene state, committed boundary, committed scene action, and frozen Source Graph context.
 - W-30 replay currently covers a deterministic cue subset whose committed actions already carry explicit target state: live recall, trigger, audition, bank swap, slice-pool browse, focus step, and damage profile. It updates preview mode, focused bank/pad, last capture, and W-30 grit only.
+- `promote.capture_to_pad` replay assigns an existing `CaptureRef` to an explicit W-30 pad target and updates W-30 lane focus. It does not create or regenerate capture audio.
 - `w30.loop_freeze` and `promote.resample` are the first artifact-backed W-30 replay suffixes allowed through the executor. They may only hydrate from explicit persisted capture identity: source capture target, exactly one produced capture, stable storage path, and valid source-window or lineage/depth identity. Replay points `last_capture` at the produced artifact capture so app projection can use the existing cached WAV artifact; it does not regenerate capture audio.
 - Other artifact-producing W-30 / capture / promote actions remain intentionally unsupported and must reject without leaving partially applied state.
 - Current convergence coverage materializes a snapshot anchor by replaying the safe prefix in tests, then applies the selected suffix and compares the resulting structural state against origin replay; this proves the executor path, not real snapshot payload hydration.

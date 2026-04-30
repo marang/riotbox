@@ -105,6 +105,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output -- --nocapture`
 - `cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output -- --nocapture`
+- `cargo test -p riotbox-app w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_artifact -- --nocapture`
 - `cargo test -p riotbox-core snapshot_payload_hydration -- --nocapture`
 - `just ci`
 
@@ -115,10 +116,11 @@ snapshots. The W-30 probe verifies payload-backed restore can hydrate a
 source-backed W-30 anchor, apply a safe suffix, and match committed preview
 output. The loop-freeze and promote-resample artifact probes verify replay can
 reload a session from JSON, hydrate persisted W-30 WAV artifacts, and avoid
-fallback oscillator collapse. The internal-resample probe verifies the explicit
-`promote.capture_to_pad` gesture can assign a printed resample artifact to a W-30
-pad before source-less reload and artifact-backed playback. The core probe
-verifies the lower-level hydration contract.
+fallback oscillator collapse. The promote-capture-to-pad probe verifies the
+explicit `[p]` gesture can be replayed for a printed resample artifact and still
+drive artifact-backed W-30 playback. The internal-resample probe verifies that
+same gesture can assign a printed resample artifact to a W-30 pad before
+source-less reload. The core probe verifies the lower-level hydration contract.
 
 ## Out Of Scope Today
 

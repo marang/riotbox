@@ -63,7 +63,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   lineage/depth intact, pass preflight, and drive artifact-backed pad playback.
 - The existing explicit `[p]` / `promote.capture_to_pad` gesture can assign a
   printed resample artifact to the focused W-30 pad before that source-less
-  reload path.
+  reload path, and replay can now restore that pad assignment when it appears as
+  a snapshot suffix.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the

@@ -271,6 +271,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::GhostSetMode,
             ActionCommand::SceneLaunch,
             ActionCommand::SceneRestore,
+            ActionCommand::PromoteCaptureToPad,
             ActionCommand::Mc202SetRole,
             ActionCommand::Mc202GenerateFollower,
             ActionCommand::Mc202GenerateAnswer,
