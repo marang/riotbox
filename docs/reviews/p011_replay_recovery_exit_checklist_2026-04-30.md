@@ -55,6 +55,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   storage identity or missing artifact files before decoding or cache use.
 - Recovery artifact-availability diagnostics use the same preflight classifier
   as cache/hydration readiness, reducing drift between UI and restore gates.
+- Reloaded sessions can repopulate W-30 capture audio cache from an existing
+  artifact and keep artifact-backed pad playback audible without source audio.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
