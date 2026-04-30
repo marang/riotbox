@@ -303,6 +303,9 @@ Rules:
   snapshot cursor and no separate action, lane, or arrangement model
 - snapshot restore must validate payload version, `snapshot_id`, and
   `action_cursor` before using the payload as an anchor
+- session load validation must reject present payloads whose `snapshot_id` or
+  `action_cursor` does not match the owning snapshot; missing payloads remain
+  valid until a snapshot-anchored restore path explicitly requires one
 - snapshot payload hydration should happen before the existing replay suffix
   executor runs; the payload must not execute actions itself
 - the current save path may fill missing payloads only for existing snapshots at

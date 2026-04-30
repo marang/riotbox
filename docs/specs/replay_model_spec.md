@@ -325,6 +325,11 @@ fails, the runtime may surface a read-only recovery/debug prompt, but it must no
 silently fall back to a different anchor or repair the session without an
 explicit recovery path.
 
+Session load validation rejects present payloads whose identity or cursor does
+not match the owning snapshot before app state is constructed. Missing payloads
+remain load-valid because payloads are optional unless a selected restore path
+requires a snapshot anchor.
+
 The first implementation should copy the current `RuntimeState` shape into a
 versioned snapshot payload and prove that latest-runtime restore and
 snapshot-payload-plus-suffix restore converge for one replay-safe session. Broader
