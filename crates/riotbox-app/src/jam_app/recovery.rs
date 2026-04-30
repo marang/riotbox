@@ -35,6 +35,56 @@ impl SessionRecoverySurface {
             )
         })
     }
+
+    #[must_use]
+    pub fn dry_run_manual_choice(
+        &self,
+        candidate_path: impl AsRef<Path>,
+    ) -> Option<ManualRecoveryChoiceDryRun> {
+        let candidate_path = candidate_path.as_ref();
+        self.candidates
+            .iter()
+            .find(|candidate| candidate.path == candidate_path)
+            .map(ManualRecoveryChoiceDryRun::from_candidate)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ManualRecoveryChoiceDryRun {
+    pub candidate_path: PathBuf,
+    pub decision_label: String,
+    pub artifact_availability_label: String,
+    pub replay_readiness_label: String,
+    pub payload_readiness_label: String,
+    pub replay_suffix_label: String,
+    pub replay_unsupported_label: String,
+    pub guidance_label: Option<String>,
+    pub trust: RecoveryCandidateTrust,
+    pub action_hint: &'static str,
+    pub selected_for_restore: bool,
+    pub safety_note: &'static str,
+}
+
+impl ManualRecoveryChoiceDryRun {
+    fn from_candidate(candidate: &SessionRecoveryCandidateView) -> Self {
+        Self {
+            candidate_path: candidate.path.clone(),
+            decision_label: candidate.decision_label.clone(),
+            artifact_availability_label: candidate.artifact_availability_label.clone(),
+            replay_readiness_label: candidate.replay_readiness_label.clone(),
+            payload_readiness_label: candidate.payload_readiness_label.clone(),
+            replay_suffix_label: candidate.replay_suffix_label.clone(),
+            replay_unsupported_label: candidate.replay_unsupported_label.clone(),
+            guidance_label: candidate
+                .guidance
+                .as_ref()
+                .map(|guidance| guidance.help_label()),
+            trust: candidate.trust,
+            action_hint: candidate.action_hint,
+            selected_for_restore: false,
+            safety_note: "Dry-run only: candidate inspected, not selected for restore.",
+        }
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]

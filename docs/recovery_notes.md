@@ -69,6 +69,13 @@ Manual recovery candidates may show a compact decision diagnostic:
 These decision labels are deliberately read-only. They summarize why a candidate
 needs manual review and must not choose, repair, or replace a session file.
 
+Manual recovery choice dry-runs may inspect one listed candidate and mirror its
+decision, artifact readiness, payload readiness, replay suffix, unsupported
+replay summary, guidance, trust, and action hint. A dry-run is still read-only:
+it keeps `selected_candidate` empty and reports that the candidate was not
+selected for restore. It is a preflight for a future explicit user choice, not
+an automatic recovery path.
+
 The user-session observer mirrors these recovery labels in its startup snapshot,
 including the compact `decision` field. This keeps automated session probes
 aligned with the same read-only recovery boundary shown by the app surface.
@@ -151,6 +158,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
 - `cargo test -p riotbox-app runtime_view_surfaces_snapshot_payload_readiness -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_capture_artifact_availability_for_parseable_candidates -- --nocapture`
+- `cargo test -p riotbox-app recovery_surface_dry_runs_manual_choice_without_selecting_or_mutating_files -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_supported_artifact_hydration_blocker_guidance -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_missing_snapshot_payload_guidance_without_mutating_candidate -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_classifies_invalid_snapshot_payload_candidate_as_broken_clue -- --nocapture`
