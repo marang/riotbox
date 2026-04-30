@@ -8,7 +8,26 @@ cd "$repo_root"
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
+observer_fixture="$tmpdir/feral-grid-observer/events.ndjson"
+
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0
+cargo run -p riotbox-app --bin user_session_observer_probe -- \
+  --probe feral-grid-jam \
+  --observer "$observer_fixture"
+python3 scripts/validate_user_session_observer_ndjson.py "$observer_fixture"
+jq -s -e \
+  'length >= 6
+    and .[0].event == "observer_started"
+    and .[0].launch.probe == "feral-grid-jam"
+    and all(.[]; has("snapshot"))
+    and all(.[]; .snapshot.transport | type == "object")
+    and all(.[]; .snapshot.queue | type == "object")
+    and all(.[]; .snapshot.runtime | type == "object")
+    and all(.[]; .snapshot.recovery | type == "object")
+    and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")
+    and any(.[]; .event == "key_outcome" and .key == "g" and .outcome == "queue_mc202_generate_follower")' \
+  "$observer_fixture"
+
 cargo run -p riotbox-audio --bin feral_grid_pack -- \
   --source "$tmpdir/source.wav" \
   --output-dir "$tmpdir/feral-grid" \
@@ -19,12 +38,12 @@ python3 scripts/validate_listening_manifest_json.py \
   "$tmpdir/feral-grid/manifest.json"
 
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
-  --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson \
+  --observer "$observer_fixture" \
   --manifest "$tmpdir/feral-grid/manifest.json" \
   --require-evidence
 
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
-  --observer crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson \
+  --observer "$observer_fixture" \
   --manifest "$tmpdir/feral-grid/manifest.json" \
   --output "$tmpdir/observer-audio-summary.json" \
   --json \
@@ -33,6 +52,11 @@ jq -e \
   '.schema == "riotbox.observer_audio_summary.v1"
     and .schema_version == 1
     and .control_path.present == true
+    and (.control_path.key_outcomes | index("f -> queue_tr909_fill")) != null
+    and (.control_path.key_outcomes | index("g -> queue_mc202_generate_follower")) != null
+    and .control_path.commit_count >= 2
+    and (.control_path.commit_boundaries | index("Bar")) != null
+    and (.control_path.commit_boundaries | index("Phrase")) != null
     and .output_path.present == true
     and (.output_path.issues | length == 0)' \
   "$tmpdir/observer-audio-summary.json"
