@@ -24,7 +24,6 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Phrase, 0, 1, 0, 400);
     assert!(committed_state.queue_promote_last_capture(410));
     commit_w30_replay_step(&mut committed_state, CommitBoundary::Bar, 4, 2, 0, 500);
-
     let pre_resample_action_cursor = committed_state.session.action_log.actions.len();
     let pre_resample_runtime = committed_state.session.runtime_state.clone();
     assert_eq!(
@@ -75,29 +74,30 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         committed_pad_playback.sample_count,
     );
 
-    let full_action_log = committed_state.session.action_log.clone();
-    let target_action_cursor = full_action_log.actions.len();
-    let resample_action_id = full_action_log
-        .actions
-        .last()
-        .expect("resample action")
-        .id;
-    let mut restore_session = committed_state.session.clone();
-    restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![snapshot_payload_for_anchor(
-        "snap-before-promote-resample",
-        "before promote resample",
-        "2026-04-30T11:20:00Z",
+    let replayed_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed promote.resample action log builds replay plan",
+            snapshot_id: "snap-before-promote-resample",
+            snapshot_label: "before promote resample",
+            snapshot_created_at: "2026-04-30T11:20:00Z",
+            expected_plan_len: 3,
+            anchor_plan_len: 2,
+            target_plan_index: 2,
+            anchor_label: "W-30 capture promotion anchor materializes before resample",
+            restore_expectation: "snapshot payload restore hydrates promote.resample artifact suffix",
+        },
         pre_resample_action_cursor,
         &pre_resample_runtime,
-    )];
-
-    save_session_json(&session_path, &restore_session).expect("save resample replay session");
-    let mut replayed_state = JamAppState::from_json_files(&session_path, Some(&graph_path))
-        .expect("reload replay session");
-    let report = replayed_state
-        .apply_restore_target_from_snapshot_payload(target_action_cursor)
-        .expect("snapshot payload restore hydrates promote.resample artifact suffix");
+        |state| {
+            state.files = Some(JamFileSet {
+                session_path: session_path.clone(),
+                source_graph_path: Some(graph_path.clone()),
+            });
+            state.refresh_capture_audio_cache();
+        },
+    );
     let replayed_pad_playback = replayed_state
         .runtime
         .w30_preview
@@ -111,13 +111,6 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         replayed_pad_playback.sample_count,
     );
 
-    assert_restore_report_identity(
-        &report,
-        target_action_cursor,
-        "snap-before-promote-resample",
-        pre_resample_action_cursor,
-        vec![resample_action_id],
-    );
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30,
         committed_state.session.runtime_state.lane_state.w30

@@ -1,7 +1,6 @@
 #[test]
 fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
-    let (tempdir, _graph, _source_audio_cache, mut committed_state) =
-        w30_source_backed_replay_state();
+    let (tempdir, graph, _source_audio_cache, mut committed_state) = w30_source_backed_replay_state();
     let session_path = tempdir.path().join("session.json");
     committed_state.files = Some(JamFileSet {
         session_path: session_path.clone(),
@@ -98,29 +97,30 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         committed_pad_playback.sample_count,
     );
 
-    let full_action_log = committed_state.session.action_log.clone();
-    let target_action_cursor = full_action_log.actions.len();
-    let loop_freeze_action_id = full_action_log
-        .actions
-        .last()
-        .expect("loop-freeze action")
-        .id;
-    let mut restore_session = committed_state.session.clone();
-    restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![snapshot_payload_for_anchor(
-        "snap-before-loop-freeze",
-        "before loop freeze",
-        "2026-04-30T10:35:00Z",
+    let replayed_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed loop-freeze action log builds replay plan",
+            snapshot_id: "snap-before-loop-freeze",
+            snapshot_label: "before loop freeze",
+            snapshot_created_at: "2026-04-30T10:35:00Z",
+            expected_plan_len: 1,
+            anchor_plan_len: 0,
+            target_plan_index: 0,
+            anchor_label: "empty W-30 pre-freeze anchor materializes",
+            restore_expectation: "snapshot payload restore hydrates loop-freeze artifact suffix",
+        },
         pre_freeze_action_cursor,
         &pre_freeze_runtime,
-    )];
-
-    save_session_json(&session_path, &restore_session).expect("save replay hydration session");
-    let mut replayed_state = JamAppState::from_json_files(&session_path, None::<&Path>)
-        .expect("reload replay session");
-    let report = replayed_state
-        .apply_restore_target_from_snapshot_payload(target_action_cursor)
-        .expect("snapshot payload restore hydrates loop-freeze artifact suffix");
+        |state| {
+            state.files = Some(JamFileSet {
+                session_path: session_path.clone(),
+                source_graph_path: None,
+            });
+            state.refresh_capture_audio_cache();
+        },
+    );
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30.last_capture,
         Some(produced_capture_id.clone())
@@ -148,13 +148,6 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         replayed_pad_playback.sample_count,
     );
 
-    assert_restore_report_identity(
-        &report,
-        target_action_cursor,
-        "snap-before-loop-freeze",
-        pre_freeze_action_cursor,
-        vec![loop_freeze_action_id],
-    );
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30,
         committed_state.session.runtime_state.lane_state.w30

@@ -74,29 +74,30 @@ fn w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_arti
         committed_pad_playback.sample_count,
     );
 
-    let full_action_log = committed_state.session.action_log.clone();
-    let target_action_cursor = full_action_log.actions.len();
-    let promotion_action_id = full_action_log
-        .actions
-        .last()
-        .expect("promotion action")
-        .id;
-    let mut restore_session = committed_state.session.clone();
-    restore_session.runtime_state = Default::default();
-    restore_session.snapshots = vec![snapshot_payload_for_anchor(
-        "snap-before-resample-pad-promotion",
-        "before resample pad promotion",
-        "2026-04-30T12:25:00Z",
+    let replayed_state = run_snapshot_payload_restore_probe_from_anchor_runtime(
+        &committed_state,
+        graph,
+        SnapshotPayloadRestoreSpec {
+            plan_label: "committed resample promotion action log builds replay plan",
+            snapshot_id: "snap-before-resample-pad-promotion",
+            snapshot_label: "before resample pad promotion",
+            snapshot_created_at: "2026-04-30T12:25:00Z",
+            expected_plan_len: 4,
+            anchor_plan_len: 3,
+            target_plan_index: 3,
+            anchor_label: "W-30 resample anchor materializes before pad promotion",
+            restore_expectation: "snapshot payload restore replays resample pad promotion",
+        },
         pre_promotion_action_cursor,
         &pre_promotion_runtime,
-    )];
-
-    save_session_json(&session_path, &restore_session).expect("save promotion replay session");
-    let mut replayed_state = JamAppState::from_json_files(&session_path, Some(&graph_path))
-        .expect("reload replay session");
-    let report = replayed_state
-        .apply_restore_target_from_snapshot_payload(target_action_cursor)
-        .expect("snapshot payload restore replays resample pad promotion");
+        |state| {
+            state.files = Some(JamFileSet {
+                session_path: session_path.clone(),
+                source_graph_path: Some(graph_path.clone()),
+            });
+            state.refresh_capture_audio_cache();
+        },
+    );
     let replayed_pad_playback = replayed_state
         .runtime
         .w30_preview
@@ -110,13 +111,6 @@ fn w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_arti
         replayed_pad_playback.sample_count,
     );
 
-    assert_restore_report_identity(
-        &report,
-        target_action_cursor,
-        "snap-before-resample-pad-promotion",
-        pre_promotion_action_cursor,
-        vec![promotion_action_id],
-    );
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.w30,
         committed_state.session.runtime_state.lane_state.w30
