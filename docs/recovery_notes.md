@@ -11,6 +11,8 @@ Riotbox treats recovery as an explicit operator action for now.
 
 - normal session load is deterministic and side-effect free
 - adjacent temp or autosave-like files may be shown as clues, not chosen automatically
+- interrupted-save shapes with a broken requested session plus adjacent
+  parseable temp/autosave files must remain manual-review surfaces only
 - snapshot payloads accelerate restore only when an explicit restore helper uses them
 - the action log and structured commit records remain the replay truth
 
