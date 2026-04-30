@@ -257,7 +257,45 @@ fn observer_snapshot(shell: &JamShellState) -> Value {
             "w30_preview_target": runtime.w30_preview_target_summary,
             "w30_resample_tap_mode": runtime.w30_resample_tap_mode,
             "warnings": runtime.runtime_warnings,
-        }
+        },
+        "recovery": recovery_observer_snapshot(shell),
+    })
+}
+
+fn recovery_observer_snapshot(shell: &JamShellState) -> Value {
+    let Some(surface) = shell.recovery_surface.as_ref() else {
+        return json!({
+            "present": false,
+            "has_manual_candidates": false,
+            "selected_candidate": null,
+            "candidate_count": 0,
+            "candidates": [],
+        });
+    };
+
+    json!({
+        "present": true,
+        "headline": surface.headline,
+        "safety_note": surface.safety_note,
+        "target_path": surface.target_path,
+        "has_manual_candidates": surface.has_manual_candidates(),
+        "selected_candidate": surface.selected_candidate,
+        "candidate_count": surface.candidates.len(),
+        "candidates": surface.candidates.iter().map(|candidate| {
+            json!({
+                "path": candidate.path,
+                "kind": candidate.kind_label,
+                "status": candidate.status_label,
+                "artifact_availability": candidate.artifact_availability_label,
+                "replay_readiness": candidate.replay_readiness_label,
+                "payload_readiness": candidate.payload_readiness_label,
+                "replay_suffix": candidate.replay_suffix_label,
+                "replay_unsupported": candidate.replay_unsupported_label,
+                "guidance": candidate.guidance.map(|guidance| format!("{guidance:?}")),
+                "trust": format!("{:?}", candidate.trust),
+                "action_hint": candidate.action_hint,
+            })
+        }).collect::<Vec<_>>(),
     })
 }
 
