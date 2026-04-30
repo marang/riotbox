@@ -115,12 +115,14 @@ fn accepted_ghost_action_snapshot_replay_plan_uses_restored_commit_records() {
             created_at: "2026-04-29T19:12:00Z".into(),
             label: "before ghost fill".into(),
             action_cursor: 0,
+            payload: None,
         },
         Snapshot {
             snapshot_id: SnapshotId::from("after-ghost"),
             created_at: "2026-04-29T19:12:01Z".into(),
             label: "after ghost fill".into(),
             action_cursor: state.session.action_log.actions.len(),
+            payload: None,
         },
     ];
 
@@ -380,6 +382,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         created_at: "2026-04-29T22:10:00Z".into(),
         label: "before artifact action".into(),
         action_cursor: 0,
+        payload: None,
     }];
 
     let unsupported_action_cursor = session

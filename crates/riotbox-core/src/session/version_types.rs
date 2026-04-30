@@ -403,12 +403,27 @@ pub enum ReplayPolicy {
     SnapshotOnly,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SnapshotPayloadVersion {
+    V1,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SnapshotPayload {
+    pub payload_version: SnapshotPayloadVersion,
+    pub snapshot_id: SnapshotId,
+    pub action_cursor: usize,
+    pub runtime_state: RuntimeState,
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Snapshot {
     pub snapshot_id: SnapshotId,
     pub created_at: String,
     pub label: String,
     pub action_cursor: usize,
+    #[serde(default)]
+    pub payload: Option<SnapshotPayload>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

@@ -217,6 +217,7 @@ mod tests {
             created_at: "2026-04-12T18:05:00Z".into(),
             label: "first jam".into(),
             action_cursor: 1,
+            payload: None,
         });
         session.captures.push(CaptureRef {
             capture_id: CaptureId::from("cap-01"),

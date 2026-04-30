@@ -22,6 +22,86 @@ pub struct ReplayTargetExecutionReport {
     pub applied_action_ids: Vec<ActionId>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum SnapshotPayloadHydrationError {
+    Plan(ReplayPlanError),
+    MissingSnapshotAnchor {
+        target_action_cursor: usize,
+    },
+    MissingSnapshotPayload {
+        snapshot_id: String,
+    },
+    PayloadSnapshotIdMismatch {
+        snapshot_id: String,
+        payload_snapshot_id: String,
+    },
+    PayloadActionCursorMismatch {
+        snapshot_id: String,
+        snapshot_action_cursor: usize,
+        payload_action_cursor: usize,
+    },
+    Execution(ReplayTargetExecutionError),
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct SnapshotPayloadHydrationReport {
+    pub session: SessionFile,
+    pub replay_report: ReplayTargetExecutionReport,
+}
+
+pub fn hydrate_replay_target_from_snapshot_payload(
+    session: &SessionFile,
+    target_action_cursor: usize,
+    source_graph: Option<&SourceGraph>,
+) -> Result<SnapshotPayloadHydrationReport, SnapshotPayloadHydrationError> {
+    let plan = build_replay_target_plan(
+        &session.action_log,
+        &session.snapshots,
+        target_action_cursor,
+    )
+    .map_err(SnapshotPayloadHydrationError::Plan)?;
+    let Some(anchor) = plan.anchor else {
+        return Err(SnapshotPayloadHydrationError::MissingSnapshotAnchor {
+            target_action_cursor,
+        });
+    };
+    let snapshot_id = anchor.snapshot_id.as_str().to_owned();
+    let payload = anchor.payload.as_ref().ok_or_else(|| {
+        SnapshotPayloadHydrationError::MissingSnapshotPayload {
+            snapshot_id: snapshot_id.clone(),
+        }
+    })?;
+
+    if payload.snapshot_id != anchor.snapshot_id {
+        return Err(SnapshotPayloadHydrationError::PayloadSnapshotIdMismatch {
+            snapshot_id,
+            payload_snapshot_id: payload.snapshot_id.as_str().to_owned(),
+        });
+    }
+
+    if payload.action_cursor != anchor.action_cursor {
+        return Err(SnapshotPayloadHydrationError::PayloadActionCursorMismatch {
+            snapshot_id,
+            snapshot_action_cursor: anchor.action_cursor,
+            payload_action_cursor: payload.action_cursor,
+        });
+    }
+
+    let mut hydrated_session = session.clone();
+    hydrated_session.runtime_state = payload.runtime_state.clone();
+    let replay_report = apply_replay_target_suffix_to_session(
+        &mut hydrated_session,
+        target_action_cursor,
+        source_graph,
+    )
+    .map_err(SnapshotPayloadHydrationError::Execution)?;
+
+    Ok(SnapshotPayloadHydrationReport {
+        session: hydrated_session,
+        replay_report,
+    })
+}
+
 pub fn apply_replay_target_suffix_to_session(
     session: &mut SessionFile,
     target_action_cursor: usize,
@@ -62,7 +142,10 @@ mod tests {
             ActorType, CommitBoundary, Quantization, UndoPolicy,
         },
         ids::SnapshotId,
-        session::{ActionCommitRecord, ActionLog, ReplayPolicy, Snapshot},
+        session::{
+            ActionCommitRecord, ActionLog, ReplayPolicy, Snapshot, SnapshotPayload,
+            SnapshotPayloadVersion,
+        },
         transport::CommitBoundaryState,
     };
 
@@ -138,6 +221,27 @@ mod tests {
             created_at: "2026-04-29T22:20:00Z".into(),
             label: "test snapshot".into(),
             action_cursor,
+            payload: None,
+        }
+    }
+
+    fn snapshot_with_session_payload(
+        snapshot_id: &str,
+        action_cursor: usize,
+        session: &SessionFile,
+    ) -> Snapshot {
+        let snapshot_id = SnapshotId::from(snapshot_id);
+        Snapshot {
+            snapshot_id: snapshot_id.clone(),
+            created_at: "2026-04-29T22:20:00Z".into(),
+            label: "test snapshot".into(),
+            action_cursor,
+            payload: Some(SnapshotPayload {
+                payload_version: SnapshotPayloadVersion::V1,
+                snapshot_id,
+                action_cursor,
+                runtime_state: session.runtime_state.clone(),
+            }),
         }
     }
 
@@ -225,5 +329,94 @@ mod tests {
             })
         );
         assert_eq!(session, original_session);
+    }
+
+    #[test]
+    fn snapshot_payload_hydration_clones_anchor_state_and_applies_suffix() {
+        let action_log = action_log(vec![
+            action(1, ActionCommand::TransportPlay, ActionParams::Empty, 100),
+            action(
+                2,
+                ActionCommand::TransportSeek,
+                ActionParams::Transport {
+                    position_beats: Some(16),
+                },
+                200,
+            ),
+        ]);
+        let mut latest_session = session_with_log(action_log.clone(), Vec::new());
+        apply_replay_target_suffix_to_session(&mut latest_session, 2, None)
+            .expect("latest runtime state materializes");
+
+        let mut anchor_session = session_with_log(action_log.clone(), Vec::new());
+        apply_replay_target_suffix_to_session(&mut anchor_session, 1, None)
+            .expect("anchor runtime state materializes");
+        let snapshot = snapshot_with_session_payload("snap-after-play", 1, &anchor_session);
+        let mut session = latest_session.clone();
+        session.snapshots = vec![snapshot];
+        let original_session = session.clone();
+
+        let report = hydrate_replay_target_from_snapshot_payload(&session, 2, None)
+            .expect("snapshot payload hydration succeeds");
+
+        assert_eq!(
+            report.replay_report.anchor_snapshot_id.as_deref(),
+            Some("snap-after-play")
+        );
+        assert_eq!(report.replay_report.anchor_action_cursor, Some(1));
+        assert_eq!(report.replay_report.applied_action_ids, vec![ActionId(2)]);
+        assert_eq!(report.session.runtime_state, latest_session.runtime_state);
+        assert_eq!(session, original_session);
+    }
+
+    #[test]
+    fn snapshot_payload_hydration_rejects_missing_payload() {
+        let action_log = action_log(vec![action(
+            1,
+            ActionCommand::TransportPlay,
+            ActionParams::Empty,
+            100,
+        )]);
+        let session = session_with_log(action_log, vec![snapshot("snap-after-play", 1)]);
+
+        let error = hydrate_replay_target_from_snapshot_payload(&session, 1, None)
+            .expect_err("missing payload should reject");
+
+        assert_eq!(
+            error,
+            SnapshotPayloadHydrationError::MissingSnapshotPayload {
+                snapshot_id: "snap-after-play".into()
+            }
+        );
+    }
+
+    #[test]
+    fn snapshot_payload_hydration_rejects_payload_cursor_mismatch() {
+        let action_log = action_log(vec![action(
+            1,
+            ActionCommand::TransportPlay,
+            ActionParams::Empty,
+            100,
+        )]);
+        let anchor_session = session_with_log(action_log.clone(), Vec::new());
+        let mut snapshot = snapshot_with_session_payload("snap-after-play", 1, &anchor_session);
+        snapshot
+            .payload
+            .as_mut()
+            .expect("test payload exists")
+            .action_cursor = 0;
+        let session = session_with_log(action_log, vec![snapshot]);
+
+        let error = hydrate_replay_target_from_snapshot_payload(&session, 1, None)
+            .expect_err("cursor mismatch should reject");
+
+        assert_eq!(
+            error,
+            SnapshotPayloadHydrationError::PayloadActionCursorMismatch {
+                snapshot_id: "snap-after-play".into(),
+                snapshot_action_cursor: 1,
+                payload_action_cursor: 0,
+            }
+        );
     }
 }

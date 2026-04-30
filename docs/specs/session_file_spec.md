@@ -284,6 +284,13 @@ Snapshot {
   action_cursor
   payload?
 }
+
+SnapshotPayload {
+  payload_version
+  snapshot_id
+  action_cursor
+  runtime_state
+}
 ```
 
 Rules:

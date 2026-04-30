@@ -95,6 +95,7 @@ fn snapshot(snapshot_id: &str, action_cursor: usize) -> Snapshot {
         created_at: "2026-04-29T20:30:00Z".into(),
         label: "test snapshot".into(),
         action_cursor,
+        payload: None,
     }
 }
 

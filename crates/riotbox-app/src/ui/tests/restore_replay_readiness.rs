@@ -8,6 +8,7 @@ fn renders_log_shell_with_restore_replay_readiness_cues() {
         created_at: "2026-04-29T22:56:00Z".into(),
         label: "before fill".into(),
         action_cursor: 0,
+        payload: None,
     }];
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(41),

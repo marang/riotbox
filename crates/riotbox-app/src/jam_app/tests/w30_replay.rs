@@ -167,6 +167,7 @@ fn w30_target_suffix_replay_helper_matches_committed_app_preview_output() {
         created_at: "2026-04-29T22:45:00Z".into(),
         label: "after W-30 browse".into(),
         action_cursor: browse_action_cursor,
+        payload: None,
     }];
     let anchor_report = riotbox_core::replay::apply_replay_plan_to_session(
         &mut hydrated_anchor_session,
