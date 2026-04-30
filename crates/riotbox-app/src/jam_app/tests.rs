@@ -8,6 +8,7 @@ include!("tests/persistence_runtime_view.rs");
 include!("tests/replay_hardening.rs");
 include!("tests/snapshot_payload_restore_failures.rs");
 include!("tests/recovery_surface.rs");
+include!("tests/recovery_choice_dry_run.rs");
 include!("tests/recovery_hydration_guidance.rs");
 include!("tests/recovery_payload_guidance.rs");
 include!("tests/artifact_hydration_preflight.rs");
