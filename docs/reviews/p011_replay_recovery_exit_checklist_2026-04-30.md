@@ -57,6 +57,8 @@ bounded. It proves important seams, not complete product-grade recovery.
   as cache/hydration readiness, reducing drift between UI and restore gates.
 - Reloaded sessions can repopulate W-30 capture audio cache from an existing
   artifact and keep artifact-backed pad playback audible without source audio.
+- Internally printed W-30 resample artifacts can survive save/reload with
+  lineage/depth intact, pass preflight, and drive artifact-backed pad playback.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
