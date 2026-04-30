@@ -122,6 +122,14 @@ the app session. `capture.now`, `capture.loop`, `capture.bar_group`,
 capture promotion suffixes have bounded replay support when explicit persisted
 identity is present.
 
+Supported artifact replay can still be blocked by missing persisted identity.
+The manual recovery surface performs a read-only hydration probe against a
+session copy and surfaces these cases separately from unsupported commands. It
+must not select a candidate, mutate the candidate file, repair storage paths, or
+generate artifacts. Current blocker details include missing produced captures,
+ambiguous produced captures, missing storage identity, missing source-window
+identity, invalid capture type, and lineage mismatch.
+
 ## Current Verification Seams
 
 Use these probes when changing recovery behavior:
@@ -129,6 +137,7 @@ Use these probes when changing recovery behavior:
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
 - `cargo test -p riotbox-app runtime_view_surfaces_snapshot_payload_readiness -- --nocapture`
 - `cargo test -p riotbox-app recovery_surface_reports_capture_artifact_availability_for_parseable_candidates -- --nocapture`
+- `cargo test -p riotbox-app recovery_surface_reports_supported_artifact_hydration_blocker_guidance -- --nocapture`
 - `cargo test -p riotbox-app capture_artifact_hydration_preflight -- --nocapture`
 - `cargo test -p riotbox-app reloaded_session_uses_capture_artifact_cache_without_source_audio -- --nocapture`
 - `cargo test -p riotbox-app committed_w30_internal_resample_prints_reusable_bus_artifact -- --nocapture`
