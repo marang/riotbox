@@ -27,6 +27,7 @@ pub struct SessionRecoveryCandidateView {
     pub path: PathBuf,
     pub kind_label: &'static str,
     pub status_label: &'static str,
+    pub payload_readiness_label: String,
     pub trust: RecoveryCandidateTrust,
     pub detail: String,
     pub action_hint: &'static str,
@@ -70,6 +71,7 @@ fn recovery_candidate_view(
         path: candidate.path.clone(),
         kind_label: recovery_kind_label(&candidate.kind),
         status_label: recovery_status_label(&candidate.status),
+        payload_readiness_label: recovery_payload_readiness_label(candidate),
         trust,
         detail: recovery_detail(&candidate.kind, &candidate.status),
         action_hint: recovery_action_hint(trust),
@@ -128,6 +130,22 @@ fn recovery_candidate_trust(
             RecoveryCandidateTrust::RecoverableClue
         }
         _ => RecoveryCandidateTrust::BrokenClue,
+    }
+}
+
+fn recovery_payload_readiness_label(
+    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
+) -> String {
+    if !matches!(
+        candidate.status,
+        SessionRecoveryCandidateStatus::ParseableSession
+    ) {
+        return "payload unchecked".into();
+    }
+
+    match load_session_json(&candidate.path) {
+        Ok(session) => runtime_replay_warnings::derive_replay_readiness_labels(&session).payload,
+        Err(_) => "payload unreadable".into(),
     }
 }
 

@@ -43,9 +43,10 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
             .take(3)
             .map(|candidate| {
                 Line::from(format!(
-                    "{} | {} | {} | {}",
+                    "{} | {} | {} | {} | {}",
                     candidate.kind_label,
                     candidate.status_label,
+                    candidate.payload_readiness_label,
                     candidate.action_hint,
                     recovery_candidate_file_label(candidate.path.as_path())
                 ))

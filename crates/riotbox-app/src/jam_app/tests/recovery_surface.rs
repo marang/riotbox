@@ -41,6 +41,7 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             .map(|candidate| (
                 candidate.kind_label,
                 candidate.status_label,
+                candidate.payload_readiness_label.as_str(),
                 candidate.trust,
                 candidate.action_hint,
             ))
@@ -49,24 +50,28 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             (
                 "normal session path",
                 "parseable session JSON",
+                "payload none | full replay",
                 RecoveryCandidateTrust::NormalLoadTarget,
                 "load normally",
             ),
             (
                 "orphan temp file",
                 "invalid session JSON",
+                "payload unchecked",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
             ),
             (
                 "autosave file",
                 "parseable session JSON",
+                "payload none | full replay",
                 RecoveryCandidateTrust::RecoverableClue,
                 "review before manual recovery",
             ),
             (
                 "autosave file",
                 "invalid session JSON",
+                "payload unchecked",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
             ),
@@ -104,4 +109,51 @@ fn recovery_surface_reports_missing_target_without_selecting_candidate() {
         surface.candidates[0].action_hint,
         "normal load cannot start from this path"
     );
+}
+
+#[test]
+fn recovery_surface_reports_snapshot_payload_readiness_for_parseable_candidates() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let missing_payload_path = dir.path().join("session.autosave.missing.json");
+    let ready_payload_path = dir.path().join("session.autosave.ready.json");
+
+    save_session_json(
+        &target_path,
+        &SessionFile::new("canonical", "riotbox-test", "2026-04-30T08:15:00Z"),
+    )
+    .expect("save canonical session");
+
+    let graph = sample_graph();
+    let missing_payload_session = sample_session(&graph);
+    save_session_json(&missing_payload_path, &missing_payload_session)
+        .expect("save missing-payload autosave session");
+
+    let mut ready_payload_session = sample_session(&graph);
+    ready_payload_session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &ready_payload_session.snapshots[0].snapshot_id,
+            ready_payload_session.snapshots[0].action_cursor,
+            &ready_payload_session.runtime_state,
+        ));
+    save_session_json(&ready_payload_path, &ready_payload_session)
+        .expect("save ready-payload autosave session");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+    let payload_labels = surface
+        .candidates
+        .iter()
+        .filter(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .map(|candidate| candidate.payload_readiness_label.as_str())
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        payload_labels,
+        vec![
+            "payload missing | snapshot restore blocked",
+            "payload ready | snapshot restore ok",
+        ]
+    );
+    assert_eq!(surface.selected_candidate, None);
 }
