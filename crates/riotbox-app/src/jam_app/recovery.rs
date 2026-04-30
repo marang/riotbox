@@ -1,8 +1,10 @@
 use super::*;
 
 mod hydration_guidance;
+mod payload_guidance;
 
 use hydration_guidance::supported_artifact_replay_hydration_blocker;
+use payload_guidance::missing_snapshot_payload_guidance;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SessionRecoverySurface {
@@ -46,6 +48,7 @@ pub struct SessionRecoveryCandidateView {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum RecoveryCandidateGuidance {
     SupportedArtifactReplayHydrationBlocked { detail: String },
+    MissingSnapshotPayload { detail: String },
 }
 
 impl RecoveryCandidateGuidance {
@@ -54,6 +57,9 @@ impl RecoveryCandidateGuidance {
         match self {
             Self::SupportedArtifactReplayHydrationBlocked { detail } => {
                 format!("Replay hydration note: {detail}")
+            }
+            Self::MissingSnapshotPayload { detail } => {
+                format!("Snapshot payload note: {detail}")
             }
         }
     }
@@ -195,6 +201,9 @@ fn recovery_candidate_guidance(
 ) -> Option<RecoveryCandidateGuidance> {
     if let Some(detail) = supported_artifact_replay_hydration_blocker(candidate) {
         return Some(RecoveryCandidateGuidance::SupportedArtifactReplayHydrationBlocked { detail });
+    }
+    if let Some(detail) = missing_snapshot_payload_guidance(candidate) {
+        return Some(RecoveryCandidateGuidance::MissingSnapshotPayload { detail });
     }
 
     None
