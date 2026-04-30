@@ -52,10 +52,10 @@ fn snapshot_payload_restore_hydrates_capture_now_artifact_preview_output() {
     session.action_log.commit_records.push(ActionCommitRecord {
         action_id,
         boundary: CommitBoundaryState {
-            kind: CommitBoundary::Beat,
-            beat_index: 16,
-            bar_index: 4,
-            phrase_index: 1,
+            kind: CommitBoundary::Immediate,
+            beat_index: 0,
+            bar_index: 0,
+            phrase_index: 0,
             scene_id: None,
         },
         commit_sequence: 1,
