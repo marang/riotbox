@@ -41,6 +41,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::W30StepFocus,
     ActionCommand::W30ApplyDamageProfile,
     ActionCommand::W30LoopFreeze,
+    ActionCommand::PromoteResample,
 ];
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -306,7 +307,9 @@ pub fn apply_replay_entry_to_session(
         | ActionCommand::W30BrowseSlicePool
         | ActionCommand::W30StepFocus
         | ActionCommand::W30ApplyDamageProfile => apply_w30_cue(session, entry)?,
-        ActionCommand::W30LoopFreeze => apply_w30_artifact_hydrated_cue(session, entry)?,
+        ActionCommand::W30LoopFreeze | ActionCommand::PromoteResample => {
+            apply_w30_artifact_hydrated_cue(session, entry)?
+        }
         command => {
             return Err(ReplayExecutionError::UnsupportedAction {
                 action_id: action.id,
@@ -330,6 +333,7 @@ fn apply_w30_artifact_hydrated_cue(
             reason,
         }
     })?;
+    let source_capture_id = hydration.source_capture_id.clone();
     let capture = session
         .captures
         .iter()
@@ -342,7 +346,7 @@ fn apply_w30_artifact_hydrated_cue(
                 command: action.command,
             },
         })?;
-    let (bank_id, pad_id) = w30_artifact_target(capture, action)?;
+    let (bank_id, pad_id) = w30_artifact_target(session, capture, action, &source_capture_id)?;
 
     session.runtime_state.lane_state.w30.active_bank = Some(bank_id);
     session.runtime_state.lane_state.w30.focused_pad = Some(pad_id);
@@ -358,29 +362,47 @@ fn apply_w30_artifact_hydrated_cue(
 }
 
 fn w30_artifact_target(
+    session: &SessionFile,
     capture: &crate::session::CaptureRef,
     action: &crate::action::Action,
+    source_capture_id: &crate::ids::CaptureId,
 ) -> Result<(BankId, PadId), ReplayExecutionError> {
     if let Some(CaptureTarget::W30Pad { bank_id, pad_id }) = capture.assigned_target.as_ref() {
         return Ok((bank_id.clone(), pad_id.clone()));
     }
 
-    let Some(bank_id) = action.target.bank_id.clone() else {
-        return Err(ReplayExecutionError::InvalidParams {
-            action_id: action.id,
-            command: action.command,
-            expected: "CaptureTarget::W30Pad or ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
-        });
-    };
-    let Some(pad_id) = action.target.pad_id.clone() else {
-        return Err(ReplayExecutionError::InvalidParams {
-            action_id: action.id,
-            command: action.command,
-            expected: "CaptureTarget::W30Pad or ActionTarget { bank_id: Some(_), pad_id: Some(_) }",
-        });
-    };
+    if let (Some(bank_id), Some(pad_id)) =
+        (action.target.bank_id.clone(), action.target.pad_id.clone())
+    {
+        return Ok((bank_id, pad_id));
+    }
 
-    Ok((bank_id, pad_id))
+    if let Some((bank_id, pad_id)) = session
+        .captures
+        .iter()
+        .find(|capture| capture.capture_id == *source_capture_id)
+        .and_then(|capture| match capture.assigned_target.as_ref() {
+            Some(CaptureTarget::W30Pad { bank_id, pad_id }) => {
+                Some((bank_id.clone(), pad_id.clone()))
+            }
+            _ => None,
+        })
+    {
+        return Ok((bank_id, pad_id));
+    }
+
+    if let (Some(bank_id), Some(pad_id)) = (
+        session.runtime_state.lane_state.w30.active_bank.clone(),
+        session.runtime_state.lane_state.w30.focused_pad.clone(),
+    ) {
+        return Ok((bank_id, pad_id));
+    }
+
+    Err(ReplayExecutionError::InvalidParams {
+        action_id: action.id,
+        command: action.command,
+        expected: "produced/source CaptureTarget::W30Pad, ActionTarget { bank_id: Some(_), pad_id: Some(_) }, or existing W-30 focus",
+    })
 }
 
 fn apply_mc202_role(

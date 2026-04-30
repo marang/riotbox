@@ -1,9 +1,12 @@
-fn unsupported_promote_resample_action(id: u64) -> Action {
+fn unsupported_promote_capture_to_scene_action(id: u64) -> Action {
     Action {
         id: ActionId(id),
         actor: ActorType::User,
-        command: ActionCommand::PromoteResample,
-        params: ActionParams::Empty,
+        command: ActionCommand::PromoteCaptureToScene,
+        params: ActionParams::Promotion {
+            capture_id: Some(CaptureId::from("cap-01")),
+            destination: Some("scene:scene-1".into()),
+        },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
             ..Default::default()
@@ -14,7 +17,7 @@ fn unsupported_promote_resample_action(id: u64) -> Action {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "promote-resample committed".into(),
+            summary: "promote capture to scene committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: Some("unsupported artifact-producing action".into()),
@@ -78,7 +81,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     session
         .action_log
         .actions
-        .push(unsupported_promote_resample_action(77));
+        .push(unsupported_promote_capture_to_scene_action(77));
     session
         .action_log
         .commit_records
@@ -99,7 +102,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
             riotbox_core::replay::ReplayTargetExecutionError::Execution(
                 riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                     action_id: ActionId(77),
-                    command: ActionCommand::PromoteResample,
+                    command: ActionCommand::PromoteCaptureToScene,
                 }
             )
         )
@@ -119,7 +122,7 @@ fn app_snapshot_payload_restore_rejects_unsupported_suffix_without_mutating_stat
     );
     assert_eq!(
         state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: promote.resample"
+        "unsupported suffix 1: promote.capture_to_scene"
     );
 }
 

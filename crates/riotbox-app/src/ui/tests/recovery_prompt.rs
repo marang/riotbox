@@ -106,10 +106,10 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(55),
         actor: ActorType::User,
-        command: ActionCommand::PromoteResample,
-        params: ActionParams::Mutation {
-            intensity: 0.8,
-            target_id: Some("cap-01".into()),
+        command: ActionCommand::PromoteCaptureToScene,
+        params: ActionParams::Promotion {
+            capture_id: Some(CaptureId::from("cap-01")),
+            destination: Some("scene:scene-1".into()),
         },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
@@ -123,7 +123,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "promote resample committed".into(),
+            summary: "promote capture to scene committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -159,7 +159,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         rendered.contains("Restore replay: blocked: 1 unsupported suffix"),
         "{rendered}"
     );
-    assert!(rendered.contains("promote.resample"), "{rendered}");
+    assert!(rendered.contains("promote.capture_to_scene"), "{rendered}");
     assert!(
         rendered.contains("autosave file | parseable session JSON | artifacts blocked: 1 of 1"),
         "{rendered}"
@@ -203,10 +203,10 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(56),
         actor: ActorType::User,
-        command: ActionCommand::PromoteResample,
-        params: ActionParams::Mutation {
-            intensity: 0.8,
-            target_id: Some("cap-01".into()),
+        command: ActionCommand::PromoteCaptureToScene,
+        params: ActionParams::Promotion {
+            capture_id: Some(CaptureId::from("cap-01")),
+            destination: Some("scene:scene-1".into()),
         },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
@@ -220,7 +220,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "promote resample committed".into(),
+            summary: "promote capture to scene committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -262,7 +262,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("unsupported suffix promote.resample"),
+        rendered.contains("unsupported suffix promote.capture_to_scene"),
         "{rendered}"
     );
     assert!(

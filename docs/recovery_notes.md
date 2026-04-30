@@ -38,8 +38,8 @@ Manual recovery candidates may also show W-30/capture artifact availability:
 These labels are diagnostics only. They do not hydrate, regenerate, repair, or
 choose artifacts.
 
-When artifacts are ready but replay is blocked by an artifact-producing W-30
-command such as `promote.resample`, the manual recovery UI may say that audio
+When artifacts are ready but replay is blocked by an artifact-producing command
+such as `promote.capture_to_scene`, the manual recovery UI may say that audio
 artifacts are present while replay remains blocked until that command has an
 explicit artifact hydrator. That hint is explanatory only; it must not select a
 candidate or silently repair the session.
@@ -53,10 +53,10 @@ missing files, unreadable paths, and paths that are not files.
 The current app preflight only proves the file boundary and keeps cache refresh
 aligned with it. The core replay contract seam is
 `plan_w30_artifact_replay_hydration`; it validates explicit session identity for
-artifact-producing W-30 actions before any file is loaded. `w30.loop_freeze` can
-now use that identity through the replay executor to point W-30 state at an
-already persisted artifact; it still does not recreate capture audio or
-synthesize a replacement.
+artifact-producing W-30 actions before any file is loaded. `w30.loop_freeze` and
+`promote.resample` can now use that identity through the replay executor to
+point W-30 state at an already persisted artifact; they still do not recreate
+capture audio or synthesize a replacement.
 
 Recovery artifact-availability labels should use this same preflight classifier
 so UI diagnostics and future hydration gates cannot drift.
@@ -85,10 +85,11 @@ Payload readiness is not the whole recovery decision. A ready payload can still
 be blocked if the action suffix after the snapshot contains commands the replay
 executor cannot safely apply yet.
 
-Current unsupported examples include artifact-producing W-30 actions such as
-`promote.resample`. These must reject without partially mutating the app session.
-`w30.loop_freeze` is the first narrow artifact-backed suffix that can hydrate
-from explicit persisted capture identity.
+Current unsupported examples include artifact-producing promote/capture actions
+such as `promote.capture_to_scene`. These must reject without partially mutating
+the app session. `w30.loop_freeze` and `promote.resample` are the first narrow
+artifact-backed suffixes that can hydrate from explicit persisted capture
+identity.
 
 ## Current Verification Seams
 

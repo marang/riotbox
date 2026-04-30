@@ -48,8 +48,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Source-backed W-30 snapshot-payload restore has a bounded preview parity
   probe for the browse-anchor plus trigger-suffix path.
 - W-30 artifact hydration has an explicit identity boundary in the session and
-  replay specs, and `w30.loop_freeze` is now the first narrow artifact-backed
-  replay suffix that can hydrate from persisted capture identity.
+  replay specs, and `w30.loop_freeze` plus `promote.resample` are now the first
+  narrow artifact-backed replay suffixes that can hydrate from persisted capture
+  identity.
 - Manual recovery candidates can report capture artifact availability as
   read-only diagnostics before any future hydration path uses those artifacts.
 - The app has a W-30 capture artifact hydration preflight that rejects missing
@@ -79,8 +80,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Automatic startup recovery selection.
 - Interactive guided recovery that can safely choose a candidate with user
   confirmation.
-- Remaining capture/resample artifact hydration for artifact-producing W-30
-  actions beyond `w30.loop_freeze`, including `promote.resample`.
+- Remaining artifact hydration for broader artifact-producing W-30 /
+  capture / promote actions beyond `w30.loop_freeze` and `promote.resample`,
+  such as `promote.capture_to_scene`.
 - Full arrangement export, stems, recording, or manifest-normalized export
   reproducibility.
 - Long-run soak behavior over extended live sessions.

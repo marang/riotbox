@@ -385,10 +385,10 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let unsupported_action = Action {
         id: ActionId(77),
         actor: ActorType::User,
-        command: ActionCommand::PromoteResample,
-        params: ActionParams::Mutation {
-            intensity: 0.8,
-            target_id: Some("cap-01".into()),
+        command: ActionCommand::PromoteCaptureToScene,
+        params: ActionParams::Promotion {
+            capture_id: Some(CaptureId::from("cap-01")),
+            destination: Some("scene:scene-1".into()),
         },
         target: ActionTarget {
             scope: Some(TargetScope::LaneW30),
@@ -402,7 +402,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "promote-resample committed".into(),
+            summary: "promote capture to scene committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: Some("artifact-producing W-30 action".into()),
@@ -448,7 +448,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
             riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(77),
-                command: ActionCommand::PromoteResample,
+                command: ActionCommand::PromoteCaptureToScene,
             }
         )
     ));
@@ -467,7 +467,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
-        vec![ActionCommand::PromoteResample]
+        vec![ActionCommand::PromoteCaptureToScene]
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_status,
@@ -479,11 +479,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_suffix,
-        "suffix 1 action(s): promote.resample"
+        "suffix 1 action(s): promote.capture_to_scene"
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: promote.resample"
+        "unsupported suffix 1: promote.capture_to_scene"
     );
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
@@ -491,6 +491,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: promote.resample"
+        warning
+            == "replay cannot cover 1 unsupported command(s) after snapshot: promote.capture_to_scene"
     }));
 }
