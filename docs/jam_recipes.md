@@ -113,6 +113,18 @@ Listen to these files under `artifacts/audio_qa/local-mc202/lane-recipe-listenin
 
 For machine-readable QA, inspect the generated `manifest.json` in the same directory. It records every recipe case, its baseline/candidate artifacts, comparison report, thresholds, and output metrics, so the listening check is tied to concrete non-silent/non-collapsed audio evidence.
 
+For the current CI-safe observer/audio correlation proof of this MC-202 recipe
+path, run:
+
+```bash
+just recipe2-observer-audio-gate
+```
+
+That gate pairs a Recipe 2 observer fixture (`Space`, `g`, `a`, `P`, `I`, `G`,
+and touch raise) with a generated lane recipe listening-pack manifest. It proves
+the expected control path and the current MC-202 Recipe 2 output cases, not a
+live host-session recording.
+
 ## Recipe 3: Capture, Audition, Promote, Hit
 
 Goal: learn the first source-backed W-30 reuse loop.

@@ -6,9 +6,14 @@ use std::{
 use riotbox_audio::listening_manifest::validate_manifest_envelope;
 use serde_json::Value;
 
+#[path = "observer_audio_correlate/lane_recipe_output.rs"]
+mod lane_recipe_output;
 #[path = "observer_audio_correlate/observer_validation.rs"]
 mod observer_validation;
 
+use lane_recipe_output::{
+    LaneRecipeCaseEvidence, collect_lane_recipe_cases, lane_recipe_metric_failures,
+};
 use observer_validation::validate_user_session_observer_events;
 
 const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
@@ -140,6 +145,7 @@ struct CorrelationSummary {
     w30_candidate_rms: Option<f64>,
     w30_candidate_active_sample_ratio: Option<f64>,
     w30_rms_delta: Option<f64>,
+    lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
 }
 
 fn print_help() {
@@ -227,6 +233,7 @@ fn build_summary_from_events(
         w30_candidate_active_sample_ratio: manifest["metrics"]["candidate"]["active_sample_ratio"]
             .as_f64(),
         w30_rms_delta: manifest["metrics"]["deltas"]["rms"].as_f64(),
+        lane_recipe_cases: collect_lane_recipe_cases(&manifest),
     })
 }
 
@@ -424,6 +431,8 @@ fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
 
     let metric_failures = if summary.pack_id == "w30-preview-smoke" {
         w30_source_preview_metric_failures(summary)
+    } else if summary.pack_id == "lane-recipe-listening-pack" {
+        lane_recipe_metric_failures(&summary.lane_recipe_cases, STRICT_OUTPUT_METRIC_FLOOR)
     } else {
         feral_grid_metric_failures(summary)
     };
@@ -505,6 +514,9 @@ fn validate_required_evidence(summary: &CorrelationSummary) -> Result<(), io::Er
     Ok(())
 }
 
+#[cfg(test)]
+#[path = "observer_audio_correlate/lane_recipe_tests.rs"]
+mod lane_recipe_tests;
 #[cfg(test)]
 #[path = "observer_audio_correlate/tests.rs"]
 mod tests;

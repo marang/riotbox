@@ -1,0 +1,14 @@
+{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic-recipe2-source.wav"}}
+{"event":"audio_runtime","status":"started","host":"offline"}
+{"event":"key_outcome","key":"space","outcome":"transport started"}
+{"event":"key_outcome","key":"g","outcome":"follower queued"}
+{"event":"transport_commit","committed":[{"action_id":301,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}
+{"event":"key_outcome","key":"a","outcome":"answer queued"}
+{"event":"transport_commit","committed":[{"action_id":302,"boundary":"NextBar","beat_index":16,"bar_index":4,"phrase_index":1,"commit_sequence":2}]}
+{"event":"key_outcome","key":"P","outcome":"pressure queued"}
+{"event":"transport_commit","committed":[{"action_id":303,"boundary":"NextPhrase","beat_index":32,"bar_index":8,"phrase_index":2,"commit_sequence":3}]}
+{"event":"key_outcome","key":"I","outcome":"instigator queued"}
+{"event":"transport_commit","committed":[{"action_id":304,"boundary":"NextPhrase","beat_index":48,"bar_index":12,"phrase_index":3,"commit_sequence":4}]}
+{"event":"key_outcome","key":"G","outcome":"mutate queued"}
+{"event":"transport_commit","committed":[{"action_id":305,"boundary":"NextPhrase","beat_index":64,"bar_index":16,"phrase_index":4,"commit_sequence":5}]}
+{"event":"key_outcome","key":">","outcome":"touch raised"}

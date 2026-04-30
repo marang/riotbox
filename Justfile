@@ -32,6 +32,7 @@ audio-qa-ci:
     just observer-audio-correlate-generated-feral-grid
     just first-playable-jam-probe
     just stage-style-jam-probe
+    just recipe2-observer-audio-gate
     just offline-render-reproducibility-smoke
 
 mem-init:
@@ -117,6 +118,7 @@ user-session-observer-validator-fixtures:
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/first_playable_jam_probe/events.ndjson
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/stage_style_jam_probe/events.ndjson
+    python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/recipe2_mc202_probe/events.ndjson
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_valid_recovery.ndjson
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_schema.ndjson; then echo "expected invalid user-session observer fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_recovery_decision.ndjson; then echo "expected missing recovery decision fixture to fail" >&2; exit 1; fi
@@ -146,6 +148,9 @@ first-playable-jam-probe:
 
 stage-style-jam-probe:
     scripts/validate_stage_style_jam_probe.sh
+
+recipe2-observer-audio-gate:
+    scripts/validate_recipe2_observer_audio_gate.sh
 
 offline-render-reproducibility-smoke:
     scripts/validate_offline_render_reproducibility.sh

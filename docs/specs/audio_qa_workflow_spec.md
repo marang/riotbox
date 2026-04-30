@@ -511,6 +511,7 @@ Today the repo already has:
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
 - `just audio-qa-ci` validates freshly generated W-30 preview, lane recipe, Feral before/after, and Feral grid manifests against the listening manifest v1 envelope
+- `just recipe2-observer-audio-gate` correlates the documented Recipe 2 MC-202 observer path with a freshly generated lane recipe listening-pack manifest
 - generated-pack manifest validation can require referenced artifact and metrics files to exist via `--require-existing-artifacts`
 - `just offline-render-reproducibility-smoke` is a CI-safe bounded reproducibility check that renders the same deterministic source-backed W-30 output twice and compares WAV hashes; it is an offline render smoke, not the full export workflow
 
