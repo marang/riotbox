@@ -42,11 +42,20 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
             })
             .take(3)
             .map(|candidate| {
+                let mut replay_parts = vec![
+                    candidate.replay_readiness_label.clone(),
+                    candidate.payload_readiness_label.clone(),
+                ];
+                if is_actionable_replay_unsupported(&candidate.replay_unsupported_label) {
+                    replay_parts.push(compact_restore_replay_label(
+                        &candidate.replay_unsupported_label,
+                    ));
+                }
                 Line::from(format!(
                     "{} | {} | {} | {} | {}",
                     candidate.kind_label,
                     candidate.status_label,
-                    candidate.payload_readiness_label,
+                    replay_parts.join(" | "),
                     candidate.action_hint,
                     recovery_candidate_file_label(candidate.path.as_path())
                 ))
@@ -63,6 +72,10 @@ fn restore_replay_help_scope_label(shell: &JamShellState) -> String {
     }
 
     compact_restore_replay_label(&runtime.replay_restore_suffix)
+}
+
+fn is_actionable_replay_unsupported(label: &str) -> bool {
+    label.starts_with("unsupported suffix") || label.starts_with("unsupported origin")
 }
 
 fn recovery_candidate_file_label(path: &Path) -> String {

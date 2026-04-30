@@ -41,7 +41,9 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             .map(|candidate| (
                 candidate.kind_label,
                 candidate.status_label,
+                candidate.replay_readiness_label.as_str(),
                 candidate.payload_readiness_label.as_str(),
+                candidate.replay_unsupported_label.as_str(),
                 candidate.trust,
                 candidate.action_hint,
             ))
@@ -50,28 +52,36 @@ fn recovery_surface_lists_candidates_without_selecting_or_mutating_files() {
             (
                 "normal session path",
                 "parseable session JSON",
+                "ready: no replay entries",
                 "payload none | full replay",
+                "unsupported none",
                 RecoveryCandidateTrust::NormalLoadTarget,
                 "load normally",
             ),
             (
                 "orphan temp file",
                 "invalid session JSON",
+                "replay unchecked",
                 "payload unchecked",
+                "unsupported unchecked",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
             ),
             (
                 "autosave file",
                 "parseable session JSON",
+                "ready: no replay entries",
                 "payload none | full replay",
+                "unsupported none",
                 RecoveryCandidateTrust::RecoverableClue,
                 "review before manual recovery",
             ),
             (
                 "autosave file",
                 "invalid session JSON",
+                "replay unchecked",
                 "payload unchecked",
+                "unsupported unchecked",
                 RecoveryCandidateTrust::BrokenClue,
                 "do not recover automatically",
             ),
@@ -154,6 +164,61 @@ fn recovery_surface_reports_snapshot_payload_readiness_for_parseable_candidates(
             "payload missing | snapshot restore blocked",
             "payload ready | snapshot restore ok",
         ]
+    );
+    assert_eq!(surface.selected_candidate, None);
+}
+
+#[test]
+fn recovery_surface_reports_blocked_replay_status_for_parseable_candidates() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let blocked_autosave_path = dir.path().join("session.autosave.blocked.json");
+
+    save_session_json(
+        &target_path,
+        &SessionFile::new("canonical", "riotbox-test", "2026-04-30T08:30:00Z"),
+    )
+    .expect("save canonical session");
+
+    let graph = sample_graph();
+    let mut blocked_session = sample_session(&graph);
+    let snapshot = blocked_session.snapshots[0].clone();
+    blocked_session.snapshots[0].payload =
+        Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &snapshot.snapshot_id,
+            snapshot.action_cursor,
+            &blocked_session.runtime_state,
+        ));
+    blocked_session
+        .action_log
+        .actions
+        .push(unsupported_loop_freeze_action(88));
+    blocked_session
+        .action_log
+        .commit_records
+        .push(loop_freeze_commit_record(88));
+    save_session_json(&blocked_autosave_path, &blocked_session)
+        .expect("save blocked autosave session");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+    let blocked_candidate = surface
+        .candidates
+        .iter()
+        .find(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .expect("blocked autosave candidate");
+
+    assert_eq!(
+        blocked_candidate.replay_readiness_label,
+        "blocked: 1 unsupported suffix action(s)"
+    );
+    assert_eq!(
+        blocked_candidate.payload_readiness_label,
+        "payload ready | snapshot restore ok"
+    );
+    assert_eq!(
+        blocked_candidate.replay_unsupported_label,
+        "unsupported suffix 1: w30.loop_freeze"
     );
     assert_eq!(surface.selected_candidate, None);
 }

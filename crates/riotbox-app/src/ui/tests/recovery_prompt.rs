@@ -54,7 +54,11 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("autosave file | parseable session JSON | payload none | full replay"),
+        rendered.contains("autosave file | parseable session JSON | ready: no replay entries"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("payload none | full replay"),
         "{rendered}"
     );
     assert!(
@@ -92,7 +96,11 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         created_at: "2026-04-29T23:10:00Z".into(),
         label: "before unsupported freeze".into(),
         action_cursor: 0,
-        payload: None,
+        payload: Some(riotbox_core::session::SnapshotPayload::from_runtime_state(
+            &SnapshotId::from("before-freeze"),
+            0,
+            &shell.app.session.runtime_state,
+        )),
     }];
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(55),
@@ -137,6 +145,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
             committed_at: 900,
         });
     shell.app.refresh_view();
+    save_session_json(&autosave_path, &shell.app.session).expect("save blocked autosave session");
     shell.set_recovery_surface(
         JamAppState::scan_session_recovery_surface(&target_path)
             .expect("scan recovery surface"),
@@ -151,11 +160,15 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     );
     assert!(rendered.contains("w30.loop_freeze"), "{rendered}");
     assert!(
-        rendered.contains("autosave file | parseable session JSON | payload none | full replay"),
+        rendered.contains("autosave file | parseable session JSON | blocked: 1 unsupported suffix"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("review before manual recovery"),
+        rendered.contains("payload ready | snapshot restore ok"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("unsupported suffix"),
         "{rendered}"
     );
 }
