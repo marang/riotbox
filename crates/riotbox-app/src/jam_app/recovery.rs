@@ -106,31 +106,32 @@ fn recovery_artifact_availability_label(
         return "artifacts n/a | no captures".into();
     }
 
-    let base_dir = candidate.path.parent().unwrap_or_else(|| Path::new("."));
+    let base_dir = candidate.path.parent();
     let mut ready = 0usize;
     let mut missing = 0usize;
     let mut unreadable = 0usize;
     let mut missing_identity = 0usize;
 
     for capture in &session.captures {
-        let storage_path = capture.storage_path.trim();
-        if storage_path.is_empty() {
-            missing_identity += 1;
-            continue;
-        }
-
-        let artifact_path = Path::new(storage_path);
-        let artifact_path = if artifact_path.is_absolute() {
-            artifact_path.to_path_buf()
-        } else {
-            base_dir.join(artifact_path)
-        };
-
-        match std::fs::metadata(&artifact_path) {
-            Ok(metadata) if metadata.is_file() => ready += 1,
-            Ok(_) => unreadable += 1,
-            Err(error) if error.kind() == io::ErrorKind::NotFound => missing += 1,
-            Err(_) => unreadable += 1,
+        match capture_artifacts::preflight_capture_artifact_hydration(capture, base_dir) {
+            Ok(_) => ready += 1,
+            Err(
+                capture_artifacts::CaptureArtifactHydrationPreflightError::MissingStoragePath {
+                    ..
+                }
+                | capture_artifacts::CaptureArtifactHydrationPreflightError::MissingSessionFileSet {
+                    ..
+                },
+            ) => missing_identity += 1,
+            Err(capture_artifacts::CaptureArtifactHydrationPreflightError::MissingArtifact {
+                ..
+            }) => missing += 1,
+            Err(
+                capture_artifacts::CaptureArtifactHydrationPreflightError::UnreadableArtifact {
+                    ..
+                }
+                | capture_artifacts::CaptureArtifactHydrationPreflightError::NotFile { .. },
+            ) => unreadable += 1,
         }
     }
 

@@ -31,36 +31,11 @@ impl JamAppState {
         &self,
         capture: &CaptureRef,
     ) -> Result<PathBuf, CaptureArtifactHydrationPreflightError> {
-        if capture.storage_path.trim().is_empty() {
-            return Err(CaptureArtifactHydrationPreflightError::MissingStoragePath {
-                capture_id: capture.capture_id.clone(),
-            });
-        }
-
-        let path = self.capture_audio_artifact_path(capture).ok_or_else(|| {
-            CaptureArtifactHydrationPreflightError::MissingSessionFileSet {
-                capture_id: capture.capture_id.clone(),
-            }
-        })?;
-
-        match std::fs::metadata(&path) {
-            Ok(metadata) if metadata.is_file() => Ok(path),
-            Ok(_) => Err(CaptureArtifactHydrationPreflightError::NotFile {
-                capture_id: capture.capture_id.clone(),
-                path,
-            }),
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {
-                Err(CaptureArtifactHydrationPreflightError::MissingArtifact {
-                    capture_id: capture.capture_id.clone(),
-                    path,
-                })
-            }
-            Err(error) => Err(CaptureArtifactHydrationPreflightError::UnreadableArtifact {
-                capture_id: capture.capture_id.clone(),
-                path,
-                reason: error.to_string(),
-            }),
-        }
+        let base_dir = self
+            .files
+            .as_ref()
+            .and_then(|files| files.session_path.parent());
+        preflight_capture_artifact_hydration(capture, base_dir)
     }
 
     pub(in crate::jam_app) fn persist_capture_audio_artifact(&mut self, capture: &mut CaptureRef) {
@@ -313,5 +288,48 @@ impl JamAppState {
             .parent()
             .unwrap_or_else(|| Path::new("."));
         Some(session_dir.join(storage_path))
+    }
+}
+
+pub(in crate::jam_app) fn preflight_capture_artifact_hydration(
+    capture: &CaptureRef,
+    base_dir: Option<&Path>,
+) -> Result<PathBuf, CaptureArtifactHydrationPreflightError> {
+    let storage_path = capture.storage_path.trim();
+    if storage_path.is_empty() {
+        return Err(CaptureArtifactHydrationPreflightError::MissingStoragePath {
+            capture_id: capture.capture_id.clone(),
+        });
+    }
+
+    let storage_path = Path::new(storage_path);
+    let path = if storage_path.is_absolute() {
+        storage_path.to_path_buf()
+    } else {
+        let base_dir = base_dir.ok_or_else(|| {
+            CaptureArtifactHydrationPreflightError::MissingSessionFileSet {
+                capture_id: capture.capture_id.clone(),
+            }
+        })?;
+        base_dir.join(storage_path)
+    };
+
+    match std::fs::metadata(&path) {
+        Ok(metadata) if metadata.is_file() => Ok(path),
+        Ok(_) => Err(CaptureArtifactHydrationPreflightError::NotFile {
+            capture_id: capture.capture_id.clone(),
+            path,
+        }),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => {
+            Err(CaptureArtifactHydrationPreflightError::MissingArtifact {
+                capture_id: capture.capture_id.clone(),
+                path,
+            })
+        }
+        Err(error) => Err(CaptureArtifactHydrationPreflightError::UnreadableArtifact {
+            capture_id: capture.capture_id.clone(),
+            path,
+            reason: error.to_string(),
+        }),
     }
 }
