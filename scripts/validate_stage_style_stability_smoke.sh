@@ -11,10 +11,37 @@ if ! [[ "$repetitions" =~ ^[0-9]+$ ]] || (( repetitions < 2 )); then
   exit 1
 fi
 
+bars="${RIOTBOX_STAGE_STYLE_STABILITY_BARS:-4}"
+if ! [[ "$bars" =~ ^[0-9]+$ ]] || (( bars < 2 )); then
+  echo "RIOTBOX_STAGE_STYLE_STABILITY_BARS must be an integer >= 2" >&2
+  exit 1
+fi
+
+source_seconds="${RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_SECONDS:-8.0}"
+source_window_seconds="${RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_WINDOW_SECONDS:-1.0}"
+python3 - "$source_seconds" "$source_window_seconds" <<'PY'
+import math
+import sys
+
+try:
+    source_seconds = float(sys.argv[1])
+    source_window_seconds = float(sys.argv[2])
+except ValueError as exc:
+    raise SystemExit("stage-style stability durations must be finite numbers")
+if not math.isfinite(source_seconds) or source_seconds <= 0.0:
+    raise SystemExit("RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_SECONDS must be a positive finite number")
+if not math.isfinite(source_window_seconds) or source_window_seconds <= 0.0:
+    raise SystemExit("RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_WINDOW_SECONDS must be a positive finite number")
+if source_window_seconds > source_seconds:
+    raise SystemExit("RIOTBOX_STAGE_STYLE_STABILITY_SOURCE_WINDOW_SECONDS must not exceed source seconds")
+PY
+
 tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 expected_mix_hash=""
+
+echo "stage-style stability config: repetitions=$repetitions bars=$bars source_seconds=$source_seconds source_window_seconds=$source_window_seconds"
 
 for run in $(seq 1 "$repetitions"); do
   run_dir="$tmpdir/stage-style-stability-$run"
@@ -24,7 +51,7 @@ for run in $(seq 1 "$repetitions"); do
   pack_dir="$run_dir/feral-grid"
   summary="$run_dir/observer-audio-summary.json"
 
-  python3 scripts/write_synthetic_break_wav.py "$source_wav" 8.0
+  python3 scripts/write_synthetic_break_wav.py "$source_wav" "$source_seconds"
   cargo run -p riotbox-app --bin user_session_observer_probe -- \
     --probe stage-style-restore-diversity \
     --observer "$observer_fixture"
@@ -48,8 +75,8 @@ for run in $(seq 1 "$repetitions"); do
   cargo run -p riotbox-audio --bin feral_grid_pack -- \
     --source "$source_wav" \
     --output-dir "$pack_dir" \
-    --bars 4 \
-    --source-window-seconds 1.0
+    --bars "$bars" \
+    --source-window-seconds "$source_window_seconds"
   python3 scripts/validate_listening_manifest_json.py \
     --require-existing-artifacts \
     "$pack_dir/manifest.json"
