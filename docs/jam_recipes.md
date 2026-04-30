@@ -406,6 +406,13 @@ Then run this loop:
 11. press `2` for `Log`
 12. switch between `1`, `2`, and `4` to compare `Jam`, `Log`, and `Capture`
 
+Optional resample reuse check:
+
+13. after a promoted W-30 pad is working, press `e` to print a W-30 resample on the next phrase
+14. wait until the resample lands as a new capture
+15. press `p` again to explicitly promote that printed resample into the focused W-30 pad
+16. wait until promotion commits, then press `w` to hit the resampled pad
+
 What to observe:
 
 - `audition raw/src` means raw audition is using captured source material
@@ -424,6 +431,7 @@ What this teaches:
 
 - `[o]` is the quickest way to test the raw captured moment
 - `[p]` promotes the capture into the W-30 reuse path
+- after `[e]` prints an internal resample, `[p]` is also the explicit gesture that assigns that printed resample to the focused W-30 pad
 - `[w]` tests the promoted hit / recall path
 - if you press the next key before the current action commits, you are mostly testing queue state, not the audible result yet
 - Riotbox now exposes whether that path is source-backed, but it is still a bounded preview excerpt, not a full W-30 sampler engine

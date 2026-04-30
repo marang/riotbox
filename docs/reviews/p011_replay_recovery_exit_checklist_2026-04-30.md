@@ -59,6 +59,9 @@ bounded. It proves important seams, not complete product-grade recovery.
   artifact and keep artifact-backed pad playback audible without source audio.
 - Internally printed W-30 resample artifacts can survive save/reload with
   lineage/depth intact, pass preflight, and drive artifact-backed pad playback.
+- The existing explicit `[p]` / `promote.capture_to_pad` gesture can assign a
+  printed resample artifact to the focused W-30 pad before that source-less
+  reload path.
 - Missing payloads, mismatched payload identity, and unsupported suffixes reject
   instead of silently falling back.
 - Save may materialize payloads only for existing explicit snapshots at the
