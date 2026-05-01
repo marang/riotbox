@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: Containerfile.mempalace
+    network_mode: none
     working_dir: /repo
     volumes:
       - .:/repo

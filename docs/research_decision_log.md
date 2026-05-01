@@ -219,6 +219,36 @@ Evidence: the earlier MemPalace evaluation already proved the rootless Podman pa
 Consequences: contributors can use MemPalace through stable project commands, while the tool remains optional and subordinate to repo docs, Linear, Git history, and `rg` for exact lookup.  
 Status: accepted
 
+### RBX-015a
+
+Date: 2026-05-01
+Topic: MemPalace runtime update and index repair
+Phase: Pro Hardening
+Question: can Riotbox move the MemPalace container from the older Python 3.12 /
+MemPalace 3.1.0 runtime to the current Python/MemPalace stack, and should the
+existing palace index be repaired for cosine-distance metadata?
+Decision: update the repo-local MemPalace container to pinned
+`python:3.14.4-slim` and `mempalace==3.3.4`, keep normal access through
+`just`/`scripts/mempalace.sh`, and add `just mem-repair` for explicit index
+metadata repair.
+Why: PyPI reports MemPalace 3.3.4 as the current release, and the updated
+package now installs and runs on Python 3.14. The existing index produced a
+MemPalace warning that it lacked cosine-distance metadata, which makes semantic
+scores less meaningful for text-embedding search.
+Evidence: the updated image built successfully, `mempalace --version` reported
+`MemPalace 3.3.4`, `mempalace --palace /palace repair --yes` rebuilt 5154
+drawers, `just mem-status` re-mined successfully and reported 5246 drawers, and
+`just mem-search "replay recovery"` returned results without the previous
+cosine-distance warning. The local Podman runtime required container networking
+to be disabled for normal run commands because the host lacks `/dev/net/tun` for
+the default networking backend; builds still require normal registry/network
+access.
+Consequences: MemPalace remains optional dev-memory, not canonical project
+truth. The supported operational path remains the repo-local `just` wrapper,
+with `mem-repair` available for rare index maintenance rather than direct
+container invocations.
+Status: accepted
+
 ### RBX-016
 
 Date: 2026-04-12  

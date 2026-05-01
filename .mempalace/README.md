@@ -31,7 +31,8 @@ Recommended container mounts for repeatable local trials:
 - `.mempalace/palace` -> `/palace`
 - `.mempalace/cache` -> `/root/.cache`
 
-The current evaluation uses a rootless Podman setup with pinned `python:3.12-slim`.
+The current evaluation uses a rootless Podman setup with pinned
+`python:3.14.4-slim` and `mempalace==3.3.4`.
 
 Repo tooling now exists for this:
 
@@ -39,6 +40,7 @@ Repo tooling now exists for this:
 - `Containerfile.mempalace`
 - `scripts/mempalace.sh`
 - `just mem-init`
+- `just mem-repair`
 - `just mem-status`
 - `just mem-search "query"`
 
@@ -50,7 +52,11 @@ The wrapper script automatically:
 - re-mines the corpus if those sources changed since the last successful index
 - serializes operations with a repo-local lock so multiple status/search calls do not mine concurrently
 - rebuilds the palace index when the room structure changes
+- repairs the palace index through `just mem-repair` when MemPalace reports
+  index metadata drift, such as missing cosine-distance metadata
 - rebuilds the MemPalace container image only when `Containerfile.mempalace` or `compose.mempalace.yaml` changes
+- runs normal runtime commands with container networking disabled; image builds
+  still require normal registry/network access
 
 Current rooms:
 

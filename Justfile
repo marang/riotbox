@@ -50,6 +50,9 @@ mem-sync:
 mem-mine:
     ./scripts/mempalace.sh mine
 
+mem-repair:
+    ./scripts/mempalace.sh repair
+
 mem-status:
     ./scripts/mempalace.sh status
 

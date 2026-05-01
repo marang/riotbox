@@ -426,7 +426,12 @@ Operational path:
 
 - use `just mem-init` for the first setup
 - use `just mem-status` and `just mem-search "..."` for normal use
-- the wrapper script uses rootless Podman with pinned `python:3.12`
+- use `just mem-repair` when MemPalace reports index metadata drift, such as
+  missing cosine-distance metadata
+- the wrapper script uses rootless Podman with pinned `python:3.14.4-slim` and
+  `mempalace==3.3.4`
+- normal MemPalace runtime commands run with container networking disabled;
+  image builds still require normal registry/network access
 - the wrapper automatically re-mines when mined repo sources changed
 - the wrapper uses a repo-local lock so multiple MemPalace commands do not mine concurrently
 - the wrapper owns the generated room structure; do not hand-edit `.mempalace/corpus/mempalace.yaml`

@@ -24,6 +24,7 @@ Usage:
   scripts/mempalace.sh init
   scripts/mempalace.sh sync
   scripts/mempalace.sh mine
+  scripts/mempalace.sh repair
   scripts/mempalace.sh status
   scripts/mempalace.sh search "query text"
   scripts/mempalace.sh shell
@@ -314,6 +315,11 @@ case "$command" in
     ;;
   mine)
     mine_corpus
+    ;;
+  repair)
+    ensure_initialized
+    compose_run "mempalace --palace /palace repair --yes"
+    rm -f "$INDEXED_MANIFEST"
     ;;
   status)
     ensure_fresh_index
