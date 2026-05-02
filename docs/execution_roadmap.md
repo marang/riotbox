@@ -99,6 +99,11 @@ Critical spikes:
 - sidecar RPC and failure-isolation spike
 - deterministic replay spike
 - analysis-provider bakeoff for beat / bars / sections / slice candidates
+- source beat-grid verification spike:
+  - automatic BPM estimate from arbitrary WAV input
+  - beat, downbeat, bar, and phrase-grid candidate quality
+  - confidence reporting and low-confidence fallback behavior
+  - audio drift checks proving generated bass, MC-202, TR-909, and W-30 layers stay aligned to the source grid
 
 Output of every spike:
 - decision
@@ -129,10 +134,15 @@ Deliverables:
 - file load
 - decode / normalize
 - beat / bar grid
+- automatic BPM estimate with confidence
+- downbeat and phrase-grid candidates with confidence
+- explicit timing warnings when the detected grid is weak or ambiguous
+- source-grid drift report proving rendered lanes stay aligned to the analyzed grid
 - sections
 - first slice / loop candidates
 - Source Graph v1
 - sidecar RPC path
+- Jam / Source surface shows current beat, bar, phrase, tempo confidence, and degraded timing state when applicable
 
 ### Phase E - Jam-first playable slice
 
@@ -158,6 +168,14 @@ Reason:
 - 202 adds identity and pressure
 - W-30 becomes most valuable once grid, actions, and capture semantics are already stable
 
+TR-909 MVP must explicitly include a punch / kick-reinforcement slice:
+- kick body, click, tail, and pitch-envelope shaping
+- source-kick plus 909-kick layering without destroying the source downbeat
+- drum-bus saturation, drive, compression, and room pressure
+- audible `reinforce`, `fill`, `slam`, and `takeover` contrast in both offline renders and the TUI path
+- low-end and transient QA for peak, RMS, low-band RMS, crest factor, onset density, and source-grid drift
+- fallback behavior when timing confidence is too weak to layer punch safely
+
 ### Phase G - Scene Brain
 
 Goal:
@@ -178,6 +196,13 @@ Goal:
 Deliverables:
 - feral scoring
 - break rebuild policy
+- source-derived rebuild policy:
+  - use the source beat grid, anchors, sections, transients, and candidates as musical reference material for a new Riotbox pattern
+  - do not default to merely playing the original beat with generated layers on top
+  - preserve downbeat kick identity or backbeat snare logic only when a mode explicitly promises anchor preservation
+  - allow destructive, rebuilt, or replacement behavior when the gesture / scene / aggression level makes that intent explicit
+  - keep MC-202, TR-909, W-30, and bass mutations aligned to the detected source grid even when the audible beat is newly generated
+  - fail soft or require confirmation when timing confidence is too low for grid-locked rebuilds
 - hook-fragment logic
 - abuse-mix policy
 - rebake / promotion logic
@@ -265,6 +290,7 @@ Reason:
 - timing model
 - state handoff
 - commit safety
+- grid-lock safety: rendered and scheduled bass, MC-202, TR-909, and W-30 events must use the same timing authority as the source beat grid once that grid is trusted
 
 ### MIR / ML
 
@@ -272,6 +298,11 @@ Reason:
 - confidence model
 - Source Graph generation
 - candidate scoring
+- source beat-grid detection:
+  - BPM estimate
+  - beat, downbeat, bar, and phrase-grid candidates
+  - confidence and warning model
+  - drift detection between source anchors and generated lane events
 
 ### TUI / Interaction
 
@@ -279,6 +310,7 @@ Reason:
 - action visibility
 - pending vs committed state
 - shortcut model
+- timing trust visibility: Jam / Source should show beat, bar, phrase, BPM confidence, and degraded timing state before the user commits timing-sensitive gestures
 
 ### QA
 
@@ -287,6 +319,7 @@ Reason:
 - deterministic replay checks
 - golden renders
 - performance acceptance
+- source-grid audio QA for bass and generated lane drift
 
 ---
 
@@ -311,11 +344,16 @@ Expected output:
 Questions:
 - which provider combination is acceptable for beat / bar / section / slice candidate quality?
 - what confidence failures must be surfaced instead of hidden?
+- how accurately can the provider detect BPM, beat, downbeat, bar, and phrase grid from unlabeled user audio?
+- how do we detect and report when the generated Riotbox grid starts drifting against the source beat?
+- what fallback behavior is safe when the beat grid is plausible but not trustworthy enough for bass or destructive mutation?
 
 Expected output:
 - baseline provider set
 - failure modes
 - fallback strategy
+- fixture-backed BPM / downbeat tolerance thresholds
+- source-grid drift metric and acceptance budget
 
 ### Research item 3 - Sidecar RPC and fault isolation
 
@@ -356,6 +394,10 @@ Expected output:
 
 - decode fixture tests
 - beat / bar / section fixture tests
+- BPM estimate tolerance tests
+- downbeat-confidence fixture tests
+- low-confidence timing fixture tests
+- source-grid drift fixture tests that fail when generated bass or lane events audibly walk away from the source beat
 - candidate reproducibility tests
 - confidence-report tests
 
@@ -369,6 +411,12 @@ Expected output:
 ### Stage 4 - Device MVPs
 
 - TR-909 reinforcement behavior tests
+- TR-909 punch-engine tests:
+  - kick body / click / tail shaping changes the rendered buffer
+  - source-kick plus 909-kick layering increases punch without masking the downbeat
+  - drum-bus drive / compression / room settings produce measurable but bounded changes
+  - `reinforce`, `fill`, `slam`, and `takeover` produce distinct audible outputs
+  - low-band RMS, transient density, crest factor, and source-grid drift stay inside explicit budgets
 - MC-202 follower and phrase mutation tests
 - W-30 capture and pad reuse tests
 
@@ -376,6 +424,10 @@ Expected output:
 
 - scene transition tests
 - variation-rate tests
+- source-beat anchor preservation tests:
+  - downbeat kick remains readable at low / medium aggression
+  - backbeat snare logic remains readable at low / medium aggression
+  - destructive behavior is explicit rather than accidental
 - quote-risk and repetition checks
 - capture-yield checks
 
@@ -414,6 +466,9 @@ Benchmarks are required from the first implementation slice onward.
 - memory consumption per job
 - sidecar job latency
 - candidate count stability
+- BPM / beat-grid accuracy against fixture expectations
+- downbeat confidence quality against fixture expectations
+- source-grid drift budget for generated lane overlays
 
 ### Workflow benchmarks
 
@@ -428,6 +483,16 @@ Benchmarks are required from the first implementation slice onward.
 - variation density
 - quote-risk ceiling
 - feral scorecard consistency
+- TR-909 punch quality:
+  - kicks feel louder, deeper, and more forward without clipping
+  - source downbeat remains readable unless destructive mode is explicit
+  - `reinforce`, `fill`, `slam`, and `takeover` are distinguishable by ear and metrics
+  - low-end energy improves without bass / kick drift against the source grid
+- source-derived rebuild quality:
+  - Riotbox creates a new musical result from source-derived timing, anchors, sections, transients, and candidates
+  - original-beat preservation is required only in modes that explicitly promise anchor preservation
+  - generated bass and device lanes stay grid-locked even when the audible beat is rebuilt or replaced
+  - TUI makes tempo confidence, preservation mode, destructive mode, and timing degradation visible before the user commits a timing-sensitive gesture
 
 ---
 

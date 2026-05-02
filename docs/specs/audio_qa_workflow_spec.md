@@ -68,6 +68,49 @@ These checks validate behavior against product intent rather than "beauty":
 - takeover is more assertive than support
 - capture and promoted playback remain materially usable
 - variation exists over time and does not collapse into identical bars
+- source-derived rebuilds remain musically usable when the original source layer is muted
+- source-layer modes are explicit and optional, not an implicit requirement for Riotbox to sound complete
+- anchor-preservation modes keep promised kick / snare anchors readable, while destructive or replacement modes are allowed to rebuild the beat
+
+### 3.2.1 Source-derived rebuild gates
+
+Riotbox must distinguish three related but different output modes:
+
+- `rebuild-only`: the original source file is not audible as a continuous backing track; Riotbox output is generated or reconstructed from source-derived timing, anchors, sections, transients, slices, captures, and candidates
+- `source-layer`: the original source is intentionally audible beside generated Riotbox lanes, such as for loop accompaniment, A/B checking, hybrid performance, or transition support
+- `anchor-preserve`: selected source anchors, such as downbeat kick or backbeat snare identity, are intentionally preserved or reinforced while the surrounding pattern may still be rebuilt
+
+QA must not let `source-layer` mask weak generation.
+
+For every source-derived arrangement or rebuild feature, include at least two of
+these comparison renders when the seam exists:
+
+- `rebuild_only.wav`: source layer muted, generated Riotbox lanes active
+- `source_layer_on.wav`: same render with the source layer intentionally audible
+- `source_reference.wav`: the original or looped source reference for listening comparison only
+- `anchor_preserve.wav`: optional mode-specific render proving promised downbeat / backbeat anchors remain readable
+- `destructive_or_replace.wav`: optional mode-specific render proving replacement behavior is explicit and still grid-locked
+
+The `rebuild_only` render is the primary product proof. It must pass non-silence,
+timing, variation, and musical-contract checks without relying on the original
+beat underneath. `source_layer_on` may sound better or different, but it must not
+be the only passing case unless the feature is explicitly a source-layer feature.
+
+Minimum checks:
+
+- source layer mute state is represented in control-path state, manifest metadata, or render config
+- generated lanes remain aligned to the trusted source beat grid
+- output is not silent, fallback-collapsed, or one-bar identical across the review window
+- source-retention or source-correlation metrics are reported when available
+- listening notes explicitly say whether the result works without the source layer
+
+Failure classes to record:
+
+- needs original source to sound complete
+- source-layer masks weak generation
+- rebuilt beat loses grid
+- anchor-preserve mode destroys promised kick or snare identity
+- destructive mode was not explicit
 
 ### 3.3 Fixture-backed golden render review
 
@@ -243,6 +286,10 @@ The first audio QA implementation should start with bounded, explainable metrics
 - `usable_break_variant_count`
 - `quote_risk`
 - `source_retention_estimate`
+- `source_layer_dependency`
+- `rebuild_only_usability`
+- `anchor_preservation_score`
+- `grid_drift_budget`
 
 For early phases, metrics should use ranges rather than fake precision.
 
@@ -259,6 +306,9 @@ Recommended fields:
 - transition quality
 - variation usefulness
 - support-layer tastefulness
+- rebuild-only usefulness
+- source-layer dependency
+- anchor-preservation honesty
 - capture-worthiness
 - artifact severity
 
@@ -278,6 +328,9 @@ Short comments should also note concrete failure classes such as:
 - awkward phrasing
 - weak impact
 - over-repetitive
+- only works with original source underneath
+- generated layers drift against the source grid
+- promised anchor was lost
 - capture not worth keeping
 
 ---
@@ -307,6 +360,10 @@ Each fixture should support a small review set such as:
 - break reinforce
 - takeover
 - capture
+- rebuild-only
+- source-layer-on
+- anchor-preserve
+- destructive / replace
 
 Not every fixture needs every pack, but the assignment must be explicit.
 
@@ -331,6 +388,19 @@ For every new or changed audio-producing function, the minimum test shape is:
 
 - one control-path assertion, such as action log, render-state, queue/commit, or provenance state
 - one output-path assertion, such as non-silence, peak/RMS range, source-vs-fallback metric delta, or a fixture-backed WAV artifact comparison
+
+For source-derived rebuild, arrangement, TR-909 reinforcement, MC-202 phrase, W-30
+slice/capture, bass, or Feral policy changes, the release gate must also state
+which source-audibility mode was tested:
+
+- rebuild-only
+- source-layer
+- anchor-preserve
+- destructive / replace
+
+If a feature claims to generate a new Riotbox result, `rebuild-only` evidence is
+required. If `source-layer` is used, it must be documented as an optional layer or
+transition tool, not as hidden support for a weak rebuild.
 
 If the function only prepares state and cannot produce audio by itself, the output assertion must cover the nearest downstream render seam that consumes that state.
 
