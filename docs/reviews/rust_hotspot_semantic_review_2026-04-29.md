@@ -21,7 +21,7 @@ find crates -name '*.rs' -type f -print0 | xargs -0 wc -l | sort -nr | sed -n '1
 | ---: | --- | --- |
 | 500 | `crates/riotbox-core/src/view/jam/tests/build_view_model_tests.rs` | Refactor candidate |
 | 499 | `crates/riotbox-audio/src/bin/lane_recipe_pack/tr909_support_case.rs` | Leave for now |
-| 494 | `crates/riotbox-audio/src/bin/feral_grid_pack/mc202_question_answer.rs` | Leave for now |
+| 494 | `crates/riotbox-audio/src/bin/feral_grid_pack/render_stems.rs` | Leave for now |
 | 488 | `crates/riotbox-app/src/jam_app/runtime_view.rs` | Watch / later semantic split |
 | 487 | `crates/riotbox-app/src/jam_app/w30_queue.rs` | Leave for now |
 | 481 | `crates/riotbox-core/src/view/jam/build_view_model.rs` | Refactor candidate |

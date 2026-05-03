@@ -54,7 +54,7 @@ The previous gap review found five weak spots.
 - Scorecard tests:
   `crates/riotbox-core/src/view/jam/tests/feral_scorecard_tests.rs`
 - Generated Feral grid scorecard:
-  `crates/riotbox-audio/src/bin/feral_grid_pack/mc202_question_answer.rs`
+  `crates/riotbox-audio/src/bin/feral_grid_pack/render_stems.rs`
 - Generated scorecard validator:
   `scripts/validate_listening_manifest_json.py`
 - Listening manifest scorecard contract:

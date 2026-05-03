@@ -8,16 +8,11 @@ use serde::Serialize;
 use riotbox_audio::{
     listening_manifest::{
         LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
-        ListeningPackRenderMetrics as ManifestRenderMetrics,
-        ListeningPackSignalMetrics as ManifestSignalMetrics, write_manifest_json,
-    },
-    mc202::{
-        Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-        Mc202RenderRouting, Mc202RenderState,
+        ListeningPackRenderMetrics as ManifestRenderMetrics, write_manifest_json,
     },
     runtime::{
-        OfflineAudioMetrics, render_mc202_offline, render_tr909_offline,
-        render_w30_preview_offline, signal_metrics_with_grid,
+        OfflineAudioMetrics, render_tr909_offline, render_w30_preview_offline,
+        signal_metrics_with_grid,
     },
     source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},
     tr909::{
@@ -41,7 +36,6 @@ const MIN_BARS: u32 = 2;
 const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;
 const DEFAULT_SOURCE_WINDOW_SECONDS: f32 = 1.0;
 const MIN_SIGNAL_RMS: f32 = 0.001;
-const MIN_MC202_BAR_DELTA_RMS: f32 = 0.003;
 const MIN_LOW_BAND_RMS: f32 = 0.004;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -178,11 +172,9 @@ struct RenderMetrics {
 
 #[derive(Clone, Copy, Debug)]
 struct PackReport {
-    mc202: RenderMetrics,
     tr909: RenderMetrics,
     w30: RenderMetrics,
     full_mix: RenderMetrics,
-    mc202_question_answer_delta: OfflineAudioMetrics,
 }
 
 #[derive(Serialize)]
@@ -220,32 +212,28 @@ struct ManifestFeralScorecard {
     source_backed: bool,
     generated: bool,
     fallback_like: bool,
-    lane_gestures: [&'static str; 3],
-    material_sources: [&'static str; 3],
+    lane_gestures: [&'static str; 2],
+    material_sources: [&'static str; 2],
     warnings: [&'static str; 1],
 }
 
 #[derive(Serialize)]
 struct ManifestThresholds {
     min_signal_rms: f32,
-    min_mc202_bar_delta_rms: f32,
     min_low_band_rms: f32,
 }
 
 #[derive(Serialize)]
 struct ManifestPackMetrics {
-    mc202_question_answer: ManifestRenderMetrics,
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
     bar_variation: ManifestBarVariationMetrics,
     spectral_energy: ManifestSpectralEnergyMetrics,
-    mc202_question_answer_delta: ManifestSignalMetrics,
 }
 
 #[derive(Serialize)]
 struct ManifestBarVariationMetrics {
-    mc202_question_answer: BarVariationMetrics,
     tr909_beat_fill: BarVariationMetrics,
     w30_feral_source_chop: BarVariationMetrics,
     full_grid_mix: BarVariationMetrics,
@@ -253,7 +241,6 @@ struct ManifestBarVariationMetrics {
 
 #[derive(Serialize)]
 struct ManifestSpectralEnergyMetrics {
-    mc202_question_answer: SpectralEnergyMetrics,
     tr909_beat_fill: SpectralEnergyMetrics,
     w30_feral_source_chop: SpectralEnergyMetrics,
     full_grid_mix: SpectralEnergyMetrics,
@@ -269,8 +256,8 @@ fn print_help() {
            --source-start-seconds SECONDS\n\
            --source-window-seconds SECONDS\n\
          \n\
-         Renders a local grid-locked Feral demo pack. MC-202 question/answer,\n\
-         TR-909 beat/fill, and W-30 source chop stems share one beat/bar grid\n\
+         Renders a local grid-locked Feral demo pack. TR-909 beat/fill and\n\
+         W-30 source chop stems share one beat/bar grid\n\
          so the output can be checked for musical timing instead of only logs."
     );
 }
@@ -336,31 +323,26 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )
     .ok_or("source-backed W-30 preview window produced no samples")?;
 
-    let mc202 = render_mc202_question_answer(&grid);
     let tr909 = render_tr909_beat_fill(&grid);
     let w30 = render_w30_source_chop(&grid, w30_preview);
-    let full_mix = render_full_mix(&mc202, &tr909, &w30);
+    let full_mix = render_full_mix(&tr909, &w30);
 
-    assert_grid_len("mc202", &mc202, &grid);
     assert_grid_len("tr909", &tr909, &grid);
     assert_grid_len("w30", &w30, &grid);
     assert_grid_len("full_mix", &full_mix, &grid);
 
-    write_audio_with_metrics(&stems_dir.join("01_mc202_question_answer.wav"), &mc202, &grid)?;
-    write_audio_with_metrics(&stems_dir.join("02_tr909_beat_fill.wav"), &tr909, &grid)?;
-    write_audio_with_metrics(&stems_dir.join("03_w30_feral_source_chop.wav"), &w30, &grid)?;
+    write_audio_with_metrics(&stems_dir.join("01_tr909_beat_fill.wav"), &tr909, &grid)?;
+    write_audio_with_metrics(&stems_dir.join("02_w30_feral_source_chop.wav"), &w30, &grid)?;
     write_audio_with_metrics(
-        &output_dir.join("04_riotbox_grid_feral_mix.wav"),
+        &output_dir.join("03_riotbox_grid_feral_mix.wav"),
         &full_mix,
         &grid,
     )?;
 
     let report = PackReport {
-        mc202: render_metrics(&mc202, &grid),
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),
         full_mix: render_metrics(&full_mix, &grid),
-        mc202_question_answer_delta: mc202_first_question_answer_delta(&mc202, &grid),
     };
     validate_report(&report)?;
     write_report(&output_dir.join("grid-report.md"), args, &grid, report)?;
@@ -403,6 +385,7 @@ impl Grid {
         frames_for_beats(self.bpm, (bar + 1).saturating_mul(self.beats_per_bar))
     }
 
+    #[cfg(test)]
     fn bar_frame_count(&self, bar: u32) -> usize {
         self.bar_end_frame(bar)
             .saturating_sub(self.bar_start_frame(bar))
@@ -453,22 +436,4 @@ fn source_preview_from_interleaved(
         sample_count,
         samples: preview,
     })
-}
-
-fn render_mc202_question_answer(grid: &Grid) -> Vec<f32> {
-    let mut output =
-        Vec::with_capacity(grid.total_frames.saturating_mul(usize::from(CHANNEL_COUNT)));
-    for bar in 0..grid.bars {
-        let question = bar.is_multiple_of(2);
-        let state =
-            mc202_question_answer_state(question, grid.bpm, f64::from(bar * grid.beats_per_bar));
-        let chunk = render_mc202_offline(
-            &state,
-            SAMPLE_RATE,
-            CHANNEL_COUNT,
-            grid.bar_frame_count(bar),
-        );
-        output.extend(chunk);
-    }
-    output
 }

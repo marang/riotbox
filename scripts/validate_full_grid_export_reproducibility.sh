@@ -37,8 +37,8 @@ source_a="$tmpdir/source-a.wav"
 source_b="$tmpdir/source-b.wav"
 run_a="$tmpdir/run-a"
 run_b="$tmpdir/run-b"
-mix_a="$run_a/04_riotbox_grid_feral_mix.wav"
-mix_b="$run_b/04_riotbox_grid_feral_mix.wav"
+mix_a="$run_a/03_riotbox_grid_feral_mix.wav"
+mix_b="$run_b/03_riotbox_grid_feral_mix.wav"
 
 python3 scripts/write_synthetic_break_wav.py "$source_a" "$source_seconds"
 python3 scripts/write_synthetic_break_wav.py "$source_b" "$source_seconds"
@@ -67,9 +67,12 @@ render_grid_export() {
       and .feral_scorecard.readiness == "ready"
       and .feral_scorecard.source_backed == true
       and .feral_scorecard.fallback_like == false
+      and (.feral_scorecard.lane_gestures | index("mc202 question/answer")) == null
       and .metrics.full_grid_mix.signal.rms > 0.000001
       and .metrics.full_grid_mix.low_band.rms > 0.000001
-      and .metrics.mc202_question_answer_delta.rms > 0.000001' \
+      and .metrics.tr909_beat_fill.signal.rms > 0.000001
+      and .metrics.w30_feral_source_chop.signal.rms > 0.000001
+      and (.metrics | has("mc202_question_answer_delta") | not)' \
     "$run_dir/manifest.json"
 }
 

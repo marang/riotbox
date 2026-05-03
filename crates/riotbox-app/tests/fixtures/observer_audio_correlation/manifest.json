@@ -3,10 +3,9 @@
   "pack_id": "feral-grid-demo",
   "result": "pass",
   "artifacts": [
-    { "role": "mc202_question_answer", "kind": "wav", "path": "stems/01_mc202_question_answer.wav" },
-    { "role": "tr909_beat_fill", "kind": "wav", "path": "stems/02_tr909_beat_fill.wav" },
-    { "role": "w30_feral_source_chop", "kind": "wav", "path": "stems/03_w30_feral_source_chop.wav" },
-    { "role": "full_grid_mix", "kind": "wav", "path": "04_full_grid_mix.wav" },
+    { "role": "tr909_beat_fill", "kind": "wav", "path": "stems/01_tr909_beat_fill.wav" },
+    { "role": "w30_feral_source_chop", "kind": "wav", "path": "stems/02_w30_feral_source_chop.wav" },
+    { "role": "full_grid_mix", "kind": "wav", "path": "03_riotbox_grid_feral_mix.wav" },
     { "role": "report", "kind": "markdown", "path": "report.md" },
     { "role": "manifest", "kind": "json", "path": "manifest.json" }
   ],
@@ -19,9 +18,6 @@
       "low_band": {
         "rms": 0.0612
       }
-    },
-    "mc202_question_answer_delta": {
-      "rms": 0.0264
     }
   }
 }

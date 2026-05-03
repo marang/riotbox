@@ -1,35 +1,3 @@
-fn mc202_question_answer_state(question: bool, bpm: f32, position_beats: f64) -> Mc202RenderState {
-    if question {
-        Mc202RenderState {
-            mode: Mc202RenderMode::Follower,
-            routing: Mc202RenderRouting::MusicBusBass,
-            phrase_shape: Mc202PhraseShape::FollowerDrive,
-            note_budget: Mc202NoteBudget::Balanced,
-            contour_hint: Mc202ContourHint::Lift,
-            hook_response: Mc202HookResponse::Direct,
-            touch: 0.76,
-            music_bus_level: 0.86,
-            tempo_bpm: bpm,
-            position_beats,
-            is_transport_running: true,
-        }
-    } else {
-        Mc202RenderState {
-            mode: Mc202RenderMode::Answer,
-            routing: Mc202RenderRouting::MusicBusBass,
-            phrase_shape: Mc202PhraseShape::AnswerHook,
-            note_budget: Mc202NoteBudget::Sparse,
-            contour_hint: Mc202ContourHint::Drop,
-            hook_response: Mc202HookResponse::AnswerSpace,
-            touch: 0.92,
-            music_bus_level: 0.88,
-            tempo_bpm: bpm,
-            position_beats,
-            is_transport_running: true,
-        }
-    }
-}
-
 fn render_tr909_beat_fill(grid: &Grid) -> Vec<f32> {
     render_tr909_offline(
         &Tr909RenderState {
@@ -75,18 +43,16 @@ fn render_w30_source_chop(grid: &Grid, source_window_preview: W30PreviewSampleWi
     )
 }
 
-fn render_full_mix(mc202: &[f32], tr909: &[f32], w30: &[f32]) -> Vec<f32> {
-    debug_assert_eq!(mc202.len(), tr909.len());
-    debug_assert_eq!(mc202.len(), w30.len());
+fn render_full_mix(tr909: &[f32], w30: &[f32]) -> Vec<f32> {
+    debug_assert_eq!(tr909.len(), w30.len());
 
     let tr909_low = one_pole_lowpass(tr909, 165.0);
-    mc202
+    tr909
         .iter()
-        .zip(tr909.iter())
         .zip(tr909_low.iter())
         .zip(w30.iter())
-        .map(|(((mc202, tr909), tr909_low), w30)| {
-            let mixed = mc202 * 1.12 + tr909 * 10.0 + tr909_low * 18.0 + w30 * 0.94;
+        .map(|((tr909, tr909_low), w30)| {
+            let mixed = tr909 * 10.0 + tr909_low * 18.0 + w30 * 0.94;
             (mixed * 1.7).tanh() * 0.92
         })
         .collect()
@@ -138,41 +104,8 @@ fn render_metrics(samples: &[f32], grid: &Grid) -> RenderMetrics {
     }
 }
 
-fn mc202_first_question_answer_delta(mc202: &[f32], grid: &Grid) -> OfflineAudioMetrics {
-    if grid.bars < 2 {
-        return OfflineAudioMetrics {
-            active_samples: 0,
-            peak_abs: 0.0,
-            rms: 0.0,
-            sum: 0.0,
-            ..OfflineAudioMetrics::default()
-        };
-    }
-
-    let channels = usize::from(CHANNEL_COUNT);
-    let question_start = grid.bar_start_frame(0) * channels;
-    let question_end = grid.bar_end_frame(0) * channels;
-    let answer_start = grid.bar_start_frame(1) * channels;
-    let answer_end = grid.bar_end_frame(1) * channels;
-    let question = &mc202[question_start..question_end];
-    let answer = &mc202[answer_start..answer_end];
-    let delta = question
-        .iter()
-        .zip(answer.iter())
-        .map(|(question, answer)| question - answer)
-        .collect::<Vec<_>>();
-    signal_metrics_with_grid(
-        &delta,
-        SAMPLE_RATE,
-        CHANNEL_COUNT,
-        grid.bpm,
-        grid.beats_per_bar,
-    )
-}
-
 fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>> {
     for (name, metrics) in [
-        ("mc202", report.mc202),
         ("tr909", report.tr909),
         ("w30", report.w30),
         ("full_mix", report.full_mix),
@@ -180,14 +113,6 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         if metrics.signal.rms <= MIN_SIGNAL_RMS {
             return Err(format!("{name} rendered near silence").into());
         }
-    }
-
-    if report.mc202_question_answer_delta.rms <= MIN_MC202_BAR_DELTA_RMS {
-        return Err(format!(
-            "MC-202 question/answer bars are too similar: delta RMS {:.6}",
-            report.mc202_question_answer_delta.rms
-        )
-        .into());
     }
 
     if report.full_mix.low_band.rms <= MIN_LOW_BAND_RMS {
@@ -271,14 +196,11 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - Total beats: `{}`\n\
              - Total frames: `{}`\n\
              - Duration seconds: `{:.6}`\n\
-             - MC-202 question/answer delta RMS: `{:.6}`\n\
-             - Minimum MC-202 delta RMS: `{MIN_MC202_BAR_DELTA_RMS:.6}`\n\
              - Full mix low-band RMS: `{:.6}`\n\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
              - Result: `pass`\n\n\
              | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run | Low energy | Mid energy | High energy |\n\
              | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n\
-             | MC-202 question/answer | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | TR-909 beat/fill | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | W-30 Feral source chop | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | Full grid mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n",
@@ -289,17 +211,7 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             grid.total_beats,
             grid.total_frames,
             grid.duration_seconds(),
-            report.mc202_question_answer_delta.rms,
             report.full_mix.low_band.rms,
-            report.mc202.signal.rms,
-            report.mc202.signal.peak_abs,
-            report.mc202.low_band.rms,
-            report.mc202.signal.active_samples,
-            report.mc202.bar_variation.bar_similarity,
-            report.mc202.bar_variation.identical_bar_run_length,
-            report.mc202.spectral_energy.low_band_energy_ratio,
-            report.mc202.spectral_energy.mid_band_energy_ratio,
-            report.mc202.spectral_energy.high_band_energy_ratio,
             report.tr909.signal.rms,
             report.tr909.signal.peak_abs,
             report.tr909.low_band.rms,
@@ -357,27 +269,22 @@ fn write_manifest(
         feral_scorecard: manifest_feral_scorecard(),
         thresholds: ManifestThresholds {
             min_signal_rms: MIN_SIGNAL_RMS,
-            min_mc202_bar_delta_rms: MIN_MC202_BAR_DELTA_RMS,
             min_low_band_rms: MIN_LOW_BAND_RMS,
         },
         metrics: ManifestPackMetrics {
-            mc202_question_answer: manifest_render_metrics(report.mc202),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
             full_grid_mix: manifest_render_metrics(report.full_mix),
             bar_variation: ManifestBarVariationMetrics {
-                mc202_question_answer: report.mc202.bar_variation,
                 tr909_beat_fill: report.tr909.bar_variation,
                 w30_feral_source_chop: report.w30.bar_variation,
                 full_grid_mix: report.full_mix.bar_variation,
             },
             spectral_energy: ManifestSpectralEnergyMetrics {
-                mc202_question_answer: report.mc202.spectral_energy,
                 tr909_beat_fill: report.tr909.spectral_energy,
                 w30_feral_source_chop: report.w30.spectral_energy,
                 full_grid_mix: report.full_mix.spectral_energy,
             },
-            mc202_question_answer_delta: report.mc202_question_answer_delta.into(),
         },
         verification_command: format!(
             "just feral-grid-pack \"{}\" {} {:.3} {} {:.3} {:.3}",
@@ -407,16 +314,8 @@ fn manifest_feral_scorecard() -> ManifestFeralScorecard {
         source_backed: true,
         generated: true,
         fallback_like: false,
-        lane_gestures: [
-            "mc202 question/answer",
-            "tr909 beat/fill",
-            "w30 source chop",
-        ],
-        material_sources: [
-            "generated mc202",
-            "generated tr909",
-            "source-backed w30 window",
-        ],
+        lane_gestures: ["tr909 beat/fill", "w30 source chop"],
+        material_sources: ["generated tr909", "source-backed w30 window"],
         warnings: ["offline QA pack, not live arranger"],
     }
 }
@@ -424,20 +323,16 @@ fn manifest_feral_scorecard() -> ManifestFeralScorecard {
 fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
     vec![
         manifest_audio_artifact(
-            "mc202_question_answer",
-            output_dir.join("stems/01_mc202_question_answer.wav"),
-        ),
-        manifest_audio_artifact(
             "tr909_beat_fill",
-            output_dir.join("stems/02_tr909_beat_fill.wav"),
+            output_dir.join("stems/01_tr909_beat_fill.wav"),
         ),
         manifest_audio_artifact(
             "w30_feral_source_chop",
-            output_dir.join("stems/03_w30_feral_source_chop.wav"),
+            output_dir.join("stems/02_w30_feral_source_chop.wav"),
         ),
         manifest_audio_artifact(
             "full_grid_mix",
-            output_dir.join("04_riotbox_grid_feral_mix.wav"),
+            output_dir.join("03_riotbox_grid_feral_mix.wav"),
         ),
         ManifestArtifact::markdown_report("grid_report", &output_dir.join("grid-report.md")),
         ManifestArtifact::markdown_readme("readme", &output_dir.join("README.md")),
@@ -472,10 +367,9 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              - Source window start: `{:.3}s`\n\
              - W-30 source window length: `{:.3}s`\n\n\
              ## Files\n\n\
-             - `stems/01_mc202_question_answer.wav`: one-bar question, one-bar answer, alternating across the grid.\n\
-             - `stems/02_tr909_beat_fill.wav`: TR-909 beat/fill support rendered on the same grid.\n\
-             - `stems/03_w30_feral_source_chop.wav`: W-30 source-backed Feral chop rendered on the same grid.\n\
-             - `04_riotbox_grid_feral_mix.wav`: combined grid-locked listening mix with low-end support.\n\
+             - `stems/01_tr909_beat_fill.wav`: TR-909 beat/fill support rendered on the same grid.\n\
+             - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop rendered on the same grid.\n\
+             - `03_riotbox_grid_feral_mix.wav`: combined grid-locked listening mix with low-end support.\n\
              - `grid-report.md`: timing and output metrics.\n\
              - `manifest.json`: machine-readable pack metadata, artifact paths, thresholds, and key metrics.\n\
 \n\

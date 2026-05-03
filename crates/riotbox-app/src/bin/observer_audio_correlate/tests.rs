@@ -83,7 +83,7 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert_eq!(summary.commit_boundaries, ["NextBar"]);
     assert_eq!(summary.pack_id, "feral-grid-demo");
     assert_eq!(summary.manifest_result, "pass");
-    assert_eq!(summary.artifact_count, 6);
+    assert_eq!(summary.artifact_count, 5);
     assert_eq!(summary.full_mix_rms, Some(0.1));
     assert_eq!(summary.w30_candidate_rms, None);
     assert!(markdown.contains("Control path present: `yes`"));
@@ -128,16 +128,12 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert_eq!(summary.audio_runtime_status, "started");
     assert_eq!(summary.pack_id, "feral-grid-demo");
     assert_eq!(summary.manifest_result, "pass");
-    assert_eq!(summary.artifact_count, 6);
+    assert_eq!(summary.artifact_count, 5);
     assert_eq!(summary.commit_count, 1);
     assert_eq!(summary.commit_boundaries, ["NextBar"]);
     assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
     assert!(summary.full_mix_low_band_rms.is_some_and(|rms| rms > 0.01));
-    assert!(
-        summary
-            .mc202_question_answer_delta_rms
-            .is_some_and(|rms| rms > 0.001)
-    );
+    assert_eq!(summary.mc202_question_answer_delta_rms, None);
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
@@ -265,11 +261,6 @@ fn strict_evidence_rejects_missing_output_metrics() {
     assert!(error.to_string().contains("output-path manifest evidence"));
     assert!(error.to_string().contains("full_mix_rms=missing"));
     assert!(error.to_string().contains("full_mix_low_band_rms=missing"));
-    assert!(
-        error
-            .to_string()
-            .contains("mc202_question_answer_delta_rms=missing")
-    );
     let markdown = render_markdown(&summary);
     assert!(markdown.contains("Output path present: `no`"));
     assert!(markdown.contains("full_mix_rms=missing"));
@@ -342,13 +333,12 @@ fn synthetic_manifest() -> String {
     r#"{
   "pack_id": "feral-grid-demo",
   "result": "pass",
-  "artifacts": [{}, {}, {}, {}, {}, {}],
+  "artifacts": [{}, {}, {}, {}, {}],
   "metrics": {
     "full_grid_mix": {
       "signal": { "rms": 0.1 },
       "low_band": { "rms": 0.08 }
-    },
-    "mc202_question_answer_delta": { "rms": 0.01 }
+    }
   }
 }"#
     .to_string()
@@ -358,7 +348,7 @@ fn synthetic_manifest_without_metrics() -> String {
     r#"{
   "pack_id": "feral-grid-demo",
   "result": "pass",
-  "artifacts": [{}, {}, {}, {}, {}, {}],
+  "artifacts": [{}, {}, {}, {}, {}],
   "metrics": {}
 }"#
     .to_string()
@@ -368,13 +358,12 @@ fn synthetic_manifest_with_collapsed_metrics() -> String {
     r#"{
   "pack_id": "feral-grid-demo",
   "result": "pass",
-  "artifacts": [{}, {}, {}, {}, {}, {}],
+  "artifacts": [{}, {}, {}, {}, {}],
   "metrics": {
     "full_grid_mix": {
       "signal": { "rms": 0.0 },
       "low_band": { "rms": 0.0 }
-    },
-    "mc202_question_answer_delta": { "rms": 0.0 }
+    }
   }
 }"#
     .to_string()

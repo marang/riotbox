@@ -327,8 +327,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Manifest result: `{}`\n\
          - Artifact count: `{}`\n\
          - Full mix RMS: `{}`\n\
-         - Full mix low-band RMS: `{}`\n\
-         - MC-202 question/answer delta RMS: `{}`\n\n\
+         - Full mix low-band RMS: `{}`\n\n\
          - W-30 candidate RMS: `{}`\n\
          - W-30 candidate active-sample ratio: `{}`\n\
          - W-30 RMS delta: `{}`\n\n\
@@ -357,7 +356,6 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         summary.artifact_count,
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
-        format_optional_f64(summary.mc202_question_answer_delta_rms),
         format_optional_f64(summary.w30_candidate_rms),
         format_optional_f64(summary.w30_candidate_active_sample_ratio),
         format_optional_f64(summary.w30_rms_delta),
@@ -445,10 +443,6 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     metric_failures([
         ("full_mix_rms", summary.full_mix_rms),
         ("full_mix_low_band_rms", summary.full_mix_low_band_rms),
-        (
-            "mc202_question_answer_delta_rms",
-            summary.mc202_question_answer_delta_rms,
-        ),
     ])
 }
 

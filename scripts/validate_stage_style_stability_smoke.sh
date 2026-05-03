@@ -98,12 +98,11 @@ for run in $(seq 1 "$repetitions"); do
       and .output_path.present == true
       and (.output_path.issues | length == 0)
       and .output_path.metrics.full_mix_rms > 0.000001
-      and .output_path.metrics.full_mix_low_band_rms > 0.000001
-      and .output_path.metrics.mc202_question_answer_delta_rms > 0.000001' \
+      and .output_path.metrics.full_mix_low_band_rms > 0.000001' \
     "$summary"
   python3 scripts/validate_observer_audio_summary_json.py "$summary"
 
-  mix_hash="$(sha256sum "$pack_dir/04_riotbox_grid_feral_mix.wav" | awk '{print $1}')"
+  mix_hash="$(sha256sum "$pack_dir/03_riotbox_grid_feral_mix.wav" | awk '{print $1}')"
   if [[ -z "$expected_mix_hash" ]]; then
     expected_mix_hash="$mix_hash"
   elif [[ "$mix_hash" != "$expected_mix_hash" ]]; then

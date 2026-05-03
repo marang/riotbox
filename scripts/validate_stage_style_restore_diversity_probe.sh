@@ -83,7 +83,6 @@ jq -e \
     and .output_path.present == true
     and (.output_path.issues | length == 0)
     and .output_path.metrics.full_mix_rms > 0.000001
-    and .output_path.metrics.full_mix_low_band_rms > 0.000001
-    and .output_path.metrics.mc202_question_answer_delta_rms > 0.000001' \
+    and .output_path.metrics.full_mix_low_band_rms > 0.000001' \
   "$summary"
 python3 scripts/validate_observer_audio_summary_json.py "$summary"

@@ -113,36 +113,23 @@ mod tests {
 
         render_pack(&args).expect("render pack");
 
+        assert!(output_dir.join("stems/01_tr909_beat_fill.wav").is_file());
         assert!(
             output_dir
-                .join("stems/01_mc202_question_answer.wav")
+                .join("stems/02_w30_feral_source_chop.wav")
                 .is_file()
         );
-        assert!(output_dir.join("stems/02_tr909_beat_fill.wav").is_file());
-        assert!(
-            output_dir
-                .join("stems/03_w30_feral_source_chop.wav")
-                .is_file()
-        );
-        assert!(output_dir.join("04_riotbox_grid_feral_mix.wav").is_file());
+        assert!(output_dir.join("03_riotbox_grid_feral_mix.wav").is_file());
         assert!(output_dir.join("grid-report.md").is_file());
         assert!(output_dir.join("manifest.json").is_file());
 
-        let mc202 =
-            SourceAudioCache::load_pcm_wav(output_dir.join("stems/01_mc202_question_answer.wav"))
-                .expect("load mc202");
         let full_mix =
-            SourceAudioCache::load_pcm_wav(output_dir.join("04_riotbox_grid_feral_mix.wav"))
+            SourceAudioCache::load_pcm_wav(output_dir.join("03_riotbox_grid_feral_mix.wav"))
                 .expect("load full mix");
         let grid = Grid::new(128.0, 4, 2).expect("grid");
 
-        assert_eq!(mc202.frame_count(), grid.total_frames);
         assert_eq!(full_mix.frame_count(), grid.total_frames);
         assert!(signal_metrics(full_mix.interleaved_samples()).rms > MIN_SIGNAL_RMS);
-        assert!(
-            mc202_first_question_answer_delta(mc202.interleaved_samples(), &grid).rms
-                > MIN_MC202_BAR_DELTA_RMS
-        );
         assert!(
             signal_metrics(&one_pole_lowpass(full_mix.interleaved_samples(), 165.0)).rms
                 > MIN_LOW_BAND_RMS
@@ -177,17 +164,12 @@ mod tests {
                 .as_array()
                 .expect("lane gestures")
                 .len(),
-            3
+            2
         );
         assert_manifest_f32(
             &manifest["thresholds"]["min_signal_rms"],
             MIN_SIGNAL_RMS,
             "min_signal_rms",
-        );
-        assert_manifest_f32(
-            &manifest["thresholds"]["min_mc202_bar_delta_rms"],
-            MIN_MC202_BAR_DELTA_RMS,
-            "min_mc202_bar_delta_rms",
         );
         assert_manifest_f32(
             &manifest["thresholds"]["min_low_band_rms"],
@@ -196,34 +178,27 @@ mod tests {
         );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");
-        assert_eq!(artifacts.len(), 6);
-        assert_manifest_artifact(
-            artifacts,
-            "mc202_question_answer",
-            "audio_wav",
-            output_dir.join("stems/01_mc202_question_answer.wav"),
-            Some(output_dir.join("stems/01_mc202_question_answer.metrics.md")),
-        );
+        assert_eq!(artifacts.len(), 5);
         assert_manifest_artifact(
             artifacts,
             "tr909_beat_fill",
             "audio_wav",
-            output_dir.join("stems/02_tr909_beat_fill.wav"),
-            Some(output_dir.join("stems/02_tr909_beat_fill.metrics.md")),
+            output_dir.join("stems/01_tr909_beat_fill.wav"),
+            Some(output_dir.join("stems/01_tr909_beat_fill.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
             "w30_feral_source_chop",
             "audio_wav",
-            output_dir.join("stems/03_w30_feral_source_chop.wav"),
-            Some(output_dir.join("stems/03_w30_feral_source_chop.metrics.md")),
+            output_dir.join("stems/02_w30_feral_source_chop.wav"),
+            Some(output_dir.join("stems/02_w30_feral_source_chop.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
             "full_grid_mix",
             "audio_wav",
-            output_dir.join("04_riotbox_grid_feral_mix.wav"),
-            Some(output_dir.join("04_riotbox_grid_feral_mix.metrics.md")),
+            output_dir.join("03_riotbox_grid_feral_mix.wav"),
+            Some(output_dir.join("03_riotbox_grid_feral_mix.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
@@ -258,12 +233,8 @@ mod tests {
                 .expect("low-band rms")
                 > f64::from(MIN_LOW_BAND_RMS)
         );
-        assert!(
-            manifest["metrics"]["mc202_question_answer_delta"]["rms"]
-                .as_f64()
-                .expect("delta rms")
-                > f64::from(MIN_MC202_BAR_DELTA_RMS)
-        );
+        assert!(manifest["metrics"]["mc202_question_answer_delta"].is_null());
+        assert!(manifest["metrics"]["mc202_question_answer"].is_null());
         assert!(
             manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
                 .as_f64()

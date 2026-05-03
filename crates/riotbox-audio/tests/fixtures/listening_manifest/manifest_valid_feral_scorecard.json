@@ -6,8 +6,8 @@
     {
       "role": "full_grid_mix",
       "kind": "audio_wav",
-      "path": "04_full_grid_mix.wav",
-      "metrics_path": "04_full_grid_mix.metrics.md"
+      "path": "03_full_grid_mix.wav",
+      "metrics_path": "03_full_grid_mix.metrics.md"
     }
   ],
   "feral_scorecard": {
@@ -22,12 +22,10 @@
     "generated": true,
     "fallback_like": false,
     "lane_gestures": [
-      "mc202 question/answer",
       "tr909 beat/fill",
       "w30 source chop"
     ],
     "material_sources": [
-      "generated mc202",
       "generated tr909",
       "source-backed w30 window"
     ],
