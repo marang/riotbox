@@ -20,6 +20,8 @@ Use it for:
 
 Do **not** use it as a diary.
 
+Entry IDs are required for new durable decisions. Older unnumbered entries remain historical context and may be normalized in a dedicated cleanup, but new accepted decisions should use stable `RBX-###` headings.
+
 ---
 
 ## 2. Entry Template
@@ -1382,4 +1384,32 @@ Decision: keep normal session load deterministic and side-effect free. Treat orp
 Why: deterministic replay depends on knowing exactly which session file was loaded. Silent fallback to a nearby file could make a corrupted or stale replay truth look valid and would make debugging user reports harder. Manual recovery is less magical but safer until recovery-candidate scanning and UI prompts are covered.
 Evidence: `crates/riotbox-core/src/persistence.rs` serializes before writing, writes a hidden sibling temp file, then renames into place. `truncated_session_json_load_fails_without_replacing_adjacent_valid_session` proves partial JSON fails explicitly while adjacent valid files remain manually loadable. `docs/specs/session_file_spec.md` now records the orphan-temp, autosave, and manual fallback boundary.
 Consequences: the next recovery implementation should add a non-mutating recovery-candidate scanner before any guided TUI prompt. `load_session_json` should not learn automatic fallback behavior.
+Status: accepted
+
+---
+
+### RBX-026
+
+Date: 2026-05-03
+Topic: Rust-first all-lane Source Timing Intelligence
+Phase: Analysis Foundation / Pro Hardening
+Question: how should Riotbox add professional beat-grid, timing, and phrase intelligence without turning MC-202, TR-909/TR-202-style rhythm support, W-30 slicing, or future lanes into isolated timing systems?
+Decision: implement Source Timing Intelligence as a Rust-first product contract across all timing-aware lanes. Represent tempo, meter, beat grid, swing, phrase, confidence, drift, degradation, and competing timing hypotheses explicitly in Source Graph, session/replay state, and QA outputs. External MIR/Python tooling may be used for research comparison and offline validation, but runtime lane behavior, replay truth, and user-visible timing contracts must not depend on a Python-only implementation.
+Why: Riotbox needs timing intelligence that can make MC-style questions, TR-style answers, W-30 slices, source captures, scene movement, and future lanes land musically together. A lane-specific or tool-specific timing shortcut would create architecture drift and make output quality hard to prove.
+Evidence: `docs/plans/source_timing_intelligence_plan.md` defines the all-lane plan, quality gates, evaluation corpus, and phased implementation path. `docs/execution_roadmap.md`, `docs/phase_definition_of_done.md`, and `docs/specs/technology_stack_spec.md` now anchor the plan against the roadmap, phase exits, and stack boundary.
+Consequences: near-term implementation should start with typed timing models, fixtures, deterministic offline analysis, and lane consumer seams before changing audible behavior broadly. Audio-producing timing slices must include source-vs-control output proof and documented confidence/degradation behavior.
+Status: accepted
+
+---
+
+### RBX-027
+
+Date: 2026-05-03
+Topic: P011 remains MVP-spine hardening; P012+ becomes Post-MVP roadmap
+Phase: Roadmap / Pro Hardening
+Question: how should Riotbox interpret the project codes after P011 without confusing bounded MVP exits with 1.0 release readiness?
+Decision: keep `P011 | Pro Hardening` as the active final MVP-spine closeout project. Treat `P012` and later project codes as Post-MVP / product-to-1.0-release phases, beginning with Source Timing Intelligence and ending with `P020 | Riotbox 1.0 Release Cut` as a release milestone rather than the end of product development. Maintain only a coarse project / phase overview for P012-P020 until P011 is exit-clean; do not decompose distant Post-MVP work into a broad ticket list yet.
+Why: Riotbox has bounded MVP exits for MC-202, W-30, Scene Brain, Ghost Watch / Assist, and Feral policy, but P011 still needs replay, recovery, export reproducibility, and stage-style reliability to become trustworthy. Starting detailed Post-MVP ticketing before that closeout would create backlog noise and blur the active hardening gate.
+Evidence: `docs/phase_definition_of_done.md` now names P011 as the final MVP-spine hardening project, and `docs/execution_roadmap.md` records the P011-P020 project / phase map without creating a ticket list.
+Consequences: Linear should keep P011 active and high-priority until its exit checklist is clean. P012 may be prepared as near-next orientation, while P013-P020 should remain coarse phase placeholders until the active gate moves.
 Status: accepted

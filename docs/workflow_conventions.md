@@ -66,6 +66,20 @@ When the intended next action is ambiguous, ask one concise clarifying question 
 
 If the user labels something as later work, capture it as a ticket, repo note, or roadmap item. If the user asks to continue implementation, proceed with the next bounded roadmap-aligned ticket.
 
+## 4.1 Plan Anchoring
+
+When a new implementation plan becomes an accepted work direction, do not leave it only as a standalone planning file.
+
+Minimum anchoring path:
+
+- keep the detailed plan under `docs/plans/`
+- link it from `docs/README.md`
+- connect it to the relevant phase in `docs/execution_roadmap.md`
+- tighten `docs/phase_definition_of_done.md` when the plan changes phase completion criteria
+- add a short architecture decision to `docs/research_decision_log.md` when the plan freezes a durable direction
+
+Do not duplicate the whole plan across those files. The plan holds the detail; the roadmap, DoD, README, and decision log make it discoverable and binding for future agents.
+
 ---
 
 ## 5. Branch Naming

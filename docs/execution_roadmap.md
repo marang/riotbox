@@ -104,6 +104,7 @@ Critical spikes:
   - beat, downbeat, bar, and phrase-grid candidate quality
   - confidence reporting and low-confidence fallback behavior
   - audio drift checks proving generated bass, MC-202, TR-909, and W-30 layers stay aligned to the source grid
+  - follow the Rust-first all-lane direction in `docs/plans/source_timing_intelligence_plan.md`; external MIR/Python tools may inform research, but must not become the runtime timing contract
 
 Output of every spike:
 - decision
@@ -136,8 +137,10 @@ Deliverables:
 - beat / bar grid
 - automatic BPM estimate with confidence
 - downbeat and phrase-grid candidates with confidence
+- multiple timing hypotheses for half-time, double-time, and ambiguous material
 - explicit timing warnings when the detected grid is weak or ambiguous
 - source-grid drift report proving rendered lanes stay aligned to the analyzed grid
+- all-lane timing proof for TR/Kick-Bass, MC-202, and W-30 using source-vs-output audio evidence
 - sections
 - first slice / loop candidates
 - Source Graph v1
@@ -235,23 +238,37 @@ Deliverables:
 
 ---
 
-## 6. Immediate Build Sequence
+## 6. Current Implementation Direction
 
-This is the recommended order from the current repo state:
+The original immediate build sequence has largely landed: core contracts, Jam / Log / Source / Capture shells, device MVP seams, Ghost Watch / Assist, Feral policy, and replay/recovery hardening slices now exist in bounded form. The current active direction should be read with `docs/phase_definition_of_done.md`, the current reviews, and the active plans.
 
-1. `Source Graph Spec`
-2. `Session File Spec`
-3. `Action Lexicon Spec`
-4. `Validation & Benchmark Spec`
-5. `Fixture Corpus Spec`
-6. `Audio Core Spec`
-7. `TUI Screen Spec`
-8. begin Core Skeleton implementation
+Near-next roadmap-aligned work:
+
+1. continue `P011 | Pro Hardening` until replay, recovery, export reproducibility, and stage-style gates are exit-clean
+2. treat P011 as the final MVP-spine hardening project; P012 and later project codes are Post-MVP / product-to-1.0-release phases
+3. start the Source Timing Intelligence program from `docs/plans/source_timing_intelligence_plan.md` as the first Post-MVP foundation track
+4. keep all timing work Rust-first at the product-contract layer and prove TR/Kick-Bass, MC-202, and W-30 output paths against the source grid
+5. update specs and decision log as the timing contract freezes into implementation
+
+Linear project / phase map:
+
+1. `P011 | Pro Hardening` - active MVP-spine closeout
+2. `P012 | Source Timing Intelligence` - first Post-MVP foundation phase
+3. `P013 | All-Lane Musical Depth`
+4. `P014 | Arrangement / Scene System`
+5. `P015 | Productization Alpha`
+6. `P016 | Pro Workflow / Export`
+7. `P017 | Live Performance Readiness`
+8. `P018 | Ghost + Feral Autonomy Expansion`
+9. `P019 | Beta / Release Hardening`
+10. `P020 | Riotbox 1.0 Release Cut`
+
+This is a project / phase overview, not a ticket list. Keep P012 near-next and keep P013-P020 coarse until P011 is exit-clean.
 
 Reason:
-- Source Graph, session, and actions are the main contracts everything else depends on.
-- Validation and fixture definitions must exist before implementation fans out.
-- Audio core and TUI become easier and more consistent once actions and state are explicit.
+- Replay/recovery/export reliability is the current hardening gate.
+- Source Timing Intelligence is the next major musical foundation needed before deeper source-derived rebuilds, timing-sensitive Ghost suggestions, and stronger all-lane generated output.
+- Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing behavior must extend them instead of creating a parallel analysis or arranger path.
 
 ---
 
@@ -508,9 +525,9 @@ No phase is complete when code merely exists. A phase completes only when:
 
 ---
 
-## 13. Late-Stage Product Readiness
+## 13. 1.0 / Stage-Ready Product Readiness
 
-Riotbox approaches "finished product" only when all of the following are true:
+Riotbox approaches a stage-ready 1.0 release only when all of the following are true:
 
 - a user can move through the full product spine reliably
 - replay is deterministic enough to trust saved work

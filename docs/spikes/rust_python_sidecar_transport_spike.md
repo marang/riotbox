@@ -54,6 +54,7 @@ Important clarification:
 
 - this is the first transport contract, not the promised final production transport
 - the current `Python` sidecar choice is also pragmatic rather than permanent
+- later Source Timing Intelligence work is Rust-first at the product-contract layer; this spike remains valid as sidecar transport evidence, but it must not be read as a requirement that timing detection depends durably on Python
 
 ---
 

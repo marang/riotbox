@@ -61,16 +61,24 @@ Done when:
 
 ## 5. Phase 2 - Analysis Vertical Slice
 
+Current note:
+
+- the initial Analysis v1 contract exists, but Source Timing Intelligence reopens the timing foundation as a stricter all-lane analysis track; these criteria define the next timing-ready analysis bar and do not retroactively invalidate later bounded MVP exits
+
 Done when:
 
 - a track can be loaded
 - decode / normalize works
 - beat / bar information exists
+- beat, downbeat, bar, and phrase timing includes confidence and visible degraded-state behavior
+- multiple timing hypotheses are preserved when half-time, double-time, or downbeat ambiguity is plausible
+- source-grid drift reporting exists and is usable by downstream render checks
 - sections exist
 - first slice or loop candidates exist
 - a Source Graph v1 is produced
 - Jam screen shows useful analysis state
 - analysis failure degrades visibly rather than silently
+- TR/Kick-Bass, MC-202, and W-30 each have at least one timing-aware output-path proof with source-vs-output audio evidence
 
 ---
 
@@ -155,7 +163,13 @@ Current review:
 
 ---
 
-## 11. Phase 8 - Pro Hardening
+## 11. Phase 8 / P011 - Pro Hardening
+
+Boundary:
+
+- `P011 | Pro Hardening` is the final MVP-spine hardening project, not the first Post-MVP expansion project.
+- The phase closes only when the bounded MVP spine can be trusted for repeated replay, recovery, QA, and export-oriented work.
+- Post-MVP project phases such as Source Timing Intelligence and deeper musical expansion should start from this hardened spine instead of bypassing it.
 
 Done when:
 
@@ -171,8 +185,22 @@ Current review:
 - `docs/reviews/p011_replay_hardening_checkpoint_2026-04-29.md`
 - `docs/reviews/p011_replay_recovery_exit_checklist_2026-04-30.md`
 - status: active after restore and commit-record validation hardening; not exit-ready because full replay execution, snapshot convergence, crash recovery, export reproducibility, and long-run/stage-run gates remain open
-- current stage-style/recovery gates: `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence, while `just stage-style-restore-diversity-probe` adds a richer replay-safe W-30 / TR-909 / MC-202 control path correlated with generated full-grid output evidence; `just stage-style-snapshot-convergence-smoke` proves a supported Scene / MC-202 / TR-909 stage-style suffix converges from a mid-run snapshot payload to the same final mix buffer as the committed path; `just stage-style-stability-smoke` repeats the richer generated run and requires stable full-mix hashes plus non-collapsed observer/audio summaries across repetitions; `just stage-style-stability-gate` is the stronger bounded variant with more repetitions and a longer generated source/grid budget; `just interrupted-session-recovery-probe` and `just missing-target-recovery-probe` cover generated file-backed recovery observer drills; these are bounded CI-safe probes, not host-audio soak tests or automatic recovery
-- current offline/export reproducibility gates: `just offline-render-reproducibility-smoke` proves an existing deterministic source-backed W-30 render helper emits byte-stable WAV output for the same generated source; `just full-grid-export-reproducibility-smoke` proves the deterministic Feral grid/full-mix pack validates and exports the same full-mix WAV hash twice from generated source material; these are not full arrangement or DAW export coverage
+
+Current bounded gates:
+
+- `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence.
+- `just stage-style-restore-diversity-probe` adds a richer replay-safe W-30 / TR-909 / MC-202 control path correlated with generated full-grid output evidence.
+- `just stage-style-snapshot-convergence-smoke` proves a supported Scene / MC-202 / TR-909 stage-style suffix converges from a mid-run snapshot payload to the same final mix buffer as the committed path.
+- `just stage-style-stability-smoke` repeats the richer generated run and requires stable full-mix hashes plus non-collapsed observer/audio summaries across repetitions.
+- `just stage-style-stability-gate` is the stronger bounded variant with more repetitions and a longer generated source/grid budget.
+- `just interrupted-session-recovery-probe` and `just missing-target-recovery-probe` cover generated file-backed recovery observer drills.
+- `just offline-render-reproducibility-smoke` proves an existing deterministic source-backed W-30 render helper emits byte-stable WAV output for the same generated source.
+- `just full-grid-export-reproducibility-smoke` proves the deterministic Feral grid/full-mix pack validates and exports the same full-mix WAV hash twice from generated source material.
+
+Current boundary:
+
+- These are bounded CI-safe probes, not host-audio soak tests, automatic recovery, full arrangement export, stem export, or DAW-style export coverage.
+- P011 should remain active until the exit checklist can say replay, recovery, export reproducibility, and stage-style reliability are no longer smoke-level evidence.
 
 ---
 
@@ -194,7 +222,7 @@ Current review:
 
 ---
 
-## 13. Final Product Readiness
+## 13. 1.0 / Stage-Ready Product Readiness
 
 Riotbox is close to product-ready when:
 

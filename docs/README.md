@@ -1,8 +1,8 @@
 # Riotbox Docs
 
-Status: initial spec scaffold
+Status: active implementation documentation
 
-This directory holds implementation-facing specifications derived from the strategy documents in `plan/`.
+This directory holds implementation-facing specifications, plans, reviews, benchmarks, and workflow notes derived from the strategy documents in `plan/` and from shipped Riotbox slices.
 
 ## Source of Truth
 
@@ -15,10 +15,11 @@ This directory holds implementation-facing specifications derived from the strat
 
 - Stable core contracts live in `docs/`.
 - Exploratory thinking and generative planning stay in `plan/`.
+- Accepted implementation plans live in `docs/plans/` and should be anchored from the roadmap, phase definition of done, README, and decision log when they freeze a durable direction.
 - Profile behavior must be expressed as policy, preset, or scoring extensions, not as a parallel product architecture.
 - Incoming refinements to the feral addendum should update profile-oriented specs, not the core contracts unless they truly change the core.
 
-## Recommended Build Order
+## Recommended Reading / Build Context Order
 
 1. [PRD v1](./prd_v1.md)
 2. [Execution Roadmap](./execution_roadmap.md)
@@ -38,13 +39,15 @@ This directory holds implementation-facing specifications derived from the strat
 16. [Recovery Notes](./recovery_notes.md)
 17. [Phase Definition of Done](./phase_definition_of_done.md)
 18. [Research / Decision Log](./research_decision_log.md)
+19. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
 
 ## Why This Order
 
-- The PRD fixes scope and acceptance criteria for the MVP.
+- The PRD fixes scope and acceptance criteria for the product spine.
 - Source graph, session file, and action schema are the main contracts the rest of the system depends on.
 - TUI and Ghost API become much easier once actions, state, and persistence are explicit.
 - The feral profile can then evolve as a style layer without destabilizing the core.
+- Accepted plans such as Source Timing Intelligence are linked here after the stable contracts they extend.
 
 ## User Learning Path
 
@@ -76,9 +79,14 @@ docs/
       README.md
       TEMPLATE.md
       index.md
+  assets/
+    brand/
+      README.md
   benchmarks/
     README.md
     jam_workflow_baseline_2026-04-17.md
+  plans/
+    source_timing_intelligence_plan.md
   reviews/
     whole_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-13.md
@@ -119,29 +127,31 @@ docs/
 
 ## Current Status
 
-- `prd_v1.md`: draft started
-- `execution_roadmap.md`: draft started
-- `workflow_conventions.md`: draft started
+- `prd_v1.md`: product spine and MVP framing captured
+- `execution_roadmap.md`: active roadmap with Source Timing Intelligence anchored
+- `workflow_conventions.md`: active contributor / agent workflow conventions captured
 - `jam_recipes.md`: learning-path guide captured
 - `recovery_notes.md`: current manual recovery and snapshot-payload label guidance captured
-- `specs/technology_stack_spec.md`: draft started
-- `specs/rust_engineering_guidelines.md`: draft started
-- `specs/source_graph_spec.md`: draft started
-- `specs/session_file_spec.md`: draft started
-- `specs/action_lexicon_spec.md`: draft started
-- `specs/replay_model_spec.md`: draft started
-- `specs/audio_core_spec.md`: draft started
-- `specs/tui_screen_spec.md`: draft started
-- `specs/ghost_api_spec.md`: draft started
-- `specs/preset_style_spec.md`: draft started
-- `specs/validation_benchmark_spec.md`: draft started
-- `specs/fixture_corpus_spec.md`: draft started
+- `specs/technology_stack_spec.md`: Stack Freeze v1 captured with current timing-contract clarification
+- `specs/rust_engineering_guidelines.md`: Rust engineering guidelines captured
+- `specs/source_graph_spec.md`: Source Graph v1 contract captured
+- `specs/session_file_spec.md`: Session file and recovery boundary captured
+- `specs/action_lexicon_spec.md`: action vocabulary and queue/commit semantics captured
+- `specs/replay_model_spec.md`: replay model and current allowlist captured
+- `specs/audio_core_spec.md`: audio core contract captured
+- `specs/tui_screen_spec.md`: TUI screen contract captured
+- `specs/ghost_api_spec.md`: Ghost Watch / Assist contract captured
+- `specs/preset_style_spec.md`: preset/style contract captured
+- `specs/validation_benchmark_spec.md`: validation and benchmark contract captured
+- `specs/fixture_corpus_spec.md`: fixture corpus contract captured
 - `specs/audio_qa_workflow_spec.md`: audio QA workflow plan captured
-- `phase_definition_of_done.md`: draft started
-- `research_decision_log.md`: draft started
+- `phase_definition_of_done.md`: phase DoD with current phase status captured
+- `research_decision_log.md`: architecture decisions captured
+- `plans/source_timing_intelligence_plan.md`: all-lane Rust-first timing intelligence plan captured
 - `archive/linear_issues/README.md`: archive policy started
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started
+- `assets/brand/README.md`: brand asset notes captured
 - `benchmarks/README.md`: benchmark archive policy started
 - `benchmarks/audio_qa_artifact_convention_2026-04-26.md`: audio QA baseline-vs-candidate artifact convention captured
 - `benchmarks/audio_qa_listening_review_template_2026-04-26.md`: local audio QA listening-review template captured
@@ -161,19 +171,37 @@ docs/
 - `benchmarks/w30_preview_smoke_listening_pack_2026-04-26.md`: W-30 preview local listening-pack convention captured
 - `benchmarks/listening_manifest_schema_policy_2026-04-29.md`: audio QA manifest schema policy captured
 - `benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`: audio QA manifest v1 field-level JSON contract captured
+- `benchmarks/observer_audio_correlation_template_2026-04-29.md`: observer/audio correlation template captured
+- `benchmarks/observer_audio_summary_json_contract_2026-04-29.md`: observer/audio summary JSON contract captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
 - `benchmarks/capture_do_next_readability_baseline_2026-04-25.md`: Capture `Do Next` readability baseline captured
+- `benchmarks/capture_pending_do_next_readability_baseline_2026-04-25.md`: Capture pending `Do Next` readability baseline captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17_w30_followup.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-18.md`: review captured
 - `reviews/jam_first_use_feedback_2026-04-18.md`: first-use UX feedback captured
+- `reviews/feral_policy_entry_audit_2026-04-26.md`: Feral policy entry audit captured
+- `reviews/mc202_mvp_exit_review_2026-04-26.md`: MC-202 MVP exit review captured
+- `reviews/periodic_scene_brain_tui_seam_review_2026-04-25.md`: Scene Brain TUI seam review captured
 - `reviews/scene_launch_audio_coupling_2026-04-25.md`: Scene launch to TR-909 audio-coupling audit captured
+- `reviews/periodic_jam_hierarchy_seam_review_2026-04-26.md`: Jam hierarchy seam review captured
+- `reviews/periodic_w30_capture_seam_review_2026-04-26.md`: W-30 capture seam review captured
 - `reviews/routine_audio_output_audit_2026-04-26.md`: README and Jam recipe control/audio proof audit captured
 - `reviews/w30_mvp_gap_review_2026-04-26.md`: W-30 MVP gap review captured
 - `reviews/w30_mvp_exit_review_2026-04-26.md`: W-30 MVP exit review captured
+- `reviews/scene_brain_mvp_gap_review_2026-04-26.md`: Scene Brain MVP gap review captured
+- `reviews/rust_hotspot_semantic_review_2026-04-29.md`: Rust hotspot semantic review captured
+- `reviews/p009_feral_policy_gap_review_2026-04-29.md`: Feral policy gap review captured
+- `reviews/p009_feral_policy_exit_review_2026-04-29.md`: Feral policy exit review captured
+- `reviews/p010_ghost_watch_assist_exit_review_2026-04-29.md`: Ghost Watch / Assist exit review captured
+- `reviews/p011_replay_hardening_checkpoint_2026-04-29.md`: P011 replay hardening checkpoint captured
+- `reviews/p011_qa_gate_periodic_review_2026-04-30.md`: P011 QA gate review captured
+- `reviews/p011_replay_recovery_codebase_review_2026-04-30.md`: P011 replay/recovery codebase review captured
 - `reviews/p011_replay_recovery_exit_checklist_2026-04-30.md`: P011 replay/recovery exit checklist captured
+- `reviews/snapshot_payload_hydration_boundary_2026-04-30.md`: snapshot payload hydration boundary review captured
+- `reviews/docs_consistency_review_2026-05-03.md`: docs consistency review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
@@ -197,4 +225,4 @@ docs/
 - `screenshots/w30_resample_lab_diagnostics_baseline.txt`: baseline captured
 - `screenshots/w30_diagnostics_baseline.txt`: baseline captured
 - `screenshots/w30_bank_forge_diagnostics_baseline.txt`: baseline captured
-- all other specs: not started
+- other review artifacts and screenshots are historical baselines unless referenced by the active roadmap, DoD, or workflow conventions

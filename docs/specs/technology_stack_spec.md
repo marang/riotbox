@@ -67,6 +67,7 @@ Clarification:
 
 - this is the current recommended implementation language for the sidecar, not an irreversible architecture commitment
 - the sidecar boundary should remain language-neutral enough that later implementations can move parts of the sidecar to `Rust` or another language if the contract remains stable
+- Source Timing Intelligence is a Rust-first product contract. Python or external MIR tooling may be used for research comparison, but the durable timing model, replay surface, Source Graph schema, QA gates, and runtime consumers must not depend on a Python-only implementation.
 
 ### 3.3 Core repository shape
 
