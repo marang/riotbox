@@ -152,6 +152,17 @@ bounded. It proves important seams, not complete product-grade recovery.
 This matrix is the current P011 snapshot-payload restore coverage index. It is
 not a full P011 exit declaration.
 
+The machine-checkable companion index lives at
+`docs/benchmarks/p011_replay_family_manifest.json` and is validated by:
+
+```bash
+just p011-replay-family-manifest
+```
+
+That validator checks that each claimed proof points at existing repo-local test
+files and test functions. It does not replace the tests themselves and must not
+be read as a full replay-from-origin claim.
+
 | Area | Covered suffix / family | Proof file | Output proof |
 | --- | --- | --- | --- |
 | Core hydration boundary | payload clone, cursor/identity rejection, target suffix execution | `crates/riotbox-core/src/replay/target_execution.rs` | state convergence and explicit rejection paths |

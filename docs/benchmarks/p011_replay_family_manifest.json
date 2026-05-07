@@ -1,0 +1,267 @@
+{
+  "schema": "riotbox.p011_replay_family_manifest.v1",
+  "schema_version": 1,
+  "project": "P011 | Pro Hardening",
+  "boundary": "Supported replay-family evidence for P011 exit tracking, not a full replay-executor claim.",
+  "families": [
+    {
+      "id": "core_replay_planning",
+      "name": "Core Replay Planning",
+      "status": "supported",
+      "covered_suffix": "commit ordering, snapshot anchor selection, target suffix planning",
+      "control_path": true,
+      "output_path": false,
+      "proofs": [
+        {
+          "path": "crates/riotbox-core/src/replay/plan/tests.rs",
+          "tests": [
+            "replay_plan_orders_actions_by_boundary_and_sequence",
+            "replay_target_plan_with_prior_anchor_replays_suffix_to_target"
+          ],
+          "command": "cargo test -p riotbox-core replay_target_plan -- --nocapture"
+        }
+      ],
+      "open_boundary": "Planning proof only; it does not execute musical output by itself."
+    },
+    {
+      "id": "core_structural_executor",
+      "name": "Core Structural Executor",
+      "status": "supported",
+      "covered_suffix": "transport stop, scene lock/unlock, duplicate-safe structural replay",
+      "control_path": true,
+      "output_path": false,
+      "proofs": [
+        {
+          "path": "crates/riotbox-core/src/replay/executor/tests/structural.rs",
+          "tests": [
+            "snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions",
+            "supported_action_list_documents_the_initial_executor_subset"
+          ],
+          "command": "cargo test -p riotbox-core snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions -- --nocapture"
+        }
+      ],
+      "open_boundary": "Structural state only; audible lane families require their own output-path proofs."
+    },
+    {
+      "id": "w30_cue_damage",
+      "name": "W-30 Cue and Damage Replay",
+      "status": "supported",
+      "covered_suffix": "browse anchor to trigger, promoted audition, and damage profile",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_replay.rs",
+          "tests": [
+            "w30_snapshot_payload_restore_runner_matches_committed_app_preview_output",
+            "w30_snapshot_payload_restore_hydrates_damage_profile_preview_output",
+            "w30_snapshot_payload_restore_hydrates_promoted_audition_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app w30_snapshot_payload_restore -- --nocapture"
+        }
+      ],
+      "open_boundary": "Does not claim every future W-30 gesture is replay-safe."
+    },
+    {
+      "id": "w30_artifact_replay",
+      "name": "W-30 Artifact Replay",
+      "status": "supported",
+      "covered_suffix": "loop-freeze, promote.resample, promote.capture_to_pad for explicit artifacts",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_loop_freeze_artifact_replay.rs",
+          "tests": [
+            "w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_resample_artifact_replay.rs",
+          "tests": [
+            "w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_output -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_resample_promotion_replay.rs",
+          "tests": [
+            "w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_artifact"
+          ],
+          "command": "cargo test -p riotbox-app w30_snapshot_payload_restore_replays_promote_capture_to_pad_for_resample_artifact -- --nocapture"
+        }
+      ],
+      "open_boundary": "Artifact identity must stay explicit; missing or ambiguous artifacts are not silently repaired."
+    },
+    {
+      "id": "capture_artifact_replay",
+      "name": "Capture Artifact Replay",
+      "status": "supported",
+      "covered_suffix": "capture.now, capture.loop, capture.bar_group, w30.capture_to_pad source-window artifacts",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_capture_now_replay.rs",
+          "tests": [
+            "snapshot_payload_restore_hydrates_capture_now_artifact_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_now_artifact_preview_output -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_capture_loop_replay.rs",
+          "tests": [
+            "snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_loop_artifact_preview_output -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_capture_bar_group_replay.rs",
+          "tests": [
+            "snapshot_payload_restore_hydrates_capture_bar_group_artifact_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app snapshot_payload_restore_hydrates_capture_bar_group_artifact_preview_output -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_capture_to_pad_replay.rs",
+          "tests": [
+            "w30_snapshot_payload_restore_hydrates_capture_to_pad_artifact_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app w30_snapshot_payload_restore_hydrates_capture_to_pad_artifact_preview_output -- --nocapture"
+        }
+      ],
+      "open_boundary": "Only persisted source-window-backed captures are covered."
+    },
+    {
+      "id": "tr909_support_replay",
+      "name": "TR-909 Support Replay",
+      "status": "supported",
+      "covered_suffix": "fill to slam, takeover to release, reinforce to scene lock",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/tr909_replay.rs",
+          "tests": [
+            "tr909_snapshot_payload_restore_runner_matches_committed_app_projection",
+            "tr909_snapshot_payload_restore_hydrates_takeover_release_projection",
+            "tr909_snapshot_payload_restore_hydrates_reinforce_scene_lock_projection"
+          ],
+          "command": "cargo test -p riotbox-app tr909_snapshot_payload_restore -- --nocapture"
+        }
+      ],
+      "open_boundary": "Does not prove future source-grid timing correctness."
+    },
+    {
+      "id": "mc202_phrase_replay",
+      "name": "MC-202 Phrase Replay",
+      "status": "supported",
+      "covered_suffix": "follower to answer, pressure, instigator, phrase mutation",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/mc202_restore_replay.rs",
+          "tests": [
+            "mc202_snapshot_payload_restore_hydrates_answer_projection",
+            "mc202_snapshot_payload_restore_hydrates_pressure_projection",
+            "mc202_snapshot_payload_restore_hydrates_instigator_projection",
+            "mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection"
+          ],
+          "command": "cargo test -p riotbox-app mc202_snapshot_payload_restore_hydrates -- --nocapture"
+        }
+      ],
+      "open_boundary": "Phrase replay is covered for current recipe families, not arbitrary future bass generation."
+    },
+    {
+      "id": "scene_movement_replay",
+      "name": "Scene Movement Replay",
+      "status": "supported",
+      "covered_suffix": "scene.launch anchor to scene.restore suffix",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/scene_replay.rs",
+          "tests": [
+            "graph_aware_scene_replay_matches_committed_movement_projection",
+            "scene_restore_snapshot_payload_restore_matches_committed_movement_projection"
+          ],
+          "command": "cargo test -p riotbox-app scene_restore_snapshot_payload_restore_matches_committed_movement_projection -- --nocapture"
+        }
+      ],
+      "open_boundary": "Graph-aware movement is bounded to current launch/restore behavior."
+    },
+    {
+      "id": "stage_style_supported_seam",
+      "name": "Stage-Style Supported Seam",
+      "status": "supported",
+      "covered_suffix": "scene.launch plus MC-202 answer anchor to TR-909 fill/slam and scene.restore suffix",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/stage_style_snapshot_convergence.rs",
+          "tests": [
+            "stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix"
+          ],
+          "command": "cargo test -p riotbox-app stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix -- --nocapture"
+        }
+      ],
+      "open_boundary": "Still a bounded stage-style seam, not a soak test or full live-session replay."
+    },
+    {
+      "id": "save_reload_payload_readiness",
+      "name": "Save / Reload Payload Readiness",
+      "status": "supported",
+      "covered_suffix": "latest explicit snapshot payload materialization and reload readiness",
+      "control_path": true,
+      "output_path": false,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/persistence_runtime_view.rs",
+          "tests": [
+            "save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it"
+          ],
+          "command": "cargo test -p riotbox-app save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it -- --nocapture"
+        }
+      ],
+      "open_boundary": "Payload readiness is a restore boundary, not automatic recovery."
+    },
+    {
+      "id": "recovery_diagnostics",
+      "name": "Recovery Diagnostics",
+      "status": "supported",
+      "covered_suffix": "read-only candidate diagnostics, replay-family labels, and manual-choice dry-run evidence",
+      "control_path": true,
+      "output_path": false,
+      "proofs": [
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/recovery_surface.rs",
+          "tests": [
+            "recovery_surface_lists_candidates_without_selecting_or_mutating_files",
+            "recovery_surface_reports_blocked_replay_status_for_parseable_candidates"
+          ],
+          "command": "cargo test -p riotbox-app recovery_surface -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/recovery_replay_family_diagnostics.rs",
+          "tests": [
+            "recovery_surface_reports_replay_families_for_supported_mixed_suffix",
+            "recovery_surface_reports_replay_family_for_unsupported_suffix"
+          ],
+          "command": "cargo test -p riotbox-app recovery_surface_reports_replay_families -- --nocapture"
+        }
+      ],
+      "open_boundary": "Diagnostics remain non-mutating and do not select a recovery candidate."
+    }
+  ],
+  "known_open_boundaries": [
+    "full replay-from-origin for every replay-relevant action family",
+    "interactive user-confirmed recovery restore execution",
+    "real host interrupted-session rehearsal",
+    "product export reproducibility beyond current helper smoke gates",
+    "source-grid timing intelligence and drift correction"
+  ]
+}

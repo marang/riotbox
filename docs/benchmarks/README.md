@@ -28,6 +28,8 @@ Current benchmark artifacts:
   Schema version and compatibility policy for local audio QA `manifest.json` files.
 - [listening_manifest_v1_json_contract_2026-04-29.md](./listening_manifest_v1_json_contract_2026-04-29.md)
   Field-level JSON contract for local audio QA listening manifest schema version 1.
+- [p011_replay_family_manifest.json](./p011_replay_family_manifest.json)
+  Machine-checkable P011 supported replay-family evidence index.
 - [representative_source_showcase_2026-05-07.md](./representative_source_showcase_2026-05-07.md)
   Local multi-source Feral grid showcase generator for source-response review after the P011 diversity fixes.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
