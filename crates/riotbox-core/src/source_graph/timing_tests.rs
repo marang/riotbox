@@ -20,21 +20,32 @@ mod timing_tests {
         let weak_case = case_by_id(cases, "fx_timing_weak_noisy_123");
         let ambiguous_case = case_by_id(cases, "fx_timing_halftime_140_ambiguous");
 
-        let clean_timing = timing_model_from_case(clean_case);
+        let clean_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
         assert_eq!(clean_timing.effective_timing_quality(), TimingQuality::High);
         assert_eq!(
             clean_timing.effective_degraded_policy(),
             TimingDegradedPolicy::Locked
         );
+        assert_eq!(clean_timing.beat_grid.len(), 32);
+        assert_eq!(clean_timing.bar_grid.len(), 8);
+        assert_eq!(clean_timing.phrase_grid.len(), 2);
+        assert_eq!(clean_timing.hypotheses[0].anchors.len(), 1);
 
-        let weak_timing = timing_model_from_case(weak_case);
+        let weak_timing = analyze_source_timing_seed(&analysis_seed_from_case(weak_case));
         assert_eq!(weak_timing.effective_timing_quality(), TimingQuality::Low);
         assert_eq!(
             weak_timing.effective_degraded_policy(),
             TimingDegradedPolicy::ManualConfirm
         );
+        assert!(weak_timing.phrase_grid.is_empty());
+        assert!(
+            weak_timing
+                .warnings
+                .iter()
+                .any(|warning| warning.code == TimingWarningCode::LowTimingConfidence)
+        );
 
-        let ambiguous_timing = timing_model_from_case(ambiguous_case);
+        let ambiguous_timing = analyze_source_timing_seed(&analysis_seed_from_case(ambiguous_case));
         assert_eq!(
             ambiguous_timing.primary_hypothesis().map(|hypothesis| {
                 (
@@ -50,6 +61,14 @@ mod timing_tests {
             ))
         );
         assert_eq!(ambiguous_timing.hypotheses.len(), 2);
+        assert_eq!(ambiguous_timing.hypotheses[1].kind, TimingHypothesisKind::HalfTime);
+        assert_eq!(ambiguous_timing.hypotheses[1].bpm, 70.0);
+        assert!(
+            ambiguous_timing.hypotheses[1]
+                .beat_grid
+                .windows(2)
+                .all(|window| window[0].time_seconds < window[1].time_seconds)
+        );
     }
 
     fn case_by_id<'a>(
@@ -64,7 +83,7 @@ mod timing_tests {
             .expect("fixture case")
     }
 
-    fn timing_model_from_case(case: &serde_json::Value) -> TimingModel {
+    fn analysis_seed_from_case(case: &serde_json::Value) -> SourceTimingAnalysisSeed {
         let expected = case.get("expected").expect("expected timing contract");
         let meter = MeterHint {
             beats_per_bar: expected
@@ -80,88 +99,54 @@ mod timing_tests {
             .get("primary_bpm")
             .and_then(serde_json::Value::as_f64)
             .expect("primary_bpm") as f32;
-        let quality = timing_quality_from_label(
-            expected
-                .get("timing_quality")
-                .and_then(serde_json::Value::as_str),
-        );
-        let policy = degraded_policy_from_label(
-            expected
-                .get("degraded_policy")
-                .and_then(serde_json::Value::as_str),
-        );
-        let warnings = timing_warnings_from_expected(expected);
-        let mut hypotheses = vec![TimingHypothesis {
-            hypothesis_id: "primary".into(),
-            kind: TimingHypothesisKind::Primary,
-            bpm: primary_bpm,
+
+        SourceTimingAnalysisSeed {
+            fixture_id: case
+                .get("fixture_id")
+                .and_then(serde_json::Value::as_str)
+                .expect("fixture_id")
+                .into(),
+            duration_seconds: case
+                .get("duration_seconds")
+                .and_then(serde_json::Value::as_f64)
+                .expect("duration_seconds") as f32,
+            primary_bpm,
             meter,
-            confidence: expected
+            quality: timing_quality_from_label(
+                expected
+                    .get("timing_quality")
+                    .and_then(serde_json::Value::as_str),
+            ),
+            degraded_policy: degraded_policy_from_label(
+                expected
+                    .get("degraded_policy")
+                    .and_then(serde_json::Value::as_str),
+            ),
+            beat_hit_tolerance_ms: expected
+                .get("beat_hit_tolerance_ms")
+                .and_then(serde_json::Value::as_f64)
+                .expect("beat_hit_tolerance_ms") as f32,
+            downbeat_tolerance_ms: expected
+                .get("downbeat_tolerance_ms")
+                .and_then(serde_json::Value::as_f64)
+                .expect("downbeat_tolerance_ms") as f32,
+            expected_beat_count_min: u32_from_expected(expected, "expected_beat_count_min"),
+            expected_bar_count_min: u32_from_expected(expected, "expected_bar_count_min"),
+            expected_phrase_count_min: u32_from_expected(expected, "expected_phrase_count_min"),
+            confidence_floor: expected
                 .get("confidence_floor")
                 .and_then(serde_json::Value::as_f64)
                 .expect("confidence_floor") as f32,
-            score: 1.0,
-            beat_grid: Vec::new(),
-            bar_grid: Vec::new(),
-            phrase_grid: Vec::new(),
-            anchors: Vec::new(),
-            drift: Vec::new(),
-            groove: Vec::new(),
-            quality,
-            warnings: warnings.clone(),
-            provenance: vec!["fixture-catalog".into()],
-        }];
-
-        if let Some(alternatives) = expected
-            .get("alternatives")
-            .and_then(serde_json::Value::as_array)
-        {
-            for alternative in alternatives {
-                hypotheses.push(TimingHypothesis {
-                    hypothesis_id: alternative
-                        .get("kind")
-                        .and_then(serde_json::Value::as_str)
-                        .unwrap_or("ambiguous")
-                        .into(),
-                    kind: timing_hypothesis_kind_from_label(
-                        alternative.get("kind").and_then(serde_json::Value::as_str),
-                    ),
-                    bpm: alternative
-                        .get("bpm")
-                        .and_then(serde_json::Value::as_f64)
-                        .expect("alternative bpm") as f32,
-                    meter,
-                    confidence: alternative
-                        .get("confidence_floor")
-                        .and_then(serde_json::Value::as_f64)
-                        .expect("alternative confidence_floor") as f32,
-                    score: 0.5,
-                    beat_grid: Vec::new(),
-                    bar_grid: Vec::new(),
-                    phrase_grid: Vec::new(),
-                    anchors: Vec::new(),
-                    drift: Vec::new(),
-                    groove: Vec::new(),
-                    quality: TimingQuality::Low,
-                    warnings: warnings.clone(),
-                    provenance: vec!["fixture-catalog-alternative".into()],
-                });
-            }
+            warnings: timing_warning_codes_from_expected(expected),
+            alternatives: timing_alternatives_from_expected(expected),
         }
+    }
 
-        TimingModel {
-            bpm_estimate: Some(primary_bpm),
-            bpm_confidence: hypotheses[0].confidence,
-            meter_hint: Some(meter),
-            beat_grid: Vec::new(),
-            bar_grid: Vec::new(),
-            phrase_grid: Vec::new(),
-            hypotheses,
-            primary_hypothesis_id: Some("primary".into()),
-            quality,
-            warnings,
-            degraded_policy: policy,
-        }
+    fn u32_from_expected(expected: &serde_json::Value, field: &str) -> u32 {
+        expected
+            .get(field)
+            .and_then(serde_json::Value::as_u64)
+            .expect(field) as u32
     }
 
     fn timing_quality_from_label(label: Option<&str>) -> TimingQuality {
@@ -193,7 +178,34 @@ mod timing_tests {
         }
     }
 
-    fn timing_warnings_from_expected(expected: &serde_json::Value) -> Vec<TimingWarning> {
+    fn timing_alternatives_from_expected(
+        expected: &serde_json::Value,
+    ) -> Vec<SourceTimingAlternativeSeed> {
+        expected
+            .get("alternatives")
+            .and_then(serde_json::Value::as_array)
+            .map(|alternatives| {
+                alternatives
+                    .iter()
+                    .map(|alternative| SourceTimingAlternativeSeed {
+                        kind: timing_hypothesis_kind_from_label(
+                            alternative.get("kind").and_then(serde_json::Value::as_str),
+                        ),
+                        bpm: alternative
+                            .get("bpm")
+                            .and_then(serde_json::Value::as_f64)
+                            .expect("alternative bpm") as f32,
+                        confidence_floor: alternative
+                            .get("confidence_floor")
+                            .and_then(serde_json::Value::as_f64)
+                            .expect("alternative confidence_floor") as f32,
+                    })
+                    .collect()
+            })
+            .unwrap_or_default()
+    }
+
+    fn timing_warning_codes_from_expected(expected: &serde_json::Value) -> Vec<TimingWarningCode> {
         expected
             .get("warnings")
             .and_then(serde_json::Value::as_array)
@@ -201,10 +213,7 @@ mod timing_tests {
                 warnings
                     .iter()
                     .filter_map(serde_json::Value::as_str)
-                    .map(|warning| TimingWarning {
-                        code: timing_warning_code_from_label(warning),
-                        message: warning.replace('_', " "),
-                    })
+                    .map(timing_warning_code_from_label)
                     .collect()
             })
             .unwrap_or_default()
