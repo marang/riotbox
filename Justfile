@@ -18,6 +18,7 @@ ci:
     cargo test
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
+    just p011-exit-evidence-manifest-validator-fixtures
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
 
@@ -157,6 +158,10 @@ p011-replay-family-manifest manifest="docs/benchmarks/p011_replay_family_manifes
 
 p011-exit-evidence-manifest manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
     python3 scripts/validate_p011_exit_evidence_manifest.py "{{manifest}}"
+
+p011-exit-evidence-manifest-validator-fixtures:
+    python3 scripts/validate_p011_exit_evidence_manifest.py docs/benchmarks/p011_exit_evidence_manifest.json
+    if python3 scripts/validate_p011_exit_evidence_manifest.py docs/benchmarks/fixtures/p011_exit_evidence_manifest_missing_just_recipe.json; then echo "expected missing just recipe fixture to fail" >&2; exit 1; fi
 
 source-showcase-diversity-validator-fixtures:
     python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08

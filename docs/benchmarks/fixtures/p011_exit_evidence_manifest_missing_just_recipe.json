@@ -1,0 +1,76 @@
+{
+  "schema": "riotbox.p011_exit_evidence_manifest.v1",
+  "schema_version": 1,
+  "project": "P011 | Pro Hardening",
+  "boundary": "Invalid fixture: proof command references a missing just recipe.",
+  "status": "active_not_exit_ready",
+  "known_open_boundaries": [
+    "fixture keeps the P011 evidence validator command-reference check honest"
+  ],
+  "categories": [
+    {
+      "id": "replay",
+      "name": "Replay Evidence",
+      "status": "partial",
+      "control_path": true,
+      "output_path": true,
+      "open_boundary": "invalid fixture",
+      "proofs": [
+        {
+          "path": "docs/benchmarks/p011_replay_family_manifest.json",
+          "command": "just missing-p011-exit-evidence-recipe",
+          "evidence_type": "manifest",
+          "why": "The fixture should fail because this recipe does not exist."
+        }
+      ]
+    },
+    {
+      "id": "recovery",
+      "name": "Recovery Evidence",
+      "status": "partial",
+      "control_path": true,
+      "output_path": false,
+      "open_boundary": "fixture filler",
+      "proofs": [
+        {
+          "path": "docs/reviews/p011_replay_recovery_exit_checklist_2026-04-30.md",
+          "command": "just p011-exit-evidence-manifest",
+          "evidence_type": "review",
+          "why": "Keeps the fixture structurally complete."
+        }
+      ]
+    },
+    {
+      "id": "export_reproducibility",
+      "name": "Export Reproducibility Evidence",
+      "status": "partial",
+      "control_path": true,
+      "output_path": true,
+      "open_boundary": "fixture filler",
+      "proofs": [
+        {
+          "path": "docs/benchmarks/product_export_reproducibility_boundary_2026-05-07.md",
+          "command": "just product-export-reproducibility-smoke",
+          "evidence_type": "benchmark_doc",
+          "why": "Keeps the fixture structurally complete."
+        }
+      ]
+    },
+    {
+      "id": "stage_style_stability",
+      "name": "Stage-Style Stability Evidence",
+      "status": "partial",
+      "control_path": true,
+      "output_path": true,
+      "open_boundary": "fixture filler",
+      "proofs": [
+        {
+          "path": "docs/benchmarks/stage_style_stability_proof_2026-05-07.md",
+          "command": "just stage-style-stability-proof",
+          "evidence_type": "benchmark_doc",
+          "why": "Keeps the fixture structurally complete."
+        }
+      ]
+    }
+  ]
+}

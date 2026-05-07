@@ -189,7 +189,7 @@ Current review:
 Current bounded gates:
 
 - `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence.
-- `just p011-exit-evidence-manifest` validates a machine-checkable P011 exit evidence index across replay, recovery, export reproducibility, and stage-style stability categories while keeping known open boundaries explicit.
+- `just p011-exit-evidence-manifest` validates a machine-checkable P011 exit evidence index across replay, recovery, export reproducibility, and stage-style stability categories while keeping known open boundaries explicit, including repo-local `just` recipe references for proof commands.
 - `just stage-style-restore-diversity-probe` adds a richer replay-safe W-30 / TR-909 / MC-202 control path correlated with generated full-grid output evidence.
 - `just stage-style-snapshot-convergence-smoke` proves a supported Scene / MC-202 / TR-909 stage-style suffix converges from a mid-run snapshot payload to the same final mix buffer as the committed path.
 - `just stage-style-stability-smoke` / `just stage-style-stability-proof` repeats the richer generated run, requires stable full-mix hashes plus non-collapsed observer/audio summaries across repetitions, and validates a normalized proof manifest for run count, observer/audio evidence, commit-boundary coverage, and stable output hash.

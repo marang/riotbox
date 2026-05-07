@@ -380,6 +380,7 @@ just observer-audio-correlate-json-fixture
 just user-session-observer-validator-fixtures
 just listening-manifest-validator-fixtures
 just p011-exit-evidence-manifest
+just p011-exit-evidence-manifest-validator-fixtures
 just source-showcase-diversity-validator-fixtures
 just source-showcase-diversity-report-fixtures
 just source-showcase-diversity "PACK_A PACK_B"

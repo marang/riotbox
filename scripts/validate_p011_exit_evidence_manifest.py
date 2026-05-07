@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 import sys
 from pathlib import Path
 from typing import Any
@@ -34,7 +35,8 @@ def main() -> int:
 
     try:
         manifest = json.loads(manifest_path.read_text())
-        validate_manifest(manifest)
+        just_recipes = load_just_recipes()
+        validate_manifest(manifest, just_recipes)
     except (OSError, ValueError, TypeError) as error:
         print(f"invalid P011 exit evidence manifest: {error}", file=sys.stderr)
         return 1
@@ -48,7 +50,53 @@ def main() -> int:
     return 0
 
 
-def validate_manifest(manifest: Any) -> None:
+def load_just_recipes() -> set[str]:
+    try:
+        result = subprocess.run(
+            ["just", "--summary"],
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except FileNotFoundError as error:
+        return load_justfile_recipes(Path("Justfile"), error)
+    except subprocess.CalledProcessError as error:
+        stderr = error.stderr.strip()
+        detail = f": {stderr}" if stderr else ""
+        raise ValueError(f"failed to list just recipes{detail}") from error
+
+    recipes = set(result.stdout.split())
+    if not recipes:
+        raise ValueError("just --summary returned no recipes")
+    return recipes
+
+
+def load_justfile_recipes(path: Path, missing_just_error: FileNotFoundError) -> set[str]:
+    try:
+        text = path.read_text()
+    except OSError as error:
+        raise ValueError(
+            "just is unavailable and Justfile could not be read to validate recipe references"
+        ) from missing_just_error
+
+    recipes: set[str] = set()
+    for line in text.splitlines():
+        stripped = line.strip()
+        if not stripped or line[0].isspace() or stripped.startswith("#") or ":" not in stripped:
+            continue
+        recipe_head = stripped.split(":", 1)[0].strip()
+        if not recipe_head:
+            continue
+        recipe = recipe_head.split()[0]
+        if "=" not in recipe:
+            recipes.add(recipe)
+
+    if not recipes:
+        raise ValueError("Justfile contains no recipe definitions") from missing_just_error
+    return recipes
+
+
+def validate_manifest(manifest: Any, just_recipes: set[str]) -> None:
     require_object(manifest, "manifest")
     require_equal(manifest, "schema", SCHEMA)
     require_equal(manifest, "schema_version", SCHEMA_VERSION)
@@ -66,7 +114,7 @@ def validate_manifest(manifest: Any) -> None:
     ids: set[str] = set()
     output_path_count = 0
     for index, category in enumerate(categories):
-        category_id = validate_category(category, index)
+        category_id = validate_category(category, index, just_recipes)
         if category_id in ids:
             raise ValueError(f"duplicate category id: {category_id}")
         ids.add(category_id)
@@ -80,7 +128,7 @@ def validate_manifest(manifest: Any) -> None:
         raise ValueError("expected at least one output-path evidence category")
 
 
-def validate_category(category: Any, index: int) -> str:
+def validate_category(category: Any, index: int, just_recipes: set[str]) -> str:
     require_object(category, f"category {index}")
     category_id = require_string(category, "id")
     require_string(category, "name")
@@ -95,11 +143,11 @@ def validate_category(category: Any, index: int) -> str:
     if not proofs:
         raise ValueError(f"{category_id}: proofs must not be empty")
     for proof_index, proof in enumerate(proofs):
-        validate_proof(category_id, proof, proof_index)
+        validate_proof(category_id, proof, proof_index, just_recipes)
     return category_id
 
 
-def validate_proof(category_id: str, proof: Any, proof_index: int) -> None:
+def validate_proof(category_id: str, proof: Any, proof_index: int, just_recipes: set[str]) -> None:
     require_object(proof, f"{category_id}.proofs[{proof_index}]")
     path = Path(require_string(proof, "path"))
     command = require_string(proof, "command")
@@ -107,8 +155,26 @@ def validate_proof(category_id: str, proof: Any, proof_index: int) -> None:
     require_string(proof, "why")
     if not path.exists():
         raise ValueError(f"{category_id}: proof path does not exist: {path}")
-    if not (command.startswith("just ") or command.startswith("cargo test")):
-        raise ValueError(f"{category_id}: proof command must be just or cargo test: {command}")
+    validate_command(category_id, command, just_recipes)
+
+
+def validate_command(category_id: str, command: str, just_recipes: set[str]) -> None:
+    if command == "cargo test" or command.startswith("cargo test "):
+        return
+
+    if command.startswith("just "):
+        parts = command.split()
+        if len(parts) < 2:
+            raise ValueError(f"{category_id}: proof command is missing just recipe: {command}")
+        recipe = parts[1]
+        if recipe not in just_recipes:
+            raise ValueError(
+                f"{category_id}: proof command references unknown just recipe "
+                f"{recipe!r}: {command}"
+            )
+        return
+
+    raise ValueError(f"{category_id}: proof command must be just or cargo test: {command}")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
