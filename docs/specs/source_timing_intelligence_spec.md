@@ -430,6 +430,19 @@ candidate `TimingHypothesis` entries:
 - it must preserve half-time / double-time alternatives when plausible
 - downbeat and phrase confidence remain explicitly uncertain
 
+The first beat-period scoring detector v0 scores candidate beat periods from
+probe onset evidence before selecting a primary BPM candidate:
+
+- candidate periods are derived from bounded onset-distance evidence
+- primary selection is score-first but conservatively tie-broken toward the
+  observed median adjacent onset distance
+- half-time, double-time, and ambiguous period alternatives remain visible when
+  their scores stay close to the primary
+- hypothesis provenance includes
+  `source-timing-probe.beat-period-score.v0`
+- this is still a bounded onset-period scorer, not a production beat/downbeat
+  detector
+
 The preliminary downbeat ambiguity scaffold may score beat-phase candidates
 inside the current meter and add `AlternateDownbeat` hypotheses when multiple
 bar-start phases are similarly plausible. This is still not production downbeat

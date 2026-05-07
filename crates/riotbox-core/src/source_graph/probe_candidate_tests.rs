@@ -20,6 +20,11 @@ fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
     assert!(!timing.beat_grid.is_empty());
     assert!(has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
     assert!(has_warning(&timing, TimingWarningCode::PhraseUncertain));
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    assert!(primary.score > 0.0);
+    assert!(primary
+        .provenance
+        .contains(&"source-timing-probe.beat-period-score.v0".into()));
 }
 
 #[test]
@@ -39,6 +44,50 @@ fn source_timing_probe_bpm_candidates_preserve_half_and_double_time_ambiguity() 
         .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::DoubleTime));
     assert!(has_warning(&timing, TimingWarningCode::HalfTimePossible));
     assert!(has_warning(&timing, TimingWarningCode::DoubleTimePossible));
+}
+
+#[test]
+fn source_timing_probe_bpm_candidates_preserve_period_score_ambiguity() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input(
+            "period-ambiguous-120",
+            4.0,
+            &[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    assert_bpm_close(timing.bpm_estimate, 120.0);
+    assert!(timing
+        .hypotheses
+        .iter()
+        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::HalfTime));
+    assert!(timing
+        .hypotheses
+        .iter()
+        .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::DoubleTime));
+    assert!(timing.hypotheses.iter().all(|hypothesis| hypothesis
+        .provenance
+        .contains(&"source-timing-probe.beat-period-score.v0".into())));
+}
+
+#[test]
+fn source_timing_probe_bpm_candidates_score_uneven_onsets_without_collapsing() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input(
+            "uneven-120",
+            4.0,
+            &[0.0, 0.5, 1.01, 1.52, 2.0, 2.49, 3.01, 3.48],
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    assert_bpm_close(timing.bpm_estimate, 120.0);
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    assert_eq!(primary.kind, TimingHypothesisKind::Primary);
+    assert!(primary.score > 0.0);
+    assert!(!primary.beat_grid.is_empty());
+    assert!(has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
 }
 
 #[test]

@@ -1,19 +1,28 @@
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct ProbeBpmHypothesisScoring {
+    confidence: Confidence,
+    beat_period_score: f32,
+    downbeat_score: f32,
+}
+
 fn probe_bpm_hypothesis(
     hypothesis_id: String,
     kind: TimingHypothesisKind,
     bpm: f32,
-    confidence: Confidence,
+    scoring: ProbeBpmHypothesisScoring,
     downbeat_offset_beats: u8,
-    downbeat_score: f32,
     input: &SourceTimingProbeBpmCandidateInput,
 ) -> TimingHypothesis {
+    let confidence = scoring.confidence;
+    let hypothesis_score =
+        confidence * scoring.beat_period_score.clamp(0.0, 1.0) * scoring.downbeat_score.max(0.0);
     TimingHypothesis {
         hypothesis_id,
         kind,
         bpm,
         meter: input.meter,
         confidence,
-        score: confidence * downbeat_score.max(0.0),
+        score: hypothesis_score,
         beat_grid: probe_candidate_beat_grid(input.duration_seconds, bpm, confidence),
         bar_grid: probe_candidate_bar_grid(
             input.duration_seconds,
@@ -21,7 +30,7 @@ fn probe_bpm_hypothesis(
             confidence,
             input.meter,
             downbeat_offset_beats,
-            downbeat_score,
+            scoring.downbeat_score,
         ),
         phrase_grid: Vec::new(),
         anchors: normalized_onset_times(input)
@@ -39,6 +48,7 @@ fn probe_bpm_hypothesis(
                 tags: vec![
                     "probe_onset".into(),
                     "bpm_candidate".into(),
+                    "period_scored".into(),
                     format!("downbeat_phase_{}", downbeat_offset_beats + 1),
                 ],
             })
@@ -47,7 +57,11 @@ fn probe_bpm_hypothesis(
         groove: Vec::new(),
         quality: TimingQuality::Medium,
         warnings: Vec::new(),
-        provenance: vec!["source-timing-probe.bpm-candidate".into(), input.source_id.clone()],
+        provenance: vec![
+            "source-timing-probe.bpm-candidate".into(),
+            "source-timing-probe.beat-period-score.v0".into(),
+            input.source_id.clone(),
+        ],
     }
 }
 
@@ -70,7 +84,9 @@ fn probe_bpm_warning_message(
     input: &SourceTimingProbeBpmCandidateInput,
 ) -> &'static str {
     match code {
-        TimingWarningCode::AmbiguousDownbeat => "BPM candidate has no downbeat scoring yet",
+        TimingWarningCode::AmbiguousDownbeat => {
+            "BPM candidate has only preliminary downbeat scoring"
+        }
         TimingWarningCode::PhraseUncertain => "BPM candidate has no phrase boundary scoring yet",
         TimingWarningCode::HalfTimePossible => "half-time BPM candidate preserved",
         TimingWarningCode::DoubleTimePossible => "double-time BPM candidate preserved",
