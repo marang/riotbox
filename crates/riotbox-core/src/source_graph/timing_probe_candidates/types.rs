@@ -35,6 +35,30 @@ impl Default for SourceTimingProbeBpmCandidatePolicy {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct SourceTimingProbeBeatEvidenceReport {
+    pub schema: &'static str,
+    pub schema_version: u32,
+    pub source_id: String,
+    pub onset_count: usize,
+    pub candidate_count: usize,
+    pub primary_bpm: Option<f32>,
+    pub primary_period_seconds: Option<f32>,
+    pub primary_score: Option<f32>,
+    pub primary_matched_onset_ratio: Option<f32>,
+    pub primary_median_distance_ratio: Option<f32>,
+    pub alternate_candidate_count: usize,
+    pub status: SourceTimingProbeBeatEvidenceStatus,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SourceTimingProbeBeatEvidenceStatus {
+    Unavailable,
+    Weak,
+    Stable,
+    Ambiguous,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingCandidateConfidenceReport {
     pub schema: &'static str,
     pub schema_version: u32,

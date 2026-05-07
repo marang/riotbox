@@ -4,9 +4,10 @@ use super::*;
 use crate::source_audio::{SourceAudioCache, write_interleaved_pcm16_wav};
 use riotbox_core::source_graph::{
     MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingCandidatePhraseStatus,
-    SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy,
-    TimingHypothesisKind, TimingQuality, TimingWarningCode,
-    source_timing_candidate_confidence_report, timing_model_from_probe_bpm_candidates,
+    SourceTimingProbeBeatEvidenceStatus, SourceTimingProbeBpmCandidatePolicy,
+    SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy, TimingHypothesisKind, TimingQuality,
+    TimingWarningCode, source_timing_candidate_confidence_report,
+    source_timing_probe_beat_evidence_report, timing_model_from_probe_bpm_candidates,
     timing_model_from_probe_diagnostics,
 };
 
@@ -160,6 +161,7 @@ fn source_timing_probe_candidate_confidence_reports_phrase_grid_for_long_accente
             min_onset_flux: 0.01,
         },
     );
+    let candidate_policy = focused_120_bpm_policy();
     let timing = timing_model_from_probe_bpm_candidates(
         &probe.bpm_candidate_input(
             "accented-phrase-grid",
@@ -168,12 +170,31 @@ fn source_timing_probe_candidate_confidence_reports_phrase_grid_for_long_accente
                 beat_unit: 4,
             },
         ),
-        SourceTimingProbeBpmCandidatePolicy::default(),
+        candidate_policy,
+    );
+    let beat_evidence = source_timing_probe_beat_evidence_report(
+        &probe.bpm_candidate_input(
+            "accented-phrase-grid",
+            MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+        ),
+        candidate_policy,
     );
     let report = source_timing_candidate_confidence_report(&timing);
 
     let bpm = timing.bpm_estimate.expect("bpm estimate");
     assert!((bpm - 120.0).abs() <= 0.01, "{bpm}");
+    assert_eq!(
+        beat_evidence.status,
+        SourceTimingProbeBeatEvidenceStatus::Stable
+    );
+    assert!(
+        beat_evidence
+            .primary_matched_onset_ratio
+            .is_some_and(|ratio| ratio >= 0.95)
+    );
     assert_eq!(
         report.primary_phrase_status,
         SourceTimingCandidatePhraseStatus::Stable
@@ -332,6 +353,14 @@ fn accented_phrase_grid_samples() -> Vec<f32> {
         add_impulse(&mut samples, index * 500, 16, amplitude);
     }
     samples
+}
+
+fn focused_120_bpm_policy() -> SourceTimingProbeBpmCandidatePolicy {
+    SourceTimingProbeBpmCandidatePolicy {
+        min_bpm: 80.0,
+        max_bpm: 180.0,
+        ..SourceTimingProbeBpmCandidatePolicy::default()
+    }
 }
 
 fn impulse_train_samples(

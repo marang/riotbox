@@ -374,6 +374,7 @@ just source-timing-bpm-candidates
 just source-timing-downbeat-ambiguity
 just source-timing-drift-report
 just source-timing-phrase-grid
+just source-timing-beat-evidence
 just source-timing-candidate-confidence-report
 just mem-status
 just mem-search "replay truth"
