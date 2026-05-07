@@ -3,10 +3,11 @@ use tempfile::tempdir;
 use super::*;
 use crate::source_audio::{SourceAudioCache, write_interleaved_pcm16_wav};
 use riotbox_core::source_graph::{
-    MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingProbeBpmCandidatePolicy,
-    SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy, TimingHypothesisKind, TimingQuality,
-    TimingWarningCode, source_timing_candidate_confidence_report,
-    timing_model_from_probe_bpm_candidates, timing_model_from_probe_diagnostics,
+    MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingCandidatePhraseStatus,
+    SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy,
+    TimingHypothesisKind, TimingQuality, TimingWarningCode,
+    source_timing_candidate_confidence_report, timing_model_from_probe_bpm_candidates,
+    timing_model_from_probe_diagnostics,
 };
 
 #[test]
@@ -135,7 +136,67 @@ fn source_timing_probe_candidate_fixture_seed_scores_pcm_wav_grid() {
         report.result,
         SourceTimingCandidateConfidenceResult::CandidateAmbiguous
     );
+    assert_eq!(
+        report.primary_phrase_status,
+        SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+    );
     assert!(report.requires_manual_confirm);
+}
+
+#[test]
+fn source_timing_probe_candidate_confidence_reports_phrase_grid_for_long_accented_wav() {
+    let tempdir = tempdir().expect("create tempdir");
+    let source_path = tempdir.path().join("accented_phrase_grid.wav");
+    let samples = accented_phrase_grid_samples();
+    write_interleaved_pcm16_wav(&source_path, 1_000, 1, &samples).expect("write source");
+    let source = SourceAudioCache::load_pcm_wav(&source_path).expect("load source");
+
+    let probe = analyze_source_timing_probe(
+        &source,
+        SourceTimingProbeConfig {
+            window_size_frames: 50,
+            hop_size_frames: 50,
+            onset_threshold_ratio: 0.20,
+            min_onset_flux: 0.01,
+        },
+    );
+    let timing = timing_model_from_probe_bpm_candidates(
+        &probe.bpm_candidate_input(
+            "accented-phrase-grid",
+            MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+    let report = source_timing_candidate_confidence_report(&timing);
+
+    let bpm = timing.bpm_estimate.expect("bpm estimate");
+    assert!((bpm - 120.0).abs() <= 0.01, "{bpm}");
+    assert_eq!(
+        report.primary_phrase_status,
+        SourceTimingCandidatePhraseStatus::Stable
+    );
+    assert_eq!(report.primary_phrase_count, 2);
+    assert_eq!(report.primary_phrase_bar_count, 8);
+    assert!(
+        report
+            .primary_phrase_confidence
+            .is_some_and(|value| value >= 0.4)
+    );
+    assert!(
+        !timing
+            .warnings
+            .iter()
+            .any(|warning| warning.code == TimingWarningCode::AmbiguousDownbeat)
+    );
+    assert!(
+        !timing
+            .warnings
+            .iter()
+            .any(|warning| warning.code == TimingWarningCode::PhraseUncertain)
+    );
 }
 
 #[test]
@@ -260,6 +321,15 @@ fn accented_beat_samples() -> Vec<f32> {
     {
         let amplitude = if index % 4 == 0 { 0.95 } else { 0.32 };
         add_impulse(&mut samples, start, 16, amplitude);
+    }
+    samples
+}
+
+fn accented_phrase_grid_samples() -> Vec<f32> {
+    let mut samples = vec![0.0_f32; 16_000];
+    for index in 0..32 {
+        let amplitude = if index % 4 == 0 { 0.95 } else { 0.32 };
+        add_impulse(&mut samples, index * 500, 16, amplitude);
     }
     samples
 }
