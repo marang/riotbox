@@ -15,6 +15,8 @@ The report captures:
 - effective timing quality and degraded policy
 - total hypotheses plus alternate downbeat, half-time, and double-time counts
 - primary downbeat confidence
+- primary source-grid drift status, available window count, drift metrics, and
+  drift confidence
 - warning codes and manual-confirm requirement
 
 ## Gate
@@ -27,7 +29,9 @@ just source-timing-candidate-confidence-report
 
 The gate proves that ambiguous BPM candidates expose alternate downbeat and
 tempo ambiguity, while degraded sparse probes report no primary BPM and stay in
-manual-review territory.
+manual-review territory. It also proves that stable 4/8-bar drift and high
+source-grid drift are summarized without requiring consumers to inspect raw
+timing hypotheses.
 
 ## Boundary
 
