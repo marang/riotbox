@@ -48,6 +48,40 @@ fn downbeat_phase_scores(
     scores
 }
 
+#[must_use]
+pub fn source_timing_probe_downbeat_evidence_report(
+    input: &SourceTimingProbeBpmCandidateInput,
+    bpm: f32,
+    policy: SourceTimingProbeBpmCandidatePolicy,
+) -> SourceTimingProbeDownbeatEvidenceReport {
+    let onsets = normalized_onset_times_and_strengths(input);
+    let phases = if onsets.is_empty() || !bpm.is_finite() || bpm <= 0.0 {
+        Vec::new()
+    } else {
+        downbeat_phase_scores(input, bpm)
+    };
+    let primary = phases.first().copied();
+    let alternate_phase_count = ambiguous_downbeat_phases(&phases, policy).count();
+    let status = match primary {
+        None => SourceTimingProbeDownbeatEvidenceStatus::Unavailable,
+        Some(phase) if phase.score < 0.4 => SourceTimingProbeDownbeatEvidenceStatus::Weak,
+        Some(_) if alternate_phase_count > 0 => SourceTimingProbeDownbeatEvidenceStatus::Ambiguous,
+        Some(_) => SourceTimingProbeDownbeatEvidenceStatus::Stable,
+    };
+
+    SourceTimingProbeDownbeatEvidenceReport {
+        schema: "riotbox.source_timing_probe_downbeat_evidence.v1",
+        schema_version: 1,
+        source_id: input.source_id.clone(),
+        bpm,
+        phase_count: phases.len(),
+        primary_offset_beats: primary.map(|phase| phase.offset_beats),
+        primary_score: primary.map(|phase| phase.score),
+        alternate_phase_count,
+        status,
+    }
+}
+
 fn best_downbeat_phase(input: &SourceTimingProbeBpmCandidateInput, bpm: f32) -> DownbeatPhaseScore {
     downbeat_phase_scores(input, bpm)
         .first()
