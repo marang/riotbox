@@ -28,7 +28,9 @@ just source-timing-wav-probe
 ```
 
 The gate uses synthetic PCM WAV fixtures to prove that impulse-like source
-material produces onset evidence while silence stays quiet.
+material produces onset evidence while silence stays quiet. It also includes a
+long accented 120 BPM WAV fixture that must bridge through the candidate timing
+model into stable preliminary phrase-grid confidence evidence.
 
 The gate also checks the first conservative `TimingModel` diagnostic bridge:
 
@@ -41,4 +43,6 @@ The gate also checks the first conservative `TimingModel` diagnostic bridge:
 
 This probe is input evidence for later timing hypotheses. Follow-up slices must
 map it conservatively into `TimingModel` diagnostics and then into BPM/downbeat
-candidates without falsely reporting a locked grid when evidence is weak.
+candidates without falsely reporting a locked grid when evidence is weak. Phrase
+readiness from this gate is still preliminary QA evidence, not production
+structural segmentation.
