@@ -88,6 +88,30 @@ mod tests {
     }
 
     #[test]
+    fn mix_balance_gate_rejects_old_drum_dominant_policy() {
+        let grid = Grid::new(128.0, 4, 2).expect("grid");
+        let sample_count = grid.total_frames * usize::from(CHANNEL_COUNT);
+        let tr909 = vec![0.20; sample_count];
+        let w30 = vec![0.20; sample_count];
+        let old_drum_dominant_policy = MixPolicy {
+            tr909_gain: 10.0,
+            tr909_low_gain: 18.0,
+            w30_gain: 0.94,
+            drive: 1.7,
+            output_gain: 0.92,
+        };
+
+        let old_ratio =
+            generated_to_source_rms_ratio(&tr909, &w30, &grid, old_drum_dominant_policy);
+        let source_first_ratio = source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid);
+        let support_ratio = support_generated_to_source_rms_ratio(&tr909, &w30, &grid);
+
+        assert!(old_ratio >= MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
+        assert!(source_first_ratio < MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO);
+        assert!(support_ratio < MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
+    }
+
+    #[test]
     fn renders_grid_pack_files_and_noncollapsed_audio() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source_path = temp.path().join("source.wav");
@@ -119,16 +143,26 @@ mod tests {
                 .join("stems/02_w30_feral_source_chop.wav")
                 .is_file()
         );
-        assert!(output_dir.join("03_riotbox_grid_feral_mix.wav").is_file());
+        assert!(output_dir.join("03_riotbox_source_first_mix.wav").is_file());
+        assert!(
+            output_dir
+                .join("04_riotbox_generated_support_mix.wav")
+                .is_file()
+        );
         assert!(output_dir.join("grid-report.md").is_file());
         assert!(output_dir.join("manifest.json").is_file());
 
-        let full_mix =
-            SourceAudioCache::load_pcm_wav(output_dir.join("03_riotbox_grid_feral_mix.wav"))
+        let source_first_mix =
+            SourceAudioCache::load_pcm_wav(output_dir.join("03_riotbox_source_first_mix.wav"))
                 .expect("load full mix");
+        let full_mix =
+            SourceAudioCache::load_pcm_wav(output_dir.join("04_riotbox_generated_support_mix.wav"))
+                .expect("load generated-support mix");
         let grid = Grid::new(128.0, 4, 2).expect("grid");
 
+        assert_eq!(source_first_mix.frame_count(), grid.total_frames);
         assert_eq!(full_mix.frame_count(), grid.total_frames);
+        assert!(signal_metrics(source_first_mix.interleaved_samples()).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(full_mix.interleaved_samples()).rms > MIN_SIGNAL_RMS);
         assert!(
             signal_metrics(&one_pole_lowpass(full_mix.interleaved_samples(), 165.0)).rms
@@ -176,9 +210,19 @@ mod tests {
             MIN_LOW_BAND_RMS,
             "min_low_band_rms",
         );
+        assert_manifest_f32(
+            &manifest["thresholds"]["max_source_first_generated_to_source_rms_ratio"],
+            MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+            "max_source_first_generated_to_source_rms_ratio",
+        );
+        assert_manifest_f32(
+            &manifest["thresholds"]["max_support_generated_to_source_rms_ratio"],
+            MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+            "max_support_generated_to_source_rms_ratio",
+        );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");
-        assert_eq!(artifacts.len(), 5);
+        assert_eq!(artifacts.len(), 6);
         assert_manifest_artifact(
             artifacts,
             "tr909_beat_fill",
@@ -195,10 +239,17 @@ mod tests {
         );
         assert_manifest_artifact(
             artifacts,
+            "source_first_mix",
+            "audio_wav",
+            output_dir.join("03_riotbox_source_first_mix.wav"),
+            Some(output_dir.join("03_riotbox_source_first_mix.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
             "full_grid_mix",
             "audio_wav",
-            output_dir.join("03_riotbox_grid_feral_mix.wav"),
-            Some(output_dir.join("03_riotbox_grid_feral_mix.metrics.md")),
+            output_dir.join("04_riotbox_generated_support_mix.wav"),
+            Some(output_dir.join("04_riotbox_generated_support_mix.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
@@ -215,6 +266,12 @@ mod tests {
             None,
         );
 
+        assert!(
+            manifest["metrics"]["source_first_mix"]["signal"]["rms"]
+                .as_f64()
+                .expect("source-first mix rms")
+                > f64::from(MIN_SIGNAL_RMS)
+        );
         assert!(
             manifest["metrics"]["full_grid_mix"]["signal"]["rms"]
                 .as_f64()
@@ -236,6 +293,24 @@ mod tests {
         assert!(manifest["metrics"]["mc202_question_answer_delta"].is_null());
         assert!(manifest["metrics"]["mc202_question_answer"].is_null());
         assert!(
+            manifest["metrics"]["mix_balance"]["source_first_generated_to_source_rms_ratio"]
+                .as_f64()
+                .expect("source-first generated/source ratio")
+                < f64::from(MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO)
+        );
+        assert!(
+            manifest["metrics"]["mix_balance"]["support_generated_to_source_rms_ratio"]
+                .as_f64()
+                .expect("support generated/source ratio")
+                < f64::from(MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
+        );
+        assert!(
+            manifest["metrics"]["bar_variation"]["source_first_mix"]["bar_similarity"]
+                .as_f64()
+                .expect("source-first bar similarity")
+                <= 1.0
+        );
+        assert!(
             manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
                 .as_f64()
                 .expect("bar similarity")
@@ -247,7 +322,11 @@ mod tests {
                 .expect("identical bar run")
                 >= 1
         );
-        let spectral = &manifest["metrics"]["spectral_energy"]["full_grid_mix"];
+        assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["source_first_mix"]);
+        assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["full_grid_mix"]);
+    }
+
+    fn assert_spectral_sum(spectral: &serde_json::Value) {
         let spectral_sum = spectral["low_band_energy_ratio"]
             .as_f64()
             .expect("low energy")
