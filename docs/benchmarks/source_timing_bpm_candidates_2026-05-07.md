@@ -2,7 +2,7 @@
 
 Date: 2026-05-07
 Project: `P012 | Source Timing Intelligence`
-Status: initial probe BPM-candidate, beat-period, and downbeat-accent scoring spike
+Status: initial probe BPM-candidate, beat-period, downbeat-accent, and drift scoring spike
 
 ## Purpose
 
@@ -15,6 +15,7 @@ The candidate path reports:
 - primary beat/bar candidate grids
 - half-time and double-time alternatives when they fit the policy range
 - downbeat-accent phase scoring from probe-window onset strength
+- 4/8-bar source-grid drift reports when enough source material exists
 - ambiguous downbeat and phrase-uncertain warnings when evidence stays weak
 - fixture-like PCM WAV probe evidence that reaches the same candidate path
 
@@ -29,7 +30,8 @@ just source-timing-bpm-candidates
 The gate uses synthetic onset spacing plus generated PCM WAV probe fixture
 paths to prove that a 120 BPM impulse train and a fixture-like pulse source can
 produce a BPM candidate, accent evidence can select a clearer downbeat phase,
-and sparse or ambiguous onsets degrade instead of claiming timing lock.
+stable-grid drift can be measured, and sparse or ambiguous onsets degrade
+instead of claiming timing lock.
 
 ## Boundary
 

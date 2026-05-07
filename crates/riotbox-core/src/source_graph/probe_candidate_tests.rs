@@ -167,6 +167,55 @@ fn source_timing_probe_bpm_candidates_keep_ambiguous_downbeats_when_accents_are_
 }
 
 #[test]
+fn source_timing_probe_bpm_candidates_report_stable_grid_drift() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input(
+            "stable-drift-120",
+            16.0,
+            &even_onsets(0.0, 0.5, 32),
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    assert!(primary
+        .provenance
+        .contains(&"source-timing-probe.drift-report.v0".into()));
+    let four_bar = primary
+        .drift
+        .iter()
+        .find(|report| report.window_bars == 4)
+        .expect("4-bar drift report");
+    let eight_bar = primary
+        .drift
+        .iter()
+        .find(|report| report.window_bars == 8)
+        .expect("8-bar drift report");
+    assert!(four_bar.max_drift_ms <= 0.01, "{four_bar:?}");
+    assert!(eight_bar.mean_abs_drift_ms <= 0.01, "{eight_bar:?}");
+    assert!(!has_warning(&timing, TimingWarningCode::DriftHigh));
+}
+
+#[test]
+fn source_timing_probe_bpm_candidates_warn_when_grid_drift_is_high() {
+    let mut onsets = even_onsets(0.0, 0.5, 32);
+    for time_seconds in onsets.iter_mut().skip(16) {
+        *time_seconds += 0.12;
+    }
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input("late-drift-120", 16.0, &onsets),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    assert!(primary
+        .drift
+        .iter()
+        .any(|report| report.max_drift_ms > 100.0));
+    assert!(has_warning(&timing, TimingWarningCode::DriftHigh));
+}
+
+#[test]
 fn source_timing_candidate_confidence_report_summarizes_ambiguous_candidate() {
     let timing = timing_model_from_probe_bpm_candidates(
         &candidate_input(
@@ -286,6 +335,12 @@ fn weighted_candidate_input(
             beat_unit: 4,
         },
     }
+}
+
+fn even_onsets(start_seconds: f32, period_seconds: f32, count: usize) -> Vec<f32> {
+    (0..count)
+        .map(|index| start_seconds + period_seconds * index as f32)
+        .collect()
 }
 
 fn assert_bpm_close(actual: Option<f32>, expected: f32) {

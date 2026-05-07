@@ -53,7 +53,7 @@ fn probe_bpm_hypothesis(
                 ],
             })
             .collect(),
-        drift: Vec::new(),
+        drift: probe_candidate_drift_reports(input, bpm, confidence),
         groove: Vec::new(),
         quality: TimingQuality::Medium,
         warnings: Vec::new(),
@@ -61,6 +61,7 @@ fn probe_bpm_hypothesis(
             "source-timing-probe.bpm-candidate".into(),
             "source-timing-probe.beat-period-score.v0".into(),
             "source-timing-probe.downbeat-accent-score.v0".into(),
+            "source-timing-probe.drift-report.v0".into(),
             input.source_id.clone(),
         ],
     }

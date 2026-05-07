@@ -372,6 +372,7 @@ just source-timing-fixture-evaluator
 just source-timing-wav-probe
 just source-timing-bpm-candidates
 just source-timing-downbeat-ambiguity
+just source-timing-drift-report
 just source-timing-candidate-confidence-report
 just mem-status
 just mem-search "replay truth"

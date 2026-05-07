@@ -41,10 +41,17 @@ pub fn timing_model_from_probe_bpm_candidates(
         primary_phase.offset_beats,
         input,
     );
+    let primary_drift_high = primary
+        .drift
+        .iter()
+        .any(|drift| drift.max_drift_ms > 70.0 || drift.end_drift_ms.abs() > 70.0);
     let mut hypotheses = vec![primary];
     let mut warnings = vec![TimingWarningCode::PhraseUncertain];
     if !ambiguous_phases.is_empty() || primary_phase.score < 0.4 {
         warnings.push(TimingWarningCode::AmbiguousDownbeat);
+    }
+    if primary_drift_high {
+        warnings.push(TimingWarningCode::DriftHigh);
     }
 
     for phase in ambiguous_phases {
