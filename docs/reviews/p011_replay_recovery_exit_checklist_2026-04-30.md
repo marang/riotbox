@@ -17,6 +17,10 @@ bounded. It proves important seams, not complete product-grade recovery.
   Runs formatter, full Rust tests, audio QA smoke gates, observer/audio
   correlation probes, stage-style probe, offline render reproducibility smoke,
   and clippy.
+- `just p011-exit-evidence-manifest`
+  Validates the machine-checkable P011 evidence index across replay, recovery,
+  export reproducibility, and stage-style stability categories while preserving
+  known open boundaries.
 - `just stage-style-jam-probe`
   Exercises a longer generated W-30 source-diff output, generated app-level
   multi-boundary observer evidence, summary-level commit boundary assertions,
@@ -176,6 +180,17 @@ just p011-replay-family-manifest
 That validator checks that each claimed proof points at existing repo-local test
 files and test functions. It does not replace the tests themselves and must not
 be read as a full replay-from-origin claim.
+
+The broader machine-checkable P011 exit evidence index lives at
+`docs/benchmarks/p011_exit_evidence_manifest.json` and is validated by:
+
+```bash
+just p011-exit-evidence-manifest
+```
+
+That index groups current replay, recovery, export reproducibility, and
+stage-style stability evidence. It intentionally keeps known open boundaries in
+the manifest and is not a declaration that P011 is complete.
 
 | Area | Covered suffix / family | Proof file | Output proof |
 | --- | --- | --- | --- |
