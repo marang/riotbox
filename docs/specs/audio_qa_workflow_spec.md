@@ -144,6 +144,29 @@ source-showcase packs, not a replacement for listening review. A passing result
 means the pack avoided the known identical-output false positive; it does not
 mean TR-909, W-30, MC-202, or future bass policies are musically complete.
 
+When `--json-output` or `--markdown-output` is provided, the command also emits a
+source-diversity summary with:
+
+- per-role artifact hash groups
+- pairwise normalized RMS deltas
+- pairwise low-band RMS deltas
+- pairwise spectral-energy distance when manifest spectral metrics exist
+- pairwise waveform correlation when referenced artifacts are readable PCM16 WAV
+- generated-to-source-backed dominance ratios
+- stable failure codes such as `full_mix_identical_across_sources`,
+  `full_mix_cross_source_correlation_too_high`, and
+  `generated_stem_dominates_mix`
+
+Early P011 guardrail defaults:
+
+- identical full-mix hashes across different sources always fail
+- source-backed stems with identical hashes across different sources fail unless
+  the fixture explicitly proves the same selected source window
+- full-mix normalized RMS delta below `0.05` is treated as too similar
+- full-mix waveform correlation at or above `0.995` is treated as too similar
+- identical generated support with generated/source-backed RMS ratio at or above
+  `0.75` is treated as dominant
+
 ### 3.3 Fixture-backed golden render review
 
 For stable fixture, seed, action list, and render config:
