@@ -103,6 +103,7 @@ source-timing-downbeat-ambiguity:
 
 source-timing-drift-report:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_report_stable_grid_drift -- --nocapture
+    cargo test -p riotbox-core source_timing_probe_bpm_candidates_report_long_grid_drift_windows -- --nocapture
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_warn_when_grid_drift_is_high -- --nocapture
 
 source-timing-candidate-confidence-report:

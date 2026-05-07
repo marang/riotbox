@@ -193,6 +193,32 @@ fn source_timing_probe_bpm_candidates_report_stable_grid_drift() {
         .expect("8-bar drift report");
     assert!(four_bar.max_drift_ms <= 0.01, "{four_bar:?}");
     assert!(eight_bar.mean_abs_drift_ms <= 0.01, "{eight_bar:?}");
+    assert!(primary.drift.iter().all(|report| report.window_bars <= 8));
+    assert!(!has_warning(&timing, TimingWarningCode::DriftHigh));
+}
+
+#[test]
+fn source_timing_probe_bpm_candidates_report_long_grid_drift_windows() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input(
+            "long-stable-drift-120",
+            64.0,
+            &even_onsets(0.0, 0.5, 128),
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    let reported_windows = primary
+        .drift
+        .iter()
+        .map(|report| report.window_bars)
+        .collect::<Vec<_>>();
+    assert_eq!(reported_windows, vec![4, 8, 16, 32]);
+    assert!(primary
+        .drift
+        .iter()
+        .all(|report| report.max_drift_ms <= 0.01));
     assert!(!has_warning(&timing, TimingWarningCode::DriftHigh));
 }
 
