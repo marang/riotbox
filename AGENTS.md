@@ -371,6 +371,7 @@ just source-timing-analyzer-skeleton-fixtures
 just source-timing-fixture-evaluator
 just source-timing-wav-probe
 just source-timing-bpm-candidates
+just source-timing-downbeat-ambiguity
 just mem-status
 just mem-search "replay truth"
 just w30-smoke-qa local
