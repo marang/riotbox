@@ -175,6 +175,7 @@ struct RenderMetrics {
 #[derive(Clone, Copy, Debug)]
 struct PackReport {
     tr909_source_profile: SourceAwareTr909Profile,
+    w30_source_chop_profile: W30SourceChopProfile,
     tr909: RenderMetrics,
     w30: RenderMetrics,
     source_first_mix: RenderMetrics,
@@ -234,6 +235,7 @@ struct ManifestThresholds {
 #[derive(Serialize)]
 struct ManifestPackMetrics {
     tr909_source_profile: ManifestTr909SourceProfile,
+    w30_source_chop_profile: ManifestW30SourceChopProfile,
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     source_first_mix: ManifestRenderMetrics,
@@ -333,7 +335,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         args.source_window_seconds.min(grid.duration_seconds()),
     );
     let source_window_samples = source.window_samples(w30_source_window);
-    let w30_preview = source_preview_from_interleaved(
+    let (w30_preview, w30_source_chop_profile) = source_chop_preview_from_interleaved(
         source_window_samples,
         usize::from(CHANNEL_COUNT),
         w30_source_window.start_frame as u64,
@@ -341,7 +343,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
             .start_frame
             .saturating_add(w30_source_window.frame_count) as u64,
     )
-    .ok_or("source-backed W-30 preview window produced no samples")?;
+    .ok_or("source-backed W-30 chop window produced no samples")?;
 
     let tr909_source_profile = derive_source_aware_tr909_profile(source_window_samples, &grid);
     let tr909 = render_tr909_source_support(&grid, tr909_source_profile);
@@ -369,6 +371,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let report = PackReport {
         tr909_source_profile,
+        w30_source_chop_profile,
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),
         source_first_mix: render_metrics(&source_first_mix, &grid),
@@ -440,35 +443,4 @@ fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::
         .into());
     }
     Ok(())
-}
-
-fn source_preview_from_interleaved(
-    samples: &[f32],
-    channel_count: usize,
-    source_start_frame: u64,
-    source_end_frame: u64,
-) -> Option<W30PreviewSampleWindow> {
-    let channel_count = channel_count.max(1);
-    let frame_count = samples.len() / channel_count;
-    if frame_count == 0 {
-        return None;
-    }
-
-    let sample_count = frame_count.min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
-    let stride = (frame_count / sample_count).max(1);
-    let mut preview = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
-
-    for (index, slot) in preview.iter_mut().take(sample_count).enumerate() {
-        let frame_index = (index * stride).min(frame_count - 1);
-        let base = frame_index * channel_count;
-        let sum: f32 = samples[base..base + channel_count].iter().sum();
-        *slot = sum / channel_count as f32;
-    }
-
-    Some(W30PreviewSampleWindow {
-        source_start_frame,
-        source_end_frame,
-        sample_count,
-        samples: preview,
-    })
 }

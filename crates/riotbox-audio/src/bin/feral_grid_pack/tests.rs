@@ -336,6 +336,18 @@ mod tests {
                 > 0.0
         );
         assert!(
+            manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
+                .as_f64()
+                .expect("w30 source chop preview rms")
+                > 0.0
+        );
+        assert!(
+            manifest["metrics"]["w30_source_chop_profile"]["gain"]
+                .as_f64()
+                .expect("w30 source chop gain")
+                >= 0.85
+        );
+        assert!(
             manifest["metrics"]["mix_balance"]["source_first_generated_to_source_rms_ratio"]
                 .as_f64()
                 .expect("source-first generated/source ratio")
