@@ -43,15 +43,16 @@ Read these before making structural changes:
 3. `docs/specs/technology_stack_spec.md`
 4. `docs/specs/rust_engineering_guidelines.md`
 5. `docs/specs/source_graph_spec.md`
-6. `docs/specs/session_file_spec.md`
-7. `docs/specs/action_lexicon_spec.md`
-8. `docs/specs/audio_core_spec.md`
-9. `docs/specs/validation_benchmark_spec.md`
-10. `docs/specs/fixture_corpus_spec.md`
-11. `docs/specs/audio_qa_workflow_spec.md`
-12. `docs/specs/tui_screen_spec.md`
-13. `docs/specs/ghost_api_spec.md`
-14. `docs/specs/preset_style_spec.md`
+6. `docs/specs/source_timing_intelligence_spec.md`
+7. `docs/specs/session_file_spec.md`
+8. `docs/specs/action_lexicon_spec.md`
+9. `docs/specs/audio_core_spec.md`
+10. `docs/specs/validation_benchmark_spec.md`
+11. `docs/specs/fixture_corpus_spec.md`
+12. `docs/specs/audio_qa_workflow_spec.md`
+13. `docs/specs/tui_screen_spec.md`
+14. `docs/specs/ghost_api_spec.md`
+15. `docs/specs/preset_style_spec.md`
 
 Strategic context lives in:
 

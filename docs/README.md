@@ -36,10 +36,11 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 13. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
 14. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
 15. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
-16. [Recovery Notes](./recovery_notes.md)
-17. [Phase Definition of Done](./phase_definition_of_done.md)
-18. [Research / Decision Log](./research_decision_log.md)
-19. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+16. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+17. [Recovery Notes](./recovery_notes.md)
+18. [Phase Definition of Done](./phase_definition_of_done.md)
+19. [Research / Decision Log](./research_decision_log.md)
+20. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
 
 ## Why This Order
 
@@ -111,6 +112,7 @@ docs/
     w30_audible_preview_baseline.txt
   specs/
     source_graph_spec.md
+    source_timing_intelligence_spec.md
     session_file_spec.md
     action_lexicon_spec.md
     replay_model_spec.md
@@ -135,6 +137,7 @@ docs/
 - `specs/technology_stack_spec.md`: Stack Freeze v1 captured with current timing-contract clarification
 - `specs/rust_engineering_guidelines.md`: Rust engineering guidelines captured
 - `specs/source_graph_spec.md`: Source Graph v1 contract captured
+- `specs/source_timing_intelligence_spec.md`: Rust-first all-lane timing contract captured
 - `specs/session_file_spec.md`: Session file and recovery boundary captured
 - `specs/action_lexicon_spec.md`: action vocabulary and queue/commit semantics captured
 - `specs/replay_model_spec.md`: replay model and current allowlist captured
