@@ -13,6 +13,8 @@ pub struct SourceTimingProbeBpmCandidatePolicy {
     pub max_bpm: f32,
     pub primary_confidence: Confidence,
     pub alternative_confidence: Confidence,
+    pub min_beat_period_score: f32,
+    pub beat_period_ambiguity_margin: f32,
     pub downbeat_ambiguity_margin: f32,
 }
 
@@ -24,6 +26,8 @@ impl Default for SourceTimingProbeBpmCandidatePolicy {
             max_bpm: 240.0,
             primary_confidence: 0.55,
             alternative_confidence: 0.35,
+            min_beat_period_score: 0.45,
+            beat_period_ambiguity_margin: 0.08,
             downbeat_ambiguity_margin: 0.05,
         }
     }
