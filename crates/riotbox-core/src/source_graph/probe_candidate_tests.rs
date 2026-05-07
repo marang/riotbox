@@ -1,6 +1,7 @@
 use super::*;
 
 mod confidence_report_tests;
+mod evidence_report_tests;
 
 #[test]
 fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
@@ -74,80 +75,6 @@ fn source_timing_probe_bpm_candidates_preserve_period_score_ambiguity() {
     assert!(timing.hypotheses.iter().all(|hypothesis| hypothesis
         .provenance
         .contains(&"source-timing-probe.beat-period-score.v0".into())));
-}
-
-#[test]
-fn source_timing_probe_beat_evidence_report_summarizes_stable_candidate() {
-    let report = source_timing_probe_beat_evidence_report(
-        &candidate_input(
-            "beat-evidence-stable-120",
-            16.0,
-            &even_onsets(0.0, 0.5, 32),
-        ),
-        focused_120_bpm_policy(),
-    );
-
-    assert_eq!(report.schema, "riotbox.source_timing_probe_beat_evidence.v1");
-    assert_eq!(report.schema_version, 1);
-    assert_eq!(report.source_id, "beat-evidence-stable-120");
-    assert_eq!(report.onset_count, 32);
-    assert_eq!(report.status, SourceTimingProbeBeatEvidenceStatus::Stable);
-    assert_bpm_close(report.primary_bpm, 120.0);
-    assert!(report.primary_score.is_some_and(|score| score >= 0.95));
-    assert!(report
-        .primary_matched_onset_ratio
-        .is_some_and(|ratio| ratio >= 0.95));
-    assert!(report
-        .primary_median_distance_ratio
-        .is_some_and(|ratio| ratio <= 0.01));
-    assert_eq!(report.alternate_candidate_count, 0);
-}
-
-#[test]
-fn source_timing_probe_beat_evidence_report_summarizes_unavailable_weak_and_ambiguous_candidates()
-{
-    let unavailable = source_timing_probe_beat_evidence_report(
-        &candidate_input("beat-evidence-weak", 4.0, &[0.0, 1.0]),
-        SourceTimingProbeBpmCandidatePolicy::default(),
-    );
-
-    assert_eq!(
-        unavailable.status,
-        SourceTimingProbeBeatEvidenceStatus::Unavailable
-    );
-    assert_eq!(unavailable.primary_bpm, None);
-    assert_eq!(unavailable.candidate_count, 0);
-
-    let weak = source_timing_probe_beat_evidence_report(
-        &candidate_input(
-            "beat-evidence-threshold-weak-120",
-            16.0,
-            &even_onsets(0.0, 0.5, 32),
-        ),
-        SourceTimingProbeBpmCandidatePolicy {
-            min_beat_period_score: 1.1,
-            ..focused_120_bpm_policy()
-        },
-    );
-
-    assert_eq!(weak.status, SourceTimingProbeBeatEvidenceStatus::Weak);
-    assert_bpm_close(weak.primary_bpm, 120.0);
-
-    let ambiguous = source_timing_probe_beat_evidence_report(
-        &candidate_input(
-            "beat-evidence-ambiguous-120",
-            4.0,
-            &[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],
-        ),
-        SourceTimingProbeBpmCandidatePolicy::default(),
-    );
-
-    assert_eq!(
-        ambiguous.status,
-        SourceTimingProbeBeatEvidenceStatus::Ambiguous
-    );
-    assert_bpm_close(ambiguous.primary_bpm, 120.0);
-    assert!(ambiguous.alternate_candidate_count > 0);
 }
 
 #[test]

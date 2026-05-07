@@ -22,6 +22,7 @@ ci:
     just source-timing-wav-probe
     just source-timing-bpm-candidates
     just source-timing-beat-evidence
+    just source-timing-downbeat-evidence
     just source-timing-downbeat-ambiguity
     just source-timing-drift-report
     just source-timing-phrase-grid
@@ -102,6 +103,9 @@ source-timing-bpm-candidates:
 source-timing-beat-evidence:
     cargo test -p riotbox-core source_timing_probe_beat_evidence_report -- --nocapture
     cargo test -p riotbox-audio source_timing_probe_candidate_confidence_reports_phrase_grid_for_long_accented_wav -- --nocapture
+
+source-timing-downbeat-evidence:
+    cargo test -p riotbox-core source_timing_probe_downbeat_evidence_report -- --nocapture
 
 source-timing-downbeat-ambiguity:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases -- --nocapture

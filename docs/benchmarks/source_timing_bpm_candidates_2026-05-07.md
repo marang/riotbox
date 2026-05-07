@@ -18,6 +18,7 @@ The candidate path reports:
 - 4/8/16/32-bar source-grid drift reports when enough source material exists
 - preliminary 4-bar phrase candidates when bar timing is stable and long enough
 - beat-period evidence summaries for QA explanation of candidate selection
+- downbeat-phase evidence summaries for QA explanation of bar-phase selection
 - ambiguous downbeat and phrase-uncertain warnings when evidence stays weak
 - fixture-like PCM WAV probe evidence that reaches the same candidate path
 
@@ -49,6 +50,14 @@ WAV bridge for stable long accented 120 BPM material.
 
 ```bash
 just source-timing-beat-evidence
+```
+
+A focused downbeat-evidence gate proves that primary phase offset, primary
+score, alternate-phase count, and stable / weak / ambiguous / unavailable
+status are reportable without consumers inspecting raw phase scoring internals.
+
+```bash
+just source-timing-downbeat-evidence
 ```
 
 ## Boundary
