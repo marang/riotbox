@@ -19,6 +19,8 @@ The candidate path reports:
 - preliminary 4-bar phrase candidates when bar timing is stable and long enough
 - beat-period evidence summaries for QA explanation of candidate selection
 - downbeat-phase evidence summaries for QA explanation of bar-phase selection
+- combined timing readiness summaries for QA / future-TUI review of whether the
+  current probe result is unavailable, weak, needs-review, or ready
 - ambiguous downbeat and phrase-uncertain warnings when evidence stays weak
 - fixture-like PCM WAV probe evidence that reaches the same candidate path
 
@@ -58,6 +60,14 @@ status are reportable without consumers inspecting raw phase scoring internals.
 
 ```bash
 just source-timing-downbeat-evidence
+```
+
+A focused readiness-report gate proves that candidate confidence, beat-period
+evidence, and downbeat-phase evidence can be summarized without becoming a
+separate timing authority.
+
+```bash
+just source-timing-readiness-report
 ```
 
 ## Boundary

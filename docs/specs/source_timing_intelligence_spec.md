@@ -196,6 +196,11 @@ Rules:
   selection: primary phase offset, score, alternate-phase count, and whether the
   evidence is unavailable, weak, stable, or ambiguous. This explains why a bar
   phase was selected without making it a separate timing authority.
+- source timing QA may also expose a combined readiness report that folds
+  candidate confidence, beat-period evidence, and downbeat-phase evidence into a
+  compact status such as unavailable, weak, needs-review, or ready. This report
+  is a QA / future-TUI summary only; it must not become a hidden timing source
+  separate from the Source Graph timing hypotheses.
 
 ---
 

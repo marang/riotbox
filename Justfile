@@ -23,6 +23,7 @@ ci:
     just source-timing-bpm-candidates
     just source-timing-beat-evidence
     just source-timing-downbeat-evidence
+    just source-timing-readiness-report
     just source-timing-downbeat-ambiguity
     just source-timing-drift-report
     just source-timing-phrase-grid
@@ -106,6 +107,9 @@ source-timing-beat-evidence:
 
 source-timing-downbeat-evidence:
     cargo test -p riotbox-core source_timing_probe_downbeat_evidence_report -- --nocapture
+
+source-timing-readiness-report:
+    cargo test -p riotbox-core source_timing_probe_readiness_report -- --nocapture
 
 source-timing-downbeat-ambiguity:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases -- --nocapture

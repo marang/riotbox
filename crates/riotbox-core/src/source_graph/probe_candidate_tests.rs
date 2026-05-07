@@ -2,6 +2,7 @@ use super::*;
 
 mod confidence_report_tests;
 mod evidence_report_tests;
+mod readiness_report_tests;
 
 #[test]
 fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
