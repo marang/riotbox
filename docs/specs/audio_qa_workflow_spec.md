@@ -171,6 +171,12 @@ Early P011 guardrail defaults:
   source-backed W-30 chop, while `04_riotbox_generated_support_mix.wav` keeps the
   generated TR-909 support secondary and records generated/source RMS ratios in
   `metrics.mix_balance`
+- Feral grid TR-909 support must not be fixed only by BPM/grid when the pack is
+  presented as source-aware. The generated manifest records
+  `metrics.tr909_source_profile` with the measured source-window energy/onset
+  evidence, chosen support profile, pattern adoption, phrase variation,
+  drum-bus level, slam intensity, and reason label so reviewers can see why the
+  support pattern changed.
 
 ### 3.3 Fixture-backed golden render review
 
