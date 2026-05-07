@@ -39,18 +39,21 @@ fn beat_period_scores(
         })
         .collect::<Vec<_>>();
     scores.sort_by(|left, right| {
-        right
-            .score
-            .total_cmp(&left.score)
-            .then_with(|| {
-                right
-                    .matched_onset_ratio
-                    .total_cmp(&left.matched_onset_ratio)
-            })
-            .then_with(|| left.median_distance_ratio.total_cmp(&right.median_distance_ratio))
-            .then_with(|| left.bpm.total_cmp(&right.bpm))
+        period_score_order(left, right).then_with(|| left.bpm.total_cmp(&right.bpm))
     });
     scores
+}
+
+fn period_score_order(left: &BeatPeriodScore, right: &BeatPeriodScore) -> std::cmp::Ordering {
+    const SCORE_TIE_MARGIN: f32 = 0.001;
+
+    if (left.score - right.score).abs() > SCORE_TIE_MARGIN {
+        return right.score.total_cmp(&left.score);
+    }
+
+    left.median_distance_ratio
+        .total_cmp(&right.median_distance_ratio)
+        .then_with(|| right.matched_onset_ratio.total_cmp(&left.matched_onset_ratio))
 }
 
 fn ambiguous_beat_period_scores(
