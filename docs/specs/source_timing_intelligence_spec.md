@@ -183,6 +183,10 @@ Rules:
   timing evidence, but this must stay labelled as preliminary and must preserve
   `phrase_uncertain` when material is too short, downbeat scoring is ambiguous,
   or drift is high
+- source timing QA reports must expose phrase-grid availability explicitly, not
+  require reviewers to infer it from raw hypotheses. Early report statuses
+  should distinguish unavailable primary timing, not-enough-material,
+  ambiguous-downbeat, high-drift, and stable preliminary phrase evidence.
 
 ---
 
