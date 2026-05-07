@@ -16,6 +16,7 @@ The candidate path reports:
 - half-time and double-time alternatives when they fit the policy range
 - downbeat-accent phase scoring from probe-window onset strength
 - 4/8/16/32-bar source-grid drift reports when enough source material exists
+- preliminary 4-bar phrase candidates when bar timing is stable and long enough
 - ambiguous downbeat and phrase-uncertain warnings when evidence stays weak
 - fixture-like PCM WAV probe evidence that reaches the same candidate path
 
@@ -31,7 +32,13 @@ The gate uses synthetic onset spacing plus generated PCM WAV probe fixture
 paths to prove that a 120 BPM impulse train and a fixture-like pulse source can
 produce a BPM candidate, accent evidence can select a clearer downbeat phase,
 stable-grid drift can be measured across short and longer windows, and sparse
-or ambiguous onsets degrade instead of claiming timing lock.
+or ambiguous onsets degrade instead of claiming timing lock. A focused
+phrase-grid gate proves that stable bar evidence can produce preliminary
+4-bar phrase spans while short material stays phrase-uncertain.
+
+```bash
+just source-timing-phrase-grid
+```
 
 ## Boundary
 

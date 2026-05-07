@@ -41,12 +41,16 @@ pub fn timing_model_from_probe_bpm_candidates(
         primary_phase.offset_beats,
         input,
     );
-    let primary_drift_high = primary
-        .drift
-        .iter()
-        .any(|drift| drift.max_drift_ms > 70.0 || drift.end_drift_ms.abs() > 70.0);
+    let primary_drift_high = has_high_drift(&primary.drift);
+    let primary_phrase_uncertain = primary.phrase_grid.is_empty()
+        || !ambiguous_phases.is_empty()
+        || primary_phase.score < 0.4
+        || primary_drift_high;
     let mut hypotheses = vec![primary];
-    let mut warnings = vec![TimingWarningCode::PhraseUncertain];
+    let mut warnings = Vec::new();
+    if primary_phrase_uncertain {
+        warnings.push(TimingWarningCode::PhraseUncertain);
+    }
     if !ambiguous_phases.is_empty() || primary_phase.score < 0.4 {
         warnings.push(TimingWarningCode::AmbiguousDownbeat);
     }
@@ -143,7 +147,7 @@ pub fn timing_model_from_probe_bpm_candidates(
         meter_hint: Some(input.meter),
         beat_grid: hypotheses[0].beat_grid.clone(),
         bar_grid: hypotheses[0].bar_grid.clone(),
-        phrase_grid: Vec::new(),
+        phrase_grid: hypotheses[0].phrase_grid.clone(),
         hypotheses,
         primary_hypothesis_id: Some("probe-bpm-primary".into()),
         quality: TimingQuality::Medium,
