@@ -37,8 +37,7 @@ source_a="$tmpdir/source-a.wav"
 source_b="$tmpdir/source-b.wav"
 run_a="$tmpdir/run-a"
 run_b="$tmpdir/run-b"
-mix_a="$run_a/04_riotbox_generated_support_mix.wav"
-mix_b="$run_b/04_riotbox_generated_support_mix.wav"
+proof="$tmpdir/product-export-proof.json"
 
 python3 scripts/write_synthetic_break_wav.py "$source_a" "$source_seconds"
 python3 scripts/write_synthetic_break_wav.py "$source_b" "$source_seconds"
@@ -79,16 +78,7 @@ render_grid_export() {
 render_grid_export "$source_a" "$run_a"
 render_grid_export "$source_b" "$run_b"
 
-if [[ ! -s "$mix_a" || ! -s "$mix_b" ]]; then
-  echo "full-grid export reproducibility smoke produced an empty mix WAV" >&2
-  exit 1
-fi
-
-hash_a="$(sha256sum "$mix_a" | awk '{print $1}')"
-hash_b="$(sha256sum "$mix_b" | awk '{print $1}')"
-if [[ "$hash_a" != "$hash_b" ]]; then
-  echo "full-grid export output is not byte-reproducible: $hash_a != $hash_b" >&2
-  exit 1
-fi
-
-echo "full-grid export reproducibility ok: $hash_a"
+python3 scripts/validate_product_export_reproducibility.py \
+  --write-proof "$proof" \
+  "$run_a/manifest.json" \
+  "$run_b/manifest.json"

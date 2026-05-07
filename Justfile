@@ -203,3 +203,6 @@ offline-render-reproducibility-smoke:
 
 full-grid-export-reproducibility-smoke:
     scripts/validate_full_grid_export_reproducibility.sh
+
+product-export-reproducibility-smoke:
+    scripts/validate_full_grid_export_reproducibility.sh
