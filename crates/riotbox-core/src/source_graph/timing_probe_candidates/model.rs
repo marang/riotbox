@@ -88,8 +88,10 @@ pub fn timing_model_from_probe_bpm_candidates(
         ));
     }
 
-    if primary_bpm / 2.0 >= policy.min_bpm {
-        let half_bpm = primary_bpm / 2.0;
+    const BPM_BOUNDARY_EPSILON: f32 = 0.01;
+
+    if primary_bpm / 2.0 + BPM_BOUNDARY_EPSILON >= policy.min_bpm {
+        let half_bpm = (primary_bpm / 2.0).max(policy.min_bpm);
         let half_phase = best_downbeat_phase(input, half_bpm);
         let half_period_score = period_score_for_bpm(&period_scores, half_bpm)
             .map_or(primary_period.score, |score| score.score);
@@ -107,8 +109,8 @@ pub fn timing_model_from_probe_bpm_candidates(
         ));
         warnings.push(TimingWarningCode::HalfTimePossible);
     }
-    if primary_bpm * 2.0 <= policy.max_bpm {
-        let double_bpm = primary_bpm * 2.0;
+    if primary_bpm * 2.0 <= policy.max_bpm + BPM_BOUNDARY_EPSILON {
+        let double_bpm = (primary_bpm * 2.0).min(policy.max_bpm);
         let double_phase = best_downbeat_phase(input, double_bpm);
         let double_period_score = period_score_for_bpm(&period_scores, double_bpm)
             .map_or(primary_period.score, |score| score.score);
