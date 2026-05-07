@@ -16,6 +16,7 @@ clippy:
 ci:
     cargo fmt --check
     cargo test
+    just source-timing-fixture-catalog-validator-fixtures
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
     just p011-exit-evidence-manifest-validator-fixtures
@@ -65,6 +66,13 @@ mem-status:
 
 mem-search query:
     ./scripts/mempalace.sh search "{{query}}"
+
+source-timing-fixture-catalog catalog="crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json":
+    python3 scripts/validate_source_timing_fixture_catalog.py "{{catalog}}"
+
+source-timing-fixture-catalog-validator-fixtures:
+    python3 scripts/validate_source_timing_fixture_catalog.py crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json
+    if python3 scripts/validate_source_timing_fixture_catalog.py crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog_invalid_empty_cases.json; then echo "expected empty timing fixture catalog to fail" >&2; exit 1; fi
 
 w30-smoke-candidate date="local" duration="2.0":
     cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role candidate --duration-seconds "{{duration}}"

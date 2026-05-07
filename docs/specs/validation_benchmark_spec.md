@@ -133,6 +133,8 @@ Critical workflow tests:
 - memory use per analysis run
 - candidate count stability
 - confidence-distribution drift
+- source timing fixture agreement for BPM, beat, downbeat, phrase, ambiguity,
+  and degraded-policy expectations
 
 ### 7.3 Workflow benchmarks
 

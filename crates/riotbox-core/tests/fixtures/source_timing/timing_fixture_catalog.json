@@ -1,0 +1,124 @@
+{
+  "schema": "riotbox.source_timing_fixture_catalog.v1",
+  "schema_version": 1,
+  "description": "First deterministic P012 source-timing fixture seeds. These are expected timing contracts, not embedded audio assets.",
+  "cases": [
+    {
+      "fixture_id": "fx_timing_clean_128_4x4",
+      "category": "clean_rhythm",
+      "title": "Clean 128 BPM four-on-floor grid",
+      "duration_seconds": 16.0,
+      "expected": {
+        "primary_bpm": 128.0,
+        "bpm_tolerance": 0.2,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "high",
+        "degraded_policy": "locked",
+        "beat_hit_tolerance_ms": 35.0,
+        "downbeat_tolerance_ms": 35.0,
+        "phrase_tolerance_bars": 0,
+        "expected_beat_count_min": 32,
+        "expected_bar_count_min": 8,
+        "expected_phrase_count_min": 2,
+        "confidence_floor": 0.85,
+        "warnings": [],
+        "alternatives": []
+      },
+      "notes": "Baseline high-confidence grid for first analyzer and lane-alignment tests."
+    },
+    {
+      "fixture_id": "fx_timing_dense_break_130",
+      "category": "dense_break",
+      "title": "Dense 130 BPM break with ghost-note pressure",
+      "duration_seconds": 16.0,
+      "expected": {
+        "primary_bpm": 130.0,
+        "bpm_tolerance": 0.4,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "medium",
+        "degraded_policy": "cautious",
+        "beat_hit_tolerance_ms": 70.0,
+        "downbeat_tolerance_ms": 70.0,
+        "phrase_tolerance_bars": 1,
+        "expected_beat_count_min": 32,
+        "expected_bar_count_min": 8,
+        "expected_phrase_count_min": 1,
+        "confidence_floor": 0.62,
+        "warnings": ["weak_backbeat_anchor"],
+        "alternatives": []
+      },
+      "notes": "Ghost notes should not destroy downbeat selection, but destructive moves should stay cautious."
+    },
+    {
+      "fixture_id": "fx_timing_hook_forward_120",
+      "category": "hook_forward",
+      "title": "Hook-forward 120 BPM phrase grid",
+      "duration_seconds": 24.0,
+      "expected": {
+        "primary_bpm": 120.0,
+        "bpm_tolerance": 0.25,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "high",
+        "degraded_policy": "locked",
+        "beat_hit_tolerance_ms": 35.0,
+        "downbeat_tolerance_ms": 35.0,
+        "phrase_tolerance_bars": 0,
+        "expected_beat_count_min": 48,
+        "expected_bar_count_min": 12,
+        "expected_phrase_count_min": 3,
+        "confidence_floor": 0.8,
+        "warnings": [],
+        "alternatives": []
+      },
+      "notes": "Phrase and answer-slot checks can use this case without quote-risk policy deciding the timing."
+    },
+    {
+      "fixture_id": "fx_timing_halftime_140_ambiguous",
+      "category": "half_time_ambiguity",
+      "title": "140 BPM source with plausible 70 BPM half-time read",
+      "duration_seconds": 16.0,
+      "expected": {
+        "primary_bpm": 140.0,
+        "bpm_tolerance": 0.5,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "medium",
+        "degraded_policy": "manual_confirm",
+        "beat_hit_tolerance_ms": 70.0,
+        "downbeat_tolerance_ms": 70.0,
+        "phrase_tolerance_bars": 1,
+        "expected_beat_count_min": 32,
+        "expected_bar_count_min": 8,
+        "expected_phrase_count_min": 1,
+        "confidence_floor": 0.55,
+        "warnings": ["half_time_possible", "ambiguous_downbeat"],
+        "alternatives": [
+          { "kind": "half_time", "bpm": 70.0, "confidence_floor": 0.45 }
+        ]
+      },
+      "notes": "Primary grid can exist, but high-impact lane moves should require confirmation."
+    },
+    {
+      "fixture_id": "fx_timing_weak_noisy_123",
+      "category": "weak_timing",
+      "title": "Weak noisy source with tentative 123 BPM estimate",
+      "duration_seconds": 12.0,
+      "expected": {
+        "primary_bpm": 123.0,
+        "bpm_tolerance": 2.0,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "low",
+        "degraded_policy": "manual_confirm",
+        "beat_hit_tolerance_ms": 70.0,
+        "downbeat_tolerance_ms": 120.0,
+        "phrase_tolerance_bars": 2,
+        "expected_beat_count_min": 16,
+        "expected_bar_count_min": 4,
+        "expected_phrase_count_min": 0,
+        "confidence_floor": 0.3,
+        "warnings": ["low_timing_confidence", "weak_kick_anchor", "phrase_uncertain"],
+        "alternatives": []
+      },
+      "notes": "This case must never report high confidence; low timing should stay visibly degraded."
+    }
+  ]
+}

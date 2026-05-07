@@ -38,6 +38,8 @@ Current benchmark artifacts:
   Normalized product-export reproducibility boundary for the current Feral grid generated-support full-mix seam.
 - [stage_style_stability_proof_2026-05-07.md](./stage_style_stability_proof_2026-05-07.md)
   Normalized repeated-run proof for the generated stage-style restore-diversity observer/audio stability seam.
+- [source_timing_fixture_seeds_2026-05-07.md](./source_timing_fixture_seeds_2026-05-07.md)
+  Initial P012 source-timing fixture seed catalog and validation gate for BPM, grid, confidence, ambiguity, and degraded-policy expectations.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
