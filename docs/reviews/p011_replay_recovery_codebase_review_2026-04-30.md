@@ -40,7 +40,8 @@ metadata and fallback-output assertions.
 
 ### 2. Snapshot-payload restore parity tests duplicate anchor construction
 
-- Location: `crates/riotbox-app/src/jam_app/tests/w30_replay.rs:194`
+- Location: `crates/riotbox-app/src/jam_app/tests/w30_replay_core.rs:174`
+- Location: `crates/riotbox-app/src/jam_app/tests/w30_replay_snapshot_variants.rs:1`
 - Location: `crates/riotbox-app/src/jam_app/tests/tr909_replay.rs:169`
 - Location: `crates/riotbox-app/src/jam_app/tests/mc202_restore_replay.rs:22`
 - Category: scope

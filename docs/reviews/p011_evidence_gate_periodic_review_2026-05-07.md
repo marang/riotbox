@@ -67,7 +67,9 @@ mechanically shard files just to chase a line count.
 Follow-up status: `RIOTBOX-573` landed the core W-30 replay executor split.
 `RIOTBOX-575` landed the app-level split for the Ghost assist queue, W-30
 committed preview/resample cases, UI shell fixture snapshots, and observer/audio
-correlation entrypoint.
+correlation entrypoint. `RIOTBOX-577` landed the next adjacent P011 test split
+by separating W-30 source-window projection versus artifact-backed playback
+tests, and W-30 replay core paths versus snapshot payload variants and helpers.
 
 ### 2. P011 exit evidence validation does not prove referenced `just` recipes exist
 
@@ -132,6 +134,10 @@ normal cargo arguments.
   Ghost queue/current/feed tests, W-30 committed preview versus resample tests,
   UI shell fixture/snapshot groups, and observer/audio correlation args, summary
   build, and summary render responsibilities.
+- `RIOTBOX-577`: split the next adjacent P011 test files over the soft review
+  budget. This landed by separating W-30 source-window projection/artifact tests
+  and W-30 replay core/snapshot/helper responsibilities without changing test
+  behavior.
 - Continue P011 with the smallest next slice that converts smoke-level evidence
   into stronger replay, recovery, export, or stage-style proof without creating a
   shadow path.

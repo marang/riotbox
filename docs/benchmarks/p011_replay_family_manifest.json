@@ -51,9 +51,15 @@
       "output_path": true,
       "proofs": [
         {
-          "path": "crates/riotbox-app/src/jam_app/tests/w30_replay.rs",
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_replay_core.rs",
           "tests": [
-            "w30_snapshot_payload_restore_runner_matches_committed_app_preview_output",
+            "w30_snapshot_payload_restore_runner_matches_committed_app_preview_output"
+          ],
+          "command": "cargo test -p riotbox-app w30_snapshot_payload_restore_runner_matches_committed_app_preview_output -- --nocapture"
+        },
+        {
+          "path": "crates/riotbox-app/src/jam_app/tests/w30_replay_snapshot_variants.rs",
+          "tests": [
             "w30_snapshot_payload_restore_hydrates_damage_profile_preview_output",
             "w30_snapshot_payload_restore_hydrates_promoted_audition_preview_output"
           ],
