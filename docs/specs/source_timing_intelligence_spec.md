@@ -441,6 +441,16 @@ detection:
   phase score is stronger
 - `AmbiguousDownbeat` remains visible while scoring is only onset-presence based
 
+The candidate confidence report summarizes this early detector state for QA:
+
+- `source_timing_candidate_confidence_report(...)`
+- `just source-timing-candidate-confidence-report`
+- the report preserves BPM confidence, effective timing quality, degraded
+  policy, hypothesis counts, alternate-downbeat counts, warning codes, and
+  whether manual confirmation is still required
+- this report is for regression and review evidence only; it is not a user-facing
+  confidence UI yet
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 

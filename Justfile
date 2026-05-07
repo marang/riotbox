@@ -22,6 +22,7 @@ ci:
     just source-timing-wav-probe
     just source-timing-bpm-candidates
     just source-timing-downbeat-ambiguity
+    just source-timing-candidate-confidence-report
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
     just p011-exit-evidence-manifest-validator-fixtures
@@ -96,6 +97,9 @@ source-timing-bpm-candidates:
 source-timing-downbeat-ambiguity:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases -- --nocapture
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_keep_primary_bar_grid_phase_when_clearer -- --nocapture
+
+source-timing-candidate-confidence-report:
+    cargo test -p riotbox-core source_timing_candidate_confidence_report -- --nocapture
 
 w30-smoke-candidate date="local" duration="2.0":
     cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role candidate --duration-seconds "{{duration}}"
