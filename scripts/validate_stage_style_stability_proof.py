@@ -70,9 +70,11 @@ def build_proof(run_dirs: list[Path]) -> dict[str, Any]:
         "scope": "bounded CI-safe observer/audio stability proof, not host-audio soak",
         "runs": runs,
     }
+    proof_identity = normalized_proof_identity(proof_without_hash)
     return {
         **proof_without_hash,
-        "normalized_proof_sha256": sha256_text(canonical_json(proof_without_hash)),
+        "normalized_proof_identity": proof_identity,
+        "normalized_proof_sha256": sha256_text(canonical_json(proof_identity)),
     }
 
 
@@ -110,6 +112,41 @@ def normalize_run(index: int, run_dir: Path) -> dict[str, Any]:
         "full_mix_rms": metrics["full_mix_rms"],
         "full_mix_low_band_rms": metrics["full_mix_low_band_rms"],
         "needs_human_listening": summary["needs_human_listening"],
+    }
+
+
+def normalized_proof_identity(proof: dict[str, Any]) -> dict[str, Any]:
+    """Return the stable proof identity, excluding run-local audit hashes.
+
+    The generated support mix hash is the product-level stability signal. Other
+    per-run file hashes are still emitted for audit/debugging, but they can drift
+    across independent temp directories or regenerated observer artifacts.
+    """
+
+    return {
+        "schema": proof["schema"],
+        "schema_version": proof["schema_version"],
+        "boundary": proof["boundary"],
+        "run_count": proof["run_count"],
+        "stable_mix_sha256": proof["stable_mix_sha256"],
+        "required_commit_boundaries": proof["required_commit_boundaries"],
+        "scope": proof["scope"],
+        "runs": [normalized_run_identity(run) for run in proof["runs"]],
+    }
+
+
+def normalized_run_identity(run: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "run": run["run"],
+        "observer_event_count": run["observer_event_count"],
+        "commit_count": run["commit_count"],
+        "commit_boundaries": run["commit_boundaries"],
+        "key_outcomes": run["key_outcomes"],
+        "pack_id": run["pack_id"],
+        "artifact_count": run["artifact_count"],
+        "full_mix_rms": run["full_mix_rms"],
+        "full_mix_low_band_rms": run["full_mix_low_band_rms"],
+        "needs_human_listening": run["needs_human_listening"],
     }
 
 

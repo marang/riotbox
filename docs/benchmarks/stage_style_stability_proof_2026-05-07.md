@@ -29,9 +29,14 @@ Each run must produce:
 - non-collapsed full-mix RMS and low-band RMS
 - the same generated-support full-mix WAV SHA-256 across repeated runs
 
-The normalized proof records run count, observer event counts, summary and
-manifest hashes, stable mix hash, commit counts, boundary coverage, and bounded
-scope. It keeps temp paths out of the durable proof data.
+The proof records run count, observer event counts, summary and manifest hashes,
+stable mix hash, commit counts, boundary coverage, and bounded scope. It keeps
+temp paths out of the durable proof data.
+
+`normalized_proof_sha256` is computed from a stable proof identity that excludes
+run-local observer, summary, manifest, and per-run mix audit hashes. Those hashes
+remain in the proof JSON for debugging, but the stable product signal is the
+top-level `stable_mix_sha256` plus the normalized control/output evidence shape.
 
 ## Product Scope
 

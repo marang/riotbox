@@ -110,13 +110,11 @@ normal cargo arguments.
 
 ## Residual Risks
 
-- `scripts/validate_stage_style_stability_proof.py:63` builds a normalized proof
-  object that still contains per-run artifact hashes at
-  `scripts/validate_stage_style_stability_proof.py:101`. The stable output
-  signal is the `stable_mix_sha256`, not necessarily the proof hash across
-  independent working directories or regenerated observer artifacts. Treat the
-  proof hash as run-local unless a later slice intentionally normalizes the
-  per-run hashes out of the proof identity.
+- `RIOTBOX-576` normalizes the stage-style stability proof identity so the
+  top-level proof hash no longer includes run-local observer, summary, manifest,
+  or per-run mix audit hashes. Those audit hashes still remain in the proof JSON
+  for debugging; the stable output signal remains `stable_mix_sha256` plus the
+  normalized control/output evidence shape.
 - The current P011 gate family remains CI-safe and bounded. It is useful
   hardening evidence, but it is still not a replacement for full replay
   execution, full product export, or live host-audio endurance validation.
