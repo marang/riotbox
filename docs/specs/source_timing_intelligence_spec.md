@@ -398,6 +398,12 @@ fixture timing expectations into the `TimingModel` payload shape:
 - `crates/riotbox-core/src/source_graph/timing_analysis.rs`
 - `just source-timing-analyzer-skeleton-fixtures`
 
+The first implemented evaluator step compares analyzer output back to fixture
+expectations:
+
+- `crates/riotbox-core/src/source_graph/timing_evaluation.rs`
+- `just source-timing-fixture-evaluator`
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 
