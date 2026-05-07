@@ -207,6 +207,8 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - TR-909 source reason: `{}`\n\
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
+             - W-30 source-chop reason: `{}`\n\
+             - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
@@ -231,6 +233,10 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             report.tr909_source_profile.phrase_variation.label(),
             report.tr909_source_profile.low_band_energy_ratio,
             report.tr909_source_profile.high_band_energy_ratio,
+            report.w30_source_chop_profile.reason,
+            report.w30_source_chop_profile.preview_rms,
+            report.w30_source_chop_profile.source_window_rms,
+            report.w30_source_chop_profile.gain,
             report.source_first_generated_to_source_rms_ratio,
             report.support_generated_to_source_rms_ratio,
             report.full_mix.low_band.rms,
@@ -307,6 +313,9 @@ fn write_manifest(
         },
         metrics: ManifestPackMetrics {
             tr909_source_profile: manifest_tr909_source_profile(report.tr909_source_profile),
+            w30_source_chop_profile: manifest_w30_source_chop_profile(
+                report.w30_source_chop_profile,
+            ),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
             source_first_mix: manifest_render_metrics(report.source_first_mix),
@@ -415,7 +424,7 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              - W-30 source window length: `{:.3}s`\n\n\
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
-             - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop rendered on the same grid.\n\
+             - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop with articulate source-window selection and bounded loudness normalization.\n\
              - `03_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated drums stay secondary.\n\
              - `04_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 adds low-end and movement without proving source extraction by itself.\n\
              - `grid-report.md`: timing and output metrics.\n\

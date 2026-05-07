@@ -177,6 +177,12 @@ Early P011 guardrail defaults:
   evidence, chosen support profile, pattern adoption, phrase variation,
   drum-bus level, slam intensity, and reason label so reviewers can see why the
   support pattern changed.
+- Feral grid W-30 source-chop output must carry audible source identity, not only
+  prove that a source window exists. The generated manifest records
+  `metrics.w30_source_chop_profile` with source-window RMS, selected segment
+  RMS, normalized preview RMS/peak, selected source frame, gain, and reason label
+  so reviewers can tell whether the W-30 stem used an articulate source segment
+  and did not collapse back to a generic preview/control tone.
 
 ### 3.3 Fixture-backed golden render review
 
