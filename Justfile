@@ -19,6 +19,7 @@ ci:
     just source-timing-fixture-catalog-validator-fixtures
     just source-timing-analyzer-skeleton-fixtures
     just source-timing-fixture-evaluator
+    just source-timing-wav-probe
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
     just p011-exit-evidence-manifest-validator-fixtures
@@ -81,6 +82,9 @@ source-timing-analyzer-skeleton-fixtures:
 
 source-timing-fixture-evaluator:
     cargo test -p riotbox-core source_timing_fixture -- --nocapture
+
+source-timing-wav-probe:
+    cargo test -p riotbox-audio source_timing_probe -- --nocapture
 
 w30-smoke-candidate date="local" duration="2.0":
     cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role candidate --duration-seconds "{{duration}}"

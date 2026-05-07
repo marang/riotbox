@@ -404,6 +404,12 @@ expectations:
 - `crates/riotbox-core/src/source_graph/timing_evaluation.rs`
 - `just source-timing-fixture-evaluator`
 
+The first implemented WAV probe step extracts deterministic onset-envelope
+features from existing PCM WAV source loading:
+
+- `crates/riotbox-audio/src/source_timing_probe.rs`
+- `just source-timing-wav-probe`
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 
