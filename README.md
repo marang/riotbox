@@ -151,6 +151,7 @@ Best next moves from there:
 - `Recipe 11` if you want to check whether W-30 capture reuse is source-backed or on fallback
 - `Recipe 12` if you want to follow the new `feral ready` suggested gesture path
 - `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the TUI by ear
+- `Recipe 15` if you want an offline Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
 - `Recipe 7` only if you want one longer workflow loop for queue -> commit -> capture -> audition -> promote -> hit -> undo
 
 If `just` is installed, the normal local check path is:
@@ -164,6 +165,16 @@ If you render local audio QA packs and want to capture a listening verdict, star
 ```bash
 just audio-qa-notes artifacts/audio_qa/local/notes.md
 ```
+
+For the current Feral grid listening pack, do not assume `auto` BPM is always the best-sounding path yet. Auto mode is now honest and reports whether it used source timing or fell back to the static grid, but real example files can still need an explicit BPM:
+
+```bash
+just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local-beat03-explicit 130.0 8 1.0 0.0
+just feral-grid-pack "data/test_audio/examples/Beat08_128BPM(Full).wav" local-beat08-auto auto 8 1.0 0.0
+just feral-grid-pack "data/test_audio/examples/DH_BeatC_120-01.wav" local-dh-beatc-explicit 120.0 8 1.0 0.0
+```
+
+Then inspect `manifest.json`: `grid_bpm_source`, `source_timing_bpm_delta`, and `source_timing.bpm_agrees_with_grid` tell you whether the pack timing was trusted or only a fallback. The current local benchmark is documented in [`docs/benchmarks/source_timing_example_readiness_2026-05-07.md`](docs/benchmarks/source_timing_example_readiness_2026-05-07.md).
 
 If `just` is not installed, the direct equivalents are:
 

@@ -20,6 +20,13 @@ Good starter files from the local example set:
 - `data/test_audio/examples/DH_BeatC_120-01.wav`
 - `data/test_audio/examples/DH_RushArp_120_A.wav`
 
+Source choice depends on what you are testing:
+
+- `Beat08_128BPM(Full).wav` is the safest first timing/queue source.
+- `Beat03_130BPM(Full).wav` is useful, but current Feral grid listening packs should use explicit `130 BPM`.
+- `DH_BeatC_120-01.wav` should use explicit `120 BPM` for Feral grid listening packs.
+- `DH_RushArp_120_A.wav` is useful for tonal scene contrast, but not a good TR-909 drum-support Feral grid pack source yet.
+
 Example launch:
 
 ```bash
@@ -580,6 +587,55 @@ What it does not prove yet:
 - device-level playback on the host
 - finished sampler/sequencer behavior
 
+## Recipe 15: Render A Feral Grid Pack With Honest BPM
+
+Goal: generate one local Feral grid audio pack without pretending auto timing is stronger than it is today.
+
+This is not an interactive TUI recipe. Use it when you want WAVs to audition what the current offline Feral grid seam can render.
+
+Start with one explicit-BPM example:
+
+```bash
+just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local-beat03-feral-grid 130.0 8 1.0 0.0
+```
+
+Then listen in this order:
+
+```text
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/01_tr909_beat_fill.wav
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/02_w30_feral_source_chop.wav
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/03_riotbox_source_first_mix.wav
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/04_riotbox_generated_support_mix.wav
+```
+
+Try these variants:
+
+```bash
+just feral-grid-pack "data/test_audio/examples/Beat08_128BPM(Full).wav" local-beat08-feral-grid-auto auto 8 1.0 0.0
+just feral-grid-pack "data/test_audio/examples/DH_BeatC_120-01.wav" local-dh-beatc-feral-grid 120.0 8 1.0 0.0
+```
+
+How to interpret `auto`:
+
+- `grid_bpm_source: source_timing` means the current readiness report drove the grid.
+- `grid_bpm_source: static_default` means auto mode fell back to the static default grid.
+- `source_timing.bpm_agrees_with_grid: false` means the generated pack is timing-risky and should not be judged as a successful beat-grid example.
+- `source_timing.readiness: weak` means the detector saw useful evidence but not enough downbeat/phrase confidence for automatic trust.
+
+Current local benchmark result:
+
+- `Beat03_130BPM(Full).wav`: use explicit `130 BPM`; auto currently falls back to `128 BPM`.
+- `Beat08_128BPM(Full).wav`: BPM is close in auto mode, but readiness is still weak.
+- `Beat20_128BPM(Full).wav`: similar to Beat08.
+- `DH_BeatC_120-01.wav`: use explicit `120 BPM`; auto fallback is musically misleading.
+- `DH_RushArp_120_A.wav`: do not use this path for Feral grid drum-support examples yet; it needs a separate melodic/source-chop showcase path.
+
+What this proves today:
+
+- Riotbox can generate a bounded TR-909 plus W-30 Feral grid pack with manifest-backed output metrics.
+- The pack is useful for listening and QA, not yet a full composition/export workflow.
+- Explicit BPM is still the honest path for some real examples until source timing reaches `ready`.
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -596,6 +652,7 @@ So if two runs feel similar:
 - use `Recipe 12` if you want to understand the new `feral ready` gesture path
 - use `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the live TUI path
 - use `Recipe 14` if you want a CI-safe first-playable control-plus-output probe
+- use `Recipe 15` if you want a local Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 
