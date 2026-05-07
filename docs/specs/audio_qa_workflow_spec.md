@@ -138,6 +138,20 @@ The current lightweight command is:
 just source-showcase-diversity "PACK_A PACK_B ..."
 ```
 
+After the P011 source-diversity, mix-balance, source-aware TR-909, and W-30
+source-chop guardrails have landed, use the representative local showcase
+generator for a multi-source review pack:
+
+```bash
+just representative-source-showcase
+```
+
+That command writes ignored artifacts under
+`artifacts/audio_qa/local-representative-source-showcase/`, including raw source
+comparison windows, W-30 source chops, source-first mixes, generated-support
+mixes, source-diversity output, reproducibility evidence, and an observer/audio
+correlation summary.
+
 It hashes referenced audio artifacts and compares manifest metrics across
 multiple `manifest.json` files or pack directories. It is a blocker gate for
 source-showcase packs, not a replacement for listening review. A passing result

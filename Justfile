@@ -147,6 +147,9 @@ listening-manifest-validator-fixtures:
 source-showcase-diversity manifests:
     python3 scripts/validate_source_showcase_diversity.py {{manifests}}
 
+representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase":
+    scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}"
+
 source-showcase-diversity-validator-fixtures:
     python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08
     if python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/invalid_dominated_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/invalid_dominated_beat08; then echo "expected dominated source-showcase fixture to fail" >&2; exit 1; fi
