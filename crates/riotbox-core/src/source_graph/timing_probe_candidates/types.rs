@@ -80,6 +80,32 @@ pub enum SourceTimingProbeDownbeatEvidenceStatus {
 }
 
 #[derive(Clone, Debug, PartialEq)]
+pub struct SourceTimingProbeReadinessReport {
+    pub schema: &'static str,
+    pub schema_version: u32,
+    pub source_id: String,
+    pub primary_bpm: Option<f32>,
+    pub primary_downbeat_offset_beats: Option<u8>,
+    pub beat_status: SourceTimingProbeBeatEvidenceStatus,
+    pub downbeat_status: SourceTimingProbeDownbeatEvidenceStatus,
+    pub confidence_result: SourceTimingCandidateConfidenceResult,
+    pub drift_status: SourceTimingCandidateDriftStatus,
+    pub phrase_status: SourceTimingCandidatePhraseStatus,
+    pub alternate_evidence_count: usize,
+    pub warning_codes: Vec<TimingWarningCode>,
+    pub requires_manual_confirm: bool,
+    pub readiness: SourceTimingProbeReadinessStatus,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SourceTimingProbeReadinessStatus {
+    Unavailable,
+    Weak,
+    NeedsReview,
+    Ready,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingCandidateConfidenceReport {
     pub schema: &'static str,
     pub schema_version: u32,
