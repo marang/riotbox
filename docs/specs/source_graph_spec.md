@@ -110,6 +110,11 @@ Rules:
 
 ## 7. Timing Model
 
+The richer Source Timing Intelligence contract is defined in
+`docs/specs/source_timing_intelligence_spec.md`. This section records the
+minimum Source Graph v1 timing shape and compatibility fields that existing
+consumers still use.
+
 ```text
 Timing {
   bpm_estimate
@@ -143,6 +148,8 @@ Each bar should expose:
 
 - uncertain timing must remain visible; do not silently round ambiguity away
 - downstream scheduling may use the graph, but realtime commit timing remains a core responsibility
+- future timing-aware lanes must consume the shared Source Graph timing contract
+  rather than adding lane-local beat-grid or downbeat models
 
 ---
 
