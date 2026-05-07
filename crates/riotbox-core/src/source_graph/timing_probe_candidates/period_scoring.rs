@@ -44,6 +44,39 @@ fn beat_period_scores(
     scores
 }
 
+#[must_use]
+pub fn source_timing_probe_beat_evidence_report(
+    input: &SourceTimingProbeBpmCandidateInput,
+    policy: SourceTimingProbeBpmCandidatePolicy,
+) -> SourceTimingProbeBeatEvidenceReport {
+    let scores = beat_period_scores(input, policy);
+    let primary = scores.first().copied();
+    let alternate_candidate_count = ambiguous_beat_period_scores(&scores, policy).count();
+    let status = match primary {
+        None => SourceTimingProbeBeatEvidenceStatus::Unavailable,
+        Some(score) if score.score < policy.min_beat_period_score => {
+            SourceTimingProbeBeatEvidenceStatus::Weak
+        }
+        Some(_) if alternate_candidate_count > 0 => SourceTimingProbeBeatEvidenceStatus::Ambiguous,
+        Some(_) => SourceTimingProbeBeatEvidenceStatus::Stable,
+    };
+
+    SourceTimingProbeBeatEvidenceReport {
+        schema: "riotbox.source_timing_probe_beat_evidence.v1",
+        schema_version: 1,
+        source_id: input.source_id.clone(),
+        onset_count: normalized_onset_times(input).len(),
+        candidate_count: scores.len(),
+        primary_bpm: primary.map(|score| score.bpm),
+        primary_period_seconds: primary.map(|score| score.period_seconds),
+        primary_score: primary.map(|score| score.score),
+        primary_matched_onset_ratio: primary.map(|score| score.matched_onset_ratio),
+        primary_median_distance_ratio: primary.map(|score| score.median_distance_ratio),
+        alternate_candidate_count,
+        status,
+    }
+}
+
 fn period_score_order(left: &BeatPeriodScore, right: &BeatPeriodScore) -> std::cmp::Ordering {
     const SCORE_TIE_MARGIN: f32 = 0.001;
 

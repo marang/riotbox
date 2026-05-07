@@ -17,6 +17,7 @@ The candidate path reports:
 - downbeat-accent phase scoring from probe-window onset strength
 - 4/8/16/32-bar source-grid drift reports when enough source material exists
 - preliminary 4-bar phrase candidates when bar timing is stable and long enough
+- beat-period evidence summaries for QA explanation of candidate selection
 - ambiguous downbeat and phrase-uncertain warnings when evidence stays weak
 - fixture-like PCM WAV probe evidence that reaches the same candidate path
 
@@ -38,6 +39,16 @@ phrase-grid gate proves that stable bar evidence can produce preliminary
 
 ```bash
 just source-timing-phrase-grid
+```
+
+A focused beat-evidence gate proves that the dominant onset interval evidence
+is reportable as candidate count, primary BPM/period, primary score,
+matched-onset ratio, median-distance ratio, alternate-candidate count, and a
+stable / weak / ambiguous / unavailable status. It also checks the generated
+WAV bridge for stable long accented 120 BPM material.
+
+```bash
+just source-timing-beat-evidence
 ```
 
 ## Boundary

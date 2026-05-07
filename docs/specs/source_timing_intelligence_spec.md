@@ -187,6 +187,11 @@ Rules:
   require reviewers to infer it from raw hypotheses. Early report statuses
   should distinguish unavailable primary timing, not-enough-material,
   ambiguous-downbeat, high-drift, and stable preliminary phrase evidence.
+- source timing QA reports should also expose beat-period evidence behind a BPM
+  candidate: candidate count, primary BPM/period, score, matched-onset ratio,
+  median-distance ratio, alternate-candidate count, and whether the evidence is
+  unavailable, weak, stable, or ambiguous. This is explanatory QA evidence, not
+  permission for downstream lanes to treat the grid as production-locked.
 
 ---
 
