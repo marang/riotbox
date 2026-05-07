@@ -195,11 +195,11 @@ Current bounded gates:
 - `just stage-style-stability-gate` is the stronger bounded variant with more repetitions and a longer generated source/grid budget.
 - `just interrupted-session-recovery-probe` and `just missing-target-recovery-probe` cover generated file-backed recovery observer drills.
 - `just offline-render-reproducibility-smoke` proves an existing deterministic source-backed W-30 render helper emits byte-stable WAV output for the same generated source.
-- `just full-grid-export-reproducibility-smoke` proves the deterministic Feral grid source-first plus generated-support pack validates and exports the same generated-support WAV hash twice from generated source material.
+- `just full-grid-export-reproducibility-smoke` / `just product-export-reproducibility-smoke` proves the deterministic Feral grid source-first plus generated-support pack validates and exports the same generated-support WAV hash twice from generated source material, then validates a normalized product-export proof that removes temp paths and compares stable manifest data plus audio artifact hashes.
 
 Current boundary:
 
-- These are bounded CI-safe probes, not host-audio soak tests, automatic recovery, full arrangement export, stem export, or DAW-style export coverage.
+- These are bounded CI-safe probes, not host-audio soak tests, automatic recovery, full arrangement export, stem package export, live recording export, or DAW-style export coverage.
 - P011 should remain active until the exit checklist can say replay, recovery, export reproducibility, and stage-style reliability are no longer smoke-level evidence.
 
 ---

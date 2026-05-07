@@ -29,6 +29,10 @@ bounded. It proves important seams, not complete product-grade recovery.
 - `just offline-render-reproducibility-smoke`
   Proves one deterministic source-backed W-30 render emits byte-stable WAV
   output for the same generated source.
+- `just product-export-reproducibility-smoke`
+  Proves the current Feral grid generated-support full-mix export seam is
+  reproducible after normalizing temp/source paths away from the listening
+  manifest and comparing stable audio artifact hashes.
 - `cargo test -p riotbox-app app_snapshot_payload_restore_rejects -- --nocapture`
   Proves app-level snapshot-payload restore failure paths are explicit and
   non-mutating.
@@ -146,6 +150,9 @@ bounded. It proves important seams, not complete product-grade recovery.
 - Stage-style QA now includes bounded output-path evidence plus a payload
   readiness guard.
 - Offline render reproducibility has one CI-safe smoke gate.
+- The current Feral grid generated-support full-mix seam has a normalized
+  product-export reproducibility proof. This is still bounded and does not
+  cover full arrangement export, stem packages, or live recording export.
 
 ## Snapshot Restore Parity Coverage Matrix
 
@@ -212,8 +219,9 @@ remain open P011 work.
   capture / promote actions beyond `w30.loop_freeze`, `promote.resample`,
   bounded `w30.capture_to_pad`, bounded `capture.bar_group`, and bounded
   `capture.now` / `capture.loop`.
-- Full arrangement export, stems, recording, or manifest-normalized export
-  reproducibility.
+- Full arrangement export, stem package export, live recording export, or
+  product export commands beyond the current Feral grid generated-support
+  full-mix boundary.
 - Long-run soak behavior over extended live sessions.
 - Real user-session recovery drills against an actual interrupted host run.
 

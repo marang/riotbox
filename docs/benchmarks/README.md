@@ -32,6 +32,8 @@ Current benchmark artifacts:
   Machine-checkable P011 supported replay-family evidence index.
 - [representative_source_showcase_2026-05-07.md](./representative_source_showcase_2026-05-07.md)
   Local multi-source Feral grid showcase generator for source-response review after the P011 diversity fixes.
+- [product_export_reproducibility_boundary_2026-05-07.md](./product_export_reproducibility_boundary_2026-05-07.md)
+  Normalized product-export reproducibility boundary for the current Feral grid generated-support full-mix seam.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
