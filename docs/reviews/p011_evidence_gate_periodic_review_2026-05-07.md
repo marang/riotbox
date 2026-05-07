@@ -119,9 +119,14 @@ normal cargo arguments.
 ## Recommended Follow-Ups
 
 - `RIOTBOX-573`: split the largest replay/test hotspots by semantic
-  responsibility before adding another broad replay family to those files.
+  responsibility before adding another broad replay family to those files. The
+  first durable split should target the core W-30 replay executor tests by
+  separating cue/focus moves, promotion replay, capture replay, and artifact
+  hydration planning.
 - `RIOTBOX-574`: tighten the P011 exit evidence manifest validator so stale or
   misspelled `just` recipe references fail.
+- `RIOTBOX-575`: continue with the remaining app-level Ghost/W-30/UI/observer
+  hotspots after the core W-30 replay split lands.
 - Continue P011 with the smallest next slice that converts smoke-level evidence
   into stronger replay, recovery, export, or stage-style proof without creating a
   shadow path.
