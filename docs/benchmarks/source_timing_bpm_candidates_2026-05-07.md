@@ -70,6 +70,10 @@ separate timing authority.
 just source-timing-readiness-report
 ```
 
+Generated Feral grid listening packs should carry this readiness summary in
+their manifest so example audio can be judged against timing evidence instead
+of only against rendered level metrics.
+
 ## Boundary
 
 This is not a production BPM/downbeat detector. It is an intentionally bounded
