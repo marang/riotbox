@@ -23,11 +23,11 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
         Line::from(""),
         Line::from("Session recovery"),
         Line::from(surface.headline.clone()),
-        Line::from(surface.safety_note.clone()),
-        Line::from("No candidate is selected here; reload an explicit reviewed path manually."),
+        Line::from("Manual recovery only: Riotbox did not choose, load, replace, or delete."),
+        Line::from("Selected candidate: none | dry-run only | no auto-restore"),
     ];
-    if let Some(preview_line) = recovery_preview_line(surface) {
-        lines.push(Line::from(preview_line));
+    if let Some(guide_lines) = manual_choice_guide_lines(surface) {
+        lines.extend(guide_lines.into_iter().map(Line::from));
     }
     lines.push(Line::from(format!(
         "Restore replay: {} | {} | {}",
@@ -80,18 +80,27 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
     Some(lines)
 }
 
-fn recovery_preview_line(surface: &crate::jam_app::SessionRecoverySurface) -> Option<String> {
+fn manual_choice_guide_lines(surface: &crate::jam_app::SessionRecoverySurface) -> Option<Vec<String>> {
     let candidate = surface
         .candidates
         .iter()
         .find(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))?;
     let dry_run = surface.dry_run_manual_choice(&candidate.path)?;
+    let file = recovery_candidate_file_label(candidate.path.as_path());
+    let replay = compact_restore_replay_label(&candidate.replay_family_label);
+    let artifact = candidate.artifact_availability_label.as_str();
+    let decision = compact_recovery_decision_label(&candidate.decision_label);
 
-    Some(format!(
-        "Preview only: inspect {} | {} | no restore selected",
-        recovery_candidate_file_label(dry_run.candidate_path.as_path()),
-        compact_recovery_decision_label(&dry_run.decision_label),
-    ))
+    Some(vec![
+        format!(
+            "Review candidate: {file} | {decision} | {}",
+            candidate.status_label
+        ),
+        format!("Replay/artifacts: {replay} | {artifact} | {}", candidate.payload_readiness_label),
+        format!("Dry-run result: {} | no restore selected", dry_run.safety_note),
+        "Next: inspect that file outside Riotbox; restart with --session only if you choose it."
+            .into(),
+    ])
 }
 
 fn restore_replay_help_scope_label(shell: &JamShellState) -> String {

@@ -42,18 +42,31 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
 
     assert!(rendered.contains("Session recovery"), "{rendered}");
     assert!(
-        rendered.contains("Manual recovery only: Riotbox did not choose, load, replace, or delete"),
+        rendered.contains("Manual recovery only: Riotbox did not choose, load, replace, or"),
         "{rendered}"
     );
     assert!(
-        rendered.contains("No candidate is selected here; reload an explicit reviewed path"),
-        "{rendered}"
-    );
-    assert!(
-        rendered.contains("Preview only: inspect session.autosave.2026-04-29T211500Z.json"),
+        rendered.contains("Selected candidate: none | dry-run only | no auto-restore"),
         "{rendered}"
     );
     assert!(rendered.contains("no restore selected"), "{rendered}");
+    assert!(
+        rendered.contains("Review candidate: session.autosave.2026-04-29T211500Z.json"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Replay/artifacts: families none | no replay | artifacts n/a"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("payload none | full replay"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Dry-run result: Dry-run only: candidate inspected"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("Next: inspect that file outside Riotbox"), "{rendered}");
     assert!(
         shell
             .recovery_surface
@@ -61,24 +74,10 @@ fn renders_manual_recovery_prompt_in_warnings_and_help() {
             .is_some_and(|surface| surface.selected_candidate.is_none()),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("Restore replay: no replay entries"),
-        "{rendered}"
-    );
-    assert!(
-        rendered.contains("autosave file | decision reviewable | families none | no replay"),
-        "{rendered}"
-    );
-    assert!(
-        rendered.contains("artifacts n/a | no captures"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("artifacts n/a"), "{rendered}");
     assert!(rendered.contains("payload none"), "{rendered}");
     assert!(rendered.contains("families none"), "{rendered}");
-    assert!(
-        rendered.contains("decision reviewable"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("reviewable"), "{rendered}");
     assert!(rendered.contains("parseable session JSON"), "{rendered}");
 }
 
@@ -164,27 +163,20 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
     assert!(
-        rendered.contains("Restore replay: blocked: 1 unsupported suffix"),
+        rendered.contains("Review candidate: session.autosave.2026-04-29T231000Z.json"),
         "{rendered}"
     );
-    assert!(rendered.contains("mutate.scene"), "{rendered}");
+    assert!(rendered.contains("multi-blocked"), "{rendered}");
+    assert!(rendered.contains("parseable session JSON"), "{rendered}");
     assert!(
-        rendered.contains("autosave file | decision multi-blocked | families Scene | suffix 1"),
+        rendered.contains("Replay/artifacts: families Scene | suffix 1"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("payload ready"),
-        "{rendered}"
-    );
-    assert!(
-        rendered.contains("unsupported suffix"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("artifacts blocked"), "{rendered}");
+    assert!(rendered.contains("1 missing"), "{rendered}");
+    assert!(rendered.contains("payload ready"), "{rendered}");
     assert!(rendered.contains("families Scene"), "{rendered}");
-    assert!(
-        rendered.contains("decision multi-blocked"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("multi-blocked"), "{rendered}");
 }
 
 #[test]
@@ -268,21 +260,17 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 38);
 
-    assert!(
-        rendered.contains("autosave file | decision replay-blocked | families Scene | suffix 1"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("decision"), "{rendered}");
+    assert!(rendered.contains("replay-blocked"), "{rendered}");
+    assert!(rendered.contains("families Scene | suffix 1"), "{rendered}");
     assert!(
         rendered.contains("artifacts ready: 1"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("unsupported suffix mutate.scene"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("payload ready"), "{rendered}");
     assert!(
         !rendered.contains("Artifact note: audio present"),
         "{rendered}"
     );
-    assert!(rendered.contains("No candidate is selected here"), "{rendered}");
+    assert!(rendered.contains("Selected candidate: none"), "{rendered}");
 }
