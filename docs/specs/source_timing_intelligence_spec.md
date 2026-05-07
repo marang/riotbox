@@ -420,6 +420,16 @@ into a conservative `TimingModel` diagnostic:
 - the diagnostic does not emit BPM, beat grids, bar grids, phrase grids, or a
   primary hypothesis
 
+The first implemented BPM-candidate spike maps synthetic probe onset times into
+candidate `TimingHypothesis` entries:
+
+- `crates/riotbox-core/src/source_graph/timing_probe_candidates.rs`
+- `just source-timing-bpm-candidates`
+- it may emit a medium-confidence BPM candidate and beat grid for deterministic
+  synthetic onset spacing
+- it must preserve half-time / double-time alternatives when plausible
+- downbeat and phrase confidence remain explicitly uncertain
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 
