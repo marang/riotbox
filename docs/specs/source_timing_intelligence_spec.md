@@ -467,6 +467,9 @@ The candidate confidence report summarizes this early detector state for QA:
 - the report preserves BPM confidence, effective timing quality, degraded
   policy, hypothesis counts, alternate-downbeat counts, warning codes, and
   whether manual confirmation is still required
+- after drift-report v0, the report also preserves primary drift status,
+  available drift-window count, max/mean/end drift metrics, and drift
+  confidence so QA/TUI consumers do not need to scrape raw hypotheses
 - this report is for regression and review evidence only; it is not a user-facing
   confidence UI yet
 
