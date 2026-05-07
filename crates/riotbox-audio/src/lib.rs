@@ -3,5 +3,6 @@ pub mod mc202;
 pub mod probe;
 pub mod runtime;
 pub mod source_audio;
+pub mod source_timing_probe;
 pub mod tr909;
 pub mod w30;
