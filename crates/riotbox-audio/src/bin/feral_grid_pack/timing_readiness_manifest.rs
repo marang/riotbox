@@ -6,6 +6,7 @@ struct ManifestSourceTimingReadiness {
     readiness: &'static str,
     requires_manual_confirm: bool,
     primary_bpm: Option<f32>,
+    bpm_agrees_with_grid: Option<bool>,
     primary_downbeat_offset_beats: Option<u8>,
     beat_status: &'static str,
     downbeat_status: &'static str,
@@ -18,6 +19,7 @@ struct ManifestSourceTimingReadiness {
 
 fn manifest_source_timing_readiness(
     report: &SourceTimingProbeReadinessReport,
+    grid_bpm: GridBpmDecision,
 ) -> ManifestSourceTimingReadiness {
     ManifestSourceTimingReadiness {
         schema: report.schema,
@@ -26,6 +28,7 @@ fn manifest_source_timing_readiness(
         readiness: readiness_status_label(report.readiness),
         requires_manual_confirm: report.requires_manual_confirm,
         primary_bpm: report.primary_bpm,
+        bpm_agrees_with_grid: source_timing_bpm_agrees(grid_bpm.source_delta_bpm),
         primary_downbeat_offset_beats: report.primary_downbeat_offset_beats,
         beat_status: beat_evidence_status_label(report.beat_status),
         downbeat_status: downbeat_evidence_status_label(report.downbeat_status),

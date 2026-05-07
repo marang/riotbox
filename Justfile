@@ -166,8 +166,12 @@ lane-recipe-pack date="local" duration="2.0":
 feral-before-after source date="local" start="0.0" duration="2.0" source_window="1.0":
     cargo run -p riotbox-audio --bin feral_before_after_pack -- --source "{{source}}" --date "{{date}}" --source-start-seconds "{{start}}" --duration-seconds "{{duration}}" --source-window-seconds "{{source_window}}"
 
-feral-grid-pack source date="local" bpm="128.0" bars="8" source_window="1.0" start="0.0":
-    cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bpm "{{bpm}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"
+feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" start="0.0":
+    if [ "{{bpm}}" = "auto" ]; then \
+        cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
+    else \
+        cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bpm "{{bpm}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
+    fi
 
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"

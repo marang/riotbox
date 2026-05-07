@@ -280,12 +280,30 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
     )
 }
 
+fn verification_command(args: &Args, grid: &Grid, source_window_seconds: f32) -> String {
+    let bpm_arg = if args.bpm_overridden {
+        format!(" {:.3}", grid.bpm)
+    } else {
+        " auto".to_string()
+    };
+    format!(
+        "just feral-grid-pack \"{}\" {}{} {} {:.3} {:.3}",
+        args.source_path.display(),
+        args.date,
+        bpm_arg,
+        grid.bars,
+        source_window_seconds,
+        args.source_start_seconds
+    )
+}
+
 fn write_manifest(
     path: &Path,
     args: &Args,
     grid: &Grid,
     report: PackReport,
     timing_readiness: &SourceTimingProbeReadinessReport,
+    grid_bpm: GridBpmDecision,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = args.output_dir();
     let source_window_seconds = args.source_window_seconds.min(grid.duration_seconds());
@@ -296,6 +314,8 @@ fn write_manifest(
         sample_rate: SAMPLE_RATE,
         channel_count: CHANNEL_COUNT,
         bpm: grid.bpm,
+        grid_bpm_source: grid_bpm_source_label(grid_bpm.source),
+        source_timing_bpm_delta: grid_bpm.source_delta_bpm,
         beats_per_bar: grid.beats_per_bar,
         bars: grid.bars,
         total_beats: grid.total_beats,
@@ -305,7 +325,7 @@ fn write_manifest(
         source_window_seconds,
         artifacts: manifest_artifacts(&output_dir),
         feral_scorecard: manifest_feral_scorecard(),
-        source_timing: manifest_source_timing_readiness(timing_readiness),
+        source_timing: manifest_source_timing_readiness(timing_readiness, grid_bpm),
         thresholds: ManifestThresholds {
             min_signal_rms: MIN_SIGNAL_RMS,
             min_low_band_rms: MIN_LOW_BAND_RMS,
@@ -340,15 +360,7 @@ fn write_manifest(
                 full_grid_mix: report.full_mix.spectral_energy,
             },
         },
-        verification_command: format!(
-            "just feral-grid-pack \"{}\" {} {:.3} {} {:.3} {:.3}",
-            args.source_path.display(),
-            args.date,
-            grid.bpm,
-            grid.bars,
-            source_window_seconds,
-            args.source_start_seconds
-        ),
+        verification_command: verification_command(args, grid, source_window_seconds),
         result: "pass",
     };
 
@@ -409,7 +421,12 @@ fn manifest_render_metrics(metrics: RenderMetrics) -> ManifestRenderMetrics {
     }
 }
 
-fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<()> {
+fn write_readme(
+    output_dir: &Path,
+    args: &Args,
+    grid: &Grid,
+    grid_bpm: GridBpmDecision,
+) -> std::io::Result<()> {
     fs::write(
         output_dir.join("README.md"),
         format!(
@@ -419,6 +436,8 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              ## Grid\n\n\
              - Source: `{}`\n\
              - BPM: `{:.3}`\n\
+             - BPM source: `{}`\n\
+             - Source timing BPM delta: `{}`\n\
              - Bars: `{}`\n\
              - Beats per bar: `{}`\n\
              - Duration: `{:.3}s`\n\
@@ -437,6 +456,11 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              but it does not yet mean the live TUI mixer exposes this whole arrangement path directly.\n",
             args.source_path.display(),
             grid.bpm,
+            grid_bpm_source_label(grid_bpm.source),
+            grid_bpm
+                .source_delta_bpm
+                .map(|delta| format!("{delta:.3}"))
+                .unwrap_or_else(|| "unknown".to_string()),
             grid.bars,
             grid.beats_per_bar,
             grid.duration_seconds(),

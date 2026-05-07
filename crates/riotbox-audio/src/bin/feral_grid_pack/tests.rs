@@ -22,6 +22,7 @@ mod tests {
         assert_eq!(parsed.source_path, PathBuf::from("input.wav"));
         assert_eq!(parsed.output_dir, Some(PathBuf::from("out")));
         assert_eq!(parsed.bpm, 130.0);
+        assert!(parsed.bpm_overridden);
         assert_eq!(parsed.bars, 4);
         assert_eq!(parsed.source_window_seconds, 0.5);
     }
@@ -156,6 +157,7 @@ mod tests {
             output_dir: Some(output_dir.clone()),
             date: "test".into(),
             bpm: 128.0,
+            bpm_overridden: true,
             bars: 2,
             source_start_seconds: 0.0,
             source_window_seconds: 0.5,
@@ -209,6 +211,8 @@ mod tests {
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["bars"], 2);
+        assert_eq!(manifest["grid_bpm_source"], "user_override");
+        assert!(manifest["source_timing_bpm_delta"].is_number());
         assert_eq!(manifest["feral_scorecard"]["readiness"], "ready");
         assert_eq!(
             manifest["feral_scorecard"]["break_rebuild_potential"],
@@ -228,15 +232,13 @@ mod tests {
         assert!(manifest["source_timing"]["source_id"]
             .as_str()
             .is_some_and(|value| value.ends_with("source.wav")));
-        assert!(
-            manifest["source_timing"]["readiness"]
-                .as_str()
-                .is_some_and(|value| matches!(
-                    value,
-                    "unavailable" | "weak" | "needs_review" | "ready"
-                ))
-        );
+        let readiness = manifest["source_timing"]["readiness"].as_str();
+        assert!(readiness.is_some_and(|value| matches!(
+            value,
+            "unavailable" | "weak" | "needs_review" | "ready"
+        )));
         assert!(manifest["source_timing"]["requires_manual_confirm"].is_boolean());
+        assert!(manifest["source_timing"]["bpm_agrees_with_grid"].is_boolean());
         assert!(manifest["source_timing"]["warning_codes"].is_array());
         assert_eq!(
             manifest["feral_scorecard"]["lane_gestures"]
