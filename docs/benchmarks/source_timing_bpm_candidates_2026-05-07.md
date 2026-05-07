@@ -2,7 +2,7 @@
 
 Date: 2026-05-07
 Project: `P012 | Source Timing Intelligence`
-Status: initial synthetic probe BPM-candidate spike
+Status: initial probe BPM-candidate and beat-period scoring spike
 
 ## Purpose
 
@@ -11,10 +11,11 @@ deterministic probe onset times into preliminary BPM candidate hypotheses.
 
 The candidate path reports:
 
-- primary BPM estimate from median onset spacing
+- primary BPM estimate from scored beat-period candidates
 - primary beat/bar candidate grids
 - half-time and double-time alternatives when they fit the policy range
 - ambiguous downbeat and phrase-uncertain warnings
+- fixture-like PCM WAV probe evidence that reaches the same candidate path
 
 ## Gate
 
@@ -24,9 +25,10 @@ Run:
 just source-timing-bpm-candidates
 ```
 
-The gate uses synthetic onset spacing and the real WAV probe fixture path to
-prove that a 120 BPM impulse train can produce a BPM candidate while sparse
-onsets degrade instead of claiming timing lock.
+The gate uses synthetic onset spacing plus generated PCM WAV probe fixture
+paths to prove that a 120 BPM impulse train and a fixture-like pulse source can
+produce a BPM candidate while sparse onsets degrade instead of claiming timing
+lock.
 
 ## Boundary
 
