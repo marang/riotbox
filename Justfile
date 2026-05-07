@@ -19,6 +19,8 @@ ci:
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
     just p011-exit-evidence-manifest-validator-fixtures
+    just p011-exit-evidence-category-gate-fixtures
+    just p011-replay-evidence-gate
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
 
@@ -162,6 +164,16 @@ p011-exit-evidence-manifest manifest="docs/benchmarks/p011_exit_evidence_manifes
 p011-exit-evidence-manifest-validator-fixtures:
     python3 scripts/validate_p011_exit_evidence_manifest.py docs/benchmarks/p011_exit_evidence_manifest.json
     if python3 scripts/validate_p011_exit_evidence_manifest.py docs/benchmarks/fixtures/p011_exit_evidence_manifest_missing_just_recipe.json; then echo "expected missing just recipe fixture to fail" >&2; exit 1; fi
+
+p011-exit-evidence-category-gate category manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
+    python3 scripts/run_p011_exit_evidence_category.py "{{category}}" "{{manifest}}"
+
+p011-exit-evidence-category-gate-fixtures:
+    python3 scripts/run_p011_exit_evidence_category.py --dry-run replay docs/benchmarks/p011_exit_evidence_manifest.json
+    if python3 scripts/run_p011_exit_evidence_category.py --dry-run missing docs/benchmarks/p011_exit_evidence_manifest.json; then echo "expected missing P011 evidence category to fail" >&2; exit 1; fi
+
+p011-replay-evidence-gate manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
+    python3 scripts/run_p011_exit_evidence_category.py replay "{{manifest}}"
 
 source-showcase-diversity-validator-fixtures:
     python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08
