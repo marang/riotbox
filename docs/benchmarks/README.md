@@ -50,6 +50,8 @@ Current benchmark artifacts:
   Initial P012 synthetic WAV/probe BPM candidate spike with preserved half/double-time alternatives.
 - [source_timing_downbeat_ambiguity_2026-05-07.md](./source_timing_downbeat_ambiguity_2026-05-07.md)
   Initial P012 downbeat phase ambiguity scaffold for probe BPM candidates.
+- [source_timing_candidate_confidence_report_2026-05-07.md](./source_timing_candidate_confidence_report_2026-05-07.md)
+  Initial P012 candidate confidence report seam for probe timing QA.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)

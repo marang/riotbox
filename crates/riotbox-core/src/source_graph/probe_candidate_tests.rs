@@ -92,6 +92,58 @@ fn source_timing_probe_bpm_candidates_keep_primary_bar_grid_phase_when_clearer()
 }
 
 #[test]
+fn source_timing_candidate_confidence_report_summarizes_ambiguous_candidate() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input(
+            "report-ambiguous-120",
+            4.0,
+            &[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let report = source_timing_candidate_confidence_report(&timing);
+
+    assert_eq!(report.schema, "riotbox.source_timing_candidate_confidence.v1");
+    assert_eq!(report.schema_version, 1);
+    assert_bpm_close(report.primary_bpm, 120.0);
+    assert_eq!(
+        report.result,
+        SourceTimingCandidateConfidenceResult::CandidateAmbiguous
+    );
+    assert_eq!(report.alternate_downbeat_count, 3);
+    assert_eq!(report.half_time_count, 1);
+    assert_eq!(report.double_time_count, 1);
+    assert!(report.requires_manual_confirm);
+    assert!(report.primary_downbeat_confidence.is_some_and(|value| value > 0.0));
+    assert!(report
+        .warning_codes
+        .contains(&TimingWarningCode::AmbiguousDownbeat));
+}
+
+#[test]
+fn source_timing_candidate_confidence_report_summarizes_degraded_probe() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input("report-sparse", 4.0, &[0.0, 1.0]),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let report = source_timing_candidate_confidence_report(&timing);
+
+    assert_eq!(report.primary_bpm, None);
+    assert_eq!(report.hypothesis_count, 0);
+    assert_eq!(
+        report.result,
+        SourceTimingCandidateConfidenceResult::Degraded
+    );
+    assert_eq!(report.degraded_policy, TimingDegradedPolicy::Disabled);
+    assert!(report.requires_manual_confirm);
+    assert!(report
+        .warning_codes
+        .contains(&TimingWarningCode::LowTimingConfidence));
+}
+
+#[test]
 fn source_timing_probe_bpm_candidates_sort_and_filter_public_input() {
     let timing = timing_model_from_probe_bpm_candidates(
         &candidate_input(
