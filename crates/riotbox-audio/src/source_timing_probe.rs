@@ -1,5 +1,7 @@
 use crate::source_audio::SourceAudioCache;
-use riotbox_core::source_graph::SourceTimingProbeDiagnosticInput;
+use riotbox_core::source_graph::{
+    MeterHint, SourceTimingProbeBpmCandidateInput, SourceTimingProbeDiagnosticInput,
+};
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SourceTimingProbeConfig {
@@ -33,6 +35,25 @@ impl SourceTimingProbe {
             peak_positive_flux: self.peak_positive_flux,
             onset_count: self.onset_count,
             onset_density_per_second: self.onset_density_per_second,
+        }
+    }
+
+    #[must_use]
+    pub fn bpm_candidate_input(
+        &self,
+        source_id: impl Into<String>,
+        meter: MeterHint,
+    ) -> SourceTimingProbeBpmCandidateInput {
+        SourceTimingProbeBpmCandidateInput {
+            source_id: source_id.into(),
+            duration_seconds: self.duration_seconds,
+            onset_times_seconds: self
+                .windows
+                .iter()
+                .filter(|window| window.onset)
+                .map(|window| window.start_seconds)
+                .collect(),
+            meter,
         }
     }
 }

@@ -370,6 +370,7 @@ just source-timing-fixture-catalog-validator-fixtures
 just source-timing-analyzer-skeleton-fixtures
 just source-timing-fixture-evaluator
 just source-timing-wav-probe
+just source-timing-bpm-candidates
 just mem-status
 just mem-search "replay truth"
 just w30-smoke-qa local

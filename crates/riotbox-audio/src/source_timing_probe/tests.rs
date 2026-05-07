@@ -3,7 +3,8 @@ use tempfile::tempdir;
 use super::*;
 use crate::source_audio::{SourceAudioCache, write_interleaved_pcm16_wav};
 use riotbox_core::source_graph::{
-    SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy, TimingQuality,
+    MeterHint, SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDiagnosticPolicy,
+    TimingDegradedPolicy, TimingQuality, timing_model_from_probe_bpm_candidates,
     timing_model_from_probe_diagnostics,
 };
 
@@ -50,6 +51,20 @@ fn source_timing_probe_detects_impulse_onsets_from_pcm_wav_cache() {
         TimingDegradedPolicy::ManualConfirm
     );
     assert!(timing.bpm_estimate.is_none());
+
+    let bpm_timing = timing_model_from_probe_bpm_candidates(
+        &probe.bpm_candidate_input(
+            "impulses",
+            MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+    let bpm = bpm_timing.bpm_estimate.expect("bpm estimate");
+    assert!((bpm - 120.0).abs() <= 0.01, "{bpm}");
+    assert!(!bpm_timing.hypotheses.is_empty());
 }
 
 #[test]
