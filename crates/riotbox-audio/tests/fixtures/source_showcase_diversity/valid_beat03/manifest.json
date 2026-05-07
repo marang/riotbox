@@ -11,6 +11,11 @@
   "metrics": {
     "tr909_beat_fill": { "signal": { "rms": 0.06 }, "low_band": { "rms": 0.02 } },
     "w30_feral_source_chop": { "signal": { "rms": 0.18 }, "low_band": { "rms": 0.05 } },
-    "full_grid_mix": { "signal": { "rms": 0.21 }, "low_band": { "rms": 0.07 } }
+    "full_grid_mix": { "signal": { "rms": 0.21 }, "low_band": { "rms": 0.07 } },
+    "spectral_energy": {
+      "tr909_beat_fill": { "low_band_energy_ratio": 0.65, "mid_band_energy_ratio": 0.25, "high_band_energy_ratio": 0.10 },
+      "w30_feral_source_chop": { "low_band_energy_ratio": 0.30, "mid_band_energy_ratio": 0.50, "high_band_energy_ratio": 0.20 },
+      "full_grid_mix": { "low_band_energy_ratio": 0.40, "mid_band_energy_ratio": 0.40, "high_band_energy_ratio": 0.20 }
+    }
   }
 }

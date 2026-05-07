@@ -48,12 +48,17 @@ Future source-showcase packs must distinguish:
 ## Current Guard
 
 `scripts/validate_source_showcase_diversity.py` adds the first lightweight
-manifest-level blocker. It rejects:
+manifest-level blocker and metric reporter. It rejects:
 
 - identical full-mix artifact hashes across distinct source values
 - identical source-backed artifact hashes across distinct source values
 - identical generated stems across distinct source values when their RMS is too
   high relative to source-backed material
+
+It can also emit JSON and Markdown summaries with per-role hash groups,
+pairwise normalized RMS deltas, pairwise low-band deltas, spectral distance when
+available, waveform correlation when artifacts are readable PCM16 WAV, and
+stable failure codes for actionable follow-up tickets.
 
 The command is intentionally conservative. It blocks the known false-positive
 class while later tickets make TR-909 support source-aware and improve W-30

@@ -28,6 +28,7 @@ audio-qa-ci:
     just user-session-observer-validator-fixtures
     just listening-manifest-validator-fixtures
     just source-showcase-diversity-validator-fixtures
+    just source-showcase-diversity-report-fixtures
     just listening-manifest-validate-generated-packs
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
@@ -150,6 +151,9 @@ source-showcase-diversity-validator-fixtures:
     python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08
     if python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/invalid_dominated_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/invalid_dominated_beat08; then echo "expected dominated source-showcase fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/invalid_full_mix_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/invalid_full_mix_beat08; then echo "expected identical full-mix source-showcase fixture to fail" >&2; exit 1; fi
+
+source-showcase-diversity-report-fixtures:
+    tmp="$(mktemp -d)" && python3 scripts/validate_source_showcase_diversity.py --json-output "$tmp/source-diversity.json" --markdown-output "$tmp/source-diversity.md" crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08 && python3 -c 'import json, pathlib, sys; data=json.loads(pathlib.Path(sys.argv[1]).read_text()); assert data["schema"] == "riotbox.source_showcase_diversity.v1"; assert data["result"] == "pass"; assert data["pairwise_role_metrics"]; assert data["generated_dominance"]; assert any(item["role"] == "full_grid_mix" and item["spectral_energy_distance"] is not None for item in data["pairwise_role_metrics"])' "$tmp/source-diversity.json" && grep -q "Pairwise Metrics" "$tmp/source-diversity.md" && rm -rf "$tmp"
 
 listening-manifest-validate-generated-packs:
     scripts/validate_generated_listening_manifests.sh
