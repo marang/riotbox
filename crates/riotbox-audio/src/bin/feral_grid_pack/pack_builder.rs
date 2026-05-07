@@ -37,6 +37,8 @@ const DEFAULT_SOURCE_START_SECONDS: f32 = 0.0;
 const DEFAULT_SOURCE_WINDOW_SECONDS: f32 = 1.0;
 const MIN_SIGNAL_RMS: f32 = 0.001;
 const MIN_LOW_BAND_RMS: f32 = 0.004;
+const MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.45;
+const MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.75;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -174,7 +176,10 @@ struct RenderMetrics {
 struct PackReport {
     tr909: RenderMetrics,
     w30: RenderMetrics,
+    source_first_mix: RenderMetrics,
     full_mix: RenderMetrics,
+    source_first_generated_to_source_rms_ratio: f32,
+    support_generated_to_source_rms_ratio: f32,
 }
 
 #[derive(Serialize)]
@@ -221,13 +226,17 @@ struct ManifestFeralScorecard {
 struct ManifestThresholds {
     min_signal_rms: f32,
     min_low_band_rms: f32,
+    max_source_first_generated_to_source_rms_ratio: f32,
+    max_support_generated_to_source_rms_ratio: f32,
 }
 
 #[derive(Serialize)]
 struct ManifestPackMetrics {
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
+    source_first_mix: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
+    mix_balance: ManifestMixBalanceMetrics,
     bar_variation: ManifestBarVariationMetrics,
     spectral_energy: ManifestSpectralEnergyMetrics,
 }
@@ -236,6 +245,7 @@ struct ManifestPackMetrics {
 struct ManifestBarVariationMetrics {
     tr909_beat_fill: BarVariationMetrics,
     w30_feral_source_chop: BarVariationMetrics,
+    source_first_mix: BarVariationMetrics,
     full_grid_mix: BarVariationMetrics,
 }
 
@@ -243,7 +253,14 @@ struct ManifestBarVariationMetrics {
 struct ManifestSpectralEnergyMetrics {
     tr909_beat_fill: SpectralEnergyMetrics,
     w30_feral_source_chop: SpectralEnergyMetrics,
+    source_first_mix: SpectralEnergyMetrics,
     full_grid_mix: SpectralEnergyMetrics,
+}
+
+#[derive(Serialize)]
+struct ManifestMixBalanceMetrics {
+    source_first_generated_to_source_rms_ratio: f32,
+    support_generated_to_source_rms_ratio: f32,
 }
 
 fn print_help() {
@@ -325,16 +342,23 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let tr909 = render_tr909_beat_fill(&grid);
     let w30 = render_w30_source_chop(&grid, w30_preview);
-    let full_mix = render_full_mix(&tr909, &w30);
+    let source_first_mix = render_source_first_mix(&tr909, &w30);
+    let full_mix = render_generated_support_mix(&tr909, &w30);
 
     assert_grid_len("tr909", &tr909, &grid);
     assert_grid_len("w30", &w30, &grid);
+    assert_grid_len("source_first_mix", &source_first_mix, &grid);
     assert_grid_len("full_mix", &full_mix, &grid);
 
     write_audio_with_metrics(&stems_dir.join("01_tr909_beat_fill.wav"), &tr909, &grid)?;
     write_audio_with_metrics(&stems_dir.join("02_w30_feral_source_chop.wav"), &w30, &grid)?;
     write_audio_with_metrics(
-        &output_dir.join("03_riotbox_grid_feral_mix.wav"),
+        &output_dir.join("03_riotbox_source_first_mix.wav"),
+        &source_first_mix,
+        &grid,
+    )?;
+    write_audio_with_metrics(
+        &output_dir.join("04_riotbox_generated_support_mix.wav"),
         &full_mix,
         &grid,
     )?;
@@ -342,7 +366,13 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let report = PackReport {
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),
+        source_first_mix: render_metrics(&source_first_mix, &grid),
         full_mix: render_metrics(&full_mix, &grid),
+        source_first_generated_to_source_rms_ratio:
+            source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid),
+        support_generated_to_source_rms_ratio: support_generated_to_source_rms_ratio(
+            &tr909, &w30, &grid,
+        ),
     };
     validate_report(&report)?;
     write_report(&output_dir.join("grid-report.md"), args, &grid, report)?;

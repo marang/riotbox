@@ -195,7 +195,7 @@ Current bounded gates:
 - `just stage-style-stability-gate` is the stronger bounded variant with more repetitions and a longer generated source/grid budget.
 - `just interrupted-session-recovery-probe` and `just missing-target-recovery-probe` cover generated file-backed recovery observer drills.
 - `just offline-render-reproducibility-smoke` proves an existing deterministic source-backed W-30 render helper emits byte-stable WAV output for the same generated source.
-- `just full-grid-export-reproducibility-smoke` proves the deterministic Feral grid/full-mix pack validates and exports the same full-mix WAV hash twice from generated source material.
+- `just full-grid-export-reproducibility-smoke` proves the deterministic Feral grid source-first plus generated-support pack validates and exports the same generated-support WAV hash twice from generated source material.
 
 Current boundary:
 

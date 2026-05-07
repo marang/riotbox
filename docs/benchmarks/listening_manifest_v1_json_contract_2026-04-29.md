@@ -87,7 +87,7 @@ Current schema version `1` producer ids:
 | `w30-preview-smoke` | `w30_preview_render` / `w30_preview_compare` | Baseline-vs-candidate W-30 preview smoke output. |
 | `lane-recipe-listening-pack` | `lane_recipe_pack` | TR-909, Scene-coupled TR-909, and MC-202 lane recipe comparisons. |
 | `feral-before-after` | `feral_before_after_pack` | Source excerpt, Riotbox-transformed after render, stems, and before-then-after listening file. |
-| `feral-grid-demo` | `feral_grid_pack` | Grid-locked MC-202, TR-909, W-30, and full-mix Feral demo output. |
+| `feral-grid-demo` | `feral_grid_pack` | Grid-locked TR-909/W-30 source-first and generated-support Feral demo output. |
 
 ## Compatibility Rules
 

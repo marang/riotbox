@@ -166,6 +166,11 @@ Early P011 guardrail defaults:
 - full-mix waveform correlation at or above `0.995` is treated as too similar
 - identical generated support with generated/source-backed RMS ratio at or above
   `0.75` is treated as dominant
+- Feral grid packs expose two listening mixes so source extraction is not judged
+  from a drum-dominant render: `03_riotbox_source_first_mix.wav` leads with the
+  source-backed W-30 chop, while `04_riotbox_generated_support_mix.wav` keeps the
+  generated TR-909 support secondary and records generated/source RMS ratios in
+  `metrics.mix_balance`
 
 ### 3.3 Fixture-backed golden render review
 
@@ -644,7 +649,7 @@ Today the repo already has:
 - `just recipe2-observer-audio-gate` correlates a headless app-level documented Recipe 2 MC-202 observer path with a freshly generated lane recipe listening-pack manifest, and requires that the generated observer stream carries the same transport / queue / runtime / recovery snapshot envelope used by the live `riotbox-app --observer` path
 - generated-pack manifest validation can require referenced artifact and metrics files to exist via `--require-existing-artifacts`
 - `just offline-render-reproducibility-smoke` is a CI-safe bounded reproducibility check that renders the same deterministic source-backed W-30 output twice and compares WAV hashes; it is an offline render smoke, not the full export workflow
-- `just full-grid-export-reproducibility-smoke` is a CI-safe bounded export reproducibility check that renders the deterministic Feral grid/full-mix pack twice from generated source material, validates both listening manifests, rejects collapsed full-mix output metrics, and compares the exported full-mix WAV hashes; it is still not the full arrangement export workflow
+- `just full-grid-export-reproducibility-smoke` is a CI-safe bounded export reproducibility check that renders the deterministic Feral grid/source-first plus generated-support pack twice from generated source material, validates both listening manifests, rejects collapsed full-mix output metrics, and compares the exported generated-support WAV hashes; it is still not the full arrangement export workflow
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary

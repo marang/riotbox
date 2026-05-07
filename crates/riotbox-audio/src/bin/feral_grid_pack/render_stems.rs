@@ -43,21 +43,6 @@ fn render_w30_source_chop(grid: &Grid, source_window_preview: W30PreviewSampleWi
     )
 }
 
-fn render_full_mix(tr909: &[f32], w30: &[f32]) -> Vec<f32> {
-    debug_assert_eq!(tr909.len(), w30.len());
-
-    let tr909_low = one_pole_lowpass(tr909, 165.0);
-    tr909
-        .iter()
-        .zip(tr909_low.iter())
-        .zip(w30.iter())
-        .map(|((tr909, tr909_low), w30)| {
-            let mixed = tr909 * 10.0 + tr909_low * 18.0 + w30 * 0.94;
-            (mixed * 1.7).tanh() * 0.92
-        })
-        .collect()
-}
-
 fn one_pole_lowpass(samples: &[f32], cutoff_hz: f32) -> Vec<f32> {
     let dt = 1.0 / SAMPLE_RATE as f32;
     let rc = 1.0 / (std::f32::consts::TAU * cutoff_hz.max(1.0));
@@ -108,11 +93,32 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
     for (name, metrics) in [
         ("tr909", report.tr909),
         ("w30", report.w30),
+        ("source_first_mix", report.source_first_mix),
         ("full_mix", report.full_mix),
     ] {
         if metrics.signal.rms <= MIN_SIGNAL_RMS {
             return Err(format!("{name} rendered near silence").into());
         }
+    }
+
+    if report.source_first_generated_to_source_rms_ratio
+        >= MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO
+    {
+        return Err(format!(
+            "source-first mix generated/source RMS ratio {:.6} exceeds {:.6}",
+            report.source_first_generated_to_source_rms_ratio,
+            MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO
+        )
+        .into());
+    }
+
+    if report.support_generated_to_source_rms_ratio >= MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO {
+        return Err(format!(
+            "generated-support mix generated/source RMS ratio {:.6} exceeds {:.6}",
+            report.support_generated_to_source_rms_ratio,
+            MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO
+        )
+        .into());
     }
 
     if report.full_mix.low_band.rms <= MIN_LOW_BAND_RMS {
@@ -196,14 +202,17 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - Total beats: `{}`\n\
              - Total frames: `{}`\n\
              - Duration seconds: `{:.6}`\n\
-             - Full mix low-band RMS: `{:.6}`\n\
+             - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
+             - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
+             - Generated-support mix low-band RMS: `{:.6}`\n\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
              - Result: `pass`\n\n\
              | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run | Low energy | Mid energy | High energy |\n\
              | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n\
              | TR-909 beat/fill | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | W-30 Feral source chop | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
-             | Full grid mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n",
+             | Source-first mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
+             | Generated-support mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n",
             args.source_path.display(),
             grid.bpm,
             grid.bars,
@@ -211,6 +220,8 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             grid.total_beats,
             grid.total_frames,
             grid.duration_seconds(),
+            report.source_first_generated_to_source_rms_ratio,
+            report.support_generated_to_source_rms_ratio,
             report.full_mix.low_band.rms,
             report.tr909.signal.rms,
             report.tr909.signal.peak_abs,
@@ -230,6 +241,15 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             report.w30.spectral_energy.low_band_energy_ratio,
             report.w30.spectral_energy.mid_band_energy_ratio,
             report.w30.spectral_energy.high_band_energy_ratio,
+            report.source_first_mix.signal.rms,
+            report.source_first_mix.signal.peak_abs,
+            report.source_first_mix.low_band.rms,
+            report.source_first_mix.signal.active_samples,
+            report.source_first_mix.bar_variation.bar_similarity,
+            report.source_first_mix.bar_variation.identical_bar_run_length,
+            report.source_first_mix.spectral_energy.low_band_energy_ratio,
+            report.source_first_mix.spectral_energy.mid_band_energy_ratio,
+            report.source_first_mix.spectral_energy.high_band_energy_ratio,
             report.full_mix.signal.rms,
             report.full_mix.signal.peak_abs,
             report.full_mix.low_band.rms,
@@ -270,19 +290,30 @@ fn write_manifest(
         thresholds: ManifestThresholds {
             min_signal_rms: MIN_SIGNAL_RMS,
             min_low_band_rms: MIN_LOW_BAND_RMS,
+            max_source_first_generated_to_source_rms_ratio:
+                MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+            max_support_generated_to_source_rms_ratio: MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         },
         metrics: ManifestPackMetrics {
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
+            source_first_mix: manifest_render_metrics(report.source_first_mix),
             full_grid_mix: manifest_render_metrics(report.full_mix),
+            mix_balance: ManifestMixBalanceMetrics {
+                source_first_generated_to_source_rms_ratio:
+                    report.source_first_generated_to_source_rms_ratio,
+                support_generated_to_source_rms_ratio: report.support_generated_to_source_rms_ratio,
+            },
             bar_variation: ManifestBarVariationMetrics {
                 tr909_beat_fill: report.tr909.bar_variation,
                 w30_feral_source_chop: report.w30.bar_variation,
+                source_first_mix: report.source_first_mix.bar_variation,
                 full_grid_mix: report.full_mix.bar_variation,
             },
             spectral_energy: ManifestSpectralEnergyMetrics {
                 tr909_beat_fill: report.tr909.spectral_energy,
                 w30_feral_source_chop: report.w30.spectral_energy,
+                source_first_mix: report.source_first_mix.spectral_energy,
                 full_grid_mix: report.full_mix.spectral_energy,
             },
         },
@@ -331,8 +362,12 @@ fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
             output_dir.join("stems/02_w30_feral_source_chop.wav"),
         ),
         manifest_audio_artifact(
+            "source_first_mix",
+            output_dir.join("03_riotbox_source_first_mix.wav"),
+        ),
+        manifest_audio_artifact(
             "full_grid_mix",
-            output_dir.join("03_riotbox_grid_feral_mix.wav"),
+            output_dir.join("04_riotbox_generated_support_mix.wav"),
         ),
         ManifestArtifact::markdown_report("grid_report", &output_dir.join("grid-report.md")),
         ManifestArtifact::markdown_readme("readme", &output_dir.join("README.md")),
@@ -369,7 +404,8 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: TR-909 beat/fill support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop rendered on the same grid.\n\
-             - `03_riotbox_grid_feral_mix.wav`: combined grid-locked listening mix with low-end support.\n\
+             - `03_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated drums stay secondary.\n\
+             - `04_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 adds low-end and movement without proving source extraction by itself.\n\
              - `grid-report.md`: timing and output metrics.\n\
              - `manifest.json`: machine-readable pack metadata, artifact paths, thresholds, and key metrics.\n\
 \n\
