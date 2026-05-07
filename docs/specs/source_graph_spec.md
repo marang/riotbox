@@ -123,8 +123,17 @@ Timing {
   beat_grid
   bar_grid
   phrase_grid
+  hypotheses
+  primary_hypothesis_id
+  quality
+  warnings
+  degraded_policy
 }
 ```
+
+The first six fields are the compatibility surface used by existing consumers.
+The richer fields are the Source Timing Intelligence surface and should become
+the preferred contract for new timing-aware work.
 
 ### 7.1 Beat grid
 

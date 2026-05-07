@@ -201,6 +201,159 @@ mod tests {
         assert_eq!(decoded, graph);
     }
 
+    #[test]
+    fn rich_timing_hypotheses_roundtrip_and_select_primary_grid() {
+        let mut graph = minimal_source_graph();
+        graph.timing.bpm_estimate = Some(128.0);
+        graph.timing.bpm_confidence = 0.72;
+        graph.timing.meter_hint = Some(MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        });
+        graph.timing.primary_hypothesis_id = Some("timing-primary".into());
+        graph.timing.quality = TimingQuality::Medium;
+        graph.timing.degraded_policy = TimingDegradedPolicy::Cautious;
+        graph.timing.warnings.push(TimingWarning {
+            code: TimingWarningCode::DoubleTimePossible,
+            message: "double-time grid remains plausible".into(),
+        });
+        graph.timing.hypotheses.push(TimingHypothesis {
+            hypothesis_id: "timing-primary".into(),
+            kind: TimingHypothesisKind::Primary,
+            bpm: 128.0,
+            meter: MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+            confidence: 0.82,
+            score: 0.91,
+            beat_grid: vec![BeatPoint {
+                beat_index: 0,
+                time_seconds: 0.0,
+                confidence: 0.95,
+            }],
+            bar_grid: vec![BarSpan {
+                bar_index: 0,
+                start_seconds: 0.0,
+                end_seconds: 1.875,
+                downbeat_confidence: 0.88,
+                phrase_index: Some(0),
+            }],
+            phrase_grid: vec![PhraseSpan {
+                phrase_index: 0,
+                start_bar: 0,
+                end_bar: 4,
+                confidence: 0.75,
+            }],
+            anchors: vec![SourceTimingAnchor {
+                anchor_id: "kick-0".into(),
+                anchor_type: SourceTimingAnchorType::Kick,
+                time_seconds: 0.0,
+                bar_index: Some(0),
+                beat_index: Some(0),
+                confidence: 0.9,
+                strength: 0.84,
+                tags: vec!["downbeat".into()],
+            }],
+            drift: vec![TimingDriftReport {
+                window_bars: 4,
+                max_drift_ms: 12.0,
+                mean_abs_drift_ms: 4.5,
+                end_drift_ms: -2.0,
+                confidence: 0.78,
+            }],
+            groove: vec![GrooveResidual {
+                subdivision: GrooveSubdivision::Sixteenth,
+                offset_ms: -8.0,
+                confidence: 0.66,
+            }],
+            quality: TimingQuality::High,
+            warnings: vec![TimingWarning {
+                code: TimingWarningCode::WeakBackbeatAnchor,
+                message: "backbeat is present but not dominant".into(),
+            }],
+            provenance: vec!["fixture:timing-grid".into()],
+        });
+        graph.timing.hypotheses.push(TimingHypothesis {
+            hypothesis_id: "timing-double".into(),
+            kind: TimingHypothesisKind::DoubleTime,
+            bpm: 256.0,
+            meter: MeterHint {
+                beats_per_bar: 4,
+                beat_unit: 4,
+            },
+            confidence: 0.41,
+            score: 0.4,
+            beat_grid: Vec::new(),
+            bar_grid: Vec::new(),
+            phrase_grid: Vec::new(),
+            anchors: Vec::new(),
+            drift: Vec::new(),
+            groove: Vec::new(),
+            quality: TimingQuality::Low,
+            warnings: vec![TimingWarning {
+                code: TimingWarningCode::DoubleTimePossible,
+                message: "alternate double-time path".into(),
+            }],
+            provenance: vec!["fixture:alternate".into()],
+        });
+
+        let json = serde_json::to_string_pretty(&graph).expect("serialize source graph");
+        let decoded: SourceGraph = serde_json::from_str(&json).expect("deserialize source graph");
+
+        assert_eq!(decoded, graph);
+        assert_eq!(
+            decoded
+                .timing
+                .primary_hypothesis()
+                .map(|hypothesis| hypothesis.bpm),
+            Some(128.0)
+        );
+        assert_eq!(
+            decoded.timing.effective_timing_quality(),
+            TimingQuality::Medium
+        );
+        assert_eq!(
+            decoded.timing.effective_degraded_policy(),
+            TimingDegradedPolicy::Cautious
+        );
+    }
+
+    #[test]
+    fn timing_model_loads_legacy_json_without_rich_timing_fields() {
+        let timing: TimingModel = serde_json::from_str(
+            r#"{
+              "bpm_estimate": 126.0,
+              "bpm_confidence": 0.61,
+              "meter_hint": {"beats_per_bar": 4, "beat_unit": 4},
+              "beat_grid": [],
+              "bar_grid": [],
+              "phrase_grid": []
+            }"#,
+        )
+        .expect("deserialize legacy timing model");
+
+        assert_eq!(timing.hypotheses, Vec::new());
+        assert_eq!(timing.primary_hypothesis_id, None);
+        assert_eq!(timing.quality, TimingQuality::Unknown);
+        assert_eq!(timing.effective_timing_quality(), TimingQuality::Medium);
+        assert_eq!(
+            timing.effective_degraded_policy(),
+            TimingDegradedPolicy::Cautious
+        );
+    }
+
+    #[test]
+    fn timing_model_without_analysis_disables_timing_aware_consumers() {
+        let timing = TimingModel::default();
+
+        assert_eq!(timing.effective_timing_quality(), TimingQuality::Unknown);
+        assert_eq!(
+            timing.effective_degraded_policy(),
+            TimingDegradedPolicy::Disabled
+        );
+    }
+
     fn minimal_source_graph() -> SourceGraph {
         SourceGraph::new(
             SourceDescriptor {
