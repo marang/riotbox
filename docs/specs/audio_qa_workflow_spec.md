@@ -112,6 +112,38 @@ Failure classes to record:
 - anchor-preserve mode destroys promised kick or snare identity
 - destructive mode was not explicit
 
+### 3.2.2 Multi-source showcase diversity gates
+
+Source-showcase listening packs must prove source reflection across multiple
+input files. Passing non-silence, reproducibility, and same-source stability is
+not enough if different sources produce effectively the same Riotbox result.
+
+For any pack presented as a source showcase:
+
+- validate reproducibility within the same source separately from diversity
+  across different sources
+- reject identical or near-identical full mixes across distinct source files
+- reject source-backed stems that are byte-identical across distinct source
+  files unless the fixture explicitly proves those sources contain the same
+  selected window
+- reject source-independent generated stems, such as fixed TR-909 or MC-202
+  support, when they are loud enough to dominate the source-backed material
+- record whether generated support is intentionally common across sources or
+  whether it is supposed to react to source timing, density, energy, anchors, or
+  section role
+
+The current lightweight command is:
+
+```bash
+just source-showcase-diversity "PACK_A PACK_B ..."
+```
+
+It hashes referenced audio artifacts and compares manifest metrics across
+multiple `manifest.json` files or pack directories. It is a blocker gate for
+source-showcase packs, not a replacement for listening review. A passing result
+means the pack avoided the known identical-output false positive; it does not
+mean TR-909, W-30, MC-202, or future bass policies are musically complete.
+
 ### 3.3 Fixture-backed golden render review
 
 For stable fixture, seed, action list, and render config:

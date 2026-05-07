@@ -379,6 +379,8 @@ just observer-audio-correlate-json artifacts/audio_qa/local/user-session/events.
 just observer-audio-correlate-json-fixture
 just user-session-observer-validator-fixtures
 just listening-manifest-validator-fixtures
+just source-showcase-diversity-validator-fixtures
+just source-showcase-diversity "PACK_A PACK_B"
 just listening-manifest-validate-generated-packs
 just observer-audio-correlate-generated-feral-grid
 just first-playable-jam-probe
