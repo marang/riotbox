@@ -5,6 +5,14 @@ use std::{
 
 use serde::Serialize;
 
+use riotbox_core::source_graph::{
+    MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingCandidateDriftStatus,
+    SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceStatus,
+    SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDownbeatEvidenceStatus,
+    SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus,
+    source_timing_probe_readiness_report,
+};
+
 use riotbox_audio::{
     listening_manifest::{
         LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
@@ -15,6 +23,7 @@ use riotbox_audio::{
         signal_metrics_with_grid,
     },
     source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},
+    source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -201,6 +210,7 @@ struct ListeningPackManifest {
     source_window_seconds: f32,
     artifacts: Vec<ManifestArtifact>,
     feral_scorecard: ManifestFeralScorecard,
+    source_timing: ManifestSourceTimingReadiness,
     thresholds: ManifestThresholds,
     metrics: ManifestPackMetrics,
     verification_command: String,
@@ -329,6 +339,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let source = SourceAudioCache::load_pcm_wav(&args.source_path)?;
     validate_source_format(&source)?;
+    let timing_readiness = source_timing_readiness_for_source(&source, &args.source_path);
 
     let w30_source_window = source.window_by_seconds(
         args.source_start_seconds,
@@ -384,7 +395,13 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     };
     validate_report(&report)?;
     write_report(&output_dir.join("grid-report.md"), args, &grid, report)?;
-    write_manifest(&output_dir.join("manifest.json"), args, &grid, report)?;
+    write_manifest(
+        &output_dir.join("manifest.json"),
+        args,
+        &grid,
+        report,
+        &timing_readiness,
+    )?;
     write_readme(&output_dir, args, &grid)?;
 
     Ok(())
@@ -443,4 +460,19 @@ fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::
         .into());
     }
     Ok(())
+}
+
+fn source_timing_readiness_for_source(
+    source: &SourceAudioCache,
+    source_path: &Path,
+) -> SourceTimingProbeReadinessReport {
+    let probe = analyze_source_timing_probe(source, SourceTimingProbeConfig::default());
+    let input = probe.bpm_candidate_input(
+        source_path.display().to_string(),
+        MeterHint {
+            beats_per_bar: DEFAULT_BEATS_PER_BAR as u8,
+            beat_unit: 4,
+        },
+    );
+    source_timing_probe_readiness_report(&input, SourceTimingProbeBpmCandidatePolicy::default())
 }

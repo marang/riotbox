@@ -221,6 +221,24 @@ mod tests {
             "grid-locked generated feral QA pack"
         );
         assert_eq!(
+            manifest["source_timing"]["schema"],
+            "riotbox.source_timing_probe_readiness.v1"
+        );
+        assert_eq!(manifest["source_timing"]["schema_version"], 1);
+        assert!(manifest["source_timing"]["source_id"]
+            .as_str()
+            .is_some_and(|value| value.ends_with("source.wav")));
+        assert!(
+            manifest["source_timing"]["readiness"]
+                .as_str()
+                .is_some_and(|value| matches!(
+                    value,
+                    "unavailable" | "weak" | "needs_review" | "ready"
+                ))
+        );
+        assert!(manifest["source_timing"]["requires_manual_confirm"].is_boolean());
+        assert!(manifest["source_timing"]["warning_codes"].is_array());
+        assert_eq!(
             manifest["feral_scorecard"]["lane_gestures"]
                 .as_array()
                 .expect("lane gestures")
