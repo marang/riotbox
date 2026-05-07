@@ -410,6 +410,16 @@ features from existing PCM WAV source loading:
 - `crates/riotbox-audio/src/source_timing_probe.rs`
 - `just source-timing-wav-probe`
 
+The first implemented probe-diagnostics step maps those real-WAV input features
+into a conservative `TimingModel` diagnostic:
+
+- `crates/riotbox-core/src/source_graph/timing_probe_diagnostics.rs`
+- rich onset evidence may only reach `Low` timing quality with
+  `ManualConfirm`
+- weak or silent evidence stays visibly degraded / disabled
+- the diagnostic does not emit BPM, beat grids, bar grids, phrase grids, or a
+  primary hypothesis
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 

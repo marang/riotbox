@@ -2,6 +2,10 @@ use tempfile::tempdir;
 
 use super::*;
 use crate::source_audio::{SourceAudioCache, write_interleaved_pcm16_wav};
+use riotbox_core::source_graph::{
+    SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy, TimingQuality,
+    timing_model_from_probe_diagnostics,
+};
 
 #[test]
 fn source_timing_probe_detects_impulse_onsets_from_pcm_wav_cache() {
@@ -35,6 +39,17 @@ fn source_timing_probe_detects_impulse_onsets_from_pcm_wav_cache() {
             .iter()
             .any(|window| window.onset && window.start_frame == 100)
     );
+
+    let timing = timing_model_from_probe_diagnostics(
+        &probe.diagnostic_input("impulses"),
+        SourceTimingProbeDiagnosticPolicy::default(),
+    );
+    assert_eq!(timing.effective_timing_quality(), TimingQuality::Low);
+    assert_eq!(
+        timing.effective_degraded_policy(),
+        TimingDegradedPolicy::ManualConfirm
+    );
+    assert!(timing.bpm_estimate.is_none());
 }
 
 #[test]
@@ -60,6 +75,17 @@ fn source_timing_probe_stays_quiet_for_silence() {
     assert_eq!(probe.onset_count, 0);
     assert_eq!(probe.onset_density_per_second, 0.0);
     assert!(probe.windows.iter().all(|window| !window.onset));
+
+    let timing = timing_model_from_probe_diagnostics(
+        &probe.diagnostic_input("silence"),
+        SourceTimingProbeDiagnosticPolicy::default(),
+    );
+    assert_eq!(timing.effective_timing_quality(), TimingQuality::Unknown);
+    assert_eq!(
+        timing.effective_degraded_policy(),
+        TimingDegradedPolicy::Disabled
+    );
+    assert!(timing.bpm_estimate.is_none());
 }
 
 fn impulse_train_samples(

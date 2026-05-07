@@ -1,4 +1,5 @@
 use crate::source_audio::SourceAudioCache;
+use riotbox_core::source_graph::SourceTimingProbeDiagnosticInput;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct SourceTimingProbeConfig {
@@ -15,6 +16,23 @@ impl Default for SourceTimingProbeConfig {
             hop_size_frames: 512,
             onset_threshold_ratio: 0.35,
             min_onset_flux: 0.02,
+        }
+    }
+}
+
+impl SourceTimingProbe {
+    #[must_use]
+    pub fn diagnostic_input(
+        &self,
+        source_id: impl Into<String>,
+    ) -> SourceTimingProbeDiagnosticInput {
+        SourceTimingProbeDiagnosticInput {
+            source_id: source_id.into(),
+            duration_seconds: self.duration_seconds,
+            peak_energy: self.peak_energy,
+            peak_positive_flux: self.peak_positive_flux,
+            onset_count: self.onset_count,
+            onset_density_per_second: self.onset_density_per_second,
         }
     }
 }
