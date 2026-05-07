@@ -20,10 +20,7 @@ ci:
     just p011-exit-evidence-manifest
     just p011-exit-evidence-manifest-validator-fixtures
     just p011-exit-evidence-category-gate-fixtures
-    just p011-replay-evidence-gate
-    just p011-recovery-evidence-gate
-    just p011-export-evidence-gate
-    just p011-stage-style-evidence-gate
+    just p011-exit-evidence-gate
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
 
@@ -173,7 +170,11 @@ p011-exit-evidence-category-gate category manifest="docs/benchmarks/p011_exit_ev
 
 p011-exit-evidence-category-gate-fixtures:
     python3 scripts/run_p011_exit_evidence_category.py --dry-run replay docs/benchmarks/p011_exit_evidence_manifest.json
+    python3 scripts/run_p011_exit_evidence_category.py --dry-run all docs/benchmarks/p011_exit_evidence_manifest.json
     if python3 scripts/run_p011_exit_evidence_category.py --dry-run missing docs/benchmarks/p011_exit_evidence_manifest.json; then echo "expected missing P011 evidence category to fail" >&2; exit 1; fi
+
+p011-exit-evidence-gate manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
+    python3 scripts/run_p011_exit_evidence_category.py all "{{manifest}}"
 
 p011-replay-evidence-gate manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
     python3 scripts/run_p011_exit_evidence_category.py replay "{{manifest}}"

@@ -47,7 +47,10 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Execute one bounded category from the P011 exit evidence manifest."
     )
-    parser.add_argument("category", help="manifest category id, e.g. replay")
+    parser.add_argument(
+        "category",
+        help="manifest category id, e.g. replay, or 'all' for every category",
+    )
     parser.add_argument(
         "manifest",
         nargs="?",
@@ -64,6 +67,12 @@ def parse_args() -> argparse.Namespace:
 
 
 def commands_for_category(manifest: dict[str, Any], category_id: str) -> list[str]:
+    if category_id == "all":
+        all_proofs: list[dict[str, Any]] = []
+        for category in manifest["categories"]:
+            all_proofs.extend(category["proofs"])
+        return unique_commands(all_proofs)
+
     for category in manifest["categories"]:
         if category["id"] == category_id:
             return unique_commands(category["proofs"])

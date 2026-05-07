@@ -190,6 +190,7 @@ Current bounded gates:
 
 - `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence.
 - `just p011-exit-evidence-manifest` validates a machine-checkable P011 exit evidence index across replay, recovery, export reproducibility, and stage-style stability categories while keeping known open boundaries explicit, including repo-local `just` recipe references for proof commands.
+- `just p011-exit-evidence-gate` executes every bounded P011 evidence category from the manifest with global command deduplication; this is the CI entrypoint for category-level P011 exit evidence, not a claim of host-audio soak, full arrangement export readiness, or endurance coverage.
 - `just p011-replay-evidence-gate` executes the bounded replay category from the P011 exit evidence index after validating the manifest, making replay evidence the first category promoted beyond index-only validation without claiming full all-category exit readiness.
 - `just p011-recovery-evidence-gate` executes the bounded recovery category from the same P011 evidence index, covering generated recovery observer drills and recovery-surface tests while keeping automatic startup recovery and real interrupted-host-session rehearsal out of scope.
 - `just p011-export-evidence-gate` executes the bounded export reproducibility category from the same P011 evidence index, covering the current deterministic Feral grid product-export seam without claiming full arrangement export readiness.

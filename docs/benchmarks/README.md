@@ -31,7 +31,7 @@ Current benchmark artifacts:
 - [p011_replay_family_manifest.json](./p011_replay_family_manifest.json)
   Machine-checkable P011 supported replay-family evidence index.
 - [p011_exit_evidence_manifest.json](./p011_exit_evidence_manifest.json)
-  Machine-checkable P011 exit evidence index across replay, recovery, export, and stage-style stability categories. `just p011-replay-evidence-gate`, `just p011-recovery-evidence-gate`, `just p011-export-evidence-gate`, and `just p011-stage-style-evidence-gate` execute the bounded categories from this index.
+  Machine-checkable P011 exit evidence index across replay, recovery, export, and stage-style stability categories. `just p011-exit-evidence-gate` executes all bounded categories from this index with global command deduplication; the per-category `p011-*-evidence-gate` recipes remain available for targeted local checks.
 - [representative_source_showcase_2026-05-07.md](./representative_source_showcase_2026-05-07.md)
   Local multi-source Feral grid showcase generator for source-response review after the P011 diversity fixes.
 - [product_export_reproducibility_boundary_2026-05-07.md](./product_export_reproducibility_boundary_2026-05-07.md)
