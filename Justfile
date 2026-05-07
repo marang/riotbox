@@ -16,6 +16,7 @@ clippy:
 ci:
     cargo fmt --check
     cargo test
+    just p011-replay-family-manifest
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
 
@@ -149,6 +150,9 @@ source-showcase-diversity manifests:
 
 representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase":
     scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}"
+
+p011-replay-family-manifest manifest="docs/benchmarks/p011_replay_family_manifest.json":
+    python3 scripts/validate_p011_replay_family_manifest.py "{{manifest}}"
 
 source-showcase-diversity-validator-fixtures:
     python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08
