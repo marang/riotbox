@@ -42,6 +42,8 @@ Current benchmark artifacts:
   Initial P012 source-timing fixture seed catalog and validation gate for BPM, grid, confidence, ambiguity, and degraded-policy expectations.
 - [source_timing_analyzer_skeleton_2026-05-07.md](./source_timing_analyzer_skeleton_2026-05-07.md)
   Initial P012 Rust timing analyzer skeleton that maps fixture seeds into SourceGraph `TimingModel` payloads.
+- [source_timing_fixture_evaluator_2026-05-07.md](./source_timing_fixture_evaluator_2026-05-07.md)
+  Initial P012 evaluator that compares analyzer `TimingModel` output against fixture timing expectations.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)

@@ -21,6 +21,9 @@ mod timing_tests {
         let ambiguous_case = case_by_id(cases, "fx_timing_halftime_140_ambiguous");
 
         let clean_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
+        let clean_evaluation =
+            evaluate_timing_fixture_output(&clean_timing, &evaluation_target_from_case(clean_case));
+        assert!(clean_evaluation.passed, "{clean_evaluation:?}");
         assert_eq!(clean_timing.effective_timing_quality(), TimingQuality::High);
         assert_eq!(
             clean_timing.effective_degraded_policy(),
@@ -32,6 +35,9 @@ mod timing_tests {
         assert_eq!(clean_timing.hypotheses[0].anchors.len(), 1);
 
         let weak_timing = analyze_source_timing_seed(&analysis_seed_from_case(weak_case));
+        let weak_evaluation =
+            evaluate_timing_fixture_output(&weak_timing, &evaluation_target_from_case(weak_case));
+        assert!(weak_evaluation.passed, "{weak_evaluation:?}");
         assert_eq!(weak_timing.effective_timing_quality(), TimingQuality::Low);
         assert_eq!(
             weak_timing.effective_degraded_policy(),
@@ -46,6 +52,11 @@ mod timing_tests {
         );
 
         let ambiguous_timing = analyze_source_timing_seed(&analysis_seed_from_case(ambiguous_case));
+        let ambiguous_evaluation = evaluate_timing_fixture_output(
+            &ambiguous_timing,
+            &evaluation_target_from_case(ambiguous_case),
+        );
+        assert!(ambiguous_evaluation.passed, "{ambiguous_evaluation:?}");
         assert_eq!(
             ambiguous_timing.primary_hypothesis().map(|hypothesis| {
                 (
@@ -69,6 +80,31 @@ mod timing_tests {
                 .windows(2)
                 .all(|window| window[0].time_seconds < window[1].time_seconds)
         );
+    }
+
+    #[test]
+    fn source_timing_fixture_evaluator_rejects_out_of_tolerance_timing() {
+        let catalog: serde_json::Value =
+            serde_json::from_str(TIMING_FIXTURE_CATALOG).expect("parse timing fixture catalog");
+        let cases = catalog
+            .get("cases")
+            .and_then(serde_json::Value::as_array)
+            .expect("catalog cases");
+        let clean_case = case_by_id(cases, "fx_timing_clean_128_4x4");
+        let mut timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
+        timing.bpm_estimate = Some(118.0);
+        timing.beat_grid.truncate(4);
+
+        let evaluation =
+            evaluate_timing_fixture_output(&timing, &evaluation_target_from_case(clean_case));
+
+        assert!(!evaluation.passed);
+        assert!(evaluation
+            .issues
+            .contains(&TimingFixtureEvaluationIssue::BpmOutsideTolerance));
+        assert!(evaluation
+            .issues
+            .contains(&TimingFixtureEvaluationIssue::BeatCountBelowMinimum));
     }
 
     fn case_by_id<'a>(
@@ -139,6 +175,43 @@ mod timing_tests {
                 .expect("confidence_floor") as f32,
             warnings: timing_warning_codes_from_expected(expected),
             alternatives: timing_alternatives_from_expected(expected),
+        }
+    }
+
+    fn evaluation_target_from_case(case: &serde_json::Value) -> TimingFixtureEvaluationTarget {
+        let expected = case.get("expected").expect("expected timing contract");
+        TimingFixtureEvaluationTarget {
+            fixture_id: case
+                .get("fixture_id")
+                .and_then(serde_json::Value::as_str)
+                .expect("fixture_id")
+                .into(),
+            primary_bpm: expected
+                .get("primary_bpm")
+                .and_then(serde_json::Value::as_f64)
+                .expect("primary_bpm") as f32,
+            bpm_tolerance: expected
+                .get("bpm_tolerance")
+                .and_then(serde_json::Value::as_f64)
+                .expect("bpm_tolerance") as f32,
+            expected_beat_count_min: u32_from_expected(expected, "expected_beat_count_min"),
+            expected_bar_count_min: u32_from_expected(expected, "expected_bar_count_min"),
+            expected_phrase_count_min: u32_from_expected(expected, "expected_phrase_count_min"),
+            quality: timing_quality_from_label(
+                expected
+                    .get("timing_quality")
+                    .and_then(serde_json::Value::as_str),
+            ),
+            degraded_policy: degraded_policy_from_label(
+                expected
+                    .get("degraded_policy")
+                    .and_then(serde_json::Value::as_str),
+            ),
+            warnings: timing_warning_codes_from_expected(expected),
+            alternative_kinds: timing_alternatives_from_expected(expected)
+                .into_iter()
+                .map(|alternative| alternative.kind)
+                .collect(),
         }
     }
 
