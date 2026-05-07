@@ -23,6 +23,7 @@ ci:
     just p011-replay-evidence-gate
     just p011-recovery-evidence-gate
     just p011-export-evidence-gate
+    just p011-stage-style-evidence-gate
     just audio-qa-ci
     cargo clippy --all-targets --all-features -- -D warnings
 
@@ -182,6 +183,9 @@ p011-recovery-evidence-gate manifest="docs/benchmarks/p011_exit_evidence_manifes
 
 p011-export-evidence-gate manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
     python3 scripts/run_p011_exit_evidence_category.py export_reproducibility "{{manifest}}"
+
+p011-stage-style-evidence-gate manifest="docs/benchmarks/p011_exit_evidence_manifest.json":
+    python3 scripts/run_p011_exit_evidence_category.py stage_style_stability "{{manifest}}"
 
 source-showcase-diversity-validator-fixtures:
     python3 scripts/validate_source_showcase_diversity.py crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat03 crates/riotbox-audio/tests/fixtures/source_showcase_diversity/valid_beat08
