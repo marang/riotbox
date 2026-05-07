@@ -1,0 +1,110 @@
+{
+  "schema": "riotbox.p011_exit_evidence_manifest.v1",
+  "schema_version": 1,
+  "project": "P011 | Pro Hardening",
+  "boundary": "Machine-checkable index of current P011 exit evidence; not a declaration that P011 is complete.",
+  "status": "active_not_exit_ready",
+  "categories": [
+    {
+      "id": "replay",
+      "name": "Replay Evidence",
+      "status": "bounded_supported",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "docs/benchmarks/p011_replay_family_manifest.json",
+          "command": "just p011-replay-family-manifest",
+          "evidence_type": "manifest",
+          "why": "Indexes supported replay-family proofs and their explicit open boundaries."
+        },
+        {
+          "path": "docs/reviews/p011_replay_recovery_exit_checklist_2026-04-30.md",
+          "command": "cargo test -p riotbox-app stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix -- --nocapture",
+          "evidence_type": "review",
+          "why": "Documents current snapshot-restore parity coverage and remaining replay gaps."
+        }
+      ],
+      "open_boundary": "Still not a full replay-from-origin proof for every replay-relevant action family."
+    },
+    {
+      "id": "recovery",
+      "name": "Recovery Evidence",
+      "status": "bounded_supported",
+      "control_path": true,
+      "output_path": false,
+      "proofs": [
+        {
+          "path": "scripts/validate_interrupted_session_recovery_probe.sh",
+          "command": "just interrupted-session-recovery-probe",
+          "evidence_type": "script",
+          "why": "Validates a generated file-backed interrupted-session observer drill."
+        },
+        {
+          "path": "scripts/validate_missing_target_recovery_probe.sh",
+          "command": "just missing-target-recovery-probe",
+          "evidence_type": "script",
+          "why": "Validates a generated file-backed missing-target recovery observer drill."
+        },
+        {
+          "path": "docs/reviews/p011_replay_recovery_exit_checklist_2026-04-30.md",
+          "command": "cargo test -p riotbox-app recovery_surface -- --nocapture",
+          "evidence_type": "review",
+          "why": "Documents read-only recovery diagnostics, manual dry-runs, and non-selection boundaries."
+        }
+      ],
+      "open_boundary": "Automatic startup recovery selection and real interrupted-host-session rehearsal remain open."
+    },
+    {
+      "id": "export_reproducibility",
+      "name": "Export Reproducibility Evidence",
+      "status": "bounded_supported",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "docs/benchmarks/product_export_reproducibility_boundary_2026-05-07.md",
+          "command": "just product-export-reproducibility-smoke",
+          "evidence_type": "benchmark_doc",
+          "why": "Documents the normalized product-export proof boundary for the current Feral grid full-mix seam."
+        },
+        {
+          "path": "scripts/validate_product_export_reproducibility.py",
+          "command": "just product-export-reproducibility-smoke",
+          "evidence_type": "validator",
+          "why": "Validates stable normalized manifest data plus audio artifact hashes for repeated exports."
+        }
+      ],
+      "open_boundary": "Full arrangement export, stem package export, live recording export, and DAW-style export remain open."
+    },
+    {
+      "id": "stage_style_stability",
+      "name": "Stage-Style Stability Evidence",
+      "status": "bounded_supported",
+      "control_path": true,
+      "output_path": true,
+      "proofs": [
+        {
+          "path": "docs/benchmarks/stage_style_stability_proof_2026-05-07.md",
+          "command": "just stage-style-stability-proof",
+          "evidence_type": "benchmark_doc",
+          "why": "Documents the normalized repeated-run stage-style restore-diversity proof boundary."
+        },
+        {
+          "path": "scripts/validate_stage_style_stability_proof.py",
+          "command": "just stage-style-stability-proof",
+          "evidence_type": "validator",
+          "why": "Validates repeated-run observer/audio evidence, boundary coverage, and stable full-mix hash."
+        }
+      ],
+      "open_boundary": "Host-audio soak, multi-hour live-session endurance, and device-driver stability remain open."
+    }
+  ],
+  "known_open_boundaries": [
+    "full replay-from-origin for every replay-relevant action family",
+    "automatic startup recovery selection",
+    "real interrupted-host-session recovery drill",
+    "full arrangement export and stem package export",
+    "host-audio soak and multi-hour live-session endurance"
+  ]
+}

@@ -30,6 +30,8 @@ Current benchmark artifacts:
   Field-level JSON contract for local audio QA listening manifest schema version 1.
 - [p011_replay_family_manifest.json](./p011_replay_family_manifest.json)
   Machine-checkable P011 supported replay-family evidence index.
+- [p011_exit_evidence_manifest.json](./p011_exit_evidence_manifest.json)
+  Machine-checkable P011 exit evidence index across replay, recovery, export, and stage-style stability categories.
 - [representative_source_showcase_2026-05-07.md](./representative_source_showcase_2026-05-07.md)
   Local multi-source Feral grid showcase generator for source-response review after the P011 diversity fixes.
 - [product_export_reproducibility_boundary_2026-05-07.md](./product_export_reproducibility_boundary_2026-05-07.md)

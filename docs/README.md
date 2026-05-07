@@ -173,6 +173,7 @@ docs/
 - `benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`: audio QA manifest v1 field-level JSON contract captured
 - `benchmarks/observer_audio_correlation_template_2026-04-29.md`: observer/audio correlation template captured
 - `benchmarks/observer_audio_summary_json_contract_2026-04-29.md`: observer/audio summary JSON contract captured
+- `benchmarks/p011_exit_evidence_manifest.json`: machine-checkable P011 exit evidence index captured
 - `benchmarks/product_export_reproducibility_boundary_2026-05-07.md`: normalized product-export reproducibility boundary captured
 - `benchmarks/stage_style_stability_proof_2026-05-07.md`: normalized stage-style repeated-run stability proof captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
