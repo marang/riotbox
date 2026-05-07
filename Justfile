@@ -22,6 +22,7 @@ ci:
     just source-timing-wav-probe
     just source-timing-bpm-candidates
     just source-timing-downbeat-ambiguity
+    just source-timing-drift-report
     just source-timing-candidate-confidence-report
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
@@ -99,6 +100,10 @@ source-timing-bpm-candidates:
 source-timing-downbeat-ambiguity:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases -- --nocapture
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_keep_primary_bar_grid_phase_when_clearer -- --nocapture
+
+source-timing-drift-report:
+    cargo test -p riotbox-core source_timing_probe_bpm_candidates_report_stable_grid_drift -- --nocapture
+    cargo test -p riotbox-core source_timing_probe_bpm_candidates_warn_when_grid_drift_is_high -- --nocapture
 
 source-timing-candidate-confidence-report:
     cargo test -p riotbox-core source_timing_candidate_confidence_report -- --nocapture

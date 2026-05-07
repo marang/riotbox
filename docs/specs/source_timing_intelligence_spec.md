@@ -255,6 +255,9 @@ Rules:
 
 - drift must be measurable over 4, 8, 16, and 32 bar windows when the source is
   long enough
+- early probe-derived timing candidates may start with 4/8-bar drift reports
+  before longer windows are reliable, but missing windows must mean "not enough
+  material", not silent confidence
 - groove data should preserve feel where possible instead of flattening every
   lane to a rigid grid
 - output QA must check generated-lane drift against the selected source grid
