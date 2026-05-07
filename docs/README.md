@@ -204,6 +204,7 @@ docs/
 - `reviews/p011_replay_recovery_codebase_review_2026-04-30.md`: P011 replay/recovery codebase review captured
 - `reviews/p011_replay_recovery_exit_checklist_2026-04-30.md`: P011 replay/recovery exit checklist captured
 - `reviews/p011_evidence_gate_periodic_review_2026-05-07.md`: P011 evidence-gate periodic review captured
+- `reviews/p011_evidence_gate_codebase_review_2026-05-07.md`: P011 executable evidence-gate codebase review captured
 - `reviews/snapshot_payload_hydration_boundary_2026-04-30.md`: snapshot payload hydration boundary review captured
 - `reviews/docs_consistency_review_2026-05-03.md`: docs consistency review captured
 - `reviews/source_showcase_false_positive_review_2026-05-03.md`: source-showcase audio QA false-positive review captured

@@ -70,6 +70,8 @@ def commands_for_category(manifest: dict[str, Any], category_id: str) -> list[st
     if category_id == "all":
         all_proofs: list[dict[str, Any]] = []
         for category in manifest["categories"]:
+            if category["status"] != "bounded_supported":
+                continue
             all_proofs.extend(category["proofs"])
         return unique_commands(all_proofs)
 
