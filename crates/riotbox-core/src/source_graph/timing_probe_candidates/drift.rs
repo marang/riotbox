@@ -9,7 +9,7 @@ fn probe_candidate_drift_reports(
         return Vec::new();
     }
 
-    [4_u32, 8_u32]
+    [4_u32, 8_u32, 16_u32, 32_u32]
         .into_iter()
         .filter_map(|window_bars| {
             let window_seconds = seconds_per_bar * window_bars as f32;
