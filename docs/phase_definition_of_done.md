@@ -191,7 +191,7 @@ Current bounded gates:
 - `just stage-style-jam-probe` exercises a longer generated W-30 source-diff output plus generated app-level multi-boundary observer/audio correlation evidence.
 - `just stage-style-restore-diversity-probe` adds a richer replay-safe W-30 / TR-909 / MC-202 control path correlated with generated full-grid output evidence.
 - `just stage-style-snapshot-convergence-smoke` proves a supported Scene / MC-202 / TR-909 stage-style suffix converges from a mid-run snapshot payload to the same final mix buffer as the committed path.
-- `just stage-style-stability-smoke` repeats the richer generated run and requires stable full-mix hashes plus non-collapsed observer/audio summaries across repetitions.
+- `just stage-style-stability-smoke` / `just stage-style-stability-proof` repeats the richer generated run, requires stable full-mix hashes plus non-collapsed observer/audio summaries across repetitions, and validates a normalized proof manifest for run count, observer/audio evidence, commit-boundary coverage, and stable output hash.
 - `just stage-style-stability-gate` is the stronger bounded variant with more repetitions and a longer generated source/grid budget.
 - `just interrupted-session-recovery-probe` and `just missing-target-recovery-probe` cover generated file-backed recovery observer drills.
 - `just offline-render-reproducibility-smoke` proves an existing deterministic source-backed W-30 render helper emits byte-stable WAV output for the same generated source.

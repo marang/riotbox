@@ -40,11 +40,14 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 expected_mix_hash=""
+proof_path="${RIOTBOX_STAGE_STYLE_STABILITY_PROOF_PATH:-$tmpdir/stage-style-stability-proof.json}"
+run_dirs=()
 
 echo "stage-style stability config: repetitions=$repetitions bars=$bars source_seconds=$source_seconds source_window_seconds=$source_window_seconds"
 
 for run in $(seq 1 "$repetitions"); do
   run_dir="$tmpdir/stage-style-stability-$run"
+  run_dirs+=("$run_dir")
   mkdir -p "$run_dir"
   source_wav="$run_dir/source.wav"
   observer_fixture="$run_dir/events.ndjson"
@@ -114,5 +117,9 @@ for run in $(seq 1 "$repetitions"); do
 
   echo "stage-style stability run $run/$repetitions ok: $mix_hash"
 done
+
+python3 scripts/validate_stage_style_stability_proof.py \
+  --write-proof "$proof_path" \
+  "${run_dirs[@]}"
 
 echo "stage-style stability smoke ok across $repetitions repeated runs: $expected_mix_hash"

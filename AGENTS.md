@@ -386,6 +386,7 @@ just listening-manifest-validate-generated-packs
 just observer-audio-correlate-generated-feral-grid
 just first-playable-jam-probe
 just stage-style-snapshot-convergence-smoke
+just stage-style-stability-proof
 just full-grid-export-reproducibility-smoke
 just product-export-reproducibility-smoke
 cargo run -p riotbox-audio --bin w30_preview_render
