@@ -392,9 +392,18 @@ Rules:
 
 ## 11. Out Of Scope For The First Contract Slice
 
-This spec does not implement:
+The first implemented analyzer step is a deterministic Rust skeleton that maps
+fixture timing expectations into the `TimingModel` payload shape:
 
-- the analyzer
+- `crates/riotbox-core/src/source_graph/timing_analysis.rs`
+- `just source-timing-analyzer-skeleton-fixtures`
+
+This skeleton is a contract/output-shape proof. It is not yet a production
+BPM/downbeat detector and must not be presented as robust source analysis.
+
+This spec still does not implement:
+
+- a production-grade analyzer
 - a new audio scheduler
 - host-audio monitoring
 - lane sound redesign
