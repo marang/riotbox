@@ -42,7 +42,7 @@ hardening expands the same files further.
 - Location: `crates/riotbox-app/src/bin/observer_audio_correlate.rs:1`
 - Category: scope
 - Severity: major
-- Follow-up: `RIOTBOX-573`
+- Follow-up: `RIOTBOX-573`, `RIOTBOX-575`
 
 Several P011-adjacent files are over the repo's soft 500-line review/context
 budget:
@@ -63,6 +63,11 @@ include replay executor W-30 behavior families, Ghost assist queue behavior
 families, W-30 committed preview/resample cases, UI shell snapshot fixture
 families, and observer/audio correlation parsing versus report emission. Do not
 mechanically shard files just to chase a line count.
+
+Follow-up status: `RIOTBOX-573` landed the core W-30 replay executor split.
+`RIOTBOX-575` landed the app-level split for the Ghost assist queue, W-30
+committed preview/resample cases, UI shell fixture snapshots, and observer/audio
+correlation entrypoint.
 
 ### 2. P011 exit evidence validation does not prove referenced `just` recipes exist
 
@@ -119,14 +124,16 @@ normal cargo arguments.
 ## Recommended Follow-Ups
 
 - `RIOTBOX-573`: split the largest replay/test hotspots by semantic
-  responsibility before adding another broad replay family to those files. The
-  first durable split should target the core W-30 replay executor tests by
-  separating cue/focus moves, promotion replay, capture replay, and artifact
-  hydration planning.
+  responsibility before adding another broad replay family to those files. This
+  landed for the core W-30 replay executor tests by separating cue/focus moves,
+  promotion replay, capture replay, and artifact hydration planning.
 - `RIOTBOX-574`: tighten the P011 exit evidence manifest validator so stale or
   misspelled `just` recipe references fail.
 - `RIOTBOX-575`: continue with the remaining app-level Ghost/W-30/UI/observer
-  hotspots after the core W-30 replay split lands.
+  hotspots after the core W-30 replay split lands. This landed by splitting
+  Ghost queue/current/feed tests, W-30 committed preview versus resample tests,
+  UI shell fixture/snapshot groups, and observer/audio correlation args, summary
+  build, and summary render responsibilities.
 - Continue P011 with the smallest next slice that converts smoke-level evidence
   into stronger replay, recovery, export, or stage-style proof without creating a
   shadow path.
