@@ -16,6 +16,17 @@ fn probe_bpm_hypothesis(
     let confidence = scoring.confidence;
     let hypothesis_score =
         confidence * scoring.beat_period_score.clamp(0.0, 1.0) * scoring.downbeat_score.max(0.0);
+    let beat_grid = probe_candidate_beat_grid(input.duration_seconds, bpm, confidence);
+    let bar_grid = probe_candidate_bar_grid(
+        input.duration_seconds,
+        bpm,
+        confidence,
+        input.meter,
+        downbeat_offset_beats,
+        scoring.downbeat_score,
+    );
+    let drift = probe_candidate_drift_reports(input, bpm, confidence);
+    let phrase_grid = probe_candidate_phrase_grid(&bar_grid, scoring.downbeat_score, &drift);
     TimingHypothesis {
         hypothesis_id,
         kind,
@@ -23,16 +34,9 @@ fn probe_bpm_hypothesis(
         meter: input.meter,
         confidence,
         score: hypothesis_score,
-        beat_grid: probe_candidate_beat_grid(input.duration_seconds, bpm, confidence),
-        bar_grid: probe_candidate_bar_grid(
-            input.duration_seconds,
-            bpm,
-            confidence,
-            input.meter,
-            downbeat_offset_beats,
-            scoring.downbeat_score,
-        ),
-        phrase_grid: Vec::new(),
+        beat_grid,
+        bar_grid,
+        phrase_grid,
         anchors: normalized_onset_evidence(input)
             .into_iter()
             .take(16)
@@ -53,7 +57,7 @@ fn probe_bpm_hypothesis(
                 ],
             })
             .collect(),
-        drift: probe_candidate_drift_reports(input, bpm, confidence),
+        drift,
         groove: Vec::new(),
         quality: TimingQuality::Medium,
         warnings: Vec::new(),
@@ -62,6 +66,7 @@ fn probe_bpm_hypothesis(
             "source-timing-probe.beat-period-score.v0".into(),
             "source-timing-probe.downbeat-accent-score.v0".into(),
             "source-timing-probe.drift-report.v0".into(),
+            "source-timing-probe.phrase-grid.v0".into(),
             input.source_id.clone(),
         ],
     }
@@ -129,7 +134,7 @@ fn probe_bpm_warning_message(
         TimingWarningCode::AmbiguousDownbeat => {
             "BPM candidate has only preliminary downbeat scoring"
         }
-        TimingWarningCode::PhraseUncertain => "BPM candidate has no phrase boundary scoring yet",
+        TimingWarningCode::PhraseUncertain => "BPM candidate has uncertain phrase boundary scoring",
         TimingWarningCode::HalfTimePossible => "half-time BPM candidate preserved",
         TimingWarningCode::DoubleTimePossible => "double-time BPM candidate preserved",
         TimingWarningCode::LowTimingConfidence => "BPM candidate confidence is low",
@@ -137,7 +142,7 @@ fn probe_bpm_warning_message(
         TimingWarningCode::WeakBackbeatAnchor => "BPM candidate has no trusted backbeat anchor yet",
         TimingWarningCode::DriftHigh => {
             let _ = input;
-            "BPM candidate has no drift model yet"
+            "BPM candidate drift is high"
         }
     }
 }

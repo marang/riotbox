@@ -179,6 +179,10 @@ Rules:
   selected hypothesis
 - missing grids are allowed, but absence must be visible through quality,
   warnings, and degraded policy
+- early probe-derived phrase candidates may use 4-bar spans from stable bar
+  timing evidence, but this must stay labelled as preliminary and must preserve
+  `phrase_uncertain` when material is too short, downbeat scoring is ambiguous,
+  or drift is high
 
 ---
 

@@ -223,6 +223,56 @@ fn source_timing_probe_bpm_candidates_report_long_grid_drift_windows() {
 }
 
 #[test]
+fn source_timing_probe_bpm_candidates_add_phrase_grid_when_bar_timing_is_stable() {
+    let onsets = even_onsets(0.0, 0.5, 32);
+    let timing = timing_model_from_probe_bpm_candidates(
+        &weighted_candidate_input(
+            "stable-phrase-120",
+            16.0,
+            &onsets,
+            &downbeat_strengths(onsets.len(), 4),
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    assert_eq!(primary.phrase_grid.len(), 2);
+    assert_eq!(timing.phrase_grid, primary.phrase_grid);
+    let phrase_spans = primary
+        .phrase_grid
+        .iter()
+        .map(|phrase| (phrase.phrase_index, phrase.start_bar, phrase.end_bar))
+        .collect::<Vec<_>>();
+    assert_eq!(phrase_spans, vec![(1, 1, 4), (2, 5, 8)]);
+    assert!(primary
+        .provenance
+        .contains(&"source-timing-probe.phrase-grid.v0".into()));
+    assert!(!has_warning(&timing, TimingWarningCode::PhraseUncertain));
+}
+
+#[test]
+fn source_timing_probe_bpm_candidates_keep_phrase_uncertain_for_short_material() {
+    let onsets = even_onsets(0.0, 0.5, 8);
+    let timing = timing_model_from_probe_bpm_candidates(
+        &weighted_candidate_input(
+            "short-phrase-120",
+            4.0,
+            &onsets,
+            &downbeat_strengths(onsets.len(), 4),
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    assert!(timing.phrase_grid.is_empty());
+    assert!(timing
+        .primary_hypothesis()
+        .expect("primary hypothesis")
+        .phrase_grid
+        .is_empty());
+    assert!(has_warning(&timing, TimingWarningCode::PhraseUncertain));
+}
+
+#[test]
 fn source_timing_probe_bpm_candidates_warn_when_grid_drift_is_high() {
     let mut onsets = even_onsets(0.0, 0.5, 32);
     for time_seconds in onsets.iter_mut().skip(16) {
@@ -234,11 +284,10 @@ fn source_timing_probe_bpm_candidates_warn_when_grid_drift_is_high() {
     );
 
     let primary = timing.primary_hypothesis().expect("primary hypothesis");
-    assert!(primary
-        .drift
-        .iter()
-        .any(|report| report.max_drift_ms > 100.0));
+    assert!(primary.drift.iter().any(|report| report.max_drift_ms > 100.0));
+    assert!(primary.phrase_grid.is_empty());
     assert!(has_warning(&timing, TimingWarningCode::DriftHigh));
+    assert!(has_warning(&timing, TimingWarningCode::PhraseUncertain));
 }
 
 #[test]
@@ -422,6 +471,18 @@ fn weighted_candidate_input(
 fn even_onsets(start_seconds: f32, period_seconds: f32, count: usize) -> Vec<f32> {
     (0..count)
         .map(|index| start_seconds + period_seconds * index as f32)
+        .collect()
+}
+
+fn downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
+    (0..count)
+        .map(|index| {
+            if index % beats_per_bar == 0 {
+                2.0
+            } else {
+                0.5
+            }
+        })
         .collect()
 }
 
