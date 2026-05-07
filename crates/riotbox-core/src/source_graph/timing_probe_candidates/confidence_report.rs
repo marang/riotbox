@@ -15,6 +15,7 @@ pub fn source_timing_candidate_confidence_report(
         .and_then(|hypothesis| hypothesis.bar_grid.first())
         .map(|bar| bar.downbeat_confidence);
     let primary_drift = primary_drift_summary(timing);
+    let primary_phrase = primary_phrase_summary(timing, primary_drift.status);
     let degraded_policy = timing.effective_degraded_policy();
     let requires_manual_confirm = degraded_policy != TimingDegradedPolicy::Locked
         || !warning_codes.is_empty()
@@ -51,9 +52,65 @@ pub fn source_timing_candidate_confidence_report(
         primary_drift_mean_abs_ms: primary_drift.mean_abs_ms,
         primary_drift_end_ms: primary_drift.end_ms,
         primary_drift_confidence: primary_drift.confidence,
+        primary_phrase_status: primary_phrase.status,
+        primary_phrase_count: primary_phrase.phrase_count,
+        primary_phrase_bar_count: primary_phrase.bar_count,
+        primary_phrase_confidence: primary_phrase.confidence,
         warning_codes,
         requires_manual_confirm,
         result,
+    }
+}
+
+struct PrimaryPhraseSummary {
+    status: SourceTimingCandidatePhraseStatus,
+    phrase_count: usize,
+    bar_count: usize,
+    confidence: Option<Confidence>,
+}
+
+fn primary_phrase_summary(
+    timing: &TimingModel,
+    drift_status: SourceTimingCandidateDriftStatus,
+) -> PrimaryPhraseSummary {
+    let Some(primary) = timing.primary_hypothesis() else {
+        return PrimaryPhraseSummary {
+            status: SourceTimingCandidatePhraseStatus::Unavailable,
+            phrase_count: 0,
+            bar_count: 0,
+            confidence: None,
+        };
+    };
+
+    let phrase_count = primary.phrase_grid.len();
+    let bar_count = primary.bar_grid.len();
+    let confidence = primary
+        .phrase_grid
+        .iter()
+        .map(|phrase| phrase.confidence)
+        .reduce(f32::min);
+
+    let status = if bar_count < 8 {
+        SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+    } else if drift_status == SourceTimingCandidateDriftStatus::High {
+        SourceTimingCandidatePhraseStatus::HighDrift
+    } else if timing
+        .warnings
+        .iter()
+        .any(|warning| warning.code == TimingWarningCode::AmbiguousDownbeat)
+    {
+        SourceTimingCandidatePhraseStatus::AmbiguousDownbeat
+    } else if phrase_count > 0 {
+        SourceTimingCandidatePhraseStatus::Stable
+    } else {
+        SourceTimingCandidatePhraseStatus::Unavailable
+    };
+
+    PrimaryPhraseSummary {
+        status,
+        phrase_count,
+        bar_count,
+        confidence,
     }
 }
 

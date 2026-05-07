@@ -53,6 +53,10 @@ pub struct SourceTimingCandidateConfidenceReport {
     pub primary_drift_mean_abs_ms: Option<f32>,
     pub primary_drift_end_ms: Option<f32>,
     pub primary_drift_confidence: Option<Confidence>,
+    pub primary_phrase_status: SourceTimingCandidatePhraseStatus,
+    pub primary_phrase_count: usize,
+    pub primary_phrase_bar_count: usize,
+    pub primary_phrase_confidence: Option<Confidence>,
     pub warning_codes: Vec<TimingWarningCode>,
     pub requires_manual_confirm: bool,
     pub result: SourceTimingCandidateConfidenceResult,
@@ -64,6 +68,15 @@ pub enum SourceTimingCandidateDriftStatus {
     NotEnoughMaterial,
     Stable,
     High,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum SourceTimingCandidatePhraseStatus {
+    Unavailable,
+    NotEnoughMaterial,
+    AmbiguousDownbeat,
+    HighDrift,
+    Stable,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]

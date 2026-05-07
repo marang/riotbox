@@ -17,6 +17,8 @@ The report captures:
 - primary downbeat confidence
 - primary source-grid drift status, available window count, drift metrics, and
   drift confidence
+- primary phrase-grid status, phrase count, covered bar count, and phrase
+  confidence
 - warning codes and manual-confirm requirement
 
 ## Gate
@@ -31,7 +33,8 @@ The gate proves that ambiguous BPM candidates expose alternate downbeat and
 tempo ambiguity, while degraded sparse probes report no primary BPM and stay in
 manual-review territory. It also proves that stable 4/8-bar drift and high
 source-grid drift are summarized without requiring consumers to inspect raw
-timing hypotheses.
+timing hypotheses. Phrase-grid assertions distinguish stable preliminary
+4-bar phrase spans from too-short, ambiguous-downbeat, and high-drift material.
 
 ## Boundary
 
