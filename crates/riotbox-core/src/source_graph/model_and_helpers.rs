@@ -2,9 +2,6 @@ use crate::{
     ids::{AssetId, CandidateId, SceneId, SectionId, SourceId},
     transport::TransportClockState,
 };
-use serde::{Deserialize, Serialize};
-
-pub type Confidence = f32;
 
 #[must_use]
 pub fn section_for_transport_bar<'a>(
@@ -152,46 +149,6 @@ pub enum DecodeProfile {
     Custom(String),
 }
 
-#[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
-pub struct TimingModel {
-    pub bpm_estimate: Option<f32>,
-    pub bpm_confidence: Confidence,
-    pub meter_hint: Option<MeterHint>,
-    pub beat_grid: Vec<BeatPoint>,
-    pub bar_grid: Vec<BarSpan>,
-    pub phrase_grid: Vec<PhraseSpan>,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct MeterHint {
-    pub beats_per_bar: u8,
-    pub beat_unit: u8,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BeatPoint {
-    pub beat_index: u32,
-    pub time_seconds: f32,
-    pub confidence: Confidence,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct BarSpan {
-    pub bar_index: u32,
-    pub start_seconds: f32,
-    pub end_seconds: f32,
-    pub downbeat_confidence: Confidence,
-    pub phrase_index: Option<u32>,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Serialize, Deserialize)]
-pub struct PhraseSpan {
-    pub phrase_index: u32,
-    pub start_bar: u32,
-    pub end_bar: u32,
-    pub confidence: Confidence,
-}
-
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Section {
     pub section_id: SectionId,
@@ -329,4 +286,3 @@ pub struct GraphProvenance {
     pub analysis_seed: u64,
     pub run_notes: Option<String>,
 }
-

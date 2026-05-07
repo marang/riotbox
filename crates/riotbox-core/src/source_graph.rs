@@ -1,3 +1,7 @@
-// Textual includes keep this large file split mechanical and behavior-preserving.
+use serde::{Deserialize, Serialize};
+
+// Textual includes keep Source Graph sub-areas in one public module while
+// letting each file keep a semantic review boundary.
+include!("source_graph/timing.rs");
 include!("source_graph/model_and_helpers.rs");
 include!("source_graph/tests.rs");
