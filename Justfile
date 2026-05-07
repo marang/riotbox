@@ -110,6 +110,7 @@ source-timing-downbeat-evidence:
 
 source-timing-readiness-report:
     cargo test -p riotbox-core source_timing_probe_readiness_report -- --nocapture
+    cargo test -p riotbox-audio source_timing_probe_preserves_real_loop_like_weak_readiness -- --nocapture
 
 source-timing-downbeat-ambiguity:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases -- --nocapture
