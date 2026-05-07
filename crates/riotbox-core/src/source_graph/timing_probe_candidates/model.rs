@@ -28,6 +28,7 @@ pub fn timing_model_from_probe_bpm_candidates(
 
     let downbeat_phases = downbeat_phase_scores(input, primary_bpm);
     let primary_phase = downbeat_phases.first().copied().unwrap_or_default();
+    let ambiguous_phases = ambiguous_downbeat_phases(&downbeat_phases, policy).collect::<Vec<_>>();
     let primary = probe_bpm_hypothesis(
         "probe-bpm-primary".into(),
         TimingHypothesisKind::Primary,
@@ -41,12 +42,12 @@ pub fn timing_model_from_probe_bpm_candidates(
         input,
     );
     let mut hypotheses = vec![primary];
-    let mut warnings = vec![
-        TimingWarningCode::AmbiguousDownbeat,
-        TimingWarningCode::PhraseUncertain,
-    ];
+    let mut warnings = vec![TimingWarningCode::PhraseUncertain];
+    if !ambiguous_phases.is_empty() || primary_phase.score < 0.4 {
+        warnings.push(TimingWarningCode::AmbiguousDownbeat);
+    }
 
-    for phase in ambiguous_downbeat_phases(&downbeat_phases, policy) {
+    for phase in ambiguous_phases {
         hypotheses.push(probe_bpm_hypothesis(
             format!("probe-bpm-alt-downbeat-{}", phase.offset_beats + 1),
             TimingHypothesisKind::AlternateDownbeat,
