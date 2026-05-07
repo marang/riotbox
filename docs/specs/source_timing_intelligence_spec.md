@@ -430,6 +430,17 @@ candidate `TimingHypothesis` entries:
 - it must preserve half-time / double-time alternatives when plausible
 - downbeat and phrase confidence remain explicitly uncertain
 
+The preliminary downbeat ambiguity scaffold may score beat-phase candidates
+inside the current meter and add `AlternateDownbeat` hypotheses when multiple
+bar-start phases are similarly plausible. This is still not production downbeat
+detection:
+
+- `just source-timing-downbeat-ambiguity`
+- alternate phases must stay visible instead of being silently collapsed
+- the primary candidate may expose a shifted bar grid only when the bounded
+  phase score is stronger
+- `AmbiguousDownbeat` remains visible while scoring is only onset-presence based
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 

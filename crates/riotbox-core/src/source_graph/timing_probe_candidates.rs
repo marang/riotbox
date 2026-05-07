@@ -13,6 +13,7 @@ pub struct SourceTimingProbeBpmCandidatePolicy {
     pub max_bpm: f32,
     pub primary_confidence: Confidence,
     pub alternative_confidence: Confidence,
+    pub downbeat_ambiguity_margin: f32,
 }
 
 impl Default for SourceTimingProbeBpmCandidatePolicy {
@@ -23,6 +24,7 @@ impl Default for SourceTimingProbeBpmCandidatePolicy {
             max_bpm: 240.0,
             primary_confidence: 0.55,
             alternative_confidence: 0.35,
+            downbeat_ambiguity_margin: 0.05,
         }
     }
 }
@@ -49,11 +51,15 @@ pub fn timing_model_from_probe_bpm_candidates(
         );
     };
 
+    let downbeat_phases = downbeat_phase_scores(input, primary_bpm);
+    let primary_phase = downbeat_phases.first().copied().unwrap_or_default();
     let primary = probe_bpm_hypothesis(
         "probe-bpm-primary".into(),
         TimingHypothesisKind::Primary,
         primary_bpm,
         policy.primary_confidence,
+        primary_phase.offset_beats,
+        primary_phase.score,
         input,
     );
     let mut hypotheses = vec![primary];
@@ -62,22 +68,42 @@ pub fn timing_model_from_probe_bpm_candidates(
         TimingWarningCode::PhraseUncertain,
     ];
 
+    for phase in ambiguous_downbeat_phases(&downbeat_phases, policy) {
+        hypotheses.push(probe_bpm_hypothesis(
+            format!("probe-bpm-alt-downbeat-{}", phase.offset_beats + 1),
+            TimingHypothesisKind::AlternateDownbeat,
+            primary_bpm,
+            policy.alternative_confidence,
+            phase.offset_beats,
+            phase.score,
+            input,
+        ));
+    }
+
     if primary_bpm / 2.0 >= policy.min_bpm {
+        let half_bpm = primary_bpm / 2.0;
+        let half_phase = best_downbeat_phase(input, half_bpm);
         hypotheses.push(probe_bpm_hypothesis(
             "probe-bpm-half-time".into(),
             TimingHypothesisKind::HalfTime,
-            primary_bpm / 2.0,
+            half_bpm,
             policy.alternative_confidence,
+            half_phase.offset_beats,
+            half_phase.score,
             input,
         ));
         warnings.push(TimingWarningCode::HalfTimePossible);
     }
     if primary_bpm * 2.0 <= policy.max_bpm {
+        let double_bpm = primary_bpm * 2.0;
+        let double_phase = best_downbeat_phase(input, double_bpm);
         hypotheses.push(probe_bpm_hypothesis(
             "probe-bpm-double-time".into(),
             TimingHypothesisKind::DoubleTime,
-            primary_bpm * 2.0,
+            double_bpm,
             policy.alternative_confidence,
+            double_phase.offset_beats,
+            double_phase.score,
             input,
         ));
         warnings.push(TimingWarningCode::DoubleTimePossible);
@@ -145,6 +171,8 @@ fn probe_bpm_hypothesis(
     kind: TimingHypothesisKind,
     bpm: f32,
     confidence: Confidence,
+    downbeat_offset_beats: u8,
+    downbeat_score: f32,
     input: &SourceTimingProbeBpmCandidateInput,
 ) -> TimingHypothesis {
     TimingHypothesis {
@@ -153,9 +181,16 @@ fn probe_bpm_hypothesis(
         bpm,
         meter: input.meter,
         confidence,
-        score: confidence,
+        score: confidence * downbeat_score.max(0.0),
         beat_grid: probe_candidate_beat_grid(input.duration_seconds, bpm, confidence),
-        bar_grid: probe_candidate_bar_grid(input.duration_seconds, bpm, confidence, input.meter),
+        bar_grid: probe_candidate_bar_grid(
+            input.duration_seconds,
+            bpm,
+            confidence,
+            input.meter,
+            downbeat_offset_beats,
+            downbeat_score,
+        ),
         phrase_grid: Vec::new(),
         anchors: normalized_onset_times(input)
             .into_iter()
@@ -169,7 +204,11 @@ fn probe_bpm_hypothesis(
                 beat_index: None,
                 confidence,
                 strength: confidence,
-                tags: vec!["probe_onset".into(), "bpm_candidate".into()],
+                tags: vec![
+                    "probe_onset".into(),
+                    "bpm_candidate".into(),
+                    format!("downbeat_phase_{}", downbeat_offset_beats + 1),
+                ],
             })
             .collect(),
         drift: Vec::new(),
@@ -192,6 +231,69 @@ fn normalized_onset_times(input: &SourceTimingProbeBpmCandidateInput) -> Vec<f32
         .collect::<Vec<_>>();
     onset_times.sort_by(f32::total_cmp);
     onset_times
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq)]
+struct DownbeatPhaseScore {
+    offset_beats: u8,
+    score: f32,
+}
+
+fn downbeat_phase_scores(input: &SourceTimingProbeBpmCandidateInput, bpm: f32) -> Vec<DownbeatPhaseScore> {
+    let onset_times = normalized_onset_times(input);
+    let beats_per_bar = input.meter.beats_per_bar.max(1);
+    let seconds_per_beat = 60.0 / bpm.max(1.0);
+    let seconds_per_bar = seconds_per_beat * f32::from(beats_per_bar);
+    if onset_times.is_empty() || seconds_per_bar <= 0.0 {
+        return vec![DownbeatPhaseScore::default()];
+    }
+
+    let tolerance_seconds = (seconds_per_beat * 0.2).clamp(0.02, 0.08);
+    let mut scores = (0..beats_per_bar)
+        .map(|offset_beats| {
+            let phase_seconds = f32::from(offset_beats) * seconds_per_beat;
+            let matching_onsets = onset_times
+                .iter()
+                .filter(|time_seconds| {
+                    distance_to_repeating_phase(**time_seconds, phase_seconds, seconds_per_bar)
+                        <= tolerance_seconds
+                })
+                .count();
+            DownbeatPhaseScore {
+                offset_beats,
+                score: matching_onsets as f32 / onset_times.len() as f32,
+            }
+        })
+        .collect::<Vec<_>>();
+    scores.sort_by(|left, right| {
+        right
+            .score
+            .total_cmp(&left.score)
+            .then_with(|| left.offset_beats.cmp(&right.offset_beats))
+    });
+    scores
+}
+
+fn best_downbeat_phase(input: &SourceTimingProbeBpmCandidateInput, bpm: f32) -> DownbeatPhaseScore {
+    downbeat_phase_scores(input, bpm)
+        .first()
+        .copied()
+        .unwrap_or_default()
+}
+
+fn ambiguous_downbeat_phases(
+    phases: &[DownbeatPhaseScore],
+    policy: SourceTimingProbeBpmCandidatePolicy,
+) -> impl Iterator<Item = DownbeatPhaseScore> + '_ {
+    let best_score = phases.first().map_or(0.0, |phase| phase.score);
+    phases.iter().copied().skip(1).filter(move |phase| {
+        phase.score > 0.0 && best_score - phase.score <= policy.downbeat_ambiguity_margin
+    })
+}
+
+fn distance_to_repeating_phase(time_seconds: f32, phase_seconds: f32, period_seconds: f32) -> f32 {
+    let position = (time_seconds - phase_seconds).rem_euclid(period_seconds);
+    position.min(period_seconds - position)
 }
 
 fn probe_candidate_beat_grid(
@@ -218,16 +320,19 @@ fn probe_candidate_bar_grid(
     bpm: f32,
     confidence: Confidence,
     meter: MeterHint,
+    downbeat_offset_beats: u8,
+    downbeat_score: f32,
 ) -> Vec<BarSpan> {
-    let seconds_per_bar = (60.0 / bpm.max(1.0)) * f32::from(meter.beats_per_bar.max(1));
+    let seconds_per_beat = 60.0 / bpm.max(1.0);
+    let seconds_per_bar = seconds_per_beat * f32::from(meter.beats_per_bar.max(1));
     let mut bar_grid = Vec::new();
-    let mut start_seconds = 0.0_f32;
+    let mut start_seconds = f32::from(downbeat_offset_beats) * seconds_per_beat;
     while start_seconds < duration_seconds.max(0.0) {
         bar_grid.push(BarSpan {
             bar_index: u32::try_from(bar_grid.len() + 1).unwrap_or(u32::MAX),
             start_seconds,
             end_seconds: (start_seconds + seconds_per_bar).min(duration_seconds.max(0.0)),
-            downbeat_confidence: confidence * 0.5,
+            downbeat_confidence: confidence * downbeat_score.clamp(0.0, 1.0),
             phrase_index: None,
         });
         start_seconds += seconds_per_bar;
