@@ -93,6 +93,7 @@ source-timing-wav-probe:
 source-timing-bpm-candidates:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates -- --nocapture
     cargo test -p riotbox-audio source_timing_probe_detects_impulse_onsets_from_pcm_wav_cache -- --nocapture
+    cargo test -p riotbox-audio source_timing_probe_candidate_fixture_seed_scores_pcm_wav_grid -- --nocapture
 
 source-timing-downbeat-ambiguity:
     cargo test -p riotbox-core source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases -- --nocapture
