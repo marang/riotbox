@@ -30,6 +30,13 @@ just source-timing-wav-probe
 The gate uses synthetic PCM WAV fixtures to prove that impulse-like source
 material produces onset evidence while silence stays quiet.
 
+The gate also checks the first conservative `TimingModel` diagnostic bridge:
+
+- silence maps to `Unknown` timing quality and `Disabled` degraded policy
+- sparse onset evidence stays low-confidence and disabled
+- richer onset evidence can only request `ManualConfirm`
+- no probe-only diagnostic may claim a BPM estimate or locked beat grid
+
 ## Boundary
 
 This probe is input evidence for later timing hypotheses. Follow-up slices must

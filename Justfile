@@ -84,6 +84,7 @@ source-timing-fixture-evaluator:
     cargo test -p riotbox-core source_timing_fixture -- --nocapture
 
 source-timing-wav-probe:
+    cargo test -p riotbox-core source_timing_probe_diagnostics -- --nocapture
     cargo test -p riotbox-audio source_timing_probe -- --nocapture
 
 w30-smoke-candidate date="local" duration="2.0":

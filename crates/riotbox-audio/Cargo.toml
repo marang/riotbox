@@ -6,6 +6,7 @@ license-file.workspace = true
 
 [dependencies]
 cpal = "0.17.3"
+riotbox-core = { path = "../riotbox-core" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 
