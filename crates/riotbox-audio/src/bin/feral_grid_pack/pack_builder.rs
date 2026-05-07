@@ -48,6 +48,7 @@ const MIN_SIGNAL_RMS: f32 = 0.001;
 const MIN_LOW_BAND_RMS: f32 = 0.004;
 const MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.45;
 const MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO: f32 = 0.75;
+const SOURCE_TIMING_BPM_MATCH_TOLERANCE: f32 = 1.0;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(env::args().skip(1))?;
@@ -67,6 +68,7 @@ struct Args {
     output_dir: Option<PathBuf>,
     date: String,
     bpm: f32,
+    bpm_overridden: bool,
     bars: u32,
     source_start_seconds: f32,
     source_window_seconds: f32,
@@ -79,6 +81,7 @@ impl Args {
         let mut output_dir = None;
         let mut date = DEFAULT_DATE.to_string();
         let mut bpm = DEFAULT_BPM;
+        let mut bpm_overridden = false;
         let mut bars = DEFAULT_BARS;
         let mut source_start_seconds = DEFAULT_SOURCE_START_SECONDS;
         let mut source_window_seconds = DEFAULT_SOURCE_WINDOW_SECONDS;
@@ -112,6 +115,7 @@ impl Args {
                             .next()
                             .ok_or_else(|| "--bpm requires a value".to_string())?,
                     )?;
+                    bpm_overridden = true;
                 }
                 "--bars" => {
                     bars = parse_bars(
@@ -147,6 +151,7 @@ impl Args {
             output_dir,
             date,
             bpm,
+            bpm_overridden,
             bars,
             source_start_seconds,
             source_window_seconds,
@@ -201,6 +206,8 @@ struct ListeningPackManifest {
     sample_rate: u32,
     channel_count: u16,
     bpm: f32,
+    grid_bpm_source: &'static str,
+    source_timing_bpm_delta: Option<f32>,
     beats_per_bar: u32,
     bars: u32,
     total_beats: u32,
@@ -282,12 +289,14 @@ fn print_help() {
         "Usage: feral_grid_pack --source PATH [--date NAME] [--output-dir PATH]\n\
          \n\
          Optional grid controls:\n\
-           --bpm BPM\n\
+          --bpm BPM              Override source-timing BPM selection\n\
            --bars BARS\n\
            --source-start-seconds SECONDS\n\
            --source-window-seconds SECONDS\n\
          \n\
-         Renders a local grid-locked Feral demo pack. TR-909 beat/fill and\n\
+         Renders a local grid-locked Feral demo pack. Without --bpm, the pack\n\
+         uses ready source timing when available and otherwise falls back to\n\
+         the static default BPM. TR-909 beat/fill and\n\
          W-30 source chop stems share one beat/bar grid\n\
          so the output can be checked for musical timing instead of only logs."
     );
@@ -332,7 +341,6 @@ fn parse_bars(value: &str) -> Result<u32, String> {
 }
 
 fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
-    let grid = Grid::new(args.bpm, DEFAULT_BEATS_PER_BAR, args.bars)?;
     let output_dir = args.output_dir();
     let stems_dir = output_dir.join("stems");
     fs::create_dir_all(&stems_dir)?;
@@ -340,6 +348,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let source = SourceAudioCache::load_pcm_wav(&args.source_path)?;
     validate_source_format(&source)?;
     let timing_readiness = source_timing_readiness_for_source(&source, &args.source_path);
+    let grid_bpm = choose_grid_bpm(args, &timing_readiness);
+    let grid = Grid::new(grid_bpm.bpm, DEFAULT_BEATS_PER_BAR, args.bars)?;
 
     let w30_source_window = source.window_by_seconds(
         args.source_start_seconds,
@@ -401,8 +411,9 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &grid,
         report,
         &timing_readiness,
+        grid_bpm,
     )?;
-    write_readme(&output_dir, args, &grid)?;
+    write_readme(&output_dir, args, &grid, grid_bpm)?;
 
     Ok(())
 }

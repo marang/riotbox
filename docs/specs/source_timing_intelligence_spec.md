@@ -495,6 +495,30 @@ The candidate confidence report summarizes this early detector state for QA:
 - this report is for regression and review evidence only; it is not a user-facing
   confidence UI yet
 
+The source-timing readiness report is the current boundary for allowing downstream
+QA/listening tools to consume the timing estimate:
+
+- `source_timing_probe_readiness_report(...)`
+- `just source-timing-readiness-report`
+- it combines beat evidence, downbeat evidence, confidence, drift, phrase
+  stability, warnings, primary BPM, primary downbeat offset, and manual-confirm
+  policy into one report
+- `Ready` means the evidence is stable enough for bounded QA consumers; it does
+  not mean Riotbox has a production-grade arbitrary-audio beat/downbeat detector
+
+Generated Feral grid listening packs may use this readiness report as their
+bounded BPM policy:
+
+- explicit `--bpm` always wins and is recorded as `grid_bpm_source:
+  user_override`
+- without `--bpm`, a `Ready` report with a finite positive primary BPM may drive
+  the pack grid and is recorded as `grid_bpm_source: source_timing`
+- if readiness is weaker, the pack falls back to the static default BPM and is
+  recorded as `grid_bpm_source: static_default`
+- manifests must preserve the source/grid BPM delta and whether the source timing
+  agrees with the chosen grid, so QA can detect timing mismatch instead of only
+  hearing a drifting or fallback-like render
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 
