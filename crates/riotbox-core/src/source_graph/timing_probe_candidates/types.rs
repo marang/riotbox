@@ -3,6 +3,7 @@ pub struct SourceTimingProbeBpmCandidateInput {
     pub source_id: String,
     pub duration_seconds: f32,
     pub onset_times_seconds: Vec<f32>,
+    pub onset_strengths: Vec<f32>,
     pub meter: MeterHint,
 }
 

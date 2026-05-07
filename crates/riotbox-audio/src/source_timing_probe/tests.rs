@@ -5,8 +5,8 @@ use crate::source_audio::{SourceAudioCache, write_interleaved_pcm16_wav};
 use riotbox_core::source_graph::{
     MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingProbeBpmCandidatePolicy,
     SourceTimingProbeDiagnosticPolicy, TimingDegradedPolicy, TimingHypothesisKind, TimingQuality,
-    source_timing_candidate_confidence_report, timing_model_from_probe_bpm_candidates,
-    timing_model_from_probe_diagnostics,
+    TimingWarningCode, source_timing_candidate_confidence_report,
+    timing_model_from_probe_bpm_candidates, timing_model_from_probe_diagnostics,
 };
 
 #[test]
@@ -139,6 +139,68 @@ fn source_timing_probe_candidate_fixture_seed_scores_pcm_wav_grid() {
 }
 
 #[test]
+fn source_timing_probe_weights_pcm_wav_downbeat_accents() {
+    let tempdir = tempdir().expect("create tempdir");
+    let source_path = tempdir.path().join("accented_downbeats.wav");
+    let samples = accented_beat_samples();
+    write_interleaved_pcm16_wav(&source_path, 1_000, 1, &samples).expect("write source");
+    let source = SourceAudioCache::load_pcm_wav(&source_path).expect("load source");
+
+    let probe = analyze_source_timing_probe(
+        &source,
+        SourceTimingProbeConfig {
+            window_size_frames: 50,
+            hop_size_frames: 50,
+            onset_threshold_ratio: 0.20,
+            min_onset_flux: 0.01,
+        },
+    );
+    let candidate_input = probe.bpm_candidate_input(
+        "accented-downbeats",
+        MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+    );
+
+    assert_eq!(candidate_input.onset_times_seconds.len(), probe.onset_count);
+    assert_eq!(
+        candidate_input.onset_strengths.len(),
+        candidate_input.onset_times_seconds.len()
+    );
+    assert!(
+        candidate_input
+            .onset_strengths
+            .first()
+            .is_some_and(|strength| *strength > 0.30),
+        "{candidate_input:?}"
+    );
+
+    let timing = timing_model_from_probe_bpm_candidates(
+        &candidate_input,
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+    let primary = timing.primary_hypothesis().expect("primary hypothesis");
+    assert!(
+        !timing
+            .hypotheses
+            .iter()
+            .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::AlternateDownbeat)
+    );
+    assert!(
+        !timing
+            .warnings
+            .iter()
+            .any(|warning| warning.code == TimingWarningCode::AmbiguousDownbeat)
+    );
+    assert!(
+        primary
+            .provenance
+            .contains(&"source-timing-probe.downbeat-accent-score.v0".into())
+    );
+}
+
+#[test]
 fn source_timing_probe_stays_quiet_for_silence() {
     let tempdir = tempdir().expect("create tempdir");
     let source_path = tempdir.path().join("silence.wav");
@@ -186,6 +248,19 @@ fn fixture_like_break_samples() -> Vec<f32> {
         add_impulse(&mut samples, start, 8, 0.05);
     }
 
+    samples
+}
+
+fn accented_beat_samples() -> Vec<f32> {
+    let mut samples = vec![0.0_f32; 4_000];
+    for (index, start) in [0, 500, 1_000, 1_500, 2_000, 2_500, 3_000, 3_500]
+        .iter()
+        .copied()
+        .enumerate()
+    {
+        let amplitude = if index % 4 == 0 { 0.95 } else { 0.32 };
+        add_impulse(&mut samples, start, 16, amplitude);
+    }
     samples
 }
 

@@ -53,6 +53,12 @@ impl SourceTimingProbe {
                 .filter(|window| window.onset)
                 .map(|window| window.start_seconds)
                 .collect(),
+            onset_strengths: self
+                .windows
+                .iter()
+                .filter(|window| window.onset)
+                .map(|window| window.positive_flux.max(window.energy).max(0.0))
+                .collect(),
             meter,
         }
     }

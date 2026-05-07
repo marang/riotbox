@@ -8,28 +8,34 @@ fn downbeat_phase_scores(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
 ) -> Vec<DownbeatPhaseScore> {
-    let onset_times = normalized_onset_times(input);
+    let onsets = normalized_onset_times_and_strengths(input);
     let beats_per_bar = input.meter.beats_per_bar.max(1);
     let seconds_per_beat = 60.0 / bpm.max(1.0);
     let seconds_per_bar = seconds_per_beat * f32::from(beats_per_bar);
-    if onset_times.is_empty() || seconds_per_bar <= 0.0 {
+    if onsets.is_empty() || seconds_per_bar <= 0.0 {
         return vec![DownbeatPhaseScore::default()];
     }
+    let total_strength = onsets
+        .iter()
+        .map(|(_, strength)| strength.max(0.0))
+        .sum::<f32>()
+        .max(f32::EPSILON);
 
     let tolerance_seconds = (seconds_per_beat * 0.2).clamp(0.02, 0.08);
     let mut scores = (0..beats_per_bar)
         .map(|offset_beats| {
             let phase_seconds = f32::from(offset_beats) * seconds_per_beat;
-            let matching_onsets = onset_times
+            let matching_strength = onsets
                 .iter()
-                .filter(|time_seconds| {
-                    distance_to_repeating_phase(**time_seconds, phase_seconds, seconds_per_bar)
-                        <= tolerance_seconds
+                .filter_map(|(time_seconds, strength)| {
+                    (distance_to_repeating_phase(*time_seconds, phase_seconds, seconds_per_bar)
+                        <= tolerance_seconds)
+                        .then_some(strength.max(0.0))
                 })
-                .count();
+                .sum::<f32>();
             DownbeatPhaseScore {
                 offset_beats,
-                score: matching_onsets as f32 / onset_times.len() as f32,
+                score: matching_strength / total_strength,
             }
         })
         .collect::<Vec<_>>();

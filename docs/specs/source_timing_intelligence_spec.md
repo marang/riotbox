@@ -130,6 +130,9 @@ Rules:
 - a selected primary hypothesis must be explicit
 - low-confidence or ambiguous material must not silently upgrade to a
   high-confidence grid
+- early probe-derived downbeat scoring may use onset/accent strength from the
+  source timing probe, but weak or flat accents must still preserve alternate
+  downbeat candidates instead of claiming a confident phase lock
 
 ### 4.2 Grids
 

@@ -25,6 +25,9 @@ fn source_timing_probe_bpm_candidates_estimate_clean_synthetic_spacing() {
     assert!(primary
         .provenance
         .contains(&"source-timing-probe.beat-period-score.v0".into()));
+    assert!(primary
+        .provenance
+        .contains(&"source-timing-probe.downbeat-accent-score.v0".into()));
 }
 
 #[test]
@@ -117,10 +120,11 @@ fn source_timing_probe_bpm_candidates_preserve_alternate_downbeat_phases() {
 #[test]
 fn source_timing_probe_bpm_candidates_keep_primary_bar_grid_phase_when_clearer() {
     let timing = timing_model_from_probe_bpm_candidates(
-        &candidate_input(
+        &weighted_candidate_input(
             "phase-weighted-120",
             4.0,
-            &[0.0, 0.0, 0.5, 1.0, 1.5, 2.0, 2.0, 2.5, 3.0, 3.5],
+            &[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],
+            &[1.0, 0.25, 0.25, 0.25, 1.0, 0.25, 0.25, 0.25],
         ),
         SourceTimingProbeBpmCandidatePolicy::default(),
     );
@@ -134,10 +138,32 @@ fn source_timing_probe_bpm_candidates_keep_primary_bar_grid_phase_when_clearer()
         .bar_grid
         .first()
         .is_some_and(|bar| bar.downbeat_confidence > 0.0));
+    assert!(!has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
     assert!(!timing
         .hypotheses
         .iter()
         .any(|hypothesis| hypothesis.kind == TimingHypothesisKind::AlternateDownbeat));
+}
+
+#[test]
+fn source_timing_probe_bpm_candidates_keep_ambiguous_downbeats_when_accents_are_flat() {
+    let timing = timing_model_from_probe_bpm_candidates(
+        &weighted_candidate_input(
+            "phase-flat-120",
+            4.0,
+            &[0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5],
+            &[0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5],
+        ),
+        SourceTimingProbeBpmCandidatePolicy::default(),
+    );
+
+    let alternate_downbeats = timing
+        .hypotheses
+        .iter()
+        .filter(|hypothesis| hypothesis.kind == TimingHypothesisKind::AlternateDownbeat)
+        .count();
+    assert_eq!(alternate_downbeats, 3);
+    assert!(has_warning(&timing, TimingWarningCode::AmbiguousDownbeat));
 }
 
 #[test]
@@ -236,10 +262,25 @@ fn candidate_input(
     duration_seconds: f32,
     onset_times_seconds: &[f32],
 ) -> SourceTimingProbeBpmCandidateInput {
+    weighted_candidate_input(
+        source_id,
+        duration_seconds,
+        onset_times_seconds,
+        &vec![1.0; onset_times_seconds.len()],
+    )
+}
+
+fn weighted_candidate_input(
+    source_id: &str,
+    duration_seconds: f32,
+    onset_times_seconds: &[f32],
+    onset_strengths: &[f32],
+) -> SourceTimingProbeBpmCandidateInput {
     SourceTimingProbeBpmCandidateInput {
         source_id: source_id.into(),
         duration_seconds,
         onset_times_seconds: onset_times_seconds.to_vec(),
+        onset_strengths: onset_strengths.to_vec(),
         meter: MeterHint {
             beats_per_bar: 4,
             beat_unit: 4,
