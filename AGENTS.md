@@ -365,6 +365,8 @@ just ci
 just audio-qa-ci
 just check
 just clippy
+just source-timing-fixture-catalog
+just source-timing-fixture-catalog-validator-fixtures
 just mem-status
 just mem-search "replay truth"
 just w30-smoke-qa local

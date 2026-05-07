@@ -229,7 +229,29 @@ Removing or replacing a fixture should require:
 
 ---
 
-## 10. Next Step
+## 10. Source Timing Fixture Seeds
+
+The first P012 timing-specific seed catalog lives at:
+
+- `crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json`
+
+It defines deterministic expectations for clean timing, dense breaks,
+hook-forward phrases, half-time ambiguity, and weak timing without committing
+audio assets.
+
+The validation gate is:
+
+```bash
+just source-timing-fixture-catalog
+```
+
+The seed catalog is a fixture contract for upcoming analyzer and lane proof
+slices. It is not itself a source-audio corpus and does not replace later
+source-vs-output audio evidence.
+
+---
+
+## 11. Next Step
 
 After this draft:
 
