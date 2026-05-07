@@ -1,12 +1,14 @@
-fn render_tr909_beat_fill(grid: &Grid) -> Vec<f32> {
+fn render_tr909_source_support(grid: &Grid, profile: SourceAwareTr909Profile) -> Vec<f32> {
     render_tr909_offline(
         &Tr909RenderState {
-            mode: Tr909RenderMode::Fill,
+            mode: Tr909RenderMode::SourceSupport,
             routing: Tr909RenderRouting::DrumBusSupport,
-            pattern_adoption: Some(Tr909PatternAdoption::MainlineDrive),
-            phrase_variation: Some(Tr909PhraseVariation::PhraseDrive),
-            drum_bus_level: 0.94,
-            slam_intensity: 0.32,
+            source_support_profile: Some(profile.support_profile),
+            source_support_context: Some(profile.support_context),
+            pattern_adoption: Some(profile.pattern_adoption),
+            phrase_variation: Some(profile.phrase_variation),
+            drum_bus_level: profile.drum_bus_level,
+            slam_intensity: profile.slam_intensity,
             is_transport_running: true,
             tempo_bpm: grid.bpm,
             position_beats: 0.0,
@@ -202,6 +204,9 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - Total beats: `{}`\n\
              - Total frames: `{}`\n\
              - Duration seconds: `{:.6}`\n\
+             - TR-909 source reason: `{}`\n\
+             - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
+             - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
@@ -209,7 +214,7 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - Result: `pass`\n\n\
              | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run | Low energy | Mid energy | High energy |\n\
              | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n\
-             | TR-909 beat/fill | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
+             | TR-909 source support | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | W-30 Feral source chop | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | Source-first mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | Generated-support mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n",
@@ -220,6 +225,12 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             grid.total_beats,
             grid.total_frames,
             grid.duration_seconds(),
+            report.tr909_source_profile.reason,
+            report.tr909_source_profile.support_profile.label(),
+            report.tr909_source_profile.pattern_adoption.label(),
+            report.tr909_source_profile.phrase_variation.label(),
+            report.tr909_source_profile.low_band_energy_ratio,
+            report.tr909_source_profile.high_band_energy_ratio,
             report.source_first_generated_to_source_rms_ratio,
             report.support_generated_to_source_rms_ratio,
             report.full_mix.low_band.rms,
@@ -295,6 +306,7 @@ fn write_manifest(
             max_support_generated_to_source_rms_ratio: MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         },
         metrics: ManifestPackMetrics {
+            tr909_source_profile: manifest_tr909_source_profile(report.tr909_source_profile),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
             source_first_mix: manifest_render_metrics(report.source_first_mix),
@@ -402,7 +414,7 @@ fn write_readme(output_dir: &Path, args: &Args, grid: &Grid) -> std::io::Result<
              - Source window start: `{:.3}s`\n\
              - W-30 source window length: `{:.3}s`\n\n\
              ## Files\n\n\
-             - `stems/01_tr909_beat_fill.wav`: TR-909 beat/fill support rendered on the same grid.\n\
+             - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop rendered on the same grid.\n\
              - `03_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated drums stay secondary.\n\
              - `04_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 adds low-end and movement without proving source extraction by itself.\n\

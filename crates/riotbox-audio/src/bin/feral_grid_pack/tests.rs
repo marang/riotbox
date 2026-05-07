@@ -112,6 +112,33 @@ mod tests {
     }
 
     #[test]
+    fn source_aware_tr909_profile_changes_for_same_bpm_sources() {
+        let grid = Grid::new(128.0, 4, 2).expect("grid");
+        let low_source = tone_samples(80.0, frames_for_beats(128.0, 8));
+        let high_source = tone_samples(4_200.0, frames_for_beats(128.0, 8));
+
+        let low_profile = derive_source_aware_tr909_profile(&low_source, &grid);
+        let high_profile = derive_source_aware_tr909_profile(&high_source, &grid);
+        let low_render = render_tr909_source_support(&grid, low_profile);
+        let high_render = render_tr909_source_support(&grid, high_profile);
+        let low_render_repeat = render_tr909_source_support(&grid, low_profile);
+
+        assert_eq!(
+            low_profile.support_profile,
+            Tr909SourceSupportProfile::DropDrive
+        );
+        assert_eq!(
+            high_profile.support_profile,
+            Tr909SourceSupportProfile::BreakLift
+        );
+        assert_ne!(low_profile.pattern_adoption, high_profile.pattern_adoption);
+        assert_ne!(low_render, high_render);
+        assert_eq!(low_render, low_render_repeat);
+        assert!(signal_metrics(&low_render).rms > MIN_SIGNAL_RMS);
+        assert!(signal_metrics(&high_render).rms > MIN_SIGNAL_RMS);
+    }
+
+    #[test]
     fn renders_grid_pack_files_and_noncollapsed_audio() {
         let temp = tempfile::tempdir().expect("tempdir");
         let source_path = temp.path().join("source.wav");
@@ -292,6 +319,22 @@ mod tests {
         );
         assert!(manifest["metrics"]["mc202_question_answer_delta"].is_null());
         assert!(manifest["metrics"]["mc202_question_answer"].is_null());
+        assert_eq!(
+            manifest["metrics"]["tr909_source_profile"]["support_context"],
+            "transport_bar"
+        );
+        assert!(
+            manifest["metrics"]["tr909_source_profile"]["reason"]
+                .as_str()
+                .expect("tr909 source reason")
+                .starts_with("source_")
+        );
+        assert!(
+            manifest["metrics"]["tr909_source_profile"]["signal_rms"]
+                .as_f64()
+                .expect("tr909 source signal rms")
+                > 0.0
+        );
         assert!(
             manifest["metrics"]["mix_balance"]["source_first_generated_to_source_rms_ratio"]
                 .as_f64()

@@ -17,7 +17,7 @@ use riotbox_audio::{
     source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-        Tr909RenderState,
+        Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
     },
     w30::{
         W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PreviewRenderMode, W30PreviewRenderRouting,
@@ -174,6 +174,7 @@ struct RenderMetrics {
 
 #[derive(Clone, Copy, Debug)]
 struct PackReport {
+    tr909_source_profile: SourceAwareTr909Profile,
     tr909: RenderMetrics,
     w30: RenderMetrics,
     source_first_mix: RenderMetrics,
@@ -232,6 +233,7 @@ struct ManifestThresholds {
 
 #[derive(Serialize)]
 struct ManifestPackMetrics {
+    tr909_source_profile: ManifestTr909SourceProfile,
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     source_first_mix: ManifestRenderMetrics,
@@ -330,8 +332,9 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         args.source_start_seconds,
         args.source_window_seconds.min(grid.duration_seconds()),
     );
+    let source_window_samples = source.window_samples(w30_source_window);
     let w30_preview = source_preview_from_interleaved(
-        source.window_samples(w30_source_window),
+        source_window_samples,
         usize::from(CHANNEL_COUNT),
         w30_source_window.start_frame as u64,
         w30_source_window
@@ -340,7 +343,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )
     .ok_or("source-backed W-30 preview window produced no samples")?;
 
-    let tr909 = render_tr909_beat_fill(&grid);
+    let tr909_source_profile = derive_source_aware_tr909_profile(source_window_samples, &grid);
+    let tr909 = render_tr909_source_support(&grid, tr909_source_profile);
     let w30 = render_w30_source_chop(&grid, w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &w30);
     let full_mix = render_generated_support_mix(&tr909, &w30);
@@ -364,6 +368,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let report = PackReport {
+        tr909_source_profile,
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),
         source_first_mix: render_metrics(&source_first_mix, &grid),
