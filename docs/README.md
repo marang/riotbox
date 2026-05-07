@@ -174,6 +174,7 @@ docs/
 - `benchmarks/observer_audio_correlation_template_2026-04-29.md`: observer/audio correlation template captured
 - `benchmarks/observer_audio_summary_json_contract_2026-04-29.md`: observer/audio summary JSON contract captured
 - `benchmarks/product_export_reproducibility_boundary_2026-05-07.md`: normalized product-export reproducibility boundary captured
+- `benchmarks/stage_style_stability_proof_2026-05-07.md`: normalized stage-style repeated-run stability proof captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
 - `benchmarks/capture_do_next_readability_baseline_2026-04-25.md`: Capture `Do Next` readability baseline captured
 - `benchmarks/capture_pending_do_next_readability_baseline_2026-04-25.md`: Capture pending `Do Next` readability baseline captured

@@ -26,6 +26,10 @@ bounded. It proves important seams, not complete product-grade recovery.
   Proves a supported Scene / MC-202 / TR-909 stage-style sequence can restore
   from a mid-run snapshot payload and converge to the same final mixed buffer
   as the originally committed path.
+- `just stage-style-stability-proof`
+  Repeats the generated stage-style restore-diversity observer/audio path and
+  validates a normalized proof for run count, observer/audio evidence,
+  Phrase/Bar/Beat boundary coverage, and stable generated-support mix hash.
 - `just offline-render-reproducibility-smoke`
   Proves one deterministic source-backed W-30 render emits byte-stable WAV
   output for the same generated source.
@@ -149,6 +153,9 @@ bounded. It proves important seams, not complete product-grade recovery.
   MC-202, TR-909, W-30, and mixed suffix candidates without executing restore.
 - Stage-style QA now includes bounded output-path evidence plus a payload
   readiness guard.
+- Stage-style stability now has a normalized repeated-run proof around the
+  generated restore-diversity path. This remains bounded CI evidence, not a
+  host-audio soak or multi-hour performance rehearsal.
 - Offline render reproducibility has one CI-safe smoke gate.
 - The current Feral grid generated-support full-mix seam has a normalized
   product-export reproducibility proof. This is still bounded and does not
