@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "source": "Beat08_128BPM(Full).wav",
+  "result": "pass",
+  "artifacts": [
+    { "role": "tr909_beat_fill", "kind": "audio_wav", "path": "stems/01_tr909_beat_fill.wav", "metrics_path": null },
+    { "role": "w30_feral_source_chop", "kind": "audio_wav", "path": "stems/02_w30_feral_source_chop.wav", "metrics_path": null },
+    { "role": "full_grid_mix", "kind": "audio_wav", "path": "03_riotbox_grid_feral_mix.wav", "metrics_path": null }
+  ],
+  "metrics": {
+    "tr909_beat_fill": { "signal": { "rms": 0.06 }, "low_band": { "rms": 0.02 } },
+    "w30_feral_source_chop": { "signal": { "rms": 0.22 }, "low_band": { "rms": 0.06 } },
+    "full_grid_mix": { "signal": { "rms": 0.25 }, "low_band": { "rms": 0.08 } }
+  }
+}
