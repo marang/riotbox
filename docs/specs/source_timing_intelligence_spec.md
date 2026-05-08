@@ -642,6 +642,11 @@ bounded BPM policy:
   transient-cluster counts from the shared Jam source timing summary. This is a
   control-path proof that the app observed real anchor evidence or honestly
   observed none; it is not a replacement for manifest-side output comparison.
+- app observer snapshots should preserve compact primary groove evidence as
+  `groove_evidence`: residual count, max absolute offset, and a short preview
+  from the shared Jam source timing summary. This keeps control-path session
+  logs aligned with probe/manifest groove evidence without asking observer
+  consumers to inspect raw timing hypotheses.
 - generated Feral grid QA should prove both the conservative fallback path and a
   strict auto-grid path: weak or manual-confirm timing must stay
   `static_default`, while long stable timing may use `source_timing` only when
