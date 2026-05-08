@@ -61,98 +61,6 @@ fn accepts_help_without_required_paths() {
 }
 
 #[test]
-fn summarizes_synthetic_observer_and_manifest() {
-    let temp = tempfile::tempdir().expect("tempdir");
-    let observer_path = temp.path().join("events.ndjson");
-    let manifest_path = temp.path().join("manifest.json");
-    fs::write(&observer_path, synthetic_observer()).expect("write observer");
-    fs::write(&manifest_path, synthetic_manifest()).expect("write manifest");
-
-    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
-    let markdown = render_markdown(&summary);
-
-    assert_eq!(summary.observer_schema, "riotbox.user_session_observer.v1");
-    assert_eq!(summary.launch_mode, "ingest");
-    assert_eq!(summary.audio_runtime_status, "started");
-    assert_eq!(
-        summary.key_outcomes,
-        ["space -> transport started", "f -> queued"]
-    );
-    assert!(summary.first_commit.contains("action 2 at NextBar"));
-    assert_eq!(summary.commit_count, 1);
-    assert_eq!(summary.commit_boundaries, ["NextBar"]);
-    assert_eq!(
-        summary.observer_source_timing,
-        Some(ObserverSourceTimingReadiness {
-            source_id: "src-timing".to_string(),
-            bpm_estimate: Some(128.0),
-            bpm_confidence: 0.72,
-            quality: "low".to_string(),
-            degraded_policy: "manual_confirm".to_string(),
-            primary_hypothesis_id: Some("probe-primary".to_string()),
-            hypothesis_count: 1,
-            primary_warning_code: Some("ambiguous_downbeat".to_string()),
-            warning_codes: vec![
-                "ambiguous_downbeat".to_string(),
-                "phrase_uncertain".to_string()
-            ],
-        })
-    );
-    assert_eq!(summary.pack_id, "feral-grid-demo");
-    assert_eq!(summary.manifest_result, "pass");
-    assert_eq!(summary.artifact_count, 5);
-    assert_eq!(summary.full_mix_rms, Some(0.1));
-    assert_eq!(summary.w30_candidate_rms, None);
-    assert_eq!(
-        summary.source_grid_output_drift,
-        Some(SourceGridOutputDriftEvidence {
-            hit_ratio: 0.875,
-            max_peak_offset_ms: 12.5,
-            max_allowed_peak_offset_ms: 70.0,
-        })
-    );
-    assert!(markdown.contains("Source-grid output hit ratio: `0.875000`"));
-    assert!(markdown.contains("Source-grid output max peak offset: `12.500000`"));
-    assert!(markdown.contains("Observer source timing: `src-timing quality=low"));
-    assert!(markdown.contains("Control path present: `yes`"));
-    assert!(markdown.contains("Output path present: `yes`"));
-    assert!(markdown.contains("Output path issues: `none`"));
-    let json: Value = serde_json::from_str(&render_json(&summary).expect("json")).expect("json");
-    assert_eq!(json["schema"], SUMMARY_SCHEMA);
-    assert_eq!(
-        json["schema_version"].as_u64(),
-        Some(u64::from(SUMMARY_SCHEMA_VERSION))
-    );
-    assert_eq!(json["control_path"]["present"], true);
-    assert_eq!(json["control_path"]["commit_count"], 1);
-    assert_eq!(json["control_path"]["commit_boundaries"][0], "NextBar");
-    assert_eq!(
-        json["control_path"]["observer_source_timing"]["quality"],
-        "low"
-    );
-    assert_eq!(
-        json["control_path"]["observer_source_timing"]["warning_codes"][1],
-        "phrase_uncertain"
-    );
-    assert_eq!(json["output_path"]["present"], true);
-    assert_eq!(
-        json["output_path"]["issues"]
-            .as_array()
-            .expect("issues")
-            .len(),
-        0
-    );
-    assert_eq!(
-        json["output_path"]["metrics"]["full_mix_rms"].as_f64(),
-        Some(0.1)
-    );
-    assert_eq!(
-        json["output_path"]["metrics"]["source_grid_output_drift"]["hit_ratio"].as_f64(),
-        Some(0.875)
-    );
-}
-
-#[test]
 fn summarizes_committed_fixture_observer_and_manifest() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -394,15 +302,20 @@ fn synthetic_manifest() -> String {
   "result": "pass",
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
+    "source_id": "source.wav",
+    "policy_profile": "dance_loop_auto_readiness",
     "readiness": "weak",
     "requires_manual_confirm": true,
+    "primary_bpm": 128.397,
+    "bpm_agrees_with_grid": true,
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
-    "alternate_evidence_count": 2
+    "alternate_evidence_count": 2,
+    "warning_codes": ["AmbiguousDownbeat", "PhraseUncertain"]
   },
   "metrics": {
     "full_grid_mix": {

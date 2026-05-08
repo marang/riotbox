@@ -18,6 +18,7 @@ use observer_validation::validate_user_session_observer_events;
 
 const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
 const SOURCE_GRID_OUTPUT_MIN_HIT_RATIO: f64 = 0.5;
+const SOURCE_TIMING_BPM_ALIGNMENT_TOLERANCE: f64 = 1.0;
 const SUMMARY_SCHEMA: &str = "riotbox.observer_audio_summary.v1";
 const SUMMARY_SCHEMA_VERSION: u32 = 1;
 
@@ -61,6 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 include!("observer_audio_correlate/args.rs");
 include!("observer_audio_correlate/summary_build.rs");
+include!("observer_audio_correlate/source_timing_alignment.rs");
 include!("observer_audio_correlate/summary_render.rs");
 
 #[cfg(test)]
@@ -73,8 +75,14 @@ mod observer_source_timing_tests;
 #[path = "observer_audio_correlate/source_grid_output_drift_tests.rs"]
 mod source_grid_output_drift_tests;
 #[cfg(test)]
+#[path = "observer_audio_correlate/source_timing_alignment_tests.rs"]
+mod source_timing_alignment_tests;
+#[cfg(test)]
 #[path = "observer_audio_correlate/source_timing_evidence_tests.rs"]
 mod source_timing_evidence_tests;
+#[cfg(test)]
+#[path = "observer_audio_correlate/summary_smoke_tests.rs"]
+mod summary_smoke_tests;
 #[cfg(test)]
 #[path = "observer_audio_correlate/tests.rs"]
 mod tests;

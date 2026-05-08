@@ -19,6 +19,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Source timing readiness: `{}`\n\
          - Source timing downbeat: `{}`\n\
          - Source timing phrase: `{}`\n\n\
+         - Source timing alignment: `{}`\n\n\
          - Source-grid output hit ratio: `{}`\n\
          - Source-grid output max peak offset: `{}`\n\
          - Source-grid output max allowed offset: `{}`\n\n\
@@ -54,6 +55,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_source_timing_readiness(summary),
         format_source_timing_downbeat(summary),
         format_source_timing_phrase(summary),
+        format_source_timing_alignment(summary),
         format_source_grid_hit_ratio(summary),
         format_source_grid_max_peak_offset(summary),
         format_source_grid_max_allowed_offset(summary),
@@ -98,8 +100,12 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "manifest_result": &summary.manifest_result,
             "artifact_count": summary.artifact_count,
             "source_timing": summary.source_timing.as_ref().map(|timing| serde_json::json!({
+                "source_id": &timing.source_id,
+                "policy_profile": &timing.policy_profile,
                 "readiness": &timing.readiness,
                 "requires_manual_confirm": timing.requires_manual_confirm,
+                "primary_bpm": timing.primary_bpm,
+                "bpm_agrees_with_grid": timing.bpm_agrees_with_grid,
                 "beat_status": &timing.beat_status,
                 "downbeat_status": &timing.downbeat_status,
                 "primary_downbeat_offset_beats": timing.primary_downbeat_offset_beats,
@@ -107,6 +113,14 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "drift_status": &timing.drift_status,
                 "phrase_status": &timing.phrase_status,
                 "alternate_evidence_count": timing.alternate_evidence_count,
+                "warning_codes": &timing.warning_codes,
+            })),
+            "source_timing_alignment": summary.source_timing_alignment.as_ref().map(|alignment| serde_json::json!({
+                "status": &alignment.status,
+                "bpm_delta": alignment.bpm_delta,
+                "bpm_tolerance": alignment.bpm_tolerance,
+                "warning_overlap": &alignment.warning_overlap,
+                "issues": &alignment.issues,
             })),
             "metrics": {
                 "full_mix_rms": summary.full_mix_rms,
@@ -206,6 +220,32 @@ fn format_source_timing_phrase(summary: &CorrelationSummary) -> String {
     )
 }
 
+fn format_source_timing_alignment(summary: &CorrelationSummary) -> String {
+    summary.source_timing_alignment.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |alignment| {
+            let warnings = if alignment.warning_overlap.is_empty() {
+                "none".to_string()
+            } else {
+                alignment.warning_overlap.join("+")
+            };
+            let issues = if alignment.issues.is_empty() {
+                "none".to_string()
+            } else {
+                alignment.issues.join(",")
+            };
+            format!(
+                "{} bpm_delta={} tolerance={:.6} warning_overlap={} issues={}",
+                alignment.status,
+                format_optional_f64(alignment.bpm_delta),
+                alignment.bpm_tolerance,
+                warnings,
+                issues
+            )
+        },
+    )
+}
+
 fn format_source_grid_hit_ratio(summary: &CorrelationSummary) -> String {
     format_optional_f64(
         summary
@@ -277,8 +317,17 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     if summary.source_timing_malformed {
         failures.push("source_timing=malformed".to_string());
     }
+    failures.extend(source_timing_alignment_failures(summary));
     failures.extend(source_grid_output_drift_failures(summary));
     failures
+}
+
+fn source_timing_alignment_failures(summary: &CorrelationSummary) -> Vec<String> {
+    summary
+        .source_timing_alignment
+        .as_ref()
+        .map(|alignment| alignment.issues.clone())
+        .unwrap_or_default()
 }
 
 fn source_grid_output_drift_failures(summary: &CorrelationSummary) -> Vec<String> {

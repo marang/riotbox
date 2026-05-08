@@ -16,8 +16,12 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
     assert_eq!(
         summary.source_timing,
         Some(SourceTimingEvidence {
+            source_id: "source.wav".to_string(),
+            policy_profile: "dance_loop_auto_readiness".to_string(),
             readiness: "weak".to_string(),
             requires_manual_confirm: true,
+            primary_bpm: Some(128.397),
+            bpm_agrees_with_grid: Some(true),
             beat_status: "stable".to_string(),
             downbeat_status: "ambiguous".to_string(),
             primary_downbeat_offset_beats: Some(0),
@@ -25,6 +29,10 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
             drift_status: "stable".to_string(),
             phrase_status: "ambiguous_downbeat".to_string(),
             alternate_evidence_count: 2,
+            warning_codes: vec![
+                "PhraseUncertain".to_string(),
+                "AmbiguousDownbeat".to_string(),
+            ],
         })
     );
     assert!(markdown.contains("Source timing downbeat: `ambiguous offset=0`"));
@@ -75,15 +83,20 @@ fn synthetic_manifest_with_source_timing() -> String {
   "result": "pass",
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
+    "source_id": "source.wav",
+    "policy_profile": "dance_loop_auto_readiness",
     "readiness": "weak",
     "requires_manual_confirm": true,
+    "primary_bpm": 128.397,
+    "bpm_agrees_with_grid": true,
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
-    "alternate_evidence_count": 2
+    "alternate_evidence_count": 2,
+    "warning_codes": ["PhraseUncertain", "AmbiguousDownbeat"]
   },
   "metrics": {
     "full_grid_mix": {
@@ -101,14 +114,19 @@ fn synthetic_manifest_with_malformed_source_timing() -> String {
   "result": "pass",
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
+    "source_id": "source.wav",
+    "policy_profile": "dance_loop_auto_readiness",
     "readiness": "weak",
     "requires_manual_confirm": true,
+    "primary_bpm": 128.397,
+    "bpm_agrees_with_grid": true,
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
-    "alternate_evidence_count": 2
+    "alternate_evidence_count": 2,
+    "warning_codes": ["PhraseUncertain", "AmbiguousDownbeat"]
   },
   "metrics": {
     "full_grid_mix": {

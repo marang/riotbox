@@ -25,6 +25,7 @@
     "manifest_result": "pass",
     "artifact_count": 6,
     "source_timing": null,
+    "source_timing_alignment": null,
     "metrics": {
       "full_mix_rms": null,
       "full_mix_low_band_rms": null,
