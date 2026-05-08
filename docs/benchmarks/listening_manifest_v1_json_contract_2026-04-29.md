@@ -78,6 +78,27 @@ it must include:
 This keeps the Feral QA explanation machine-readable without making every
 schema version `1` listening pack emit Feral-specific fields.
 
+### `source_timing`
+
+The Feral grid pack may emit a top-level `source_timing` object that records the
+timing-readiness report used for grid-BPM decisions. When a `feral-grid-demo`
+manifest records the modern `grid_bpm_source` field, `source_timing` must also
+be present so automation can audit the timing policy instead of trusting an
+anonymous readiness label.
+
+When present, `source_timing` must include:
+
+- non-empty string fields: `schema`, `source_id`, `policy_profile`, `readiness`
+- integer field: `schema_version`, currently `1`
+- boolean field: `requires_manual_confirm`
+- number or null field: `primary_bpm`
+- boolean or null field: `bpm_agrees_with_grid`
+- string array field: `warning_codes`
+
+Current accepted `policy_profile` values are `broad_research` and
+`dance_loop_auto_readiness`. Current generated Feral grid packs use
+`dance_loop_auto_readiness`.
+
 ## Current Producers
 
 Current schema version `1` producer ids:

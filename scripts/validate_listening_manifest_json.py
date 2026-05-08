@@ -16,6 +16,8 @@ from typing import Any
 
 
 SCHEMA_VERSION = 1
+SOURCE_TIMING_POLICY_PROFILES = {"broad_research", "dance_loop_auto_readiness"}
+SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
 
 
 def main() -> int:
@@ -77,6 +79,12 @@ def validate_manifest(manifest: Any) -> None:
     if scorecard is not None:
         validate_feral_scorecard(scorecard)
 
+    source_timing = manifest.get("source_timing")
+    if source_timing is not None:
+        validate_source_timing(source_timing)
+    elif manifest.get("pack_id") == "feral-grid-demo" and "grid_bpm_source" in manifest:
+        raise ValueError("source_timing must be present for feral-grid-demo grid BPM manifests")
+
 
 def validate_artifact(artifact: Any, index: int) -> None:
     require_object(artifact, f"artifact {index}")
@@ -106,6 +114,23 @@ def validate_feral_scorecard(scorecard: Any) -> None:
     require_non_empty_string_list(scorecard, "lane_gestures")
     require_non_empty_string_list(scorecard, "material_sources")
     require_non_empty_string_list(scorecard, "warnings")
+
+
+def validate_source_timing(source_timing: Any) -> None:
+    require_object(source_timing, "source_timing")
+    require_string(source_timing, "schema", "source_timing schema")
+    require_schema_version(source_timing)
+    require_string(source_timing, "source_id", "source_timing source_id")
+    require_one_of(source_timing, "policy_profile", SOURCE_TIMING_POLICY_PROFILES)
+    require_one_of(source_timing, "readiness", SOURCE_TIMING_READINESS)
+    require_bool(source_timing, "requires_manual_confirm", "source_timing")
+    require_optional_float_or_null(source_timing, "primary_bpm", "source_timing primary_bpm")
+    require_optional_bool_or_null(
+        source_timing,
+        "bpm_agrees_with_grid",
+        "source_timing bpm_agrees_with_grid",
+    )
+    require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
 
 
 def validate_artifact_paths(manifest: dict[str, Any], manifest_dir: Path) -> None:
@@ -153,10 +178,10 @@ def require_list(parent: dict[str, Any], field: str, name: str | None = None) ->
     return value
 
 
-def require_bool(parent: dict[str, Any], field: str) -> None:
+def require_bool(parent: dict[str, Any], field: str, prefix: str = "feral_scorecard") -> None:
     value = parent.get(field)
     if not isinstance(value, bool):
-        raise TypeError(f"feral_scorecard {field} must be a boolean")
+        raise TypeError(f"{prefix} {field} must be a boolean")
 
 
 def require_non_negative_int(parent: dict[str, Any], field: str) -> None:
@@ -170,6 +195,15 @@ def require_non_empty_string_list(parent: dict[str, Any], field: str) -> None:
     values = require_list(parent, field, name)
     if not values:
         raise ValueError(f"{name} must not be empty")
+    require_string_list_values(values, name)
+
+
+def require_string_list(parent: dict[str, Any], field: str, name: str) -> None:
+    values = require_list(parent, field, name)
+    require_string_list_values(values, name)
+
+
+def require_string_list_values(values: list[Any], name: str) -> None:
     for index, value in enumerate(values):
         if not isinstance(value, str) or not value.strip():
             raise TypeError(f"{name} entry {index} must be a non-empty string")
@@ -179,6 +213,18 @@ def require_optional_string_or_null(parent: dict[str, Any], field: str, name: st
     value = parent.get(field)
     if value is not None and not isinstance(value, str):
         raise TypeError(f"{name} must be a string or null")
+
+
+def require_optional_bool_or_null(parent: dict[str, Any], field: str, name: str) -> None:
+    value = parent.get(field)
+    if value is not None and not isinstance(value, bool):
+        raise TypeError(f"{name} must be a boolean or null")
+
+
+def require_optional_float_or_null(parent: dict[str, Any], field: str, name: str) -> None:
+    value = parent.get(field)
+    if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
+        raise TypeError(f"{name} must be a number or null")
 
 
 if __name__ == "__main__":
