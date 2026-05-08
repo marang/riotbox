@@ -4,6 +4,8 @@ struct DownbeatPhaseScore {
     score: f32,
 }
 
+const MIN_STABLE_DOWNBEAT_PHASE_SCORE: f32 = 0.30;
+
 fn downbeat_phase_scores(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,
@@ -64,7 +66,9 @@ pub fn source_timing_probe_downbeat_evidence_report(
     let alternate_phase_count = ambiguous_downbeat_phases(&phases, policy).count();
     let status = match primary {
         None => SourceTimingProbeDownbeatEvidenceStatus::Unavailable,
-        Some(phase) if phase.score < 0.4 => SourceTimingProbeDownbeatEvidenceStatus::Weak,
+        Some(phase) if phase.score < MIN_STABLE_DOWNBEAT_PHASE_SCORE => {
+            SourceTimingProbeDownbeatEvidenceStatus::Weak
+        }
         Some(_) if alternate_phase_count > 0 => SourceTimingProbeDownbeatEvidenceStatus::Ambiguous,
         Some(_) => SourceTimingProbeDownbeatEvidenceStatus::Stable,
     };

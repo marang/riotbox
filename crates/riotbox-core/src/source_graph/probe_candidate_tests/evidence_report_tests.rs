@@ -102,6 +102,26 @@ fn source_timing_probe_downbeat_evidence_report_summarizes_stable_candidate() {
 }
 
 #[test]
+fn source_timing_probe_downbeat_evidence_accepts_moderate_downbeat_contrast() {
+    let onsets = even_onsets(0.0, 0.5, 32);
+    let report = source_timing_probe_downbeat_evidence_report(
+        &weighted_candidate_input(
+            "downbeat-evidence-moderate-contrast-120",
+            16.0,
+            &onsets,
+            &moderate_downbeat_strengths(onsets.len(), 4),
+        ),
+        120.0,
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert_eq!(report.status, SourceTimingProbeDownbeatEvidenceStatus::Stable);
+    assert_eq!(report.primary_offset_beats, Some(0));
+    assert!(report.primary_score.is_some_and(|score| score >= 0.30));
+    assert_eq!(report.alternate_phase_count, 0);
+}
+
+#[test]
 fn source_timing_probe_downbeat_evidence_report_summarizes_unavailable_weak_and_ambiguous_candidates(
 ) {
     let unavailable = source_timing_probe_downbeat_evidence_report(
