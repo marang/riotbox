@@ -617,7 +617,8 @@ just feral-grid-pack "data/test_audio/examples/DH_BeatC_120-01.wav" local-dh-bea
 
 How to interpret `auto`:
 
-- `grid_bpm_source: source_timing` means the current readiness report drove the grid.
+- `grid_bpm_source: source_timing` means the current readiness report drove the
+  grid because it was ready and did not require manual confirmation.
 - `grid_bpm_source: static_default` means auto mode fell back to the static default grid.
 - `source_timing.policy_profile: dance_loop_auto_readiness` means the pack used the stricter dance-loop auto-trust policy, not the broader diagnostic timing policy.
 - `source_timing.bpm_agrees_with_grid: false` means the generated pack is timing-risky and should not be judged as a successful beat-grid example.

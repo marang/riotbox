@@ -297,7 +297,8 @@ fn print_help() {
            --source-window-seconds SECONDS\n\
          \n\
          Renders a local grid-locked Feral demo pack. Without --bpm, the pack\n\
-         uses ready source timing when available and otherwise falls back to\n\
+         uses ready source timing that does not require manual confirmation\n\
+         when available and otherwise falls back to\n\
          the static default BPM. TR-909 beat/fill and\n\
          W-30 source chop stems share one beat/bar grid\n\
          so the output can be checked for musical timing instead of only logs."

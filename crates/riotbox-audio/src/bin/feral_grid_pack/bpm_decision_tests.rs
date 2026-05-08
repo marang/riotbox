@@ -20,6 +20,21 @@ mod bpm_decision_tests {
     }
 
     #[test]
+    fn bpm_grid_decision_does_not_auto_trust_manual_confirm_source_timing() {
+        let args = bpm_decision_args(DEFAULT_BPM, false);
+        let mut manual_confirm_ready =
+            readiness_report(Some(130.0), SourceTimingProbeReadinessStatus::Ready);
+        manual_confirm_ready.requires_manual_confirm = true;
+
+        let decision = choose_grid_bpm(&args, &manual_confirm_ready);
+
+        assert_eq!(decision.source, GridBpmSource::StaticDefault);
+        assert!((decision.bpm - DEFAULT_BPM).abs() < 0.0001);
+        assert_eq!(decision.source_primary_bpm, Some(130.0));
+        assert_eq!(decision.source_delta_bpm, Some(2.0));
+    }
+
+    #[test]
     fn bpm_grid_decision_keeps_explicit_bpm_and_reports_source_delta() {
         let args = bpm_decision_args(128.0, true);
         let ready = readiness_report(Some(130.0), SourceTimingProbeReadinessStatus::Ready);

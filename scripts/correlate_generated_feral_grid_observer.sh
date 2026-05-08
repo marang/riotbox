@@ -42,6 +42,12 @@ cargo run -p riotbox-audio --bin feral_grid_pack -- \
 python3 scripts/validate_listening_manifest_json.py \
   --require-existing-artifacts \
   "$tmpdir/feral-grid/manifest.json"
+jq -e \
+  '.grid_bpm_source == "static_default"
+    and .source_timing.readiness == "ready"
+    and .source_timing.requires_manual_confirm == true
+    and (.source_timing_bpm_delta | type == "number")' \
+  "$tmpdir/feral-grid/manifest.json"
 
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
   --observer "$observer_fixture" \

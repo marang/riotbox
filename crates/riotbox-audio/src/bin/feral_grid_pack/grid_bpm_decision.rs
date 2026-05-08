@@ -30,6 +30,7 @@ fn choose_grid_bpm(
     }
 
     if timing_readiness.readiness == SourceTimingProbeReadinessStatus::Ready
+        && !timing_readiness.requires_manual_confirm
         && let Some(bpm) = source_primary_bpm.filter(|bpm| bpm.is_finite() && *bpm > 0.0)
     {
         return GridBpmDecision {
