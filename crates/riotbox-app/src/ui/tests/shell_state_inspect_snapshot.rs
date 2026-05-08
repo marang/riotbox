@@ -11,6 +11,10 @@ fn renders_jam_shell_inspect_snapshot() {
     assert!(rendered.contains("accent off"), "{rendered}");
     assert!(rendered.contains("Source structure"), "{rendered}");
     assert!(
+        rendered.contains("source clock beat 32 | bar 8 | phrase 1"),
+        "{rendered}"
+    );
+    assert!(
         rendered.contains("source timing needs confirm | quality"),
         "{rendered}"
     );
