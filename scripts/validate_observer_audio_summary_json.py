@@ -150,6 +150,18 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
         return
     timing = require_object(value, field)
     require_string(timing, "source_id")
+    require_one_of(
+        timing,
+        "cue",
+        {
+            "grid locked",
+            "needs confirm",
+            "listen first",
+            "fallback grid",
+            "not available",
+            "unknown",
+        },
+    )
     require_string(timing, "policy_profile")
     require_string(timing, "readiness")
     require_bool(timing, "requires_manual_confirm")
@@ -189,6 +201,18 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
         return
     timing = require_object(value, field)
     require_string(timing, "source_id")
+    require_one_of(
+        timing,
+        "cue",
+        {
+            "grid locked",
+            "needs confirm",
+            "listen first",
+            "fallback grid",
+            "not available",
+            "unknown",
+        },
+    )
     require_optional_number(timing, "bpm_estimate")
     require_number(timing, "bpm_confidence")
     require_one_of(timing, "quality", {"low", "medium", "high", "unknown"})

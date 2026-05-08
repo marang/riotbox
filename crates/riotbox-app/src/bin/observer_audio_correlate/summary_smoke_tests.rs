@@ -28,6 +28,7 @@ fn summarizes_synthetic_observer_and_manifest() {
             source_id: "src-timing".to_string(),
             bpm_estimate: Some(128.0),
             bpm_confidence: 0.72,
+            cue: "needs confirm".to_string(),
             quality: "low".to_string(),
             degraded_policy: "manual_confirm".to_string(),
             primary_hypothesis_id: Some("probe-primary".to_string()),
@@ -101,7 +102,7 @@ fn summarizes_synthetic_observer_and_manifest() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,

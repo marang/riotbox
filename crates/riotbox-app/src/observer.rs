@@ -166,6 +166,8 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
     let Some(graph) = shell.app.source_graph.as_ref() else {
         return Value::Null;
     };
+    let degraded_policy =
+        observer_timing_degraded_policy_label(&graph.timing.effective_degraded_policy());
 
     json!({
         "present": true,
@@ -173,9 +175,8 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "bpm_estimate": graph.timing.bpm_estimate,
         "bpm_confidence": graph.timing.bpm_confidence,
         "quality": observer_timing_quality_label(&graph.timing.effective_timing_quality()),
-        "degraded_policy": observer_timing_degraded_policy_label(
-            &graph.timing.effective_degraded_policy(),
-        ),
+        "degraded_policy": degraded_policy,
+        "cue": crate::source_timing_cues::source_timing_policy_cue_label(degraded_policy),
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
         "primary_warning_code": graph

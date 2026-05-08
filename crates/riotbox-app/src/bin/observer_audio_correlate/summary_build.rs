@@ -32,6 +32,7 @@ struct CorrelationSummary {
 #[derive(Debug, PartialEq)]
 struct ObserverSourceTimingReadiness {
     source_id: String,
+    cue: String,
     bpm_estimate: Option<f64>,
     bpm_confidence: f64,
     quality: String,
@@ -189,6 +190,10 @@ fn collect_observer_source_timing(
 
     let evidence = ObserverSourceTimingReadiness {
         source_id: match non_empty_string(source_timing, "source_id") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        cue: match non_empty_string(source_timing, "cue") {
             Some(value) => value,
             None => return (None, true),
         },

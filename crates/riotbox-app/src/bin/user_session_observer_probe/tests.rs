@@ -183,6 +183,7 @@ fn writes_feral_grid_jam_observer_stream() {
     assert!(events.contains(r#""source_id":"src-feral-grid-probe""#));
     assert!(events.contains(r#""quality":"medium""#));
     assert!(events.contains(r#""degraded_policy":"cautious""#));
+    assert!(events.contains(r#""cue":"listen first""#));
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
     assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
@@ -203,6 +204,7 @@ fn writes_feral_grid_locked_jam_observer_stream() {
     assert!(events.contains(r#""source_id":"src-feral-grid-probe""#));
     assert!(events.contains(r#""quality":"high""#));
     assert!(events.contains(r#""degraded_policy":"locked""#));
+    assert!(events.contains(r#""cue":"grid locked""#));
     assert!(events.contains(r#""warning_codes":[]"#));
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));

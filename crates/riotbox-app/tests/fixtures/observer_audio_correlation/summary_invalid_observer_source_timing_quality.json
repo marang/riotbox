@@ -18,6 +18,7 @@
       "bpm_confidence": 0.72,
       "quality": "maybe",
       "degraded_policy": "manual_confirm",
+      "cue": "needs confirm",
       "primary_hypothesis_id": "probe-primary",
       "hypothesis_count": 1,
       "primary_warning_code": "ambiguous_downbeat",

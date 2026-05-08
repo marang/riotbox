@@ -298,6 +298,7 @@ mod tests {
         assert_eq!(source_timing["source_id"], "src-timing");
         assert_eq!(source_timing["quality"], "low");
         assert_eq!(source_timing["degraded_policy"], "manual_confirm");
+        assert_eq!(source_timing["cue"], "needs confirm");
         assert_eq!(source_timing["primary_hypothesis_id"], "probe-primary");
         assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
         assert_eq!(source_timing["warning_codes"][1], "phrase_uncertain");

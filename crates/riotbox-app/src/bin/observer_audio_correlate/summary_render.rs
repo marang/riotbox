@@ -89,7 +89,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "commit_boundaries": &summary.commit_boundaries,
             "observer_source_timing": summary.observer_source_timing.as_ref().map(|timing| serde_json::json!({
                 "source_id": &timing.source_id,
-                "cue": observer_source_timing_cue(timing),
+                "cue": &timing.cue,
                 "bpm_estimate": timing.bpm_estimate,
                 "bpm_confidence": timing.bpm_confidence,
                 "quality": &timing.quality,
@@ -166,7 +166,7 @@ fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
             format!(
                 "{} cue={} quality={} policy={} bpm={} confidence={:.3} warning={}",
                 timing.source_id,
-                observer_source_timing_cue(timing),
+                timing.cue,
                 timing.quality,
                 timing.degraded_policy,
                 format_optional_f64(timing.bpm_estimate),
@@ -195,10 +195,6 @@ fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {
             )
         },
     )
-}
-
-fn observer_source_timing_cue(timing: &ObserverSourceTimingReadiness) -> &'static str {
-    riotbox_app::source_timing_cues::source_timing_policy_cue_label(&timing.degraded_policy)
 }
 
 fn source_timing_readiness_cue(timing: &SourceTimingEvidence) -> &'static str {
