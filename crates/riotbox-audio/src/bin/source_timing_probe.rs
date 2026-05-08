@@ -10,9 +10,11 @@ use riotbox_audio::{
 };
 use riotbox_core::source_graph::{
     MeterHint, SourceTimingCandidateConfidenceResult, SourceTimingCandidateDriftStatus,
-    SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceStatus,
-    SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDownbeatEvidenceStatus,
+    SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceReport,
+    SourceTimingProbeBeatEvidenceStatus, SourceTimingProbeBpmCandidatePolicy,
+    SourceTimingProbeDownbeatEvidenceReport, SourceTimingProbeDownbeatEvidenceStatus,
     SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus, TimingWarningCode,
+    source_timing_probe_beat_evidence_report, source_timing_probe_downbeat_evidence_report,
     source_timing_probe_readiness_report,
 };
 use serde::Serialize;
@@ -35,13 +37,19 @@ struct ProbeSummary {
     readiness: &'static str,
     requires_manual_confirm: bool,
     primary_bpm: Option<f32>,
+    primary_beat_score: Option<f32>,
+    primary_beat_matched_onset_ratio: Option<f32>,
+    primary_beat_median_distance_ratio: Option<f32>,
     primary_downbeat_offset_beats: Option<u8>,
+    primary_downbeat_score: Option<f32>,
     beat_status: &'static str,
     downbeat_status: &'static str,
     confidence_result: &'static str,
     drift_status: &'static str,
     phrase_status: &'static str,
     alternate_evidence_count: usize,
+    alternate_beat_candidate_count: usize,
+    alternate_downbeat_phase_count: usize,
     warning_codes: Vec<&'static str>,
     onset_count: usize,
     onset_density_per_second: f32,
@@ -80,11 +88,16 @@ fn run(args: impl IntoIterator<Item = String>) -> Result<(), String> {
             beat_unit: 4,
         },
     );
-    let readiness = source_timing_probe_readiness_report(
+    let policy = SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness();
+    let readiness = source_timing_probe_readiness_report(&input, policy);
+    let beat = source_timing_probe_beat_evidence_report(&input, policy);
+    let downbeat = source_timing_probe_downbeat_evidence_report(
         &input,
-        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+        readiness.primary_bpm.unwrap_or(f32::NAN),
+        policy,
     );
-    let summary = ProbeSummary::from_report(&args.source_path, &readiness, &probe);
+    let summary =
+        ProbeSummary::from_report(&args.source_path, &readiness, &beat, &downbeat, &probe);
 
     if args.json {
         println!(
@@ -130,6 +143,8 @@ impl ProbeSummary {
     fn from_report(
         source_path: &Path,
         report: &SourceTimingProbeReadinessReport,
+        beat: &SourceTimingProbeBeatEvidenceReport,
+        downbeat: &SourceTimingProbeDownbeatEvidenceReport,
         probe: &riotbox_audio::source_timing_probe::SourceTimingProbe,
     ) -> Self {
         Self {
@@ -141,13 +156,19 @@ impl ProbeSummary {
             readiness: readiness_status_label(report.readiness),
             requires_manual_confirm: report.requires_manual_confirm,
             primary_bpm: report.primary_bpm,
+            primary_beat_score: beat.primary_score,
+            primary_beat_matched_onset_ratio: beat.primary_matched_onset_ratio,
+            primary_beat_median_distance_ratio: beat.primary_median_distance_ratio,
             primary_downbeat_offset_beats: report.primary_downbeat_offset_beats,
+            primary_downbeat_score: downbeat.primary_score,
             beat_status: beat_status_label(report.beat_status),
             downbeat_status: downbeat_status_label(report.downbeat_status),
             confidence_result: confidence_result_label(report.confidence_result),
             drift_status: drift_status_label(report.drift_status),
             phrase_status: phrase_status_label(report.phrase_status),
             alternate_evidence_count: report.alternate_evidence_count,
+            alternate_beat_candidate_count: beat.alternate_candidate_count,
+            alternate_downbeat_phase_count: downbeat.alternate_phase_count,
             warning_codes: report
                 .warning_codes
                 .iter()
@@ -167,6 +188,12 @@ fn render_text(summary: &ProbeSummary) -> String {
     let downbeat = summary
         .primary_downbeat_offset_beats
         .map_or_else(|| "none".to_string(), |offset| offset.to_string());
+    let beat_score = summary
+        .primary_beat_score
+        .map_or_else(|| "none".to_string(), |score| format!("{score:.3}"));
+    let downbeat_score = summary
+        .primary_downbeat_score
+        .map_or_else(|| "none".to_string(), |score| format!("{score:.3}"));
     let warnings = if summary.warning_codes.is_empty() {
         "none".to_string()
     } else {
@@ -181,6 +208,7 @@ fn render_text(summary: &ProbeSummary) -> String {
             "readiness: {readiness} manual_confirm={manual_confirm}\n",
             "bpm: {bpm}\n",
             "beat: {beat} downbeat: {downbeat_status} offset_beats={downbeat}\n",
+            "scores: beat={beat_score} downbeat={downbeat_score}\n",
             "phrase: {phrase} drift: {drift} confidence: {confidence}\n",
             "alternates: {alternates} warnings: {warnings}\n",
             "onsets: {onsets} density_per_second={density:.3} duration_seconds={duration:.3}"
@@ -193,6 +221,8 @@ fn render_text(summary: &ProbeSummary) -> String {
         beat = summary.beat_status,
         downbeat_status = summary.downbeat_status,
         downbeat = downbeat,
+        beat_score = beat_score,
+        downbeat_score = downbeat_score,
         phrase = summary.phrase_status,
         drift = summary.drift_status,
         confidence = summary.confidence_result,
@@ -328,12 +358,17 @@ mod tests {
                 beat_unit: 4,
             },
         );
-        let readiness = source_timing_probe_readiness_report(
+        let policy = SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness();
+        let readiness = source_timing_probe_readiness_report(&input, policy);
+        let beat = source_timing_probe_beat_evidence_report(&input, policy);
+        let downbeat = source_timing_probe_downbeat_evidence_report(
             &input,
-            SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+            readiness.primary_bpm.unwrap_or(f32::NAN),
+            policy,
         );
-        let summary = ProbeSummary::from_report(&source_path, &readiness, &probe);
+        let summary = ProbeSummary::from_report(&source_path, &readiness, &beat, &downbeat, &probe);
         let text = render_text(&summary);
+        let json = serde_json::to_value(&summary).expect("json");
 
         assert_eq!(summary.schema, "riotbox.source_timing_probe_cli.v1");
         assert_eq!(summary.schema_version, 1);
@@ -342,10 +377,19 @@ mod tests {
                 .primary_bpm
                 .is_some_and(|bpm| (bpm - 120.0).abs() <= 0.1)
         );
+        assert!(summary.primary_beat_score.is_some_and(|score| score > 0.0));
+        assert!(
+            summary
+                .primary_downbeat_score
+                .is_some_and(|score| score > 0.0)
+        );
         assert!(text.contains("cue: "));
         assert!(text.contains("beat: stable"));
         assert!(text.contains("downbeat: "));
-        assert!(serde_json::to_value(&summary).expect("json")["schema"].is_string());
+        assert!(text.contains("scores: beat="));
+        assert!(json["schema"].is_string());
+        assert!(json["primary_beat_score"].is_number());
+        assert!(json["primary_downbeat_score"].is_number());
     }
 
     fn accented_loop_samples() -> Vec<f32> {
