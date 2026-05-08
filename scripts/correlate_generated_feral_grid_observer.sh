@@ -9,6 +9,8 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 observer_fixture="$tmpdir/feral-grid-observer/events.ndjson"
+mismatched_observer_fixture="$tmpdir/feral-grid-observer/events-mismatched-source-timing.ndjson"
+mismatch_output="$tmpdir/feral-grid-observer/mismatch-output.txt"
 
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0
 cargo run -p riotbox-app --bin user_session_observer_probe -- \
@@ -74,3 +76,18 @@ jq -e \
   "$tmpdir/observer-audio-summary.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary.json"
+
+jq -c '.snapshot.source_timing.bpm_estimate = 118.0' \
+  "$observer_fixture" > "$mismatched_observer_fixture"
+python3 scripts/validate_user_session_observer_ndjson.py \
+  "$mismatched_observer_fixture"
+if cargo run -p riotbox-app --bin observer_audio_correlate -- \
+  --observer "$mismatched_observer_fixture" \
+  --manifest "$tmpdir/feral-grid/manifest.json" \
+  --require-evidence > "$mismatch_output" 2>&1; then
+  cat "$mismatch_output" >&2
+  echo "expected source timing alignment mismatch to fail strict evidence" >&2
+  exit 1
+fi
+grep -q "source_timing_alignment.bpm_delta" "$mismatch_output"
+grep -q "missing passing output-path manifest evidence" "$mismatch_output"
