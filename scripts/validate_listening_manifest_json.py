@@ -85,6 +85,8 @@ def validate_manifest(manifest: Any) -> None:
     elif manifest.get("pack_id") == "feral-grid-demo" and "grid_bpm_source" in manifest:
         raise ValueError("source_timing must be present for feral-grid-demo grid BPM manifests")
 
+    validate_source_grid_output_drift(manifest)
+
 
 def validate_artifact(artifact: Any, index: int) -> None:
     require_object(artifact, f"artifact {index}")
@@ -131,6 +133,34 @@ def validate_source_timing(source_timing: Any) -> None:
         "source_timing bpm_agrees_with_grid",
     )
     require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
+
+
+def validate_source_grid_output_drift(manifest: dict[str, Any]) -> None:
+    metrics = manifest.get("metrics")
+    if not isinstance(metrics, dict) or "source_grid_output_drift" not in metrics:
+        return
+
+    drift = require_object(
+        metrics.get("source_grid_output_drift"),
+        "metrics source_grid_output_drift",
+    )
+    require_non_negative_int(drift, "beat_count", "source_grid_output_drift")
+    require_non_negative_int(drift, "hit_count", "source_grid_output_drift")
+    if drift["hit_count"] > drift["beat_count"]:
+        raise ValueError("source_grid_output_drift hit_count must not exceed beat_count")
+    hit_ratio = require_number(drift, "hit_ratio", "source_grid_output_drift hit_ratio")
+    if hit_ratio < 0.0 or hit_ratio > 1.0:
+        raise ValueError("source_grid_output_drift hit_ratio must be between 0 and 1")
+    require_non_negative_number(
+        drift,
+        "max_peak_offset_ms",
+        "source_grid_output_drift max_peak_offset_ms",
+    )
+    require_non_negative_number(
+        drift,
+        "max_allowed_peak_offset_ms",
+        "source_grid_output_drift max_allowed_peak_offset_ms",
+    )
 
 
 def validate_artifact_paths(manifest: dict[str, Any], manifest_dir: Path) -> None:
@@ -184,10 +214,27 @@ def require_bool(parent: dict[str, Any], field: str, prefix: str = "feral_scorec
         raise TypeError(f"{prefix} {field} must be a boolean")
 
 
-def require_non_negative_int(parent: dict[str, Any], field: str) -> None:
+def require_non_negative_int(
+    parent: dict[str, Any],
+    field: str,
+    prefix: str = "feral_scorecard",
+) -> None:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
-        raise TypeError(f"feral_scorecard {field} must be a non-negative integer")
+        raise TypeError(f"{prefix} {field} must be a non-negative integer")
+
+
+def require_number(parent: dict[str, Any], field: str, name: str) -> float:
+    value = parent.get(field)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise TypeError(f"{name} must be a number")
+    return float(value)
+
+
+def require_non_negative_number(parent: dict[str, Any], field: str, name: str) -> None:
+    value = require_number(parent, field, name)
+    if value < 0.0:
+        raise ValueError(f"{name} must be non-negative")
 
 
 def require_non_empty_string_list(parent: dict[str, Any], field: str) -> None:

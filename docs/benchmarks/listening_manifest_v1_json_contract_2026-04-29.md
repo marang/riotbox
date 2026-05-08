@@ -99,6 +99,24 @@ Current accepted `policy_profile` values are `broad_research` and
 `dance_loop_auto_readiness`. Current generated Feral grid packs use
 `dance_loop_auto_readiness`.
 
+### `metrics.source_grid_output_drift`
+
+Feral grid manifests may include a `source_grid_output_drift` object inside the
+pack-specific `metrics` object. When present, the repo-local validator checks it
+as a named optional QA contract so malformed drift evidence cannot reach later
+observer/audio correlation as if it were trustworthy.
+
+When present, `metrics.source_grid_output_drift` must include:
+
+- non-negative integer fields: `beat_count`, `hit_count`
+- number field between `0` and `1`: `hit_ratio`
+- non-negative number fields: `max_peak_offset_ms`,
+  `max_allowed_peak_offset_ms`
+
+`hit_count` must not exceed `beat_count`. This contract checks shape and basic
+sanity only; threshold policy remains with the producer and downstream
+observer/audio evidence gate.
+
 ## Current Producers
 
 Current schema version `1` producer ids:
