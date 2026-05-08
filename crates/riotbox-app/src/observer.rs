@@ -49,6 +49,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "w30_resample_tap_mode": runtime.w30_resample_tap_mode,
             "warnings": runtime.runtime_warnings,
         },
+        "source_timing": source_timing_observer_snapshot(shell),
         "recovery": recovery_observer_snapshot(shell),
     })
 }
@@ -159,6 +160,77 @@ fn recovery_observer_snapshot(shell: &JamShellState) -> Value {
             })
         }).collect::<Vec<_>>(),
     })
+}
+
+fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
+    let Some(graph) = shell.app.source_graph.as_ref() else {
+        return Value::Null;
+    };
+
+    json!({
+        "present": true,
+        "source_id": graph.source.source_id.to_string(),
+        "bpm_estimate": graph.timing.bpm_estimate,
+        "bpm_confidence": graph.timing.bpm_confidence,
+        "quality": observer_timing_quality_label(&graph.timing.effective_timing_quality()),
+        "degraded_policy": observer_timing_degraded_policy_label(
+            &graph.timing.effective_degraded_policy(),
+        ),
+        "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
+        "hypothesis_count": graph.timing.hypotheses.len(),
+        "primary_warning_code": graph
+            .timing
+            .warnings
+            .first()
+            .map(|warning| observer_timing_warning_code_label(&warning.code)),
+        "warning_codes": graph
+            .timing
+            .warnings
+            .iter()
+            .map(|warning| observer_timing_warning_code_label(&warning.code))
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn observer_timing_quality_label(
+    quality: &riotbox_core::source_graph::TimingQuality,
+) -> &'static str {
+    match quality {
+        riotbox_core::source_graph::TimingQuality::Low => "low",
+        riotbox_core::source_graph::TimingQuality::Medium => "medium",
+        riotbox_core::source_graph::TimingQuality::High => "high",
+        riotbox_core::source_graph::TimingQuality::Unknown => "unknown",
+    }
+}
+
+fn observer_timing_degraded_policy_label(
+    policy: &riotbox_core::source_graph::TimingDegradedPolicy,
+) -> &'static str {
+    match policy {
+        riotbox_core::source_graph::TimingDegradedPolicy::Locked => "locked",
+        riotbox_core::source_graph::TimingDegradedPolicy::Cautious => "cautious",
+        riotbox_core::source_graph::TimingDegradedPolicy::ManualConfirm => "manual_confirm",
+        riotbox_core::source_graph::TimingDegradedPolicy::FallbackGrid => "fallback_grid",
+        riotbox_core::source_graph::TimingDegradedPolicy::Disabled => "disabled",
+        riotbox_core::source_graph::TimingDegradedPolicy::Unknown => "unknown",
+    }
+}
+
+fn observer_timing_warning_code_label(
+    code: &riotbox_core::source_graph::TimingWarningCode,
+) -> &'static str {
+    match code {
+        riotbox_core::source_graph::TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
+        riotbox_core::source_graph::TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
+        riotbox_core::source_graph::TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",
+        riotbox_core::source_graph::TimingWarningCode::HalfTimePossible => "half_time_possible",
+        riotbox_core::source_graph::TimingWarningCode::DoubleTimePossible => "double_time_possible",
+        riotbox_core::source_graph::TimingWarningCode::DriftHigh => "drift_high",
+        riotbox_core::source_graph::TimingWarningCode::PhraseUncertain => "phrase_uncertain",
+        riotbox_core::source_graph::TimingWarningCode::LowTimingConfidence => {
+            "low_timing_confidence"
+        }
+    }
 }
 
 fn recovery_manual_choice_dry_run_snapshot(surface: &SessionRecoverySurface) -> Option<Value> {
