@@ -1,0 +1,29 @@
+{
+  "schema": "riotbox.source_timing_probe_cli.v1",
+  "schema_version": 1,
+  "source_path": "data/test_audio/examples/Beat08_128BPM(Full).wav",
+  "source_id": "data/test_audio/examples/Beat08_128BPM(Full).wav",
+  "cue": "needs confirm",
+  "readiness": "ready",
+  "requires_manual_confirm": true,
+  "primary_bpm": 128.39673,
+  "primary_beat_score": 0.9921391,
+  "primary_beat_matched_onset_ratio": 1.0,
+  "primary_beat_median_distance_ratio": 0.006250029,
+  "primary_downbeat_offset_beats": 3,
+  "primary_downbeat_score": 0.31510773,
+  "beat_status": "stable",
+  "downbeat_status": "stable",
+  "confidence_result": "candidate_cautious",
+  "drift_status": "not_enough_material",
+  "phrase_status": "not_enough_material",
+  "alternate_evidence_count": 0,
+  "alternate_beat_candidate_count": 0,
+  "alternate_downbeat_phase_count": 0,
+  "warning_codes": [
+    "phrase_uncertain"
+  ],
+  "onset_count": 9,
+  "onset_density_per_second": 2.4,
+  "duration_seconds": 3.75
+}

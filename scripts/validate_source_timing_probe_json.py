@@ -1,0 +1,170 @@
+#!/usr/bin/env python3
+"""Validate Riotbox source timing probe CLI JSON v1."""
+
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+
+SCHEMA = "riotbox.source_timing_probe_cli.v1"
+SCHEMA_VERSION = 1
+SOURCE_TIMING_CUES = {
+    "grid locked",
+    "needs confirm",
+    "listen first",
+    "not available",
+}
+
+
+def main() -> int:
+    if len(sys.argv) != 2:
+        print("usage: validate_source_timing_probe_json.py <probe.json>", file=sys.stderr)
+        return 2
+
+    path = Path(sys.argv[1])
+    try:
+        summary = json.loads(path.read_text())
+        validate_summary(summary)
+    except (OSError, ValueError, TypeError) as error:
+        print(f"invalid source timing probe JSON: {error}", file=sys.stderr)
+        return 1
+
+    print(f"valid {SCHEMA} summary: {path}")
+    return 0
+
+
+def validate_summary(summary: Any) -> None:
+    require_object(summary, "summary")
+    require_equal(summary, "schema", SCHEMA)
+    require_equal(summary, "schema_version", SCHEMA_VERSION)
+    require_string(summary, "source_path")
+    require_string(summary, "source_id")
+    cue = require_one_of(summary, "cue", SOURCE_TIMING_CUES)
+    readiness = require_one_of(summary, "readiness", {"ready", "needs_review", "weak", "unavailable"})
+    requires_manual_confirm = require_bool(summary, "requires_manual_confirm")
+    require_probe_cue_match(cue, readiness, requires_manual_confirm)
+    require_optional_number(summary, "primary_bpm")
+    require_optional_number(summary, "primary_beat_score")
+    require_optional_number(summary, "primary_beat_matched_onset_ratio")
+    require_optional_number(summary, "primary_beat_median_distance_ratio")
+    require_optional_int(summary, "primary_downbeat_offset_beats")
+    require_optional_number(summary, "primary_downbeat_score")
+    require_one_of(summary, "beat_status", {"unavailable", "weak", "stable", "ambiguous"})
+    require_one_of(summary, "downbeat_status", {"unavailable", "weak", "stable", "ambiguous"})
+    require_one_of(
+        summary,
+        "confidence_result",
+        {"degraded", "candidate_cautious", "candidate_ambiguous"},
+    )
+    require_one_of(summary, "drift_status", {"unavailable", "not_enough_material", "stable", "high"})
+    require_one_of(
+        summary,
+        "phrase_status",
+        {"unavailable", "not_enough_material", "ambiguous_downbeat", "high_drift", "stable"},
+    )
+    require_non_negative_int(summary, "alternate_evidence_count")
+    require_non_negative_int(summary, "alternate_beat_candidate_count")
+    require_non_negative_int(summary, "alternate_downbeat_phase_count")
+    require_string_list(summary, "warning_codes")
+    require_non_negative_int(summary, "onset_count")
+    require_non_negative_number(summary, "onset_density_per_second")
+    require_non_negative_number(summary, "duration_seconds")
+
+
+def require_object(value: Any, name: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise TypeError(f"{name} must be an object")
+    return value
+
+
+def require_equal(parent: dict[str, Any], field: str, expected: Any) -> None:
+    actual = parent.get(field)
+    if actual != expected:
+        raise ValueError(f"{field} must be {expected!r}, got {actual!r}")
+
+
+def require_bool(parent: dict[str, Any], field: str) -> bool:
+    value = parent.get(field)
+    if not isinstance(value, bool):
+        raise TypeError(f"{field} must be a boolean")
+    return value
+
+
+def require_string(parent: dict[str, Any], field: str) -> str:
+    value = parent.get(field)
+    if not isinstance(value, str) or not value:
+        raise TypeError(f"{field} must be a non-empty string")
+    return value
+
+
+def require_string_list(parent: dict[str, Any], field: str) -> None:
+    value = parent.get(field)
+    if not isinstance(value, list) or any(not isinstance(item, str) or not item for item in value):
+        raise TypeError(f"{field} must be an array of non-empty strings")
+
+
+def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str:
+    value = require_string(parent, field)
+    if value not in allowed:
+        raise ValueError(f"{field} must be one of {sorted(allowed)}, got {value!r}")
+    return value
+
+
+def require_optional_number(parent: dict[str, Any], field: str) -> float | int | None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as a number or null")
+    value = parent.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise TypeError(f"{field} must be a number or null")
+    return value
+
+
+def require_non_negative_number(parent: dict[str, Any], field: str) -> None:
+    value = require_optional_number(parent, field)
+    if value is None or value < 0:
+        raise ValueError(f"{field} must be a non-negative number")
+
+
+def require_optional_int(parent: dict[str, Any], field: str) -> int | None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an integer or null")
+    value = parent.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TypeError(f"{field} must be an integer or null")
+    return value
+
+
+def require_non_negative_int(parent: dict[str, Any], field: str) -> None:
+    value = require_optional_int(parent, field)
+    if value is None or value < 0:
+        raise ValueError(f"{field} must be a non-negative integer")
+
+
+def require_probe_cue_match(cue: str, readiness: str, requires_manual_confirm: bool) -> None:
+    expected = source_timing_readiness_cue(readiness, requires_manual_confirm)
+    if cue != expected:
+        raise ValueError(
+            "cue must match readiness/manual-confirm state "
+            f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {cue!r}"
+        )
+
+
+def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -> str:
+    if requires_manual_confirm:
+        return "needs confirm"
+    if readiness == "ready":
+        return "grid locked"
+    if readiness in {"needs_review", "weak"}:
+        return "listen first"
+    return "not available"
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
