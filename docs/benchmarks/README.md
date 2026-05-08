@@ -54,6 +54,8 @@ Current benchmark artifacts:
   Initial P012 candidate confidence report seam for probe timing QA.
 - [source_timing_example_readiness_2026-05-07.md](./source_timing_example_readiness_2026-05-07.md)
   Local real-example readiness check for Feral grid packs, including when current example sources still need explicit BPM instead of auto timing.
+- [source_timing_generated_probe_matrix_2026-05-08.md](./source_timing_generated_probe_matrix_2026-05-08.md)
+  Generated Source Timing probe matrix covering strong grid-lock, silence degradation, and flat-pulse beat-without-downbeat ambiguity on the real CLI path.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
