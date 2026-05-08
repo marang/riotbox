@@ -12,6 +12,7 @@ pub fn source_timing_probe_readiness_report(
         policy,
     );
     let alternate_evidence_count = confidence.alternate_downbeat_count
+        + confidence.ambiguous_period_count
         + confidence.half_time_count
         + confidence.double_time_count
         + beat.alternate_candidate_count

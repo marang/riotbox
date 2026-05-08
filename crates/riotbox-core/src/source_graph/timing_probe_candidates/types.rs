@@ -135,6 +135,7 @@ pub struct SourceTimingCandidateConfidenceReport {
     pub degraded_policy: TimingDegradedPolicy,
     pub hypothesis_count: usize,
     pub alternate_downbeat_count: usize,
+    pub ambiguous_period_count: usize,
     pub half_time_count: usize,
     pub double_time_count: usize,
     pub primary_downbeat_confidence: Option<Confidence>,

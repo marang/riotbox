@@ -313,6 +313,10 @@ Minimum degraded policies:
 Rules:
 
 - `locked` requires high confidence and low drift for the selected use case
+- current probe-derived auto-readiness may emit `locked` only when the primary
+  BPM is finite, exactly one primary timing hypothesis exists, there are no
+  timing warnings or alternate hypotheses, preliminary phrase evidence is
+  present, and drift stays within the strict locked threshold of 35 ms
 - `cautious` should reduce destructive lane suggestions
 - `manual_confirm` is required when an action would make strong musical claims
   on ambiguous timing
