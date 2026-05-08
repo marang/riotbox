@@ -4,8 +4,6 @@ struct DownbeatPhaseScore {
     score: f32,
 }
 
-const MIN_STABLE_DOWNBEAT_PHASE_SCORE: f32 = 0.30;
-
 fn downbeat_phase_scores(
     input: &SourceTimingProbeBpmCandidateInput,
     bpm: f32,

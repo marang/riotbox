@@ -42,8 +42,6 @@ pub fn timing_model_from_probe_bpm_candidates(
         input,
     );
     let primary_drift_high = has_high_drift(&primary.drift);
-    const MIN_STABLE_DOWNBEAT_PHASE_SCORE: f32 = 0.30;
-
     let primary_phrase_uncertain = primary.phrase_grid.is_empty()
         || !ambiguous_phases.is_empty()
         || primary_phase.score < MIN_STABLE_DOWNBEAT_PHASE_SCORE
