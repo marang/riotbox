@@ -80,6 +80,8 @@ It must expose:
 - pending actions
 - recent committed actions
 - key confidence or warning signals
+- compact Source Timing Intelligence readiness in Jam perform / inspect views:
+  timing quality, degraded policy, and at most one primary timing warning code
 - a compact timing rail for the next queued live gesture
 - suggested Scene launch gestures that may name the next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
 - Scene jump availability should come from the shared Jam view model, not be re-inferred separately by individual TUI surfaces

@@ -4,6 +4,9 @@ fn renders_more_musical_jam_shell_snapshot() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("trust usable"));
+    assert!(rendered.contains("source timing low | policy"));
+    assert!(rendered.contains("manual_confirm"));
+    assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
     assert!(rendered.contains("warnings"));
