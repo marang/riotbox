@@ -20,14 +20,26 @@ fn source_timing_probe_bpm_candidate_policies_separate_research_and_dance_loop_a
 #[test]
 fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
     let onsets = even_onsets(0.0, 0.5, 32);
+    let input = weighted_candidate_input(
+        "readiness-ready-120",
+        16.0,
+        &onsets,
+        &downbeat_strengths(onsets.len(), 4),
+    );
+    let policy = SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness();
+    let timing = timing_model_from_probe_bpm_candidates(&input, policy);
+    let confidence = source_timing_candidate_confidence_report(&timing);
+
+    assert_eq!(timing.effective_timing_quality(), TimingQuality::High);
+    assert_eq!(
+        timing.effective_degraded_policy(),
+        TimingDegradedPolicy::Locked
+    );
+    assert!(!confidence.requires_manual_confirm);
+
     let report = source_timing_probe_readiness_report(
-        &weighted_candidate_input(
-            "readiness-ready-120",
-            16.0,
-            &onsets,
-            &downbeat_strengths(onsets.len(), 4),
-        ),
-        focused_120_bpm_policy(),
+        &input,
+        policy,
     );
 
     assert_eq!(report.schema, "riotbox.source_timing_probe_readiness.v1");
@@ -50,7 +62,7 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
         SourceTimingCandidatePhraseStatus::Stable
     );
     assert_eq!(report.alternate_evidence_count, 0);
-    assert!(report.requires_manual_confirm);
+    assert!(!report.requires_manual_confirm);
     assert_eq!(report.readiness, SourceTimingProbeReadinessStatus::Ready);
 }
 

@@ -75,6 +75,33 @@ fn source_timing_candidate_confidence_report_summarizes_degraded_probe() {
 }
 
 #[test]
+fn source_timing_candidate_confidence_report_requires_confirm_for_ambiguous_period() {
+    let onsets = even_onsets(0.0, 0.5, 32);
+    let mut timing = timing_model_from_probe_bpm_candidates(
+        &weighted_candidate_input(
+            "report-ambiguous-period-120",
+            16.0,
+            &onsets,
+            &downbeat_strengths(onsets.len(), 4),
+        ),
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+    let mut ambiguous_period = timing.primary_hypothesis().expect("primary").clone();
+    ambiguous_period.hypothesis_id = "probe-bpm-ambiguous-period".into();
+    ambiguous_period.kind = TimingHypothesisKind::Ambiguous;
+    timing.hypotheses.push(ambiguous_period);
+
+    let report = source_timing_candidate_confidence_report(&timing);
+
+    assert_eq!(report.ambiguous_period_count, 1);
+    assert_eq!(
+        report.result,
+        SourceTimingCandidateConfidenceResult::CandidateAmbiguous
+    );
+    assert!(report.requires_manual_confirm);
+}
+
+#[test]
 fn source_timing_candidate_confidence_report_summarizes_primary_drift() {
     let stable = source_timing_candidate_confidence_report(&timing_model_from_probe_bpm_candidates(
         &candidate_input(

@@ -141,6 +141,9 @@ pub fn timing_model_from_probe_bpm_candidates(
         warnings.push(TimingWarningCode::DoubleTimePossible);
     }
 
+    let (quality, degraded_policy) =
+        timing_model_quality_and_policy(primary_bpm, &hypotheses, &warnings);
+
     TimingModel {
         bpm_estimate: Some(primary_bpm),
         bpm_confidence: policy.primary_confidence,
@@ -150,7 +153,7 @@ pub fn timing_model_from_probe_bpm_candidates(
         phrase_grid: hypotheses[0].phrase_grid.clone(),
         hypotheses,
         primary_hypothesis_id: Some("probe-bpm-primary".into()),
-        quality: TimingQuality::Medium,
+        quality,
         warnings: warnings
             .into_iter()
             .map(|code| TimingWarning {
@@ -158,8 +161,63 @@ pub fn timing_model_from_probe_bpm_candidates(
                 message: probe_bpm_warning_message(code, input).into(),
             })
             .collect(),
-        degraded_policy: TimingDegradedPolicy::Cautious,
+        degraded_policy,
     }
+}
+
+fn timing_model_quality_and_policy(
+    primary_bpm: f32,
+    hypotheses: &[TimingHypothesis],
+    warnings: &[TimingWarningCode],
+) -> (TimingQuality, TimingDegradedPolicy) {
+    if has_strict_stable_timing_evidence(primary_bpm, hypotheses, warnings) {
+        (TimingQuality::High, TimingDegradedPolicy::Locked)
+    } else {
+        (TimingQuality::Medium, TimingDegradedPolicy::Cautious)
+    }
+}
+
+fn has_strict_stable_timing_evidence(
+    primary_bpm: f32,
+    hypotheses: &[TimingHypothesis],
+    warnings: &[TimingWarningCode],
+) -> bool {
+    const MAX_LOCKED_DRIFT_MS: f32 = 35.0;
+    const MIN_LOCKED_SCORE: f32 = 0.25;
+    // Bar confidence is probe confidence scaled by downbeat score, so this is
+    // intentionally stricter than weak evidence but below the raw phase score.
+    const MIN_DOWNBEAT_CONFIDENCE: f32 = 0.3;
+
+    if !primary_bpm.is_finite() || primary_bpm <= 0.0 || !warnings.is_empty() {
+        return false;
+    }
+
+    let [primary] = hypotheses else {
+        return false;
+    };
+    if primary.kind != TimingHypothesisKind::Primary
+        || primary.score < MIN_LOCKED_SCORE
+        || primary.beat_grid.is_empty()
+        || primary.bar_grid.len() < 8
+        || primary.phrase_grid.is_empty()
+        || primary.drift.is_empty()
+        || has_high_drift(&primary.drift)
+    {
+        return false;
+    }
+
+    if primary
+        .bar_grid
+        .first()
+        .is_none_or(|bar| bar.downbeat_confidence < MIN_DOWNBEAT_CONFIDENCE)
+    {
+        return false;
+    }
+
+    primary.drift.iter().all(|drift| {
+        drift.max_drift_ms <= MAX_LOCKED_DRIFT_MS
+            && drift.end_drift_ms.abs() <= MAX_LOCKED_DRIFT_MS
+    })
 }
 
 fn beat_period_hypothesis_kind(

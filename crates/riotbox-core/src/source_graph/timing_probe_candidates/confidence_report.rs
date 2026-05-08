@@ -3,6 +3,7 @@ pub fn source_timing_candidate_confidence_report(
     timing: &TimingModel,
 ) -> SourceTimingCandidateConfidenceReport {
     let alternate_downbeat_count = count_hypotheses(timing, TimingHypothesisKind::AlternateDownbeat);
+    let ambiguous_period_count = count_hypotheses(timing, TimingHypothesisKind::Ambiguous);
     let half_time_count = count_hypotheses(timing, TimingHypothesisKind::HalfTime);
     let double_time_count = count_hypotheses(timing, TimingHypothesisKind::DoubleTime);
     let warning_codes = timing
@@ -20,11 +21,13 @@ pub fn source_timing_candidate_confidence_report(
     let requires_manual_confirm = degraded_policy != TimingDegradedPolicy::Locked
         || !warning_codes.is_empty()
         || alternate_downbeat_count > 0
+        || ambiguous_period_count > 0
         || half_time_count > 0
         || double_time_count > 0;
     let result = if timing.bpm_estimate.is_none() || timing.primary_hypothesis().is_none() {
         SourceTimingCandidateConfidenceResult::Degraded
     } else if alternate_downbeat_count > 0
+        || ambiguous_period_count > 0
         || half_time_count > 0
         || double_time_count > 0
         || warning_codes.contains(&TimingWarningCode::AmbiguousDownbeat)
@@ -43,6 +46,7 @@ pub fn source_timing_candidate_confidence_report(
         degraded_policy,
         hypothesis_count: timing.hypotheses.len(),
         alternate_downbeat_count,
+        ambiguous_period_count,
         half_time_count,
         double_time_count,
         primary_downbeat_confidence,
