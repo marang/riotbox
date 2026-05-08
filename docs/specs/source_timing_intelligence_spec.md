@@ -526,6 +526,11 @@ bounded BPM policy:
   metric, currently `metrics.source_grid_output_drift`, so QA can catch obvious
   generated-support/grid misalignment before this becomes production beat/downbeat
   validation
+- observer/audio correlation should compare app-observed Source Timing readiness
+  with manifest-side Source Timing evidence when both are present. The current
+  summary contract reports this as `output_path.source_timing_alignment`, using
+  BPM delta plus normalized warning-code overlap as bounded proof that the
+  control path and generated output path are using compatible timing evidence.
 
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.

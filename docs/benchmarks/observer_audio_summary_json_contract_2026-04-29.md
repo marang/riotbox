@@ -55,6 +55,8 @@ The `output_path` object should include:
 - `artifact_count`: number of manifest artifacts.
 - `source_timing`: `null` or a compact object copied from manifest
   source-timing readiness evidence.
+- `source_timing_alignment`: `null` or compact evidence comparing observer-side
+  Source Timing readiness with manifest-side Source Timing evidence.
 - `metrics`: object containing every currently required output metric field; values may be numbers or `null` when evidence is missing.
 
 When non-null, `source_timing` should include:
@@ -68,6 +70,22 @@ When non-null, `source_timing` should include:
 - `drift_status`
 - `phrase_status`
 - `alternate_evidence_count`
+
+When non-null, `source_timing_alignment` should include:
+
+- `status`: one of `aligned`, `partial`, or `mismatch`.
+- `bpm_delta`: absolute BPM difference between observer and manifest timing, or
+  `null` when either side does not expose a comparable BPM.
+- `bpm_tolerance`: the tolerance used for this comparison. Current value:
+  `1.0` BPM.
+- `warning_overlap`: normalized warning codes present on both sides.
+- `issues`: mismatch reasons. Strict evidence treats any issue as an output-path
+  failure.
+
+`source_timing_alignment` compares musical timing evidence, not source identity.
+Observer source ids and manifest artifact/source ids may intentionally differ in
+generated probes, so source ids are reported separately and are not an alignment
+criterion.
 
 The current stable metric keys are:
 
@@ -93,6 +111,14 @@ support output no longer proves it landed near the selected source grid.
 For manifests that include source timing evidence, strict correlation treats a
 malformed `source_timing` object as an output-path issue. Missing `source_timing`
 remains non-fatal for older and non-Feral manifests.
+
+When both observer and manifest source timing evidence are present and well
+formed, strict correlation also evaluates `source_timing_alignment`. A BPM delta
+above tolerance or non-overlapping warning evidence when both sides emit warnings
+sets `status: mismatch` and adds an output-path issue. Comparable BPM evidence
+or shared warning evidence with no issues sets `status: aligned`; well-formed but
+not directly comparable evidence sets `status: partial` and remains reviewable
+instead of becoming a false failure.
 
 ## Compatibility Rule
 
@@ -120,11 +146,16 @@ The committed fixture JSON smoke currently requires:
 - `output_path.present == true`
 - `output_path.issues` is empty
 - `output_path.source_timing` is present as an object or `null`
+- `output_path.source_timing_alignment` is present as an object or `null`
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
 - validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, and a rejected missing metric key
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
+- `just observer-audio-correlate-generated-feral-grid` requires generated Feral
+  Grid observer evidence and output manifest evidence to report aligned source
+  timing, including BPM tolerance, empty alignment issues, and shared
+  `phrase_uncertain` warning evidence
 
 ## Current Non-Goals
 

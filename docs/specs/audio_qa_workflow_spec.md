@@ -659,6 +659,10 @@ Today the repo already has:
 - observer/audio JSON summaries include a top-level `schema` and `schema_version` marker plus control-path `commit_count`, `commit_boundaries`, and optional observer-side Source Timing Intelligence readiness fields so automation can reject unexpected summary shapes and assert boundary/timing coverage before making QA decisions
 - the committed-fixture JSON smoke requires both `control_path.present` and `output_path.present`, keeping the machine-readable path aligned with the control-plus-output proof rule
 - observer/audio summaries can surface Feral-grid `source_grid_output_drift` evidence and strict correlation treats present drift evidence as a smoke gate for generated support landing near the selected source grid
+- observer/audio summaries can compare observer-side Source Timing readiness with
+  manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
+  strict correlation treats real mismatches as output-path failures while keeping
+  missing or non-comparable evidence reviewable for older/non-Feral packs
 - the observer/audio JSON summary v1 contract is documented in `docs/benchmarks/observer_audio_summary_json_contract_2026-04-29.md`
 - the observer/audio JSON fixture smoke also runs the repo-local `scripts/validate_observer_audio_summary_json.py` contract validator without adding an external schema dependency
 - validator fixtures cover both a valid failure summary with `null` metrics and a rejected invalid schema marker
@@ -669,6 +673,9 @@ Today the repo already has:
 - optional Feral scorecard validation inside the shared manifest v1 validator, so generated Feral grid manifests must carry well-typed scorecard evidence when they emit a `feral_scorecard` block
 - strict observer/audio correlation now validates that shared manifest v1 envelope before treating pack-specific output metrics as acceptable evidence
 - observer/audio strict Markdown and JSON correlation is smoke-tested against a freshly generated Feral grid manifest built from a deterministic synthetic break WAV and a generated app-level Feral-grid observer probe
+- generated Feral grid observer/audio correlation now gates on aligned source
+  timing evidence: observer readiness and manifest timing must stay within BPM
+  tolerance, share normalized warning evidence, and report no alignment issues
 - observer/audio strict JSON correlation also accepts W-30 preview source-diff manifests as output-path evidence, using candidate RMS, active-sample ratio, and RMS delta to reject silent or fallback-collapsed first-playable output
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
