@@ -223,29 +223,39 @@ def validate_grid_bpm_decision(
 
 def validate_source_grid_output_drift(manifest: dict[str, Any]) -> None:
     metrics = manifest.get("metrics")
-    if not isinstance(metrics, dict) or "source_grid_output_drift" not in metrics:
+    if not isinstance(metrics, dict):
         return
 
+    for metric_key in (
+        "source_grid_output_drift",
+        "tr909_source_grid_alignment",
+        "w30_source_grid_alignment",
+    ):
+        if metric_key in metrics:
+            validate_source_grid_output_drift_metric(metrics, metric_key)
+
+
+def validate_source_grid_output_drift_metric(metrics: dict[str, Any], metric_key: str) -> None:
     drift = require_object(
-        metrics.get("source_grid_output_drift"),
-        "metrics source_grid_output_drift",
+        metrics.get(metric_key),
+        f"metrics {metric_key}",
     )
-    require_non_negative_int(drift, "beat_count", "source_grid_output_drift")
-    require_non_negative_int(drift, "hit_count", "source_grid_output_drift")
+    require_non_negative_int(drift, "beat_count", metric_key)
+    require_non_negative_int(drift, "hit_count", metric_key)
     if drift["hit_count"] > drift["beat_count"]:
-        raise ValueError("source_grid_output_drift hit_count must not exceed beat_count")
-    hit_ratio = require_number(drift, "hit_ratio", "source_grid_output_drift hit_ratio")
+        raise ValueError(f"{metric_key} hit_count must not exceed beat_count")
+    hit_ratio = require_number(drift, "hit_ratio", f"{metric_key} hit_ratio")
     if hit_ratio < 0.0 or hit_ratio > 1.0:
-        raise ValueError("source_grid_output_drift hit_ratio must be between 0 and 1")
+        raise ValueError(f"{metric_key} hit_ratio must be between 0 and 1")
     require_non_negative_number(
         drift,
         "max_peak_offset_ms",
-        "source_grid_output_drift max_peak_offset_ms",
+        f"{metric_key} max_peak_offset_ms",
     )
     require_non_negative_number(
         drift,
         "max_allowed_peak_offset_ms",
-        "source_grid_output_drift max_allowed_peak_offset_ms",
+        f"{metric_key} max_allowed_peak_offset_ms",
     )
 
 
