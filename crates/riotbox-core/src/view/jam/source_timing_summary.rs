@@ -71,10 +71,7 @@ impl SourceTimingSummaryView {
             cue: source_timing_policy_cue_label(degraded_policy).into(),
             quality: source_timing_quality_label(&graph.timing.effective_timing_quality()).into(),
             degraded_policy: degraded_policy.into(),
-            primary_warning: graph
-                .timing
-                .warnings
-                .first()
+            primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
             primary_anchor_count,
             primary_kick_anchor_count,
@@ -87,6 +84,27 @@ impl SourceTimingSummaryView {
                 primary_transient_anchor_count,
             ),
         }
+    }
+}
+
+fn primary_source_timing_warning(
+    warnings: &[crate::source_graph::TimingWarning],
+) -> Option<&crate::source_graph::TimingWarning> {
+    warnings
+        .iter()
+        .min_by_key(|warning| source_timing_warning_priority(&warning.code))
+}
+
+fn source_timing_warning_priority(code: &crate::source_graph::TimingWarningCode) -> u8 {
+    match code {
+        crate::source_graph::TimingWarningCode::DriftHigh => 0,
+        crate::source_graph::TimingWarningCode::AmbiguousDownbeat => 1,
+        crate::source_graph::TimingWarningCode::LowTimingConfidence => 2,
+        crate::source_graph::TimingWarningCode::WeakKickAnchor => 3,
+        crate::source_graph::TimingWarningCode::WeakBackbeatAnchor => 4,
+        crate::source_graph::TimingWarningCode::HalfTimePossible => 5,
+        crate::source_graph::TimingWarningCode::DoubleTimePossible => 6,
+        crate::source_graph::TimingWarningCode::PhraseUncertain => 7,
     }
 }
 
@@ -187,6 +205,45 @@ mod source_timing_summary_tests {
         assert_eq!(timing.primary_anchor_cue, "anchors 1 | backbeat");
     }
 
+    #[test]
+    fn summary_picks_most_musically_urgent_primary_warning() {
+        let mut graph = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::ManualConfirm);
+        graph.timing.warnings.push(timing_warning(TimingWarningCode::PhraseUncertain));
+        graph
+            .timing
+            .warnings
+            .push(timing_warning(TimingWarningCode::WeakKickAnchor));
+        graph
+            .timing
+            .warnings
+            .push(timing_warning(TimingWarningCode::AmbiguousDownbeat));
+
+        let timing = SourceTimingSummaryView::from_graph(&graph);
+
+        assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
+    }
+
+    #[test]
+    fn summary_prioritizes_drift_over_other_timing_warnings() {
+        let mut graph = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::ManualConfirm);
+        graph
+            .timing
+            .warnings
+            .push(timing_warning(TimingWarningCode::AmbiguousDownbeat));
+        graph
+            .timing
+            .warnings
+            .push(timing_warning(TimingWarningCode::DriftHigh));
+        graph
+            .timing
+            .warnings
+            .push(timing_warning(TimingWarningCode::LowTimingConfidence));
+
+        let timing = SourceTimingSummaryView::from_graph(&graph);
+
+        assert_eq!(timing.primary_warning.as_deref(), Some("drift_high"));
+    }
+
     fn source_timing_graph(
         quality: TimingQuality,
         degraded_policy: TimingDegradedPolicy,
@@ -254,6 +311,13 @@ mod source_timing_summary_tests {
             confidence: 0.82,
             strength: 0.95,
             tags: Vec::new(),
+        }
+    }
+
+    fn timing_warning(code: TimingWarningCode) -> TimingWarning {
+        TimingWarning {
+            code,
+            message: format!("{code:?}"),
         }
     }
 }
