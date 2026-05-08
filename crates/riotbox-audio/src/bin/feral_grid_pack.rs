@@ -16,3 +16,4 @@ include!("feral_grid_pack/tests.rs");
 include!("feral_grid_pack/bpm_decision_tests.rs");
 include!("feral_grid_pack/w30_source_chop_tests.rs");
 include!("feral_grid_pack/source_grid_output_drift_tests.rs");
+include!("feral_grid_pack/tr909_source_grid_consumer_tests.rs");
