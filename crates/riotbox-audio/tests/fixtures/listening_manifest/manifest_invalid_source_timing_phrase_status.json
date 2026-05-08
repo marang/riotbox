@@ -25,7 +25,6 @@
     "downbeat_status": "ambiguous",
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
-    "phrase_status": "ambiguous_downbeat",
     "alternate_evidence_count": 2,
     "warning_codes": [
       "PhraseUncertain",

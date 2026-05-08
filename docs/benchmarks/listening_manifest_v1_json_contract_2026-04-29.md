@@ -93,11 +93,31 @@ When present, `source_timing` must include:
 - boolean field: `requires_manual_confirm`
 - number or null field: `primary_bpm`
 - boolean or null field: `bpm_agrees_with_grid`
+- non-negative integer or null field: `primary_downbeat_offset_beats`
+- status string fields: `beat_status`, `downbeat_status`, `confidence_result`,
+  `drift_status`, `phrase_status`
+- non-negative integer field: `alternate_evidence_count`
 - string array field: `warning_codes`
 
 Current accepted `policy_profile` values are `broad_research` and
 `dance_loop_auto_readiness`. Current generated Feral grid packs use
 `dance_loop_auto_readiness`.
+
+Current accepted source-timing status values are:
+
+- `readiness`: `unavailable`, `weak`, `needs_review`, `ready`
+- `beat_status` and `downbeat_status`: `unavailable`, `weak`, `stable`,
+  `ambiguous`
+- `confidence_result`: `degraded`, `candidate_cautious`,
+  `candidate_ambiguous`
+- `drift_status`: `unavailable`, `not_enough_material`, `stable`, `high`
+- `phrase_status`: `unavailable`, `not_enough_material`,
+  `ambiguous_downbeat`, `high_drift`, `stable`
+
+This makes the current downbeat and phrase-grid evidence auditable at the
+listening-manifest boundary. It is still readiness evidence from the bounded
+Source Timing probe, not a claim that arbitrary-audio beat/downbeat detection is
+production-ready.
 
 ### `metrics.source_grid_output_drift`
 
