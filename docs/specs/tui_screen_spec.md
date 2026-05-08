@@ -81,7 +81,9 @@ It must expose:
 - recent committed actions
 - key confidence or warning signals
 - compact Source Timing Intelligence readiness in Jam perform / inspect views:
-  timing quality, degraded policy, and at most one primary timing warning code
+  musician-readable timing cue such as `grid locked`, `needs confirm`, or
+  `listen first`, plus timing quality, degraded policy, and at most one primary
+  timing warning code
 - a compact timing rail for the next queued live gesture
 - suggested Scene launch gestures that may name the next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
 - Scene jump availability should come from the shared Jam view model, not be re-inferred separately by individual TUI surfaces
@@ -132,7 +134,9 @@ Show:
 - source identity
 - tempo / confidence
 - timing quality, degraded policy, primary hypothesis cue, and compact timing
-  warning codes when Source Timing Intelligence evidence is available
+  warning codes when Source Timing Intelligence evidence is available; the
+  Source screen may also show the same compact musician-readable timing cue as
+  Jam so users do not have to decode policy names first
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings

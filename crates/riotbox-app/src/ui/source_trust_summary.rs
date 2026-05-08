@@ -200,8 +200,10 @@ fn quality_label(quality: &QualityClass) -> &'static str {
 fn source_timing_readiness_line(shell: &JamShellState) -> String {
     let trust = trust_summary(shell);
     format!(
-        "source timing {} | policy {}",
-        trust.source_timing_quality, trust.source_timing_policy
+        "source timing {} | quality {} | policy {}",
+        source_timing_policy_cue_label(trust.source_timing_policy),
+        trust.source_timing_quality,
+        trust.source_timing_policy
     )
 }
 
@@ -230,6 +232,17 @@ fn jam_source_timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'s
         TimingDegradedPolicy::FallbackGrid => "fallback_grid",
         TimingDegradedPolicy::Disabled => "disabled",
         TimingDegradedPolicy::Unknown => "unknown",
+    }
+}
+
+fn source_timing_policy_cue_label(policy: &str) -> &'static str {
+    match policy {
+        "locked" => "grid locked",
+        "manual_confirm" => "needs confirm",
+        "cautious" => "listen first",
+        "fallback_grid" => "fallback grid",
+        "disabled" => "not available",
+        _ => "unknown",
     }
 }
 

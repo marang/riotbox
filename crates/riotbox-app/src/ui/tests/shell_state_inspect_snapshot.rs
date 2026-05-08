@@ -10,7 +10,11 @@ fn renders_jam_shell_inspect_snapshot() {
     assert!(rendered.contains("TR-909 detail"), "{rendered}");
     assert!(rendered.contains("accent off"), "{rendered}");
     assert!(rendered.contains("Source structure"), "{rendered}");
-    assert!(rendered.contains("source timing low | policy"), "{rendered}");
+    assert!(
+        rendered.contains("source timing needs confirm | quality"),
+        "{rendered}"
+    );
+    assert!(rendered.contains("low | policy manual_confirm"), "{rendered}");
     assert!(rendered.contains("manual_confirm"), "{rendered}");
     assert!(rendered.contains("timing warning ambiguous_downbeat"), "{rendered}");
     assert!(rendered.contains("Material flow"), "{rendered}");
