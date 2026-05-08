@@ -392,6 +392,7 @@ just observer-audio-correlate artifacts/audio_qa/local/user-session/events.ndjso
 just observer-audio-correlate-json artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.json
 just observer-audio-correlate-json-fixture
 just user-session-observer-validator-fixtures
+just source-timing-probe-json-validator-fixtures
 just listening-manifest-validator-fixtures
 just p011-exit-evidence-manifest
 just p011-exit-evidence-manifest-validator-fixtures
