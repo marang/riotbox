@@ -409,43 +409,6 @@ fn source_identity_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
-fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    match shell.app.source_graph.as_ref() {
-        Some(graph) => vec![
-            Line::from(format!(
-                "tempo {} | conf {:.2}",
-                graph
-                    .timing
-                    .bpm_estimate
-                    .map(|bpm| format!("{bpm:.1} BPM"))
-                    .unwrap_or_else(|| "unknown".into()),
-                graph.timing.bpm_confidence
-            )),
-            Line::from(format!(
-                "meter {}",
-                graph
-                    .timing
-                    .meter_hint
-                    .as_ref()
-                    .map(|meter| format!("{}/{}", meter.beats_per_bar, meter.beat_unit))
-                    .unwrap_or_else(|| "unknown".into())
-            )),
-            Line::from(format!(
-                "beats {} | bars {} | phrases {}",
-                graph.timing.beat_grid.len(),
-                graph.timing.bar_grid.len(),
-                graph.timing.phrase_grid.len()
-            )),
-            Line::from(format!(
-                "timing {} | sections {}",
-                quality_label(&graph.analysis_summary.timing_quality),
-                quality_label(&graph.analysis_summary.section_quality)
-            )),
-        ],
-        None => vec![Line::from("no timing information available")],
-    }
-}
-
 fn section_compact_label(section: &Section) -> String {
     format!(
         "{} bars {}-{}",

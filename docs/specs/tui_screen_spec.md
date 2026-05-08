@@ -129,6 +129,8 @@ Show:
 
 - source identity
 - tempo / confidence
+- timing quality, degraded policy, primary hypothesis cue, and compact timing
+  warning codes when Source Timing Intelligence evidence is available
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings

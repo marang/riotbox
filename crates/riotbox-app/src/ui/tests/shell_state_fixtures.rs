@@ -110,6 +110,43 @@ fn sample_shell_state() -> JamShellState {
     );
     graph.timing.bpm_estimate = Some(126.0);
     graph.timing.bpm_confidence = 0.76;
+    graph.timing.meter_hint = Some(MeterHint {
+        beats_per_bar: 4,
+        beat_unit: 4,
+    });
+    graph.timing.quality = TimingQuality::Low;
+    graph.timing.degraded_policy = TimingDegradedPolicy::ManualConfirm;
+    graph.timing.primary_hypothesis_id = Some("timing-primary".into());
+    graph.timing.hypotheses.push(TimingHypothesis {
+        hypothesis_id: "timing-primary".into(),
+        kind: TimingHypothesisKind::Primary,
+        bpm: 126.0,
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.76,
+        score: 0.68,
+        beat_grid: Vec::new(),
+        bar_grid: Vec::new(),
+        phrase_grid: Vec::new(),
+        anchors: Vec::new(),
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality: TimingQuality::Low,
+        warnings: Vec::new(),
+        provenance: vec!["fixture.source_timing".into()],
+    });
+    graph.timing.warnings = vec![
+        TimingWarning {
+            code: TimingWarningCode::AmbiguousDownbeat,
+            message: "downbeat candidates are close".into(),
+        },
+        TimingWarning {
+            code: TimingWarningCode::PhraseUncertain,
+            message: "phrase grid needs confirmation".into(),
+        },
+    ];
     graph.sections.push(Section {
         section_id: SectionId::from("section-a"),
         label_hint: SectionLabelHint::Intro,

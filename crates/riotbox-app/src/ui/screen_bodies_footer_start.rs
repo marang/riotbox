@@ -157,7 +157,7 @@ fn render_source_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     let rows = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(6),
+            Constraint::Length(7),
             Constraint::Length(9),
             Constraint::Min(8),
         ])

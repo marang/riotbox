@@ -20,8 +20,10 @@ use riotbox_core::{
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
-        DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Relationship, RelationshipType,
-        Section, SectionLabelHint, SourceDescriptor, SourceGraph,
+        DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
+        RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
+        TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
+        TimingWarning, TimingWarningCode,
     },
     transport::{CommitBoundaryState, TransportClockState},
 };
