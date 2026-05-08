@@ -189,3 +189,24 @@ fn writes_feral_grid_jam_observer_stream() {
     assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 1);
     assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
 }
+
+#[test]
+fn writes_feral_grid_locked_jam_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_feral_grid_locked_jam_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"feral-grid-jam-locked""#));
+    assert!(events.contains(r#""source_timing":{"#));
+    assert!(events.contains(r#""source_id":"src-feral-grid-probe""#));
+    assert!(events.contains(r#""quality":"high""#));
+    assert!(events.contains(r#""degraded_policy":"locked""#));
+    assert!(events.contains(r#""warning_codes":[]"#));
+    assert!(events.contains(r#""outcome":"toggle_transport""#));
+    assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
+    assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 1);
+    assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
+}
