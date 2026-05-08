@@ -522,6 +522,10 @@ bounded BPM policy:
 - manifests must preserve the source/grid BPM delta and whether the source timing
   agrees with the chosen grid, so QA can detect timing mismatch instead of only
   hearing a drifting or fallback-like render
+- generated Feral grid packs should also expose a bounded output-drift smoke
+  metric, currently `metrics.source_grid_output_drift`, so QA can catch obvious
+  generated-support/grid misalignment before this becomes production beat/downbeat
+  validation
 
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.

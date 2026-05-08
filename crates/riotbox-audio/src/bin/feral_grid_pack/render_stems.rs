@@ -131,6 +131,14 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if report.source_grid_output_drift.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
+        return Err(format!(
+            "source-grid output drift hit ratio {:.6} is below {:.6}",
+            report.source_grid_output_drift.hit_ratio, SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
+        )
+        .into());
+    }
+
     Ok(())
 }
 
@@ -213,6 +221,7 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
              - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
+             - Source-grid output hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
              - Result: `pass`\n\n\
              | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run | Low energy | Mid energy | High energy |\n\
              | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n\
@@ -240,6 +249,8 @@ fn write_report(path: &Path, args: &Args, grid: &Grid, report: PackReport) -> st
             report.source_first_generated_to_source_rms_ratio,
             report.support_generated_to_source_rms_ratio,
             report.full_mix.low_band.rms,
+            report.source_grid_output_drift.hit_ratio,
+            report.source_grid_output_drift.max_peak_offset_ms,
             report.tr909.signal.rms,
             report.tr909.signal.peak_abs,
             report.tr909.low_band.rms,
@@ -347,6 +358,7 @@ fn write_manifest(
                     report.source_first_generated_to_source_rms_ratio,
                 support_generated_to_source_rms_ratio: report.support_generated_to_source_rms_ratio,
             },
+            source_grid_output_drift: report.source_grid_output_drift,
             bar_variation: ManifestBarVariationMetrics {
                 tr909_beat_fill: report.tr909.bar_variation,
                 w30_feral_source_chop: report.w30.bar_variation,

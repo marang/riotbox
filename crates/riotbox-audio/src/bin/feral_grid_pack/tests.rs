@@ -375,6 +375,9 @@ mod tests {
                 .expect("support generated/source ratio")
                 < f64::from(MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
         );
+        let output_drift = &manifest["metrics"]["source_grid_output_drift"];
+        let hit_ratio = output_drift["hit_ratio"].as_f64().expect("hit ratio");
+        assert!(hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
         assert!(
             manifest["metrics"]["bar_variation"]["source_first_mix"]["bar_similarity"]
                 .as_f64()

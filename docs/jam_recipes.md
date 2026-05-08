@@ -622,6 +622,7 @@ How to interpret `auto`:
 - `source_timing.policy_profile: dance_loop_auto_readiness` means the pack used the stricter dance-loop auto-trust policy, not the broader diagnostic timing policy.
 - `source_timing.bpm_agrees_with_grid: false` means the generated pack is timing-risky and should not be judged as a successful beat-grid example.
 - `source_timing.readiness: weak` means the detector saw useful evidence but not enough downbeat/phrase confidence for automatic trust.
+- `metrics.source_grid_output_drift.hit_ratio` is an early generated-output smoke metric; values below `0.5` mean the support render is not landing reliably near the chosen grid.
 
 Current local benchmark result:
 
