@@ -486,6 +486,21 @@ detection:
   phase score is stronger
 - `AmbiguousDownbeat` remains visible while scoring is only onset-presence based
 
+Probe-derived anchors may now classify bounded musical grid roles inside a
+primary timing hypothesis:
+
+- stable bar-start evidence may classify beat-1 onsets as `Kick` anchors with
+  `kick_anchor` and `downbeat` tags
+- stable 4/4 beat-2 and beat-4 onsets may classify as `Backbeat` anchors with
+  `backbeat_anchor` and `snare_style` tags
+- ambiguous or weak downbeat evidence must keep onsets as `TransientCluster`
+  anchors even when they are beat-aligned
+- all classified probe anchors must preserve bar/beat indices when the onset is
+  close enough to the selected grid, plus `anchor_classified_v0` provenance in
+  tags
+- this is source-timing evidence only; lane policies decide later whether to
+  preserve, answer, replace, or destroy these anchors
+
 The candidate confidence report summarizes this early detector state for QA:
 
 - `source_timing_candidate_confidence_report(...)`
