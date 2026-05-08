@@ -208,6 +208,7 @@ struct ListeningPackManifest {
     channel_count: u16,
     bpm: f32,
     grid_bpm_source: &'static str,
+    grid_bpm_decision_reason: &'static str,
     source_timing_bpm_delta: Option<f32>,
     beats_per_bar: u32,
     bars: u32,

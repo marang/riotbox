@@ -38,6 +38,20 @@ SOURCE_TIMING_PHRASE_STATUSES = {
     "high_drift",
     "stable",
 }
+GRID_BPM_DECISION_REASONS = {
+    "user_override",
+    "source_timing_ready",
+    "source_timing_requires_manual_confirm",
+    "source_timing_not_ready",
+    "source_timing_missing_bpm",
+    "source_timing_invalid_bpm",
+}
+STATIC_DEFAULT_GRID_BPM_REASONS = {
+    "source_timing_requires_manual_confirm",
+    "source_timing_not_ready",
+    "source_timing_missing_bpm",
+    "source_timing_invalid_bpm",
+}
 
 
 def main() -> int:
@@ -105,6 +119,9 @@ def validate_manifest(manifest: Any) -> None:
     elif manifest.get("pack_id") == "feral-grid-demo" and "grid_bpm_source" in manifest:
         raise ValueError("source_timing must be present for feral-grid-demo grid BPM manifests")
 
+    if manifest.get("pack_id") == "feral-grid-demo" and "grid_bpm_source" in manifest:
+        validate_grid_bpm_decision(manifest, source_timing)
+
     validate_source_grid_output_drift(manifest)
 
 
@@ -168,6 +185,40 @@ def validate_source_timing(source_timing: Any) -> None:
         "source_timing",
     )
     require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
+
+
+def validate_grid_bpm_decision(
+    manifest: dict[str, Any], source_timing: Any | None
+) -> None:
+    require_one_of(manifest, "grid_bpm_decision_reason", GRID_BPM_DECISION_REASONS)
+    source = manifest.get("grid_bpm_source")
+    reason = manifest.get("grid_bpm_decision_reason")
+
+    if source == "user_override" and reason != "user_override":
+        raise ValueError("user_override grid BPM source requires user_override decision reason")
+    if source == "source_timing" and reason != "source_timing_ready":
+        raise ValueError(
+            "source_timing grid BPM source requires source_timing_ready decision reason"
+        )
+    if source == "static_default" and reason not in STATIC_DEFAULT_GRID_BPM_REASONS:
+        raise ValueError("static_default grid BPM source requires a source-timing fallback reason")
+
+    if not isinstance(source_timing, dict):
+        return
+    if reason == "source_timing_ready":
+        if source_timing.get("readiness") != "ready":
+            raise ValueError("source_timing_ready requires source_timing.readiness == ready")
+        if source_timing.get("requires_manual_confirm") is not False:
+            raise ValueError(
+                "source_timing_ready requires source_timing.requires_manual_confirm == false"
+            )
+    if reason == "source_timing_requires_manual_confirm":
+        if source_timing.get("requires_manual_confirm") is not True:
+            raise ValueError(
+                "source_timing_requires_manual_confirm requires manual confirmation evidence"
+            )
+    if reason == "source_timing_not_ready" and source_timing.get("readiness") == "ready":
+        raise ValueError("source_timing_not_ready cannot be used with ready source timing")
 
 
 def validate_source_grid_output_drift(manifest: dict[str, Any]) -> None:

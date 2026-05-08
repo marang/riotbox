@@ -44,6 +44,10 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
         "ambiguous_downbeat"
     );
     assert_eq!(json["output_path"]["grid_bpm_source"], "static_default");
+    assert_eq!(
+        json["output_path"]["grid_bpm_decision_reason"],
+        "source_timing_requires_manual_confirm"
+    );
     assert_eq!(json["output_path"]["source_timing_bpm_delta"], 0.397);
 }
 
@@ -84,6 +88,7 @@ fn synthetic_manifest_with_source_timing() -> String {
   "pack_id": "feral-grid-demo",
   "result": "pass",
   "grid_bpm_source": "static_default",
+  "grid_bpm_decision_reason": "source_timing_requires_manual_confirm",
   "source_timing_bpm_delta": 0.397,
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
@@ -117,6 +122,7 @@ fn synthetic_manifest_with_malformed_source_timing() -> String {
   "pack_id": "feral-grid-demo",
   "result": "pass",
   "grid_bpm_source": "static_default",
+  "grid_bpm_decision_reason": "source_timing_requires_manual_confirm",
   "source_timing_bpm_delta": 0.397,
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {

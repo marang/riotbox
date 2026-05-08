@@ -520,6 +520,11 @@ bounded BPM policy:
   recorded as `grid_bpm_source: source_timing`
 - if readiness is weaker, the pack falls back to the static default BPM and is
   recorded as `grid_bpm_source: static_default`
+- generated Feral grid manifests must also record
+  `grid_bpm_decision_reason`, using stable values such as `user_override`,
+  `source_timing_ready`, `source_timing_requires_manual_confirm`,
+  `source_timing_not_ready`, `source_timing_missing_bpm`, and
+  `source_timing_invalid_bpm`, so QA can tell why a static fallback occurred
 - Feral grid manifests must record the readiness policy profile used for this
   decision, currently `source_timing.policy_profile:
   dance_loop_auto_readiness`, so diagnostic and auto-trust policies stay

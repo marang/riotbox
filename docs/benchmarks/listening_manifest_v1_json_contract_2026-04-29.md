@@ -85,6 +85,9 @@ timing-readiness report used for grid-BPM decisions. When a `feral-grid-demo`
 manifest records the modern `grid_bpm_source` field, `source_timing` must also
 be present so automation can audit the timing policy instead of trusting an
 anonymous readiness label.
+The same manifests must include `grid_bpm_decision_reason` so QA can distinguish
+trusted source timing, explicit user override, manual-confirm fallback,
+weak/not-ready timing, and missing or invalid source BPM evidence.
 
 When present, `source_timing` must include:
 

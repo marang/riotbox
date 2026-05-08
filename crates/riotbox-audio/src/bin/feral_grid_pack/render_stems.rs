@@ -234,6 +234,7 @@ fn write_manifest(
         channel_count: CHANNEL_COUNT,
         bpm: grid.bpm,
         grid_bpm_source: grid_bpm_source_label(grid_bpm.source),
+        grid_bpm_decision_reason: grid_bpm_decision_reason_label(grid_bpm.reason),
         source_timing_bpm_delta: grid_bpm.source_delta_bpm,
         beats_per_bar: grid.beats_per_bar,
         bars: grid.bars,

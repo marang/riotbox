@@ -110,6 +110,7 @@ fn synthetic_manifest() -> String {
   "pack_id": "feral-grid-demo",
   "result": "pass",
   "grid_bpm_source": "static_default",
+  "grid_bpm_decision_reason": "source_timing_requires_manual_confirm",
   "source_timing_bpm_delta": 0.397,
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {

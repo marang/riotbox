@@ -664,9 +664,10 @@ Today the repo already has:
   strict correlation treats real mismatches as output-path failures while keeping
   missing or non-comparable evidence reviewable for older/non-Feral packs
 - observer/audio JSON summaries surface Feral-grid `grid_bpm_source` and
-  `source_timing_bpm_delta`, so reviewers can distinguish trusted source timing,
-  explicit user override, and conservative static-default fallback without
-  opening the raw manifest
+  `grid_bpm_decision_reason` plus `source_timing_bpm_delta`, so reviewers can
+  distinguish trusted source timing, explicit user override, manual-confirm
+  fallback, missing/invalid timing, and conservative static-default fallback
+  without opening the raw manifest
 - the observer/audio JSON summary v1 contract is documented in `docs/benchmarks/observer_audio_summary_json_contract_2026-04-29.md`
 - the observer/audio JSON fixture smoke also runs the repo-local `scripts/validate_observer_audio_summary_json.py` contract validator without adding an external schema dependency
 - validator fixtures cover both a valid failure summary with `null` metrics and a rejected invalid schema marker

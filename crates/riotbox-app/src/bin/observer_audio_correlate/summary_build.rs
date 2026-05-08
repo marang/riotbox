@@ -13,6 +13,7 @@ struct CorrelationSummary {
     manifest_result: String,
     artifact_count: usize,
     grid_bpm_source: String,
+    grid_bpm_decision_reason: String,
     source_timing_bpm_delta: Option<f64>,
     full_mix_rms: Option<f64>,
     full_mix_low_band_rms: Option<f64>,
@@ -144,6 +145,10 @@ fn build_summary_from_events(
         manifest_result: manifest["result"].as_str().unwrap_or("unknown").to_string(),
         artifact_count: manifest["artifacts"].as_array().map_or(0, Vec::len),
         grid_bpm_source: manifest["grid_bpm_source"]
+            .as_str()
+            .unwrap_or("unknown")
+            .to_string(),
+        grid_bpm_decision_reason: manifest["grid_bpm_decision_reason"]
             .as_str()
             .unwrap_or("unknown")
             .to_string(),
