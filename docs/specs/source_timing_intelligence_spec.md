@@ -512,7 +512,8 @@ bounded BPM policy:
 - explicit `--bpm` always wins and is recorded as `grid_bpm_source:
   user_override`
 - without `--bpm`, a `Ready` report with a finite positive primary BPM may drive
-  the pack grid and is recorded as `grid_bpm_source: source_timing`
+  the pack grid only when it does not require manual confirmation; that case is
+  recorded as `grid_bpm_source: source_timing`
 - if readiness is weaker, the pack falls back to the static default BPM and is
   recorded as `grid_bpm_source: static_default`
 - Feral grid manifests must record the readiness policy profile used for this
