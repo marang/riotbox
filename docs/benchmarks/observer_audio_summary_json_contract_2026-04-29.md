@@ -47,13 +47,16 @@ When non-null, `control_path.observer_source_timing` should include:
 - `hypothesis_count`
 - `anchor_evidence`: `null` or compact primary anchor counts copied from the
   observer snapshot.
+- `groove_evidence`: `null` or compact primary groove residual evidence copied
+  from the observer snapshot.
 - `primary_warning_code`
 - `warning_codes`
 
 The observer should source `cue`, `quality`, `degraded_policy`,
-`primary_warning_code`, and compact `anchor_evidence` from the shared Jam source
-timing summary. Raw beat/downbeat/phrase detail, hypothesis ids, counts, and full
-warning-code lists may remain direct Source Graph diagnostics.
+`primary_warning_code`, compact `anchor_evidence`, and compact
+`groove_evidence` from the shared Jam source timing summary. Raw
+beat/downbeat/phrase detail, hypothesis ids, counts, and full warning-code lists
+may remain direct Source Graph diagnostics.
 
 `primary_warning_code` is the summary's focused warning, selected by the shared
 musician-facing warning priority. `warning_codes` remains the full diagnostic
@@ -83,6 +86,9 @@ The `output_path` object should include:
   Source Timing readiness with manifest-side Source Timing evidence.
 - `source_timing_anchor_alignment`: `null` or compact evidence comparing
   observer-side primary anchor counts with manifest-side primary anchor counts.
+- `source_timing_groove_alignment`: `null` or compact evidence comparing
+  observer-side primary groove residual evidence with manifest-side primary
+  groove residual evidence.
 - `metrics`: object containing every currently required output metric field; values may be numbers or `null` when evidence is missing.
 
 When non-null, `source_timing` should include:
@@ -100,6 +106,8 @@ When non-null, `source_timing` should include:
 - `alternate_evidence_count`
 - `anchor_evidence`: `null` or compact primary anchor counts copied from
   manifest source-timing readiness evidence.
+- `groove_evidence`: `null` or compact primary groove residual evidence copied
+  from manifest source-timing readiness evidence.
 
 When non-null, `source_timing_alignment` should include:
 
@@ -130,6 +138,20 @@ current probes may expose different evidence density on the control and manifest
 paths. The strict gate rejects only clear contradictions, such as an observer
 that reports primary kick/backbeat/transient anchor evidence while the manifest
 reports zero comparable anchors for that class.
+
+When non-null, `source_timing_groove_alignment` should include:
+
+- `status`: one of `aligned`, `partial`, or `mismatch`.
+- `observer`: `null` or the observer-side `groove_evidence` object.
+- `manifest`: `null` or the manifest-side `groove_evidence` object.
+- `issues`: mismatch reasons. Strict evidence treats any issue as an output-path
+  failure.
+
+Groove alignment intentionally does not require exact residual-offset equality.
+The current observer and manifest paths may expose different evidence density.
+The strict gate rejects only clear contradictions, such as an observer that
+reports primary groove residuals while the manifest reports zero comparable
+residuals.
 
 The current stable metric keys are:
 
@@ -164,6 +186,12 @@ or shared warning evidence with no issues sets `status: aligned`; well-formed bu
 not directly comparable evidence sets `status: partial` and remains reviewable
 instead of becoming a false failure.
 
+When both observer and manifest primary groove evidence are present and well
+formed, strict correlation also evaluates `source_timing_groove_alignment`.
+Comparable residual presence with no issues sets `status: aligned`; missing or
+non-comparable evidence sets `status: partial`; clear contradictions set
+`status: mismatch` and add output-path issues.
+
 ## Compatibility Rule
 
 Do not bump `schema_version` for additive fields that do not change the meaning of existing fields.
@@ -194,6 +222,8 @@ The committed fixture JSON smoke currently requires:
 - `output_path.source_timing_bpm_delta` is present as a number or `null`
 - `output_path.source_timing` is present as an object or `null`
 - `output_path.source_timing_alignment` is present as an object or `null`
+- `output_path.source_timing_anchor_alignment` is present as an object or `null`
+- `output_path.source_timing_groove_alignment` is present as an object or `null`
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
