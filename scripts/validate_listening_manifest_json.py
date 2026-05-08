@@ -38,6 +38,12 @@ SOURCE_TIMING_PHRASE_STATUSES = {
     "high_drift",
     "stable",
 }
+GROOVE_SUBDIVISIONS = {
+    "eighth",
+    "triplet",
+    "sixteenth",
+    "thirty_second",
+}
 GRID_BPM_DECISION_REASONS = {
     "user_override",
     "source_timing_ready",
@@ -180,6 +186,7 @@ def validate_source_timing(source_timing: Any) -> None:
     require_one_of(source_timing, "drift_status", SOURCE_TIMING_DRIFT_STATUSES)
     require_one_of(source_timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
     validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
+    validate_source_timing_groove_evidence(source_timing.get("groove_evidence"))
     require_non_negative_int(
         source_timing,
         "alternate_evidence_count",
@@ -219,6 +226,46 @@ def validate_source_timing_anchor_evidence(anchor_evidence: Any) -> None:
         raise ValueError(
             "source_timing anchor_evidence typed anchor counts must not exceed primary_anchor_count"
         )
+
+
+def validate_source_timing_groove_evidence(groove_evidence: Any) -> None:
+    evidence = require_object(groove_evidence, "source_timing groove_evidence")
+    require_non_negative_int(
+        evidence,
+        "primary_groove_residual_count",
+        "source_timing groove_evidence",
+    )
+    total = evidence["primary_groove_residual_count"]
+    require_non_negative_number(
+        evidence,
+        "primary_max_abs_offset_ms",
+        "source_timing groove_evidence",
+    )
+    preview = require_list(
+        evidence,
+        "primary_groove_preview",
+        "source_timing groove_evidence primary_groove_preview",
+    )
+    if len(preview) > min(total, 4):
+        raise ValueError(
+            "source_timing groove_evidence preview must contain at most the first four residuals"
+        )
+    for index, item in enumerate(preview):
+        validate_source_timing_groove_preview(item, index)
+
+
+def validate_source_timing_groove_preview(item: Any, index: int) -> None:
+    residual = require_object(item, f"source_timing groove residual {index}")
+    require_one_of(residual, "subdivision", GROOVE_SUBDIVISIONS)
+    require_number(residual, "offset_ms", f"source_timing groove residual {index} offset_ms")
+    require_non_negative_number(
+        residual,
+        "confidence",
+        f"source_timing groove residual {index} confidence",
+    )
+    confidence = residual["confidence"]
+    if confidence > 1.0:
+        raise ValueError("source_timing groove residual confidence must be <= 1")
 
 
 def validate_grid_bpm_decision(

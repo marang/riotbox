@@ -1,4 +1,6 @@
-use riotbox_core::source_graph::{SourceTimingAnchor, SourceTimingAnchorType, TimingModel};
+use riotbox_core::source_graph::{
+    GrooveResidual, GrooveSubdivision, SourceTimingAnchor, SourceTimingAnchorType, TimingModel,
+};
 
 #[derive(Serialize)]
 struct ManifestSourceTimingReadiness {
@@ -17,6 +19,7 @@ struct ManifestSourceTimingReadiness {
     drift_status: &'static str,
     phrase_status: &'static str,
     anchor_evidence: ManifestSourceTimingAnchorEvidence,
+    groove_evidence: ManifestSourceTimingGrooveEvidence,
     alternate_evidence_count: usize,
     warning_codes: Vec<String>,
 }
@@ -52,10 +55,55 @@ impl ManifestSourceTimingAnchorEvidence {
     }
 }
 
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct ManifestSourceTimingGrooveEvidence {
+    primary_groove_residual_count: usize,
+    primary_max_abs_offset_ms: f32,
+    primary_groove_preview: Vec<ManifestSourceTimingGrooveResidual>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct ManifestSourceTimingGrooveResidual {
+    subdivision: &'static str,
+    offset_ms: f32,
+    confidence: f32,
+}
+
+impl ManifestSourceTimingGrooveEvidence {
+    fn from_timing(timing: &TimingModel) -> Self {
+        let groove = timing
+            .primary_hypothesis()
+            .map_or(&[][..], |hypothesis| hypothesis.groove.as_slice());
+        Self {
+            primary_groove_residual_count: groove.len(),
+            primary_max_abs_offset_ms: groove
+                .iter()
+                .map(|residual| residual.offset_ms.abs())
+                .fold(0.0_f32, f32::max),
+            primary_groove_preview: groove
+                .iter()
+                .take(4)
+                .map(ManifestSourceTimingGrooveResidual::from_residual)
+                .collect(),
+        }
+    }
+}
+
+impl ManifestSourceTimingGrooveResidual {
+    fn from_residual(residual: &GrooveResidual) -> Self {
+        Self {
+            subdivision: source_timing_groove_subdivision_label(residual.subdivision),
+            offset_ms: residual.offset_ms,
+            confidence: residual.confidence,
+        }
+    }
+}
+
 fn manifest_source_timing_readiness(
     report: &SourceTimingProbeReadinessReport,
     grid_bpm: GridBpmDecision,
     anchor_evidence: &ManifestSourceTimingAnchorEvidence,
+    groove_evidence: &ManifestSourceTimingGrooveEvidence,
 ) -> ManifestSourceTimingReadiness {
     ManifestSourceTimingReadiness {
         schema: report.schema,
@@ -73,12 +121,22 @@ fn manifest_source_timing_readiness(
         drift_status: drift_status_label(report.drift_status),
         phrase_status: phrase_status_label(report.phrase_status),
         anchor_evidence: anchor_evidence.clone(),
+        groove_evidence: groove_evidence.clone(),
         alternate_evidence_count: report.alternate_evidence_count,
         warning_codes: report
             .warning_codes
             .iter()
             .map(|code| format!("{code:?}"))
             .collect(),
+    }
+}
+
+fn source_timing_groove_subdivision_label(subdivision: GrooveSubdivision) -> &'static str {
+    match subdivision {
+        GrooveSubdivision::Eighth => "eighth",
+        GrooveSubdivision::Triplet => "triplet",
+        GrooveSubdivision::Sixteenth => "sixteenth",
+        GrooveSubdivision::ThirtySecond => "thirty_second",
     }
 }
 

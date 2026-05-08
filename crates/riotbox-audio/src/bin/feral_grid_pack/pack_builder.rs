@@ -356,9 +356,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let source = SourceAudioCache::load_pcm_wav(&args.source_path)?;
     validate_source_format(&source)?;
     let source_timing_analysis = source_timing_analysis_for_source(&source, &args.source_path);
-    let timing_readiness = source_timing_analysis.readiness;
-    let source_timing_anchor_evidence = source_timing_analysis.anchor_evidence;
-    let grid_bpm = choose_grid_bpm(args, &timing_readiness);
+    let timing_readiness = &source_timing_analysis.readiness;
+    let grid_bpm = choose_grid_bpm(args, timing_readiness);
     let grid = Grid::new(grid_bpm.bpm, DEFAULT_BEATS_PER_BAR, args.bars)?;
 
     let w30_source_window = source.window_by_seconds(
@@ -420,17 +419,16 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     };
     validate_report(&report)?;
     let report_path = output_dir.join("grid-report.md");
-    write_report(&report_path, args, &grid, report, &timing_readiness, grid_bpm)?;
+    write_report(&report_path, args, &grid, report, timing_readiness, grid_bpm)?;
     write_manifest(
         &output_dir.join("manifest.json"),
         args,
         &grid,
         report,
-        &timing_readiness,
-        &source_timing_anchor_evidence,
+        &source_timing_analysis,
         grid_bpm,
     )?;
-    write_readme(&output_dir, args, &grid, grid_bpm, &timing_readiness)?;
+    write_readme(&output_dir, args, &grid, grid_bpm, timing_readiness)?;
 
     Ok(())
 }
@@ -493,6 +491,7 @@ fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::
 struct SourceTimingAnalysisForManifest {
     readiness: SourceTimingProbeReadinessReport,
     anchor_evidence: ManifestSourceTimingAnchorEvidence,
+    groove_evidence: ManifestSourceTimingGrooveEvidence,
 }
 
 fn source_timing_analysis_for_source(
@@ -518,5 +517,6 @@ fn source_timing_analysis_for_source(
     SourceTimingAnalysisForManifest {
         readiness,
         anchor_evidence: ManifestSourceTimingAnchorEvidence::from_timing(&timing),
+        groove_evidence: ManifestSourceTimingGrooveEvidence::from_timing(&timing),
     }
 }

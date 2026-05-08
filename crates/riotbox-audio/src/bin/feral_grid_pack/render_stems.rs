@@ -229,8 +229,7 @@ fn write_manifest(
     args: &Args,
     grid: &Grid,
     report: PackReport,
-    timing_readiness: &SourceTimingProbeReadinessReport,
-    source_timing_anchor_evidence: &ManifestSourceTimingAnchorEvidence,
+    source_timing_analysis: &SourceTimingAnalysisForManifest,
     grid_bpm: GridBpmDecision,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let output_dir = args.output_dir();
@@ -255,9 +254,10 @@ fn write_manifest(
         artifacts: manifest_artifacts(&output_dir),
         feral_scorecard: manifest_feral_scorecard(),
         source_timing: manifest_source_timing_readiness(
-            timing_readiness,
+            &source_timing_analysis.readiness,
             grid_bpm,
-            source_timing_anchor_evidence,
+            &source_timing_analysis.anchor_evidence,
+            &source_timing_analysis.groove_evidence,
         ),
         thresholds: ManifestThresholds {
             min_signal_rms: MIN_SIGNAL_RMS,
