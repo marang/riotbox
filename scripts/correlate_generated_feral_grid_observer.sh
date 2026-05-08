@@ -101,6 +101,12 @@ jq -s -e \
     and all(.[]; .snapshot.source_timing.source_id == "src-feral-grid-probe")
     and all(.[]; .snapshot.source_timing.quality == "high")
     and all(.[]; .snapshot.source_timing.degraded_policy == "locked")
+    and all(.[]; .snapshot.source_timing.beat_status == "grid")
+    and all(.[]; .snapshot.source_timing.beat_count == 16)
+    and all(.[]; .snapshot.source_timing.downbeat_status == "bar_locked")
+    and all(.[]; .snapshot.source_timing.bar_count == 4)
+    and all(.[]; .snapshot.source_timing.phrase_status == "phrase_locked")
+    and all(.[]; .snapshot.source_timing.phrase_count == 1)
     and all(.[]; .snapshot.source_timing.primary_warning_code == null)
     and all(.[]; .snapshot.source_timing.warning_codes == [])
     and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")
@@ -138,6 +144,12 @@ jq -e \
     and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
     and .control_path.observer_source_timing.quality == "high"
     and .control_path.observer_source_timing.degraded_policy == "locked"
+    and .control_path.observer_source_timing.beat_status == "grid"
+    and .control_path.observer_source_timing.beat_count == 16
+    and .control_path.observer_source_timing.downbeat_status == "bar_locked"
+    and .control_path.observer_source_timing.bar_count == 4
+    and .control_path.observer_source_timing.phrase_status == "phrase_locked"
+    and .control_path.observer_source_timing.phrase_count == 1
     and .control_path.observer_source_timing.primary_warning_code == null
     and .output_path.grid_bpm_source == "source_timing"
     and .output_path.grid_bpm_decision_reason == "source_timing_ready"
