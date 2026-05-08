@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+repo_root="$(cd "$script_dir/.." && pwd)"
+cd "$repo_root"
+
+tmpdir="$(mktemp -d)"
+trap 'rm -rf "$tmpdir"' EXIT
+
+source_wav="$tmpdir/source.wav"
+summary_json="$tmpdir/source-timing-probe.json"
+
+python3 scripts/write_synthetic_break_wav.py "$source_wav" 16.0
+cargo run -p riotbox-audio --bin source_timing_probe -- --json "$source_wav" > "$summary_json"
+python3 scripts/validate_source_timing_probe_json.py "$summary_json"
+
+python3 - "$summary_json" <<'PY'
+from __future__ import annotations
+
+import json
+import sys
+from pathlib import Path
+
+summary = json.loads(Path(sys.argv[1]).read_text())
+
+expected = {
+    "cue": "grid locked",
+    "readiness": "ready",
+    "requires_manual_confirm": False,
+    "beat_status": "stable",
+    "downbeat_status": "stable",
+    "phrase_status": "stable",
+}
+for key, value in expected.items():
+    actual = summary.get(key)
+    if actual != value:
+        raise SystemExit(f"{key} must be {value!r}, got {actual!r}")
+
+checks = {
+    "primary_bpm": lambda value: 127.0 <= value <= 130.0,
+    "primary_beat_score": lambda value: value >= 0.90,
+    "primary_downbeat_score": lambda value: value >= 0.30,
+    "duration_seconds": lambda value: value >= 15.9,
+    "onset_count": lambda value: value > 0,
+}
+for key, predicate in checks.items():
+    value = summary.get(key)
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or not predicate(value):
+        raise SystemExit(f"{key} failed generated source timing smoke: {value!r}")
+
+if summary.get("warning_codes") != []:
+    raise SystemExit(
+        f"warning_codes must be empty for generated locked source: {summary.get('warning_codes')!r}"
+    )
+
+print(
+    "generated source timing probe ok: "
+    f"bpm={summary['primary_bpm']:.3f} "
+    f"beat={summary['primary_beat_score']:.3f} "
+    f"downbeat={summary['primary_downbeat_score']:.3f}"
+)
+PY

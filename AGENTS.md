@@ -393,6 +393,7 @@ just observer-audio-correlate-json artifacts/audio_qa/local/user-session/events.
 just observer-audio-correlate-json-fixture
 just user-session-observer-validator-fixtures
 just source-timing-probe-json-validator-fixtures
+just generated-source-timing-probe-json-smoke
 just listening-manifest-validator-fixtures
 just p011-exit-evidence-manifest
 just p011-exit-evidence-manifest-validator-fixtures
