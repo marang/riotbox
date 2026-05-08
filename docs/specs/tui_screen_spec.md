@@ -83,7 +83,9 @@ It must expose:
 - compact Source Timing Intelligence readiness in Jam perform / inspect views:
   musician-readable timing cue such as `grid locked`, `needs confirm`, or
   `listen first`, plus timing quality, degraded policy, and at most one primary
-  timing warning code
+  timing warning code. That primary warning is priority-selected by the shared
+  timing summary so high drift and downbeat ambiguity outrank lower-urgency
+  phrase or anchor warnings.
 - source timing presentation language must come from the shared Jam source
   timing summary, not from screen-local Source Graph remapping. This keeps Jam,
   Help, Source, observer snapshots, and observer/audio QA aligned while the
