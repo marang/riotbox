@@ -105,7 +105,8 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Grid BPM source: `source_timing`"));
     assert!(markdown.contains("Grid BPM decision reason: `source_timing_ready`"));
     assert!(markdown.contains("Source timing BPM delta: `0.000000`"));
-    assert!(markdown.contains("Observer source timing: `src-beat08 quality=medium"));
+    assert!(markdown.contains("Observer source timing: `src-beat08 cue=listen first"));
+    assert!(markdown.contains("Source timing readiness: `grid locked readiness=ready"));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
     assert!(markdown.contains("Control path present: `yes`"));

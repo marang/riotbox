@@ -36,9 +36,11 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
         })
     );
     assert!(markdown.contains("Source timing downbeat: `ambiguous offset=0`"));
+    assert!(markdown.contains("Source timing readiness: `needs confirm readiness=weak"));
     assert!(markdown.contains(
         "Source timing phrase: `ambiguous_downbeat confidence=candidate_ambiguous drift=stable alternates=2`"
     ));
+    assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
     assert_eq!(
         json["output_path"]["source_timing"]["phrase_status"],
         "ambiguous_downbeat"

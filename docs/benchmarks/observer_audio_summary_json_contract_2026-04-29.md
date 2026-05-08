@@ -37,6 +37,8 @@ The `control_path` object should include:
 When non-null, `control_path.observer_source_timing` should include:
 
 - `source_id`
+- `cue`: musician-facing Source Timing trust cue such as `grid locked`,
+  `needs confirm`, `listen first`, `fallback grid`, or `not available`.
 - `bpm_estimate`
 - `bpm_confidence`
 - `quality`
@@ -67,6 +69,8 @@ The `output_path` object should include:
 
 When non-null, `source_timing` should include:
 
+- `cue`: musician-facing readiness cue derived from the manifest timing
+  readiness and manual-confirm flag.
 - `readiness`
 - `requires_manual_confirm`
 - `beat_status`
