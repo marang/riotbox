@@ -182,6 +182,7 @@ pub struct SourceSummaryView {
     pub source_id: String,
     pub bpm_estimate: Option<f32>,
     pub bpm_confidence: f32,
+    pub timing: SourceTimingSummaryView,
     pub section_count: usize,
     pub loop_candidate_count: usize,
     pub hook_candidate_count: usize,
@@ -442,4 +443,3 @@ pub struct SceneTransitionPolicyView {
     pub mc202_intent: SceneTransitionLaneIntentView,
     pub intensity: f32,
 }
-

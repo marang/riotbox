@@ -199,14 +199,45 @@ fn quality_label(quality: &QualityClass) -> &'static str {
 
 fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     let trust = trust_summary(shell);
-    source_timing_cue_line(
-        "source timing",
-        trust.source_timing_policy,
-        [
-            ("trust", trust.source_timing_quality),
-            ("mode", source_timing_policy_display_label(trust.source_timing_policy)),
-        ],
-    )
+    Line::from(vec![
+        Span::styled("timing ", style_low_emphasis()),
+        Span::styled(
+            source_timing_policy_cue_label(trust.source_timing_policy),
+            source_timing_policy_cue_style(trust.source_timing_policy),
+        ),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::raw(trust.source_timing_quality),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
+    ])
+}
+
+fn source_timing_anchor_compact(shell: &JamShellState) -> String {
+    let timing = &shell.app.jam_view.source.timing;
+    if timing.primary_anchor_count == 0 {
+        "anchors none".into()
+    } else {
+        format!(
+            "anchors {} {}",
+            timing.primary_anchor_count,
+            source_timing_anchor_kind_compact(shell)
+        )
+    }
+}
+
+fn source_timing_anchor_kind_compact(shell: &JamShellState) -> &'static str {
+    let timing = &shell.app.jam_view.source.timing;
+    if timing.primary_kick_anchor_count > 0 && timing.primary_backbeat_anchor_count > 0 {
+        "kick+bb"
+    } else if timing.primary_kick_anchor_count > 0 {
+        "kick"
+    } else if timing.primary_backbeat_anchor_count > 0 {
+        "backbeat"
+    } else if timing.primary_transient_anchor_count > 0 {
+        "transient"
+    } else {
+        "no anchor"
+    }
 }
 
 fn source_timing_clock_line(shell: &JamShellState) -> String {
@@ -298,14 +329,6 @@ fn jam_source_timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'s
 
 fn source_timing_policy_cue_label(policy: &str) -> &'static str {
     crate::source_timing_cues::source_timing_policy_cue_label(policy)
-}
-
-fn source_timing_policy_display_label(policy: &'static str) -> &'static str {
-    match policy {
-        "manual_confirm" => "manual confirm",
-        "fallback_grid" => "fallback grid",
-        other => other,
-    }
 }
 
 fn source_timing_policy_cue_style(policy: &str) -> Style {

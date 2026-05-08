@@ -84,6 +84,9 @@ It must expose:
   musician-readable timing cue such as `grid locked`, `needs confirm`, or
   `listen first`, plus timing quality, degraded policy, and at most one primary
   timing warning code
+- Jam may collapse the timing cue to an instrument-sized line such as
+  `timing needs confirm | low | kick+bb`; the Source screen should carry the
+  slightly fuller anchor count such as `anchors 2 kick+bb`
 - compact source timing clock in Jam perform / inspect views when available:
   current beat, bar, and phrase as derived from the existing app transport and
   Source Graph timing state; show an unavailable cue instead of pretending the

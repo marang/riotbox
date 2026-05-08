@@ -129,6 +129,52 @@ fn source_graph_with_feral_capture_evidence() -> SourceGraph {
         break_rebuild_potential: QualityClass::High,
         warnings: vec![],
     };
+    graph.timing.bpm_estimate = Some(128.0);
+    graph.timing.bpm_confidence = 0.88;
+    graph.timing.quality = crate::source_graph::TimingQuality::High;
+    graph.timing.degraded_policy = crate::source_graph::TimingDegradedPolicy::Locked;
+    graph.timing.primary_hypothesis_id = Some("timing-primary".into());
+    graph.timing.hypotheses.push(crate::source_graph::TimingHypothesis {
+        hypothesis_id: "timing-primary".into(),
+        kind: crate::source_graph::TimingHypothesisKind::Primary,
+        bpm: 128.0,
+        meter: crate::source_graph::MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.88,
+        score: 0.82,
+        beat_grid: Vec::new(),
+        bar_grid: Vec::new(),
+        phrase_grid: Vec::new(),
+        anchors: vec![
+            crate::source_graph::SourceTimingAnchor {
+                anchor_id: "kick-1".into(),
+                anchor_type: crate::source_graph::SourceTimingAnchorType::Kick,
+                time_seconds: 0.0,
+                bar_index: Some(1),
+                beat_index: Some(1),
+                confidence: 0.92,
+                strength: 0.9,
+                tags: vec!["kick_anchor".into()],
+            },
+            crate::source_graph::SourceTimingAnchor {
+                anchor_id: "backbeat-1".into(),
+                anchor_type: crate::source_graph::SourceTimingAnchorType::Backbeat,
+                time_seconds: 1.0,
+                bar_index: Some(1),
+                beat_index: Some(3),
+                confidence: 0.84,
+                strength: 0.8,
+                tags: vec!["backbeat_anchor".into()],
+            },
+        ],
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality: crate::source_graph::TimingQuality::High,
+        warnings: Vec::new(),
+        provenance: vec!["fixture.source_timing".into()],
+    });
 
     graph
 }
