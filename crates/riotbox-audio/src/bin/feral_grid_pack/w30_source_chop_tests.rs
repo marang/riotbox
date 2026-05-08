@@ -55,6 +55,35 @@ mod w30_source_chop_tests {
         assert!(pulse_metrics.rms > MIN_SIGNAL_RMS);
     }
 
+    #[test]
+    fn w30_source_chop_render_lands_on_selected_source_grid() {
+        let grid = Grid::new(128.0, 4, 2).expect("grid");
+        let pulse_source = delayed_pulse_source(frames_for_beats(128.0, 8), 0, 0.01, 0.65);
+        let pulse_preview = source_chop_preview_from_interleaved(
+            &pulse_source,
+            usize::from(CHANNEL_COUNT),
+            0,
+            frames_for_beats(128.0, 8) as u64,
+        )
+        .expect("pulse preview")
+        .0;
+
+        let render = render_w30_source_chop(&grid, pulse_preview);
+        let metrics = source_grid_output_drift_metrics(&render, &grid);
+
+        assert_eq!(metrics.beat_count, grid.total_beats);
+        assert!(
+            metrics.hit_ratio >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
+            "W-30 hit ratio {} should stay on the selected source grid",
+            metrics.hit_ratio
+        );
+        assert!(
+            metrics.max_peak_offset_ms <= SOURCE_GRID_OUTPUT_MAX_PEAK_OFFSET_MS,
+            "W-30 max peak offset {} ms should stay inside source-grid tolerance",
+            metrics.max_peak_offset_ms
+        );
+    }
+
     fn render_w30_source_chop_control(grid: &Grid) -> Vec<f32> {
         render_w30_preview_offline(
             &W30PreviewRenderState {
