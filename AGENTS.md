@@ -395,6 +395,7 @@ just user-session-observer-validator-fixtures
 just source-timing-probe-json-validator-fixtures
 just generated-source-timing-probe-json-smoke
 just generated-degraded-source-timing-probe-json-smoke
+just generated-ambiguous-source-timing-probe-json-smoke
 just listening-manifest-validator-fixtures
 just p011-exit-evidence-manifest
 just p011-exit-evidence-manifest-validator-fixtures
