@@ -375,7 +375,7 @@ fn renders_source_shell_snapshot_with_missing_source_timing_summary() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("readiness not available | trust unknown"), "{rendered}");
-    assert!(rendered.contains("mode unknown | warning none"), "{rendered}");
+    assert!(rendered.contains("mode disabled | warning none"), "{rendered}");
     assert!(rendered.contains("no timing information available"), "{rendered}");
 }
 

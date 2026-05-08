@@ -16,7 +16,7 @@ impl Default for SourceTimingSummaryView {
         Self {
             cue: "not available".into(),
             quality: "unknown".into(),
-            degraded_policy: "unknown".into(),
+            degraded_policy: "disabled".into(),
             primary_warning: None,
             primary_anchor_count: 0,
             primary_kick_anchor_count: 0,
@@ -87,6 +87,19 @@ impl SourceTimingSummaryView {
                 primary_transient_anchor_count,
             ),
         }
+    }
+}
+
+#[cfg(test)]
+mod source_timing_summary_tests {
+    use super::*;
+
+    #[test]
+    fn default_summary_keeps_policy_and_cue_contract_aligned() {
+        let timing = SourceTimingSummaryView::default();
+
+        assert_eq!(timing.degraded_policy, "disabled");
+        assert_eq!(timing.cue, "not available");
     }
 }
 

@@ -478,4 +478,5 @@ fn attach_source_timing(
     }
 
     shell.app.source_graph = Some(graph);
+    shell.app.refresh_view();
 }
