@@ -166,17 +166,16 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
     let Some(graph) = shell.app.source_graph.as_ref() else {
         return Value::Null;
     };
-    let degraded_policy =
-        observer_timing_degraded_policy_label(&graph.timing.effective_degraded_policy());
+    let timing = &shell.app.jam_view.source.timing;
 
     json!({
         "present": true,
         "source_id": graph.source.source_id.to_string(),
         "bpm_estimate": graph.timing.bpm_estimate,
         "bpm_confidence": graph.timing.bpm_confidence,
-        "quality": observer_timing_quality_label(&graph.timing.effective_timing_quality()),
-        "degraded_policy": degraded_policy,
-        "cue": crate::source_timing_cues::source_timing_policy_cue_label(degraded_policy),
+        "quality": timing.quality.as_str(),
+        "degraded_policy": timing.degraded_policy.as_str(),
+        "cue": timing.cue.as_str(),
         "beat_status": observer_source_timing_beat_status(graph),
         "beat_count": graph.timing.beat_grid.len(),
         "downbeat_status": observer_source_timing_downbeat_status(graph),
@@ -185,12 +184,8 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "phrase_count": graph.timing.phrase_grid.len(),
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
-        "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(graph),
-        "primary_warning_code": graph
-            .timing
-            .warnings
-            .first()
-            .map(|warning| observer_timing_warning_code_label(&warning.code)),
+        "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(timing),
+        "primary_warning_code": timing.primary_warning.as_deref(),
         "warning_codes": graph
             .timing
             .warnings
@@ -201,37 +196,14 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
 }
 
 fn source_timing_anchor_evidence_observer_snapshot(
-    graph: &riotbox_core::source_graph::SourceGraph,
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> Value {
-    let anchors = graph
-        .timing
-        .primary_hypothesis()
-        .map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
     json!({
-        "primary_anchor_count": anchors.len(),
-        "primary_kick_anchor_count": count_source_timing_anchor_type(
-            anchors,
-            riotbox_core::source_graph::SourceTimingAnchorType::Kick,
-        ),
-        "primary_backbeat_anchor_count": count_source_timing_anchor_type(
-            anchors,
-            riotbox_core::source_graph::SourceTimingAnchorType::Backbeat,
-        ),
-        "primary_transient_anchor_count": count_source_timing_anchor_type(
-            anchors,
-            riotbox_core::source_graph::SourceTimingAnchorType::TransientCluster,
-        ),
+        "primary_anchor_count": timing.primary_anchor_count,
+        "primary_kick_anchor_count": timing.primary_kick_anchor_count,
+        "primary_backbeat_anchor_count": timing.primary_backbeat_anchor_count,
+        "primary_transient_anchor_count": timing.primary_transient_anchor_count,
     })
-}
-
-fn count_source_timing_anchor_type(
-    anchors: &[riotbox_core::source_graph::SourceTimingAnchor],
-    anchor_type: riotbox_core::source_graph::SourceTimingAnchorType,
-) -> usize {
-    anchors
-        .iter()
-        .filter(|anchor| anchor.anchor_type == anchor_type)
-        .count()
 }
 
 fn observer_source_timing_beat_status(
@@ -272,30 +244,6 @@ fn observer_source_timing_phrase_status(
         return "phrase_locked";
     }
     "unknown"
-}
-
-fn observer_timing_quality_label(
-    quality: &riotbox_core::source_graph::TimingQuality,
-) -> &'static str {
-    match quality {
-        riotbox_core::source_graph::TimingQuality::Low => "low",
-        riotbox_core::source_graph::TimingQuality::Medium => "medium",
-        riotbox_core::source_graph::TimingQuality::High => "high",
-        riotbox_core::source_graph::TimingQuality::Unknown => "unknown",
-    }
-}
-
-fn observer_timing_degraded_policy_label(
-    policy: &riotbox_core::source_graph::TimingDegradedPolicy,
-) -> &'static str {
-    match policy {
-        riotbox_core::source_graph::TimingDegradedPolicy::Locked => "locked",
-        riotbox_core::source_graph::TimingDegradedPolicy::Cautious => "cautious",
-        riotbox_core::source_graph::TimingDegradedPolicy::ManualConfirm => "manual_confirm",
-        riotbox_core::source_graph::TimingDegradedPolicy::FallbackGrid => "fallback_grid",
-        riotbox_core::source_graph::TimingDegradedPolicy::Disabled => "disabled",
-        riotbox_core::source_graph::TimingDegradedPolicy::Unknown => "unknown",
-    }
 }
 
 fn observer_timing_warning_code_label(
