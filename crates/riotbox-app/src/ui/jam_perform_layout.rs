@@ -154,17 +154,19 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
             Line::from("1 [Space] start transport"),
             Line::from("2 [f] queue one first fill"),
             Line::from("3 [2] watch Log when it lands on the next bar"),
-            Line::from("Goal: get one obvious first change before doing anything else"),
+            Line::from(source_timing_help_line(shell)),
         ],
         Some(FirstRunOnrampStage::QueuedFirstMove) => vec![
             Line::from("Your first move is armed."),
             Line::from("Let transport cross the next bar so the fill can actually land."),
             Line::from("Then [2] confirm it in Log and decide: [c] capture it or [u] undo it."),
+            Line::from(source_timing_help_line(shell)),
         ],
         Some(FirstRunOnrampStage::FirstResult) => vec![
             Line::from(format!("What changed: {}", latest_landed_text(shell))),
             Line::from("What next: [c] capture it or [u] undo it if it missed."),
             Line::from("Then try one more move: [y] jump or [g] follow."),
+            Line::from(source_timing_help_line(shell)),
         ],
         None => Vec::new(),
     };

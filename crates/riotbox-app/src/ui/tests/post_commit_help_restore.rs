@@ -253,6 +253,10 @@ fn renders_help_overlay_with_first_run_guidance() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("First run"), "{rendered}");
+    assert!(
+        rendered.contains("Timing: needs confirm | source b32 bar8 p1"),
+        "{rendered}"
+    );
     assert!(rendered.contains("space: start transport"), "{rendered}");
     assert!(rendered.contains("f: queue one first fill"), "{rendered}");
     assert!(
@@ -261,6 +265,27 @@ fn renders_help_overlay_with_first_run_guidance() {
     );
     assert!(
         rendered.contains("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
+        "{rendered}"
+    );
+}
+
+#[test]
+fn renders_help_overlay_with_locked_source_timing_guidance() {
+    let mut shell = first_run_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("first-run shell should include source graph");
+    graph.timing.quality = TimingQuality::High;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+    graph.timing.warnings.clear();
+    shell.show_help = true;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(
+        rendered.contains("Timing: grid locked | source b32 bar8 p1 | grid can steer moves"),
         "{rendered}"
     );
 }

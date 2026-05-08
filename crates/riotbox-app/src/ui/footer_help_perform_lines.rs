@@ -120,6 +120,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(stage) = first_run_onramp_stage(shell) {
         lines.push(Line::from(""));
         lines.push(Line::from("First run"));
+        lines.push(Line::from(source_timing_help_line(shell)));
         match stage {
             FirstRunOnrampStage::Start => {
                 lines.push(line_with_primary_key_prefixes("space: start transport"));
@@ -145,6 +146,9 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
                 ));
             }
         }
+        lines.push(Line::from(
+            "After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5",
+        ));
     }
 
     if let Some(recovery_help_lines) = recovery_help_lines(shell) {
@@ -174,8 +178,6 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             "{} | 2: confirm in Log",
             render_gesture_items(HELP_PRIMARY_CONFIRM_GESTURES, ": ")
         )),
-        Line::from(""),
-        Line::from("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
         Line::from(""),
         Line::from("Advanced / lane gestures"),
         line_with_primary_key_prefixes(format!("r: {}", shell.launch_mode.refresh_verb())),

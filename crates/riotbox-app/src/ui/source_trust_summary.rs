@@ -215,6 +215,24 @@ fn source_timing_clock_compact(shell: &JamShellState) -> String {
     source_timing_clock_label(shell, true)
 }
 
+fn source_timing_help_line(shell: &JamShellState) -> String {
+    let trust = trust_summary(shell);
+    let cue = source_timing_policy_cue_label(trust.source_timing_policy);
+    let meaning = match trust.source_timing_policy {
+        "locked" => "grid can steer moves",
+        "manual_confirm" => "confirm before trusting grid",
+        "cautious" => "listen before trusting grid",
+        "fallback_grid" => "using safe fallback grid",
+        "disabled" => "timing unavailable",
+        _ => "timing trust unknown",
+    };
+
+    format!(
+        "Timing: {cue} | {} | {meaning}",
+        source_timing_clock_compact(shell)
+    )
+}
+
 fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
     let Some(graph) = shell.app.source_graph.as_ref() else {
         return if compact {
