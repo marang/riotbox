@@ -675,6 +675,7 @@ Today the repo already has:
 - `just source-timing-probe-json-validator-fixtures` validates the source timing probe CLI JSON contract, including cue/readiness consistency and machine-readable score fields, and is wired into `just audio-qa-ci`
 - `just generated-source-timing-probe-json-smoke` runs the real source timing probe CLI against a deterministic generated WAV, validates the emitted JSON contract, and asserts stable grid-locked timing evidence before the aggregate audio QA gate can pass
 - `just generated-degraded-source-timing-probe-json-smoke` runs the same CLI contract against generated silence and asserts degraded/manual-confirm evidence so weak material cannot falsely pass as grid-locked
+- `just generated-ambiguous-source-timing-probe-json-smoke` runs a flat-pulse generated source with strong beat evidence but weak downbeat/phrase evidence and asserts it remains manual-confirm instead of falsely becoming grid-locked
 - strict observer/audio correlation now rejects malformed observer stream evidence before accepting committed control-path evidence
 - `just user-session-observer-validator-fixtures` validates the committed observer fixture streams plus valid and invalid recovery-snapshot fixtures, and is wired into `just audio-qa-ci`
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible
