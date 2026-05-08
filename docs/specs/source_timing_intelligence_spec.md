@@ -202,6 +202,30 @@ Rules:
   is a QA / future-TUI summary only; it must not become a hidden timing source
   separate from the Source Graph timing hypotheses.
 
+### 4.3 Presentation Summary Contract
+
+The Source Graph remains the durable timing truth, but musician-facing surfaces
+must not each re-infer their own cue language from raw timing fields.
+
+Use the shared Jam source timing summary, currently
+`SourceTimingSummaryView`, as the presentation contract for:
+
+- TUI Jam / Help / Source timing cues
+- user-session observer cue, quality, degraded-policy, primary-warning, and
+  compact primary-anchor evidence
+- observer/audio correlation control-path timing readiness
+
+That summary may collapse Source Graph detail into bounded musician language
+such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or
+`not available`. Detailed diagnostics such as raw beat-grid count, bar-grid
+count, phrase-grid count, hypothesis ids, and full warning-code lists should
+still come directly from Source Graph timing state when a surface needs them.
+
+Do not add another UI-only or observer-only timing-label mapper unless it wraps
+the shared summary or is documented here as a temporary migration seam. Any new
+policy label must keep the policy-to-cue contract aligned across TUI, observer
+NDJSON, observer/audio JSON summaries, and validators.
+
 ---
 
 ## 5. Source Anchors
@@ -573,7 +597,10 @@ bounded BPM policy:
   lane-recipe QA proof, not a full source-derived MC-202 question/answer
   placement engine.
 - observer/audio correlation should compare app-observed Source Timing readiness
-  with manifest-side Source Timing evidence when both are present. The current
+  with manifest-side Source Timing evidence when both are present. The
+  app-observed cue, quality, degraded policy, primary warning, and compact
+  primary-anchor evidence should come from the shared Jam source timing summary,
+  while raw grid/hypothesis counts remain Source Graph diagnostics. The current
   summary contract reports this as `output_path.source_timing_alignment`, using
   BPM delta plus normalized warning-code overlap as bounded proof that the
   control path and generated output path are using compatible timing evidence.
@@ -590,9 +617,9 @@ bounded BPM policy:
   phrase-uncertain states without scraping TUI text.
 - app observer snapshots should also preserve compact primary timing-anchor
   evidence as `anchor_evidence`: total primary anchors plus kick, backbeat, and
-  transient-cluster counts. This is a control-path proof that the app observed
-  real anchor evidence or honestly observed none; it is not a replacement for
-  manifest-side output comparison.
+  transient-cluster counts from the shared Jam source timing summary. This is a
+  control-path proof that the app observed real anchor evidence or honestly
+  observed none; it is not a replacement for manifest-side output comparison.
 - generated Feral grid QA should prove both the conservative fallback path and a
   strict auto-grid path: weak or manual-confirm timing must stay
   `static_default`, while long stable timing may use `source_timing` only when

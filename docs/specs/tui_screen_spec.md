@@ -84,6 +84,10 @@ It must expose:
   musician-readable timing cue such as `grid locked`, `needs confirm`, or
   `listen first`, plus timing quality, degraded policy, and at most one primary
   timing warning code
+- source timing presentation language must come from the shared Jam source
+  timing summary, not from screen-local Source Graph remapping. This keeps Jam,
+  Help, Source, observer snapshots, and observer/audio QA aligned while the
+  Source Graph remains the durable timing truth.
 - Jam may collapse the timing cue to an instrument-sized line such as
   `timing needs confirm | low | kick+bb`; the Source screen should carry the
   slightly fuller anchor count such as `anchors 2 kick+bb`
@@ -143,7 +147,9 @@ Show:
 - timing quality, degraded policy, primary hypothesis cue, and compact timing
   warning codes when Source Timing Intelligence evidence is available; the
   Source screen may also show the same compact musician-readable timing cue as
-  Jam so users do not have to decode policy names first
+  Jam so users do not have to decode policy names first. That compact cue should
+  be read from the shared Jam source timing summary; raw hypothesis, grid, and
+  warning detail may still be read from the Source Graph for diagnosis.
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings

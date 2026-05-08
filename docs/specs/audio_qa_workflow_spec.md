@@ -663,6 +663,11 @@ Today the repo already has:
   manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
   strict correlation treats real mismatches as output-path failures while keeping
   missing or non-comparable evidence reviewable for older/non-Feral packs
+- observer-side Source Timing readiness fields used for cue, quality,
+  degraded policy, primary warning, and compact primary-anchor evidence should
+  come from the shared Jam source timing summary, not from a separate observer
+  mapper. Beat/downbeat/phrase counts and full warning-code lists remain raw
+  Source Graph diagnostics when included in the observer stream.
 - observer/audio summaries can also compare compact observer-side and
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`; this records partial, aligned,
@@ -679,7 +684,14 @@ Today the repo already has:
 - the observer/audio JSON summary v1 contract is documented in `docs/benchmarks/observer_audio_summary_json_contract_2026-04-29.md`
 - the observer/audio JSON fixture smoke also runs the repo-local `scripts/validate_observer_audio_summary_json.py` contract validator without adding an external schema dependency
 - validator fixtures cover both a valid failure summary with `null` metrics and a rejected invalid schema marker
-- a repo-local `scripts/validate_user_session_observer_ndjson.py` helper validates the `riotbox.user_session_observer.v1` event stream shape, including recovery snapshot candidate `decision` labels, compact replay-family diagnostics, optional Source Timing Intelligence readiness plus musician-facing timing `cue` when a Source Graph is attached, compact source-timing anchor-evidence counts, policy-to-cue consistency, and optional read-only `manual_choice_dry_run` evidence when snapshots are present
+- a repo-local `scripts/validate_user_session_observer_ndjson.py` helper
+  validates the `riotbox.user_session_observer.v1` event stream shape,
+  including recovery snapshot candidate `decision` labels, compact
+  replay-family diagnostics, optional Source Timing Intelligence readiness plus
+  musician-facing timing `cue` when a Source Graph is attached, compact
+  source-timing anchor-evidence counts from the shared Jam source timing
+  summary, policy-to-cue consistency, and optional read-only
+  `manual_choice_dry_run` evidence when snapshots are present
 - `just source-timing-probe-json-validator-fixtures` validates the source timing probe CLI JSON contract, including cue/readiness consistency, machine-readable score fields, and primary anchor-evidence shape, and is wired into `just audio-qa-ci`
 - `just generated-source-timing-probe-json-smoke` runs the real source timing probe CLI against a deterministic generated WAV, validates the emitted JSON contract, and asserts stable grid-locked timing plus visible kick/backbeat anchor evidence before the aggregate audio QA gate can pass
 - `just generated-degraded-source-timing-probe-json-smoke` runs the same CLI contract against generated silence and asserts degraded/manual-confirm evidence so weak material cannot falsely pass as grid-locked
