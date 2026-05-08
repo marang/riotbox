@@ -55,6 +55,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             "timing {} | sections {}",
             trust.timing_quality, trust.section_quality
         )),
+        Line::from(source_timing_readiness_line(shell)),
         Line::from(format!(
             "loops {} | hooks {}",
             shell.app.jam_view.source.loop_candidate_count,
@@ -333,4 +334,3 @@ fn render_inspect_detail_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShell
     frame.render_widget(material, columns[1]);
     frame.render_widget(diagnostics, columns[2]);
 }
-

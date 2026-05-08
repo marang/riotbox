@@ -139,6 +139,9 @@ struct TrustSummary {
     warning_count: usize,
     timing_quality: &'static str,
     section_quality: &'static str,
+    source_timing_quality: &'static str,
+    source_timing_policy: &'static str,
+    source_timing_warning: Option<&'static str>,
 }
 
 fn trust_summary(shell: &JamShellState) -> TrustSummary {
@@ -159,6 +162,17 @@ fn trust_summary(shell: &JamShellState) -> TrustSummary {
                 warning_count: graph.analysis_summary.warnings.len(),
                 timing_quality: quality_label(&graph.analysis_summary.timing_quality),
                 section_quality: quality_label(&graph.analysis_summary.section_quality),
+                source_timing_quality: jam_source_timing_quality_label(
+                    &graph.timing.effective_timing_quality(),
+                ),
+                source_timing_policy: jam_source_timing_degraded_policy_label(
+                    &graph.timing.effective_degraded_policy(),
+                ),
+                source_timing_warning: graph
+                    .timing
+                    .warnings
+                    .first()
+                    .map(|warning| jam_source_timing_warning_code_label(&warning.code)),
             }
         }
         None => TrustSummary {
@@ -167,6 +181,9 @@ fn trust_summary(shell: &JamShellState) -> TrustSummary {
             warning_count: 0,
             timing_quality: "unknown",
             section_quality: "unknown",
+            source_timing_quality: "unknown",
+            source_timing_policy: "unknown",
+            source_timing_warning: None,
         },
     }
 }
@@ -177,6 +194,55 @@ fn quality_label(quality: &QualityClass) -> &'static str {
         QualityClass::Medium => "medium",
         QualityClass::High => "high",
         QualityClass::Unknown => "unknown",
+    }
+}
+
+fn source_timing_readiness_line(shell: &JamShellState) -> String {
+    let trust = trust_summary(shell);
+    format!(
+        "source timing {} | policy {}",
+        trust.source_timing_quality, trust.source_timing_policy
+    )
+}
+
+fn source_timing_warning_line(shell: &JamShellState) -> String {
+    let trust = trust_summary(shell);
+    trust
+        .source_timing_warning
+        .map(|warning| format!("timing warning {warning}"))
+        .unwrap_or_else(|| "timing warning none".into())
+}
+
+fn jam_source_timing_quality_label(quality: &TimingQuality) -> &'static str {
+    match quality {
+        TimingQuality::Low => "low",
+        TimingQuality::Medium => "medium",
+        TimingQuality::High => "high",
+        TimingQuality::Unknown => "unknown",
+    }
+}
+
+fn jam_source_timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'static str {
+    match policy {
+        TimingDegradedPolicy::Locked => "locked",
+        TimingDegradedPolicy::Cautious => "cautious",
+        TimingDegradedPolicy::ManualConfirm => "manual_confirm",
+        TimingDegradedPolicy::FallbackGrid => "fallback_grid",
+        TimingDegradedPolicy::Disabled => "disabled",
+        TimingDegradedPolicy::Unknown => "unknown",
+    }
+}
+
+fn jam_source_timing_warning_code_label(code: &TimingWarningCode) -> &'static str {
+    match code {
+        TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
+        TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
+        TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",
+        TimingWarningCode::HalfTimePossible => "half_time_possible",
+        TimingWarningCode::DoubleTimePossible => "double_time_possible",
+        TimingWarningCode::DriftHigh => "drift_high",
+        TimingWarningCode::PhraseUncertain => "phrase_uncertain",
+        TimingWarningCode::LowTimingConfidence => "low_timing_confidence",
     }
 }
 
