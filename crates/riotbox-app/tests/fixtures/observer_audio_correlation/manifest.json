@@ -18,6 +18,13 @@
       "low_band": {
         "rms": 0.0612
       }
+    },
+    "source_grid_output_drift": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
     }
   }
 }

@@ -61,6 +61,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_number(metrics, "full_mix_rms")
     require_optional_number(metrics, "full_mix_low_band_rms")
     require_optional_number(metrics, "mc202_question_answer_delta_rms")
+    require_optional_source_grid_output_drift(metrics)
     require_optional_number(metrics, "w30_candidate_rms")
     require_optional_number(metrics, "w30_candidate_active_sample_ratio")
     require_optional_number(metrics, "w30_rms_delta")
@@ -111,6 +112,25 @@ def require_optional_number(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
         raise TypeError(f"{field} must be a number or null")
+
+
+def require_optional_source_grid_output_drift(parent: dict[str, Any]) -> None:
+    field = "source_grid_output_drift"
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    drift = require_object(value, field)
+    require_number(drift, "hit_ratio")
+    require_number(drift, "max_peak_offset_ms")
+    require_number(drift, "max_allowed_peak_offset_ms")
+
+
+def require_number(parent: dict[str, Any], field: str) -> None:
+    value = parent.get(field)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise TypeError(f"{field} must be a number")
 
 
 if __name__ == "__main__":

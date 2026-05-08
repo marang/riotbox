@@ -15,6 +15,9 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Artifact count: `{}`\n\
          - Full mix RMS: `{}`\n\
          - Full mix low-band RMS: `{}`\n\n\
+         - Source-grid output hit ratio: `{}`\n\
+         - Source-grid output max peak offset: `{}`\n\
+         - Source-grid output max allowed offset: `{}`\n\n\
          - W-30 candidate RMS: `{}`\n\
          - W-30 candidate active-sample ratio: `{}`\n\
          - W-30 RMS delta: `{}`\n\n\
@@ -43,6 +46,9 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         summary.artifact_count,
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
+        format_source_grid_hit_ratio(summary),
+        format_source_grid_max_peak_offset(summary),
+        format_source_grid_max_allowed_offset(summary),
         format_optional_f64(summary.w30_candidate_rms),
         format_optional_f64(summary.w30_candidate_active_sample_ratio),
         format_optional_f64(summary.w30_rms_delta),
@@ -76,6 +82,11 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "full_mix_rms": summary.full_mix_rms,
                 "full_mix_low_band_rms": summary.full_mix_low_band_rms,
                 "mc202_question_answer_delta_rms": summary.mc202_question_answer_delta_rms,
+                "source_grid_output_drift": summary.source_grid_output_drift.as_ref().map(|drift| serde_json::json!({
+                    "hit_ratio": drift.hit_ratio,
+                    "max_peak_offset_ms": drift.max_peak_offset_ms,
+                    "max_allowed_peak_offset_ms": drift.max_allowed_peak_offset_ms,
+                })),
                 "w30_candidate_rms": summary.w30_candidate_rms,
                 "w30_candidate_active_sample_ratio": summary.w30_candidate_active_sample_ratio,
                 "w30_rms_delta": summary.w30_rms_delta,
@@ -88,6 +99,33 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
+}
+
+fn format_source_grid_hit_ratio(summary: &CorrelationSummary) -> String {
+    format_optional_f64(
+        summary
+            .source_grid_output_drift
+            .as_ref()
+            .map(|drift| drift.hit_ratio),
+    )
+}
+
+fn format_source_grid_max_peak_offset(summary: &CorrelationSummary) -> String {
+    format_optional_f64(
+        summary
+            .source_grid_output_drift
+            .as_ref()
+            .map(|drift| drift.max_peak_offset_ms),
+    )
+}
+
+fn format_source_grid_max_allowed_offset(summary: &CorrelationSummary) -> String {
+    format_optional_f64(
+        summary
+            .source_grid_output_drift
+            .as_ref()
+            .map(|drift| drift.max_allowed_peak_offset_ms),
+    )
 }
 
 fn format_output_path_issues(summary: &CorrelationSummary) -> String {
@@ -127,10 +165,37 @@ fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
 }
 
 fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
-    metric_failures([
+    let mut failures = metric_failures([
         ("full_mix_rms", summary.full_mix_rms),
         ("full_mix_low_band_rms", summary.full_mix_low_band_rms),
-    ])
+    ]);
+    failures.extend(source_grid_output_drift_failures(summary));
+    failures
+}
+
+fn source_grid_output_drift_failures(summary: &CorrelationSummary) -> Vec<String> {
+    if summary.source_grid_output_drift_malformed {
+        return vec!["source_grid_output_drift=malformed".to_string()];
+    }
+
+    let Some(drift) = &summary.source_grid_output_drift else {
+        return Vec::new();
+    };
+
+    let mut failures = Vec::new();
+    if drift.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
+        failures.push(format!(
+            "source_grid_output_drift.hit_ratio={:.6} < floor {:.6}",
+            drift.hit_ratio, SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
+        ));
+    }
+    if drift.max_peak_offset_ms > drift.max_allowed_peak_offset_ms {
+        failures.push(format!(
+            "source_grid_output_drift.max_peak_offset_ms={:.6} > allowed {:.6}",
+            drift.max_peak_offset_ms, drift.max_allowed_peak_offset_ms
+        ));
+    }
+    failures
 }
 
 fn w30_source_preview_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
