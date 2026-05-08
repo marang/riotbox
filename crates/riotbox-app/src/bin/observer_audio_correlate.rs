@@ -70,5 +70,8 @@ mod lane_recipe_tests;
 #[path = "observer_audio_correlate/source_grid_output_drift_tests.rs"]
 mod source_grid_output_drift_tests;
 #[cfg(test)]
+#[path = "observer_audio_correlate/source_timing_evidence_tests.rs"]
+mod source_timing_evidence_tests;
+#[cfg(test)]
 #[path = "observer_audio_correlate/tests.rs"]
 mod tests;

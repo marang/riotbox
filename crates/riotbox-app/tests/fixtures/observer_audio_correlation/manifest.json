@@ -9,6 +9,27 @@
     { "role": "report", "kind": "markdown", "path": "report.md" },
     { "role": "manifest", "kind": "json", "path": "manifest.json" }
   ],
+  "source_timing": {
+    "schema": "riotbox.source_timing_probe_readiness.v1",
+    "schema_version": 1,
+    "source_id": "source.wav",
+    "policy_profile": "dance_loop_auto_readiness",
+    "readiness": "weak",
+    "requires_manual_confirm": true,
+    "primary_bpm": 128.397,
+    "bpm_agrees_with_grid": true,
+    "beat_status": "stable",
+    "downbeat_status": "ambiguous",
+    "primary_downbeat_offset_beats": 0,
+    "confidence_result": "candidate_ambiguous",
+    "drift_status": "stable",
+    "phrase_status": "ambiguous_downbeat",
+    "alternate_evidence_count": 2,
+    "warning_codes": [
+      "PhraseUncertain",
+      "AmbiguousDownbeat"
+    ]
+  },
   "metrics": {
     "full_grid_mix": {
       "signal": {

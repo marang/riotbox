@@ -148,6 +148,7 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
     assert!(summary.full_mix_low_band_rms.is_some_and(|rms| rms > 0.01));
     assert_eq!(summary.mc202_question_answer_delta_rms, None);
+    assert!(summary.source_timing.is_some());
     assert_eq!(
         summary.source_grid_output_drift,
         Some(SourceGridOutputDriftEvidence {
@@ -156,6 +157,7 @@ fn summarizes_committed_fixture_observer_and_manifest() {
             max_allowed_peak_offset_ms: 70.0,
         })
     );
+    assert!(markdown.contains("Source timing phrase: `ambiguous_downbeat"));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
     assert!(markdown.contains("Control path present: `yes`"));
@@ -357,6 +359,17 @@ fn synthetic_manifest() -> String {
   "pack_id": "feral-grid-demo",
   "result": "pass",
   "artifacts": [{}, {}, {}, {}, {}],
+  "source_timing": {
+    "readiness": "weak",
+    "requires_manual_confirm": true,
+    "beat_status": "stable",
+    "downbeat_status": "ambiguous",
+    "primary_downbeat_offset_beats": 0,
+    "confidence_result": "candidate_ambiguous",
+    "drift_status": "stable",
+    "phrase_status": "ambiguous_downbeat",
+    "alternate_evidence_count": 2
+  },
   "metrics": {
     "full_grid_mix": {
       "signal": { "rms": 0.1 },

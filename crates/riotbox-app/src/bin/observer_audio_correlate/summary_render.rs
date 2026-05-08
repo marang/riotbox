@@ -15,6 +15,9 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Artifact count: `{}`\n\
          - Full mix RMS: `{}`\n\
          - Full mix low-band RMS: `{}`\n\n\
+         - Source timing readiness: `{}`\n\
+         - Source timing downbeat: `{}`\n\
+         - Source timing phrase: `{}`\n\n\
          - Source-grid output hit ratio: `{}`\n\
          - Source-grid output max peak offset: `{}`\n\
          - Source-grid output max allowed offset: `{}`\n\n\
@@ -46,6 +49,9 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         summary.artifact_count,
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
+        format_source_timing_readiness(summary),
+        format_source_timing_downbeat(summary),
+        format_source_timing_phrase(summary),
         format_source_grid_hit_ratio(summary),
         format_source_grid_max_peak_offset(summary),
         format_source_grid_max_allowed_offset(summary),
@@ -78,6 +84,17 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "pack_id": &summary.pack_id,
             "manifest_result": &summary.manifest_result,
             "artifact_count": summary.artifact_count,
+            "source_timing": summary.source_timing.as_ref().map(|timing| serde_json::json!({
+                "readiness": &timing.readiness,
+                "requires_manual_confirm": timing.requires_manual_confirm,
+                "beat_status": &timing.beat_status,
+                "downbeat_status": &timing.downbeat_status,
+                "primary_downbeat_offset_beats": timing.primary_downbeat_offset_beats,
+                "confidence_result": &timing.confidence_result,
+                "drift_status": &timing.drift_status,
+                "phrase_status": &timing.phrase_status,
+                "alternate_evidence_count": timing.alternate_evidence_count,
+            })),
             "metrics": {
                 "full_mix_rms": summary.full_mix_rms,
                 "full_mix_low_band_rms": summary.full_mix_low_band_rms,
@@ -99,6 +116,58 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
+}
+
+fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {
+    if summary.source_timing_malformed {
+        return "malformed".to_string();
+    }
+    summary.source_timing.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |timing| {
+            format!(
+                "{} manual_confirm={}",
+                timing.readiness,
+                yes_no(timing.requires_manual_confirm)
+            )
+        },
+    )
+}
+
+fn format_source_timing_downbeat(summary: &CorrelationSummary) -> String {
+    if summary.source_timing_malformed {
+        return "malformed".to_string();
+    }
+    summary.source_timing.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |timing| {
+            format!(
+                "{} offset={}",
+                timing.downbeat_status,
+                timing
+                    .primary_downbeat_offset_beats
+                    .map_or_else(|| "unknown".to_string(), |value| value.to_string())
+            )
+        },
+    )
+}
+
+fn format_source_timing_phrase(summary: &CorrelationSummary) -> String {
+    if summary.source_timing_malformed {
+        return "malformed".to_string();
+    }
+    summary.source_timing.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |timing| {
+            format!(
+                "{} confidence={} drift={} alternates={}",
+                timing.phrase_status,
+                timing.confidence_result,
+                timing.drift_status,
+                timing.alternate_evidence_count
+            )
+        },
+    )
 }
 
 fn format_source_grid_hit_ratio(summary: &CorrelationSummary) -> String {
@@ -169,6 +238,9 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
         ("full_mix_rms", summary.full_mix_rms),
         ("full_mix_low_band_rms", summary.full_mix_low_band_rms),
     ]);
+    if summary.source_timing_malformed {
+        failures.push("source_timing=malformed".to_string());
+    }
     failures.extend(source_grid_output_drift_failures(summary));
     failures
 }
