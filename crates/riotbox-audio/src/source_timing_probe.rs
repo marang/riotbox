@@ -192,4 +192,7 @@ fn onset_density(onset_count: usize, duration_seconds: f32) -> f32 {
 }
 
 #[cfg(test)]
+mod real_loop_readiness_tests;
+
+#[cfg(test)]
 mod tests;
