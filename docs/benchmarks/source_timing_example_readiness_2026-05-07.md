@@ -29,10 +29,14 @@ The Feral grid auto path uses `dance_loop_auto_readiness`, not the wider
 diagnostics because it preserves half-time / double-time alternatives more
 aggressively.
 
+Each generated manifest records that decision as
+`source_timing.policy_profile: dance_loop_auto_readiness`.
+
 The report values below come from each generated `manifest.json`:
 
 - `grid_bpm_source`
 - `bpm`
+- `source_timing.policy_profile`
 - `source_timing.primary_bpm`
 - `source_timing_bpm_delta`
 - `source_timing.bpm_agrees_with_grid`

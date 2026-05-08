@@ -487,6 +487,6 @@ fn source_timing_readiness_for_source(
     );
     source_timing_probe_readiness_report(
         &input,
-        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+        SOURCE_TIMING_POLICY_PROFILE.bpm_candidate_policy,
     )
 }

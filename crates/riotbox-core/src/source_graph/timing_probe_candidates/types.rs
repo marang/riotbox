@@ -26,6 +26,9 @@ impl Default for SourceTimingProbeBpmCandidatePolicy {
 }
 
 impl SourceTimingProbeBpmCandidatePolicy {
+    pub const BROAD_RESEARCH_PROFILE: &'static str = "broad_research";
+    pub const DANCE_LOOP_AUTO_READINESS_PROFILE: &'static str = "dance_loop_auto_readiness";
+
     #[must_use]
     pub const fn broad_research() -> Self {
         Self {
