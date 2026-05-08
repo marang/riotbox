@@ -18,6 +18,26 @@ from typing import Any
 SCHEMA_VERSION = 1
 SOURCE_TIMING_POLICY_PROFILES = {"broad_research", "dance_loop_auto_readiness"}
 SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
+SOURCE_TIMING_BEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
+SOURCE_TIMING_DOWNBEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
+SOURCE_TIMING_CONFIDENCE_RESULTS = {
+    "degraded",
+    "candidate_cautious",
+    "candidate_ambiguous",
+}
+SOURCE_TIMING_DRIFT_STATUSES = {
+    "unavailable",
+    "not_enough_material",
+    "stable",
+    "high",
+}
+SOURCE_TIMING_PHRASE_STATUSES = {
+    "unavailable",
+    "not_enough_material",
+    "ambiguous_downbeat",
+    "high_drift",
+    "stable",
+}
 
 
 def main() -> int:
@@ -131,6 +151,21 @@ def validate_source_timing(source_timing: Any) -> None:
         source_timing,
         "bpm_agrees_with_grid",
         "source_timing bpm_agrees_with_grid",
+    )
+    require_optional_non_negative_int_or_null(
+        source_timing,
+        "primary_downbeat_offset_beats",
+        "source_timing primary_downbeat_offset_beats",
+    )
+    require_one_of(source_timing, "beat_status", SOURCE_TIMING_BEAT_STATUSES)
+    require_one_of(source_timing, "downbeat_status", SOURCE_TIMING_DOWNBEAT_STATUSES)
+    require_one_of(source_timing, "confidence_result", SOURCE_TIMING_CONFIDENCE_RESULTS)
+    require_one_of(source_timing, "drift_status", SOURCE_TIMING_DRIFT_STATUSES)
+    require_one_of(source_timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
+    require_non_negative_int(
+        source_timing,
+        "alternate_evidence_count",
+        "source_timing",
     )
     require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
 
@@ -272,6 +307,18 @@ def require_optional_float_or_null(parent: dict[str, Any], field: str, name: str
     value = parent.get(field)
     if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
         raise TypeError(f"{name} must be a number or null")
+
+
+def require_optional_non_negative_int_or_null(
+    parent: dict[str, Any],
+    field: str,
+    name: str,
+) -> None:
+    value = parent.get(field)
+    if value is not None and (
+        not isinstance(value, int) or isinstance(value, bool) or value < 0
+    ):
+        raise TypeError(f"{name} must be a non-negative integer or null")
 
 
 if __name__ == "__main__":
