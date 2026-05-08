@@ -10,7 +10,7 @@ use ratatui::{
 use riotbox_audio::w30::W30PreviewRenderMode;
 use riotbox_core::source_graph::{
     DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint, TimingDegradedPolicy,
-    TimingQuality, TimingWarningCode,
+    TimingWarningCode,
 };
 use riotbox_core::{
     action::{ActionCommand, ActionStatus, GhostMode},

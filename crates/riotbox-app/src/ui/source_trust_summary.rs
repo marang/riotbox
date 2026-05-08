@@ -202,19 +202,6 @@ fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     ])
 }
 
-fn source_timing_anchor_compact(shell: &JamShellState) -> String {
-    let timing = &shell.app.jam_view.source.timing;
-    if timing.primary_anchor_count == 0 {
-        "anchors none".into()
-    } else {
-        format!(
-            "anchors {} {}",
-            timing.primary_anchor_count,
-            source_timing_anchor_kind_compact(shell)
-        )
-    }
-}
-
 fn source_timing_anchor_kind_compact(shell: &JamShellState) -> &'static str {
     let timing = &shell.app.jam_view.source.timing;
     if timing.primary_kick_anchor_count > 0 && timing.primary_backbeat_anchor_count > 0 {

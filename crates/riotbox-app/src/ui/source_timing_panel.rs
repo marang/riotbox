@@ -1,11 +1,10 @@
 fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let timing = &shell.app.jam_view.source.timing;
     match shell.app.source_graph.as_ref() {
         Some(graph) => vec![
             Line::from(format!(
                 "readiness {} | {} | conf {:.2}",
-                crate::source_timing_cues::source_timing_policy_cue_label(
-                    timing_degraded_policy_machine_label(&graph.timing.effective_degraded_policy())
-                ),
+                timing.cue,
                 graph
                     .timing
                     .bpm_estimate
@@ -23,19 +22,30 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .map(|meter| format!("{}/{}", meter.beats_per_bar, meter.beat_unit))
                     .unwrap_or_else(|| "unknown".into()),
                 graph.timing.hypotheses.len(),
-                source_timing_anchor_compact(shell)
+                timing.primary_anchor_cue
             )),
             Line::from(format!(
                 "mode {} | trust {}",
-                timing_degraded_policy_display_label(&graph.timing.effective_degraded_policy()),
-                timing_quality_label(&graph.timing.effective_timing_quality()),
+                source_timing_degraded_policy_display_label(&timing.degraded_policy),
+                timing.quality,
             )),
             Line::from(format!(
-                "warnings {}",
-                timing_warning_codes(&graph.timing.warnings)
+                "warning {}",
+                timing.primary_warning.as_deref().unwrap_or("none")
             )),
         ],
-        None => vec![Line::from("no timing information available")],
+        None => vec![
+            Line::from(format!(
+                "readiness {} | trust {}",
+                timing.cue, timing.quality
+            )),
+            Line::from(format!(
+                "mode {} | warning {}",
+                source_timing_degraded_policy_display_label(&timing.degraded_policy),
+                timing.primary_warning.as_deref().unwrap_or("none")
+            )),
+            Line::from("no timing information available"),
+        ],
     }
 }
 
@@ -90,58 +100,13 @@ fn phrase_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> &'sta
     "unknown"
 }
 
-fn timing_quality_label(quality: &TimingQuality) -> &'static str {
-    match quality {
-        TimingQuality::Low => "low",
-        TimingQuality::Medium => "medium",
-        TimingQuality::High => "high",
-        TimingQuality::Unknown => "unknown",
-    }
-}
-
-fn timing_degraded_policy_machine_label(policy: &TimingDegradedPolicy) -> &'static str {
+fn source_timing_degraded_policy_display_label(policy: &str) -> &'static str {
     match policy {
-        TimingDegradedPolicy::Locked => "locked",
-        TimingDegradedPolicy::Cautious => "cautious",
-        TimingDegradedPolicy::ManualConfirm => "manual_confirm",
-        TimingDegradedPolicy::FallbackGrid => "fallback_grid",
-        TimingDegradedPolicy::Disabled => "disabled",
-        TimingDegradedPolicy::Unknown => "unknown",
-    }
-}
-
-fn timing_degraded_policy_display_label(policy: &TimingDegradedPolicy) -> &'static str {
-    match policy {
-        TimingDegradedPolicy::Locked => "locked",
-        TimingDegradedPolicy::Cautious => "listen first",
-        TimingDegradedPolicy::ManualConfirm => "manual confirm",
-        TimingDegradedPolicy::FallbackGrid => "fallback grid",
-        TimingDegradedPolicy::Disabled => "disabled",
-        TimingDegradedPolicy::Unknown => "unknown",
-    }
-}
-
-fn timing_warning_codes(warnings: &[riotbox_core::source_graph::TimingWarning]) -> String {
-    if warnings.is_empty() {
-        return "none".into();
-    }
-
-    warnings
-        .iter()
-        .map(|warning| timing_warning_code_label(&warning.code))
-        .collect::<Vec<_>>()
-        .join(", ")
-}
-
-fn timing_warning_code_label(code: &TimingWarningCode) -> &'static str {
-    match code {
-        TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
-        TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
-        TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",
-        TimingWarningCode::HalfTimePossible => "half_time_possible",
-        TimingWarningCode::DoubleTimePossible => "double_time_possible",
-        TimingWarningCode::DriftHigh => "drift_high",
-        TimingWarningCode::PhraseUncertain => "phrase_uncertain",
-        TimingWarningCode::LowTimingConfidence => "low_timing_confidence",
+        "locked" => "locked",
+        "cautious" => "listen first",
+        "manual_confirm" => "manual confirm",
+        "fallback_grid" => "fallback grid",
+        "disabled" => "disabled",
+        _ => "unknown",
     }
 }
