@@ -16,7 +16,16 @@ struct CorrelationSummary {
     w30_candidate_rms: Option<f64>,
     w30_candidate_active_sample_ratio: Option<f64>,
     w30_rms_delta: Option<f64>,
+    source_grid_output_drift: Option<SourceGridOutputDriftEvidence>,
+    source_grid_output_drift_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
+}
+
+#[derive(Debug, PartialEq)]
+struct SourceGridOutputDriftEvidence {
+    hit_ratio: f64,
+    max_peak_offset_ms: f64,
+    max_allowed_peak_offset_ms: f64,
 }
 
 #[cfg(test)]
@@ -59,6 +68,9 @@ fn build_summary_from_events(
         .unwrap_or_else(|| "none".to_string());
     let (commit_count, commit_boundaries) = collect_commit_summary(observer_events);
 
+    let (source_grid_output_drift, source_grid_output_drift_malformed) =
+        collect_source_grid_output_drift(&manifest);
+
     Ok(CorrelationSummary {
         observer_schema: launch
             .and_then(|event| event["schema"].as_str())
@@ -90,8 +102,36 @@ fn build_summary_from_events(
         w30_candidate_active_sample_ratio: manifest["metrics"]["candidate"]["active_sample_ratio"]
             .as_f64(),
         w30_rms_delta: manifest["metrics"]["deltas"]["rms"].as_f64(),
+        source_grid_output_drift,
+        source_grid_output_drift_malformed,
         lane_recipe_cases: collect_lane_recipe_cases(&manifest),
     })
+}
+
+fn collect_source_grid_output_drift(manifest: &Value) -> (Option<SourceGridOutputDriftEvidence>, bool) {
+    let Some(metrics) = manifest.get("metrics").and_then(Value::as_object) else {
+        return (None, false);
+    };
+    let Some(metric) = metrics.get("source_grid_output_drift") else {
+        return (None, false);
+    };
+
+    let evidence = SourceGridOutputDriftEvidence {
+        hit_ratio: match metric["hit_ratio"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        max_peak_offset_ms: match metric["max_peak_offset_ms"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        max_allowed_peak_offset_ms: match metric["max_allowed_peak_offset_ms"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+    };
+
+    (Some(evidence), false)
 }
 
 fn read_observer_events(path: &Path) -> Result<Vec<Value>, Box<dyn std::error::Error>> {

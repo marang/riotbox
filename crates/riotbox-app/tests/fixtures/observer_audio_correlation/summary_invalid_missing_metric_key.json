@@ -27,6 +27,7 @@
       "full_mix_rms": null,
       "full_mix_low_band_rms": null,
       "mc202_question_answer_delta_rms": null,
+      "source_grid_output_drift": null,
       "w30_candidate_rms": null,
       "w30_candidate_active_sample_ratio": null
     }

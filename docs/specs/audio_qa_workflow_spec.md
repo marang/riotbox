@@ -658,6 +658,7 @@ Today the repo already has:
 - the committed-fixture JSON summary path is smoke-tested in `just audio-qa-ci` and the named GitHub Actions audio QA step
 - observer/audio JSON summaries include a top-level `schema` and `schema_version` marker plus control-path `commit_count` and `commit_boundaries` fields so automation can reject unexpected summary shapes and assert boundary coverage before making QA decisions
 - the committed-fixture JSON smoke requires both `control_path.present` and `output_path.present`, keeping the machine-readable path aligned with the control-plus-output proof rule
+- observer/audio summaries can surface Feral-grid `source_grid_output_drift` evidence and strict correlation treats present drift evidence as a smoke gate for generated support landing near the selected source grid
 - the observer/audio JSON summary v1 contract is documented in `docs/benchmarks/observer_audio_summary_json_contract_2026-04-29.md`
 - the observer/audio JSON fixture smoke also runs the repo-local `scripts/validate_observer_audio_summary_json.py` contract validator without adding an external schema dependency
 - validator fixtures cover both a valid failure summary with `null` metrics and a rejected invalid schema marker

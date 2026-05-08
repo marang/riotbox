@@ -46,6 +46,7 @@ The current stable metric keys are:
 - `full_mix_rms`
 - `full_mix_low_band_rms`
 - `mc202_question_answer_delta_rms`
+- `source_grid_output_drift`: `null` or an object with `hit_ratio`, `max_peak_offset_ms`, and `max_allowed_peak_offset_ms`
 - `w30_candidate_rms`
 - `w30_candidate_active_sample_ratio`
 - `w30_rms_delta`
@@ -55,6 +56,11 @@ Pack-specific output evidence may still be validated from the source
 current lane recipe correlation accepts `lane-recipe-listening-pack` output only
 when its required MC-202 Recipe 2 cases are present, passing, non-collapsed, and
 above their signal-delta thresholds.
+
+For `feral-grid-demo` manifests that include source-grid output drift evidence,
+strict correlation also treats that metric as an output smoke gate. A low hit
+ratio or a peak offset beyond the reported allowed window means the generated
+support output no longer proves it landed near the selected source grid.
 
 ## Compatibility Rule
 
@@ -81,6 +87,7 @@ The committed fixture JSON smoke currently requires:
 - `output_path.present == true`
 - `output_path.issues` is empty
 - every stable metric key is present, with a number or `null` value
+- `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
 - validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, and a rejected missing metric key
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts

@@ -17,6 +17,7 @@ use lane_recipe_output::{
 use observer_validation::validate_user_session_observer_events;
 
 const STRICT_OUTPUT_METRIC_FLOOR: f64 = 1.0e-6;
+const SOURCE_GRID_OUTPUT_MIN_HIT_RATIO: f64 = 0.5;
 const SUMMARY_SCHEMA: &str = "riotbox.observer_audio_summary.v1";
 const SUMMARY_SCHEMA_VERSION: u32 = 1;
 
@@ -65,6 +66,9 @@ include!("observer_audio_correlate/summary_render.rs");
 #[cfg(test)]
 #[path = "observer_audio_correlate/lane_recipe_tests.rs"]
 mod lane_recipe_tests;
+#[cfg(test)]
+#[path = "observer_audio_correlate/source_grid_output_drift_tests.rs"]
+mod source_grid_output_drift_tests;
 #[cfg(test)]
 #[path = "observer_audio_correlate/tests.rs"]
 mod tests;

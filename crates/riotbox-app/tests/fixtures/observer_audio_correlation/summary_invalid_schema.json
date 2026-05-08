@@ -23,6 +23,11 @@
       "full_mix_rms": 0.1843,
       "full_mix_low_band_rms": 0.0612,
       "mc202_question_answer_delta_rms": 0.0264,
+      "source_grid_output_drift": {
+        "hit_ratio": 1.0,
+        "max_peak_offset_ms": 1.27,
+        "max_allowed_peak_offset_ms": 70.0
+      },
       "w30_candidate_rms": null,
       "w30_candidate_active_sample_ratio": null,
       "w30_rms_delta": null
