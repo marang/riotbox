@@ -30,6 +30,8 @@
     "pack_id": "feral-grid-demo",
     "manifest_result": "pass",
     "artifact_count": 6,
+    "grid_bpm_source": "unknown",
+    "source_timing_bpm_delta": null,
     "source_timing": null,
     "source_timing_alignment": null,
     "metrics": {

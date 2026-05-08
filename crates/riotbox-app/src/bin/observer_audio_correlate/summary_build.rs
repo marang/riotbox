@@ -12,6 +12,8 @@ struct CorrelationSummary {
     pack_id: String,
     manifest_result: String,
     artifact_count: usize,
+    grid_bpm_source: String,
+    source_timing_bpm_delta: Option<f64>,
     full_mix_rms: Option<f64>,
     full_mix_low_band_rms: Option<f64>,
     mc202_question_answer_delta_rms: Option<f64>,
@@ -141,6 +143,11 @@ fn build_summary_from_events(
             .to_string(),
         manifest_result: manifest["result"].as_str().unwrap_or("unknown").to_string(),
         artifact_count: manifest["artifacts"].as_array().map_or(0, Vec::len),
+        grid_bpm_source: manifest["grid_bpm_source"]
+            .as_str()
+            .unwrap_or("unknown")
+            .to_string(),
+        source_timing_bpm_delta: manifest["source_timing_bpm_delta"].as_f64(),
         full_mix_rms: manifest["metrics"]["full_grid_mix"]["signal"]["rms"].as_f64(),
         full_mix_low_band_rms: manifest["metrics"]["full_grid_mix"]["low_band"]["rms"].as_f64(),
         mc202_question_answer_delta_rms: manifest["metrics"]["mc202_question_answer_delta"]["rms"]
