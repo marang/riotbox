@@ -54,7 +54,8 @@ fn summarizes_synthetic_observer_and_manifest() {
     );
     assert!(markdown.contains("Source-grid output hit ratio: `0.875000`"));
     assert!(markdown.contains("Source-grid output max peak offset: `12.500000`"));
-    assert!(markdown.contains("Observer source timing: `src-timing quality=low"));
+    assert!(markdown.contains("Observer source timing: `src-timing cue=needs confirm"));
+    assert!(markdown.contains("Source timing readiness: `needs confirm readiness=weak"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
@@ -68,9 +69,14 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert_eq!(json["control_path"]["commit_count"], 1);
     assert_eq!(json["control_path"]["commit_boundaries"][0], "NextBar");
     assert_eq!(
+        json["control_path"]["observer_source_timing"]["cue"],
+        "needs confirm"
+    );
+    assert_eq!(
         json["control_path"]["observer_source_timing"]["quality"],
         "low"
     );
+    assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
     assert_eq!(
         json["control_path"]["observer_source_timing"]["warning_codes"][1],
         "phrase_uncertain"
