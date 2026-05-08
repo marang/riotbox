@@ -7,6 +7,14 @@ struct SourceTimingAlignmentEvidence {
     issues: Vec<String>,
 }
 
+#[derive(Debug, PartialEq)]
+struct SourceTimingAnchorAlignmentEvidence {
+    status: String,
+    observer: Option<SourceTimingAnchorEvidence>,
+    manifest: Option<SourceTimingAnchorEvidence>,
+    issues: Vec<String>,
+}
+
 fn collect_source_timing_alignment(
     observer_timing: Option<&ObserverSourceTimingReadiness>,
     manifest_timing: Option<&SourceTimingEvidence>,
@@ -60,6 +68,80 @@ fn collect_source_timing_alignment(
         warning_overlap,
         issues,
     })
+}
+
+fn collect_source_timing_anchor_alignment(
+    observer_timing: Option<&ObserverSourceTimingReadiness>,
+    manifest_timing: Option<&SourceTimingEvidence>,
+    observer_malformed: bool,
+    manifest_malformed: bool,
+) -> Option<SourceTimingAnchorAlignmentEvidence> {
+    if observer_malformed || manifest_malformed {
+        return None;
+    }
+    let observer = observer_timing.and_then(|timing| timing.anchor_evidence.clone());
+    let manifest = manifest_timing.and_then(|timing| timing.anchor_evidence.clone());
+    if observer.is_none() && manifest.is_none() {
+        return None;
+    }
+
+    let issues = source_timing_anchor_alignment_issues(observer.as_ref(), manifest.as_ref());
+    let status = if !issues.is_empty() {
+        "mismatch"
+    } else if source_timing_anchor_alignment_has_comparable_counts(
+        observer.as_ref(),
+        manifest.as_ref(),
+    ) {
+        "aligned"
+    } else {
+        "partial"
+    };
+
+    Some(SourceTimingAnchorAlignmentEvidence {
+        status: status.to_string(),
+        observer,
+        manifest,
+        issues,
+    })
+}
+
+fn source_timing_anchor_alignment_has_comparable_counts(
+    observer: Option<&SourceTimingAnchorEvidence>,
+    manifest: Option<&SourceTimingAnchorEvidence>,
+) -> bool {
+    matches!(
+        (observer, manifest),
+        (Some(observer), Some(manifest))
+            if observer.primary_anchor_count > 0 && manifest.primary_anchor_count > 0
+    )
+}
+
+fn source_timing_anchor_alignment_issues(
+    observer: Option<&SourceTimingAnchorEvidence>,
+    manifest: Option<&SourceTimingAnchorEvidence>,
+) -> Vec<String> {
+    let (Some(observer), Some(manifest)) = (observer, manifest) else {
+        return Vec::new();
+    };
+
+    let mut issues = Vec::new();
+    if observer.primary_anchor_count > 0 && manifest.primary_anchor_count == 0 {
+        issues.push("source_timing_anchor_alignment.manifest_anchor_count=0".to_string());
+    }
+    if observer.primary_kick_anchor_count > 0 && manifest.primary_kick_anchor_count == 0 {
+        issues.push("source_timing_anchor_alignment.manifest_kick_anchor_count=0".to_string());
+    }
+    if observer.primary_backbeat_anchor_count > 0 && manifest.primary_backbeat_anchor_count == 0 {
+        issues.push("source_timing_anchor_alignment.manifest_backbeat_anchor_count=0".to_string());
+    }
+    if observer.primary_transient_anchor_count > 0
+        && manifest.primary_transient_anchor_count == 0
+    {
+        issues.push(
+            "source_timing_anchor_alignment.manifest_transient_anchor_count=0".to_string(),
+        );
+    }
+    issues
 }
 
 fn normalize_warning_codes(codes: &[String]) -> Vec<String> {

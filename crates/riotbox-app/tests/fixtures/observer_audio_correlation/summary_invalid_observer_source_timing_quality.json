@@ -36,6 +36,7 @@
     "source_timing_bpm_delta": null,
     "source_timing": null,
     "source_timing_alignment": null,
+    "source_timing_anchor_alignment": null,
     "metrics": {
       "full_mix_rms": 0.1843,
       "full_mix_low_band_rms": 0.0612,

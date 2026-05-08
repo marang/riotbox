@@ -45,6 +45,8 @@ When non-null, `control_path.observer_source_timing` should include:
 - `degraded_policy`
 - `primary_hypothesis_id`
 - `hypothesis_count`
+- `anchor_evidence`: `null` or compact primary anchor counts copied from the
+  observer snapshot.
 - `primary_warning_code`
 - `warning_codes`
 
@@ -70,6 +72,8 @@ The `output_path` object should include:
   source-timing readiness evidence.
 - `source_timing_alignment`: `null` or compact evidence comparing observer-side
   Source Timing readiness with manifest-side Source Timing evidence.
+- `source_timing_anchor_alignment`: `null` or compact evidence comparing
+  observer-side primary anchor counts with manifest-side primary anchor counts.
 - `metrics`: object containing every currently required output metric field; values may be numbers or `null` when evidence is missing.
 
 When non-null, `source_timing` should include:
@@ -85,6 +89,8 @@ When non-null, `source_timing` should include:
 - `drift_status`
 - `phrase_status`
 - `alternate_evidence_count`
+- `anchor_evidence`: `null` or compact primary anchor counts copied from
+  manifest source-timing readiness evidence.
 
 When non-null, `source_timing_alignment` should include:
 
@@ -101,6 +107,20 @@ When non-null, `source_timing_alignment` should include:
 Observer source ids and manifest artifact/source ids may intentionally differ in
 generated probes, so source ids are reported separately and are not an alignment
 criterion.
+
+When non-null, `source_timing_anchor_alignment` should include:
+
+- `status`: one of `aligned`, `partial`, or `mismatch`.
+- `observer`: `null` or the observer-side `anchor_evidence` object.
+- `manifest`: `null` or the manifest-side `anchor_evidence` object.
+- `issues`: mismatch reasons. Strict evidence treats any issue as an output-path
+  failure.
+
+Anchor alignment intentionally does not require exact count equality. Different
+current probes may expose different evidence density on the control and manifest
+paths. The strict gate rejects only clear contradictions, such as an observer
+that reports primary kick/backbeat/transient anchor evidence while the manifest
+reports zero comparable anchors for that class.
 
 The current stable metric keys are:
 

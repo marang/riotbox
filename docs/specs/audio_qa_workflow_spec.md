@@ -663,6 +663,10 @@ Today the repo already has:
   manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
   strict correlation treats real mismatches as output-path failures while keeping
   missing or non-comparable evidence reviewable for older/non-Feral packs
+- observer/audio summaries can also compare compact observer-side and
+  manifest-side Source Timing anchor evidence as
+  `output_path.source_timing_anchor_alignment`; this records partial, aligned,
+  and contradictory anchor evidence without requiring exact anchor-count equality
 - generated Feral grid listening manifests carry compact
   `source_timing.anchor_evidence` counts for primary, kick, backbeat, and
   transient-cluster anchors, so QA can audit whether timing readiness is backed

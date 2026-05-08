@@ -39,6 +39,7 @@ fn summarizes_synthetic_observer_and_manifest() {
             phrase_count: 0,
             primary_hypothesis_id: Some("probe-primary".to_string()),
             hypothesis_count: 1,
+            anchor_evidence: None,
             primary_warning_code: Some("ambiguous_downbeat".to_string()),
             warning_codes: vec![
                 "ambiguous_downbeat".to_string(),

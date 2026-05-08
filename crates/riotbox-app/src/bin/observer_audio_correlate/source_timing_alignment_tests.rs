@@ -30,9 +30,36 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
     );
     assert_eq!(alignment.warning_overlap, vec!["phrase_uncertain"]);
     assert!(alignment.issues.is_empty());
+    let anchor_alignment = summary
+        .source_timing_anchor_alignment
+        .as_ref()
+        .expect("anchor alignment");
+    assert_eq!(anchor_alignment.status, "aligned");
+    assert_eq!(
+        anchor_alignment
+            .observer
+            .as_ref()
+            .expect("observer anchors")
+            .primary_anchor_count,
+        4
+    );
+    assert_eq!(
+        anchor_alignment
+            .manifest
+            .as_ref()
+            .expect("manifest anchors")
+            .primary_anchor_count,
+        8
+    );
+    assert!(anchor_alignment.issues.is_empty());
     assert!(markdown.contains("Source timing alignment: `aligned"));
+    assert!(markdown.contains("Source timing anchor alignment: `aligned"));
     assert_eq!(
         json["output_path"]["source_timing_alignment"]["status"],
+        "aligned"
+    );
+    assert_eq!(
+        json["output_path"]["source_timing_anchor_alignment"]["status"],
         "aligned"
     );
     assert_eq!(
@@ -76,6 +103,49 @@ fn strict_evidence_rejects_source_timing_alignment_mismatch() {
 }
 
 #[test]
+fn strict_evidence_rejects_contradictory_source_timing_anchor_alignment() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_with_source_timing(128.0, "phrase_uncertain"),
+    )
+    .expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_source_timing_anchor_counts(
+            128.397,
+            &["PhraseUncertain"],
+            SourceTimingAnchorEvidence {
+                primary_anchor_count: 0,
+                primary_kick_anchor_count: 0,
+                primary_backbeat_anchor_count: 0,
+                primary_transient_anchor_count: 0,
+            },
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("anchor mismatch");
+    let markdown = render_markdown(&summary);
+
+    assert!(
+        error
+            .to_string()
+            .contains("source_timing_anchor_alignment.manifest_anchor_count=0")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("source_timing_anchor_alignment.manifest_kick_anchor_count=0")
+    );
+    assert!(markdown.contains("Source timing anchor alignment: `mismatch"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
+#[test]
 fn strict_evidence_rejects_locked_observer_static_output_policy() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -108,7 +178,7 @@ fn strict_evidence_rejects_locked_observer_static_output_policy() {
 
 fn observer_with_source_timing(bpm: f64, warning_code: &str) -> String {
     format!(
-        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","beat_status":"tempo_only","beat_count":0,"downbeat_status":"unknown","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
+        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","beat_status":"tempo_only","beat_count":0,"downbeat_status":"unknown","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"anchor_evidence":{{"primary_anchor_count":4,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":2,"primary_transient_anchor_count":1}},"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
     ) + "\n"
         + r#"{"event":"audio_runtime","status":"started"}"#
         + "\n"
@@ -118,7 +188,7 @@ fn observer_with_source_timing(bpm: f64, warning_code: &str) -> String {
 
 fn locked_observer_with_source_timing(bpm: f64) -> String {
     format!(
-        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.92,"quality":"high","degraded_policy":"locked","cue":"grid locked","beat_status":"grid","beat_count":16,"downbeat_status":"bar_locked","bar_count":4,"phrase_status":"phrase_locked","phrase_count":1,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":null,"warning_codes":[]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
+        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.92,"quality":"high","degraded_policy":"locked","cue":"grid locked","beat_status":"grid","beat_count":16,"downbeat_status":"bar_locked","bar_count":4,"phrase_status":"phrase_locked","phrase_count":1,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{{"primary_anchor_count":16,"primary_kick_anchor_count":4,"primary_backbeat_anchor_count":8,"primary_transient_anchor_count":4}},"primary_warning_code":null,"warning_codes":[]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
     ) + "\n"
         + r#"{"event":"audio_runtime","status":"started"}"#
         + "\n"
@@ -127,6 +197,23 @@ fn locked_observer_with_source_timing(bpm: f64) -> String {
 }
 
 fn manifest_with_source_timing(primary_bpm: f64, warning_codes: &[&str]) -> String {
+    manifest_with_source_timing_anchor_counts(
+        primary_bpm,
+        warning_codes,
+        SourceTimingAnchorEvidence {
+            primary_anchor_count: 8,
+            primary_kick_anchor_count: 2,
+            primary_backbeat_anchor_count: 4,
+            primary_transient_anchor_count: 2,
+        },
+    )
+}
+
+fn manifest_with_source_timing_anchor_counts(
+    primary_bpm: f64,
+    warning_codes: &[&str],
+    anchor_evidence: SourceTimingAnchorEvidence,
+) -> String {
     let warning_codes = warning_codes
         .iter()
         .map(|code| format!(r#""{code}""#))
@@ -155,6 +242,12 @@ fn manifest_with_source_timing(primary_bpm: f64, warning_codes: &[&str]) -> Stri
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
     "alternate_evidence_count": 2,
+    "anchor_evidence": {{
+      "primary_anchor_count": {},
+      "primary_kick_anchor_count": {},
+      "primary_backbeat_anchor_count": {},
+      "primary_transient_anchor_count": {}
+    }},
     "warning_codes": [{warning_codes}]
   }},
   "metrics": {{
@@ -168,7 +261,11 @@ fn manifest_with_source_timing(primary_bpm: f64, warning_codes: &[&str]) -> Stri
       "max_allowed_peak_offset_ms": 70.0
     }}
   }}
-}}"#
+}}"#,
+        anchor_evidence.primary_anchor_count,
+        anchor_evidence.primary_kick_anchor_count,
+        anchor_evidence.primary_backbeat_anchor_count,
+        anchor_evidence.primary_transient_anchor_count,
     )
 }
 
@@ -196,6 +293,12 @@ fn manifest_with_static_manual_confirm_source_timing(primary_bpm: f64) -> String
     "drift_status": "stable",
     "phrase_status": "stable",
     "alternate_evidence_count": 0,
+    "anchor_evidence": {{
+      "primary_anchor_count": 16,
+      "primary_kick_anchor_count": 4,
+      "primary_backbeat_anchor_count": 8,
+      "primary_transient_anchor_count": 4
+    }},
     "warning_codes": []
   }},
   "metrics": {{
