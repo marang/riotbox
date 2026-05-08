@@ -24,6 +24,10 @@ jq -s -e \
     and all(.[]; .snapshot.queue | type == "object")
     and all(.[]; .snapshot.runtime | type == "object")
     and all(.[]; .snapshot.recovery | type == "object")
+    and all(.[]; .snapshot.source_timing.source_id == "src-feral-grid-probe")
+    and all(.[]; .snapshot.source_timing.quality == "medium")
+    and all(.[]; .snapshot.source_timing.degraded_policy == "cautious")
+    and all(.[]; .snapshot.source_timing.primary_warning_code == "phrase_uncertain")
     and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")
     and any(.[]; .event == "key_outcome" and .key == "g" and .outcome == "queue_mc202_generate_follower")' \
   "$observer_fixture"
@@ -57,6 +61,10 @@ jq -e \
     and .control_path.commit_count >= 2
     and (.control_path.commit_boundaries | index("Bar")) != null
     and (.control_path.commit_boundaries | index("Phrase")) != null
+    and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
+    and .control_path.observer_source_timing.quality == "medium"
+    and .control_path.observer_source_timing.degraded_policy == "cautious"
+    and .control_path.observer_source_timing.primary_warning_code == "phrase_uncertain"
     and .output_path.present == true
     and (.output_path.issues | length == 0)' \
   "$tmpdir/observer-audio-summary.json"
