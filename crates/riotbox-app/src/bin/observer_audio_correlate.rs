@@ -64,6 +64,7 @@ include!("observer_audio_correlate/args.rs");
 include!("observer_audio_correlate/observer_source_timing.rs");
 include!("observer_audio_correlate/summary_build.rs");
 include!("observer_audio_correlate/source_timing_alignment.rs");
+include!("observer_audio_correlate/source_timing_policy.rs");
 include!("observer_audio_correlate/observer_source_timing_render.rs");
 include!("observer_audio_correlate/summary_render.rs");
 

@@ -363,11 +363,13 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
 }
 
 fn source_timing_alignment_failures(summary: &CorrelationSummary) -> Vec<String> {
-    summary
+    let mut failures = summary
         .source_timing_alignment
         .as_ref()
         .map(|alignment| alignment.issues.clone())
-        .unwrap_or_default()
+        .unwrap_or_default();
+    failures.extend(source_timing_policy_failures(summary));
+    failures
 }
 
 fn source_grid_output_drift_failures(summary: &CorrelationSummary) -> Vec<String> {

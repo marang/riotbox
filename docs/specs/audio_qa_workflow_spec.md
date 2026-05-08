@@ -689,6 +689,9 @@ Today the repo already has:
   Source Timing detail fields can carry a real locked grid shape: `beat_status`
   `grid`, nonzero beat count, `downbeat_status` `bar_locked`, nonzero bar
   count, `phrase_status` `phrase_locked`, and nonzero phrase count
+- strict observer/audio correlation rejects locked observer timing when the
+  generated output path still reports static/default or manual-confirm Source
+  Timing policy, so control-path grid lock cannot silently mask fallback output
 - observer/audio strict JSON correlation also accepts W-30 preview source-diff manifests as output-path evidence, using candidate RMS, active-sample ratio, and RMS delta to reject silent or fallback-collapsed first-playable output
 - the listening manifest v1 field-level JSON contract is documented in `docs/benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`
 - a repo-local `scripts/validate_listening_manifest_json.py` helper and `just listening-manifest-validator-fixtures` fixture matrix validate the listening manifest v1 envelope without freezing pack-specific metrics
