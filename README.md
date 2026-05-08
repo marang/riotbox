@@ -114,6 +114,11 @@ The honest status: **this is already playable as a prototype shell, but it is no
 
 5. Watch the shell show what is **queued**, what gets **committed**, and what changed in each lane.
 
+Before judging timing-sensitive gestures, read the compact timing cue on `Jam` or `Source`.
+For example, `timing needs confirm | low | kick+bb` means Riotbox found useful
+kick/backbeat evidence but is not ready to trust the grid automatically yet. The
+short cue meanings are documented in [`docs/jam_recipes.md`](docs/jam_recipes.md#read-the-timing-cues).
+
 If you want the simplest first success, do not try every action. Start with:
 
 - `Space` to make time move

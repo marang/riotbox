@@ -46,6 +46,37 @@ Useful rule:
 
 - unsure whether something worked -> press `2`
 
+## Read The Timing Cues
+
+Before you judge whether a fill, chop, capture, or generated phrase is lining up,
+check the compact timing cue on `Jam`, `Help`, or `Source`.
+
+You may see lines like:
+
+```text
+timing needs confirm | low | kick+bb
+Timing: needs confirm | low | kick+bb | source b32 bar8 p1 | confirm before trusting grid
+readiness needs confirm | 126.0 BPM | conf 0.76
+```
+
+Use the cue like this:
+
+- `grid locked`: the source grid is trusted enough to steer timing-sensitive moves.
+- `needs confirm`: Riotbox found useful evidence, but you should listen or use explicit BPM before trusting the grid.
+- `listen first`: usable timing evidence exists, but the result should be treated as cautious, not locked.
+- `fallback grid`: Riotbox is using a safe default grid instead of trusting the source timing.
+- `not available`: no useful source timing is attached; do not judge beat-sensitive gestures as timing-smart yet.
+
+The last part is the anchor shorthand:
+
+- `kick+bb`: kick and backbeat evidence both shaped the cue.
+- `kick`, `backbeat`, or `transient`: only that anchor family is currently visible.
+- `no anchor`: the timing cue is not backed by a clear source anchor.
+
+If the cue is not `grid locked`, keep the experiment simple: press one gesture,
+wait for it to commit, inspect `Log`, and use explicit BPM for offline Feral grid
+packs when the recipe says so.
+
 ## Recipe 1: Learn The Timing Model
 
 Goal: understand quantized commit timing.
@@ -53,13 +84,15 @@ Goal: understand quantized commit timing.
 1. start Riotbox with `Beat08_128BPM(Full).wav`
 2. press `Space`
 3. press `f`
-4. stay on `Jam` briefly
-5. press `2`
+4. read the timing cue on `Jam`
+5. stay on `Jam` briefly
+6. press `2`
 
 What to observe:
 
 - the action is queued before it lands
 - it commits on a musical boundary, not instantly
+- the timing cue tells you whether that boundary is source-locked, cautious, or fallback
 - `wait [..>] next ...` is the compact timing rail for the queued gesture
 - `Log` shows the truth more clearly than trying to infer it from one line on `Jam`
 
