@@ -137,6 +137,12 @@ def validate_source_timing(value: Any) -> None:
         set(SOURCE_TIMING_CUE_BY_POLICY),
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
+    require_one_of(source_timing, "beat_status", {"grid", "tempo_only", "unknown"})
+    require_int(source_timing, "beat_count")
+    require_one_of(source_timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
+    require_int(source_timing, "bar_count")
+    require_one_of(source_timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"})
+    require_int(source_timing, "phrase_count")
     primary = source_timing.get("primary_hypothesis_id")
     if primary is not None and not isinstance(primary, str):
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")

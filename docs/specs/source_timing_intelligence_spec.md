@@ -554,6 +554,11 @@ bounded BPM policy:
   summary contract reports this as `output_path.source_timing_alignment`, using
   BPM delta plus normalized warning-code overlap as bounded proof that the
   control path and generated output path are using compatible timing evidence.
+- app observer snapshots should preserve compact Source Timing detail fields
+  derived from Source Graph timing state, including `beat_status`,
+  `beat_count`, `downbeat_status`, `bar_count`, `phrase_status`, and
+  `phrase_count`, so QA can distinguish tempo-only, ambiguous-downbeat, and
+  phrase-uncertain states without scraping TUI text.
 - generated Feral grid QA should prove both the conservative fallback path and a
   strict auto-grid path: weak or manual-confirm timing must stay
   `static_default`, while long stable timing may use `source_timing` only when

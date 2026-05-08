@@ -31,6 +31,12 @@ fn summarizes_synthetic_observer_and_manifest() {
             cue: "needs confirm".to_string(),
             quality: "low".to_string(),
             degraded_policy: "manual_confirm".to_string(),
+            beat_status: "tempo_only".to_string(),
+            beat_count: 0,
+            downbeat_status: "ambiguous".to_string(),
+            bar_count: 0,
+            phrase_status: "uncertain".to_string(),
+            phrase_count: 0,
             primary_hypothesis_id: Some("probe-primary".to_string()),
             hypothesis_count: 1,
             primary_warning_code: Some("ambiguous_downbeat".to_string()),
@@ -95,6 +101,18 @@ fn summarizes_synthetic_observer_and_manifest() {
         json["control_path"]["observer_source_timing"]["quality"],
         "low"
     );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["beat_status"],
+        "tempo_only"
+    );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["downbeat_status"],
+        "ambiguous"
+    );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["phrase_status"],
+        "uncertain"
+    );
     assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
     assert_eq!(
         json["control_path"]["observer_source_timing"]["warning_codes"][1],
@@ -128,7 +146,7 @@ fn summarizes_synthetic_observer_and_manifest() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,
