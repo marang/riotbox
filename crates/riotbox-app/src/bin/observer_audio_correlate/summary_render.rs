@@ -198,31 +198,14 @@ fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {
 }
 
 fn observer_source_timing_cue(timing: &ObserverSourceTimingReadiness) -> &'static str {
-    source_timing_policy_cue_label(&timing.degraded_policy)
+    riotbox_app::source_timing_cues::source_timing_policy_cue_label(&timing.degraded_policy)
 }
 
 fn source_timing_readiness_cue(timing: &SourceTimingEvidence) -> &'static str {
-    if timing.requires_manual_confirm {
-        return "needs confirm";
-    }
-
-    match timing.readiness.as_str() {
-        "ready" => "grid locked",
-        "needs_review" | "weak" => "listen first",
-        "unavailable" => "not available",
-        _ => "unknown",
-    }
-}
-
-fn source_timing_policy_cue_label(policy: &str) -> &'static str {
-    match policy {
-        "locked" => "grid locked",
-        "manual_confirm" => "needs confirm",
-        "cautious" => "listen first",
-        "fallback_grid" => "fallback grid",
-        "disabled" => "not available",
-        _ => "unknown",
-    }
+    riotbox_app::source_timing_cues::source_timing_readiness_cue_label(
+        &timing.readiness,
+        timing.requires_manual_confirm,
+    )
 }
 
 fn format_source_timing_downbeat(summary: &CorrelationSummary) -> String {

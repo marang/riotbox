@@ -297,14 +297,7 @@ fn jam_source_timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'s
 }
 
 fn source_timing_policy_cue_label(policy: &str) -> &'static str {
-    match policy {
-        "locked" => "grid locked",
-        "manual_confirm" => "needs confirm",
-        "cautious" => "listen first",
-        "fallback_grid" => "fallback grid",
-        "disabled" => "not available",
-        _ => "unknown",
-    }
+    crate::source_timing_cues::source_timing_policy_cue_label(policy)
 }
 
 fn source_timing_policy_cue_style(policy: &str) -> Style {
