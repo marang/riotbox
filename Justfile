@@ -198,6 +198,7 @@ observer-audio-summary-validator-fixtures:
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_schema.json; then echo "expected invalid observer/audio summary fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_missing_metric_key.json; then echo "expected missing metric observer/audio summary fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_observer_source_timing_quality.json; then echo "expected invalid observer source timing quality fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_observer_source_timing_cue.json; then echo "expected invalid observer source timing cue fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_source_timing_alignment_status.json; then echo "expected invalid source timing alignment status fixture to fail" >&2; exit 1; fi
 
 user-session-observer-validator-fixtures:
@@ -206,6 +207,7 @@ user-session-observer-validator-fixtures:
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_valid_source_timing.ndjson
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_schema.ndjson; then echo "expected invalid user-session observer fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_source_timing_quality.ndjson; then echo "expected invalid source timing quality fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_source_timing_cue.ndjson; then echo "expected invalid source timing cue fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_recovery_decision.ndjson; then echo "expected missing recovery decision fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_replay_family.ndjson; then echo "expected missing recovery replay-family fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_recovery_dry_run_selection.ndjson; then echo "expected selected recovery dry-run fixture to fail" >&2; exit 1; fi
