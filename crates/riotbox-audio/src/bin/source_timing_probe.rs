@@ -6,8 +6,11 @@ use std::{
 
 #[path = "source_timing_probe/anchor_summary.rs"]
 mod anchor_summary;
+#[path = "source_timing_probe/groove_summary.rs"]
+mod groove_summary;
 
 use anchor_summary::AnchorEvidenceSummary;
+use groove_summary::GrooveEvidenceSummary;
 use riotbox_audio::{
     source_audio::SourceAudioCache,
     source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
@@ -55,6 +58,7 @@ struct ProbeSummary {
     alternate_beat_candidate_count: usize,
     alternate_downbeat_phase_count: usize,
     anchor_evidence: AnchorEvidenceSummary,
+    groove_evidence: GrooveEvidenceSummary,
     warning_codes: Vec<&'static str>,
     onset_count: usize,
     onset_density_per_second: f32,
@@ -183,6 +187,7 @@ impl ProbeSummary {
             alternate_beat_candidate_count: beat.alternate_candidate_count,
             alternate_downbeat_phase_count: downbeat.alternate_phase_count,
             anchor_evidence: AnchorEvidenceSummary::from_timing(timing),
+            groove_evidence: GrooveEvidenceSummary::from_timing(timing),
             warning_codes: report
                 .warning_codes
                 .iter()
@@ -214,6 +219,7 @@ fn render_text(summary: &ProbeSummary) -> String {
         summary.warning_codes.join(",")
     };
     let anchors = &summary.anchor_evidence;
+    let groove = &summary.groove_evidence;
 
     format!(
         concat!(
@@ -226,6 +232,7 @@ fn render_text(summary: &ProbeSummary) -> String {
             "scores: beat={beat_score} downbeat={downbeat_score}\n",
             "phrase: {phrase} drift: {drift} confidence: {confidence}\n",
             "anchors: total={anchor_total} kick={kick_anchors} backbeat={backbeat_anchors} transient={transient_anchors}\n",
+            "groove: residuals={groove_residuals} max_abs_offset_ms={groove_max_abs_offset:.3}\n",
             "alternates: {alternates} warnings: {warnings}\n",
             "onsets: {onsets} density_per_second={density:.3} duration_seconds={duration:.3}"
         ),
@@ -246,6 +253,8 @@ fn render_text(summary: &ProbeSummary) -> String {
         kick_anchors = anchors.primary_kick_anchor_count,
         backbeat_anchors = anchors.primary_backbeat_anchor_count,
         transient_anchors = anchors.primary_transient_anchor_count,
+        groove_residuals = groove.primary_groove_residual_count,
+        groove_max_abs_offset = groove.primary_max_abs_offset_ms,
         alternates = summary.alternate_evidence_count,
         warnings = warnings,
         onsets = summary.onset_count,
@@ -410,11 +419,14 @@ mod tests {
         assert!(text.contains("downbeat: "));
         assert!(text.contains("scores: beat="));
         assert!(text.contains("anchors: total="));
+        assert!(text.contains("groove: residuals="));
         assert!(json["schema"].is_string());
         assert!(json["primary_beat_score"].is_number());
         assert!(json["primary_downbeat_score"].is_number());
         assert!(json["anchor_evidence"]["primary_anchor_count"].is_number());
         assert!(json["anchor_evidence"]["primary_anchor_preview"].is_array());
+        assert!(json["groove_evidence"]["primary_groove_residual_count"].is_number());
+        assert!(json["groove_evidence"]["primary_groove_preview"].is_array());
     }
 
     fn accented_loop_samples() -> Vec<f32> {

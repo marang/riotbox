@@ -5,7 +5,7 @@
   "source_id": "source.wav",
   "cue": "grid locked",
   "readiness": "ready",
-  "requires_manual_confirm": true,
+  "requires_manual_confirm": false,
   "primary_bpm": 128.0,
   "primary_beat_score": 0.99,
   "primary_beat_matched_onset_ratio": 1.0,
@@ -15,16 +15,16 @@
   "beat_status": "stable",
   "downbeat_status": "stable",
   "confidence_result": "candidate_cautious",
-  "drift_status": "not_enough_material",
-  "phrase_status": "not_enough_material",
+  "drift_status": "stable",
+  "phrase_status": "stable",
   "alternate_evidence_count": 0,
   "alternate_beat_candidate_count": 0,
   "alternate_downbeat_phase_count": 0,
   "anchor_evidence": {
-    "primary_anchor_count": 9,
-    "primary_kick_anchor_count": 2,
-    "primary_backbeat_anchor_count": 4,
-    "primary_transient_anchor_count": 3,
+    "primary_anchor_count": 1,
+    "primary_kick_anchor_count": 1,
+    "primary_backbeat_anchor_count": 0,
+    "primary_transient_anchor_count": 0,
     "primary_anchor_preview": [
       {
         "anchor_type": "kick",
@@ -43,9 +43,15 @@
     ]
   },
   "groove_evidence": {
-    "primary_groove_residual_count": 0,
-    "primary_max_abs_offset_ms": 0.0,
-    "primary_groove_preview": []
+    "primary_groove_residual_count": 1,
+    "primary_max_abs_offset_ms": 12.5,
+    "primary_groove_preview": [
+      {
+        "subdivision": "eighth",
+        "offset_ms": 12.5,
+        "confidence": 1.5
+      }
+    ]
   },
   "warning_codes": [],
   "onset_count": 9,

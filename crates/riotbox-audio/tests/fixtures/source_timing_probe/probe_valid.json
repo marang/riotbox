@@ -42,6 +42,17 @@
       }
     ]
   },
+  "groove_evidence": {
+    "primary_groove_residual_count": 1,
+    "primary_max_abs_offset_ms": 12.5,
+    "primary_groove_preview": [
+      {
+        "subdivision": "eighth",
+        "offset_ms": 12.5,
+        "confidence": 0.55
+      }
+    ]
+  },
   "warning_codes": [
     "phrase_uncertain"
   ],
