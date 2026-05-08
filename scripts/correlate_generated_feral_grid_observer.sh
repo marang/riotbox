@@ -65,6 +65,10 @@ jq -e \
     and .control_path.observer_source_timing.quality == "medium"
     and .control_path.observer_source_timing.degraded_policy == "cautious"
     and .control_path.observer_source_timing.primary_warning_code == "phrase_uncertain"
+    and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_alignment.bpm_delta <= .output_path.source_timing_alignment.bpm_tolerance
+    and (.output_path.source_timing_alignment.warning_overlap | index("phrase_uncertain")) != null
+    and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.present == true
     and (.output_path.issues | length == 0)' \
   "$tmpdir/observer-audio-summary.json"
