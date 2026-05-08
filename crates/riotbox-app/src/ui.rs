@@ -11,6 +11,7 @@ include!("ui/diagnostics_mc202_w30_logs.rs");
 include!("ui/w30_capture_source_helpers.rs");
 include!("ui/scene_timing_rail.rs");
 include!("ui/first_run_capture.rs");
+include!("ui/source_timing_panel.rs");
 include!("ui/capture_log_source_lists.rs");
 include!("ui/source_trust_summary.rs");
 

@@ -323,6 +323,9 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
     assert!(rendered.contains("Candidates"));
     assert!(rendered.contains("Provenance"));
     assert!(rendered.contains("Source Graph Warnings"));
+    assert!(rendered.contains("quality low | policy manual_confirm"));
+    assert!(rendered.contains("meter 4/4 | hyp 1 primary timing-primary"));
+    assert!(rendered.contains("warnings ambiguous_downbeat, phrase_uncertain"));
     assert!(rendered.contains("feral ready"));
     assert!(rendered.contains("break high"));
     assert!(rendered.contains("quote risk 1"));
