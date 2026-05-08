@@ -9,6 +9,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - First commit: `{}`\n\n\
          - Commit count: `{}`\n\
          - Commit boundaries: `{}`\n\n\
+         - Observer source timing: `{}`\n\n\
          ## Output Path\n\n\
          - Pack id: `{}`\n\
          - Manifest result: `{}`\n\
@@ -44,6 +45,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         } else {
             summary.commit_boundaries.join(", ")
         },
+        format_observer_source_timing(summary),
         summary.pack_id,
         summary.manifest_result,
         summary.artifact_count,
@@ -77,6 +79,17 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "first_commit": &summary.first_commit,
             "commit_count": summary.commit_count,
             "commit_boundaries": &summary.commit_boundaries,
+            "observer_source_timing": summary.observer_source_timing.as_ref().map(|timing| serde_json::json!({
+                "source_id": &timing.source_id,
+                "bpm_estimate": timing.bpm_estimate,
+                "bpm_confidence": timing.bpm_confidence,
+                "quality": &timing.quality,
+                "degraded_policy": &timing.degraded_policy,
+                "primary_hypothesis_id": &timing.primary_hypothesis_id,
+                "hypothesis_count": timing.hypothesis_count,
+                "primary_warning_code": &timing.primary_warning_code,
+                "warning_codes": &timing.warning_codes,
+            })),
         },
         "output_path": {
             "present": output_path_present(summary),
@@ -116,6 +129,29 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
+}
+
+fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
+    if summary.observer_source_timing_malformed {
+        return "malformed".to_string();
+    }
+    summary.observer_source_timing.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |timing| {
+            format!(
+                "{} quality={} policy={} bpm={} confidence={:.3} warning={}",
+                timing.source_id,
+                timing.quality,
+                timing.degraded_policy,
+                format_optional_f64(timing.bpm_estimate),
+                timing.bpm_confidence,
+                timing
+                    .primary_warning_code
+                    .as_deref()
+                    .unwrap_or("none")
+            )
+        },
+    )
 }
 
 fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {
@@ -315,6 +351,12 @@ fn validate_required_evidence(summary: &CorrelationSummary) -> Result<(), io::Er
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "observer/audio correlation is missing committed control-path evidence",
+        ));
+    }
+    if summary.observer_source_timing_malformed {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "observer/audio correlation has malformed observer source timing evidence",
         ));
     }
 

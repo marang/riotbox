@@ -1,5 +1,5 @@
 {
-  "schema": "riotbox.observer_audio_summary.v2",
+  "schema": "riotbox.observer_audio_summary.v1",
   "schema_version": 1,
   "control_path": {
     "present": true,
@@ -12,7 +12,17 @@
     "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
     "commit_count": 1,
     "commit_boundaries": ["NextBar"],
-    "observer_source_timing": null
+    "observer_source_timing": {
+      "source_id": "src-timing",
+      "bpm_estimate": 128.0,
+      "bpm_confidence": 0.72,
+      "quality": "maybe",
+      "degraded_policy": "manual_confirm",
+      "primary_hypothesis_id": "probe-primary",
+      "hypothesis_count": 1,
+      "primary_warning_code": "ambiguous_downbeat",
+      "warning_codes": ["ambiguous_downbeat"]
+    }
   },
   "output_path": {
     "present": true,
@@ -20,6 +30,7 @@
     "pack_id": "feral-grid-demo",
     "manifest_result": "pass",
     "artifact_count": 6,
+    "source_timing": null,
     "metrics": {
       "full_mix_rms": 0.1843,
       "full_mix_low_band_rms": 0.0612,

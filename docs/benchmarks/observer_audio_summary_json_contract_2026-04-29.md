@@ -31,6 +31,20 @@ The `control_path` object should include:
 - `first_commit`: compact description of the first committed transport action, or `none`.
 - `commit_count`: integer count of committed actions seen in the observer stream.
 - `commit_boundaries`: array of unique commit boundary labels seen in committed actions.
+- `observer_source_timing`: `null` or compact Source Timing Intelligence readiness
+  copied from the observer snapshot when a Source Graph was attached.
+
+When non-null, `control_path.observer_source_timing` should include:
+
+- `source_id`
+- `bpm_estimate`
+- `bpm_confidence`
+- `quality`
+- `degraded_policy`
+- `primary_hypothesis_id`
+- `hypothesis_count`
+- `primary_warning_code`
+- `warning_codes`
 
 The `output_path` object should include:
 
@@ -102,6 +116,7 @@ The committed fixture JSON smoke currently requires:
 - `control_path.present == true`
 - `control_path.commit_count` is an integer
 - `control_path.commit_boundaries` is an array of strings
+- `control_path.observer_source_timing` is present as an object or `null`
 - `output_path.present == true`
 - `output_path.issues` is empty
 - `output_path.source_timing` is present as an object or `null`
