@@ -7,6 +7,8 @@ struct CorrelationSummary {
     first_commit: String,
     commit_count: usize,
     commit_boundaries: Vec<String>,
+    observer_source_timing: Option<ObserverSourceTimingReadiness>,
+    observer_source_timing_malformed: bool,
     pack_id: String,
     manifest_result: String,
     artifact_count: usize,
@@ -21,6 +23,19 @@ struct CorrelationSummary {
     source_grid_output_drift: Option<SourceGridOutputDriftEvidence>,
     source_grid_output_drift_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
+}
+
+#[derive(Debug, PartialEq)]
+struct ObserverSourceTimingReadiness {
+    source_id: String,
+    bpm_estimate: Option<f64>,
+    bpm_confidence: f64,
+    quality: String,
+    degraded_policy: String,
+    primary_hypothesis_id: Option<String>,
+    hypothesis_count: u64,
+    primary_warning_code: Option<String>,
+    warning_codes: Vec<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -82,6 +97,8 @@ fn build_summary_from_events(
         .and_then(format_first_commit)
         .unwrap_or_else(|| "none".to_string());
     let (commit_count, commit_boundaries) = collect_commit_summary(observer_events);
+    let (observer_source_timing, observer_source_timing_malformed) =
+        collect_observer_source_timing(observer_events);
 
     let (source_grid_output_drift, source_grid_output_drift_malformed) =
         collect_source_grid_output_drift(&manifest);
@@ -104,6 +121,8 @@ fn build_summary_from_events(
         first_commit,
         commit_count,
         commit_boundaries,
+        observer_source_timing,
+        observer_source_timing_malformed,
         pack_id: manifest["pack_id"]
             .as_str()
             .unwrap_or("unknown")
@@ -124,6 +143,77 @@ fn build_summary_from_events(
         source_grid_output_drift_malformed,
         lane_recipe_cases: collect_lane_recipe_cases(&manifest),
     })
+}
+
+fn collect_observer_source_timing(
+    events: &[Value],
+) -> (Option<ObserverSourceTimingReadiness>, bool) {
+    let Some(source_timing) = events
+        .iter()
+        .filter_map(|event| event.get("snapshot"))
+        .find_map(|snapshot| snapshot.get("source_timing"))
+    else {
+        return (None, false);
+    };
+    if source_timing.is_null() {
+        return (None, false);
+    }
+    if !source_timing.is_object() {
+        return (None, true);
+    }
+
+    let evidence = ObserverSourceTimingReadiness {
+        source_id: match non_empty_string(source_timing, "source_id") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        bpm_estimate: match source_timing.get("bpm_estimate") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_f64() {
+                Some(value) => Some(value),
+                None => return (None, true),
+            },
+            None => return (None, true),
+        },
+        bpm_confidence: match source_timing["bpm_confidence"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        quality: match non_empty_string(source_timing, "quality") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        degraded_policy: match non_empty_string(source_timing, "degraded_policy") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        primary_hypothesis_id: match source_timing.get("primary_hypothesis_id") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_str().filter(|value| !value.is_empty()) {
+                Some(value) => Some(value.to_string()),
+                None => return (None, true),
+            },
+            None => return (None, true),
+        },
+        hypothesis_count: match source_timing["hypothesis_count"].as_u64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        primary_warning_code: match source_timing.get("primary_warning_code") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_str().filter(|value| !value.is_empty()) {
+                Some(value) => Some(value.to_string()),
+                None => return (None, true),
+            },
+            None => return (None, true),
+        },
+        warning_codes: match string_list(source_timing, "warning_codes") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+    };
+
+    (Some(evidence), false)
 }
 
 fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, bool) {
@@ -181,10 +271,22 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
 }
 
 fn source_timing_string(source_timing: &Value, field: &str) -> Option<String> {
-    source_timing[field]
+    non_empty_string(source_timing, field)
+}
+
+fn non_empty_string(value: &Value, field: &str) -> Option<String> {
+    value[field]
         .as_str()
         .filter(|value| !value.is_empty())
         .map(ToOwned::to_owned)
+}
+
+fn string_list(value: &Value, field: &str) -> Option<Vec<String>> {
+    value[field]
+        .as_array()?
+        .iter()
+        .map(|item| item.as_str().filter(|value| !value.is_empty()).map(str::to_string))
+        .collect()
 }
 
 fn collect_source_grid_output_drift(manifest: &Value) -> (Option<SourceGridOutputDriftEvidence>, bool) {

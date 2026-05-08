@@ -67,6 +67,9 @@ include!("observer_audio_correlate/summary_render.rs");
 #[path = "observer_audio_correlate/lane_recipe_tests.rs"]
 mod lane_recipe_tests;
 #[cfg(test)]
+#[path = "observer_audio_correlate/observer_source_timing_tests.rs"]
+mod observer_source_timing_tests;
+#[cfg(test)]
 #[path = "observer_audio_correlate/source_grid_output_drift_tests.rs"]
 mod source_grid_output_drift_tests;
 #[cfg(test)]

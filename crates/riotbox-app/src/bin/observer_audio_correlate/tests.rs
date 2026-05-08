@@ -81,6 +81,23 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert!(summary.first_commit.contains("action 2 at NextBar"));
     assert_eq!(summary.commit_count, 1);
     assert_eq!(summary.commit_boundaries, ["NextBar"]);
+    assert_eq!(
+        summary.observer_source_timing,
+        Some(ObserverSourceTimingReadiness {
+            source_id: "src-timing".to_string(),
+            bpm_estimate: Some(128.0),
+            bpm_confidence: 0.72,
+            quality: "low".to_string(),
+            degraded_policy: "manual_confirm".to_string(),
+            primary_hypothesis_id: Some("probe-primary".to_string()),
+            hypothesis_count: 1,
+            primary_warning_code: Some("ambiguous_downbeat".to_string()),
+            warning_codes: vec![
+                "ambiguous_downbeat".to_string(),
+                "phrase_uncertain".to_string()
+            ],
+        })
+    );
     assert_eq!(summary.pack_id, "feral-grid-demo");
     assert_eq!(summary.manifest_result, "pass");
     assert_eq!(summary.artifact_count, 5);
@@ -96,6 +113,7 @@ fn summarizes_synthetic_observer_and_manifest() {
     );
     assert!(markdown.contains("Source-grid output hit ratio: `0.875000`"));
     assert!(markdown.contains("Source-grid output max peak offset: `12.500000`"));
+    assert!(markdown.contains("Observer source timing: `src-timing quality=low"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
@@ -108,6 +126,14 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert_eq!(json["control_path"]["present"], true);
     assert_eq!(json["control_path"]["commit_count"], 1);
     assert_eq!(json["control_path"]["commit_boundaries"][0], "NextBar");
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["quality"],
+        "low"
+    );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["warning_codes"][1],
+        "phrase_uncertain"
+    );
     assert_eq!(json["output_path"]["present"], true);
     assert_eq!(
         json["output_path"]["issues"]
@@ -145,6 +171,13 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert_eq!(summary.artifact_count, 5);
     assert_eq!(summary.commit_count, 1);
     assert_eq!(summary.commit_boundaries, ["NextBar"]);
+    assert_eq!(
+        summary
+            .observer_source_timing
+            .as_ref()
+            .map(|timing| timing.quality.as_str()),
+        Some("medium")
+    );
     assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
     assert!(summary.full_mix_low_band_rms.is_some_and(|rms| rms > 0.01));
     assert_eq!(summary.mc202_question_answer_delta_rms, None);
@@ -158,6 +191,7 @@ fn summarizes_committed_fixture_observer_and_manifest() {
         })
     );
     assert!(markdown.contains("Source timing phrase: `ambiguous_downbeat"));
+    assert!(markdown.contains("Observer source timing: `src-beat08 quality=medium"));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
     assert!(markdown.contains("Control path present: `yes`"));
@@ -312,7 +346,7 @@ fn strict_evidence_rejects_collapsed_output_metrics() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,

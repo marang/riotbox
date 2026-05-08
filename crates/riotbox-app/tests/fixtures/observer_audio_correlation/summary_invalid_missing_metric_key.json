@@ -11,7 +11,8 @@
     ],
     "first_commit": "none",
     "commit_count": 0,
-    "commit_boundaries": []
+    "commit_boundaries": [],
+    "observer_source_timing": null
   },
   "output_path": {
     "present": false,

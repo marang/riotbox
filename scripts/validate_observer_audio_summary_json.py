@@ -48,6 +48,7 @@ def validate_summary(summary: Any) -> None:
     require_string(control_path, "first_commit")
     require_int(control_path, "commit_count")
     require_string_list(control_path, "commit_boundaries")
+    require_optional_observer_source_timing(control_path)
     require_string_list(control_path, "key_outcomes")
 
     output_path = require_object_field(summary, "output_path")
@@ -147,6 +148,29 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_int(timing, "alternate_evidence_count")
 
 
+def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
+    field = "observer_source_timing"
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    timing = require_object(value, field)
+    require_string(timing, "source_id")
+    require_optional_number(timing, "bpm_estimate")
+    require_number(timing, "bpm_confidence")
+    require_one_of(timing, "quality", {"low", "medium", "high", "unknown"})
+    require_one_of(
+        timing,
+        "degraded_policy",
+        {"locked", "cautious", "manual_confirm", "fallback_grid", "disabled", "unknown"},
+    )
+    require_optional_string(timing, "primary_hypothesis_id")
+    require_int(timing, "hypothesis_count")
+    require_optional_string(timing, "primary_warning_code")
+    require_string_list(timing, "warning_codes")
+
+
 def require_number(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if not isinstance(value, (int, float)) or isinstance(value, bool):
@@ -159,6 +183,22 @@ def require_optional_int(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
         raise TypeError(f"{field} must be an integer or null")
+
+
+def require_optional_string(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as a string or null")
+    value = parent.get(field)
+    if value is not None and (not isinstance(value, str) or not value):
+        raise TypeError(f"{field} must be a non-empty string or null")
+
+
+def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> None:
+    value = parent.get(field)
+    if not isinstance(value, str) or not value:
+        raise TypeError(f"{field} must be a non-empty string")
+    if value not in allowed:
+        raise ValueError(f"{field} must be one of {sorted(allowed)}, got {value!r}")
 
 
 if __name__ == "__main__":
