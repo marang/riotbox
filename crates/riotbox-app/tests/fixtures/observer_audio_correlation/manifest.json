@@ -27,6 +27,12 @@
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
+    "anchor_evidence": {
+      "primary_anchor_count": 8,
+      "primary_kick_anchor_count": 2,
+      "primary_backbeat_anchor_count": 4,
+      "primary_transient_anchor_count": 2
+    },
     "alternate_evidence_count": 2,
     "warning_codes": [
       "PhraseUncertain",

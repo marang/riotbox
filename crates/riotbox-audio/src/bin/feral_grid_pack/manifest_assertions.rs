@@ -263,6 +263,21 @@ mod manifest_assertions {
                     | "stable"
             )
         }));
+        let anchor_evidence = &source_timing["anchor_evidence"];
+        let primary_anchor_count = anchor_evidence["primary_anchor_count"]
+            .as_u64()
+            .expect("primary anchor count");
+        let typed_anchor_count = anchor_evidence["primary_kick_anchor_count"]
+            .as_u64()
+            .expect("primary kick anchor count")
+            + anchor_evidence["primary_backbeat_anchor_count"]
+                .as_u64()
+                .expect("primary backbeat anchor count")
+            + anchor_evidence["primary_transient_anchor_count"]
+                .as_u64()
+                .expect("primary transient anchor count");
+        assert!(primary_anchor_count > 0);
+        assert!(typed_anchor_count <= primary_anchor_count);
         assert!(source_timing["alternate_evidence_count"].is_u64());
         assert!(source_timing["warning_codes"].is_array());
     }
