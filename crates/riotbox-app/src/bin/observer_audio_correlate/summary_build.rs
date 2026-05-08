@@ -24,6 +24,7 @@ struct CorrelationSummary {
     source_timing: Option<SourceTimingEvidence>,
     source_timing_malformed: bool,
     source_timing_alignment: Option<SourceTimingAlignmentEvidence>,
+    source_timing_anchor_alignment: Option<SourceTimingAnchorAlignmentEvidence>,
     source_grid_output_drift: Option<SourceGridOutputDriftEvidence>,
     source_grid_output_drift_malformed: bool,
     tr909_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
@@ -48,6 +49,7 @@ struct SourceTimingEvidence {
     drift_status: String,
     phrase_status: String,
     alternate_evidence_count: u64,
+    anchor_evidence: Option<SourceTimingAnchorEvidence>,
     warning_codes: Vec<String>,
 }
 
@@ -113,6 +115,12 @@ fn build_summary_from_events(
         observer_source_timing_malformed,
         source_timing_malformed,
     );
+    let source_timing_anchor_alignment = collect_source_timing_anchor_alignment(
+        observer_source_timing.as_ref(),
+        source_timing.as_ref(),
+        observer_source_timing_malformed,
+        source_timing_malformed,
+    );
 
     Ok(CorrelationSummary {
         observer_schema: launch
@@ -159,6 +167,7 @@ fn build_summary_from_events(
         source_timing,
         source_timing_malformed,
         source_timing_alignment,
+        source_timing_anchor_alignment,
         source_grid_output_drift,
         source_grid_output_drift_malformed,
         tr909_source_grid_alignment,
@@ -241,6 +250,10 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
         alternate_evidence_count: match source_timing["alternate_evidence_count"].as_u64() {
             Some(value) => value,
             None => return (None, true),
+        },
+        anchor_evidence: match collect_optional_source_timing_anchor_evidence(source_timing) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
         },
         warning_codes: match string_list(source_timing, "warning_codes") {
             Some(value) => value,

@@ -14,6 +14,7 @@ struct ObserverSourceTimingReadiness {
     phrase_count: u64,
     primary_hypothesis_id: Option<String>,
     hypothesis_count: u64,
+    anchor_evidence: Option<SourceTimingAnchorEvidence>,
     primary_warning_code: Option<String>,
     warning_codes: Vec<String>,
 }
@@ -115,6 +116,10 @@ fn collect_observer_source_timing(
         hypothesis_count: match source_timing["hypothesis_count"].as_u64() {
             Some(value) => value,
             None => return (None, true),
+        },
+        anchor_evidence: match collect_optional_source_timing_anchor_evidence(source_timing) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
         },
         primary_warning_code: match source_timing.get("primary_warning_code") {
             Some(value) if value.is_null() => None,

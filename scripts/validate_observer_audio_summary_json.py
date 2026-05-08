@@ -71,6 +71,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_number(output_path, "source_timing_bpm_delta")
     require_optional_source_timing(output_path)
     require_optional_source_timing_alignment(output_path)
+    require_optional_source_timing_anchor_alignment(output_path)
 
     metrics = require_object_field(output_path, "metrics")
     require_optional_number(metrics, "full_mix_rms")
@@ -181,6 +182,7 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_string(timing, "drift_status")
     require_string(timing, "phrase_status")
     require_int(timing, "alternate_evidence_count")
+    require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_string_list(timing, "warning_codes")
 
 
@@ -196,6 +198,20 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
     require_optional_number(alignment, "bpm_delta")
     require_number(alignment, "bpm_tolerance")
     require_string_list(alignment, "warning_overlap")
+    require_string_list(alignment, "issues")
+
+
+def require_optional_source_timing_anchor_alignment(parent: dict[str, Any]) -> None:
+    field = "source_timing_anchor_alignment"
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    alignment = require_object(value, field)
+    require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
+    require_optional_source_timing_anchor_evidence(alignment, "observer")
+    require_optional_source_timing_anchor_evidence(alignment, "manifest")
     require_string_list(alignment, "issues")
 
 
@@ -226,8 +242,24 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     require_int(timing, "phrase_count")
     require_optional_string(timing, "primary_hypothesis_id")
     require_int(timing, "hypothesis_count")
+    require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_optional_string(timing, "primary_warning_code")
     require_string_list(timing, "warning_codes")
+
+
+def require_optional_source_timing_anchor_evidence(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    anchor_evidence = require_object(value, field)
+    total = require_non_negative_int(anchor_evidence, "primary_anchor_count")
+    kick = require_non_negative_int(anchor_evidence, "primary_kick_anchor_count")
+    backbeat = require_non_negative_int(anchor_evidence, "primary_backbeat_anchor_count")
+    transient = require_non_negative_int(anchor_evidence, "primary_transient_anchor_count")
+    if kick + backbeat + transient > total:
+        raise ValueError(f"{field} typed anchor counts cannot exceed primary_anchor_count")
 
 
 def require_number(parent: dict[str, Any], field: str) -> None:
@@ -242,6 +274,15 @@ def require_optional_int(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
         raise TypeError(f"{field} must be an integer or null")
+
+
+def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
+    value = parent.get(field)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TypeError(f"{field} must be an integer")
+    if value < 0:
+        raise ValueError(f"{field} must be non-negative")
+    return value
 
 
 def require_optional_string(parent: dict[str, Any], field: str) -> None:

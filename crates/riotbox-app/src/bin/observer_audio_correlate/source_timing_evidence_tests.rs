@@ -29,6 +29,7 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
             drift_status: "stable".to_string(),
             phrase_status: "ambiguous_downbeat".to_string(),
             alternate_evidence_count: 2,
+            anchor_evidence: None,
             warning_codes: vec![
                 "PhraseUncertain".to_string(),
                 "AmbiguousDownbeat".to_string(),

@@ -85,6 +85,9 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
     and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_anchor_alignment.status == "partial"
+    and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 0
+    and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
     and .output_path.source_timing_alignment.bpm_delta <= .output_path.source_timing_alignment.bpm_tolerance
     and (.output_path.source_timing_alignment.warning_overlap | index("phrase_uncertain")) != null
     and (.output_path.source_timing_alignment.issues | length == 0)
@@ -166,6 +169,9 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_ready"
     and .output_path.source_timing_bpm_delta == 0.0
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_anchor_alignment.status == "aligned"
+    and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 16
+    and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
     and (.output_path.source_timing_alignment.warning_overlap | length == 0)
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.present == true

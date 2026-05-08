@@ -577,6 +577,12 @@ bounded BPM policy:
   summary contract reports this as `output_path.source_timing_alignment`, using
   BPM delta plus normalized warning-code overlap as bounded proof that the
   control path and generated output path are using compatible timing evidence.
+- observer/audio correlation should also compare compact app-observed and
+  manifest-side Source Timing anchor evidence as
+  `output_path.source_timing_anchor_alignment`. This is a bounded consistency
+  proof for primary/kick/backbeat/transient anchor classes; it must not demand
+  exact anchor-count equality while the current probes can report different
+  evidence density on each path.
 - app observer snapshots should preserve compact Source Timing detail fields
   derived from Source Graph timing state, including `beat_status`,
   `beat_count`, `downbeat_status`, `bar_count`, `phrase_status`, and
