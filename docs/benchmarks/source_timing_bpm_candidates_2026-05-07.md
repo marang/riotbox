@@ -70,10 +70,16 @@ separate timing authority.
 just source-timing-readiness-report
 ```
 
-That gate also includes a generated real-loop-like 128 BPM drum fixture. The
-fixture deliberately keeps downbeat and phrase evidence weak while preserving a
-stable BPM estimate and half-time ambiguity. It exists so later detector work can
-improve real example readiness without loosening policy blindly or committing
+That gate also includes generated real-loop-like 128 BPM drum fixtures:
+
+- a flat fixture that deliberately keeps downbeat and phrase evidence weak while
+  preserving a stable BPM estimate and half-time ambiguity
+- an accented fixture that proves clear beat, downbeat, and phrase evidence can
+  classify as `ready` through the same PCM WAV probe path when evaluated with a
+  bounded 80-180 BPM dance-loop policy
+
+Together they give later detector work both a negative and positive guardrail, so
+real example readiness can improve without loosening policy blindly or committing
 external WAV files.
 
 Generated Feral grid listening packs should carry this readiness summary in
