@@ -4,6 +4,10 @@ use std::{
     process,
 };
 
+#[path = "source_timing_probe/anchor_summary.rs"]
+mod anchor_summary;
+
+use anchor_summary::AnchorEvidenceSummary;
 use riotbox_audio::{
     source_audio::SourceAudioCache,
     source_timing_probe::{SourceTimingProbeConfig, analyze_source_timing_probe},
@@ -15,7 +19,7 @@ use riotbox_core::source_graph::{
     SourceTimingProbeDownbeatEvidenceReport, SourceTimingProbeDownbeatEvidenceStatus,
     SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus, TimingWarningCode,
     source_timing_probe_beat_evidence_report, source_timing_probe_downbeat_evidence_report,
-    source_timing_probe_readiness_report,
+    source_timing_probe_readiness_report, timing_model_from_probe_bpm_candidates,
 };
 use serde::Serialize;
 
@@ -50,6 +54,7 @@ struct ProbeSummary {
     alternate_evidence_count: usize,
     alternate_beat_candidate_count: usize,
     alternate_downbeat_phase_count: usize,
+    anchor_evidence: AnchorEvidenceSummary,
     warning_codes: Vec<&'static str>,
     onset_count: usize,
     onset_density_per_second: f32,
@@ -96,8 +101,15 @@ fn run(args: impl IntoIterator<Item = String>) -> Result<(), String> {
         readiness.primary_bpm.unwrap_or(f32::NAN),
         policy,
     );
-    let summary =
-        ProbeSummary::from_report(&args.source_path, &readiness, &beat, &downbeat, &probe);
+    let timing = timing_model_from_probe_bpm_candidates(&input, policy);
+    let summary = ProbeSummary::from_report(
+        &args.source_path,
+        &readiness,
+        &beat,
+        &downbeat,
+        &timing,
+        &probe,
+    );
 
     if args.json {
         println!(
@@ -145,6 +157,7 @@ impl ProbeSummary {
         report: &SourceTimingProbeReadinessReport,
         beat: &SourceTimingProbeBeatEvidenceReport,
         downbeat: &SourceTimingProbeDownbeatEvidenceReport,
+        timing: &riotbox_core::source_graph::TimingModel,
         probe: &riotbox_audio::source_timing_probe::SourceTimingProbe,
     ) -> Self {
         Self {
@@ -169,6 +182,7 @@ impl ProbeSummary {
             alternate_evidence_count: report.alternate_evidence_count,
             alternate_beat_candidate_count: beat.alternate_candidate_count,
             alternate_downbeat_phase_count: downbeat.alternate_phase_count,
+            anchor_evidence: AnchorEvidenceSummary::from_timing(timing),
             warning_codes: report
                 .warning_codes
                 .iter()
@@ -199,6 +213,7 @@ fn render_text(summary: &ProbeSummary) -> String {
     } else {
         summary.warning_codes.join(",")
     };
+    let anchors = &summary.anchor_evidence;
 
     format!(
         concat!(
@@ -210,6 +225,7 @@ fn render_text(summary: &ProbeSummary) -> String {
             "beat: {beat} downbeat: {downbeat_status} offset_beats={downbeat}\n",
             "scores: beat={beat_score} downbeat={downbeat_score}\n",
             "phrase: {phrase} drift: {drift} confidence: {confidence}\n",
+            "anchors: total={anchor_total} kick={kick_anchors} backbeat={backbeat_anchors} transient={transient_anchors}\n",
             "alternates: {alternates} warnings: {warnings}\n",
             "onsets: {onsets} density_per_second={density:.3} duration_seconds={duration:.3}"
         ),
@@ -226,6 +242,10 @@ fn render_text(summary: &ProbeSummary) -> String {
         phrase = summary.phrase_status,
         drift = summary.drift_status,
         confidence = summary.confidence_result,
+        anchor_total = anchors.primary_anchor_count,
+        kick_anchors = anchors.primary_kick_anchor_count,
+        backbeat_anchors = anchors.primary_backbeat_anchor_count,
+        transient_anchors = anchors.primary_transient_anchor_count,
         alternates = summary.alternate_evidence_count,
         warnings = warnings,
         onsets = summary.onset_count,
@@ -366,7 +386,9 @@ mod tests {
             readiness.primary_bpm.unwrap_or(f32::NAN),
             policy,
         );
-        let summary = ProbeSummary::from_report(&source_path, &readiness, &beat, &downbeat, &probe);
+        let timing = timing_model_from_probe_bpm_candidates(&input, policy);
+        let summary =
+            ProbeSummary::from_report(&source_path, &readiness, &beat, &downbeat, &timing, &probe);
         let text = render_text(&summary);
         let json = serde_json::to_value(&summary).expect("json");
 
@@ -387,9 +409,12 @@ mod tests {
         assert!(text.contains("beat: stable"));
         assert!(text.contains("downbeat: "));
         assert!(text.contains("scores: beat="));
+        assert!(text.contains("anchors: total="));
         assert!(json["schema"].is_string());
         assert!(json["primary_beat_score"].is_number());
         assert!(json["primary_downbeat_score"].is_number());
+        assert!(json["anchor_evidence"]["primary_anchor_count"].is_number());
+        assert!(json["anchor_evidence"]["primary_anchor_preview"].is_array());
     }
 
     fn accented_loop_samples() -> Vec<f32> {
