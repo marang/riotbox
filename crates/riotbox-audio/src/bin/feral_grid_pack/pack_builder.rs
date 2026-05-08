@@ -194,6 +194,7 @@ struct PackReport {
     w30: RenderMetrics,
     source_first_mix: RenderMetrics,
     full_mix: RenderMetrics,
+    source_grid_output_drift: SourceGridOutputDriftMetrics,
     source_first_generated_to_source_rms_ratio: f32,
     support_generated_to_source_rms_ratio: f32,
 }
@@ -258,6 +259,7 @@ struct ManifestPackMetrics {
     source_first_mix: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
     mix_balance: ManifestMixBalanceMetrics,
+    source_grid_output_drift: SourceGridOutputDriftMetrics,
     bar_variation: ManifestBarVariationMetrics,
     spectral_energy: ManifestSpectralEnergyMetrics,
 }
@@ -397,6 +399,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         w30: render_metrics(&w30, &grid),
         source_first_mix: render_metrics(&source_first_mix, &grid),
         full_mix: render_metrics(&full_mix, &grid),
+        source_grid_output_drift: source_grid_output_drift_metrics(&tr909, &grid),
         source_first_generated_to_source_rms_ratio:
             source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid),
         support_generated_to_source_rms_ratio: support_generated_to_source_rms_ratio(

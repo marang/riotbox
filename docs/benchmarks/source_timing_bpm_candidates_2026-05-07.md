@@ -94,6 +94,9 @@ The timing candidate policy has two named profiles:
 Generated Feral grid listening packs should carry this readiness summary and
 the named readiness policy profile in their manifest so example audio can be
 judged against timing evidence instead of only against rendered level metrics.
+They should also expose a bounded `metrics.source_grid_output_drift` smoke
+metric for the generated support grid; this catches obvious output/grid
+misalignment but is not a production beat/downbeat accuracy claim.
 
 ## Boundary
 
