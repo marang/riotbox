@@ -5,9 +5,8 @@ fn renders_more_musical_jam_shell_snapshot() {
 
     assert!(rendered.contains("trust usable"));
     assert!(rendered.contains("idle @ 32.0 | source b32 bar8 p1"));
-    assert!(rendered.contains("source timing needs confirm | quality"));
-    assert!(rendered.contains("low | policy manual_confirm"));
-    assert!(rendered.contains("manual_confirm"));
+    assert!(rendered.contains("source timing needs confirm | trust"));
+    assert!(rendered.contains("low | mode manual confirm"));
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
@@ -45,13 +44,11 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("source timing grid locked | quality"),
+        rendered.contains("source timing grid locked | trust"),
         "{rendered}"
     );
-    assert!(
-        rendered.contains("high | policy locked"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("trust high"), "{rendered}");
+    assert!(rendered.contains("mode locked"), "{rendered}");
     assert!(rendered.contains("timing warning none"), "{rendered}");
 }
 
@@ -74,7 +71,7 @@ fn source_timing_readiness_styles_locked_cue_as_confirmed() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "source timing grid locked | quality high | policy locked");
+    assert_eq!(rendered, "source timing grid locked | trust high | mode locked");
     assert_eq!(line.spans[2].content.as_ref(), "grid locked");
     assert_eq!(line.spans[2].style.fg, Some(Color::Green));
     assert!(
@@ -96,7 +93,7 @@ fn source_timing_readiness_styles_manual_confirm_as_pending() {
 
     assert_eq!(
         rendered,
-        "source timing needs confirm | quality low | policy manual_confirm"
+        "source timing needs confirm | trust low | mode manual confirm"
     );
     assert_eq!(line.spans[2].content.as_ref(), "needs confirm");
     assert_eq!(line.spans[2].style.fg, Some(Color::Yellow));

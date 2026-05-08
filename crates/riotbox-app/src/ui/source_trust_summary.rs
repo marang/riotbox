@@ -203,8 +203,8 @@ fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
         "source timing",
         trust.source_timing_policy,
         [
-            ("quality", trust.source_timing_quality),
-            ("policy", trust.source_timing_policy),
+            ("trust", trust.source_timing_quality),
+            ("mode", source_timing_policy_display_label(trust.source_timing_policy)),
         ],
     )
 }
@@ -298,6 +298,14 @@ fn jam_source_timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'s
 
 fn source_timing_policy_cue_label(policy: &str) -> &'static str {
     crate::source_timing_cues::source_timing_policy_cue_label(policy)
+}
+
+fn source_timing_policy_display_label(policy: &'static str) -> &'static str {
+    match policy {
+        "manual_confirm" => "manual confirm",
+        "fallback_grid" => "fallback grid",
+        other => other,
+    }
 }
 
 fn source_timing_policy_cue_style(policy: &str) -> Style {

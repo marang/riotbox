@@ -323,8 +323,10 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
     assert!(rendered.contains("Candidates"));
     assert!(rendered.contains("Provenance"));
     assert!(rendered.contains("Source Graph Warnings"));
-    assert!(rendered.contains("cue needs confirm | quality low | policy manual_confirm"));
-    assert!(rendered.contains("meter 4/4 | hyp 1 primary timing-primary"));
+    assert!(rendered.contains("readiness needs confirm | 126.0 BPM | conf 0.76"));
+    assert!(rendered.contains("beat tempo only | downbeat ambiguous | phrase uncertain"));
+    assert!(rendered.contains("meter 4/4 | hypotheses 1 | primary timing-primary"));
+    assert!(rendered.contains("mode manual confirm | trust low"));
     assert!(rendered.contains("warnings ambiguous_downbeat, phrase_uncertain"));
     assert!(rendered.contains("feral ready"));
     assert!(rendered.contains("break high"));

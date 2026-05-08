@@ -2,7 +2,10 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) => vec![
             Line::from(format!(
-                "tempo {} | conf {:.2}",
+                "readiness {} | {} | conf {:.2}",
+                crate::source_timing_cues::source_timing_policy_cue_label(
+                    timing_degraded_policy_machine_label(&graph.timing.effective_degraded_policy())
+                ),
                 graph
                     .timing
                     .bpm_estimate
@@ -10,22 +13,9 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .unwrap_or_else(|| "unknown".into()),
                 graph.timing.bpm_confidence
             )),
-            source_timing_cue_line(
-                "cue",
-                timing_degraded_policy_label(&graph.timing.effective_degraded_policy()),
-                [
-                    (
-                        "quality",
-                        timing_quality_label(&graph.timing.effective_timing_quality()),
-                    ),
-                    (
-                        "policy",
-                        timing_degraded_policy_label(&graph.timing.effective_degraded_policy()),
-                    ),
-                ],
-            ),
+            source_timing_grid_readiness_line(graph),
             Line::from(format!(
-                "meter {} | hyp {} primary {}",
+                "meter {} | hypotheses {} | primary {}",
                 graph
                     .timing
                     .meter_hint
@@ -40,10 +30,9 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .unwrap_or("none")
             )),
             Line::from(format!(
-                "beats {} | bars {} | phrases {}",
-                graph.timing.beat_grid.len(),
-                graph.timing.bar_grid.len(),
-                graph.timing.phrase_grid.len()
+                "mode {} | trust {}",
+                timing_degraded_policy_display_label(&graph.timing.effective_degraded_policy()),
+                timing_quality_label(&graph.timing.effective_timing_quality()),
             )),
             Line::from(format!(
                 "warnings {}",
@@ -52,6 +41,57 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         ],
         None => vec![Line::from("no timing information available")],
     }
+}
+
+fn source_timing_grid_readiness_line(
+    graph: &riotbox_core::source_graph::SourceGraph,
+) -> Line<'static> {
+    Line::from(format!(
+        "beat {} | downbeat {} | phrase {}",
+        beat_grid_status_label(graph),
+        downbeat_status_label(graph),
+        phrase_status_label(graph)
+    ))
+}
+
+fn beat_grid_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> String {
+    if !graph.timing.beat_grid.is_empty() {
+        return format!("grid {}", graph.timing.beat_grid.len());
+    }
+    if graph.timing.bpm_estimate.is_some() {
+        return "tempo only".into();
+    }
+    "unknown".into()
+}
+
+fn downbeat_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> &'static str {
+    if graph
+        .timing
+        .warnings
+        .iter()
+        .any(|warning| warning.code == TimingWarningCode::AmbiguousDownbeat)
+    {
+        return "ambiguous";
+    }
+    if !graph.timing.bar_grid.is_empty() {
+        return "bar locked";
+    }
+    "unknown"
+}
+
+fn phrase_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> &'static str {
+    if graph
+        .timing
+        .warnings
+        .iter()
+        .any(|warning| warning.code == TimingWarningCode::PhraseUncertain)
+    {
+        return "uncertain";
+    }
+    if !graph.timing.phrase_grid.is_empty() {
+        return "phrase locked";
+    }
+    "unknown"
 }
 
 fn timing_quality_label(quality: &TimingQuality) -> &'static str {
@@ -63,12 +103,23 @@ fn timing_quality_label(quality: &TimingQuality) -> &'static str {
     }
 }
 
-fn timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'static str {
+fn timing_degraded_policy_machine_label(policy: &TimingDegradedPolicy) -> &'static str {
     match policy {
         TimingDegradedPolicy::Locked => "locked",
         TimingDegradedPolicy::Cautious => "cautious",
         TimingDegradedPolicy::ManualConfirm => "manual_confirm",
         TimingDegradedPolicy::FallbackGrid => "fallback_grid",
+        TimingDegradedPolicy::Disabled => "disabled",
+        TimingDegradedPolicy::Unknown => "unknown",
+    }
+}
+
+fn timing_degraded_policy_display_label(policy: &TimingDegradedPolicy) -> &'static str {
+    match policy {
+        TimingDegradedPolicy::Locked => "locked",
+        TimingDegradedPolicy::Cautious => "listen first",
+        TimingDegradedPolicy::ManualConfirm => "manual confirm",
+        TimingDegradedPolicy::FallbackGrid => "fallback grid",
         TimingDegradedPolicy::Disabled => "disabled",
         TimingDegradedPolicy::Unknown => "unknown",
     }
