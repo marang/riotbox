@@ -221,6 +221,23 @@ such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or
 count, phrase-grid count, hypothesis ids, and full warning-code lists should
 still come directly from Source Graph timing state when a surface needs them.
 
+When the shared summary exposes one `primary_warning`, it should pick the most
+musically actionable timing risk, not the first warning in Source Graph storage
+order. Current priority is:
+
+1. `drift_high`
+2. `ambiguous_downbeat`
+3. `low_timing_confidence`
+4. `weak_kick_anchor`
+5. `weak_backbeat_anchor`
+6. `half_time_possible`
+7. `double_time_possible`
+8. `phrase_uncertain`
+
+Surfaces may show only this primary warning for focus, but raw observer/source
+diagnostic fields such as `warning_codes` should still preserve the full Source
+Graph warning list when space or QA context requires it.
+
 Do not add another UI-only or observer-only timing-label mapper unless it wraps
 the shared summary or is documented here as a temporary migration seam. Any new
 policy label must keep the policy-to-cue contract aligned across TUI, observer
@@ -599,11 +616,13 @@ bounded BPM policy:
 - observer/audio correlation should compare app-observed Source Timing readiness
   with manifest-side Source Timing evidence when both are present. The
   app-observed cue, quality, degraded policy, primary warning, and compact
-  primary-anchor evidence should come from the shared Jam source timing summary,
-  while raw grid/hypothesis counts remain Source Graph diagnostics. The current
-  summary contract reports this as `output_path.source_timing_alignment`, using
-  BPM delta plus normalized warning-code overlap as bounded proof that the
-  control path and generated output path are using compatible timing evidence.
+  primary-anchor evidence should come from the shared Jam source timing summary.
+  The primary warning is priority-selected by musician-facing timing risk, while
+  raw grid/hypothesis counts and full warning-code lists remain Source Graph
+  diagnostics. The current summary contract reports this as
+  `output_path.source_timing_alignment`, using BPM delta plus normalized
+  warning-code overlap as bounded proof that the control path and generated
+  output path are using compatible timing evidence.
 - observer/audio correlation should also compare compact app-observed and
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`. This is a bounded consistency

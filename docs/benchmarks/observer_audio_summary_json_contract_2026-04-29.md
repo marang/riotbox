@@ -55,6 +55,10 @@ The observer should source `cue`, `quality`, `degraded_policy`,
 timing summary. Raw beat/downbeat/phrase detail, hypothesis ids, counts, and full
 warning-code lists may remain direct Source Graph diagnostics.
 
+`primary_warning_code` is the summary's focused warning, selected by the shared
+musician-facing warning priority. `warning_codes` remains the full diagnostic
+list from Source Graph timing state when present.
+
 The `cue` must match the shared musician-facing label for `degraded_policy`; a
 summary that says `degraded_policy=manual_confirm` but `cue=listen first` is
 malformed because the control path would no longer explain timing trust
