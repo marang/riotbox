@@ -120,6 +120,18 @@ def validate_source_timing(value: Any) -> None:
     require_one_of(source_timing, "quality", {"low", "medium", "high", "unknown"})
     require_one_of(
         source_timing,
+        "cue",
+        {
+            "grid locked",
+            "needs confirm",
+            "listen first",
+            "fallback grid",
+            "not available",
+            "unknown",
+        },
+    )
+    require_one_of(
+        source_timing,
         "degraded_policy",
         {"locked", "cautious", "manual_confirm", "fallback_grid", "disabled", "unknown"},
     )

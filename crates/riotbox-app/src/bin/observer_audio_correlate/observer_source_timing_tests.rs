@@ -22,7 +22,7 @@ fn strict_evidence_rejects_malformed_observer_source_timing() {
 
 fn observer_with_malformed_source_timing() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":"nope","quality":"low","degraded_policy":"manual_confirm","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":"nope","quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
