@@ -2,7 +2,7 @@
   "schema_version": 1,
   "pack_id": "feral-grid-demo",
   "result": "pass",
-  "grid_bpm_source": "static_default",
+  "grid_bpm_source": "source_timing",
   "grid_bpm_decision_reason": "source_timing_requires_manual_confirm",
   "artifacts": [
     {
@@ -16,10 +16,21 @@
     "schema": "riotbox.source_timing_probe_readiness.v1",
     "schema_version": 1,
     "source_id": "source.wav",
+    "policy_profile": "dance_loop_auto_readiness",
     "readiness": "weak",
     "requires_manual_confirm": true,
     "primary_bpm": 128.397,
     "bpm_agrees_with_grid": true,
-    "warning_codes": []
+    "primary_downbeat_offset_beats": 0,
+    "beat_status": "stable",
+    "downbeat_status": "ambiguous",
+    "confidence_result": "candidate_ambiguous",
+    "drift_status": "stable",
+    "phrase_status": "ambiguous_downbeat",
+    "alternate_evidence_count": 2,
+    "warning_codes": [
+      "PhraseUncertain",
+      "AmbiguousDownbeat"
+    ]
   }
 }

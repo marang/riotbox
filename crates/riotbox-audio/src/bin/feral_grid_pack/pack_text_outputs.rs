@@ -116,6 +116,7 @@ fn write_readme(
              - Source: `{}`\n\
              - BPM: `{:.3}`\n\
              - BPM source: `{}`\n\
+             - BPM decision reason: `{}`\n\
              - Source timing BPM delta: `{}`\n\
              - Source timing readiness: `{}`\n\
              - Source timing downbeat: `{}`\n\
@@ -140,6 +141,7 @@ fn write_readme(
             args.source_path.display(),
             grid.bpm,
             grid_bpm_source_label(grid_bpm.source),
+            grid_bpm_decision_reason_label(grid_bpm.reason),
             grid_bpm
                 .source_delta_bpm
                 .map(|delta| format!("{delta:.3}"))
@@ -163,11 +165,13 @@ fn source_timing_report_lines(
 ) -> String {
     format!(
         "- Source timing readiness: `{}`\n\
+         - Grid BPM decision reason: `{}`\n\
          - Source timing BPM: `primary={} delta={} agrees={}`\n\
          - Source timing downbeat: `{}`\n\
          - Source timing phrase: `{}`\n\
          - Source timing warnings: `{}`\n",
         source_timing_readiness_line(report),
+        grid_bpm_decision_reason_label(grid_bpm.reason),
         optional_f32(report.primary_bpm),
         optional_f32(grid_bpm.source_delta_bpm),
         optional_bool(source_timing_bpm_agrees(grid_bpm.source_delta_bpm)),

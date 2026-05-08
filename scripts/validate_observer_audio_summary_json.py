@@ -58,6 +58,7 @@ def validate_summary(summary: Any) -> None:
     require_string(output_path, "manifest_result")
     require_int(output_path, "artifact_count")
     require_string(output_path, "grid_bpm_source")
+    require_string(output_path, "grid_bpm_decision_reason")
     require_optional_number(output_path, "source_timing_bpm_delta")
     require_optional_source_timing(output_path)
     require_optional_source_timing_alignment(output_path)

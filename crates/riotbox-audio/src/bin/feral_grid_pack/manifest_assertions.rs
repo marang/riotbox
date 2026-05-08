@@ -13,6 +13,7 @@ mod manifest_assertions {
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["bars"], 2);
         assert_eq!(manifest["grid_bpm_source"], "user_override");
+        assert_eq!(manifest["grid_bpm_decision_reason"], "user_override");
         assert!(manifest["source_timing_bpm_delta"].is_number());
         assert_eq!(manifest["feral_scorecard"]["readiness"], "ready");
         assert_eq!(

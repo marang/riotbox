@@ -37,6 +37,7 @@ packs also surface the same compact readiness, downbeat, phrase, and warning
 evidence in `README.md` and `grid-report.md` for human QA:
 
 - `grid_bpm_source`
+- `grid_bpm_decision_reason`
 - `bpm`
 - `source_timing.policy_profile`
 - `source_timing.primary_bpm`

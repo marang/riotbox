@@ -44,6 +44,7 @@ python3 scripts/validate_listening_manifest_json.py \
   "$tmpdir/feral-grid/manifest.json"
 jq -e \
   '.grid_bpm_source == "static_default"
+    and .grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == true
     and (.source_timing_bpm_delta | type == "number")' \
@@ -74,6 +75,7 @@ jq -e \
     and .control_path.observer_source_timing.degraded_policy == "cautious"
     and .control_path.observer_source_timing.primary_warning_code == "phrase_uncertain"
     and .output_path.grid_bpm_source == "static_default"
+    and .output_path.grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
     and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.bpm_delta <= .output_path.source_timing_alignment.bpm_tolerance

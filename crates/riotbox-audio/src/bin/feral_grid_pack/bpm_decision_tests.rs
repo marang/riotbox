@@ -10,11 +10,19 @@ mod bpm_decision_tests {
 
         let source_timing = choose_grid_bpm(&args, &ready);
         assert_eq!(source_timing.source, GridBpmSource::SourceTiming);
+        assert_eq!(
+            source_timing.reason,
+            GridBpmDecisionReason::SourceTimingReady
+        );
         assert!((source_timing.bpm - 130.0).abs() < 0.0001);
         assert_eq!(source_timing.source_delta_bpm, Some(0.0));
 
         let fallback = choose_grid_bpm(&args, &weak);
         assert_eq!(fallback.source, GridBpmSource::StaticDefault);
+        assert_eq!(
+            fallback.reason,
+            GridBpmDecisionReason::SourceTimingNotReady
+        );
         assert!((fallback.bpm - DEFAULT_BPM).abs() < 0.0001);
         assert_eq!(fallback.source_delta_bpm, Some(2.0));
     }
@@ -29,6 +37,10 @@ mod bpm_decision_tests {
         let decision = choose_grid_bpm(&args, &manual_confirm_ready);
 
         assert_eq!(decision.source, GridBpmSource::StaticDefault);
+        assert_eq!(
+            decision.reason,
+            GridBpmDecisionReason::SourceTimingRequiresManualConfirm
+        );
         assert!((decision.bpm - DEFAULT_BPM).abs() < 0.0001);
         assert_eq!(decision.source_primary_bpm, Some(130.0));
         assert_eq!(decision.source_delta_bpm, Some(2.0));
@@ -41,10 +53,38 @@ mod bpm_decision_tests {
 
         let decision = choose_grid_bpm(&args, &ready);
         assert_eq!(decision.source, GridBpmSource::UserOverride);
+        assert_eq!(decision.reason, GridBpmDecisionReason::UserOverride);
         assert!((decision.bpm - 128.0).abs() < 0.0001);
         assert_eq!(decision.source_primary_bpm, Some(130.0));
         assert_eq!(decision.source_delta_bpm, Some(2.0));
         assert_eq!(source_timing_bpm_agrees(decision.source_delta_bpm), Some(false));
+    }
+
+    #[test]
+    fn bpm_grid_decision_labels_missing_or_invalid_source_bpm() {
+        let args = bpm_decision_args(DEFAULT_BPM, false);
+
+        let missing = choose_grid_bpm(
+            &args,
+            &readiness_report(None, SourceTimingProbeReadinessStatus::Ready),
+        );
+        assert_eq!(missing.source, GridBpmSource::StaticDefault);
+        assert_eq!(
+            missing.reason,
+            GridBpmDecisionReason::SourceTimingMissingBpm
+        );
+        assert_eq!(missing.source_delta_bpm, None);
+
+        let invalid = choose_grid_bpm(
+            &args,
+            &readiness_report(Some(0.0), SourceTimingProbeReadinessStatus::Ready),
+        );
+        assert_eq!(invalid.source, GridBpmSource::StaticDefault);
+        assert_eq!(
+            invalid.reason,
+            GridBpmDecisionReason::SourceTimingInvalidBpm
+        );
+        assert_eq!(invalid.source_delta_bpm, None);
     }
 
     #[test]

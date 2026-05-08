@@ -78,7 +78,8 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert_eq!(summary.manifest_result, "pass");
     assert_eq!(summary.artifact_count, 5);
     assert_eq!(summary.grid_bpm_source, "source_timing");
-    assert_eq!(summary.source_timing_bpm_delta, Some(0.397));
+    assert_eq!(summary.grid_bpm_decision_reason, "source_timing_ready");
+    assert_eq!(summary.source_timing_bpm_delta, Some(0.0));
     assert_eq!(summary.commit_count, 1);
     assert_eq!(summary.commit_boundaries, ["NextBar"]);
     assert_eq!(
@@ -102,7 +103,8 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     );
     assert!(markdown.contains("Source timing phrase: `ambiguous_downbeat"));
     assert!(markdown.contains("Grid BPM source: `source_timing`"));
-    assert!(markdown.contains("Source timing BPM delta: `0.397000`"));
+    assert!(markdown.contains("Grid BPM decision reason: `source_timing_ready`"));
+    assert!(markdown.contains("Source timing BPM delta: `0.000000`"));
     assert!(markdown.contains("Observer source timing: `src-beat08 quality=medium"));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
@@ -305,13 +307,14 @@ fn synthetic_manifest() -> String {
   "pack_id": "feral-grid-demo",
   "result": "pass",
   "grid_bpm_source": "source_timing",
-  "source_timing_bpm_delta": 0.397,
+  "grid_bpm_decision_reason": "source_timing_ready",
+  "source_timing_bpm_delta": 0.0,
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
     "source_id": "source.wav",
     "policy_profile": "dance_loop_auto_readiness",
-    "readiness": "weak",
-    "requires_manual_confirm": true,
+    "readiness": "ready",
+    "requires_manual_confirm": false,
     "primary_bpm": 128.397,
     "bpm_agrees_with_grid": true,
     "beat_status": "stable",

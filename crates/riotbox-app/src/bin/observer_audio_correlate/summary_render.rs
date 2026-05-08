@@ -15,6 +15,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Manifest result: `{}`\n\
          - Artifact count: `{}`\n\
          - Grid BPM source: `{}`\n\
+         - Grid BPM decision reason: `{}`\n\
          - Source timing BPM delta: `{}`\n\
          - Full mix RMS: `{}`\n\
          - Full mix low-band RMS: `{}`\n\n\
@@ -53,6 +54,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         summary.manifest_result,
         summary.artifact_count,
         summary.grid_bpm_source,
+        summary.grid_bpm_decision_reason,
         format_optional_f64(summary.source_timing_bpm_delta),
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
@@ -104,6 +106,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "manifest_result": &summary.manifest_result,
             "artifact_count": summary.artifact_count,
             "grid_bpm_source": &summary.grid_bpm_source,
+            "grid_bpm_decision_reason": &summary.grid_bpm_decision_reason,
             "source_timing_bpm_delta": summary.source_timing_bpm_delta,
             "source_timing": summary.source_timing.as_ref().map(|timing| serde_json::json!({
                 "source_id": &timing.source_id,
