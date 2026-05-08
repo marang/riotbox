@@ -620,6 +620,8 @@ How to interpret `auto`:
 - `grid_bpm_source: source_timing` means the current readiness report drove the
   grid because it was ready and did not require manual confirmation.
 - `grid_bpm_source: static_default` means auto mode fell back to the static default grid.
+- `grid_bpm_decision_reason` explains why the source was selected or why
+  `static_default` was used, for example `source_timing_requires_manual_confirm`.
 - `source_timing.policy_profile: dance_loop_auto_readiness` means the pack used the stricter dance-loop auto-trust policy, not the broader diagnostic timing policy.
 - `source_timing.bpm_agrees_with_grid: false` means the generated pack is timing-risky and should not be judged as a successful beat-grid example.
 - `source_timing.readiness: weak` means the detector saw useful evidence but not enough downbeat/phrase confidence for automatic trust.

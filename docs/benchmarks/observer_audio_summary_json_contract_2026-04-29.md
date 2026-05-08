@@ -55,6 +55,8 @@ The `output_path` object should include:
 - `artifact_count`: number of manifest artifacts.
 - `grid_bpm_source`: manifest grid BPM source when present, or `unknown` for
   older/non-grid manifests.
+- `grid_bpm_decision_reason`: manifest grid BPM decision reason when present,
+  or `unknown` for older/non-grid manifests.
 - `source_timing_bpm_delta`: manifest source/grid BPM delta when present, or
   `null`.
 - `source_timing`: `null` or a compact object copied from manifest
@@ -150,6 +152,7 @@ The committed fixture JSON smoke currently requires:
 - `output_path.present == true`
 - `output_path.issues` is empty
 - `output_path.grid_bpm_source` is present as a string
+- `output_path.grid_bpm_decision_reason` is present as a string
 - `output_path.source_timing_bpm_delta` is present as a number or `null`
 - `output_path.source_timing` is present as an object or `null`
 - `output_path.source_timing_alignment` is present as an object or `null`
