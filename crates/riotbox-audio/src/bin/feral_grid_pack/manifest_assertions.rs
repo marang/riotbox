@@ -169,6 +169,15 @@ mod manifest_assertions {
         let output_drift = &manifest["metrics"]["source_grid_output_drift"];
         let hit_ratio = output_drift["hit_ratio"].as_f64().expect("hit ratio");
         assert!(hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+        let tr909_alignment = &manifest["metrics"]["tr909_source_grid_alignment"];
+        let tr909_hit_ratio = tr909_alignment["hit_ratio"]
+            .as_f64()
+            .expect("tr909 alignment hit ratio");
+        assert!(tr909_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+        assert_eq!(
+            tr909_alignment["beat_count"],
+            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
+        );
         assert!(
             manifest["metrics"]["bar_variation"]["source_first_mix"]["bar_similarity"]
                 .as_f64()
