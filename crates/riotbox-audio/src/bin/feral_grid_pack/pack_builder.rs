@@ -195,6 +195,7 @@ struct PackReport {
     source_first_mix: RenderMetrics,
     full_mix: RenderMetrics,
     tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
     source_grid_output_drift: SourceGridOutputDriftMetrics,
     source_first_generated_to_source_rms_ratio: f32,
     support_generated_to_source_rms_ratio: f32,
@@ -262,6 +263,7 @@ struct ManifestPackMetrics {
     full_grid_mix: ManifestRenderMetrics,
     mix_balance: ManifestMixBalanceMetrics,
     tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
     source_grid_output_drift: SourceGridOutputDriftMetrics,
     bar_variation: ManifestBarVariationMetrics,
     spectral_energy: ManifestSpectralEnergyMetrics,
@@ -397,6 +399,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     let tr909_source_grid_alignment = source_grid_output_drift_metrics(&tr909, &grid);
+    let w30_source_grid_alignment = source_grid_output_drift_metrics(&w30, &grid);
     let report = PackReport {
         tr909_source_profile,
         w30_source_chop_profile,
@@ -405,6 +408,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         source_first_mix: render_metrics(&source_first_mix, &grid),
         full_mix: render_metrics(&full_mix, &grid),
         tr909_source_grid_alignment,
+        w30_source_grid_alignment,
         source_grid_output_drift: tr909_source_grid_alignment,
         source_first_generated_to_source_rms_ratio:
             source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid),

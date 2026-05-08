@@ -178,6 +178,15 @@ mod manifest_assertions {
             tr909_alignment["beat_count"],
             manifest["metrics"]["source_grid_output_drift"]["beat_count"]
         );
+        let w30_alignment = &manifest["metrics"]["w30_source_grid_alignment"];
+        let w30_hit_ratio = w30_alignment["hit_ratio"]
+            .as_f64()
+            .expect("w30 alignment hit ratio");
+        assert!(w30_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+        assert_eq!(
+            w30_alignment["beat_count"],
+            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
+        );
         assert!(
             manifest["metrics"]["bar_variation"]["source_first_mix"]["bar_similarity"]
                 .as_f64()

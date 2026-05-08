@@ -129,11 +129,16 @@ pack-specific `metrics` object. When present, the repo-local validator checks it
 as a named optional QA contract so malformed drift evidence cannot reach later
 observer/audio correlation as if it were trustworthy.
 
-Feral grid manifests may also include the same shape as
+The repo-local validator applies the same shape checks to named lane-specific
+alignment proofs. Feral grid manifests may include the same shape as
 `metrics.tr909_source_grid_alignment` when the producer wants the TR-909 support
 stem to be explicitly auditable as its own timing-aware lane. This keeps the
 older generic output-drift field compatible while making the TR-909 lane proof
 visible by name.
+
+Feral grid manifests may also include the same shape as
+`metrics.w30_source_grid_alignment` when the producer wants the W-30 source chop
+stem to be explicitly auditable as its own timing-aware lane.
 
 When present, `metrics.source_grid_output_drift` must include:
 
