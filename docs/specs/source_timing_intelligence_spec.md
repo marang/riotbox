@@ -323,6 +323,9 @@ Rules:
   mean "not enough material", not silent confidence
 - groove data should preserve feel where possible instead of flattening every
   lane to a rigid grid
+- the current Rust probe may emit a small bounded `GrooveResidual` set from
+  onset-to-grid residuals for common subdivisions; this is timing evidence for
+  later lane policy, not a finished swing/groove playback engine
 - output QA must check generated-lane drift against the selected source grid
   for timing-aware audio slices
 

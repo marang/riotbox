@@ -3,6 +3,7 @@ use super::*;
 mod anchor_tests;
 mod confidence_report_tests;
 mod evidence_report_tests;
+mod groove_tests;
 mod readiness_report_tests;
 
 #[test]
