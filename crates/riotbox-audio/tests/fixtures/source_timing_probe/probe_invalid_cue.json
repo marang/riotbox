@@ -20,6 +20,28 @@
   "alternate_evidence_count": 0,
   "alternate_beat_candidate_count": 0,
   "alternate_downbeat_phase_count": 0,
+  "anchor_evidence": {
+    "primary_anchor_count": 9,
+    "primary_kick_anchor_count": 2,
+    "primary_backbeat_anchor_count": 4,
+    "primary_transient_anchor_count": 3,
+    "primary_anchor_preview": [
+      {
+        "anchor_type": "kick",
+        "time_seconds": 0.0,
+        "bar_index": 1,
+        "beat_index": 1,
+        "confidence": 0.65,
+        "strength": 1.0,
+        "tags": [
+          "probe_onset",
+          "anchor_classified_v0",
+          "kick_anchor",
+          "downbeat"
+        ]
+      }
+    ]
+  },
   "warning_codes": [],
   "onset_count": 9,
   "onset_density_per_second": 2.4,

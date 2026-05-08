@@ -71,6 +71,20 @@ for key in ("primary_beat_score", "primary_downbeat_score"):
     if summary.get(key) is not None:
         raise SystemExit(f"{key} must stay null for degraded silence, got {summary.get(key)!r}")
 
+anchors = summary.get("anchor_evidence", {})
+for key in (
+    "primary_anchor_count",
+    "primary_kick_anchor_count",
+    "primary_backbeat_anchor_count",
+    "primary_transient_anchor_count",
+):
+    if anchors.get(key) != 0:
+        raise SystemExit(f"anchor_evidence.{key} must be 0 for degraded silence, got {anchors.get(key)!r}")
+if anchors.get("primary_anchor_preview") != []:
+    raise SystemExit(
+        "anchor_evidence.primary_anchor_preview must stay empty for degraded silence"
+    )
+
 print(
     "generated degraded source timing probe ok: "
     f"cue={summary['cue']} warnings={','.join(sorted(warnings))}"

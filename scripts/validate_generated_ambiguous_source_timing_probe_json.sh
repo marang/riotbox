@@ -89,11 +89,32 @@ missing = sorted(required_warnings - warnings)
 if missing:
     raise SystemExit(f"missing expected warning codes: {missing}")
 
+anchors = summary.get("anchor_evidence", {})
+anchor_expectations = {
+    "primary_anchor_count": lambda value: value > 0,
+    "primary_kick_anchor_count": lambda value: value == 0,
+    "primary_backbeat_anchor_count": lambda value: value == 0,
+    "primary_transient_anchor_count": lambda value: value > 0,
+}
+for key, predicate in anchor_expectations.items():
+    value = anchors.get(key)
+    if not isinstance(value, int) or isinstance(value, bool) or not predicate(value):
+        raise SystemExit(f"anchor_evidence.{key} failed ambiguous timing smoke: {value!r}")
+
+preview = anchors.get("primary_anchor_preview", [])
+if not preview:
+    raise SystemExit("anchor_evidence.primary_anchor_preview must not be empty for flat-pulse source")
+if any(anchor.get("anchor_type") != "transient_cluster" for anchor in preview):
+    raise SystemExit(
+        "ambiguous flat-pulse anchor preview must remain generic transient_cluster evidence"
+    )
+
 print(
     "generated ambiguous source timing probe ok: "
     f"bpm={summary['primary_bpm']:.3f} "
     f"beat={summary['primary_beat_score']:.3f} "
     f"downbeat={summary['primary_downbeat_score']:.3f} "
-    f"alternates={summary['alternate_downbeat_phase_count']}"
+    f"alternates={summary['alternate_downbeat_phase_count']} "
+    f"anchors={anchors['primary_anchor_count']}"
 )
 PY

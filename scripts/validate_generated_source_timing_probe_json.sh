@@ -54,10 +54,29 @@ if summary.get("warning_codes") != []:
         f"warning_codes must be empty for generated locked source: {summary.get('warning_codes')!r}"
     )
 
+anchors = summary.get("anchor_evidence", {})
+anchor_checks = {
+    "primary_anchor_count": lambda value: value > 0,
+    "primary_kick_anchor_count": lambda value: value > 0,
+    "primary_backbeat_anchor_count": lambda value: value > 0,
+    "primary_transient_anchor_count": lambda value: value >= 0,
+}
+for key, predicate in anchor_checks.items():
+    value = anchors.get(key)
+    if not isinstance(value, int) or isinstance(value, bool) or not predicate(value):
+        raise SystemExit(f"anchor_evidence.{key} failed generated source timing smoke: {value!r}")
+
+preview = anchors.get("primary_anchor_preview", [])
+if not preview or not any(anchor.get("anchor_type") == "kick" for anchor in preview):
+    raise SystemExit("anchor_evidence.primary_anchor_preview must include a kick anchor")
+if not any(anchor.get("anchor_type") == "backbeat" for anchor in preview):
+    raise SystemExit("anchor_evidence.primary_anchor_preview must include a backbeat anchor")
+
 print(
     "generated source timing probe ok: "
     f"bpm={summary['primary_bpm']:.3f} "
     f"beat={summary['primary_beat_score']:.3f} "
-    f"downbeat={summary['primary_downbeat_score']:.3f}"
+    f"downbeat={summary['primary_downbeat_score']:.3f} "
+    f"anchors={anchors['primary_anchor_count']}"
 )
 PY

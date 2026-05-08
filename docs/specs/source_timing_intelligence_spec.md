@@ -500,6 +500,9 @@ primary timing hypothesis:
   tags
 - this is source-timing evidence only; lane policies decide later whether to
   preserve, answer, replace, or destroy these anchors
+- the source timing probe CLI JSON must expose a compact `anchor_evidence`
+  summary so QA can distinguish stable kick/backbeat evidence from generic
+  transient evidence before lane policies consume it
 
 The candidate confidence report summarizes this early detector state for QA:
 

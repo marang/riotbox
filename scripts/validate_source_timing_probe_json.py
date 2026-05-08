@@ -17,6 +17,16 @@ SOURCE_TIMING_CUES = {
     "listen first",
     "not available",
 }
+ANCHOR_TYPES = {
+    "kick",
+    "snare",
+    "backbeat",
+    "fill",
+    "loop_window",
+    "answer_slot",
+    "capture_candidate",
+    "transient_cluster",
+}
 
 
 def main() -> int:
@@ -68,10 +78,42 @@ def validate_summary(summary: Any) -> None:
     require_non_negative_int(summary, "alternate_evidence_count")
     require_non_negative_int(summary, "alternate_beat_candidate_count")
     require_non_negative_int(summary, "alternate_downbeat_phase_count")
+    validate_anchor_evidence(summary)
     require_string_list(summary, "warning_codes")
     require_non_negative_int(summary, "onset_count")
     require_non_negative_number(summary, "onset_density_per_second")
     require_non_negative_number(summary, "duration_seconds")
+
+
+def validate_anchor_evidence(summary: dict[str, Any]) -> None:
+    anchor_evidence = require_object(summary.get("anchor_evidence"), "anchor_evidence")
+    total = require_non_negative_int(anchor_evidence, "primary_anchor_count")
+    kick = require_non_negative_int(anchor_evidence, "primary_kick_anchor_count")
+    backbeat = require_non_negative_int(anchor_evidence, "primary_backbeat_anchor_count")
+    transient = require_non_negative_int(anchor_evidence, "primary_transient_anchor_count")
+    if kick + backbeat + transient > total:
+        raise ValueError(
+            "primary kick/backbeat/transient anchor counts must not exceed primary_anchor_count"
+        )
+    preview = require_array(anchor_evidence, "primary_anchor_preview")
+    if len(preview) > min(total, 8):
+        raise ValueError(
+            "primary_anchor_preview must contain at most the first eight primary anchors"
+        )
+    for index, item in enumerate(preview):
+        validate_anchor_preview(require_object(item, f"primary_anchor_preview[{index}]"))
+
+
+def validate_anchor_preview(anchor: dict[str, Any]) -> None:
+    require_one_of(anchor, "anchor_type", ANCHOR_TYPES)
+    require_non_negative_number(anchor, "time_seconds")
+    require_optional_int(anchor, "bar_index")
+    require_optional_int(anchor, "beat_index")
+    confidence = require_non_negative_number(anchor, "confidence")
+    if confidence > 1:
+        raise ValueError(f"anchor confidence must be <= 1, got {confidence!r}")
+    require_non_negative_number(anchor, "strength")
+    require_string_list(anchor, "tags")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
@@ -106,6 +148,13 @@ def require_string_list(parent: dict[str, Any], field: str) -> None:
         raise TypeError(f"{field} must be an array of non-empty strings")
 
 
+def require_array(parent: dict[str, Any], field: str) -> list[Any]:
+    value = parent.get(field)
+    if not isinstance(value, list):
+        raise TypeError(f"{field} must be an array")
+    return value
+
+
 def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str:
     value = require_string(parent, field)
     if value not in allowed:
@@ -124,10 +173,11 @@ def require_optional_number(parent: dict[str, Any], field: str) -> float | int |
     return value
 
 
-def require_non_negative_number(parent: dict[str, Any], field: str) -> None:
+def require_non_negative_number(parent: dict[str, Any], field: str) -> float | int:
     value = require_optional_number(parent, field)
     if value is None or value < 0:
         raise ValueError(f"{field} must be a non-negative number")
+    return value
 
 
 def require_optional_int(parent: dict[str, Any], field: str) -> int | None:
@@ -141,10 +191,11 @@ def require_optional_int(parent: dict[str, Any], field: str) -> int | None:
     return value
 
 
-def require_non_negative_int(parent: dict[str, Any], field: str) -> None:
+def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
     value = require_optional_int(parent, field)
     if value is None or value < 0:
         raise ValueError(f"{field} must be a non-negative integer")
+    return value
 
 
 def require_probe_cue_match(cue: str, readiness: str, requires_manual_confirm: bool) -> None:
