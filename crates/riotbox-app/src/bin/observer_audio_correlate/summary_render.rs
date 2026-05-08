@@ -24,6 +24,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Source timing phrase: `{}`\n\n\
          - Source timing alignment: `{}`\n\n\
          - Source timing anchor alignment: `{}`\n\n\
+         - Source timing groove alignment: `{}`\n\n\
          - Source-grid output hit ratio: `{}`\n\
          - Source-grid output max peak offset: `{}`\n\
          - Source-grid output max allowed offset: `{}`\n\n\
@@ -66,6 +67,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_source_timing_phrase(summary),
         format_source_timing_alignment(summary),
         format_source_timing_anchor_alignment(summary),
+        format_source_timing_groove_alignment(summary),
         format_source_grid_hit_ratio(summary),
         format_source_grid_max_peak_offset(summary),
         format_source_grid_max_allowed_offset(summary),
@@ -109,6 +111,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "primary_hypothesis_id": &timing.primary_hypothesis_id,
                 "hypothesis_count": timing.hypothesis_count,
                 "anchor_evidence": timing.anchor_evidence.as_ref().map(source_timing_anchor_evidence_json),
+                "groove_evidence": timing.groove_evidence.as_ref().map(source_timing_groove_evidence_json),
                 "primary_warning_code": &timing.primary_warning_code,
                 "warning_codes": &timing.warning_codes,
             })),
@@ -138,6 +141,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "phrase_status": &timing.phrase_status,
                 "alternate_evidence_count": timing.alternate_evidence_count,
                 "anchor_evidence": timing.anchor_evidence.as_ref().map(source_timing_anchor_evidence_json),
+                "groove_evidence": timing.groove_evidence.as_ref().map(source_timing_groove_evidence_json),
                 "warning_codes": &timing.warning_codes,
             })),
             "source_timing_alignment": summary.source_timing_alignment.as_ref().map(|alignment| serde_json::json!({
@@ -151,6 +155,12 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "status": &alignment.status,
                 "observer": alignment.observer.as_ref().map(source_timing_anchor_evidence_json),
                 "manifest": alignment.manifest.as_ref().map(source_timing_anchor_evidence_json),
+                "issues": &alignment.issues,
+            })),
+            "source_timing_groove_alignment": summary.source_timing_groove_alignment.as_ref().map(|alignment| serde_json::json!({
+                "status": &alignment.status,
+                "observer": alignment.observer.as_ref().map(source_timing_groove_evidence_json),
+                "manifest": alignment.manifest.as_ref().map(source_timing_groove_evidence_json),
                 "issues": &alignment.issues,
             })),
             "metrics": {
@@ -294,6 +304,39 @@ fn format_source_timing_anchor_counts(evidence: Option<&SourceTimingAnchorEviden
                 evidence.primary_kick_anchor_count,
                 evidence.primary_backbeat_anchor_count,
                 evidence.primary_transient_anchor_count
+            )
+        },
+    )
+}
+
+fn format_source_timing_groove_alignment(summary: &CorrelationSummary) -> String {
+    summary.source_timing_groove_alignment.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |alignment| {
+            let issues = if alignment.issues.is_empty() {
+                "none".to_string()
+            } else {
+                alignment.issues.join(",")
+            };
+            format!(
+                "{} observer={} manifest={} issues={}",
+                alignment.status,
+                format_source_timing_groove_counts(alignment.observer.as_ref()),
+                format_source_timing_groove_counts(alignment.manifest.as_ref()),
+                issues
+            )
+        },
+    )
+}
+
+fn format_source_timing_groove_counts(evidence: Option<&SourceTimingGrooveEvidence>) -> String {
+    evidence.map_or_else(
+        || "missing".to_string(),
+        |evidence| {
+            format!(
+                "{}(max_abs_ms={:.3})",
+                evidence.primary_groove_residual_count,
+                evidence.primary_max_abs_offset_ms
             )
         },
     )

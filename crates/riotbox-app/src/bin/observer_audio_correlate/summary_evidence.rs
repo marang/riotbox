@@ -44,6 +44,7 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     }
     failures.extend(source_timing_alignment_failures(summary));
     failures.extend(source_timing_anchor_alignment_failures(summary));
+    failures.extend(source_timing_groove_alignment_failures(summary));
     failures.extend(source_grid_output_drift_failures(summary));
     failures.extend(source_grid_alignment_failures(
         "tr909_source_grid_alignment",
@@ -71,6 +72,14 @@ fn source_timing_alignment_failures(summary: &CorrelationSummary) -> Vec<String>
 fn source_timing_anchor_alignment_failures(summary: &CorrelationSummary) -> Vec<String> {
     summary
         .source_timing_anchor_alignment
+        .as_ref()
+        .map(|alignment| alignment.issues.clone())
+        .unwrap_or_default()
+}
+
+fn source_timing_groove_alignment_failures(summary: &CorrelationSummary) -> Vec<String> {
+    summary
+        .source_timing_groove_alignment
         .as_ref()
         .map(|alignment| alignment.issues.clone())
         .unwrap_or_default()

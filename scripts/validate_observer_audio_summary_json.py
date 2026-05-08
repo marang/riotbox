@@ -24,6 +24,12 @@ SOURCE_TIMING_CUE_BY_POLICY = {
     "unknown": "unknown",
 }
 SOURCE_TIMING_CUES = set(SOURCE_TIMING_CUE_BY_POLICY.values())
+GROOVE_SUBDIVISIONS = {
+    "eighth",
+    "triplet",
+    "sixteenth",
+    "thirty_second",
+}
 
 
 def main() -> int:
@@ -72,6 +78,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_source_timing(output_path)
     require_optional_source_timing_alignment(output_path)
     require_optional_source_timing_anchor_alignment(output_path)
+    require_optional_source_timing_groove_alignment(output_path)
 
     metrics = require_object_field(output_path, "metrics")
     require_optional_number(metrics, "full_mix_rms")
@@ -129,6 +136,13 @@ def require_string_list(parent: dict[str, Any], field: str) -> None:
         raise TypeError(f"{field} must be an array of strings")
 
 
+def require_array(parent: dict[str, Any], field: str) -> list[Any]:
+    value = parent.get(field)
+    if not isinstance(value, list):
+        raise TypeError(f"{field} must be an array")
+    return value
+
+
 def require_int(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool):
@@ -183,6 +197,7 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_string(timing, "phrase_status")
     require_int(timing, "alternate_evidence_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
+    require_optional_source_timing_groove_evidence(timing, "groove_evidence")
     require_string_list(timing, "warning_codes")
 
 
@@ -215,6 +230,20 @@ def require_optional_source_timing_anchor_alignment(parent: dict[str, Any]) -> N
     require_string_list(alignment, "issues")
 
 
+def require_optional_source_timing_groove_alignment(parent: dict[str, Any]) -> None:
+    field = "source_timing_groove_alignment"
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    alignment = require_object(value, field)
+    require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
+    require_optional_source_timing_groove_evidence(alignment, "observer")
+    require_optional_source_timing_groove_evidence(alignment, "manifest")
+    require_string_list(alignment, "issues")
+
+
 def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     field = "observer_source_timing"
     if field not in parent:
@@ -243,6 +272,7 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     require_optional_string(timing, "primary_hypothesis_id")
     require_int(timing, "hypothesis_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
+    require_optional_source_timing_groove_evidence(timing, "groove_evidence")
     require_optional_string(timing, "primary_warning_code")
     require_string_list(timing, "warning_codes")
 
@@ -262,10 +292,42 @@ def require_optional_source_timing_anchor_evidence(parent: dict[str, Any], field
         raise ValueError(f"{field} typed anchor counts cannot exceed primary_anchor_count")
 
 
+def require_optional_source_timing_groove_evidence(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    groove_evidence = require_object(value, field)
+    total = require_non_negative_int(groove_evidence, "primary_groove_residual_count")
+    max_abs = require_number_value(groove_evidence, "primary_max_abs_offset_ms")
+    if max_abs < 0:
+        raise ValueError(f"{field}.primary_max_abs_offset_ms must be non-negative")
+    preview = require_array(groove_evidence, "primary_groove_preview")
+    if len(preview) > min(total, 4):
+        raise ValueError(f"{field} preview must contain at most the first four residuals")
+    for index, residual in enumerate(preview):
+        require_source_timing_groove_residual(residual, f"{field}.primary_groove_preview[{index}]")
+
+
+def require_source_timing_groove_residual(value: Any, name: str) -> None:
+    residual = require_object(value, name)
+    require_one_of(residual, "subdivision", GROOVE_SUBDIVISIONS)
+    require_number(residual, "offset_ms")
+    confidence = require_number_value(residual, "confidence")
+    if confidence < 0 or confidence > 1:
+        raise ValueError(f"{name}.confidence must be between 0 and 1")
+
+
 def require_number(parent: dict[str, Any], field: str) -> None:
+    require_number_value(parent, field)
+
+
+def require_number_value(parent: dict[str, Any], field: str) -> float | int:
     value = parent.get(field)
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise TypeError(f"{field} must be a number")
+    return value
 
 
 def require_optional_int(parent: dict[str, Any], field: str) -> None:

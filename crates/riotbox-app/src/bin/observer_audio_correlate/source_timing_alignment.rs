@@ -15,6 +15,14 @@ struct SourceTimingAnchorAlignmentEvidence {
     issues: Vec<String>,
 }
 
+#[derive(Debug, PartialEq)]
+struct SourceTimingGrooveAlignmentEvidence {
+    status: String,
+    observer: Option<SourceTimingGrooveEvidence>,
+    manifest: Option<SourceTimingGrooveEvidence>,
+    issues: Vec<String>,
+}
+
 fn collect_source_timing_alignment(
     observer_timing: Option<&ObserverSourceTimingReadiness>,
     manifest_timing: Option<&SourceTimingEvidence>,
@@ -105,6 +113,41 @@ fn collect_source_timing_anchor_alignment(
     })
 }
 
+fn collect_source_timing_groove_alignment(
+    observer_timing: Option<&ObserverSourceTimingReadiness>,
+    manifest_timing: Option<&SourceTimingEvidence>,
+    observer_malformed: bool,
+    manifest_malformed: bool,
+) -> Option<SourceTimingGrooveAlignmentEvidence> {
+    if observer_malformed || manifest_malformed {
+        return None;
+    }
+    let observer = observer_timing.and_then(|timing| timing.groove_evidence.clone());
+    let manifest = manifest_timing.and_then(|timing| timing.groove_evidence.clone());
+    if observer.is_none() && manifest.is_none() {
+        return None;
+    }
+
+    let issues = source_timing_groove_alignment_issues(observer.as_ref(), manifest.as_ref());
+    let status = if !issues.is_empty() {
+        "mismatch"
+    } else if source_timing_groove_alignment_has_comparable_residuals(
+        observer.as_ref(),
+        manifest.as_ref(),
+    ) {
+        "aligned"
+    } else {
+        "partial"
+    };
+
+    Some(SourceTimingGrooveAlignmentEvidence {
+        status: status.to_string(),
+        observer,
+        manifest,
+        issues,
+    })
+}
+
 fn source_timing_anchor_alignment_has_comparable_counts(
     observer: Option<&SourceTimingAnchorEvidence>,
     manifest: Option<&SourceTimingAnchorEvidence>,
@@ -140,6 +183,35 @@ fn source_timing_anchor_alignment_issues(
         issues.push(
             "source_timing_anchor_alignment.manifest_transient_anchor_count=0".to_string(),
         );
+    }
+    issues
+}
+
+fn source_timing_groove_alignment_has_comparable_residuals(
+    observer: Option<&SourceTimingGrooveEvidence>,
+    manifest: Option<&SourceTimingGrooveEvidence>,
+) -> bool {
+    matches!(
+        (observer, manifest),
+        (Some(observer), Some(manifest))
+            if observer.primary_groove_residual_count > 0
+                && manifest.primary_groove_residual_count > 0
+    )
+}
+
+fn source_timing_groove_alignment_issues(
+    observer: Option<&SourceTimingGrooveEvidence>,
+    manifest: Option<&SourceTimingGrooveEvidence>,
+) -> Vec<String> {
+    let (Some(observer), Some(manifest)) = (observer, manifest) else {
+        return Vec::new();
+    };
+
+    let mut issues = Vec::new();
+    if observer.primary_groove_residual_count > 0
+        && manifest.primary_groove_residual_count == 0
+    {
+        issues.push("source_timing_groove_alignment.manifest_residual_count=0".to_string());
     }
     issues
 }
