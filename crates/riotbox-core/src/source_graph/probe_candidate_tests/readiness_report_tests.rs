@@ -1,6 +1,23 @@
 use super::*;
 
 #[test]
+fn source_timing_probe_bpm_candidate_policies_separate_research_and_dance_loop_auto() {
+    let broad = SourceTimingProbeBpmCandidatePolicy::broad_research();
+    let dance = SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness();
+
+    assert_eq!(SourceTimingProbeBpmCandidatePolicy::default(), broad);
+    assert_eq!(broad.min_bpm, 55.0);
+    assert_eq!(broad.max_bpm, 240.0);
+    assert_eq!(broad.beat_period_ambiguity_margin, 0.08);
+
+    assert_eq!(dance.min_bpm, 80.0);
+    assert_eq!(dance.max_bpm, 180.0);
+    assert_eq!(dance.beat_period_ambiguity_margin, 0.001);
+    assert_eq!(dance.min_onset_count, broad.min_onset_count);
+    assert_eq!(dance.downbeat_ambiguity_margin, broad.downbeat_ambiguity_margin);
+}
+
+#[test]
 fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
     let onsets = even_onsets(0.0, 0.5, 32);
     let report = source_timing_probe_readiness_report(

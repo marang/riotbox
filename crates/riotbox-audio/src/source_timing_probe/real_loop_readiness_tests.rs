@@ -86,15 +86,7 @@ fn source_timing_probe_accepts_real_loop_like_ready_readiness() {
             beat_unit: 4,
         },
     );
-    // This fixture proves the positive readiness seam with a bounded dance-loop
-    // policy. The broad default policy intentionally stays more conservative
-    // about half/double-time and near-period ambiguity.
-    let policy = SourceTimingProbeBpmCandidatePolicy {
-        min_bpm: 80.0,
-        max_bpm: 180.0,
-        beat_period_ambiguity_margin: 0.001,
-        ..SourceTimingProbeBpmCandidatePolicy::default()
-    };
+    let policy = SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness();
     let readiness = source_timing_probe_readiness_report(&candidate_input, policy);
     let beat_evidence = source_timing_probe_beat_evidence_report(&candidate_input, policy);
 

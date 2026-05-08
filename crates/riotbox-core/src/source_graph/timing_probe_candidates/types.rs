@@ -21,6 +21,13 @@ pub struct SourceTimingProbeBpmCandidatePolicy {
 
 impl Default for SourceTimingProbeBpmCandidatePolicy {
     fn default() -> Self {
+        Self::broad_research()
+    }
+}
+
+impl SourceTimingProbeBpmCandidatePolicy {
+    #[must_use]
+    pub const fn broad_research() -> Self {
         Self {
             min_onset_count: 4,
             min_bpm: 55.0,
@@ -30,6 +37,16 @@ impl Default for SourceTimingProbeBpmCandidatePolicy {
             min_beat_period_score: 0.45,
             beat_period_ambiguity_margin: 0.08,
             downbeat_ambiguity_margin: 0.05,
+        }
+    }
+
+    #[must_use]
+    pub const fn dance_loop_auto_readiness() -> Self {
+        Self {
+            min_bpm: 80.0,
+            max_bpm: 180.0,
+            beat_period_ambiguity_margin: 0.001,
+            ..Self::broad_research()
         }
     }
 }

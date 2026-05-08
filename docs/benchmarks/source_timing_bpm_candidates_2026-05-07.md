@@ -76,11 +76,20 @@ That gate also includes generated real-loop-like 128 BPM drum fixtures:
   preserving a stable BPM estimate and half-time ambiguity
 - an accented fixture that proves clear beat, downbeat, and phrase evidence can
   classify as `ready` through the same PCM WAV probe path when evaluated with a
-  bounded 80-180 BPM dance-loop policy
+  bounded 80-180 BPM dance-loop auto-readiness policy
 
 Together they give later detector work both a negative and positive guardrail, so
 real example readiness can improve without loosening policy blindly or committing
 external WAV files.
+
+The timing candidate policy has two named profiles:
+
+- `broad_research`: the default diagnostic policy, intentionally wide at
+  55-240 BPM so half-time, double-time, and near-period ambiguity remain visible
+  during detector research
+- `dance_loop_auto_readiness`: a narrower 80-180 BPM policy with a stricter
+  period-ambiguity margin for Feral grid auto-BPM trust, so a clearly locked
+  dance loop can become `ready` without changing the broader research policy
 
 Generated Feral grid listening packs should carry this readiness summary in
 their manifest so example audio can be judged against timing evidence instead

@@ -485,5 +485,8 @@ fn source_timing_readiness_for_source(
             beat_unit: 4,
         },
     );
-    source_timing_probe_readiness_report(&input, SourceTimingProbeBpmCandidatePolicy::default())
+    source_timing_probe_readiness_report(
+        &input,
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    )
 }
