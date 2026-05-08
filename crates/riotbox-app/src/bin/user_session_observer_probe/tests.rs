@@ -179,6 +179,10 @@ fn writes_feral_grid_jam_observer_stream() {
 
     let events = fs::read_to_string(path).expect("read observer");
     assert!(events.contains(r#""probe":"feral-grid-jam""#));
+    assert!(events.contains(r#""source_timing":{"#));
+    assert!(events.contains(r#""source_id":"src-feral-grid-probe""#));
+    assert!(events.contains(r#""quality":"medium""#));
+    assert!(events.contains(r#""degraded_policy":"cautious""#));
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
     assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));

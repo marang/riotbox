@@ -7,8 +7,15 @@ use riotbox_app::{
     ui::{JamShellState, ShellLaunchMode},
 };
 use riotbox_core::{
-    action::CommitBoundary, persistence::save_session_json, queue::ActionQueue,
+    action::CommitBoundary,
+    ids::SourceId,
+    persistence::save_session_json,
+    queue::ActionQueue,
     session::SessionFile,
+    source_graph::{
+        DecodeProfile, GraphProvenance, SourceDescriptor, SourceGraph, TimingDegradedPolicy,
+        TimingQuality, TimingWarning, TimingWarningCode,
+    },
 };
 use serde_json::{Value, json};
 
@@ -351,6 +358,12 @@ fn record_recovery_probe_audio_runtime(
 pub(super) fn write_feral_grid_jam_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;
     let mut shell = probe_shell("feral-grid-jam-probe");
+    attach_probe_source_timing(
+        &mut shell,
+        "src-feral-grid-probe",
+        "synthetic-feral-grid-source.wav",
+        128.0,
+    );
 
     record_probe_start(
         &mut writer,
@@ -367,4 +380,36 @@ pub(super) fn write_feral_grid_jam_observer(path: &Path) -> io::Result<()> {
     apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('g'))?;
     commit_boundary(&mut shell, &mut writer, 500, CommitBoundary::Phrase, 2, 1)?;
     Ok(())
+}
+
+fn attach_probe_source_timing(shell: &mut JamShellState, source_id: &str, path: &str, bpm: f32) {
+    let mut graph = SourceGraph::new(
+        SourceDescriptor {
+            source_id: SourceId::from(source_id),
+            path: path.into(),
+            content_hash: "headless-probe-source-hash".into(),
+            duration_seconds: 8.0,
+            sample_rate: 44_100,
+            channel_count: 2,
+            decode_profile: DecodeProfile::Native,
+        },
+        GraphProvenance {
+            sidecar_version: "headless-probe".into(),
+            provider_set: vec!["user_session_observer_probe".into()],
+            generated_at: "2026-05-08T00:00:00Z".into(),
+            source_hash: "headless-probe-source-hash".into(),
+            analysis_seed: 19,
+            run_notes: Some("synthetic source timing readiness for observer QA".into()),
+        },
+    );
+    graph.timing.bpm_estimate = Some(bpm);
+    graph.timing.bpm_confidence = 0.86;
+    graph.timing.quality = TimingQuality::Medium;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Cautious;
+    graph.timing.warnings.push(TimingWarning {
+        code: TimingWarningCode::PhraseUncertain,
+        message: "headless probe uses synthetic source timing readiness".into(),
+    });
+
+    shell.app.source_graph = Some(graph);
 }
