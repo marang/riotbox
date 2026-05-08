@@ -62,6 +62,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 include!("observer_audio_correlate/args.rs");
 include!("observer_audio_correlate/source_timing_anchor_evidence.rs");
+include!("observer_audio_correlate/source_timing_groove_evidence.rs");
 include!("observer_audio_correlate/observer_source_timing.rs");
 include!("observer_audio_correlate/summary_build.rs");
 include!("observer_audio_correlate/source_timing_alignment.rs");

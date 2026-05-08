@@ -45,6 +45,7 @@ fn summarizes_synthetic_observer_and_manifest() {
                 primary_backbeat_anchor_count: 1,
                 primary_transient_anchor_count: 1,
             }),
+            groove_evidence: None,
             primary_warning_code: Some("ambiguous_downbeat".to_string()),
             warning_codes: vec![
                 "ambiguous_downbeat".to_string(),
