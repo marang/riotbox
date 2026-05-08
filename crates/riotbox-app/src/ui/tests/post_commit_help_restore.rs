@@ -254,9 +254,10 @@ fn renders_help_overlay_with_first_run_guidance() {
 
     assert!(rendered.contains("First run"), "{rendered}");
     assert!(
-        rendered.contains("Timing: needs confirm | source b32 bar8 p1"),
+        rendered.contains("Timing: needs confirm | low | kick+bb | source b32 bar8 p1"),
         "{rendered}"
     );
+    assert!(rendered.contains("before trusting grid"), "{rendered}");
     assert!(rendered.contains("space: start transport"), "{rendered}");
     assert!(rendered.contains("f: queue one first fill"), "{rendered}");
     assert!(
@@ -280,14 +281,16 @@ fn renders_help_overlay_with_locked_source_timing_guidance() {
     graph.timing.quality = TimingQuality::High;
     graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
     graph.timing.warnings.clear();
+    shell.app.refresh_view();
     shell.show_help = true;
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("Timing: grid locked | source b32 bar8 p1 | grid can steer moves"),
+        rendered.contains("Timing: grid locked | high | kick+bb | source b32 bar8 p1"),
         "{rendered}"
     );
+    assert!(rendered.contains("steer moves"), "{rendered}");
 }
 
 #[test]

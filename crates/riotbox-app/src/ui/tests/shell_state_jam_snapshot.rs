@@ -111,12 +111,12 @@ fn source_timing_help_styles_missing_source_as_low_emphasis() {
 
     assert_eq!(
         rendered,
-        "Timing: unknown | clock unavailable | timing trust unknown"
+        "Timing: not available | unknown | no anchor | clock unavailable | timing trust unknown"
     );
-    assert_eq!(line.spans[2].content.as_ref(), "unknown");
-    assert_eq!(line.spans[2].style.fg, Some(Color::DarkGray));
+    assert_eq!(line.spans[1].content.as_ref(), "not available");
+    assert_eq!(line.spans[1].style.fg, Some(Color::DarkGray));
     assert!(
-        !line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+        !line.spans[1].style.add_modifier.contains(Modifier::BOLD),
         "{line:?}"
     );
 }

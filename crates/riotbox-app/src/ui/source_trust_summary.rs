@@ -139,8 +139,6 @@ struct TrustSummary {
     warning_count: usize,
     timing_quality: &'static str,
     section_quality: &'static str,
-    source_timing_quality: &'static str,
-    source_timing_policy: &'static str,
     source_timing_warning: Option<&'static str>,
 }
 
@@ -162,12 +160,6 @@ fn trust_summary(shell: &JamShellState) -> TrustSummary {
                 warning_count: graph.analysis_summary.warnings.len(),
                 timing_quality: quality_label(&graph.analysis_summary.timing_quality),
                 section_quality: quality_label(&graph.analysis_summary.section_quality),
-                source_timing_quality: jam_source_timing_quality_label(
-                    &graph.timing.effective_timing_quality(),
-                ),
-                source_timing_policy: jam_source_timing_degraded_policy_label(
-                    &graph.timing.effective_degraded_policy(),
-                ),
                 source_timing_warning: graph
                     .timing
                     .warnings
@@ -181,8 +173,6 @@ fn trust_summary(shell: &JamShellState) -> TrustSummary {
             warning_count: 0,
             timing_quality: "unknown",
             section_quality: "unknown",
-            source_timing_quality: "unknown",
-            source_timing_policy: "unknown",
             source_timing_warning: None,
         },
     }
@@ -198,15 +188,15 @@ fn quality_label(quality: &QualityClass) -> &'static str {
 }
 
 fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
-    let trust = trust_summary(shell);
+    let timing = &shell.app.jam_view.source.timing;
     Line::from(vec![
         Span::styled("timing ", style_low_emphasis()),
         Span::styled(
-            source_timing_policy_cue_label(trust.source_timing_policy),
-            source_timing_policy_cue_style(trust.source_timing_policy),
+            timing.cue.clone(),
+            source_timing_policy_cue_style(&timing.degraded_policy),
         ),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(trust.source_timing_quality),
+        Span::raw(timing.quality.clone()),
         Span::styled(" | ", style_low_emphasis()),
         Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
     ])
@@ -249,8 +239,8 @@ fn source_timing_clock_compact(shell: &JamShellState) -> String {
 }
 
 fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
-    let trust = trust_summary(shell);
-    let meaning = match trust.source_timing_policy {
+    let timing = &shell.app.jam_view.source.timing;
+    let meaning = match timing.degraded_policy.as_str() {
         "locked" => "grid can steer moves",
         "manual_confirm" => "confirm before trusting grid",
         "cautious" => "listen before trusting grid",
@@ -259,12 +249,21 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
         _ => "timing trust unknown",
     };
 
-    let mut line = source_timing_cue_line("Timing:", trust.source_timing_policy, []);
-    line.spans.push(Span::styled(" | ", style_low_emphasis()));
-    line.spans.push(Span::raw(source_timing_clock_compact(shell)));
-    line.spans.push(Span::styled(" | ", style_low_emphasis()));
-    line.spans.push(Span::raw(meaning));
-    line
+    Line::from(vec![
+        Span::raw("Timing: "),
+        Span::styled(
+            timing.cue.clone(),
+            source_timing_policy_cue_style(&timing.degraded_policy),
+        ),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::raw(timing.quality.clone()),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::raw(source_timing_clock_compact(shell)),
+        Span::styled(" | ", style_low_emphasis()),
+        Span::raw(meaning),
+    ])
 }
 
 fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
@@ -307,30 +306,6 @@ fn source_timing_warning_line(shell: &JamShellState) -> String {
         .unwrap_or_else(|| "timing warning none".into())
 }
 
-fn jam_source_timing_quality_label(quality: &TimingQuality) -> &'static str {
-    match quality {
-        TimingQuality::Low => "low",
-        TimingQuality::Medium => "medium",
-        TimingQuality::High => "high",
-        TimingQuality::Unknown => "unknown",
-    }
-}
-
-fn jam_source_timing_degraded_policy_label(policy: &TimingDegradedPolicy) -> &'static str {
-    match policy {
-        TimingDegradedPolicy::Locked => "locked",
-        TimingDegradedPolicy::Cautious => "cautious",
-        TimingDegradedPolicy::ManualConfirm => "manual_confirm",
-        TimingDegradedPolicy::FallbackGrid => "fallback_grid",
-        TimingDegradedPolicy::Disabled => "disabled",
-        TimingDegradedPolicy::Unknown => "unknown",
-    }
-}
-
-fn source_timing_policy_cue_label(policy: &str) -> &'static str {
-    crate::source_timing_cues::source_timing_policy_cue_label(policy)
-}
-
 fn source_timing_policy_cue_style(policy: &str) -> Style {
     match policy {
         "locked" => style_confirmation_strong(),
@@ -338,30 +313,6 @@ fn source_timing_policy_cue_style(policy: &str) -> Style {
         "disabled" | "unknown" => style_low_emphasis(),
         _ => style_low_emphasis(),
     }
-}
-
-fn source_timing_cue_line<const N: usize>(
-    prefix: &'static str,
-    policy: &'static str,
-    details: [(&'static str, &'static str); N],
-) -> Line<'static> {
-    let mut spans = vec![
-        Span::raw(prefix),
-        Span::raw(" "),
-        Span::styled(
-            source_timing_policy_cue_label(policy),
-            source_timing_policy_cue_style(policy),
-        ),
-    ];
-
-    for (label, value) in details {
-        spans.push(Span::styled(" | ", style_low_emphasis()));
-        spans.push(Span::raw(label));
-        spans.push(Span::raw(" "));
-        spans.push(Span::raw(value));
-    }
-
-    Line::from(spans)
 }
 
 fn jam_source_timing_warning_code_label(code: &TimingWarningCode) -> &'static str {
