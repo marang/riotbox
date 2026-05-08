@@ -53,6 +53,7 @@ jq -e \
     and .grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == true
+    and .source_timing.anchor_evidence.primary_anchor_count > 0
     and (.source_timing_bpm_delta | type == "number")' \
   "$tmpdir/feral-grid/manifest.json"
 
@@ -135,6 +136,8 @@ jq -e \
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == false
     and .source_timing.phrase_status == "stable"
+    and .source_timing.anchor_evidence.primary_kick_anchor_count > 0
+    and .source_timing.anchor_evidence.primary_backbeat_anchor_count > 0
     and .source_timing.warning_codes == []
     and .source_timing_bpm_delta == 0.0' \
   "$tmpdir/feral-grid-locked/manifest.json"

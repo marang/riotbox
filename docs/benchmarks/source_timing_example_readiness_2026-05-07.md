@@ -45,6 +45,7 @@ evidence in `README.md` and `grid-report.md` for human QA:
 - `source_timing.bpm_agrees_with_grid`
 - `source_timing.readiness`
 - `source_timing.requires_manual_confirm`
+- `source_timing.anchor_evidence`
 - `source_timing.warning_codes`
 
 ## Results

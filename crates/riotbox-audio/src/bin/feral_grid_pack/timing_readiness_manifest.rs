@@ -1,3 +1,5 @@
+use riotbox_core::source_graph::{SourceTimingAnchor, SourceTimingAnchorType, TimingModel};
+
 #[derive(Serialize)]
 struct ManifestSourceTimingReadiness {
     schema: &'static str,
@@ -14,13 +16,46 @@ struct ManifestSourceTimingReadiness {
     confidence_result: &'static str,
     drift_status: &'static str,
     phrase_status: &'static str,
+    anchor_evidence: ManifestSourceTimingAnchorEvidence,
     alternate_evidence_count: usize,
     warning_codes: Vec<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct ManifestSourceTimingAnchorEvidence {
+    primary_anchor_count: usize,
+    primary_kick_anchor_count: usize,
+    primary_backbeat_anchor_count: usize,
+    primary_transient_anchor_count: usize,
+}
+
+impl ManifestSourceTimingAnchorEvidence {
+    fn from_timing(timing: &TimingModel) -> Self {
+        let anchors = timing
+            .primary_hypothesis()
+            .map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
+        Self {
+            primary_anchor_count: anchors.len(),
+            primary_kick_anchor_count: count_source_timing_anchor_type(
+                anchors,
+                SourceTimingAnchorType::Kick,
+            ),
+            primary_backbeat_anchor_count: count_source_timing_anchor_type(
+                anchors,
+                SourceTimingAnchorType::Backbeat,
+            ),
+            primary_transient_anchor_count: count_source_timing_anchor_type(
+                anchors,
+                SourceTimingAnchorType::TransientCluster,
+            ),
+        }
+    }
 }
 
 fn manifest_source_timing_readiness(
     report: &SourceTimingProbeReadinessReport,
     grid_bpm: GridBpmDecision,
+    anchor_evidence: &ManifestSourceTimingAnchorEvidence,
 ) -> ManifestSourceTimingReadiness {
     ManifestSourceTimingReadiness {
         schema: report.schema,
@@ -37,6 +72,7 @@ fn manifest_source_timing_readiness(
         confidence_result: confidence_result_label(report.confidence_result),
         drift_status: drift_status_label(report.drift_status),
         phrase_status: phrase_status_label(report.phrase_status),
+        anchor_evidence: anchor_evidence.clone(),
         alternate_evidence_count: report.alternate_evidence_count,
         warning_codes: report
             .warning_codes
@@ -44,6 +80,16 @@ fn manifest_source_timing_readiness(
             .map(|code| format!("{code:?}"))
             .collect(),
     }
+}
+
+fn count_source_timing_anchor_type(
+    anchors: &[SourceTimingAnchor],
+    anchor_type: SourceTimingAnchorType,
+) -> usize {
+    anchors
+        .iter()
+        .filter(|anchor| anchor.anchor_type == anchor_type)
+        .count()
 }
 
 fn readiness_status_label(status: SourceTimingProbeReadinessStatus) -> &'static str {

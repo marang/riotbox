@@ -550,6 +550,11 @@ bounded BPM policy:
 - manifests must preserve the source/grid BPM delta and whether the source timing
   agrees with the chosen grid, so QA can detect timing mismatch instead of only
   hearing a drifting or fallback-like render
+- generated Feral grid manifests must preserve compact primary anchor evidence
+  under `source_timing.anchor_evidence`, including total primary anchors plus
+  kick, backbeat, and generic transient counts; this keeps downstream listening
+  QA from trusting a readiness label without seeing what musical timing anchors
+  supported it
 - generated Feral grid packs should also expose a bounded output-drift smoke
   metric, currently `metrics.source_grid_output_drift`, so QA can catch obvious
   generated-support/grid misalignment before this becomes production beat/downbeat

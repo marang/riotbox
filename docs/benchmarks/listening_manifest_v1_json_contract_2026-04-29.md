@@ -99,8 +99,15 @@ When present, `source_timing` must include:
 - non-negative integer or null field: `primary_downbeat_offset_beats`
 - status string fields: `beat_status`, `downbeat_status`, `confidence_result`,
   `drift_status`, `phrase_status`
+- object field: `anchor_evidence`, with non-negative integer fields
+  `primary_anchor_count`, `primary_kick_anchor_count`,
+  `primary_backbeat_anchor_count`, and `primary_transient_anchor_count`
 - non-negative integer field: `alternate_evidence_count`
 - string array field: `warning_codes`
+
+The sum of the typed anchor-evidence counts must not exceed
+`primary_anchor_count`. These counts are compact QA evidence for the musical
+timing anchors behind the readiness decision; they are not a full anchor preview.
 
 Current accepted `policy_profile` values are `broad_research` and
 `dance_loop_auto_readiness`. Current generated Feral grid packs use
