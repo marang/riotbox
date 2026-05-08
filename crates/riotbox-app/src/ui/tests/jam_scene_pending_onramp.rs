@@ -381,6 +381,10 @@ fn renders_jam_shell_with_first_run_onramp() {
         rendered.contains("3 [2] watch Log when it lands on the next bar"),
         "{rendered}"
     );
+    assert!(
+        rendered.contains("Timing: needs confirm | source b32 bar8 p1"),
+        "{rendered}"
+    );
 }
 
 #[test]
@@ -394,6 +398,10 @@ fn renders_jam_shell_with_queued_first_move_guidance() {
     assert!(rendered.contains("next bar"), "{rendered}");
     assert!(rendered.contains("confirm it in Log"), "{rendered}");
     assert!(rendered.contains("[c] capture"), "{rendered}");
+    assert!(
+        rendered.contains("confirm before trusting grid"),
+        "{rendered}"
+    );
 }
 
 #[test]
@@ -438,4 +446,3 @@ fn next_panel_promotes_timing_rail_above_landed_history() {
     );
     assert_eq!(line_texts[3], "landed user fill");
 }
-
