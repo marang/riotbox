@@ -142,6 +142,11 @@ mod manifest_assertions {
                 .expect("tr909 source signal rms")
                 > 0.0
         );
+        assert!(manifest["metrics"]["tr909_groove_timing"]["applied"].is_boolean());
+        assert!(manifest["metrics"]["tr909_groove_timing"]["reason"]
+            .as_str()
+            .is_some_and(|reason| !reason.is_empty()));
+        assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
                 .as_f64()
@@ -278,6 +283,10 @@ mod manifest_assertions {
                 .expect("primary transient anchor count");
         assert!(primary_anchor_count > 0);
         assert!(typed_anchor_count <= primary_anchor_count);
+        let groove_evidence = &source_timing["groove_evidence"];
+        assert!(groove_evidence["primary_groove_residual_count"].is_u64());
+        assert!(groove_evidence["primary_max_abs_offset_ms"].is_number());
+        assert!(groove_evidence["primary_groove_preview"].is_array());
         assert!(source_timing["alternate_evidence_count"].is_u64());
         assert!(source_timing["warning_codes"].is_array());
     }

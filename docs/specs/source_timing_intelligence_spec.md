@@ -607,6 +607,11 @@ bounded BPM policy:
   lane-specific key, currently `metrics.tr909_source_grid_alignment`, so the
   first all-lane proof is visible as TR-909 output evidence rather than only a
   generic pack-level drift smoke
+- trusted Feral-grid TR-909 support may consume compact primary groove residual
+  evidence as a bounded whole-lane timing offset, recorded as
+  `metrics.tr909_groove_timing`. This is a first source-timing groove consumer,
+  not a production swing engine; weak/manual-confirm/static timing must keep the
+  offset inactive and auditable.
 - W-30 source chop should expose the same bounded alignment evidence under a
   lane-specific key, currently `metrics.w30_source_grid_alignment`, so the
   source-backed sample lane is auditable separately from TR-909 support

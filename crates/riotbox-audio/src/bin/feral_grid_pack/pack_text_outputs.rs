@@ -21,6 +21,7 @@ fn write_report(
              {}\
              - TR-909 source reason: `{}`\n\
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
+             - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
@@ -50,6 +51,10 @@ fn write_report(
             report.tr909_source_profile.support_profile.label(),
             report.tr909_source_profile.pattern_adoption.label(),
             report.tr909_source_profile.phrase_variation.label(),
+            report.tr909_groove_timing.reason,
+            report.tr909_groove_timing.applied,
+            report.tr909_groove_timing.offset_ms,
+            report.tr909_groove_timing.source_subdivision.unwrap_or("none"),
             report.tr909_source_profile.low_band_energy_ratio,
             report.tr909_source_profile.high_band_energy_ratio,
             report.w30_source_chop_profile.reason,

@@ -147,6 +147,12 @@ Feral grid manifests may also include the same shape as
 `metrics.w30_source_grid_alignment` when the producer wants the W-30 source chop
 stem to be explicitly auditable as its own timing-aware lane.
 
+Feral grid manifests may include `metrics.tr909_groove_timing` when the TR-909
+support stem consumes trusted Source Timing groove residuals. The repo-local
+validator checks this object as a named optional QA contract so a generated pack
+can distinguish applied groove timing from conservative fallback or missing
+groove evidence.
+
 When present, `metrics.source_grid_output_drift` must include:
 
 - non-negative integer fields: `beat_count`, `hit_count`
@@ -157,6 +163,18 @@ When present, `metrics.source_grid_output_drift` must include:
 `hit_count` must not exceed `beat_count`. This contract checks shape and basic
 sanity only; threshold policy remains with the producer and downstream
 observer/audio evidence gate.
+
+When present, `metrics.tr909_groove_timing` must include:
+
+- boolean field: `applied`
+- string field: `reason`
+- number field: `offset_ms`
+- non-negative integer field: `source_residual_count`
+- non-negative number field: `source_max_abs_offset_ms`
+- string-or-null field: `source_subdivision`
+
+If `applied` is true, `reason` must be `source_timing_groove_residual`. If
+`applied` is false, `offset_ms` must be `0`.
 
 ## Current Producers
 

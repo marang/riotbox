@@ -8,6 +8,7 @@ include!("feral_grid_pack/mix_policy.rs");
 include!("feral_grid_pack/grid_bpm_decision.rs");
 include!("feral_grid_pack/source_timing_policy_profile.rs");
 include!("feral_grid_pack/timing_readiness_manifest.rs");
+include!("feral_grid_pack/source_timing_groove_policy.rs");
 include!("feral_grid_pack/source_grid_output_drift.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");

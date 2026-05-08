@@ -268,6 +268,7 @@ fn write_manifest(
         },
         metrics: ManifestPackMetrics {
             tr909_source_profile: manifest_tr909_source_profile(report.tr909_source_profile),
+            tr909_groove_timing: report.tr909_groove_timing,
             w30_source_chop_profile: manifest_w30_source_chop_profile(
                 report.w30_source_chop_profile,
             ),
