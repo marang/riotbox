@@ -43,6 +43,7 @@ audio-qa-ci:
     just observer-audio-correlate-json-fixture
     just observer-audio-summary-validator-fixtures
     just user-session-observer-validator-fixtures
+    just source-timing-probe-json-validator-fixtures
     just listening-manifest-validator-fixtures
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
