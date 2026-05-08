@@ -52,6 +52,13 @@ GRID_BPM_DECISION_REASONS = {
     "source_timing_missing_bpm",
     "source_timing_invalid_bpm",
 }
+TR909_GROOVE_TIMING_REASONS = {
+    "not_source_timing_grid",
+    "no_groove_residuals",
+    "invalid_groove_offset",
+    "groove_offset_too_small",
+    "source_timing_groove_residual",
+}
 STATIC_DEFAULT_GRID_BPM_REASONS = {
     "source_timing_requires_manual_confirm",
     "source_timing_not_ready",
@@ -314,6 +321,35 @@ def validate_source_grid_output_drift(manifest: dict[str, Any]) -> None:
     ):
         if metric_key in metrics:
             validate_source_grid_output_drift_metric(metrics, metric_key)
+
+    if "tr909_groove_timing" in metrics:
+        validate_tr909_groove_timing(metrics["tr909_groove_timing"])
+
+
+def validate_tr909_groove_timing(value: Any) -> None:
+    timing = require_object(value, "metrics tr909_groove_timing")
+    require_bool(timing, "applied", "metrics tr909_groove_timing")
+    require_one_of(timing, "reason", TR909_GROOVE_TIMING_REASONS)
+    require_number(timing, "offset_ms", "metrics tr909_groove_timing offset_ms")
+    require_non_negative_int(
+        timing,
+        "source_residual_count",
+        "metrics tr909_groove_timing",
+    )
+    require_non_negative_number(
+        timing,
+        "source_max_abs_offset_ms",
+        "metrics tr909_groove_timing source_max_abs_offset_ms",
+    )
+    subdivision = timing.get("source_subdivision")
+    if subdivision is not None and subdivision not in GROOVE_SUBDIVISIONS:
+        raise ValueError(
+            "metrics tr909_groove_timing source_subdivision must be a known groove subdivision or null"
+        )
+    if timing["applied"] and timing["reason"] != "source_timing_groove_residual":
+        raise ValueError("applied tr909_groove_timing requires source_timing_groove_residual")
+    if not timing["applied"] and timing["offset_ms"] != 0:
+        raise ValueError("inactive tr909_groove_timing must use offset_ms 0")
 
 
 def validate_source_grid_output_drift_metric(metrics: dict[str, Any], metric_key: str) -> None:

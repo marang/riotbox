@@ -189,6 +189,7 @@ struct RenderMetrics {
 #[derive(Clone, Copy, Debug)]
 struct PackReport {
     tr909_source_profile: SourceAwareTr909Profile,
+    tr909_groove_timing: Tr909GrooveTimingPolicy,
     w30_source_chop_profile: W30SourceChopProfile,
     tr909: RenderMetrics,
     w30: RenderMetrics,
@@ -256,6 +257,7 @@ struct ManifestThresholds {
 #[derive(Serialize)]
 struct ManifestPackMetrics {
     tr909_source_profile: ManifestTr909SourceProfile,
+    tr909_groove_timing: Tr909GrooveTimingPolicy,
     w30_source_chop_profile: ManifestW30SourceChopProfile,
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
@@ -376,7 +378,12 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     .ok_or("source-backed W-30 chop window produced no samples")?;
 
     let tr909_source_profile = derive_source_aware_tr909_profile(source_window_samples, &grid);
-    let tr909 = render_tr909_source_support(&grid, tr909_source_profile);
+    let tr909_groove_timing =
+        tr909_groove_timing_policy(grid_bpm, &source_timing_analysis.groove_evidence);
+    let tr909 = apply_tr909_groove_timing(
+        &render_tr909_source_support(&grid, tr909_source_profile),
+        tr909_groove_timing,
+    );
     let w30 = render_w30_source_chop(&grid, w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &w30);
     let full_mix = render_generated_support_mix(&tr909, &w30);
@@ -403,6 +410,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let w30_source_grid_alignment = source_grid_output_drift_metrics(&w30, &grid);
     let report = PackReport {
         tr909_source_profile,
+        tr909_groove_timing,
         w30_source_chop_profile,
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),

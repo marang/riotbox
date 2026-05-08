@@ -56,6 +56,8 @@ jq -e \
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == true
     and .source_timing.anchor_evidence.primary_anchor_count > 0
+    and .metrics.tr909_groove_timing.applied == false
+    and .metrics.tr909_groove_timing.reason == "not_source_timing_grid"
     and (.source_timing_bpm_delta | type == "number")' \
   "$tmpdir/feral-grid/manifest.json"
 
@@ -150,6 +152,9 @@ jq -e \
     and .source_timing.anchor_evidence.primary_kick_anchor_count > 0
     and .source_timing.anchor_evidence.primary_backbeat_anchor_count > 0
     and .source_timing.warning_codes == []
+    and .metrics.tr909_groove_timing.applied == true
+    and .metrics.tr909_groove_timing.reason == "source_timing_groove_residual"
+    and (.metrics.tr909_groove_timing.offset_ms | type == "number")
     and .source_timing_bpm_delta == 0.0' \
   "$tmpdir/feral-grid-locked/manifest.json"
 

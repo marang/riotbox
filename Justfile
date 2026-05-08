@@ -253,6 +253,7 @@ listening-manifest-validator-fixtures:
     if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_source_timing_groove_evidence.json; then echo "expected invalid source timing groove-evidence fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_source_grid_output_drift.json; then echo "expected invalid source-grid output drift fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_lane_source_grid_alignment.json; then echo "expected invalid lane source-grid alignment fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_invalid_tr909_groove_timing.json; then echo "expected invalid TR-909 groove timing fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_listening_manifest_json.py --require-existing-artifacts crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_missing_artifact_file.json; then echo "expected missing listening manifest artifact file fixture to fail" >&2; exit 1; fi
 
 source-showcase-diversity manifests:
