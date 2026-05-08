@@ -6,7 +6,7 @@ fn probe_candidate_phrase_grid(
     const PHRASE_BARS: u32 = 4;
     const MIN_PHRASE_COUNT: u32 = 2;
 
-    if downbeat_score < 0.4 || has_high_drift(drift) {
+    if downbeat_score < MIN_STABLE_DOWNBEAT_PHASE_SCORE || has_high_drift(drift) {
         return Vec::new();
     }
     let bar_count = u32::try_from(bar_grid.len()).unwrap_or(u32::MAX);

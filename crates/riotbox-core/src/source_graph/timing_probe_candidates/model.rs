@@ -44,14 +44,14 @@ pub fn timing_model_from_probe_bpm_candidates(
     let primary_drift_high = has_high_drift(&primary.drift);
     let primary_phrase_uncertain = primary.phrase_grid.is_empty()
         || !ambiguous_phases.is_empty()
-        || primary_phase.score < 0.4
+        || primary_phase.score < MIN_STABLE_DOWNBEAT_PHASE_SCORE
         || primary_drift_high;
     let mut hypotheses = vec![primary];
     let mut warnings = Vec::new();
     if primary_phrase_uncertain {
         warnings.push(TimingWarningCode::PhraseUncertain);
     }
-    if !ambiguous_phases.is_empty() || primary_phase.score < 0.4 {
+    if !ambiguous_phases.is_empty() || primary_phase.score < MIN_STABLE_DOWNBEAT_PHASE_SCORE {
         warnings.push(TimingWarningCode::AmbiguousDownbeat);
     }
     if primary_drift_high {

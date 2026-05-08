@@ -67,6 +67,33 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
 }
 
 #[test]
+fn source_timing_probe_readiness_accepts_moderate_downbeat_contrast() {
+    let onsets = even_onsets(0.0, 0.5, 32);
+    let input = weighted_candidate_input(
+        "readiness-moderate-downbeat-120",
+        16.0,
+        &onsets,
+        &moderate_downbeat_strengths(onsets.len(), 4),
+    );
+    let report = source_timing_probe_readiness_report(
+        &input,
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert_bpm_close(report.primary_bpm, 120.0);
+    assert_eq!(
+        report.downbeat_status,
+        SourceTimingProbeDownbeatEvidenceStatus::Stable
+    );
+    assert!(
+        !report
+            .warning_codes
+            .contains(&TimingWarningCode::AmbiguousDownbeat),
+        "{report:?}"
+    );
+}
+
+#[test]
 fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_candidates() {
     let unavailable = source_timing_probe_readiness_report(
         &candidate_input("readiness-unavailable", 4.0, &[0.0, 1.0]),

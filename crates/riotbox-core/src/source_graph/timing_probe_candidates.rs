@@ -1,3 +1,5 @@
+const MIN_STABLE_DOWNBEAT_PHASE_SCORE: f32 = 0.30;
+
 include!("timing_probe_candidates/types.rs");
 include!("timing_probe_candidates/confidence_report.rs");
 include!("timing_probe_candidates/period_scoring.rs");

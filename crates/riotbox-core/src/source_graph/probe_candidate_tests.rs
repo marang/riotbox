@@ -382,6 +382,18 @@ fn downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
         .collect()
 }
 
+fn moderate_downbeat_strengths(count: usize, beats_per_bar: usize) -> Vec<f32> {
+    (0..count)
+        .map(|index| {
+            if index % beats_per_bar == 0 {
+                0.8
+            } else {
+                0.5
+            }
+        })
+        .collect()
+}
+
 fn focused_120_bpm_policy() -> SourceTimingProbeBpmCandidatePolicy {
     SourceTimingProbeBpmCandidatePolicy {
         min_bpm: 80.0,
