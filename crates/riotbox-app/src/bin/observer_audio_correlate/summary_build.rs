@@ -188,15 +188,27 @@ fn collect_observer_source_timing(
         return (None, true);
     }
 
+    let cue = match non_empty_string(source_timing, "cue") {
+        Some(value) => value,
+        None => return (None, true),
+    };
+    let degraded_policy = match non_empty_string(source_timing, "degraded_policy") {
+        Some(value) => value,
+        None => return (None, true),
+    };
+    let Some(expected_cue) = observer_source_timing_policy_cue(&degraded_policy) else {
+        return (None, true);
+    };
+    if cue != expected_cue {
+        return (None, true);
+    }
+
     let evidence = ObserverSourceTimingReadiness {
         source_id: match non_empty_string(source_timing, "source_id") {
             Some(value) => value,
             None => return (None, true),
         },
-        cue: match non_empty_string(source_timing, "cue") {
-            Some(value) => value,
-            None => return (None, true),
-        },
+        cue,
         bpm_estimate: match source_timing.get("bpm_estimate") {
             Some(value) if value.is_null() => None,
             Some(value) => match value.as_f64() {
@@ -213,10 +225,7 @@ fn collect_observer_source_timing(
             Some(value) => value,
             None => return (None, true),
         },
-        degraded_policy: match non_empty_string(source_timing, "degraded_policy") {
-            Some(value) => value,
-            None => return (None, true),
-        },
+        degraded_policy,
         primary_hypothesis_id: match source_timing.get("primary_hypothesis_id") {
             Some(value) if value.is_null() => None,
             Some(value) => match value.as_str().filter(|value| !value.is_empty()) {
@@ -244,6 +253,17 @@ fn collect_observer_source_timing(
     };
 
     (Some(evidence), false)
+}
+
+fn observer_source_timing_policy_cue(policy: &str) -> Option<&'static str> {
+    match policy {
+        "locked" | "manual_confirm" | "cautious" | "fallback_grid" | "disabled" | "unknown" => {
+            Some(riotbox_app::source_timing_cues::source_timing_policy_cue_label(
+                policy,
+            ))
+        }
+        _ => None,
+    }
 }
 
 fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, bool) {

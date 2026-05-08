@@ -15,6 +15,14 @@ from typing import Any
 
 
 SCHEMA = "riotbox.user_session_observer.v1"
+SOURCE_TIMING_CUE_BY_POLICY = {
+    "locked": "grid locked",
+    "manual_confirm": "needs confirm",
+    "cautious": "listen first",
+    "fallback_grid": "fallback grid",
+    "disabled": "not available",
+    "unknown": "unknown",
+}
 
 
 def main() -> int:
@@ -118,23 +126,17 @@ def validate_source_timing(value: Any) -> None:
     require_optional_number(source_timing, "bpm_estimate")
     require_number(source_timing, "bpm_confidence")
     require_one_of(source_timing, "quality", {"low", "medium", "high", "unknown"})
-    require_one_of(
+    cue = require_one_of(
         source_timing,
         "cue",
-        {
-            "grid locked",
-            "needs confirm",
-            "listen first",
-            "fallback grid",
-            "not available",
-            "unknown",
-        },
+        set(SOURCE_TIMING_CUE_BY_POLICY.values()),
     )
-    require_one_of(
+    degraded_policy = require_one_of(
         source_timing,
         "degraded_policy",
-        {"locked", "cautious", "manual_confirm", "fallback_grid", "disabled", "unknown"},
+        set(SOURCE_TIMING_CUE_BY_POLICY),
     )
+    require_source_timing_policy_cue_match(cue, degraded_policy)
     primary = source_timing.get("primary_hypothesis_id")
     if primary is not None and not isinstance(primary, str):
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
@@ -262,6 +264,15 @@ def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str
     if value not in allowed:
         raise ValueError(f"{field} must be one of {sorted(allowed)}, got {value!r}")
     return value
+
+
+def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> None:
+    expected = SOURCE_TIMING_CUE_BY_POLICY[degraded_policy]
+    if cue != expected:
+        raise ValueError(
+            "source_timing.cue must match degraded_policy "
+            f"{degraded_policy!r}: expected {expected!r}, got {cue!r}"
+        )
 
 
 def require_replay_family(parent: dict[str, Any], field: str) -> str:

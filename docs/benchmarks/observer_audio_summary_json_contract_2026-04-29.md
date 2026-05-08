@@ -48,6 +48,11 @@ When non-null, `control_path.observer_source_timing` should include:
 - `primary_warning_code`
 - `warning_codes`
 
+The `cue` must match the shared musician-facing label for `degraded_policy`; a
+summary that says `degraded_policy=manual_confirm` but `cue=listen first` is
+malformed because the control path would no longer explain timing trust
+consistently.
+
 The `output_path` object should include:
 
 - `present`: boolean verdict for passing non-collapsed output evidence.
@@ -163,7 +168,7 @@ The committed fixture JSON smoke currently requires:
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
-- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, and a rejected missing metric key
+- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, and rejected Source Timing shape/cue mismatches
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source

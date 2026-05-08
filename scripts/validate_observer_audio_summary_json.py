@@ -15,6 +15,15 @@ from typing import Any
 
 SCHEMA = "riotbox.observer_audio_summary.v1"
 SCHEMA_VERSION = 1
+SOURCE_TIMING_CUE_BY_POLICY = {
+    "locked": "grid locked",
+    "manual_confirm": "needs confirm",
+    "cautious": "listen first",
+    "fallback_grid": "fallback grid",
+    "disabled": "not available",
+    "unknown": "unknown",
+}
+SOURCE_TIMING_CUES = set(SOURCE_TIMING_CUE_BY_POLICY.values())
 
 
 def main() -> int:
@@ -89,9 +98,11 @@ def require_equal(parent: dict[str, Any], field: str, expected: Any) -> None:
         raise ValueError(f"{field} must be {expected!r}, got {actual!r}")
 
 
-def require_bool(parent: dict[str, Any], field: str) -> None:
-    if not isinstance(parent.get(field), bool):
+def require_bool(parent: dict[str, Any], field: str) -> bool:
+    value = parent.get(field)
+    if not isinstance(value, bool):
         raise TypeError(f"{field} must be a boolean")
+    return value
 
 
 def require_optional_bool(parent: dict[str, Any], field: str) -> None:
@@ -102,10 +113,11 @@ def require_optional_bool(parent: dict[str, Any], field: str) -> None:
         raise TypeError(f"{field} must be a boolean or null")
 
 
-def require_string(parent: dict[str, Any], field: str) -> None:
+def require_string(parent: dict[str, Any], field: str) -> str:
     value = parent.get(field)
     if not isinstance(value, str) or not value:
         raise TypeError(f"{field} must be a non-empty string")
+    return value
 
 
 def require_string_list(parent: dict[str, Any], field: str) -> None:
@@ -150,21 +162,11 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
         return
     timing = require_object(value, field)
     require_string(timing, "source_id")
-    require_one_of(
-        timing,
-        "cue",
-        {
-            "grid locked",
-            "needs confirm",
-            "listen first",
-            "fallback grid",
-            "not available",
-            "unknown",
-        },
-    )
+    cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
     require_string(timing, "policy_profile")
-    require_string(timing, "readiness")
-    require_bool(timing, "requires_manual_confirm")
+    readiness = require_string(timing, "readiness")
+    requires_manual_confirm = require_bool(timing, "requires_manual_confirm")
+    require_source_timing_readiness_cue_match(cue, readiness, requires_manual_confirm)
     require_optional_number(timing, "primary_bpm")
     require_optional_bool(timing, "bpm_agrees_with_grid")
     require_string(timing, "beat_status")
@@ -201,26 +203,16 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
         return
     timing = require_object(value, field)
     require_string(timing, "source_id")
-    require_one_of(
-        timing,
-        "cue",
-        {
-            "grid locked",
-            "needs confirm",
-            "listen first",
-            "fallback grid",
-            "not available",
-            "unknown",
-        },
-    )
+    cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
     require_optional_number(timing, "bpm_estimate")
     require_number(timing, "bpm_confidence")
     require_one_of(timing, "quality", {"low", "medium", "high", "unknown"})
-    require_one_of(
+    degraded_policy = require_one_of(
         timing,
         "degraded_policy",
-        {"locked", "cautious", "manual_confirm", "fallback_grid", "disabled", "unknown"},
+        set(SOURCE_TIMING_CUE_BY_POLICY),
     )
+    require_source_timing_policy_cue_match(cue, degraded_policy)
     require_optional_string(timing, "primary_hypothesis_id")
     require_int(timing, "hypothesis_count")
     require_optional_string(timing, "primary_warning_code")
@@ -249,12 +241,45 @@ def require_optional_string(parent: dict[str, Any], field: str) -> None:
         raise TypeError(f"{field} must be a non-empty string or null")
 
 
-def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> None:
+def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str:
     value = parent.get(field)
     if not isinstance(value, str) or not value:
         raise TypeError(f"{field} must be a non-empty string")
     if value not in allowed:
         raise ValueError(f"{field} must be one of {sorted(allowed)}, got {value!r}")
+    return value
+
+
+def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> None:
+    expected = SOURCE_TIMING_CUE_BY_POLICY[degraded_policy]
+    if cue != expected:
+        raise ValueError(
+            "observer_source_timing.cue must match degraded_policy "
+            f"{degraded_policy!r}: expected {expected!r}, got {cue!r}"
+        )
+
+
+def require_source_timing_readiness_cue_match(
+    cue: str, readiness: str, requires_manual_confirm: bool
+) -> None:
+    expected = source_timing_readiness_cue(readiness, requires_manual_confirm)
+    if cue != expected:
+        raise ValueError(
+            "source_timing.cue must match readiness/manual-confirm state "
+            f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {cue!r}"
+        )
+
+
+def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -> str:
+    if requires_manual_confirm:
+        return "needs confirm"
+    if readiness == "ready":
+        return "grid locked"
+    if readiness in {"needs_review", "weak"}:
+        return "listen first"
+    if readiness == "unavailable":
+        return "not available"
+    return "unknown"
 
 
 if __name__ == "__main__":
