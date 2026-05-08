@@ -73,6 +73,8 @@ jq -e \
     and .control_path.observer_source_timing.quality == "medium"
     and .control_path.observer_source_timing.degraded_policy == "cautious"
     and .control_path.observer_source_timing.primary_warning_code == "phrase_uncertain"
+    and .output_path.grid_bpm_source == "static_default"
+    and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.bpm_delta <= .output_path.source_timing_alignment.bpm_tolerance
     and (.output_path.source_timing_alignment.warning_overlap | index("phrase_uncertain")) != null

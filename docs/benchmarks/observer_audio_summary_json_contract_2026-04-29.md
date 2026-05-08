@@ -53,6 +53,10 @@ The `output_path` object should include:
 - `pack_id`: source audio QA pack id.
 - `manifest_result`: source manifest result.
 - `artifact_count`: number of manifest artifacts.
+- `grid_bpm_source`: manifest grid BPM source when present, or `unknown` for
+  older/non-grid manifests.
+- `source_timing_bpm_delta`: manifest source/grid BPM delta when present, or
+  `null`.
 - `source_timing`: `null` or a compact object copied from manifest
   source-timing readiness evidence.
 - `source_timing_alignment`: `null` or compact evidence comparing observer-side
@@ -145,6 +149,8 @@ The committed fixture JSON smoke currently requires:
 - `control_path.observer_source_timing` is present as an object or `null`
 - `output_path.present == true`
 - `output_path.issues` is empty
+- `output_path.grid_bpm_source` is present as a string
+- `output_path.source_timing_bpm_delta` is present as a number or `null`
 - `output_path.source_timing` is present as an object or `null`
 - `output_path.source_timing_alignment` is present as an object or `null`
 - every stable metric key is present, with a number or `null` value

@@ -43,6 +43,8 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
         json["output_path"]["source_timing"]["phrase_status"],
         "ambiguous_downbeat"
     );
+    assert_eq!(json["output_path"]["grid_bpm_source"], "static_default");
+    assert_eq!(json["output_path"]["source_timing_bpm_delta"], 0.397);
 }
 
 #[test]
@@ -81,6 +83,8 @@ fn synthetic_manifest_with_source_timing() -> String {
     r#"{
   "pack_id": "feral-grid-demo",
   "result": "pass",
+  "grid_bpm_source": "static_default",
+  "source_timing_bpm_delta": 0.397,
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
     "source_id": "source.wav",
@@ -112,6 +116,8 @@ fn synthetic_manifest_with_malformed_source_timing() -> String {
     r#"{
   "pack_id": "feral-grid-demo",
   "result": "pass",
+  "grid_bpm_source": "static_default",
+  "source_timing_bpm_delta": 0.397,
   "artifacts": [{}, {}, {}, {}, {}],
   "source_timing": {
     "source_id": "source.wav",
