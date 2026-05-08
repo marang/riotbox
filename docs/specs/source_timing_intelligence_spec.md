@@ -582,6 +582,11 @@ bounded BPM policy:
   `beat_count`, `downbeat_status`, `bar_count`, `phrase_status`, and
   `phrase_count`, so QA can distinguish tempo-only, ambiguous-downbeat, and
   phrase-uncertain states without scraping TUI text.
+- app observer snapshots should also preserve compact primary timing-anchor
+  evidence as `anchor_evidence`: total primary anchors plus kick, backbeat, and
+  transient-cluster counts. This is a control-path proof that the app observed
+  real anchor evidence or honestly observed none; it is not a replacement for
+  manifest-side output comparison.
 - generated Feral grid QA should prove both the conservative fallback path and a
   strict auto-grid path: weak or manual-confirm timing must stay
   `static_default`, while long stable timing may use `source_timing` only when
