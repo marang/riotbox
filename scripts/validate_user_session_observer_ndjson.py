@@ -147,12 +147,28 @@ def validate_source_timing(value: Any) -> None:
     if primary is not None and not isinstance(primary, str):
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
     require_int(source_timing, "hypothesis_count")
+    validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
     warning = source_timing.get("primary_warning_code")
     if warning is not None and not isinstance(warning, str):
         raise TypeError("source_timing.primary_warning_code must be a string or null")
     warning_codes = require_list(source_timing, "warning_codes")
     if any(not isinstance(code, str) or not code for code in warning_codes):
         raise TypeError("source_timing.warning_codes must contain non-empty strings")
+
+
+def validate_source_timing_anchor_evidence(value: Any) -> None:
+    anchor_evidence = require_object(value, "source_timing.anchor_evidence")
+    total = require_non_negative_int(anchor_evidence, "primary_anchor_count")
+    kick = require_non_negative_int(anchor_evidence, "primary_kick_anchor_count")
+    backbeat = require_non_negative_int(anchor_evidence, "primary_backbeat_anchor_count")
+    transient = require_non_negative_int(
+        anchor_evidence,
+        "primary_transient_anchor_count",
+    )
+    if kick + backbeat + transient > total:
+        raise ValueError(
+            "source_timing.anchor_evidence typed anchor counts cannot exceed total anchors"
+        )
 
 
 def validate_recovery(recovery: dict[str, Any]) -> None:
@@ -240,6 +256,15 @@ def require_int(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool):
         raise TypeError(f"{field} must be an integer")
+
+
+def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
+    value = parent.get(field)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TypeError(f"{field} must be an integer")
+    if value < 0:
+        raise ValueError(f"{field} must be non-negative")
+    return value
 
 
 def require_number(parent: dict[str, Any], field: str) -> float | int:

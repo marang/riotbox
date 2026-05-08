@@ -24,6 +24,57 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     graph.timing.quality = TimingQuality::Low;
     graph.timing.degraded_policy = TimingDegradedPolicy::ManualConfirm;
     graph.timing.primary_hypothesis_id = Some("probe-primary".into());
+    graph.timing.hypotheses.push(TimingHypothesis {
+        hypothesis_id: "probe-primary".into(),
+        kind: TimingHypothesisKind::Primary,
+        bpm: 128.0,
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.72,
+        score: 0.68,
+        beat_grid: Vec::new(),
+        bar_grid: Vec::new(),
+        phrase_grid: Vec::new(),
+        anchors: vec![
+            SourceTimingAnchor {
+                anchor_id: "kick-1".into(),
+                anchor_type: SourceTimingAnchorType::Kick,
+                time_seconds: 0.0,
+                bar_index: Some(1),
+                beat_index: Some(1),
+                confidence: 0.82,
+                strength: 0.95,
+                tags: vec!["kick_anchor".into()],
+            },
+            SourceTimingAnchor {
+                anchor_id: "backbeat-1".into(),
+                anchor_type: SourceTimingAnchorType::Backbeat,
+                time_seconds: 0.47,
+                bar_index: Some(1),
+                beat_index: Some(2),
+                confidence: 0.74,
+                strength: 0.8,
+                tags: vec!["backbeat_anchor".into()],
+            },
+            SourceTimingAnchor {
+                anchor_id: "transient-1".into(),
+                anchor_type: SourceTimingAnchorType::TransientCluster,
+                time_seconds: 0.94,
+                bar_index: Some(1),
+                beat_index: Some(3),
+                confidence: 0.69,
+                strength: 0.7,
+                tags: vec!["transient_cluster".into()],
+            },
+        ],
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality: TimingQuality::Low,
+        warnings: Vec::new(),
+        provenance: vec!["fixture.source_timing_observer".into()],
+    });
     graph.timing.warnings.push(TimingWarning {
         code: TimingWarningCode::AmbiguousDownbeat,
         message: "downbeat candidates are close".into(),
@@ -57,6 +108,22 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     assert_eq!(source_timing["phrase_status"], "uncertain");
     assert_eq!(source_timing["phrase_count"], 0);
     assert_eq!(source_timing["primary_hypothesis_id"], "probe-primary");
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_anchor_count"],
+        3
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_kick_anchor_count"],
+        1
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_backbeat_anchor_count"],
+        1
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_transient_anchor_count"],
+        1
+    );
     assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
     assert_eq!(source_timing["warning_codes"][1], "phrase_uncertain");
 }

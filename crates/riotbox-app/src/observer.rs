@@ -185,6 +185,7 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "phrase_count": graph.timing.phrase_grid.len(),
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
+        "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(graph),
         "primary_warning_code": graph
             .timing
             .warnings
@@ -197,6 +198,40 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
             .map(|warning| observer_timing_warning_code_label(&warning.code))
             .collect::<Vec<_>>(),
     })
+}
+
+fn source_timing_anchor_evidence_observer_snapshot(
+    graph: &riotbox_core::source_graph::SourceGraph,
+) -> Value {
+    let anchors = graph
+        .timing
+        .primary_hypothesis()
+        .map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
+    json!({
+        "primary_anchor_count": anchors.len(),
+        "primary_kick_anchor_count": count_source_timing_anchor_type(
+            anchors,
+            riotbox_core::source_graph::SourceTimingAnchorType::Kick,
+        ),
+        "primary_backbeat_anchor_count": count_source_timing_anchor_type(
+            anchors,
+            riotbox_core::source_graph::SourceTimingAnchorType::Backbeat,
+        ),
+        "primary_transient_anchor_count": count_source_timing_anchor_type(
+            anchors,
+            riotbox_core::source_graph::SourceTimingAnchorType::TransientCluster,
+        ),
+    })
+}
+
+fn count_source_timing_anchor_type(
+    anchors: &[riotbox_core::source_graph::SourceTimingAnchor],
+    anchor_type: riotbox_core::source_graph::SourceTimingAnchorType,
+) -> usize {
+    anchors
+        .iter()
+        .filter(|anchor| anchor.anchor_type == anchor_type)
+        .count()
 }
 
 fn observer_source_timing_beat_status(

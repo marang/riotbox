@@ -16,8 +16,9 @@ mod tests {
         },
         source_graph::{
             AnalysisSummary, Candidate, CandidateType, DecodeProfile, GraphProvenance,
-            QualityClass, SourceDescriptor, SourceGraph, TimingDegradedPolicy, TimingQuality,
-            TimingWarning, TimingWarningCode,
+            MeterHint, QualityClass, SourceDescriptor, SourceGraph, SourceTimingAnchor,
+            SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind,
+            TimingQuality, TimingWarning, TimingWarningCode,
         },
     };
 
