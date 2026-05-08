@@ -72,11 +72,32 @@ if not preview or not any(anchor.get("anchor_type") == "kick" for anchor in prev
 if not any(anchor.get("anchor_type") == "backbeat" for anchor in preview):
     raise SystemExit("anchor_evidence.primary_anchor_preview must include a backbeat anchor")
 
+groove = summary.get("groove_evidence", {})
+groove_checks = {
+    "primary_groove_residual_count": lambda value: value >= 0,
+    "primary_max_abs_offset_ms": lambda value: value >= 0.0,
+}
+for key, predicate in groove_checks.items():
+    value = groove.get(key)
+    if not isinstance(value, (int, float)) or isinstance(value, bool) or not predicate(value):
+        raise SystemExit(f"groove_evidence.{key} failed generated source timing smoke: {value!r}")
+
+groove_preview = groove.get("primary_groove_preview", [])
+if not isinstance(groove_preview, list):
+    raise SystemExit("groove_evidence.primary_groove_preview must be a list")
+for residual in groove_preview:
+    if residual.get("subdivision") not in {"eighth", "triplet", "sixteenth", "thirty_second"}:
+        raise SystemExit(f"unexpected groove subdivision: {residual!r}")
+    confidence = residual.get("confidence")
+    if not isinstance(confidence, (int, float)) or isinstance(confidence, bool) or not 0 <= confidence <= 1:
+        raise SystemExit(f"invalid groove confidence: {residual!r}")
+
 print(
     "generated source timing probe ok: "
     f"bpm={summary['primary_bpm']:.3f} "
     f"beat={summary['primary_beat_score']:.3f} "
     f"downbeat={summary['primary_downbeat_score']:.3f} "
-    f"anchors={anchors['primary_anchor_count']}"
+    f"anchors={anchors['primary_anchor_count']} "
+    f"groove_residuals={groove['primary_groove_residual_count']}"
 )
 PY

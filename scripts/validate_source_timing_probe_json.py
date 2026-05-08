@@ -27,6 +27,12 @@ ANCHOR_TYPES = {
     "capture_candidate",
     "transient_cluster",
 }
+GROOVE_SUBDIVISIONS = {
+    "eighth",
+    "triplet",
+    "sixteenth",
+    "thirty_second",
+}
 
 
 def main() -> int:
@@ -79,6 +85,7 @@ def validate_summary(summary: Any) -> None:
     require_non_negative_int(summary, "alternate_beat_candidate_count")
     require_non_negative_int(summary, "alternate_downbeat_phase_count")
     validate_anchor_evidence(summary)
+    validate_groove_evidence(summary)
     require_string_list(summary, "warning_codes")
     require_non_negative_int(summary, "onset_count")
     require_non_negative_number(summary, "onset_density_per_second")
@@ -114,6 +121,27 @@ def validate_anchor_preview(anchor: dict[str, Any]) -> None:
         raise ValueError(f"anchor confidence must be <= 1, got {confidence!r}")
     require_non_negative_number(anchor, "strength")
     require_string_list(anchor, "tags")
+
+
+def validate_groove_evidence(summary: dict[str, Any]) -> None:
+    groove_evidence = require_object(summary.get("groove_evidence"), "groove_evidence")
+    total = require_non_negative_int(groove_evidence, "primary_groove_residual_count")
+    require_non_negative_number(groove_evidence, "primary_max_abs_offset_ms")
+    preview = require_array(groove_evidence, "primary_groove_preview")
+    if len(preview) > min(total, 4):
+        raise ValueError(
+            "primary_groove_preview must contain at most the first four primary residuals"
+        )
+    for index, item in enumerate(preview):
+        validate_groove_preview(require_object(item, f"primary_groove_preview[{index}]"))
+
+
+def validate_groove_preview(residual: dict[str, Any]) -> None:
+    require_one_of(residual, "subdivision", GROOVE_SUBDIVISIONS)
+    require_number(residual, "offset_ms")
+    confidence = require_non_negative_number(residual, "confidence")
+    if confidence > 1:
+        raise ValueError(f"groove confidence must be <= 1, got {confidence!r}")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
@@ -170,6 +198,13 @@ def require_optional_number(parent: dict[str, Any], field: str) -> float | int |
         return None
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise TypeError(f"{field} must be a number or null")
+    return value
+
+
+def require_number(parent: dict[str, Any], field: str) -> float | int:
+    value = require_optional_number(parent, field)
+    if value is None:
+        raise ValueError(f"{field} must be a number")
     return value
 
 
