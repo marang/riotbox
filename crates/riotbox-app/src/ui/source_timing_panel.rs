@@ -11,7 +11,10 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 graph.timing.bpm_confidence
             )),
             Line::from(format!(
-                "quality {} | policy {}",
+                "cue {} | quality {} | policy {}",
+                source_timing_policy_cue_label(timing_degraded_policy_label(
+                    &graph.timing.effective_degraded_policy()
+                )),
                 timing_quality_label(&graph.timing.effective_timing_quality()),
                 timing_degraded_policy_label(&graph.timing.effective_degraded_policy())
             )),
