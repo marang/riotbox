@@ -541,6 +541,10 @@ bounded BPM policy:
   summary contract reports this as `output_path.source_timing_alignment`, using
   BPM delta plus normalized warning-code overlap as bounded proof that the
   control path and generated output path are using compatible timing evidence.
+- generated Feral grid QA should prove both the conservative fallback path and a
+  strict auto-grid path: weak or manual-confirm timing must stay
+  `static_default`, while long stable timing may use `source_timing` only when
+  manual confirmation is false.
 
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.

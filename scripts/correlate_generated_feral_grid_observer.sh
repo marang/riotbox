@@ -9,10 +9,12 @@ tmpdir="$(mktemp -d)"
 trap 'rm -rf "$tmpdir"' EXIT
 
 observer_fixture="$tmpdir/feral-grid-observer/events.ndjson"
+locked_observer_fixture="$tmpdir/feral-grid-observer/events-locked.ndjson"
 mismatched_observer_fixture="$tmpdir/feral-grid-observer/events-mismatched-source-timing.ndjson"
 mismatch_output="$tmpdir/feral-grid-observer/mismatch-output.txt"
 
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0
+python3 scripts/write_synthetic_break_wav.py "$tmpdir/source-locked.wav" 16.0
 cargo run -p riotbox-app --bin user_session_observer_probe -- \
   --probe feral-grid-jam \
   --observer "$observer_fixture"
@@ -86,6 +88,68 @@ jq -e \
   "$tmpdir/observer-audio-summary.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary.json"
+
+cargo run -p riotbox-app --bin user_session_observer_probe -- \
+  --probe feral-grid-jam-locked \
+  --observer "$locked_observer_fixture"
+python3 scripts/validate_user_session_observer_ndjson.py "$locked_observer_fixture"
+jq -s -e \
+  'length >= 6
+    and .[0].event == "observer_started"
+    and .[0].launch.probe == "feral-grid-jam-locked"
+    and all(.[]; has("snapshot"))
+    and all(.[]; .snapshot.source_timing.source_id == "src-feral-grid-probe")
+    and all(.[]; .snapshot.source_timing.quality == "high")
+    and all(.[]; .snapshot.source_timing.degraded_policy == "locked")
+    and all(.[]; .snapshot.source_timing.primary_warning_code == null)
+    and all(.[]; .snapshot.source_timing.warning_codes == [])
+    and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")
+    and any(.[]; .event == "key_outcome" and .key == "g" and .outcome == "queue_mc202_generate_follower")' \
+  "$locked_observer_fixture"
+
+cargo run -p riotbox-audio --bin feral_grid_pack -- \
+  --source "$tmpdir/source-locked.wav" \
+  --output-dir "$tmpdir/feral-grid-locked" \
+  --bars 4 \
+  --source-window-seconds 1.0
+python3 scripts/validate_listening_manifest_json.py \
+  --require-existing-artifacts \
+  "$tmpdir/feral-grid-locked/manifest.json"
+jq -e \
+  '.grid_bpm_source == "source_timing"
+    and .grid_bpm_decision_reason == "source_timing_ready"
+    and .source_timing.readiness == "ready"
+    and .source_timing.requires_manual_confirm == false
+    and .source_timing.phrase_status == "stable"
+    and .source_timing.warning_codes == []
+    and .source_timing_bpm_delta == 0.0' \
+  "$tmpdir/feral-grid-locked/manifest.json"
+
+cargo run -p riotbox-app --bin observer_audio_correlate -- \
+  --observer "$locked_observer_fixture" \
+  --manifest "$tmpdir/feral-grid-locked/manifest.json" \
+  --output "$tmpdir/observer-audio-summary-locked.json" \
+  --json \
+  --require-evidence
+jq -e \
+  '.schema == "riotbox.observer_audio_summary.v1"
+    and .schema_version == 1
+    and .control_path.present == true
+    and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
+    and .control_path.observer_source_timing.quality == "high"
+    and .control_path.observer_source_timing.degraded_policy == "locked"
+    and .control_path.observer_source_timing.primary_warning_code == null
+    and .output_path.grid_bpm_source == "source_timing"
+    and .output_path.grid_bpm_decision_reason == "source_timing_ready"
+    and .output_path.source_timing_bpm_delta == 0.0
+    and .output_path.source_timing_alignment.status == "aligned"
+    and (.output_path.source_timing_alignment.warning_overlap | length == 0)
+    and (.output_path.source_timing_alignment.issues | length == 0)
+    and .output_path.present == true
+    and (.output_path.issues | length == 0)' \
+  "$tmpdir/observer-audio-summary-locked.json"
+python3 scripts/validate_observer_audio_summary_json.py \
+  "$tmpdir/observer-audio-summary-locked.json"
 
 jq -c '.snapshot.source_timing.bpm_estimate = 118.0' \
   "$observer_fixture" > "$mismatched_observer_fixture"

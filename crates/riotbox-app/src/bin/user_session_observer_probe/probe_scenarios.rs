@@ -382,7 +382,58 @@ pub(super) fn write_feral_grid_jam_observer(path: &Path) -> io::Result<()> {
     Ok(())
 }
 
+pub(super) fn write_feral_grid_locked_jam_observer(path: &Path) -> io::Result<()> {
+    let mut writer = NdjsonWriter::open(path)?;
+    let mut shell = probe_shell("feral-grid-jam-locked-probe");
+    attach_locked_probe_source_timing(
+        &mut shell,
+        "src-feral-grid-probe",
+        "synthetic-feral-grid-source.wav",
+        128.0,
+    );
+
+    record_probe_start(
+        &mut writer,
+        &mut shell,
+        path,
+        "feral-grid-jam-locked",
+        "synthetic-feral-grid-source.wav",
+        "headless-feral-grid-session.json",
+    )?;
+
+    apply_probe_key(&mut shell, &mut writer, 100, KeyCode::Char(' '))?;
+    apply_probe_key(&mut shell, &mut writer, 200, KeyCode::Char('f'))?;
+    commit_boundary(&mut shell, &mut writer, 300, CommitBoundary::Bar, 1, 1)?;
+    apply_probe_key(&mut shell, &mut writer, 400, KeyCode::Char('g'))?;
+    commit_boundary(&mut shell, &mut writer, 500, CommitBoundary::Phrase, 2, 1)?;
+    Ok(())
+}
+
 fn attach_probe_source_timing(shell: &mut JamShellState, source_id: &str, path: &str, bpm: f32) {
+    attach_source_timing(shell, source_id, path, bpm, ProbeTimingProfile::Cautious);
+}
+
+fn attach_locked_probe_source_timing(
+    shell: &mut JamShellState,
+    source_id: &str,
+    path: &str,
+    bpm: f32,
+) {
+    attach_source_timing(shell, source_id, path, bpm, ProbeTimingProfile::Locked);
+}
+
+enum ProbeTimingProfile {
+    Cautious,
+    Locked,
+}
+
+fn attach_source_timing(
+    shell: &mut JamShellState,
+    source_id: &str,
+    path: &str,
+    bpm: f32,
+    profile: ProbeTimingProfile,
+) {
     let mut graph = SourceGraph::new(
         SourceDescriptor {
             source_id: SourceId::from(source_id),
@@ -403,13 +454,22 @@ fn attach_probe_source_timing(shell: &mut JamShellState, source_id: &str, path: 
         },
     );
     graph.timing.bpm_estimate = Some(bpm);
-    graph.timing.bpm_confidence = 0.86;
-    graph.timing.quality = TimingQuality::Medium;
-    graph.timing.degraded_policy = TimingDegradedPolicy::Cautious;
-    graph.timing.warnings.push(TimingWarning {
-        code: TimingWarningCode::PhraseUncertain,
-        message: "headless probe uses synthetic source timing readiness".into(),
-    });
+    match profile {
+        ProbeTimingProfile::Cautious => {
+            graph.timing.bpm_confidence = 0.86;
+            graph.timing.quality = TimingQuality::Medium;
+            graph.timing.degraded_policy = TimingDegradedPolicy::Cautious;
+            graph.timing.warnings.push(TimingWarning {
+                code: TimingWarningCode::PhraseUncertain,
+                message: "headless probe uses synthetic source timing readiness".into(),
+            });
+        }
+        ProbeTimingProfile::Locked => {
+            graph.timing.bpm_confidence = 0.92;
+            graph.timing.quality = TimingQuality::High;
+            graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+        }
+    }
 
     shell.app.source_graph = Some(graph);
 }
