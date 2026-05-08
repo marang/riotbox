@@ -193,6 +193,7 @@ struct CaseReport {
     baseline_metrics: OfflineAudioMetrics,
     candidate_metrics: OfflineAudioMetrics,
     signal_delta_metrics: OfflineAudioMetrics,
+    mc202_phrase_grid: Option<Mc202PhraseGridTimingMetrics>,
     min_rms_delta: f32,
     min_signal_delta_rms: f32,
     passed: bool,
