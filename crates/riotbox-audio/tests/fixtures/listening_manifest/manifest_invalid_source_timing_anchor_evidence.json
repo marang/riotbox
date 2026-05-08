@@ -33,6 +33,11 @@
       "primary_backbeat_anchor_count": 2,
       "primary_transient_anchor_count": 0
     },
+    "groove_evidence": {
+      "primary_groove_residual_count": 0,
+      "primary_max_abs_offset_ms": 0.0,
+      "primary_groove_preview": []
+    },
     "alternate_evidence_count": 2,
     "warning_codes": [
       "PhraseUncertain",
