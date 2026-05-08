@@ -1,21 +1,22 @@
 ┌Jam───────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Riotbox Jam                                                                                                           │
-│Mode ingest | Screen source | Source src-1 | 126.0 BPM | trust usable                                                 │
+│Mode ingest | Screen source | Source src-1 | 126.0 BPM | trust usable | feral ready                                   │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Navigation────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
-│Screens: 1 Jam | 2 Log | [3 Source] | Tab switch                                                                      │
+│Screens: 1 Jam | 2 Log | [3 Source] | 4 Capture | Tab switch                                                          │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
 ┌Identity────────────────────────────────────────────┐┌Timing──────────────────────────────────────────────────────────┐
-│source src-1                                        ││tempo 126.0 BPM | conf 0.76                                     │
-│fixtures/input.wav                                  ││meter unknown                                                   │
-│12.00s | 44100 Hz | 2 ch | native                   ││beats 0 | bars 0 | phrases 0                                    │
-│hash hash-1                                         ││timing medium | sections high                                   │
+│source src-1                                        ││readiness needs confirm | 126.0 BPM | conf 0.76                 │
+│fixtures/input.wav                                  ││beat tempo only | downbeat ambiguous | phrase uncertain         │
+│12.00s | 44100 Hz | 2 ch | native                   ││meter 4/4 | hypotheses 1 | primary timing-primary               │
+│hash hash-1                                         ││mode manual confirm | trust low                                 │
+│                                                    ││warnings ambiguous_downbeat, phrase_uncertain                   │
 └────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────────────┘
 ┌Sections──────────────────────────────────────┐┌Candidates────────────────────────┐┌Provenance────────────────────────┐
-│intro | bars 1-2 | 0.00s-4.00s | medium | conf││loops 1 | hooks 0                 ││sidecar 0.1.0                     │
-│drop | bars 3-6 | 4.00s-12.00s | high | conf 0││best loop 0.84 (0.78)             ││providers decoded.wav_baseline    │
-│                                              ││best hook none                    ││seed 1                            │
-│                                              ││assets 1                          ││generated 2026-04-12T00:00:00Z    │
+│intro | bars 1-2 | 0.00s-4.00s | medium | conf││feral ready | break high          ││sidecar 0.1.0                     │
+│drop | bars 3-6 | 4.00s-12.00s | high | conf 0││quote risk 1 | support 1          ││providers decoded.wav_baseline    │
+│                                              ││hooks 1 | capture 1               ││seed 1                            │
+│                                              ││use use capture before quoting    ││generated 2026-04-12T00:00:00Z    │
 │                                              ││                                  ││                                  │
 │                                              ││                                  ││                                  │
 └──────────────────────────────────────────────┘└──────────────────────────────────┘└──────────────────────────────────┘
@@ -29,6 +30,7 @@
 └────────────────────────────────────────────────────────────┘└────────────────────────────────────────────────────────┘
 ┌Footer────────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
 │Keys: q quit | ? help | 1-4 screens | Tab switch | i inspect | space play/pause | [ ] drum | r re-ingest              │
-│Actions: m mutate scene | f 909 fill | d 909 reinforce | c capture phrase | u undo                                    │
-│Status: ingested source into Jam shell | audio unknown | sidecar unknown                                              │
+│Primary: y scene jump | g follow | f fill | c capture | w hit | u undo                                                │
+│Advanced: Y restore | a answer | b voice | P pressure | I instigate | G phrase | d push | t takeover | k lock | more  │
+│in ? help                                                                                                             │
 └──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
