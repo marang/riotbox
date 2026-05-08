@@ -1,3 +1,126 @@
+#[derive(Serialize)]
+struct ListeningPackManifest {
+    schema_version: u32,
+    pack_id: &'static str,
+    date: String,
+    sample_rate: u32,
+    channel_count: u16,
+    duration_seconds: f32,
+    case_count: usize,
+    artifacts: Vec<ManifestArtifact>,
+    cases: Vec<ManifestCase>,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestCase {
+    id: &'static str,
+    title: &'static str,
+    recipe_refs: &'static str,
+    baseline_label: &'static str,
+    candidate_label: &'static str,
+    thresholds: ManifestThresholds,
+    metrics: ManifestCaseMetrics,
+    result: &'static str,
+}
+
+#[derive(Serialize)]
+struct ManifestThresholds {
+    min_rms_delta: f32,
+    min_signal_delta_rms: f32,
+}
+
+#[derive(Serialize)]
+struct ManifestCaseMetrics {
+    baseline: ManifestSignalMetrics,
+    candidate: ManifestSignalMetrics,
+    signal_delta: ManifestSignalMetrics,
+    rms_delta: f32,
+    mc202_phrase_grid: Option<Mc202PhraseGridTimingMetrics>,
+}
+
+fn write_manifest(
+    path: &Path,
+    args: &Args,
+    output_dir: &Path,
+    reports: &[CaseReport],
+) -> Result<(), Box<dyn std::error::Error>> {
+    let manifest = ListeningPackManifest {
+        schema_version: LISTENING_MANIFEST_SCHEMA_VERSION,
+        pack_id: PACK_ID,
+        date: args.date.clone(),
+        sample_rate: SAMPLE_RATE,
+        channel_count: CHANNEL_COUNT,
+        duration_seconds: args.duration_seconds,
+        case_count: reports.len(),
+        artifacts: manifest_artifacts(output_dir, reports),
+        cases: reports.iter().map(ManifestCase::from).collect(),
+        result: "pass",
+    };
+
+    write_manifest_json(path, &manifest)?;
+    Ok(())
+}
+
+fn manifest_artifacts(output_dir: &Path, reports: &[CaseReport]) -> Vec<ManifestArtifact> {
+    let mut artifacts = Vec::new();
+    for report in reports {
+        let case_dir = output_dir.join(report.id);
+        let baseline_path = case_dir.join("baseline.wav");
+        let baseline_metrics_path = case_dir.join("baseline.metrics.md");
+        let candidate_path = case_dir.join("candidate.wav");
+        let candidate_metrics_path = case_dir.join("candidate.metrics.md");
+        let comparison_path = case_dir.join("comparison.md");
+        artifacts.push(ManifestArtifact::case_audio_wav(
+            report.id,
+            "baseline",
+            &baseline_path,
+            Some(&baseline_metrics_path),
+        ));
+        artifacts.push(ManifestArtifact::case_audio_wav(
+            report.id,
+            "candidate",
+            &candidate_path,
+            Some(&candidate_metrics_path),
+        ));
+        artifacts.push(ManifestArtifact::case_markdown_report(
+            report.id,
+            "comparison",
+            &comparison_path,
+        ));
+    }
+    artifacts.push(ManifestArtifact::case_markdown_report(
+        "pack",
+        "summary",
+        &output_dir.join("pack-summary.md"),
+    ));
+    artifacts
+}
+
+impl From<&CaseReport> for ManifestCase {
+    fn from(report: &CaseReport) -> Self {
+        Self {
+            id: report.id,
+            title: report.title,
+            recipe_refs: report.recipe_refs,
+            baseline_label: report.baseline_label,
+            candidate_label: report.candidate_label,
+            thresholds: ManifestThresholds {
+                min_rms_delta: report.min_rms_delta,
+                min_signal_delta_rms: report.min_signal_delta_rms,
+            },
+            metrics: ManifestCaseMetrics {
+                baseline: report.baseline_metrics.into(),
+                candidate: report.candidate_metrics.into(),
+                signal_delta: report.signal_delta_metrics.into(),
+                rms_delta: rms_delta(report.baseline_metrics, report.candidate_metrics),
+                mc202_phrase_grid: report.mc202_phrase_grid,
+            },
+            result: if report.passed { "pass" } else { "fail" },
+        }
+    }
+}
+
 fn write_pcm16_wav(
     path: &Path,
     sample_rate: u32,
@@ -194,6 +317,28 @@ mod tests {
                 >= first_case["thresholds"]["min_signal_delta_rms"]
                     .as_f64()
                     .expect("min signal delta")
+        );
+        assert!(first_case["metrics"]["mc202_phrase_grid"].is_null());
+
+        let mc202_case = cases
+            .iter()
+            .find(|case| case["id"] == "mc202-follower-to-answer")
+            .expect("mc202 case");
+        assert_eq!(mc202_case["metrics"]["mc202_phrase_grid"]["passed"], true);
+        assert_eq!(
+            mc202_case["metrics"]["mc202_phrase_grid"]["resolution"],
+            "sixteenth"
+        );
+        assert!(
+            mc202_case["metrics"]["mc202_phrase_grid"]["starts_on_phrase_boundary"]
+                .as_bool()
+                .expect("phrase boundary")
+        );
+        assert!(
+            mc202_case["metrics"]["mc202_phrase_grid"]["hit_ratio"]
+                .as_f64()
+                .expect("hit ratio")
+                >= 0.95
         );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");

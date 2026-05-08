@@ -97,7 +97,7 @@ What to observe:
 - on hook-like chorus sections, follower/leader material uses `answer_space` response so MC-202 answers around the hook instead of doubling the hook downbeats
 - after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
-- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, `mc202-follower-to-mutated-drive`, `mc202-neutral-to-lift-contour`, and `mc202-direct-to-hook-response`
+- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, `mc202-follower-to-mutated-drive`, `mc202-neutral-to-lift-contour`, and `mc202-direct-to-hook-response`; each MC-202 case also carries a `mc202_phrase_grid` metric proving the rendered candidate starts on the phrase boundary and its note onsets land on the sixteenth grid
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
@@ -118,7 +118,7 @@ Listen to these files under `artifacts/audio_qa/local-mc202/lane-recipe-listenin
 - `mc202-follower-to-instigator/baseline.wav` vs `candidate.wav`
 - `mc202-follower-to-mutated-drive/baseline.wav` vs `candidate.wav`
 
-For machine-readable QA, inspect the generated `manifest.json` in the same directory. It records every recipe case, its baseline/candidate artifacts, comparison report, thresholds, and output metrics, so the listening check is tied to concrete non-silent/non-collapsed audio evidence.
+For machine-readable QA, inspect the generated `manifest.json` in the same directory. It records every recipe case, its baseline/candidate artifacts, comparison report, thresholds, output metrics, and MC-202 phrase/grid timing proof, so the listening check is tied to concrete non-silent/non-collapsed/non-free-running audio evidence.
 
 For the current CI-safe observer/audio correlation proof of this MC-202 recipe
 path, run:

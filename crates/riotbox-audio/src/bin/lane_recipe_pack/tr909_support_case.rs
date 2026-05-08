@@ -84,6 +84,7 @@ fn render_case(
     fs::create_dir_all(&case_dir)?;
 
     let (baseline, candidate) = render_pair(&case.render_pair, frame_count);
+    let mc202_phrase_grid = mc202_phrase_grid_metrics(&case.render_pair, &candidate);
     let baseline_metrics =
         signal_metrics_with_grid(&baseline, SAMPLE_RATE, CHANNEL_COUNT, DEFAULT_BPM, BEATS_PER_BAR);
     let candidate_metrics = signal_metrics_with_grid(
@@ -94,6 +95,11 @@ fn render_case(
         BEATS_PER_BAR,
     );
     let signal_delta_metrics = signal_delta_metrics(&baseline, &candidate);
+    let passed = rms_delta(baseline_metrics, candidate_metrics) >= case.min_rms_delta
+        && signal_delta_metrics.rms >= case.min_signal_delta_rms
+        && mc202_phrase_grid
+            .map(|metrics| metrics.passed)
+            .unwrap_or(true);
     let report = CaseReport {
         id: case.id,
         title: case.title,
@@ -103,10 +109,10 @@ fn render_case(
         baseline_metrics,
         candidate_metrics,
         signal_delta_metrics,
+        mc202_phrase_grid,
         min_rms_delta: case.min_rms_delta,
         min_signal_delta_rms: case.min_signal_delta_rms,
-        passed: rms_delta(baseline_metrics, candidate_metrics) >= case.min_rms_delta
-            && signal_delta_metrics.rms >= case.min_signal_delta_rms,
+        passed,
     };
 
     let baseline_path = case_dir.join("baseline.wav");
@@ -129,12 +135,13 @@ fn render_case(
 
     if !report.passed {
         return Err(format!(
-            "{} output delta failed: RMS delta {:.6} / min {:.6}, signal delta RMS {:.6} / min {:.6}",
+            "{} output delta failed: RMS delta {:.6} / min {:.6}, signal delta RMS {:.6} / min {:.6}, MC-202 phrase grid {:?}",
             report.id,
             rms_delta(report.baseline_metrics, report.candidate_metrics),
             report.min_rms_delta,
             report.signal_delta_metrics.rms,
-            report.min_signal_delta_rms
+            report.min_signal_delta_rms,
+            report.mc202_phrase_grid
         )
         .into());
     }
@@ -231,6 +238,31 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
     let event_density_delta =
         (baseline.event_density_per_bar - candidate.event_density_per_bar).abs();
     let signal_delta = report.signal_delta_metrics;
+    let mc202_phrase_grid = report
+        .mc202_phrase_grid
+        .map(|metrics| {
+            format!(
+                "\n\
+                 ## MC-202 Phrase/Grid Timing\n\n\
+                 - Result: `{}`\n\
+                 - Position beats: `{:.3}`\n\
+                 - Starts on phrase boundary: `{}`\n\
+                 - Candidate onset count: `{}`\n\
+                 - Grid-aligned onset count: `{}`\n\
+                 - Hit ratio: `{:.6}`\n\
+                 - Max onset offset ms: `{:.3}`\n\
+                 - Max allowed onset offset ms: `{:.3}`\n",
+                if metrics.passed { "pass" } else { "fail" },
+                metrics.position_beats,
+                metrics.starts_on_phrase_boundary,
+                metrics.candidate_onset_count,
+                metrics.grid_aligned_onset_count,
+                metrics.hit_ratio,
+                metrics.max_onset_offset_ms,
+                metrics.max_allowed_onset_offset_ms
+            )
+        })
+        .unwrap_or_default();
 
     format!(
         "# Lane Recipe Listening Comparison\n\n\
@@ -259,7 +291,7 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
          | silence_ratio | {:.6} | {:.6} | {:.6} |\n\
          | dc_offset | {:.6} | {:.6} | {:.6} |\n\
          | onset_count | {} | {} | {} |\n\
-         | event_density_per_bar | {:.6} | {:.6} | {:.6} |\n",
+         | event_density_per_bar | {:.6} | {:.6} | {:.6} |\n{}",
         case.id,
         case.title,
         case.recipe_refs,
@@ -306,7 +338,8 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
         onset_count_delta,
         baseline.event_density_per_bar,
         candidate.event_density_per_bar,
-        event_density_delta
+        event_density_delta,
+        mc202_phrase_grid
     )
 }
 
@@ -375,125 +408,4 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
     );
 
     summary
-}
-
-#[derive(Serialize)]
-struct ListeningPackManifest {
-    schema_version: u32,
-    pack_id: &'static str,
-    date: String,
-    sample_rate: u32,
-    channel_count: u16,
-    duration_seconds: f32,
-    case_count: usize,
-    artifacts: Vec<ManifestArtifact>,
-    cases: Vec<ManifestCase>,
-    result: &'static str,
-}
-
-#[derive(Serialize)]
-struct ManifestCase {
-    id: &'static str,
-    title: &'static str,
-    recipe_refs: &'static str,
-    baseline_label: &'static str,
-    candidate_label: &'static str,
-    thresholds: ManifestThresholds,
-    metrics: ManifestCaseMetrics,
-    result: &'static str,
-}
-
-#[derive(Serialize)]
-struct ManifestThresholds {
-    min_rms_delta: f32,
-    min_signal_delta_rms: f32,
-}
-
-#[derive(Serialize)]
-struct ManifestCaseMetrics {
-    baseline: ManifestSignalMetrics,
-    candidate: ManifestSignalMetrics,
-    signal_delta: ManifestSignalMetrics,
-    rms_delta: f32,
-}
-
-fn write_manifest(
-    path: &Path,
-    args: &Args,
-    output_dir: &Path,
-    reports: &[CaseReport],
-) -> Result<(), Box<dyn std::error::Error>> {
-    let manifest = ListeningPackManifest {
-        schema_version: LISTENING_MANIFEST_SCHEMA_VERSION,
-        pack_id: PACK_ID,
-        date: args.date.clone(),
-        sample_rate: SAMPLE_RATE,
-        channel_count: CHANNEL_COUNT,
-        duration_seconds: args.duration_seconds,
-        case_count: reports.len(),
-        artifacts: manifest_artifacts(output_dir, reports),
-        cases: reports.iter().map(ManifestCase::from).collect(),
-        result: "pass",
-    };
-
-    write_manifest_json(path, &manifest)?;
-    Ok(())
-}
-
-fn manifest_artifacts(output_dir: &Path, reports: &[CaseReport]) -> Vec<ManifestArtifact> {
-    let mut artifacts = Vec::new();
-    for report in reports {
-        let case_dir = output_dir.join(report.id);
-        let baseline_path = case_dir.join("baseline.wav");
-        let baseline_metrics_path = case_dir.join("baseline.metrics.md");
-        let candidate_path = case_dir.join("candidate.wav");
-        let candidate_metrics_path = case_dir.join("candidate.metrics.md");
-        let comparison_path = case_dir.join("comparison.md");
-        artifacts.push(ManifestArtifact::case_audio_wav(
-            report.id,
-            "baseline",
-            &baseline_path,
-            Some(&baseline_metrics_path),
-        ));
-        artifacts.push(ManifestArtifact::case_audio_wav(
-            report.id,
-            "candidate",
-            &candidate_path,
-            Some(&candidate_metrics_path),
-        ));
-        artifacts.push(ManifestArtifact::case_markdown_report(
-            report.id,
-            "comparison",
-            &comparison_path,
-        ));
-    }
-    artifacts.push(ManifestArtifact::case_markdown_report(
-        "pack",
-        "summary",
-        &output_dir.join("pack-summary.md"),
-    ));
-    artifacts
-}
-
-impl From<&CaseReport> for ManifestCase {
-    fn from(report: &CaseReport) -> Self {
-        Self {
-            id: report.id,
-            title: report.title,
-            recipe_refs: report.recipe_refs,
-            baseline_label: report.baseline_label,
-            candidate_label: report.candidate_label,
-            thresholds: ManifestThresholds {
-                min_rms_delta: report.min_rms_delta,
-                min_signal_delta_rms: report.min_signal_delta_rms,
-            },
-            metrics: ManifestCaseMetrics {
-                baseline: report.baseline_metrics.into(),
-                candidate: report.candidate_metrics.into(),
-                signal_delta: report.signal_delta_metrics.into(),
-                rms_delta: rms_delta(report.baseline_metrics, report.candidate_metrics),
-            },
-            result: if report.passed { "pass" } else { "fail" },
-        }
-    }
 }

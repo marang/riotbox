@@ -78,5 +78,9 @@ jq -e \
     and ([.cases[].id] | index("mc202-direct-to-hook-response")) != null
     and all(.cases[] | select(.id | startswith("mc202-")); .result == "pass")
     and all(.cases[] | select(.id | startswith("mc202-")); .metrics.candidate.rms > 0.000001)
-    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.signal_delta.rms >= .thresholds.min_signal_delta_rms)' \
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.signal_delta.rms >= .thresholds.min_signal_delta_rms)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.passed == true)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.starts_on_phrase_boundary == true)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.hit_ratio >= 0.95)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.candidate_onset_count > 0)' \
   "$pack_dir/manifest.json"
