@@ -632,6 +632,15 @@ bounded BPM policy:
   proof for primary/kick/backbeat/transient anchor classes; it must not demand
   exact anchor-count equality while the current probes can report different
   evidence density on each path.
+- observer/audio correlation should also compare compact app-observed and
+  manifest-side Source Timing groove evidence as
+  `output_path.source_timing_groove_alignment`. This is a bounded consistency
+  proof for primary groove residual presence, maximum absolute residual offset,
+  and short residual previews; it must not require exact residual-offset
+  equality while the current observer and manifest producers expose different
+  evidence density. Strict evidence should reject clear contradictions, such as
+  locked observer groove residuals with no manifest residuals, while keeping
+  missing or non-comparable evidence `partial`.
 - app observer snapshots should preserve compact Source Timing detail fields
   derived from Source Graph timing state, including `beat_status`,
   `beat_count`, `downbeat_status`, `bar_count`, `phrase_status`, and

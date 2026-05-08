@@ -672,6 +672,14 @@ Today the repo already has:
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`; this records partial, aligned,
   and contradictory anchor evidence without requiring exact anchor-count equality
+- observer/audio summaries can also compare compact observer-side and
+  manifest-side Source Timing groove evidence as
+  `output_path.source_timing_groove_alignment`; this records partial, aligned,
+  and contradictory groove-residual evidence without requiring exact
+  residual-offset equality. Strict correlation treats clear contradictions as
+  output-path failures, such as locked observer groove residuals with zero
+  comparable manifest residuals, while missing or density-mismatched evidence
+  stays reviewable as `partial`.
 - generated Feral grid listening manifests carry compact
   `source_timing.anchor_evidence` counts for primary, kick, backbeat, and
   transient-cluster anchors, so QA can audit whether timing readiness is backed
@@ -706,6 +714,9 @@ Today the repo already has:
 - generated Feral grid observer/audio correlation now gates on aligned source
   timing evidence: observer readiness and manifest timing must stay within BPM
   tolerance, share normalized warning evidence, and report no alignment issues
+- generated Feral grid observer/audio correlation now also reports source timing
+  anchor and groove alignment separately, so QA can distinguish a grid/BPM match
+  from missing musical anchor evidence or missing groove-residual evidence
 - the generated locked Feral-grid observer/audio path also proves that observer
   Source Timing detail fields can carry a real locked grid shape: `beat_status`
   `grid`, nonzero beat count, `downbeat_status` `bar_locked`, nonzero bar
