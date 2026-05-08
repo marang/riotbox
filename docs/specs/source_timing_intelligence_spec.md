@@ -536,6 +536,10 @@ bounded BPM policy:
   metric, currently `metrics.source_grid_output_drift`, so QA can catch obvious
   generated-support/grid misalignment before this becomes production beat/downbeat
   validation
+- TR-909 support should expose the same bounded alignment evidence under a
+  lane-specific key, currently `metrics.tr909_source_grid_alignment`, so the
+  first all-lane proof is visible as TR-909 output evidence rather than only a
+  generic pack-level drift smoke
 - observer/audio correlation should compare app-observed Source Timing readiness
   with manifest-side Source Timing evidence when both are present. The current
   summary contract reports this as `output_path.source_timing_alignment`, using

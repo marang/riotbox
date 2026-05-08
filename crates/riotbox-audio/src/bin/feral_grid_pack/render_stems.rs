@@ -131,10 +131,10 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
-    if report.source_grid_output_drift.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
+    if report.tr909_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
         return Err(format!(
-            "source-grid output drift hit ratio {:.6} is below {:.6}",
-            report.source_grid_output_drift.hit_ratio, SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
+            "TR-909 source-grid alignment hit ratio {:.6} is below {:.6}",
+            report.tr909_source_grid_alignment.hit_ratio, SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
         )
         .into());
     }
@@ -267,6 +267,7 @@ fn write_manifest(
                     report.source_first_generated_to_source_rms_ratio,
                 support_generated_to_source_rms_ratio: report.support_generated_to_source_rms_ratio,
             },
+            tr909_source_grid_alignment: report.tr909_source_grid_alignment,
             source_grid_output_drift: report.source_grid_output_drift,
             bar_variation: ManifestBarVariationMetrics {
                 tr909_beat_fill: report.tr909.bar_variation,
