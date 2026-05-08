@@ -26,6 +26,7 @@ fn probe_bpm_hypothesis(
         scoring.downbeat_score,
     );
     let drift = probe_candidate_drift_reports(input, bpm, confidence);
+    let groove = probe_candidate_groove_residuals(input, bpm, confidence);
     let phrase_grid = probe_candidate_phrase_grid(&bar_grid, scoring.downbeat_score, &drift);
     let anchors = probe_candidate_anchors(
         input,
@@ -39,6 +40,18 @@ fn probe_bpm_hypothesis(
         &beat_grid,
         &bar_grid,
     );
+    let mut provenance = vec![
+        "source-timing-probe.bpm-candidate".into(),
+        "source-timing-probe.beat-period-score.v0".into(),
+        "source-timing-probe.downbeat-accent-score.v0".into(),
+        "source-timing-probe.drift-report.v0".into(),
+        "source-timing-probe.phrase-grid.v0".into(),
+    ];
+    if !groove.is_empty() {
+        provenance.push("source-timing-probe.groove-residual.v0".into());
+    }
+    provenance.push(input.source_id.clone());
+
     TimingHypothesis {
         hypothesis_id,
         kind,
@@ -51,17 +64,10 @@ fn probe_bpm_hypothesis(
         phrase_grid,
         anchors,
         drift,
-        groove: Vec::new(),
+        groove,
         quality: TimingQuality::Medium,
         warnings: Vec::new(),
-        provenance: vec![
-            "source-timing-probe.bpm-candidate".into(),
-            "source-timing-probe.beat-period-score.v0".into(),
-            "source-timing-probe.downbeat-accent-score.v0".into(),
-            "source-timing-probe.drift-report.v0".into(),
-            "source-timing-probe.phrase-grid.v0".into(),
-            input.source_id.clone(),
-        ],
+        provenance,
     }
 }
 
