@@ -205,6 +205,12 @@ fn writes_feral_grid_locked_jam_observer_stream() {
     assert!(events.contains(r#""quality":"high""#));
     assert!(events.contains(r#""degraded_policy":"locked""#));
     assert!(events.contains(r#""cue":"grid locked""#));
+    assert!(events.contains(r#""beat_status":"grid""#));
+    assert!(events.contains(r#""beat_count":16"#));
+    assert!(events.contains(r#""downbeat_status":"bar_locked""#));
+    assert!(events.contains(r#""bar_count":4"#));
+    assert!(events.contains(r#""phrase_status":"phrase_locked""#));
+    assert!(events.contains(r#""phrase_count":1"#));
     assert!(events.contains(r#""warning_codes":[]"#));
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));

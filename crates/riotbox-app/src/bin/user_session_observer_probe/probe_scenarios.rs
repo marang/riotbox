@@ -19,10 +19,15 @@ use riotbox_core::{
 };
 use serde_json::{Value, json};
 
+#[path = "locked_timing_grid.rs"]
+mod locked_timing_grid;
+
 use super::{
     NdjsonWriter, apply_probe_key, commit_boundary, headless_audio_health, probe_shell,
     record_probe_start,
 };
+
+use locked_timing_grid::attach_locked_timing_grid;
 
 pub(super) fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;
@@ -468,6 +473,7 @@ fn attach_source_timing(
             graph.timing.bpm_confidence = 0.92;
             graph.timing.quality = TimingQuality::High;
             graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+            attach_locked_timing_grid(&mut graph, bpm);
         }
     }
 
