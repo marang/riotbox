@@ -200,7 +200,9 @@ observer-audio-summary-validator-fixtures:
 user-session-observer-validator-fixtures:
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/events.ndjson
     python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_valid_recovery.ndjson
+    python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_valid_source_timing.ndjson
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_schema.ndjson; then echo "expected invalid user-session observer fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_source_timing_quality.ndjson; then echo "expected invalid source timing quality fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_recovery_decision.ndjson; then echo "expected missing recovery decision fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_missing_replay_family.ndjson; then echo "expected missing recovery replay-family fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_user_session_observer_ndjson.py crates/riotbox-app/tests/fixtures/user_session_observer/events_invalid_recovery_dry_run_selection.ndjson; then echo "expected selected recovery dry-run fixture to fail" >&2; exit 1; fi

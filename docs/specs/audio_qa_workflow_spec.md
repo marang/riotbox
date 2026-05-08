@@ -662,7 +662,7 @@ Today the repo already has:
 - the observer/audio JSON summary v1 contract is documented in `docs/benchmarks/observer_audio_summary_json_contract_2026-04-29.md`
 - the observer/audio JSON fixture smoke also runs the repo-local `scripts/validate_observer_audio_summary_json.py` contract validator without adding an external schema dependency
 - validator fixtures cover both a valid failure summary with `null` metrics and a rejected invalid schema marker
-- a repo-local `scripts/validate_user_session_observer_ndjson.py` helper validates the `riotbox.user_session_observer.v1` event stream shape, including recovery snapshot candidate `decision` labels, compact replay-family diagnostics, and optional read-only `manual_choice_dry_run` evidence when snapshots are present
+- a repo-local `scripts/validate_user_session_observer_ndjson.py` helper validates the `riotbox.user_session_observer.v1` event stream shape, including recovery snapshot candidate `decision` labels, compact replay-family diagnostics, optional Source Timing Intelligence readiness when a Source Graph is attached, and optional read-only `manual_choice_dry_run` evidence when snapshots are present
 - strict observer/audio correlation now rejects malformed observer stream evidence before accepting committed control-path evidence
 - `just user-session-observer-validator-fixtures` validates the committed observer fixture streams plus valid and invalid recovery-snapshot fixtures, and is wired into `just audio-qa-ci`
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible

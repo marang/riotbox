@@ -105,7 +105,34 @@ def validate_snapshot_if_present(event: dict[str, Any]) -> None:
     require_object_field(snapshot, "transport")
     require_object_field(snapshot, "queue")
     require_object_field(snapshot, "runtime")
+    validate_source_timing(snapshot.get("source_timing"))
     validate_recovery(require_object_field(snapshot, "recovery"))
+
+
+def validate_source_timing(value: Any) -> None:
+    if value is None:
+        return
+    source_timing = require_object(value, "source_timing")
+    require_bool(source_timing, "present")
+    require_string(source_timing, "source_id")
+    require_optional_number(source_timing, "bpm_estimate")
+    require_number(source_timing, "bpm_confidence")
+    require_one_of(source_timing, "quality", {"low", "medium", "high", "unknown"})
+    require_one_of(
+        source_timing,
+        "degraded_policy",
+        {"locked", "cautious", "manual_confirm", "fallback_grid", "disabled", "unknown"},
+    )
+    primary = source_timing.get("primary_hypothesis_id")
+    if primary is not None and not isinstance(primary, str):
+        raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
+    require_int(source_timing, "hypothesis_count")
+    warning = source_timing.get("primary_warning_code")
+    if warning is not None and not isinstance(warning, str):
+        raise TypeError("source_timing.primary_warning_code must be a string or null")
+    warning_codes = require_list(source_timing, "warning_codes")
+    if any(not isinstance(code, str) or not code for code in warning_codes):
+        raise TypeError("source_timing.warning_codes must contain non-empty strings")
 
 
 def validate_recovery(recovery: dict[str, Any]) -> None:
@@ -195,10 +222,33 @@ def require_int(parent: dict[str, Any], field: str) -> None:
         raise TypeError(f"{field} must be an integer")
 
 
+def require_number(parent: dict[str, Any], field: str) -> float | int:
+    value = parent.get(field)
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise TypeError(f"{field} must be a number")
+    return value
+
+
+def require_optional_number(parent: dict[str, Any], field: str) -> float | int | None:
+    value = parent.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise TypeError(f"{field} must be a number or null")
+    return value
+
+
 def require_string(parent: dict[str, Any], field: str) -> str:
     value = parent.get(field)
     if not isinstance(value, str) or not value:
         raise TypeError(f"{field} must be a non-empty string")
+    return value
+
+
+def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str:
+    value = require_string(parent, field)
+    if value not in allowed:
+        raise ValueError(f"{field} must be one of {sorted(allowed)}, got {value!r}")
     return value
 
 
