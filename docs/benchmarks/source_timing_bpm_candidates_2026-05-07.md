@@ -91,9 +91,9 @@ The timing candidate policy has two named profiles:
   period-ambiguity margin for Feral grid auto-BPM trust, so a clearly locked
   dance loop can become `ready` without changing the broader research policy
 
-Generated Feral grid listening packs should carry this readiness summary in
-their manifest so example audio can be judged against timing evidence instead
-of only against rendered level metrics.
+Generated Feral grid listening packs should carry this readiness summary and
+the named readiness policy profile in their manifest so example audio can be
+judged against timing evidence instead of only against rendered level metrics.
 
 ## Boundary
 

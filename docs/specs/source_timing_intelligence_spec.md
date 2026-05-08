@@ -515,6 +515,10 @@ bounded BPM policy:
   the pack grid and is recorded as `grid_bpm_source: source_timing`
 - if readiness is weaker, the pack falls back to the static default BPM and is
   recorded as `grid_bpm_source: static_default`
+- Feral grid manifests must record the readiness policy profile used for this
+  decision, currently `source_timing.policy_profile:
+  dance_loop_auto_readiness`, so diagnostic and auto-trust policies stay
+  auditable
 - manifests must preserve the source/grid BPM delta and whether the source timing
   agrees with the chosen grid, so QA can detect timing mismatch instead of only
   hearing a drifting or fallback-like render

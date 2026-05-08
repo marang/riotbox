@@ -124,14 +124,8 @@ mod tests {
         let high_render = render_tr909_source_support(&grid, high_profile);
         let low_render_repeat = render_tr909_source_support(&grid, low_profile);
 
-        assert_eq!(
-            low_profile.support_profile,
-            Tr909SourceSupportProfile::DropDrive
-        );
-        assert_eq!(
-            high_profile.support_profile,
-            Tr909SourceSupportProfile::BreakLift
-        );
+        assert_eq!(low_profile.support_profile, Tr909SourceSupportProfile::DropDrive);
+        assert_eq!(high_profile.support_profile, Tr909SourceSupportProfile::BreakLift);
         assert_ne!(low_profile.pattern_adoption, high_profile.pattern_adoption);
         assert_ne!(low_render, high_render);
         assert_eq!(low_render, low_render_repeat);
@@ -224,22 +218,24 @@ mod tests {
             manifest["feral_scorecard"]["top_reason"],
             "grid-locked generated feral QA pack"
         );
-        assert_eq!(
-            manifest["source_timing"]["schema"],
-            "riotbox.source_timing_probe_readiness.v1"
-        );
-        assert_eq!(manifest["source_timing"]["schema_version"], 1);
-        assert!(manifest["source_timing"]["source_id"]
+        let source_timing = &manifest["source_timing"];
+        assert_eq!(source_timing["schema"], "riotbox.source_timing_probe_readiness.v1");
+        assert_eq!(source_timing["schema_version"], 1);
+        assert!(source_timing["source_id"]
             .as_str()
             .is_some_and(|value| value.ends_with("source.wav")));
-        let readiness = manifest["source_timing"]["readiness"].as_str();
+        assert_eq!(
+            source_timing["policy_profile"],
+            SourceTimingProbeBpmCandidatePolicy::DANCE_LOOP_AUTO_READINESS_PROFILE
+        );
+        let readiness = source_timing["readiness"].as_str();
         assert!(readiness.is_some_and(|value| matches!(
             value,
             "unavailable" | "weak" | "needs_review" | "ready"
         )));
-        assert!(manifest["source_timing"]["requires_manual_confirm"].is_boolean());
-        assert!(manifest["source_timing"]["bpm_agrees_with_grid"].is_boolean());
-        assert!(manifest["source_timing"]["warning_codes"].is_array());
+        assert!(source_timing["requires_manual_confirm"].is_boolean());
+        assert!(source_timing["bpm_agrees_with_grid"].is_boolean());
+        assert!(source_timing["warning_codes"].is_array());
         assert_eq!(
             manifest["feral_scorecard"]["lane_gestures"]
                 .as_array()
