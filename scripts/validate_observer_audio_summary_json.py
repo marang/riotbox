@@ -58,6 +58,7 @@ def validate_summary(summary: Any) -> None:
     require_string(output_path, "manifest_result")
     require_int(output_path, "artifact_count")
     require_optional_source_timing(output_path)
+    require_optional_source_timing_alignment(output_path)
 
     metrics = require_object_field(output_path, "metrics")
     require_optional_number(metrics, "full_mix_rms")
@@ -88,6 +89,14 @@ def require_equal(parent: dict[str, Any], field: str, expected: Any) -> None:
 def require_bool(parent: dict[str, Any], field: str) -> None:
     if not isinstance(parent.get(field), bool):
         raise TypeError(f"{field} must be a boolean")
+
+
+def require_optional_bool(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as a boolean or null")
+    value = parent.get(field)
+    if value is not None and not isinstance(value, bool):
+        raise TypeError(f"{field} must be a boolean or null")
 
 
 def require_string(parent: dict[str, Any], field: str) -> None:
@@ -137,8 +146,12 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     if value is None:
         return
     timing = require_object(value, field)
+    require_string(timing, "source_id")
+    require_string(timing, "policy_profile")
     require_string(timing, "readiness")
     require_bool(timing, "requires_manual_confirm")
+    require_optional_number(timing, "primary_bpm")
+    require_optional_bool(timing, "bpm_agrees_with_grid")
     require_string(timing, "beat_status")
     require_string(timing, "downbeat_status")
     require_optional_int(timing, "primary_downbeat_offset_beats")
@@ -146,6 +159,22 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_string(timing, "drift_status")
     require_string(timing, "phrase_status")
     require_int(timing, "alternate_evidence_count")
+    require_string_list(timing, "warning_codes")
+
+
+def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
+    field = "source_timing_alignment"
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    alignment = require_object(value, field)
+    require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
+    require_optional_number(alignment, "bpm_delta")
+    require_number(alignment, "bpm_tolerance")
+    require_string_list(alignment, "warning_overlap")
+    require_string_list(alignment, "issues")
 
 
 def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:

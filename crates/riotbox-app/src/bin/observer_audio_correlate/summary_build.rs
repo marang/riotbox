@@ -20,6 +20,7 @@ struct CorrelationSummary {
     w30_rms_delta: Option<f64>,
     source_timing: Option<SourceTimingEvidence>,
     source_timing_malformed: bool,
+    source_timing_alignment: Option<SourceTimingAlignmentEvidence>,
     source_grid_output_drift: Option<SourceGridOutputDriftEvidence>,
     source_grid_output_drift_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
@@ -40,8 +41,12 @@ struct ObserverSourceTimingReadiness {
 
 #[derive(Debug, PartialEq)]
 struct SourceTimingEvidence {
+    source_id: String,
+    policy_profile: String,
     readiness: String,
     requires_manual_confirm: bool,
+    primary_bpm: Option<f64>,
+    bpm_agrees_with_grid: Option<bool>,
     beat_status: String,
     downbeat_status: String,
     primary_downbeat_offset_beats: Option<u64>,
@@ -49,6 +54,7 @@ struct SourceTimingEvidence {
     drift_status: String,
     phrase_status: String,
     alternate_evidence_count: u64,
+    warning_codes: Vec<String>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -103,6 +109,12 @@ fn build_summary_from_events(
     let (source_grid_output_drift, source_grid_output_drift_malformed) =
         collect_source_grid_output_drift(&manifest);
     let (source_timing, source_timing_malformed) = collect_source_timing(&manifest);
+    let source_timing_alignment = collect_source_timing_alignment(
+        observer_source_timing.as_ref(),
+        source_timing.as_ref(),
+        observer_source_timing_malformed,
+        source_timing_malformed,
+    );
 
     Ok(CorrelationSummary {
         observer_schema: launch
@@ -139,6 +151,7 @@ fn build_summary_from_events(
         w30_rms_delta: manifest["metrics"]["deltas"]["rms"].as_f64(),
         source_timing,
         source_timing_malformed,
+        source_timing_alignment,
         source_grid_output_drift,
         source_grid_output_drift_malformed,
         lane_recipe_cases: collect_lane_recipe_cases(&manifest),
@@ -225,12 +238,36 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
     }
 
     let evidence = SourceTimingEvidence {
+        source_id: match source_timing_string(source_timing, "source_id") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        policy_profile: match source_timing_string(source_timing, "policy_profile") {
+            Some(value) => value,
+            None => return (None, true),
+        },
         readiness: match source_timing_string(source_timing, "readiness") {
             Some(value) => value,
             None => return (None, true),
         },
         requires_manual_confirm: match source_timing["requires_manual_confirm"].as_bool() {
             Some(value) => value,
+            None => return (None, true),
+        },
+        primary_bpm: match source_timing.get("primary_bpm") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_f64() {
+                Some(value) => Some(value),
+                None => return (None, true),
+            },
+            None => return (None, true),
+        },
+        bpm_agrees_with_grid: match source_timing.get("bpm_agrees_with_grid") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_bool() {
+                Some(value) => Some(value),
+                None => return (None, true),
+            },
             None => return (None, true),
         },
         beat_status: match source_timing_string(source_timing, "beat_status") {
@@ -262,6 +299,10 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
             None => return (None, true),
         },
         alternate_evidence_count: match source_timing["alternate_evidence_count"].as_u64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        warning_codes: match string_list(source_timing, "warning_codes") {
             Some(value) => value,
             None => return (None, true),
         },
