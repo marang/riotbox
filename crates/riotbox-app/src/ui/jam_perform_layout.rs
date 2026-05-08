@@ -10,9 +10,10 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     let now = Paragraph::new(vec![
         Line::from(format!(
-            "{} @ {:.1}",
+            "{} @ {:.1} | {}",
             transport_label(shell),
-            shell.app.jam_view.transport.position_beats
+            shell.app.jam_view.transport.position_beats,
+            source_timing_clock_compact(shell)
         )),
         Line::from(format!(
             "scene {} | energy {}",

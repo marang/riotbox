@@ -4,6 +4,7 @@ fn renders_more_musical_jam_shell_snapshot() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("trust usable"));
+    assert!(rendered.contains("idle @ 32.0 | source b32 bar8 p1"));
     assert!(rendered.contains("source timing needs confirm | quality"));
     assert!(rendered.contains("low | policy manual_confirm"));
     assert!(rendered.contains("manual_confirm"));
@@ -52,4 +53,15 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
         "{rendered}"
     );
     assert!(rendered.contains("timing warning none"), "{rendered}");
+}
+
+#[test]
+fn renders_missing_source_timing_clock_as_unavailable() {
+    let mut shell = sample_shell_state();
+    shell.app.source_graph = None;
+    shell.app.refresh_view();
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("clock unavailable"), "{rendered}");
 }

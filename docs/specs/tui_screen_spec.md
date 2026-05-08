@@ -84,6 +84,10 @@ It must expose:
   musician-readable timing cue such as `grid locked`, `needs confirm`, or
   `listen first`, plus timing quality, degraded policy, and at most one primary
   timing warning code
+- compact source timing clock in Jam perform / inspect views when available:
+  current beat, bar, and phrase as derived from the existing app transport and
+  Source Graph timing state; show an unavailable cue instead of pretending the
+  clock is known
 - a compact timing rail for the next queued live gesture
 - suggested Scene launch gestures that may name the next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
 - Scene jump availability should come from the shared Jam view model, not be re-inferred separately by individual TUI surfaces

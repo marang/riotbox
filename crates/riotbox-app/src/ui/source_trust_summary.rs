@@ -207,6 +207,46 @@ fn source_timing_readiness_line(shell: &JamShellState) -> String {
     )
 }
 
+fn source_timing_clock_line(shell: &JamShellState) -> String {
+    source_timing_clock_label(shell, false)
+}
+
+fn source_timing_clock_compact(shell: &JamShellState) -> String {
+    source_timing_clock_label(shell, true)
+}
+
+fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
+    let Some(graph) = shell.app.source_graph.as_ref() else {
+        return if compact {
+            "clock unavailable".into()
+        } else {
+            "source clock unavailable".into()
+        };
+    };
+
+    match graph.timing.effective_degraded_policy() {
+        TimingDegradedPolicy::Disabled | TimingDegradedPolicy::Unknown => if compact {
+            "clock unavailable".into()
+        } else {
+            "source clock unavailable".into()
+        },
+        _ => {
+            let clock = &shell.app.runtime.transport;
+            if compact {
+                format!(
+                    "source b{} bar{} p{}",
+                    clock.beat_index, clock.bar_index, clock.phrase_index
+                )
+            } else {
+                format!(
+                    "source clock beat {} | bar {} | phrase {}",
+                    clock.beat_index, clock.bar_index, clock.phrase_index
+                )
+            }
+        }
+    }
+}
+
 fn source_timing_warning_line(shell: &JamShellState) -> String {
     let trust = trust_summary(shell);
     trust
