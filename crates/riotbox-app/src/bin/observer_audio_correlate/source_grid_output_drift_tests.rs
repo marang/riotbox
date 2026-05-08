@@ -47,6 +47,54 @@ fn strict_evidence_rejects_malformed_source_grid_output_drift() {
     assert!(render_markdown(&summary).contains("Output path present: `no`"));
 }
 
+#[test]
+fn strict_evidence_rejects_lane_source_grid_alignment_failures() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        synthetic_manifest_with_lane_alignment_failures(),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("lane alignment evidence");
+
+    assert!(error.to_string().contains("output-path manifest evidence"));
+    assert!(
+        error
+            .to_string()
+            .contains("w30_source_grid_alignment.hit_ratio=0.250000")
+    );
+    assert!(render_markdown(&summary).contains("W-30 source-grid alignment: `hit_ratio=0.250000"));
+    assert!(render_markdown(&summary).contains("Output path present: `no`"));
+}
+
+#[test]
+fn strict_evidence_rejects_malformed_lane_source_grid_alignment() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        synthetic_manifest_with_malformed_lane_alignment(),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("malformed lane alignment");
+
+    assert!(
+        error
+            .to_string()
+            .contains("tr909_source_grid_alignment=malformed")
+    );
+    assert!(render_markdown(&summary).contains("Output path present: `no`"));
+}
+
 fn synthetic_observer() -> String {
     [
         r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
@@ -91,6 +139,61 @@ fn synthetic_manifest_with_malformed_drift() -> String {
       "low_band": { "rms": 0.08 }
     },
     "source_grid_output_drift": {
+      "hit_ratio": 1.0,
+      "max_allowed_peak_offset_ms": 70.0
+    }
+  }
+}"#
+    .to_string()
+}
+
+fn synthetic_manifest_with_lane_alignment_failures() -> String {
+    r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}],
+  "metrics": {
+    "full_grid_mix": {
+      "signal": { "rms": 0.1 },
+      "low_band": { "rms": 0.08 }
+    },
+    "source_grid_output_drift": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 2,
+      "hit_ratio": 0.25,
+      "max_peak_offset_ms": 85.0,
+      "max_allowed_peak_offset_ms": 70.0
+    }
+  }
+}"#
+    .to_string()
+}
+
+fn synthetic_manifest_with_malformed_lane_alignment() -> String {
+    r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}],
+  "metrics": {
+    "full_grid_mix": {
+      "signal": { "rms": 0.1 },
+      "low_band": { "rms": 0.08 }
+    },
+    "source_grid_output_drift": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "tr909_source_grid_alignment": {
       "hit_ratio": 1.0,
       "max_allowed_peak_offset_ms": 70.0
     }

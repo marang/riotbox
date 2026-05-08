@@ -26,6 +26,10 @@ struct CorrelationSummary {
     source_timing_alignment: Option<SourceTimingAlignmentEvidence>,
     source_grid_output_drift: Option<SourceGridOutputDriftEvidence>,
     source_grid_output_drift_malformed: bool,
+    tr909_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
+    tr909_source_grid_alignment_malformed: bool,
+    w30_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
+    w30_source_grid_alignment_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
 }
 
@@ -112,6 +116,10 @@ fn build_summary_from_events(
 
     let (source_grid_output_drift, source_grid_output_drift_malformed) =
         collect_source_grid_output_drift(&manifest);
+    let (tr909_source_grid_alignment, tr909_source_grid_alignment_malformed) =
+        collect_source_grid_alignment(&manifest, "tr909_source_grid_alignment");
+    let (w30_source_grid_alignment, w30_source_grid_alignment_malformed) =
+        collect_source_grid_alignment(&manifest, "w30_source_grid_alignment");
     let (source_timing, source_timing_malformed) = collect_source_timing(&manifest);
     let source_timing_alignment = collect_source_timing_alignment(
         observer_source_timing.as_ref(),
@@ -167,6 +175,10 @@ fn build_summary_from_events(
         source_timing_alignment,
         source_grid_output_drift,
         source_grid_output_drift_malformed,
+        tr909_source_grid_alignment,
+        tr909_source_grid_alignment_malformed,
+        w30_source_grid_alignment,
+        w30_source_grid_alignment_malformed,
         lane_recipe_cases: collect_lane_recipe_cases(&manifest),
     })
 }
@@ -368,10 +380,17 @@ fn string_list(value: &Value, field: &str) -> Option<Vec<String>> {
 }
 
 fn collect_source_grid_output_drift(manifest: &Value) -> (Option<SourceGridOutputDriftEvidence>, bool) {
+    collect_source_grid_alignment(manifest, "source_grid_output_drift")
+}
+
+fn collect_source_grid_alignment(
+    manifest: &Value,
+    metric_key: &str,
+) -> (Option<SourceGridOutputDriftEvidence>, bool) {
     let Some(metrics) = manifest.get("metrics").and_then(Value::as_object) else {
         return (None, false);
     };
-    let Some(metric) = metrics.get("source_grid_output_drift") else {
+    let Some(metric) = metrics.get(metric_key) else {
         return (None, false);
     };
 

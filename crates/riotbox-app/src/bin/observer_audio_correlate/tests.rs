@@ -101,6 +101,22 @@ fn summarizes_committed_fixture_observer_and_manifest() {
             max_allowed_peak_offset_ms: 70.0,
         })
     );
+    assert_eq!(
+        summary.tr909_source_grid_alignment,
+        Some(SourceGridOutputDriftEvidence {
+            hit_ratio: 1.0,
+            max_peak_offset_ms: 1.27,
+            max_allowed_peak_offset_ms: 70.0,
+        })
+    );
+    assert_eq!(
+        summary.w30_source_grid_alignment,
+        Some(SourceGridOutputDriftEvidence {
+            hit_ratio: 1.0,
+            max_peak_offset_ms: 5.13,
+            max_allowed_peak_offset_ms: 70.0,
+        })
+    );
     assert!(markdown.contains("Source timing phrase: `ambiguous_downbeat"));
     assert!(markdown.contains("Grid BPM source: `source_timing`"));
     assert!(markdown.contains("Grid BPM decision reason: `source_timing_ready`"));
@@ -108,6 +124,8 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Observer source timing: `src-beat08 cue=listen first"));
     assert!(markdown.contains("Source timing readiness: `grid locked readiness=ready"));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
+    assert!(markdown.contains("TR-909 source-grid alignment: `hit_ratio=1.000000"));
+    assert!(markdown.contains("W-30 source-grid alignment: `hit_ratio=1.000000"));
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));

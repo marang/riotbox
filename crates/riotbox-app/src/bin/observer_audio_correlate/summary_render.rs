@@ -26,6 +26,8 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Source-grid output hit ratio: `{}`\n\
          - Source-grid output max peak offset: `{}`\n\
          - Source-grid output max allowed offset: `{}`\n\n\
+         - TR-909 source-grid alignment: `{}`\n\
+         - W-30 source-grid alignment: `{}`\n\n\
          - W-30 candidate RMS: `{}`\n\
          - W-30 candidate active-sample ratio: `{}`\n\
          - W-30 RMS delta: `{}`\n\n\
@@ -65,6 +67,8 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_source_grid_hit_ratio(summary),
         format_source_grid_max_peak_offset(summary),
         format_source_grid_max_allowed_offset(summary),
+        format_source_grid_alignment(&summary.tr909_source_grid_alignment),
+        format_source_grid_alignment(&summary.w30_source_grid_alignment),
         format_optional_f64(summary.w30_candidate_rms),
         format_optional_f64(summary.w30_candidate_active_sample_ratio),
         format_optional_f64(summary.w30_rms_delta),
@@ -142,6 +146,8 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                     "max_peak_offset_ms": drift.max_peak_offset_ms,
                     "max_allowed_peak_offset_ms": drift.max_allowed_peak_offset_ms,
                 })),
+                "tr909_source_grid_alignment": summary.tr909_source_grid_alignment.as_ref().map(source_grid_alignment_json),
+                "w30_source_grid_alignment": summary.w30_source_grid_alignment.as_ref().map(source_grid_alignment_json),
                 "w30_candidate_rms": summary.w30_candidate_rms,
                 "w30_candidate_active_sample_ratio": summary.w30_candidate_active_sample_ratio,
                 "w30_rms_delta": summary.w30_rms_delta,
@@ -293,6 +299,28 @@ fn format_source_grid_max_allowed_offset(summary: &CorrelationSummary) -> String
     )
 }
 
+fn format_source_grid_alignment(drift: &Option<SourceGridOutputDriftEvidence>) -> String {
+    drift.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |drift| {
+            format!(
+                "hit_ratio={} max_peak_offset_ms={} max_allowed_peak_offset_ms={}",
+                format_optional_f64(Some(drift.hit_ratio)),
+                format_optional_f64(Some(drift.max_peak_offset_ms)),
+                format_optional_f64(Some(drift.max_allowed_peak_offset_ms))
+            )
+        },
+    )
+}
+
+fn source_grid_alignment_json(drift: &SourceGridOutputDriftEvidence) -> serde_json::Value {
+    serde_json::json!({
+        "hit_ratio": drift.hit_ratio,
+        "max_peak_offset_ms": drift.max_peak_offset_ms,
+        "max_allowed_peak_offset_ms": drift.max_allowed_peak_offset_ms,
+    })
+}
+
 fn format_output_path_issues(summary: &CorrelationSummary) -> String {
     let failures = output_path_evidence_failures(summary);
     if failures.is_empty() {
@@ -339,6 +367,16 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     }
     failures.extend(source_timing_alignment_failures(summary));
     failures.extend(source_grid_output_drift_failures(summary));
+    failures.extend(source_grid_alignment_failures(
+        "tr909_source_grid_alignment",
+        &summary.tr909_source_grid_alignment,
+        summary.tr909_source_grid_alignment_malformed,
+    ));
+    failures.extend(source_grid_alignment_failures(
+        "w30_source_grid_alignment",
+        &summary.w30_source_grid_alignment,
+        summary.w30_source_grid_alignment_malformed,
+    ));
     failures
 }
 
@@ -351,24 +389,36 @@ fn source_timing_alignment_failures(summary: &CorrelationSummary) -> Vec<String>
 }
 
 fn source_grid_output_drift_failures(summary: &CorrelationSummary) -> Vec<String> {
-    if summary.source_grid_output_drift_malformed {
-        return vec!["source_grid_output_drift=malformed".to_string()];
+    source_grid_alignment_failures(
+        "source_grid_output_drift",
+        &summary.source_grid_output_drift,
+        summary.source_grid_output_drift_malformed,
+    )
+}
+
+fn source_grid_alignment_failures(
+    metric_key: &str,
+    drift: &Option<SourceGridOutputDriftEvidence>,
+    malformed: bool,
+) -> Vec<String> {
+    if malformed {
+        return vec![format!("{metric_key}=malformed")];
     }
 
-    let Some(drift) = &summary.source_grid_output_drift else {
+    let Some(drift) = drift else {
         return Vec::new();
     };
 
     let mut failures = Vec::new();
     if drift.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
         failures.push(format!(
-            "source_grid_output_drift.hit_ratio={:.6} < floor {:.6}",
+            "{metric_key}.hit_ratio={:.6} < floor {:.6}",
             drift.hit_ratio, SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
         ));
     }
     if drift.max_peak_offset_ms > drift.max_allowed_peak_offset_ms {
         failures.push(format!(
-            "source_grid_output_drift.max_peak_offset_ms={:.6} > allowed {:.6}",
+            "{metric_key}.max_peak_offset_ms={:.6} > allowed {:.6}",
             drift.max_peak_offset_ms, drift.max_allowed_peak_offset_ms
         ));
     }
