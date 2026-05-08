@@ -71,6 +71,61 @@ fn source_timing_probe_preserves_real_loop_like_weak_readiness() {
 }
 
 #[test]
+fn source_timing_probe_keeps_flat_loop_degraded_for_dance_auto_readiness() {
+    let tempdir = tempdir().expect("create tempdir");
+    let source_path = tempdir.path().join("flat_dance_auto_readiness_128.wav");
+    let samples = real_loop_like_flat_drum_samples_128_bpm();
+    write_interleaved_pcm16_wav(&source_path, 32_000, 1, &samples).expect("write source");
+    let source = SourceAudioCache::load_pcm_wav(&source_path).expect("load source");
+
+    let probe = analyze_source_timing_probe(&source, SourceTimingProbeConfig::default());
+    let candidate_input = probe.bpm_candidate_input(
+        "flat-dance-auto-readiness-128",
+        MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+    );
+    let readiness = source_timing_probe_readiness_report(
+        &candidate_input,
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert!(probe.onset_count >= 24, "{probe:?}");
+    assert_bpm_near(readiness.primary_bpm, 128.0, 1.0);
+    assert_eq!(
+        readiness.beat_status,
+        SourceTimingProbeBeatEvidenceStatus::Stable
+    );
+    assert_eq!(
+        readiness.downbeat_status,
+        SourceTimingProbeDownbeatEvidenceStatus::Weak
+    );
+    assert_eq!(
+        readiness.confidence_result,
+        SourceTimingCandidateConfidenceResult::CandidateAmbiguous
+    );
+    assert_eq!(
+        readiness.phrase_status,
+        SourceTimingCandidatePhraseStatus::AmbiguousDownbeat
+    );
+    assert_eq!(readiness.readiness, SourceTimingProbeReadinessStatus::Weak);
+    assert!(readiness.requires_manual_confirm);
+    assert!(
+        readiness
+            .warning_codes
+            .contains(&TimingWarningCode::AmbiguousDownbeat),
+        "{readiness:?}"
+    );
+    assert!(
+        readiness
+            .warning_codes
+            .contains(&TimingWarningCode::PhraseUncertain),
+        "{readiness:?}"
+    );
+}
+
+#[test]
 fn source_timing_probe_accepts_real_loop_like_ready_readiness() {
     let tempdir = tempdir().expect("create tempdir");
     let source_path = tempdir.path().join("real_loop_like_ready_128.wav");
