@@ -200,6 +200,17 @@ fn writes_feral_grid_jam_observer_stream() {
         source_timing["anchor_evidence"]["primary_transient_anchor_count"],
         0
     );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_residual_count"],
+        0
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_preview"]
+            .as_array()
+            .unwrap()
+            .len(),
+        0
+    );
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
     assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
@@ -241,6 +252,18 @@ fn writes_feral_grid_locked_jam_observer_stream() {
     assert_eq!(
         source_timing["anchor_evidence"]["primary_transient_anchor_count"],
         4
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_residual_count"],
+        2
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_max_abs_offset_ms"],
+        6.0
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_preview"][0]["subdivision"],
+        "eighth"
     );
     assert!(events.contains(r#""warning_codes":[]"#));
     assert!(events.contains(r#""outcome":"toggle_transport""#));

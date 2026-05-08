@@ -70,7 +70,18 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
             },
         ],
         drift: Vec::new(),
-        groove: Vec::new(),
+        groove: vec![
+            GrooveResidual {
+                subdivision: GrooveSubdivision::Eighth,
+                offset_ms: -9.5,
+                confidence: 0.72,
+            },
+            GrooveResidual {
+                subdivision: GrooveSubdivision::Sixteenth,
+                offset_ms: 4.25,
+                confidence: 0.61,
+            },
+        ],
         quality: TimingQuality::Low,
         warnings: Vec::new(),
         provenance: vec!["fixture.source_timing_observer".into()],
@@ -123,6 +134,22 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     assert_eq!(
         source_timing["anchor_evidence"]["primary_transient_anchor_count"],
         1
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_residual_count"],
+        2
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_max_abs_offset_ms"],
+        9.5
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_preview"][0]["subdivision"],
+        "eighth"
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_preview"][0]["offset_ms"],
+        -9.5
     );
     assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
     assert_eq!(source_timing["warning_codes"][1], "phrase_uncertain");
@@ -216,6 +243,10 @@ fn observer_snapshot_uses_shared_source_timing_summary_for_musician_cues() {
     assert_eq!(
         source_timing["anchor_evidence"]["primary_anchor_count"],
         1
+    );
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_residual_count"],
+        0
     );
     assert_eq!(source_timing["warning_codes"].as_array().unwrap().len(), 0);
 }

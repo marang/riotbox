@@ -35,6 +35,8 @@ jq -s -e \
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_kick_anchor_count == 0)
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_backbeat_anchor_count == 0)
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_transient_anchor_count == 0)
+    and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_residual_count == 0)
+    and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_preview == [])
     and all(.[]; .snapshot.source_timing.primary_warning_code == "phrase_uncertain")
     and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")
     and any(.[]; .event == "key_outcome" and .key == "g" and .outcome == "queue_mc202_generate_follower")' \
@@ -119,6 +121,9 @@ jq -s -e \
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_kick_anchor_count == 4)
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_backbeat_anchor_count == 8)
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_transient_anchor_count == 4)
+    and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_residual_count == 2)
+    and all(.[]; .snapshot.source_timing.groove_evidence.primary_max_abs_offset_ms == 6.0)
+    and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_preview[0].subdivision == "eighth")
     and all(.[]; .snapshot.source_timing.primary_warning_code == null)
     and all(.[]; .snapshot.source_timing.warning_codes == [])
     and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")

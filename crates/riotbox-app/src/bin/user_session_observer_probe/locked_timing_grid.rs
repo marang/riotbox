@@ -1,6 +1,7 @@
 use riotbox_core::source_graph::{
-    BarSpan, BeatPoint, MeterHint, PhraseSpan, SourceGraph, SourceTimingAnchor,
-    SourceTimingAnchorType, TimingHypothesis, TimingHypothesisKind, TimingQuality,
+    BarSpan, BeatPoint, GrooveResidual, GrooveSubdivision, MeterHint, PhraseSpan, SourceGraph,
+    SourceTimingAnchor, SourceTimingAnchorType, TimingHypothesis, TimingHypothesisKind,
+    TimingQuality,
 };
 
 pub(super) fn attach_locked_timing_grid(graph: &mut SourceGraph, bpm: f32) {
@@ -50,11 +51,26 @@ pub(super) fn attach_locked_timing_grid(graph: &mut SourceGraph, bpm: f32) {
         phrase_grid: graph.timing.phrase_grid.clone(),
         anchors: locked_grid_anchors(beat_seconds),
         drift: Vec::new(),
-        groove: Vec::new(),
+        groove: locked_grid_groove(),
         quality: TimingQuality::High,
         warnings: Vec::new(),
         provenance: vec!["user_session_observer_probe.locked_timing_grid".into()],
     }];
+}
+
+fn locked_grid_groove() -> Vec<GrooveResidual> {
+    vec![
+        GrooveResidual {
+            subdivision: GrooveSubdivision::Eighth,
+            offset_ms: -6.0,
+            confidence: 0.78,
+        },
+        GrooveResidual {
+            subdivision: GrooveSubdivision::Sixteenth,
+            offset_ms: 3.5,
+            confidence: 0.66,
+        },
+    ]
 }
 
 fn locked_grid_anchors(beat_seconds: f32) -> Vec<SourceTimingAnchor> {

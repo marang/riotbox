@@ -23,6 +23,12 @@ SOURCE_TIMING_CUE_BY_POLICY = {
     "disabled": "not available",
     "unknown": "unknown",
 }
+GROOVE_SUBDIVISIONS = {
+    "eighth",
+    "triplet",
+    "sixteenth",
+    "thirty_second",
+}
 
 
 def main() -> int:
@@ -148,6 +154,7 @@ def validate_source_timing(value: Any) -> None:
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
     require_int(source_timing, "hypothesis_count")
     validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
+    validate_source_timing_groove_evidence(source_timing.get("groove_evidence"))
     warning = source_timing.get("primary_warning_code")
     if warning is not None and not isinstance(warning, str):
         raise TypeError("source_timing.primary_warning_code must be a string or null")
@@ -169,6 +176,33 @@ def validate_source_timing_anchor_evidence(value: Any) -> None:
         raise ValueError(
             "source_timing.anchor_evidence typed anchor counts cannot exceed total anchors"
         )
+
+
+def validate_source_timing_groove_evidence(value: Any) -> None:
+    groove_evidence = require_object(value, "source_timing.groove_evidence")
+    total = require_non_negative_int(
+        groove_evidence,
+        "primary_groove_residual_count",
+    )
+    max_abs = require_number(groove_evidence, "primary_max_abs_offset_ms")
+    if max_abs < 0:
+        raise ValueError("primary_max_abs_offset_ms must be non-negative")
+    preview = require_list(groove_evidence, "primary_groove_preview")
+    if len(preview) > min(total, 4):
+        raise ValueError(
+            "source_timing.groove_evidence preview must contain at most the first four residuals"
+        )
+    for index, item in enumerate(preview):
+        validate_source_timing_groove_residual(item, index)
+
+
+def validate_source_timing_groove_residual(value: Any, index: int) -> None:
+    residual = require_object(value, f"source_timing.groove_evidence[{index}]")
+    require_one_of(residual, "subdivision", GROOVE_SUBDIVISIONS)
+    require_number(residual, "offset_ms")
+    confidence = require_number(residual, "confidence")
+    if confidence < 0 or confidence > 1:
+        raise ValueError("source_timing.groove_evidence confidence must be between 0 and 1")
 
 
 def validate_recovery(recovery: dict[str, Any]) -> None:

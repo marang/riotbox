@@ -689,8 +689,9 @@ Today the repo already has:
   including recovery snapshot candidate `decision` labels, compact
   replay-family diagnostics, optional Source Timing Intelligence readiness plus
   musician-facing timing `cue` when a Source Graph is attached, compact
-  source-timing anchor-evidence counts from the shared Jam source timing
-  summary, policy-to-cue consistency, and optional read-only
+  source-timing anchor-evidence counts and source-timing groove-evidence
+  previews from the shared Jam source timing summary, policy-to-cue
+  consistency, and optional read-only
   `manual_choice_dry_run` evidence when snapshots are present
 - `just source-timing-probe-json-validator-fixtures` validates the source timing probe CLI JSON contract, including cue/readiness consistency, machine-readable score fields, and primary anchor-evidence shape, and is wired into `just audio-qa-ci`
 - `just generated-source-timing-probe-json-smoke` runs the real source timing probe CLI against a deterministic generated WAV, validates the emitted JSON contract, and asserts stable grid-locked timing plus visible kick/backbeat anchor evidence before the aggregate audio QA gate can pass

@@ -1,4 +1,11 @@
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq)]
+pub struct SourceTimingGrooveResidualView {
+    pub subdivision: String,
+    pub offset_ms: f32,
+    pub confidence: f32,
+}
+
+#[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingSummaryView {
     pub cue: String,
     pub quality: String,
@@ -9,6 +16,9 @@ pub struct SourceTimingSummaryView {
     pub primary_backbeat_anchor_count: usize,
     pub primary_transient_anchor_count: usize,
     pub primary_anchor_cue: String,
+    pub primary_groove_residual_count: usize,
+    pub primary_max_abs_groove_offset_ms: f32,
+    pub primary_groove_preview: Vec<SourceTimingGrooveResidualView>,
 }
 
 impl Default for SourceTimingSummaryView {
@@ -23,6 +33,9 @@ impl Default for SourceTimingSummaryView {
             primary_backbeat_anchor_count: 0,
             primary_transient_anchor_count: 0,
             primary_anchor_cue: "anchors none".into(),
+            primary_groove_residual_count: 0,
+            primary_max_abs_groove_offset_ms: 0.0,
+            primary_groove_preview: Vec::new(),
         }
     }
 }
@@ -32,28 +45,9 @@ impl SourceTimingSummaryView {
     pub fn from_graph(graph: &SourceGraph) -> Self {
         let degraded_policy =
             source_timing_degraded_policy_label(&graph.timing.effective_degraded_policy());
-        let anchors = graph
-            .timing
-            .primary_hypothesis_id
-            .as_deref()
-            .and_then(|primary_id| {
-                graph
-                    .timing
-                    .hypotheses
-                    .iter()
-                    .find(|hypothesis| hypothesis.hypothesis_id == primary_id)
-            })
-            .or_else(|| {
-                graph
-                    .timing
-                    .hypotheses
-                    .iter()
-                    .find(|hypothesis| {
-                        hypothesis.kind
-                            == crate::source_graph::TimingHypothesisKind::Primary
-                    })
-            })
-            .map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
+        let primary_hypothesis = primary_source_timing_hypothesis(&graph.timing);
+        let anchors = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
+        let groove = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.groove.as_slice());
 
         let primary_anchor_count = anchors.len();
         let primary_kick_anchor_count =
@@ -66,6 +60,11 @@ impl SourceTimingSummaryView {
             anchors,
             crate::source_graph::SourceTimingAnchorType::TransientCluster,
         );
+        let primary_groove_residual_count = groove.len();
+        let primary_max_abs_groove_offset_ms = groove
+            .iter()
+            .map(|residual| residual.offset_ms.abs())
+            .fold(0.0_f32, f32::max);
 
         Self {
             cue: source_timing_policy_cue_label(degraded_policy).into(),
@@ -83,7 +82,46 @@ impl SourceTimingSummaryView {
                 primary_backbeat_anchor_count,
                 primary_transient_anchor_count,
             ),
+            primary_groove_residual_count,
+            primary_max_abs_groove_offset_ms,
+            primary_groove_preview: groove
+                .iter()
+                .take(4)
+                .map(source_timing_groove_residual_view)
+                .collect(),
         }
+    }
+}
+
+fn primary_source_timing_hypothesis(
+    timing: &crate::source_graph::TimingModel,
+) -> Option<&crate::source_graph::TimingHypothesis> {
+    timing.primary_hypothesis().or_else(|| {
+        timing
+            .hypotheses
+            .iter()
+            .find(|hypothesis| hypothesis.kind == crate::source_graph::TimingHypothesisKind::Primary)
+    })
+}
+
+fn source_timing_groove_residual_view(
+    residual: &crate::source_graph::GrooveResidual,
+) -> SourceTimingGrooveResidualView {
+    SourceTimingGrooveResidualView {
+        subdivision: source_timing_groove_subdivision_label(residual.subdivision).into(),
+        offset_ms: residual.offset_ms,
+        confidence: residual.confidence,
+    }
+}
+
+fn source_timing_groove_subdivision_label(
+    subdivision: crate::source_graph::GrooveSubdivision,
+) -> &'static str {
+    match subdivision {
+        crate::source_graph::GrooveSubdivision::Eighth => "eighth",
+        crate::source_graph::GrooveSubdivision::Triplet => "triplet",
+        crate::source_graph::GrooveSubdivision::Sixteenth => "sixteenth",
+        crate::source_graph::GrooveSubdivision::ThirtySecond => "thirty_second",
     }
 }
 
@@ -115,8 +153,9 @@ mod source_timing_summary_tests {
         ids::SourceId,
         source_graph::{
             DecodeProfile, GraphProvenance, MeterHint, SourceDescriptor, SourceGraph,
-            SourceTimingAnchor, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
-            TimingHypothesisKind, TimingQuality, TimingWarning, TimingWarningCode,
+            GrooveResidual, GrooveSubdivision, SourceTimingAnchor, SourceTimingAnchorType,
+            TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
+            TimingWarning, TimingWarningCode,
         },
     };
 
@@ -142,6 +181,18 @@ mod source_timing_summary_tests {
                 source_anchor("fill-1", SourceTimingAnchorType::Fill),
             ],
         ));
+        graph.timing.hypotheses[0].groove = vec![
+            GrooveResidual {
+                subdivision: GrooveSubdivision::Eighth,
+                offset_ms: -12.5,
+                confidence: 0.72,
+            },
+            GrooveResidual {
+                subdivision: GrooveSubdivision::Sixteenth,
+                offset_ms: 6.25,
+                confidence: 0.61,
+            },
+        ];
         graph.timing.warnings.push(TimingWarning {
             code: TimingWarningCode::AmbiguousDownbeat,
             message: "downbeat candidates are close".into(),
@@ -158,6 +209,10 @@ mod source_timing_summary_tests {
         assert_eq!(timing.primary_backbeat_anchor_count, 1);
         assert_eq!(timing.primary_transient_anchor_count, 1);
         assert_eq!(timing.primary_anchor_cue, "anchors 4 | kick+backbeat");
+        assert_eq!(timing.primary_groove_residual_count, 2);
+        assert_eq!(timing.primary_max_abs_groove_offset_ms, 12.5);
+        assert_eq!(timing.primary_groove_preview[0].subdivision, "eighth");
+        assert_eq!(timing.primary_groove_preview[0].offset_ms, -12.5);
     }
 
     #[test]
@@ -178,6 +233,8 @@ mod source_timing_summary_tests {
         assert_eq!(timing.primary_warning, None);
         assert_eq!(timing.primary_anchor_count, 1);
         assert_eq!(timing.primary_anchor_cue, "anchors 1 | kick");
+        assert_eq!(timing.primary_groove_residual_count, 0);
+        assert_eq!(timing.primary_groove_preview, Vec::new());
     }
 
     #[test]

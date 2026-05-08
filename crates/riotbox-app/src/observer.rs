@@ -185,12 +185,33 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
         "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(timing),
+        "groove_evidence": source_timing_groove_evidence_observer_snapshot(timing),
         "primary_warning_code": timing.primary_warning.as_deref(),
         "warning_codes": graph
             .timing
             .warnings
             .iter()
             .map(|warning| observer_timing_warning_code_label(&warning.code))
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn source_timing_groove_evidence_observer_snapshot(
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
+) -> Value {
+    json!({
+        "primary_groove_residual_count": timing.primary_groove_residual_count,
+        "primary_max_abs_offset_ms": timing.primary_max_abs_groove_offset_ms,
+        "primary_groove_preview": timing
+            .primary_groove_preview
+            .iter()
+            .map(|residual| {
+                json!({
+                    "subdivision": residual.subdivision.as_str(),
+                    "offset_ms": residual.offset_ms,
+                    "confidence": residual.confidence,
+                })
+            })
             .collect::<Vec<_>>(),
     })
 }
