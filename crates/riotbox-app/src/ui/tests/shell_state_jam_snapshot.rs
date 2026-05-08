@@ -111,7 +111,7 @@ fn source_timing_help_styles_missing_source_as_low_emphasis() {
 
     assert_eq!(
         rendered,
-        "Timing: not available | unknown | no anchor | clock unavailable | timing trust unknown"
+        "Timing: not available | unknown | no anchor | clock unavailable | timing unavailable"
     );
     assert_eq!(line.spans[1].content.as_ref(), "not available");
     assert_eq!(line.spans[1].style.fg, Some(Color::DarkGray));
