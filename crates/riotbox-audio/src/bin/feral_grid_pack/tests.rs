@@ -195,6 +195,18 @@ mod tests {
         let manifest = fs::read_to_string(output_dir.join("manifest.json")).expect("manifest");
         let manifest: serde_json::Value = serde_json::from_str(&manifest).expect("parse manifest");
         super::manifest_assertions::assert_manifest_smoke_gate(&manifest, &output_dir);
+
+        let report = fs::read_to_string(output_dir.join("grid-report.md")).expect("report");
+        let readme = fs::read_to_string(output_dir.join("README.md")).expect("readme");
+        for text in [&report, &readme] {
+            assert!(text.contains("Source timing readiness: `"));
+            assert!(text.contains("Source timing downbeat: `"));
+            assert!(text.contains("Source timing phrase: `"));
+            assert!(text.contains("confidence="));
+            assert!(text.contains("drift="));
+            assert!(text.contains("Source timing warnings: `"));
+        }
+        assert!(report.contains("Source timing BPM: `primary="));
     }
 
     fn synthetic_break_source(frame_count: usize) -> Vec<f32> {

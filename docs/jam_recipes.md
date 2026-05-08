@@ -624,6 +624,10 @@ How to interpret `auto`:
 - `source_timing.readiness: weak` means the detector saw useful evidence but not enough downbeat/phrase confidence for automatic trust.
 - `metrics.source_grid_output_drift.hit_ratio` is an early generated-output smoke metric; values below `0.5` mean the support render is not landing reliably near the chosen grid.
 
+You no longer need to inspect only raw JSON for the first timing read. The generated
+`README.md` and `grid-report.md` also show compact source timing readiness,
+downbeat, phrase, and warning lines.
+
 Current local benchmark result:
 
 - `Beat03_130BPM(Full).wav`: use explicit `130 BPM`; auto currently falls back to `128 BPM`.

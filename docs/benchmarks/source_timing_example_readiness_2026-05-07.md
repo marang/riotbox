@@ -32,7 +32,9 @@ aggressively.
 Each generated manifest records that decision as
 `source_timing.policy_profile: dance_loop_auto_readiness`.
 
-The report values below come from each generated `manifest.json`:
+The report values below come from each generated `manifest.json`. Newer Feral grid
+packs also surface the same compact readiness, downbeat, phrase, and warning
+evidence in `README.md` and `grid-report.md` for human QA:
 
 - `grid_bpm_source`
 - `bpm`
