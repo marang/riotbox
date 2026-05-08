@@ -45,6 +45,7 @@ audio-qa-ci:
     just user-session-observer-validator-fixtures
     just source-timing-probe-json-validator-fixtures
     just generated-source-timing-probe-json-smoke
+    just generated-degraded-source-timing-probe-json-smoke
     just listening-manifest-validator-fixtures
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
@@ -220,6 +221,9 @@ source-timing-probe-json-validator-fixtures:
 
 generated-source-timing-probe-json-smoke:
     scripts/validate_generated_source_timing_probe_json.sh
+
+generated-degraded-source-timing-probe-json-smoke:
+    scripts/validate_generated_degraded_source_timing_probe_json.sh
 
 listening-manifest-validator-fixtures:
     python3 scripts/validate_listening_manifest_json.py crates/riotbox-audio/tests/fixtures/listening_manifest/manifest_valid.json
