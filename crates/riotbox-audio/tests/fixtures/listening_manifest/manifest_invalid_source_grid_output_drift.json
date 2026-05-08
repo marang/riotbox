@@ -1,0 +1,21 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [
+    {
+      "role": "full_grid_mix",
+      "kind": "audio_wav",
+      "path": "04_full_grid_mix.wav",
+      "metrics_path": "04_full_grid_mix.metrics.md"
+    }
+  ],
+  "metrics": {
+    "source_grid_output_drift": {
+      "beat_count": 8,
+      "hit_count": 7,
+      "hit_ratio": 0.875,
+      "max_allowed_peak_offset_ms": 70.0
+    }
+  }
+}
