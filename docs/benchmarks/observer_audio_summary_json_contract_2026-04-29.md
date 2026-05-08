@@ -39,7 +39,21 @@ The `output_path` object should include:
 - `pack_id`: source audio QA pack id.
 - `manifest_result`: source manifest result.
 - `artifact_count`: number of manifest artifacts.
+- `source_timing`: `null` or a compact object copied from manifest
+  source-timing readiness evidence.
 - `metrics`: object containing every currently required output metric field; values may be numbers or `null` when evidence is missing.
+
+When non-null, `source_timing` should include:
+
+- `readiness`
+- `requires_manual_confirm`
+- `beat_status`
+- `downbeat_status`
+- `primary_downbeat_offset_beats`
+- `confidence_result`
+- `drift_status`
+- `phrase_status`
+- `alternate_evidence_count`
 
 The current stable metric keys are:
 
@@ -61,6 +75,10 @@ For `feral-grid-demo` manifests that include source-grid output drift evidence,
 strict correlation also treats that metric as an output smoke gate. A low hit
 ratio or a peak offset beyond the reported allowed window means the generated
 support output no longer proves it landed near the selected source grid.
+
+For manifests that include source timing evidence, strict correlation treats a
+malformed `source_timing` object as an output-path issue. Missing `source_timing`
+remains non-fatal for older and non-Feral manifests.
 
 ## Compatibility Rule
 
@@ -86,6 +104,7 @@ The committed fixture JSON smoke currently requires:
 - `control_path.commit_boundaries` is an array of strings
 - `output_path.present == true`
 - `output_path.issues` is empty
+- `output_path.source_timing` is present as an object or `null`
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape

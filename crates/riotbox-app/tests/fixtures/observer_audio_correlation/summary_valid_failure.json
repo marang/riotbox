@@ -23,6 +23,7 @@
     "pack_id": "feral-grid-demo",
     "manifest_result": "pass",
     "artifact_count": 6,
+    "source_timing": null,
     "metrics": {
       "full_mix_rms": null,
       "full_mix_low_band_rms": null,

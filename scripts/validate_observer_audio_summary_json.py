@@ -56,6 +56,7 @@ def validate_summary(summary: Any) -> None:
     require_string(output_path, "pack_id")
     require_string(output_path, "manifest_result")
     require_int(output_path, "artifact_count")
+    require_optional_source_timing(output_path)
 
     metrics = require_object_field(output_path, "metrics")
     require_optional_number(metrics, "full_mix_rms")
@@ -127,10 +128,37 @@ def require_optional_source_grid_output_drift(parent: dict[str, Any]) -> None:
     require_number(drift, "max_allowed_peak_offset_ms")
 
 
+def require_optional_source_timing(parent: dict[str, Any]) -> None:
+    field = "source_timing"
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    timing = require_object(value, field)
+    require_string(timing, "readiness")
+    require_bool(timing, "requires_manual_confirm")
+    require_string(timing, "beat_status")
+    require_string(timing, "downbeat_status")
+    require_optional_int(timing, "primary_downbeat_offset_beats")
+    require_string(timing, "confidence_result")
+    require_string(timing, "drift_status")
+    require_string(timing, "phrase_status")
+    require_int(timing, "alternate_evidence_count")
+
+
 def require_number(parent: dict[str, Any], field: str) -> None:
     value = parent.get(field)
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise TypeError(f"{field} must be a number")
+
+
+def require_optional_int(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an integer or null")
+    value = parent.get(field)
+    if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
+        raise TypeError(f"{field} must be an integer or null")
 
 
 if __name__ == "__main__":

@@ -16,9 +16,24 @@ struct CorrelationSummary {
     w30_candidate_rms: Option<f64>,
     w30_candidate_active_sample_ratio: Option<f64>,
     w30_rms_delta: Option<f64>,
+    source_timing: Option<SourceTimingEvidence>,
+    source_timing_malformed: bool,
     source_grid_output_drift: Option<SourceGridOutputDriftEvidence>,
     source_grid_output_drift_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
+}
+
+#[derive(Debug, PartialEq)]
+struct SourceTimingEvidence {
+    readiness: String,
+    requires_manual_confirm: bool,
+    beat_status: String,
+    downbeat_status: String,
+    primary_downbeat_offset_beats: Option<u64>,
+    confidence_result: String,
+    drift_status: String,
+    phrase_status: String,
+    alternate_evidence_count: u64,
 }
 
 #[derive(Debug, PartialEq)]
@@ -70,6 +85,7 @@ fn build_summary_from_events(
 
     let (source_grid_output_drift, source_grid_output_drift_malformed) =
         collect_source_grid_output_drift(&manifest);
+    let (source_timing, source_timing_malformed) = collect_source_timing(&manifest);
 
     Ok(CorrelationSummary {
         observer_schema: launch
@@ -102,10 +118,73 @@ fn build_summary_from_events(
         w30_candidate_active_sample_ratio: manifest["metrics"]["candidate"]["active_sample_ratio"]
             .as_f64(),
         w30_rms_delta: manifest["metrics"]["deltas"]["rms"].as_f64(),
+        source_timing,
+        source_timing_malformed,
         source_grid_output_drift,
         source_grid_output_drift_malformed,
         lane_recipe_cases: collect_lane_recipe_cases(&manifest),
     })
+}
+
+fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, bool) {
+    let Some(source_timing) = manifest.get("source_timing") else {
+        return (None, false);
+    };
+    if !source_timing.is_object() {
+        return (None, true);
+    }
+
+    let evidence = SourceTimingEvidence {
+        readiness: match source_timing_string(source_timing, "readiness") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        requires_manual_confirm: match source_timing["requires_manual_confirm"].as_bool() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        beat_status: match source_timing_string(source_timing, "beat_status") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        downbeat_status: match source_timing_string(source_timing, "downbeat_status") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        primary_downbeat_offset_beats: match source_timing.get("primary_downbeat_offset_beats") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_u64() {
+                Some(value) => Some(value),
+                None => return (None, true),
+            },
+            None => return (None, true),
+        },
+        confidence_result: match source_timing_string(source_timing, "confidence_result") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        drift_status: match source_timing_string(source_timing, "drift_status") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        phrase_status: match source_timing_string(source_timing, "phrase_status") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        alternate_evidence_count: match source_timing["alternate_evidence_count"].as_u64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+    };
+
+    (Some(evidence), false)
+}
+
+fn source_timing_string(source_timing: &Value, field: &str) -> Option<String> {
+    source_timing[field]
+        .as_str()
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
 }
 
 fn collect_source_grid_output_drift(manifest: &Value) -> (Option<SourceGridOutputDriftEvidence>, bool) {
