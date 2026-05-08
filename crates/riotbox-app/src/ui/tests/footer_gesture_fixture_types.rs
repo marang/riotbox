@@ -22,8 +22,8 @@ use riotbox_core::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
         DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
         RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
-        TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
-        TimingWarning, TimingWarningCode,
+        SourceTimingAnchor, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
+        TimingHypothesisKind, TimingQuality, TimingWarning, TimingWarningCode,
     },
     transport::{CommitBoundaryState, TransportClockState},
 };

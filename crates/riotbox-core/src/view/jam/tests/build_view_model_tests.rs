@@ -6,6 +6,14 @@ fn projects_transport_source_and_scene_summary() {
     assert!(vm.transport.is_playing);
     assert_eq!(vm.source.loop_candidate_count, 1);
     assert_eq!(vm.source.hook_candidate_count, 1);
+    assert_eq!(vm.source.timing.cue, "grid locked");
+    assert_eq!(vm.source.timing.quality, "high");
+    assert_eq!(vm.source.timing.degraded_policy, "locked");
+    assert_eq!(vm.source.timing.primary_anchor_count, 2);
+    assert_eq!(vm.source.timing.primary_kick_anchor_count, 1);
+    assert_eq!(vm.source.timing.primary_backbeat_anchor_count, 1);
+    assert_eq!(vm.source.timing.primary_transient_anchor_count, 0);
+    assert_eq!(vm.source.timing.primary_anchor_cue, "anchors 2 | kick+backbeat");
     assert_eq!(vm.source.feral_scorecard.readiness, "ready");
     assert_eq!(vm.source.feral_scorecard.break_rebuild_potential, "high");
     assert_eq!(vm.source.feral_scorecard.hook_fragment_count, 1);

@@ -5,8 +5,7 @@ fn renders_more_musical_jam_shell_snapshot() {
 
     assert!(rendered.contains("trust usable"));
     assert!(rendered.contains("idle @ 32.0 | source b32 bar8 p1"));
-    assert!(rendered.contains("source timing needs confirm | trust"));
-    assert!(rendered.contains("low | mode manual confirm"));
+    assert!(rendered.contains("timing needs confirm | low | kick+bb"));
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
@@ -40,15 +39,11 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
     graph.timing.quality = TimingQuality::High;
     graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
     graph.timing.warnings.clear();
+    shell.app.refresh_view();
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(
-        rendered.contains("source timing grid locked | trust"),
-        "{rendered}"
-    );
-    assert!(rendered.contains("trust high"), "{rendered}");
-    assert!(rendered.contains("mode locked"), "{rendered}");
+    assert!(rendered.contains("timing grid locked | high | kick+bb"), "{rendered}");
     assert!(rendered.contains("timing warning none"), "{rendered}");
 }
 
@@ -63,6 +58,7 @@ fn source_timing_readiness_styles_locked_cue_as_confirmed() {
     graph.timing.quality = TimingQuality::High;
     graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
     graph.timing.warnings.clear();
+    shell.app.refresh_view();
 
     let line = source_timing_readiness_line(&shell);
     let rendered = line
@@ -71,11 +67,11 @@ fn source_timing_readiness_styles_locked_cue_as_confirmed() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "source timing grid locked | trust high | mode locked");
-    assert_eq!(line.spans[2].content.as_ref(), "grid locked");
-    assert_eq!(line.spans[2].style.fg, Some(Color::Green));
+    assert_eq!(rendered, "timing grid locked | high | kick+bb");
+    assert_eq!(line.spans[1].content.as_ref(), "grid locked");
+    assert_eq!(line.spans[1].style.fg, Some(Color::Green));
     assert!(
-        line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+        line.spans[1].style.add_modifier.contains(Modifier::BOLD),
         "{line:?}"
     );
 }
@@ -91,14 +87,11 @@ fn source_timing_readiness_styles_manual_confirm_as_pending() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(
-        rendered,
-        "source timing needs confirm | trust low | mode manual confirm"
-    );
-    assert_eq!(line.spans[2].content.as_ref(), "needs confirm");
-    assert_eq!(line.spans[2].style.fg, Some(Color::Yellow));
+    assert_eq!(rendered, "timing needs confirm | low | kick+bb");
+    assert_eq!(line.spans[1].content.as_ref(), "needs confirm");
+    assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
     assert!(
-        line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+        line.spans[1].style.add_modifier.contains(Modifier::BOLD),
         "{line:?}"
     );
 }

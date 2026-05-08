@@ -15,7 +15,7 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             )),
             source_timing_grid_readiness_line(graph),
             Line::from(format!(
-                "meter {} | hypotheses {} | primary {}",
+                "meter {} | hypotheses {} | {}",
                 graph
                     .timing
                     .meter_hint
@@ -23,11 +23,7 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .map(|meter| format!("{}/{}", meter.beats_per_bar, meter.beat_unit))
                     .unwrap_or_else(|| "unknown".into()),
                 graph.timing.hypotheses.len(),
-                graph
-                    .timing
-                    .primary_hypothesis_id
-                    .as_deref()
-                    .unwrap_or("none")
+                source_timing_anchor_compact(shell)
             )),
             Line::from(format!(
                 "mode {} | trust {}",

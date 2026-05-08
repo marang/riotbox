@@ -279,6 +279,7 @@ impl JamViewModel {
                 source_id: graph.source.source_id.to_string(),
                 bpm_estimate: graph.timing.bpm_estimate,
                 bpm_confidence: graph.timing.bpm_confidence,
+                timing: SourceTimingSummaryView::from_graph(graph),
                 section_count: graph.sections.len(),
                 loop_candidate_count: graph.loop_candidate_count(),
                 hook_candidate_count: graph.hook_candidate_count(),
