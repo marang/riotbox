@@ -218,6 +218,12 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
         set(SOURCE_TIMING_CUE_BY_POLICY),
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
+    require_one_of(timing, "beat_status", {"grid", "tempo_only", "unknown"})
+    require_int(timing, "beat_count")
+    require_one_of(timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
+    require_int(timing, "bar_count")
+    require_one_of(timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"})
+    require_int(timing, "phrase_count")
     require_optional_string(timing, "primary_hypothesis_id")
     require_int(timing, "hypothesis_count")
     require_optional_string(timing, "primary_warning_code")

@@ -98,6 +98,12 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "bpm_confidence": timing.bpm_confidence,
                 "quality": &timing.quality,
                 "degraded_policy": &timing.degraded_policy,
+                "beat_status": &timing.beat_status,
+                "beat_count": timing.beat_count,
+                "downbeat_status": &timing.downbeat_status,
+                "bar_count": timing.bar_count,
+                "phrase_status": &timing.phrase_status,
+                "phrase_count": timing.phrase_count,
                 "primary_hypothesis_id": &timing.primary_hypothesis_id,
                 "hypothesis_count": timing.hypothesis_count,
                 "primary_warning_code": &timing.primary_warning_code,
@@ -160,30 +166,6 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
-}
-
-fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
-    if summary.observer_source_timing_malformed {
-        return "malformed".to_string();
-    }
-    summary.observer_source_timing.as_ref().map_or_else(
-        || "unknown".to_string(),
-        |timing| {
-            format!(
-                "{} cue={} quality={} policy={} bpm={} confidence={:.3} warning={}",
-                timing.source_id,
-                timing.cue,
-                timing.quality,
-                timing.degraded_policy,
-                format_optional_f64(timing.bpm_estimate),
-                timing.bpm_confidence,
-                timing
-                    .primary_warning_code
-                    .as_deref()
-                    .unwrap_or("none")
-            )
-        },
-    )
 }
 
 fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {

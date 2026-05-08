@@ -177,6 +177,12 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "quality": observer_timing_quality_label(&graph.timing.effective_timing_quality()),
         "degraded_policy": degraded_policy,
         "cue": crate::source_timing_cues::source_timing_policy_cue_label(degraded_policy),
+        "beat_status": observer_source_timing_beat_status(graph),
+        "beat_count": graph.timing.beat_grid.len(),
+        "downbeat_status": observer_source_timing_downbeat_status(graph),
+        "bar_count": graph.timing.bar_grid.len(),
+        "phrase_status": observer_source_timing_phrase_status(graph),
+        "phrase_count": graph.timing.phrase_grid.len(),
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
         "primary_warning_code": graph
@@ -191,6 +197,46 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
             .map(|warning| observer_timing_warning_code_label(&warning.code))
             .collect::<Vec<_>>(),
     })
+}
+
+fn observer_source_timing_beat_status(
+    graph: &riotbox_core::source_graph::SourceGraph,
+) -> &'static str {
+    if !graph.timing.beat_grid.is_empty() {
+        return "grid";
+    }
+    if graph.timing.bpm_estimate.is_some() {
+        return "tempo_only";
+    }
+    "unknown"
+}
+
+fn observer_source_timing_downbeat_status(
+    graph: &riotbox_core::source_graph::SourceGraph,
+) -> &'static str {
+    if graph.timing.warnings.iter().any(|warning| {
+        warning.code == riotbox_core::source_graph::TimingWarningCode::AmbiguousDownbeat
+    }) {
+        return "ambiguous";
+    }
+    if !graph.timing.bar_grid.is_empty() {
+        return "bar_locked";
+    }
+    "unknown"
+}
+
+fn observer_source_timing_phrase_status(
+    graph: &riotbox_core::source_graph::SourceGraph,
+) -> &'static str {
+    if graph.timing.warnings.iter().any(|warning| {
+        warning.code == riotbox_core::source_graph::TimingWarningCode::PhraseUncertain
+    }) {
+        return "uncertain";
+    }
+    if !graph.timing.phrase_grid.is_empty() {
+        return "phrase_locked";
+    }
+    "unknown"
 }
 
 fn observer_timing_quality_label(
