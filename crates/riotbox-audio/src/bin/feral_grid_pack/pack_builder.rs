@@ -407,7 +407,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         ),
     };
     validate_report(&report)?;
-    write_report(&output_dir.join("grid-report.md"), args, &grid, report)?;
+    let report_path = output_dir.join("grid-report.md");
+    write_report(&report_path, args, &grid, report, &timing_readiness, grid_bpm)?;
     write_manifest(
         &output_dir.join("manifest.json"),
         args,
@@ -416,7 +417,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &timing_readiness,
         grid_bpm,
     )?;
-    write_readme(&output_dir, args, &grid, grid_bpm)?;
+    write_readme(&output_dir, args, &grid, grid_bpm, &timing_readiness)?;
 
     Ok(())
 }
