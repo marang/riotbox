@@ -1,6 +1,7 @@
 use std::{fs, path::PathBuf};
 
 use super::*;
+use serde_json::Value;
 
 #[test]
 fn parses_required_probe_args() {
@@ -184,6 +185,21 @@ fn writes_feral_grid_jam_observer_stream() {
     assert!(events.contains(r#""quality":"medium""#));
     assert!(events.contains(r#""degraded_policy":"cautious""#));
     assert!(events.contains(r#""cue":"listen first""#));
+    let source_timing = first_source_timing_snapshot(&events);
+    assert_eq!(source_timing["primary_warning_code"], "phrase_uncertain");
+    assert_eq!(source_timing["anchor_evidence"]["primary_anchor_count"], 0);
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_kick_anchor_count"],
+        0
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_backbeat_anchor_count"],
+        0
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_transient_anchor_count"],
+        0
+    );
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
     assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
@@ -211,10 +227,35 @@ fn writes_feral_grid_locked_jam_observer_stream() {
     assert!(events.contains(r#""bar_count":4"#));
     assert!(events.contains(r#""phrase_status":"phrase_locked""#));
     assert!(events.contains(r#""phrase_count":1"#));
+    let source_timing = first_source_timing_snapshot(&events);
+    assert_eq!(source_timing["primary_warning_code"], Value::Null);
+    assert_eq!(source_timing["anchor_evidence"]["primary_anchor_count"], 16);
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_kick_anchor_count"],
+        4
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_backbeat_anchor_count"],
+        8
+    );
+    assert_eq!(
+        source_timing["anchor_evidence"]["primary_transient_anchor_count"],
+        4
+    );
     assert!(events.contains(r#""warning_codes":[]"#));
     assert!(events.contains(r#""outcome":"toggle_transport""#));
     assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
     assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
     assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 1);
     assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
+}
+
+fn first_source_timing_snapshot(events: &str) -> Value {
+    events
+        .lines()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .filter_map(|event| event["snapshot"]["source_timing"].as_object().cloned())
+        .map(Value::Object)
+        .next()
+        .expect("source timing snapshot")
 }
