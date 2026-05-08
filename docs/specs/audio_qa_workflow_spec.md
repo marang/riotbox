@@ -663,6 +663,10 @@ Today the repo already has:
   manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
   strict correlation treats real mismatches as output-path failures while keeping
   missing or non-comparable evidence reviewable for older/non-Feral packs
+- generated Feral grid listening manifests carry compact
+  `source_timing.anchor_evidence` counts for primary, kick, backbeat, and
+  transient-cluster anchors, so QA can audit whether timing readiness is backed
+  by musically meaningful anchors instead of only a readiness/status label
 - observer/audio JSON summaries surface Feral-grid `grid_bpm_source` and
   `grid_bpm_decision_reason` plus `source_timing_bpm_delta`, so reviewers can
   distinguish trusted source timing, explicit user override, manual-confirm

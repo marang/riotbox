@@ -179,12 +179,46 @@ def validate_source_timing(source_timing: Any) -> None:
     require_one_of(source_timing, "confidence_result", SOURCE_TIMING_CONFIDENCE_RESULTS)
     require_one_of(source_timing, "drift_status", SOURCE_TIMING_DRIFT_STATUSES)
     require_one_of(source_timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
+    validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
     require_non_negative_int(
         source_timing,
         "alternate_evidence_count",
         "source_timing",
     )
     require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
+
+
+def validate_source_timing_anchor_evidence(anchor_evidence: Any) -> None:
+    evidence = require_object(anchor_evidence, "source_timing anchor_evidence")
+    require_non_negative_int(
+        evidence,
+        "primary_anchor_count",
+        "source_timing anchor_evidence",
+    )
+    require_non_negative_int(
+        evidence,
+        "primary_kick_anchor_count",
+        "source_timing anchor_evidence",
+    )
+    require_non_negative_int(
+        evidence,
+        "primary_backbeat_anchor_count",
+        "source_timing anchor_evidence",
+    )
+    require_non_negative_int(
+        evidence,
+        "primary_transient_anchor_count",
+        "source_timing anchor_evidence",
+    )
+    typed_count = (
+        evidence["primary_kick_anchor_count"]
+        + evidence["primary_backbeat_anchor_count"]
+        + evidence["primary_transient_anchor_count"]
+    )
+    if typed_count > evidence["primary_anchor_count"]:
+        raise ValueError(
+            "source_timing anchor_evidence typed anchor counts must not exceed primary_anchor_count"
+        )
 
 
 def validate_grid_bpm_decision(

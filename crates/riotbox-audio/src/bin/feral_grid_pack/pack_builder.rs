@@ -10,7 +10,7 @@ use riotbox_core::source_graph::{
     SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceStatus,
     SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDownbeatEvidenceStatus,
     SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus,
-    source_timing_probe_readiness_report,
+    source_timing_probe_readiness_report, timing_model_from_probe_bpm_candidates,
 };
 
 use riotbox_audio::{
@@ -355,7 +355,9 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let source = SourceAudioCache::load_pcm_wav(&args.source_path)?;
     validate_source_format(&source)?;
-    let timing_readiness = source_timing_readiness_for_source(&source, &args.source_path);
+    let source_timing_analysis = source_timing_analysis_for_source(&source, &args.source_path);
+    let timing_readiness = source_timing_analysis.readiness;
+    let source_timing_anchor_evidence = source_timing_analysis.anchor_evidence;
     let grid_bpm = choose_grid_bpm(args, &timing_readiness);
     let grid = Grid::new(grid_bpm.bpm, DEFAULT_BEATS_PER_BAR, args.bars)?;
 
@@ -425,6 +427,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &grid,
         report,
         &timing_readiness,
+        &source_timing_anchor_evidence,
         grid_bpm,
     )?;
     write_readme(&output_dir, args, &grid, grid_bpm, &timing_readiness)?;
@@ -487,10 +490,15 @@ fn validate_source_format(source: &SourceAudioCache) -> Result<(), Box<dyn std::
     Ok(())
 }
 
-fn source_timing_readiness_for_source(
+struct SourceTimingAnalysisForManifest {
+    readiness: SourceTimingProbeReadinessReport,
+    anchor_evidence: ManifestSourceTimingAnchorEvidence,
+}
+
+fn source_timing_analysis_for_source(
     source: &SourceAudioCache,
     source_path: &Path,
-) -> SourceTimingProbeReadinessReport {
+) -> SourceTimingAnalysisForManifest {
     let probe = analyze_source_timing_probe(source, SourceTimingProbeConfig::default());
     let input = probe.bpm_candidate_input(
         source_path.display().to_string(),
@@ -499,8 +507,16 @@ fn source_timing_readiness_for_source(
             beat_unit: 4,
         },
     );
-    source_timing_probe_readiness_report(
+    let readiness = source_timing_probe_readiness_report(
         &input,
         SOURCE_TIMING_POLICY_PROFILE.bpm_candidate_policy,
-    )
+    );
+    let timing = timing_model_from_probe_bpm_candidates(
+        &input,
+        SOURCE_TIMING_POLICY_PROFILE.bpm_candidate_policy,
+    );
+    SourceTimingAnalysisForManifest {
+        readiness,
+        anchor_evidence: ManifestSourceTimingAnchorEvidence::from_timing(&timing),
+    }
 }
