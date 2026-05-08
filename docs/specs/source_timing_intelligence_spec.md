@@ -543,6 +543,12 @@ bounded BPM policy:
 - W-30 source chop should expose the same bounded alignment evidence under a
   lane-specific key, currently `metrics.w30_source_grid_alignment`, so the
   source-backed sample lane is auditable separately from TR-909 support
+- MC-202 lane recipe manifests should expose bounded phrase-grid evidence under
+  `metrics.mc202_phrase_grid` for each required MC-202 case, proving that
+  generated candidate phrases start on the selected phrase boundary and that
+  detected note onsets stay aligned to the sixteenth grid. This is a current
+  lane-recipe QA proof, not a full source-derived MC-202 question/answer
+  placement engine.
 - observer/audio correlation should compare app-observed Source Timing readiness
   with manifest-side Source Timing evidence when both are present. The current
   summary contract reports this as `output_path.source_timing_alignment`, using
