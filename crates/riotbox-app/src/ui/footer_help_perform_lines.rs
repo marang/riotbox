@@ -120,7 +120,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(stage) = first_run_onramp_stage(shell) {
         lines.push(Line::from(""));
         lines.push(Line::from("First run"));
-        lines.push(Line::from(source_timing_help_line(shell)));
+        lines.push(source_timing_help_line(shell));
         match stage {
             FirstRunOnrampStage::Start => {
                 lines.push(line_with_primary_key_prefixes("space: start transport"));

@@ -197,13 +197,15 @@ fn quality_label(quality: &QualityClass) -> &'static str {
     }
 }
 
-fn source_timing_readiness_line(shell: &JamShellState) -> String {
+fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     let trust = trust_summary(shell);
-    format!(
-        "source timing {} | quality {} | policy {}",
-        source_timing_policy_cue_label(trust.source_timing_policy),
-        trust.source_timing_quality,
-        trust.source_timing_policy
+    source_timing_cue_line(
+        "source timing",
+        trust.source_timing_policy,
+        [
+            ("quality", trust.source_timing_quality),
+            ("policy", trust.source_timing_policy),
+        ],
     )
 }
 
@@ -215,9 +217,8 @@ fn source_timing_clock_compact(shell: &JamShellState) -> String {
     source_timing_clock_label(shell, true)
 }
 
-fn source_timing_help_line(shell: &JamShellState) -> String {
+fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
     let trust = trust_summary(shell);
-    let cue = source_timing_policy_cue_label(trust.source_timing_policy);
     let meaning = match trust.source_timing_policy {
         "locked" => "grid can steer moves",
         "manual_confirm" => "confirm before trusting grid",
@@ -227,10 +228,12 @@ fn source_timing_help_line(shell: &JamShellState) -> String {
         _ => "timing trust unknown",
     };
 
-    format!(
-        "Timing: {cue} | {} | {meaning}",
-        source_timing_clock_compact(shell)
-    )
+    let mut line = source_timing_cue_line("Timing:", trust.source_timing_policy, []);
+    line.spans.push(Span::styled(" | ", style_low_emphasis()));
+    line.spans.push(Span::raw(source_timing_clock_compact(shell)));
+    line.spans.push(Span::styled(" | ", style_low_emphasis()));
+    line.spans.push(Span::raw(meaning));
+    line
 }
 
 fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
@@ -302,6 +305,39 @@ fn source_timing_policy_cue_label(policy: &str) -> &'static str {
         "disabled" => "not available",
         _ => "unknown",
     }
+}
+
+fn source_timing_policy_cue_style(policy: &str) -> Style {
+    match policy {
+        "locked" => style_confirmation_strong(),
+        "manual_confirm" | "cautious" | "fallback_grid" => style_pending_cue(),
+        "disabled" | "unknown" => style_low_emphasis(),
+        _ => style_low_emphasis(),
+    }
+}
+
+fn source_timing_cue_line<const N: usize>(
+    prefix: &'static str,
+    policy: &'static str,
+    details: [(&'static str, &'static str); N],
+) -> Line<'static> {
+    let mut spans = vec![
+        Span::raw(prefix),
+        Span::raw(" "),
+        Span::styled(
+            source_timing_policy_cue_label(policy),
+            source_timing_policy_cue_style(policy),
+        ),
+    ];
+
+    for (label, value) in details {
+        spans.push(Span::styled(" | ", style_low_emphasis()));
+        spans.push(Span::raw(label));
+        spans.push(Span::raw(" "));
+        spans.push(Span::raw(value));
+    }
+
+    Line::from(spans)
 }
 
 fn jam_source_timing_warning_code_label(code: &TimingWarningCode) -> &'static str {

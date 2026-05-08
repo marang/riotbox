@@ -10,14 +10,20 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .unwrap_or_else(|| "unknown".into()),
                 graph.timing.bpm_confidence
             )),
-            Line::from(format!(
-                "cue {} | quality {} | policy {}",
-                source_timing_policy_cue_label(timing_degraded_policy_label(
-                    &graph.timing.effective_degraded_policy()
-                )),
-                timing_quality_label(&graph.timing.effective_timing_quality()),
-                timing_degraded_policy_label(&graph.timing.effective_degraded_policy())
-            )),
+            source_timing_cue_line(
+                "cue",
+                timing_degraded_policy_label(&graph.timing.effective_degraded_policy()),
+                [
+                    (
+                        "quality",
+                        timing_quality_label(&graph.timing.effective_timing_quality()),
+                    ),
+                    (
+                        "policy",
+                        timing_degraded_policy_label(&graph.timing.effective_degraded_policy()),
+                    ),
+                ],
+            ),
             Line::from(format!(
                 "meter {} | hyp {} primary {}",
                 graph

@@ -56,6 +56,82 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
 }
 
 #[test]
+fn source_timing_readiness_styles_locked_cue_as_confirmed() {
+    let mut shell = sample_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("sample shell should include source graph");
+    graph.timing.quality = TimingQuality::High;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+    graph.timing.warnings.clear();
+
+    let line = source_timing_readiness_line(&shell);
+    let rendered = line
+        .spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
+
+    assert_eq!(rendered, "source timing grid locked | quality high | policy locked");
+    assert_eq!(line.spans[2].content.as_ref(), "grid locked");
+    assert_eq!(line.spans[2].style.fg, Some(Color::Green));
+    assert!(
+        line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+        "{line:?}"
+    );
+}
+
+#[test]
+fn source_timing_readiness_styles_manual_confirm_as_pending() {
+    let shell = sample_shell_state();
+
+    let line = source_timing_readiness_line(&shell);
+    let rendered = line
+        .spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
+
+    assert_eq!(
+        rendered,
+        "source timing needs confirm | quality low | policy manual_confirm"
+    );
+    assert_eq!(line.spans[2].content.as_ref(), "needs confirm");
+    assert_eq!(line.spans[2].style.fg, Some(Color::Yellow));
+    assert!(
+        line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+        "{line:?}"
+    );
+}
+
+#[test]
+fn source_timing_help_styles_missing_source_as_low_emphasis() {
+    let mut shell = sample_shell_state();
+    shell.app.source_graph = None;
+    shell.app.refresh_view();
+
+    let line = source_timing_help_line(&shell);
+    let rendered = line
+        .spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
+
+    assert_eq!(
+        rendered,
+        "Timing: unknown | clock unavailable | timing trust unknown"
+    );
+    assert_eq!(line.spans[2].content.as_ref(), "unknown");
+    assert_eq!(line.spans[2].style.fg, Some(Color::DarkGray));
+    assert!(
+        !line.spans[2].style.add_modifier.contains(Modifier::BOLD),
+        "{line:?}"
+    );
+}
+
+#[test]
 fn renders_missing_source_timing_clock_as_unavailable() {
     let mut shell = sample_shell_state();
     shell.app.source_graph = None;

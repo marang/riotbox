@@ -481,7 +481,7 @@ fn source_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             source.section_count, source.loop_candidate_count, source.hook_candidate_count
         )),
         Line::from(source_timing_clock_line(shell)),
-        Line::from(source_timing_readiness_line(shell)),
+        source_timing_readiness_line(shell),
         Line::from(source_timing_warning_line(shell)),
         Line::from(first_section),
         Line::from(second_section),
