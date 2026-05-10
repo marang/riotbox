@@ -1,4 +1,10 @@
-use super::*;
+use riotbox_core::{
+    action::{Action, ActionCommand, ActionParams, ActionResult},
+    replay::derive_scene_movement_state,
+    session::SessionFile,
+    source_graph::SourceGraph,
+    transport::CommitBoundaryState,
+};
 
 pub(in crate::jam_app) fn apply_scene_side_effects(
     session: &mut SessionFile,
