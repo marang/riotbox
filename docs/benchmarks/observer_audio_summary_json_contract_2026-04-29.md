@@ -74,10 +74,15 @@ The `output_path` object should include:
 - `pack_id`: source audio QA pack id.
 - `manifest_result`: source manifest result.
 - `artifact_count`: number of manifest artifacts.
-- `grid_bpm_source`: manifest grid BPM source when present, or `unknown` for
-  older/non-grid manifests.
-- `grid_bpm_decision_reason`: manifest grid BPM decision reason when present,
-  or `unknown` for older/non-grid manifests.
+- `grid_bpm_source`: manifest grid BPM source, one of `unknown`,
+  `user_override`, `source_timing`, or `static_default`. Older/non-grid
+  manifests may report `unknown`.
+- `grid_bpm_decision_reason`: manifest grid BPM decision reason, one of
+  `unknown`, `user_override`, `source_timing_ready`,
+  `source_timing_needs_review_manual_confirm`,
+  `source_timing_requires_manual_confirm`, `source_timing_not_ready`,
+  `source_timing_missing_bpm`, or `source_timing_invalid_bpm`.
+  Older/non-grid manifests may report `unknown`.
 - `source_timing_bpm_delta`: manifest source/grid BPM delta when present, or
   `null`.
 - `source_timing`: `null` or a compact object copied from manifest
@@ -217,8 +222,14 @@ The committed fixture JSON smoke currently requires:
 - `control_path.observer_source_timing` is present as an object or `null`
 - `output_path.present == true`
 - `output_path.issues` is empty
-- `output_path.grid_bpm_source` is present as a string
-- `output_path.grid_bpm_decision_reason` is present as a string
+- `output_path.grid_bpm_source` is present as one of the stable source labels
+- `output_path.grid_bpm_decision_reason` is present as one of the stable
+  decision-reason labels
+- Feral-grid output rejects `unknown` grid BPM decisions; older/non-grid output
+  may still use `unknown/unknown` until those paths expose equivalent evidence
+- `source_timing` grid BPM decisions require matching Source Timing readiness
+  evidence, so source timing, user override, and static fallback paths cannot be
+  confused in machine-readable QA
 - `output_path.source_timing_bpm_delta` is present as a number or `null`
 - `output_path.source_timing` is present as an object or `null`
 - `output_path.source_timing_alignment` is present as an object or `null`
@@ -227,7 +238,7 @@ The committed fixture JSON smoke currently requires:
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
-- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, and rejected Source Timing shape/cue mismatches
+- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, rejected grid BPM decision mismatches, and rejected Source Timing shape/cue mismatches
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source
