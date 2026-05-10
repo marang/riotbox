@@ -36,12 +36,25 @@ Run:
 
 ```bash
 just source-timing-fixture-evaluator
+just source-timing-fixture-report
+just source-timing-fixture-report-smoke
 ```
 
 The gate includes positive fixture-output checks and negative regressions that
 reject out-of-tolerance BPM, too few beat events, weak primary confidence,
 missing primary drift evidence, and drift measurements that exceed the fixture
 beat/downbeat tolerances.
+
+The report command emits `riotbox.source_timing_fixture_evaluation_report.v1`
+JSON with:
+
+- the catalog path
+- total case count
+- aggregate pass/fail status
+- serialized per-fixture `TimingFixtureEvaluation` entries
+
+The smoke command keeps that machine-readable report envelope wired into
+`just ci` so future benchmark/report surfaces can consume the same measurements.
 
 ## Boundary
 
