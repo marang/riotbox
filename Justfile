@@ -91,6 +91,7 @@ source-timing-fixture-catalog catalog="crates/riotbox-core/tests/fixtures/source
 source-timing-fixture-catalog-validator-fixtures:
     python3 scripts/validate_source_timing_fixture_catalog.py crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json
     if python3 scripts/validate_source_timing_fixture_catalog.py crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog_invalid_empty_cases.json; then echo "expected empty timing fixture catalog to fail" >&2; exit 1; fi
+    python3 scripts/validate_source_timing_fixture_catalog_label_fixtures.py
 
 source-timing-analyzer-skeleton-fixtures:
     cargo test -p riotbox-core source_timing_fixture_catalog_maps_to_core_timing_contract -- --nocapture
