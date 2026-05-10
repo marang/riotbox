@@ -9,7 +9,7 @@ use std::{
 
 use riotbox_audio::{
     mc202::Mc202RenderState,
-    runtime::{AudioRuntimeHealth, AudioRuntimeTimingSnapshot, render_w30_resample_tap_offline},
+    runtime::{AudioRuntimeHealth, render_w30_resample_tap_offline},
     source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
     tr909::Tr909RenderState,
     w30::{
@@ -41,6 +41,9 @@ use riotbox_core::{
 };
 use riotbox_sidecar::client::{ClientError as SidecarClientError, StdioSidecarClient};
 use sha2::{Digest, Sha256};
+
+#[cfg(test)]
+use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
 
 mod capture_artifacts;
 mod capture_helpers;
@@ -86,10 +89,7 @@ pub use state::{
     AppRuntimeState, JamAppError, JamAppState, JamFileSet, QueueControlResult, SidecarState,
     TransportDriverState,
 };
-use transport_helpers::{
-    crossed_commit_boundary, normalize_scene_candidates, transport_clock_for_state,
-    transport_clock_from_state,
-};
+use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
 
 impl JamAppState {
     pub(super) const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
