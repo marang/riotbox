@@ -724,6 +724,13 @@ Today the repo already has:
   `source_timing_bpm_delta`, and matching
   `source_timing.bpm_agrees_with_grid` evidence while the output path remains
   non-collapsed
+- the generated Feral grid gate also proves the timing-risky user override
+  path: an out-of-tolerance override must still report
+  `grid_bpm_source: user_override` and
+  `grid_bpm_decision_reason: user_override`, but its numeric
+  `source_timing_bpm_delta` must exceed the agreement tolerance and
+  `source_timing.bpm_agrees_with_grid` must be `false` in both the manifest and
+  observer/audio summary while output remains non-collapsed
 - generated Feral grid observer/audio correlation now also reports source timing
   anchor and groove alignment separately, so QA can distinguish a grid/BPM match
   from missing musical anchor evidence or missing groove-residual evidence
