@@ -17,6 +17,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Grid BPM source: `{}`\n\
          - Grid BPM decision reason: `{}`\n\
          - Source timing BPM delta: `{}`\n\
+         - Source timing BPM agrees with grid: `{}`\n\
          - Full mix RMS: `{}`\n\
          - Full mix low-band RMS: `{}`\n\n\
          - Source timing readiness: `{}`\n\
@@ -60,6 +61,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         summary.grid_bpm_source,
         summary.grid_bpm_decision_reason,
         format_optional_f64(summary.source_timing_bpm_delta),
+        format_source_timing_bpm_agreement(summary),
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
         format_source_timing_readiness(summary),
@@ -186,6 +188,17 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
 
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
+}
+
+fn format_source_timing_bpm_agreement(summary: &CorrelationSummary) -> String {
+    if summary.source_timing_malformed {
+        return "malformed".to_string();
+    }
+    summary
+        .source_timing
+        .as_ref()
+        .and_then(|timing| timing.bpm_agrees_with_grid)
+        .map_or_else(|| "unknown".to_string(), |value| yes_no(value).to_string())
 }
 
 fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {

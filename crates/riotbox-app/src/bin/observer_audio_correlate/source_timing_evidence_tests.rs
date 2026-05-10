@@ -39,6 +39,7 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
     );
     assert!(markdown.contains("Source timing downbeat: `ambiguous offset=0`"));
     assert!(markdown.contains("Source timing readiness: `needs confirm readiness=weak"));
+    assert!(markdown.contains("Source timing BPM agrees with grid: `yes`"));
     assert!(markdown.contains(
         "Source timing phrase: `ambiguous_downbeat confidence=candidate_ambiguous drift=stable alternates=2`"
     ));
@@ -72,6 +73,7 @@ fn strict_evidence_rejects_malformed_source_timing() {
     let markdown = render_markdown(&summary);
 
     assert!(error.to_string().contains("source_timing=malformed"));
+    assert!(markdown.contains("Source timing BPM agrees with grid: `malformed`"));
     assert!(markdown.contains("Source timing phrase: `malformed`"));
     assert!(markdown.contains("Output path present: `no`"));
 }

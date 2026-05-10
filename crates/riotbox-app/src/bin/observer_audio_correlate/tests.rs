@@ -128,6 +128,7 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Grid BPM source: `source_timing`"));
     assert!(markdown.contains("Grid BPM decision reason: `source_timing_ready`"));
     assert!(markdown.contains("Source timing BPM delta: `0.000000`"));
+    assert!(markdown.contains("Source timing BPM agrees with grid: `yes`"));
     assert!(markdown.contains("Observer source timing: `src-beat08 cue=listen first"));
     assert!(markdown.contains("beat=tempo_only(0) downbeat=unknown(0) phrase=uncertain(0)"));
     assert!(markdown.contains("Source timing readiness: `grid locked readiness=ready"));
