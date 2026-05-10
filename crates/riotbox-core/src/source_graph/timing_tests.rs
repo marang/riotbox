@@ -218,6 +218,35 @@ mod timing_tests {
         );
     }
 
+    #[test]
+    fn source_timing_fixture_evaluation_serializes_object_issue_variants() {
+        let evaluation = TimingFixtureEvaluation {
+            fixture_id: "fx_timing_halftime_140_ambiguous".into(),
+            passed: false,
+            bpm_error: 0.0,
+            beat_count: 32,
+            bar_count: 8,
+            phrase_count: 1,
+            primary_confidence: Some(0.55),
+            primary_max_mean_abs_drift_ms: Some(35.0),
+            primary_max_drift_ms: Some(70.0),
+            issues: vec![
+                TimingFixtureEvaluationIssue::MissingWarning(TimingWarningCode::PhraseUncertain),
+                TimingFixtureEvaluationIssue::MissingAlternative(TimingHypothesisKind::HalfTime),
+            ],
+        };
+
+        let evaluation_json = serde_json::to_value(&evaluation).expect("serialize evaluation");
+
+        assert_eq!(
+            evaluation_json["issues"],
+            serde_json::json!([
+                { "missing_warning": "PhraseUncertain" },
+                { "missing_alternative": "HalfTime" }
+            ])
+        );
+    }
+
     fn assert_json_number_close(value: &serde_json::Value, expected: f64) {
         let actual = value.as_f64().expect("json number");
         assert!(
