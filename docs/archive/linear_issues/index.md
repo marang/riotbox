@@ -258,6 +258,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Used typed MC-202 role and phrase helpers in render projection.
 - [RIOTBOX-751.md](./RIOTBOX-751.md)
   Decide MC-202 session-file typed migration boundary
+- [RIOTBOX-752.md](./RIOTBOX-752.md)
+  Resume P012 all-lane source-grid output proof
 - [RIOTBOX-753.md](./RIOTBOX-753.md)
   Context-light search workflow, branch closeout rule, and per-ticket archive split.
 - [RIOTBOX-754.md](./RIOTBOX-754.md)
