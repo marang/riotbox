@@ -1441,3 +1441,17 @@ Why: P012 is about shared timing authority across lanes. A generic non-silent mi
 Evidence: `strict_evidence_rejects_missing_required_source_grid_alignment` now fails a synthetic `pass` manifest with no Source Grid alignment evidence, `cargo test -p riotbox-app --bin observer_audio_correlate -- --nocapture` covers the strict gate, and `just p012-all-lane-source-grid-output-proof` runs the current Feral-grid TR-909/W-30 proof plus MC-202 phrase-grid proof together.
 Consequences: this is still a bounded P012 QA gate, not production arbitrary-audio beat/downbeat detection. MC-202 remains proven through phrase-grid recipe evidence until the source-derived question/answer placement engine lands.
 Status: accepted
+
+---
+
+### RBX-030
+
+Date: 2026-05-10
+Topic: MC-202 P012 proof should bridge internal phrase timing to a Source Graph phrase slot
+Phase: Source Timing Intelligence / Audio QA
+Question: what is the smallest honest P012 MC-202 phrase-slot proof before a full source-derived question/answer arranger exists?
+Decision: extend the lane recipe listening pack with `metrics.mc202_source_phrase_slot` for required MC-202 cases. The metric proves the generated candidate consumes a selected Source Graph phrase-grid slot and starts on that source phrase boundary, while the existing `mc202_phrase_grid` metric continues to prove internal sixteenth-grid note alignment.
+Why: MC-202 output can be internally quantized but still unrelated to source-derived phrase timing. P012 needs a bridge proof that MC-202 is attached to Source Graph timing before the full source-aware question/answer engine lands.
+Evidence: `mc202_lane_recipe_cases_consume_source_phrase_slots` and `mc202_source_phrase_slot_gate_rejects_non_source_phrase_boundary_candidate` cover the audio-side metric, observer/audio strict evidence rejects missing `mc202_source_phrase_slot`, and `just recipe2-observer-audio-gate` validates the generated manifest plus observer correlation path.
+Consequences: this is a bounded synthetic-source proof. It does not claim production arbitrary-audio phrase arrangement, but future MC-202 source-aware placement should consume the same Source Graph phrase-slot concept rather than introduce a lane-local timing model.
+Status: accepted

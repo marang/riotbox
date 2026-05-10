@@ -49,6 +49,30 @@ mod mc202_phrase_grid_consumer_tests {
     }
 
     #[test]
+    fn mc202_lane_recipe_cases_consume_source_phrase_slots() {
+        let source_timing = lane_recipe_source_timing_model();
+        let mc202_cases = pack_cases()
+            .into_iter()
+            .filter(|case| matches!(case.render_pair, RenderPair::Mc202 { .. }))
+            .collect::<Vec<_>>();
+
+        for case in mc202_cases {
+            let metrics = mc202_source_phrase_slot_metrics(&case.render_pair, &source_timing)
+                .unwrap_or_else(|| panic!("{} missing MC-202 source phrase-slot metrics", case.id));
+
+            assert!(
+                metrics.passed,
+                "{} should land on a selected source phrase slot: {:?}",
+                case.id, metrics
+            );
+            assert_eq!(metrics.source_hypothesis_id.as_deref(), Some("lane-recipe-source-grid"));
+            assert_eq!(metrics.phrase_index, Some(3));
+            assert_eq!(metrics.phrase_start_bar, Some(9));
+            assert!(metrics.starts_on_source_phrase_boundary);
+        }
+    }
+
+    #[test]
     fn mc202_phrase_grid_gate_rejects_non_phrase_boundary_candidate() {
         let mut candidate = mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78);
         candidate.position_beats = 4.0;
@@ -67,6 +91,30 @@ mod mc202_phrase_grid_consumer_tests {
         assert!(
             !metrics.passed,
             "phrase-offset MC-202 candidate must fail the phrase-grid timing gate"
+        );
+    }
+
+    #[test]
+    fn mc202_source_phrase_slot_gate_rejects_non_source_phrase_boundary_candidate() {
+        let source_timing = lane_recipe_source_timing_model();
+        let mut candidate = mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78);
+        candidate.position_beats = 28.0;
+        let pair = RenderPair::Mc202 {
+            baseline: mc202_state(Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive, 0.62),
+            candidate,
+        };
+
+        let metrics =
+            mc202_source_phrase_slot_metrics(&pair, &source_timing).expect("source phrase metrics");
+
+        assert_eq!(metrics.phrase_index, Some(2));
+        assert!(
+            !metrics.starts_on_source_phrase_boundary,
+            "candidate inside phrase but not at the source phrase boundary must be visible"
+        );
+        assert!(
+            !metrics.passed,
+            "source phrase-offset MC-202 candidate must fail the source phrase-slot timing gate"
         );
     }
 }

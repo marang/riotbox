@@ -37,6 +37,7 @@ struct ManifestCaseMetrics {
     signal_delta: ManifestSignalMetrics,
     rms_delta: f32,
     mc202_phrase_grid: Option<Mc202PhraseGridTimingMetrics>,
+    mc202_source_phrase_slot: Option<Mc202SourcePhraseSlotMetrics>,
 }
 
 fn write_manifest(
@@ -115,6 +116,7 @@ impl From<&CaseReport> for ManifestCase {
                 signal_delta: report.signal_delta_metrics.into(),
                 rms_delta: rms_delta(report.baseline_metrics, report.candidate_metrics),
                 mc202_phrase_grid: report.mc202_phrase_grid,
+                mc202_source_phrase_slot: report.mc202_source_phrase_slot.clone(),
             },
             result: if report.passed { "pass" } else { "fail" },
         }
@@ -160,8 +162,8 @@ fn write_pcm16_wav(
 mod tests {
     use super::{
         Args, BEATS_PER_BAR, CHANNEL_COUNT, DEFAULT_BPM, LISTENING_MANIFEST_SCHEMA_VERSION, PACK_ID,
-        SAMPLE_RATE, pack_cases, render_pack, render_pair, signal_delta_metrics,
-        signal_metrics_with_grid,
+        SAMPLE_RATE, MC202_SOURCE_PHRASE_SLOT_CONTRACT, pack_cases, render_pack, render_pair,
+        signal_delta_metrics, signal_metrics_with_grid,
     };
     use std::{fs, path::PathBuf};
 
@@ -325,6 +327,18 @@ mod tests {
             .find(|case| case["id"] == "mc202-follower-to-answer")
             .expect("mc202 case");
         assert_eq!(mc202_case["metrics"]["mc202_phrase_grid"]["passed"], true);
+        assert_eq!(
+            mc202_case["metrics"]["mc202_source_phrase_slot"]["passed"],
+            true
+        );
+        assert_eq!(
+            mc202_case["metrics"]["mc202_source_phrase_slot"]["contract"],
+            MC202_SOURCE_PHRASE_SLOT_CONTRACT
+        );
+        assert_eq!(
+            mc202_case["metrics"]["mc202_source_phrase_slot"]["phrase_index"],
+            3
+        );
         assert_eq!(
             mc202_case["metrics"]["mc202_phrase_grid"]["resolution"],
             "sixteenth"

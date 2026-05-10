@@ -633,9 +633,13 @@ bounded BPM policy:
 - MC-202 lane recipe manifests should expose bounded phrase-grid evidence under
   `metrics.mc202_phrase_grid` for each required MC-202 case, proving that
   generated candidate phrases start on the selected phrase boundary and that
-  detected note onsets stay aligned to the sixteenth grid. This is a current
-  lane-recipe QA proof, not a full source-derived MC-202 question/answer
-  placement engine.
+  detected note onsets stay aligned to the sixteenth grid.
+- MC-202 lane recipe manifests should also expose bounded Source Graph phrase
+  slot evidence under `metrics.mc202_source_phrase_slot`, proving that the
+  generated candidate consumes a selected source phrase-grid slot and starts at
+  that source phrase boundary. The current proof may use a synthetic source
+  timing contract; it is a P012 bridge proof, not a full production
+  question/answer placement engine.
 - observer/audio correlation should compare app-observed Source Timing readiness
   with manifest-side Source Timing evidence when both are present. The
   app-observed cue, quality, degraded policy, primary warning, and compact

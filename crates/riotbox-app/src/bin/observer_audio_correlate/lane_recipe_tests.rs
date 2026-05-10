@@ -61,6 +61,30 @@ fn strict_evidence_rejects_missing_mc202_phrase_grid_metric() {
     assert!(error.to_string().contains("mc202_phrase_grid=missing"));
 }
 
+#[test]
+fn strict_evidence_rejects_missing_mc202_source_phrase_slot_metric() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, recipe2_mc202_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        lane_recipe_manifest_missing_source_phrase_slot(),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error =
+        validate_required_evidence(&summary).expect_err("missing source phrase slot metric");
+
+    assert!(error.to_string().contains("mc202-follower-to-answer"));
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_source_phrase_slot=missing")
+    );
+}
+
 fn recipe2_mc202_observer() -> String {
     [
         r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic-recipe2-source.wav"}}"#,
@@ -267,6 +291,54 @@ fn lane_recipe_manifest_missing_phrase_grid() -> String {
     ])
 }
 
+fn lane_recipe_manifest_missing_source_phrase_slot() -> String {
+    lane_recipe_manifest_with_cases(&[
+        lane_recipe_case_without_source_phrase_slot(
+            "mc202-follower-to-answer",
+            "pass",
+            0.005675,
+            0.008565,
+            0.005,
+        ),
+        lane_recipe_case("mc202-touch-low-to-high", "pass", 0.009559, 0.006182, 0.006),
+        lane_recipe_case(
+            "mc202-follower-to-pressure",
+            "pass",
+            0.005752,
+            0.009299,
+            0.004,
+        ),
+        lane_recipe_case(
+            "mc202-follower-to-instigator",
+            "pass",
+            0.005908,
+            0.009383,
+            0.009,
+        ),
+        lane_recipe_case(
+            "mc202-follower-to-mutated-drive",
+            "pass",
+            0.009877,
+            0.009514,
+            0.005,
+        ),
+        lane_recipe_case(
+            "mc202-neutral-to-lift-contour",
+            "pass",
+            0.008217,
+            0.007847,
+            0.004,
+        ),
+        lane_recipe_case(
+            "mc202-direct-to-hook-response",
+            "pass",
+            0.003446,
+            0.008681,
+            0.004,
+        ),
+    ])
+}
+
 fn lane_recipe_manifest_with_cases(cases: &[String]) -> String {
     format!(
         r#"{{
@@ -308,6 +380,18 @@ fn lane_recipe_case(
       "max_onset_offset_ms": 2.902494,
       "max_allowed_onset_offset_ms": 8.0,
       "passed": true
+    },
+    "mc202_source_phrase_slot": {
+      "contract": "source_graph_phrase_grid.v0",
+      "source_hypothesis_id": "lane-recipe-source-grid",
+      "phrase_grid_available": true,
+      "phrase_index": 3,
+      "phrase_start_bar": 9,
+      "phrase_end_bar": 12,
+      "candidate_position_beats": 32.0,
+      "candidate_bar_index": 9,
+      "starts_on_source_phrase_boundary": true,
+      "passed": true
     }"#,
     )
 }
@@ -326,6 +410,36 @@ fn lane_recipe_case_without_phrase_grid(
         signal_delta_rms,
         min_signal_delta_rms,
         "",
+    )
+}
+
+fn lane_recipe_case_without_source_phrase_slot(
+    id: &str,
+    result: &str,
+    candidate_rms: f64,
+    signal_delta_rms: f64,
+    min_signal_delta_rms: f64,
+) -> String {
+    lane_recipe_case_with_extra_metrics(
+        id,
+        result,
+        candidate_rms,
+        signal_delta_rms,
+        min_signal_delta_rms,
+        r#",
+    "mc202_phrase_grid": {
+      "resolution": "sixteenth",
+      "phrase_length_steps": 64,
+      "phrase_length_beats": 16.0,
+      "position_beats": 32.0,
+      "starts_on_phrase_boundary": true,
+      "candidate_onset_count": 7,
+      "grid_aligned_onset_count": 7,
+      "hit_ratio": 1.0,
+      "max_onset_offset_ms": 2.902494,
+      "max_allowed_onset_offset_ms": 8.0,
+      "passed": true
+    }"#,
     )
 }
 
