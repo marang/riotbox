@@ -1413,3 +1413,17 @@ Why: Riotbox has bounded MVP exits for MC-202, W-30, Scene Brain, Ghost Watch / 
 Evidence: `docs/phase_definition_of_done.md` now names P011 as the final MVP-spine hardening project, and `docs/execution_roadmap.md` records the P011-P020 project / phase map without creating a ticket list.
 Consequences: Linear should keep P011 active and high-priority until its exit checklist is clean. P012 may be prepared as near-next orientation, while P013-P020 should remain coarse phase placeholders until the active gate moves.
 Status: accepted
+
+---
+
+### RBX-028
+
+Date: 2026-05-10
+Topic: MC-202 Session v1 should keep compatibility labels behind typed helpers
+Phase: Repo Ops / MC-202 typed contract follow-up
+Question: after MC-202 queue, side effects, replay, and render projection consume typed helpers, should Session v1 migrate persisted MC-202 lane state from compatibility labels to typed enum fields?
+Decision: do not change the Session v1 JSON shape for MC-202 role, phrase-intent, or undo snapshot fields now. Keep stable compatibility labels in persisted JSON, and require behavior consumers to parse those labels through typed core helpers before queue, replay, render, observer, or QA decisions.
+Why: the real drift risk was behavior branching on arbitrary raw strings, not the persisted label shape itself. Existing sessions, fixtures, archive evidence, TUI labels, and observer/audio QA already depend on the stable labels. Changing the JSON shape would create migration cost without a musician-facing or architecture benefit while Session v1 is still sufficient.
+Evidence: Stage 1-3 of `docs/reviews/mc202_typed_contract_migration_plan_2026-05-10.md` have moved current behavior to typed helper boundaries, and `docs/specs/session_file_spec.md` now records the Session v1 compatibility-label contract.
+Consequences: future MC-202 roles or phrase intents must extend the typed helpers first. A typed-field JSON migration is allowed only as part of a documented session-version migration with legacy fixture load, roundtrip, restore, deterministic replay, undo snapshot compatibility, TUI/observer label, and audio-output proof where applicable.
+Status: accepted
