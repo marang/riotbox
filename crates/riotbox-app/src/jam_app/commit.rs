@@ -102,18 +102,9 @@ impl JamAppState {
 
         for committed_ref in &committed {
             if let Some(action) = self.queue.history_action(committed_ref.action_id) {
-                let action = action.clone();
-                self.session.action_log.actions.push(action.clone());
-                self.session
-                    .action_log
-                    .commit_records
-                    .push(ActionCommitRecord {
-                        action_id: committed_ref.action_id,
-                        boundary: committed_ref.boundary.clone(),
-                        commit_sequence: committed_ref.commit_sequence,
-                        committed_at,
-                    });
-                self.apply_committed_action_side_effects(&action, &boundary);
+                let action =
+                    self.record_committed_action(action.clone(), committed_ref, committed_at);
+                self.apply_committed_action_pipeline(&action, &boundary);
             }
         }
 
@@ -122,17 +113,45 @@ impl JamAppState {
         committed
     }
 
-    fn apply_committed_action_side_effects(
+    fn record_committed_action(
         &mut self,
-        action: &Action,
-        boundary: &CommitBoundaryState,
-    ) {
+        action: Action,
+        committed_ref: &CommittedActionRef,
+        committed_at: TimestampMs,
+    ) -> Action {
+        self.session.action_log.actions.push(action.clone());
+        self.session
+            .action_log
+            .commit_records
+            .push(ActionCommitRecord {
+                action_id: committed_ref.action_id,
+                boundary: committed_ref.boundary.clone(),
+                commit_sequence: committed_ref.commit_sequence,
+                committed_at,
+            });
+        action
+    }
+
+    fn apply_committed_action_pipeline(&mut self, action: &Action, boundary: &CommitBoundaryState) {
+        self.snapshot_undo_state_before_side_effects(action);
+        self.materialize_capture_before_lane_side_effects(action, boundary);
+        self.apply_lane_scene_and_ghost_side_effects(action, boundary);
+        self.mirror_scene_commit_to_runtime_transport(action);
+    }
+
+    fn snapshot_undo_state_before_side_effects(&mut self, action: &Action) {
         if is_mc202_phrase_action(action.command) {
             self.session.runtime_state.undo_state.mc202_snapshots.push(
                 Mc202UndoSnapshotState::from_session(action.id, &self.session),
             );
         }
+    }
 
+    fn materialize_capture_before_lane_side_effects(
+        &mut self,
+        action: &Action,
+        boundary: &CommitBoundaryState,
+    ) {
         if let Some(mut capture) =
             capture_ref_from_action(&self.session, self.source_graph.as_ref(), action, boundary)
         {
@@ -167,7 +186,13 @@ impl JamAppState {
                 });
             }
         }
+    }
 
+    fn apply_lane_scene_and_ghost_side_effects(
+        &mut self,
+        action: &Action,
+        boundary: &CommitBoundaryState,
+    ) {
         apply_w30_side_effects(&mut self.session, action, Some(boundary));
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
@@ -178,6 +203,9 @@ impl JamAppState {
             self.source_graph.as_ref(),
         );
         apply_ghost_side_effects(&mut self.session, action);
+    }
+
+    fn mirror_scene_commit_to_runtime_transport(&mut self, action: &Action) {
         if matches!(
             action.command,
             ActionCommand::SceneLaunch | ActionCommand::SceneRestore
