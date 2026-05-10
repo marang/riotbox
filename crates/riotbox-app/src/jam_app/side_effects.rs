@@ -2,8 +2,7 @@ use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
     ids::CaptureId,
     session::{
-        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
-        Tr909TakeoverProfileState, W30PreviewModeState,
+        SessionFile, Tr909ReinforcementModeState, Tr909TakeoverProfileState, W30PreviewModeState,
     },
     transport::CommitBoundaryState,
 };
