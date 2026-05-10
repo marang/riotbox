@@ -199,7 +199,14 @@ def main(argv: list[str]) -> int:
 
     seen_ids: set[str] = set()
     categories = {data_case.get("category") for data_case in cases if isinstance(data_case, dict)}
-    required_categories = {"clean_rhythm", "dense_break", "hook_forward", "half_time_ambiguity", "weak_timing"}
+    required_categories = {
+        "clean_rhythm",
+        "dense_break",
+        "hook_forward",
+        "half_time_ambiguity",
+        "double_time_ambiguity",
+        "weak_timing",
+    }
     missing_categories = sorted(required_categories - categories)
     if missing_categories:
         fail(f"missing required categories: {', '.join(missing_categories)}")
