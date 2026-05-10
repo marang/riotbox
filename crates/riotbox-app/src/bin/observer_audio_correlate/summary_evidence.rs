@@ -60,6 +60,7 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
         &summary.w30_source_grid_alignment,
         summary.w30_source_grid_alignment_malformed,
     ));
+    failures.extend(w30_source_loop_closure_failures(summary));
     failures
 }
 
@@ -143,6 +144,43 @@ fn w30_source_preview_metric_failures(summary: &CorrelationSummary) -> Vec<Strin
         ),
         ("w30_rms_delta", summary.w30_rms_delta),
     ])
+}
+
+fn w30_source_loop_closure_failures(summary: &CorrelationSummary) -> Vec<String> {
+    if summary.w30_source_loop_closure_malformed {
+        return vec!["w30_source_loop_closure=malformed".to_string()];
+    }
+
+    let Some(proof) = &summary.w30_source_loop_closure else {
+        return vec!["w30_source_loop_closure=missing".to_string()];
+    };
+
+    let mut failures = Vec::new();
+    if !proof.passed {
+        failures.push("w30_source_loop_closure.passed=false".to_string());
+    }
+    if proof.preview_rms <= STRICT_OUTPUT_METRIC_FLOOR {
+        failures.push(format!(
+            "w30_source_loop_closure.preview_rms={:.6} <= floor {:.6}",
+            proof.preview_rms, STRICT_OUTPUT_METRIC_FLOOR
+        ));
+    }
+    if !proof.source_contains_selection {
+        failures.push("w30_source_loop_closure.source_contains_selection=false".to_string());
+    }
+    if proof.edge_delta_abs > proof.max_allowed_edge_delta_abs {
+        failures.push(format!(
+            "w30_source_loop_closure.edge_delta_abs={:.6} > allowed {:.6}",
+            proof.edge_delta_abs, proof.max_allowed_edge_delta_abs
+        ));
+    }
+    if proof.edge_abs_max > proof.max_allowed_edge_abs {
+        failures.push(format!(
+            "w30_source_loop_closure.edge_abs_max={:.6} > allowed {:.6}",
+            proof.edge_abs_max, proof.max_allowed_edge_abs
+        ));
+    }
+    failures
 }
 
 fn metric_failures(metrics: impl IntoIterator<Item = (&'static str, Option<f64>)>) -> Vec<String> {

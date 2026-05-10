@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-002
 
 Date: 2026-04-12  
@@ -1454,4 +1456,18 @@ Decision: extend the lane recipe listening pack with `metrics.mc202_source_phras
 Why: MC-202 output can be internally quantized but still unrelated to source-derived phrase timing. P012 needs a bridge proof that MC-202 is attached to Source Graph timing before the full source-aware question/answer engine lands.
 Evidence: `mc202_lane_recipe_cases_consume_source_phrase_slots` and `mc202_source_phrase_slot_gate_rejects_non_source_phrase_boundary_candidate` cover the audio-side metric, observer/audio strict evidence rejects missing `mc202_source_phrase_slot`, and `just recipe2-observer-audio-gate` validates the generated manifest plus observer correlation path.
 Consequences: this is a bounded synthetic-source proof. It does not claim production arbitrary-audio phrase arrangement, but future MC-202 source-aware placement should consume the same Source Graph phrase-slot concept rather than introduce a lane-local timing model.
+Status: accepted
+
+---
+
+### RBX-031
+
+Date: 2026-05-10
+Topic: W-30 P012 proof should require bounded source-loop closure evidence
+Phase: Source Timing Intelligence / Audio QA
+Question: is W-30 source-grid alignment enough proof that the current source chop is a usable loop/chop unit?
+Decision: require Feral-grid manifests to include `metrics.w30_source_loop_closure` beside `w30_source_grid_alignment`. The first metric proves the selected source-backed preview is non-silent, maps back to its selected source window, and has faded edges inside edge-delta / edge-absolute budgets before strict observer/audio QA treats the W-30 output path as passing.
+Why: A W-30 stem can land on the grid but still be an unsafe or fallback-like chop if the selected micro-loop has loud unclosed edges or no real source-backed preview evidence. P012 needs timing and loop-closure proof to move toward musician-trustworthy source-derived sampling.
+Evidence: `w30_source_loop_closure_proves_repeat_safe_faded_chop_window` covers the audio-side metric, `strict_evidence_rejects_w30_source_loop_closure_failures` covers observer/audio strict rejection, and Feral-grid manifest assertions require the metric to pass.
+Consequences: this is a bounded micro-loop/chop-window QA proof, not the final automatic W-30 loop detector. Future loop detection should widen the same Source Graph timing/closure evidence instead of adding a lane-local timing model.
 Status: accepted

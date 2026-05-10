@@ -197,6 +197,11 @@ Early P011 guardrail defaults:
   RMS, normalized preview RMS/peak, selected source frame, gain, and reason label
   so reviewers can tell whether the W-30 stem used an articulate source segment
   and did not collapse back to a generic preview/control tone.
+- Feral grid W-30 source-chop output must also expose bounded repeat-safety
+  evidence under `metrics.w30_source_loop_closure`. The first proof checks that
+  the selected preview is non-silent, maps back to the selected source window,
+  and has faded edges inside edge-delta / edge-absolute budgets. This is a
+  micro-loop/chop-window QA proof, not the final W-30 loop detector.
 
 ### 3.3 Fixture-backed golden render review
 
@@ -661,9 +666,9 @@ Today the repo already has:
 - observer/audio summaries can surface Feral-grid `source_grid_output_drift`
   evidence and strict correlation requires Feral-grid manifests to include
   pack-level `source_grid_output_drift` plus lane-specific
-  `tr909_source_grid_alignment` and `w30_source_grid_alignment`; missing or
-  out-of-budget metrics fail the output path instead of being treated as an
-  optional note
+  `tr909_source_grid_alignment`, `w30_source_grid_alignment`, and
+  `w30_source_loop_closure`; missing or out-of-budget metrics fail the output
+  path instead of being treated as an optional note
 - observer/audio summaries can compare observer-side Source Timing readiness with
   manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
   strict correlation treats real mismatches as output-path failures while keeping

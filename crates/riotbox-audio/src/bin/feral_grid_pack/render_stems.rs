@@ -147,6 +147,15 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.w30_source_loop_closure.passed {
+        return Err(format!(
+            "W-30 source loop closure failed: edge_delta_abs {:.6} edge_abs_max {:.6}",
+            report.w30_source_loop_closure.edge_delta_abs,
+            report.w30_source_loop_closure.edge_abs_max
+        )
+        .into());
+    }
+
     Ok(())
 }
 
@@ -271,6 +280,9 @@ fn write_manifest(
             tr909_groove_timing: report.tr909_groove_timing,
             w30_source_chop_profile: manifest_w30_source_chop_profile(
                 report.w30_source_chop_profile,
+            ),
+            w30_source_loop_closure: manifest_w30_source_loop_closure_proof(
+                report.w30_source_loop_closure,
             ),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             w30_feral_source_chop: manifest_render_metrics(report.w30),

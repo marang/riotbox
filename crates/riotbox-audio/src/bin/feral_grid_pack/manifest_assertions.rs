@@ -159,6 +159,30 @@ mod manifest_assertions {
                 .expect("w30 source chop gain")
                 >= 0.85
         );
+        let w30_loop_closure = &manifest["metrics"]["w30_source_loop_closure"];
+        assert_eq!(w30_loop_closure["passed"], true);
+        assert!(
+            w30_loop_closure["preview_rms"]
+                .as_f64()
+                .expect("w30 loop closure preview rms")
+                > 0.0
+        );
+        assert!(
+            w30_loop_closure["edge_delta_abs"]
+                .as_f64()
+                .expect("w30 loop closure edge delta")
+                <= w30_loop_closure["max_allowed_edge_delta_abs"]
+                    .as_f64()
+                    .expect("w30 loop closure edge delta budget")
+        );
+        assert!(
+            w30_loop_closure["edge_abs_max"]
+                .as_f64()
+                .expect("w30 loop closure edge abs")
+                <= w30_loop_closure["max_allowed_edge_abs"]
+                    .as_f64()
+                    .expect("w30 loop closure edge abs budget")
+        );
         assert!(
             manifest["metrics"]["mix_balance"]["source_first_generated_to_source_rms_ratio"]
                 .as_f64()

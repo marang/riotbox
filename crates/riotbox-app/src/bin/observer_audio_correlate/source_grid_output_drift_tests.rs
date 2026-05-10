@@ -130,6 +130,37 @@ fn strict_evidence_rejects_malformed_lane_source_grid_alignment() {
     assert!(render_markdown(&summary).contains("Output path present: `no`"));
 }
 
+#[test]
+fn strict_evidence_rejects_w30_source_loop_closure_failures() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        synthetic_manifest_with_w30_loop_closure_failure(),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("w30 loop closure evidence");
+
+    assert!(error.to_string().contains("output-path manifest evidence"));
+    assert!(
+        error
+            .to_string()
+            .contains("w30_source_loop_closure.passed=false")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("w30_source_loop_closure.edge_delta_abs=0.120000")
+    );
+    let markdown = render_markdown(&summary);
+    assert!(markdown.contains("W-30 source-loop closure: `passed=no"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
 fn synthetic_observer() -> String {
     [
         r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
@@ -246,6 +277,53 @@ fn synthetic_manifest_with_malformed_lane_alignment() -> String {
     "tr909_source_grid_alignment": {
       "hit_ratio": 1.0,
       "max_allowed_peak_offset_ms": 70.0
+    }
+  }
+}"#
+    .to_string()
+}
+
+fn synthetic_manifest_with_w30_loop_closure_failure() -> String {
+    r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}],
+  "metrics": {
+    "full_grid_mix": {
+      "signal": { "rms": 0.1 },
+      "low_band": { "rms": 0.08 }
+    },
+    "source_grid_output_drift": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "tr909_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 5.13,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_loop_closure": {
+      "passed": false,
+      "selected_frame_count": 2048,
+      "preview_rms": 0.145,
+      "edge_delta_abs": 0.12,
+      "max_allowed_edge_delta_abs": 0.06,
+      "edge_abs_max": 0.08,
+      "max_allowed_edge_abs": 0.04,
+      "source_contains_selection": true,
+      "reason": "source_chop_loop_closure_out_of_budget"
     }
   }
 }"#

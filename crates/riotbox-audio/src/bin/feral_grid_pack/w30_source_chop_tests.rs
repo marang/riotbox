@@ -84,6 +84,55 @@ mod w30_source_chop_tests {
         );
     }
 
+    #[test]
+    fn w30_source_loop_closure_proves_repeat_safe_faded_chop_window() {
+        let pulse_source = delayed_pulse_source(frames_for_beats(128.0, 8), 1_200, 0.02, 0.55);
+        let (preview, profile) = source_chop_preview_from_interleaved(
+            &pulse_source,
+            usize::from(CHANNEL_COUNT),
+            0,
+            frames_for_beats(128.0, 8) as u64,
+        )
+        .expect("pulse preview");
+
+        let proof = w30_source_loop_closure_proof(&preview, profile);
+
+        assert!(proof.passed, "{proof:?}");
+        assert_eq!(proof.selected_frame_count, W30_PREVIEW_SAMPLE_WINDOW_LEN);
+        assert!(proof.preview_rms > MIN_SIGNAL_RMS);
+        assert!(proof.source_contains_selection);
+        assert!(proof.edge_delta_abs <= proof.max_allowed_edge_delta_abs);
+        assert!(proof.edge_abs_max <= proof.max_allowed_edge_abs);
+    }
+
+    #[test]
+    fn w30_source_loop_closure_rejects_unfaded_loud_edges() {
+        let mut preview = W30PreviewSampleWindow {
+            source_start_frame: 0,
+            source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
+            sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+            samples: [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN],
+        };
+        preview.samples[0] = 0.5;
+        preview.samples[W30_PREVIEW_SAMPLE_WINDOW_LEN - 1] = -0.5;
+        let profile = W30SourceChopProfile {
+            source_window_rms: 0.2,
+            selected_rms_before_gain: 0.2,
+            preview_rms: 0.2,
+            preview_peak_abs: 0.5,
+            selected_start_frame: 0,
+            selected_frame_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+            gain: 1.0,
+            reason: "test_unfaded_edges",
+        };
+
+        let proof = w30_source_loop_closure_proof(&preview, profile);
+
+        assert!(!proof.passed);
+        assert!(proof.edge_delta_abs > proof.max_allowed_edge_delta_abs);
+        assert!(proof.edge_abs_max > proof.max_allowed_edge_abs);
+    }
+
     fn render_w30_source_chop_control(grid: &Grid) -> Vec<f32> {
         render_w30_preview_offline(
             &W30PreviewRenderState {
