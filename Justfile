@@ -204,6 +204,7 @@ observer-audio-summary-validator-fixtures:
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_missing_metric_key.json; then echo "expected missing metric observer/audio summary fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_observer_source_timing_quality.json; then echo "expected invalid observer source timing quality fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_observer_source_timing_cue.json; then echo "expected invalid observer source timing cue fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_grid_bpm_decision_reason.json; then echo "expected invalid grid BPM decision reason fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_source_timing_alignment_status.json; then echo "expected invalid source timing alignment status fixture to fail" >&2; exit 1; fi
 
 user-session-observer-validator-fixtures:

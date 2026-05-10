@@ -30,6 +30,28 @@ GROOVE_SUBDIVISIONS = {
     "sixteenth",
     "thirty_second",
 }
+GRID_BPM_SOURCES = {
+    "unknown",
+    "user_override",
+    "source_timing",
+    "static_default",
+}
+GRID_BPM_DECISION_REASONS = {
+    "unknown",
+    "user_override",
+    "source_timing_ready",
+    "source_timing_needs_review_manual_confirm",
+    "source_timing_requires_manual_confirm",
+    "source_timing_not_ready",
+    "source_timing_missing_bpm",
+    "source_timing_invalid_bpm",
+}
+STATIC_DEFAULT_GRID_BPM_REASONS = {
+    "source_timing_requires_manual_confirm",
+    "source_timing_not_ready",
+    "source_timing_missing_bpm",
+    "source_timing_invalid_bpm",
+}
 
 
 def main() -> int:
@@ -72,10 +94,11 @@ def validate_summary(summary: Any) -> None:
     require_string(output_path, "pack_id")
     require_string(output_path, "manifest_result")
     require_int(output_path, "artifact_count")
-    require_string(output_path, "grid_bpm_source")
-    require_string(output_path, "grid_bpm_decision_reason")
+    require_one_of(output_path, "grid_bpm_source", GRID_BPM_SOURCES)
+    require_one_of(output_path, "grid_bpm_decision_reason", GRID_BPM_DECISION_REASONS)
     require_optional_number(output_path, "source_timing_bpm_delta")
     require_optional_source_timing(output_path)
+    require_output_grid_bpm_decision(output_path)
     require_optional_source_timing_alignment(output_path)
     require_optional_source_timing_anchor_alignment(output_path)
     require_optional_source_timing_groove_alignment(output_path)
@@ -214,6 +237,76 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
     require_number(alignment, "bpm_tolerance")
     require_string_list(alignment, "warning_overlap")
     require_string_list(alignment, "issues")
+
+
+def require_output_grid_bpm_decision(output_path: dict[str, Any]) -> None:
+    pack_id = output_path.get("pack_id")
+    source = output_path["grid_bpm_source"]
+    reason = output_path["grid_bpm_decision_reason"]
+    source_timing = output_path.get("source_timing")
+
+    if not output_path.get("present"):
+        if source != "unknown" or reason != "unknown":
+            raise ValueError("absent output_path requires unknown grid BPM source and reason")
+        return
+
+    if source == "unknown" or reason == "unknown":
+        if source == "unknown" and reason == "unknown" and pack_id != "feral-grid-demo":
+            return
+        raise ValueError(
+            "feral-grid output_path requires known grid BPM source and reason"
+        )
+    if source == "user_override" and reason != "user_override":
+        raise ValueError("user_override grid BPM source requires user_override decision reason")
+    if source == "static_default" and reason not in STATIC_DEFAULT_GRID_BPM_REASONS:
+        raise ValueError("static_default grid BPM source requires a fallback decision reason")
+    if source == "source_timing":
+        if reason not in {"source_timing_ready", "source_timing_needs_review_manual_confirm"}:
+            raise ValueError(
+                "source_timing grid BPM source requires a source-timing decision reason"
+            )
+        if not isinstance(source_timing, dict):
+            raise ValueError("source_timing grid BPM source requires source_timing evidence")
+
+    if not isinstance(source_timing, dict):
+        return
+    if reason == "source_timing_ready":
+        if source_timing.get("readiness") != "ready":
+            raise ValueError("source_timing_ready requires source_timing.readiness == ready")
+        if source_timing.get("requires_manual_confirm") is not False:
+            raise ValueError(
+                "source_timing_ready requires source_timing.requires_manual_confirm == false"
+            )
+    if reason == "source_timing_requires_manual_confirm":
+        if source_timing.get("requires_manual_confirm") is not True:
+            raise ValueError(
+                "source_timing_requires_manual_confirm requires manual confirmation evidence"
+            )
+    if reason == "source_timing_needs_review_manual_confirm":
+        if source_timing.get("readiness") != "needs_review":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires source_timing.readiness == needs_review"
+            )
+        if source_timing.get("requires_manual_confirm") is not True:
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires manual confirmation evidence"
+            )
+        if source_timing.get("beat_status") != "stable":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires stable beat evidence"
+            )
+        if source_timing.get("downbeat_status") != "stable":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires stable downbeat evidence"
+            )
+        if source_timing.get("confidence_result") != "candidate_cautious":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires candidate_cautious confidence"
+            )
+        if source_timing.get("alternate_evidence_count") != 0:
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires no alternate evidence"
+            )
 
 
 def require_optional_source_timing_anchor_alignment(parent: dict[str, Any]) -> None:
