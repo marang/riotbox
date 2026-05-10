@@ -6,7 +6,7 @@ use riotbox_core::replay::{
 };
 
 use super::lifecycle::latest_commit_boundary_from_log;
-use super::*;
+use super::{JamAppState, max_action_id, transport_clock_from_state};
 
 impl JamAppState {
     pub fn restore_target_dry_run_summary(
