@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::ExitCode;
 
@@ -24,8 +25,16 @@ struct FixtureEvaluationReport {
     schema_version: u32,
     catalog_path: String,
     case_count: usize,
+    category_coverage: Vec<CategoryCoverage>,
     passed: bool,
     evaluations: Vec<TimingFixtureEvaluation>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+struct CategoryCoverage {
+    category: String,
+    case_count: usize,
+    passed: bool,
 }
 
 fn main() -> ExitCode {
@@ -107,11 +116,23 @@ fn build_report(catalog_path: &Path) -> Result<FixtureEvaluationReport, String> 
         .ok_or_else(|| "fixture catalog cases must be an array".to_string())?;
 
     let mut evaluations = Vec::with_capacity(cases.len());
+    let mut category_coverage = BTreeMap::<String, CategoryCoverage>::new();
     for case in cases {
+        let category = fixture_category_from_case(case)?;
         let seed = source_timing_analysis_seed_from_fixture_case(case)?;
         let target = timing_fixture_evaluation_target_from_fixture_case(case)?;
         let timing = analyze_source_timing_seed(&seed);
-        evaluations.push(evaluate_timing_fixture_output(&timing, &target));
+        let evaluation = evaluate_timing_fixture_output(&timing, &target);
+        let coverage = category_coverage
+            .entry(category.clone())
+            .or_insert_with(|| CategoryCoverage {
+                category,
+                case_count: 0,
+                passed: true,
+            });
+        coverage.case_count += 1;
+        coverage.passed &= evaluation.passed;
+        evaluations.push(evaluation);
     }
 
     Ok(FixtureEvaluationReport {
@@ -119,9 +140,18 @@ fn build_report(catalog_path: &Path) -> Result<FixtureEvaluationReport, String> 
         schema_version: 1,
         catalog_path: catalog_path.display().to_string(),
         case_count: evaluations.len(),
+        category_coverage: category_coverage.into_values().collect(),
         passed: evaluations.iter().all(|evaluation| evaluation.passed),
         evaluations,
     })
+}
+
+fn fixture_category_from_case(case: &serde_json::Value) -> Result<String, String> {
+    case.get("category")
+        .and_then(serde_json::Value::as_str)
+        .filter(|category| !category.is_empty())
+        .map(Into::into)
+        .ok_or_else(|| "fixture case category must be a non-empty string".to_string())
 }
 
 fn render_markdown_report(report: &FixtureEvaluationReport) -> String {
@@ -134,6 +164,19 @@ fn render_markdown_report(report: &FixtureEvaluationReport) -> String {
         "- Result: `{}`\n\n",
         if report.passed { "pass" } else { "fail" }
     ));
+    markdown.push_str("## Category Coverage\n\n");
+    markdown.push_str("| Category | Cases | Result |\n");
+    markdown.push_str("|---|---:|---:|\n");
+    for coverage in &report.category_coverage {
+        markdown.push_str(&format!(
+            "| `{}` | `{}` | `{}` |\n",
+            coverage.category,
+            coverage.case_count,
+            if coverage.passed { "pass" } else { "fail" },
+        ));
+    }
+    markdown.push('\n');
+    markdown.push_str("## Fixture Evaluations\n\n");
     markdown.push_str(
         "| Fixture | Result | BPM Error | Confidence | Mean Drift | Max Drift | Issues |\n",
     );
@@ -223,7 +266,14 @@ mod tests {
         assert_eq!(report_json["schema"], SCHEMA);
         assert_eq!(report_json["schema_version"], 1);
         assert_eq!(report_json["passed"], true);
-        assert!(report.case_count >= 5);
+        assert!(report.case_count >= 7);
+        assert_category_covered(&report, "clean_rhythm");
+        assert_category_covered(&report, "dense_break");
+        assert_category_covered(&report, "hook_forward");
+        assert_category_covered(&report, "half_time_ambiguity");
+        assert_category_covered(&report, "double_time_ambiguity");
+        assert_category_covered(&report, "high_drift");
+        assert_category_covered(&report, "weak_timing");
         assert_eq!(
             report_json["evaluations"][0]["fixture_id"],
             "fx_timing_clean_128_4x4"
@@ -241,6 +291,11 @@ mod tests {
             schema_version: 1,
             catalog_path: "fixtures/catalog.json".into(),
             case_count: 1,
+            category_coverage: vec![CategoryCoverage {
+                category: "clean_rhythm".into(),
+                case_count: 1,
+                passed: true,
+            }],
             passed: true,
             evaluations: vec![TimingFixtureEvaluation {
                 fixture_id: "fx_timing_clean_128_4x4".into(),
@@ -259,6 +314,9 @@ mod tests {
         let markdown = render_markdown_report(&report);
 
         assert!(markdown.contains("# Source Timing Fixture Evaluation Report"));
+        assert!(markdown.contains("## Category Coverage"));
+        assert!(markdown.contains("| `clean_rhythm` | `1` | `pass` |"));
+        assert!(markdown.contains("## Fixture Evaluations"));
         assert!(markdown.contains("fx_timing_clean_128_4x4"));
         assert!(markdown.contains("| `fx_timing_clean_128_4x4` | `pass` |"));
         assert!(markdown.contains("`none`"));
@@ -350,6 +408,16 @@ mod tests {
             .join("tests/fixtures/source_timing/timing_fixture_catalog.json");
         let catalog_text = std::fs::read_to_string(catalog_path).expect("read catalog");
         serde_json::from_str(&catalog_text).expect("parse catalog")
+    }
+
+    fn assert_category_covered(report: &FixtureEvaluationReport, category: &str) {
+        let coverage = report
+            .category_coverage
+            .iter()
+            .find(|coverage| coverage.category == category)
+            .unwrap_or_else(|| panic!("missing category coverage for {category}"));
+        assert!(coverage.case_count > 0, "{coverage:?}");
+        assert!(coverage.passed, "{coverage:?}");
     }
 
     fn write_temp_catalog(name: &str, catalog: &serde_json::Value) -> PathBuf {
