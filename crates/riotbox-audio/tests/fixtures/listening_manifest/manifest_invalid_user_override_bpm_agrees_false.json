@@ -1,0 +1,51 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "grid_bpm_source": "user_override",
+  "grid_bpm_decision_reason": "user_override",
+  "source_timing_bpm_delta": 0.397,
+  "artifacts": [
+    {
+      "role": "full_grid_mix",
+      "kind": "audio_wav",
+      "path": "04_full_grid_mix.wav",
+      "metrics_path": "04_full_grid_mix.metrics.md"
+    }
+  ],
+  "source_timing": {
+    "schema": "riotbox.source_timing_probe_readiness.v1",
+    "schema_version": 1,
+    "source_id": "source.wav",
+    "policy_profile": "dance_loop_auto_readiness",
+    "readiness": "needs_review",
+    "requires_manual_confirm": true,
+    "primary_bpm": 128.397,
+    "bpm_agrees_with_grid": false,
+    "primary_downbeat_offset_beats": 0,
+    "beat_status": "stable",
+    "downbeat_status": "stable",
+    "confidence_result": "candidate_cautious",
+    "drift_status": "not_enough_material",
+    "phrase_status": "not_enough_material",
+    "anchor_evidence": {
+      "primary_anchor_count": 8,
+      "primary_kick_anchor_count": 2,
+      "primary_backbeat_anchor_count": 4,
+      "primary_transient_anchor_count": 2
+    },
+    "groove_evidence": {
+      "primary_groove_residual_count": 1,
+      "primary_max_abs_offset_ms": 12.5,
+      "primary_groove_preview": [
+        {
+          "subdivision": "eighth",
+          "offset_ms": 12.5,
+          "confidence": 0.55
+        }
+      ]
+    },
+    "alternate_evidence_count": 0,
+    "warning_codes": ["PhraseUncertain"]
+  }
+}
