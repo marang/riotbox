@@ -88,6 +88,16 @@ anonymous readiness label.
 The same manifests must include `grid_bpm_decision_reason` so QA can distinguish
 trusted source timing, explicit user override, manual-confirm fallback,
 weak/not-ready timing, and missing or invalid source BPM evidence.
+The current accepted `grid_bpm_source` values for modern Feral-grid manifests
+are `user_override`, `source_timing`, and `static_default`.
+Modern Feral-grid manifests must also include `source_timing_bpm_delta` as a
+number or `null`. The delta is not free-form metadata: it must match the grid
+BPM decision and `source_timing.bpm_agrees_with_grid`. `source_timing` decisions
+require a numeric `0.0` delta and agreement. `static_default` and
+`user_override` decisions with usable source BPM evidence require a numeric
+delta, and agreement is derived from the current `1.0` BPM tolerance. Missing or
+invalid source BPM fallback reasons require a `null` delta and
+`bpm_agrees_with_grid: null`.
 
 When present, `source_timing` must include:
 
