@@ -15,6 +15,7 @@ const DEFAULT_CATALOG: &str =
 #[derive(Clone, Debug, PartialEq)]
 struct Args {
     catalog_path: PathBuf,
+    markdown_output: Option<PathBuf>,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
@@ -53,11 +54,17 @@ fn main() -> ExitCode {
 
 fn run(args: impl IntoIterator<Item = String>) -> Result<FixtureEvaluationReport, String> {
     let args = parse_args(args)?;
-    build_report(&args.catalog_path)
+    let report = build_report(&args.catalog_path)?;
+    if let Some(markdown_output) = args.markdown_output {
+        std::fs::write(&markdown_output, render_markdown_report(&report))
+            .map_err(|error| format!("failed to write {}: {error}", markdown_output.display()))?;
+    }
+    Ok(report)
 }
 
 fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Args, String> {
     let mut catalog_path = PathBuf::from(DEFAULT_CATALOG);
+    let mut markdown_output = None;
     let mut args = args.into_iter();
 
     while let Some(arg) = args.next() {
@@ -68,16 +75,25 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Args, String> {
                     .ok_or_else(|| "--catalog requires a path".to_string())?;
                 catalog_path = PathBuf::from(value);
             }
+            "--markdown-output" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| "--markdown-output requires a path".to_string())?;
+                markdown_output = Some(PathBuf::from(value));
+            }
             "--help" | "-h" => {
                 return Err(format!(
-                    "usage: source_timing_fixture_report [--catalog {DEFAULT_CATALOG}]"
+                    "usage: source_timing_fixture_report [--catalog {DEFAULT_CATALOG}] [--markdown-output report.md]"
                 ));
             }
             _ => return Err(format!("unknown argument: {arg}")),
         }
     }
 
-    Ok(Args { catalog_path })
+    Ok(Args {
+        catalog_path,
+        markdown_output,
+    })
 }
 
 fn build_report(catalog_path: &Path) -> Result<FixtureEvaluationReport, String> {
@@ -108,6 +124,61 @@ fn build_report(catalog_path: &Path) -> Result<FixtureEvaluationReport, String> 
     })
 }
 
+fn render_markdown_report(report: &FixtureEvaluationReport) -> String {
+    let mut markdown = String::new();
+    markdown.push_str("# Source Timing Fixture Evaluation Report\n\n");
+    markdown.push_str(&format!("- Schema: `{}`\n", report.schema));
+    markdown.push_str(&format!("- Catalog: `{}`\n", report.catalog_path));
+    markdown.push_str(&format!("- Cases: `{}`\n", report.case_count));
+    markdown.push_str(&format!(
+        "- Result: `{}`\n\n",
+        if report.passed { "pass" } else { "fail" }
+    ));
+    markdown.push_str(
+        "| Fixture | Result | BPM Error | Confidence | Mean Drift | Max Drift | Issues |\n",
+    );
+    markdown.push_str("|---|---:|---:|---:|---:|---:|---|\n");
+
+    for evaluation in &report.evaluations {
+        markdown.push_str(&format!(
+            "| `{}` | `{}` | `{:.3}` | {} | {} | {} | {} |\n",
+            evaluation.fixture_id,
+            if evaluation.passed { "pass" } else { "fail" },
+            evaluation.bpm_error,
+            optional_f32_label(evaluation.primary_confidence),
+            optional_f32_label(evaluation.primary_max_mean_abs_drift_ms),
+            optional_f32_label(evaluation.primary_max_drift_ms),
+            issue_label(evaluation),
+        ));
+    }
+
+    markdown
+}
+
+fn optional_f32_label(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("`{value:.3}`"))
+        .unwrap_or_else(|| "`unknown`".into())
+}
+
+fn issue_label(evaluation: &TimingFixtureEvaluation) -> String {
+    if evaluation.issues.is_empty() {
+        return "`none`".into();
+    }
+
+    evaluation
+        .issues
+        .iter()
+        .map(|issue| {
+            serde_json::to_string(issue)
+                .unwrap_or_else(|_| format!("{issue:?}"))
+                .trim_matches('"')
+                .to_string()
+        })
+        .collect::<Vec<_>>()
+        .join(", ")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -117,13 +188,21 @@ mod tests {
         assert_eq!(
             parse_args(Vec::<String>::new()).expect("default args"),
             Args {
-                catalog_path: PathBuf::from(DEFAULT_CATALOG)
+                catalog_path: PathBuf::from(DEFAULT_CATALOG),
+                markdown_output: None,
             }
         );
         assert_eq!(
-            parse_args(["--catalog".into(), "fixtures/catalog.json".into()]).expect("custom args"),
+            parse_args([
+                "--catalog".into(),
+                "fixtures/catalog.json".into(),
+                "--markdown-output".into(),
+                "report.md".into(),
+            ])
+            .expect("custom args"),
             Args {
-                catalog_path: PathBuf::from("fixtures/catalog.json")
+                catalog_path: PathBuf::from("fixtures/catalog.json"),
+                markdown_output: Some(PathBuf::from("report.md")),
             }
         );
     }
@@ -153,5 +232,35 @@ mod tests {
         assert!(report_json["evaluations"][0]["primary_confidence"].is_number());
         assert!(report_json["evaluations"][0]["primary_max_drift_ms"].is_number());
         assert!(report_json["evaluations"][0]["issues"].is_array());
+    }
+
+    #[test]
+    fn markdown_report_uses_json_report_data() {
+        let report = FixtureEvaluationReport {
+            schema: SCHEMA,
+            schema_version: 1,
+            catalog_path: "fixtures/catalog.json".into(),
+            case_count: 1,
+            passed: true,
+            evaluations: vec![TimingFixtureEvaluation {
+                fixture_id: "fx_timing_clean_128_4x4".into(),
+                passed: true,
+                bpm_error: 0.397,
+                beat_count: 32,
+                bar_count: 8,
+                phrase_count: 2,
+                primary_confidence: Some(0.85),
+                primary_max_mean_abs_drift_ms: Some(17.5),
+                primary_max_drift_ms: Some(35.0),
+                issues: vec![],
+            }],
+        };
+
+        let markdown = render_markdown_report(&report);
+
+        assert!(markdown.contains("# Source Timing Fixture Evaluation Report"));
+        assert!(markdown.contains("fx_timing_clean_128_4x4"));
+        assert!(markdown.contains("| `fx_timing_clean_128_4x4` | `pass` |"));
+        assert!(markdown.contains("`none`"));
     }
 }
