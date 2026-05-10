@@ -714,6 +714,10 @@ Today the repo already has:
 - generated Feral grid observer/audio correlation now gates on aligned source
   timing evidence: observer readiness and manifest timing must stay within BPM
   tolerance, share normalized warning evidence, and report no alignment issues
+- the same generated Feral grid gate also proves the conservative fallback path:
+  weak/unavailable source timing must report `grid_bpm_source: static_default`
+  with an explicit fallback `grid_bpm_decision_reason`, while the observer/audio
+  summary still preserves aligned warning evidence and non-collapsed output
 - generated Feral grid observer/audio correlation now also reports source timing
   anchor and groove alignment separately, so QA can distinguish a grid/BPM match
   from missing musical anchor evidence or missing groove-residual evidence

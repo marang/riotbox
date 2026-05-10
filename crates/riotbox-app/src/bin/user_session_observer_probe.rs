@@ -21,10 +21,11 @@ use serde_json::{Value, json};
 mod probe_scenarios;
 
 use probe_scenarios::{
-    write_feral_grid_jam_observer, write_feral_grid_locked_jam_observer,
-    write_first_playable_jam_observer, write_interrupted_session_recovery_observer,
-    write_missing_target_recovery_observer, write_recipe2_mc202_observer,
-    write_stage_style_jam_observer, write_stage_style_restore_diversity_observer,
+    write_feral_grid_fallback_jam_observer, write_feral_grid_jam_observer,
+    write_feral_grid_locked_jam_observer, write_first_playable_jam_observer,
+    write_interrupted_session_recovery_observer, write_missing_target_recovery_observer,
+    write_recipe2_mc202_observer, write_stage_style_jam_observer,
+    write_stage_style_restore_diversity_observer,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -46,10 +47,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         "missing-target-recovery" => write_missing_target_recovery_observer(&args.observer_path)?,
         "feral-grid-jam" => write_feral_grid_jam_observer(&args.observer_path)?,
+        "feral-grid-jam-fallback" => write_feral_grid_fallback_jam_observer(&args.observer_path)?,
         "feral-grid-jam-locked" => write_feral_grid_locked_jam_observer(&args.observer_path)?,
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-locked"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked"
             )
             .into());
         }
@@ -109,7 +111,7 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-locked> --observer <events.ndjson>"
+        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-fallback|feral-grid-jam-locked> --observer <events.ndjson>"
     );
 }
 
