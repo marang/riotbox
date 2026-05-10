@@ -189,6 +189,13 @@ Per lane, store only the state required to reproduce behavior:
 - W-30 preview intent plus bank/pad focus and current capture reference
 - TR-909 takeover, pattern, and reinforcement state
 
+MC-202 role and phrase-variant fields currently use stable compatibility labels
+in persisted sessions. Those labels are behavior-relevant and must not drift as
+ad-hoc strings. The typed migration path is documented in
+`docs/reviews/mc202_typed_contract_migration_plan_2026-05-10.md`; until a
+session-version migration is explicitly shipped, old session JSON must continue
+to restore and replay.
+
 ### 8.4 Mixer state
 
 - per-bus levels
