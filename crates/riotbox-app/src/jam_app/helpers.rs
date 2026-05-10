@@ -1,5 +1,8 @@
 use riotbox_core::{
-    action::{ActionCommand, ActionResult},
+    action::{
+        ActionCommand, ActionDraft, ActionParams, ActionResult, ActionTarget, ActorType,
+        Quantization, TargetScope,
+    },
     ids::ActionId,
     session::{CaptureRef, SessionFile},
 };
@@ -57,4 +60,31 @@ pub(in crate::jam_app) fn update_logged_action_result(
             summary: summary.into(),
         });
     }
+}
+
+pub(in crate::jam_app) fn user_lane_mutation_draft(
+    command: ActionCommand,
+    quantization: Quantization,
+    scope: TargetScope,
+    target_id: impl Into<String>,
+    intensity: f32,
+    explanation: impl Into<String>,
+) -> ActionDraft {
+    let target_id = target_id.into();
+    let mut draft = ActionDraft::new(
+        ActorType::User,
+        command,
+        quantization,
+        ActionTarget {
+            scope: Some(scope),
+            object_id: Some(target_id.clone()),
+            ..Default::default()
+        },
+    );
+    draft.params = ActionParams::Mutation {
+        intensity,
+        target_id: Some(target_id),
+    };
+    draft.explanation = Some(explanation.into());
+    draft
 }
