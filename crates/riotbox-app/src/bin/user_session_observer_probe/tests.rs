@@ -219,6 +219,43 @@ fn writes_feral_grid_jam_observer_stream() {
 }
 
 #[test]
+fn writes_feral_grid_fallback_jam_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_feral_grid_fallback_jam_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"feral-grid-jam-fallback""#));
+    assert!(events.contains(r#""source_timing":{"#));
+    assert!(events.contains(r#""source_id":"src-feral-grid-probe""#));
+    assert!(events.contains(r#""quality":"low""#));
+    assert!(events.contains(r#""degraded_policy":"fallback_grid""#));
+    assert!(events.contains(r#""cue":"fallback grid""#));
+    assert!(events.contains(r#""beat_status":"unknown""#));
+    assert!(events.contains(r#""downbeat_status":"unknown""#));
+    assert!(events.contains(r#""phrase_status":"unknown""#));
+    let source_timing = first_source_timing_snapshot(&events);
+    assert_eq!(source_timing["bpm_estimate"], Value::Null);
+    assert_eq!(
+        source_timing["primary_warning_code"],
+        "low_timing_confidence"
+    );
+    assert_eq!(source_timing["anchor_evidence"]["primary_anchor_count"], 0);
+    assert_eq!(
+        source_timing["groove_evidence"]["primary_groove_residual_count"],
+        0
+    );
+    assert!(events.contains(r#""low_timing_confidence""#));
+    assert!(events.contains(r#""weak_kick_anchor""#));
+    assert!(events.contains(r#""outcome":"toggle_transport""#));
+    assert!(events.contains(r#""outcome":"queue_tr909_fill""#));
+    assert!(events.contains(r#""outcome":"queue_mc202_generate_follower""#));
+    assert_eq!(events.matches(r#""boundary":"Bar""#).count(), 1);
+    assert_eq!(events.matches(r#""boundary":"Phrase""#).count(), 1);
+}
+
+#[test]
 fn writes_feral_grid_locked_jam_observer_stream() {
     let temp = tempfile::tempdir().expect("tempdir");
     let path = temp.path().join("events.ndjson");
