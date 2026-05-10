@@ -270,4 +270,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Handle archive generator network failures cleanly
 - [RIOTBOX-759.md](./RIOTBOX-759.md)
   Bound optional MemPalace status during ticket closeout
+- [RIOTBOX-760.md](./RIOTBOX-760.md)
+  Fix closeout optional timeout status reporting
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
