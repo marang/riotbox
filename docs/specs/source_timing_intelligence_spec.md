@@ -361,6 +361,10 @@ Rules:
   BPM is finite, exactly one primary timing hypothesis exists, there are no
   timing warnings or alternate hypotheses, preliminary phrase evidence is
   present, and drift stays within the strict locked threshold of 35 ms
+- source timing probe readiness may expose stable beat/downbeat evidence while
+  still requiring manual confirmation; in that case the readiness status must be
+  `needs_review`, not `ready`, so `ready` always means the compact probe summary
+  is usable without a manual-confirm cue
 - `cautious` should reduce destructive lane suggestions
 - `manual_confirm` is required when an action would make strong musical claims
   on ambiguous timing

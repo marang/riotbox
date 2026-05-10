@@ -4,7 +4,7 @@
   "source_path": "source.wav",
   "source_id": "source.wav",
   "cue": "grid locked",
-  "readiness": "ready",
+  "readiness": "needs_review",
   "requires_manual_confirm": true,
   "primary_bpm": 128.0,
   "primary_beat_score": 0.99,

@@ -4,7 +4,7 @@
   "source_path": "data/test_audio/examples/Beat08_128BPM(Full).wav",
   "source_id": "data/test_audio/examples/Beat08_128BPM(Full).wav",
   "cue": "needs confirm",
-  "readiness": "ready",
+  "readiness": "needs_review",
   "requires_manual_confirm": true,
   "primary_bpm": 128.39673,
   "primary_beat_score": 0.9921391,

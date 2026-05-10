@@ -57,11 +57,11 @@ than pack BPM decision fields.
 
 | Source | Cue | Readiness | Manual confirm | Primary BPM | Beat | Downbeat | Phrase | Warnings | Practical guidance |
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- |
-| `Beat03_130BPM(Full).wav` | `needs confirm` | `ready` | yes | 130.285 | stable | stable | not_enough_material | `PhraseUncertain` | BPM, beat, and downbeat are useful, but short-loop phrase absence still blocks automatic trust. |
-| `Beat08_128BPM(Full).wav` | `needs confirm` | `ready` | yes | 128.397 | stable | stable | not_enough_material | `PhraseUncertain` | Same: usable grid evidence, still needs explicit confirmation for phrase-level confidence. |
+| `Beat03_130BPM(Full).wav` | `needs confirm` | `needs_review` | yes | 130.285 | stable | stable | not_enough_material | `PhraseUncertain` | BPM, beat, and downbeat are useful, but short-loop phrase absence still blocks automatic trust. |
+| `Beat08_128BPM(Full).wav` | `needs confirm` | `needs_review` | yes | 128.397 | stable | stable | not_enough_material | `PhraseUncertain` | Same: usable grid evidence, still needs explicit confirmation for phrase-level confidence. |
 | `Beat20_128BPM(Full).wav` | `needs confirm` | `weak` | yes | 128.397 | stable | weak | not_enough_material | `PhraseUncertain`, `AmbiguousDownbeat` | Keep conservative; downbeat evidence is not stable enough. |
-| `DH_BeatC_120-01.wav` | `needs confirm` | `ready` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
-| `DH_BeatC_KickSnr_120-01.wav` | `needs confirm` | `ready` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
+| `DH_BeatC_120-01.wav` | `needs confirm` | `needs_review` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
+| `DH_BeatC_KickSnr_120-01.wav` | `needs confirm` | `needs_review` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
 | `DH_Fadapad_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Correctly not a drum-timing source for this probe path. |
 | `DH_RushArp_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Needs a melodic/source-chop path, not TR-style timing trust. |
 
@@ -72,8 +72,8 @@ for every source:
 
 - the CLI now finds useful BPM and often stable downbeat evidence for several
   short drum loops
-- `readiness=ready` can still pair with `requires_manual_confirm=true`; this is
-  safe but confusing and should be refined before musicians depend on it
+- `ready` no longer pairs with `requires_manual_confirm=true`; stable short-loop
+  grids that still need a human decision are now reported as `needs_review`
 - short-loop phrase absence is currently reported as `not_enough_material` /
   `PhraseUncertain`, even when beat and downbeat are stable
 - sources with a known BPM should still use explicit BPM in musician-facing

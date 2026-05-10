@@ -53,7 +53,7 @@ python3 scripts/validate_listening_manifest_json.py \
 jq -e \
   '.grid_bpm_source == "static_default"
     and .grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
-    and .source_timing.readiness == "ready"
+    and .source_timing.readiness == "needs_review"
     and .source_timing.requires_manual_confirm == true
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .metrics.tr909_groove_timing.applied == false

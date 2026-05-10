@@ -126,7 +126,7 @@ fn source_timing_probe_keeps_flat_loop_degraded_for_dance_auto_readiness() {
 }
 
 #[test]
-fn source_timing_probe_accepts_real_loop_like_ready_readiness() {
+fn source_timing_probe_keeps_manual_confirmed_real_loop_like_grid_in_review() {
     let tempdir = tempdir().expect("create tempdir");
     let source_path = tempdir.path().join("real_loop_like_ready_128.wav");
     let samples = real_loop_like_accented_drum_samples_128_bpm();
@@ -160,7 +160,11 @@ fn source_timing_probe_accepts_real_loop_like_ready_readiness() {
         readiness.phrase_status,
         SourceTimingCandidatePhraseStatus::Stable
     );
-    assert_eq!(readiness.readiness, SourceTimingProbeReadinessStatus::Ready);
+    assert_eq!(
+        readiness.readiness,
+        SourceTimingProbeReadinessStatus::NeedsReview
+    );
+    assert!(readiness.requires_manual_confirm);
     assert!(
         !readiness
             .warning_codes
@@ -169,6 +173,53 @@ fn source_timing_probe_accepts_real_loop_like_ready_readiness() {
     );
     assert!(
         !readiness
+            .warning_codes
+            .contains(&TimingWarningCode::PhraseUncertain),
+        "{readiness:?}"
+    );
+}
+
+#[test]
+fn source_timing_probe_keeps_short_real_loop_like_grid_in_review() {
+    let tempdir = tempdir().expect("create tempdir");
+    let source_path = tempdir.path().join("short_real_loop_like_128.wav");
+    let samples = short_real_loop_like_accented_drum_samples_128_bpm();
+    write_interleaved_pcm16_wav(&source_path, 32_768, 1, &samples).expect("write source");
+    let source = SourceAudioCache::load_pcm_wav(&source_path).expect("load source");
+
+    let probe = analyze_source_timing_probe(&source, SourceTimingProbeConfig::default());
+    let candidate_input = probe.bpm_candidate_input(
+        "short-real-loop-like-128",
+        MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+    );
+    let readiness = source_timing_probe_readiness_report(
+        &candidate_input,
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert_bpm_near(readiness.primary_bpm, 128.0, 1.0);
+    assert_eq!(
+        readiness.beat_status,
+        SourceTimingProbeBeatEvidenceStatus::Stable
+    );
+    assert_eq!(
+        readiness.downbeat_status,
+        SourceTimingProbeDownbeatEvidenceStatus::Stable
+    );
+    assert_eq!(
+        readiness.phrase_status,
+        SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+    );
+    assert_eq!(
+        readiness.readiness,
+        SourceTimingProbeReadinessStatus::NeedsReview
+    );
+    assert!(readiness.requires_manual_confirm);
+    assert!(
+        readiness
             .warning_codes
             .contains(&TimingWarningCode::PhraseUncertain),
         "{readiness:?}"
@@ -200,6 +251,21 @@ fn real_loop_like_flat_drum_samples_128_bpm() -> Vec<f32> {
 fn real_loop_like_accented_drum_samples_128_bpm() -> Vec<f32> {
     const BEAT_FRAMES: usize = 15_360;
     const BEATS: usize = 32;
+
+    let mut samples = vec![0.0_f32; BEAT_FRAMES * BEATS];
+    for beat in 0..BEATS {
+        let start = beat * BEAT_FRAMES;
+        let amplitude = if beat % 4 == 0 { 1.0 } else { 0.45 };
+        add_impulse(&mut samples, start, 96, amplitude);
+        add_impulse(&mut samples, start + BEAT_FRAMES / 2, 32, 0.08);
+    }
+
+    samples
+}
+
+fn short_real_loop_like_accented_drum_samples_128_bpm() -> Vec<f32> {
+    const BEAT_FRAMES: usize = 15_360;
+    const BEATS: usize = 16;
 
     let mut samples = vec![0.0_f32; BEAT_FRAMES * BEATS];
     for beat in 0..BEATS {
