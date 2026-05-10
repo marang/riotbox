@@ -362,6 +362,11 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - verification summary
   - decision-log or spec links touched by the ticket
 - Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
+- For the deletion check, verify archive presence by path or exact metadata only; do not read or semantically search the whole archive.
+- Prefer:
+  - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
+  - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
+- Do not use MemPalace as the deletion gate. Exact filesystem / metadata checks are the source of truth for whether the archive handoff exists.
 - Prefer the repo-local helper for deletion:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - Use token auth for that helper:

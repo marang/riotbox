@@ -10,6 +10,13 @@ This archive is excluded from default `rg` searches by `.rgignore` so routine ag
 rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues
 ```
 
+For Linear deletion checks, do not read the archive content broadly. Verify only the archive handoff:
+
+```bash
+test -f docs/archive/linear_issues/RIOTBOX-123.md
+rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues
+```
+
 ## Canonical Roles
 
 - `Linear`

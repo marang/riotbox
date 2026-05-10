@@ -527,6 +527,10 @@ Deletion rule:
   - the PR is merged
   - the issue is marked done
   - the repo archive entry exists
+- verify archive presence by exact file or metadata check, not by reading or semantically searching the whole archive:
+  - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
+  - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
+- do not use MemPalace as the deletion gate; exact filesystem / metadata checks are more reliable for cleanup decisions
 - when deleting, prefer the repo-local helper:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - the helper should use token auth via `LINEAR_API_TOKEN`
