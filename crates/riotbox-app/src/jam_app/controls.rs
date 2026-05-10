@@ -1,4 +1,4 @@
-use super::*;
+use super::state::JamAppState;
 
 impl JamAppState {
     pub fn toggle_pin_latest_capture(&mut self) -> Option<bool> {
