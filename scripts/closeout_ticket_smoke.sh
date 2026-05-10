@@ -19,6 +19,11 @@ grep -q "dry-run complete for RIOTBOX-755" "$tmp/dry-run.out"
 scripts/closeout_ticket.sh --ticket RIOTBOX-755 --mem-status --mem-status-timeout 1 >"$tmp/mem-dry-run.out"
 grep -q "dry-run: timeout 1s" "$tmp/mem-dry-run.out"
 
+CLOSEOUT_MEM_STATUS_COMMAND='sleep 2' \
+  scripts/closeout_ticket.sh --ticket RIOTBOX-755 --mem-status --mem-status-timeout 1 --execute \
+  >"$tmp/mem-timeout.out"
+grep -q "optional command timed out after 1s" "$tmp/mem-timeout.out"
+
 placeholder_ticket="RIOTBOX-999998"
 placeholder_archive="docs/archive/linear_issues/${placeholder_ticket}.md"
 cp docs/archive/linear_issues/index.md "$tmp/index.md"
