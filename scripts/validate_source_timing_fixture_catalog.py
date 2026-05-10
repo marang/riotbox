@@ -18,6 +18,7 @@ CATEGORIES = {
     "hook_forward",
     "half_time_ambiguity",
     "double_time_ambiguity",
+    "high_drift",
     "weak_timing",
 }
 WARNINGS = {
@@ -164,10 +165,42 @@ def validate_case(case: object, seen_ids: set[str]) -> str:
         if alt_confidence > 1.0:
             fail(f"{fixture_id}: alternative {index} confidence_floor must be <= 1.0")
 
+    drift = expected.get("drift")
+    if drift is not None:
+        if not isinstance(drift, dict):
+            fail(f"{fixture_id}: drift must be an object")
+        finite_int(drift.get("window_bars"), f"{fixture_id}: drift.window_bars", minimum=1)
+        max_drift_ms = finite_number(
+            drift.get("max_drift_ms"),
+            f"{fixture_id}: drift.max_drift_ms",
+            minimum=0.0,
+        )
+        finite_number(
+            drift.get("mean_abs_drift_ms"),
+            f"{fixture_id}: drift.mean_abs_drift_ms",
+            minimum=0.0,
+        )
+        end_drift_ms = finite_number(
+            drift.get("end_drift_ms"),
+            f"{fixture_id}: drift.end_drift_ms",
+        )
+    else:
+        max_drift_ms = 0.0
+        end_drift_ms = 0.0
+
     if category == "clean_rhythm" and (quality != "high" or policy != "locked"):
         fail(f"{fixture_id}: clean rhythm seeds must be high/locked")
     if category == "weak_timing" and quality == "high":
         fail(f"{fixture_id}: weak timing seeds must not be high quality")
+    if category == "high_drift":
+        if "drift_high" not in warnings:
+            fail(f"{fixture_id}: high drift seeds must carry drift_high")
+        if drift is None:
+            fail(f"{fixture_id}: high drift seeds must define explicit drift metrics")
+        if max_drift_ms <= 70.0 and abs(end_drift_ms) <= 70.0:
+            fail(f"{fixture_id}: high drift seeds must exceed the high-drift threshold")
+        if policy == "locked":
+            fail(f"{fixture_id}: high drift seeds must not be locked")
     if "ambiguity" in category and not alternatives:
         fail(f"{fixture_id}: ambiguity seeds must preserve at least one alternative")
     if policy == "locked" and warnings:
@@ -205,6 +238,7 @@ def main(argv: list[str]) -> int:
         "hook_forward",
         "half_time_ambiguity",
         "double_time_ambiguity",
+        "high_drift",
         "weak_timing",
     }
     missing_categories = sorted(required_categories - categories)

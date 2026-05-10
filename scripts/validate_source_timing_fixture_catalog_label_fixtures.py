@@ -46,6 +46,21 @@ def main() -> int:
                 "halff_time_typo",
             ),
         ),
+        (
+            "high drift missing warning",
+            "high drift seeds must carry drift_high",
+            lambda data: set_warning(data, "fx_timing_drifting_live_118", 0, "phrase_uncertain"),
+        ),
+        (
+            "high drift missing metrics",
+            "high drift seeds must define explicit drift metrics",
+            lambda data: remove_expected(data, "fx_timing_drifting_live_118", "drift"),
+        ),
+        (
+            "high drift below threshold",
+            "high drift seeds must exceed the high-drift threshold",
+            lambda data: set_drift_thresholds(data, "fx_timing_drifting_live_118", 60.0, 60.0),
+        ),
     ]
 
     if not cases:
@@ -98,6 +113,21 @@ def set_warning(catalog: dict[str, Any], fixture_id: str, index: int, value: str
 
 def set_alternative_kind(catalog: dict[str, Any], fixture_id: str, index: int, value: str) -> None:
     case_by_id(catalog, fixture_id)["expected"]["alternatives"][index]["kind"] = value
+
+
+def remove_expected(catalog: dict[str, Any], fixture_id: str, field: str) -> None:
+    del case_by_id(catalog, fixture_id)["expected"][field]
+
+
+def set_drift_thresholds(
+    catalog: dict[str, Any],
+    fixture_id: str,
+    max_drift_ms: float,
+    end_drift_ms: float,
+) -> None:
+    drift = case_by_id(catalog, fixture_id)["expected"]["drift"]
+    drift["max_drift_ms"] = max_drift_ms
+    drift["end_drift_ms"] = end_drift_ms
 
 
 def slug(value: str) -> str:

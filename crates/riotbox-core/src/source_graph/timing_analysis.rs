@@ -14,6 +14,7 @@ pub struct SourceTimingAnalysisSeed {
     pub confidence_floor: Confidence,
     pub warnings: Vec<TimingWarningCode>,
     pub alternatives: Vec<SourceTimingAlternativeSeed>,
+    pub drift: Option<SourceTimingDriftSeed>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -21,6 +22,14 @@ pub struct SourceTimingAlternativeSeed {
     pub kind: TimingHypothesisKind,
     pub bpm: f32,
     pub confidence_floor: Confidence,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct SourceTimingDriftSeed {
+    pub window_bars: u32,
+    pub max_drift_ms: f32,
+    pub mean_abs_drift_ms: f32,
+    pub end_drift_ms: f32,
 }
 
 #[must_use]
@@ -188,6 +197,16 @@ fn timing_drift(
     seed: &SourceTimingAnalysisSeed,
     confidence: Confidence,
 ) -> Vec<TimingDriftReport> {
+    if let Some(drift) = seed.drift {
+        return vec![TimingDriftReport {
+            window_bars: drift.window_bars,
+            max_drift_ms: drift.max_drift_ms,
+            mean_abs_drift_ms: drift.mean_abs_drift_ms,
+            end_drift_ms: drift.end_drift_ms,
+            confidence,
+        }];
+    }
+
     vec![TimingDriftReport {
         window_bars: seed.expected_bar_count_min.clamp(1, 8),
         max_drift_ms: seed.downbeat_tolerance_ms,

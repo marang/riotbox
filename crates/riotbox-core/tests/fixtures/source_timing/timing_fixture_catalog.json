@@ -123,6 +123,35 @@
       "notes": "Primary grid can exist, but fast double-time interpretation stays visible for cautious lane policy."
     },
     {
+      "fixture_id": "fx_timing_drifting_live_118",
+      "category": "high_drift",
+      "title": "118 BPM live-feel source with high end drift",
+      "duration_seconds": 32.0,
+      "expected": {
+        "primary_bpm": 118.0,
+        "bpm_tolerance": 0.8,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "medium",
+        "degraded_policy": "manual_confirm",
+        "beat_hit_tolerance_ms": 70.0,
+        "downbeat_tolerance_ms": 120.0,
+        "phrase_tolerance_bars": 2,
+        "expected_beat_count_min": 60,
+        "expected_bar_count_min": 15,
+        "expected_phrase_count_min": 2,
+        "confidence_floor": 0.58,
+        "drift": {
+          "window_bars": 8,
+          "max_drift_ms": 110.0,
+          "mean_abs_drift_ms": 45.0,
+          "end_drift_ms": 95.0
+        },
+        "warnings": ["drift_high", "phrase_uncertain"],
+        "alternatives": []
+      },
+      "notes": "A usable BPM is present, but lane policies must see live-feel drift before locking destructive grid moves."
+    },
+    {
       "fixture_id": "fx_timing_weak_noisy_123",
       "category": "weak_timing",
       "title": "Weak noisy source with tentative 123 BPM estimate",
