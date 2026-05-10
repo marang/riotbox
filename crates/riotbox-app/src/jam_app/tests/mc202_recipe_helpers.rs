@@ -137,6 +137,50 @@ fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
 }
 
 #[test]
+fn mc202_render_projection_consumes_typed_role_and_phrase_intent_contract() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Pressure.label().into());
+    session.runtime_state.lane_state.mc202.phrase_variant =
+        Mc202PhraseIntentState::MutatedDrive.phrase_variant();
+    session.runtime_state.macro_state.mc202_touch = Mc202RoleState::Pressure.default_touch();
+
+    let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Pressure);
+    assert_eq!(
+        state.runtime.mc202_render.phrase_shape,
+        Mc202PhraseShape::MutatedDrive
+    );
+    assert_eq!(
+        state.runtime.mc202_render.note_budget,
+        riotbox_audio::mc202::Mc202NoteBudget::Wide
+    );
+    let rendered = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+    let metrics = signal_metrics(&rendered);
+    assert!(metrics.rms > 0.001, "typed MC-202 projection rendered silent");
+}
+
+#[test]
+fn mc202_render_projection_rejects_unknown_role_label_without_rendering() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.lane_state.mc202.role = Some("future_role".into());
+    session.runtime_state.lane_state.mc202.phrase_variant =
+        Mc202PhraseIntentState::MutatedDrive.phrase_variant();
+    session.runtime_state.macro_state.mc202_touch = 0.90;
+
+    let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
+    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    let mut rendered = vec![0.0; 44_100 * 2];
+    render_mc202_buffer(&mut rendered, 44_100, 2, &state.runtime.mc202_render);
+    let metrics = signal_metrics(&rendered);
+    assert_eq!(metrics.rms, 0.0, "unknown MC-202 role should not render");
+}
+
+#[test]
 fn mc202_recipe_replay_proves_control_and_audio_path() {
     let graph = sample_graph();
     let session = sample_session(&graph);

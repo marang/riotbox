@@ -22,8 +22,8 @@ use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionStatus},
     ids::{CaptureId, SceneId},
     session::{
-        Mc202PhraseVariantState, SceneMovementDirectionState, SceneMovementLaneIntentState,
-        SceneMovementState, SessionFile, W30PreviewModeState,
+        Mc202PhraseIntentState, Mc202RoleState, SceneMovementDirectionState,
+        SceneMovementLaneIntentState, SceneMovementState, SessionFile, W30PreviewModeState,
     },
     source_graph::{
         EnergyClass, Section, SectionLabelHint, SourceGraph, section_for_projected_scene,
@@ -191,22 +191,13 @@ pub(super) fn build_mc202_render_state(
     let Some(role) = mc202.role.as_deref() else {
         return Mc202RenderState::default();
     };
+    let Some(role) = Mc202RoleState::from_label(role) else {
+        return Mc202RenderState::default();
+    };
 
-    let (mode, phrase_shape) = match role {
-        "leader" => (Mc202RenderMode::Leader, Mc202PhraseShape::RootPulse),
-        "answer" => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
-        "pressure" => (Mc202RenderMode::Pressure, Mc202PhraseShape::PressureCell),
-        "instigator" => (
-            Mc202RenderMode::Instigator,
-            Mc202PhraseShape::InstigatorSpike,
-        ),
-        "follower" => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
-        _ => return Mc202RenderState::default(),
-    };
-    let phrase_shape = match mc202.phrase_variant {
-        Some(Mc202PhraseVariantState::MutatedDrive) => Mc202PhraseShape::MutatedDrive,
-        _ => phrase_shape,
-    };
+    let (mode, base_phrase_shape) = mc202_render_mode_and_shape(role);
+    let phrase_intent = Mc202PhraseIntentState::from_phrase_variant(mc202.phrase_variant);
+    let phrase_shape = mc202_phrase_shape_for_intent(phrase_intent).unwrap_or(base_phrase_shape);
     let current_section = mc202_current_section(source_graph, transport, scene_context(session));
     let hook_response =
         mc202_hook_response_for_role_graph_and_section(role, source_graph, current_section);
@@ -242,6 +233,26 @@ pub(super) fn build_mc202_render_state(
         tempo_bpm,
         position_beats: transport.position_beats,
         is_transport_running: transport.is_playing,
+    }
+}
+
+fn mc202_render_mode_and_shape(role: Mc202RoleState) -> (Mc202RenderMode, Mc202PhraseShape) {
+    match role {
+        Mc202RoleState::Leader => (Mc202RenderMode::Leader, Mc202PhraseShape::RootPulse),
+        Mc202RoleState::Follower => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
+        Mc202RoleState::Answer => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
+        Mc202RoleState::Pressure => (Mc202RenderMode::Pressure, Mc202PhraseShape::PressureCell),
+        Mc202RoleState::Instigator => (
+            Mc202RenderMode::Instigator,
+            Mc202PhraseShape::InstigatorSpike,
+        ),
+    }
+}
+
+fn mc202_phrase_shape_for_intent(intent: Mc202PhraseIntentState) -> Option<Mc202PhraseShape> {
+    match intent {
+        Mc202PhraseIntentState::Base => None,
+        Mc202PhraseIntentState::MutatedDrive => Some(Mc202PhraseShape::MutatedDrive),
     }
 }
 
@@ -310,11 +321,11 @@ fn mc202_contour_hint_for_section(section: &Section) -> Mc202ContourHint {
 }
 
 fn mc202_hook_response_for_role_graph_and_section(
-    role: &str,
+    role: Mc202RoleState,
     source_graph: Option<&SourceGraph>,
     section: Option<&Section>,
 ) -> Mc202HookResponse {
-    if !matches!(role, "follower" | "leader") {
+    if !matches!(role, Mc202RoleState::Follower | Mc202RoleState::Leader) {
         return Mc202HookResponse::Direct;
     }
 
@@ -438,4 +449,3 @@ pub(super) fn build_w30_preview_render_state(
         position_beats: transport.position_beats,
     }
 }
-

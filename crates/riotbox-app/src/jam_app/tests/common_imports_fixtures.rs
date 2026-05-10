@@ -41,7 +41,7 @@ use riotbox_core::{
     session::{
         ActionCommitRecord, CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType,
         GhostBudgetState, GhostState, GhostSuggestionRecord, GraphStorageMode,
-        Mc202PhraseVariantState,
+        Mc202PhraseIntentState, Mc202PhraseVariantState, Mc202RoleState,
         SceneMovementDirectionState, SceneMovementLaneIntentState, SessionFile, Snapshot,
         SourceGraphRef, SourceRef, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
         W30PreviewModeState,
