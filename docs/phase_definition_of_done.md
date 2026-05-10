@@ -184,7 +184,9 @@ Current review:
 
 - `docs/reviews/p011_replay_hardening_checkpoint_2026-04-29.md`
 - `docs/reviews/p011_replay_recovery_exit_checklist_2026-04-30.md`
-- status: active after restore and commit-record validation hardening; not exit-ready because full replay execution, snapshot convergence, crash recovery, export reproducibility, and long-run/stage-run gates remain open
+- `docs/reviews/p011_exit_evidence_gate_review_2026-05-10.md`
+- `docs/reviews/p011_exit_readiness_decision_2026-05-10.md`
+- status: closed for bounded MVP-spine hardening on 2026-05-10 after the aggregate P011 evidence gate passed across replay, recovery, export reproducibility, and stage-style stability; host-audio soak, multi-hour endurance, full arrangement/stem export, deeper musical quality, and Source Timing Intelligence remain explicitly deferred to later projects
 
 Current bounded gates:
 
@@ -206,7 +208,7 @@ Current bounded gates:
 Current boundary:
 
 - These are bounded CI-safe probes, not host-audio soak tests, automatic recovery, full arrangement export, stem package export, live recording export, or DAW-style export coverage.
-- P011 should remain active until the exit checklist can say replay, recovery, export reproducibility, and stage-style reliability are no longer smoke-level evidence.
+- The passing 2026-05-10 aggregate evidence gate is the P011 bounded-exit baseline. Keep it as a regression gate while primary implementation moves to P012.
 
 ---
 

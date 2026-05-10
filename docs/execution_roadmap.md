@@ -244,16 +244,16 @@ The original immediate build sequence has largely landed: core contracts, Jam / 
 
 Near-next roadmap-aligned work:
 
-1. continue `P011 | Pro Hardening` until replay, recovery, export reproducibility, and stage-style gates are exit-clean
-2. treat P011 as the final MVP-spine hardening project; P012 and later project codes are Post-MVP / product-to-1.0-release phases
-3. start the Source Timing Intelligence program from `docs/plans/source_timing_intelligence_plan.md` as the first Post-MVP foundation track
-4. keep all timing work Rust-first at the product-contract layer and prove TR/Kick-Bass, MC-202, and W-30 output paths against the source grid
+1. treat `P011 | Pro Hardening` as closed for bounded MVP-spine hardening after the 2026-05-10 aggregate evidence gate
+2. start the Source Timing Intelligence program from `docs/plans/source_timing_intelligence_plan.md` as the first Post-MVP foundation track
+3. keep all timing work Rust-first at the product-contract layer and prove TR/Kick-Bass, MC-202, and W-30 output paths against the source grid
+4. keep the P011 aggregate gate green as a regression baseline while P012 changes land
 5. update specs and decision log as the timing contract freezes into implementation
 
 Linear project / phase map:
 
-1. `P011 | Pro Hardening` - active MVP-spine closeout
-2. `P012 | Source Timing Intelligence` - first Post-MVP foundation phase
+1. `P011 | Pro Hardening` - closed bounded MVP-spine hardening baseline
+2. `P012 | Source Timing Intelligence` - active first Post-MVP foundation phase
 3. `P013 | All-Lane Musical Depth`
 4. `P014 | Arrangement / Scene System`
 5. `P015 | Productization Alpha`
@@ -263,10 +263,10 @@ Linear project / phase map:
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
 
-This is a project / phase overview, not a ticket list. Keep P012 near-next and keep P013-P020 coarse until P011 is exit-clean.
+This is a project / phase overview, not a ticket list. Keep P012 active-next and keep P013-P020 coarse until the timing foundation is strong enough to justify deeper musical expansion.
 
 Reason:
-- Replay/recovery/export reliability is the current hardening gate.
+- Replay/recovery/export reliability now has a bounded P011 regression gate.
 - Source Timing Intelligence is the next major musical foundation needed before deeper source-derived rebuilds, timing-sensitive Ghost suggestions, and stronger all-lane generated output.
 - Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing behavior must extend them instead of creating a parallel analysis or arranger path.
 
