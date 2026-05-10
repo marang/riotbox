@@ -1,4 +1,47 @@
 #[test]
+fn committed_tr909_fill_and_reinforce_write_log_results() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state.queue_tr909_fill(300);
+    let committed_fill = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 37,
+            bar_index: 10,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed_fill.len(), 1);
+    assert_eq!(
+        last_action_result_summary(&state),
+        Some("triggered TR-909 fill at beat 37, bar 10, phrase 2")
+    );
+
+    state.queue_tr909_reinforce(500);
+    let committed_reinforce = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 48,
+            bar_index: 12,
+            phrase_index: 3,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        600,
+    );
+
+    assert_eq!(committed_reinforce.len(), 1);
+    assert_eq!(
+        last_action_result_summary(&state),
+        Some("reinforced TR-909 break at beat 48, bar 12, phrase 3")
+    );
+}
+
+#[test]
 fn committed_tr909_takeover_and_release_update_lane_state() {
     let graph = sample_graph();
     let session = sample_session(&graph);
@@ -76,6 +119,10 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
         state.runtime.tr909_render.phrase_variation,
         Some(Tr909PhraseVariation::PhraseLift)
     );
+    assert_eq!(
+        last_action_result_summary(&state),
+        Some("engaged TR-909 takeover at beat 36, bar 9, phrase 2")
+    );
 
     state.update_transport_clock(TransportClockState {
         is_playing: true,
@@ -140,6 +187,10 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
     assert_eq!(
         state.runtime.tr909_render.phrase_variation,
         Some(Tr909PhraseVariation::PhraseDrive)
+    );
+    assert_eq!(
+        last_action_result_summary(&state),
+        Some("engaged TR-909 scene lock at beat 44, bar 11, phrase 2")
     );
 
     state.update_transport_clock(TransportClockState {
@@ -227,6 +278,20 @@ fn committed_tr909_takeover_and_release_update_lane_state() {
         state.runtime.tr909_render.phrase_variation,
         Some(Tr909PhraseVariation::PhraseRelease)
     );
+    assert_eq!(
+        last_action_result_summary(&state),
+        Some("released TR-909 takeover at beat 52, bar 13, phrase 3")
+    );
+}
+
+fn last_action_result_summary(state: &JamAppState) -> Option<&str> {
+    state
+        .session
+        .action_log
+        .actions
+        .last()
+        .and_then(|action| action.result.as_ref())
+        .map(|result| result.summary.as_str())
 }
 
 #[test]
@@ -423,4 +488,3 @@ fn feral_break_support_bias_changes_tr909_source_support_output() {
         0.002,
     );
 }
-

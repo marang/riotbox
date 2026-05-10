@@ -4,6 +4,8 @@ use riotbox_core::{
     transport::CommitBoundaryState,
 };
 
+use crate::jam_app::helpers::update_logged_action_result;
+
 pub(in crate::jam_app) fn apply_tr909_side_effects(
     session: &mut SessionFile,
     action: &Action,
@@ -44,6 +46,11 @@ pub(in crate::jam_app) fn apply_tr909_side_effects(
                 boundary.map(|boundary| format!("fill-bar-{}", boundary.bar_index));
             session.runtime_state.lane_state.tr909.reinforcement_mode =
                 Some(Tr909ReinforcementModeState::Fills);
+            update_logged_action_result(
+                session,
+                action.id,
+                tr909_result_summary("triggered TR-909 fill", boundary),
+            );
         }
         ActionCommand::Tr909ReinforceBreak => {
             session.runtime_state.lane_state.tr909.reinforcement_mode =
@@ -54,6 +61,11 @@ pub(in crate::jam_app) fn apply_tr909_side_effects(
                     |scene_id| format!("reinforce-{scene_id}"),
                 )
             });
+            update_logged_action_result(
+                session,
+                action.id,
+                tr909_result_summary("reinforced TR-909 break", boundary),
+            );
         }
         ActionCommand::Tr909Takeover => {
             session.runtime_state.lane_state.tr909.takeover_enabled = true;
@@ -67,6 +79,11 @@ pub(in crate::jam_app) fn apply_tr909_side_effects(
             });
             session.runtime_state.lane_state.tr909.reinforcement_mode =
                 Some(Tr909ReinforcementModeState::Takeover);
+            update_logged_action_result(
+                session,
+                action.id,
+                tr909_result_summary("engaged TR-909 takeover", boundary),
+            );
         }
         ActionCommand::Tr909SceneLock => {
             session.runtime_state.lane_state.tr909.takeover_enabled = true;
@@ -80,6 +97,11 @@ pub(in crate::jam_app) fn apply_tr909_side_effects(
             });
             session.runtime_state.lane_state.tr909.reinforcement_mode =
                 Some(Tr909ReinforcementModeState::Takeover);
+            update_logged_action_result(
+                session,
+                action.id,
+                tr909_result_summary("engaged TR-909 scene lock", boundary),
+            );
         }
         ActionCommand::Tr909Release => {
             session.runtime_state.lane_state.tr909.takeover_enabled = false;
@@ -96,7 +118,24 @@ pub(in crate::jam_app) fn apply_tr909_side_effects(
                 session.runtime_state.lane_state.tr909.reinforcement_mode =
                     Some(Tr909ReinforcementModeState::SourceSupport);
             }
+            update_logged_action_result(
+                session,
+                action.id,
+                tr909_result_summary("released TR-909 takeover", boundary),
+            );
         }
         _ => {}
     }
+}
+
+fn tr909_result_summary(gesture: &str, boundary: Option<&CommitBoundaryState>) -> String {
+    boundary.map_or_else(
+        || gesture.to_string(),
+        |boundary| {
+            format!(
+                "{gesture} at beat {}, bar {}, phrase {}",
+                boundary.beat_index, boundary.bar_index, boundary.phrase_index
+            )
+        },
+    )
 }
