@@ -48,6 +48,56 @@ pub enum TimingFixtureEvaluationIssue {
     MissingPrimaryHypothesis,
 }
 
+pub fn source_timing_analysis_seed_from_fixture_case(
+    case: &serde_json::Value,
+) -> Result<SourceTimingAnalysisSeed, String> {
+    let expected = fixture_expected(case)?;
+    let primary_bpm = required_f32(expected, "primary_bpm")?;
+    Ok(SourceTimingAnalysisSeed {
+        fixture_id: fixture_id_from_case(case)?,
+        duration_seconds: required_f32(case, "duration_seconds")?,
+        primary_bpm,
+        meter: MeterHint {
+            beats_per_bar: required_u64_at(expected, "/meter/beats_per_bar")? as u8,
+            beat_unit: required_u64_at(expected, "/meter/beat_unit")? as u8,
+        },
+        quality: timing_quality_from_label(optional_str(expected, "timing_quality")),
+        degraded_policy: timing_degraded_policy_from_label(optional_str(expected, "degraded_policy")),
+        beat_hit_tolerance_ms: required_f32(expected, "beat_hit_tolerance_ms")?,
+        downbeat_tolerance_ms: required_f32(expected, "downbeat_tolerance_ms")?,
+        expected_beat_count_min: required_u32(expected, "expected_beat_count_min")?,
+        expected_bar_count_min: required_u32(expected, "expected_bar_count_min")?,
+        expected_phrase_count_min: required_u32(expected, "expected_phrase_count_min")?,
+        confidence_floor: required_f32(expected, "confidence_floor")?,
+        warnings: timing_warning_codes_from_expected(expected),
+        alternatives: source_timing_alternatives_from_expected(expected)?,
+    })
+}
+
+pub fn timing_fixture_evaluation_target_from_fixture_case(
+    case: &serde_json::Value,
+) -> Result<TimingFixtureEvaluationTarget, String> {
+    let expected = fixture_expected(case)?;
+    Ok(TimingFixtureEvaluationTarget {
+        fixture_id: fixture_id_from_case(case)?,
+        primary_bpm: required_f32(expected, "primary_bpm")?,
+        bpm_tolerance: required_f32(expected, "bpm_tolerance")?,
+        beat_hit_tolerance_ms: required_f32(expected, "beat_hit_tolerance_ms")?,
+        downbeat_tolerance_ms: required_f32(expected, "downbeat_tolerance_ms")?,
+        expected_beat_count_min: required_u32(expected, "expected_beat_count_min")?,
+        expected_bar_count_min: required_u32(expected, "expected_bar_count_min")?,
+        expected_phrase_count_min: required_u32(expected, "expected_phrase_count_min")?,
+        confidence_floor: required_f32(expected, "confidence_floor")?,
+        quality: timing_quality_from_label(optional_str(expected, "timing_quality")),
+        degraded_policy: timing_degraded_policy_from_label(optional_str(expected, "degraded_policy")),
+        warnings: timing_warning_codes_from_expected(expected),
+        alternative_kinds: source_timing_alternatives_from_expected(expected)?
+            .into_iter()
+            .map(|alternative| alternative.kind)
+            .collect(),
+    })
+}
+
 #[must_use]
 pub fn evaluate_timing_fixture_output(
     timing: &TimingModel,
@@ -152,4 +202,123 @@ pub fn evaluate_timing_fixture_output(
 
 fn max_drift_value(values: impl Iterator<Item = f32>) -> Option<f32> {
     values.reduce(f32::max)
+}
+
+fn fixture_expected(case: &serde_json::Value) -> Result<&serde_json::Value, String> {
+    case.get("expected")
+        .ok_or_else(|| "fixture case missing expected timing contract".into())
+}
+
+fn fixture_id_from_case(case: &serde_json::Value) -> Result<String, String> {
+    required_str(case, "fixture_id").map(Into::into)
+}
+
+fn required_str<'a>(value: &'a serde_json::Value, field: &str) -> Result<&'a str, String> {
+    value
+        .get(field)
+        .and_then(serde_json::Value::as_str)
+        .ok_or_else(|| format!("{field} must be a string"))
+}
+
+fn optional_str<'a>(value: &'a serde_json::Value, field: &str) -> Option<&'a str> {
+    value.get(field).and_then(serde_json::Value::as_str)
+}
+
+fn required_f32(value: &serde_json::Value, field: &str) -> Result<f32, String> {
+    value
+        .get(field)
+        .and_then(serde_json::Value::as_f64)
+        .map(|number| number as f32)
+        .ok_or_else(|| format!("{field} must be a number"))
+}
+
+fn required_u32(value: &serde_json::Value, field: &str) -> Result<u32, String> {
+    value
+        .get(field)
+        .and_then(serde_json::Value::as_u64)
+        .map(|number| number as u32)
+        .ok_or_else(|| format!("{field} must be an unsigned integer"))
+}
+
+fn required_u64_at(value: &serde_json::Value, pointer: &str) -> Result<u64, String> {
+    value
+        .pointer(pointer)
+        .and_then(serde_json::Value::as_u64)
+        .ok_or_else(|| format!("{pointer} must be an unsigned integer"))
+}
+
+fn timing_quality_from_label(label: Option<&str>) -> TimingQuality {
+    match label {
+        Some("low") => TimingQuality::Low,
+        Some("medium") => TimingQuality::Medium,
+        Some("high") => TimingQuality::High,
+        _ => TimingQuality::Unknown,
+    }
+}
+
+fn timing_degraded_policy_from_label(label: Option<&str>) -> TimingDegradedPolicy {
+    match label {
+        Some("locked") => TimingDegradedPolicy::Locked,
+        Some("cautious") => TimingDegradedPolicy::Cautious,
+        Some("manual_confirm") => TimingDegradedPolicy::ManualConfirm,
+        Some("fallback_grid") => TimingDegradedPolicy::FallbackGrid,
+        Some("disabled") => TimingDegradedPolicy::Disabled,
+        _ => TimingDegradedPolicy::Unknown,
+    }
+}
+
+fn timing_hypothesis_kind_from_label(label: Option<&str>) -> TimingHypothesisKind {
+    match label {
+        Some("half_time") => TimingHypothesisKind::HalfTime,
+        Some("double_time") => TimingHypothesisKind::DoubleTime,
+        Some("alternate_downbeat") => TimingHypothesisKind::AlternateDownbeat,
+        _ => TimingHypothesisKind::Ambiguous,
+    }
+}
+
+fn source_timing_alternatives_from_expected(
+    expected: &serde_json::Value,
+) -> Result<Vec<SourceTimingAlternativeSeed>, String> {
+    let Some(alternatives) = expected.get("alternatives").and_then(serde_json::Value::as_array)
+    else {
+        return Ok(Vec::new());
+    };
+
+    alternatives
+        .iter()
+        .map(|alternative| {
+            Ok(SourceTimingAlternativeSeed {
+                kind: timing_hypothesis_kind_from_label(optional_str(alternative, "kind")),
+                bpm: required_f32(alternative, "bpm")?,
+                confidence_floor: required_f32(alternative, "confidence_floor")?,
+            })
+        })
+        .collect()
+}
+
+fn timing_warning_codes_from_expected(expected: &serde_json::Value) -> Vec<TimingWarningCode> {
+    expected
+        .get("warnings")
+        .and_then(serde_json::Value::as_array)
+        .map(|warnings| {
+            warnings
+                .iter()
+                .filter_map(serde_json::Value::as_str)
+                .map(timing_warning_code_from_label)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+fn timing_warning_code_from_label(label: &str) -> TimingWarningCode {
+    match label {
+        "weak_kick_anchor" => TimingWarningCode::WeakKickAnchor,
+        "weak_backbeat_anchor" => TimingWarningCode::WeakBackbeatAnchor,
+        "ambiguous_downbeat" => TimingWarningCode::AmbiguousDownbeat,
+        "half_time_possible" => TimingWarningCode::HalfTimePossible,
+        "double_time_possible" => TimingWarningCode::DoubleTimePossible,
+        "drift_high" => TimingWarningCode::DriftHigh,
+        "phrase_uncertain" => TimingWarningCode::PhraseUncertain,
+        _ => TimingWarningCode::LowTimingConfidence,
+    }
 }
