@@ -533,6 +533,10 @@ Deletion rule:
 - do not use MemPalace as the deletion gate; exact filesystem / metadata checks are more reliable for cleanup decisions
 - when deleting, prefer the repo-local helper:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
+- for repeated cleanup, prefer the repo-local closeout helper:
+  - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99`
+- the closeout helper defaults to dry-run and must only be executed after the PR is merged, the issue is marked done, and the archive handoff exists:
+  - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99 --delete-linear --delete-remote-branch --delete-local-branch --execute`
 - the helper should use token auth via `LINEAR_API_TOKEN`
 - do not treat pasted browser session cookies as the normal cleanup path
 
