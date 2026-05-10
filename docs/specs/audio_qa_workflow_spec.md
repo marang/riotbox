@@ -658,7 +658,12 @@ Today the repo already has:
 - the committed-fixture JSON summary path is smoke-tested in `just audio-qa-ci` and the named GitHub Actions audio QA step
 - observer/audio JSON summaries include a top-level `schema` and `schema_version` marker plus control-path `commit_count`, `commit_boundaries`, and optional observer-side Source Timing Intelligence readiness fields so automation can reject unexpected summary shapes and assert boundary/timing coverage before making QA decisions
 - the committed-fixture JSON smoke requires both `control_path.present` and `output_path.present`, keeping the machine-readable path aligned with the control-plus-output proof rule
-- observer/audio summaries can surface Feral-grid `source_grid_output_drift` evidence and strict correlation treats present drift evidence as a smoke gate for generated support landing near the selected source grid
+- observer/audio summaries can surface Feral-grid `source_grid_output_drift`
+  evidence and strict correlation requires Feral-grid manifests to include
+  pack-level `source_grid_output_drift` plus lane-specific
+  `tr909_source_grid_alignment` and `w30_source_grid_alignment`; missing or
+  out-of-budget metrics fail the output path instead of being treated as an
+  optional note
 - observer/audio summaries can compare observer-side Source Timing readiness with
   manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
   strict correlation treats real mismatches as output-path failures while keeping

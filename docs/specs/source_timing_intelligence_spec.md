@@ -626,6 +626,10 @@ bounded BPM policy:
 - W-30 source chop should expose the same bounded alignment evidence under a
   lane-specific key, currently `metrics.w30_source_grid_alignment`, so the
   source-backed sample lane is auditable separately from TR-909 support
+- strict observer/audio correlation treats Feral-grid pack-level
+  `source_grid_output_drift`, `tr909_source_grid_alignment`, and
+  `w30_source_grid_alignment` as required P012 output evidence; if any are
+  missing, malformed, or outside budget, the output path is not passing
 - MC-202 lane recipe manifests should expose bounded phrase-grid evidence under
   `metrics.mc202_phrase_grid` for each required MC-202 case, proving that
   generated candidate phrases start on the selected phrase boundary and that

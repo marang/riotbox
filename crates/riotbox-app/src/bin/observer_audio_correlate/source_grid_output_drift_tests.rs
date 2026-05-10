@@ -48,6 +48,41 @@ fn strict_evidence_rejects_malformed_source_grid_output_drift() {
 }
 
 #[test]
+fn strict_evidence_rejects_missing_required_source_grid_alignment() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        synthetic_manifest_without_required_alignment(),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("missing source-grid alignment");
+
+    assert!(
+        error
+            .to_string()
+            .contains("source_grid_output_drift=missing")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("tr909_source_grid_alignment=missing")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("w30_source_grid_alignment=missing")
+    );
+    let markdown = render_markdown(&summary);
+    assert!(markdown.contains("Output path present: `no`"));
+    assert!(markdown.contains("source_grid_output_drift=missing"));
+}
+
+#[test]
 fn strict_evidence_rejects_lane_source_grid_alignment_failures() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -141,6 +176,21 @@ fn synthetic_manifest_with_malformed_drift() -> String {
     "source_grid_output_drift": {
       "hit_ratio": 1.0,
       "max_allowed_peak_offset_ms": 70.0
+    }
+  }
+}"#
+    .to_string()
+}
+
+fn synthetic_manifest_without_required_alignment() -> String {
+    r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}],
+  "metrics": {
+    "full_grid_mix": {
+      "signal": { "rms": 0.1 },
+      "low_band": { "rms": 0.08 }
     }
   }
 }"#

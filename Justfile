@@ -382,6 +382,10 @@ stage-style-stability-gate:
 recipe2-observer-audio-gate:
     scripts/validate_recipe2_observer_audio_gate.sh
 
+p012-all-lane-source-grid-output-proof:
+    just observer-audio-correlate-generated-feral-grid
+    just recipe2-observer-audio-gate
+
 offline-render-reproducibility-smoke:
     scripts/validate_offline_render_reproducibility.sh
 

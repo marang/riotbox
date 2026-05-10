@@ -45,13 +45,17 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     failures.extend(source_timing_alignment_failures(summary));
     failures.extend(source_timing_anchor_alignment_failures(summary));
     failures.extend(source_timing_groove_alignment_failures(summary));
-    failures.extend(source_grid_output_drift_failures(summary));
-    failures.extend(source_grid_alignment_failures(
+    failures.extend(required_source_grid_alignment_failures(
+        "source_grid_output_drift",
+        &summary.source_grid_output_drift,
+        summary.source_grid_output_drift_malformed,
+    ));
+    failures.extend(required_source_grid_alignment_failures(
         "tr909_source_grid_alignment",
         &summary.tr909_source_grid_alignment,
         summary.tr909_source_grid_alignment_malformed,
     ));
-    failures.extend(source_grid_alignment_failures(
+    failures.extend(required_source_grid_alignment_failures(
         "w30_source_grid_alignment",
         &summary.w30_source_grid_alignment,
         summary.w30_source_grid_alignment_malformed,
@@ -85,12 +89,20 @@ fn source_timing_groove_alignment_failures(summary: &CorrelationSummary) -> Vec<
         .unwrap_or_default()
 }
 
-fn source_grid_output_drift_failures(summary: &CorrelationSummary) -> Vec<String> {
-    source_grid_alignment_failures(
-        "source_grid_output_drift",
-        &summary.source_grid_output_drift,
-        summary.source_grid_output_drift_malformed,
-    )
+fn required_source_grid_alignment_failures(
+    metric_key: &str,
+    drift: &Option<SourceGridOutputDriftEvidence>,
+    malformed: bool,
+) -> Vec<String> {
+    if malformed {
+        return vec![format!("{metric_key}=malformed")];
+    }
+
+    if drift.is_none() {
+        return vec![format!("{metric_key}=missing")];
+    }
+
+    source_grid_alignment_failures(metric_key, drift, false)
 }
 
 fn source_grid_alignment_failures(

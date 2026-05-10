@@ -1427,3 +1427,17 @@ Why: the real drift risk was behavior branching on arbitrary raw strings, not th
 Evidence: Stage 1-3 of `docs/reviews/mc202_typed_contract_migration_plan_2026-05-10.md` have moved current behavior to typed helper boundaries, and `docs/specs/session_file_spec.md` now records the Session v1 compatibility-label contract.
 Consequences: future MC-202 roles or phrase intents must extend the typed helpers first. A typed-field JSON migration is allowed only as part of a documented session-version migration with legacy fixture load, roundtrip, restore, deterministic replay, undo snapshot compatibility, TUI/observer label, and audio-output proof where applicable.
 Status: accepted
+
+---
+
+### RBX-029
+
+Date: 2026-05-10
+Topic: P012 Feral-grid output evidence must require lane-specific Source Grid alignment
+Phase: Source Timing Intelligence / Audio QA
+Question: when a Feral-grid manifest reports `pass`, is pack-level audio activity enough, or must the strict observer/audio gate prove lane-specific Source Grid alignment?
+Decision: require strict observer/audio correlation for Feral-grid manifests to include pack-level `source_grid_output_drift` plus lane-specific `tr909_source_grid_alignment` and `w30_source_grid_alignment`. Missing, malformed, below-ratio, or over-offset metrics fail the output path.
+Why: P012 is about shared timing authority across lanes. A generic non-silent mix can hide the actual failure mode musicians hear: one lane walking away from the source grid while logs and pack status still claim success.
+Evidence: `strict_evidence_rejects_missing_required_source_grid_alignment` now fails a synthetic `pass` manifest with no Source Grid alignment evidence, `cargo test -p riotbox-app --bin observer_audio_correlate -- --nocapture` covers the strict gate, and `just p012-all-lane-source-grid-output-proof` runs the current Feral-grid TR-909/W-30 proof plus MC-202 phrase-grid proof together.
+Consequences: this is still a bounded P012 QA gate, not production arbitrary-audio beat/downbeat detection. MC-202 remains proven through phrase-grid recipe evidence until the source-derived question/answer placement engine lands.
+Status: accepted
