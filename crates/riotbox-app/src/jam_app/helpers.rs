@@ -1,5 +1,5 @@
 use riotbox_core::{
-    action::ActionCommand,
+    action::{ActionCommand, ActionResult},
     ids::ActionId,
     session::{CaptureRef, SessionFile},
 };
@@ -38,4 +38,23 @@ pub(in crate::jam_app) fn max_action_id(session: &SessionFile) -> Option<ActionI
         .iter()
         .map(|action| action.id)
         .max()
+}
+
+pub(in crate::jam_app) fn update_logged_action_result(
+    session: &mut SessionFile,
+    action_id: ActionId,
+    summary: impl Into<String>,
+) {
+    if let Some(logged_action) = session
+        .action_log
+        .actions
+        .iter_mut()
+        .rev()
+        .find(|logged_action| logged_action.id == action_id)
+    {
+        logged_action.result = Some(ActionResult {
+            accepted: true,
+            summary: summary.into(),
+        });
+    }
 }

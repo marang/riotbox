@@ -50,7 +50,9 @@ use capture_helpers::{
     capture_targets_specific_w30_pad, capture_targets_w30_pad,
 };
 pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_REASON};
-use helpers::{is_mc202_phrase_action, max_action_id, next_action_id_from_session};
+use helpers::{
+    is_mc202_phrase_action, max_action_id, next_action_id_from_session, update_logged_action_result,
+};
 use projection::normalize_w30_preview_mode;
 pub use recovery::{
     RecoveryCandidateGuidance, RecoveryCandidateTrust, SessionRecoveryCandidateView,

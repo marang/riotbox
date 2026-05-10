@@ -6,7 +6,7 @@ use riotbox_core::{
     },
     ids::ActionId,
     queue::CommittedActionRef,
-    session::{ActionCommitRecord, CaptureRef, Mc202UndoSnapshotState, SessionFile},
+    session::{ActionCommitRecord, CaptureRef, Mc202UndoSnapshotState},
     source_graph::SourceGraph,
     transport::CommitBoundaryState,
 };
@@ -16,6 +16,7 @@ use super::{
     apply_mc202_side_effects, apply_scene_side_effects, apply_tr909_side_effects,
     apply_w30_side_effects, capture_promotion_summary, capture_ref_from_action,
     is_mc202_phrase_action, max_action_id, next_action_id_from_session,
+    update_logged_action_result,
 };
 use crate::jam_app::helpers::append_capture_note;
 
@@ -270,23 +271,4 @@ fn feral_resample_policy_summary(
         capture.resample_generation_depth,
         capture.lineage_capture_refs.len()
     ))
-}
-
-fn update_logged_action_result(
-    session: &mut SessionFile,
-    action_id: ActionId,
-    summary: impl Into<String>,
-) {
-    if let Some(logged_action) = session
-        .action_log
-        .actions
-        .iter_mut()
-        .rev()
-        .find(|logged_action| logged_action.id == action_id)
-    {
-        logged_action.result = Some(ActionResult {
-            accepted: true,
-            summary: summary.into(),
-        });
-    }
 }
