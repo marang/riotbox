@@ -1,4 +1,11 @@
-use super::*;
+use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::{
+    TimestampMs,
+    action::{
+        ActionCommand, ActionDraft, ActionParams, ActionTarget, ActorType, Quantization,
+        TargetScope,
+    },
+};
 
 impl JamAppState {
     fn mc202_phrase_control_pending(&self) -> bool {
@@ -31,7 +38,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Mc202SetRole,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneMc202),
                 object_id: Some(next_role.into()),
                 ..Default::default()
@@ -59,7 +66,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Mc202MutatePhrase,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneMc202),
                 object_id: Some("mutated_drive".into()),
                 ..Default::default()
@@ -87,7 +94,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Mc202GenerateFollower,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneMc202),
                 object_id: Some("follower".into()),
                 ..Default::default()
@@ -112,7 +119,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Mc202GenerateAnswer,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneMc202),
                 object_id: Some("answer".into()),
                 ..Default::default()
@@ -140,7 +147,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Mc202GeneratePressure,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneMc202),
                 object_id: Some("pressure".into()),
                 ..Default::default()
@@ -168,7 +175,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Mc202GenerateInstigator,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneMc202),
                 object_id: Some("instigator".into()),
                 ..Default::default()
