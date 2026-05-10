@@ -22,6 +22,7 @@ Options:
   -h, --help                  show this help
 
 Examples:
+  scripts/archive_linear_issue.py --ticket RIOTBOX-123 --pr 99 --why "..." --shipped "..." --execute
   scripts/closeout_ticket.sh --ticket RIOTBOX-123
   scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99
   scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99 --delete-linear --delete-remote-branch --delete-local-branch --execute
@@ -200,6 +201,9 @@ rg --no-ignore -n "^- Ticket: \`${ticket}\`" "$archive_file" >/dev/null \
   || die "archive metadata missing in $archive_file"
 rg --no-ignore -n "${ticket}.md" docs/archive/linear_issues/index.md >/dev/null \
   || die "archive index does not mention ${ticket}.md"
+if rg --no-ignore -n "TODO: summarize (why this ticket existed|shipped behavior) before closeout" "$archive_file" >/dev/null; then
+  die "archive still contains generator TODO placeholders: $archive_file"
+fi
 info "archive handoff ok for $ticket"
 
 if [ "$delete_remote_branch" -eq 1 ] || [ "$delete_local_branch" -eq 1 ]; then
