@@ -1,9 +1,10 @@
-use riotbox_core::replay::SnapshotPayloadReadiness;
-
-use super::*;
+use riotbox_core::{
+    persistence::{SessionRecoveryCandidate, SessionRecoveryCandidateStatus, load_session_json},
+    replay::{SnapshotPayloadReadiness, build_latest_snapshot_replay_convergence_summary},
+};
 
 pub(super) fn missing_snapshot_payload_guidance(
-    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
+    candidate: &SessionRecoveryCandidate,
 ) -> Option<String> {
     if !matches!(
         candidate.status,
@@ -15,10 +16,9 @@ pub(super) fn missing_snapshot_payload_guidance(
     let Ok(session) = load_session_json(&candidate.path) else {
         return None;
     };
-    let Ok(summary) = riotbox_core::replay::build_latest_snapshot_replay_convergence_summary(
-        &session.action_log,
-        &session.snapshots,
-    ) else {
+    let Ok(summary) =
+        build_latest_snapshot_replay_convergence_summary(&session.action_log, &session.snapshots)
+    else {
         return None;
     };
     if summary.anchor_payload_readiness != SnapshotPayloadReadiness::Missing {

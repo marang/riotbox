@@ -8,9 +8,7 @@ use riotbox_core::{
     action::ActionStatus,
     ids::SourceId,
     persistence::{
-        SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus, load_session_json,
-        load_source_graph_json, save_session_json, save_source_graph_json,
-        scan_session_recovery_candidates,
+        load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
     },
     queue::ActionQueue,
     session::{GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},

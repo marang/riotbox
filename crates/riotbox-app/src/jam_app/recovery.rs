@@ -1,4 +1,14 @@
-use super::*;
+use std::path::{Path, PathBuf};
+
+use riotbox_core::persistence::{
+    SessionRecoveryCandidate, SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus,
+    load_session_json, scan_session_recovery_candidates,
+};
+
+use super::{
+    capture_artifacts, runtime_replay_warnings,
+    state::{JamAppError, JamAppState},
+};
 
 mod hydration_guidance;
 mod payload_guidance;
@@ -157,9 +167,7 @@ impl JamAppState {
     }
 }
 
-fn recovery_candidate_view(
-    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
-) -> SessionRecoveryCandidateView {
+fn recovery_candidate_view(candidate: &SessionRecoveryCandidate) -> SessionRecoveryCandidateView {
     let replay_labels = recovery_replay_readiness_labels(candidate);
     let payload_invalid = replay_labels
         .payload
@@ -209,9 +217,7 @@ fn recovery_candidate_view(
     }
 }
 
-fn recovery_artifact_availability_label(
-    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
-) -> String {
+fn recovery_artifact_availability_label(candidate: &SessionRecoveryCandidate) -> String {
     if !matches!(
         candidate.status,
         SessionRecoveryCandidateStatus::ParseableSession
@@ -281,7 +287,7 @@ fn recovery_artifact_availability_label(
 }
 
 fn recovery_candidate_guidance(
-    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
+    candidate: &SessionRecoveryCandidate,
 ) -> Option<RecoveryCandidateGuidance> {
     if let Some(detail) = supported_artifact_replay_hydration_blocker(candidate) {
         return Some(RecoveryCandidateGuidance::SupportedArtifactReplayHydrationBlocked { detail });
@@ -353,7 +359,7 @@ fn recovery_candidate_trust(
 }
 
 fn recovery_replay_readiness_labels(
-    candidate: &riotbox_core::persistence::SessionRecoveryCandidate,
+    candidate: &SessionRecoveryCandidate,
 ) -> runtime_replay_warnings::ReplayReadinessLabels {
     if !matches!(
         candidate.status,
