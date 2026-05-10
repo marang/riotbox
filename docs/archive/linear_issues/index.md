@@ -5,7 +5,27 @@ This index tracks archived Linear ticket history that has been removed from the 
 ## Archive Files
 
 - [2026-04.md](./2026-04.md)
-  Grouped archive for routine April 2026 Riotbox tickets and early implementation slices.
+  Index for split April 2026 Riotbox ticket-range archives.
+- [2026-04-000-049.md](./2026-04-000-049.md)
+  Split April 2026 archive for RIOTBOX-000 through RIOTBOX-049.
+- [2026-04-050-099.md](./2026-04-050-099.md)
+  Split April 2026 archive for RIOTBOX-050 through RIOTBOX-099.
+- [2026-04-100-149.md](./2026-04-100-149.md)
+  Split April 2026 archive for RIOTBOX-100 through RIOTBOX-149.
+- [2026-04-150-199.md](./2026-04-150-199.md)
+  Split April 2026 archive for RIOTBOX-150 through RIOTBOX-199.
+- [2026-04-200-249.md](./2026-04-200-249.md)
+  Split April 2026 archive for RIOTBOX-200 through RIOTBOX-249.
+- [2026-04-250-299.md](./2026-04-250-299.md)
+  Split April 2026 archive for RIOTBOX-250 through RIOTBOX-299.
+- [2026-04-300-349.md](./2026-04-300-349.md)
+  Split April 2026 archive for RIOTBOX-300 through RIOTBOX-349.
+- [2026-04-350-399.md](./2026-04-350-399.md)
+  Split April 2026 archive for RIOTBOX-350 through RIOTBOX-399.
+- [2026-04-400-449.md](./2026-04-400-449.md)
+  Split April 2026 archive for RIOTBOX-400 through RIOTBOX-449.
+- [2026-04-450-499.md](./2026-04-450-499.md)
+  Split April 2026 archive for RIOTBOX-450 through RIOTBOX-499.
 - [2026-05.md](./2026-05.md)
   Grouped archive for routine May 2026 Riotbox tickets, including the P012 Source Timing Intelligence batch.
 - [RIOTBOX-16.md](./RIOTBOX-16.md)

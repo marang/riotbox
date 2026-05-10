@@ -34,6 +34,11 @@ Use one of these two shapes:
 - one file per ticket for architecture, review, decision, or process-heavy tickets
 - grouped files for routine feature work when readability stays good
 
+If a grouped file grows large enough that normal file reads become noisy, split it into range files and keep the original month file as an index. Use names such as:
+
+- `2026-04-000-099.md`
+- `2026-04-050-099.md`
+
 ## Naming And Formatting
 
 Use these naming rules:
