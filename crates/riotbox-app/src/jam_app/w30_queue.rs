@@ -1,4 +1,15 @@
-use super::*;
+use super::{
+    state::{JamAppState, QueueControlResult},
+    w30_targets,
+};
+use riotbox_core::{
+    TimestampMs,
+    action::{
+        ActionCommand, ActionDraft, ActionParams, ActionTarget, ActorType, Quantization,
+        TargetScope,
+    },
+    session::CaptureTarget,
+};
 
 impl JamAppState {
     pub fn queue_capture_bar(&mut self, requested_at: TimestampMs) {
@@ -6,7 +17,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::CaptureBarGroup,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 ..Default::default()
             },
@@ -54,7 +65,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::PromoteCaptureToPad,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -91,7 +102,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30LiveRecall,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -143,7 +154,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30StepFocus,
             Quantization::NextBeat,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -187,7 +198,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30SwapBank,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -231,7 +242,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30BrowseSlicePool,
             Quantization::NextBeat,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(target.bank_id.clone()),
                 pad_id: Some(target.pad_id.clone()),
@@ -272,7 +283,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30ApplyDamageProfile,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -310,7 +321,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30LoopFreeze,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -348,7 +359,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30AuditionPromoted,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -397,7 +408,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30AuditionRawCapture,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -434,7 +445,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::W30TriggerPad,
             Quantization::NextBeat,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 bank_id: Some(bank_id.clone()),
                 pad_id: Some(pad_id.clone()),
@@ -467,7 +478,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::PromoteResample,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 ..Default::default()
             },
