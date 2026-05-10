@@ -24,7 +24,7 @@ use riotbox_core::{
         scan_session_recovery_candidates,
     },
     queue::ActionQueue,
-    session::{CaptureRef, GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
+    session::{GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
     source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
