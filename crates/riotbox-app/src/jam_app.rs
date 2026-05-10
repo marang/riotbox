@@ -1,35 +1,23 @@
 use std::{
-    collections::BTreeMap,
-    error::Error,
-    fmt::{self, Display, Formatter},
-    io,
     path::{Path, PathBuf},
     time::{SystemTime, UNIX_EPOCH},
 };
 
-use riotbox_audio::{
-    mc202::Mc202RenderState,
-    runtime::AudioRuntimeHealth,
-    source_audio::SourceAudioCache,
-    tr909::Tr909RenderState,
-    w30::{W30PreviewRenderState, W30ResampleTapState},
-};
+use riotbox_audio::source_audio::SourceAudioCache;
 use riotbox_core::{
     action::ActionStatus,
-    ghost::GhostWatchSuggestion,
-    ids::{CaptureId, SourceId},
+    ids::SourceId,
     persistence::{
-        PersistenceError, SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus,
-        load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
+        SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus, load_session_json,
+        load_source_graph_json, save_session_json, save_source_graph_json,
         scan_session_recovery_candidates,
     },
     queue::ActionQueue,
     session::{GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
     source_graph::{DecodeProfile, SourceGraph},
-    transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
 };
-use riotbox_sidecar::client::{ClientError as SidecarClientError, StdioSidecarClient};
+use riotbox_sidecar::client::StdioSidecarClient;
 use sha2::{Digest, Sha256};
 
 #[cfg(test)]
@@ -83,6 +71,8 @@ use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
 
 #[cfg(test)]
 use riotbox_core::TimestampMs;
+#[cfg(test)]
+use riotbox_core::transport::CommitBoundaryState;
 
 impl JamAppState {
     pub(super) const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
