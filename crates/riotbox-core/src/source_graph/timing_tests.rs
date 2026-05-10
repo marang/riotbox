@@ -94,6 +94,15 @@ mod timing_tests {
         let mut timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
         timing.bpm_estimate = Some(118.0);
         timing.beat_grid.truncate(4);
+        let primary = timing.primary_hypothesis_id.clone().expect("primary id");
+        let primary = timing
+            .hypotheses
+            .iter_mut()
+            .find(|hypothesis| hypothesis.hypothesis_id == primary)
+            .expect("primary hypothesis");
+        primary.confidence = 0.1;
+        primary.drift[0].mean_abs_drift_ms = 500.0;
+        primary.drift[0].max_drift_ms = 500.0;
 
         let evaluation =
             evaluate_timing_fixture_output(&timing, &evaluation_target_from_case(clean_case));
@@ -105,6 +114,38 @@ mod timing_tests {
         assert!(evaluation
             .issues
             .contains(&TimingFixtureEvaluationIssue::BeatCountBelowMinimum));
+        assert!(evaluation
+            .issues
+            .contains(&TimingFixtureEvaluationIssue::PrimaryConfidenceBelowFloor));
+        assert!(evaluation
+            .issues
+            .contains(&TimingFixtureEvaluationIssue::BeatDriftOutsideTolerance));
+        assert!(evaluation
+            .issues
+            .contains(&TimingFixtureEvaluationIssue::DownbeatDriftOutsideTolerance));
+
+        let mut missing_drift_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
+        let primary = missing_drift_timing
+            .primary_hypothesis_id
+            .clone()
+            .expect("primary id");
+        missing_drift_timing
+            .hypotheses
+            .iter_mut()
+            .find(|hypothesis| hypothesis.hypothesis_id == primary)
+            .expect("primary hypothesis")
+            .drift
+            .clear();
+
+        let missing_drift_evaluation = evaluate_timing_fixture_output(
+            &missing_drift_timing,
+            &evaluation_target_from_case(clean_case),
+        );
+
+        assert!(!missing_drift_evaluation.passed);
+        assert!(missing_drift_evaluation
+            .issues
+            .contains(&TimingFixtureEvaluationIssue::MissingTimingDrift));
     }
 
     fn case_by_id<'a>(
@@ -194,9 +235,21 @@ mod timing_tests {
                 .get("bpm_tolerance")
                 .and_then(serde_json::Value::as_f64)
                 .expect("bpm_tolerance") as f32,
+            beat_hit_tolerance_ms: expected
+                .get("beat_hit_tolerance_ms")
+                .and_then(serde_json::Value::as_f64)
+                .expect("beat_hit_tolerance_ms") as f32,
+            downbeat_tolerance_ms: expected
+                .get("downbeat_tolerance_ms")
+                .and_then(serde_json::Value::as_f64)
+                .expect("downbeat_tolerance_ms") as f32,
             expected_beat_count_min: u32_from_expected(expected, "expected_beat_count_min"),
             expected_bar_count_min: u32_from_expected(expected, "expected_bar_count_min"),
             expected_phrase_count_min: u32_from_expected(expected, "expected_phrase_count_min"),
+            confidence_floor: expected
+                .get("confidence_floor")
+                .and_then(serde_json::Value::as_f64)
+                .expect("confidence_floor") as f32,
             quality: timing_quality_from_label(
                 expected
                     .get("timing_quality")
