@@ -1,6 +1,19 @@
-use super::helpers::append_capture_note;
-use super::*;
+use std::{
+    io,
+    path::{Path, PathBuf},
+};
 
+use riotbox_audio::{
+    runtime::render_w30_resample_tap_offline,
+    source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
+    w30::{
+        W30ResampleTapMode, W30ResampleTapRouting, W30ResampleTapSourceProfile, W30ResampleTapState,
+    },
+};
+use riotbox_core::{ids::CaptureId, session::CaptureRef};
+
+use super::JamAppState;
+use super::helpers::append_capture_note;
 use super::state::W30BusPrintInput;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
