@@ -276,4 +276,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Added positive and negative validator fixtures for observer/audio JSON summaries.
 - [2026-04.md](./2026-04.md#riotbox-328-audit-feral-policy-entry-constraints)
   Grouped archive entries for the P009 Feral policy batch `RIOTBOX-328` through `RIOTBOX-338` plus the `RIOTBOX-339` Feral before/after audio QA pack.
+- [RIOTBOX-753.md](./RIOTBOX-753.md)
+  Context-light search workflow, branch closeout rule, and April archive split.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
