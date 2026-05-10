@@ -1,7 +1,7 @@
 # Source Timing Example Readiness
 
 Date: 2026-05-07
-Rechecked: 2026-05-08
+Rechecked: 2026-05-10
 
 Status: local real-example readiness check for Feral grid packs after the
 Source Timing readiness-to-pack bridge and explicit dance-loop auto-readiness
@@ -50,38 +50,48 @@ evidence in `README.md` and `grid-report.md` for human QA:
 
 ## Results
 
-| Source | Grid BPM source | Grid BPM | Primary BPM | Delta | Agrees | Readiness | Manual confirm | Warnings | Practical guidance |
-| --- | --- | ---: | ---: | ---: | --- | --- | --- | --- | --- |
-| `Beat03_130BPM(Full).wav` | `static_default` | 128.000 | 130.285 | 2.285 | no | `weak` | yes | `PhraseUncertain`, `AmbiguousDownbeat` | Use explicit `130 BPM` for listening examples until readiness improves. |
-| `Beat08_128BPM(Full).wav` | `static_default` | 128.000 | 128.397 | 0.397 | yes | `weak` | yes | `PhraseUncertain`, `AmbiguousDownbeat` | Timing is BPM-close, but still not auto-trusted because downbeat/phrase evidence is weak. |
-| `Beat20_128BPM(Full).wav` | `static_default` | 128.000 | 128.397 | 0.397 | yes | `weak` | yes | `PhraseUncertain`, `AmbiguousDownbeat` | Same as Beat08: acceptable BPM agreement, not enough readiness for automatic trust. |
-| `DH_BeatC_120-01.wav` | `static_default` | 128.000 | 120.185 | 7.815 | no | `weak` | yes | `PhraseUncertain`, `AmbiguousDownbeat` | Use explicit `120 BPM`; auto fallback is musically misleading here. |
-| `DH_RushArp_120_A.wav` | no manifest | unknown | unknown | unknown | unknown | unknown | unknown | render failed: `tr909 rendered near silence` | Not a good Feral grid pack source for this drum-support path yet. Needs a separate melodic/source-chop example path. |
+The 2026-05-10 recheck uses the real `source_timing_probe --json` CLI directly
+against local example WAVs. The Feral grid pack manifest can still choose a
+fallback grid policy independently, so this table records probe readiness rather
+than pack BPM decision fields.
+
+| Source | Cue | Readiness | Manual confirm | Primary BPM | Beat | Downbeat | Phrase | Warnings | Practical guidance |
+| --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- |
+| `Beat03_130BPM(Full).wav` | `needs confirm` | `ready` | yes | 130.285 | stable | stable | not_enough_material | `PhraseUncertain` | BPM, beat, and downbeat are useful, but short-loop phrase absence still blocks automatic trust. |
+| `Beat08_128BPM(Full).wav` | `needs confirm` | `ready` | yes | 128.397 | stable | stable | not_enough_material | `PhraseUncertain` | Same: usable grid evidence, still needs explicit confirmation for phrase-level confidence. |
+| `Beat20_128BPM(Full).wav` | `needs confirm` | `weak` | yes | 128.397 | stable | weak | not_enough_material | `PhraseUncertain`, `AmbiguousDownbeat` | Keep conservative; downbeat evidence is not stable enough. |
+| `DH_BeatC_120-01.wav` | `needs confirm` | `ready` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
+| `DH_BeatC_KickSnr_120-01.wav` | `needs confirm` | `ready` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
+| `DH_Fadapad_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Correctly not a drum-timing source for this probe path. |
+| `DH_RushArp_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Needs a melodic/source-chop path, not TR-style timing trust. |
 
 ## Interpretation
 
 The current examples are more auditable than before, but not automatically better
 for every source:
 
-- the pack now exposes when auto mode fell back to `static_default`
-- the Feral grid auto policy no longer reports generic half-time ambiguity for
-  these examples, but still refuses auto-trust while downbeat / phrase evidence
-  is weak
-- BPM agreement is visible even when readiness remains weak
+- the CLI now finds useful BPM and often stable downbeat evidence for several
+  short drum loops
+- `readiness=ready` can still pair with `requires_manual_confirm=true`; this is
+  safe but confusing and should be refined before musicians depend on it
+- short-loop phrase absence is currently reported as `not_enough_material` /
+  `PhraseUncertain`, even when beat and downbeat are stable
 - sources with a known BPM should still use explicit BPM in musician-facing
-  examples when readiness is not `ready`
+  examples when the cue remains `needs confirm`
 - melodic or non-drum sources can still fail the current TR-909 support render
   gate and should not be presented as Feral grid examples yet
 
 This directly explains why generated examples can still feel like the previous
-ones unless the user chooses an explicit BPM or the detector reaches `ready`.
+ones unless the user chooses an explicit BPM or the detector reaches a more
+clearly trusted short-loop state.
 
 ## Follow-Up
 
 Near-term follow-up should not loosen readiness just to make examples look better.
 Instead:
 
-- improve downbeat and phrase evidence so stable real sources can become `ready`
+- refine short-loop readiness semantics so stable BPM/beat/downbeat evidence can
+  be used conservatively without pretending long-phrase confidence exists
 - keep explicit-BPM examples documented where the current detector is still weak
 - add a separate melodic/source-chop showcase path for non-drum sources such as
   `DH_RushArp_120_A.wav`
