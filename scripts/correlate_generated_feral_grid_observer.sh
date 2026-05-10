@@ -14,6 +14,7 @@ locked_observer_fixture="$tmpdir/feral-grid-observer/events-locked.ndjson"
 mismatched_observer_fixture="$tmpdir/feral-grid-observer/events-mismatched-source-timing.ndjson"
 mismatch_output="$tmpdir/feral-grid-observer/mismatch-output.txt"
 user_override_bpm=128.75
+risky_user_override_bpm=135.0
 
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0
 python3 - "$tmpdir/source-fallback.wav" <<'PY'
@@ -183,6 +184,57 @@ jq -e \
   "$tmpdir/observer-audio-summary-user-override.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary-user-override.json"
+
+cargo run -p riotbox-audio --bin feral_grid_pack -- \
+  --source "$tmpdir/source.wav" \
+  --output-dir "$tmpdir/feral-grid-risky-user-override" \
+  --bpm "$risky_user_override_bpm" \
+  --bars 2 \
+  --source-window-seconds 0.5
+python3 scripts/validate_listening_manifest_json.py \
+  --require-existing-artifacts \
+  "$tmpdir/feral-grid-risky-user-override/manifest.json"
+jq -e \
+  --argjson override_bpm "$risky_user_override_bpm" \
+  '.grid_bpm_source == "user_override"
+    and .grid_bpm_decision_reason == "user_override"
+    and .bpm == $override_bpm
+    and (.source_timing_bpm_delta | type == "number")
+    and .source_timing_bpm_delta > 1.0
+    and .source_timing.bpm_agrees_with_grid == false
+    and .source_timing.primary_bpm != null
+    and .metrics.tr909_groove_timing.applied == false
+    and .metrics.tr909_groove_timing.reason == "not_source_timing_grid"
+    and .metrics.source_grid_output_drift.hit_ratio >= 0.5
+    and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms' \
+  "$tmpdir/feral-grid-risky-user-override/manifest.json"
+
+cargo run -p riotbox-app --bin observer_audio_correlate -- \
+  --observer "$observer_fixture" \
+  --manifest "$tmpdir/feral-grid-risky-user-override/manifest.json" \
+  --output "$tmpdir/observer-audio-summary-risky-user-override.json" \
+  --json \
+  --require-evidence
+jq -e \
+  '.schema == "riotbox.observer_audio_summary.v1"
+    and .schema_version == 1
+    and .control_path.present == true
+    and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
+    and .control_path.observer_source_timing.degraded_policy == "cautious"
+    and .output_path.grid_bpm_source == "user_override"
+    and .output_path.grid_bpm_decision_reason == "user_override"
+    and (.output_path.source_timing_bpm_delta | type == "number")
+    and .output_path.source_timing_bpm_delta > 1.0
+    and .output_path.source_timing.bpm_agrees_with_grid == false
+    and .output_path.source_timing_alignment.status == "aligned"
+    and (.output_path.source_timing_alignment.issues | length == 0)
+    and .output_path.metrics.source_grid_output_drift.hit_ratio >= 0.5
+    and .output_path.metrics.source_grid_output_drift.max_peak_offset_ms <= .output_path.metrics.source_grid_output_drift.max_allowed_peak_offset_ms
+    and .output_path.present == true
+    and (.output_path.issues | length == 0)' \
+  "$tmpdir/observer-audio-summary-risky-user-override.json"
+python3 scripts/validate_observer_audio_summary_json.py \
+  "$tmpdir/observer-audio-summary-risky-user-override.json"
 
 cargo run -p riotbox-app --bin user_session_observer_probe -- \
   --probe feral-grid-jam-fallback \
