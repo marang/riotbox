@@ -20,6 +20,7 @@ mod timing_tests {
         let weak_case = case_by_id(cases, "fx_timing_weak_noisy_123");
         let ambiguous_case = case_by_id(cases, "fx_timing_halftime_140_ambiguous");
         let double_time_case = case_by_id(cases, "fx_timing_doubletime_90_ambiguous");
+        let high_drift_case = case_by_id(cases, "fx_timing_drifting_live_118");
 
         let clean_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
         let clean_evaluation =
@@ -109,6 +110,32 @@ mod timing_tests {
         assert_eq!(double_time_timing.hypotheses.len(), 2);
         assert_eq!(double_time_timing.hypotheses[1].kind, TimingHypothesisKind::DoubleTime);
         assert_eq!(double_time_timing.hypotheses[1].bpm, 180.0);
+
+        let high_drift_timing =
+            analyze_source_timing_seed(&analysis_seed_from_case(high_drift_case));
+        let high_drift_evaluation = evaluate_timing_fixture_output(
+            &high_drift_timing,
+            &evaluation_target_from_case(high_drift_case),
+        );
+        assert!(high_drift_evaluation.passed, "{high_drift_evaluation:?}");
+        assert_eq!(high_drift_timing.effective_timing_quality(), TimingQuality::Medium);
+        assert_eq!(
+            high_drift_timing.effective_degraded_policy(),
+            TimingDegradedPolicy::ManualConfirm
+        );
+        assert_eq!(high_drift_evaluation.primary_max_mean_abs_drift_ms, Some(45.0));
+        assert_eq!(high_drift_evaluation.primary_max_drift_ms, Some(110.0));
+        assert!(high_drift_timing
+            .warnings
+            .iter()
+            .any(|warning| warning.code == TimingWarningCode::DriftHigh));
+        let high_drift_primary = high_drift_timing
+            .primary_hypothesis()
+            .expect("high drift primary hypothesis");
+        assert!(high_drift_primary
+            .drift
+            .iter()
+            .any(|drift| drift.end_drift_ms.abs() > 70.0));
     }
 
     #[test]

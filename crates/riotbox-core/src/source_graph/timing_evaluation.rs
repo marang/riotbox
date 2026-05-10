@@ -75,6 +75,7 @@ pub fn source_timing_analysis_seed_from_fixture_case(
         confidence_floor: required_f32(expected, "confidence_floor")?,
         warnings: timing_warning_codes_from_expected(&fixture_id, expected)?,
         alternatives: source_timing_alternatives_from_expected(&fixture_id, expected)?,
+        drift: source_timing_drift_from_expected(&fixture_id, expected)?,
     })
 }
 
@@ -308,6 +309,25 @@ fn source_timing_alternatives_from_expected(
             })
         })
         .collect()
+}
+
+fn source_timing_drift_from_expected(
+    fixture_id: &str,
+    expected: &serde_json::Value,
+) -> Result<Option<SourceTimingDriftSeed>, String> {
+    let Some(drift) = expected.get("drift") else {
+        return Ok(None);
+    };
+    if !drift.is_object() {
+        return Err(format!("{fixture_id}: drift must be an object"));
+    }
+
+    Ok(Some(SourceTimingDriftSeed {
+        window_bars: required_u32(drift, "window_bars")?,
+        max_drift_ms: required_f32(drift, "max_drift_ms")?,
+        mean_abs_drift_ms: required_f32(drift, "mean_abs_drift_ms")?,
+        end_drift_ms: required_f32(drift, "end_drift_ms")?,
+    }))
 }
 
 fn timing_warning_codes_from_expected(
