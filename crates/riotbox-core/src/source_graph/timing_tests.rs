@@ -157,6 +157,75 @@ mod timing_tests {
             .contains(&TimingFixtureEvaluationIssue::MissingTimingDrift));
     }
 
+    #[test]
+    fn source_timing_fixture_evaluation_serializes_measurements_and_issues() {
+        let catalog: serde_json::Value =
+            serde_json::from_str(TIMING_FIXTURE_CATALOG).expect("parse timing fixture catalog");
+        let cases = catalog
+            .get("cases")
+            .and_then(serde_json::Value::as_array)
+            .expect("catalog cases");
+        let clean_case = case_by_id(cases, "fx_timing_clean_128_4x4");
+        let mut timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
+        let passing_evaluation =
+            evaluate_timing_fixture_output(&timing, &evaluation_target_from_case(clean_case));
+        let passing_json =
+            serde_json::to_value(&passing_evaluation).expect("serialize passing evaluation");
+
+        assert_eq!(passing_json["fixture_id"], "fx_timing_clean_128_4x4");
+        assert_eq!(passing_json["passed"], true);
+        assert_json_number_close(&passing_json["primary_confidence"], 0.85);
+        assert_json_number_close(&passing_json["primary_max_mean_abs_drift_ms"], 17.5);
+        assert_json_number_close(&passing_json["primary_max_drift_ms"], 35.0);
+        assert_eq!(
+            passing_json["issues"]
+                .as_array()
+                .expect("passing issue array")
+                .len(),
+            0
+        );
+
+        timing.bpm_estimate = Some(118.0);
+        timing.beat_grid.truncate(4);
+        let primary = timing.primary_hypothesis_id.clone().expect("primary id");
+        let primary = timing
+            .hypotheses
+            .iter_mut()
+            .find(|hypothesis| hypothesis.hypothesis_id == primary)
+            .expect("primary hypothesis");
+        primary.confidence = 0.1;
+        primary.drift[0].mean_abs_drift_ms = 500.0;
+        primary.drift[0].max_drift_ms = 500.0;
+
+        let failing_evaluation =
+            evaluate_timing_fixture_output(&timing, &evaluation_target_from_case(clean_case));
+        let failing_json =
+            serde_json::to_value(&failing_evaluation).expect("serialize failing evaluation");
+
+        assert_eq!(failing_json["passed"], false);
+        assert_json_number_close(&failing_json["primary_confidence"], 0.1);
+        assert_json_number_close(&failing_json["primary_max_mean_abs_drift_ms"], 500.0);
+        assert_json_number_close(&failing_json["primary_max_drift_ms"], 500.0);
+        assert_eq!(
+            failing_json["issues"],
+            serde_json::json!([
+                "bpm_outside_tolerance",
+                "beat_count_below_minimum",
+                "primary_confidence_below_floor",
+                "beat_drift_outside_tolerance",
+                "downbeat_drift_outside_tolerance"
+            ])
+        );
+    }
+
+    fn assert_json_number_close(value: &serde_json::Value, expected: f64) {
+        let actual = value.as_f64().expect("json number");
+        assert!(
+            (actual - expected).abs() < 0.000_1,
+            "expected {actual} to be close to {expected}"
+        );
+    }
+
     fn case_by_id<'a>(
         cases: &'a [serde_json::Value],
         fixture_id: &str,

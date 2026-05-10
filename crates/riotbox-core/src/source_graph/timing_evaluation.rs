@@ -1,4 +1,4 @@
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimingFixtureEvaluationTarget {
     pub fixture_id: String,
     pub primary_bpm: f32,
@@ -15,7 +15,7 @@ pub struct TimingFixtureEvaluationTarget {
     pub alternative_kinds: Vec<TimingHypothesisKind>,
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct TimingFixtureEvaluation {
     pub fixture_id: String,
     pub passed: bool,
@@ -29,7 +29,8 @@ pub struct TimingFixtureEvaluation {
     pub issues: Vec<TimingFixtureEvaluationIssue>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum TimingFixtureEvaluationIssue {
     MissingBpmEstimate,
     BpmOutsideTolerance,
