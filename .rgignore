@@ -1,0 +1,14 @@
+# Keep default repo searches focused on live source and canonical docs.
+#
+# Search these paths explicitly when needed:
+#   rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues
+#   rg --no-ignore "source phrase" plan/conversation_creating_*.txt
+docs/archive/linear_issues/
+plan/conversation_creating_*.txt
+
+# Audio/data outputs are already gitignored, but keep ripgrep behavior explicit.
+artifacts/
+data/sessions/
+data/test_audio/examples/*.wav
+data/test_audio/examples/*.mp3
+data/test_audio/examples/*.flac

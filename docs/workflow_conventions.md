@@ -27,7 +27,7 @@ When the local `riotbox-development` skill is available, use it for Riotbox impl
 
 Default workflow:
 
-`Linear issue -> branch -> scoped commit(s) -> PR -> review -> merge -> sync local main`
+`Linear issue -> branch -> scoped commit(s) -> PR -> review -> merge -> sync local main -> close out ticket and branch`
 
 Do not skip the PR step for normal feature or implementation work.
 
@@ -53,6 +53,9 @@ For a normal implementation or docs slice:
 14. wait for merge / approval boundary before continuing to the next ticket
 15. after merge, sync local `main`
 16. move the issue to `Done`
+17. archive useful Linear context before deletion when the ticket should be removed from Linear
+18. delete the merged remote feature branch after the merge is verified
+19. delete the completed Linear issue only after the archive entry exists
 
 This is the default unless the user explicitly asks for something else.
 
@@ -231,6 +234,21 @@ Preferred response when a Rust file crosses the budget:
 - avoid durable `01_...rs`, `02_...rs` numbering; numbered shards are not an acceptable final structure
 - avoid mixing behavior changes with file-size cleanup
 - create a follow-up ticket if the split is too large for the current branch
+
+## 8.1.3 Context Hygiene For Agents
+
+Riotbox keeps long-term history and generated evidence in the repo, but normal implementation work should not load all of it into agent context.
+
+Default behavior:
+
+- respect `.rgignore` for broad searches
+- search live source, specs, reviews, and workflow docs first
+- avoid broad searches through `docs/archive/linear_issues/`, generated `artifacts/`, local `data/`, and raw planning transcripts unless the current task needs those paths
+- prefer `rg "..." crates docs/specs docs/reviews docs/workflow_conventions.md AGENTS.md` for architecture or implementation questions
+- prefer exact archive searches such as `rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues` when ticket history is needed
+- prefer exact audio/manifest searches under `artifacts/audio_qa/...` only when validating a specific generated proof
+
+Do not paste large archive batches, generated manifests, raw transcript files, or long audio probe outputs into a PR description or agent summary. Summarize the relevant finding and link the file path instead.
 
 ## 8.2 CI Check After PR Open
 
@@ -513,6 +531,16 @@ Deletion rule:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - the helper should use token auth via `LINEAR_API_TOKEN`
 - do not treat pasted browser session cookies as the normal cleanup path
+
+GitHub branch cleanup rule:
+
+- after a PR is merged and local `main` is synced, delete the remote feature branch unless it is intentionally long-lived
+- do branch cleanup as part of ticket closeout, alongside the Linear archive/delete path
+- prefer deleting the exact branch used by the merged PR:
+  - `git push origin --delete feature/riotbox-123-example`
+- never delete `main`, release branches, protected branches, or an active branch with an open PR
+- for squash-merged PRs, do not rely only on `git branch --merged`; squash merges can leave branch tips outside `main` even when the PR content is already merged
+- if doing a bulk cleanup, first verify there are no open PRs and then delete only stale non-`main` heads that are known merged, archived, or otherwise obsolete
 
 Priority rule:
 

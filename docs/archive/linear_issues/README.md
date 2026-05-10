@@ -4,6 +4,12 @@ This directory is the long-term archive for completed Linear tickets that no lon
 
 Use it to keep Riotbox project history searchable and durable while staying under the Linear free-tier issue cap.
 
+This archive is excluded from default `rg` searches by `.rgignore` so routine agent work does not spend context on old ticket history. Search it explicitly when needed:
+
+```bash
+rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues
+```
+
 ## Canonical Roles
 
 - `Linear`
@@ -27,6 +33,11 @@ Use one of these two shapes:
 
 - one file per ticket for architecture, review, decision, or process-heavy tickets
 - grouped files for routine feature work when readability stays good
+
+If a grouped file grows large enough that normal file reads become noisy, split it into range files and keep the original month file as an index. Use names such as:
+
+- `2026-04-000-099.md`
+- `2026-04-050-099.md`
 
 ## Naming And Formatting
 
