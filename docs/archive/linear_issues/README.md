@@ -10,6 +10,13 @@ This archive is excluded from default `rg` searches by `.rgignore` so routine ag
 rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues
 ```
 
+For Linear deletion checks, do not read the archive content broadly. Verify only the archive handoff:
+
+```bash
+test -f docs/archive/linear_issues/RIOTBOX-123.md
+rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues
+```
+
 ## Canonical Roles
 
 - `Linear`
@@ -29,24 +36,20 @@ Archive a ticket here before deleting it from Linear when:
 
 ## Archive Shapes
 
-Use one of these two shapes:
+Use one archive shape:
 
-- one file per ticket for architecture, review, decision, or process-heavy tickets
-- grouped files for routine feature work when readability stays good
+- one file per ticket for every archived Linear ticket
 
-If a grouped file grows large enough that normal file reads become noisy, split it into range files and keep the original month file as an index. Use names such as:
-
-- `2026-04-000-099.md`
-- `2026-04-050-099.md`
+Monthly files such as `2026-04.md` should be indexes to per-ticket files, not grouped content archives.
 
 ## Naming And Formatting
 
 Use these naming rules:
 
 - `RIOTBOX-123.md`
-  one-file archive entry for one important ticket
+  archive entry for one ticket
 - `YYYY-MM.md`
-  grouped archive file for routine tickets
+  monthly index file for archived tickets
 
 Formatting rules:
 

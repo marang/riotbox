@@ -455,13 +455,13 @@ Do that archive update as part of the normal ticket closeout path, not as a sepa
 
 Recommended archive shapes:
 
-- one file per ticket for architecture, review, decision, or process tickets
-- grouped monthly or phase-oriented files for routine feature tickets when readability stays good
+- one file per ticket for all archived Linear tickets
+- monthly files such as `2026-05.md` should be indexes, not grouped content archives
 
 Naming and formatting rules:
 
 - use `RIOTBOX-123.md` for one-ticket archive files
-- use `YYYY-MM.md` for grouped monthly files
+- use `YYYY-MM.md` for monthly index files
 - use ISO dates in all metadata fields: `YYYY-MM-DD`
 - keep the metadata block field order consistent with the archive template
 - use stable final-status values such as:
@@ -527,6 +527,10 @@ Deletion rule:
   - the PR is merged
   - the issue is marked done
   - the repo archive entry exists
+- verify archive presence by exact file or metadata check, not by reading or semantically searching the whole archive:
+  - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
+  - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
+- do not use MemPalace as the deletion gate; exact filesystem / metadata checks are more reliable for cleanup decisions
 - when deleting, prefer the repo-local helper:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - the helper should use token auth via `LINEAR_API_TOKEN`

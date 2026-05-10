@@ -326,12 +326,12 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Do that archive work as part of the ticket closeout path, not as a separate default `Archive ...` ticket.
 - Use the repo archive as canonical Git-backed history.
 - MemPalace should stay focused on live product docs and specs, not archived Linear ticket files.
-- For important architecture, review, and decision-heavy tickets, prefer one archive file per ticket.
-- For routine feature tickets, a grouped archive file is acceptable when the entries stay readable and searchable.
+- Use one archive file per Linear ticket so deletion checks stay exact and context-light.
+- Do not create new grouped ticket archives by default; use month files such as `2026-05.md` only as indexes to per-ticket files.
 - Keep archive entries structurally uniform.
 - Use:
   - `RIOTBOX-123.md` for one-ticket archive files
-  - `YYYY-MM.md` for grouped monthly archive files
+  - `YYYY-MM.md` for monthly index files
 - Use ISO dates (`YYYY-MM-DD`) for all archived ticket timestamps.
 - Keep metadata fields in the same order as the archive template so entries stay easy to scan, diff, and mine.
 - Use stable final-status terms such as:
@@ -362,6 +362,11 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - verification summary
   - decision-log or spec links touched by the ticket
 - Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
+- For the deletion check, verify archive presence by path or exact metadata only; do not read or semantically search the whole archive.
+- Prefer:
+  - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
+  - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
+- Do not use MemPalace as the deletion gate. Exact filesystem / metadata checks are the source of truth for whether the archive handoff exists.
 - Prefer the repo-local helper for deletion:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - Use token auth for that helper:
