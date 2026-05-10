@@ -88,6 +88,8 @@ intent enum and keep the old field as compatibility input.
 
 ### Stage 1: Typed conversion helpers
 
+Status: landed.
+
 Add a typed conversion layer in `riotbox-core`, with tests proving every current
 role and mutation label round-trips through the expected stable label.
 
@@ -101,6 +103,8 @@ Expected helpers:
 This stage should not change session JSON shape yet.
 
 ### Stage 2: Use typed values inside app side effects and replay
+
+Status: landed.
 
 Replace direct string comparisons in commit and replay code with typed parsing at
 the action boundary.
@@ -116,22 +120,53 @@ Important behavior to preserve:
 
 ### Stage 3: Use typed values in render projection
 
+Status: landed.
+
 Render projection should branch on `Mc202RoleState` / phrase intent rather than
 raw strings.
 
 This reduces the chance that a future role string lands in Session/replay but
 does not render, or renders but does not replay.
 
-### Stage 4: Session-file migration
+### Stage 4: Session-file migration boundary
 
-Only after Stage 1-3 are stable, decide whether the persisted `Mc202LaneState`
-should store:
+Status: decided on 2026-05-10 by RIOTBOX-751.
 
-- compatibility strings plus typed accessors, or
-- typed enum fields with a session-version migration for old JSON.
+Decision: do not migrate the Session v1 JSON shape for MC-202 role and phrase
+intent fields now.
 
-If the JSON shape changes, update `docs/specs/session_file_spec.md`, fixture
-roundtrips, restore tests, and archive the migration decision.
+`Mc202LaneState` and MC-202 undo snapshots should continue to persist stable
+compatibility labels such as `follower`, `answer`, `pressure`, `instigator`, and
+`mutated_drive` for Session v1. Those labels remain part of the persisted wire
+contract, fixture contract, TUI/observer vocabulary, and archive evidence.
+
+Behavior must not branch on arbitrary raw strings. Consumers that make musical,
+replay, render, or QA decisions must parse these labels through the typed core
+helpers:
+
+- `Mc202RoleState`
+- `Mc202PhraseIntentState`
+- `Mc202PhraseVariantState`
+
+This keeps existing sessions backward compatible while removing the real drift
+risk: behavior controlled by unreviewed string comparisons.
+
+Future typed-field JSON migration is allowed only when it is part of a broader
+session-version migration or when new MC-202 role/phrase semantics cannot be
+represented safely by the current compatibility fields. That future migration
+must update:
+
+- `docs/specs/session_file_spec.md`
+- session-version migration code
+- legacy fixture load and roundtrip coverage
+- restore and deterministic replay assertions
+- MC-202 undo snapshot compatibility tests
+- TUI/observer label compatibility expectations
+- output-path proof for any audio-affecting render consequence
+
+Until then, unknown labels must reject or degrade explicitly at typed conversion
+boundaries rather than silently mutating Session state or rendering an unrelated
+fallback.
 
 ## Required Proof For Implementation Slices
 

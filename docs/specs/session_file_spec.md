@@ -189,12 +189,31 @@ Per lane, store only the state required to reproduce behavior:
 - W-30 preview intent plus bank/pad focus and current capture reference
 - TR-909 takeover, pattern, and reinforcement state
 
-MC-202 role and phrase-variant fields currently use stable compatibility labels
-in persisted sessions. Those labels are behavior-relevant and must not drift as
-ad-hoc strings. The typed migration path is documented in
-`docs/reviews/mc202_typed_contract_migration_plan_2026-05-10.md`; until a
-session-version migration is explicitly shipped, old session JSON must continue
-to restore and replay.
+MC-202 role and phrase-variant fields use stable compatibility labels in
+Session v1 persisted JSON. Current examples include `leader`, `follower`,
+`answer`, `pressure`, `instigator`, and `mutated_drive`.
+
+These labels are behavior-relevant persisted contract values, not ad-hoc
+implementation strings. Session v1 intentionally keeps the compatibility-label
+JSON shape for MC-202 lane state and MC-202 undo snapshots. Behavior consumers
+must parse labels through typed core helpers such as `Mc202RoleState`,
+`Mc202PhraseIntentState`, and `Mc202PhraseVariantState` before making queue,
+replay, render, observer, or QA decisions.
+
+Rules:
+
+- old Session v1 JSON must continue to restore and replay
+- unknown MC-202 role or phrase labels must reject or degrade explicitly at typed
+  conversion boundaries
+- raw label strings may be used for persisted JSON, display text, and artifact
+  names, but not as unreviewed behavior branches
+- no MC-202 Session v1 JSON shape migration is planned
+- any future typed-field JSON migration must be part of a documented
+  session-version migration with legacy fixture load, roundtrip, restore, replay,
+  undo snapshot, TUI/observer label, and audio-output proof where applicable
+
+The migration boundary is documented in
+`docs/reviews/mc202_typed_contract_migration_plan_2026-05-10.md`.
 
 ### 8.4 Mixer state
 
