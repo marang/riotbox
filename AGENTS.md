@@ -188,6 +188,15 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 
 ## Coding Guidance
 
+### Context hygiene
+
+- Keep normal searches focused on live source and canonical docs.
+- Default `rg` searches should respect `.rgignore`; it excludes long Linear archives, raw planning transcripts, generated artifacts, and local audio data.
+- Search `docs/archive/linear_issues/` only when ticket history is needed.
+- Search ignored archive or audio paths explicitly with `rg --no-ignore "..." <path>` instead of broad repo-wide searches.
+- Do not paste large generated manifests, WAV metadata dumps, archive batches, or raw transcript sections into working context unless they are directly needed for the slice.
+- Prefer opening specific files and line ranges over loading entire long documents.
+
 ### Rust
 
 - Keep core types explicit and boring
@@ -358,6 +367,12 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Use token auth for that helper:
   - `LINEAR_API_TOKEN=...`
 - Do not rely on pasted browser session cookies as the normal workflow path.
+- Delete the merged remote feature branch as part of ticket closeout after the PR is merged and local `main` is synced.
+- Prefer deleting the exact PR branch:
+  - `git push origin --delete feature/riotbox-123-example`
+- Never delete `main`, release/protected branches, branches with open PRs, or intentionally long-lived branches.
+- For squash-merged PRs, do not rely only on `git branch --merged`; verify PR merge/closed state or known archive status before bulk branch deletion.
+- If doing a bulk GitHub branch cleanup, first confirm there are no open PRs and then remove only stale non-`main` heads.
 
 ### Next-ticket heuristic
 
@@ -385,7 +400,9 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 
 ## Commands
 
-Current useful commands:
+Keep this section as a short command shortlist. Use `just --list` and the `Justfile` for the full command catalog instead of duplicating every recipe here.
+
+Default checks:
 
 ```bash
 cargo fmt
@@ -394,58 +411,34 @@ just ci
 just audio-qa-ci
 just check
 just clippy
+```
+
+Common development helpers:
+
+```bash
 just source-timing-fixture-catalog
-just source-timing-fixture-catalog-validator-fixtures
-just source-timing-analyzer-skeleton-fixtures
-just source-timing-fixture-evaluator
 just source-timing-wav-probe
-just source-timing-bpm-candidates
-just source-timing-downbeat-ambiguity
-just source-timing-drift-report
-just source-timing-phrase-grid
-just source-timing-beat-evidence
-just source-timing-downbeat-evidence
 just source-timing-readiness-report
-just source-timing-candidate-confidence-report
 just mem-status
 just mem-search "replay truth"
+```
+
+Common audio and user-session probes:
+
+```bash
 just w30-smoke-qa local
 just w30-smoke-source-qa "data/test_audio/examples/Beat03_130BPM(Full).wav" local
-just w30-smoke-source-diff "data/test_audio/examples/Beat03_130BPM(Full).wav" local-source-diff
 just lane-recipe-pack local 2.0
 just feral-before-after "data/test_audio/examples/Beat03_130BPM(Full).wav" local
 just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local 130.0 8 1.0
-just audio-qa-notes artifacts/audio_qa/local/notes.md
-just observer-audio-correlation-notes artifacts/audio_qa/local/observer_audio_correlation.md
-just observer-audio-correlate artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.md
-just observer-audio-correlate-json artifacts/audio_qa/local/user-session/events.ndjson artifacts/audio_qa/local/feral-grid-demo/manifest.json artifacts/audio_qa/local/observer_audio_summary.json
-just observer-audio-correlate-json-fixture
-just user-session-observer-validator-fixtures
-just source-timing-probe-json-validator-fixtures
-just generated-source-timing-probe-json-smoke
-just generated-degraded-source-timing-probe-json-smoke
-just generated-ambiguous-source-timing-probe-json-smoke
-just listening-manifest-validator-fixtures
-just p011-exit-evidence-manifest
-just p011-exit-evidence-manifest-validator-fixtures
-just source-showcase-diversity-validator-fixtures
-just source-showcase-diversity-report-fixtures
-just source-showcase-diversity "PACK_A PACK_B"
-just listening-manifest-validate-generated-packs
-just observer-audio-correlate-generated-feral-grid
-just first-playable-jam-probe
-just stage-style-snapshot-convergence-smoke
-just stage-style-stability-proof
-just full-grid-export-reproducibility-smoke
-just product-export-reproducibility-smoke
-cargo run -p riotbox-audio --bin source_timing_probe -- --json "data/test_audio/examples/Beat08_128BPM(Full).wav"
-cargo run -p riotbox-audio --bin w30_preview_render
-cargo run -p riotbox-audio --bin w30_preview_compare
 cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples/Beat08_128BPM(Full).wav" --observer artifacts/audio_qa/local/user-session/events.ndjson
-scripts/linear_issue_delete.sh RIOTBOX-123
 ```
 
-Add new commands here when the repo grows enough that agents need a stable shortlist.
+Workflow helpers:
+
+```bash
+scripts/linear_issue_delete.sh RIOTBOX-123
+```
 
 Current CI baseline:
 

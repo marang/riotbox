@@ -4,6 +4,12 @@ This directory is the long-term archive for completed Linear tickets that no lon
 
 Use it to keep Riotbox project history searchable and durable while staying under the Linear free-tier issue cap.
 
+This archive is excluded from default `rg` searches by `.rgignore` so routine agent work does not spend context on old ticket history. Search it explicitly when needed:
+
+```bash
+rg --no-ignore "RIOTBOX-123" docs/archive/linear_issues
+```
+
 ## Canonical Roles
 
 - `Linear`
