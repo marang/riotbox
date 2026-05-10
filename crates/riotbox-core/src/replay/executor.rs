@@ -3,7 +3,7 @@ use crate::{
     ids::ActionId,
     replay::{ReplayPlanEntry, W30ArtifactReplayHydrationError},
     session::{
-        Mc202PhraseVariantState, SessionFile, Tr909ReinforcementModeState,
+        Mc202PhraseIntentState, Mc202RoleState, SessionFile, Tr909ReinforcementModeState,
         Tr909TakeoverProfileState,
     },
 };
@@ -199,7 +199,7 @@ pub fn apply_replay_entry_to_session(
         }
         ActionCommand::CaptureBarGroup => apply_capture_bar_group_hydrated_cue(session, entry)?,
         ActionCommand::Mc202SetRole => {
-            let role = action
+            let role_label = action
                 .target
                 .object_id
                 .clone()
@@ -212,49 +212,80 @@ pub fn apply_replay_entry_to_session(
                     command: action.command,
                     expected: "ActionTarget::object_id or ActionParams::Mutation { target_id: Some(_) }",
                 })?;
+            let role = Mc202RoleState::from_label(&role_label).ok_or(
+                ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "known MC-202 role label",
+                },
+            )?;
 
             apply_mc202_role(
                 session,
                 entry,
-                &role,
-                mc202_touch_or(action, if role == "leader" { 0.85 } else { 0.65 }),
+                role,
+                mc202_touch_or(action, mc202_set_role_default_touch(role)),
             );
         }
         ActionCommand::Mc202GenerateFollower => {
-            apply_mc202_role(session, entry, "follower", mc202_touch_or(action, 0.78));
+            apply_mc202_role(
+                session,
+                entry,
+                Mc202RoleState::Follower,
+                mc202_touch_or(action, Mc202RoleState::Follower.default_touch()),
+            );
         }
         ActionCommand::Mc202GenerateAnswer => {
-            apply_mc202_role(session, entry, "answer", mc202_touch_or(action, 0.82));
+            apply_mc202_role(
+                session,
+                entry,
+                Mc202RoleState::Answer,
+                mc202_touch_or(action, Mc202RoleState::Answer.default_touch()),
+            );
         }
         ActionCommand::Mc202GeneratePressure => {
-            apply_mc202_role(session, entry, "pressure", mc202_touch_or(action, 0.84));
+            apply_mc202_role(
+                session,
+                entry,
+                Mc202RoleState::Pressure,
+                mc202_touch_or(action, Mc202RoleState::Pressure.default_touch()),
+            );
         }
         ActionCommand::Mc202GenerateInstigator => {
-            apply_mc202_role(session, entry, "instigator", mc202_touch_or(action, 0.90));
+            apply_mc202_role(
+                session,
+                entry,
+                Mc202RoleState::Instigator,
+                mc202_touch_or(action, Mc202RoleState::Instigator.default_touch()),
+            );
         }
         ActionCommand::Mc202MutatePhrase => {
-            let current_role = session
+            let current_role_label = session
                 .runtime_state
                 .lane_state
                 .mc202
                 .role
                 .clone()
                 .unwrap_or_else(|| "follower".into());
-            let variant = match &action.params {
-                ActionParams::Mutation {
-                    target_id: Some(target_id),
-                    ..
-                } if target_id == "mutated_drive" => target_id.clone(),
-                _ => "mutated_drive".into(),
-            };
+            let current_role = Mc202RoleState::from_label(&current_role_label).ok_or(
+                ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "known current MC-202 role label",
+                },
+            )?;
+            let intent = mc202_phrase_intent_from_action(action)?;
             let bar_index = entry.commit_record.boundary.bar_index.max(1);
-            let phrase_ref = format!("{current_role}-{variant}-bar-{bar_index}");
+            let phrase_ref = format!(
+                "{}-{}-bar-{bar_index}",
+                current_role.label(),
+                intent.label()
+            );
             let touch = mc202_touch_or(action, 0.88);
 
-            session.runtime_state.lane_state.mc202.role = Some(current_role);
+            session.runtime_state.lane_state.mc202.role = Some(current_role.label().into());
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref);
-            session.runtime_state.lane_state.mc202.phrase_variant =
-                Some(Mc202PhraseVariantState::MutatedDrive);
+            session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
             session.runtime_state.macro_state.mc202_touch =
                 session.runtime_state.macro_state.mc202_touch.max(touch);
         }
@@ -343,15 +374,43 @@ pub fn apply_replay_entry_to_session(
 fn apply_mc202_role(
     session: &mut SessionFile,
     entry: &ReplayPlanEntry<'_>,
-    role: &str,
+    role: Mc202RoleState,
     touch: f32,
 ) {
-    session.runtime_state.lane_state.mc202.role = Some(role.into());
+    let role_label = role.label();
+    session.runtime_state.lane_state.mc202.role = Some(role_label.into());
     session.runtime_state.lane_state.mc202.phrase_ref =
-        Some(mc202_boundary_phrase_ref(entry, role));
+        Some(mc202_boundary_phrase_ref(entry, role_label));
     session.runtime_state.lane_state.mc202.phrase_variant = None;
     session.runtime_state.macro_state.mc202_touch =
         session.runtime_state.macro_state.mc202_touch.max(touch);
+}
+
+fn mc202_set_role_default_touch(role: Mc202RoleState) -> f32 {
+    if role == Mc202RoleState::Leader {
+        0.85
+    } else {
+        0.65
+    }
+}
+
+fn mc202_phrase_intent_from_action(
+    action: &crate::action::Action,
+) -> Result<Mc202PhraseIntentState, ReplayExecutionError> {
+    match &action.params {
+        ActionParams::Mutation {
+            target_id: Some(target_id),
+            ..
+        } => match Mc202PhraseIntentState::from_label(target_id) {
+            Some(Mc202PhraseIntentState::MutatedDrive) => Ok(Mc202PhraseIntentState::MutatedDrive),
+            _ => Err(ReplayExecutionError::InvalidParams {
+                action_id: action.id,
+                command: action.command,
+                expected: "known MC-202 phrase mutation intent label",
+            }),
+        },
+        _ => Ok(Mc202PhraseIntentState::MutatedDrive),
+    }
 }
 
 fn mc202_touch_or(action: &crate::action::Action, fallback: f32) -> f32 {

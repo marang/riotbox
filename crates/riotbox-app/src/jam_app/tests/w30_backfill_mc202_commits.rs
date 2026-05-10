@@ -225,6 +225,59 @@ fn committed_mc202_role_change_updates_lane_state_and_macro_touch() {
 }
 
 #[test]
+fn committed_mc202_role_change_rejects_unknown_role_without_mutating_lane_state() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let original_mc202 = session.runtime_state.lane_state.mc202.clone();
+    let original_touch = session.runtime_state.macro_state.mc202_touch;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let mut draft = ActionDraft::new(
+        ActorType::User,
+        ActionCommand::Mc202SetRole,
+        Quantization::NextPhrase,
+        ActionTarget {
+            scope: Some(TargetScope::LaneMc202),
+            object_id: Some("scene_lock".into()),
+            ..Default::default()
+        },
+    );
+    draft.params = ActionParams::Mutation {
+        intensity: 0.99,
+        target_id: Some("scene_lock".into()),
+    };
+    state.queue.enqueue(draft, 300);
+
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 36,
+            bar_index: 9,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert_eq!(state.session.runtime_state.lane_state.mc202, original_mc202);
+    assert_eq!(
+        state.session.runtime_state.macro_state.mc202_touch,
+        original_touch
+    );
+    assert_eq!(
+        state
+            .session
+            .action_log
+            .actions
+            .last()
+            .and_then(|action| action.result.as_ref())
+            .map(|result| (result.accepted, result.summary.as_str())),
+        Some((false, "rejected unknown MC-202 role scene_lock"))
+    );
+}
+
+#[test]
 fn committed_mc202_follower_generation_updates_phrase_ref_and_touch() {
     let graph = sample_graph();
     let session = sample_session(&graph);
@@ -424,4 +477,3 @@ fn committed_mc202_pressure_generation_updates_phrase_ref_touch_and_render_shape
         Some("generated MC-202 pressure phrase pressure-scene-1 at 0.84")
     );
 }
-
