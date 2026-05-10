@@ -19,6 +19,7 @@ ci:
     just source-timing-fixture-catalog-validator-fixtures
     just source-timing-analyzer-skeleton-fixtures
     just source-timing-fixture-evaluator
+    just source-timing-fixture-report-smoke
     just source-timing-wav-probe
     just source-timing-bpm-candidates
     just source-timing-beat-evidence
@@ -94,6 +95,12 @@ source-timing-analyzer-skeleton-fixtures:
 
 source-timing-fixture-evaluator:
     cargo test -p riotbox-core source_timing_fixture -- --nocapture
+
+source-timing-fixture-report catalog="crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json":
+    cargo run -p riotbox-core --bin source_timing_fixture_report -- --catalog "{{catalog}}"
+
+source-timing-fixture-report-smoke:
+    tmp="$(mktemp)" && cargo run -p riotbox-core --bin source_timing_fixture_report -- --catalog crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json > "$tmp" && jq -e '.schema == "riotbox.source_timing_fixture_evaluation_report.v1" and .schema_version == 1 and .passed == true and (.evaluations | length) >= 5 and (.evaluations[0].fixture_id == "fx_timing_clean_128_4x4") and (.evaluations[0].primary_confidence | type == "number") and (.evaluations[0].primary_max_drift_ms | type == "number") and (.evaluations[0].issues | type == "array")' "$tmp" && rm "$tmp"
 
 source-timing-wav-probe:
     cargo test -p riotbox-core source_timing_probe_diagnostics -- --nocapture
