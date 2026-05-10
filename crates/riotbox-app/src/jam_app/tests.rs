@@ -15,6 +15,7 @@ include!("tests/recovery_replay_family_diagnostics.rs");
 include!("tests/artifact_hydration_preflight.rs");
 include!("tests/feral_support_runtime_controls.rs");
 include!("tests/transport_scene_select.rs");
+include!("tests/commit_pipeline_order.rs");
 include!("tests/scene_restore_mc202_queue_start.rs");
 include!("tests/ghost_assist_queue/queue_acceptance.rs");
 include!("tests/ghost_assist_queue/accepted_replay_roundtrip.rs");
