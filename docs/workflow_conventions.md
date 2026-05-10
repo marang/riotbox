@@ -130,12 +130,25 @@ PR descriptions should include:
 - `Why This Matters`
 - `Summary`
 - `Verification`
+- `Drift Check` for non-trivial feature branches
 
 `Why This Matters` must explain:
 
 - what larger phase or milestone the slice belongs to
 - what product path or architecture seam it unlocks
 - what remains intentionally bounded, stubbed, or out of scope
+
+`Drift Check` should answer:
+
+- New `ActionCommand`: yes/no
+- Queue path covered: yes/no/n/a
+- Commit or side-effect path covered: yes/no/n/a
+- Session/replay consequence covered: yes/no/n/a
+- User-visible or observer surface covered: yes/no/n/a
+- Test/QA proof included: yes/no/n/a
+- Added `JamAppState` state: yes/no
+- Added or changed audio-producing behavior: yes/no
+- Shadow-system risk reviewed: yes/no
 
 Do not write PR descriptions as changelogs only.
 
@@ -177,7 +190,25 @@ If the `code-review` skill is not available in the current session:
 - state that clearly in the working notes or PR context
 - fall back to the normal self-review pass instead of skipping review entirely
 
-## 8.1.1 Rust File-Size Budget
+## 8.1.1 Drift Review Checklist
+
+For each finished feature branch, reviewers should check whether the branch introduced hidden architecture drift.
+
+Minimum questions:
+
+- Did this add or change an `ActionCommand`? If yes, are queue, commit/side-effect, Session/replay, user/observer surface, and QA proof all covered?
+- Did this add state to `JamAppState`? If yes, why is it app-runtime state rather than Session/Core truth?
+- Did this add a new lane, Ghost, Feral, capture, replay, source timing, or persistence path? If yes, does it reuse the existing contracts instead of creating a shadow system?
+- Did this claim an audible product change? If yes, where is the audio, metric, observer/audio, listening manifest, or reproducibility proof?
+- Did this introduce string values that now control behavior? If yes, should they become enums or documented contract fields?
+- Did this increase repeated queue or side-effect patterns? If yes, is a small helper now warranted?
+- Did this add broad app-module imports such as `use super::*`? If yes, is the dependency surface still reviewable?
+
+Record recurring findings in `docs/reviews/` and promote durable rules into `AGENTS.md`, this workflow document, or the relevant spec.
+
+The current detailed guardrail is recorded in `docs/reviews/riotbox_drift_guardrails_2026-05-10.md`.
+
+## 8.1.2 Rust File-Size Budget
 
 Riotbox treats every `.rs` file over roughly 500 lines as a soft refactor candidate, not a hard limit.
 
