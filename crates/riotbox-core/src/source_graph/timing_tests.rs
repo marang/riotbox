@@ -19,6 +19,7 @@ mod timing_tests {
         let clean_case = case_by_id(cases, "fx_timing_clean_128_4x4");
         let weak_case = case_by_id(cases, "fx_timing_weak_noisy_123");
         let ambiguous_case = case_by_id(cases, "fx_timing_halftime_140_ambiguous");
+        let double_time_case = case_by_id(cases, "fx_timing_doubletime_90_ambiguous");
 
         let clean_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
         let clean_evaluation =
@@ -83,6 +84,31 @@ mod timing_tests {
                 .windows(2)
                 .all(|window| window[0].time_seconds < window[1].time_seconds)
         );
+
+        let double_time_timing =
+            analyze_source_timing_seed(&analysis_seed_from_case(double_time_case));
+        let double_time_evaluation = evaluate_timing_fixture_output(
+            &double_time_timing,
+            &evaluation_target_from_case(double_time_case),
+        );
+        assert!(double_time_evaluation.passed, "{double_time_evaluation:?}");
+        assert_eq!(
+            double_time_timing.primary_hypothesis().map(|hypothesis| {
+                (
+                    hypothesis.kind,
+                    hypothesis.bpm,
+                    hypothesis.warnings[0].code,
+                )
+            }),
+            Some((
+                TimingHypothesisKind::Primary,
+                90.0,
+                TimingWarningCode::DoubleTimePossible,
+            ))
+        );
+        assert_eq!(double_time_timing.hypotheses.len(), 2);
+        assert_eq!(double_time_timing.hypotheses[1].kind, TimingHypothesisKind::DoubleTime);
+        assert_eq!(double_time_timing.hypotheses[1].bpm, 180.0);
     }
 
     #[test]

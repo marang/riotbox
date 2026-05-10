@@ -98,6 +98,31 @@
       "notes": "Primary grid can exist, but high-impact lane moves should require confirmation."
     },
     {
+      "fixture_id": "fx_timing_doubletime_90_ambiguous",
+      "category": "double_time_ambiguity",
+      "title": "90 BPM source with plausible 180 BPM double-time read",
+      "duration_seconds": 16.0,
+      "expected": {
+        "primary_bpm": 90.0,
+        "bpm_tolerance": 0.5,
+        "meter": { "beats_per_bar": 4, "beat_unit": 4 },
+        "timing_quality": "medium",
+        "degraded_policy": "manual_confirm",
+        "beat_hit_tolerance_ms": 70.0,
+        "downbeat_tolerance_ms": 70.0,
+        "phrase_tolerance_bars": 1,
+        "expected_beat_count_min": 24,
+        "expected_bar_count_min": 6,
+        "expected_phrase_count_min": 1,
+        "confidence_floor": 0.55,
+        "warnings": ["double_time_possible", "ambiguous_downbeat"],
+        "alternatives": [
+          { "kind": "double_time", "bpm": 180.0, "confidence_floor": 0.45 }
+        ]
+      },
+      "notes": "Primary grid can exist, but fast double-time interpretation stays visible for cautious lane policy."
+    },
+    {
       "fixture_id": "fx_timing_weak_noisy_123",
       "category": "weak_timing",
       "title": "Weak noisy source with tentative 123 BPM estimate",
