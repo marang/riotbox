@@ -1,0 +1,24 @@
+{
+  "schema": "riotbox.source_timing_fixture_evaluation_report.v1",
+  "schema_version": 1,
+  "catalog_path": "crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json",
+  "case_count": 1,
+  "passed": false,
+  "evaluations": [
+    {
+      "fixture_id": "fx_timing_halftime_140_ambiguous",
+      "passed": false,
+      "bpm_error": 0.0,
+      "beat_count": 32,
+      "bar_count": 8,
+      "phrase_count": 1,
+      "primary_confidence": 0.55,
+      "primary_max_mean_abs_drift_ms": 35.0,
+      "primary_max_drift_ms": 70.0,
+      "issues": [
+        { "missing_warning": "PhraseUncertain" },
+        { "missing_alternative": "HalfTime" }
+      ]
+    }
+  ]
+}
