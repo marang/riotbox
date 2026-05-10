@@ -1,4 +1,7 @@
-use super::*;
+use riotbox_core::{
+    action::{Action, ActionCommand, ActionParams, ActionResult},
+    session::SessionFile,
+};
 
 pub(in crate::jam_app) fn apply_ghost_side_effects(
     session: &mut SessionFile,
