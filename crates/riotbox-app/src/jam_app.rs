@@ -15,23 +15,16 @@ use riotbox_audio::{
     w30::{W30PreviewRenderState, W30ResampleTapState},
 };
 use riotbox_core::{
-    TimestampMs,
-    action::{
-        Action, ActionCommand, ActionParams, ActionResult, ActionStatus, ActionTarget, ActorType,
-        Quantization, TargetScope,
-    },
+    action::ActionStatus,
     ghost::GhostWatchSuggestion,
-    ids::{ActionId, CaptureId, SourceId},
+    ids::{CaptureId, SourceId},
     persistence::{
         PersistenceError, SessionRecoveryCandidateKind, SessionRecoveryCandidateStatus,
         load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
         scan_session_recovery_candidates,
     },
-    queue::{ActionQueue, CommittedActionRef},
-    session::{
-        ActionCommitRecord, CaptureRef, GraphStorageMode, Mc202UndoSnapshotState, SessionFile,
-        SourceGraphRef, SourceRef,
-    },
+    queue::ActionQueue,
+    session::{CaptureRef, GraphStorageMode, SessionFile, SourceGraphRef, SourceRef},
     source_graph::{DecodeProfile, SourceGraph},
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::JamViewModel,
@@ -87,6 +80,9 @@ pub use state::{
     TransportDriverState,
 };
 use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
+
+#[cfg(test)]
+use riotbox_core::TimestampMs;
 
 impl JamAppState {
     pub(super) const W30_DAMAGE_PROFILE_LABEL: &str = "shred";
