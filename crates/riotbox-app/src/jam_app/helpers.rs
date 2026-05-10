@@ -1,4 +1,8 @@
-use super::*;
+use riotbox_core::{
+    action::ActionCommand,
+    ids::ActionId,
+    session::{CaptureRef, SessionFile},
+};
 
 pub(in crate::jam_app) fn is_mc202_phrase_action(command: ActionCommand) -> bool {
     matches!(
@@ -19,19 +23,15 @@ pub(in crate::jam_app) fn append_capture_note(capture: &mut CaptureRef, detail: 
     });
 }
 
-pub(in crate::jam_app) fn next_action_id_from_session(
-    session: &SessionFile,
-) -> riotbox_core::ids::ActionId {
-    riotbox_core::ids::ActionId(
+pub(in crate::jam_app) fn next_action_id_from_session(session: &SessionFile) -> ActionId {
+    ActionId(
         max_action_id(session)
             .map(|id| id.0.saturating_add(1))
             .unwrap_or(1),
     )
 }
 
-pub(in crate::jam_app) fn max_action_id(
-    session: &SessionFile,
-) -> Option<riotbox_core::ids::ActionId> {
+pub(in crate::jam_app) fn max_action_id(session: &SessionFile) -> Option<ActionId> {
     session
         .action_log
         .actions
