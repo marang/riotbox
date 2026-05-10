@@ -38,6 +38,8 @@ Run:
 just source-timing-fixture-evaluator
 just source-timing-fixture-report
 just source-timing-fixture-report-smoke
+just source-timing-fixture-report-markdown-smoke
+just source-timing-fixture-report-json-validator-fixtures
 ```
 
 The gate includes positive fixture-output checks and negative regressions that
@@ -53,8 +55,17 @@ JSON with:
 - aggregate pass/fail status
 - serialized per-fixture `TimingFixtureEvaluation` entries
 
-The smoke command keeps that machine-readable report envelope wired into
+The report smoke command keeps that machine-readable report envelope wired into
 `just ci` so future benchmark/report surfaces can consume the same measurements.
+
+The Markdown smoke command verifies the human-readable review surface is derived
+from the same report data and still contains the expected fixture summary.
+
+The JSON validator fixtures are the schema-oriented guard for downstream tools.
+They validate static valid/invalid report fixtures and a generated report from
+the real command path. The validator checks the report schema/version, case-count
+consistency, required per-fixture measurements, aggregate pass/fail consistency,
+and known issue-code shape.
 
 ## Boundary
 
