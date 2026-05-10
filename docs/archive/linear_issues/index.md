@@ -256,4 +256,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Added positive and negative validator fixtures for observer/audio JSON summaries.
 - [RIOTBOX-753.md](./RIOTBOX-753.md)
   Context-light search workflow, branch closeout rule, and per-ticket archive split.
+- [RIOTBOX-754.md](./RIOTBOX-754.md)
+  One-file-per-ticket Linear archive structure and exact deletion checks.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
