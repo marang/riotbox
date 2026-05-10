@@ -1,0 +1,21 @@
+{
+  "schema": "riotbox.source_timing_fixture_evaluation_report.v2",
+  "schema_version": 1,
+  "catalog_path": "crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json",
+  "case_count": 1,
+  "passed": true,
+  "evaluations": [
+    {
+      "fixture_id": "fx_timing_clean_128_4x4",
+      "passed": true,
+      "bpm_error": 0.0,
+      "beat_count": 32,
+      "bar_count": 8,
+      "phrase_count": 2,
+      "primary_confidence": 0.85,
+      "primary_max_mean_abs_drift_ms": 17.5,
+      "primary_max_drift_ms": 35.0,
+      "issues": []
+    }
+  ]
+}
