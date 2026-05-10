@@ -1,4 +1,6 @@
 target/
+__pycache__/
+*.py[cod]
 artifacts/audio_qa/
 .mempalace/cache/
 .mempalace/palace/
