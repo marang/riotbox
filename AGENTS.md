@@ -291,6 +291,9 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Do not use MemPalace as the deletion gate.
 - Prefer the deletion helper:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
+- Prefer the closeout helper for repeated cleanup:
+  - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99`
+- The closeout helper defaults to dry-run. Pass `--execute` only after PR merge, archive handoff, and Linear Done state are confirmed.
 - Use token auth for deletion:
   - `LINEAR_API_TOKEN=...`
 - Do not rely on pasted browser session cookies as the normal workflow path.
@@ -369,6 +372,7 @@ cargo run -p riotbox-app --bin riotbox-app -- --source "data/test_audio/examples
 Workflow helpers:
 
 ```bash
+scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99
 scripts/linear_issue_delete.sh RIOTBOX-123
 ```
 
