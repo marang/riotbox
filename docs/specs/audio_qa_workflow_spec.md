@@ -718,6 +718,12 @@ Today the repo already has:
   weak/unavailable source timing must report `grid_bpm_source: static_default`
   with an explicit fallback `grid_bpm_decision_reason`, while the observer/audio
   summary still preserves aligned warning evidence and non-collapsed output
+- the same generated Feral grid gate also proves the explicit user override
+  path: an override must report `grid_bpm_source: user_override`,
+  `grid_bpm_decision_reason: user_override`, numeric
+  `source_timing_bpm_delta`, and matching
+  `source_timing.bpm_agrees_with_grid` evidence while the output path remains
+  non-collapsed
 - generated Feral grid observer/audio correlation now also reports source timing
   anchor and groove alignment separately, so QA can distinguish a grid/BPM match
   from missing musical anchor evidence or missing groove-residual evidence
