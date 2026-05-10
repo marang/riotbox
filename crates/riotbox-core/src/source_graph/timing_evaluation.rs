@@ -3,9 +3,12 @@ pub struct TimingFixtureEvaluationTarget {
     pub fixture_id: String,
     pub primary_bpm: f32,
     pub bpm_tolerance: f32,
+    pub beat_hit_tolerance_ms: f32,
+    pub downbeat_tolerance_ms: f32,
     pub expected_beat_count_min: u32,
     pub expected_bar_count_min: u32,
     pub expected_phrase_count_min: u32,
+    pub confidence_floor: Confidence,
     pub quality: TimingQuality,
     pub degraded_policy: TimingDegradedPolicy,
     pub warnings: Vec<TimingWarningCode>,
@@ -32,6 +35,10 @@ pub enum TimingFixtureEvaluationIssue {
     PhraseCountBelowMinimum,
     QualityMismatch,
     DegradedPolicyMismatch,
+    PrimaryConfidenceBelowFloor,
+    MissingTimingDrift,
+    BeatDriftOutsideTolerance,
+    DownbeatDriftOutsideTolerance,
     MissingWarning(TimingWarningCode),
     MissingAlternative(TimingHypothesisKind),
     MissingPrimaryHypothesis,
@@ -69,8 +76,30 @@ pub fn evaluate_timing_fixture_output(
     if timing.effective_degraded_policy() != target.degraded_policy {
         issues.push(TimingFixtureEvaluationIssue::DegradedPolicyMismatch);
     }
-    if timing.primary_hypothesis().is_none() {
-        issues.push(TimingFixtureEvaluationIssue::MissingPrimaryHypothesis);
+    match timing.primary_hypothesis() {
+        Some(primary) => {
+            if primary.confidence < target.confidence_floor {
+                issues.push(TimingFixtureEvaluationIssue::PrimaryConfidenceBelowFloor);
+            }
+            if target.expected_bar_count_min > 0 && primary.drift.is_empty() {
+                issues.push(TimingFixtureEvaluationIssue::MissingTimingDrift);
+            }
+            if primary
+                .drift
+                .iter()
+                .any(|drift| drift.mean_abs_drift_ms > target.beat_hit_tolerance_ms)
+            {
+                issues.push(TimingFixtureEvaluationIssue::BeatDriftOutsideTolerance);
+            }
+            if primary
+                .drift
+                .iter()
+                .any(|drift| drift.max_drift_ms > target.downbeat_tolerance_ms)
+            {
+                issues.push(TimingFixtureEvaluationIssue::DownbeatDriftOutsideTolerance);
+            }
+        }
+        None => issues.push(TimingFixtureEvaluationIssue::MissingPrimaryHypothesis),
     }
 
     for expected_warning in &target.warnings {
