@@ -1,4 +1,12 @@
-use super::*;
+use super::state::{JamAppState, QueueControlResult};
+use riotbox_core::{
+    TimestampMs,
+    action::{
+        ActionCommand, ActionDraft, ActionParams, ActionTarget, ActorType, Quantization,
+        TargetScope,
+    },
+    session::Tr909TakeoverProfileState,
+};
 
 impl JamAppState {
     pub fn queue_tr909_fill(&mut self, requested_at: TimestampMs) {
@@ -6,7 +14,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Tr909FillNext,
             Quantization::NextBar,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneTr909),
                 ..Default::default()
             },
@@ -21,7 +29,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Tr909ReinforceBreak,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneTr909),
                 ..Default::default()
             },
@@ -63,7 +71,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Tr909SetSlam,
             Quantization::NextBeat,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneTr909),
                 ..Default::default()
             },
@@ -94,7 +102,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Tr909Takeover,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneTr909),
                 ..Default::default()
             },
@@ -125,7 +133,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Tr909SceneLock,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneTr909),
                 ..Default::default()
             },
@@ -152,7 +160,7 @@ impl JamAppState {
             ActorType::User,
             ActionCommand::Tr909Release,
             Quantization::NextPhrase,
-            riotbox_core::action::ActionTarget {
+            ActionTarget {
                 scope: Some(TargetScope::LaneTr909),
                 ..Default::default()
             },
