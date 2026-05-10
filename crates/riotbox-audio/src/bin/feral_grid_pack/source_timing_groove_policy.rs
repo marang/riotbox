@@ -28,6 +28,13 @@ fn tr909_groove_timing_policy(
         return base;
     }
 
+    if grid_bpm.reason != GridBpmDecisionReason::SourceTimingReady {
+        return Tr909GrooveTimingPolicy {
+            reason: "source_timing_not_locked",
+            ..base
+        };
+    }
+
     let Some(residual) = strongest_groove_residual(groove) else {
         return Tr909GrooveTimingPolicy {
             reason: "no_groove_residuals",

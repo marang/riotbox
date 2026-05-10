@@ -51,14 +51,14 @@ python3 scripts/validate_listening_manifest_json.py \
   --require-existing-artifacts \
   "$tmpdir/feral-grid/manifest.json"
 jq -e \
-  '.grid_bpm_source == "static_default"
-    and .grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
+  '.grid_bpm_source == "source_timing"
+    and .grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
     and .source_timing.readiness == "needs_review"
     and .source_timing.requires_manual_confirm == true
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .metrics.tr909_groove_timing.applied == false
-    and .metrics.tr909_groove_timing.reason == "not_source_timing_grid"
-    and (.source_timing_bpm_delta | type == "number")' \
+    and .metrics.tr909_groove_timing.reason == "source_timing_not_locked"
+    and .source_timing_bpm_delta == 0.0' \
   "$tmpdir/feral-grid/manifest.json"
 
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
@@ -85,9 +85,9 @@ jq -e \
     and .control_path.observer_source_timing.quality == "medium"
     and .control_path.observer_source_timing.degraded_policy == "cautious"
     and .control_path.observer_source_timing.primary_warning_code == "phrase_uncertain"
-    and .output_path.grid_bpm_source == "static_default"
-    and .output_path.grid_bpm_decision_reason == "source_timing_requires_manual_confirm"
-    and (.output_path.source_timing_bpm_delta | type == "number")
+    and .output_path.grid_bpm_source == "source_timing"
+    and .output_path.grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
+    and .output_path.source_timing_bpm_delta == 0.0
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_anchor_alignment.status == "partial"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 0

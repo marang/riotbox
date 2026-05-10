@@ -47,6 +47,7 @@ GROOVE_SUBDIVISIONS = {
 GRID_BPM_DECISION_REASONS = {
     "user_override",
     "source_timing_ready",
+    "source_timing_needs_review_manual_confirm",
     "source_timing_requires_manual_confirm",
     "source_timing_not_ready",
     "source_timing_missing_bpm",
@@ -58,6 +59,7 @@ TR909_GROOVE_TIMING_REASONS = {
     "invalid_groove_offset",
     "groove_offset_too_small",
     "source_timing_groove_residual",
+    "source_timing_not_locked",
 }
 STATIC_DEFAULT_GRID_BPM_REASONS = {
     "source_timing_requires_manual_confirm",
@@ -284,10 +286,11 @@ def validate_grid_bpm_decision(
 
     if source == "user_override" and reason != "user_override":
         raise ValueError("user_override grid BPM source requires user_override decision reason")
-    if source == "source_timing" and reason != "source_timing_ready":
-        raise ValueError(
-            "source_timing grid BPM source requires source_timing_ready decision reason"
-        )
+    if source == "source_timing" and reason not in {
+        "source_timing_ready",
+        "source_timing_needs_review_manual_confirm",
+    }:
+        raise ValueError("source_timing grid BPM source requires a source-timing decision reason")
     if source == "static_default" and reason not in STATIC_DEFAULT_GRID_BPM_REASONS:
         raise ValueError("static_default grid BPM source requires a source-timing fallback reason")
 
@@ -304,6 +307,31 @@ def validate_grid_bpm_decision(
         if source_timing.get("requires_manual_confirm") is not True:
             raise ValueError(
                 "source_timing_requires_manual_confirm requires manual confirmation evidence"
+            )
+    if reason == "source_timing_needs_review_manual_confirm":
+        if source_timing.get("readiness") != "needs_review":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires source_timing.readiness == needs_review"
+            )
+        if source_timing.get("requires_manual_confirm") is not True:
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires manual confirmation evidence"
+            )
+        if source_timing.get("beat_status") != "stable":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires stable beat evidence"
+            )
+        if source_timing.get("downbeat_status") != "stable":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires stable downbeat evidence"
+            )
+        if source_timing.get("confidence_result") != "candidate_cautious":
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires candidate_cautious confidence"
+            )
+        if source_timing.get("alternate_evidence_count") != 0:
+            raise ValueError(
+                "source_timing_needs_review_manual_confirm requires no alternate evidence"
             )
     if reason == "source_timing_not_ready" and source_timing.get("readiness") == "ready":
         raise ValueError("source_timing_not_ready cannot be used with ready source timing")

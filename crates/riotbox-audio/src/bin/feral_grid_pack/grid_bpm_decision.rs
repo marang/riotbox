@@ -9,6 +9,7 @@ enum GridBpmSource {
 enum GridBpmDecisionReason {
     UserOverride,
     SourceTimingReady,
+    SourceTimingNeedsReviewManualConfirm,
     SourceTimingRequiresManualConfirm,
     SourceTimingNotReady,
     SourceTimingMissingBpm,
@@ -55,6 +56,18 @@ fn choose_grid_bpm(
         };
     }
 
+    if can_use_cautious_source_timing_bpm(timing_readiness)
+        && let Some(bpm) = usable_source_bpm
+    {
+        return GridBpmDecision {
+            bpm,
+            source: GridBpmSource::SourceTiming,
+            reason: GridBpmDecisionReason::SourceTimingNeedsReviewManualConfirm,
+            source_primary_bpm,
+            source_delta_bpm: Some(0.0),
+        };
+    }
+
     GridBpmDecision {
         bpm: args.bpm,
         source: GridBpmSource::StaticDefault,
@@ -62,6 +75,17 @@ fn choose_grid_bpm(
         source_primary_bpm,
         source_delta_bpm,
     }
+}
+
+fn can_use_cautious_source_timing_bpm(
+    timing_readiness: &SourceTimingProbeReadinessReport,
+) -> bool {
+    timing_readiness.readiness == SourceTimingProbeReadinessStatus::NeedsReview
+        && timing_readiness.requires_manual_confirm
+        && timing_readiness.beat_status == SourceTimingProbeBeatEvidenceStatus::Stable
+        && timing_readiness.downbeat_status == SourceTimingProbeDownbeatEvidenceStatus::Stable
+        && timing_readiness.confidence_result == SourceTimingCandidateConfidenceResult::CandidateCautious
+        && timing_readiness.alternate_evidence_count == 0
 }
 
 fn static_default_reason(
@@ -90,6 +114,9 @@ fn grid_bpm_decision_reason_label(reason: GridBpmDecisionReason) -> &'static str
     match reason {
         GridBpmDecisionReason::UserOverride => "user_override",
         GridBpmDecisionReason::SourceTimingReady => "source_timing_ready",
+        GridBpmDecisionReason::SourceTimingNeedsReviewManualConfirm => {
+            "source_timing_needs_review_manual_confirm"
+        }
         GridBpmDecisionReason::SourceTimingRequiresManualConfirm => {
             "source_timing_requires_manual_confirm"
         }
