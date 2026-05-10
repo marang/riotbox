@@ -199,6 +199,14 @@ when supported hook or capture material suggests room should be left for a
 break-rebuild move. This changes render policy only; it does not add a new
 MC-202 action or phrase-generation path.
 
+MC-202 role and phrase-intent labels currently remain stable serialized labels
+for existing actions, sessions, TUI, observer output, and QA artifacts. New
+behavior must not add a second MC-202 action path to escape those labels. The
+typed migration plan is documented in
+`docs/reviews/mc202_typed_contract_migration_plan_2026-05-10.md`; implementation
+should move behavior branching to typed conversion helpers while preserving the
+existing action commands and compatibility labels.
+
 ### 6.6 Structural / safety
 
 - `lock.object`
