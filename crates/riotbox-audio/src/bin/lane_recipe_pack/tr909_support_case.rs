@@ -85,6 +85,9 @@ fn render_case(
 
     let (baseline, candidate) = render_pair(&case.render_pair, frame_count);
     let mc202_phrase_grid = mc202_phrase_grid_metrics(&case.render_pair, &candidate);
+    let source_timing = lane_recipe_source_timing_model();
+    let mc202_source_phrase_slot =
+        mc202_source_phrase_slot_metrics(&case.render_pair, &source_timing);
     let baseline_metrics =
         signal_metrics_with_grid(&baseline, SAMPLE_RATE, CHANNEL_COUNT, DEFAULT_BPM, BEATS_PER_BAR);
     let candidate_metrics = signal_metrics_with_grid(
@@ -99,6 +102,10 @@ fn render_case(
         && signal_delta_metrics.rms >= case.min_signal_delta_rms
         && mc202_phrase_grid
             .map(|metrics| metrics.passed)
+            .unwrap_or(true)
+        && mc202_source_phrase_slot
+            .as_ref()
+            .map(|metrics| metrics.passed)
             .unwrap_or(true);
     let report = CaseReport {
         id: case.id,
@@ -110,6 +117,7 @@ fn render_case(
         candidate_metrics,
         signal_delta_metrics,
         mc202_phrase_grid,
+        mc202_source_phrase_slot,
         min_rms_delta: case.min_rms_delta,
         min_signal_delta_rms: case.min_signal_delta_rms,
         passed,
@@ -135,13 +143,14 @@ fn render_case(
 
     if !report.passed {
         return Err(format!(
-            "{} output delta failed: RMS delta {:.6} / min {:.6}, signal delta RMS {:.6} / min {:.6}, MC-202 phrase grid {:?}",
+            "{} output delta failed: RMS delta {:.6} / min {:.6}, signal delta RMS {:.6} / min {:.6}, MC-202 phrase grid {:?}, MC-202 source phrase slot {:?}",
             report.id,
             rms_delta(report.baseline_metrics, report.candidate_metrics),
             report.min_rms_delta,
             report.signal_delta_metrics.rms,
             report.min_signal_delta_rms,
-            report.mc202_phrase_grid
+            report.mc202_phrase_grid,
+            report.mc202_source_phrase_slot
         )
         .into());
     }
@@ -263,6 +272,42 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
             )
         })
         .unwrap_or_default();
+    let mc202_source_phrase_slot = report
+        .mc202_source_phrase_slot
+        .as_ref()
+        .map(|metrics| {
+            format!(
+                "\n\
+                 ## MC-202 Source Phrase Slot\n\n\
+                 - Result: `{}`\n\
+                 - Contract: `{}`\n\
+                 - Source hypothesis: `{}`\n\
+                 - Phrase grid available: `{}`\n\
+                 - Candidate position beats: `{:.3}`\n\
+                 - Candidate bar index: `{}`\n\
+                 - Phrase index: `{}`\n\
+                 - Phrase bars: `{}`\n\
+                 - Starts on source phrase boundary: `{}`\n",
+                if metrics.passed { "pass" } else { "fail" },
+                metrics.contract,
+                metrics
+                    .source_hypothesis_id
+                    .as_deref()
+                    .unwrap_or("unknown"),
+                metrics.phrase_grid_available,
+                metrics.candidate_position_beats,
+                metrics.candidate_bar_index,
+                metrics
+                    .phrase_index
+                    .map_or_else(|| "unknown".to_string(), |value| value.to_string()),
+                match (metrics.phrase_start_bar, metrics.phrase_end_bar) {
+                    (Some(start), Some(end)) => format!("{start}-{end}"),
+                    _ => "unknown".to_string(),
+                },
+                metrics.starts_on_source_phrase_boundary
+            )
+        })
+        .unwrap_or_default();
 
     format!(
         "# Lane Recipe Listening Comparison\n\n\
@@ -291,7 +336,7 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
          | silence_ratio | {:.6} | {:.6} | {:.6} |\n\
          | dc_offset | {:.6} | {:.6} | {:.6} |\n\
          | onset_count | {} | {} | {} |\n\
-         | event_density_per_bar | {:.6} | {:.6} | {:.6} |\n{}",
+         | event_density_per_bar | {:.6} | {:.6} | {:.6} |\n{}{}",
         case.id,
         case.title,
         case.recipe_refs,
@@ -339,7 +384,8 @@ fn render_comparison_markdown(case: &PackCase, report: &CaseReport) -> String {
         baseline.event_density_per_bar,
         candidate.event_density_per_bar,
         event_density_delta,
-        mc202_phrase_grid
+        mc202_phrase_grid,
+        mc202_source_phrase_slot
     )
 }
 

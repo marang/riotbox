@@ -82,5 +82,9 @@ jq -e \
     and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.passed == true)
     and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.starts_on_phrase_boundary == true)
     and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.hit_ratio >= 0.95)
-    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.candidate_onset_count > 0)' \
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_phrase_grid.candidate_onset_count > 0)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_source_phrase_slot.passed == true)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_source_phrase_slot.phrase_grid_available == true)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_source_phrase_slot.phrase_index != null)
+    and all(.cases[] | select(.id | startswith("mc202-")); .metrics.mc202_source_phrase_slot.starts_on_source_phrase_boundary == true)' \
   "$pack_dir/manifest.json"

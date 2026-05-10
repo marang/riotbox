@@ -171,8 +171,9 @@ The current stable metric keys are:
 Pack-specific output evidence may still be validated from the source
 `manifest.json` outside these stable summary metric keys. For example, the
 current lane recipe correlation accepts `lane-recipe-listening-pack` output only
-when its required MC-202 Recipe 2 cases are present, passing, non-collapsed, and
-above their signal-delta thresholds.
+when its required MC-202 Recipe 2 cases are present, passing, non-collapsed,
+above their signal-delta thresholds, aligned to their internal phrase grid, and
+attached to a selected Source Graph phrase slot.
 
 For `feral-grid-demo` manifests that include source-grid output drift evidence,
 strict correlation also treats that metric as an output smoke gate. A low hit

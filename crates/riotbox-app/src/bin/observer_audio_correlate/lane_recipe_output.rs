@@ -19,6 +19,8 @@ pub(super) struct LaneRecipeCaseEvidence {
     min_signal_delta_rms: Option<f64>,
     mc202_phrase_grid: Option<Mc202PhraseGridEvidence>,
     mc202_phrase_grid_malformed: bool,
+    mc202_source_phrase_slot: Option<Mc202SourcePhraseSlotEvidence>,
+    mc202_source_phrase_slot_malformed: bool,
 }
 
 #[derive(Debug, PartialEq)]
@@ -32,6 +34,14 @@ pub(super) struct Mc202PhraseGridEvidence {
     passed: bool,
 }
 
+#[derive(Debug, PartialEq)]
+pub(super) struct Mc202SourcePhraseSlotEvidence {
+    phrase_grid_available: bool,
+    phrase_index: Option<u64>,
+    starts_on_source_phrase_boundary: bool,
+    passed: bool,
+}
+
 pub(super) fn collect_lane_recipe_cases(manifest: &Value) -> Vec<LaneRecipeCaseEvidence> {
     manifest["cases"]
         .as_array()
@@ -39,6 +49,8 @@ pub(super) fn collect_lane_recipe_cases(manifest: &Value) -> Vec<LaneRecipeCaseE
         .flatten()
         .map(|case| {
             let (mc202_phrase_grid, mc202_phrase_grid_malformed) = collect_mc202_phrase_grid(case);
+            let (mc202_source_phrase_slot, mc202_source_phrase_slot_malformed) =
+                collect_mc202_source_phrase_slot(case);
             LaneRecipeCaseEvidence {
                 id: case["id"].as_str().unwrap_or("unknown").to_string(),
                 result: case["result"].as_str().unwrap_or("unknown").to_string(),
@@ -47,6 +59,8 @@ pub(super) fn collect_lane_recipe_cases(manifest: &Value) -> Vec<LaneRecipeCaseE
                 min_signal_delta_rms: case["thresholds"]["min_signal_delta_rms"].as_f64(),
                 mc202_phrase_grid,
                 mc202_phrase_grid_malformed,
+                mc202_source_phrase_slot,
+                mc202_source_phrase_slot_malformed,
             }
         })
         .collect()
@@ -150,6 +164,46 @@ pub(super) fn lane_recipe_metric_failures(
                 case.id, phrase_grid.max_onset_offset_ms, phrase_grid.max_allowed_onset_offset_ms
             ));
         }
+
+        if case.mc202_source_phrase_slot_malformed {
+            failures.push(format!(
+                "lane_recipe_case={} mc202_source_phrase_slot=malformed",
+                case.id
+            ));
+            continue;
+        }
+
+        let Some(source_phrase_slot) = &case.mc202_source_phrase_slot else {
+            failures.push(format!(
+                "lane_recipe_case={} mc202_source_phrase_slot=missing",
+                case.id
+            ));
+            continue;
+        };
+        if !source_phrase_slot.passed {
+            failures.push(format!(
+                "lane_recipe_case={} mc202_source_phrase_slot=fail",
+                case.id
+            ));
+        }
+        if !source_phrase_slot.phrase_grid_available {
+            failures.push(format!(
+                "lane_recipe_case={} mc202_source_phrase_slot.phrase_grid_available=false",
+                case.id
+            ));
+        }
+        if source_phrase_slot.phrase_index.is_none() {
+            failures.push(format!(
+                "lane_recipe_case={} mc202_source_phrase_slot.phrase_index=missing",
+                case.id
+            ));
+        }
+        if !source_phrase_slot.starts_on_source_phrase_boundary {
+            failures.push(format!(
+                "lane_recipe_case={} mc202_source_phrase_slot.starts_on_source_phrase_boundary=false",
+                case.id
+            ));
+        }
     }
 
     failures
@@ -188,6 +242,37 @@ fn collect_mc202_phrase_grid(case: &Value) -> (Option<Mc202PhraseGridEvidence>, 
             None => return (None, true),
         },
         max_allowed_onset_offset_ms: match metric["max_allowed_onset_offset_ms"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        passed: match metric["passed"].as_bool() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+    };
+
+    (Some(evidence), false)
+}
+
+fn collect_mc202_source_phrase_slot(case: &Value) -> (Option<Mc202SourcePhraseSlotEvidence>, bool) {
+    let Some(metric) = case["metrics"].get("mc202_source_phrase_slot") else {
+        return (None, false);
+    };
+    if metric.is_null() {
+        return (None, false);
+    }
+    if !metric.is_object() {
+        return (None, true);
+    }
+
+    let evidence = Mc202SourcePhraseSlotEvidence {
+        phrase_grid_available: match metric["phrase_grid_available"].as_bool() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        phrase_index: metric["phrase_index"].as_u64(),
+        starts_on_source_phrase_boundary: match metric["starts_on_source_phrase_boundary"].as_bool()
+        {
             Some(value) => value,
             None => return (None, true),
         },
