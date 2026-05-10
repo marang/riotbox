@@ -136,3 +136,92 @@ fn mc202_set_role_rejects_missing_role_target_without_mutating_session() {
     );
     assert_eq!(session, original_session);
 }
+
+#[test]
+fn mc202_set_role_rejects_unknown_role_target_without_mutating_session() {
+    let action_log = action_log(vec![targeted_action(
+        1,
+        ActionCommand::Mc202SetRole,
+        ActionParams::Empty,
+        ActionTarget {
+            scope: Some(TargetScope::LaneMc202),
+            object_id: Some("scene_lock".into()),
+            ..Default::default()
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("unknown role target");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::Mc202SetRole,
+            expected: "known MC-202 role label"
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
+fn mc202_mutate_phrase_rejects_unknown_intent_target_without_mutating_session() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::Mc202MutatePhrase,
+        ActionParams::Mutation {
+            intensity: 0.91,
+            target_id: Some("scene_lock".into()),
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
+    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    let original_session = session.clone();
+
+    let error =
+        apply_replay_plan_to_session(&mut session, &plan).expect_err("unknown phrase intent");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::Mc202MutatePhrase,
+            expected: "known MC-202 phrase mutation intent label"
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
+fn mc202_mutate_phrase_rejects_base_intent_without_mutating_session() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::Mc202MutatePhrase,
+        ActionParams::Mutation {
+            intensity: 0.91,
+            target_id: Some("base".into()),
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
+    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("base intent");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::Mc202MutatePhrase,
+            expected: "known MC-202 phrase mutation intent label"
+        }
+    );
+    assert_eq!(session, original_session);
+}
