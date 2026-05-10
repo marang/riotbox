@@ -1,10 +1,10 @@
-use super::state::{JamAppState, QueueControlResult};
+use super::{
+    helpers::user_lane_mutation_draft,
+    state::{JamAppState, QueueControlResult},
+};
 use riotbox_core::{
     TimestampMs,
-    action::{
-        ActionCommand, ActionDraft, ActionParams, ActionTarget, ActorType, Quantization,
-        TargetScope,
-    },
+    action::{ActionCommand, Quantization, TargetScope},
 };
 
 impl JamAppState {
@@ -34,21 +34,14 @@ impl JamAppState {
         };
         let target_touch = if next_role == "leader" { 0.85 } else { 0.65 };
 
-        let mut draft = ActionDraft::new(
-            ActorType::User,
+        let draft = user_lane_mutation_draft(
             ActionCommand::Mc202SetRole,
             Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneMc202),
-                object_id: Some(next_role.into()),
-                ..Default::default()
-            },
+            TargetScope::LaneMc202,
+            next_role,
+            target_touch,
+            format!("set MC-202 role to {next_role} on next phrase"),
         );
-        draft.params = ActionParams::Mutation {
-            intensity: target_touch,
-            target_id: Some(next_role.into()),
-        };
-        draft.explanation = Some(format!("set MC-202 role to {next_role} on next phrase"));
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -62,21 +55,14 @@ impl JamAppState {
             return QueueControlResult::AlreadyInState;
         }
 
-        let mut draft = ActionDraft::new(
-            ActorType::User,
+        let draft = user_lane_mutation_draft(
             ActionCommand::Mc202MutatePhrase,
             Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneMc202),
-                object_id: Some("mutated_drive".into()),
-                ..Default::default()
-            },
+            TargetScope::LaneMc202,
+            "mutated_drive",
+            0.88,
+            "mutate MC-202 phrase on next phrase boundary",
         );
-        draft.params = ActionParams::Mutation {
-            intensity: 0.88,
-            target_id: Some("mutated_drive".into()),
-        };
-        draft.explanation = Some("mutate MC-202 phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -90,21 +76,14 @@ impl JamAppState {
             return QueueControlResult::AlreadyPending;
         }
 
-        let mut draft = ActionDraft::new(
-            ActorType::User,
+        let draft = user_lane_mutation_draft(
             ActionCommand::Mc202GenerateFollower,
             Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneMc202),
-                object_id: Some("follower".into()),
-                ..Default::default()
-            },
+            TargetScope::LaneMc202,
+            "follower",
+            0.78,
+            "generate MC-202 follower phrase on next phrase boundary",
         );
-        draft.params = ActionParams::Mutation {
-            intensity: 0.78,
-            target_id: Some("follower".into()),
-        };
-        draft.explanation = Some("generate MC-202 follower phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -115,21 +94,14 @@ impl JamAppState {
             return QueueControlResult::AlreadyPending;
         }
 
-        let mut draft = ActionDraft::new(
-            ActorType::User,
+        let draft = user_lane_mutation_draft(
             ActionCommand::Mc202GenerateAnswer,
             Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneMc202),
-                object_id: Some("answer".into()),
-                ..Default::default()
-            },
+            TargetScope::LaneMc202,
+            "answer",
+            0.82,
+            "generate MC-202 answer phrase on next phrase boundary",
         );
-        draft.params = ActionParams::Mutation {
-            intensity: 0.82,
-            target_id: Some("answer".into()),
-        };
-        draft.explanation = Some("generate MC-202 answer phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -143,21 +115,14 @@ impl JamAppState {
             return QueueControlResult::AlreadyPending;
         }
 
-        let mut draft = ActionDraft::new(
-            ActorType::User,
+        let draft = user_lane_mutation_draft(
             ActionCommand::Mc202GeneratePressure,
             Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneMc202),
-                object_id: Some("pressure".into()),
-                ..Default::default()
-            },
+            TargetScope::LaneMc202,
+            "pressure",
+            0.84,
+            "generate MC-202 pressure phrase on next phrase boundary",
         );
-        draft.params = ActionParams::Mutation {
-            intensity: 0.84,
-            target_id: Some("pressure".into()),
-        };
-        draft.explanation = Some("generate MC-202 pressure phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
@@ -171,22 +136,14 @@ impl JamAppState {
             return QueueControlResult::AlreadyPending;
         }
 
-        let mut draft = ActionDraft::new(
-            ActorType::User,
+        let draft = user_lane_mutation_draft(
             ActionCommand::Mc202GenerateInstigator,
             Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneMc202),
-                object_id: Some("instigator".into()),
-                ..Default::default()
-            },
+            TargetScope::LaneMc202,
+            "instigator",
+            0.90,
+            "generate MC-202 instigator phrase on next phrase boundary",
         );
-        draft.params = ActionParams::Mutation {
-            intensity: 0.90,
-            target_id: Some("instigator".into()),
-        };
-        draft.explanation =
-            Some("generate MC-202 instigator phrase on next phrase boundary".into());
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
