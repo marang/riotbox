@@ -47,6 +47,45 @@ mod bpm_decision_tests {
     }
 
     #[test]
+    fn bpm_grid_decision_uses_stable_needs_review_source_timing_cautiously() {
+        let args = bpm_decision_args(DEFAULT_BPM, false);
+        let mut needs_review =
+            readiness_report(Some(130.0), SourceTimingProbeReadinessStatus::NeedsReview);
+        needs_review.requires_manual_confirm = true;
+
+        let decision = choose_grid_bpm(&args, &needs_review);
+
+        assert_eq!(decision.source, GridBpmSource::SourceTiming);
+        assert_eq!(
+            decision.reason,
+            GridBpmDecisionReason::SourceTimingNeedsReviewManualConfirm
+        );
+        assert!((decision.bpm - 130.0).abs() < 0.0001);
+        assert_eq!(decision.source_primary_bpm, Some(130.0));
+        assert_eq!(decision.source_delta_bpm, Some(0.0));
+    }
+
+    #[test]
+    fn bpm_grid_decision_rejects_ambiguous_needs_review_source_timing() {
+        let args = bpm_decision_args(DEFAULT_BPM, false);
+        let mut ambiguous =
+            readiness_report(Some(130.0), SourceTimingProbeReadinessStatus::NeedsReview);
+        ambiguous.requires_manual_confirm = true;
+        ambiguous.confidence_result = SourceTimingCandidateConfidenceResult::CandidateAmbiguous;
+        ambiguous.alternate_evidence_count = 1;
+
+        let decision = choose_grid_bpm(&args, &ambiguous);
+
+        assert_eq!(decision.source, GridBpmSource::StaticDefault);
+        assert_eq!(
+            decision.reason,
+            GridBpmDecisionReason::SourceTimingRequiresManualConfirm
+        );
+        assert!((decision.bpm - DEFAULT_BPM).abs() < 0.0001);
+        assert_eq!(decision.source_delta_bpm, Some(2.0));
+    }
+
+    #[test]
     fn bpm_grid_decision_keeps_explicit_bpm_and_reports_source_delta() {
         let args = bpm_decision_args(128.0, true);
         let ready = readiness_report(Some(130.0), SourceTimingProbeReadinessStatus::Ready);

@@ -66,6 +66,18 @@ mod tr909_source_grid_consumer_tests {
     }
 
     #[test]
+    fn tr909_groove_timing_stays_inactive_for_cautious_source_timing_grid() {
+        let policy = tr909_groove_timing_policy(
+            cautious_source_timing_grid_decision(128.0),
+            &groove_evidence_with_offset(12.5),
+        );
+
+        assert!(!policy.applied);
+        assert_eq!(policy.reason, "source_timing_not_locked");
+        assert_eq!(policy.offset_ms, 0.0);
+    }
+
+    #[test]
     fn tr909_groove_timing_accepts_early_residuals_inside_grid_tolerance() {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let policy = tr909_groove_timing_policy(
@@ -137,6 +149,16 @@ mod tr909_source_grid_consumer_tests {
             bpm,
             source: GridBpmSource::StaticDefault,
             reason: GridBpmDecisionReason::SourceTimingRequiresManualConfirm,
+            source_primary_bpm: Some(bpm),
+            source_delta_bpm: Some(0.0),
+        }
+    }
+
+    fn cautious_source_timing_grid_decision(bpm: f32) -> GridBpmDecision {
+        GridBpmDecision {
+            bpm,
+            source: GridBpmSource::SourceTiming,
+            reason: GridBpmDecisionReason::SourceTimingNeedsReviewManualConfirm,
             source_primary_bpm: Some(bpm),
             source_delta_bpm: Some(0.0),
         }

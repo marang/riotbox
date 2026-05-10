@@ -584,13 +584,20 @@ bounded BPM policy:
 - without `--bpm`, a `Ready` report with a finite positive primary BPM may drive
   the pack grid only when it does not require manual confirmation; that case is
   recorded as `grid_bpm_source: source_timing`
+- a `NeedsReview` report may also drive the pack grid only when the primary BPM
+  is finite and the beat/downbeat evidence is stable, manual confirmation is
+  still required, the confidence result is cautious, and no alternate timing
+  evidence is present; this case is recorded as
+  `grid_bpm_source: source_timing` with
+  `grid_bpm_decision_reason: source_timing_needs_review_manual_confirm`
 - if readiness is weaker, the pack falls back to the static default BPM and is
   recorded as `grid_bpm_source: static_default`
 - generated Feral grid manifests must also record
   `grid_bpm_decision_reason`, using stable values such as `user_override`,
-  `source_timing_ready`, `source_timing_requires_manual_confirm`,
-  `source_timing_not_ready`, `source_timing_missing_bpm`, and
-  `source_timing_invalid_bpm`, so QA can tell why a static fallback occurred
+  `source_timing_ready`, `source_timing_needs_review_manual_confirm`,
+  `source_timing_requires_manual_confirm`, `source_timing_not_ready`,
+  `source_timing_missing_bpm`, and `source_timing_invalid_bpm`, so QA can tell
+  whether source timing was trusted, used cautiously, or rejected
 - Feral grid manifests must record the readiness policy profile used for this
   decision, currently `source_timing.policy_profile:
   dance_loop_auto_readiness`, so diagnostic and auto-trust policies stay
