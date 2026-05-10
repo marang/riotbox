@@ -276,4 +276,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Bound optional MemPalace status during ticket closeout
 - [RIOTBOX-760.md](./RIOTBOX-760.md)
   Fix closeout optional timeout status reporting
+- [RIOTBOX-761.md](./RIOTBOX-761.md)
+  Add MC-202 source-derived phrase-slot output proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
