@@ -295,6 +295,7 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - Prefer the closeout helper for repeated cleanup:
   - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99`
+- If `--mem-status` is used, keep it bounded with `--mem-status-timeout`; MemPalace is optional and must not block branch or Linear cleanup.
 - The archive and closeout helpers default to dry-run. Pass `--execute` only after PR merge, archive handoff, and Linear Done state are confirmed.
 - Use token auth for deletion:
   - `LINEAR_API_TOKEN=...`

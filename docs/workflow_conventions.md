@@ -543,6 +543,7 @@ Deletion rule:
 - the archive and closeout helpers default to dry-run; execute them only when the branch is ready for the corresponding mutation
 - the closeout helper must only be executed after the PR is merged, the issue is marked done, and the archive handoff exists:
   - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99 --delete-linear --delete-remote-branch --delete-local-branch --execute`
+- if `--mem-status` is used, bound it with `--mem-status-timeout`; MemPalace status is optional maintenance and must not block branch cleanup or Linear deletion
 - the helper should use token auth via `LINEAR_API_TOKEN`
 - do not treat pasted browser session cookies as the normal cleanup path
 
