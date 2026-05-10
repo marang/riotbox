@@ -94,6 +94,36 @@ fn source_timing_probe_readiness_accepts_moderate_downbeat_contrast() {
 }
 
 #[test]
+fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
+    let onsets = even_onsets(0.0, 0.5, 16);
+    let report = source_timing_probe_readiness_report(
+        &weighted_candidate_input(
+            "readiness-short-loop-120",
+            8.0,
+            &onsets,
+            &downbeat_strengths(onsets.len(), 4),
+        ),
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert_bpm_close(report.primary_bpm, 120.0);
+    assert_eq!(report.beat_status, SourceTimingProbeBeatEvidenceStatus::Stable);
+    assert_eq!(
+        report.downbeat_status,
+        SourceTimingProbeDownbeatEvidenceStatus::Stable
+    );
+    assert_eq!(
+        report.phrase_status,
+        SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+    );
+    assert!(report.requires_manual_confirm);
+    assert_eq!(
+        report.readiness,
+        SourceTimingProbeReadinessStatus::NeedsReview
+    );
+}
+
+#[test]
 fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_candidates() {
     let unavailable = source_timing_probe_readiness_report(
         &candidate_input("readiness-unavailable", 4.0, &[0.0, 1.0]),

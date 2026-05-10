@@ -55,6 +55,7 @@ fn timing_probe_readiness_status(
     {
         SourceTimingProbeReadinessStatus::Weak
     } else if confidence.result == SourceTimingCandidateConfidenceResult::CandidateAmbiguous
+        || confidence.requires_manual_confirm
         || beat.status == SourceTimingProbeBeatEvidenceStatus::Ambiguous
         || downbeat.status == SourceTimingProbeDownbeatEvidenceStatus::Ambiguous
     {
