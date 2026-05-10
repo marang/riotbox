@@ -2,41 +2,51 @@
 
 ## Purpose
 
-This repository is in the transition from planning to implementation.
+Use this file as the local operating brief for coding agents working in Riotbox.
 
-Use this file as the local operating brief for coding agents working in the repo.
+Riotbox is transitioning from planning into implementation. Keep implementation aligned with `docs/`, `plan/`, Linear, and Git history. If implementation and planning diverge, update the relevant spec or decision log instead of silently inventing behavior.
 
-The goal is to keep implementation aligned with the planning documents and to prevent architecture drift during the first build slices.
+When the local `riotbox-development` skill is available, use it for Riotbox development work. That skill captures the expectation that agents act as senior software engineers, senior audio engineers, and musician-users of the instrument.
 
-When the local `riotbox-development` skill is available, use it for Riotbox development work. It captures the current expectation that agents act as senior software engineers, senior audio engineers, and musician-users of the instrument.
+If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pattern, update that skill, re-read it, and mirror durable project rules into this file, `docs/workflow_conventions.md`, or the relevant spec.
 
-If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pattern, update that skill and then re-read it before relying on the new rule. Durable project rules still need to be mirrored into repo docs such as this file, `docs/workflow_conventions.md`, or the relevant spec.
+## Critical Rules
 
----
+- Preserve the product spine: Source Graph, Session model, Action Lexicon, and queue / commit semantics.
+- Do not create shadow systems: no second action system, persistence model, replay truth, arrangement model, Ghost-only architecture, or Feral-only architecture.
+- Keep realtime audio isolated from blocking I/O, analysis work, Ghost reasoning, heavy UI work, and model calls.
+- Represent replay-, restore-, capture-lineage-, source-timing-, or product-contract state in core/session models, not hidden app-local state.
+- Do not close an audio-producing slice with only UI/log proof. If sound should change, prove the output path.
+- For every new `ActionCommand`, account for queue, commit/side-effect, Session/replay, user/observer, and QA surfaces.
+- Treat `JamAppState` as an app facade, not a second product truth.
+- Run branch-level review before PRs when the `code-review` skill is available.
+- Inspect GitHub Actions / CI explicitly after opening a PR.
+- Keep Linear current: issue state, priority, labels, project, archive, deletion, and branch cleanup are part of the work.
+- Use one archive file per Linear ticket under `docs/archive/linear_issues/RIOTBOX-123.md`; month files are indexes only.
+- Search archives and generated artifacts only when needed. Default `rg` should respect `.rgignore`.
+- Never revert unrelated user changes.
 
 ## Current State
 
-- Planning and spec layer exists under `docs/` and `plan/`
-- Rust workspace is active at the repo root with real implementation across:
+- Planning and spec layers exist under `docs/` and `plan/`.
+- Rust workspace is active at the repo root:
   - `crates/riotbox-core`
   - `crates/riotbox-app`
   - `crates/riotbox-audio`
   - `crates/riotbox-sidecar`
-- The current product spine is already beyond a minimal shell:
-  - Source Graph and Session v1 are real
-  - queue / commit semantics and action history are real
-  - `Jam`, `Log`, `Source`, and `Capture` shells are real
-  - TR-909, MC-202, W-30, and Scene Brain slices already exist behind the current Jam workflow
-- The current active roadmap phase should be read from the live docs, not inferred only from this file:
+- The product spine is beyond a minimal shell:
+  - Source Graph and Session v1 are real.
+  - Queue / commit semantics and action history are real.
+  - `Jam`, `Log`, `Source`, and `Capture` shells are real.
+  - TR-909, MC-202, W-30, and Scene Brain slices exist behind the Jam workflow.
+- Read the active roadmap phase from live docs:
   - `docs/README.md`
   - `docs/execution_roadmap.md`
   - `docs/phase_definition_of_done.md`
 
----
-
 ## Source Of Truth
 
-Read these before making structural changes:
+Read these before structural changes:
 
 1. `docs/prd_v1.md`
 2. `docs/execution_roadmap.md`
@@ -54,358 +64,275 @@ Read these before making structural changes:
 14. `docs/specs/ghost_api_spec.md`
 15. `docs/specs/preset_style_spec.md`
 
-Strategic context lives in:
+Strategic context:
 
 - `plan/riotbox_masterplan.md`
 - `plan/riotbox_liam_howlett_feral_addendum.md`
 
-Agent-facing drift guardrails live in:
+Agent-facing drift guardrails:
 
 - `docs/reviews/riotbox_drift_guardrails_2026-05-10.md`
 
-If implementation and planning diverge, update the relevant spec or decision log rather than silently inventing new behavior.
+## Architecture Guardrails
 
----
+- Keep contracts explicit and boring.
+- Prefer small enums and structs over stringly behavior.
+- Do not bypass Source Graph, Session, Action Lexicon, or queue / commit semantics.
+- Keep `feral_rebuild` as a profile / policy layer, not a product fork.
+- If a string controls branching, replay, restore, QA, generated artifacts, or cross-module behavior, turn it into a typed contract or document why it stays a string.
+- Prefer explicit imports in app modules.
+- Avoid new `use super::*` imports unless the local test/module context keeps dependencies harmless and reviewable.
+- Repeated queue-draft construction and side-effect log-result mutation are acceptable while small; review for a narrow helper after the same shape appears across three or more lane paths.
+- Mechanical `include!` splits are not durable module ownership.
+- Convert included shards into real modules only when semantic boundary, visibility, tests, and review cost all improve.
+- Do not add `JamAppState` state unless it is truly app-runtime state, does not need restore/replay, and has no better home in Session/Core.
 
-## Architecture Rules
+## ActionCommand Rule
 
-### 1. Contracts before cleverness
+Every new `ActionCommand` must explicitly account for:
 
-Do not introduce behavior that bypasses:
+1. Queue path.
+2. Commit / side-effect path.
+3. Session / replay consequence.
+4. User-visible or observer surface.
+5. Test / QA proof.
 
-- Source Graph
-- Session model
-- Action Lexicon
-- queue / commit semantics
+If a surface is intentionally not applicable, say why in the PR or working notes.
 
-### 2. No shadow systems
+## Realtime Audio Rules
 
-Do not create:
+- Isolate the audio path from blocking I/O, analysis work, Ghost reasoning, heavy UI work, and model calls.
+- Treat sandbox-only audio failures as inconclusive until verified against the real user session.
+- Distinguish sandboxed execution from real user-session execution.
+- For Linux audio validation, record whether the result came from restricted sandbox context or a real user session.
+- On this machine, the real session uses PipeWire, while `cpal` can still report and use the Linux `Alsa` host successfully.
+- Use real-session verification for audio spikes, device enumeration, and latency checks.
 
-- a second action system
-- a second persistence model
-- a second arrangement model hidden behind Ghost
-- a separate feral architecture
+## Audio-Producing Slices
 
-`feral_rebuild` must stay a profile / policy layer, not a fork of the product.
+- Treat `docs/specs/audio_qa_workflow_spec.md` as an active workflow contract.
+- Use the spec to decide which current audio QA layers apply and which are still aspirational.
+- Do not claim offline WAV review packs, candidate-vs-baseline audio directories, or formal listening-pack gates unless the slice uses an existing harness.
+- Minimum current proof:
+  - relevant unit and integration tests
+  - buffer regression coverage when touching an existing audio seam
+  - action/log/state assertions proving the intended path landed
+  - output assertions proving the seam is not silent, not fallback-collapsed, and inside expected metrics
+  - local manual listening when the behavior materially changes and is audible today
+  - explicit PR or working-context notes when a stronger audio QA layer is still aspirational
+- When fuller harnesses land, tighten this rule to the spec's stronger release gates.
 
-### 3. Realtime discipline
+## Rust Guidance
 
-The audio path must remain isolated from:
+- Keep core types explicit and boring.
+- Keep tests close to the modules they validate.
+- Avoid unnecessary dependencies during early model stabilization.
+- Treat roughly 500 lines per Rust file, including tests and bin helpers, as a soft review/context budget.
+- Treat any `.rs` file over that budget as a refactor candidate.
+- Never split files mechanically just to satisfy line count.
+- Split only when resulting modules have clearer semantic responsibility, lower review cost, and lower agent context cost.
+- Do not hide context cost in giant `tests.rs` files.
+- Split large tests by behavior area, fixture family, screen, lane, or helper responsibility only when ownership gets clearer.
+- Name split Rust shards after their responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`.
+- Do not use durable `01_...rs`, `02_...rs` numbering.
 
-- blocking I/O
-- analysis work
-- Ghost reasoning
-- heavy UI work
+## Documentation Rules
 
-### 4. Determinism matters
+- Freeze new technical decisions in `docs/research_decision_log.md`.
+- Update the corresponding spec in `docs/specs/` when a contract changes.
+- Do not bury important architecture decisions only in code comments.
+- Keep important workflow rules in repo docs, not only in MemPalace or Linear.
 
-If state affects restore, replay, or capture lineage, it should be represented explicitly in the core model.
-
-### 5. Architecture drift / AI-slop guardrail
-
-Riotbox may use coding agents, but agents must not create generic glue-code drift.
-
-For every new `ActionCommand`, explicitly account for:
-
-1. queue path
-2. commit / side-effect path
-3. Session / replay consequence
-4. user-visible or observer surface
-5. test / QA proof
-
-Do not close a slice when the claimed product change only appears in UI text or logs. If a feature is supposed to affect sound, replay, capture lineage, source timing, restore, or exported artifacts, include a concrete proof path.
-
-Before adding state to `JamAppState`, ask whether the state belongs in Session/Core instead. `JamAppState` is an app facade, not a second product truth.
-
-Prefer explicit imports in app modules. Avoid new `use super::*` imports unless the local test/module context makes the dependency surface harmless and reviewable.
-
-String labels may be used for display and artifact names. If a string starts controlling behavior across modules, turn it into a typed contract or document why it remains a string.
-
-Repeated queue-draft construction and repeated side-effect log-result mutation are acceptable while still small, but should trigger a narrow helper review once the same shape appears across three or more lane paths.
-
-Mechanical `include!` splits are not durable module ownership. Convert included shards into real modules only when the semantic boundary, visibility, tests, and review cost all improve.
-
----
-
-## Frozen Stack v1
-
-The current stack freeze is documented in `docs/specs/technology_stack_spec.md`.
-
-Use these defaults unless a documented spike disproves them:
-
-- `Rust` for core, runtime-facing state, TUI, and audio path
-- `Python` later for the analysis sidecar
-- `JSON` for early persistence and inspection
-- planned runtime direction:
-  - `cpal` for audio I/O
-  - `tokio` for control-plane async work
-  - `ratatui` for terminal UI
-
-Do not replace Rust with Go for the main core.
-
----
-
-## Repo Layout
-
-Current important paths:
-
-- `crates/riotbox-core`
-  Shared core models and logic
-- `docs/`
-  Implementation-facing contracts
-- `plan/`
-  Strategy and historical planning material
-
-Expected near-term additions:
-
-- `crates/riotbox-app`
-  app-level orchestration and Jam state wiring
-- `crates/riotbox-audio`
-  audio runtime and callback-side work
-- `python/sidecar`
-  analysis process
-
----
-
-## Near-Term Build Order
-
-Follow this order unless the user explicitly redirects:
-
-1. stabilize core data models
-2. add serialization roundtrips for `SourceGraph` and `SessionFile`
-3. build app-level Jam state wiring
-4. run bounded spikes:
-   - audio latency
-   - Rust/Python transport
-   - deterministic replay
-   - session serialization
-5. move into core skeleton runtime work
-
-Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
-
----
-
-## Coding Guidance
-
-### Context hygiene
+## Context Hygiene
 
 - Keep normal searches focused on live source and canonical docs.
-- Default `rg` searches should respect `.rgignore`; it excludes long Linear archives, raw planning transcripts, generated artifacts, and local audio data.
+- Let default `rg` respect `.rgignore`.
+- `.rgignore` excludes long Linear archives, raw planning transcripts, generated artifacts, and local audio data.
 - Search `docs/archive/linear_issues/` only when ticket history is needed.
-- Search ignored archive or audio paths explicitly with `rg --no-ignore "..." <path>` instead of broad repo-wide searches.
-- Do not paste large generated manifests, WAV metadata dumps, archive batches, or raw transcript sections into working context unless they are directly needed for the slice.
-- Prefer opening specific files and line ranges over loading entire long documents.
+- Search ignored archive or audio paths explicitly with `rg --no-ignore "..." <path>`.
+- Do not paste large generated manifests, WAV metadata dumps, archive batches, or raw transcript sections unless directly needed.
+- Prefer specific files and line ranges over entire long documents.
 
-### Rust
+## Review And QA
 
-- Keep core types explicit and boring
-- Prefer small enums and structs over stringly behavior
-- Keep tests close to the modules they validate
-- Avoid unnecessary dependencies during early model stabilization
-- Treat roughly 500 lines per Rust file, including tests and bin helpers, as a soft review/context budget, not a hard rule.
-- Treat any `.rs` file over that budget as a refactor candidate, but never split files mechanically just to satisfy line count.
-- Split only when the resulting modules have clearer semantic responsibility, lower review cost, and lower agent context cost.
-- Do not hide context cost in giant `tests.rs` files. If a test module grows past the budget, split it by behavior area, fixture family, screen, lane, or helper responsibility only when that creates clearer ownership.
-- Name split Rust shards after their responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`; do not use durable `01_...rs`, `02_...rs` numbering.
-
-### Documentation
-
-- If a technical decision is newly frozen, add it to `docs/research_decision_log.md`
-- If a contract changes, update the corresponding spec in `docs/specs/`
-- Do not bury important architecture decisions only in code comments
-
-### Git hygiene
-
-- Do not revert unrelated user changes
-- Keep commits scoped to one coherent slice where possible
-
-### Review gate
-
-- Before committing a finished feature-branch slice, run the `code-review` skill on the branch diff when that skill is available in the current session.
-- Do not assume one hardcoded user path for skills. If a skill path from session context is missing, check `$HOME/.codex/skills/<skill>/SKILL.md` before falling back.
-- Use that review to identify findings, fix them on the branch, and answer any review questions before opening the PR.
-- After that, still run a short self-review on the branch diff.
-- The branch-level review should explicitly check for:
+- Before committing a finished feature-branch slice, run the `code-review` skill on the branch diff when available.
+- If a skill path from session context is missing, check `$HOME/.codex/skills/<skill>/SKILL.md` before falling back.
+- Fix real review findings on the branch before opening the PR when feasible.
+- Still run a short self-review on the branch diff.
+- Branch review must check:
   - correctness bugs
   - architecture drift against `docs/` contracts
   - missing tests for new behavior
   - workflow/documentation gaps introduced by the slice
-  - growth of any Rust file beyond the 500-line budget, including production, tests, fixtures, and bin helpers
-- If the review finds a real issue, fix it on the branch before creating the PR when feasible
-
-### Audio-producing slices
-
-- For audio-producing changes, treat `docs/specs/audio_qa_workflow_spec.md` as an active workflow contract, not only an indexed reference.
-- Use it to decide which current audio QA layers apply to the slice and which ones are still intentionally not operational in the repo yet.
-- Do not claim offline WAV review packs, candidate-vs-baseline audio directories, or formal listening-pack gates unless the slice actually uses a real harness that already exists in the repo.
-- Until the fuller audio QA harnesses land, the minimum expectation for audio-producing slices is:
-  - relevant unit and integration tests
-  - relevant buffer regression coverage when the slice touches an existing audio seam
-  - action/log/state assertions proving the intended action path or render state actually landed
-  - output assertions proving the affected audible seam is not silent, not fallback-collapsed, and inside expected metrics
-  - local manual listening against the real session when the behavior changed materially and can be heard today
-  - explicit notes in the PR or working context when an audio QA layer from the spec is still aspirational rather than operational
-- Do not close an audio-producing slice with only UI/log proof. If the feature is supposed to sound different, include a buffer regression, offline render comparison, source-vs-control metric check, or documented reason why the output seam is not yet operational.
-- When the fuller harnesses do land, tighten this rule to use the spec's stronger release gates instead of treating them as future work.
-
-### Periodic codebase review
-
-- Run the `review-codebase` skill on a regular cadence, not on every feature branch.
-- Default cadence: after every 5th finished feature branch.
-- Use that broader review to catch cross-slice drift, recurring weaknesses, missing tests, and architecture erosion that branch-local review may miss.
-- Record important findings in:
+  - growth of any Rust file beyond the 500-line budget
+- Run `review-codebase` regularly, not on every branch.
+- Default broad-review cadence: after every 5th finished feature branch.
+- Record important broad-review findings in:
   - `docs/reviews/`
   - `docs/research_decision_log.md`
-  - workflow/docs updates when the findings change how the repo should be operated
-- If the `review-codebase` skill is not available in the current session, note that explicitly and fall back to a normal whole-codebase review pass.
+  - workflow/docs updates when the findings change repo operation
+- If `review-codebase` is unavailable, note it and do a normal whole-codebase review pass.
 
-### CI gate
+## PR And CI Expectations
 
-- After opening a PR, inspect the GitHub Actions / CI results explicitly.
-- Do not treat a ticket as merely "waiting for review" if CI is red.
-- If CI fails and the failure is relevant to the slice, fix it on the same branch before considering the review boundary clean.
-- Treat open PRs and in-flight CI as merge gates, not as a reason to pause the main implementation lane.
-- If the current PR is locally clean and CI is only running or already green, continue with the next bounded roadmap-aligned slice and re-check the open PR periodically.
-- When no event or webhook mechanism is available, use explicit periodic polling instead of idling.
-- Do not emit standalone status-only progress reports when there is no real blocker.
-- If a user-facing update is necessary during active work, tie it directly to the next concrete action already being taken.
-- At minimum, check:
+- Normal slice work should use a PR.
+- Direct push to `main` is only acceptable when the user explicitly asks, the change is very small, the change is repo/workflow-meta, and skipping PR does not hide meaningful review risk.
+- Every PR should include `Why This Matters`.
+- `Why This Matters` must explain:
+  - larger phase or milestone
+  - product path or architecture seam unlocked
+  - what remains bounded, stubbed, or out of scope
+- Non-trivial feature PRs should include `Drift Check`.
+- `Drift Check` should cover:
+  - new or changed `ActionCommand`
+  - queue path
+  - commit / side-effect path
+  - Session / replay consequence
+  - user-visible or observer surface
+  - test / QA proof
+  - added `JamAppState` state
+  - added or changed audio-producing behavior
+  - shadow-system risk
+- After opening a PR, inspect GitHub Actions / CI explicitly.
+- If CI is red and relevant to the slice, fix it on the same branch.
+- Treat open PRs and in-flight CI as merge gates, not a reason to pause the main implementation lane.
+- If CI is running or already green and the branch is locally clean, continue with the next bounded roadmap-aligned slice.
+- Re-check open PRs periodically when no webhook/event mechanism is available.
+- Do not emit standalone status-only progress reports when there is no blocker.
+- Pair user-facing progress updates with the next concrete action.
+- Minimum CI checks:
   - formatter status
   - test status
   - lint status
-  - any slice-specific workflow required by the repo
+  - slice-specific workflow required by the repo
 
-### PR descriptions
-
-- Every PR description should include a short `Why This Matters` section.
-- That section should explain the slice in product and roadmap terms, not only list code changes.
-- At minimum, state:
-  - what larger phase or milestone this slice belongs to
-  - what real product path or architecture seam it unlocks
-  - what is still intentionally out of scope or stubbed
-- Do not write PR descriptions as changelogs only.
-- Non-trivial feature branches should also include a `Drift Check` section that answers whether the slice added or changed an `ActionCommand`, added `JamAppState` state, changed audio-producing behavior, and covered queue, commit, Session/replay, user/observer, QA, and shadow-system risk where applicable.
-
-### Linear hygiene
+## Linear Workflow
 
 - Keep Linear updates human-readable.
-- Move issues to review when the PR is open and to done when the PR is merged.
-- Follow the repo workflow note in `docs/workflow_conventions.md` for branch / PR / merge / Linear conventions.
+- Move issues to `In Progress` when work starts.
+- Move issues to `In Review` when the PR is open.
+- Move issues to `Done` when the PR is merged.
 - Keep Linear priorities explicit:
   - `In Progress` / `In Review` -> `High (2)`
   - honest near-next backlog -> `Medium (3)`
   - distant work -> `Low (4)` or unset
   - archive / repo-ops slices -> usually `Medium (3)` unless urgent
-- Keep Linear labels explicit and orthogonal to projects:
+- Keep labels orthogonal to projects:
   - projects answer phase
   - labels answer slice type
-  - current base labels:
-    - `workflow`
-    - `archive`
-    - `ux`
-    - `benchmark`
-    - `review-followup`
-- Treat workflow and archive obligations as a real work lane, not as optional cleanup after coding.
-- When delegation is available and the slice is substantial enough, prefer two parallel lanes:
+- Current base labels:
+  - `workflow`
+  - `archive`
+  - `ux`
+  - `benchmark`
+  - `review-followup`
+- Treat workflow and archive obligations as real work, not optional cleanup.
+- When delegation is available and a slice is substantial, prefer two parallel lanes:
   - main implementation lane
-  - workflow / ops lane or subagent for Linear state, project updates, archive prep, and similar repo-process obligations
-- The workflow / ops lane should keep Linear and repo bookkeeping continuously aligned while implementation is moving, not only after the code is already finished.
-- The main thread may keep implementing while the workflow / ops lane keeps Linear state, project updates, and archive obligations aligned.
-- The main thread still owns correctness, final review, PR quality, merge readiness, and final integration.
-- Keep a small active backlog in Linear so work does not stall at ticket boundaries.
-- Treat this as an active rule, not a soft preference.
-- During active implementation, do not let the working backlog drop to zero when the next likely slice is already clear.
+  - workflow / ops lane for Linear state, project updates, archive prep, and repo-process obligations
+- The main thread still owns correctness, review, PR quality, merge readiness, and final integration.
+- Keep a small active backlog in Linear.
 - Before closing the current ticket loop, ensure Linear still has:
-  - 1 ticket in progress or in review
-  - 1-5 near-next tickets in backlog
-  - milestone-level placeholders for later work only when they stay coarse and honest
+  - 1 issue in progress or in review
+  - 1-5 near-next backlog issues
+  - coarse milestone-level placeholders only when honest
 - Do not fully decompose distant phases into many detailed tickets before nearer slices land.
+
+## Linear Archive And Deletion
+
 - Treat Linear as the active operations layer, not the long-term archive.
-- Before deleting a completed Linear issue to stay under the free-tier cap, archive its useful context into repo markdown under `docs/archive/linear_issues/`.
-- Do that archive work as part of the ticket closeout path, not as a separate default `Archive ...` ticket.
+- Archive useful context before deleting a completed Linear issue.
+- Archive under `docs/archive/linear_issues/`.
+- Do archive work as part of closeout, not as a default separate `Archive ...` ticket.
 - Use the repo archive as canonical Git-backed history.
-- MemPalace should stay focused on live product docs and specs, not archived Linear ticket files.
-- Use one archive file per Linear ticket so deletion checks stay exact and context-light.
-- Do not create new grouped ticket archives by default; use month files such as `2026-05.md` only as indexes to per-ticket files.
+- Keep MemPalace focused on live product docs and specs, not archived Linear ticket files.
+- Use one archive file per Linear ticket.
+- Do not create grouped ticket archives by default.
+- Use month files such as `2026-05.md` only as indexes to per-ticket files.
 - Keep archive entries structurally uniform.
-- Use:
-  - `RIOTBOX-123.md` for one-ticket archive files
-  - `YYYY-MM.md` for monthly index files
-- Use ISO dates (`YYYY-MM-DD`) for all archived ticket timestamps.
-- Keep metadata fields in the same order as the archive template so entries stay easy to scan, diff, and mine.
-- Use stable final-status terms such as:
+- Use `RIOTBOX-123.md` for ticket archive files.
+- Use `YYYY-MM.md` for monthly index files.
+- Use ISO dates (`YYYY-MM-DD`) for archived ticket timestamps.
+- Keep metadata fields in the archive template order.
+- Use stable final-status terms:
   - `Done`
   - `Canceled`
   - `Duplicate`
   - `Superseded`
-- At minimum, preserve:
+- Preserve at minimum:
   - ticket id and title
   - Linear project
   - milestone or phase
-  - ticket status such as done, canceled, or superseded
+  - final ticket status
   - created date
   - implementation start date when known
   - done, merged, canceled, or deleted date when applicable
-  - actual repo feature branch used for the work
+  - actual repo feature branch
   - why the ticket existed
   - what shipped
   - PR link
   - merge commit
   - follow-up tickets or bounded open questions
-- When useful, also preserve:
-  - Linear-generated branch name if it differed from the actual repo branch and is worth keeping
+- Preserve when useful:
+  - Linear-generated branch name when it differed from the actual repo branch
   - Linear issue URL
   - labels
   - assignee or owner
   - deleted-from-Linear date
   - verification summary
   - decision-log or spec links touched by the ticket
-- Only delete the Linear issue after the PR is merged, the issue is done, and the repo archive entry exists.
-- For the deletion check, verify archive presence by path or exact metadata only; do not read or semantically search the whole archive.
-- Prefer:
+- Delete a Linear issue only after:
+  - the PR is merged
+  - the issue is done
+  - the repo archive entry exists
+- Verify archive presence by exact file or metadata only:
   - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
   - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
-- Do not use MemPalace as the deletion gate. Exact filesystem / metadata checks are the source of truth for whether the archive handoff exists.
-- Prefer the repo-local helper for deletion:
+- Do not use MemPalace as the deletion gate.
+- Prefer the deletion helper:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
-- Use token auth for that helper:
+- Use token auth for deletion:
   - `LINEAR_API_TOKEN=...`
 - Do not rely on pasted browser session cookies as the normal workflow path.
-- Delete the merged remote feature branch as part of ticket closeout after the PR is merged and local `main` is synced.
+
+## Branch And Git Hygiene
+
+- Do not revert unrelated user changes.
+- Keep commits scoped to one coherent slice where possible.
+- After a PR is merged, sync local `main`.
+- Delete the merged remote feature branch after the PR is merged and local `main` is synced.
 - Prefer deleting the exact PR branch:
   - `git push origin --delete feature/riotbox-123-example`
 - Never delete `main`, release/protected branches, branches with open PRs, or intentionally long-lived branches.
-- For squash-merged PRs, do not rely only on `git branch --merged`; verify PR merge/closed state or known archive status before bulk branch deletion.
-- If doing a bulk GitHub branch cleanup, first confirm there are no open PRs and then remove only stale non-`main` heads.
+- For squash-merged PRs, do not rely only on `git branch --merged`.
+- Verify PR merge/closed state or known archive status before bulk branch deletion.
+- If doing bulk GitHub branch cleanup, first confirm there are no open PRs and remove only stale non-`main` heads.
+- Do not amend commits unless explicitly requested.
 
-### Next-ticket heuristic
+## Next-Ticket Heuristic
 
 - Derive the next ticket from:
   - `docs/execution_roadmap.md`
   - `docs/phase_definition_of_done.md`
-  - the active feature spec for the area being worked on
-  - the actual current repo state
-- Prefer the smallest coherent slice that closes the most immediate product-path or architecture-path gap.
+  - the active feature spec for the area
+  - actual current repo state
+- Prefer the smallest coherent slice that closes the most immediate product or architecture gap.
 - Do not define many future tickets in detail before the current slice lands.
-- Validate each proposed next ticket against four questions:
-  - does it fit the current phase?
-  - does it create visible product progress or remove a real blocker?
-  - does it preserve the current architecture instead of creating a shadow path?
-  - is it small enough to review as one coherent slice?
-- If multiple candidates are possible, prefer the one that keeps Riotbox moving along the product spine already defined in the roadmap instead of opening a new side path.
-- After a ticket is cleanly closed, the agent may autonomously start the next-best backlog ticket if:
-  - the previous slice is merged or otherwise fully closed
-  - no unresolved review or CI blocker remains on the closed slice
-  - the next ticket satisfies the next-ticket heuristic above
-  - the near-term Linear backlog still stays within the repo rule of 1-5 honest backlog tickets
-- Prefer continuing through the next-best roadmap-aligned ticket instead of waiting for a user nudge when the next step is already clear and bounded.
-
----
+- Validate each next ticket:
+  - fits the current phase
+  - creates visible product progress or removes a real blocker
+  - preserves current architecture
+  - is small enough to review as one coherent slice
+- Prefer roadmap-aligned product-spine work over new side paths.
+- After clean closeout, autonomously start the next-best backlog ticket when:
+  - the previous slice is merged or fully closed
+  - no unresolved review or CI blocker remains
+  - the next ticket satisfies this heuristic
+  - the Linear backlog remains within the 1-5 near-next rule
 
 ## Commands
 
-Keep this section as a short command shortlist. Use `just --list` and the `Justfile` for the full command catalog instead of duplicating every recipe here.
+Keep this section as a short command shortlist. Use `just --list` and `Justfile` for the full command catalog.
 
 Default checks:
 
@@ -453,80 +380,50 @@ Current CI baseline:
   - `cargo clippy --all-targets --all-features -- -D warnings`
 - Before opening or updating a PR, prefer running `just ci` locally.
 
-## MemPalace Dev Memory
+## MemPalace / Memory Notes
 
-MemPalace is available as an optional dev-memory helper.
-
-Rules:
-
-- it is not product core
-- it is not a source of truth
-- canonical project truth still lives in `docs/`, `plan/`, Linear, and Git history
-- use it to complement `rg`, not replace it
+- MemPalace is optional dev memory.
+- It is not product core.
+- It is not a source of truth.
+- Canonical truth lives in `docs/`, `plan/`, Linear, and Git history.
+- Use MemPalace to complement `rg`, not replace it.
+- Do not store new canonical decisions only in MemPalace.
+- If something matters, write it into repo docs or Linear.
 
 Repo-local layout:
 
-- `.mempalace/palace/`
-  persistent Chroma database
-- `.mempalace/cache/`
-  model and package cache
-- `.mempalace/results/`
-  captured evaluation outputs
-- `.mempalace/corpus/`
-  copied project corpus for mining
+- `.mempalace/palace/` stores the persistent Chroma database.
+- `.mempalace/cache/` stores model and package cache.
+- `.mempalace/results/` stores captured evaluation outputs.
+- `.mempalace/corpus/` stores copied project corpus for mining.
 
 Operational path:
 
-- use `just mem-init` for the first setup
-- use `just mem-status` and `just mem-search "..."` for normal use
-- use `just mem-repair` when MemPalace reports index metadata drift, such as
-  missing cosine-distance metadata
-- the wrapper script uses rootless Podman with pinned `python:3.14.4-slim` and
-  `mempalace==3.3.4`
-- normal MemPalace runtime commands run with container networking disabled;
-  image builds still require normal registry/network access
-- the wrapper automatically re-mines when mined repo sources changed
-- the wrapper uses a repo-local lock so multiple MemPalace commands do not mine concurrently
-- the wrapper owns the generated room structure; do not hand-edit `.mempalace/corpus/mempalace.yaml`
-- the wrapper syncs selected live repo sources into room-specific folders instead of mirroring the whole repo layout
-- the active rooms are `specs`, `workflow`, `reviews`, `audio_qa`, `plan`, `decisions`, `code`, `documentation`, and `general`
-- if the room structure changes, the wrapper rebuilds the palace index on the next mine/status/search
-- the wrapper rebuilds the MemPalace container image only when its compose/container files change
+- Use `just mem-init` for first setup.
+- Use `just mem-status` and `just mem-search "..."` for normal work.
+- Use `just mem-repair` for index metadata drift such as missing cosine-distance metadata.
+- The wrapper uses rootless Podman with pinned `python:3.14.4-slim` and `mempalace==3.3.4`.
+- Normal runtime commands run with container networking disabled.
+- Image builds require normal registry/network access.
+- The wrapper re-mines when mined repo sources changed.
+- The wrapper uses a repo-local lock to prevent concurrent mining.
+- Do not hand-edit `.mempalace/corpus/mempalace.yaml`.
+- The wrapper syncs selected live repo sources into room-specific folders.
+- Active rooms: `specs`, `workflow`, `reviews`, `audio_qa`, `plan`, `decisions`, `code`, `documentation`, and `general`.
+- If room structure changes, the wrapper rebuilds the palace index on the next mine/status/search.
+- The wrapper rebuilds the MemPalace container image only when compose/container files change.
 
-Do not store new canonical decisions only in MemPalace. If something matters, it still needs to be written into repo docs or Linear.
+## Sandbox And Environment Notes
 
----
-
-## Sandboxed Audio
-
-Audio and device probing require extra care in this environment.
-
-Rules:
+### Audio And Device Probing
 
 - Do not assume a failed audio probe inside the sandbox means the machine audio stack is broken.
-- Distinguish clearly between:
-  - sandboxed execution
-  - real user-session execution
-- For Linux audio validation, record whether a result came from:
-  - restricted sandbox context
-  - escalated command against the live user session
-- Treat sandbox-only audio failures as inconclusive until verified against the real session.
+- Record whether Linux audio validation came from sandbox or real user session.
+- Treat sandbox-only audio failures as inconclusive.
 
-Current known behavior from Riotbox work:
+### Agent Sandbox Self-Checks
 
-- sandboxed audio and session-bus access can fail even when the machine audio setup is healthy
-- on this machine, the real session uses PipeWire, while `cpal` can still report and use the Linux `Alsa` host successfully
-
-Practical consequence:
-
-- use real-session verification for audio spikes, device enumeration, and latency checks
-- write down which context produced the observation
-
-## Agent Sandbox Howto
-
-When Riotbox runs inside `agent-sandbox`, do not guess which host capability is missing. Check it explicitly and then ask for the smallest missing mount or image capability.
-
-First-line self-checks:
+Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
 
 ```bash
 command -v git
@@ -539,76 +436,102 @@ test -S "/run/user/$(id -u)/podman/podman.sock" && echo podman-socket-ok
 
 Interpretation:
 
-- if `pkg-config --libs --cflags alsa` fails, the sandbox cannot build the current Linux audio path cleanly
-- if `podman` is missing or the Podman socket is unavailable, MemPalace operational commands cannot run from inside the sandbox
-- `just` is convenient but not required; prefer direct script commands if `just` is absent
+- If `pkg-config --libs --cflags alsa` fails, the sandbox cannot build the current Linux audio path cleanly.
+- If `podman` is missing or the Podman socket is unavailable, MemPalace operational commands cannot run from inside the sandbox.
+- `just` is convenient but not required; prefer direct script commands if `just` is absent.
 
 Preferred solution:
 
-- bake the needed tooling into the sandbox image
-- use mounts only for host-specific assets or sockets
+- Bake needed tooling into the sandbox image.
+- Use mounts only for host-specific assets or sockets.
 
 ### Arch Host Requirements
 
-For the current Riotbox repo on an Arch host, these are the practical requirements.
-
 Audio build requirements:
 
-- `pkg-config` available in the sandbox
-- ALSA headers and pkg-config data visible in the sandbox
+- `pkg-config` available in the sandbox.
+- ALSA headers and pkg-config data visible in the sandbox.
+- `PKG_CONFIG_PATH=/usr/lib/pkgconfig`.
 
-Useful host mounts on Arch:
+Useful Arch host mounts:
 
 - `/usr/include/alsa` -> `/usr/include/alsa`
 - `/usr/lib/pkgconfig` -> `/usr/lib/pkgconfig`
 - `/usr/lib/libasound.so` -> `/usr/lib/libasound.so`
 - `/usr/lib/libasound.so.2` -> `/usr/lib/libasound.so.2`
 
-Required environment:
-
-- `PKG_CONFIG_PATH=/usr/lib/pkgconfig`
-
 MemPalace operational requirements:
 
-- `podman` client available in the sandbox
-- `podman compose` support available in the sandbox
+- `podman` client available in the sandbox.
+- `podman compose` support available in the sandbox.
 
-If using the host's rootless Podman instead of nested Podman inside the sandbox:
+If using host rootless Podman instead of nested Podman:
 
-- mount the host Podman socket:
-  - `/run/user/<host-uid>/podman/podman.sock`
-- expose it at the same path or a known sandbox path
-- set:
-  - `CONTAINER_HOST=unix:///run/user/<host-uid>/podman/podman.sock`
+- Mount `/run/user/<host-uid>/podman/podman.sock`.
+- Expose it at the same path or a known sandbox path.
+- Set `CONTAINER_HOST=unix:///run/user/<host-uid>/podman/podman.sock`.
 
-In that setup, the repo-local `scripts/mempalace.sh` wrapper can use the host container runtime without needing full nested container support.
+In that setup, `scripts/mempalace.sh` can use the host container runtime without full nested container support.
 
 ### Git Push Ergonomics
 
-For smoother Git pushes from the sandbox:
-
-- ensure SSH auth is available
-- ensure GitHub host trust is available
-
-The current agent can work around missing writable `known_hosts` by using a temporary file, but a better sandbox setup is:
-
-- writable `~/.ssh/known_hosts`, or
-- pre-seeded GitHub host keys inside the image
+- Ensure SSH auth is available.
+- Ensure GitHub host trust is available.
+- A temporary `known_hosts` file is a workaround.
+- Better sandbox setup: writable `~/.ssh/known_hosts` or pre-seeded GitHub host keys.
 
 ### Host Services
 
-When the sandbox needs to reach a host-local TCP service, prefer:
+- Use `host.containers.internal` for host-local TCP services.
+- Do not assume `localhost` means the host. In the sandbox it is container-local.
 
-- `host.containers.internal`
+## Frozen Stack v1
 
-Do not assume `localhost` refers to the host. In the sandbox it is container-local.
+The stack freeze is documented in `docs/specs/technology_stack_spec.md`.
 
----
+Use these defaults unless a documented spike disproves them:
+
+- `Rust` for core, runtime-facing state, TUI, and audio path.
+- `Python` later for the analysis sidecar.
+- `JSON` for early persistence and inspection.
+- Planned runtime:
+  - `cpal` for audio I/O
+  - `tokio` for control-plane async work
+  - `ratatui` for terminal UI
+- Do not replace Rust with Go for the main core.
+
+## Repo Layout
+
+Important paths:
+
+- `crates/riotbox-core`: shared core models and logic.
+- `crates/riotbox-app`: app-level orchestration and Jam state wiring.
+- `crates/riotbox-audio`: audio runtime and callback-side work.
+- `crates/riotbox-sidecar`: sidecar protocol/client work.
+- `docs/`: implementation-facing contracts.
+- `plan/`: strategy and historical planning material.
+- `python/sidecar`: analysis process path.
+
+## Historical Near-Term Build Order
+
+Follow the live roadmap first. This historical order remains useful when orienting early skeleton work:
+
+1. Stabilize core data models.
+2. Add serialization roundtrips for `SourceGraph` and `SessionFile`.
+3. Build app-level Jam state wiring.
+4. Run bounded spikes:
+   - audio latency
+   - Rust/Python transport
+   - deterministic replay
+   - session serialization
+5. Move into core skeleton runtime work.
+
+Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 
 ## When In Doubt
 
-- Prefer the smaller, more explicit model
-- Prefer the contract that preserves replayability
-- Prefer the implementation that keeps realtime boundaries clean
-- Prefer updating docs over leaving hidden assumptions in code
-- If a user message mixes product feedback, ideas for later, and possible implementation requests, ask one concise clarifying question before choosing a work lane unless the intended next action is already explicit.
+- Prefer the smaller, more explicit model.
+- Prefer the contract that preserves replayability.
+- Prefer realtime boundaries.
+- Prefer docs updates over hidden assumptions.
+- Ask one concise clarifying question when user feedback mixes later ideas and immediate implementation requests, unless the intended next action is explicit.
