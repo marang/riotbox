@@ -1,7 +1,7 @@
 # MC-202 Typed Contract Migration Plan
 
-Date: 2026-05-10  
-Ticket: RIOTBOX-747  
+Date: 2026-05-10
+Ticket: RIOTBOX-747
 Audience: coding agents, reviewers, maintainers
 
 ## Purpose
