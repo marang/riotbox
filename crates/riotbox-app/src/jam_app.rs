@@ -9,13 +9,10 @@ use std::{
 
 use riotbox_audio::{
     mc202::Mc202RenderState,
-    runtime::{AudioRuntimeHealth, render_w30_resample_tap_offline},
-    source_audio::{SourceAudioCache, SourceAudioWindow, write_interleaved_pcm16_wav},
+    runtime::AudioRuntimeHealth,
+    source_audio::SourceAudioCache,
     tr909::Tr909RenderState,
-    w30::{
-        W30PreviewRenderState, W30ResampleTapMode, W30ResampleTapRouting,
-        W30ResampleTapSourceProfile, W30ResampleTapState,
-    },
+    w30::{W30PreviewRenderState, W30ResampleTapState},
 };
 use riotbox_core::{
     TimestampMs,
