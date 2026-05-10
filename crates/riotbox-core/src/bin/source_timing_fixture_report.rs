@@ -263,4 +263,65 @@ mod tests {
         assert!(markdown.contains("| `fx_timing_clean_128_4x4` | `pass` |"));
         assert!(markdown.contains("`none`"));
     }
+
+    #[test]
+    fn report_rejects_unknown_warning_label() {
+        let mut catalog = committed_catalog();
+        let weak_case = catalog["cases"]
+            .as_array_mut()
+            .expect("cases")
+            .iter_mut()
+            .find(|case| case["fixture_id"] == "fx_timing_weak_noisy_123")
+            .expect("weak fixture");
+        weak_case["expected"]["warnings"][2] = serde_json::json!("phrase_uncertain_typo");
+        let path = write_temp_catalog("unknown-warning", &catalog);
+
+        let error = build_report(&path).expect_err("unknown warning rejected");
+
+        let _ = std::fs::remove_file(&path);
+        assert!(error.contains("fx_timing_weak_noisy_123"));
+        assert!(error.contains("unknown warning label"));
+        assert!(error.contains("phrase_uncertain_typo"));
+    }
+
+    #[test]
+    fn report_rejects_unknown_alternative_kind() {
+        let mut catalog = committed_catalog();
+        let ambiguous_case = catalog["cases"]
+            .as_array_mut()
+            .expect("cases")
+            .iter_mut()
+            .find(|case| case["fixture_id"] == "fx_timing_halftime_140_ambiguous")
+            .expect("ambiguous fixture");
+        ambiguous_case["expected"]["alternatives"][0]["kind"] =
+            serde_json::json!("halff_time_typo");
+        let path = write_temp_catalog("unknown-alternative", &catalog);
+
+        let error = build_report(&path).expect_err("unknown alternative rejected");
+
+        let _ = std::fs::remove_file(&path);
+        assert!(error.contains("fx_timing_halftime_140_ambiguous"));
+        assert!(error.contains("unknown alternative kind"));
+        assert!(error.contains("halff_time_typo"));
+    }
+
+    fn committed_catalog() -> serde_json::Value {
+        let catalog_path = Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("tests/fixtures/source_timing/timing_fixture_catalog.json");
+        let catalog_text = std::fs::read_to_string(catalog_path).expect("read catalog");
+        serde_json::from_str(&catalog_text).expect("parse catalog")
+    }
+
+    fn write_temp_catalog(name: &str, catalog: &serde_json::Value) -> PathBuf {
+        let path = std::env::temp_dir().join(format!(
+            "riotbox-source-timing-fixture-{name}-{}.json",
+            std::process::id()
+        ));
+        std::fs::write(
+            &path,
+            serde_json::to_string_pretty(catalog).expect("serialize catalog"),
+        )
+        .expect("write temp catalog");
+        path
+    }
 }
