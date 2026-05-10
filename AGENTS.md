@@ -326,12 +326,12 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 - Do that archive work as part of the ticket closeout path, not as a separate default `Archive ...` ticket.
 - Use the repo archive as canonical Git-backed history.
 - MemPalace should stay focused on live product docs and specs, not archived Linear ticket files.
-- For important architecture, review, and decision-heavy tickets, prefer one archive file per ticket.
-- For routine feature tickets, a grouped archive file is acceptable when the entries stay readable and searchable.
+- Use one archive file per Linear ticket so deletion checks stay exact and context-light.
+- Do not create new grouped ticket archives by default; use month files such as `2026-05.md` only as indexes to per-ticket files.
 - Keep archive entries structurally uniform.
 - Use:
   - `RIOTBOX-123.md` for one-ticket archive files
-  - `YYYY-MM.md` for grouped monthly archive files
+  - `YYYY-MM.md` for monthly index files
 - Use ISO dates (`YYYY-MM-DD`) for all archived ticket timestamps.
 - Keep metadata fields in the same order as the archive template so entries stay easy to scan, diff, and mine.
 - Use stable final-status terms such as:

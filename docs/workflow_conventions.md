@@ -455,13 +455,13 @@ Do that archive update as part of the normal ticket closeout path, not as a sepa
 
 Recommended archive shapes:
 
-- one file per ticket for architecture, review, decision, or process tickets
-- grouped monthly or phase-oriented files for routine feature tickets when readability stays good
+- one file per ticket for all archived Linear tickets
+- monthly files such as `2026-05.md` should be indexes, not grouped content archives
 
 Naming and formatting rules:
 
 - use `RIOTBOX-123.md` for one-ticket archive files
-- use `YYYY-MM.md` for grouped monthly files
+- use `YYYY-MM.md` for monthly index files
 - use ISO dates in all metadata fields: `YYYY-MM-DD`
 - keep the metadata block field order consistent with the archive template
 - use stable final-status values such as:

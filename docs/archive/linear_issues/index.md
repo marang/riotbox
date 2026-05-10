@@ -5,29 +5,9 @@ This index tracks archived Linear ticket history that has been removed from the 
 ## Archive Files
 
 - [2026-04.md](./2026-04.md)
-  Index for split April 2026 Riotbox ticket-range archives.
-- [2026-04-000-049.md](./2026-04-000-049.md)
-  Split April 2026 archive for RIOTBOX-000 through RIOTBOX-049.
-- [2026-04-050-099.md](./2026-04-050-099.md)
-  Split April 2026 archive for RIOTBOX-050 through RIOTBOX-099.
-- [2026-04-100-149.md](./2026-04-100-149.md)
-  Split April 2026 archive for RIOTBOX-100 through RIOTBOX-149.
-- [2026-04-150-199.md](./2026-04-150-199.md)
-  Split April 2026 archive for RIOTBOX-150 through RIOTBOX-199.
-- [2026-04-200-249.md](./2026-04-200-249.md)
-  Split April 2026 archive for RIOTBOX-200 through RIOTBOX-249.
-- [2026-04-250-299.md](./2026-04-250-299.md)
-  Split April 2026 archive for RIOTBOX-250 through RIOTBOX-299.
-- [2026-04-300-349.md](./2026-04-300-349.md)
-  Split April 2026 archive for RIOTBOX-300 through RIOTBOX-349.
-- [2026-04-350-399.md](./2026-04-350-399.md)
-  Split April 2026 archive for RIOTBOX-350 through RIOTBOX-399.
-- [2026-04-400-449.md](./2026-04-400-449.md)
-  Split April 2026 archive for RIOTBOX-400 through RIOTBOX-449.
-- [2026-04-450-499.md](./2026-04-450-499.md)
-  Split April 2026 archive for RIOTBOX-450 through RIOTBOX-499.
+  Index for April 2026 one-file-per-ticket archives.
 - [2026-05.md](./2026-05.md)
-  Grouped archive for routine May 2026 Riotbox tickets, including the P012 Source Timing Intelligence batch.
+  Index for May 2026 one-file-per-ticket archives.
 - [RIOTBOX-16.md](./RIOTBOX-16.md)
   MemPalace evaluation and dev-memory adoption decision.
 - [RIOTBOX-23.md](./RIOTBOX-23.md)
@@ -274,8 +254,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Added a dependency-free observer/audio JSON summary shape validator.
 - [RIOTBOX-381.md](./RIOTBOX-381.md)
   Added positive and negative validator fixtures for observer/audio JSON summaries.
-- [2026-04.md](./2026-04.md#riotbox-328-audit-feral-policy-entry-constraints)
-  Grouped archive entries for the P009 Feral policy batch `RIOTBOX-328` through `RIOTBOX-338` plus the `RIOTBOX-339` Feral before/after audio QA pack.
 - [RIOTBOX-753.md](./RIOTBOX-753.md)
-  Context-light search workflow, branch closeout rule, and April archive split.
+  Context-light search workflow, branch closeout rule, and per-ticket archive split.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
