@@ -262,4 +262,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   One-file-per-ticket Linear archive structure and exact deletion checks.
 - [RIOTBOX-755.md](./RIOTBOX-755.md)
   Optimized `AGENTS.md` readability while preserving Riotbox workflow and architecture rules.
+- [RIOTBOX-756.md](./RIOTBOX-756.md)
+  Added a dry-run-first repo closeout helper for archive, Linear deletion, and branch cleanup.
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
