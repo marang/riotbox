@@ -23,6 +23,9 @@ pub struct TimingFixtureEvaluation {
     pub beat_count: usize,
     pub bar_count: usize,
     pub phrase_count: usize,
+    pub primary_confidence: Option<Confidence>,
+    pub primary_max_mean_abs_drift_ms: Option<f32>,
+    pub primary_max_drift_ms: Option<f32>,
     pub issues: Vec<TimingFixtureEvaluationIssue>,
 }
 
@@ -50,6 +53,12 @@ pub fn evaluate_timing_fixture_output(
     target: &TimingFixtureEvaluationTarget,
 ) -> TimingFixtureEvaluation {
     let mut issues = Vec::new();
+    let primary_hypothesis = timing.primary_hypothesis();
+    let primary_confidence = primary_hypothesis.map(|primary| primary.confidence);
+    let primary_max_mean_abs_drift_ms = primary_hypothesis
+        .and_then(|primary| max_drift_value(primary.drift.iter().map(|drift| drift.mean_abs_drift_ms)));
+    let primary_max_drift_ms = primary_hypothesis
+        .and_then(|primary| max_drift_value(primary.drift.iter().map(|drift| drift.max_drift_ms)));
     let bpm_error = match timing.bpm_estimate {
         Some(bpm) => (bpm - target.primary_bpm).abs(),
         None => {
@@ -76,7 +85,7 @@ pub fn evaluate_timing_fixture_output(
     if timing.effective_degraded_policy() != target.degraded_policy {
         issues.push(TimingFixtureEvaluationIssue::DegradedPolicyMismatch);
     }
-    match timing.primary_hypothesis() {
+    match primary_hypothesis {
         Some(primary) => {
             if primary.confidence < target.confidence_floor {
                 issues.push(TimingFixtureEvaluationIssue::PrimaryConfidenceBelowFloor);
@@ -133,6 +142,13 @@ pub fn evaluate_timing_fixture_output(
         beat_count: timing.beat_grid.len(),
         bar_count: timing.bar_grid.len(),
         phrase_count: timing.phrase_grid.len(),
+        primary_confidence,
+        primary_max_mean_abs_drift_ms,
+        primary_max_drift_ms,
         issues,
     }
+}
+
+fn max_drift_value(values: impl Iterator<Item = f32>) -> Option<f32> {
+    values.reduce(f32::max)
 }
