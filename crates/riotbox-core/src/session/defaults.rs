@@ -130,6 +130,68 @@ mod tests {
     use super::*;
 
     #[test]
+    fn mc202_role_labels_roundtrip_through_typed_contract() {
+        let cases = [
+            (Mc202RoleState::Leader, "leader", 0.85),
+            (Mc202RoleState::Follower, "follower", 0.78),
+            (Mc202RoleState::Answer, "answer", 0.82),
+            (Mc202RoleState::Pressure, "pressure", 0.84),
+            (Mc202RoleState::Instigator, "instigator", 0.90),
+        ];
+
+        for (role, label, default_touch) in cases {
+            assert_eq!(role.label(), label);
+            assert_eq!(Mc202RoleState::from_label(label), Some(role));
+            assert_eq!(serde_json::to_string(&role).unwrap(), format!("\"{label}\""));
+            assert_eq!(serde_json::from_str::<Mc202RoleState>(&format!("\"{label}\"")).unwrap(), role);
+            assert!((role.default_touch() - default_touch).abs() < f32::EPSILON);
+        }
+    }
+
+    #[test]
+    fn mc202_role_labels_reject_unknown_behavior_labels() {
+        for label in ["", "follow", "mutated_drive", "scene_lock"] {
+            assert_eq!(Mc202RoleState::from_label(label), None);
+        }
+    }
+
+    #[test]
+    fn mc202_phrase_intent_preserves_existing_mutation_variant_label() {
+        assert_eq!(Mc202PhraseIntentState::Base.label(), "base");
+        assert_eq!(Mc202PhraseIntentState::Base.phrase_variant(), None);
+        assert_eq!(Mc202PhraseIntentState::from_label("base"), Some(Mc202PhraseIntentState::Base));
+        assert_eq!(
+            Mc202PhraseIntentState::from_phrase_variant(None),
+            Mc202PhraseIntentState::Base
+        );
+
+        assert_eq!(Mc202PhraseIntentState::MutatedDrive.label(), "mutated_drive");
+        assert_eq!(
+            Mc202PhraseIntentState::MutatedDrive.phrase_variant(),
+            Some(Mc202PhraseVariantState::MutatedDrive)
+        );
+        assert_eq!(
+            Mc202PhraseIntentState::from_label("mutated_drive"),
+            Some(Mc202PhraseIntentState::MutatedDrive)
+        );
+        assert_eq!(
+            Mc202PhraseIntentState::from_phrase_variant(Some(Mc202PhraseVariantState::MutatedDrive)),
+            Mc202PhraseIntentState::MutatedDrive
+        );
+        assert_eq!(
+            serde_json::to_string(&Mc202PhraseIntentState::MutatedDrive).unwrap(),
+            "\"mutated_drive\""
+        );
+    }
+
+    #[test]
+    fn mc202_phrase_intent_rejects_unknown_behavior_labels() {
+        for label in ["", "leader", "mutated", "answer_space"] {
+            assert_eq!(Mc202PhraseIntentState::from_label(label), None);
+        }
+    }
+
+    #[test]
     fn session_file_roundtrips_via_json() {
         let graph = SourceGraph::new(
             SourceDescriptor {
