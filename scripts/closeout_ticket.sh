@@ -55,6 +55,7 @@ run_cmd() {
 
 run_optional_timeout_cmd() {
   local timeout_seconds="$1"
+  local status
   shift
   if [ "$execute" -eq 0 ]; then
     if command -v timeout >/dev/null 2>&1; then
@@ -67,17 +68,13 @@ run_optional_timeout_cmd() {
     return 0
   fi
 
+  status=0
   if command -v timeout >/dev/null 2>&1; then
-    if timeout "${timeout_seconds}s" "$@"; then
-      return 0
-    fi
-    status="$?"
+    timeout "${timeout_seconds}s" "$@" || status="$?"
   else
-    if "$@"; then
-      return 0
-    fi
-    status="$?"
+    "$@" || status="$?"
   fi
+  [ "$status" -eq 0 ] && return 0
 
   if [ "$status" -eq 124 ]; then
     info "optional command timed out after ${timeout_seconds}s, continuing: $*"
@@ -283,7 +280,9 @@ if [ "$delete_linear" -eq 1 ]; then
 fi
 
 if [ "$mem_status" -eq 1 ]; then
-  if command -v just >/dev/null 2>&1; then
+  if [ "${CLOSEOUT_MEM_STATUS_COMMAND:-}" != "" ]; then
+    run_optional_timeout_cmd "$mem_status_timeout" bash -lc "$CLOSEOUT_MEM_STATUS_COMMAND"
+  elif command -v just >/dev/null 2>&1; then
     run_optional_timeout_cmd "$mem_status_timeout" just mem-status
   else
     run_optional_timeout_cmd "$mem_status_timeout" scripts/mempalace.sh status
