@@ -254,6 +254,8 @@ This index tracks archived Linear ticket history that has been removed from the 
   Added a dependency-free observer/audio JSON summary shape validator.
 - [RIOTBOX-381.md](./RIOTBOX-381.md)
   Added positive and negative validator fixtures for observer/audio JSON summaries.
+- [RIOTBOX-750.md](./RIOTBOX-750.md)
+  Used typed MC-202 role and phrase helpers in render projection.
 - [RIOTBOX-753.md](./RIOTBOX-753.md)
   Context-light search workflow, branch closeout rule, and per-ticket archive split.
 - [RIOTBOX-754.md](./RIOTBOX-754.md)
