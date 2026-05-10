@@ -30,6 +30,23 @@ ISSUES_WITH_VALUES = {
     "missing_warning",
     "missing_alternative",
 }
+TIMING_WARNING_CODES = {
+    "WeakKickAnchor",
+    "WeakBackbeatAnchor",
+    "AmbiguousDownbeat",
+    "HalfTimePossible",
+    "DoubleTimePossible",
+    "DriftHigh",
+    "PhraseUncertain",
+    "LowTimingConfidence",
+}
+TIMING_HYPOTHESIS_KINDS = {
+    "Primary",
+    "HalfTime",
+    "DoubleTime",
+    "AlternateDownbeat",
+    "Ambiguous",
+}
 
 
 def main() -> int:
@@ -115,6 +132,12 @@ def validate_issue(issue: Any, name: str) -> None:
         raise ValueError(f"{name} object issue must be one of {sorted(ISSUES_WITH_VALUES)}, got {kind!r}")
     if not isinstance(value, str) or not value:
         raise TypeError(f"{name}.{kind} must be a non-empty string")
+    if kind == "missing_warning" and value not in TIMING_WARNING_CODES:
+        raise ValueError(f"{name}.{kind} must be one of {sorted(TIMING_WARNING_CODES)}, got {value!r}")
+    if kind == "missing_alternative" and value not in TIMING_HYPOTHESIS_KINDS:
+        raise ValueError(
+            f"{name}.{kind} must be one of {sorted(TIMING_HYPOTHESIS_KINDS)}, got {value!r}"
+        )
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
