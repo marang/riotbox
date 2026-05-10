@@ -103,6 +103,8 @@ def graphql(endpoint: str, token: str, query: str, variables: dict[str, object])
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
         die(f"Linear request failed: {exc.code} {detail}")
+    except urllib.error.URLError as exc:
+        die(f"Linear request failed: {exc.reason}")
     data = json.loads(body)
     if data.get("errors"):
         die(json.dumps(data["errors"], indent=2))
@@ -123,6 +125,8 @@ def github_json(path: str, token: str | None) -> dict:
     except urllib.error.HTTPError as exc:
         detail = exc.read().decode("utf-8", errors="replace")
         die(f"GitHub request failed: {exc.code} {detail}")
+    except urllib.error.URLError as exc:
+        die(f"GitHub request failed: {exc.reason}")
 
 
 @dataclass
