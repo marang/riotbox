@@ -24,7 +24,7 @@ rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues
 - `docs/archive/linear_issues/`
   canonical long-term ticket archive
 - `MemPalace`
-  search and retrieval layer over the archive, not canonical storage
+  retrieval layer for live project docs and specs; not canonical storage and not the deletion gate
 
 ## When To Archive Here
 
@@ -96,6 +96,14 @@ Useful optional fields:
 - decision-log or spec links touched by the ticket
 
 Use [TEMPLATE.md](./TEMPLATE.md) when creating a one-file ticket archive entry.
+
+Prefer the repo-local generator for normal closeout archives:
+
+```bash
+scripts/archive_linear_issue.py --ticket RIOTBOX-123 --pr 99 --why "..." --shipped "..." --execute
+```
+
+The generator fetches Linear metadata, optionally fetches GitHub PR metadata, writes the ticket archive file, and updates both archive indexes. It still requires a useful human-readable `--why` and at least one `--shipped` entry unless `--allow-placeholders` is explicitly used for a draft. Placeholder drafts are not valid closeout handoffs.
 
 ## Index
 

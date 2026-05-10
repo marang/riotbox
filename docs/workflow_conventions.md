@@ -531,11 +531,17 @@ Deletion rule:
   - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
   - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
 - do not use MemPalace as the deletion gate; exact filesystem / metadata checks are more reliable for cleanup decisions
+- when generating the archive entry, prefer the repo-local helper:
+  - `scripts/archive_linear_issue.py --ticket RIOTBOX-123 --pr 99 --why "..." --shipped "..."`
+  - the helper fetches Linear metadata and optional GitHub PR metadata, writes `docs/archive/linear_issues/RIOTBOX-123.md`, and updates the monthly and root archive indexes
+  - it requires explicit `--why` and at least one `--shipped` entry unless `--allow-placeholders` is intentionally used for a draft
+  - placeholder drafts are not valid closeout handoffs
 - when deleting, prefer the repo-local helper:
   - `scripts/linear_issue_delete.sh RIOTBOX-123`
 - for repeated cleanup, prefer the repo-local closeout helper:
   - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99`
-- the closeout helper defaults to dry-run and must only be executed after the PR is merged, the issue is marked done, and the archive handoff exists:
+- the archive and closeout helpers default to dry-run; execute them only when the branch is ready for the corresponding mutation
+- the closeout helper must only be executed after the PR is merged, the issue is marked done, and the archive handoff exists:
   - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99 --delete-linear --delete-remote-branch --delete-local-branch --execute`
 - the helper should use token auth via `LINEAR_API_TOKEN`
 - do not treat pasted browser session cookies as the normal cleanup path
