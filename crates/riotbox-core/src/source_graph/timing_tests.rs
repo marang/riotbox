@@ -24,6 +24,9 @@ mod timing_tests {
         let clean_evaluation =
             evaluate_timing_fixture_output(&clean_timing, &evaluation_target_from_case(clean_case));
         assert!(clean_evaluation.passed, "{clean_evaluation:?}");
+        assert_eq!(clean_evaluation.primary_confidence, Some(0.85));
+        assert_eq!(clean_evaluation.primary_max_mean_abs_drift_ms, Some(17.5));
+        assert_eq!(clean_evaluation.primary_max_drift_ms, Some(35.0));
         assert_eq!(clean_timing.effective_timing_quality(), TimingQuality::High);
         assert_eq!(
             clean_timing.effective_degraded_policy(),
@@ -123,6 +126,9 @@ mod timing_tests {
         assert!(evaluation
             .issues
             .contains(&TimingFixtureEvaluationIssue::DownbeatDriftOutsideTolerance));
+        assert_eq!(evaluation.primary_confidence, Some(0.1));
+        assert_eq!(evaluation.primary_max_mean_abs_drift_ms, Some(500.0));
+        assert_eq!(evaluation.primary_max_drift_ms, Some(500.0));
 
         let mut missing_drift_timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
         let primary = missing_drift_timing
@@ -143,6 +149,9 @@ mod timing_tests {
         );
 
         assert!(!missing_drift_evaluation.passed);
+        assert_eq!(missing_drift_evaluation.primary_confidence, Some(0.85));
+        assert_eq!(missing_drift_evaluation.primary_max_mean_abs_drift_ms, None);
+        assert_eq!(missing_drift_evaluation.primary_max_drift_ms, None);
         assert!(missing_drift_evaluation
             .issues
             .contains(&TimingFixtureEvaluationIssue::MissingTimingDrift));
