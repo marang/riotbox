@@ -268,4 +268,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Linear archive generator helper
 - [RIOTBOX-758.md](./RIOTBOX-758.md)
   Handle archive generator network failures cleanly
+- [RIOTBOX-759.md](./RIOTBOX-759.md)
+  Bound optional MemPalace status during ticket closeout
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
