@@ -1,4 +1,8 @@
-use super::*;
+use riotbox_core::{
+    action::{Action, ActionCommand, ActionParams, ActionResult},
+    session::{Mc202PhraseVariantState, SessionFile},
+    transport::CommitBoundaryState,
+};
 
 pub(in crate::jam_app) fn apply_mc202_side_effects(
     session: &mut SessionFile,
