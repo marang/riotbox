@@ -16,6 +16,8 @@ from typing import Any
 
 
 SCHEMA_VERSION = 1
+SOURCE_TIMING_BPM_MATCH_TOLERANCE = 1.0
+EPSILON = 0.000001
 SOURCE_TIMING_POLICY_PROFILES = {"broad_research", "dance_loop_auto_readiness"}
 SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
 SOURCE_TIMING_BEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
@@ -52,6 +54,11 @@ GRID_BPM_DECISION_REASONS = {
     "source_timing_not_ready",
     "source_timing_missing_bpm",
     "source_timing_invalid_bpm",
+}
+GRID_BPM_SOURCES = {
+    "user_override",
+    "source_timing",
+    "static_default",
 }
 TR909_GROOVE_TIMING_REASONS = {
     "not_source_timing_grid",
@@ -136,6 +143,7 @@ def validate_manifest(manifest: Any) -> None:
 
     if manifest.get("pack_id") == "feral-grid-demo" and "grid_bpm_source" in manifest:
         validate_grid_bpm_decision(manifest, source_timing)
+        validate_source_timing_bpm_delta_consistency(manifest, source_timing)
 
     validate_source_grid_output_drift(manifest)
 
@@ -280,6 +288,7 @@ def validate_source_timing_groove_preview(item: Any, index: int) -> None:
 def validate_grid_bpm_decision(
     manifest: dict[str, Any], source_timing: Any | None
 ) -> None:
+    require_one_of(manifest, "grid_bpm_source", GRID_BPM_SOURCES)
     require_one_of(manifest, "grid_bpm_decision_reason", GRID_BPM_DECISION_REASONS)
     source = manifest.get("grid_bpm_source")
     reason = manifest.get("grid_bpm_decision_reason")
@@ -335,6 +344,59 @@ def validate_grid_bpm_decision(
             )
     if reason == "source_timing_not_ready" and source_timing.get("readiness") == "ready":
         raise ValueError("source_timing_not_ready cannot be used with ready source timing")
+
+
+def validate_source_timing_bpm_delta_consistency(
+    manifest: dict[str, Any], source_timing: Any | None
+) -> None:
+    if "source_timing_bpm_delta" not in manifest:
+        raise TypeError("source_timing_bpm_delta must be present as a number or null")
+    require_optional_float_or_null(
+        manifest,
+        "source_timing_bpm_delta",
+        "source_timing_bpm_delta",
+    )
+    source = manifest.get("grid_bpm_source")
+    reason = manifest.get("grid_bpm_decision_reason")
+    delta = manifest.get("source_timing_bpm_delta")
+
+    if source == "source_timing":
+        if not isinstance(delta, (int, float)) or isinstance(delta, bool):
+            raise TypeError("source_timing grid BPM source requires numeric source_timing_bpm_delta")
+        if abs(float(delta)) > EPSILON:
+            raise ValueError("source_timing grid BPM source requires source_timing_bpm_delta == 0")
+        require_bpm_agreement(source_timing, True, "source_timing grid BPM source")
+        return
+
+    if reason in {"source_timing_missing_bpm", "source_timing_invalid_bpm"}:
+        if delta is not None:
+            raise ValueError(f"{reason} requires null source_timing_bpm_delta")
+        require_bpm_agreement(source_timing, None, reason)
+        return
+
+    if source == "user_override" and delta is None:
+        require_bpm_agreement(source_timing, None, "user_override without usable source BPM")
+        return
+
+    if source in {"static_default", "user_override"}:
+        if not isinstance(delta, (int, float)) or isinstance(delta, bool):
+            raise TypeError(
+                f"{source}/{reason} requires numeric source_timing_bpm_delta when source BPM is usable"
+            )
+        expected_agrees = float(delta) <= SOURCE_TIMING_BPM_MATCH_TOLERANCE
+        require_bpm_agreement(source_timing, expected_agrees, f"{source}/{reason}")
+
+
+def require_bpm_agreement(
+    source_timing: Any | None, expected: bool | None, context: str
+) -> None:
+    if not isinstance(source_timing, dict):
+        return
+    actual = source_timing.get("bpm_agrees_with_grid")
+    if actual is not expected:
+        raise ValueError(
+            f"{context} requires source_timing.bpm_agrees_with_grid == {expected!r}"
+        )
 
 
 def validate_source_grid_output_drift(manifest: dict[str, Any]) -> None:

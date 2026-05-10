@@ -2,8 +2,8 @@
   "schema_version": 1,
   "pack_id": "feral-grid-demo",
   "result": "pass",
-  "grid_bpm_source": "source_timing",
-  "grid_bpm_decision_reason": "source_timing_requires_manual_confirm",
+  "grid_bpm_source": "mystery_grid",
+  "grid_bpm_decision_reason": "source_timing_ready",
   "source_timing_bpm_delta": 0.0,
   "artifacts": [
     {
@@ -18,16 +18,16 @@
     "schema_version": 1,
     "source_id": "source.wav",
     "policy_profile": "dance_loop_auto_readiness",
-    "readiness": "weak",
-    "requires_manual_confirm": true,
-    "primary_bpm": 128.397,
+    "readiness": "ready",
+    "requires_manual_confirm": false,
+    "primary_bpm": 128.0,
     "bpm_agrees_with_grid": true,
     "primary_downbeat_offset_beats": 0,
     "beat_status": "stable",
-    "downbeat_status": "ambiguous",
-    "confidence_result": "candidate_ambiguous",
-    "drift_status": "stable",
-    "phrase_status": "ambiguous_downbeat",
+    "downbeat_status": "stable",
+    "confidence_result": "candidate_cautious",
+    "drift_status": "not_enough_material",
+    "phrase_status": "not_enough_material",
     "anchor_evidence": {
       "primary_anchor_count": 8,
       "primary_kick_anchor_count": 2,
@@ -45,10 +45,7 @@
         }
       ]
     },
-    "alternate_evidence_count": 2,
-    "warning_codes": [
-      "PhraseUncertain",
-      "AmbiguousDownbeat"
-    ]
+    "alternate_evidence_count": 0,
+    "warning_codes": []
   }
 }

@@ -1,0 +1,78 @@
+{
+  "schema": "riotbox.observer_audio_summary.v1",
+  "schema_version": 1,
+  "control_path": {
+    "present": true,
+    "observer_schema": "riotbox.user_session_observer.v1",
+    "launch_mode": "ingest",
+    "audio_runtime_status": "started",
+    "key_outcomes": [
+      "space -> transport started"
+    ],
+    "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
+    "commit_count": 1,
+    "commit_boundaries": [
+      "NextBar"
+    ],
+    "observer_source_timing": null
+  },
+  "output_path": {
+    "present": true,
+    "issues": [],
+    "pack_id": "feral-grid-demo",
+    "manifest_result": "pass",
+    "artifact_count": 6,
+    "grid_bpm_source": "source_timing",
+    "grid_bpm_decision_reason": "source_timing_ready",
+    "source_timing_bpm_delta": 2.0,
+    "source_timing": {
+      "source_id": "source.wav",
+      "cue": "grid locked",
+      "policy_profile": "dance_loop_auto_readiness",
+      "readiness": "ready",
+      "requires_manual_confirm": false,
+      "primary_bpm": 128.0,
+      "bpm_agrees_with_grid": true,
+      "beat_status": "stable",
+      "downbeat_status": "stable",
+      "primary_downbeat_offset_beats": 0,
+      "confidence_result": "candidate_cautious",
+      "drift_status": "not_enough_material",
+      "phrase_status": "not_enough_material",
+      "alternate_evidence_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 8,
+        "primary_kick_anchor_count": 2,
+        "primary_backbeat_anchor_count": 4,
+        "primary_transient_anchor_count": 2
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 1,
+        "primary_max_abs_offset_ms": 12.5,
+        "primary_groove_preview": [
+          {
+            "subdivision": "eighth",
+            "offset_ms": 12.5,
+            "confidence": 0.55
+          }
+        ]
+      },
+      "warning_codes": []
+    },
+    "source_timing_alignment": null,
+    "source_timing_anchor_alignment": null,
+    "source_timing_groove_alignment": null,
+    "metrics": {
+      "full_mix_rms": 0.1843,
+      "full_mix_low_band_rms": 0.0612,
+      "mc202_question_answer_delta_rms": null,
+      "source_grid_output_drift": null,
+      "tr909_source_grid_alignment": null,
+      "w30_source_grid_alignment": null,
+      "w30_candidate_rms": null,
+      "w30_candidate_active_sample_ratio": null,
+      "w30_rms_delta": null
+    }
+  },
+  "needs_human_listening": true
+}

@@ -183,6 +183,14 @@ For manifests that include source timing evidence, strict correlation treats a
 malformed `source_timing` object as an output-path issue. Missing `source_timing`
 remains non-fatal for older and non-Feral manifests.
 
+For Feral-grid summaries, `source_timing_bpm_delta` must agree with the grid BPM
+decision. `source_timing` decisions require a numeric `0.0` delta and
+`source_timing.bpm_agrees_with_grid: true`. `static_default` and `user_override`
+decisions with usable source BPM evidence require a numeric delta, and
+`source_timing.bpm_agrees_with_grid` must match the current `1.0` BPM tolerance.
+Missing or invalid source BPM fallback reasons require a `null` delta and
+`source_timing.bpm_agrees_with_grid: null`.
+
 When both observer and manifest source timing evidence are present and well
 formed, strict correlation also evaluates `source_timing_alignment`. A BPM delta
 above tolerance or non-overlapping warning evidence when both sides emit warnings
@@ -230,7 +238,9 @@ The committed fixture JSON smoke currently requires:
 - `source_timing` grid BPM decisions require matching Source Timing readiness
   evidence, so source timing, user override, and static fallback paths cannot be
   confused in machine-readable QA
-- `output_path.source_timing_bpm_delta` is present as a number or `null`
+- `output_path.source_timing_bpm_delta` is present as a number or `null`, and
+  for Feral-grid output is consistent with `grid_bpm_source`,
+  `grid_bpm_decision_reason`, and `source_timing.bpm_agrees_with_grid`
 - `output_path.source_timing` is present as an object or `null`
 - `output_path.source_timing_alignment` is present as an object or `null`
 - `output_path.source_timing_anchor_alignment` is present as an object or `null`
@@ -238,7 +248,7 @@ The committed fixture JSON smoke currently requires:
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
-- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, rejected grid BPM decision mismatches, and rejected Source Timing shape/cue mismatches
+- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, rejected grid BPM decision mismatches, rejected BPM-delta contradictions, and rejected Source Timing shape/cue mismatches
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source

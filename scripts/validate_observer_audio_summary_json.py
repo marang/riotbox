@@ -15,6 +15,8 @@ from typing import Any
 
 SCHEMA = "riotbox.observer_audio_summary.v1"
 SCHEMA_VERSION = 1
+SOURCE_TIMING_BPM_MATCH_TOLERANCE = 1.0
+EPSILON = 0.000001
 SOURCE_TIMING_CUE_BY_POLICY = {
     "locked": "grid locked",
     "manual_confirm": "needs confirm",
@@ -99,6 +101,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_number(output_path, "source_timing_bpm_delta")
     require_optional_source_timing(output_path)
     require_output_grid_bpm_decision(output_path)
+    require_source_timing_bpm_delta_consistency(output_path)
     require_optional_source_timing_alignment(output_path)
     require_optional_source_timing_anchor_alignment(output_path)
     require_optional_source_timing_groove_alignment(output_path)
@@ -307,6 +310,55 @@ def require_output_grid_bpm_decision(output_path: dict[str, Any]) -> None:
             raise ValueError(
                 "source_timing_needs_review_manual_confirm requires no alternate evidence"
             )
+
+
+def require_source_timing_bpm_delta_consistency(output_path: dict[str, Any]) -> None:
+    source = output_path["grid_bpm_source"]
+    reason = output_path["grid_bpm_decision_reason"]
+    delta = output_path.get("source_timing_bpm_delta")
+    source_timing = output_path.get("source_timing")
+
+    if not output_path.get("present") or source == "unknown":
+        if delta is not None:
+            raise ValueError("unknown or absent grid BPM evidence requires null source_timing_bpm_delta")
+        return
+
+    if source == "source_timing":
+        if not isinstance(delta, (int, float)) or isinstance(delta, bool):
+            raise TypeError("source_timing grid BPM source requires numeric source_timing_bpm_delta")
+        if abs(float(delta)) > EPSILON:
+            raise ValueError("source_timing grid BPM source requires source_timing_bpm_delta == 0")
+        require_bpm_agreement(source_timing, True, "source_timing grid BPM source")
+        return
+
+    if reason in {"source_timing_missing_bpm", "source_timing_invalid_bpm"}:
+        if delta is not None:
+            raise ValueError(f"{reason} requires null source_timing_bpm_delta")
+        require_bpm_agreement(source_timing, None, reason)
+        return
+
+    if source == "user_override" and delta is None:
+        require_bpm_agreement(source_timing, None, "user_override without usable source BPM")
+        return
+
+    if not isinstance(delta, (int, float)) or isinstance(delta, bool):
+        raise TypeError(
+            f"{source}/{reason} requires numeric source_timing_bpm_delta when source BPM is usable"
+        )
+    expected_agrees = float(delta) <= SOURCE_TIMING_BPM_MATCH_TOLERANCE
+    require_bpm_agreement(source_timing, expected_agrees, f"{source}/{reason}")
+
+
+def require_bpm_agreement(
+    source_timing: Any, expected: bool | None, context: str
+) -> None:
+    if not isinstance(source_timing, dict):
+        return
+    actual = source_timing.get("bpm_agrees_with_grid")
+    if actual is not expected:
+        raise ValueError(
+            f"{context} requires source_timing.bpm_agrees_with_grid == {expected!r}"
+        )
 
 
 def require_optional_source_timing_anchor_alignment(parent: dict[str, Any]) -> None:
