@@ -1,0 +1,28 @@
+{
+  "schema": "riotbox.source_timing_fixture_evaluation_report.v1",
+  "schema_version": 1,
+  "catalog_path": "fixtures/catalog.json",
+  "case_count": 1,
+  "category_coverage": [
+    {
+      "category": "clean_rhythm",
+      "case_count": 2,
+      "passed": true
+    }
+  ],
+  "passed": true,
+  "evaluations": [
+    {
+      "fixture_id": "fx_timing_clean_128_4x4",
+      "passed": true,
+      "bpm_error": 0.0,
+      "beat_count": 32,
+      "bar_count": 8,
+      "phrase_count": 2,
+      "primary_confidence": 0.85,
+      "primary_max_mean_abs_drift_ms": 17.5,
+      "primary_max_drift_ms": 35.0,
+      "issues": []
+    }
+  ]
+}

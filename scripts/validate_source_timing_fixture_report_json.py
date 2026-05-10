@@ -78,6 +78,8 @@ def validate_report(report: Any) -> None:
         raise ValueError(f"case_count must match evaluations length, got {case_count} and {len(evaluations)}")
     if case_count == 0:
         raise ValueError("evaluations must contain at least one fixture evaluation")
+    if "category_coverage" in report:
+        validate_category_coverage(report["category_coverage"], case_count, passed)
 
     seen_ids: set[str] = set()
     evaluation_results = []
@@ -88,6 +90,31 @@ def validate_report(report: Any) -> None:
     expected_passed = all(evaluation_results)
     if passed != expected_passed:
         raise ValueError(f"passed must equal all evaluation results, expected {expected_passed!r}")
+
+
+def validate_category_coverage(value: Any, case_count: int, report_passed: bool) -> None:
+    coverage_items = require_array({"category_coverage": value}, "category_coverage")
+    if not coverage_items:
+        raise ValueError("category_coverage must contain at least one category")
+
+    seen_categories: set[str] = set()
+    covered_case_count = 0
+    category_results = []
+    for index, value in enumerate(coverage_items):
+        coverage = require_object(value, f"category_coverage[{index}]")
+        category = require_string(coverage, "category")
+        if category in seen_categories:
+            raise ValueError(f"duplicate category coverage {category!r}")
+        seen_categories.add(category)
+        covered_case_count += require_positive_int(coverage, "case_count")
+        category_results.append(require_bool(coverage, "passed"))
+
+    if covered_case_count != case_count:
+        raise ValueError(
+            f"category_coverage case counts must sum to case_count, got {covered_case_count} and {case_count}"
+        )
+    if report_passed != all(category_results):
+        raise ValueError("category_coverage passed values must agree with report passed")
 
 
 def validate_evaluation(evaluation: dict[str, Any], seen_ids: set[str]) -> bool:
@@ -202,6 +229,13 @@ def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool) or value < 0:
         raise TypeError(f"{field} must be a non-negative integer")
+    return value
+
+
+def require_positive_int(parent: dict[str, Any], field: str) -> int:
+    value = require_non_negative_int(parent, field)
+    if value == 0:
+        raise ValueError(f"{field} must be > 0")
     return value
 
 
