@@ -59,6 +59,10 @@ Strategic context lives in:
 - `plan/riotbox_masterplan.md`
 - `plan/riotbox_liam_howlett_feral_addendum.md`
 
+Agent-facing drift guardrails live in:
+
+- `docs/reviews/riotbox_drift_guardrails_2026-05-10.md`
+
 If implementation and planning diverge, update the relevant spec or decision log rather than silently inventing new behavior.
 
 ---
@@ -97,6 +101,30 @@ The audio path must remain isolated from:
 ### 4. Determinism matters
 
 If state affects restore, replay, or capture lineage, it should be represented explicitly in the core model.
+
+### 5. Architecture drift / AI-slop guardrail
+
+Riotbox may use coding agents, but agents must not create generic glue-code drift.
+
+For every new `ActionCommand`, explicitly account for:
+
+1. queue path
+2. commit / side-effect path
+3. Session / replay consequence
+4. user-visible or observer surface
+5. test / QA proof
+
+Do not close a slice when the claimed product change only appears in UI text or logs. If a feature is supposed to affect sound, replay, capture lineage, source timing, restore, or exported artifacts, include a concrete proof path.
+
+Before adding state to `JamAppState`, ask whether the state belongs in Session/Core instead. `JamAppState` is an app facade, not a second product truth.
+
+Prefer explicit imports in app modules. Avoid new `use super::*` imports unless the local test/module context makes the dependency surface harmless and reviewable.
+
+String labels may be used for display and artifact names. If a string starts controlling behavior across modules, turn it into a typed contract or document why it remains a string.
+
+Repeated queue-draft construction and repeated side-effect log-result mutation are acceptable while still small, but should trigger a narrow helper review once the same shape appears across three or more lane paths.
+
+Mechanical `include!` splits are not durable module ownership. Convert included shards into real modules only when the semantic boundary, visibility, tests, and review cost all improve.
 
 ---
 
@@ -248,6 +276,7 @@ Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
   - what real product path or architecture seam it unlocks
   - what is still intentionally out of scope or stubbed
 - Do not write PR descriptions as changelogs only.
+- Non-trivial feature branches should also include a `Drift Check` section that answers whether the slice added or changed an `ActionCommand`, added `JamAppState` state, changed audio-producing behavior, and covered queue, commit, Session/replay, user/observer, QA, and shadow-system risk where applicable.
 
 ### Linear hygiene
 
