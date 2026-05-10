@@ -17,6 +17,7 @@ Options:
   --delete-remote-branch      delete origin/BRANCH after PR merge verification
   --delete-local-branch       delete local BRANCH after PR merge verification
   --mem-status                run MemPalace status after cleanup
+  --mem-status-timeout SEC    bound optional MemPalace status; default: 120
   --execute                   perform cleanup actions; default is dry-run
   --dry-run                   print actions without mutating anything
   -h, --help                  show this help
@@ -49,6 +50,39 @@ run_cmd() {
     printf 'dry-run:'
     printf ' %q' "$@"
     printf '\n'
+  fi
+}
+
+run_optional_timeout_cmd() {
+  local timeout_seconds="$1"
+  shift
+  if [ "$execute" -eq 0 ]; then
+    if command -v timeout >/dev/null 2>&1; then
+      printf 'dry-run: timeout %qs' "$timeout_seconds"
+    else
+      printf 'dry-run:'
+    fi
+    printf ' %q' "$@"
+    printf '\n'
+    return 0
+  fi
+
+  if command -v timeout >/dev/null 2>&1; then
+    if timeout "${timeout_seconds}s" "$@"; then
+      return 0
+    fi
+    status="$?"
+  else
+    if "$@"; then
+      return 0
+    fi
+    status="$?"
+  fi
+
+  if [ "$status" -eq 124 ]; then
+    info "optional command timed out after ${timeout_seconds}s, continuing: $*"
+  else
+    info "optional command failed with status $status, continuing: $*"
   fi
 }
 
@@ -128,6 +162,7 @@ delete_linear=0
 delete_remote_branch=0
 delete_local_branch=0
 mem_status=0
+mem_status_timeout=120
 execute=0
 
 while [ "$#" -gt 0 ]; do
@@ -160,6 +195,10 @@ while [ "$#" -gt 0 ]; do
       mem_status=1
       shift
       ;;
+    --mem-status-timeout)
+      mem_status_timeout="${2:-}"
+      shift 2
+      ;;
     --execute)
       execute=1
       shift
@@ -184,6 +223,8 @@ done
 }
 
 [[ "$ticket" =~ ^RIOTBOX-[0-9]+$ ]] || die "ticket must look like RIOTBOX-123, got '$ticket'"
+[[ "$mem_status_timeout" =~ ^[0-9]+$ ]] || die "--mem-status-timeout must be a positive integer"
+[ "$mem_status_timeout" -gt 0 ] || die "--mem-status-timeout must be greater than zero"
 
 root="$(repo_root)" || die "must run inside a git repository"
 cd "$root"
@@ -243,9 +284,9 @@ fi
 
 if [ "$mem_status" -eq 1 ]; then
   if command -v just >/dev/null 2>&1; then
-    run_cmd just mem-status
+    run_optional_timeout_cmd "$mem_status_timeout" just mem-status
   else
-    run_cmd scripts/mempalace.sh status
+    run_optional_timeout_cmd "$mem_status_timeout" scripts/mempalace.sh status
   fi
 fi
 
