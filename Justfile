@@ -21,6 +21,7 @@ ci:
     just source-timing-fixture-evaluator
     just source-timing-fixture-report-smoke
     just source-timing-fixture-report-markdown-smoke
+    just source-timing-fixture-report-json-validator-fixtures
     just source-timing-wav-probe
     just source-timing-bpm-candidates
     just source-timing-beat-evidence
@@ -105,6 +106,16 @@ source-timing-fixture-report-smoke:
 
 source-timing-fixture-report-markdown-smoke:
     tmp="$(mktemp -d)" && cargo run -p riotbox-core --bin source_timing_fixture_report -- --catalog crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json --markdown-output "$tmp/report.md" > "$tmp/report.json" && jq -e '.schema == "riotbox.source_timing_fixture_evaluation_report.v1" and .passed == true' "$tmp/report.json" && grep -q "Source Timing Fixture Evaluation Report" "$tmp/report.md" && grep -q "fx_timing_clean_128_4x4" "$tmp/report.md" && rm -rf "$tmp"
+
+source-timing-fixture-report-json-validator-fixtures:
+    python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_valid.json
+    python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_valid_failure.json
+    tmp="$(mktemp)" && cargo run -p riotbox-core --bin source_timing_fixture_report -- --catalog crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json > "$tmp" && python3 scripts/validate_source_timing_fixture_report_json.py "$tmp" && rm "$tmp"
+    if python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_invalid_schema.json; then echo "expected invalid fixture report schema fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_invalid_case_count.json; then echo "expected invalid fixture report case-count fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_invalid_missing_measurement.json; then echo "expected invalid fixture report missing-measurement fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_invalid_passed_consistency.json; then echo "expected invalid fixture report passed-consistency fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_source_timing_fixture_report_json.py crates/riotbox-core/tests/fixtures/source_timing_fixture_report/report_invalid_issue.json; then echo "expected invalid fixture report issue fixture to fail" >&2; exit 1; fi
 
 source-timing-wav-probe:
     cargo test -p riotbox-core source_timing_probe_diagnostics -- --nocapture
