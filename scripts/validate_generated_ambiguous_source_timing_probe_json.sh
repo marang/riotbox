@@ -60,6 +60,7 @@ expected = {
     "cue": "needs confirm",
     "readiness": "weak",
     "requires_manual_confirm": True,
+    "grid_use": "manual_confirm_only",
     "beat_status": "stable",
     "downbeat_status": "weak",
     "phrase_status": "ambiguous_downbeat",

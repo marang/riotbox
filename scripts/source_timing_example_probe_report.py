@@ -34,6 +34,7 @@ class ReportRow:
     cue: str = "-"
     readiness: str = "-"
     manual_confirm: str = "-"
+    grid_use: str = "-"
     bpm: str = "-"
     beat: str = "-"
     downbeat: str = "-"
@@ -175,6 +176,7 @@ def row_from_payload(
         cue=require_string(payload, "cue"),
         readiness=require_string(payload, "readiness"),
         manual_confirm=yes_no(require_bool(payload, "requires_manual_confirm")),
+        grid_use=require_string(payload, "grid_use"),
         bpm=format_bpm(payload.get("primary_bpm")),
         beat=require_string(payload, "beat_status"),
         downbeat=require_string(payload, "downbeat_status"),
@@ -192,8 +194,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Readiness | Manual confirm | BPM | Beat | Downbeat | Phrase | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Beat | Downbeat | Phrase | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -205,6 +207,7 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.cue,
                     row.readiness,
                     row.manual_confirm,
+                    row.grid_use,
                     row.bpm,
                     row.beat,
                     row.downbeat,
@@ -241,6 +244,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_string(payload, expectation, issues, "cue")
     compare_string(payload, expectation, issues, "readiness")
     compare_bool(payload, expectation, issues, "requires_manual_confirm")
+    compare_string(payload, expectation, issues, "grid_use")
     compare_string(payload, expectation, issues, "beat_status")
     compare_string(payload, expectation, issues, "downbeat_status")
     compare_string(payload, expectation, issues, "phrase_status")

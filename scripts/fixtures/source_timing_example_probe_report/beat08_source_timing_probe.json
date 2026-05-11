@@ -37,5 +37,6 @@
   ],
   "onset_count": 16,
   "onset_density_per_second": 3.91,
-  "duration_seconds": 4.09
+  "duration_seconds": 4.09,
+  "grid_use": "manual_confirm_only"
 }

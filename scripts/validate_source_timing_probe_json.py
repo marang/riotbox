@@ -17,6 +17,13 @@ SOURCE_TIMING_CUES = {
     "listen first",
     "not available",
 }
+GRID_USE = {
+    "locked_grid",
+    "short_loop_manual_confirm",
+    "manual_confirm_only",
+    "fallback_grid",
+    "unavailable",
+}
 ANCHOR_TYPES = {
     "kick",
     "snare",
@@ -62,6 +69,7 @@ def validate_summary(summary: Any) -> None:
     readiness = require_one_of(summary, "readiness", {"ready", "needs_review", "weak", "unavailable"})
     requires_manual_confirm = require_bool(summary, "requires_manual_confirm")
     require_probe_cue_match(cue, readiness, requires_manual_confirm)
+    grid_use = require_one_of(summary, "grid_use", GRID_USE)
     require_optional_number(summary, "primary_bpm")
     require_optional_number(summary, "primary_beat_score")
     require_optional_number(summary, "primary_beat_matched_onset_ratio")
@@ -90,6 +98,7 @@ def validate_summary(summary: Any) -> None:
     require_non_negative_int(summary, "onset_count")
     require_non_negative_number(summary, "onset_density_per_second")
     require_non_negative_number(summary, "duration_seconds")
+    require_grid_use_match(summary, grid_use)
 
 
 def validate_anchor_evidence(summary: dict[str, Any]) -> None:
@@ -240,6 +249,49 @@ def require_probe_cue_match(cue: str, readiness: str, requires_manual_confirm: b
             "cue must match readiness/manual-confirm state "
             f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {cue!r}"
         )
+
+
+def require_grid_use_match(summary: dict[str, Any], grid_use: str) -> None:
+    primary_bpm = summary.get("primary_bpm")
+    readiness = summary["readiness"]
+    requires_manual_confirm = summary["requires_manual_confirm"]
+    expected = source_timing_grid_use(summary)
+    if grid_use != expected:
+        raise ValueError(f"grid_use must be {expected!r}, got {grid_use!r}")
+    if grid_use == "locked_grid" and requires_manual_confirm:
+        raise ValueError("locked_grid must not require manual confirmation")
+    if grid_use == "short_loop_manual_confirm":
+        if not requires_manual_confirm:
+            raise ValueError("short_loop_manual_confirm must require manual confirmation")
+        if readiness != "needs_review":
+            raise ValueError("short_loop_manual_confirm requires readiness == needs_review")
+    if grid_use != "unavailable" and primary_bpm is None:
+        raise ValueError(f"{grid_use} requires primary_bpm")
+
+
+def source_timing_grid_use(summary: dict[str, Any]) -> str:
+    if summary.get("primary_bpm") is None or summary["readiness"] == "unavailable":
+        return "unavailable"
+    if summary["readiness"] == "ready" and not summary["requires_manual_confirm"]:
+        return "locked_grid"
+    if is_stable_short_loop_manual_confirm(summary):
+        return "short_loop_manual_confirm"
+    if summary["requires_manual_confirm"]:
+        return "manual_confirm_only"
+    return "fallback_grid"
+
+
+def is_stable_short_loop_manual_confirm(summary: dict[str, Any]) -> bool:
+    return (
+        summary["readiness"] == "needs_review"
+        and summary["requires_manual_confirm"] is True
+        and summary.get("primary_bpm") is not None
+        and summary["beat_status"] == "stable"
+        and summary["downbeat_status"] == "stable"
+        and summary["phrase_status"] == "not_enough_material"
+        and summary["confidence_result"] == "candidate_cautious"
+        and summary["alternate_evidence_count"] == 0
+    )
 
 
 def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -> str:

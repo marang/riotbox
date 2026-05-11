@@ -49,6 +49,7 @@ expected = {
     "cue": "needs confirm",
     "readiness": "unavailable",
     "requires_manual_confirm": True,
+    "grid_use": "unavailable",
     "primary_bpm": None,
     "beat_status": "unavailable",
     "downbeat_status": "unavailable",
