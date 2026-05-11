@@ -202,6 +202,41 @@ fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     ])
 }
 
+fn source_timing_performance_rail_line(shell: &JamShellState) -> Line<'static> {
+    let timing = &shell.app.jam_view.source.timing;
+    if shell.app.source_graph.is_none()
+        || matches!(
+            timing.degraded_policy.as_str(),
+            "disabled" | "unknown"
+        )
+    {
+        return Line::from(vec![
+            Span::styled("timing ", style_low_emphasis()),
+            Span::styled(
+                timing.cue.clone(),
+                source_timing_policy_cue_style(&timing.degraded_policy),
+            ),
+            Span::styled(" | ", style_low_emphasis()),
+            Span::styled("no clock", style_low_emphasis()),
+        ]);
+    }
+
+    let transport = &shell.app.runtime.transport;
+    Line::from(vec![
+        Span::styled("timing ", style_low_emphasis()),
+        Span::styled(
+            timing.cue.clone(),
+            source_timing_policy_cue_style(&timing.degraded_policy),
+        ),
+        Span::styled(" ", style_low_emphasis()),
+        Span::styled(
+            scene_countdown_cue(transport.beat_index),
+            style_pending_cue(),
+        ),
+        Span::styled(" next bar", style_pending_cue()),
+    ])
+}
+
 fn source_timing_anchor_kind_compact(shell: &JamShellState) -> &'static str {
     let timing = &shell.app.jam_view.source.timing;
     if timing.primary_kick_anchor_count > 0 && timing.primary_backbeat_anchor_count > 0 {

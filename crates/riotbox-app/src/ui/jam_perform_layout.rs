@@ -15,6 +15,7 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             shell.app.jam_view.transport.position_beats,
             source_timing_clock_compact(shell)
         )),
+        source_timing_performance_rail_line(shell),
         Line::from(format!(
             "scene {} | energy {}",
             shell

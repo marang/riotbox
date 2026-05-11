@@ -5,6 +5,10 @@ fn renders_more_musical_jam_shell_snapshot() {
 
     assert!(rendered.contains("trust usable"));
     assert!(rendered.contains("idle @ 32.0 | source b32 bar8 p1"));
+    assert!(
+        rendered.contains("timing needs confirm [===>] next bar"),
+        "{rendered}"
+    );
     assert!(rendered.contains("timing needs confirm | low | kick+bb"));
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
@@ -29,6 +33,30 @@ fn renders_more_musical_jam_shell_snapshot() {
 }
 
 #[test]
+fn source_timing_performance_rail_styles_current_clock_and_next_bar() {
+    let shell = sample_shell_state();
+    let line = source_timing_performance_rail_line(&shell);
+    let rendered = line
+        .spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
+
+    assert_eq!(
+        rendered,
+        "timing needs confirm [===>] next bar"
+    );
+    assert_eq!(line.spans[1].content.as_ref(), "needs confirm");
+    assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
+    assert_eq!(line.spans[3].content.as_ref(), "[===>]");
+    assert_eq!(line.spans[3].style.fg, Some(Color::Yellow));
+    assert!(
+        line.spans[3].style.add_modifier.contains(Modifier::BOLD),
+        "{line:?}"
+    );
+}
+
+#[test]
 fn renders_locked_source_timing_as_grid_locked_cue() {
     let mut shell = sample_shell_state();
     let graph = shell
@@ -44,6 +72,10 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("timing grid locked | high | kick+bb"), "{rendered}");
+    assert!(
+        rendered.contains("timing grid locked [===>] next bar"),
+        "{rendered}"
+    );
     assert!(rendered.contains("timing warning none"), "{rendered}");
 }
 
@@ -130,4 +162,8 @@ fn renders_missing_source_timing_clock_as_unavailable() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("clock unavailable"), "{rendered}");
+    assert!(
+        rendered.contains("timing not available | no clock"),
+        "{rendered}"
+    );
 }
