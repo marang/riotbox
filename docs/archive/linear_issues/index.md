@@ -284,4 +284,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show a musician-readable Source Timing rail in Jam
 - [RIOTBOX-766.md](./RIOTBOX-766.md)
   Add Jam-visible Source Timing observer recipe
+- [RIOTBOX-767.md](./RIOTBOX-767.md)
+  Refresh execution roadmap P012 next-step section
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
