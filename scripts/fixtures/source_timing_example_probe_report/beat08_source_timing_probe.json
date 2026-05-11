@@ -4,7 +4,7 @@
   "source_path": "data/test_audio/examples/Beat08_128BPM(Full).wav",
   "source_id": "data/test_audio/examples/Beat08_128BPM(Full).wav",
   "cue": "needs confirm",
-  "readiness": "ready",
+  "readiness": "needs_review",
   "requires_manual_confirm": true,
   "primary_bpm": 128.397,
   "primary_beat_score": 0.979,
@@ -21,15 +21,15 @@
   "alternate_beat_candidate_count": 0,
   "alternate_downbeat_phase_count": 0,
   "anchor_evidence": {
-    "primary_anchor_count": 11,
-    "primary_kick_anchor_count": 4,
+    "primary_anchor_count": 9,
+    "primary_kick_anchor_count": 2,
     "primary_backbeat_anchor_count": 4,
     "primary_transient_anchor_count": 3,
     "primary_anchor_preview": []
   },
   "groove_evidence": {
-    "primary_groove_residual_count": 4,
-    "primary_max_abs_offset_ms": 8.25,
+    "primary_groove_residual_count": 1,
+    "primary_max_abs_offset_ms": 12.5,
     "primary_groove_preview": []
   },
   "warning_codes": [
@@ -37,6 +37,6 @@
   ],
   "onset_count": 16,
   "onset_density_per_second": 3.91,
-  "duration_seconds": 4.09,
-  "grid_use": "manual_confirm_only"
+  "duration_seconds": 3.75,
+  "grid_use": "short_loop_manual_confirm"
 }
