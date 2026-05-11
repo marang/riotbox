@@ -741,6 +741,12 @@ bounded BPM policy:
   strict auto-grid path: weak or manual-confirm timing must stay
   `static_default`, while long stable timing may use `source_timing` only when
   manual confirmation is false.
+- generated Feral grid observer/audio gates should make each path inspectable in
+  the final JSON summary by asserting `grid_bpm_source`,
+  `grid_bpm_decision_reason`, observer-side `grid_use`, manifest-side
+  `source_timing.grid_use`, `source_timing_alignment.grid_use_compatibility`,
+  and the strict output-path verdict for fallback, cautious/manual-confirm,
+  user-override, and locked-grid cases.
 
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
