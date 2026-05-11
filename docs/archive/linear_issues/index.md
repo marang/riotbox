@@ -288,4 +288,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Refresh execution roadmap P012 next-step section
 - [RIOTBOX-768.md](./RIOTBOX-768.md)
   Add real example Source Timing probe report gate
+- [RIOTBOX-769.md](./RIOTBOX-769.md)
+  Add optional expectations to Source Timing example report
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
