@@ -282,4 +282,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add W-30 loop-closure source timing proof
 - [RIOTBOX-763.md](./RIOTBOX-763.md)
   Show a musician-readable Source Timing rail in Jam
+- [RIOTBOX-766.md](./RIOTBOX-766.md)
+  Add Jam-visible Source Timing observer recipe
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
