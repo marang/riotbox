@@ -280,4 +280,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add MC-202 source-derived phrase-slot output proof
 - [RIOTBOX-762.md](./RIOTBOX-762.md)
   Add W-30 loop-closure source timing proof
+- [RIOTBOX-763.md](./RIOTBOX-763.md)
+  Show a musician-readable Source Timing rail in Jam
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
