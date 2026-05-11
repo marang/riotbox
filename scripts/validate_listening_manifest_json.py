@@ -20,6 +20,13 @@ SOURCE_TIMING_BPM_MATCH_TOLERANCE = 1.0
 EPSILON = 0.000001
 SOURCE_TIMING_POLICY_PROFILES = {"broad_research", "dance_loop_auto_readiness"}
 SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
+SOURCE_TIMING_GRID_USE = {
+    "locked_grid",
+    "short_loop_manual_confirm",
+    "manual_confirm_only",
+    "fallback_grid",
+    "unavailable",
+}
 SOURCE_TIMING_BEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
 SOURCE_TIMING_DOWNBEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
 SOURCE_TIMING_CONFIDENCE_RESULTS = {
@@ -186,6 +193,9 @@ def validate_source_timing(source_timing: Any) -> None:
     require_one_of(source_timing, "policy_profile", SOURCE_TIMING_POLICY_PROFILES)
     require_one_of(source_timing, "readiness", SOURCE_TIMING_READINESS)
     require_bool(source_timing, "requires_manual_confirm", "source_timing")
+    if "grid_use" in source_timing:
+        require_one_of(source_timing, "grid_use", SOURCE_TIMING_GRID_USE)
+        require_source_timing_grid_use_match(source_timing, source_timing["grid_use"])
     require_optional_float_or_null(source_timing, "primary_bpm", "source_timing primary_bpm")
     require_optional_bool_or_null(
         source_timing,
@@ -210,6 +220,37 @@ def validate_source_timing(source_timing: Any) -> None:
         "source_timing",
     )
     require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
+
+
+def require_source_timing_grid_use_match(source_timing: dict[str, Any], grid_use: str) -> None:
+    expected = source_timing_grid_use(source_timing)
+    if grid_use != expected:
+        raise ValueError(f"source_timing grid_use must be {expected!r}, got {grid_use!r}")
+
+
+def source_timing_grid_use(source_timing: dict[str, Any]) -> str:
+    if source_timing.get("primary_bpm") is None or source_timing["readiness"] == "unavailable":
+        return "unavailable"
+    if source_timing["readiness"] == "ready" and not source_timing["requires_manual_confirm"]:
+        return "locked_grid"
+    if is_stable_short_loop_manual_confirm(source_timing):
+        return "short_loop_manual_confirm"
+    if source_timing["requires_manual_confirm"]:
+        return "manual_confirm_only"
+    return "fallback_grid"
+
+
+def is_stable_short_loop_manual_confirm(source_timing: dict[str, Any]) -> bool:
+    return (
+        source_timing["readiness"] == "needs_review"
+        and source_timing["requires_manual_confirm"] is True
+        and source_timing.get("primary_bpm") is not None
+        and source_timing["beat_status"] == "stable"
+        and source_timing["downbeat_status"] == "stable"
+        and source_timing["phrase_status"] == "not_enough_material"
+        and source_timing["confidence_result"] == "candidate_cautious"
+        and source_timing["alternate_evidence_count"] == 0
+    )
 
 
 def validate_source_timing_anchor_evidence(anchor_evidence: Any) -> None:

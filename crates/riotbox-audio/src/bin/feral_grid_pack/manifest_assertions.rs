@@ -254,6 +254,16 @@ mod manifest_assertions {
             "unavailable" | "weak" | "needs_review" | "ready"
         )));
         assert!(source_timing["requires_manual_confirm"].is_boolean());
+        assert!(source_timing["grid_use"].as_str().is_some_and(|value| {
+            matches!(
+                value,
+                "locked_grid"
+                    | "short_loop_manual_confirm"
+                    | "manual_confirm_only"
+                    | "fallback_grid"
+                    | "unavailable"
+            )
+        }));
         assert!(source_timing["bpm_agrees_with_grid"].is_boolean());
         assert!(
             source_timing["primary_downbeat_offset_beats"].is_null()
