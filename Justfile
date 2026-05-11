@@ -48,6 +48,7 @@ audio-qa-ci:
     just observer-audio-summary-validator-fixtures
     just user-session-observer-validator-fixtures
     just source-timing-probe-json-validator-fixtures
+    just source-timing-grid-use-contract-fixtures
     just generated-source-timing-probe-json-smoke
     just generated-degraded-source-timing-probe-json-smoke
     just generated-ambiguous-source-timing-probe-json-smoke
@@ -283,6 +284,9 @@ source-timing-probe-json-validator-fixtures:
     python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid.json
     if python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_invalid_cue.json; then echo "expected invalid source timing probe cue fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_invalid_groove_evidence.json; then echo "expected invalid source timing probe groove fixture to fail" >&2; exit 1; fi
+
+source-timing-grid-use-contract-fixtures:
+    python3 scripts/validate_source_timing_grid_use_contract_fixtures.py
 
 generated-source-timing-probe-json-smoke:
     scripts/validate_generated_source_timing_probe_json.sh
