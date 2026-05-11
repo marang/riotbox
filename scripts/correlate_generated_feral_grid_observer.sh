@@ -117,11 +117,16 @@ jq -e \
     and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
     and .control_path.observer_source_timing.quality == "medium"
     and .control_path.observer_source_timing.degraded_policy == "cautious"
+    and .control_path.observer_source_timing.grid_use == "manual_confirm_only"
     and .control_path.observer_source_timing.primary_warning_code == "phrase_uncertain"
     and .output_path.grid_bpm_source == "source_timing"
     and .output_path.grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
     and .output_path.source_timing_bpm_delta == 0.0
+    and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
+    and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing_alignment.grid_use_compatibility == "compatible"
     and .output_path.source_timing_anchor_alignment.status == "partial"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 0
     and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
@@ -172,13 +177,18 @@ jq -e \
     and .control_path.present == true
     and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
     and .control_path.observer_source_timing.degraded_policy == "cautious"
+    and .control_path.observer_source_timing.grid_use == "manual_confirm_only"
     and .output_path.grid_bpm_source == "user_override"
     and .output_path.grid_bpm_decision_reason == "user_override"
     and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_bpm_delta > 0.0
     and .output_path.source_timing_bpm_delta <= 1.0
+    and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
     and .output_path.source_timing.bpm_agrees_with_grid == true
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
+    and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing_alignment.grid_use_compatibility == "compatible"
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.present == true
     and (.output_path.issues | length == 0)' \
@@ -222,12 +232,17 @@ jq -e \
     and .control_path.present == true
     and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
     and .control_path.observer_source_timing.degraded_policy == "cautious"
+    and .control_path.observer_source_timing.grid_use == "manual_confirm_only"
     and .output_path.grid_bpm_source == "user_override"
     and .output_path.grid_bpm_decision_reason == "user_override"
     and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_bpm_delta > 1.0
+    and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
     and .output_path.source_timing.bpm_agrees_with_grid == false
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
+    and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing_alignment.grid_use_compatibility == "compatible"
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.metrics.source_grid_output_drift.hit_ratio >= 0.5
     and .output_path.metrics.source_grid_output_drift.max_peak_offset_ms <= .output_path.metrics.source_grid_output_drift.max_allowed_peak_offset_ms
@@ -301,11 +316,16 @@ jq -e \
     and .control_path.observer_source_timing.bpm_estimate == null
     and .control_path.observer_source_timing.quality == "low"
     and .control_path.observer_source_timing.degraded_policy == "fallback_grid"
+    and .control_path.observer_source_timing.grid_use == "unavailable"
     and .control_path.observer_source_timing.primary_warning_code == "low_timing_confidence"
     and .output_path.grid_bpm_source == "static_default"
     and .output_path.grid_bpm_decision_reason == "source_timing_missing_bpm"
     and .output_path.source_timing_bpm_delta == null
+    and .output_path.source_timing.grid_use == "unavailable"
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_alignment.observer_grid_use == "unavailable"
+    and .output_path.source_timing_alignment.manifest_grid_use == "unavailable"
+    and .output_path.source_timing_alignment.grid_use_compatibility == "aligned"
     and (.output_path.source_timing_alignment.warning_overlap | index("low_timing_confidence")) != null
     and (.output_path.source_timing_alignment.warning_overlap | index("weak_kick_anchor")) != null
     and (.output_path.source_timing_alignment.issues | length == 0)
@@ -389,6 +409,7 @@ jq -e \
     and .control_path.observer_source_timing.source_id == "src-feral-grid-probe"
     and .control_path.observer_source_timing.quality == "high"
     and .control_path.observer_source_timing.degraded_policy == "locked"
+    and .control_path.observer_source_timing.grid_use == "locked_grid"
     and .control_path.observer_source_timing.beat_status == "grid"
     and .control_path.observer_source_timing.beat_count == 16
     and .control_path.observer_source_timing.downbeat_status == "bar_locked"
@@ -399,7 +420,11 @@ jq -e \
     and .output_path.grid_bpm_source == "source_timing"
     and .output_path.grid_bpm_decision_reason == "source_timing_ready"
     and .output_path.source_timing_bpm_delta == 0.0
+    and .output_path.source_timing.grid_use == "locked_grid"
     and .output_path.source_timing_alignment.status == "aligned"
+    and .output_path.source_timing_alignment.observer_grid_use == "locked_grid"
+    and .output_path.source_timing_alignment.manifest_grid_use == "locked_grid"
+    and .output_path.source_timing_alignment.grid_use_compatibility == "aligned"
     and .output_path.source_timing_anchor_alignment.status == "aligned"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 16
     and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
