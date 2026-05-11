@@ -551,6 +551,11 @@ primary timing hypothesis:
 - the source timing probe CLI JSON must expose a compact `anchor_evidence`
   summary so QA can distinguish stable kick/backbeat evidence from generic
   transient evidence before lane policies consume it
+- `just source-timing-example-probe-report` may run the probe over local
+  example WAVs when they exist and emit a compact Markdown table for review.
+  Missing local WAVs must be reported as skipped rows, not CI failures, because
+  the example audio files are intentionally not committed. The committed fixture
+  smoke is `just source-timing-example-probe-report-fixtures`.
 
 The candidate confidence report summarizes this early detector state for QA:
 
