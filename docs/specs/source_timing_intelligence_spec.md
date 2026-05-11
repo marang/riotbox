@@ -600,6 +600,9 @@ QA/listening tools to consume the timing estimate:
   policy into one report
 - `Ready` means the evidence is stable enough for bounded QA consumers; it does
   not mean Riotbox has a production-grade arbitrary-audio beat/downbeat detector
+- the committed probe JSON validator fixtures must include both a short
+  manual-confirm case and a long stable `locked_grid` case, so fresh clones can
+  prove the readiness boundary without relying on local example WAV files
 
 Generated Feral grid listening packs may use this readiness report as their
 bounded BPM policy:

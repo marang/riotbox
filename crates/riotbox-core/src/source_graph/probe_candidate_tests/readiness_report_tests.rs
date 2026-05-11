@@ -62,8 +62,10 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
         SourceTimingCandidatePhraseStatus::Stable
     );
     assert_eq!(report.alternate_evidence_count, 0);
+    assert!(report.warning_codes.is_empty());
     assert!(!report.requires_manual_confirm);
     assert_eq!(report.readiness, SourceTimingProbeReadinessStatus::Ready);
+    assert_eq!(source_timing_grid_use(&report), SourceTimingGridUse::LockedGrid);
 }
 
 #[test]
