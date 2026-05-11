@@ -9,7 +9,8 @@ fn renders_more_musical_jam_shell_snapshot() {
         rendered.contains("timing needs confirm [===>] next bar"),
         "{rendered}"
     );
-    assert!(rendered.contains("timing needs confirm | low | kick+bb"));
+    assert!(rendered.contains("timing needs confirm | grid"), "{rendered}");
+    assert!(rendered.contains("manual_confirm_only | low | kick+bb"), "{rendered}");
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
@@ -71,7 +72,8 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("timing grid locked | high | kick+bb"), "{rendered}");
+    assert!(rendered.contains("timing grid locked | grid locked_grid"), "{rendered}");
+    assert!(rendered.contains("| high | kick+bb"), "{rendered}");
     assert!(
         rendered.contains("timing grid locked [===>] next bar"),
         "{rendered}"
@@ -99,7 +101,7 @@ fn source_timing_readiness_styles_locked_cue_as_confirmed() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "timing grid locked | high | kick+bb");
+    assert_eq!(rendered, "timing grid locked | grid locked_grid | high | kick+bb");
     assert_eq!(line.spans[1].content.as_ref(), "grid locked");
     assert_eq!(line.spans[1].style.fg, Some(Color::Green));
     assert!(
@@ -119,7 +121,10 @@ fn source_timing_readiness_styles_manual_confirm_as_pending() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "timing needs confirm | low | kick+bb");
+    assert_eq!(
+        rendered,
+        "timing needs confirm | grid manual_confirm_only | low | kick+bb"
+    );
     assert_eq!(line.spans[1].content.as_ref(), "needs confirm");
     assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));
     assert!(
@@ -143,7 +148,7 @@ fn source_timing_help_styles_missing_source_as_low_emphasis() {
 
     assert_eq!(
         rendered,
-        "Timing: not available | unknown | no anchor | clock unavailable | timing unavailable"
+        "Timing: not available | grid unavailable | unknown | no anchor | clock unavailable | timing unavailable"
     );
     assert_eq!(line.spans[1].content.as_ref(), "not available");
     assert_eq!(line.spans[1].style.fg, Some(Color::DarkGray));

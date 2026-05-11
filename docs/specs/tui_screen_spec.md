@@ -82,17 +82,18 @@ It must expose:
 - key confidence or warning signals
 - compact Source Timing Intelligence readiness in Jam perform / inspect views:
   musician-readable timing cue such as `grid locked`, `needs confirm`, or
-  `listen first`, plus timing quality, degraded policy, and at most one primary
-  timing warning code. That primary warning is priority-selected by the shared
-  timing summary so high drift and downbeat ambiguity outrank lower-urgency
-  phrase or anchor warnings.
+  `listen first`, plus the shared `grid_use` contract label, timing quality,
+  degraded policy, and at most one primary timing warning code. That primary
+  warning is priority-selected by the shared timing summary so high drift and
+  downbeat ambiguity outrank lower-urgency phrase or anchor warnings.
 - source timing presentation language must come from the shared Jam source
   timing summary, not from screen-local Source Graph remapping. This keeps Jam,
   Help, Source, observer snapshots, and observer/audio QA aligned while the
   Source Graph remains the durable timing truth.
 - Jam may collapse the timing cue to an instrument-sized line such as
-  `timing needs confirm | low | kick+bb`; the Source screen should carry the
-  slightly fuller anchor count such as `anchors 2 kick+bb`
+  `timing needs confirm | grid manual_confirm_only | low | kick+bb`; the Source
+  screen should carry the slightly fuller anchor count such as `anchors 2
+  kick+bb`
 - Jam should keep a one-line `Now` timing rail visible in perform mode, for
   example `timing needs confirm [===>] next bar`, so musicians can see the trust
   state and the next bar boundary without opening Inspect or Source
@@ -155,6 +156,10 @@ Show:
   Jam so users do not have to decode policy names first. That compact cue should
   be read from the shared Jam source timing summary; raw hypothesis, grid, and
   warning detail may still be read from the Source Graph for diagnosis.
+- compact `grid_use` language from the shared Jam source timing summary, using
+  the same labels as probe / manifest / observer QA (`locked_grid`,
+  `short_loop_manual_confirm`, `manual_confirm_only`, `fallback_grid`,
+  `unavailable`) so Jam, Source, and QA evidence do not drift apart.
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings
