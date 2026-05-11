@@ -6,6 +6,7 @@ struct ObserverSourceTimingReadiness {
     bpm_confidence: f64,
     quality: String,
     degraded_policy: String,
+    grid_use: String,
     beat_status: String,
     beat_count: u64,
     downbeat_status: String,
@@ -51,6 +52,24 @@ fn collect_observer_source_timing(
     if cue != expected_cue {
         return (None, true);
     }
+    let grid_use = match non_empty_string(source_timing, "grid_use") {
+        Some(value)
+            if matches!(
+                value.as_str(),
+                "locked_grid"
+                    | "short_loop_manual_confirm"
+                    | "manual_confirm_only"
+                    | "fallback_grid"
+                    | "unavailable"
+            ) =>
+        {
+            value
+        }
+        Some(_) | None => return (None, true),
+    };
+    if grid_use != observer_source_timing_expected_grid_use(source_timing, &degraded_policy) {
+        return (None, true);
+    }
 
     let evidence = ObserverSourceTimingReadiness {
         source_id: match non_empty_string(source_timing, "source_id") {
@@ -75,6 +94,7 @@ fn collect_observer_source_timing(
             None => return (None, true),
         },
         degraded_policy,
+        grid_use,
         beat_status: match non_empty_string(source_timing, "beat_status") {
             Some(value) if matches!(value.as_str(), "grid" | "tempo_only" | "unknown") => value,
             None => return (None, true),
@@ -141,6 +161,44 @@ fn collect_observer_source_timing(
     };
 
     (Some(evidence), false)
+}
+
+fn observer_source_timing_expected_grid_use(source_timing: &Value, degraded_policy: &str) -> String {
+    let bpm_available = source_timing
+        .get("bpm_estimate")
+        .is_some_and(|value| value.as_f64().is_some());
+    if !bpm_available || matches!(degraded_policy, "disabled" | "unknown") {
+        return "unavailable".to_string();
+    }
+
+    if degraded_policy == "locked" {
+        return "locked_grid".to_string();
+    }
+
+    if degraded_policy == "fallback_grid" {
+        return "fallback_grid".to_string();
+    }
+
+    if degraded_policy == "cautious"
+        && source_timing
+            .get("beat_count")
+            .and_then(Value::as_u64)
+            .is_some_and(|count| count > 0)
+        && source_timing
+            .get("bar_count")
+            .and_then(Value::as_u64)
+            .is_some_and(|count| count > 0)
+        && source_timing
+            .get("phrase_count")
+            .and_then(Value::as_u64)
+            .is_some_and(|count| count == 0)
+        && string_list(source_timing, "warning_codes")
+            .is_some_and(|codes| codes.iter().any(|code| code == "phrase_uncertain"))
+    {
+        return "short_loop_manual_confirm".to_string();
+    }
+
+    "manual_confirm_only".to_string()
 }
 
 fn observer_source_timing_policy_cue(policy: &str) -> Option<&'static str> {

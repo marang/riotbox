@@ -163,10 +163,11 @@ def require_string(parent: dict[str, Any], field: str) -> str:
     return value
 
 
-def require_string_list(parent: dict[str, Any], field: str) -> None:
+def require_string_list(parent: dict[str, Any], field: str) -> list[str]:
     value = parent.get(field)
     if not isinstance(value, list) or any(not isinstance(item, str) for item in value):
         raise TypeError(f"{field} must be an array of strings")
+    return value
 
 
 def require_array(parent: dict[str, Any], field: str) -> list[Any]:
@@ -177,9 +178,14 @@ def require_array(parent: dict[str, Any], field: str) -> list[Any]:
 
 
 def require_int(parent: dict[str, Any], field: str) -> None:
+    require_int_value(parent, field)
+
+
+def require_int_value(parent: dict[str, Any], field: str) -> int:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool):
         raise TypeError(f"{field} must be an integer")
+    return value
 
 
 def require_optional_number(parent: dict[str, Any], field: str) -> None:
@@ -418,18 +424,28 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
         set(SOURCE_TIMING_CUE_BY_POLICY),
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
+    grid_use = require_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
     require_one_of(timing, "beat_status", {"grid", "tempo_only", "unknown"})
-    require_int(timing, "beat_count")
+    beat_count = require_int_value(timing, "beat_count")
     require_one_of(timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
-    require_int(timing, "bar_count")
+    bar_count = require_int_value(timing, "bar_count")
     require_one_of(timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"})
-    require_int(timing, "phrase_count")
+    phrase_count = require_int_value(timing, "phrase_count")
     require_optional_string(timing, "primary_hypothesis_id")
     require_int(timing, "hypothesis_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")
     require_optional_string(timing, "primary_warning_code")
-    require_string_list(timing, "warning_codes")
+    warning_codes = require_string_list(timing, "warning_codes")
+    require_observer_source_timing_grid_use_match(
+        grid_use,
+        degraded_policy,
+        timing.get("bpm_estimate"),
+        beat_count,
+        bar_count,
+        phrase_count,
+        warning_codes,
+    )
 
 
 def require_optional_source_timing_anchor_evidence(parent: dict[str, Any], field: str) -> None:
@@ -537,6 +553,55 @@ def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> No
             "observer_source_timing.cue must match degraded_policy "
             f"{degraded_policy!r}: expected {expected!r}, got {cue!r}"
         )
+
+
+def require_observer_source_timing_grid_use_match(
+    grid_use: str,
+    degraded_policy: str,
+    bpm_estimate: Any,
+    beat_count: int,
+    bar_count: int,
+    phrase_count: int,
+    warning_codes: list[str],
+) -> None:
+    expected = observer_source_timing_grid_use(
+        degraded_policy,
+        bpm_estimate,
+        beat_count,
+        bar_count,
+        phrase_count,
+        warning_codes,
+    )
+    if grid_use != expected:
+        raise ValueError(
+            "observer_source_timing.grid_use must match degraded timing evidence "
+            f"{degraded_policy!r}: expected {expected!r}, got {grid_use!r}"
+        )
+
+
+def observer_source_timing_grid_use(
+    degraded_policy: str,
+    bpm_estimate: Any,
+    beat_count: int,
+    bar_count: int,
+    phrase_count: int,
+    warning_codes: list[str],
+) -> str:
+    if bpm_estimate is None or degraded_policy in {"disabled", "unknown"}:
+        return "unavailable"
+    if degraded_policy == "locked":
+        return "locked_grid"
+    if degraded_policy == "fallback_grid":
+        return "fallback_grid"
+    if (
+        degraded_policy == "cautious"
+        and beat_count > 0
+        and bar_count > 0
+        and phrase_count == 0
+        and "phrase_uncertain" in warning_codes
+    ):
+        return "short_loop_manual_confirm"
+    return "manual_confirm_only"
 
 
 def require_source_timing_readiness_cue_match(

@@ -108,6 +108,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "bpm_confidence": timing.bpm_confidence,
                 "quality": &timing.quality,
                 "degraded_policy": &timing.degraded_policy,
+                "grid_use": &timing.grid_use,
                 "beat_status": &timing.beat_status,
                 "beat_count": timing.beat_count,
                 "downbeat_status": &timing.downbeat_status,

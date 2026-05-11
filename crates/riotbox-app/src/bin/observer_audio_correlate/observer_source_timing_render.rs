@@ -6,9 +6,10 @@ fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
         || "unknown".to_string(),
         |timing| {
             format!(
-                "{} cue={} quality={} policy={} bpm={} confidence={:.3} beat={}({}) downbeat={}({}) phrase={}({}) anchors={} groove={} warning={}",
+                "{} cue={} grid_use={} quality={} policy={} bpm={} confidence={:.3} beat={}({}) downbeat={}({}) phrase={}({}) anchors={} groove={} warning={}",
                 timing.source_id,
                 timing.cue,
+                timing.grid_use,
                 timing.quality,
                 timing.degraded_policy,
                 format_optional_f64(timing.bpm_estimate),

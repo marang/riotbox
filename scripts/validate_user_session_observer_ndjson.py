@@ -23,6 +23,13 @@ SOURCE_TIMING_CUE_BY_POLICY = {
     "disabled": "not available",
     "unknown": "unknown",
 }
+SOURCE_TIMING_GRID_USE = {
+    "locked_grid",
+    "short_loop_manual_confirm",
+    "manual_confirm_only",
+    "fallback_grid",
+    "unavailable",
+}
 GROOVE_SUBDIVISIONS = {
     "eighth",
     "triplet",
@@ -129,7 +136,7 @@ def validate_source_timing(value: Any) -> None:
     source_timing = require_object(value, "source_timing")
     require_bool(source_timing, "present")
     require_string(source_timing, "source_id")
-    require_optional_number(source_timing, "bpm_estimate")
+    bpm_estimate = require_optional_number(source_timing, "bpm_estimate")
     require_number(source_timing, "bpm_confidence")
     require_one_of(source_timing, "quality", {"low", "medium", "high", "unknown"})
     cue = require_one_of(
@@ -143,12 +150,13 @@ def validate_source_timing(value: Any) -> None:
         set(SOURCE_TIMING_CUE_BY_POLICY),
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
+    grid_use = require_one_of(source_timing, "grid_use", SOURCE_TIMING_GRID_USE)
     require_one_of(source_timing, "beat_status", {"grid", "tempo_only", "unknown"})
-    require_int(source_timing, "beat_count")
+    beat_count = require_int_value(source_timing, "beat_count")
     require_one_of(source_timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
-    require_int(source_timing, "bar_count")
+    bar_count = require_int_value(source_timing, "bar_count")
     require_one_of(source_timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"})
-    require_int(source_timing, "phrase_count")
+    phrase_count = require_int_value(source_timing, "phrase_count")
     primary = source_timing.get("primary_hypothesis_id")
     if primary is not None and not isinstance(primary, str):
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
@@ -161,6 +169,15 @@ def validate_source_timing(value: Any) -> None:
     warning_codes = require_list(source_timing, "warning_codes")
     if any(not isinstance(code, str) or not code for code in warning_codes):
         raise TypeError("source_timing.warning_codes must contain non-empty strings")
+    require_source_timing_grid_use_match(
+        grid_use,
+        degraded_policy,
+        bpm_estimate,
+        beat_count,
+        bar_count,
+        phrase_count,
+        warning_codes,
+    )
 
 
 def validate_source_timing_anchor_evidence(value: Any) -> None:
@@ -287,9 +304,14 @@ def require_bool(parent: dict[str, Any], field: str) -> None:
 
 
 def require_int(parent: dict[str, Any], field: str) -> None:
+    require_int_value(parent, field)
+
+
+def require_int_value(parent: dict[str, Any], field: str) -> int:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool):
         raise TypeError(f"{field} must be an integer")
+    return value
 
 
 def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
@@ -338,6 +360,55 @@ def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> No
             "source_timing.cue must match degraded_policy "
             f"{degraded_policy!r}: expected {expected!r}, got {cue!r}"
         )
+
+
+def require_source_timing_grid_use_match(
+    grid_use: str,
+    degraded_policy: str,
+    bpm_estimate: float | int | None,
+    beat_count: int,
+    bar_count: int,
+    phrase_count: int,
+    warning_codes: list[Any],
+) -> None:
+    expected = source_timing_grid_use(
+        degraded_policy,
+        bpm_estimate,
+        beat_count,
+        bar_count,
+        phrase_count,
+        warning_codes,
+    )
+    if grid_use != expected:
+        raise ValueError(
+            "source_timing.grid_use must match degraded timing evidence "
+            f"{degraded_policy!r}: expected {expected!r}, got {grid_use!r}"
+        )
+
+
+def source_timing_grid_use(
+    degraded_policy: str,
+    bpm_estimate: float | int | None,
+    beat_count: int,
+    bar_count: int,
+    phrase_count: int,
+    warning_codes: list[Any],
+) -> str:
+    if bpm_estimate is None or degraded_policy in {"disabled", "unknown"}:
+        return "unavailable"
+    if degraded_policy == "locked":
+        return "locked_grid"
+    if degraded_policy == "fallback_grid":
+        return "fallback_grid"
+    if (
+        degraded_policy == "cautious"
+        and beat_count > 0
+        and bar_count > 0
+        and phrase_count == 0
+        and "phrase_uncertain" in warning_codes
+    ):
+        return "short_loop_manual_confirm"
+    return "manual_confirm_only"
 
 
 def require_replay_family(parent: dict[str, Any], field: str) -> str:
