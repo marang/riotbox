@@ -556,6 +556,11 @@ primary timing hypothesis:
   Missing local WAVs must be reported as skipped rows, not CI failures, because
   the example audio files are intentionally not committed. The committed fixture
   smoke is `just source-timing-example-probe-report-fixtures`.
+- the example report may use an optional expectations file for conservative
+  local regression checks. Expectations should cover stable review fields such
+  as cue, readiness, manual-confirm, BPM tolerance, beat/downbeat/phrase status,
+  and warning-code presence; missing local WAVs must remain skipped instead of
+  failing fresh clones.
 
 The candidate confidence report summarizes this early detector state for QA:
 
