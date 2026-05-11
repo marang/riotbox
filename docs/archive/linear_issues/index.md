@@ -294,4 +294,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add optional local example Source Timing expectations file
 - [RIOTBOX-771.md](./RIOTBOX-771.md)
   Capture current Source Timing example report baseline
+- [RIOTBOX-772.md](./RIOTBOX-772.md)
+  Add Source Timing grid-use classification to probe reports
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
