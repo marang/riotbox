@@ -278,4 +278,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Fix closeout optional timeout status reporting
 - [RIOTBOX-761.md](./RIOTBOX-761.md)
   Add MC-202 source-derived phrase-slot output proof
+- [RIOTBOX-762.md](./RIOTBOX-762.md)
+  Add W-30 loop-closure source timing proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
