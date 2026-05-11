@@ -383,7 +383,7 @@ fn renders_jam_shell_with_first_run_onramp() {
     );
     assert!(
         rendered.contains(
-            "Timing: needs confirm | low | kick+bb | source b32 bar8 p1 | confirm before"
+            "Timing: needs confirm | grid manual_confirm_only | low | kick+bb | source b32 bar8 p1 | confirm before"
         ),
         "{rendered}"
     );

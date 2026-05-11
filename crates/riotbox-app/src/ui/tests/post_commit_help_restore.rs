@@ -254,9 +254,10 @@ fn renders_help_overlay_with_first_run_guidance() {
 
     assert!(rendered.contains("First run"), "{rendered}");
     assert!(
-        rendered.contains("Timing: needs confirm | low | kick+bb | source b32 bar8 p1"),
+        rendered.contains("Timing: needs confirm | grid manual_confirm_only | low | kick+bb"),
         "{rendered}"
     );
+    assert!(rendered.contains("source b32 bar8 p1"), "{rendered}");
     assert!(rendered.contains("before trusting grid"), "{rendered}");
     assert!(rendered.contains("space: start transport"), "{rendered}");
     assert!(rendered.contains("f: queue one first fill"), "{rendered}");
@@ -287,9 +288,10 @@ fn renders_help_overlay_with_locked_source_timing_guidance() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("Timing: grid locked | high | kick+bb | source b32 bar8 p1"),
+        rendered.contains("Timing: grid locked | grid locked_grid | high | kick+bb | source b32"),
         "{rendered}"
     );
+    assert!(rendered.contains("bar8 p1 | grid can steer moves"), "{rendered}");
     assert!(rendered.contains("steer moves"), "{rendered}");
 }
 

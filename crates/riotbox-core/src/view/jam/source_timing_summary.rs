@@ -10,6 +10,7 @@ pub struct SourceTimingSummaryView {
     pub cue: String,
     pub quality: String,
     pub degraded_policy: String,
+    pub grid_use: String,
     pub primary_warning: Option<String>,
     pub primary_anchor_count: usize,
     pub primary_kick_anchor_count: usize,
@@ -27,6 +28,7 @@ impl Default for SourceTimingSummaryView {
             cue: "not available".into(),
             quality: "unknown".into(),
             degraded_policy: "disabled".into(),
+            grid_use: "unavailable".into(),
             primary_warning: None,
             primary_anchor_count: 0,
             primary_kick_anchor_count: 0,
@@ -70,6 +72,9 @@ impl SourceTimingSummaryView {
             cue: source_timing_policy_cue_label(degraded_policy).into(),
             quality: source_timing_quality_label(&graph.timing.effective_timing_quality()).into(),
             degraded_policy: degraded_policy.into(),
+            grid_use: crate::source_graph::source_timing_grid_use_from_timing_model(&graph.timing)
+                .label()
+                .into(),
             primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
             primary_anchor_count,
@@ -165,6 +170,7 @@ mod source_timing_summary_tests {
 
         assert_eq!(timing.degraded_policy, "disabled");
         assert_eq!(timing.cue, "not available");
+        assert_eq!(timing.grid_use, "unavailable");
     }
 
     #[test]
@@ -203,6 +209,7 @@ mod source_timing_summary_tests {
         assert_eq!(timing.quality, "low");
         assert_eq!(timing.degraded_policy, "manual_confirm");
         assert_eq!(timing.cue, "needs confirm");
+        assert_eq!(timing.grid_use, "manual_confirm_only");
         assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
         assert_eq!(timing.primary_anchor_count, 4);
         assert_eq!(timing.primary_kick_anchor_count, 1);
@@ -230,6 +237,7 @@ mod source_timing_summary_tests {
         assert_eq!(timing.quality, "high");
         assert_eq!(timing.degraded_policy, "locked");
         assert_eq!(timing.cue, "grid locked");
+        assert_eq!(timing.grid_use, "locked_grid");
         assert_eq!(timing.primary_warning, None);
         assert_eq!(timing.primary_anchor_count, 1);
         assert_eq!(timing.primary_anchor_cue, "anchors 1 | kick");
@@ -256,6 +264,7 @@ mod source_timing_summary_tests {
         assert_eq!(timing.quality, "medium");
         assert_eq!(timing.degraded_policy, "cautious");
         assert_eq!(timing.cue, "listen first");
+        assert_eq!(timing.grid_use, "manual_confirm_only");
         assert_eq!(timing.primary_anchor_count, 1);
         assert_eq!(timing.primary_kick_anchor_count, 0);
         assert_eq!(timing.primary_backbeat_anchor_count, 1);
@@ -299,6 +308,42 @@ mod source_timing_summary_tests {
         let timing = SourceTimingSummaryView::from_graph(&graph);
 
         assert_eq!(timing.primary_warning.as_deref(), Some("drift_high"));
+    }
+
+    #[test]
+    fn cautious_short_loop_summary_surfaces_short_loop_grid_use() {
+        let mut graph = source_timing_graph(TimingQuality::Medium, TimingDegradedPolicy::Cautious);
+        graph.timing.beat_grid = vec![crate::source_graph::BeatPoint {
+            beat_index: 1,
+            time_seconds: 0.0,
+            confidence: 0.86,
+        }];
+        graph.timing.bar_grid = vec![crate::source_graph::BarSpan {
+            bar_index: 1,
+            start_seconds: 0.0,
+            end_seconds: 2.0,
+            downbeat_confidence: 0.72,
+            phrase_index: None,
+        }];
+        graph
+            .timing
+            .warnings
+            .push(timing_warning(TimingWarningCode::PhraseUncertain));
+
+        let timing = SourceTimingSummaryView::from_graph(&graph);
+
+        assert_eq!(timing.grid_use, "short_loop_manual_confirm");
+        assert_eq!(timing.primary_warning.as_deref(), Some("phrase_uncertain"));
+    }
+
+    #[test]
+    fn fallback_grid_summary_surfaces_fallback_grid_use() {
+        let graph = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::FallbackGrid);
+
+        let timing = SourceTimingSummaryView::from_graph(&graph);
+
+        assert_eq!(timing.cue, "fallback grid");
+        assert_eq!(timing.grid_use, "fallback_grid");
     }
 
     fn source_timing_graph(

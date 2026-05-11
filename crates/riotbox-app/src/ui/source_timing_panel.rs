@@ -25,8 +25,9 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 timing.primary_anchor_cue
             )),
             Line::from(format!(
-                "mode {} | trust {}",
+                "mode {} | grid {} | trust {}",
                 source_timing_degraded_policy_display_label(&timing.degraded_policy),
+                timing.grid_use,
                 timing.quality,
             )),
             Line::from(format!(
@@ -40,8 +41,9 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 timing.cue, timing.quality
             )),
             Line::from(format!(
-                "mode {} | warning {}",
+                "mode {} | grid {} | warning {}",
                 source_timing_degraded_policy_display_label(&timing.degraded_policy),
+                timing.grid_use,
                 timing.primary_warning.as_deref().unwrap_or("none")
             )),
             Line::from("no timing information available"),
