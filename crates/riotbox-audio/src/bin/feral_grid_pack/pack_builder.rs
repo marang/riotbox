@@ -191,6 +191,7 @@ struct PackReport {
     tr909_source_profile: SourceAwareTr909Profile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     w30_source_chop_profile: W30SourceChopProfile,
+    w30_source_loop_closure: W30SourceLoopClosureProof,
     tr909: RenderMetrics,
     w30: RenderMetrics,
     source_first_mix: RenderMetrics,
@@ -259,6 +260,7 @@ struct ManifestPackMetrics {
     tr909_source_profile: ManifestTr909SourceProfile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     w30_source_chop_profile: ManifestW30SourceChopProfile,
+    w30_source_loop_closure: ManifestW30SourceLoopClosureProof,
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     source_first_mix: ManifestRenderMetrics,
@@ -376,6 +378,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
             .saturating_add(w30_source_window.frame_count) as u64,
     )
     .ok_or("source-backed W-30 chop window produced no samples")?;
+    let w30_source_loop_closure =
+        w30_source_loop_closure_proof(&w30_preview, w30_source_chop_profile);
 
     let tr909_source_profile = derive_source_aware_tr909_profile(source_window_samples, &grid);
     let tr909_groove_timing =
@@ -412,6 +416,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         tr909_source_profile,
         tr909_groove_timing,
         w30_source_chop_profile,
+        w30_source_loop_closure,
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),
         source_first_mix: render_metrics(&source_first_mix, &grid),

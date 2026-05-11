@@ -31,6 +31,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Source-grid output max allowed offset: `{}`\n\n\
          - TR-909 source-grid alignment: `{}`\n\
          - W-30 source-grid alignment: `{}`\n\n\
+         - W-30 source-loop closure: `{}`\n\n\
          - W-30 candidate RMS: `{}`\n\
          - W-30 candidate active-sample ratio: `{}`\n\
          - W-30 RMS delta: `{}`\n\n\
@@ -75,6 +76,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_source_grid_max_allowed_offset(summary),
         format_source_grid_alignment(&summary.tr909_source_grid_alignment),
         format_source_grid_alignment(&summary.w30_source_grid_alignment),
+        format_w30_source_loop_closure(summary),
         format_optional_f64(summary.w30_candidate_rms),
         format_optional_f64(summary.w30_candidate_active_sample_ratio),
         format_optional_f64(summary.w30_rms_delta),
@@ -176,6 +178,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 })),
                 "tr909_source_grid_alignment": summary.tr909_source_grid_alignment.as_ref().map(source_grid_alignment_json),
                 "w30_source_grid_alignment": summary.w30_source_grid_alignment.as_ref().map(source_grid_alignment_json),
+                "w30_source_loop_closure": summary.w30_source_loop_closure.as_ref().map(w30_source_loop_closure_json),
                 "w30_candidate_rms": summary.w30_candidate_rms,
                 "w30_candidate_active_sample_ratio": summary.w30_candidate_active_sample_ratio,
                 "w30_rms_delta": summary.w30_rms_delta,
@@ -401,5 +404,38 @@ fn source_grid_alignment_json(drift: &SourceGridOutputDriftEvidence) -> serde_js
         "hit_ratio": drift.hit_ratio,
         "max_peak_offset_ms": drift.max_peak_offset_ms,
         "max_allowed_peak_offset_ms": drift.max_allowed_peak_offset_ms,
+    })
+}
+
+fn format_w30_source_loop_closure(summary: &CorrelationSummary) -> String {
+    if summary.w30_source_loop_closure_malformed {
+        return "malformed".to_string();
+    }
+    summary.w30_source_loop_closure.as_ref().map_or_else(
+        || "unknown".to_string(),
+        |proof| {
+            format!(
+                "passed={} preview_rms={} edge_delta_abs={} max_allowed_edge_delta_abs={} edge_abs_max={} max_allowed_edge_abs={} source_contains_selection={}",
+                yes_no(proof.passed),
+                format_optional_f64(Some(proof.preview_rms)),
+                format_optional_f64(Some(proof.edge_delta_abs)),
+                format_optional_f64(Some(proof.max_allowed_edge_delta_abs)),
+                format_optional_f64(Some(proof.edge_abs_max)),
+                format_optional_f64(Some(proof.max_allowed_edge_abs)),
+                yes_no(proof.source_contains_selection)
+            )
+        },
+    )
+}
+
+fn w30_source_loop_closure_json(proof: &W30SourceLoopClosureEvidence) -> serde_json::Value {
+    serde_json::json!({
+        "passed": proof.passed,
+        "preview_rms": proof.preview_rms,
+        "edge_delta_abs": proof.edge_delta_abs,
+        "max_allowed_edge_delta_abs": proof.max_allowed_edge_delta_abs,
+        "edge_abs_max": proof.edge_abs_max,
+        "max_allowed_edge_abs": proof.max_allowed_edge_abs,
+        "source_contains_selection": proof.source_contains_selection,
     })
 }

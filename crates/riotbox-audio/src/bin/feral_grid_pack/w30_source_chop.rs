@@ -10,6 +10,19 @@ struct W30SourceChopProfile {
     reason: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct W30SourceLoopClosureProof {
+    passed: bool,
+    selected_frame_count: usize,
+    preview_rms: f32,
+    edge_delta_abs: f32,
+    max_allowed_edge_delta_abs: f32,
+    edge_abs_max: f32,
+    max_allowed_edge_abs: f32,
+    source_contains_selection: bool,
+    reason: &'static str,
+}
+
 #[derive(Serialize)]
 struct ManifestW30SourceChopProfile {
     source_window_rms: f32,
@@ -21,6 +34,22 @@ struct ManifestW30SourceChopProfile {
     gain: f32,
     reason: &'static str,
 }
+
+#[derive(Serialize)]
+struct ManifestW30SourceLoopClosureProof {
+    passed: bool,
+    selected_frame_count: usize,
+    preview_rms: f32,
+    edge_delta_abs: f32,
+    max_allowed_edge_delta_abs: f32,
+    edge_abs_max: f32,
+    max_allowed_edge_abs: f32,
+    source_contains_selection: bool,
+    reason: &'static str,
+}
+
+const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_DELTA_ABS: f32 = 0.060;
+const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_ABS: f32 = 0.040;
 
 fn source_chop_preview_from_interleaved(
     samples: &[f32],
@@ -76,6 +105,39 @@ fn source_chop_preview_from_interleaved(
     ))
 }
 
+fn w30_source_loop_closure_proof(
+    preview: &W30PreviewSampleWindow,
+    profile: W30SourceChopProfile,
+) -> W30SourceLoopClosureProof {
+    let source_contains_selection = preview.source_end_frame >= preview.source_start_frame
+        && preview.source_end_frame.saturating_sub(preview.source_start_frame)
+            == preview.sample_count as u64
+        && preview.sample_count == profile.selected_frame_count;
+    let preview_samples = &preview.samples[..preview.sample_count];
+    let (edge_delta_abs, edge_abs_max) = edge_closure_metrics(preview_samples);
+    let passed = profile.preview_rms > MIN_SIGNAL_RMS
+        && profile.selected_frame_count > 0
+        && source_contains_selection
+        && edge_delta_abs <= W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_DELTA_ABS
+        && edge_abs_max <= W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_ABS;
+
+    W30SourceLoopClosureProof {
+        passed,
+        selected_frame_count: profile.selected_frame_count,
+        preview_rms: profile.preview_rms,
+        edge_delta_abs,
+        max_allowed_edge_delta_abs: W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_DELTA_ABS,
+        edge_abs_max,
+        max_allowed_edge_abs: W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_ABS,
+        source_contains_selection,
+        reason: if passed {
+            "source_chop_edges_faded_and_repeat_safe"
+        } else {
+            "source_chop_loop_closure_out_of_budget"
+        },
+    }
+}
+
 fn manifest_w30_source_chop_profile(
     profile: W30SourceChopProfile,
 ) -> ManifestW30SourceChopProfile {
@@ -88,6 +150,22 @@ fn manifest_w30_source_chop_profile(
         selected_frame_count: profile.selected_frame_count,
         gain: profile.gain,
         reason: profile.reason,
+    }
+}
+
+fn manifest_w30_source_loop_closure_proof(
+    proof: W30SourceLoopClosureProof,
+) -> ManifestW30SourceLoopClosureProof {
+    ManifestW30SourceLoopClosureProof {
+        passed: proof.passed,
+        selected_frame_count: proof.selected_frame_count,
+        preview_rms: proof.preview_rms,
+        edge_delta_abs: proof.edge_delta_abs,
+        max_allowed_edge_delta_abs: proof.max_allowed_edge_delta_abs,
+        edge_abs_max: proof.edge_abs_max,
+        max_allowed_edge_abs: proof.max_allowed_edge_abs,
+        source_contains_selection: proof.source_contains_selection,
+        reason: proof.reason,
     }
 }
 
@@ -142,6 +220,16 @@ fn positive_abs_delta(samples: &[f32]) -> f32 {
         total += (pair[1].abs() - pair[0].abs()).max(0.0);
     }
     total / (samples.len() - 1) as f32
+}
+
+fn edge_closure_metrics(samples: &[f32]) -> (f32, f32) {
+    let Some(first) = samples.first() else {
+        return (0.0, 0.0);
+    };
+    let last = samples.last().copied().unwrap_or(*first);
+    let edge_delta_abs = (first - last).abs();
+    let edge_abs_max = first.abs().max(last.abs());
+    (edge_delta_abs, edge_abs_max)
 }
 
 fn edge_fade(index: usize, sample_count: usize) -> f32 {

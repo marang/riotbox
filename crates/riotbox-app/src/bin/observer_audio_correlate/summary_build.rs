@@ -32,6 +32,8 @@ struct CorrelationSummary {
     tr909_source_grid_alignment_malformed: bool,
     w30_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
     w30_source_grid_alignment_malformed: bool,
+    w30_source_loop_closure: Option<W30SourceLoopClosureEvidence>,
+    w30_source_loop_closure_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
 }
 
@@ -60,6 +62,17 @@ struct SourceGridOutputDriftEvidence {
     hit_ratio: f64,
     max_peak_offset_ms: f64,
     max_allowed_peak_offset_ms: f64,
+}
+
+#[derive(Debug, PartialEq)]
+struct W30SourceLoopClosureEvidence {
+    passed: bool,
+    preview_rms: f64,
+    edge_delta_abs: f64,
+    max_allowed_edge_delta_abs: f64,
+    edge_abs_max: f64,
+    max_allowed_edge_abs: f64,
+    source_contains_selection: bool,
 }
 
 #[cfg(test)]
@@ -110,6 +123,8 @@ fn build_summary_from_events(
         collect_source_grid_alignment(&manifest, "tr909_source_grid_alignment");
     let (w30_source_grid_alignment, w30_source_grid_alignment_malformed) =
         collect_source_grid_alignment(&manifest, "w30_source_grid_alignment");
+    let (w30_source_loop_closure, w30_source_loop_closure_malformed) =
+        collect_w30_source_loop_closure(&manifest);
     let (source_timing, source_timing_malformed) = collect_source_timing(&manifest);
     let source_timing_alignment = collect_source_timing_alignment(
         observer_source_timing.as_ref(),
@@ -183,6 +198,8 @@ fn build_summary_from_events(
         tr909_source_grid_alignment_malformed,
         w30_source_grid_alignment,
         w30_source_grid_alignment_malformed,
+        w30_source_loop_closure,
+        w30_source_loop_closure_malformed,
         lane_recipe_cases: collect_lane_recipe_cases(&manifest),
     })
 }
@@ -321,6 +338,50 @@ fn collect_source_grid_alignment(
             None => return (None, true),
         },
         max_allowed_peak_offset_ms: match metric["max_allowed_peak_offset_ms"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+    };
+
+    (Some(evidence), false)
+}
+
+fn collect_w30_source_loop_closure(
+    manifest: &Value,
+) -> (Option<W30SourceLoopClosureEvidence>, bool) {
+    let Some(metrics) = manifest.get("metrics").and_then(Value::as_object) else {
+        return (None, false);
+    };
+    let Some(metric) = metrics.get("w30_source_loop_closure") else {
+        return (None, false);
+    };
+
+    let evidence = W30SourceLoopClosureEvidence {
+        passed: match metric["passed"].as_bool() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        preview_rms: match metric["preview_rms"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        edge_delta_abs: match metric["edge_delta_abs"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        max_allowed_edge_delta_abs: match metric["max_allowed_edge_delta_abs"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        edge_abs_max: match metric["edge_abs_max"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        max_allowed_edge_abs: match metric["max_allowed_edge_abs"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        source_contains_selection: match metric["source_contains_selection"].as_bool() {
             Some(value) => value,
             None => return (None, true),
         },

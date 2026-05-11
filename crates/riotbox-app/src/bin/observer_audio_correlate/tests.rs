@@ -124,6 +124,18 @@ fn summarizes_committed_fixture_observer_and_manifest() {
             max_allowed_peak_offset_ms: 70.0,
         })
     );
+    assert_eq!(
+        summary.w30_source_loop_closure,
+        Some(W30SourceLoopClosureEvidence {
+            passed: true,
+            preview_rms: 0.145,
+            edge_delta_abs: 0.004,
+            max_allowed_edge_delta_abs: 0.06,
+            edge_abs_max: 0.006,
+            max_allowed_edge_abs: 0.04,
+            source_contains_selection: true,
+        })
+    );
     assert!(markdown.contains("Source timing phrase: `ambiguous_downbeat"));
     assert!(markdown.contains("Grid BPM source: `source_timing`"));
     assert!(markdown.contains("Grid BPM decision reason: `source_timing_ready`"));
@@ -135,6 +147,7 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("TR-909 source-grid alignment: `hit_ratio=1.000000"));
     assert!(markdown.contains("W-30 source-grid alignment: `hit_ratio=1.000000"));
+    assert!(markdown.contains("W-30 source-loop closure: `passed=yes"));
     assert!(markdown.contains("Key outcomes: `space -> transport started, f -> queued`"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
@@ -365,6 +378,31 @@ fn synthetic_manifest() -> String {
       "hit_ratio": 0.875,
       "max_peak_offset_ms": 12.5,
       "max_allowed_peak_offset_ms": 70.0
+    },
+    "tr909_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 7,
+      "hit_ratio": 0.875,
+      "max_peak_offset_ms": 12.5,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 5.13,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_loop_closure": {
+      "passed": true,
+      "selected_frame_count": 2048,
+      "preview_rms": 0.145,
+      "edge_delta_abs": 0.004,
+      "max_allowed_edge_delta_abs": 0.06,
+      "edge_abs_max": 0.006,
+      "max_allowed_edge_abs": 0.04,
+      "source_contains_selection": true,
+      "reason": "source_chop_edges_faded_and_repeat_safe"
     }
   }
 }"#

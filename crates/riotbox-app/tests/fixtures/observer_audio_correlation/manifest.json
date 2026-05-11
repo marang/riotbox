@@ -80,6 +80,17 @@
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 5.13,
       "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_loop_closure": {
+      "passed": true,
+      "selected_frame_count": 2048,
+      "preview_rms": 0.145,
+      "edge_delta_abs": 0.004,
+      "max_allowed_edge_delta_abs": 0.06,
+      "edge_abs_max": 0.006,
+      "max_allowed_edge_abs": 0.04,
+      "source_contains_selection": true,
+      "reason": "source_chop_edges_faded_and_repeat_safe"
     }
   }
 }
