@@ -312,4 +312,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Source Timing grid-use to app observer snapshots
 - [RIOTBOX-780.md](./RIOTBOX-780.md)
   Add Source Timing grid-use compatibility to observer/audio alignment
+- [RIOTBOX-781.md](./RIOTBOX-781.md)
+  Prove strict auto-grid and fallback Source Timing pack paths stay distinct
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
