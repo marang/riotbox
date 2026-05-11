@@ -50,5 +50,6 @@
   "warning_codes": [],
   "onset_count": 9,
   "onset_density_per_second": 2.4,
-  "duration_seconds": 3.75
+  "duration_seconds": 3.75,
+  "grid_use": "short_loop_manual_confirm"
 }

@@ -43,6 +43,7 @@ struct ProbeSummary {
     cue: &'static str,
     readiness: &'static str,
     requires_manual_confirm: bool,
+    grid_use: &'static str,
     primary_bpm: Option<f32>,
     primary_beat_score: Option<f32>,
     primary_beat_matched_onset_ratio: Option<f32>,
@@ -172,6 +173,7 @@ impl ProbeSummary {
             cue: source_timing_readiness_cue(report.readiness, report.requires_manual_confirm),
             readiness: readiness_status_label(report.readiness),
             requires_manual_confirm: report.requires_manual_confirm,
+            grid_use: source_timing_grid_use(report),
             primary_bpm: report.primary_bpm,
             primary_beat_score: beat.primary_score,
             primary_beat_matched_onset_ratio: beat.primary_matched_onset_ratio,
@@ -226,7 +228,7 @@ fn render_text(summary: &ProbeSummary) -> String {
             "Riotbox Source Timing Probe\n",
             "source: {source}\n",
             "cue: {cue}\n",
-            "readiness: {readiness} manual_confirm={manual_confirm}\n",
+            "readiness: {readiness} manual_confirm={manual_confirm} grid_use={grid_use}\n",
             "bpm: {bpm}\n",
             "beat: {beat} downbeat: {downbeat_status} offset_beats={downbeat}\n",
             "scores: beat={beat_score} downbeat={downbeat_score}\n",
@@ -240,6 +242,7 @@ fn render_text(summary: &ProbeSummary) -> String {
         cue = summary.cue,
         readiness = summary.readiness,
         manual_confirm = summary.requires_manual_confirm,
+        grid_use = summary.grid_use,
         bpm = bpm,
         beat = summary.beat_status,
         downbeat_status = summary.downbeat_status,
@@ -281,6 +284,37 @@ fn source_timing_readiness_cue(
         }
         SourceTimingProbeReadinessStatus::Unavailable => "not available",
     }
+}
+
+fn source_timing_grid_use(report: &SourceTimingProbeReadinessReport) -> &'static str {
+    if report.primary_bpm.is_none()
+        || report.readiness == SourceTimingProbeReadinessStatus::Unavailable
+    {
+        return "unavailable";
+    }
+    if report.readiness == SourceTimingProbeReadinessStatus::Ready
+        && !report.requires_manual_confirm
+    {
+        return "locked_grid";
+    }
+    if is_stable_short_loop_manual_confirm(report) {
+        return "short_loop_manual_confirm";
+    }
+    if report.requires_manual_confirm {
+        return "manual_confirm_only";
+    }
+    "fallback_grid"
+}
+
+fn is_stable_short_loop_manual_confirm(report: &SourceTimingProbeReadinessReport) -> bool {
+    report.readiness == SourceTimingProbeReadinessStatus::NeedsReview
+        && report.requires_manual_confirm
+        && report.primary_bpm.is_some()
+        && report.beat_status == SourceTimingProbeBeatEvidenceStatus::Stable
+        && report.downbeat_status == SourceTimingProbeDownbeatEvidenceStatus::Stable
+        && report.phrase_status == SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+        && report.confidence_result == SourceTimingCandidateConfidenceResult::CandidateCautious
+        && report.alternate_evidence_count == 0
 }
 
 fn readiness_status_label(status: SourceTimingProbeReadinessStatus) -> &'static str {
@@ -415,18 +449,73 @@ mod tests {
                 .is_some_and(|score| score > 0.0)
         );
         assert!(text.contains("cue: "));
+        assert!(text.contains("grid_use="));
         assert!(text.contains("beat: stable"));
         assert!(text.contains("downbeat: "));
         assert!(text.contains("scores: beat="));
         assert!(text.contains("anchors: total="));
         assert!(text.contains("groove: residuals="));
         assert!(json["schema"].is_string());
+        assert!(json["grid_use"].is_string());
         assert!(json["primary_beat_score"].is_number());
         assert!(json["primary_downbeat_score"].is_number());
         assert!(json["anchor_evidence"]["primary_anchor_count"].is_number());
         assert!(json["anchor_evidence"]["primary_anchor_preview"].is_array());
         assert!(json["groove_evidence"]["primary_groove_residual_count"].is_number());
         assert!(json["groove_evidence"]["primary_groove_preview"].is_array());
+    }
+
+    #[test]
+    fn source_timing_grid_use_marks_short_loop_manual_confirm() {
+        let report = readiness_report(SourceTimingProbeReadinessStatus::NeedsReview, true);
+
+        assert_eq!(source_timing_grid_use(&report), "short_loop_manual_confirm");
+    }
+
+    #[test]
+    fn source_timing_grid_use_marks_locked_grid_only_without_manual_confirm() {
+        let report = readiness_report(SourceTimingProbeReadinessStatus::Ready, false);
+
+        assert_eq!(source_timing_grid_use(&report), "locked_grid");
+    }
+
+    #[test]
+    fn source_timing_grid_use_keeps_ambiguous_loop_manual_only() {
+        let mut report = readiness_report(SourceTimingProbeReadinessStatus::Weak, true);
+        report.downbeat_status = SourceTimingProbeDownbeatEvidenceStatus::Weak;
+        report.confidence_result = SourceTimingCandidateConfidenceResult::CandidateAmbiguous;
+
+        assert_eq!(source_timing_grid_use(&report), "manual_confirm_only");
+    }
+
+    #[test]
+    fn source_timing_grid_use_marks_missing_bpm_unavailable() {
+        let mut report = readiness_report(SourceTimingProbeReadinessStatus::Unavailable, true);
+        report.primary_bpm = None;
+
+        assert_eq!(source_timing_grid_use(&report), "unavailable");
+    }
+
+    fn readiness_report(
+        readiness: SourceTimingProbeReadinessStatus,
+        requires_manual_confirm: bool,
+    ) -> SourceTimingProbeReadinessReport {
+        SourceTimingProbeReadinessReport {
+            schema: "riotbox.source_timing_probe_readiness.v1",
+            schema_version: 1,
+            source_id: "test-source".into(),
+            primary_bpm: Some(128.0),
+            primary_downbeat_offset_beats: Some(0),
+            beat_status: SourceTimingProbeBeatEvidenceStatus::Stable,
+            downbeat_status: SourceTimingProbeDownbeatEvidenceStatus::Stable,
+            confidence_result: SourceTimingCandidateConfidenceResult::CandidateCautious,
+            drift_status: SourceTimingCandidateDriftStatus::NotEnoughMaterial,
+            phrase_status: SourceTimingCandidatePhraseStatus::NotEnoughMaterial,
+            alternate_evidence_count: 0,
+            warning_codes: vec![TimingWarningCode::PhraseUncertain],
+            requires_manual_confirm,
+            readiness,
+        }
     }
 
     fn accented_loop_samples() -> Vec<f32> {

@@ -564,6 +564,12 @@ primary timing hypothesis:
 - `just source-timing-example-probe-report-local` uses the tracked local-example
   expectations file for the documented Beat/DH examples. It is an optional local
   regression command because the source WAV files are deliberately outside Git.
+- the source timing probe CLI JSON and example report expose `grid_use` as a
+  conservative QA classification derived from the existing readiness evidence.
+  Stable short drum loops with reliable beat/downbeat evidence but insufficient
+  phrase material may report `short_loop_manual_confirm`; that means the grid is
+  review-useful but still requires confirmation and must not be presented as
+  full phrase lock or production arbitrary-audio detection.
 
 The candidate confidence report summarizes this early detector state for QA:
 

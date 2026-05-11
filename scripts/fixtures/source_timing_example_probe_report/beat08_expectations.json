@@ -4,6 +4,7 @@
       "cue": "needs confirm",
       "readiness": "ready",
       "requires_manual_confirm": true,
+      "grid_use": "manual_confirm_only",
       "primary_bpm": {
         "target": 128.397,
         "tolerance": 0.01

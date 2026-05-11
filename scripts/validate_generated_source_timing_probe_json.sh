@@ -28,6 +28,7 @@ expected = {
     "cue": "grid locked",
     "readiness": "ready",
     "requires_manual_confirm": False,
+    "grid_use": "locked_grid",
     "beat_status": "stable",
     "downbeat_status": "stable",
     "phrase_status": "stable",

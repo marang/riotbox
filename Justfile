@@ -176,7 +176,7 @@ source-timing-example-probe-report-fixtures:
         --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
         --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations.json \
         --output "$output"; \
-      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | ready | yes | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 11/4/4/3 | 4 | ok |" "$output"; \
+      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | ready | yes | manual_confirm_only | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 11/4/4/3 | 4 | ok |" "$output"; \
       if python3 scripts/source_timing_example_probe_report.py \
         --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
         --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations_mismatch.json \

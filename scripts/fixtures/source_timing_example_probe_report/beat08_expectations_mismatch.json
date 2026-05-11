@@ -4,6 +4,7 @@
       "cue": "grid locked",
       "readiness": "ready",
       "requires_manual_confirm": false,
+      "grid_use": "locked_grid",
       "primary_bpm": {
         "target": 120.0,
         "tolerance": 0.01
