@@ -25,6 +25,7 @@ If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pat
 - Use one archive file per Linear ticket under `docs/archive/linear_issues/RIOTBOX-123.md`; month files are indexes only.
 - Search archives and generated artifacts only when needed. Default `rg` should respect `.rgignore`.
 - Keep command output token-bounded. Redirect long CI/QA logs to `/tmp/...log` and report only exit status plus relevant tail/error lines.
+- Use `scripts/run_compact.sh /tmp/name.log <command...>` for noisy validation commands unless full output is explicitly needed.
 - Never revert unrelated user changes.
 
 ## Current State

@@ -257,25 +257,29 @@ Long command output is an operational cost. It can consume enough agent context 
 Default behavior:
 
 - redirect long CI, QA, cargo, clippy, observer/audio, and generated-pack output to `/tmp/...log`
+- if a command is expected to print more than roughly 100 lines, run it through `scripts/run_compact.sh` or redirect it before starting it
 - report only whether the command passed, plus the relevant final lines or error excerpt
 - when a command fails, show the failing command, exit status, and the smallest useful log excerpt
 - avoid streaming full `just ci`, full `cargo test`, full Linear JSON, full GitHub JSON, large manifests, or generated evidence into the agent context
 - use `GIT_EDITOR=true` for non-interactive rebase/commit continuation when the existing commit message is sufficient
 - set shell tool output limits deliberately; do not request large output unless the task needs it
+- if a tool call unexpectedly emits too much output, switch to compact execution for the next attempt and record the workflow gap if it is recurring
 
 Preferred pattern:
 
 ```bash
-just ci >/tmp/riotbox-ci.log 2>&1
-status=$?
-tail -n 80 /tmp/riotbox-ci.log
-exit "$status"
+scripts/run_compact.sh /tmp/riotbox-ci.log just ci
 ```
 
-For successful long-running checks, prefer an even shorter summary:
+Manual fallback:
 
 ```bash
-just ci >/tmp/riotbox-ci.log 2>&1 && echo "just ci ok"
+just ci >/tmp/riotbox-ci.log 2>&1
+status=$?
+if [ "$status" -ne 0 ]; then
+  tail -n 80 /tmp/riotbox-ci.log
+fi
+exit "$status"
 ```
 
 If the log matters for review or later debugging, keep it in `/tmp` for the current session and summarize the important finding in Linear or the PR. Do not commit transient command logs.
