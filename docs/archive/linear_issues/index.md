@@ -286,4 +286,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Jam-visible Source Timing observer recipe
 - [RIOTBOX-767.md](./RIOTBOX-767.md)
   Refresh execution roadmap P012 next-step section
+- [RIOTBOX-768.md](./RIOTBOX-768.md)
+  Add real example Source Timing probe report gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
