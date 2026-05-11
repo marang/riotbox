@@ -99,6 +99,75 @@ What to observe:
 - `wait [..>] next ...` is the compact timing rail for the queued gesture
 - `Log` shows the truth more clearly than trying to infer it from one line on `Jam`
 
+### Recipe 1b: Record What Jam Shows
+
+Goal: keep a machine-readable trace of the timing rail instead of relying on
+visual memory from the terminal.
+
+Launch Riotbox with the observer enabled:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- \
+  --source "data/test_audio/examples/Beat08_128BPM(Full).wav" \
+  --observer artifacts/audio_qa/local/user-session/events.ndjson
+```
+
+Then:
+
+1. press `Space`
+2. press `f`
+3. wait until the action lands or inspect `Log` with `2`
+4. quit with `q`
+5. validate the observer stream
+
+```bash
+scripts/validate_user_session_observer_ndjson.py artifacts/audio_qa/local/user-session/events.ndjson
+```
+
+To inspect only the Source Timing snapshot fields, run:
+
+```bash
+python3 - <<'PY'
+import json
+from pathlib import Path
+
+path = Path("artifacts/audio_qa/local/user-session/events.ndjson")
+for line in path.read_text().splitlines():
+    event = json.loads(line)
+    timing = event.get("snapshot", {}).get("source_timing")
+    if timing:
+        keys = [
+            "cue",
+            "quality",
+            "degraded_policy",
+            "beat_status",
+            "beat_count",
+            "downbeat_status",
+            "bar_count",
+            "phrase_status",
+            "phrase_count",
+            "primary_warning_code",
+        ]
+        print({key: timing.get(key) for key in keys})
+        print("anchor_evidence:", timing.get("anchor_evidence"))
+        print("groove_evidence:", timing.get("groove_evidence"))
+        break
+PY
+```
+
+What to observe:
+
+- the Jam `Now` rail is the readable performance cue, for example
+  `timing needs confirm [===>] next bar`
+- the observer `source_timing.cue`, `quality`, and `degraded_policy` are the
+  machine-readable version of that cue
+- `beat_status`, `downbeat_status`, and `phrase_status` tell QA whether Riotbox
+  saw a grid, only tempo, ambiguity, or uncertainty
+- `anchor_evidence` and `groove_evidence` show whether the cue was backed by
+  source anchors or groove residuals
+- this recipe proves control-path evidence only; it does not prove that the
+  live audio device played correctly
+
 ## Recipe 2: Compare First Gestures
 
 Goal: learn that the lanes suggest different kinds of change.

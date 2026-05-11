@@ -228,6 +228,8 @@ Practical rule:
 - confused about what Riotbox thinks the source is -> press `3`
 - confused about what you captured or promoted -> press `4`
 - debugging a confusing run -> add `--observer artifacts/audio_qa/local/user-session/events.ndjson` and inspect the NDJSON event trail
+- debugging the Jam timing rail -> use `docs/jam_recipes.md` Recipe 1b to
+  validate the observer `source_timing` snapshot
 
 ## Example Session Flow
 
