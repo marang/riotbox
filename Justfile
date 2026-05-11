@@ -31,6 +31,7 @@ ci:
     just source-timing-drift-report
     just source-timing-phrase-grid
     just source-timing-candidate-confidence-report
+    just source-timing-example-probe-report-fixtures
     just p011-replay-family-manifest
     just p011-exit-evidence-manifest
     just p011-exit-evidence-manifest-validator-fixtures
@@ -160,6 +161,17 @@ source-timing-phrase-grid:
 
 source-timing-candidate-confidence-report:
     cargo test -p riotbox-core source_timing_candidate_confidence_report -- --nocapture
+
+source-timing-example-probe-report output="artifacts/audio_qa/local/source_timing_example_probe_report.md":
+    python3 scripts/source_timing_example_probe_report.py --output "{{output}}"
+
+source-timing-example-probe-report-fixtures:
+    output="$(mktemp)"; \
+      python3 scripts/source_timing_example_probe_report.py \
+        --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
+        --output "$output"; \
+      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | ready | yes | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 11/4/4/3 | 4 |" "$output"; \
+      rm -f "$output"
 
 w30-smoke-candidate date="local" duration="2.0":
     cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role candidate --duration-seconds "{{duration}}"
