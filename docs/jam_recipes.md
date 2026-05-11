@@ -54,6 +54,7 @@ check the compact timing cue on `Jam`, `Help`, or `Source`.
 You may see lines like:
 
 ```text
+timing needs confirm [===>] next bar
 timing needs confirm | low | kick+bb
 Timing: needs confirm | low | kick+bb | source b32 bar8 p1 | confirm before trusting grid
 readiness needs confirm | 126.0 BPM | conf 0.76
@@ -92,6 +93,8 @@ What to observe:
 
 - the action is queued before it lands
 - it commits on a musical boundary, not instantly
+- the `Now` timing rail shows the current timing trust plus a countdown to the
+  next bar
 - the timing cue tells you whether that boundary is source-locked, cautious, or fallback
 - `wait [..>] next ...` is the compact timing rail for the queued gesture
 - `Log` shows the truth more clearly than trying to infer it from one line on `Jam`

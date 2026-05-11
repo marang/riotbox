@@ -102,6 +102,11 @@ fn scene_restore_contrast_line(shell: &JamShellState) -> String {
         .restore_scene_energy
         .as_deref()
         .map(compact_energy_label);
+    let ghost = ghost_label(shell);
+
+    if ghost.contains("blocked") || ghost.contains("accept/reject") {
+        return format!("ghost {ghost}");
+    }
 
     format!(
         "live {current_scene}/{current_energy} <> restore {} | ghost {}",
@@ -109,7 +114,7 @@ fn scene_restore_contrast_line(shell: &JamShellState) -> String {
             Some(restore_energy) => format!("{restore_scene}/{restore_energy}"),
             None => restore_scene,
         },
-        ghost_label(shell)
+        ghost
     )
 }
 
@@ -447,4 +452,3 @@ fn ascii_countdown(slot: usize, width: usize) -> String {
     chars[slot - 1] = '>';
     format!("[{}]", chars.iter().collect::<String>())
 }
-

@@ -295,7 +295,7 @@ fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         let rows = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(7),
+                Constraint::Length(8),
                 Constraint::Length(8),
                 Constraint::Min(8),
             ])
@@ -308,7 +308,7 @@ fn render_jam_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
         let rows = Layout::default()
             .direction(Direction::Vertical)
             .constraints([
-                Constraint::Length(7),
+                Constraint::Length(8),
                 Constraint::Length(9),
                 Constraint::Min(9),
             ])
