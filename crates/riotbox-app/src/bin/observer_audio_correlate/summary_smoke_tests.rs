@@ -102,6 +102,7 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert!(markdown.contains("Observer source timing: `src-timing cue=needs confirm"));
     assert!(markdown.contains("anchors=3(kick=1 backbeat=1 transient=1)"));
     assert!(markdown.contains("Source timing readiness: `needs confirm readiness=weak"));
+    assert!(markdown.contains("Source timing grid use: `manual_confirm_only`"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
@@ -155,6 +156,10 @@ fn summarizes_synthetic_observer_and_manifest() {
         "ambiguous_downbeat"
     );
     assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
+    assert_eq!(
+        json["output_path"]["source_timing"]["grid_use"],
+        "manual_confirm_only"
+    );
     assert_eq!(
         json["control_path"]["observer_source_timing"]["warning_codes"][1],
         "phrase_uncertain"
@@ -212,6 +217,7 @@ fn synthetic_manifest() -> String {
   "source_timing": {
     "source_id": "source.wav",
     "policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "manual_confirm_only",
     "readiness": "weak",
     "requires_manual_confirm": true,
     "primary_bpm": 128.397,

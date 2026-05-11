@@ -680,6 +680,10 @@ bounded BPM policy:
   `output_path.source_timing_alignment`, using BPM delta plus normalized
   warning-code overlap as bounded proof that the control path and generated
   output path are using compatible timing evidence.
+- observer/audio summaries should expose manifest-side
+  `output_path.source_timing.grid_use` when a generated manifest provides it,
+  and validators must keep it aligned with the same conservative evidence used
+  by the manifest and probe surfaces.
 - observer/audio correlation should also compare compact app-observed and
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`. This is a bounded consistency

@@ -54,6 +54,13 @@ STATIC_DEFAULT_GRID_BPM_REASONS = {
     "source_timing_missing_bpm",
     "source_timing_invalid_bpm",
 }
+SOURCE_TIMING_GRID_USE = {
+    "locked_grid",
+    "short_loop_manual_confirm",
+    "manual_confirm_only",
+    "fallback_grid",
+    "unavailable",
+}
 
 
 def main() -> int:
@@ -210,6 +217,7 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_string(timing, "source_id")
     cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
     require_string(timing, "policy_profile")
+    grid_use = require_optional_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
     readiness = require_string(timing, "readiness")
     requires_manual_confirm = require_bool(timing, "requires_manual_confirm")
     require_source_timing_readiness_cue_match(cue, readiness, requires_manual_confirm)
@@ -225,6 +233,8 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")
     require_string_list(timing, "warning_codes")
+    if grid_use is not None:
+        require_source_timing_grid_use_match(timing, grid_use)
 
 
 def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
@@ -509,6 +519,17 @@ def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str
     return value
 
 
+def require_optional_one_of(
+    parent: dict[str, Any], field: str, allowed: set[str]
+) -> str | None:
+    if field not in parent:
+        return None
+    value = parent.get(field)
+    if value is None:
+        return None
+    return require_one_of(parent, field, allowed)
+
+
 def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> None:
     expected = SOURCE_TIMING_CUE_BY_POLICY[degraded_policy]
     if cue != expected:
@@ -539,6 +560,39 @@ def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -
     if readiness == "unavailable":
         return "not available"
     return "unknown"
+
+
+def require_source_timing_grid_use_match(
+    source_timing: dict[str, Any], grid_use: str
+) -> None:
+    expected = source_timing_grid_use(source_timing)
+    if grid_use != expected:
+        raise ValueError(f"source_timing.grid_use must be {expected!r}, got {grid_use!r}")
+
+
+def source_timing_grid_use(source_timing: dict[str, Any]) -> str:
+    if source_timing.get("primary_bpm") is None or source_timing["readiness"] == "unavailable":
+        return "unavailable"
+    if source_timing["readiness"] == "ready" and not source_timing["requires_manual_confirm"]:
+        return "locked_grid"
+    if is_stable_short_loop_manual_confirm(source_timing):
+        return "short_loop_manual_confirm"
+    if source_timing["requires_manual_confirm"]:
+        return "manual_confirm_only"
+    return "fallback_grid"
+
+
+def is_stable_short_loop_manual_confirm(source_timing: dict[str, Any]) -> bool:
+    return (
+        source_timing["readiness"] == "needs_review"
+        and source_timing["requires_manual_confirm"] is True
+        and source_timing.get("primary_bpm") is not None
+        and source_timing["beat_status"] == "stable"
+        and source_timing["downbeat_status"] == "stable"
+        and source_timing["phrase_status"] == "not_enough_material"
+        and source_timing["confidence_result"] == "candidate_cautious"
+        and source_timing["alternate_evidence_count"] == 0
+    )
 
 
 if __name__ == "__main__":

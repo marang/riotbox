@@ -21,6 +21,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Full mix RMS: `{}`\n\
          - Full mix low-band RMS: `{}`\n\n\
          - Source timing readiness: `{}`\n\
+         - Source timing grid use: `{}`\n\
          - Source timing downbeat: `{}`\n\
          - Source timing phrase: `{}`\n\n\
          - Source timing alignment: `{}`\n\n\
@@ -66,6 +67,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_optional_f64(summary.full_mix_rms),
         format_optional_f64(summary.full_mix_low_band_rms),
         format_source_timing_readiness(summary),
+        format_source_timing_grid_use(summary),
         format_source_timing_downbeat(summary),
         format_source_timing_phrase(summary),
         format_source_timing_alignment(summary),
@@ -133,6 +135,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "source_id": &timing.source_id,
                 "cue": source_timing_readiness_cue(timing),
                 "policy_profile": &timing.policy_profile,
+                "grid_use": &timing.grid_use,
                 "readiness": &timing.readiness,
                 "requires_manual_confirm": timing.requires_manual_confirm,
                 "primary_bpm": timing.primary_bpm,
@@ -219,6 +222,18 @@ fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {
             )
         },
     )
+}
+
+fn format_source_timing_grid_use(summary: &CorrelationSummary) -> String {
+    if summary.source_timing_malformed {
+        return "malformed".to_string();
+    }
+    summary
+        .source_timing
+        .as_ref()
+        .and_then(|timing| timing.grid_use.as_deref())
+        .unwrap_or("unknown")
+        .to_string()
 }
 
 fn source_timing_readiness_cue(timing: &SourceTimingEvidence) -> &'static str {

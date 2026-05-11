@@ -1,0 +1,61 @@
+{
+  "schema": "riotbox.observer_audio_summary.v1",
+  "schema_version": 1,
+  "control_path": {
+    "present": true,
+    "observer_schema": "riotbox.user_session_observer.v1",
+    "launch_mode": "ingest",
+    "audio_runtime_status": "started",
+    "key_outcomes": ["space -> transport started"],
+    "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
+    "commit_count": 1,
+    "commit_boundaries": ["NextBar"],
+    "observer_source_timing": null
+  },
+  "output_path": {
+    "present": true,
+    "issues": [],
+    "pack_id": "feral-grid-demo",
+    "manifest_result": "pass",
+    "artifact_count": 6,
+    "grid_bpm_source": "static_default",
+    "grid_bpm_decision_reason": "source_timing_requires_manual_confirm",
+    "source_timing_bpm_delta": 0.397,
+    "source_timing": {
+      "source_id": "source.wav",
+      "cue": "needs confirm",
+      "policy_profile": "dance_loop_auto_readiness",
+      "grid_use": "locked_grid",
+      "readiness": "weak",
+      "requires_manual_confirm": true,
+      "primary_bpm": 128.397,
+      "bpm_agrees_with_grid": true,
+      "beat_status": "stable",
+      "downbeat_status": "ambiguous",
+      "primary_downbeat_offset_beats": 0,
+      "confidence_result": "candidate_ambiguous",
+      "drift_status": "stable",
+      "phrase_status": "ambiguous_downbeat",
+      "alternate_evidence_count": 2,
+      "anchor_evidence": null,
+      "groove_evidence": null,
+      "warning_codes": ["PhraseUncertain", "AmbiguousDownbeat"]
+    },
+    "source_timing_alignment": null,
+    "source_timing_anchor_alignment": null,
+    "source_timing_groove_alignment": null,
+    "metrics": {
+      "full_mix_rms": 0.1843,
+      "full_mix_low_band_rms": 0.0612,
+      "mc202_question_answer_delta_rms": null,
+      "source_grid_output_drift": null,
+      "tr909_source_grid_alignment": null,
+      "w30_source_grid_alignment": null,
+      "w30_source_loop_closure": null,
+      "w30_candidate_rms": null,
+      "w30_candidate_active_sample_ratio": null,
+      "w30_rms_delta": null
+    }
+  },
+  "needs_human_listening": true
+}

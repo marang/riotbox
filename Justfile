@@ -262,6 +262,7 @@ observer-audio-summary-validator-fixtures:
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_user_override_bpm_agrees_false.json; then echo "expected invalid user override BPM agreement false fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_static_default_bpm_agrees_true.json; then echo "expected invalid static default BPM agreement true fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_static_default_bpm_agrees_false.json; then echo "expected invalid static default BPM agreement false fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_source_timing_grid_use.json; then echo "expected invalid source timing grid use fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_source_timing_alignment_status.json; then echo "expected invalid source timing alignment status fixture to fail" >&2; exit 1; fi
 
 user-session-observer-validator-fixtures:

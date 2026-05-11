@@ -17,6 +17,7 @@
     "schema_version": 1,
     "source_id": "source.wav",
     "policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "locked_grid",
     "readiness": "ready",
     "requires_manual_confirm": false,
     "primary_bpm": 128.397,

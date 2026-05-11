@@ -18,6 +18,7 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
         Some(SourceTimingEvidence {
             source_id: "source.wav".to_string(),
             policy_profile: "dance_loop_auto_readiness".to_string(),
+            grid_use: Some("manual_confirm_only".to_string()),
             readiness: "weak".to_string(),
             requires_manual_confirm: true,
             primary_bpm: Some(128.397),
@@ -39,11 +40,16 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
     );
     assert!(markdown.contains("Source timing downbeat: `ambiguous offset=0`"));
     assert!(markdown.contains("Source timing readiness: `needs confirm readiness=weak"));
+    assert!(markdown.contains("Source timing grid use: `manual_confirm_only`"));
     assert!(markdown.contains("Source timing BPM agrees with grid: `yes`"));
     assert!(markdown.contains(
         "Source timing phrase: `ambiguous_downbeat confidence=candidate_ambiguous drift=stable alternates=2`"
     ));
     assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
+    assert_eq!(
+        json["output_path"]["source_timing"]["grid_use"],
+        "manual_confirm_only"
+    );
     assert_eq!(
         json["output_path"]["source_timing"]["phrase_status"],
         "ambiguous_downbeat"
@@ -100,6 +106,7 @@ fn synthetic_manifest_with_source_timing() -> String {
   "source_timing": {
     "source_id": "source.wav",
     "policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "manual_confirm_only",
     "readiness": "weak",
     "requires_manual_confirm": true,
     "primary_bpm": 128.397,
