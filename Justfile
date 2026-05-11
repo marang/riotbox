@@ -175,9 +175,11 @@ source-timing-example-probe-report-fixtures:
     output="$(mktemp)"; \
       python3 scripts/source_timing_example_probe_report.py \
         --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
+        --fixture-json crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid_locked_grid.json \
         --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations.json \
         --output "$output"; \
-      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | ready | yes | manual_confirm_only | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 11/4/4/3 | 4 | ok |" "$output"; \
+      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | needs_review | yes | short_loop_manual_confirm | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 9/2/4/3 | 1 | ok |" "$output"; \
+      grep -q "| long_stable_lock.wav | probed | grid locked | ready | no | locked_grid | 128.397 | stable | stable | stable | none | 11/6/3/2 | 4 | ok |" "$output"; \
       if python3 scripts/source_timing_example_probe_report.py \
         --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
         --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations_mismatch.json \
