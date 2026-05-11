@@ -250,6 +250,36 @@ Default behavior:
 
 Do not paste large archive batches, generated manifests, raw transcript files, or long audio probe outputs into a PR description or agent summary. Summarize the relevant finding and link the file path instead.
 
+## 8.1.4 Token-Bounded Command Output
+
+Long command output is an operational cost. It can consume enough agent context to slow down implementation or force an avoidable session reset.
+
+Default behavior:
+
+- redirect long CI, QA, cargo, clippy, observer/audio, and generated-pack output to `/tmp/...log`
+- report only whether the command passed, plus the relevant final lines or error excerpt
+- when a command fails, show the failing command, exit status, and the smallest useful log excerpt
+- avoid streaming full `just ci`, full `cargo test`, full Linear JSON, full GitHub JSON, large manifests, or generated evidence into the agent context
+- use `GIT_EDITOR=true` for non-interactive rebase/commit continuation when the existing commit message is sufficient
+- set shell tool output limits deliberately; do not request large output unless the task needs it
+
+Preferred pattern:
+
+```bash
+just ci >/tmp/riotbox-ci.log 2>&1
+status=$?
+tail -n 80 /tmp/riotbox-ci.log
+exit "$status"
+```
+
+For successful long-running checks, prefer an even shorter summary:
+
+```bash
+just ci >/tmp/riotbox-ci.log 2>&1 && echo "just ci ok"
+```
+
+If the log matters for review or later debugging, keep it in `/tmp` for the current session and summarize the important finding in Linear or the PR. Do not commit transient command logs.
+
 ## 8.2 CI Check After PR Open
 
 After opening a PR, explicitly inspect the GitHub Actions / CI status.
