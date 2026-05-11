@@ -56,7 +56,7 @@ fn choose_grid_bpm(
         };
     }
 
-    if can_use_cautious_source_timing_bpm(timing_readiness)
+    if source_timing_can_use_cautious_grid_bpm(timing_readiness)
         && let Some(bpm) = usable_source_bpm
     {
         return GridBpmDecision {
@@ -75,17 +75,6 @@ fn choose_grid_bpm(
         source_primary_bpm,
         source_delta_bpm,
     }
-}
-
-fn can_use_cautious_source_timing_bpm(
-    timing_readiness: &SourceTimingProbeReadinessReport,
-) -> bool {
-    timing_readiness.readiness == SourceTimingProbeReadinessStatus::NeedsReview
-        && timing_readiness.requires_manual_confirm
-        && timing_readiness.beat_status == SourceTimingProbeBeatEvidenceStatus::Stable
-        && timing_readiness.downbeat_status == SourceTimingProbeDownbeatEvidenceStatus::Stable
-        && timing_readiness.confidence_result == SourceTimingCandidateConfidenceResult::CandidateCautious
-        && timing_readiness.alternate_evidence_count == 0
 }
 
 fn static_default_reason(
