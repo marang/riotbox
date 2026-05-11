@@ -308,4 +308,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add grid-use contract parity fixture matrix
 - [RIOTBOX-778.md](./RIOTBOX-778.md)
   Surface Source Timing grid-use cue in Jam/Source summary
+- [RIOTBOX-779.md](./RIOTBOX-779.md)
+  Add Source Timing grid-use to app observer snapshots
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
