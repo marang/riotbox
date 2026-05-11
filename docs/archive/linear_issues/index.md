@@ -290,4 +290,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add real example Source Timing probe report gate
 - [RIOTBOX-769.md](./RIOTBOX-769.md)
   Add optional expectations to Source Timing example report
+- [RIOTBOX-770.md](./RIOTBOX-770.md)
+  Add optional local example Source Timing expectations file
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
