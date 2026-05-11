@@ -296,4 +296,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Capture current Source Timing example report baseline
 - [RIOTBOX-772.md](./RIOTBOX-772.md)
   Add Source Timing grid-use classification to probe reports
+- [RIOTBOX-773.md](./RIOTBOX-773.md)
+  Propagate Source Timing grid-use into Feral grid manifests
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
