@@ -121,6 +121,11 @@ fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
         report.readiness,
         SourceTimingProbeReadinessStatus::NeedsReview
     );
+    assert_eq!(
+        source_timing_grid_use(&report),
+        SourceTimingGridUse::ShortLoopManualConfirm
+    );
+    assert!(source_timing_can_use_cautious_grid_bpm(&report));
 }
 
 #[test]
@@ -187,4 +192,86 @@ fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_c
                 .warning_codes
                 .contains(&TimingWarningCode::DoubleTimePossible)
     );
+}
+
+#[test]
+fn source_timing_grid_use_policy_preserves_contract_labels() {
+    let locked = grid_use_policy_report(
+        Some(128.0),
+        SourceTimingProbeReadinessStatus::Ready,
+        false,
+        SourceTimingCandidatePhraseStatus::Stable,
+        SourceTimingCandidateConfidenceResult::CandidateCautious,
+        0,
+    );
+    assert_eq!(source_timing_grid_use(&locked), SourceTimingGridUse::LockedGrid);
+    assert_eq!(source_timing_grid_use(&locked).label(), "locked_grid");
+
+    let manual_only = grid_use_policy_report(
+        Some(128.0),
+        SourceTimingProbeReadinessStatus::NeedsReview,
+        true,
+        SourceTimingCandidatePhraseStatus::AmbiguousDownbeat,
+        SourceTimingCandidateConfidenceResult::CandidateCautious,
+        0,
+    );
+    assert_eq!(
+        source_timing_grid_use(&manual_only),
+        SourceTimingGridUse::ManualConfirmOnly
+    );
+    assert_eq!(source_timing_grid_use(&manual_only).label(), "manual_confirm_only");
+
+    let fallback = grid_use_policy_report(
+        Some(128.0),
+        SourceTimingProbeReadinessStatus::Weak,
+        false,
+        SourceTimingCandidatePhraseStatus::Stable,
+        SourceTimingCandidateConfidenceResult::CandidateCautious,
+        0,
+    );
+    assert_eq!(
+        source_timing_grid_use(&fallback),
+        SourceTimingGridUse::FallbackGrid
+    );
+    assert_eq!(source_timing_grid_use(&fallback).label(), "fallback_grid");
+
+    let unavailable = grid_use_policy_report(
+        None,
+        SourceTimingProbeReadinessStatus::Unavailable,
+        true,
+        SourceTimingCandidatePhraseStatus::Unavailable,
+        SourceTimingCandidateConfidenceResult::Degraded,
+        0,
+    );
+    assert_eq!(
+        source_timing_grid_use(&unavailable),
+        SourceTimingGridUse::Unavailable
+    );
+    assert_eq!(source_timing_grid_use(&unavailable).label(), "unavailable");
+}
+
+fn grid_use_policy_report(
+    primary_bpm: Option<f32>,
+    readiness: SourceTimingProbeReadinessStatus,
+    requires_manual_confirm: bool,
+    phrase_status: SourceTimingCandidatePhraseStatus,
+    confidence_result: SourceTimingCandidateConfidenceResult,
+    alternate_evidence_count: usize,
+) -> SourceTimingProbeReadinessReport {
+    SourceTimingProbeReadinessReport {
+        schema: "riotbox.source_timing_probe_readiness.v1",
+        schema_version: 1,
+        source_id: "grid-use-policy".to_string(),
+        primary_bpm,
+        primary_downbeat_offset_beats: Some(0),
+        beat_status: SourceTimingProbeBeatEvidenceStatus::Stable,
+        downbeat_status: SourceTimingProbeDownbeatEvidenceStatus::Stable,
+        confidence_result,
+        drift_status: SourceTimingCandidateDriftStatus::Stable,
+        phrase_status,
+        alternate_evidence_count,
+        warning_codes: Vec::new(),
+        requires_manual_confirm,
+        readiness,
+    }
 }

@@ -570,6 +570,12 @@ primary timing hypothesis:
   phrase material may report `short_loop_manual_confirm`; that means the grid is
   review-useful but still requires confirmation and must not be presented as
   full phrase lock or production arbitrary-audio detection.
+- Rust producers must derive `grid_use` through the shared
+  `source_timing_grid_use(...)` core helper instead of maintaining separate
+  local classification logic in the probe CLI or generated listening-pack
+  builders. Downstream JSON validators may independently recompute the same
+  contract as an external compatibility check, but runtime producers should have
+  one Rust policy source.
 
 The candidate confidence report summarizes this early detector state for QA:
 

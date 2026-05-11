@@ -11,6 +11,7 @@ include!("timing_probe_candidates/hypothesis.rs");
 include!("timing_probe_candidates/downbeat_phase.rs");
 include!("timing_probe_candidates/grid.rs");
 include!("timing_probe_candidates/readiness_report.rs");
+include!("timing_probe_candidates/grid_use_policy.rs");
 
 #[cfg(test)]
 mod probe_candidate_tests;

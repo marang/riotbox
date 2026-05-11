@@ -10,6 +10,7 @@ use riotbox_core::source_graph::{
     SourceTimingCandidatePhraseStatus, SourceTimingProbeBeatEvidenceStatus,
     SourceTimingProbeBpmCandidatePolicy, SourceTimingProbeDownbeatEvidenceStatus,
     SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus,
+    source_timing_can_use_cautious_grid_bpm, source_timing_grid_use,
     source_timing_probe_readiness_report, timing_model_from_probe_bpm_candidates,
 };
 

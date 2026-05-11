@@ -21,8 +21,9 @@ use riotbox_core::source_graph::{
     SourceTimingProbeBeatEvidenceStatus, SourceTimingProbeBpmCandidatePolicy,
     SourceTimingProbeDownbeatEvidenceReport, SourceTimingProbeDownbeatEvidenceStatus,
     SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus, TimingWarningCode,
-    source_timing_probe_beat_evidence_report, source_timing_probe_downbeat_evidence_report,
-    source_timing_probe_readiness_report, timing_model_from_probe_bpm_candidates,
+    source_timing_grid_use, source_timing_probe_beat_evidence_report,
+    source_timing_probe_downbeat_evidence_report, source_timing_probe_readiness_report,
+    timing_model_from_probe_bpm_candidates,
 };
 use serde::Serialize;
 
@@ -173,7 +174,7 @@ impl ProbeSummary {
             cue: source_timing_readiness_cue(report.readiness, report.requires_manual_confirm),
             readiness: readiness_status_label(report.readiness),
             requires_manual_confirm: report.requires_manual_confirm,
-            grid_use: source_timing_grid_use(report),
+            grid_use: source_timing_grid_use(report).label(),
             primary_bpm: report.primary_bpm,
             primary_beat_score: beat.primary_score,
             primary_beat_matched_onset_ratio: beat.primary_matched_onset_ratio,
@@ -284,37 +285,6 @@ fn source_timing_readiness_cue(
         }
         SourceTimingProbeReadinessStatus::Unavailable => "not available",
     }
-}
-
-fn source_timing_grid_use(report: &SourceTimingProbeReadinessReport) -> &'static str {
-    if report.primary_bpm.is_none()
-        || report.readiness == SourceTimingProbeReadinessStatus::Unavailable
-    {
-        return "unavailable";
-    }
-    if report.readiness == SourceTimingProbeReadinessStatus::Ready
-        && !report.requires_manual_confirm
-    {
-        return "locked_grid";
-    }
-    if is_stable_short_loop_manual_confirm(report) {
-        return "short_loop_manual_confirm";
-    }
-    if report.requires_manual_confirm {
-        return "manual_confirm_only";
-    }
-    "fallback_grid"
-}
-
-fn is_stable_short_loop_manual_confirm(report: &SourceTimingProbeReadinessReport) -> bool {
-    report.readiness == SourceTimingProbeReadinessStatus::NeedsReview
-        && report.requires_manual_confirm
-        && report.primary_bpm.is_some()
-        && report.beat_status == SourceTimingProbeBeatEvidenceStatus::Stable
-        && report.downbeat_status == SourceTimingProbeDownbeatEvidenceStatus::Stable
-        && report.phrase_status == SourceTimingCandidatePhraseStatus::NotEnoughMaterial
-        && report.confidence_result == SourceTimingCandidateConfidenceResult::CandidateCautious
-        && report.alternate_evidence_count == 0
 }
 
 fn readiness_status_label(status: SourceTimingProbeReadinessStatus) -> &'static str {
@@ -469,14 +439,17 @@ mod tests {
     fn source_timing_grid_use_marks_short_loop_manual_confirm() {
         let report = readiness_report(SourceTimingProbeReadinessStatus::NeedsReview, true);
 
-        assert_eq!(source_timing_grid_use(&report), "short_loop_manual_confirm");
+        assert_eq!(
+            source_timing_grid_use(&report).label(),
+            "short_loop_manual_confirm"
+        );
     }
 
     #[test]
     fn source_timing_grid_use_marks_locked_grid_only_without_manual_confirm() {
         let report = readiness_report(SourceTimingProbeReadinessStatus::Ready, false);
 
-        assert_eq!(source_timing_grid_use(&report), "locked_grid");
+        assert_eq!(source_timing_grid_use(&report).label(), "locked_grid");
     }
 
     #[test]
@@ -485,7 +458,10 @@ mod tests {
         report.downbeat_status = SourceTimingProbeDownbeatEvidenceStatus::Weak;
         report.confidence_result = SourceTimingCandidateConfidenceResult::CandidateAmbiguous;
 
-        assert_eq!(source_timing_grid_use(&report), "manual_confirm_only");
+        assert_eq!(
+            source_timing_grid_use(&report).label(),
+            "manual_confirm_only"
+        );
     }
 
     #[test]
@@ -493,7 +469,7 @@ mod tests {
         let mut report = readiness_report(SourceTimingProbeReadinessStatus::Unavailable, true);
         report.primary_bpm = None;
 
-        assert_eq!(source_timing_grid_use(&report), "unavailable");
+        assert_eq!(source_timing_grid_use(&report).label(), "unavailable");
     }
 
     fn readiness_report(
