@@ -306,4 +306,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Share Source Timing grid-use policy helper
 - [RIOTBOX-777.md](./RIOTBOX-777.md)
   Add grid-use contract parity fixture matrix
+- [RIOTBOX-778.md](./RIOTBOX-778.md)
+  Surface Source Timing grid-use cue in Jam/Source summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
