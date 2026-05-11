@@ -1,0 +1,104 @@
+{
+  "sources": {
+    "Beat03_130BPM(Full).wav": {
+      "cue": "needs confirm",
+      "readiness": "needs_review",
+      "requires_manual_confirm": true,
+      "primary_bpm": {
+        "target": 130.285,
+        "tolerance": 0.5
+      },
+      "beat_status": "stable",
+      "downbeat_status": "stable",
+      "phrase_status": "not_enough_material",
+      "warning_codes_include": [
+        "phrase_uncertain"
+      ]
+    },
+    "Beat08_128BPM(Full).wav": {
+      "cue": "needs confirm",
+      "readiness": "needs_review",
+      "requires_manual_confirm": true,
+      "primary_bpm": {
+        "target": 128.397,
+        "tolerance": 0.5
+      },
+      "beat_status": "stable",
+      "downbeat_status": "stable",
+      "phrase_status": "not_enough_material",
+      "warning_codes_include": [
+        "phrase_uncertain"
+      ]
+    },
+    "Beat20_128BPM(Full).wav": {
+      "cue": "needs confirm",
+      "readiness": "weak",
+      "requires_manual_confirm": true,
+      "primary_bpm": {
+        "target": 128.397,
+        "tolerance": 0.5
+      },
+      "beat_status": "stable",
+      "downbeat_status": "weak",
+      "phrase_status": "not_enough_material",
+      "warning_codes_include": [
+        "phrase_uncertain",
+        "ambiguous_downbeat"
+      ]
+    },
+    "DH_BeatC_120-01.wav": {
+      "cue": "needs confirm",
+      "readiness": "needs_review",
+      "requires_manual_confirm": true,
+      "primary_bpm": {
+        "target": 120.185,
+        "tolerance": 0.5
+      },
+      "beat_status": "stable",
+      "downbeat_status": "stable",
+      "phrase_status": "not_enough_material",
+      "warning_codes_include": [
+        "phrase_uncertain"
+      ]
+    },
+    "DH_BeatC_KickSnr_120-01.wav": {
+      "cue": "needs confirm",
+      "readiness": "needs_review",
+      "requires_manual_confirm": true,
+      "primary_bpm": {
+        "target": 120.185,
+        "tolerance": 0.5
+      },
+      "beat_status": "stable",
+      "downbeat_status": "stable",
+      "phrase_status": "not_enough_material",
+      "warning_codes_include": [
+        "phrase_uncertain"
+      ]
+    },
+    "DH_Fadapad_120_A.wav": {
+      "cue": "needs confirm",
+      "readiness": "unavailable",
+      "requires_manual_confirm": true,
+      "beat_status": "unavailable",
+      "downbeat_status": "unavailable",
+      "phrase_status": "unavailable",
+      "warning_codes_include": [
+        "low_timing_confidence",
+        "weak_kick_anchor"
+      ]
+    },
+    "DH_RushArp_120_A.wav": {
+      "cue": "needs confirm",
+      "readiness": "unavailable",
+      "requires_manual_confirm": true,
+      "beat_status": "unavailable",
+      "downbeat_status": "unavailable",
+      "phrase_status": "unavailable",
+      "warning_codes_include": [
+        "low_timing_confidence",
+        "weak_kick_anchor"
+      ]
+    }
+  }
+}

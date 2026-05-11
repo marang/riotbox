@@ -165,6 +165,11 @@ source-timing-candidate-confidence-report:
 source-timing-example-probe-report output="artifacts/audio_qa/local/source_timing_example_probe_report.md":
     python3 scripts/source_timing_example_probe_report.py --output "{{output}}"
 
+source-timing-example-probe-report-local output="artifacts/audio_qa/local/source_timing_example_probe_report.md":
+    python3 scripts/source_timing_example_probe_report.py \
+      --expectations scripts/fixtures/source_timing_example_probe_report/local_example_expectations.json \
+      --output "{{output}}"
+
 source-timing-example-probe-report-fixtures:
     output="$(mktemp)"; \
       python3 scripts/source_timing_example_probe_report.py \
