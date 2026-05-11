@@ -284,6 +284,8 @@ user-session-observer-validator-fixtures:
 
 source-timing-probe-json-validator-fixtures:
     python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid.json
+    python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid_locked_grid.json
+    python3 scripts/validate_source_timing_locked_grid_fixture.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid_locked_grid.json
     if python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_invalid_cue.json; then echo "expected invalid source timing probe cue fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_source_timing_probe_json.py crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_invalid_groove_evidence.json; then echo "expected invalid source timing probe groove fixture to fail" >&2; exit 1; fi
 
