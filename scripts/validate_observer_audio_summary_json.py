@@ -61,6 +61,12 @@ SOURCE_TIMING_GRID_USE = {
     "fallback_grid",
     "unavailable",
 }
+SOURCE_TIMING_GRID_USE_COMPATIBILITY = {
+    "aligned",
+    "compatible",
+    "partial",
+    "mismatch",
+}
 
 
 def main() -> int:
@@ -254,8 +260,20 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
     require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
     require_optional_number(alignment, "bpm_delta")
     require_number(alignment, "bpm_tolerance")
+    observer_grid_use = require_one_of(
+        alignment, "observer_grid_use", SOURCE_TIMING_GRID_USE
+    )
+    manifest_grid_use = require_optional_one_of(
+        alignment, "manifest_grid_use", SOURCE_TIMING_GRID_USE
+    )
+    grid_use_compatibility = require_one_of(
+        alignment, "grid_use_compatibility", SOURCE_TIMING_GRID_USE_COMPATIBILITY
+    )
     require_string_list(alignment, "warning_overlap")
-    require_string_list(alignment, "issues")
+    issues = require_string_list(alignment, "issues")
+    require_source_timing_grid_use_compatibility_match(
+        observer_grid_use, manifest_grid_use, grid_use_compatibility, issues
+    )
 
 
 def require_output_grid_bpm_decision(output_path: dict[str, Any]) -> None:
@@ -602,6 +620,55 @@ def observer_source_timing_grid_use(
     ):
         return "short_loop_manual_confirm"
     return "manual_confirm_only"
+
+
+def require_source_timing_grid_use_compatibility_match(
+    observer_grid_use: str,
+    manifest_grid_use: str | None,
+    grid_use_compatibility: str,
+    issues: list[str],
+) -> None:
+    expected, should_have_issue = source_timing_grid_use_compatibility(
+        observer_grid_use, manifest_grid_use
+    )
+    if grid_use_compatibility != expected:
+        raise ValueError(
+            "source_timing_alignment.grid_use_compatibility must match "
+            f"observer/manifest grid_use: expected {expected!r}, got {grid_use_compatibility!r}"
+        )
+    has_grid_use_issue = any(
+        issue.startswith("source_timing_alignment.grid_use") for issue in issues
+    )
+    if should_have_issue and not has_grid_use_issue:
+        raise ValueError("source_timing_alignment grid-use mismatch must include an issue")
+    if not should_have_issue and has_grid_use_issue:
+        raise ValueError("source_timing_alignment grid-use issue present without mismatch")
+
+
+def source_timing_grid_use_compatibility(
+    observer_grid_use: str, manifest_grid_use: str | None
+) -> tuple[str, bool]:
+    if manifest_grid_use is None:
+        return ("partial", False)
+    if observer_grid_use == manifest_grid_use:
+        return ("aligned", False)
+    if observer_grid_use == "locked_grid":
+        return ("mismatch", True)
+    if observer_grid_use in {"unavailable", "fallback_grid"} and manifest_grid_use in {
+        "locked_grid",
+        "short_loop_manual_confirm",
+    }:
+        return ("mismatch", True)
+    if observer_grid_use in {
+        "manual_confirm_only",
+        "short_loop_manual_confirm",
+    } and manifest_grid_use in {
+        "manual_confirm_only",
+        "short_loop_manual_confirm",
+        "locked_grid",
+    }:
+        return ("compatible", False)
+    return ("partial", False)
 
 
 def require_source_timing_readiness_cue_match(

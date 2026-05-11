@@ -1,0 +1,56 @@
+{
+  "schema": "riotbox.observer_audio_summary.v1",
+  "schema_version": 1,
+  "control_path": {
+    "present": true,
+    "observer_schema": "riotbox.user_session_observer.v1",
+    "launch_mode": "ingest",
+    "audio_runtime_status": "started",
+    "key_outcomes": [
+      "space -> transport started"
+    ],
+    "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
+    "commit_count": 1,
+    "commit_boundaries": ["NextBar"],
+    "observer_source_timing": null
+  },
+  "output_path": {
+    "present": true,
+    "issues": [],
+    "pack_id": "feral-grid-demo",
+    "manifest_result": "pass",
+    "artifact_count": 6,
+    "grid_bpm_source": "user_override",
+    "grid_bpm_decision_reason": "user_override",
+    "source_timing_bpm_delta": 0.397,
+    "source_timing": null,
+    "source_timing_alignment": {
+      "status": "aligned",
+      "bpm_delta": 0.397,
+      "bpm_tolerance": 1.0,
+      "observer_grid_use": "manual_confirm_only",
+      "manifest_grid_use": "locked_grid",
+      "grid_use_compatibility": "mismatch",
+      "warning_overlap": ["phrase_uncertain"],
+      "issues": []
+    },
+    "source_timing_anchor_alignment": null,
+    "source_timing_groove_alignment": null,
+    "metrics": {
+      "full_mix_rms": 0.1843,
+      "full_mix_low_band_rms": 0.0612,
+      "mc202_question_answer_delta_rms": 0.0264,
+      "source_grid_output_drift": {
+        "hit_ratio": 1.0,
+        "max_peak_offset_ms": 1.27,
+        "max_allowed_peak_offset_ms": 70.0
+      },
+      "tr909_source_grid_alignment": null,
+      "w30_source_grid_alignment": null,
+      "w30_candidate_rms": null,
+      "w30_candidate_active_sample_ratio": null,
+      "w30_rms_delta": null
+    }
+  },
+  "needs_human_listening": true
+}

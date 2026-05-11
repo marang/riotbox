@@ -3,6 +3,9 @@ struct SourceTimingAlignmentEvidence {
     status: String,
     bpm_delta: Option<f64>,
     bpm_tolerance: f64,
+    observer_grid_use: String,
+    manifest_grid_use: Option<String>,
+    grid_use_compatibility: String,
     warning_overlap: Vec<String>,
     issues: Vec<String>,
 }
@@ -48,6 +51,10 @@ fn collect_source_timing_alignment(
         .cloned()
         .collect::<Vec<_>>();
 
+    let manifest_grid_use = manifest.grid_use.clone();
+    let (grid_use_compatibility, grid_use_issues) =
+        source_timing_grid_use_compatibility(&observer.grid_use, manifest_grid_use.as_deref());
+
     let mut issues = Vec::new();
     if let Some(delta) = bpm_delta
         && delta > SOURCE_TIMING_BPM_ALIGNMENT_TOLERANCE
@@ -60,10 +67,14 @@ fn collect_source_timing_alignment(
     {
         issues.push("source_timing_alignment.warning_codes=no_overlap".to_string());
     }
+    issues.extend(grid_use_issues);
 
     let status = if !issues.is_empty() {
         "mismatch"
-    } else if bpm_delta.is_some() || !warning_overlap.is_empty() {
+    } else if bpm_delta.is_some()
+        || !warning_overlap.is_empty()
+        || matches!(grid_use_compatibility.as_str(), "aligned" | "compatible")
+    {
         "aligned"
     } else {
         "partial"
@@ -73,9 +84,55 @@ fn collect_source_timing_alignment(
         status: status.to_string(),
         bpm_delta,
         bpm_tolerance: SOURCE_TIMING_BPM_ALIGNMENT_TOLERANCE,
+        observer_grid_use: observer.grid_use.clone(),
+        manifest_grid_use,
+        grid_use_compatibility,
         warning_overlap,
         issues,
     })
+}
+
+fn source_timing_grid_use_compatibility(
+    observer_grid_use: &str,
+    manifest_grid_use: Option<&str>,
+) -> (String, Vec<String>) {
+    let Some(manifest_grid_use) = manifest_grid_use else {
+        return ("partial".to_string(), Vec::new());
+    };
+    if observer_grid_use == manifest_grid_use {
+        return ("aligned".to_string(), Vec::new());
+    }
+
+    if observer_grid_use == "locked_grid" {
+        return (
+            "mismatch".to_string(),
+            vec![format!(
+                "source_timing_alignment.grid_use observer=locked_grid manifest={manifest_grid_use}"
+            )],
+        );
+    }
+
+    if matches!(observer_grid_use, "unavailable" | "fallback_grid")
+        && matches!(manifest_grid_use, "locked_grid" | "short_loop_manual_confirm")
+    {
+        return (
+            "mismatch".to_string(),
+            vec![format!(
+                "source_timing_alignment.grid_use observer={observer_grid_use} manifest={manifest_grid_use}"
+            )],
+        );
+    }
+
+    if matches!(observer_grid_use, "manual_confirm_only" | "short_loop_manual_confirm")
+        && matches!(
+            manifest_grid_use,
+            "manual_confirm_only" | "short_loop_manual_confirm" | "locked_grid"
+        )
+    {
+        return ("compatible".to_string(), Vec::new());
+    }
+
+    ("partial".to_string(), Vec::new())
 }
 
 fn collect_source_timing_anchor_alignment(

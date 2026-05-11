@@ -13,7 +13,11 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
     .expect("write observer");
     fs::write(
         &manifest_path,
-        manifest_with_source_timing(128.397, &["PhraseUncertain", "AmbiguousDownbeat"]),
+        manifest_with_grid_use_source_timing(
+            128.397,
+            &["PhraseUncertain", "AmbiguousDownbeat"],
+            "locked_grid",
+        ),
     )
     .expect("write manifest");
 
@@ -29,6 +33,9 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
         SOURCE_TIMING_BPM_ALIGNMENT_TOLERANCE
     );
     assert_eq!(alignment.warning_overlap, vec!["phrase_uncertain"]);
+    assert_eq!(alignment.observer_grid_use, "manual_confirm_only");
+    assert_eq!(alignment.manifest_grid_use.as_deref(), Some("locked_grid"));
+    assert_eq!(alignment.grid_use_compatibility, "compatible");
     assert!(alignment.issues.is_empty());
     let anchor_alignment = summary
         .source_timing_anchor_alignment
@@ -75,6 +82,7 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
     );
     assert!(groove_alignment.issues.is_empty());
     assert!(markdown.contains("Source timing alignment: `aligned"));
+    assert!(markdown.contains("grid_use=compatible"));
     assert!(markdown.contains("Source timing anchor alignment: `aligned"));
     assert!(markdown.contains("Source timing groove alignment: `aligned"));
     assert_eq!(
@@ -92,6 +100,18 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
     assert_eq!(
         json["output_path"]["source_timing_alignment"]["warning_overlap"][0],
         "phrase_uncertain"
+    );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["observer_grid_use"],
+        "manual_confirm_only"
+    );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["manifest_grid_use"],
+        "locked_grid"
+    );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["grid_use_compatibility"],
+        "compatible"
     );
 }
 
@@ -241,6 +261,31 @@ fn strict_evidence_rejects_locked_observer_static_output_policy() {
 }
 
 #[test]
+fn strict_evidence_rejects_locked_observer_manual_manifest_grid_use_alignment() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, locked_observer_with_source_timing(128.0)).expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_grid_use_source_timing(128.397, &["PhraseUncertain"], "manual_confirm_only"),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let alignment = summary.source_timing_alignment.as_ref().expect("alignment");
+    let error = validate_required_evidence(&summary).expect_err("grid-use alignment mismatch");
+    let markdown = render_markdown(&summary);
+
+    assert_eq!(alignment.grid_use_compatibility, "mismatch");
+    assert!(error.to_string().contains(
+        "source_timing_alignment.grid_use observer=locked_grid manifest=manual_confirm_only"
+    ));
+    assert!(markdown.contains("grid_use=mismatch"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
+#[test]
 fn strict_evidence_rejects_source_timing_grid_with_manual_only_grid_use() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -337,6 +382,20 @@ fn manifest_with_source_timing(primary_bpm: f64, warning_codes: &[&str]) -> Stri
             primary_transient_anchor_count: 2,
         },
         source_timing_groove_evidence(),
+    )
+}
+
+fn manifest_with_grid_use_source_timing(
+    primary_bpm: f64,
+    warning_codes: &[&str],
+    grid_use: &str,
+) -> String {
+    manifest_with_source_timing(primary_bpm, warning_codes).replace(
+        r#""policy_profile": "dance_loop_auto_readiness","#,
+        &format!(
+            r#""policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "{grid_use}","#
+        ),
     )
 }
 
