@@ -316,4 +316,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prove strict auto-grid and fallback Source Timing pack paths stay distinct
 - [RIOTBOX-783.md](./RIOTBOX-783.md)
   Prove manual-confirm short-loop Source Timing fixture boundary
+- [RIOTBOX-784.md](./RIOTBOX-784.md)
+  Add Source Timing example report fixtures for locked and manual-confirm rows
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
