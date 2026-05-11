@@ -41,6 +41,7 @@ struct CorrelationSummary {
 struct SourceTimingEvidence {
     source_id: String,
     policy_profile: String,
+    grid_use: Option<String>,
     readiness: String,
     requires_manual_confirm: bool,
     primary_bpm: Option<f64>,
@@ -221,6 +222,10 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
             Some(value) => value,
             None => return (None, true),
         },
+        grid_use: match optional_source_timing_string(source_timing, "grid_use") {
+            Ok(value) => value,
+            Err(()) => return (None, true),
+        },
         readiness: match source_timing_string(source_timing, "readiness") {
             Some(value) => value,
             None => return (None, true),
@@ -296,6 +301,18 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
 
 fn source_timing_string(source_timing: &Value, field: &str) -> Option<String> {
     non_empty_string(source_timing, field)
+}
+
+fn optional_source_timing_string(source_timing: &Value, field: &str) -> Result<Option<String>, ()> {
+    match source_timing.get(field) {
+        Some(value) if value.is_null() => Ok(None),
+        Some(value) => value
+            .as_str()
+            .filter(|value| !value.is_empty())
+            .map(|value| Some(value.to_string()))
+            .ok_or(()),
+        None => Ok(None),
+    }
 }
 
 fn non_empty_string(value: &Value, field: &str) -> Option<String> {
