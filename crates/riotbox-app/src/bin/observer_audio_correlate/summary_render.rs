@@ -156,6 +156,9 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "status": &alignment.status,
                 "bpm_delta": alignment.bpm_delta,
                 "bpm_tolerance": alignment.bpm_tolerance,
+                "observer_grid_use": &alignment.observer_grid_use,
+                "manifest_grid_use": &alignment.manifest_grid_use,
+                "grid_use_compatibility": &alignment.grid_use_compatibility,
                 "warning_overlap": &alignment.warning_overlap,
                 "issues": &alignment.issues,
             })),
@@ -295,10 +298,16 @@ fn format_source_timing_alignment(summary: &CorrelationSummary) -> String {
                 alignment.issues.join(",")
             };
             format!(
-                "{} bpm_delta={} tolerance={:.6} warning_overlap={} issues={}",
+                "{} bpm_delta={} tolerance={:.6} grid_use={} observer_grid_use={} manifest_grid_use={} warning_overlap={} issues={}",
                 alignment.status,
                 format_optional_f64(alignment.bpm_delta),
                 alignment.bpm_tolerance,
+                alignment.grid_use_compatibility,
+                alignment.observer_grid_use,
+                alignment
+                    .manifest_grid_use
+                    .as_deref()
+                    .unwrap_or("unknown"),
                 warnings,
                 issues
             )

@@ -693,6 +693,16 @@ bounded BPM policy:
 - strict observer/audio correlation should reject clear contradictions between
   manifest-side `grid_use` and the manifest grid BPM decision, while leaving
   explicit user BPM overrides as manual choices.
+- observer/audio correlation should also report app-observed vs manifest-side
+  grid-use compatibility under `output_path.source_timing_alignment` using
+  `observer_grid_use`, `manifest_grid_use`, and `grid_use_compatibility`. Exact
+  matches are `aligned`; conservative evidence-density differences, such as a
+  manual-confirm observer with a locked generated manifest, may be `compatible`;
+  missing manifest-side evidence remains `partial`. Strict evidence should only
+  reject clear contradictions, such as a locked observer paired with a non-locked
+  manifest grid use, or unavailable/fallback observer timing paired with locked
+  or short-loop manifest timing. This is a bounded compatibility proof, not a
+  new timing authority.
 - observer/audio correlation should also compare compact app-observed and
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`. This is a bounded consistency
