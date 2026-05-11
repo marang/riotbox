@@ -118,6 +118,9 @@ fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
         report.phrase_status,
         SourceTimingCandidatePhraseStatus::NotEnoughMaterial
     );
+    assert!(report
+        .warning_codes
+        .contains(&TimingWarningCode::PhraseUncertain));
     assert!(report.requires_manual_confirm);
     assert_eq!(
         report.readiness,
