@@ -300,4 +300,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Propagate Source Timing grid-use into Feral grid manifests
 - [RIOTBOX-774.md](./RIOTBOX-774.md)
   Propagate Source Timing grid-use into observer/audio summaries
+- [RIOTBOX-775.md](./RIOTBOX-775.md)
+  Reject observer/audio grid-use policy contradictions
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
