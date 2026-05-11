@@ -553,10 +553,26 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 
 ## 15. Next Concrete Step
 
-The immediate next execution step is:
+The immediate execution track is `P012 | Source Timing Intelligence`.
 
-1. write `Source Graph Spec`
-2. write `Session File Spec`
-3. refine `Action Lexicon Spec`
-4. refine `Validation & Benchmark Spec`
-5. begin Core Skeleton implementation against those contracts
+The old initial Core Skeleton sequence is complete enough that new work should
+not restart from spec scaffolding. Use these live references instead:
+
+- `docs/plans/source_timing_intelligence_plan.md`
+- `docs/specs/source_timing_intelligence_spec.md`
+- `docs/reviews/p012_source_timing_baseline_audit_2026-05-10.md`
+- `docs/reviews/p012_source_timing_contract_review_2026-05-08.md`
+- `docs/phase_definition_of_done.md`
+
+Near-next P012 slices should keep advancing the current source-timing spine:
+
+- improve real-source timing confidence without overstating detector maturity
+- keep Jam / Source / observer timing language aligned through the shared Jam
+  Source Timing summary
+- prove lane output against source-grid timing with concrete metrics and
+  non-collapsed audio evidence
+- keep fallback, manual-confirm, and explicit-BPM paths visible instead of
+  pretending every source is grid-locked
+
+Keep P013+ coarse until P012 timing evidence is strong enough to support deeper
+musical expansion.
