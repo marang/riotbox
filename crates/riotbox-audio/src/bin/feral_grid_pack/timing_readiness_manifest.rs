@@ -10,6 +10,7 @@ struct ManifestSourceTimingReadiness {
     policy_profile: &'static str,
     readiness: &'static str,
     requires_manual_confirm: bool,
+    grid_use: &'static str,
     primary_bpm: Option<f32>,
     bpm_agrees_with_grid: Option<bool>,
     primary_downbeat_offset_beats: Option<u8>,
@@ -112,6 +113,7 @@ fn manifest_source_timing_readiness(
         policy_profile: SOURCE_TIMING_POLICY_PROFILE.name,
         readiness: readiness_status_label(report.readiness),
         requires_manual_confirm: report.requires_manual_confirm,
+        grid_use: source_timing_grid_use(report),
         primary_bpm: report.primary_bpm,
         bpm_agrees_with_grid: source_timing_bpm_agrees(grid_bpm.source_delta_bpm),
         primary_downbeat_offset_beats: report.primary_downbeat_offset_beats,
@@ -129,6 +131,28 @@ fn manifest_source_timing_readiness(
             .map(|code| format!("{code:?}"))
             .collect(),
     }
+}
+
+fn source_timing_grid_use(report: &SourceTimingProbeReadinessReport) -> &'static str {
+    if report.primary_bpm.is_none()
+        || report.readiness == SourceTimingProbeReadinessStatus::Unavailable
+    {
+        return "unavailable";
+    }
+    if report.readiness == SourceTimingProbeReadinessStatus::Ready
+        && !report.requires_manual_confirm
+    {
+        return "locked_grid";
+    }
+    if can_use_cautious_source_timing_bpm(report)
+        && report.phrase_status == SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+    {
+        return "short_loop_manual_confirm";
+    }
+    if report.requires_manual_confirm {
+        return "manual_confirm_only";
+    }
+    "fallback_grid"
 }
 
 fn source_timing_groove_subdivision_label(subdivision: GrooveSubdivision) -> &'static str {

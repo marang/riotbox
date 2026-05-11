@@ -87,6 +87,7 @@ jq -e \
     and .grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
     and .source_timing.readiness == "needs_review"
     and .source_timing.requires_manual_confirm == true
+    and .source_timing.grid_use == "short_loop_manual_confirm"
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .metrics.tr909_groove_timing.applied == false
     and .metrics.tr909_groove_timing.reason == "source_timing_not_locked"
@@ -364,6 +365,7 @@ jq -e \
     and .grid_bpm_decision_reason == "source_timing_ready"
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == false
+    and .source_timing.grid_use == "locked_grid"
     and .source_timing.phrase_status == "stable"
     and .source_timing.anchor_evidence.primary_kick_anchor_count > 0
     and .source_timing.anchor_evidence.primary_backbeat_anchor_count > 0

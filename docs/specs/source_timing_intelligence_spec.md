@@ -617,6 +617,11 @@ bounded BPM policy:
   `source_timing_requires_manual_confirm`, `source_timing_not_ready`,
   `source_timing_missing_bpm`, and `source_timing_invalid_bpm`, so QA can tell
   whether source timing was trusted, used cautiously, or rejected
+- generated Feral grid manifests should preserve the same conservative
+  `source_timing.grid_use` classification as the probe/report surface, so
+  output-path QA can distinguish locked grids, short-loop manual-confirm grids,
+  manual-only timing, fallback grids, and unavailable timing without duplicating
+  inference logic in every downstream validator
 - Feral grid manifests must record the readiness policy profile used for this
   decision, currently `source_timing.policy_profile:
   dance_loop_auto_readiness`, so diagnostic and auto-trust policies stay
