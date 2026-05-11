@@ -169,8 +169,17 @@ source-timing-example-probe-report-fixtures:
     output="$(mktemp)"; \
       python3 scripts/source_timing_example_probe_report.py \
         --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
+        --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations.json \
         --output "$output"; \
-      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | ready | yes | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 11/4/4/3 | 4 |" "$output"; \
+      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | ready | yes | 128.397 | stable | stable | not_enough_material | phrase_uncertain | 11/4/4/3 | 4 | ok |" "$output"; \
+      if python3 scripts/source_timing_example_probe_report.py \
+        --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
+        --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations_mismatch.json \
+        --output "$output"; then \
+        echo "expected mismatched source timing example expectations to fail" >&2; \
+        exit 1; \
+      fi; \
+      grep -q "mismatch:" "$output"; \
       rm -f "$output"
 
 w30-smoke-candidate date="local" duration="2.0":

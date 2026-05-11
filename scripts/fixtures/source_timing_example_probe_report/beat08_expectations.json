@@ -1,0 +1,19 @@
+{
+  "sources": {
+    "Beat08_128BPM(Full).wav": {
+      "cue": "needs confirm",
+      "readiness": "ready",
+      "requires_manual_confirm": true,
+      "primary_bpm": {
+        "target": 128.397,
+        "tolerance": 0.01
+      },
+      "beat_status": "stable",
+      "downbeat_status": "stable",
+      "phrase_status": "not_enough_material",
+      "warning_codes_include": [
+        "phrase_uncertain"
+      ]
+    }
+  }
+}
