@@ -304,4 +304,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject observer/audio grid-use policy contradictions
 - [RIOTBOX-776.md](./RIOTBOX-776.md)
   Share Source Timing grid-use policy helper
+- [RIOTBOX-777.md](./RIOTBOX-777.md)
+  Add grid-use contract parity fixture matrix
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
