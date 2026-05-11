@@ -684,6 +684,9 @@ bounded BPM policy:
   `output_path.source_timing.grid_use` when a generated manifest provides it,
   and validators must keep it aligned with the same conservative evidence used
   by the manifest and probe surfaces.
+- strict observer/audio correlation should reject clear contradictions between
+  manifest-side `grid_use` and the manifest grid BPM decision, while leaving
+  explicit user BPM overrides as manual choices.
 - observer/audio correlation should also compare compact app-observed and
   manifest-side Source Timing anchor evidence as
   `output_path.source_timing_anchor_alignment`. This is a bounded consistency

@@ -240,6 +240,72 @@ fn strict_evidence_rejects_locked_observer_static_output_policy() {
     assert!(markdown.contains("Output path present: `no`"));
 }
 
+#[test]
+fn strict_evidence_rejects_source_timing_grid_with_manual_only_grid_use() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_with_source_timing(128.0, "phrase_uncertain"),
+    )
+    .expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_source_timing(128.397, &["PhraseUncertain"]).replace(
+            r#""policy_profile": "dance_loop_auto_readiness","#,
+            r#""policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "manual_confirm_only","#,
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("grid-use policy mismatch");
+    let markdown = render_markdown(&summary);
+
+    assert!(
+        error
+            .to_string()
+            .contains("source_timing_policy.grid_use=manual_confirm_only expected=locked_grid")
+    );
+    assert!(markdown.contains("Source timing grid use: `manual_confirm_only`"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
+#[test]
+fn strict_evidence_rejects_static_default_with_locked_grid_use() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_with_source_timing(128.0, "phrase_uncertain"),
+    )
+    .expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_static_manual_confirm_source_timing(128.0).replace(
+            r#""policy_profile": "dance_loop_auto_readiness","#,
+            r#""policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "locked_grid","#,
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("grid-use static mismatch");
+    let markdown = render_markdown(&summary);
+
+    assert!(
+        error
+            .to_string()
+            .contains("source_timing_policy.grid_use=locked_grid expected=not_locked_grid")
+    );
+    assert!(markdown.contains("Source timing grid use: `locked_grid`"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
 fn observer_with_source_timing(bpm: f64, warning_code: &str) -> String {
     format!(
         r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","beat_status":"tempo_only","beat_count":0,"downbeat_status":"unknown","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"anchor_evidence":{{"primary_anchor_count":4,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":2,"primary_transient_anchor_count":1}},"groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":12.5,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-12.5,"confidence":0.72}},{{"subdivision":"sixteenth","offset_ms":6.25,"confidence":0.61}}]}},"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,

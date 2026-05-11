@@ -212,6 +212,15 @@ manual-confirm evidence maps to `manual_confirm_only`; missing/unavailable
 source BPM maps to `unavailable`; otherwise the summary reports
 `fallback_grid`.
 
+Strict observer/audio correlation also treats clear `grid_use` / grid BPM
+decision contradictions as output-path failures. A `source_timing_ready` grid
+decision must carry `locked_grid`, a
+`source_timing_needs_review_manual_confirm` decision must carry
+`short_loop_manual_confirm`, and a `static_default` fallback must not claim
+`locked_grid` or `short_loop_manual_confirm`. Explicit user overrides remain a
+manual case and are not rejected solely because the underlying timing evidence
+has a different `grid_use`.
+
 When both observer and manifest source timing evidence are present and well
 formed, strict correlation also evaluates `source_timing_alignment`. A BPM delta
 above tolerance or non-overlapping warning evidence when both sides emit warnings
