@@ -330,4 +330,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose MC-202 lane recipe timing proof in observer/audio JSON summary
 - [RIOTBOX-789.md](./RIOTBOX-789.md)
   Add MC-202 lane recipe summary validator negative fixtures
+- [RIOTBOX-790.md](./RIOTBOX-790.md)
+  Add generated lane recipe observer/audio JSON fixture smoke
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
