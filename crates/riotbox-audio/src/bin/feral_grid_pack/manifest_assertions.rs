@@ -188,6 +188,20 @@ mod manifest_assertions {
                     .as_f64()
                     .expect("w30 trigger quantized offset budget")
         );
+        let w30_slice_choice = &manifest["metrics"]["w30_source_slice_choice"];
+        assert_eq!(w30_slice_choice["applied"], true);
+        assert!(
+            w30_slice_choice["unique_source_offset_count"]
+                .as_u64()
+                .expect("w30 slice choice unique offsets")
+                >= 4
+        );
+        assert!(
+            w30_slice_choice["selected_offset_span_samples"]
+                .as_u64()
+                .expect("w30 slice choice span")
+                > 0
+        );
         let w30_loop_closure = &manifest["metrics"]["w30_source_loop_closure"];
         assert_eq!(w30_loop_closure["passed"], true);
         assert!(

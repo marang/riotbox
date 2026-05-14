@@ -240,9 +240,11 @@ fn manifest_w30_source_trigger_variation_proof(
     }
 }
 
-fn w30_source_trigger_events(grid: &Grid, preview: &W30PreviewSampleWindow) -> Vec<W30SourceTriggerEvent> {
+fn w30_source_trigger_events_with_slice_plan(
+    grid: &Grid,
+    slice_plan: &W30SourceSliceChoicePlan,
+) -> Vec<W30SourceTriggerEvent> {
     let mut events = Vec::with_capacity(grid.total_beats as usize + grid.bars as usize);
-    let sample_stride = (preview.sample_count / 8).max(1);
 
     for bar in 0..grid.bars {
         let bar_start = bar.saturating_mul(grid.beats_per_bar) as f32;
@@ -258,7 +260,7 @@ fn w30_source_trigger_events(grid: &Grid, preview: &W30PreviewSampleWindow) -> V
             events.push(W30SourceTriggerEvent {
                 beat_position: bar_start + beat_offset,
                 velocity: *velocity,
-                source_offset_samples: source_stride.saturating_mul(sample_stride),
+                source_offset_samples: slice_plan.offset_for_stride(*source_stride),
             });
         }
     }

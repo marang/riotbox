@@ -23,6 +23,7 @@ MIN_EVENT_DENSITY = 40.0
 MAX_EVENT_DENSITY = 650.0
 MIN_W30_OFFBEAT_TRIGGERS = 1
 MIN_W30_DISTINCT_BAR_PATTERNS = 2
+MIN_W30_UNIQUE_SLICE_OFFSETS = 4
 
 
 @dataclass(frozen=True)
@@ -70,6 +71,7 @@ def main() -> int:
             "max_event_density_per_bar": MAX_EVENT_DENSITY,
             "min_w30_offbeat_trigger_count": MIN_W30_OFFBEAT_TRIGGERS,
             "min_w30_distinct_bar_pattern_count": MIN_W30_DISTINCT_BAR_PATTERNS,
+            "min_w30_unique_slice_offset_count": MIN_W30_UNIQUE_SLICE_OFFSETS,
         },
     }
 
@@ -122,6 +124,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     full = metrics["full_grid_mix"]
     source_timing = manifest["source_timing"]
     w30_variation = metrics.get("w30_source_trigger_variation", {})
+    w30_slice_choice = metrics.get("w30_source_slice_choice", {})
     return {
         "full_rms": number(full["signal"]["rms"]),
         "low_band_rms": number(full["low_band"]["rms"]),
@@ -141,6 +144,13 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         ),
         "w30_max_quantized_offset_ms": number(
             w30_variation.get("max_quantized_offset_ms", 999.0)
+        ),
+        "w30_slice_choice_applied": bool(w30_slice_choice.get("applied", False)),
+        "w30_unique_slice_offset_count": int(
+            w30_slice_choice.get("unique_source_offset_count", 0)
+        ),
+        "w30_slice_offset_span_samples": int(
+            w30_slice_choice.get("selected_offset_span_samples", 0)
         ),
         "source_anchor_count": int(source_timing["anchor_evidence"]["primary_anchor_count"]),
         "tr909_reason": metrics["tr909_source_profile"]["reason"],
@@ -176,6 +186,14 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             metrics["w30_distinct_bar_pattern_count"] >= MIN_W30_DISTINCT_BAR_PATTERNS,
             "w30_trigger_variation_too_static",
         ),
+        (
+            metrics["w30_slice_choice_applied"],
+            "w30_slice_choice_not_applied",
+        ),
+        (
+            metrics["w30_unique_slice_offset_count"] >= MIN_W30_UNIQUE_SLICE_OFFSETS,
+            "w30_slice_choice_too_static",
+        ),
         (metrics["source_anchor_count"] >= MIN_ANCHORS, "missing_source_anchor_evidence"),
         (metrics["bar_similarity"] <= MAX_BAR_SIMILARITY, "full_mix_too_static"),
         (
@@ -192,11 +210,12 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
     chop = clamp(metrics["w30_preview_rms"] / 0.24, 0.0, 1.3)
     trigger_variation = clamp(metrics["w30_offbeat_trigger_count"] / 4.0, 0.0, 1.0)
     pattern_variation = clamp(metrics["w30_distinct_bar_pattern_count"] / 4.0, 0.0, 1.0)
+    slice_variation = clamp(metrics["w30_unique_slice_offset_count"] / 6.0, 0.0, 1.0)
     movement = clamp((1.0 - metrics["bar_similarity"]) / 0.020, 0.0, 1.0)
     density = clamp(metrics["event_density_per_bar"] / 280.0, 0.0, 1.2)
     anchors = clamp(metrics["source_anchor_count"] / 8.0, 0.0, 1.0)
     penalty = len(issues) * 0.35
-    return support + low + chop + trigger_variation + pattern_variation + movement + density + anchors - penalty
+    return support + low + chop + trigger_variation + pattern_variation + slice_variation + movement + density + anchors - penalty
 
 
 def candidate_record(candidate: Candidate) -> dict[str, Any]:
@@ -232,6 +251,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It requires generated TR-909 support to be audible rather than decorative.",
         "- It requires W-30 source-chop energy, low-end support, source-anchor evidence, and non-static bar movement.",
         "- It requires W-30 trigger variation to be applied rather than relying on a static repeated chop.",
+        "- It requires W-30 slice-choice variation so repeated triggers do not keep reading the same source offset.",
         "- It remains a review gate, not an automatic taste oracle.",
         "",
         "## Selected Metrics",

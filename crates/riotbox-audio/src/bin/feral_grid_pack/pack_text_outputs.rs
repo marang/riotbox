@@ -27,6 +27,7 @@ fn write_report(
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - W-30 source-loop closure: `{}` edge delta `{:.6}` (max `{:.6}`), edge abs `{:.6}` (max `{:.6}`)\n\
              - W-30 trigger variation: `{}` triggers `{}` beat anchors `{}` offbeats `{}` skipped beat anchors `{}` distinct bar patterns `{}` max quantized offset `{:.6}` ms\n\
+             - W-30 slice choice: `{}` unique offsets `{}` span `{}` samples min `{}` max `{}`\n\
              - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
@@ -75,6 +76,11 @@ fn write_report(
             report.w30_source_trigger_variation.skipped_beat_anchor_count,
             report.w30_source_trigger_variation.distinct_bar_pattern_count,
             report.w30_source_trigger_variation.max_quantized_offset_ms,
+            report.w30_source_slice_choice.reason,
+            report.w30_source_slice_choice.unique_source_offset_count,
+            report.w30_source_slice_choice.selected_offset_span_samples,
+            report.w30_source_slice_choice.min_selected_offset_samples,
+            report.w30_source_slice_choice.max_selected_offset_samples,
             report.source_first_generated_to_source_rms_ratio,
             report.support_generated_to_source_rms_ratio,
             report.full_mix.low_band.rms,

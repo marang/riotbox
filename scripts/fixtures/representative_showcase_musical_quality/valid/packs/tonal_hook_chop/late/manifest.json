@@ -27,6 +27,11 @@
       "distinct_bar_pattern_count": 4,
       "max_quantized_offset_ms": 0.0
     },
+    "w30_source_slice_choice": {
+      "applied": true,
+      "unique_source_offset_count": 6,
+      "selected_offset_span_samples": 1536
+    },
     "tr909_source_profile": {
       "reason": "source_low_drive"
     }
