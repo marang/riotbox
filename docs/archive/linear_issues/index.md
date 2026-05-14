@@ -328,4 +328,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Source Timing readiness fixture for long stable lock candidate
 - [RIOTBOX-788.md](./RIOTBOX-788.md)
   Expose MC-202 lane recipe timing proof in observer/audio JSON summary
+- [RIOTBOX-789.md](./RIOTBOX-789.md)
+  Add MC-202 lane recipe summary validator negative fixtures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
