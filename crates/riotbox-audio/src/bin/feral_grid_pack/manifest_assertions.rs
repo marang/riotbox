@@ -165,6 +165,29 @@ mod manifest_assertions {
                 .expect("w30 source chop gain")
                 >= 0.85
         );
+        let w30_trigger_variation = &manifest["metrics"]["w30_source_trigger_variation"];
+        assert_eq!(w30_trigger_variation["applied"], true);
+        assert_eq!(w30_trigger_variation["grid_subdivision"], 2);
+        assert!(
+            w30_trigger_variation["offbeat_trigger_count"]
+                .as_u64()
+                .expect("w30 trigger variation offbeats")
+                > 0
+        );
+        assert!(
+            w30_trigger_variation["distinct_bar_pattern_count"]
+                .as_u64()
+                .expect("w30 trigger variation pattern count")
+                >= 2
+        );
+        assert!(
+            w30_trigger_variation["max_quantized_offset_ms"]
+                .as_f64()
+                .expect("w30 trigger quantized offset")
+                <= w30_trigger_variation["max_allowed_quantized_offset_ms"]
+                    .as_f64()
+                    .expect("w30 trigger quantized offset budget")
+        );
         let w30_loop_closure = &manifest["metrics"]["w30_source_loop_closure"];
         assert_eq!(w30_loop_closure["passed"], true);
         assert!(

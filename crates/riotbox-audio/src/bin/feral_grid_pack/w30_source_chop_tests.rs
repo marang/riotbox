@@ -104,6 +104,40 @@ mod w30_source_chop_tests {
     }
 
     #[test]
+    fn w30_source_chop_trigger_variation_adds_offbeats_without_grid_drift() {
+        let grid = Grid::new(128.0, 4, 4).expect("grid");
+        let pulse_source = delayed_pulse_source(frames_for_beats(128.0, 16), 0, 0.01, 0.65);
+        let pulse_preview = source_chop_preview_from_interleaved(
+            &pulse_source,
+            usize::from(CHANNEL_COUNT),
+            0,
+            frames_for_beats(128.0, 16) as u64,
+        )
+        .expect("pulse preview")
+        .0;
+
+        let (varied_render, proof) = render_w30_source_chop_with_variation(&grid, &pulse_preview);
+        let legacy_render = render_w30_source_chop_legacy(&grid, pulse_preview);
+        let varied_alignment = source_grid_output_drift_metrics(&varied_render, &grid);
+        let legacy_bars = bar_variation_metrics(&legacy_render, &grid);
+        let varied_bars = bar_variation_metrics(&varied_render, &grid);
+
+        assert!(proof.applied, "{proof:?}");
+        assert_eq!(proof.grid_subdivision, W30_SOURCE_TRIGGER_GRID_SUBDIVISION);
+        assert!(proof.offbeat_trigger_count > 0);
+        assert!(proof.distinct_bar_pattern_count >= 2);
+        assert!(proof.max_quantized_offset_ms <= proof.max_allowed_quantized_offset_ms);
+        assert!(
+            varied_alignment.hit_ratio >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
+            "{varied_alignment:?}"
+        );
+        assert!(
+            varied_bars.bar_similarity < legacy_bars.bar_similarity,
+            "varied bars {varied_bars:?} should be less static than legacy {legacy_bars:?}"
+        );
+    }
+
+    #[test]
     fn w30_source_loop_closure_proves_repeat_safe_faded_chop_window() {
         let pulse_source = delayed_pulse_source(frames_for_beats(128.0, 8), 1_200, 0.02, 0.55);
         let (preview, profile) = source_chop_preview_from_interleaved(

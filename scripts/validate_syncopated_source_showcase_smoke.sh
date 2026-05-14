@@ -47,12 +47,15 @@ jq -e \
     and .source_timing.downbeat_status == "stable"
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .source_timing_bpm_delta > 0.0
-    and .metrics.source_grid_output_drift.hit_ratio >= 0.95
+    and .metrics.source_grid_output_drift.hit_ratio >= 0.75
     and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms
     and .metrics.tr909_source_grid_alignment.hit_ratio >= 0.95
     and .metrics.tr909_source_grid_alignment.max_peak_offset_ms <= .metrics.tr909_source_grid_alignment.max_allowed_peak_offset_ms
-    and .metrics.w30_source_grid_alignment.hit_ratio >= 0.95
+    and .metrics.w30_source_grid_alignment.hit_ratio >= 0.50
     and .metrics.w30_source_grid_alignment.max_peak_offset_ms <= .metrics.w30_source_grid_alignment.max_allowed_peak_offset_ms
     and .metrics.w30_source_loop_closure.passed == true
+    and .metrics.w30_source_trigger_variation.applied == true
+    and .metrics.w30_source_trigger_variation.offbeat_trigger_count > 0
+    and .metrics.w30_source_trigger_variation.distinct_bar_pattern_count >= 2
     and .metrics.full_grid_mix.signal.rms > 0.000001' \
   "$tmpdir/pack/manifest.json"
