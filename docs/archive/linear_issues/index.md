@@ -350,4 +350,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate SourceGraphRef hash on session restore
 - [RIOTBOX-800.md](./RIOTBOX-800.md)
   Add explicit source graph path hash restore regression
+- [RIOTBOX-799.md](./RIOTBOX-799.md)
+  Turn representative source showcase from technical proof into musically convincing demo
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
