@@ -356,4 +356,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add musical-quality validator fixture coverage
 - [RIOTBOX-802.md](./RIOTBOX-802.md)
   Improve W-30 chop articulation for musical showcase candidates
+- [RIOTBOX-803.md](./RIOTBOX-803.md)
+  Add W-30 source-chop trigger variation for showcase candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
