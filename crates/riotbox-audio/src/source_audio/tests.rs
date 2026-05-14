@@ -49,6 +49,42 @@ mod tests {
     }
 
     #[test]
+    fn builds_cache_from_interleaved_samples_without_disk_roundtrip() {
+        let cache = SourceAudioCache::from_interleaved_samples(
+            "generated.wav",
+            1_000,
+            2,
+            vec![0.25, -0.25, 0.50, -0.50],
+        )
+        .expect("cache");
+
+        assert_eq!(cache.path, Path::new("generated.wav"));
+        assert_eq!(cache.sample_rate, 1_000);
+        assert_eq!(cache.channel_count, 2);
+        assert_eq!(cache.frame_count(), 2);
+        assert_eq!(cache.duration_seconds(), 0.002);
+        assert_eq!(cache.interleaved_samples(), &[0.25, -0.25, 0.50, -0.50]);
+    }
+
+    #[test]
+    fn rejects_malformed_interleaved_cache_samples() {
+        let error = SourceAudioCache::from_interleaved_samples(
+            "bad.wav",
+            1_000,
+            2,
+            vec![0.0, 1.0, 0.5],
+        )
+        .expect_err("malformed interleaved samples should fail");
+
+        assert_eq!(
+            error,
+            SourceAudioError::InvalidWave(
+                "interleaved sample count must be divisible by channel count".into()
+            )
+        );
+    }
+
+    #[test]
     fn returns_bounded_sample_window_by_seconds() {
         let tempdir = tempdir().expect("create tempdir");
         let path = tempdir.path().join("source.wav");

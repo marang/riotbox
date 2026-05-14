@@ -26,6 +26,36 @@ pub enum SourceAudioError {
 }
 
 impl SourceAudioCache {
+    pub fn from_interleaved_samples(
+        path: impl Into<PathBuf>,
+        sample_rate: u32,
+        channel_count: u16,
+        samples: Vec<f32>,
+    ) -> Result<Self, SourceAudioError> {
+        if sample_rate == 0 {
+            return Err(SourceAudioError::UnsupportedWave(
+                "sample rate must be greater than zero".into(),
+            ));
+        }
+        if channel_count == 0 {
+            return Err(SourceAudioError::UnsupportedWave(
+                "channel count must be greater than zero".into(),
+            ));
+        }
+        if !samples.len().is_multiple_of(usize::from(channel_count)) {
+            return Err(SourceAudioError::InvalidWave(
+                "interleaved sample count must be divisible by channel count".into(),
+            ));
+        }
+
+        Ok(Self {
+            path: path.into(),
+            sample_rate,
+            channel_count,
+            samples,
+        })
+    }
+
     pub fn load_pcm_wav(path: impl AsRef<Path>) -> Result<Self, SourceAudioError> {
         let path = path.as_ref();
         let bytes = fs::read(path).map_err(|error| SourceAudioError::Io(error.to_string()))?;
@@ -349,4 +379,3 @@ fn read_u32_le(bytes: &[u8], offset: usize) -> Result<u32, SourceAudioError> {
         .ok_or_else(|| SourceAudioError::InvalidWave("unexpected end of chunk".into()))?;
     Ok(u32::from_le_bytes([slice[0], slice[1], slice[2], slice[3]]))
 }
-

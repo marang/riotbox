@@ -86,7 +86,7 @@ mod mc202_phrase_grid_consumer_tests {
         assert!(
             primary
                 .provenance
-                .contains(&"lane-recipe-pack.generated-source-phrase-grid.v1".to_string())
+                .contains(&"lane-recipe-pack.generated-source-audio-phrase-grid.v1".to_string())
         );
         assert_eq!(source_timing.phrase_grid.len(), 3);
         assert_eq!(source_timing.phrase_grid[2].start_bar, 9);
