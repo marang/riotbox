@@ -45,6 +45,54 @@ fn rejects_session_with_mismatched_single_source_and_graph_refs() {
 }
 
 #[test]
+fn rejects_session_with_embedded_source_graph_hash_mismatch() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.source_graph_refs[0].graph_hash = "sha256:not-the-embedded-graph".into();
+    save_session_json(&session_path, &session).expect("save hash-mismatched session fixture");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("hash mismatch"));
+            assert!(message.contains("sha256:not-the-embedded-graph"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
+fn rejects_session_with_external_source_graph_hash_mismatch() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph_path = dir.path().join("source-graph.json");
+    let graph = sample_graph();
+    save_source_graph_json(&graph_path, &graph).expect("save external source graph fixture");
+    let mut session = sample_session(&graph);
+    let graph_ref = &mut session.source_graph_refs[0];
+    graph_ref.storage_mode = GraphStorageMode::External;
+    graph_ref.embedded_graph = None;
+    graph_ref.external_path = Some(graph_path.to_string_lossy().into_owned());
+    graph_ref.graph_hash = "sha256:not-the-external-graph".into();
+    save_session_json(&session_path, &session).expect("save external hash mismatch fixture");
+
+    let error =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect_err("load should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("hash mismatch"));
+            assert!(message.contains("sha256:not-the-external-graph"));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn rejects_session_with_snapshot_cursor_beyond_action_log() {
     let dir = tempdir().expect("create temp dir");
     let session_path = dir.path().join("jam-session.json");

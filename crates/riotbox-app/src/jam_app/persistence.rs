@@ -82,7 +82,7 @@ impl JamAppState {
                 &mut session_to_save,
                 self.source_graph.as_ref(),
                 files.source_graph_path.as_deref(),
-            );
+            )?;
             save_session_json(&files.session_path, &session_to_save)?;
 
             if let Some(source_graph) = &self.source_graph
@@ -104,26 +104,46 @@ fn resolve_source_graph(
     explicit_source_graph_path: Option<&Path>,
 ) -> Result<Option<SourceGraph>, JamAppError> {
     if let Some(path) = explicit_source_graph_path {
-        return Ok(Some(load_source_graph_json(path)?));
+        let graph = load_source_graph_json(path)?;
+        if let Some(graph_ref) = session.source_graph_refs.first() {
+            validate_source_graph_hash(graph_ref, &graph)?;
+        }
+        return Ok(Some(graph));
     }
 
     let Some(graph_ref) = session.source_graph_refs.first() else {
         return Ok(None);
     };
 
-    match graph_ref.storage_mode {
-        GraphStorageMode::Embedded => graph_ref.embedded_graph.clone().map(Some).ok_or_else(|| {
+    let graph = match graph_ref.storage_mode {
+        GraphStorageMode::Embedded => graph_ref.embedded_graph.clone().ok_or_else(|| {
             JamAppError::InvalidSession(
                 "source graph ref is embedded but embedded_graph is missing".into(),
             )
         }),
         GraphStorageMode::External => match graph_ref.external_path.as_deref() {
-            Some(path) => Ok(Some(load_source_graph_json(path)?)),
+            Some(path) => Ok(load_source_graph_json(path)?),
             None => Err(JamAppError::InvalidSession(
                 "source graph ref is external but external_path is missing".into(),
             )),
         },
+    }?;
+    validate_source_graph_hash(graph_ref, &graph)?;
+    Ok(Some(graph))
+}
+
+fn validate_source_graph_hash(
+    graph_ref: &SourceGraphRef,
+    graph: &SourceGraph,
+) -> Result<(), JamAppError> {
+    let actual_hash = source_graph_hash(graph)?;
+    if graph_ref.graph_hash != actual_hash {
+        return Err(JamAppError::InvalidSession(format!(
+            "source graph ref {} hash mismatch: session has {}, loaded graph has {}",
+            graph_ref.source_id, graph_ref.graph_hash, actual_hash
+        )));
     }
+    Ok(())
 }
 
 fn validate_mvp_session_restore_contracts(session: &SessionFile) -> Result<(), JamAppError> {
@@ -268,8 +288,11 @@ fn sync_graph_refs_with_state(
     session: &mut SessionFile,
     source_graph: Option<&SourceGraph>,
     explicit_source_graph_path: Option<&Path>,
-) {
+) -> Result<(), JamAppError> {
     for graph_ref in &mut session.source_graph_refs {
+        if let Some(source_graph) = source_graph {
+            graph_ref.graph_hash = source_graph_hash(source_graph)?;
+        }
         match graph_ref.storage_mode {
             GraphStorageMode::Embedded => {
                 graph_ref.embedded_graph = source_graph.cloned();
@@ -281,6 +304,7 @@ fn sync_graph_refs_with_state(
             }
         }
     }
+    Ok(())
 }
 
 fn resolve_external_graph_path<'a>(
@@ -342,7 +366,7 @@ fn session_from_ingested_graph(
     Ok(session)
 }
 
-fn source_graph_hash(graph: &SourceGraph) -> Result<String, JamAppError> {
+pub(in crate::jam_app) fn source_graph_hash(graph: &SourceGraph) -> Result<String, JamAppError> {
     let encoded = serde_json::to_vec(graph)?;
     Ok(format!("sha256:{:x}", Sha256::digest(encoded)))
 }

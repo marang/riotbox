@@ -85,6 +85,12 @@ fn save_persists_embedded_graph_into_session_file() {
     let mut state =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
     state.session.notes = Some("updated embedded session".into());
+    state
+        .source_graph
+        .as_mut()
+        .expect("source graph")
+        .source
+        .duration_seconds = 121.0;
     state.save().expect("save app state");
 
     let persisted_session = load_session_json(&session_path).expect("reload session");
@@ -97,7 +103,14 @@ fn save_persists_embedded_graph_into_session_file() {
         persisted_session.notes.as_deref(),
         Some("updated embedded session")
     );
-    assert_eq!(persisted_graph, graph);
+    assert_eq!(persisted_graph.source.duration_seconds, 121.0);
+    assert_eq!(
+        persisted_session.source_graph_refs[0].graph_hash,
+        crate::jam_app::persistence::source_graph_hash(&persisted_graph)
+            .expect("hash persisted graph")
+    );
+    JamAppState::from_json_files(&session_path, None::<&Path>)
+        .expect("reload with refreshed source graph hash");
 }
 
 #[test]
