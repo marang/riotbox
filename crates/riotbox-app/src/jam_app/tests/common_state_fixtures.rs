@@ -144,7 +144,7 @@ fn sample_session(graph: &SourceGraph) -> SessionFile {
     session.source_graph_refs.push(SourceGraphRef {
         source_id: SourceId::from("src-1"),
         graph_version: SourceGraphVersion::V1,
-        graph_hash: "graph-hash-1".into(),
+        graph_hash: crate::jam_app::persistence::source_graph_hash(graph).expect("hash sample graph"),
         storage_mode: GraphStorageMode::Embedded,
         embedded_graph: Some(graph.clone()),
         external_path: None,
