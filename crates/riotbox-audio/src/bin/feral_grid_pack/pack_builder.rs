@@ -413,6 +413,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
 
     let tr909_source_grid_alignment = source_grid_output_drift_metrics(&tr909, &grid);
     let w30_source_grid_alignment = source_grid_output_drift_metrics(&w30, &grid);
+    let source_grid_output_drift = source_grid_output_drift_metrics(&full_mix, &grid);
     let report = PackReport {
         tr909_source_profile,
         tr909_groove_timing,
@@ -424,7 +425,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         full_mix: render_metrics(&full_mix, &grid),
         tr909_source_grid_alignment,
         w30_source_grid_alignment,
-        source_grid_output_drift: tr909_source_grid_alignment,
+        source_grid_output_drift,
         source_first_generated_to_source_rms_ratio:
             source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid),
         support_generated_to_source_rms_ratio: support_generated_to_source_rms_ratio(
