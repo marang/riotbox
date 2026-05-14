@@ -169,6 +169,8 @@ def validate_source_timing(value: Any) -> None:
     warning_codes = require_list(source_timing, "warning_codes")
     if any(not isinstance(code, str) or not code for code in warning_codes):
         raise TypeError("source_timing.warning_codes must contain non-empty strings")
+    if degraded_policy == "locked" and (warning is not None or warning_codes):
+        raise ValueError("locked source_timing must not carry warning evidence")
     require_source_timing_grid_use_match(
         grid_use,
         degraded_policy,
