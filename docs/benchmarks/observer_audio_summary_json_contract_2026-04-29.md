@@ -94,6 +94,9 @@ The `output_path` object should include:
 - `source_timing_groove_alignment`: `null` or compact evidence comparing
   observer-side primary groove residual evidence with manifest-side primary
   groove residual evidence.
+- `lane_recipe_cases`: array of compact lane recipe case evidence. It is
+  required for every summary and may be empty when the correlated pack is not a
+  lane recipe pack.
 - `metrics`: object containing every currently required output metric field; values may be numbers or `null` when evidence is missing.
 
 When non-null, `source_timing` should include:
@@ -235,6 +238,42 @@ Comparable residual presence with no issues sets `status: aligned`; missing or
 non-comparable evidence sets `status: partial`; clear contradictions set
 `status: mismatch` and add output-path issues.
 
+The `lane_recipe_cases` array exposes pack-specific lane recipe proof that used
+to live only inside the manifest pass/fail decision. Each item should include:
+
+- `id`: stable case id from the generated lane recipe pack.
+- `result`: pack verdict such as `pass` or `fail`.
+- `candidate_rms`: candidate output energy, or `null` when unavailable.
+- `signal_delta_rms`: candidate/control signal delta, or `null` when
+  unavailable.
+- `min_signal_delta_rms`: case-specific minimum signal delta, or `null` when
+  unavailable.
+- `mc202_phrase_grid_malformed`: boolean validator diagnostic.
+- `mc202_source_phrase_slot_malformed`: boolean validator diagnostic.
+- `mc202_phrase_grid`: `null` or compact MC-202 phrase-grid evidence with
+  `hit_ratio`, phrase-boundary, onset-count, onset-offset, and `passed` fields.
+- `mc202_source_phrase_slot`: `null` or compact Source Graph phrase-slot
+  evidence with phrase-grid availability, selected phrase index,
+  source-boundary, and `passed` fields.
+
+For the generated Recipe 2 MC-202 observer/audio gate, the summary must expose
+at least these MC-202 case ids:
+
+- `mc202-follower-to-answer`
+- `mc202-touch-low-to-high`
+- `mc202-follower-to-pressure`
+- `mc202-follower-to-instigator`
+- `mc202-follower-to-mutated-drive`
+- `mc202-neutral-to-lift-contour`
+- `mc202-direct-to-hook-response`
+
+For those generated MC-202 cases, strict Recipe 2 correlation requires passing
+case results, non-collapsed candidate RMS, signal delta at or above the
+case-specific minimum, passing phrase-grid evidence, and passing Source Graph
+phrase-slot evidence. This proves the visible summary agrees with the generated
+lane recipe manifest; it is still a bounded fixture proof, not a claim that
+arbitrary-source MC-202 phrase arrangement is complete.
+
 ## Compatibility Rule
 
 Do not bump `schema_version` for additive fields that do not change the meaning of existing fields.
@@ -275,10 +314,11 @@ The committed fixture JSON smoke currently requires:
 - `output_path.source_timing_alignment` is present as an object or `null`
 - `output_path.source_timing_anchor_alignment` is present as an object or `null`
 - `output_path.source_timing_groove_alignment` is present as an object or `null`
+- `output_path.lane_recipe_cases` is present as an array
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
-- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, rejected grid BPM decision mismatches, rejected BPM-delta contradictions, and rejected Source Timing shape/cue mismatches
+- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, rejected grid BPM decision mismatches, rejected BPM-delta contradictions, rejected Source Timing shape/cue mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source
