@@ -1,0 +1,35 @@
+{
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.020,
+        "event_density_per_bar": 180.0
+      },
+      "low_band": {
+        "rms": 0.012
+      }
+    },
+    "bar_variation": {
+      "full_grid_mix": {
+        "bar_similarity": 0.980
+      }
+    },
+    "mix_balance": {
+      "support_generated_to_source_rms_ratio": 0.060,
+      "source_first_generated_to_source_rms_ratio": 0.040
+    },
+    "w30_source_chop_profile": {
+      "preview_rms": 0.160
+    },
+    "tr909_source_profile": {
+      "reason": "source_break_lift"
+    }
+  },
+  "source_timing": {
+    "readiness": "needs_review",
+    "grid_use": "manual_confirm_only",
+    "anchor_evidence": {
+      "primary_anchor_count": 3
+    }
+  }
+}

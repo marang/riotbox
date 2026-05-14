@@ -56,6 +56,7 @@ audio-qa-ci:
     just listening-manifest-validator-fixtures
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
+    just representative-source-showcase-musical-quality-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -352,6 +353,10 @@ representative-source-showcase output="artifacts/audio_qa/local-representative-s
 
 representative-source-showcase-musical-quality showcase="artifacts/audio_qa/local-representative-source-showcase":
     python3 scripts/validate_representative_showcase_musical_quality.py --json-output "{{showcase}}/validation/musical-quality.json" --markdown-output "{{showcase}}/validation/musical-quality.md" "{{showcase}}"
+
+representative-source-showcase-musical-quality-fixtures:
+    tmp="$(mktemp -d)" && python3 scripts/validate_representative_showcase_musical_quality.py --json-output "$tmp/musical-quality.json" --markdown-output "$tmp/musical-quality.md" scripts/fixtures/representative_showcase_musical_quality/valid && jq -e '.schema == "riotbox.representative_showcase_musical_quality.v1" and .result == "pass" and .selected_candidate.listening_verdict == "musically_convincing_candidate" and .selected_candidate.case_id == "tonal_hook_chop" and .passing_candidate_count == 1' "$tmp/musical-quality.json" && grep -q "musically_convincing_candidate" "$tmp/musical-quality.md" && rm -rf "$tmp"
+    tmp="$(mktemp -d)" && if python3 scripts/validate_representative_showcase_musical_quality.py scripts/fixtures/representative_showcase_musical_quality/invalid >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected musical-quality invalid fixture to fail" >&2; exit 1; fi && grep -q "generated_support_balance_out_of_range" "$tmp/invalid.out" && rm -rf "$tmp"
 
 syncopated-source-showcase-smoke:
     scripts/validate_syncopated_source_showcase_smoke.sh
