@@ -320,4 +320,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Source Timing example report fixtures for locked and manual-confirm rows
 - [RIOTBOX-785.md](./RIOTBOX-785.md)
   Add app observer Source Timing fixture for locked-grid summary path
+- [RIOTBOX-786.md](./RIOTBOX-786.md)
+  Add invalid observer fixture for locked-grid Source Timing contradictions
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
