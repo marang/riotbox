@@ -354,4 +354,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Turn representative source showcase from technical proof into musically convincing demo
 - [RIOTBOX-801.md](./RIOTBOX-801.md)
   Add musical-quality validator fixture coverage
+- [RIOTBOX-802.md](./RIOTBOX-802.md)
+  Improve W-30 chop articulation for musical showcase candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
