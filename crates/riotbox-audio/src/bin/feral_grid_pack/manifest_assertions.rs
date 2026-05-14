@@ -154,6 +154,12 @@ mod manifest_assertions {
                 > 0.0
         );
         assert!(
+            manifest["metrics"]["w30_source_chop_profile"]["tail_to_body_rms_ratio"]
+                .as_f64()
+                .expect("w30 source chop tail/body ratio")
+                >= 0.0
+        );
+        assert!(
             manifest["metrics"]["w30_source_chop_profile"]["gain"]
                 .as_f64()
                 .expect("w30 source chop gain")

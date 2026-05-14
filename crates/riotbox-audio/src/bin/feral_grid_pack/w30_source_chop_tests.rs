@@ -18,6 +18,25 @@ mod w30_source_chop_tests {
     }
 
     #[test]
+    fn source_chop_preview_shapes_tail_into_a_chop_instead_of_a_flat_loop() {
+        let samples = tone_source(180.0, 5_000, 0.22);
+        let (preview, profile) =
+            source_chop_preview_from_interleaved(&samples, usize::from(CHANNEL_COUNT), 0, 5_000)
+                .expect("preview");
+
+        let preview = &preview.samples[..preview.sample_count];
+        let body_rms = rms(&preview[256..512]);
+        let tail_rms = rms(&preview[preview.len() - 384..preview.len() - 128]);
+
+        assert!(profile.preview_rms > MIN_SIGNAL_RMS);
+        assert!(
+            tail_rms < body_rms * 0.70,
+            "tail {tail_rms} should decay below body {body_rms}"
+        );
+        assert!(profile.tail_to_body_rms_ratio < 0.70, "{profile:?}");
+    }
+
+    #[test]
     fn w30_source_chop_render_differs_from_control_and_other_source() {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let low_source = tone_source(90.0, frames_for_beats(128.0, 8), 0.12);
@@ -120,6 +139,9 @@ mod w30_source_chop_tests {
             selected_rms_before_gain: 0.2,
             preview_rms: 0.2,
             preview_peak_abs: 0.5,
+            body_rms: 0.2,
+            tail_rms: 0.2,
+            tail_to_body_rms_ratio: 1.0,
             selected_start_frame: 0,
             selected_frame_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
             gain: 1.0,
