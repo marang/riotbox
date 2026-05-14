@@ -4,6 +4,9 @@ struct W30SourceChopProfile {
     selected_rms_before_gain: f32,
     preview_rms: f32,
     preview_peak_abs: f32,
+    body_rms: f32,
+    tail_rms: f32,
+    tail_to_body_rms_ratio: f32,
     selected_start_frame: u64,
     selected_frame_count: usize,
     gain: f32,
@@ -29,6 +32,9 @@ struct ManifestW30SourceChopProfile {
     selected_rms_before_gain: f32,
     preview_rms: f32,
     preview_peak_abs: f32,
+    body_rms: f32,
+    tail_rms: f32,
+    tail_to_body_rms_ratio: f32,
     selected_start_frame: u64,
     selected_frame_count: usize,
     gain: f32,
@@ -72,7 +78,11 @@ fn source_chop_preview_from_interleaved(
     let mut preview_samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
     for (index, sample) in selected.iter().enumerate() {
         let fade = edge_fade(index, selected_frame_count);
-        preview_samples[index] = (sample * gain * fade).clamp(-0.95, 0.95);
+        let articulation = chop_articulation_envelope(index, selected_frame_count);
+        let previous = if index == 0 { *sample } else { selected[index - 1] };
+        let transient = (*sample - previous) * 0.28;
+        preview_samples[index] = ((*sample + transient) * gain * fade * articulation)
+            .clamp(-0.95, 0.95);
     }
 
     let preview = W30PreviewSampleWindow {
@@ -84,6 +94,7 @@ fn source_chop_preview_from_interleaved(
     let preview_slice = &preview.samples[..preview.sample_count];
     let preview_rms = rms(preview_slice);
     let preview_peak_abs = peak_abs(preview_slice);
+    let (body_rms, tail_rms, tail_to_body_rms_ratio) = chop_articulation_metrics(preview_slice);
     let preview_start_frame = preview.source_start_frame;
 
     Some((
@@ -93,6 +104,9 @@ fn source_chop_preview_from_interleaved(
             selected_rms_before_gain: selected_rms,
             preview_rms,
             preview_peak_abs,
+            body_rms,
+            tail_rms,
+            tail_to_body_rms_ratio,
             selected_start_frame: preview_start_frame,
             selected_frame_count,
             gain,
@@ -146,6 +160,9 @@ fn manifest_w30_source_chop_profile(
         selected_rms_before_gain: profile.selected_rms_before_gain,
         preview_rms: profile.preview_rms,
         preview_peak_abs: profile.preview_peak_abs,
+        body_rms: profile.body_rms,
+        tail_rms: profile.tail_rms,
+        tail_to_body_rms_ratio: profile.tail_to_body_rms_ratio,
         selected_start_frame: profile.selected_start_frame,
         selected_frame_count: profile.selected_frame_count,
         gain: profile.gain,
@@ -208,7 +225,7 @@ fn source_chop_gain(selected_rms: f32) -> f32 {
     if selected_rms <= f32::EPSILON {
         return 1.0;
     }
-    (0.18 / selected_rms).clamp(0.85, 5.0)
+    (0.18 / selected_rms).clamp(0.85, 1.70)
 }
 
 fn positive_abs_delta(samples: &[f32]) -> f32 {
@@ -240,6 +257,33 @@ fn edge_fade(index: usize, sample_count: usize) -> f32 {
     let fade_in = ((index + 1) as f32 / fade_len as f32).min(1.0);
     let fade_out = ((sample_count - index) as f32 / fade_len as f32).min(1.0);
     fade_in.min(fade_out)
+}
+
+fn chop_articulation_envelope(index: usize, sample_count: usize) -> f32 {
+    if sample_count <= 1 {
+        return 1.0;
+    }
+    let position = index as f32 / (sample_count - 1) as f32;
+    let attack = (position / 0.035).clamp(0.0, 1.0);
+    let body = if position <= 0.58 {
+        1.0
+    } else {
+        ((1.0 - position) / 0.42).clamp(0.0, 1.0).powf(0.72)
+    };
+    attack * (0.22 + body * 0.78)
+}
+
+fn chop_articulation_metrics(samples: &[f32]) -> (f32, f32, f32) {
+    if samples.len() < 8 {
+        return (0.0, 0.0, 0.0);
+    }
+    let body_start = (samples.len() / 8).min(samples.len() - 1);
+    let body_end = (samples.len() / 4).max(body_start + 1).min(samples.len());
+    let tail_start = (samples.len() * 3 / 4).min(samples.len() - 1);
+    let tail_end = (samples.len() * 15 / 16).max(tail_start + 1).min(samples.len());
+    let body_rms = rms(&samples[body_start..body_end]);
+    let tail_rms = rms(&samples[tail_start..tail_end]);
+    (body_rms, tail_rms, tail_rms / body_rms.max(f32::EPSILON))
 }
 
 fn rms(samples: &[f32]) -> f32 {
