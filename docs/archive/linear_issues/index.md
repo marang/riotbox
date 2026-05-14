@@ -346,4 +346,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Fix source-timing beat-period sort comparator panic on syncopated onsets
 - [RIOTBOX-797.md](./RIOTBOX-797.md)
   Add syncopated source showcase smoke gate
+- [RIOTBOX-798.md](./RIOTBOX-798.md)
+  Validate SourceGraphRef hash on session restore
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
