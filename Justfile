@@ -57,6 +57,7 @@ audio-qa-ci:
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
     just listening-manifest-validate-generated-packs
+    just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
     just first-playable-jam-probe
@@ -348,6 +349,9 @@ source-showcase-diversity manifests:
 
 representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase":
     scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}"
+
+syncopated-source-showcase-smoke:
+    scripts/validate_syncopated_source_showcase_smoke.sh
 
 p011-replay-family-manifest manifest="docs/benchmarks/p011_replay_family_manifest.json":
     python3 scripts/validate_p011_replay_family_manifest.py "{{manifest}}"
