@@ -336,4 +336,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose lane recipe summary case count in audio QA docs and contract notes
 - [RIOTBOX-792.md](./RIOTBOX-792.md)
   Plan next P012 lane-output timing proof beyond MC-202 summary visibility
+- [RIOTBOX-793.md](./RIOTBOX-793.md)
+  Add Feral-grid full-mix drift regression against lane aliasing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
