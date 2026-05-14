@@ -34,6 +34,11 @@
     },
     "tr909_source_profile": {
       "reason": "source_low_drive"
+    },
+    "tr909_kick_pressure": {
+      "applied": true,
+      "anchor_count": 8,
+      "low_band_rms_ratio": 1.12
     }
   },
   "source_timing": {

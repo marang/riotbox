@@ -35,10 +35,12 @@ validation/musical-quality.md
 That summary marks one `musically_convincing_candidate` only when the pack has
 audible generated support, W-30 source-chop energy, low-end support, source
 anchor evidence, bounded source-first masking, non-static bar movement, and a
-measured W-30 trigger-variation proof. Event density remains a guardrail, but
-the W-30 offbeat-trigger, distinct-bar-pattern, and unique-slice-offset metrics
-are the direct proof that a sparse source chop is not just a static repeated
-audition. It does not claim automatic taste scoring or release-ready output.
+measured W-30 trigger-variation proof. It also requires TR-909 kick-pressure
+proof so added drum support is measurable low-end body, not a decorative tick.
+Event density remains a guardrail, but the W-30 offbeat-trigger,
+distinct-bar-pattern, and unique-slice-offset metrics are the direct proof that
+a sparse source chop is not just a static repeated audition. It does not claim
+automatic taste scoring or release-ready output.
 
 Durable conclusions belong in docs or review notes. Generated WAVs remain local
 and untracked.

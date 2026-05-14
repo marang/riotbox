@@ -1,4 +1,5 @@
-fn render_tr909_source_support(grid: &Grid, profile: SourceAwareTr909Profile) -> Vec<f32> {
+#[allow(dead_code)]
+fn render_tr909_source_support_legacy(grid: &Grid, profile: SourceAwareTr909Profile) -> Vec<f32> {
     render_tr909_offline(
         &Tr909RenderState {
             mode: Tr909RenderMode::SourceSupport,
@@ -257,6 +258,14 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.tr909_kick_pressure.applied {
+        return Err(format!(
+            "TR-909 kick pressure was too weak: low-band ratio {:.6}, anchors {}",
+            report.tr909_kick_pressure.low_band_rms_ratio, report.tr909_kick_pressure.anchor_count
+        )
+        .into());
+    }
+
     if report.w30_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
         return Err(format!(
             "W-30 source-grid alignment hit ratio {:.6} is below {:.6}",
@@ -415,6 +424,7 @@ fn write_manifest(
         metrics: ManifestPackMetrics {
             tr909_source_profile: manifest_tr909_source_profile(report.tr909_source_profile),
             tr909_groove_timing: report.tr909_groove_timing,
+            tr909_kick_pressure: manifest_tr909_kick_pressure_proof(report.tr909_kick_pressure),
             w30_source_chop_profile: manifest_w30_source_chop_profile(
                 report.w30_source_chop_profile,
             ),

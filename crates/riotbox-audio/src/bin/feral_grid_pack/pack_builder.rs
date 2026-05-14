@@ -191,6 +191,7 @@ struct RenderMetrics {
 struct PackReport {
     tr909_source_profile: SourceAwareTr909Profile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
+    tr909_kick_pressure: Tr909KickPressureProof,
     w30_source_chop_profile: W30SourceChopProfile,
     w30_source_loop_closure: W30SourceLoopClosureProof,
     w30_source_trigger_variation: W30SourceTriggerVariationProof,
@@ -269,6 +270,7 @@ struct ManifestThresholds {
 struct ManifestPackMetrics {
     tr909_source_profile: ManifestTr909SourceProfile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
+    tr909_kick_pressure: ManifestTr909KickPressureProof,
     w30_source_chop_profile: ManifestW30SourceChopProfile,
     w30_source_loop_closure: ManifestW30SourceLoopClosureProof,
     w30_source_trigger_variation: ManifestW30SourceTriggerVariationProof,
@@ -396,10 +398,9 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let tr909_source_profile = derive_source_aware_tr909_profile(source_window_samples, &grid);
     let tr909_groove_timing =
         tr909_groove_timing_policy(grid_bpm, &source_timing_analysis.groove_evidence);
-    let tr909 = apply_tr909_groove_timing(
-        &render_tr909_source_support(&grid, tr909_source_profile),
-        tr909_groove_timing,
-    );
+    let (tr909_source_support, tr909_kick_pressure) =
+        render_tr909_source_support_with_pressure(&grid, tr909_source_profile);
+    let tr909 = apply_tr909_groove_timing(&tr909_source_support, tr909_groove_timing);
     let (w30, w30_source_trigger_variation, w30_source_slice_choice) =
         render_w30_source_chop_with_variation(&grid, &w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &w30);
@@ -427,6 +428,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let report = PackReport {
         tr909_source_profile,
         tr909_groove_timing,
+        tr909_kick_pressure,
         w30_source_chop_profile,
         w30_source_loop_closure,
         w30_source_trigger_variation,

@@ -123,12 +123,17 @@ mod tests {
         let low_render = render_tr909_source_support(&grid, low_profile);
         let high_render = render_tr909_source_support(&grid, high_profile);
         let low_render_repeat = render_tr909_source_support(&grid, low_profile);
+        let legacy_low_render = render_tr909_source_support_legacy(&grid, low_profile);
+        let (_, kick_pressure) = render_tr909_source_support_with_pressure(&grid, low_profile);
 
         assert_eq!(low_profile.support_profile, Tr909SourceSupportProfile::DropDrive);
         assert_eq!(high_profile.support_profile, Tr909SourceSupportProfile::BreakLift);
         assert_ne!(low_profile.pattern_adoption, high_profile.pattern_adoption);
         assert_ne!(low_render, high_render);
         assert_eq!(low_render, low_render_repeat);
+        assert_ne!(low_render, legacy_low_render);
+        assert!(kick_pressure.applied, "{kick_pressure:?}");
+        assert!(kick_pressure.low_band_rms_ratio >= TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO);
         assert!(signal_metrics(&low_render).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(&high_render).rms > MIN_SIGNAL_RMS);
     }
