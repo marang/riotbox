@@ -1,6 +1,6 @@
 use riotbox_core::source_graph::{
-    BeatPoint, BarSpan, MeterHint, PhraseSpan, TimingHypothesis, TimingHypothesisKind,
-    TimingModel, TimingQuality,
+    MeterHint, PhraseSpan, SourceTimingProbeBpmCandidateInput,
+    SourceTimingProbeBpmCandidatePolicy, TimingModel, timing_model_from_probe_bpm_candidates,
 };
 
 const MC202_SOURCE_PHRASE_SLOT_CONTRACT: &str = "source_graph_phrase_grid.v0";
@@ -52,78 +52,35 @@ fn mc202_source_phrase_slot_metrics(
 }
 
 fn lane_recipe_source_timing_model() -> TimingModel {
-    let phrase_grid = vec![
-        PhraseSpan {
-            phrase_index: 1,
-            start_bar: 1,
-            end_bar: 4,
-            confidence: 0.92,
+    timing_model_from_probe_bpm_candidates(
+        &lane_recipe_source_timing_candidate_input(),
+        SourceTimingProbeBpmCandidatePolicy {
+            min_bpm: 100.0,
+            max_bpm: 150.0,
+            ..SourceTimingProbeBpmCandidatePolicy::default()
         },
-        PhraseSpan {
-            phrase_index: 2,
-            start_bar: 5,
-            end_bar: 8,
-            confidence: 0.92,
-        },
-        PhraseSpan {
-            phrase_index: 3,
-            start_bar: 9,
-            end_bar: 12,
-            confidence: 0.92,
-        },
-    ];
-    let bar_grid = (1..=12)
-        .map(|bar_index| BarSpan {
-            bar_index,
-            start_seconds: (bar_index - 1) as f32 * 60.0 / DEFAULT_BPM * BEATS_PER_BAR as f32,
-            end_seconds: bar_index as f32 * 60.0 / DEFAULT_BPM * BEATS_PER_BAR as f32,
-            downbeat_confidence: 0.90,
-            phrase_index: phrase_grid
-                .iter()
-                .find(|phrase| bar_index >= phrase.start_bar && bar_index <= phrase.end_bar)
-                .map(|phrase| phrase.phrase_index),
-        })
-        .collect::<Vec<_>>();
-    let beat_grid = (0..48)
-        .map(|beat_index| BeatPoint {
-            beat_index,
-            time_seconds: beat_index as f32 * 60.0 / DEFAULT_BPM,
-            confidence: 0.90,
-        })
-        .collect::<Vec<_>>();
-    let meter = MeterHint {
-        beats_per_bar: BEATS_PER_BAR as u8,
-        beat_unit: 4,
-    };
+    )
+}
 
-    TimingModel {
-        bpm_estimate: Some(DEFAULT_BPM),
-        bpm_confidence: 0.90,
-        meter_hint: Some(meter),
-        beat_grid: beat_grid.clone(),
-        bar_grid: bar_grid.clone(),
-        phrase_grid: phrase_grid.clone(),
-        hypotheses: vec![TimingHypothesis {
-            hypothesis_id: "lane-recipe-source-grid".to_string(),
-            kind: TimingHypothesisKind::Primary,
-            bpm: DEFAULT_BPM,
-            meter,
-            confidence: 0.90,
-            score: 1.0,
-            beat_grid,
-            bar_grid,
-            phrase_grid,
-            anchors: Vec::new(),
-            drift: Vec::new(),
-            groove: Vec::new(),
-            quality: TimingQuality::High,
-            warnings: Vec::new(),
-            provenance: vec!["lane-recipe-pack.synthetic-source-phrase-grid.v0".to_string()],
-        }],
-        primary_hypothesis_id: Some("lane-recipe-source-grid".to_string()),
-        quality: TimingQuality::High,
-        warnings: Vec::new(),
-        degraded_policy: riotbox_core::source_graph::TimingDegradedPolicy::Locked,
+fn lane_recipe_source_timing_candidate_input() -> SourceTimingProbeBpmCandidateInput {
+    let seconds_per_beat = 60.0 / DEFAULT_BPM;
+    let total_beats = 12 * BEATS_PER_BAR;
+    let onset_times_seconds = (0..total_beats)
+        .map(|beat| beat as f32 * seconds_per_beat)
+        .collect::<Vec<_>>();
+    let onset_strengths = (0..total_beats)
+        .map(|beat| if beat % BEATS_PER_BAR == 0 { 1.0 } else { 0.36 })
+        .collect::<Vec<_>>();
+
+    SourceTimingProbeBpmCandidateInput {
+        source_id: "lane-recipe-pack.generated-source-phrase-grid.v1".to_string(),
+        duration_seconds: total_beats as f32 * seconds_per_beat,
+        onset_times_seconds,
+        onset_strengths,
+        meter: MeterHint {
+            beats_per_bar: BEATS_PER_BAR as u8,
+            beat_unit: 4,
+        },
     }
 }
 
