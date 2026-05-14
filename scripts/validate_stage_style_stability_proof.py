@@ -13,7 +13,7 @@ from typing import Any
 
 SCHEMA = "riotbox.stage_style_stability_proof.v1"
 SCHEMA_VERSION = 1
-MIX_RELATIVE_PATH = Path("feral-grid/04_riotbox_generated_support_mix.wav")
+MIX_RELATIVE_PATH = Path("feral-grid/05_riotbox_generated_support_mix.wav")
 MANIFEST_RELATIVE_PATH = Path("feral-grid/manifest.json")
 SUMMARY_RELATIVE_PATH = Path("observer-audio-summary.json")
 EVENTS_RELATIVE_PATH = Path("events.ndjson")

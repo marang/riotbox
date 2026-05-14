@@ -200,11 +200,11 @@ Early P011 guardrail defaults:
 - full-mix waveform correlation at or above `0.995` is treated as too similar
 - identical generated support with generated/source-backed RMS ratio at or above
   `0.75` is treated as dominant
-- Feral grid packs expose two listening mixes so source extraction is not judged
-  from a drum-dominant render: `03_riotbox_source_first_mix.wav` leads with the
-  source-backed W-30 chop, while `04_riotbox_generated_support_mix.wav` keeps the
-  generated TR-909 support secondary and records generated/source RMS ratios in
-  `metrics.mix_balance`
+- Feral grid packs expose explicit lane stems plus two listening mixes so source
+  extraction is not judged from a drum-dominant render:
+  `04_riotbox_source_first_mix.wav` leads with the source-backed W-30 chop, while
+  `05_riotbox_generated_support_mix.wav` keeps the generated TR-909 / MC-202
+  support secondary and records generated/source RMS ratios in `metrics.mix_balance`
 - Feral grid pack-level `metrics.source_grid_output_drift` is measured from the
   complete generated-support mix, not an individual lane. Lane-specific timing
   evidence remains separate under `metrics.tr909_source_grid_alignment` and

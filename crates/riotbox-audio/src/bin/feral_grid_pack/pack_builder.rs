@@ -19,8 +19,12 @@ use riotbox_audio::{
         LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
         ListeningPackRenderMetrics as ManifestRenderMetrics, write_manifest_json,
     },
+    mc202::{
+        Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
+        Mc202RenderRouting, Mc202RenderState,
+    },
     runtime::{
-        OfflineAudioMetrics, render_tr909_offline, render_w30_preview_offline,
+        OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, render_w30_preview_offline,
         signal_metrics_with_grid,
     },
     source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},
@@ -192,11 +196,13 @@ struct PackReport {
     tr909_source_profile: SourceAwareTr909Profile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: Tr909KickPressureProof,
+    mc202_bass_pressure: Mc202BassPressureProof,
     w30_source_chop_profile: W30SourceChopProfile,
     w30_source_loop_closure: W30SourceLoopClosureProof,
     w30_source_trigger_variation: W30SourceTriggerVariationProof,
     w30_source_slice_choice: W30SourceSliceChoiceProof,
     tr909: RenderMetrics,
+    mc202: RenderMetrics,
     w30: RenderMetrics,
     source_first_mix: RenderMetrics,
     full_mix: RenderMetrics,
@@ -253,8 +259,8 @@ struct ManifestFeralScorecard {
     source_backed: bool,
     generated: bool,
     fallback_like: bool,
-    lane_gestures: [&'static str; 2],
-    material_sources: [&'static str; 2],
+    lane_gestures: [&'static str; 3],
+    material_sources: [&'static str; 3],
     warnings: [&'static str; 1],
 }
 
@@ -271,11 +277,13 @@ struct ManifestPackMetrics {
     tr909_source_profile: ManifestTr909SourceProfile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: ManifestTr909KickPressureProof,
+    mc202_bass_pressure: ManifestMc202BassPressureProof,
     w30_source_chop_profile: ManifestW30SourceChopProfile,
     w30_source_loop_closure: ManifestW30SourceLoopClosureProof,
     w30_source_trigger_variation: ManifestW30SourceTriggerVariationProof,
     w30_source_slice_choice: ManifestW30SourceSliceChoiceProof,
     tr909_beat_fill: ManifestRenderMetrics,
+    mc202_bass_pressure_stem: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     source_first_mix: ManifestRenderMetrics,
     full_grid_mix: ManifestRenderMetrics,
@@ -290,6 +298,7 @@ struct ManifestPackMetrics {
 #[derive(Serialize)]
 struct ManifestBarVariationMetrics {
     tr909_beat_fill: BarVariationMetrics,
+    mc202_bass_pressure_stem: BarVariationMetrics,
     w30_feral_source_chop: BarVariationMetrics,
     source_first_mix: BarVariationMetrics,
     full_grid_mix: BarVariationMetrics,
@@ -298,6 +307,7 @@ struct ManifestBarVariationMetrics {
 #[derive(Serialize)]
 struct ManifestSpectralEnergyMetrics {
     tr909_beat_fill: SpectralEnergyMetrics,
+    mc202_bass_pressure_stem: SpectralEnergyMetrics,
     w30_feral_source_chop: SpectralEnergyMetrics,
     source_first_mix: SpectralEnergyMetrics,
     full_grid_mix: SpectralEnergyMetrics,
@@ -322,8 +332,8 @@ fn print_help() {
          Renders a local grid-locked Feral demo pack. Without --bpm, the pack\n\
          uses ready source timing that does not require manual confirmation\n\
          when available and otherwise falls back to\n\
-         the static default BPM. TR-909 beat/fill and\n\
-         W-30 source chop stems share one beat/bar grid\n\
+         the static default BPM. TR-909 beat/fill, MC-202 bass pressure,\n\
+         and W-30 source chop stems share one beat/bar grid\n\
          so the output can be checked for musical timing instead of only logs."
     );
 }
@@ -401,25 +411,28 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let (tr909_source_support, tr909_kick_pressure) =
         render_tr909_source_support_with_pressure(&grid, tr909_source_profile);
     let tr909 = apply_tr909_groove_timing(&tr909_source_support, tr909_groove_timing);
+    let (mc202, mc202_bass_pressure) = render_mc202_bass_pressure(&grid, tr909_source_profile);
     let (w30, w30_source_trigger_variation, w30_source_slice_choice) =
         render_w30_source_chop_with_variation(&grid, &w30_preview);
-    let source_first_mix = render_source_first_mix(&tr909, &w30);
-    let full_mix = render_generated_support_mix(&tr909, &w30);
+    let source_first_mix = render_source_first_mix(&tr909, &mc202, &w30);
+    let full_mix = render_generated_support_mix(&tr909, &mc202, &w30);
 
     assert_grid_len("tr909", &tr909, &grid);
+    assert_grid_len("mc202", &mc202, &grid);
     assert_grid_len("w30", &w30, &grid);
     assert_grid_len("source_first_mix", &source_first_mix, &grid);
     assert_grid_len("full_mix", &full_mix, &grid);
 
     write_audio_with_metrics(&stems_dir.join("01_tr909_beat_fill.wav"), &tr909, &grid)?;
     write_audio_with_metrics(&stems_dir.join("02_w30_feral_source_chop.wav"), &w30, &grid)?;
+    write_audio_with_metrics(&stems_dir.join("03_mc202_bass_pressure.wav"), &mc202, &grid)?;
     write_audio_with_metrics(
-        &output_dir.join("03_riotbox_source_first_mix.wav"),
+        &output_dir.join("04_riotbox_source_first_mix.wav"),
         &source_first_mix,
         &grid,
     )?;
     write_audio_with_metrics(
-        &output_dir.join("04_riotbox_generated_support_mix.wav"),
+        &output_dir.join("05_riotbox_generated_support_mix.wav"),
         &full_mix,
         &grid,
     )?;
@@ -429,11 +442,13 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         tr909_source_profile,
         tr909_groove_timing,
         tr909_kick_pressure,
+        mc202_bass_pressure,
         w30_source_chop_profile,
         w30_source_loop_closure,
         w30_source_trigger_variation,
         w30_source_slice_choice,
         tr909: render_metrics(&tr909, &grid),
+        mc202: render_metrics(&mc202, &grid),
         w30: render_metrics(&w30, &grid),
         source_first_mix: render_metrics(&source_first_mix, &grid),
         full_mix: render_metrics(&full_mix, &grid),
@@ -441,9 +456,9 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         w30_source_grid_alignment: source_grid_alignment.w30_source_grid_alignment,
         source_grid_output_drift: source_grid_alignment.source_grid_output_drift,
         source_first_generated_to_source_rms_ratio:
-            source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid),
+            source_first_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid),
         support_generated_to_source_rms_ratio: support_generated_to_source_rms_ratio(
-            &tr909, &w30, &grid,
+            &tr909, &mc202, &w30, &grid,
         ),
     };
     validate_report(&report)?;

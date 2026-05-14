@@ -70,6 +70,8 @@ render_grid_export() {
       and .metrics.full_grid_mix.signal.rms > 0.000001
       and .metrics.full_grid_mix.low_band.rms > 0.000001
       and .metrics.tr909_beat_fill.signal.rms > 0.000001
+      and .metrics.mc202_bass_pressure.applied == true
+      and .metrics.mc202_bass_pressure_stem.signal.rms > 0.000001
       and .metrics.w30_feral_source_chop.signal.rms > 0.000001
       and (.metrics | has("mc202_question_answer_delta") | not)' \
     "$run_dir/manifest.json"

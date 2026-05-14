@@ -213,6 +213,7 @@ fn render_metrics(samples: &[f32], grid: &Grid) -> RenderMetrics {
 fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>> {
     for (name, metrics) in [
         ("tr909", report.tr909),
+        ("mc202", report.mc202),
         ("w30", report.w30),
         ("source_first_mix", report.source_first_mix),
         ("full_mix", report.full_mix),
@@ -262,6 +263,16 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         return Err(format!(
             "TR-909 kick pressure was too weak: low-band ratio {:.6}, anchors {}",
             report.tr909_kick_pressure.low_band_rms_ratio, report.tr909_kick_pressure.anchor_count
+        )
+        .into());
+    }
+
+    if !report.mc202_bass_pressure.applied {
+        return Err(format!(
+            "MC-202 bass pressure was too weak: RMS {:.6}, low-band RMS {:.6}, peak {:.6}",
+            report.mc202_bass_pressure.signal_rms,
+            report.mc202_bass_pressure.low_band_rms,
+            report.mc202_bass_pressure.peak_abs
         )
         .into());
     }
@@ -425,6 +436,9 @@ fn write_manifest(
             tr909_source_profile: manifest_tr909_source_profile(report.tr909_source_profile),
             tr909_groove_timing: report.tr909_groove_timing,
             tr909_kick_pressure: manifest_tr909_kick_pressure_proof(report.tr909_kick_pressure),
+            mc202_bass_pressure: manifest_mc202_bass_pressure_proof(
+                report.mc202_bass_pressure,
+            ),
             w30_source_chop_profile: manifest_w30_source_chop_profile(
                 report.w30_source_chop_profile,
             ),
@@ -438,6 +452,7 @@ fn write_manifest(
                 report.w30_source_slice_choice,
             ),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
+            mc202_bass_pressure_stem: manifest_render_metrics(report.mc202),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
             source_first_mix: manifest_render_metrics(report.source_first_mix),
             full_grid_mix: manifest_render_metrics(report.full_mix),
@@ -451,12 +466,14 @@ fn write_manifest(
             source_grid_output_drift: report.source_grid_output_drift,
             bar_variation: ManifestBarVariationMetrics {
                 tr909_beat_fill: report.tr909.bar_variation,
+                mc202_bass_pressure_stem: report.mc202.bar_variation,
                 w30_feral_source_chop: report.w30.bar_variation,
                 source_first_mix: report.source_first_mix.bar_variation,
                 full_grid_mix: report.full_mix.bar_variation,
             },
             spectral_energy: ManifestSpectralEnergyMetrics {
                 tr909_beat_fill: report.tr909.spectral_energy,
+                mc202_bass_pressure_stem: report.mc202.spectral_energy,
                 w30_feral_source_chop: report.w30.spectral_energy,
                 source_first_mix: report.source_first_mix.spectral_energy,
                 full_grid_mix: report.full_mix.spectral_energy,
@@ -482,8 +499,12 @@ fn manifest_feral_scorecard() -> ManifestFeralScorecard {
         source_backed: true,
         generated: true,
         fallback_like: false,
-        lane_gestures: ["tr909 beat/fill", "w30 source chop"],
-        material_sources: ["generated tr909", "source-backed w30 window"],
+        lane_gestures: ["tr909 beat/fill", "mc202 bass pressure", "w30 source chop"],
+        material_sources: [
+            "generated tr909",
+            "generated mc202",
+            "source-backed w30 window",
+        ],
         warnings: ["offline QA pack, not live arranger"],
     }
 }
@@ -499,12 +520,16 @@ fn manifest_artifacts(output_dir: &Path) -> Vec<ManifestArtifact> {
             output_dir.join("stems/02_w30_feral_source_chop.wav"),
         ),
         manifest_audio_artifact(
+            "mc202_bass_pressure_stem",
+            output_dir.join("stems/03_mc202_bass_pressure.wav"),
+        ),
+        manifest_audio_artifact(
             "source_first_mix",
-            output_dir.join("03_riotbox_source_first_mix.wav"),
+            output_dir.join("04_riotbox_source_first_mix.wav"),
         ),
         manifest_audio_artifact(
             "full_grid_mix",
-            output_dir.join("04_riotbox_generated_support_mix.wav"),
+            output_dir.join("05_riotbox_generated_support_mix.wav"),
         ),
         ManifestArtifact::markdown_report("grid_report", &output_dir.join("grid-report.md")),
         ManifestArtifact::markdown_readme("readme", &output_dir.join("README.md")),

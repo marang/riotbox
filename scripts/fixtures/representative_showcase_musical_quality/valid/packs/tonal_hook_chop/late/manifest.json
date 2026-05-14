@@ -39,6 +39,11 @@
       "applied": true,
       "anchor_count": 8,
       "low_band_rms_ratio": 1.12
+    },
+    "mc202_bass_pressure": {
+      "applied": true,
+      "signal_rms": 0.006,
+      "low_band_rms": 0.002
     }
   },
   "source_timing": {

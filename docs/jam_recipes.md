@@ -709,8 +709,9 @@ Then listen in this order:
 ```text
 artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/01_tr909_beat_fill.wav
 artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/02_w30_feral_source_chop.wav
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/03_riotbox_source_first_mix.wav
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/04_riotbox_generated_support_mix.wav
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/03_mc202_bass_pressure.wav
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/04_riotbox_source_first_mix.wav
+artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/05_riotbox_generated_support_mix.wav
 ```
 
 Try these variants:

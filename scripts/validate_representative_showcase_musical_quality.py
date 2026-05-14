@@ -25,6 +25,8 @@ MIN_W30_OFFBEAT_TRIGGERS = 1
 MIN_W30_DISTINCT_BAR_PATTERNS = 2
 MIN_W30_UNIQUE_SLICE_OFFSETS = 4
 MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO = 1.06
+MIN_MC202_BASS_PRESSURE_RMS = 0.003
+MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS = 0.001
 
 
 @dataclass(frozen=True)
@@ -74,6 +76,8 @@ def main() -> int:
             "min_w30_distinct_bar_pattern_count": MIN_W30_DISTINCT_BAR_PATTERNS,
             "min_w30_unique_slice_offset_count": MIN_W30_UNIQUE_SLICE_OFFSETS,
             "min_tr909_kick_pressure_low_band_ratio": MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
+            "min_mc202_bass_pressure_rms": MIN_MC202_BASS_PRESSURE_RMS,
+            "min_mc202_bass_pressure_low_band_rms": MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
         },
     }
 
@@ -128,6 +132,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     w30_variation = metrics.get("w30_source_trigger_variation", {})
     w30_slice_choice = metrics.get("w30_source_slice_choice", {})
     tr909_kick_pressure = metrics.get("tr909_kick_pressure", {})
+    mc202_bass_pressure = metrics.get("mc202_bass_pressure", {})
     return {
         "full_rms": number(full["signal"]["rms"]),
         "low_band_rms": number(full["low_band"]["rms"]),
@@ -159,6 +164,11 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         "tr909_kick_pressure_anchor_count": int(tr909_kick_pressure.get("anchor_count", 0)),
         "tr909_kick_pressure_low_band_ratio": number(
             tr909_kick_pressure.get("low_band_rms_ratio", 0.0)
+        ),
+        "mc202_bass_pressure_applied": bool(mc202_bass_pressure.get("applied", False)),
+        "mc202_bass_pressure_rms": number(mc202_bass_pressure.get("signal_rms", 0.0)),
+        "mc202_bass_pressure_low_band_rms": number(
+            mc202_bass_pressure.get("low_band_rms", 0.0)
         ),
         "source_anchor_count": int(source_timing["anchor_evidence"]["primary_anchor_count"]),
         "tr909_reason": metrics["tr909_source_profile"]["reason"],
@@ -211,6 +221,18 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             >= MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
             "tr909_kick_pressure_too_decorative",
         ),
+        (
+            metrics["mc202_bass_pressure_applied"],
+            "mc202_bass_pressure_not_applied",
+        ),
+        (
+            metrics["mc202_bass_pressure_rms"] >= MIN_MC202_BASS_PRESSURE_RMS,
+            "mc202_bass_pressure_too_weak",
+        ),
+        (
+            metrics["mc202_bass_pressure_low_band_rms"] >= MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
+            "mc202_bass_pressure_low_band_too_weak",
+        ),
         (metrics["source_anchor_count"] >= MIN_ANCHORS, "missing_source_anchor_evidence"),
         (metrics["bar_similarity"] <= MAX_BAR_SIMILARITY, "full_mix_too_static"),
         (
@@ -233,11 +255,25 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         0.0,
         1.0,
     )
+    bass_pressure = clamp(metrics["mc202_bass_pressure_rms"] / 0.012, 0.0, 1.0)
     movement = clamp((1.0 - metrics["bar_similarity"]) / 0.020, 0.0, 1.0)
     density = clamp(metrics["event_density_per_bar"] / 280.0, 0.0, 1.2)
     anchors = clamp(metrics["source_anchor_count"] / 8.0, 0.0, 1.0)
     penalty = len(issues) * 0.35
-    return support + low + chop + trigger_variation + pattern_variation + slice_variation + kick_pressure + movement + density + anchors - penalty
+    return (
+        support
+        + low
+        + chop
+        + trigger_variation
+        + pattern_variation
+        + slice_variation
+        + kick_pressure
+        + bass_pressure
+        + movement
+        + density
+        + anchors
+        - penalty
+    )
 
 
 def candidate_record(candidate: Candidate) -> dict[str, Any]:
@@ -272,6 +308,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It keeps the source-first mix below the masking threshold.",
         "- It requires generated TR-909 support to be audible rather than decorative.",
         "- It requires TR-909 kick-pressure proof so the drum layer adds measurable low-end body.",
+        "- It requires MC-202 bass-pressure proof so the bass lane is audible, not only named in the manifest.",
         "- It requires W-30 source-chop energy, low-end support, source-anchor evidence, and non-static bar movement.",
         "- It requires W-30 trigger variation to be applied rather than relying on a static repeated chop.",
         "- It requires W-30 slice-choice variation so repeated triggers do not keep reading the same source offset.",
