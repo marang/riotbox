@@ -1,0 +1,205 @@
+{
+  "control_path": {
+    "audio_runtime_status": "started",
+    "commit_boundaries": [
+      "NextBar"
+    ],
+    "commit_count": 1,
+    "first_commit": "action 42 at NextBar beat 16 bar 4 phrase 1 sequence 7",
+    "key_outcomes": [
+      "space -> transport started",
+      "f -> queued fill"
+    ],
+    "launch_mode": "ingest",
+    "observer_schema": "riotbox.user_session_observer.v1",
+    "observer_source_timing": {
+      "anchor_evidence": {
+        "primary_anchor_count": 16,
+        "primary_backbeat_anchor_count": 8,
+        "primary_kick_anchor_count": 4,
+        "primary_transient_anchor_count": 4
+      },
+      "bar_count": 4,
+      "beat_count": 16,
+      "beat_status": "grid",
+      "bpm_confidence": 0.92,
+      "bpm_estimate": 128.0,
+      "cue": "grid locked",
+      "degraded_policy": "locked",
+      "downbeat_status": "bar_locked",
+      "grid_use": "locked_grid",
+      "groove_evidence": {
+        "primary_groove_preview": [
+          {
+            "confidence": 0.78,
+            "offset_ms": -6.0,
+            "subdivision": "eighth"
+          },
+          {
+            "confidence": 0.66,
+            "offset_ms": 3.5,
+            "subdivision": "sixteenth"
+          }
+        ],
+        "primary_groove_residual_count": 2,
+        "primary_max_abs_offset_ms": 6.0
+      },
+      "hypothesis_count": 1,
+      "phrase_count": 1,
+      "phrase_status": "phrase_locked",
+      "primary_hypothesis_id": "locked-primary",
+      "primary_warning_code": null,
+      "quality": "high",
+      "source_id": "src-locked",
+      "warning_codes": []
+    },
+    "present": true
+  },
+  "needs_human_listening": true,
+  "output_path": {
+    "artifact_count": 5,
+    "grid_bpm_decision_reason": "source_timing_ready",
+    "grid_bpm_source": "source_timing",
+    "issues": [],
+    "manifest_result": "pass",
+    "metrics": {
+      "full_mix_low_band_rms": 0.0612,
+      "full_mix_rms": 0.1843,
+      "mc202_question_answer_delta_rms": null,
+      "source_grid_output_drift": {
+        "hit_ratio": 1.0,
+        "max_allowed_peak_offset_ms": 70.0,
+        "max_peak_offset_ms": 1.27
+      },
+      "tr909_source_grid_alignment": {
+        "hit_ratio": 1.0,
+        "max_allowed_peak_offset_ms": 70.0,
+        "max_peak_offset_ms": 1.27
+      },
+      "w30_candidate_active_sample_ratio": null,
+      "w30_candidate_rms": null,
+      "w30_rms_delta": null,
+      "w30_source_grid_alignment": {
+        "hit_ratio": 1.0,
+        "max_allowed_peak_offset_ms": 70.0,
+        "max_peak_offset_ms": 5.13
+      },
+      "w30_source_loop_closure": {
+        "edge_abs_max": 0.006,
+        "edge_delta_abs": 0.004,
+        "max_allowed_edge_abs": 0.04,
+        "max_allowed_edge_delta_abs": 0.06,
+        "passed": true,
+        "preview_rms": 0.145,
+        "source_contains_selection": true
+      }
+    },
+    "pack_id": "feral-grid-demo",
+    "present": true,
+    "source_timing": {
+      "alternate_evidence_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 16,
+        "primary_backbeat_anchor_count": 8,
+        "primary_kick_anchor_count": 4,
+        "primary_transient_anchor_count": 4
+      },
+      "beat_status": "stable",
+      "bpm_agrees_with_grid": true,
+      "confidence_result": "candidate_locked",
+      "cue": "grid locked",
+      "downbeat_status": "stable",
+      "drift_status": "stable",
+      "grid_use": "locked_grid",
+      "groove_evidence": {
+        "primary_groove_preview": [
+          {
+            "confidence": 0.78,
+            "offset_ms": -6.0,
+            "subdivision": "eighth"
+          },
+          {
+            "confidence": 0.66,
+            "offset_ms": 3.5,
+            "subdivision": "sixteenth"
+          }
+        ],
+        "primary_groove_residual_count": 2,
+        "primary_max_abs_offset_ms": 6.0
+      },
+      "phrase_status": "phrase_locked",
+      "policy_profile": "dance_loop_auto_readiness",
+      "primary_bpm": 128.0,
+      "primary_downbeat_offset_beats": 0,
+      "readiness": "ready",
+      "requires_manual_confirm": false,
+      "source_id": "src-locked",
+      "warning_codes": []
+    },
+    "source_timing_alignment": {
+      "bpm_delta": 0.0,
+      "bpm_tolerance": 1.0,
+      "grid_use_compatibility": "aligned",
+      "issues": [],
+      "manifest_grid_use": "locked_grid",
+      "observer_grid_use": "locked_grid",
+      "status": "aligned",
+      "warning_overlap": []
+    },
+    "source_timing_anchor_alignment": {
+      "issues": [],
+      "manifest": {
+        "primary_anchor_count": 16,
+        "primary_backbeat_anchor_count": 8,
+        "primary_kick_anchor_count": 4,
+        "primary_transient_anchor_count": 4
+      },
+      "observer": {
+        "primary_anchor_count": 16,
+        "primary_backbeat_anchor_count": 8,
+        "primary_kick_anchor_count": 4,
+        "primary_transient_anchor_count": 4
+      },
+      "status": "aligned"
+    },
+    "source_timing_bpm_delta": 0.0,
+    "source_timing_groove_alignment": {
+      "issues": [],
+      "manifest": {
+        "primary_groove_preview": [
+          {
+            "confidence": 0.78,
+            "offset_ms": -6.0,
+            "subdivision": "eighth"
+          },
+          {
+            "confidence": 0.66,
+            "offset_ms": 3.5,
+            "subdivision": "sixteenth"
+          }
+        ],
+        "primary_groove_residual_count": 2,
+        "primary_max_abs_offset_ms": 6.0
+      },
+      "observer": {
+        "primary_groove_preview": [
+          {
+            "confidence": 0.78,
+            "offset_ms": -6.0,
+            "subdivision": "eighth"
+          },
+          {
+            "confidence": 0.66,
+            "offset_ms": 3.5,
+            "subdivision": "sixteenth"
+          }
+        ],
+        "primary_groove_residual_count": 2,
+        "primary_max_abs_offset_ms": 6.0
+      },
+      "status": "aligned"
+    }
+  },
+  "schema": "riotbox.observer_audio_summary.v1",
+  "schema_version": 1
+}
