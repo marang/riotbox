@@ -344,4 +344,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Drive MC-202 lane recipe phrase timing from generated probe audio
 - [RIOTBOX-795.md](./RIOTBOX-795.md)
   Fix source-timing beat-period sort comparator panic on syncopated onsets
+- [RIOTBOX-797.md](./RIOTBOX-797.md)
+  Add syncopated source showcase smoke gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
