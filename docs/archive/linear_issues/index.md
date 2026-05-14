@@ -340,4 +340,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Feral-grid full-mix drift regression against lane aliasing
 - [RIOTBOX-794.md](./RIOTBOX-794.md)
   Move MC-202 phrase-slot timing proof toward real source timing
+- [RIOTBOX-796.md](./RIOTBOX-796.md)
+  Drive MC-202 lane recipe phrase timing from generated probe audio
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
