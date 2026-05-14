@@ -65,11 +65,31 @@ mod mc202_phrase_grid_consumer_tests {
                 "{} should land on a selected source phrase slot: {:?}",
                 case.id, metrics
             );
-            assert_eq!(metrics.source_hypothesis_id.as_deref(), Some("lane-recipe-source-grid"));
+            assert_eq!(metrics.source_hypothesis_id.as_deref(), Some("probe-bpm-primary"));
             assert_eq!(metrics.phrase_index, Some(3));
             assert_eq!(metrics.phrase_start_bar, Some(9));
             assert!(metrics.starts_on_source_phrase_boundary);
         }
+    }
+
+    #[test]
+    fn lane_recipe_source_timing_uses_probe_generated_phrase_grid() {
+        let source_timing = lane_recipe_source_timing_model();
+        let primary = source_timing.primary_hypothesis().expect("primary hypothesis");
+
+        assert_eq!(source_timing.primary_hypothesis_id.as_deref(), Some("probe-bpm-primary"));
+        assert!(
+            primary
+                .provenance
+                .contains(&"source-timing-probe.phrase-grid.v0".to_string())
+        );
+        assert!(
+            primary
+                .provenance
+                .contains(&"lane-recipe-pack.generated-source-phrase-grid.v1".to_string())
+        );
+        assert_eq!(source_timing.phrase_grid.len(), 3);
+        assert_eq!(source_timing.phrase_grid[2].start_bar, 9);
     }
 
     #[test]

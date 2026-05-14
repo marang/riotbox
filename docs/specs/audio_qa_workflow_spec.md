@@ -774,8 +774,17 @@ Today the repo already has:
   `lane_recipe_cases` evidence for the required MC-202 cases, so the visible
   JSON summary and the generated lane recipe manifest must agree on phrase-grid
   and Source Graph phrase-slot proof
-- the same Recipe 2 gate now rejects MC-202 lane recipe cases whose generated candidate lacks `mc202_phrase_grid` evidence; that metric proves the current offline candidate starts on the phrase boundary and its detected note onsets stay aligned to the sixteenth grid
-- the same Recipe 2 gate also rejects MC-202 lane recipe cases whose generated candidate lacks `mc202_source_phrase_slot` evidence; that metric proves the current offline candidate consumes a Source Graph phrase-grid slot and starts at the selected source phrase boundary, but it is still a bounded synthetic-source proof rather than a production phrase arranger
+- the same Recipe 2 gate now rejects MC-202 lane recipe cases whose generated
+  candidate lacks `mc202_phrase_grid` evidence; that metric proves the current
+  offline candidate starts on the phrase boundary and its detected note onsets
+  stay aligned to the sixteenth grid
+- the same Recipe 2 gate also rejects MC-202 lane recipe cases whose generated
+  candidate lacks `mc202_source_phrase_slot` evidence; that metric proves the
+  current offline candidate consumes a Source Graph phrase-grid slot and starts
+  at the selected source phrase boundary. The lane recipe pack now builds that
+  phrase grid from generated source onset evidence through the normal probe-BPM
+  TimingModel path, but it is still a bounded CI-safe proof rather than a
+  production phrase arranger
 - generated-pack manifest validation can require referenced artifact and metrics files to exist via `--require-existing-artifacts`
 - `just offline-render-reproducibility-smoke` is a CI-safe bounded reproducibility check that renders the same deterministic source-backed W-30 output twice and compares WAV hashes; it is an offline render smoke, not the full export workflow
 - `just p011-exit-evidence-manifest` validates the current machine-checkable P011 evidence index across replay, recovery, export reproducibility, and stage-style stability categories, including proof-file existence and repo-local `just` recipe references; it is an evidence index, not an execution gate by itself
