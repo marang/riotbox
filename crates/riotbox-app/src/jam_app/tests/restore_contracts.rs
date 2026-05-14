@@ -93,6 +93,31 @@ fn rejects_session_with_external_source_graph_hash_mismatch() {
 }
 
 #[test]
+fn rejects_session_with_explicit_source_graph_path_hash_mismatch() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("jam-session.json");
+    let graph_path = dir.path().join("explicit-source-graph.json");
+    let session_graph = sample_graph();
+    let mut explicit_graph = sample_graph();
+    explicit_graph.source.duration_seconds = 121.0;
+    save_source_graph_json(&graph_path, &explicit_graph)
+        .expect("save explicit source graph fixture");
+    let session = sample_session(&session_graph);
+    save_session_json(&session_path, &session).expect("save session fixture");
+
+    let error = JamAppState::from_json_files(&session_path, Some(&graph_path))
+        .expect_err("explicit graph hash mismatch should fail");
+
+    match error {
+        JamAppError::InvalidSession(message) => {
+            assert!(message.contains("hash mismatch"));
+            assert!(message.contains(&session.source_graph_refs[0].graph_hash));
+        }
+        other => panic!("unexpected error: {other}"),
+    }
+}
+
+#[test]
 fn rejects_session_with_snapshot_cursor_beyond_action_log() {
     let dir = tempdir().expect("create temp dir");
     let session_path = dir.path().join("jam-session.json");
