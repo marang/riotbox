@@ -324,4 +324,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add invalid observer fixture for locked-grid Source Timing contradictions
 - [RIOTBOX-787.md](./RIOTBOX-787.md)
   Add locked-grid observer/audio correlation fixture pair for Source Timing alignment
+- [RIOTBOX-782.md](./RIOTBOX-782.md)
+  Add Source Timing readiness fixture for long stable lock candidate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
