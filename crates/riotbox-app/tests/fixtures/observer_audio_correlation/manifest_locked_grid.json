@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "grid_bpm_source": "source_timing",
+  "grid_bpm_decision_reason": "source_timing_ready",
+  "source_timing_bpm_delta": 0.0,
+  "artifacts": [
+    {
+      "role": "tr909_beat_fill",
+      "kind": "wav",
+      "path": "stems/01_tr909_beat_fill.wav"
+    },
+    {
+      "role": "w30_feral_source_chop",
+      "kind": "wav",
+      "path": "stems/02_w30_feral_source_chop.wav"
+    },
+    {
+      "role": "full_grid_mix",
+      "kind": "wav",
+      "path": "03_riotbox_grid_feral_mix.wav"
+    },
+    {
+      "role": "report",
+      "kind": "markdown",
+      "path": "report.md"
+    },
+    {
+      "role": "manifest",
+      "kind": "json",
+      "path": "manifest.json"
+    }
+  ],
+  "source_timing": {
+    "schema": "riotbox.source_timing_probe_readiness.v1",
+    "schema_version": 1,
+    "source_id": "src-locked",
+    "policy_profile": "dance_loop_auto_readiness",
+    "grid_use": "locked_grid",
+    "readiness": "ready",
+    "requires_manual_confirm": false,
+    "primary_bpm": 128.0,
+    "bpm_agrees_with_grid": true,
+    "beat_status": "stable",
+    "downbeat_status": "stable",
+    "primary_downbeat_offset_beats": 0,
+    "confidence_result": "candidate_locked",
+    "drift_status": "stable",
+    "phrase_status": "phrase_locked",
+    "anchor_evidence": {
+      "primary_anchor_count": 16,
+      "primary_kick_anchor_count": 4,
+      "primary_backbeat_anchor_count": 8,
+      "primary_transient_anchor_count": 4
+    },
+    "groove_evidence": {
+      "primary_groove_residual_count": 2,
+      "primary_max_abs_offset_ms": 6.0,
+      "primary_groove_preview": [
+        {
+          "subdivision": "eighth",
+          "offset_ms": -6.0,
+          "confidence": 0.78
+        },
+        {
+          "subdivision": "sixteenth",
+          "offset_ms": 3.5,
+          "confidence": 0.66
+        }
+      ]
+    },
+    "alternate_evidence_count": 0,
+    "warning_codes": []
+  },
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.1843,
+        "peak_abs": 0.812
+      },
+      "low_band": {
+        "rms": 0.0612
+      }
+    },
+    "source_grid_output_drift": {
+      "beat_count": 16,
+      "hit_count": 16,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "tr909_source_grid_alignment": {
+      "beat_count": 16,
+      "hit_count": 16,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_grid_alignment": {
+      "beat_count": 16,
+      "hit_count": 16,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 5.13,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_loop_closure": {
+      "passed": true,
+      "selected_frame_count": 2048,
+      "preview_rms": 0.145,
+      "edge_delta_abs": 0.004,
+      "max_allowed_edge_delta_abs": 0.06,
+      "edge_abs_max": 0.006,
+      "max_allowed_edge_abs": 0.04,
+      "source_contains_selection": true,
+      "reason": "source_chop_edges_faded_and_repeat_safe"
+    }
+  }
+}
