@@ -24,6 +24,7 @@ fn write_report(
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - TR-909 kick pressure: `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
+             - MC-202 bass pressure: `{}` mode `{}` shape `{}` budget `{}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - W-30 source-loop closure: `{}` edge delta `{:.6}` (max `{:.6}`), edge abs `{:.6}` (max `{:.6}`)\n\
@@ -40,6 +41,7 @@ fn write_report(
              | Stem | RMS | Peak abs | Low-band RMS | Active samples | Bar similarity | Identical bar run | Low energy | Mid energy | High energy |\n\
              | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n\
              | TR-909 source support | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
+             | MC-202 bass pressure | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | W-30 Feral source chop | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | Source-first mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n\
              | Generated-support mix | {:.6} | {:.6} | {:.6} | {} | {:.6} | {} | {:.6} | {:.6} | {:.6} |\n",
@@ -67,6 +69,15 @@ fn write_report(
             report.tr909_kick_pressure.low_band_rms_ratio,
             report.tr909_kick_pressure.low_band_rms_delta,
             report.tr909_kick_pressure.post_peak_abs,
+            report.mc202_bass_pressure.reason,
+            report.mc202_bass_pressure.mode.label(),
+            report.mc202_bass_pressure.phrase_shape.label(),
+            report.mc202_bass_pressure.note_budget.label(),
+            report.mc202_bass_pressure.signal_rms,
+            report.mc202_bass_pressure.low_band_rms,
+            report.mc202_bass_pressure.touch,
+            report.mc202_bass_pressure.music_bus_level,
+            report.mc202_bass_pressure.peak_abs,
             report.w30_source_chop_profile.reason,
             report.w30_source_chop_profile.preview_rms,
             report.w30_source_chop_profile.source_window_rms,
@@ -106,6 +117,15 @@ fn write_report(
             report.tr909.spectral_energy.low_band_energy_ratio,
             report.tr909.spectral_energy.mid_band_energy_ratio,
             report.tr909.spectral_energy.high_band_energy_ratio,
+            report.mc202.signal.rms,
+            report.mc202.signal.peak_abs,
+            report.mc202.low_band.rms,
+            report.mc202.signal.active_samples,
+            report.mc202.bar_variation.bar_similarity,
+            report.mc202.bar_variation.identical_bar_run_length,
+            report.mc202.spectral_energy.low_band_energy_ratio,
+            report.mc202.spectral_energy.mid_band_energy_ratio,
+            report.mc202.spectral_energy.high_band_energy_ratio,
             report.w30.signal.rms,
             report.w30.signal.peak_abs,
             report.w30.low_band.rms,
@@ -168,8 +188,9 @@ fn write_readme(
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop with articulate source-window selection and bounded loudness normalization.\n\
-             - `03_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated drums stay secondary.\n\
-             - `04_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 adds low-end and movement without proving source extraction by itself.\n\
+             - `stems/03_mc202_bass_pressure.wav`: generated MC-202 bass-pressure support rendered on the same grid.\n\
+             - `04_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated support stays secondary.\n\
+             - `05_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 and MC-202 add low-end and movement without proving source extraction by themselves.\n\
              - `grid-report.md`: timing, source-timing readiness, and output metrics.\n\
              - `manifest.json`: machine-readable pack metadata, artifact paths, thresholds, and key metrics.\n\
 \n\

@@ -93,19 +93,23 @@ mod tests {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let sample_count = grid.total_frames * usize::from(CHANNEL_COUNT);
         let tr909 = vec![0.20; sample_count];
+        let mc202 = vec![0.08; sample_count];
         let w30 = vec![0.20; sample_count];
         let old_drum_dominant_policy = MixPolicy {
             tr909_gain: 10.0,
             tr909_low_gain: 18.0,
+            mc202_gain: 0.0,
+            mc202_low_gain: 0.0,
             w30_gain: 0.94,
             drive: 1.7,
             output_gain: 0.92,
         };
 
         let old_ratio =
-            generated_to_source_rms_ratio(&tr909, &w30, &grid, old_drum_dominant_policy);
-        let source_first_ratio = source_first_generated_to_source_rms_ratio(&tr909, &w30, &grid);
-        let support_ratio = support_generated_to_source_rms_ratio(&tr909, &w30, &grid);
+            generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid, old_drum_dominant_policy);
+        let source_first_ratio =
+            source_first_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
+        let support_ratio = support_generated_to_source_rms_ratio(&tr909, &mc202, &w30, &grid);
 
         assert!(old_ratio >= MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
         assert!(source_first_ratio < MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO);
@@ -171,20 +175,21 @@ mod tests {
                 .join("stems/02_w30_feral_source_chop.wav")
                 .is_file()
         );
-        assert!(output_dir.join("03_riotbox_source_first_mix.wav").is_file());
+        assert!(output_dir.join("stems/03_mc202_bass_pressure.wav").is_file());
+        assert!(output_dir.join("04_riotbox_source_first_mix.wav").is_file());
         assert!(
             output_dir
-                .join("04_riotbox_generated_support_mix.wav")
+                .join("05_riotbox_generated_support_mix.wav")
                 .is_file()
         );
         assert!(output_dir.join("grid-report.md").is_file());
         assert!(output_dir.join("manifest.json").is_file());
 
         let source_first_mix =
-            SourceAudioCache::load_pcm_wav(output_dir.join("03_riotbox_source_first_mix.wav"))
+            SourceAudioCache::load_pcm_wav(output_dir.join("04_riotbox_source_first_mix.wav"))
                 .expect("load full mix");
         let full_mix =
-            SourceAudioCache::load_pcm_wav(output_dir.join("04_riotbox_generated_support_mix.wav"))
+            SourceAudioCache::load_pcm_wav(output_dir.join("05_riotbox_generated_support_mix.wav"))
                 .expect("load generated-support mix");
         let grid = Grid::new(128.0, 4, 2).expect("grid");
 

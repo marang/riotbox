@@ -32,7 +32,7 @@ mod manifest_assertions {
                 .as_array()
                 .expect("lane gestures")
                 .len(),
-            2
+            3
         );
         assert_manifest_f32(
             &manifest["thresholds"]["min_signal_rms"],
@@ -56,7 +56,7 @@ mod manifest_assertions {
         );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");
-        assert_eq!(artifacts.len(), 6);
+        assert_eq!(artifacts.len(), 7);
         assert_manifest_artifact(
             artifacts,
             "tr909_beat_fill",
@@ -73,17 +73,24 @@ mod manifest_assertions {
         );
         assert_manifest_artifact(
             artifacts,
+            "mc202_bass_pressure_stem",
+            "audio_wav",
+            output_dir.join("stems/03_mc202_bass_pressure.wav"),
+            Some(output_dir.join("stems/03_mc202_bass_pressure.metrics.md")),
+        );
+        assert_manifest_artifact(
+            artifacts,
             "source_first_mix",
             "audio_wav",
-            output_dir.join("03_riotbox_source_first_mix.wav"),
-            Some(output_dir.join("03_riotbox_source_first_mix.metrics.md")),
+            output_dir.join("04_riotbox_source_first_mix.wav"),
+            Some(output_dir.join("04_riotbox_source_first_mix.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
             "full_grid_mix",
             "audio_wav",
-            output_dir.join("04_riotbox_generated_support_mix.wav"),
-            Some(output_dir.join("04_riotbox_generated_support_mix.metrics.md")),
+            output_dir.join("05_riotbox_generated_support_mix.wav"),
+            Some(output_dir.join("05_riotbox_generated_support_mix.metrics.md")),
         );
         assert_manifest_artifact(
             artifacts,
@@ -166,6 +173,32 @@ mod manifest_assertions {
                 .as_f64()
                 .expect("tr909 kick pressure peak")
                 <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
+        );
+        let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
+        assert_eq!(mc202_bass_pressure["applied"], true);
+        assert!(
+            mc202_bass_pressure["signal_rms"]
+                .as_f64()
+                .expect("mc202 bass pressure rms")
+                >= f64::from(MC202_BASS_PRESSURE_MIN_RMS)
+        );
+        assert!(
+            mc202_bass_pressure["low_band_rms"]
+                .as_f64()
+                .expect("mc202 bass pressure low-band rms")
+                >= f64::from(MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS)
+        );
+        assert!(
+            mc202_bass_pressure["peak_abs"]
+                .as_f64()
+                .expect("mc202 bass pressure peak")
+                <= f64::from(MC202_BASS_PRESSURE_MAX_PEAK_ABS)
+        );
+        assert!(
+            manifest["metrics"]["mc202_bass_pressure_stem"]["signal"]["rms"]
+                .as_f64()
+                .expect("mc202 bass pressure stem rms")
+                >= f64::from(MC202_BASS_PRESSURE_MIN_RMS)
         );
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
@@ -285,6 +318,13 @@ mod manifest_assertions {
                 .expect("source-first bar similarity")
                 <= 1.0
         );
+        assert!(
+            manifest["metrics"]["bar_variation"]["mc202_bass_pressure_stem"]["bar_similarity"]
+                .as_f64()
+                .expect("mc202 bar similarity")
+                <= 1.0
+        );
+        assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["mc202_bass_pressure_stem"]);
         assert!(
             manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
                 .as_f64()

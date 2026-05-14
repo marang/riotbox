@@ -92,8 +92,8 @@ for repro_dir in "$repro_a" "$repro_b"; do
         --source-start-seconds "0.0" \
         >/dev/null
 done
-hash_a="$(sha256sum "$repro_a/04_riotbox_generated_support_mix.wav" | awk '{print $1}')"
-hash_b="$(sha256sum "$repro_b/04_riotbox_generated_support_mix.wav" | awk '{print $1}')"
+hash_a="$(sha256sum "$repro_a/05_riotbox_generated_support_mix.wav" | awk '{print $1}')"
+hash_b="$(sha256sum "$repro_b/05_riotbox_generated_support_mix.wav" | awk '{print $1}')"
 if [[ "$hash_a" != "$hash_b" ]]; then
     echo "representative source showcase reproducibility failed: $hash_a != $hash_b" >&2
     exit 1
@@ -134,8 +134,9 @@ For each \`packs/<case>/<window>/\` directory:
 
 1. \`00_source_window.wav\`: raw source comparison window.
 2. \`stems/02_w30_feral_source_chop.wav\`: source-backed W-30 chop.
-3. \`03_riotbox_source_first_mix.wav\`: source-first Riotbox render.
-4. \`04_riotbox_generated_support_mix.wav\`: generated-support mix.
+3. \`stems/03_mc202_bass_pressure.wav\`: generated MC-202 bass-pressure support.
+4. \`04_riotbox_source_first_mix.wav\`: source-first Riotbox render.
+5. \`05_riotbox_generated_support_mix.wav\`: generated-support mix.
 
 ## Validation
 
@@ -146,7 +147,7 @@ For each \`packs/<case>/<window>/\` directory:
 
 ## Boundary
 
-This pack now marks at least one \`musically_convincing_candidate\` in \`validation/musical-quality.md\`, based on source identity, W-30 chop strength, TR-909 support audibility, low-end support, bar movement, and mix balance.
+This pack now marks at least one \`musically_convincing_candidate\` in \`validation/musical-quality.md\`, based on source identity, W-30 chop strength, TR-909 support audibility, MC-202 bass pressure, low-end support, bar movement, and mix balance.
 
 This pack does not claim full kick/snare/bass source separation, automatic taste scoring, or release-quality output. It is a representative source-response pack with one explicit listening candidate for product review.
 EOF

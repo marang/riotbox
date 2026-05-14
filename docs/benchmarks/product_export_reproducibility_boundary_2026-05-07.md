@@ -10,7 +10,7 @@ generated-support full mix:
 - command: `just product-export-reproducibility-smoke`
 - pack: `feral-grid-demo`
 - export artifact role: `full_grid_mix`
-- export artifact file: `04_riotbox_generated_support_mix.wav`
+- export artifact file: `05_riotbox_generated_support_mix.wav`
 - proof validator: `scripts/validate_product_export_reproducibility.py`
 
 This is the first normalized export reproducibility proof for the MVP spine. It

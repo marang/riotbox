@@ -1,7 +1,8 @@
 # Representative Source Showcase 2026-05-07
 
 Use this local pack only after the source-diversity, mix-balance,
-source-aware TR-909, and W-30 source-chop fixes have landed.
+source-aware TR-909, MC-202 bass-pressure, and W-30 source-chop fixes have
+landed.
 
 ```bash
 just representative-source-showcase
@@ -23,8 +24,9 @@ Review order for each `packs/<case>/<window>/` directory:
 
 1. `00_source_window.wav`
 2. `stems/02_w30_feral_source_chop.wav`
-3. `03_riotbox_source_first_mix.wav`
-4. `04_riotbox_generated_support_mix.wav`
+3. `stems/03_mc202_bass_pressure.wav`
+4. `04_riotbox_source_first_mix.wav`
+5. `05_riotbox_generated_support_mix.wav`
 
 The musical-quality summary lives at:
 
@@ -37,7 +39,8 @@ audible generated support, W-30 source-chop energy, low-end support, source
 anchor evidence, bounded source-first masking, non-static bar movement, and a
 measured W-30 trigger-variation proof. It also requires TR-909 kick-pressure
 proof so added drum support is measurable low-end body, not a decorative tick.
-Event density remains a guardrail, but the W-30 offbeat-trigger,
+It requires MC-202 bass-pressure proof so the bass lane is audible instead of
+only named in the manifest. Event density remains a guardrail, but the W-30 offbeat-trigger,
 distinct-bar-pattern, and unique-slice-offset metrics are the direct proof that
 a sparse source chop is not just a static repeated audition. It does not claim
 automatic taste scoring or release-ready output.
