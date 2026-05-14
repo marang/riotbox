@@ -42,7 +42,7 @@ impl SourceAudioCache {
                 "channel count must be greater than zero".into(),
             ));
         }
-        if samples.len() % usize::from(channel_count) != 0 {
+        if !samples.len().is_multiple_of(usize::from(channel_count)) {
             return Err(SourceAudioError::InvalidWave(
                 "interleaved sample count must be divisible by channel count".into(),
             ));
