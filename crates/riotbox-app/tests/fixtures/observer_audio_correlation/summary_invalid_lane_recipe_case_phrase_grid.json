@@ -1,0 +1,71 @@
+{
+  "schema": "riotbox.observer_audio_summary.v1",
+  "schema_version": 1,
+  "control_path": {
+    "present": true,
+    "observer_schema": "riotbox.user_session_observer.v1",
+    "launch_mode": "ingest",
+    "audio_runtime_status": "started",
+    "key_outcomes": [
+      "g -> queue_mc202_generate_follower"
+    ],
+    "first_commit": "action 301 at Phrase beat 16 bar 4 phrase 1 sequence 1",
+    "commit_count": 1,
+    "commit_boundaries": [
+      "Phrase"
+    ],
+    "observer_source_timing": null
+  },
+  "output_path": {
+    "present": true,
+    "issues": [],
+    "pack_id": "lane-recipe-listening-pack",
+    "manifest_result": "pass",
+    "artifact_count": 1,
+    "grid_bpm_source": "unknown",
+    "grid_bpm_decision_reason": "unknown",
+    "source_timing_bpm_delta": null,
+    "source_timing": null,
+    "source_timing_alignment": null,
+    "source_timing_anchor_alignment": null,
+    "source_timing_groove_alignment": null,
+    "lane_recipe_cases": [
+      {
+        "id": "mc202-follower-to-answer",
+        "result": "pass",
+        "candidate_rms": 0.005675,
+        "signal_delta_rms": 0.008565,
+        "min_signal_delta_rms": 0.005,
+        "mc202_phrase_grid_malformed": false,
+        "mc202_source_phrase_slot_malformed": false,
+        "mc202_phrase_grid": {
+          "hit_ratio": "one",
+          "starts_on_phrase_boundary": true,
+          "candidate_onset_count": 7,
+          "grid_aligned_onset_count": 7,
+          "max_onset_offset_ms": 2.902494,
+          "max_allowed_onset_offset_ms": 8.0,
+          "passed": true
+        },
+        "mc202_source_phrase_slot": {
+          "phrase_grid_available": true,
+          "phrase_index": 3,
+          "starts_on_source_phrase_boundary": true,
+          "passed": true
+        }
+      }
+    ],
+    "metrics": {
+      "full_mix_rms": null,
+      "full_mix_low_band_rms": null,
+      "mc202_question_answer_delta_rms": null,
+      "source_grid_output_drift": null,
+      "tr909_source_grid_alignment": null,
+      "w30_source_grid_alignment": null,
+      "w30_candidate_rms": null,
+      "w30_candidate_active_sample_ratio": null,
+      "w30_rms_delta": null
+    }
+  },
+  "needs_human_listening": true
+}
