@@ -348,4 +348,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add syncopated source showcase smoke gate
 - [RIOTBOX-798.md](./RIOTBOX-798.md)
   Validate SourceGraphRef hash on session restore
+- [RIOTBOX-800.md](./RIOTBOX-800.md)
+  Add explicit source graph path hash restore regression
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
