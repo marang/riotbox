@@ -358,4 +358,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Improve W-30 chop articulation for musical showcase candidates
 - [RIOTBOX-803.md](./RIOTBOX-803.md)
   Add W-30 source-chop trigger variation for showcase candidates
+- [RIOTBOX-804.md](./RIOTBOX-804.md)
+  Add W-30 source slice-choice variation for showcase candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
