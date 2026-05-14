@@ -57,5 +57,7 @@ jq -e \
     and .metrics.w30_source_trigger_variation.applied == true
     and .metrics.w30_source_trigger_variation.offbeat_trigger_count > 0
     and .metrics.w30_source_trigger_variation.distinct_bar_pattern_count >= 2
+    and .metrics.w30_source_slice_choice.applied == true
+    and .metrics.w30_source_slice_choice.unique_source_offset_count >= 4
     and .metrics.full_grid_mix.signal.rms > 0.000001' \
   "$tmpdir/pack/manifest.json"

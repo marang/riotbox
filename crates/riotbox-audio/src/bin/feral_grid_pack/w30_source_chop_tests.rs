@@ -116,7 +116,8 @@ mod w30_source_chop_tests {
         .expect("pulse preview")
         .0;
 
-        let (varied_render, proof) = render_w30_source_chop_with_variation(&grid, &pulse_preview);
+        let (varied_render, proof, slice_choice) =
+            render_w30_source_chop_with_variation(&grid, &pulse_preview);
         let legacy_render = render_w30_source_chop_legacy(&grid, pulse_preview);
         let varied_alignment = source_grid_output_drift_metrics(&varied_render, &grid);
         let legacy_bars = bar_variation_metrics(&legacy_render, &grid);
@@ -127,6 +128,9 @@ mod w30_source_chop_tests {
         assert!(proof.offbeat_trigger_count > 0);
         assert!(proof.distinct_bar_pattern_count >= 2);
         assert!(proof.max_quantized_offset_ms <= proof.max_allowed_quantized_offset_ms);
+        assert!(slice_choice.applied, "{slice_choice:?}");
+        assert!(slice_choice.unique_source_offset_count >= 4);
+        assert!(slice_choice.selected_offset_span_samples > 0);
         assert!(
             varied_alignment.hit_ratio >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
             "{varied_alignment:?}"
