@@ -342,4 +342,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Move MC-202 phrase-slot timing proof toward real source timing
 - [RIOTBOX-796.md](./RIOTBOX-796.md)
   Drive MC-202 lane recipe phrase timing from generated probe audio
+- [RIOTBOX-795.md](./RIOTBOX-795.md)
+  Fix source-timing beat-period sort comparator panic on syncopated onsets
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
