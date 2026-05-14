@@ -338,4 +338,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Plan next P012 lane-output timing proof beyond MC-202 summary visibility
 - [RIOTBOX-793.md](./RIOTBOX-793.md)
   Add Feral-grid full-mix drift regression against lane aliasing
+- [RIOTBOX-794.md](./RIOTBOX-794.md)
+  Move MC-202 phrase-slot timing proof toward real source timing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
