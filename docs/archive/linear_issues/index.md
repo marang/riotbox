@@ -326,4 +326,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add locked-grid observer/audio correlation fixture pair for Source Timing alignment
 - [RIOTBOX-782.md](./RIOTBOX-782.md)
   Add Source Timing readiness fixture for long stable lock candidate
+- [RIOTBOX-788.md](./RIOTBOX-788.md)
+  Expose MC-202 lane recipe timing proof in observer/audio JSON summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
