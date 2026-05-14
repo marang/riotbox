@@ -62,7 +62,26 @@ jq -e \
     and .control_path.commit_count >= 5
     and (.control_path.commit_boundaries | index("Phrase")) != null
     and .output_path.present == true
-    and (.output_path.issues | length == 0)' \
+    and (.output_path.issues | length == 0)
+    and (.output_path.lane_recipe_cases | length) >= 7
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-answer")) != null
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-touch-low-to-high")) != null
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-pressure")) != null
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-instigator")) != null
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-mutated-drive")) != null
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-neutral-to-lift-contour")) != null
+    and ([.output_path.lane_recipe_cases[].id] | index("mc202-direct-to-hook-response")) != null
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .result == "pass")
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .candidate_rms > 0.000001)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .signal_delta_rms >= .min_signal_delta_rms)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_phrase_grid.passed == true)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_phrase_grid.starts_on_phrase_boundary == true)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_phrase_grid.hit_ratio >= 0.95)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_phrase_grid.candidate_onset_count > 0)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_source_phrase_slot.passed == true)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_source_phrase_slot.phrase_grid_available == true)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_source_phrase_slot.phrase_index != null)
+    and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .mc202_source_phrase_slot.starts_on_source_phrase_boundary == true)' \
   "$summary"
 python3 scripts/validate_observer_audio_summary_json.py "$summary"
 

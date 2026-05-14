@@ -766,6 +766,10 @@ Today the repo already has:
   manifests, including MC-202 phrase-grid and Source Graph phrase-slot proof,
   so strict lane timing evidence is inspectable instead of only affecting the
   internal pass/fail verdict
+- the generated Recipe 2 observer/audio gate asserts the generated summary's
+  `lane_recipe_cases` evidence for the required MC-202 cases, so the visible
+  JSON summary and the generated lane recipe manifest must agree on phrase-grid
+  and Source Graph phrase-slot proof
 - the same Recipe 2 gate now rejects MC-202 lane recipe cases whose generated candidate lacks `mc202_phrase_grid` evidence; that metric proves the current offline candidate starts on the phrase boundary and its detected note onsets stay aligned to the sixteenth grid
 - the same Recipe 2 gate also rejects MC-202 lane recipe cases whose generated candidate lacks `mc202_source_phrase_slot` evidence; that metric proves the current offline candidate consumes a Source Graph phrase-grid slot and starts at the selected source phrase boundary, but it is still a bounded synthetic-source proof rather than a production phrase arranger
 - generated-pack manifest validation can require referenced artifact and metrics files to exist via `--require-existing-artifacts`
