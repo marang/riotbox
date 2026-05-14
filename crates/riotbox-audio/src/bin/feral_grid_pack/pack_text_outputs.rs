@@ -23,6 +23,7 @@ fn write_report(
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
+             - TR-909 kick pressure: `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - W-30 source-loop closure: `{}` edge delta `{:.6}` (max `{:.6}`), edge abs `{:.6}` (max `{:.6}`)\n\
@@ -60,6 +61,12 @@ fn write_report(
             report.tr909_groove_timing.source_subdivision.unwrap_or("none"),
             report.tr909_source_profile.low_band_energy_ratio,
             report.tr909_source_profile.high_band_energy_ratio,
+            report.tr909_kick_pressure.reason,
+            report.tr909_kick_pressure.anchor_count,
+            report.tr909_kick_pressure.pressure_gain,
+            report.tr909_kick_pressure.low_band_rms_ratio,
+            report.tr909_kick_pressure.low_band_rms_delta,
+            report.tr909_kick_pressure.post_peak_abs,
             report.w30_source_chop_profile.reason,
             report.w30_source_chop_profile.preview_rms,
             report.w30_source_chop_profile.source_window_rms,

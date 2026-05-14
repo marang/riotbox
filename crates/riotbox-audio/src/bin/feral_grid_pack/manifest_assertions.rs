@@ -147,6 +147,26 @@ mod manifest_assertions {
             .as_str()
             .is_some_and(|reason| !reason.is_empty()));
         assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
+        let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
+        assert_eq!(tr909_kick_pressure["applied"], true);
+        assert!(
+            tr909_kick_pressure["anchor_count"]
+                .as_u64()
+                .expect("tr909 kick pressure anchors")
+                >= 2
+        );
+        assert!(
+            tr909_kick_pressure["low_band_rms_ratio"]
+                .as_f64()
+                .expect("tr909 kick pressure low-band ratio")
+                >= f64::from(TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO)
+        );
+        assert!(
+            tr909_kick_pressure["post_peak_abs"]
+                .as_f64()
+                .expect("tr909 kick pressure peak")
+                <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
+        );
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
                 .as_f64()

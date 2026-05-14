@@ -51,6 +51,8 @@ jq -e \
     and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms
     and .metrics.tr909_source_grid_alignment.hit_ratio >= 0.95
     and .metrics.tr909_source_grid_alignment.max_peak_offset_ms <= .metrics.tr909_source_grid_alignment.max_allowed_peak_offset_ms
+    and .metrics.tr909_kick_pressure.applied == true
+    and .metrics.tr909_kick_pressure.low_band_rms_ratio >= 1.06
     and .metrics.w30_source_grid_alignment.hit_ratio >= 0.50
     and .metrics.w30_source_grid_alignment.max_peak_offset_ms <= .metrics.w30_source_grid_alignment.max_allowed_peak_offset_ms
     and .metrics.w30_source_loop_closure.passed == true
