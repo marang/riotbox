@@ -185,6 +185,10 @@ Early P011 guardrail defaults:
   source-backed W-30 chop, while `04_riotbox_generated_support_mix.wav` keeps the
   generated TR-909 support secondary and records generated/source RMS ratios in
   `metrics.mix_balance`
+- Feral grid pack-level `metrics.source_grid_output_drift` is measured from the
+  complete generated-support mix, not an individual lane. Lane-specific timing
+  evidence remains separate under `metrics.tr909_source_grid_alignment` and
+  `metrics.w30_source_grid_alignment`.
 - Feral grid TR-909 support must not be fixed only by BPM/grid when the pack is
   presented as source-aware. The generated manifest records
   `metrics.tr909_source_profile` with the measured source-window energy/onset

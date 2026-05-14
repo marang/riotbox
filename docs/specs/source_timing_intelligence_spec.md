@@ -644,9 +644,10 @@ bounded BPM policy:
   QA from trusting a readiness label without seeing what musical timing anchors
   supported it
 - generated Feral grid packs should also expose a bounded output-drift smoke
-  metric, currently `metrics.source_grid_output_drift`, so QA can catch obvious
-  generated-support/grid misalignment before this becomes production beat/downbeat
-  validation
+  metric for the complete generated-support mix, currently
+  `metrics.source_grid_output_drift`, so QA can catch obvious
+  generated-support/grid misalignment before this becomes production
+  beat/downbeat validation
 - TR-909 support should expose the same bounded alignment evidence under a
   lane-specific key, currently `metrics.tr909_source_grid_alignment`, so the
   first all-lane proof is visible as TR-909 output evidence rather than only a
