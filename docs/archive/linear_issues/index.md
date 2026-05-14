@@ -352,4 +352,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add explicit source graph path hash restore regression
 - [RIOTBOX-799.md](./RIOTBOX-799.md)
   Turn representative source showcase from technical proof into musically convincing demo
+- [RIOTBOX-801.md](./RIOTBOX-801.md)
+  Add musical-quality validator fixture coverage
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
