@@ -334,4 +334,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add generated lane recipe observer/audio JSON fixture smoke
 - [RIOTBOX-791.md](./RIOTBOX-791.md)
   Expose lane recipe summary case count in audio QA docs and contract notes
+- [RIOTBOX-792.md](./RIOTBOX-792.md)
+  Plan next P012 lane-output timing proof beyond MC-202 summary visibility
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
