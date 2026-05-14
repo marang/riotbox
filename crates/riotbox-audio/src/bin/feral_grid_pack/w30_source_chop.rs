@@ -26,6 +26,27 @@ struct W30SourceLoopClosureProof {
     reason: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct W30SourceTriggerVariationProof {
+    applied: bool,
+    grid_subdivision: u32,
+    trigger_count: u32,
+    beat_anchor_trigger_count: u32,
+    offbeat_trigger_count: u32,
+    skipped_beat_anchor_count: u32,
+    distinct_bar_pattern_count: usize,
+    max_quantized_offset_ms: f32,
+    max_allowed_quantized_offset_ms: f32,
+    reason: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct W30SourceTriggerEvent {
+    beat_position: f32,
+    velocity: f32,
+    source_offset_samples: usize,
+}
+
 #[derive(Serialize)]
 struct ManifestW30SourceChopProfile {
     source_window_rms: f32,
@@ -54,8 +75,24 @@ struct ManifestW30SourceLoopClosureProof {
     reason: &'static str,
 }
 
+#[derive(Serialize)]
+struct ManifestW30SourceTriggerVariationProof {
+    applied: bool,
+    grid_subdivision: u32,
+    trigger_count: u32,
+    beat_anchor_trigger_count: u32,
+    offbeat_trigger_count: u32,
+    skipped_beat_anchor_count: u32,
+    distinct_bar_pattern_count: usize,
+    max_quantized_offset_ms: f32,
+    max_allowed_quantized_offset_ms: f32,
+    reason: &'static str,
+}
+
 const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_DELTA_ABS: f32 = 0.060;
 const W30_SOURCE_LOOP_CLOSURE_MAX_EDGE_ABS: f32 = 0.040;
+const W30_SOURCE_TRIGGER_GRID_SUBDIVISION: u32 = 2;
+const W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS: f32 = 0.01;
 
 fn source_chop_preview_from_interleaved(
     samples: &[f32],
@@ -186,6 +223,88 @@ fn manifest_w30_source_loop_closure_proof(
     }
 }
 
+fn manifest_w30_source_trigger_variation_proof(
+    proof: W30SourceTriggerVariationProof,
+) -> ManifestW30SourceTriggerVariationProof {
+    ManifestW30SourceTriggerVariationProof {
+        applied: proof.applied,
+        grid_subdivision: proof.grid_subdivision,
+        trigger_count: proof.trigger_count,
+        beat_anchor_trigger_count: proof.beat_anchor_trigger_count,
+        offbeat_trigger_count: proof.offbeat_trigger_count,
+        skipped_beat_anchor_count: proof.skipped_beat_anchor_count,
+        distinct_bar_pattern_count: proof.distinct_bar_pattern_count,
+        max_quantized_offset_ms: proof.max_quantized_offset_ms,
+        max_allowed_quantized_offset_ms: proof.max_allowed_quantized_offset_ms,
+        reason: proof.reason,
+    }
+}
+
+fn w30_source_trigger_events(grid: &Grid, preview: &W30PreviewSampleWindow) -> Vec<W30SourceTriggerEvent> {
+    let mut events = Vec::with_capacity(grid.total_beats as usize + grid.bars as usize);
+    let sample_stride = (preview.sample_count / 8).max(1);
+
+    for bar in 0..grid.bars {
+        let bar_start = bar.saturating_mul(grid.beats_per_bar) as f32;
+        let pattern = bar % 4;
+        let positions: &[(f32, f32, usize)] = match pattern {
+            0 => &[(0.0, 0.94, 0), (1.0, 0.78, 1), (2.0, 0.88, 2), (3.0, 0.72, 3)],
+            1 => &[(0.0, 0.96, 0), (0.5, 0.66, 4), (2.0, 0.84, 2), (3.0, 0.76, 5)],
+            2 => &[(0.0, 0.92, 1), (1.0, 0.74, 3), (2.5, 0.72, 5), (3.0, 0.86, 0)],
+            _ => &[(0.0, 0.98, 0), (1.5, 0.70, 4), (2.0, 0.82, 2), (3.5, 0.68, 6)],
+        };
+
+        for (beat_offset, velocity, source_stride) in positions {
+            events.push(W30SourceTriggerEvent {
+                beat_position: bar_start + beat_offset,
+                velocity: *velocity,
+                source_offset_samples: source_stride.saturating_mul(sample_stride),
+            });
+        }
+    }
+
+    events
+}
+
+fn w30_source_trigger_variation_proof(
+    grid: &Grid,
+    events: &[W30SourceTriggerEvent],
+) -> W30SourceTriggerVariationProof {
+    let beat_anchor_trigger_count = events
+        .iter()
+        .filter(|event| is_beat_anchor(event.beat_position))
+        .count() as u32;
+    let offbeat_trigger_count = events.len() as u32 - beat_anchor_trigger_count;
+    let skipped_beat_anchor_count = grid
+        .total_beats
+        .saturating_sub(beat_anchor_trigger_count.min(grid.total_beats));
+    let distinct_bar_pattern_count = grid.bars.min(4) as usize;
+    let max_quantized_offset_ms = events
+        .iter()
+        .map(|event| quantized_offset_ms(event.beat_position, grid.bpm))
+        .fold(0.0_f32, f32::max);
+    let applied = offbeat_trigger_count > 0
+        && distinct_bar_pattern_count > 1
+        && max_quantized_offset_ms <= W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS;
+
+    W30SourceTriggerVariationProof {
+        applied,
+        grid_subdivision: W30_SOURCE_TRIGGER_GRID_SUBDIVISION,
+        trigger_count: events.len() as u32,
+        beat_anchor_trigger_count,
+        offbeat_trigger_count,
+        skipped_beat_anchor_count,
+        distinct_bar_pattern_count,
+        max_quantized_offset_ms,
+        max_allowed_quantized_offset_ms: W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS,
+        reason: if applied {
+            "source_grid_locked_trigger_variation"
+        } else {
+            "source_trigger_variation_not_applied"
+        },
+    }
+}
+
 fn mono_frames(samples: &[f32], channel_count: usize) -> Vec<f32> {
     let channel_count = channel_count.max(1);
     samples
@@ -298,4 +417,14 @@ fn peak_abs(samples: &[f32]) -> f32 {
         .iter()
         .map(|sample| sample.abs())
         .fold(0.0_f32, f32::max)
+}
+
+fn is_beat_anchor(beat_position: f32) -> bool {
+    (beat_position - beat_position.round()).abs() <= f32::EPSILON
+}
+
+fn quantized_offset_ms(beat_position: f32, bpm: f32) -> f32 {
+    let subdivision = W30_SOURCE_TRIGGER_GRID_SUBDIVISION as f32;
+    let quantized = (beat_position * subdivision).round() / subdivision;
+    (beat_position - quantized).abs() * 60_000.0 / bpm.max(f32::EPSILON)
 }

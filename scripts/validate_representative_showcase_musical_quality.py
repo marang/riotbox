@@ -19,8 +19,10 @@ MAX_SOURCE_FIRST_RATIO = 0.45
 MIN_W30_PREVIEW_RMS = 0.14
 MIN_ANCHORS = 1
 MAX_BAR_SIMILARITY = 0.992
-MIN_EVENT_DENSITY = 80.0
+MIN_EVENT_DENSITY = 40.0
 MAX_EVENT_DENSITY = 650.0
+MIN_W30_OFFBEAT_TRIGGERS = 1
+MIN_W30_DISTINCT_BAR_PATTERNS = 2
 
 
 @dataclass(frozen=True)
@@ -66,6 +68,8 @@ def main() -> int:
             "max_full_mix_bar_similarity": MAX_BAR_SIMILARITY,
             "min_event_density_per_bar": MIN_EVENT_DENSITY,
             "max_event_density_per_bar": MAX_EVENT_DENSITY,
+            "min_w30_offbeat_trigger_count": MIN_W30_OFFBEAT_TRIGGERS,
+            "min_w30_distinct_bar_pattern_count": MIN_W30_DISTINCT_BAR_PATTERNS,
         },
     }
 
@@ -117,6 +121,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     metrics = manifest["metrics"]
     full = metrics["full_grid_mix"]
     source_timing = manifest["source_timing"]
+    w30_variation = metrics.get("w30_source_trigger_variation", {})
     return {
         "full_rms": number(full["signal"]["rms"]),
         "low_band_rms": number(full["low_band"]["rms"]),
@@ -129,6 +134,14 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             metrics["mix_balance"]["source_first_generated_to_source_rms_ratio"]
         ),
         "w30_preview_rms": number(metrics["w30_source_chop_profile"]["preview_rms"]),
+        "w30_trigger_variation_applied": bool(w30_variation.get("applied", False)),
+        "w30_offbeat_trigger_count": int(w30_variation.get("offbeat_trigger_count", 0)),
+        "w30_distinct_bar_pattern_count": int(
+            w30_variation.get("distinct_bar_pattern_count", 0)
+        ),
+        "w30_max_quantized_offset_ms": number(
+            w30_variation.get("max_quantized_offset_ms", 999.0)
+        ),
         "source_anchor_count": int(source_timing["anchor_evidence"]["primary_anchor_count"]),
         "tr909_reason": metrics["tr909_source_profile"]["reason"],
         "grid_use": source_timing["grid_use"],
@@ -151,6 +164,18 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "source_first_generated_support_masks_source",
         ),
         (metrics["w30_preview_rms"] >= MIN_W30_PREVIEW_RMS, "w30_chop_too_weak"),
+        (
+            metrics["w30_trigger_variation_applied"],
+            "w30_trigger_variation_not_applied",
+        ),
+        (
+            metrics["w30_offbeat_trigger_count"] >= MIN_W30_OFFBEAT_TRIGGERS,
+            "w30_trigger_variation_has_no_offbeats",
+        ),
+        (
+            metrics["w30_distinct_bar_pattern_count"] >= MIN_W30_DISTINCT_BAR_PATTERNS,
+            "w30_trigger_variation_too_static",
+        ),
         (metrics["source_anchor_count"] >= MIN_ANCHORS, "missing_source_anchor_evidence"),
         (metrics["bar_similarity"] <= MAX_BAR_SIMILARITY, "full_mix_too_static"),
         (
@@ -165,11 +190,13 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
     support = clamp(metrics["support_generated_to_source_rms_ratio"] / 0.30, 0.0, 1.4)
     low = clamp(metrics["low_band_rms"] / 0.030, 0.0, 1.3)
     chop = clamp(metrics["w30_preview_rms"] / 0.24, 0.0, 1.3)
+    trigger_variation = clamp(metrics["w30_offbeat_trigger_count"] / 4.0, 0.0, 1.0)
+    pattern_variation = clamp(metrics["w30_distinct_bar_pattern_count"] / 4.0, 0.0, 1.0)
     movement = clamp((1.0 - metrics["bar_similarity"]) / 0.020, 0.0, 1.0)
     density = clamp(metrics["event_density_per_bar"] / 280.0, 0.0, 1.2)
     anchors = clamp(metrics["source_anchor_count"] / 8.0, 0.0, 1.0)
     penalty = len(issues) * 0.35
-    return support + low + chop + movement + density + anchors - penalty
+    return support + low + chop + trigger_variation + pattern_variation + movement + density + anchors - penalty
 
 
 def candidate_record(candidate: Candidate) -> dict[str, Any]:
@@ -204,6 +231,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It keeps the source-first mix below the masking threshold.",
         "- It requires generated TR-909 support to be audible rather than decorative.",
         "- It requires W-30 source-chop energy, low-end support, source-anchor evidence, and non-static bar movement.",
+        "- It requires W-30 trigger variation to be applied rather than relying on a static repeated chop.",
         "- It remains a review gate, not an automatic taste oracle.",
         "",
         "## Selected Metrics",

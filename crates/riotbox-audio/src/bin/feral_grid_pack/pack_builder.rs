@@ -193,6 +193,7 @@ struct PackReport {
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     w30_source_chop_profile: W30SourceChopProfile,
     w30_source_loop_closure: W30SourceLoopClosureProof,
+    w30_source_trigger_variation: W30SourceTriggerVariationProof,
     tr909: RenderMetrics,
     w30: RenderMetrics,
     source_first_mix: RenderMetrics,
@@ -269,6 +270,7 @@ struct ManifestPackMetrics {
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     w30_source_chop_profile: ManifestW30SourceChopProfile,
     w30_source_loop_closure: ManifestW30SourceLoopClosureProof,
+    w30_source_trigger_variation: ManifestW30SourceTriggerVariationProof,
     tr909_beat_fill: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
     source_first_mix: ManifestRenderMetrics,
@@ -396,7 +398,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &render_tr909_source_support(&grid, tr909_source_profile),
         tr909_groove_timing,
     );
-    let w30 = render_w30_source_chop(&grid, w30_preview);
+    let (w30, w30_source_trigger_variation) =
+        render_w30_source_chop_with_variation(&grid, &w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &w30);
     let full_mix = render_generated_support_mix(&tr909, &w30);
 
@@ -424,6 +427,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         tr909_groove_timing,
         w30_source_chop_profile,
         w30_source_loop_closure,
+        w30_source_trigger_variation,
         tr909: render_metrics(&tr909, &grid),
         w30: render_metrics(&w30, &grid),
         source_first_mix: render_metrics(&source_first_mix, &grid),

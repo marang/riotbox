@@ -20,7 +20,119 @@ fn render_tr909_source_support(grid: &Grid, profile: SourceAwareTr909Profile) ->
     )
 }
 
+#[allow(dead_code)]
 fn render_w30_source_chop(grid: &Grid, source_window_preview: W30PreviewSampleWindow) -> Vec<f32> {
+    render_w30_source_chop_with_variation(grid, &source_window_preview).0
+}
+
+fn render_w30_source_chop_with_variation(
+    grid: &Grid,
+    source_window_preview: &W30PreviewSampleWindow,
+) -> (Vec<f32>, W30SourceTriggerVariationProof) {
+    let events = w30_source_trigger_events(grid, source_window_preview);
+    let proof = w30_source_trigger_variation_proof(grid, &events);
+    let profile_gain = w30_source_trigger_profile_gain(source_window_preview);
+    let mut output = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
+
+    for event in events {
+        render_w30_source_trigger_event(&mut output, grid, source_window_preview, event, profile_gain);
+    }
+
+    for sample in &mut output {
+        *sample = sample.clamp(-0.95, 0.95);
+    }
+
+    (output, proof)
+}
+
+fn render_w30_source_trigger_event(
+    output: &mut [f32],
+    grid: &Grid,
+    source_window_preview: &W30PreviewSampleWindow,
+    event: W30SourceTriggerEvent,
+    profile_gain: f32,
+) {
+    let sample_count = source_window_preview
+        .sample_count
+        .min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+    if sample_count == 0 {
+        return;
+    }
+
+    let trigger_frame = frames_for_beat_position(grid.bpm, event.beat_position);
+    let event_frame_count = sample_count.saturating_mul(2);
+    for frame_offset in 0..event_frame_count {
+        let frame = trigger_frame.saturating_add(frame_offset);
+        if frame >= grid.total_frames {
+            break;
+        }
+
+        let source_index = (event.source_offset_samples + frame_offset / 2) % sample_count;
+        let previous_source_index = (source_index + sample_count - 1) % sample_count;
+        let source_sample = source_window_preview.samples[source_index];
+        let source_edge = source_sample - source_window_preview.samples[previous_source_index];
+        let envelope = w30_source_trigger_event_envelope(frame_offset, event_frame_count);
+        let sample = (source_sample + source_edge * 0.28)
+            * event.velocity
+            * envelope
+            * w30_source_trigger_gain(event.beat_position)
+            * profile_gain;
+        let output_index = frame.saturating_mul(usize::from(CHANNEL_COUNT));
+        output[output_index] += sample;
+        output[output_index + 1] += sample * 0.98;
+    }
+}
+
+fn w30_source_trigger_event_envelope(frame_offset: usize, event_frame_count: usize) -> f32 {
+    if event_frame_count <= 1 {
+        return 1.0;
+    }
+    let position = frame_offset as f32 / (event_frame_count - 1) as f32;
+    let attack = (position / 0.018).clamp(0.0, 1.0);
+    let decay = ((1.0 - position) / 0.982).clamp(0.0, 1.0).powf(0.58);
+    attack * decay
+}
+
+fn w30_source_trigger_gain(beat_position: f32) -> f32 {
+    if is_beat_anchor(beat_position) {
+        0.26
+    } else {
+        0.20
+    }
+}
+
+fn w30_source_trigger_profile_gain(source_window_preview: &W30PreviewSampleWindow) -> f32 {
+    let sample_count = source_window_preview
+        .sample_count
+        .min(W30_PREVIEW_SAMPLE_WINDOW_LEN);
+    if sample_count == 0 {
+        return 1.0;
+    }
+
+    let samples = &source_window_preview.samples[..sample_count];
+    let (_, _, tail_to_body_rms_ratio) = chop_articulation_metrics(samples);
+    let spectral = spectral_energy_metrics(samples);
+
+    if tail_to_body_rms_ratio > 1.20 {
+        0.55
+    } else if spectral.high_band_energy_ratio > 0.08 {
+        0.60
+    } else if spectral.low_band_energy_ratio > 0.95 {
+        0.90
+    } else {
+        0.96
+    }
+}
+
+fn frames_for_beat_position(bpm: f32, beats: f32) -> usize {
+    (beats as f64 * f64::from(SAMPLE_RATE) * 60.0 / f64::from(bpm)).round() as usize
+}
+
+#[allow(dead_code)]
+fn render_w30_source_chop_legacy(
+    grid: &Grid,
+    source_window_preview: W30PreviewSampleWindow,
+) -> Vec<f32> {
     render_w30_preview_offline(
         &W30PreviewRenderState {
             mode: W30PreviewRenderMode::RawCaptureAudition,
@@ -156,6 +268,16 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.w30_source_trigger_variation.applied {
+        return Err(format!(
+            "W-30 source trigger variation was not applied: offbeat {} distinct patterns {} quantized offset {:.6} ms",
+            report.w30_source_trigger_variation.offbeat_trigger_count,
+            report.w30_source_trigger_variation.distinct_bar_pattern_count,
+            report.w30_source_trigger_variation.max_quantized_offset_ms
+        )
+        .into());
+    }
+
     Ok(())
 }
 
@@ -283,6 +405,9 @@ fn write_manifest(
             ),
             w30_source_loop_closure: manifest_w30_source_loop_closure_proof(
                 report.w30_source_loop_closure,
+            ),
+            w30_source_trigger_variation: manifest_w30_source_trigger_variation_proof(
+                report.w30_source_trigger_variation,
             ),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
