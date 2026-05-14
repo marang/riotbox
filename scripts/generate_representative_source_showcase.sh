@@ -65,6 +65,10 @@ python3 scripts/validate_source_showcase_diversity.py \
     --json-output "$output_dir/validation/source-diversity.json" \
     --markdown-output "$output_dir/validation/source-diversity.md" \
     "${primary_packs[@]}"
+python3 scripts/validate_representative_showcase_musical_quality.py \
+    --json-output "$output_dir/validation/musical-quality.json" \
+    --markdown-output "$output_dir/validation/musical-quality.md" \
+    "$output_dir"
 
 repro_a="$output_dir/validation/repro-a"
 repro_b="$output_dir/validation/repro-b"
@@ -136,12 +140,15 @@ For each \`packs/<case>/<window>/\` directory:
 ## Validation
 
 - Source-diversity summary: \`validation/source-diversity.md\`
+- Musical-quality summary: \`validation/musical-quality.md\`
 - Reproducibility summary: \`validation/reproducibility.md\`
 - Observer/audio JSON summary: \`observer/observer-audio-summary.json\`
 
 ## Boundary
 
-This pack does not claim full kick/snare/bass source separation. It is a representative source-response pack, not a finished musical demo or release asset.
+This pack now marks at least one \`musically_convincing_candidate\` in \`validation/musical-quality.md\`, based on source identity, W-30 chop strength, TR-909 support audibility, low-end support, bar movement, and mix balance.
+
+This pack does not claim full kick/snare/bass source separation, automatic taste scoring, or release-quality output. It is a representative source-response pack with one explicit listening candidate for product review.
 EOF
 
 cat >"$output_dir/validation/pack-index.txt" <<EOF

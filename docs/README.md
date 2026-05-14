@@ -211,6 +211,7 @@ docs/
 - `reviews/snapshot_payload_hydration_boundary_2026-04-30.md`: snapshot payload hydration boundary review captured
 - `reviews/docs_consistency_review_2026-05-03.md`: docs consistency review captured
 - `reviews/source_showcase_false_positive_review_2026-05-03.md`: source-showcase audio QA false-positive review captured
+- `reviews/representative_showcase_musical_quality_2026-05-14.md`: representative showcase musical-quality review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
