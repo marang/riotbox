@@ -15,6 +15,29 @@ fn strict_evidence_accepts_lane_recipe_manifest_for_recipe2_mc202_cases() {
     assert_eq!(summary.lane_recipe_cases.len(), 7);
     assert!(output_path_present(&summary));
     validate_required_evidence(&summary).expect("lane recipe evidence");
+
+    let json: Value = serde_json::from_str(&render_json(&summary).expect("json")).expect("json");
+    let cases = json["output_path"]["lane_recipe_cases"]
+        .as_array()
+        .expect("lane recipe cases");
+    assert_eq!(cases.len(), 7);
+    assert_eq!(cases[0]["id"], "mc202-follower-to-answer");
+    assert_eq!(cases[0]["result"], "pass");
+    assert_eq!(cases[0]["mc202_phrase_grid"]["passed"], true);
+    assert_eq!(cases[0]["mc202_phrase_grid"]["hit_ratio"], 1.0);
+    assert_eq!(
+        cases[0]["mc202_phrase_grid"]["starts_on_phrase_boundary"],
+        true
+    );
+    assert_eq!(cases[0]["mc202_source_phrase_slot"]["passed"], true);
+    assert_eq!(
+        cases[0]["mc202_source_phrase_slot"]["phrase_grid_available"],
+        true
+    );
+    assert_eq!(
+        cases[0]["mc202_source_phrase_slot"]["starts_on_source_phrase_boundary"],
+        true
+    );
 }
 
 #[test]

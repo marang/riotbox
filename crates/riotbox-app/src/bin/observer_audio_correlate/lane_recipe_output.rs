@@ -1,4 +1,4 @@
-use serde_json::Value;
+use serde_json::{Value, json};
 
 const REQUIRED_RECIPE2_MC202_CASES: &[&str] = &[
     "mc202-follower-to-answer",
@@ -207,6 +207,49 @@ pub(super) fn lane_recipe_metric_failures(
     }
 
     failures
+}
+
+pub(super) fn lane_recipe_cases_json(cases: &[LaneRecipeCaseEvidence]) -> Vec<Value> {
+    cases
+        .iter()
+        .map(|case| {
+            json!({
+                "id": &case.id,
+                "result": &case.result,
+                "candidate_rms": case.candidate_rms,
+                "signal_delta_rms": case.signal_delta_rms,
+                "min_signal_delta_rms": case.min_signal_delta_rms,
+                "mc202_phrase_grid": case.mc202_phrase_grid.as_ref().map(mc202_phrase_grid_json),
+                "mc202_phrase_grid_malformed": case.mc202_phrase_grid_malformed,
+                "mc202_source_phrase_slot": case
+                    .mc202_source_phrase_slot
+                    .as_ref()
+                    .map(mc202_source_phrase_slot_json),
+                "mc202_source_phrase_slot_malformed": case.mc202_source_phrase_slot_malformed,
+            })
+        })
+        .collect()
+}
+
+fn mc202_phrase_grid_json(evidence: &Mc202PhraseGridEvidence) -> Value {
+    json!({
+        "hit_ratio": evidence.hit_ratio,
+        "starts_on_phrase_boundary": evidence.starts_on_phrase_boundary,
+        "candidate_onset_count": evidence.candidate_onset_count,
+        "grid_aligned_onset_count": evidence.grid_aligned_onset_count,
+        "max_onset_offset_ms": evidence.max_onset_offset_ms,
+        "max_allowed_onset_offset_ms": evidence.max_allowed_onset_offset_ms,
+        "passed": evidence.passed,
+    })
+}
+
+fn mc202_source_phrase_slot_json(evidence: &Mc202SourcePhraseSlotEvidence) -> Value {
+    json!({
+        "phrase_grid_available": evidence.phrase_grid_available,
+        "phrase_index": evidence.phrase_index,
+        "starts_on_source_phrase_boundary": evidence.starts_on_source_phrase_boundary,
+        "passed": evidence.passed,
+    })
 }
 
 fn collect_mc202_phrase_grid(case: &Value) -> (Option<Mc202PhraseGridEvidence>, bool) {

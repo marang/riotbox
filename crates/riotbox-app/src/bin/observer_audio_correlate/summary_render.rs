@@ -174,6 +174,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "manifest": alignment.manifest.as_ref().map(source_timing_groove_evidence_json),
                 "issues": &alignment.issues,
             })),
+            "lane_recipe_cases": lane_recipe_cases_json(&summary.lane_recipe_cases),
             "metrics": {
                 "full_mix_rms": summary.full_mix_rms,
                 "full_mix_low_band_rms": summary.full_mix_low_band_rms,

@@ -12,7 +12,8 @@ mod lane_recipe_output;
 mod observer_validation;
 
 use lane_recipe_output::{
-    LaneRecipeCaseEvidence, collect_lane_recipe_cases, lane_recipe_metric_failures,
+    LaneRecipeCaseEvidence, collect_lane_recipe_cases, lane_recipe_cases_json,
+    lane_recipe_metric_failures,
 };
 use observer_validation::validate_user_session_observer_events;
 

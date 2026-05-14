@@ -118,6 +118,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_source_timing_alignment(output_path)
     require_optional_source_timing_anchor_alignment(output_path)
     require_optional_source_timing_groove_alignment(output_path)
+    require_lane_recipe_cases(output_path)
 
     metrics = require_object_field(output_path, "metrics")
     require_optional_number(metrics, "full_mix_rms")
@@ -421,6 +422,54 @@ def require_optional_source_timing_groove_alignment(parent: dict[str, Any]) -> N
     require_optional_source_timing_groove_evidence(alignment, "observer")
     require_optional_source_timing_groove_evidence(alignment, "manifest")
     require_string_list(alignment, "issues")
+
+
+def require_lane_recipe_cases(parent: dict[str, Any]) -> None:
+    cases = require_array(parent, "lane_recipe_cases")
+    for index, case in enumerate(cases):
+        require_lane_recipe_case(case, f"lane_recipe_cases[{index}]")
+
+
+def require_lane_recipe_case(value: Any, name: str) -> None:
+    case = require_object(value, name)
+    require_string(case, "id")
+    require_string(case, "result")
+    require_optional_number(case, "candidate_rms")
+    require_optional_number(case, "signal_delta_rms")
+    require_optional_number(case, "min_signal_delta_rms")
+    require_bool(case, "mc202_phrase_grid_malformed")
+    require_bool(case, "mc202_source_phrase_slot_malformed")
+    require_optional_mc202_phrase_grid(case, "mc202_phrase_grid")
+    require_optional_mc202_source_phrase_slot(case, "mc202_source_phrase_slot")
+
+
+def require_optional_mc202_phrase_grid(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    grid = require_object(value, field)
+    require_number(grid, "hit_ratio")
+    require_bool(grid, "starts_on_phrase_boundary")
+    require_int(grid, "candidate_onset_count")
+    require_int(grid, "grid_aligned_onset_count")
+    require_number(grid, "max_onset_offset_ms")
+    require_number(grid, "max_allowed_onset_offset_ms")
+    require_bool(grid, "passed")
+
+
+def require_optional_mc202_source_phrase_slot(parent: dict[str, Any], field: str) -> None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an object or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    slot = require_object(value, field)
+    require_bool(slot, "phrase_grid_available")
+    require_optional_int(slot, "phrase_index")
+    require_bool(slot, "starts_on_source_phrase_boundary")
+    require_bool(slot, "passed")
 
 
 def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
