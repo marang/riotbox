@@ -11,7 +11,9 @@
     ],
     "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
     "commit_count": 1,
-    "commit_boundaries": ["NextBar"],
+    "commit_boundaries": [
+      "NextBar"
+    ],
     "observer_source_timing": {
       "source_id": "src-timing",
       "bpm_estimate": 128.0,
@@ -22,7 +24,9 @@
       "primary_hypothesis_id": "probe-primary",
       "hypothesis_count": 1,
       "primary_warning_code": "ambiguous_downbeat",
-      "warning_codes": ["ambiguous_downbeat"]
+      "warning_codes": [
+        "ambiguous_downbeat"
+      ]
     }
   },
   "output_path": {
@@ -52,7 +56,8 @@
       "w30_candidate_rms": null,
       "w30_candidate_active_sample_ratio": null,
       "w30_rms_delta": null
-    }
+    },
+    "lane_recipe_cases": []
   },
   "needs_human_listening": true
 }

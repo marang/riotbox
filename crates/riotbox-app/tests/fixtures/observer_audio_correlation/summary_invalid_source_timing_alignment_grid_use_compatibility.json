@@ -11,7 +11,9 @@
     ],
     "first_commit": "action 42 at NextBar beat 8 bar 2 phrase 0 sequence 7",
     "commit_count": 1,
-    "commit_boundaries": ["NextBar"],
+    "commit_boundaries": [
+      "NextBar"
+    ],
     "observer_source_timing": null
   },
   "output_path": {
@@ -31,7 +33,9 @@
       "observer_grid_use": "manual_confirm_only",
       "manifest_grid_use": "locked_grid",
       "grid_use_compatibility": "mismatch",
-      "warning_overlap": ["phrase_uncertain"],
+      "warning_overlap": [
+        "phrase_uncertain"
+      ],
       "issues": []
     },
     "source_timing_anchor_alignment": null,
@@ -50,7 +54,8 @@
       "w30_candidate_rms": null,
       "w30_candidate_active_sample_ratio": null,
       "w30_rms_delta": null
-    }
+    },
+    "lane_recipe_cases": []
   },
   "needs_human_listening": true
 }

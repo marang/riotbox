@@ -31,6 +31,7 @@
     "source_timing_alignment": null,
     "source_timing_anchor_alignment": null,
     "source_timing_groove_alignment": null,
+    "lane_recipe_cases": [],
     "metrics": {
       "full_mix_rms": null,
       "full_mix_low_band_rms": null,
