@@ -318,4 +318,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prove manual-confirm short-loop Source Timing fixture boundary
 - [RIOTBOX-784.md](./RIOTBOX-784.md)
   Add Source Timing example report fixtures for locked and manual-confirm rows
+- [RIOTBOX-785.md](./RIOTBOX-785.md)
+  Add app observer Source Timing fixture for locked-grid summary path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
