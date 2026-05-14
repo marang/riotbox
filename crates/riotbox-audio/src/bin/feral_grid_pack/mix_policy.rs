@@ -16,11 +16,11 @@ const SOURCE_FIRST_MIX_POLICY: MixPolicy = MixPolicy {
 };
 
 const GENERATED_SUPPORT_MIX_POLICY: MixPolicy = MixPolicy {
-    tr909_gain: 0.30,
-    tr909_low_gain: 0.14,
-    w30_gain: 1.44,
-    drive: 2.35,
-    output_gain: 0.96,
+    tr909_gain: 0.58,
+    tr909_low_gain: 0.26,
+    w30_gain: 1.36,
+    drive: 2.20,
+    output_gain: 0.94,
 };
 
 fn render_source_first_mix(tr909: &[f32], w30: &[f32]) -> Vec<f32> {

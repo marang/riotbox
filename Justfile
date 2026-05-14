@@ -347,8 +347,11 @@ listening-manifest-validator-fixtures:
 source-showcase-diversity manifests:
     python3 scripts/validate_source_showcase_diversity.py {{manifests}}
 
-representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase":
-    scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}"
+representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase" source_seconds="8.0" bars="4":
+    scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}" "{{source_seconds}}" "{{bars}}"
+
+representative-source-showcase-musical-quality showcase="artifacts/audio_qa/local-representative-source-showcase":
+    python3 scripts/validate_representative_showcase_musical_quality.py --json-output "{{showcase}}/validation/musical-quality.json" --markdown-output "{{showcase}}/validation/musical-quality.md" "{{showcase}}"
 
 syncopated-source-showcase-smoke:
     scripts/validate_syncopated_source_showcase_smoke.sh

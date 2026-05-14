@@ -152,6 +152,19 @@ comparison windows, W-30 source chops, source-first mixes, generated-support
 mixes, source-diversity output, reproducibility evidence, and an observer/audio
 correlation summary.
 
+The representative showcase must also run the musical-quality review gate:
+
+```bash
+just representative-source-showcase-musical-quality
+```
+
+The gate is intentionally separate from source-diversity and non-silence checks.
+It marks at least one pack as a `musically_convincing_candidate` only when the
+case keeps source-first masking under control, makes generated TR-909 support
+audible rather than decorative, preserves W-30 source-chop energy, exposes
+source-anchor evidence, carries low-end support, and avoids a fully static bar
+loop. This is a listening-review aid, not automatic taste scoring.
+
 The full representative showcase stays a local review pack because it is larger
 than a normal CI smoke. The aggregate audio QA gate instead includes
 `just syncopated-source-showcase-smoke`, which generates the same deterministic

@@ -16,7 +16,8 @@ artifacts/audio_qa/local-representative-source-showcase/
 It generates deterministic synthetic fixture sources, renders at least five
 distinct source files with multiple source windows, validates the primary-window
 packs with the source-showcase diversity gate, runs a same-source reproducibility
-check, and writes an observer/audio correlation summary.
+check, writes an observer/audio correlation summary, and runs the musical-quality
+review gate.
 
 Review order for each `packs/<case>/<window>/` directory:
 
@@ -24,6 +25,17 @@ Review order for each `packs/<case>/<window>/` directory:
 2. `stems/02_w30_feral_source_chop.wav`
 3. `03_riotbox_source_first_mix.wav`
 4. `04_riotbox_generated_support_mix.wav`
+
+The musical-quality summary lives at:
+
+```text
+validation/musical-quality.md
+```
+
+That summary marks one `musically_convincing_candidate` only when the pack has
+audible generated support, W-30 source-chop energy, low-end support, source
+anchor evidence, bounded source-first masking, and non-static bar movement. It
+does not claim automatic taste scoring or release-ready output.
 
 Durable conclusions belong in docs or review notes. Generated WAVs remain local
 and untracked.
