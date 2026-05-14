@@ -78,15 +78,26 @@ pub fn source_timing_probe_beat_evidence_report(
 }
 
 fn period_score_order(left: &BeatPeriodScore, right: &BeatPeriodScore) -> std::cmp::Ordering {
-    const SCORE_TIE_MARGIN: f32 = 0.001;
+    // Bucket near-equal scores with a deterministic key instead of pairwise
+    // fuzzy equality; `sort_by` requires this comparator to be transitive.
+    period_score_bucket(right.score)
+        .cmp(&period_score_bucket(left.score))
+        .then_with(|| {
+            left.median_distance_ratio
+                .total_cmp(&right.median_distance_ratio)
+        })
+        .then_with(|| right.matched_onset_ratio.total_cmp(&left.matched_onset_ratio))
+        .then_with(|| right.score.total_cmp(&left.score))
+}
 
-    if (left.score - right.score).abs() > SCORE_TIE_MARGIN {
-        return right.score.total_cmp(&left.score);
+fn period_score_bucket(score: f32) -> i32 {
+    const SCORE_TIE_BUCKET: f32 = 0.001;
+
+    if !score.is_finite() {
+        return i32::MIN;
     }
 
-    left.median_distance_ratio
-        .total_cmp(&right.median_distance_ratio)
-        .then_with(|| right.matched_onset_ratio.total_cmp(&left.matched_onset_ratio))
+    (score / SCORE_TIE_BUCKET).round() as i32
 }
 
 fn ambiguous_beat_period_scores(
