@@ -394,4 +394,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose split beat-period evidence in Source Timing example report
 - [RIOTBOX-821.md](./RIOTBOX-821.md)
   Split Source Timing example report expectations before next expansion
+- [RIOTBOX-822.md](./RIOTBOX-822.md)
+  Assert Source Timing example report fixtures by fields
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
