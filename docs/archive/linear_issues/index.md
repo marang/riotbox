@@ -386,4 +386,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface readiness evidence in Source Timing example probe report
 - [RIOTBOX-817.md](./RIOTBOX-817.md)
   Clamp Source Timing probe evidence scores in JSON validator
+- [RIOTBOX-818.md](./RIOTBOX-818.md)
+  Review P012 Source Timing QA contract after readiness evidence slices
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
