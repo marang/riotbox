@@ -374,4 +374,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add MC-202 source-grid alignment proof to representative showcase
 - [RIOTBOX-811.md](./RIOTBOX-811.md)
   Surface MC-202 source-grid proof in observer/audio correlation
+- [RIOTBOX-812.md](./RIOTBOX-812.md)
+  Extract feral grid pack manifest ownership into a real module
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
