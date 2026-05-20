@@ -34,6 +34,8 @@ Current benchmark artifacts:
   Machine-checkable P011 exit evidence index across replay, recovery, export, and stage-style stability categories. `just p011-exit-evidence-gate` executes all bounded categories from this index with global command deduplication; the per-category `p011-*-evidence-gate` recipes remain available for targeted local checks.
 - [representative_source_showcase_2026-05-07.md](./representative_source_showcase_2026-05-07.md)
   Local multi-source Feral grid showcase generator for source-response review after the P011 diversity fixes.
+- [melodic_source_chop_showcase_2026-05-20.md](./melodic_source_chop_showcase_2026-05-20.md)
+  Local non-drum source-chop showcase that preserves unavailable Source Timing as a boundary instead of treating melodic sources as Feral-grid drum-support examples.
 - [product_export_reproducibility_boundary_2026-05-07.md](./product_export_reproducibility_boundary_2026-05-07.md)
   Normalized product-export reproducibility boundary for the current Feral grid generated-support full-mix seam.
 - [stage_style_stability_proof_2026-05-07.md](./stage_style_stability_proof_2026-05-07.md)

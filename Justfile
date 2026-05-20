@@ -232,6 +232,9 @@ lane-recipe-pack date="local" duration="2.0":
 feral-before-after source date="local" start="0.0" duration="2.0" source_window="1.0":
     cargo run -p riotbox-audio --bin feral_before_after_pack -- --source "{{source}}" --date "{{date}}" --source-start-seconds "{{start}}" --duration-seconds "{{duration}}" --source-window-seconds "{{source_window}}"
 
+melodic-source-chop-showcase output="artifacts/audio_qa/local-melodic-source-chop-showcase" date="local-melodic-source-chop-showcase" source="data/test_audio/examples/DH_RushArp_120_A.wav" duration="2.0" source_window="1.0" start="0.0":
+    scripts/generate_melodic_source_chop_showcase.sh "{{output}}" "{{date}}" "{{source}}" "{{duration}}" "{{source_window}}" "{{start}}"
+
 feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" start="0.0":
     if [ "{{bpm}}" = "auto" ]; then \
         cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
