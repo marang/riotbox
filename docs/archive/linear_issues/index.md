@@ -398,4 +398,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Assert Source Timing example report fixtures by fields
 - [RIOTBOX-823.md](./RIOTBOX-823.md)
   Assert Source Timing example report missing-source row behavior
+- [RIOTBOX-824.md](./RIOTBOX-824.md)
+  Add weak and unavailable Source Timing example report fixtures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
