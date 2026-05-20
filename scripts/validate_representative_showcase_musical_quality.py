@@ -27,6 +27,8 @@ MIN_W30_UNIQUE_SLICE_OFFSETS = 4
 MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO = 1.06
 MIN_MC202_BASS_PRESSURE_RMS = 0.003
 MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS = 0.001
+MIN_MC202_DISTINCT_BAR_PROFILES = 2
+MAX_MC202_BAR_SIMILARITY = 0.985
 
 
 @dataclass(frozen=True)
@@ -78,6 +80,8 @@ def main() -> int:
             "min_tr909_kick_pressure_low_band_ratio": MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
             "min_mc202_bass_pressure_rms": MIN_MC202_BASS_PRESSURE_RMS,
             "min_mc202_bass_pressure_low_band_rms": MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
+            "min_mc202_distinct_bar_profiles": MIN_MC202_DISTINCT_BAR_PROFILES,
+            "max_mc202_bar_similarity": MAX_MC202_BAR_SIMILARITY,
         },
     }
 
@@ -166,6 +170,13 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             tr909_kick_pressure.get("low_band_rms_ratio", 0.0)
         ),
         "mc202_bass_pressure_applied": bool(mc202_bass_pressure.get("applied", False)),
+        "mc202_phrase_variation_applied": bool(
+            mc202_bass_pressure.get("phrase_variation_applied", False)
+        ),
+        "mc202_distinct_bar_profile_count": int(
+            mc202_bass_pressure.get("distinct_bar_profile_count", 0)
+        ),
+        "mc202_bar_similarity": number(mc202_bass_pressure.get("bar_similarity", 1.0)),
         "mc202_bass_pressure_rms": number(mc202_bass_pressure.get("signal_rms", 0.0)),
         "mc202_bass_pressure_low_band_rms": number(
             mc202_bass_pressure.get("low_band_rms", 0.0)
@@ -233,6 +244,18 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             metrics["mc202_bass_pressure_low_band_rms"] >= MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
             "mc202_bass_pressure_low_band_too_weak",
         ),
+        (
+            metrics["mc202_phrase_variation_applied"],
+            "mc202_phrase_variation_not_applied",
+        ),
+        (
+            metrics["mc202_distinct_bar_profile_count"] >= MIN_MC202_DISTINCT_BAR_PROFILES,
+            "mc202_phrase_variation_too_static",
+        ),
+        (
+            metrics["mc202_bar_similarity"] <= MAX_MC202_BAR_SIMILARITY,
+            "mc202_bar_variation_too_static",
+        ),
         (metrics["source_anchor_count"] >= MIN_ANCHORS, "missing_source_anchor_evidence"),
         (metrics["bar_similarity"] <= MAX_BAR_SIMILARITY, "full_mix_too_static"),
         (
@@ -256,6 +279,7 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         1.0,
     )
     bass_pressure = clamp(metrics["mc202_bass_pressure_rms"] / 0.012, 0.0, 1.0)
+    bass_variation = clamp(metrics["mc202_distinct_bar_profile_count"] / 4.0, 0.0, 1.0)
     movement = clamp((1.0 - metrics["bar_similarity"]) / 0.020, 0.0, 1.0)
     density = clamp(metrics["event_density_per_bar"] / 280.0, 0.0, 1.2)
     anchors = clamp(metrics["source_anchor_count"] / 8.0, 0.0, 1.0)
@@ -269,6 +293,7 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         + slice_variation
         + kick_pressure
         + bass_pressure
+        + bass_variation
         + movement
         + density
         + anchors
@@ -309,6 +334,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It requires generated TR-909 support to be audible rather than decorative.",
         "- It requires TR-909 kick-pressure proof so the drum layer adds measurable low-end body.",
         "- It requires MC-202 bass-pressure proof so the bass lane is audible, not only named in the manifest.",
+        "- It requires MC-202 phrase variation so the bass lane does not collapse into one repeated support cell.",
         "- It requires W-30 source-chop energy, low-end support, source-anchor evidence, and non-static bar movement.",
         "- It requires W-30 trigger variation to be applied rather than relying on a static repeated chop.",
         "- It requires W-30 slice-choice variation so repeated triggers do not keep reading the same source offset.",
