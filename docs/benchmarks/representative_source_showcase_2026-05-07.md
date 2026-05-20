@@ -41,11 +41,13 @@ measured W-30 trigger-variation proof. It also requires TR-909 kick-pressure
 proof so added drum support is measurable low-end body, not a decorative tick.
 It requires MC-202 bass-pressure proof so the bass lane is audible instead of
 only named in the manifest, and MC-202 phrase-variation proof so that audible
-bass support does not collapse into one repeated support cell. Event density
+bass support does not collapse into one repeated support cell. It also requires
+MC-202 source-grid alignment proof so a drifting bass stem cannot pass only
+because stronger TR-909, W-30, or full-mix peaks are grid-locked. Event density
 remains a guardrail, but the W-30 offbeat-trigger, distinct-bar-pattern,
-unique-slice-offset, and MC-202 distinct-bar-profile metrics are direct proof
-that the showcase is not just a static repeated audition. It does not claim
-automatic taste scoring or release-ready output.
+unique-slice-offset, MC-202 source-grid-hit, and MC-202 distinct-bar-profile
+metrics are direct proof that the showcase is not just a static repeated
+audition. It does not claim automatic taste scoring or release-ready output.
 
 Durable conclusions belong in docs or review notes. Generated WAVs remain local
 and untracked.

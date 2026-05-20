@@ -47,6 +47,10 @@
       "bar_similarity": 0.999,
       "signal_rms": 0.0,
       "low_band_rms": 0.0
+    },
+    "mc202_source_grid_alignment": {
+      "hit_ratio": 0.0,
+      "max_peak_offset_ms": 999.0
     }
   },
   "source_timing": {

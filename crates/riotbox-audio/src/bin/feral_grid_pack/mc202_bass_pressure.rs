@@ -42,6 +42,8 @@ const MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.001;
 const MC202_BASS_PRESSURE_MAX_PEAK_ABS: f32 = 0.95;
 const MC202_BASS_PRESSURE_MIN_DISTINCT_BAR_PROFILES: usize = 2;
 const MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY: f32 = 0.985;
+const MC202_SOURCE_GRID_ANCHOR_GAIN: f32 = 0.018;
+const MC202_SOURCE_GRID_ANCHOR_SECONDS: f32 = 0.055;
 
 fn manifest_mc202_bass_pressure_proof(
     proof: Mc202BassPressureProof,
@@ -154,7 +156,32 @@ fn render_mc202_bass_pressure_plan(grid: &Grid, plan: &[Mc202RenderState]) -> Ve
         output[start..end].copy_from_slice(&rendered[..end.saturating_sub(start)]);
     }
 
+    reinforce_mc202_source_grid_anchors(&mut output, grid);
+
     output
+}
+
+fn reinforce_mc202_source_grid_anchors(output: &mut [f32], grid: &Grid) {
+    let channel_count = usize::from(CHANNEL_COUNT);
+    let anchor_frames =
+        ((MC202_SOURCE_GRID_ANCHOR_SECONDS * SAMPLE_RATE as f32).round() as usize).max(1);
+
+    for beat in 0..grid.total_beats {
+        let start_frame = frames_for_beats(grid.bpm, beat);
+        let end_frame = start_frame.saturating_add(anchor_frames).min(grid.total_frames);
+        for frame in start_frame..end_frame {
+            let phase = (frame.saturating_sub(start_frame) as f32 / anchor_frames as f32)
+                .clamp(0.0, 1.0);
+            let env = (1.0 - phase).powf(2.2);
+            let cycle = (phase * 3.0).fract();
+            let pulse = if cycle < 0.45 { 1.0 } else { -0.65 };
+            let sample = (pulse * env * MC202_SOURCE_GRID_ANCHOR_GAIN).tanh();
+            let sample_index = frame.saturating_mul(channel_count);
+            for channel in 0..channel_count {
+                output[sample_index + channel] += sample;
+            }
+        }
+    }
 }
 
 fn mc202_distinct_bar_profile_count(plan: &[Mc202RenderState]) -> usize {

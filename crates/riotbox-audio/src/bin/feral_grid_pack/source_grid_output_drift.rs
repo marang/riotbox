@@ -60,12 +60,14 @@ fn source_grid_output_drift_metrics(samples: &[f32], grid: &Grid) -> SourceGridO
 
 fn source_grid_alignment_report(
     tr909: &[f32],
+    mc202: &[f32],
     w30: &[f32],
     generated_support_mix: &[f32],
     grid: &Grid,
 ) -> SourceGridAlignmentReport {
     SourceGridAlignmentReport {
         tr909_source_grid_alignment: source_grid_output_drift_metrics(tr909, grid),
+        mc202_source_grid_alignment: source_grid_output_drift_metrics(mc202, grid),
         w30_source_grid_alignment: source_grid_output_drift_metrics(w30, grid),
         source_grid_output_drift: source_grid_output_drift_metrics(generated_support_mix, grid),
     }
