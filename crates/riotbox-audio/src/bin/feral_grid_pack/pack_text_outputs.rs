@@ -35,6 +35,7 @@ fn write_report(
              - Generated-support mix low-band RMS: `{:.6}`\n\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
              - TR-909 source-grid alignment hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
+             - MC-202 source-grid alignment hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
              - W-30 source-grid alignment hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
              - Source-grid output hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
              - Result: `pass`\n\n\
@@ -107,6 +108,8 @@ fn write_report(
             report.full_mix.low_band.rms,
             report.tr909_source_grid_alignment.hit_ratio,
             report.tr909_source_grid_alignment.max_peak_offset_ms,
+            report.mc202_source_grid_alignment.hit_ratio,
+            report.mc202_source_grid_alignment.max_peak_offset_ms,
             report.w30_source_grid_alignment.hit_ratio,
             report.w30_source_grid_alignment.max_peak_offset_ms,
             report.source_grid_output_drift.hit_ratio,

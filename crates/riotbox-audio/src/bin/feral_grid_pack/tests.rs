@@ -148,6 +148,10 @@ mod tests {
         assert!(signal_metrics(&low_render).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(&high_render).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(&mc202_low_render).rms > MC202_BASS_PRESSURE_MIN_RMS);
+        assert!(
+            source_grid_output_drift_metrics(&mc202_low_render, &grid).hit_ratio
+                >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
+        );
     }
 
     #[test]

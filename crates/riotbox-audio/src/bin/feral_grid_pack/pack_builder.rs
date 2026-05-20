@@ -207,6 +207,7 @@ struct PackReport {
     source_first_mix: RenderMetrics,
     full_mix: RenderMetrics,
     tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
     w30_source_grid_alignment: SourceGridOutputDriftMetrics,
     source_grid_output_drift: SourceGridOutputDriftMetrics,
     source_first_generated_to_source_rms_ratio: f32,
@@ -216,6 +217,7 @@ struct PackReport {
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct SourceGridAlignmentReport {
     tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
     w30_source_grid_alignment: SourceGridOutputDriftMetrics,
     source_grid_output_drift: SourceGridOutputDriftMetrics,
 }
@@ -289,6 +291,7 @@ struct ManifestPackMetrics {
     full_grid_mix: ManifestRenderMetrics,
     mix_balance: ManifestMixBalanceMetrics,
     tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
+    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
     w30_source_grid_alignment: SourceGridOutputDriftMetrics,
     source_grid_output_drift: SourceGridOutputDriftMetrics,
     bar_variation: ManifestBarVariationMetrics,
@@ -437,7 +440,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         &grid,
     )?;
 
-    let source_grid_alignment = source_grid_alignment_report(&tr909, &w30, &full_mix, &grid);
+    let source_grid_alignment = source_grid_alignment_report(&tr909, &mc202, &w30, &full_mix, &grid);
     let report = PackReport {
         tr909_source_profile,
         tr909_groove_timing,
@@ -453,6 +456,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         source_first_mix: render_metrics(&source_first_mix, &grid),
         full_mix: render_metrics(&full_mix, &grid),
         tr909_source_grid_alignment: source_grid_alignment.tr909_source_grid_alignment,
+        mc202_source_grid_alignment: source_grid_alignment.mc202_source_grid_alignment,
         w30_source_grid_alignment: source_grid_alignment.w30_source_grid_alignment,
         source_grid_output_drift: source_grid_alignment.source_grid_output_drift,
         source_first_generated_to_source_rms_ratio:
