@@ -30,6 +30,8 @@ struct CorrelationSummary {
     source_grid_output_drift_malformed: bool,
     tr909_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
     tr909_source_grid_alignment_malformed: bool,
+    mc202_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
+    mc202_source_grid_alignment_malformed: bool,
     w30_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
     w30_source_grid_alignment_malformed: bool,
     w30_source_loop_closure: Option<W30SourceLoopClosureEvidence>,
@@ -122,6 +124,8 @@ fn build_summary_from_events(
         collect_source_grid_output_drift(&manifest);
     let (tr909_source_grid_alignment, tr909_source_grid_alignment_malformed) =
         collect_source_grid_alignment(&manifest, "tr909_source_grid_alignment");
+    let (mc202_source_grid_alignment, mc202_source_grid_alignment_malformed) =
+        collect_source_grid_alignment(&manifest, "mc202_source_grid_alignment");
     let (w30_source_grid_alignment, w30_source_grid_alignment_malformed) =
         collect_source_grid_alignment(&manifest, "w30_source_grid_alignment");
     let (w30_source_loop_closure, w30_source_loop_closure_malformed) =
@@ -197,6 +201,8 @@ fn build_summary_from_events(
         source_grid_output_drift_malformed,
         tr909_source_grid_alignment,
         tr909_source_grid_alignment_malformed,
+        mc202_source_grid_alignment,
+        mc202_source_grid_alignment_malformed,
         w30_source_grid_alignment,
         w30_source_grid_alignment_malformed,
         w30_source_loop_closure,

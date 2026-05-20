@@ -50,6 +50,7 @@
         "max_allowed_peak_offset_ms": 70.0
       },
       "tr909_source_grid_alignment": null,
+      "mc202_source_grid_alignment": null,
       "w30_source_grid_alignment": null,
       "w30_candidate_rms": null,
       "w30_candidate_active_sample_ratio": null,
