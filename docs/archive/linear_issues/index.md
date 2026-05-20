@@ -376,4 +376,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface MC-202 source-grid proof in observer/audio correlation
 - [RIOTBOX-812.md](./RIOTBOX-812.md)
   Extract feral grid pack manifest ownership into a real module
+- [RIOTBOX-813.md](./RIOTBOX-813.md)
+  Document MC-202 Feral-grid source-grid proof across QA contracts
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
