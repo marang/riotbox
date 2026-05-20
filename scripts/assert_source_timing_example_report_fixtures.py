@@ -11,6 +11,7 @@ from source_timing_example_probe_report import (
     ReportRow,
     expectation_failures,
     load_json,
+    missing_row,
     render_markdown,
     row_from_payload,
 )
@@ -76,6 +77,7 @@ def main() -> int:
     rows = load_positive_rows()
     assert_rows(rows)
     assert_markdown_renders(rows)
+    assert_missing_expected_source_skips()
     assert_mismatch_expectations_fail()
     assert_invalid_expectations_fail()
     return 0
@@ -110,6 +112,22 @@ def assert_markdown_renders(rows: list[ReportRow]) -> None:
     for source in EXPECTED_ROWS:
         if f"| {source} |" not in markdown:
             raise AssertionError(f"rendered Markdown missing {source}")
+
+
+def assert_missing_expected_source_skips() -> None:
+    expectations = load_expectations(FIXTURE_DIR / "beat08_expectations.json")
+    row = missing_row(
+        Path("/tmp/riotbox-missing/Beat08_128BPM(Full).wav"),
+        expectations,
+    )
+    if row.status != "missing" or row.expectation != "skipped":
+        raise AssertionError(
+            "expected missing source with expectations to render as missing/skipped"
+        )
+    markdown = render_markdown([row])
+    expected_fragment = "| Beat08_128BPM(Full).wav | missing |"
+    if expected_fragment not in markdown:
+        raise AssertionError("rendered Markdown missing expected missing-source row")
 
 
 def assert_mismatch_expectations_fail() -> None:
