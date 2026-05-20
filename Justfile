@@ -175,35 +175,7 @@ source-timing-example-probe-report-local output="artifacts/audio_qa/local/source
       --output "{{output}}"
 
 source-timing-example-probe-report-fixtures:
-    output="$(mktemp)"; \
-      python3 scripts/source_timing_example_probe_report.py \
-        --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
-        --fixture-json crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid_locked_grid.json \
-        --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations.json \
-        --output "$output"; \
-      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | needs_review | yes | short_loop_manual_confirm | 128.397 | candidate_cautious | not_enough_material | stable | 0.979 | 0.920 | 0.990 | 0 | stable | 0.565 | 0 | not_enough_material | 0 | phrase_uncertain | 9/2/4/3 | 1 | ok |" "$output"; \
-      grep -q "| long_stable_lock.wav | probed | grid locked | ready | no | locked_grid | 128.397 | candidate_cautious | stable | stable | 0.979 | 1.000 | 0.667 | 0 | stable | 0.565 | 0 | stable | 0 | none | 11/6/3/2 | 4 | ok |" "$output"; \
-      if python3 scripts/source_timing_example_probe_report.py \
-        --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
-        --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations_mismatch.json \
-        --output "$output"; then \
-        echo "expected mismatched source timing example expectations to fail" >&2; \
-        exit 1; \
-      fi; \
-      grep -q "mismatch:" "$output"; \
-      for invalid_expectations in \
-        scripts/fixtures/source_timing_example_probe_report/beat08_expectations_invalid_empty_range.json \
-        scripts/fixtures/source_timing_example_probe_report/beat08_expectations_invalid_inverted_range.json \
-        scripts/fixtures/source_timing_example_probe_report/beat08_expectations_invalid_unknown_range_key.json; do \
-        if python3 scripts/source_timing_example_probe_report.py \
-          --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
-          --expectations "$invalid_expectations" \
-          --output "$output"; then \
-          echo "expected invalid source timing example expectation range fixture to fail: $invalid_expectations" >&2; \
-          exit 1; \
-        fi; \
-      done; \
-      rm -f "$output"
+    python3 scripts/assert_source_timing_example_report_fixtures.py
 
 w30-smoke-candidate date="local" duration="2.0":
     cargo run -p riotbox-audio --bin w30_preview_render -- --date "{{date}}" --role candidate --duration-seconds "{{duration}}"
