@@ -71,11 +71,11 @@ def validate_summary(summary: Any) -> None:
     require_probe_cue_match(cue, readiness, requires_manual_confirm)
     grid_use = require_one_of(summary, "grid_use", GRID_USE)
     require_optional_number(summary, "primary_bpm")
-    require_optional_number(summary, "primary_beat_score")
-    require_optional_number(summary, "primary_beat_matched_onset_ratio")
-    require_optional_number(summary, "primary_beat_median_distance_ratio")
+    require_optional_unit_number(summary, "primary_beat_score")
+    require_optional_unit_number(summary, "primary_beat_matched_onset_ratio")
+    require_optional_unit_number(summary, "primary_beat_median_distance_ratio")
     require_optional_int(summary, "primary_downbeat_offset_beats")
-    require_optional_number(summary, "primary_downbeat_score")
+    require_optional_unit_number(summary, "primary_downbeat_score")
     require_one_of(summary, "beat_status", {"unavailable", "weak", "stable", "ambiguous"})
     require_one_of(summary, "downbeat_status", {"unavailable", "weak", "stable", "ambiguous"})
     require_one_of(
@@ -221,6 +221,15 @@ def require_non_negative_number(parent: dict[str, Any], field: str) -> float | i
     value = require_optional_number(parent, field)
     if value is None or value < 0:
         raise ValueError(f"{field} must be a non-negative number")
+    return value
+
+
+def require_optional_unit_number(parent: dict[str, Any], field: str) -> float | int | None:
+    value = require_optional_number(parent, field)
+    if value is None:
+        return None
+    if value < 0 or value > 1:
+        raise ValueError(f"{field} must be between 0 and 1 or null")
     return value
 
 
