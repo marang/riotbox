@@ -384,4 +384,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add a bounded melodic source-chop showcase path for non-drum sources
 - [RIOTBOX-816.md](./RIOTBOX-816.md)
   Surface readiness evidence in Source Timing example probe report
+- [RIOTBOX-817.md](./RIOTBOX-817.md)
+  Clamp Source Timing probe evidence scores in JSON validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
