@@ -24,7 +24,7 @@ fn write_report(
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - TR-909 kick pressure: `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
-             - MC-202 bass pressure: `{}` mode `{}` shape `{}` budget `{}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
+             - MC-202 bass pressure: `{}` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - W-30 source-loop closure: `{}` edge delta `{:.6}` (max `{:.6}`), edge abs `{:.6}` (max `{:.6}`)\n\
@@ -73,6 +73,9 @@ fn write_report(
             report.mc202_bass_pressure.mode.label(),
             report.mc202_bass_pressure.phrase_shape.label(),
             report.mc202_bass_pressure.note_budget.label(),
+            report.mc202_bass_pressure.phrase_variation_applied,
+            report.mc202_bass_pressure.distinct_bar_profile_count,
+            report.mc202_bass_pressure.bar_similarity,
             report.mc202_bass_pressure.signal_rms,
             report.mc202_bass_pressure.low_band_rms,
             report.mc202_bass_pressure.touch,

@@ -176,6 +176,19 @@ mod manifest_assertions {
         );
         let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
         assert_eq!(mc202_bass_pressure["applied"], true);
+        assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
+        assert!(
+            mc202_bass_pressure["distinct_bar_profile_count"]
+                .as_u64()
+                .expect("mc202 bass pressure distinct bar profiles")
+                >= MC202_BASS_PRESSURE_MIN_DISTINCT_BAR_PROFILES as u64
+        );
+        assert!(
+            mc202_bass_pressure["bar_similarity"]
+                .as_f64()
+                .expect("mc202 bass pressure bar similarity")
+                <= f64::from(MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY)
+        );
         assert!(
             mc202_bass_pressure["signal_rms"]
                 .as_f64()

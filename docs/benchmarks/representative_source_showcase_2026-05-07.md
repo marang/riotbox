@@ -40,9 +40,11 @@ anchor evidence, bounded source-first masking, non-static bar movement, and a
 measured W-30 trigger-variation proof. It also requires TR-909 kick-pressure
 proof so added drum support is measurable low-end body, not a decorative tick.
 It requires MC-202 bass-pressure proof so the bass lane is audible instead of
-only named in the manifest. Event density remains a guardrail, but the W-30 offbeat-trigger,
-distinct-bar-pattern, and unique-slice-offset metrics are the direct proof that
-a sparse source chop is not just a static repeated audition. It does not claim
+only named in the manifest, and MC-202 phrase-variation proof so that audible
+bass support does not collapse into one repeated support cell. Event density
+remains a guardrail, but the W-30 offbeat-trigger, distinct-bar-pattern,
+unique-slice-offset, and MC-202 distinct-bar-profile metrics are direct proof
+that the showcase is not just a static repeated audition. It does not claim
 automatic taste scoring or release-ready output.
 
 Durable conclusions belong in docs or review notes. Generated WAVs remain local
