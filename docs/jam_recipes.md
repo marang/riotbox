@@ -746,7 +746,7 @@ Current local benchmark result:
 - `Beat08_128BPM(Full).wav`: BPM is close in auto mode, but readiness is still weak.
 - `Beat20_128BPM(Full).wav`: similar to Beat08.
 - `DH_BeatC_120-01.wav`: use explicit `120 BPM`; auto fallback is musically misleading.
-- `DH_RushArp_120_A.wav`: do not use this path for Feral grid drum-support examples yet; it needs a separate melodic/source-chop showcase path.
+- `DH_RushArp_120_A.wav`: do not use this path for Feral grid drum-support examples; use `just melodic-source-chop-showcase` to keep unavailable Source Timing explicit while proving source-backed W-30 chop output.
 
 What this proves today:
 

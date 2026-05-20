@@ -63,7 +63,7 @@ than pack BPM decision fields.
 | `DH_BeatC_120-01.wav` | `needs confirm` | `needs_review` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
 | `DH_BeatC_KickSnr_120-01.wav` | `needs confirm` | `needs_review` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
 | `DH_Fadapad_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Correctly not a drum-timing source for this probe path. |
-| `DH_RushArp_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Needs a melodic/source-chop path, not TR-style timing trust. |
+| `DH_RushArp_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Use the melodic/source-chop showcase path, not TR-style timing trust. |
 
 ## Interpretation
 
@@ -93,5 +93,6 @@ Instead:
 - refine short-loop readiness semantics so stable BPM/beat/downbeat evidence can
   be used conservatively without pretending long-phrase confidence exists
 - keep explicit-BPM examples documented where the current detector is still weak
-- add a separate melodic/source-chop showcase path for non-drum sources such as
-  `DH_RushArp_120_A.wav`
+- use `just melodic-source-chop-showcase` for non-drum sources such as
+  `DH_RushArp_120_A.wav`, preserving unavailable Source Timing while proving
+  source-backed W-30 chop output
