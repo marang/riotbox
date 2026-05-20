@@ -42,6 +42,9 @@
     },
     "mc202_bass_pressure": {
       "applied": true,
+      "phrase_variation_applied": true,
+      "distinct_bar_profile_count": 3,
+      "bar_similarity": 0.72,
       "signal_rms": 0.006,
       "low_band_rms": 0.002
     }
