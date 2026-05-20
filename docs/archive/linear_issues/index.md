@@ -396,4 +396,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split Source Timing example report expectations before next expansion
 - [RIOTBOX-822.md](./RIOTBOX-822.md)
   Assert Source Timing example report fixtures by fields
+- [RIOTBOX-823.md](./RIOTBOX-823.md)
+  Assert Source Timing example report missing-source row behavior
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
