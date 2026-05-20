@@ -15,10 +15,17 @@ from source_timing_example_probe_report import (
     render_markdown,
     row_from_payload,
 )
+from validate_source_timing_probe_json import validate_summary
 
 
 FIXTURE_DIR = Path("scripts/fixtures/source_timing_example_probe_report")
 AUDIO_FIXTURE_DIR = Path("crates/riotbox-audio/tests/fixtures/source_timing_probe")
+POSITIVE_PAYLOAD_PATHS = [
+    FIXTURE_DIR / "beat08_source_timing_probe.json",
+    AUDIO_FIXTURE_DIR / "probe_valid_locked_grid.json",
+    FIXTURE_DIR / "probe_weak_ambiguous_flat_pulse.json",
+    FIXTURE_DIR / "probe_unavailable_silence.json",
+]
 
 
 EXPECTED_ROWS = {
@@ -133,13 +140,12 @@ def main() -> int:
 
 def load_positive_rows() -> list[ReportRow]:
     expectations = load_expectations(FIXTURE_DIR / "beat08_expectations.json")
-    payload_paths = [
-        FIXTURE_DIR / "beat08_source_timing_probe.json",
-        AUDIO_FIXTURE_DIR / "probe_valid_locked_grid.json",
-        FIXTURE_DIR / "probe_weak_ambiguous_flat_pulse.json",
-        FIXTURE_DIR / "probe_unavailable_silence.json",
-    ]
-    return [row_from_payload(load_json(path), expectations) for path in payload_paths]
+    rows = []
+    for path in POSITIVE_PAYLOAD_PATHS:
+        payload = load_json(path)
+        validate_summary(payload)
+        rows.append(row_from_payload(payload, expectations))
+    return rows
 
 
 def assert_rows(rows: list[ReportRow]) -> None:
