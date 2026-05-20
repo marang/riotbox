@@ -154,6 +154,10 @@ older generic output-drift field compatible while making the TR-909 lane proof
 visible by name.
 
 Feral grid manifests may also include the same shape as
+`metrics.mc202_source_grid_alignment` when the producer wants the MC-202 bass
+support stem to be explicitly auditable as its own timing-aware lane.
+
+Feral grid manifests may also include the same shape as
 `metrics.w30_source_grid_alignment` when the producer wants the W-30 source chop
 stem to be explicitly auditable as its own timing-aware lane.
 

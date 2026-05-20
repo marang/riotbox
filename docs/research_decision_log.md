@@ -1438,10 +1438,11 @@ Date: 2026-05-10
 Topic: P012 Feral-grid output evidence must require lane-specific Source Grid alignment
 Phase: Source Timing Intelligence / Audio QA
 Question: when a Feral-grid manifest reports `pass`, is pack-level audio activity enough, or must the strict observer/audio gate prove lane-specific Source Grid alignment?
-Decision: require strict observer/audio correlation for Feral-grid manifests to include pack-level `source_grid_output_drift` plus lane-specific `tr909_source_grid_alignment` and `w30_source_grid_alignment`. Missing, malformed, below-ratio, or over-offset metrics fail the output path.
+Decision: the original P012 strict observer/audio correlation gate requires Feral-grid manifests to include pack-level `source_grid_output_drift` plus lane-specific `tr909_source_grid_alignment` and `w30_source_grid_alignment`. Missing, malformed, below-ratio, or over-offset metrics fail the output path.
 Why: P012 is about shared timing authority across lanes. A generic non-silent mix can hide the actual failure mode musicians hear: one lane walking away from the source grid while logs and pack status still claim success.
 Evidence: `strict_evidence_rejects_missing_required_source_grid_alignment` now fails a synthetic `pass` manifest with no Source Grid alignment evidence, `cargo test -p riotbox-app --bin observer_audio_correlate -- --nocapture` covers the strict gate, and `just p012-all-lane-source-grid-output-proof` runs the current Feral-grid TR-909/W-30 proof plus MC-202 phrase-grid proof together.
-Consequences: this is still a bounded P012 QA gate, not production arbitrary-audio beat/downbeat detection. MC-202 remains proven through phrase-grid recipe evidence until the source-derived question/answer placement engine lands.
+Consequences: this is still a bounded P012 QA gate, not production arbitrary-audio beat/downbeat detection. At the original P012 decision point, MC-202 remained proven through phrase-grid recipe evidence until the source-derived question/answer placement engine landed.
+Update 2026-05-20: RBX-032 extends the Feral-grid strict gate to require `mc202_source_grid_alignment` after the P013 representative showcase gained dedicated MC-202 bass-pressure source-grid proof.
 Status: accepted
 
 ---
@@ -1470,4 +1471,18 @@ Decision: require Feral-grid manifests to include `metrics.w30_source_loop_closu
 Why: A W-30 stem can land on the grid but still be an unsafe or fallback-like chop if the selected micro-loop has loud unclosed edges or no real source-backed preview evidence. P012 needs timing and loop-closure proof to move toward musician-trustworthy source-derived sampling.
 Evidence: `w30_source_loop_closure_proves_repeat_safe_faded_chop_window` covers the audio-side metric, `strict_evidence_rejects_w30_source_loop_closure_failures` covers observer/audio strict rejection, and Feral-grid manifest assertions require the metric to pass.
 Consequences: this is a bounded micro-loop/chop-window QA proof, not the final automatic W-30 loop detector. Future loop detection should widen the same Source Graph timing/closure evidence instead of adding a lane-local timing model.
+Status: accepted
+
+---
+
+### RBX-032
+
+Date: 2026-05-20
+Topic: P013 Feral-grid proof should include MC-202 lane-specific Source Grid alignment
+Phase: All-Lane Musical Depth / Audio QA
+Question: after the representative showcase gained a dedicated MC-202 bass-pressure stem, is phrase-slot proof enough for Feral-grid strict QA, or should the bass stem also carry source-grid alignment evidence?
+Decision: require Feral-grid manifests and strict observer/audio correlation to treat `metrics.mc202_source_grid_alignment` as a lane-specific output proof beside `tr909_source_grid_alignment`, `w30_source_grid_alignment`, pack-level `source_grid_output_drift`, and W-30 loop-closure evidence.
+Why: the representative showcase can otherwise hide a drifting or weak bass-pressure stem behind stronger grid-locked TR-909, W-30, or full-mix peaks. P013 is explicitly all-lane musical depth, so the MC-202 bass lane needs its own source-grid proof in the same generated-support context.
+Evidence: RIOTBOX-810 added MC-202 source-grid alignment metrics to `feral_grid_pack`, RIOTBOX-811 surfaced them through observer/audio correlation and strict validators, and RIOTBOX-812 moved manifest ownership into a real module without changing the JSON/output contract. The local verification path included `cargo test -p riotbox-audio --bin feral_grid_pack`, `just syncopated-source-showcase-smoke`, representative showcase generation, `just audio-qa-ci`, `just ci`, and GitHub Actions Rust CI #1960.
+Consequences: the older P012 MC-202 phrase-slot proof remains the lane-recipe bridge for question/answer placement, but Feral-grid showcase packs must also prove that audible MC-202 support lands near the chosen source grid. This is still bounded showcase QA, not a full production source-derived arranger.
 Status: accepted
