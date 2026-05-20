@@ -380,4 +380,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Document MC-202 Feral-grid source-grid proof across QA contracts
 - [RIOTBOX-814.md](./RIOTBOX-814.md)
   Cover MC-202 lane source-grid alignment in listening-manifest fixtures
+- [RIOTBOX-815.md](./RIOTBOX-815.md)
+  Add a bounded melodic source-chop showcase path for non-drum sources
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
