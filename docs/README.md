@@ -213,6 +213,7 @@ docs/
 - `reviews/source_showcase_false_positive_review_2026-05-03.md`: source-showcase audio QA false-positive review captured
 - `reviews/representative_showcase_musical_quality_2026-05-14.md`: representative showcase musical-quality review captured
 - `reviews/w30_chop_articulation_showcase_review_2026-05-14.md`: W-30 chop articulation showcase review captured
+- `reviews/p013_representative_showcase_seam_review_2026-05-20.md`: P013 representative showcase seam review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
