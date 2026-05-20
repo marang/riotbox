@@ -364,4 +364,10 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add TR-909 kick-pressure variation for showcase candidates
 - [RIOTBOX-806.md](./RIOTBOX-806.md)
   Add MC-202 bass-pressure lane to representative showcase candidates
+- [RIOTBOX-807.md](./RIOTBOX-807.md)
+  Add MC-202 bass-pressure phrase variation to showcase candidates
+- [RIOTBOX-808.md](./RIOTBOX-808.md)
+  Review P013 representative showcase seam after all-lane depth slices
+- [RIOTBOX-809.md](./RIOTBOX-809.md)
+  Guard representative showcase output deletion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
