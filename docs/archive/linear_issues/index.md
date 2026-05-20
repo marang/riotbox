@@ -382,4 +382,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Cover MC-202 lane source-grid alignment in listening-manifest fixtures
 - [RIOTBOX-815.md](./RIOTBOX-815.md)
   Add a bounded melodic source-chop showcase path for non-drum sources
+- [RIOTBOX-816.md](./RIOTBOX-816.md)
+  Surface readiness evidence in Source Timing example probe report
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
