@@ -1,0 +1,43 @@
+{
+  "schema": "riotbox.source_timing_probe_cli.v1",
+  "schema_version": 1,
+  "source_path": "fixtures/generated/silence.wav",
+  "source_id": "fixture-unavailable-silence",
+  "cue": "needs confirm",
+  "readiness": "unavailable",
+  "requires_manual_confirm": true,
+  "grid_use": "unavailable",
+  "primary_bpm": null,
+  "primary_beat_score": null,
+  "primary_beat_matched_onset_ratio": null,
+  "primary_beat_median_distance_ratio": null,
+  "primary_downbeat_offset_beats": null,
+  "primary_downbeat_score": null,
+  "beat_status": "unavailable",
+  "downbeat_status": "unavailable",
+  "confidence_result": "degraded",
+  "drift_status": "unavailable",
+  "phrase_status": "unavailable",
+  "alternate_evidence_count": 0,
+  "alternate_beat_candidate_count": 0,
+  "alternate_downbeat_phase_count": 0,
+  "anchor_evidence": {
+    "primary_anchor_count": 0,
+    "primary_kick_anchor_count": 0,
+    "primary_backbeat_anchor_count": 0,
+    "primary_transient_anchor_count": 0,
+    "primary_anchor_preview": []
+  },
+  "groove_evidence": {
+    "primary_groove_residual_count": 0,
+    "primary_max_abs_offset_ms": 0.0,
+    "primary_groove_preview": []
+  },
+  "warning_codes": [
+    "low_timing_confidence",
+    "weak_kick_anchor"
+  ],
+  "onset_count": 0,
+  "onset_density_per_second": 0.0,
+  "duration_seconds": 4.0
+}
