@@ -15,10 +15,6 @@ use riotbox_core::source_graph::{
 };
 
 use riotbox_audio::{
-    listening_manifest::{
-        LISTENING_MANIFEST_SCHEMA_VERSION, ListeningPackArtifact as ManifestArtifact,
-        ListeningPackRenderMetrics as ManifestRenderMetrics, write_manifest_json,
-    },
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
         Mc202RenderRouting, Mc202RenderState,
@@ -220,106 +216,6 @@ struct SourceGridAlignmentReport {
     mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
     w30_source_grid_alignment: SourceGridOutputDriftMetrics,
     source_grid_output_drift: SourceGridOutputDriftMetrics,
-}
-
-#[derive(Serialize)]
-struct ListeningPackManifest {
-    schema_version: u32,
-    pack_id: &'static str,
-    source: String,
-    sample_rate: u32,
-    channel_count: u16,
-    bpm: f32,
-    grid_bpm_source: &'static str,
-    grid_bpm_decision_reason: &'static str,
-    source_timing_bpm_delta: Option<f32>,
-    beats_per_bar: u32,
-    bars: u32,
-    total_beats: u32,
-    total_frames: usize,
-    duration_seconds: f32,
-    source_start_seconds: f32,
-    source_window_seconds: f32,
-    artifacts: Vec<ManifestArtifact>,
-    feral_scorecard: ManifestFeralScorecard,
-    source_timing: ManifestSourceTimingReadiness,
-    thresholds: ManifestThresholds,
-    metrics: ManifestPackMetrics,
-    verification_command: String,
-    result: &'static str,
-}
-
-#[derive(Serialize)]
-struct ManifestFeralScorecard {
-    readiness: &'static str,
-    break_rebuild_potential: &'static str,
-    hook_fragment_count: u32,
-    break_support_count: u32,
-    quote_risk_count: u32,
-    capture_candidate_count: u32,
-    top_reason: &'static str,
-    source_backed: bool,
-    generated: bool,
-    fallback_like: bool,
-    lane_gestures: [&'static str; 3],
-    material_sources: [&'static str; 3],
-    warnings: [&'static str; 1],
-}
-
-#[derive(Serialize)]
-struct ManifestThresholds {
-    min_signal_rms: f32,
-    min_low_band_rms: f32,
-    max_source_first_generated_to_source_rms_ratio: f32,
-    max_support_generated_to_source_rms_ratio: f32,
-}
-
-#[derive(Serialize)]
-struct ManifestPackMetrics {
-    tr909_source_profile: ManifestTr909SourceProfile,
-    tr909_groove_timing: Tr909GrooveTimingPolicy,
-    tr909_kick_pressure: ManifestTr909KickPressureProof,
-    mc202_bass_pressure: ManifestMc202BassPressureProof,
-    w30_source_chop_profile: ManifestW30SourceChopProfile,
-    w30_source_loop_closure: ManifestW30SourceLoopClosureProof,
-    w30_source_trigger_variation: ManifestW30SourceTriggerVariationProof,
-    w30_source_slice_choice: ManifestW30SourceSliceChoiceProof,
-    tr909_beat_fill: ManifestRenderMetrics,
-    mc202_bass_pressure_stem: ManifestRenderMetrics,
-    w30_feral_source_chop: ManifestRenderMetrics,
-    source_first_mix: ManifestRenderMetrics,
-    full_grid_mix: ManifestRenderMetrics,
-    mix_balance: ManifestMixBalanceMetrics,
-    tr909_source_grid_alignment: SourceGridOutputDriftMetrics,
-    mc202_source_grid_alignment: SourceGridOutputDriftMetrics,
-    w30_source_grid_alignment: SourceGridOutputDriftMetrics,
-    source_grid_output_drift: SourceGridOutputDriftMetrics,
-    bar_variation: ManifestBarVariationMetrics,
-    spectral_energy: ManifestSpectralEnergyMetrics,
-}
-
-#[derive(Serialize)]
-struct ManifestBarVariationMetrics {
-    tr909_beat_fill: BarVariationMetrics,
-    mc202_bass_pressure_stem: BarVariationMetrics,
-    w30_feral_source_chop: BarVariationMetrics,
-    source_first_mix: BarVariationMetrics,
-    full_grid_mix: BarVariationMetrics,
-}
-
-#[derive(Serialize)]
-struct ManifestSpectralEnergyMetrics {
-    tr909_beat_fill: SpectralEnergyMetrics,
-    mc202_bass_pressure_stem: SpectralEnergyMetrics,
-    w30_feral_source_chop: SpectralEnergyMetrics,
-    source_first_mix: SpectralEnergyMetrics,
-    full_grid_mix: SpectralEnergyMetrics,
-}
-
-#[derive(Serialize)]
-struct ManifestMixBalanceMetrics {
-    source_first_generated_to_source_rms_ratio: f32,
-    support_generated_to_source_rms_ratio: f32,
 }
 
 fn print_help() {
