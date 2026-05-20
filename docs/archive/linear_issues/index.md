@@ -378,4 +378,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract feral grid pack manifest ownership into a real module
 - [RIOTBOX-813.md](./RIOTBOX-813.md)
   Document MC-202 Feral-grid source-grid proof across QA contracts
+- [RIOTBOX-814.md](./RIOTBOX-814.md)
+  Cover MC-202 lane source-grid alignment in listening-manifest fixtures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
