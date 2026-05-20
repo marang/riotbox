@@ -392,4 +392,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate Source Timing example expectation range schema
 - [RIOTBOX-820.md](./RIOTBOX-820.md)
   Expose split beat-period evidence in Source Timing example report
+- [RIOTBOX-821.md](./RIOTBOX-821.md)
+  Split Source Timing example report expectations before next expansion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
