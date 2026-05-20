@@ -372,4 +372,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Guard representative showcase output deletion
 - [RIOTBOX-810.md](./RIOTBOX-810.md)
   Add MC-202 source-grid alignment proof to representative showcase
+- [RIOTBOX-811.md](./RIOTBOX-811.md)
+  Surface MC-202 source-grid proof in observer/audio correlation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
