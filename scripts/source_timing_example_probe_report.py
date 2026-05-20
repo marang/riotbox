@@ -40,8 +40,12 @@ class ReportRow:
     drift: str = "-"
     beat: str = "-"
     beat_score: str = "-"
+    beat_match: str = "-"
+    beat_median: str = "-"
+    beat_alternates: str = "-"
     downbeat: str = "-"
     downbeat_score: str = "-"
+    downbeat_alternates: str = "-"
     phrase: str = "-"
     alternate_evidence: str = "-"
     warnings: str = "-"
@@ -187,8 +191,12 @@ def row_from_payload(
         drift=require_string(payload, "drift_status"),
         beat=require_string(payload, "beat_status"),
         beat_score=format_optional_score(payload.get("primary_beat_score")),
+        beat_match=format_optional_score(payload.get("primary_beat_matched_onset_ratio")),
+        beat_median=format_optional_score(payload.get("primary_beat_median_distance_ratio")),
+        beat_alternates=str(require_int(payload, "alternate_beat_candidate_count")),
         downbeat=require_string(payload, "downbeat_status"),
         downbeat_score=format_optional_score(payload.get("primary_downbeat_score")),
+        downbeat_alternates=str(require_int(payload, "alternate_downbeat_phase_count")),
         phrase=require_string(payload, "phrase_status"),
         alternate_evidence=str(require_int(payload, "alternate_evidence_count")),
         warnings="none" if not warnings else ",".join(warnings),
@@ -204,8 +212,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Downbeat | Downbeat score | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | --- | ---: | --- | ---: | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat score | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -223,8 +231,12 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.drift,
                     row.beat,
                     row.beat_score,
+                    row.beat_match,
+                    row.beat_median,
+                    row.beat_alternates,
                     row.downbeat,
                     row.downbeat_score,
+                    row.downbeat_alternates,
                     row.phrase,
                     row.alternate_evidence,
                     row.warnings,
@@ -266,8 +278,12 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_string(payload, expectation, issues, "downbeat_status")
     compare_string(payload, expectation, issues, "phrase_status")
     compare_int(payload, expectation, issues, "alternate_evidence_count")
+    compare_int(payload, expectation, issues, "alternate_beat_candidate_count")
+    compare_int(payload, expectation, issues, "alternate_downbeat_phase_count")
     compare_bpm(payload, expectation, issues)
     compare_number_range(payload, expectation, issues, "primary_beat_score")
+    compare_number_range(payload, expectation, issues, "primary_beat_matched_onset_ratio")
+    compare_number_range(payload, expectation, issues, "primary_beat_median_distance_ratio")
     compare_number_range(payload, expectation, issues, "primary_downbeat_score")
     compare_warning_includes(payload, expectation, issues)
     return issues
