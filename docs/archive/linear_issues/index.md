@@ -390,4 +390,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P012 Source Timing QA contract after readiness evidence slices
 - [RIOTBOX-819.md](./RIOTBOX-819.md)
   Validate Source Timing example expectation range schema
+- [RIOTBOX-820.md](./RIOTBOX-820.md)
+  Expose split beat-period evidence in Source Timing example report
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
