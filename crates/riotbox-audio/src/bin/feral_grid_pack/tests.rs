@@ -129,6 +129,7 @@ mod tests {
         let low_render_repeat = render_tr909_source_support(&grid, low_profile);
         let legacy_low_render = render_tr909_source_support_legacy(&grid, low_profile);
         let (_, kick_pressure) = render_tr909_source_support_with_pressure(&grid, low_profile);
+        let (mc202_low_render, mc202_pressure) = render_mc202_bass_pressure(&grid, low_profile);
 
         assert_eq!(low_profile.support_profile, Tr909SourceSupportProfile::DropDrive);
         assert_eq!(high_profile.support_profile, Tr909SourceSupportProfile::BreakLift);
@@ -138,8 +139,15 @@ mod tests {
         assert_ne!(low_render, legacy_low_render);
         assert!(kick_pressure.applied, "{kick_pressure:?}");
         assert!(kick_pressure.low_band_rms_ratio >= TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO);
+        assert!(mc202_pressure.applied, "{mc202_pressure:?}");
+        assert!(mc202_pressure.phrase_variation_applied, "{mc202_pressure:?}");
+        assert!(
+            mc202_pressure.distinct_bar_profile_count >= MC202_BASS_PRESSURE_MIN_DISTINCT_BAR_PROFILES
+        );
+        assert!(mc202_pressure.bar_similarity <= MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY);
         assert!(signal_metrics(&low_render).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(&high_render).rms > MIN_SIGNAL_RMS);
+        assert!(signal_metrics(&mc202_low_render).rms > MC202_BASS_PRESSURE_MIN_RMS);
     }
 
     #[test]
