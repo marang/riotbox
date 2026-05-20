@@ -448,6 +448,7 @@ def validate_source_grid_output_drift(manifest: dict[str, Any]) -> None:
     for metric_key in (
         "source_grid_output_drift",
         "tr909_source_grid_alignment",
+        "mc202_source_grid_alignment",
         "w30_source_grid_alignment",
     ):
         if metric_key in metrics:

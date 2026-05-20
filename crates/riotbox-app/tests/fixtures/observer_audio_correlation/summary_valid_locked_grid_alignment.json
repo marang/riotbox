@@ -77,6 +77,11 @@
         "max_allowed_peak_offset_ms": 70.0,
         "max_peak_offset_ms": 1.27
       },
+      "mc202_source_grid_alignment": {
+        "hit_ratio": 1.0,
+        "max_allowed_peak_offset_ms": 70.0,
+        "max_peak_offset_ms": 3.25
+      },
       "w30_candidate_active_sample_ratio": null,
       "w30_candidate_rms": null,
       "w30_rms_delta": null,

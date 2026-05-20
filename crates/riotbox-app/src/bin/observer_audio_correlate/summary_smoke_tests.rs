@@ -76,6 +76,14 @@ fn summarizes_synthetic_observer_and_manifest() {
         })
     );
     assert_eq!(
+        summary.mc202_source_grid_alignment,
+        Some(SourceGridOutputDriftEvidence {
+            hit_ratio: 1.0,
+            max_peak_offset_ms: 3.25,
+            max_allowed_peak_offset_ms: 70.0,
+        })
+    );
+    assert_eq!(
         summary.w30_source_grid_alignment,
         Some(SourceGridOutputDriftEvidence {
             hit_ratio: 1.0,
@@ -98,6 +106,7 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert!(markdown.contains("Source-grid output hit ratio: `0.875000`"));
     assert!(markdown.contains("Source-grid output max peak offset: `12.500000`"));
     assert!(markdown.contains("TR-909 source-grid alignment: `hit_ratio=0.875000"));
+    assert!(markdown.contains("MC-202 source-grid alignment: `hit_ratio=1.000000"));
     assert!(markdown.contains("W-30 source-grid alignment: `hit_ratio=1.000000"));
     assert!(markdown.contains("W-30 source-loop closure: `passed=yes"));
     assert!(markdown.contains(
@@ -192,6 +201,10 @@ fn summarizes_synthetic_observer_and_manifest() {
         Some(0.875)
     );
     assert_eq!(
+        json["output_path"]["metrics"]["mc202_source_grid_alignment"]["hit_ratio"].as_f64(),
+        Some(1.0)
+    );
+    assert_eq!(
         json["output_path"]["metrics"]["w30_source_grid_alignment"]["hit_ratio"].as_f64(),
         Some(1.0)
     );
@@ -255,6 +268,13 @@ fn synthetic_manifest() -> String {
       "hit_count": 7,
       "hit_ratio": 0.875,
       "max_peak_offset_ms": 12.5,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "mc202_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 3.25,
       "max_allowed_peak_offset_ms": 70.0
     },
     "w30_source_grid_alignment": {

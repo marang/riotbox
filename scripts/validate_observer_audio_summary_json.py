@@ -126,6 +126,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_number(metrics, "mc202_question_answer_delta_rms")
     require_optional_source_grid_output_drift(metrics)
     require_optional_source_grid_alignment(metrics, "tr909_source_grid_alignment")
+    require_optional_source_grid_alignment(metrics, "mc202_source_grid_alignment")
     require_optional_source_grid_alignment(metrics, "w30_source_grid_alignment")
     require_optional_number(metrics, "w30_candidate_rms")
     require_optional_number(metrics, "w30_candidate_active_sample_ratio")

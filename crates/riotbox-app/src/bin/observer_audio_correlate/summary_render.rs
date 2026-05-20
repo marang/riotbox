@@ -31,6 +31,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Source-grid output max peak offset: `{}`\n\
          - Source-grid output max allowed offset: `{}`\n\n\
          - TR-909 source-grid alignment: `{}`\n\
+         - MC-202 source-grid alignment: `{}`\n\
          - W-30 source-grid alignment: `{}`\n\n\
          - W-30 source-loop closure: `{}`\n\n\
          - W-30 candidate RMS: `{}`\n\
@@ -77,6 +78,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_source_grid_max_peak_offset(summary),
         format_source_grid_max_allowed_offset(summary),
         format_source_grid_alignment(&summary.tr909_source_grid_alignment),
+        format_source_grid_alignment(&summary.mc202_source_grid_alignment),
         format_source_grid_alignment(&summary.w30_source_grid_alignment),
         format_w30_source_loop_closure(summary),
         format_optional_f64(summary.w30_candidate_rms),
@@ -185,6 +187,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                     "max_allowed_peak_offset_ms": drift.max_allowed_peak_offset_ms,
                 })),
                 "tr909_source_grid_alignment": summary.tr909_source_grid_alignment.as_ref().map(source_grid_alignment_json),
+                "mc202_source_grid_alignment": summary.mc202_source_grid_alignment.as_ref().map(source_grid_alignment_json),
                 "w30_source_grid_alignment": summary.w30_source_grid_alignment.as_ref().map(source_grid_alignment_json),
                 "w30_source_loop_closure": summary.w30_source_loop_closure.as_ref().map(w30_source_loop_closure_json),
                 "w30_candidate_rms": summary.w30_candidate_rms,

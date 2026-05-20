@@ -75,6 +75,11 @@ fn strict_evidence_rejects_missing_required_source_grid_alignment() {
     assert!(
         error
             .to_string()
+            .contains("mc202_source_grid_alignment=missing")
+    );
+    assert!(
+        error
+            .to_string()
             .contains("w30_source_grid_alignment=missing")
     );
     let markdown = render_markdown(&summary);
@@ -103,7 +108,15 @@ fn strict_evidence_rejects_lane_source_grid_alignment_failures() {
             .to_string()
             .contains("w30_source_grid_alignment.hit_ratio=0.250000")
     );
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_source_grid_alignment.hit_ratio=0.250000")
+    );
     assert!(render_markdown(&summary).contains("W-30 source-grid alignment: `hit_ratio=0.250000"));
+    assert!(
+        render_markdown(&summary).contains("MC-202 source-grid alignment: `hit_ratio=0.250000")
+    );
     assert!(render_markdown(&summary).contains("Output path present: `no`"));
 }
 
@@ -245,6 +258,20 @@ fn synthetic_manifest_with_lane_alignment_failures() -> String {
       "max_peak_offset_ms": 1.27,
       "max_allowed_peak_offset_ms": 70.0
     },
+    "tr909_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "mc202_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 2,
+      "hit_ratio": 0.25,
+      "max_peak_offset_ms": 85.0,
+      "max_allowed_peak_offset_ms": 70.0
+    },
     "w30_source_grid_alignment": {
       "beat_count": 8,
       "hit_count": 2,
@@ -277,6 +304,13 @@ fn synthetic_manifest_with_malformed_lane_alignment() -> String {
     "tr909_source_grid_alignment": {
       "hit_ratio": 1.0,
       "max_allowed_peak_offset_ms": 70.0
+    },
+    "mc202_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 3.25,
+      "max_allowed_peak_offset_ms": 70.0
     }
   }
 }"#
@@ -305,6 +339,13 @@ fn synthetic_manifest_with_w30_loop_closure_failure() -> String {
       "hit_count": 8,
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "mc202_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 3.25,
       "max_allowed_peak_offset_ms": 70.0
     },
     "w30_source_grid_alignment": {

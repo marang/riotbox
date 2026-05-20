@@ -56,6 +56,11 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
         summary.tr909_source_grid_alignment_malformed,
     ));
     failures.extend(required_source_grid_alignment_failures(
+        "mc202_source_grid_alignment",
+        &summary.mc202_source_grid_alignment,
+        summary.mc202_source_grid_alignment_malformed,
+    ));
+    failures.extend(required_source_grid_alignment_failures(
         "w30_source_grid_alignment",
         &summary.w30_source_grid_alignment,
         summary.w30_source_grid_alignment_malformed,
