@@ -1,0 +1,68 @@
+{
+  "schema": "riotbox.source_timing_probe_cli.v1",
+  "schema_version": 1,
+  "source_path": "fixtures/generated/flat_pulse_ambiguous.wav",
+  "source_id": "fixture-weak-ambiguous-flat-pulse",
+  "cue": "needs confirm",
+  "readiness": "weak",
+  "requires_manual_confirm": true,
+  "grid_use": "manual_confirm_only",
+  "primary_bpm": 128.3968,
+  "primary_beat_score": 0.97667295,
+  "primary_beat_matched_onset_ratio": 1.0,
+  "primary_beat_median_distance_ratio": 0.006248999,
+  "primary_downbeat_offset_beats": 0,
+  "primary_downbeat_score": 0.26792318,
+  "beat_status": "stable",
+  "downbeat_status": "weak",
+  "confidence_result": "candidate_ambiguous",
+  "drift_status": "stable",
+  "phrase_status": "ambiguous_downbeat",
+  "alternate_evidence_count": 6,
+  "alternate_beat_candidate_count": 0,
+  "alternate_downbeat_phase_count": 3,
+  "anchor_evidence": {
+    "primary_anchor_count": 16,
+    "primary_kick_anchor_count": 0,
+    "primary_backbeat_anchor_count": 0,
+    "primary_transient_anchor_count": 16,
+    "primary_anchor_preview": [
+      {
+        "anchor_type": "transient_cluster",
+        "time_seconds": 0.0,
+        "bar_index": 1,
+        "beat_index": 1,
+        "confidence": 0.55,
+        "strength": 0.21060252,
+        "tags": [
+          "probe_onset",
+          "bpm_candidate",
+          "period_scored",
+          "anchor_classified_v0",
+          "downbeat_phase_1",
+          "transient_cluster",
+          "beat_in_bar_1",
+          "grid_aligned"
+        ]
+      }
+    ]
+  },
+  "groove_evidence": {
+    "primary_groove_residual_count": 4,
+    "primary_max_abs_offset_ms": 8.667074,
+    "primary_groove_preview": [
+      {
+        "subdivision": "eighth",
+        "offset_ms": 8.667074,
+        "confidence": 0.55
+      }
+    ]
+  },
+  "warning_codes": [
+    "phrase_uncertain",
+    "ambiguous_downbeat"
+  ],
+  "onset_count": 35,
+  "onset_density_per_second": 2.1875,
+  "duration_seconds": 16.0
+}
