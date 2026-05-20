@@ -192,6 +192,8 @@ Rules:
   median-distance ratio, alternate-candidate count, and whether the evidence is
   unavailable, weak, stable, or ambiguous. This is explanatory QA evidence, not
   permission for downstream lanes to treat the grid as production-locked.
+  Scores and ratios in this evidence are bounded unit values (`0..1`) or null
+  when unavailable.
 - source timing QA reports should expose downbeat-phase evidence behind bar-grid
   selection: primary phase offset, score, alternate-phase count, and whether the
   evidence is unavailable, weak, stable, or ambiguous. This explains why a bar
