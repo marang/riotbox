@@ -370,4 +370,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P013 representative showcase seam after all-lane depth slices
 - [RIOTBOX-809.md](./RIOTBOX-809.md)
   Guard representative showcase output deletion
+- [RIOTBOX-810.md](./RIOTBOX-810.md)
+  Add MC-202 source-grid alignment proof to representative showcase
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
