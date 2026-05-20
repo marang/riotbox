@@ -5,9 +5,20 @@
       "readiness": "ready",
       "requires_manual_confirm": false,
       "grid_use": "locked_grid",
+      "confidence_result": "degraded",
+      "drift_status": "stable",
+      "alternate_evidence_count": 7,
       "primary_bpm": {
         "target": 120.0,
         "tolerance": 0.01
+      },
+      "primary_beat_score": {
+        "min": 0.0,
+        "max": 0.2
+      },
+      "primary_downbeat_score": {
+        "min": 0.9,
+        "max": 1.0
       },
       "beat_status": "stable",
       "downbeat_status": "stable",

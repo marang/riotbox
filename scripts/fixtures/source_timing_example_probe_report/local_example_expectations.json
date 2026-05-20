@@ -5,9 +5,20 @@
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
+      "confidence_result": "candidate_cautious",
+      "drift_status": "not_enough_material",
+      "alternate_evidence_count": 0,
       "primary_bpm": {
         "target": 130.285,
         "tolerance": 0.5
+      },
+      "primary_beat_score": {
+        "min": 0.85,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.25,
+        "max": 0.7
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
@@ -21,9 +32,20 @@
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
+      "confidence_result": "candidate_cautious",
+      "drift_status": "not_enough_material",
+      "alternate_evidence_count": 0,
       "primary_bpm": {
         "target": 128.397,
         "tolerance": 0.5
+      },
+      "primary_beat_score": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.25,
+        "max": 0.7
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
@@ -37,9 +59,20 @@
       "readiness": "weak",
       "requires_manual_confirm": true,
       "grid_use": "manual_confirm_only",
+      "confidence_result": "candidate_ambiguous",
+      "drift_status": "not_enough_material",
+      "alternate_evidence_count": 6,
       "primary_bpm": {
         "target": 128.397,
         "tolerance": 0.5
+      },
+      "primary_beat_score": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.2,
+        "max": 0.4
       },
       "beat_status": "stable",
       "downbeat_status": "weak",
@@ -54,9 +87,20 @@
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
+      "confidence_result": "candidate_cautious",
+      "drift_status": "not_enough_material",
+      "alternate_evidence_count": 0,
       "primary_bpm": {
         "target": 120.185,
         "tolerance": 0.5
+      },
+      "primary_beat_score": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.25,
+        "max": 0.7
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
@@ -70,9 +114,20 @@
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
+      "confidence_result": "candidate_cautious",
+      "drift_status": "not_enough_material",
+      "alternate_evidence_count": 0,
       "primary_bpm": {
         "target": 120.185,
         "tolerance": 0.5
+      },
+      "primary_beat_score": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.25,
+        "max": 0.7
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
@@ -86,6 +141,9 @@
       "readiness": "unavailable",
       "requires_manual_confirm": true,
       "grid_use": "unavailable",
+      "confidence_result": "degraded",
+      "drift_status": "unavailable",
+      "alternate_evidence_count": 0,
       "beat_status": "unavailable",
       "downbeat_status": "unavailable",
       "phrase_status": "unavailable",
@@ -99,6 +157,9 @@
       "readiness": "unavailable",
       "requires_manual_confirm": true,
       "grid_use": "unavailable",
+      "confidence_result": "degraded",
+      "drift_status": "unavailable",
+      "alternate_evidence_count": 0,
       "beat_status": "unavailable",
       "downbeat_status": "unavailable",
       "phrase_status": "unavailable",
