@@ -1,4 +1,12 @@
-// Textual includes keep this large file split mechanical and behavior-preserving.
+#[path = "feral_grid_pack/manifest.rs"]
+mod manifest;
+
+use manifest::write_manifest;
+
+#[cfg(test)]
+use riotbox_audio::listening_manifest::LISTENING_MANIFEST_SCHEMA_VERSION;
+
+// Most shards are still textual includes; manifest ownership is now a real module.
 include!("feral_grid_pack/pack_builder.rs");
 include!("feral_grid_pack/bar_variation_metrics.rs");
 include!("feral_grid_pack/spectral_energy_metrics.rs");
