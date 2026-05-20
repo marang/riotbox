@@ -346,7 +346,7 @@ def compare_number_range(
 ) -> None:
     if key not in expectation:
         return
-    expected = require_object(expectation[key], f"{key} expectation")
+    expected = require_number_range_expectation(expectation[key], f"{key} expectation")
     minimum = require_number(expected, "min") if "min" in expected else None
     maximum = require_number(expected, "max") if "max" in expected else None
     actual = payload.get(key)
@@ -358,6 +358,21 @@ def compare_number_range(
         issues.append(f"{key} {actual_value:.6f} below minimum {minimum:.6f}")
     if maximum is not None and actual_value > maximum:
         issues.append(f"{key} {actual_value:.6f} above maximum {maximum:.6f}")
+
+
+def require_number_range_expectation(value: Any, label: str) -> dict[str, Any]:
+    expected = require_object(value, label)
+    allowed_keys = {"min", "max"}
+    unknown_keys = sorted(set(expected) - allowed_keys)
+    if unknown_keys:
+        raise ValueError(f"{label} has unknown keys: {', '.join(unknown_keys)}")
+    if "min" not in expected and "max" not in expected:
+        raise ValueError(f"{label} must include min or max")
+    minimum = require_number(expected, "min") if "min" in expected else None
+    maximum = require_number(expected, "max") if "max" in expected else None
+    if minimum is not None and maximum is not None and minimum > maximum:
+        raise ValueError(f"{label} min must be <= max")
+    return expected
 
 
 def compare_warning_includes(

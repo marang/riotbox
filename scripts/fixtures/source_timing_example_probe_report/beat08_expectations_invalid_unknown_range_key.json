@@ -1,0 +1,9 @@
+{
+  "sources": {
+    "Beat08_128BPM(Full).wav": {
+      "primary_beat_score": {
+        "minimum": 0.8
+      }
+    }
+  }
+}
