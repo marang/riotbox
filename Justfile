@@ -191,6 +191,18 @@ source-timing-example-probe-report-fixtures:
         exit 1; \
       fi; \
       grep -q "mismatch:" "$output"; \
+      for invalid_expectations in \
+        scripts/fixtures/source_timing_example_probe_report/beat08_expectations_invalid_empty_range.json \
+        scripts/fixtures/source_timing_example_probe_report/beat08_expectations_invalid_inverted_range.json \
+        scripts/fixtures/source_timing_example_probe_report/beat08_expectations_invalid_unknown_range_key.json; do \
+        if python3 scripts/source_timing_example_probe_report.py \
+          --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
+          --expectations "$invalid_expectations" \
+          --output "$output"; then \
+          echo "expected invalid source timing example expectation range fixture to fail: $invalid_expectations" >&2; \
+          exit 1; \
+        fi; \
+      done; \
       rm -f "$output"
 
 w30-smoke-candidate date="local" duration="2.0":
