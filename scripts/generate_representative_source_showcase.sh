@@ -6,6 +6,15 @@ date_label="${2:-local-representative-source-showcase}"
 source_seconds="${3:-8.0}"
 bars="${4:-4}"
 
+repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
+case "$output_dir" in
+    "$repo_root"/artifacts/audio_qa/*|/tmp/riotbox-*) ;;
+    *)
+        echo "refusing to reset representative showcase output outside artifacts/audio_qa or /tmp/riotbox-*: $output_dir" >&2
+        exit 1
+        ;;
+esac
+
 rm -rf "$output_dir"
 mkdir -p "$output_dir"/{sources,packs,validation,observer}
 
