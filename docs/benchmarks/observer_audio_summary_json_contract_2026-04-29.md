@@ -171,6 +171,7 @@ The current stable metric keys are:
 - `mc202_question_answer_delta_rms`
 - `source_grid_output_drift`: `null` or an object with `hit_ratio`, `max_peak_offset_ms`, and `max_allowed_peak_offset_ms`
 - `tr909_source_grid_alignment`: `null` or the same source-grid alignment object shape
+- `mc202_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `w30_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `w30_source_loop_closure`: `null` or an object with `passed`,
   `preview_rms`, `edge_delta_abs`, `max_allowed_edge_delta_abs`,
@@ -191,9 +192,10 @@ strict correlation also treats that metric as an output smoke gate. A low hit
 ratio or a peak offset beyond the reported allowed window means the generated
 support output no longer proves it landed near the selected source grid.
 Strict Feral-grid correlation also requires lane-specific
-`tr909_source_grid_alignment`, `w30_source_grid_alignment`, and W-30
-`w30_source_loop_closure` evidence. Missing, malformed, out-of-budget, or
-`passed=false` loop-closure proof means the output path is not passing.
+`tr909_source_grid_alignment`, `mc202_source_grid_alignment`,
+`w30_source_grid_alignment`, and W-30 `w30_source_loop_closure` evidence.
+Missing, malformed, out-of-budget, or `passed=false` loop-closure proof means
+the output path is not passing.
 
 For manifests that include source timing evidence, strict correlation treats a
 malformed `source_timing` object as an output-path issue. Missing `source_timing`

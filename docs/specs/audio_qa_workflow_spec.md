@@ -207,7 +207,8 @@ Early P011 guardrail defaults:
   support secondary and records generated/source RMS ratios in `metrics.mix_balance`
 - Feral grid pack-level `metrics.source_grid_output_drift` is measured from the
   complete generated-support mix, not an individual lane. Lane-specific timing
-  evidence remains separate under `metrics.tr909_source_grid_alignment` and
+  evidence remains separate under `metrics.tr909_source_grid_alignment`,
+  `metrics.mc202_source_grid_alignment`, and
   `metrics.w30_source_grid_alignment`.
 - Feral grid TR-909 support must not be fixed only by BPM/grid when the pack is
   presented as source-aware. The generated manifest records
@@ -690,9 +691,10 @@ Today the repo already has:
 - observer/audio summaries can surface Feral-grid `source_grid_output_drift`
   evidence and strict correlation requires Feral-grid manifests to include
   pack-level `source_grid_output_drift` plus lane-specific
-  `tr909_source_grid_alignment`, `w30_source_grid_alignment`, and
-  `w30_source_loop_closure`; missing or out-of-budget metrics fail the output
-  path instead of being treated as an optional note
+  `tr909_source_grid_alignment`, `mc202_source_grid_alignment`,
+  `w30_source_grid_alignment`, and `w30_source_loop_closure`; missing or
+  out-of-budget metrics fail the output path instead of being treated as an
+  optional note
 - observer/audio summaries can compare observer-side Source Timing readiness with
   manifest-side Source Timing evidence as `output_path.source_timing_alignment`;
   strict correlation treats real mismatches as output-path failures while keeping
@@ -739,7 +741,7 @@ Today the repo already has:
 - `just generated-source-timing-probe-json-smoke` runs the real source timing probe CLI against a deterministic generated WAV, validates the emitted JSON contract, and asserts stable grid-locked timing plus visible kick/backbeat anchor evidence before the aggregate audio QA gate can pass
 - `just generated-degraded-source-timing-probe-json-smoke` runs the same CLI contract against generated silence and asserts degraded/manual-confirm evidence so weak material cannot falsely pass as grid-locked
 - `just generated-ambiguous-source-timing-probe-json-smoke` runs a flat-pulse generated source with strong beat evidence but weak downbeat/phrase evidence and asserts it remains manual-confirm with generic transient anchors instead of falsely becoming grid-locked or semantically classified
-- `just syncopated-source-showcase-smoke` runs the deterministic syncopated source showcase case through `feral_grid_pack` and validates source timing, source-grid output drift, TR-909/W-30 lane alignment, loop closure, and non-silent full-grid audio before `just audio-qa-ci` can pass
+- `just syncopated-source-showcase-smoke` runs the deterministic syncopated source showcase case through `feral_grid_pack` and validates source timing, source-grid output drift, TR-909/MC-202/W-30 lane alignment, loop closure, and non-silent full-grid audio before `just audio-qa-ci` can pass
 - strict observer/audio correlation now rejects malformed observer stream evidence before accepting committed control-path evidence
 - `just user-session-observer-validator-fixtures` validates the committed observer fixture streams plus valid and invalid recovery-snapshot fixtures, and is wired into `just audio-qa-ci`
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible
