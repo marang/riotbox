@@ -25,7 +25,17 @@
       "phrase_status": "not_enough_material",
       "warning_codes_include": [
         "phrase_uncertain"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.90,
+        "max": 0.95
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     },
     "long_stable_lock.wav": {
       "cue": "grid locked",
@@ -50,7 +60,17 @@
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "stable",
-      "warning_codes_include": []
+      "warning_codes_include": [],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.99,
+        "max": 1.0
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.60,
+        "max": 0.75
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     }
   }
 }

@@ -25,7 +25,17 @@
       "phrase_status": "phrase_locked",
       "warning_codes_include": [
         "drift_high"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.0,
+        "max": 0.1
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.0,
+        "max": 0.1
+      },
+      "alternate_beat_candidate_count": 3,
+      "alternate_downbeat_phase_count": 4
     }
   }
 }

@@ -25,7 +25,17 @@
       "phrase_status": "not_enough_material",
       "warning_codes_include": [
         "phrase_uncertain"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.90,
+        "max": 0.93
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.0,
+        "max": 0.05
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     },
     "Beat08_128BPM(Full).wav": {
       "cue": "needs confirm",
@@ -52,7 +62,17 @@
       "phrase_status": "not_enough_material",
       "warning_codes_include": [
         "phrase_uncertain"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.99,
+        "max": 1.0
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.0,
+        "max": 0.05
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     },
     "Beat20_128BPM(Full).wav": {
       "cue": "needs confirm",
@@ -80,7 +100,17 @@
       "warning_codes_include": [
         "phrase_uncertain",
         "ambiguous_downbeat"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.99,
+        "max": 1.0
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.0,
+        "max": 0.05
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 3
     },
     "DH_BeatC_120-01.wav": {
       "cue": "needs confirm",
@@ -107,7 +137,17 @@
       "phrase_status": "not_enough_material",
       "warning_codes_include": [
         "phrase_uncertain"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.99,
+        "max": 1.0
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.0,
+        "max": 0.05
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     },
     "DH_BeatC_KickSnr_120-01.wav": {
       "cue": "needs confirm",
@@ -134,7 +174,17 @@
       "phrase_status": "not_enough_material",
       "warning_codes_include": [
         "phrase_uncertain"
-      ]
+      ],
+      "primary_beat_matched_onset_ratio": {
+        "min": 0.99,
+        "max": 1.0
+      },
+      "primary_beat_median_distance_ratio": {
+        "min": 0.0,
+        "max": 0.05
+      },
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     },
     "DH_Fadapad_120_A.wav": {
       "cue": "needs confirm",
@@ -150,7 +200,9 @@
       "warning_codes_include": [
         "low_timing_confidence",
         "weak_kick_anchor"
-      ]
+      ],
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     },
     "DH_RushArp_120_A.wav": {
       "cue": "needs confirm",
@@ -166,7 +218,9 @@
       "warning_codes_include": [
         "low_timing_confidence",
         "weak_kick_anchor"
-      ]
+      ],
+      "alternate_beat_candidate_count": 0,
+      "alternate_downbeat_phase_count": 0
     }
   }
 }

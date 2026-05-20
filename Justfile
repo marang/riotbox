@@ -181,8 +181,8 @@ source-timing-example-probe-report-fixtures:
         --fixture-json crates/riotbox-audio/tests/fixtures/source_timing_probe/probe_valid_locked_grid.json \
         --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations.json \
         --output "$output"; \
-      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | needs_review | yes | short_loop_manual_confirm | 128.397 | candidate_cautious | not_enough_material | stable | 0.979 | stable | 0.565 | not_enough_material | 0 | phrase_uncertain | 9/2/4/3 | 1 | ok |" "$output"; \
-      grep -q "| long_stable_lock.wav | probed | grid locked | ready | no | locked_grid | 128.397 | candidate_cautious | stable | stable | 0.979 | stable | 0.565 | stable | 0 | none | 11/6/3/2 | 4 | ok |" "$output"; \
+      grep -q "| Beat08_128BPM(Full).wav | probed | needs confirm | needs_review | yes | short_loop_manual_confirm | 128.397 | candidate_cautious | not_enough_material | stable | 0.979 | 0.920 | 0.990 | 0 | stable | 0.565 | 0 | not_enough_material | 0 | phrase_uncertain | 9/2/4/3 | 1 | ok |" "$output"; \
+      grep -q "| long_stable_lock.wav | probed | grid locked | ready | no | locked_grid | 128.397 | candidate_cautious | stable | stable | 0.979 | 1.000 | 0.667 | 0 | stable | 0.565 | 0 | stable | 0 | none | 11/6/3/2 | 4 | ok |" "$output"; \
       if python3 scripts/source_timing_example_probe_report.py \
         --fixture-json scripts/fixtures/source_timing_example_probe_report/beat08_source_timing_probe.json \
         --expectations scripts/fixtures/source_timing_example_probe_report/beat08_expectations_mismatch.json \
