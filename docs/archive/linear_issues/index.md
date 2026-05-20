@@ -388,4 +388,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Clamp Source Timing probe evidence scores in JSON validator
 - [RIOTBOX-818.md](./RIOTBOX-818.md)
   Review P012 Source Timing QA contract after readiness evidence slices
+- [RIOTBOX-819.md](./RIOTBOX-819.md)
+  Validate Source Timing example expectation range schema
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
