@@ -5,9 +5,20 @@
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
+      "confidence_result": "candidate_cautious",
+      "drift_status": "not_enough_material",
+      "alternate_evidence_count": 0,
       "primary_bpm": {
         "target": 128.397,
         "tolerance": 0.01
+      },
+      "primary_beat_score": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.5,
+        "max": 0.7
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
@@ -21,9 +32,20 @@
       "readiness": "ready",
       "requires_manual_confirm": false,
       "grid_use": "locked_grid",
+      "confidence_result": "candidate_cautious",
+      "drift_status": "stable",
+      "alternate_evidence_count": 0,
       "primary_bpm": {
         "target": 128.397,
         "tolerance": 0.01
+      },
+      "primary_beat_score": {
+        "min": 0.95,
+        "max": 1.0
+      },
+      "primary_downbeat_score": {
+        "min": 0.5,
+        "max": 0.7
       },
       "beat_status": "stable",
       "downbeat_status": "stable",

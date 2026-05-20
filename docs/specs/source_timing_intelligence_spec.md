@@ -559,8 +559,9 @@ primary timing hypothesis:
 - the example report may use an optional expectations file for conservative
   local regression checks. Expectations should cover stable review fields such
   as cue, readiness, manual-confirm, BPM tolerance, beat/downbeat/phrase status,
-  and warning-code presence; missing local WAVs must remain skipped instead of
-  failing fresh clones.
+  confidence result, drift status, alternate evidence count, bounded
+  beat/downbeat score ranges, and warning-code presence; missing local WAVs must
+  remain skipped instead of failing fresh clones.
 - `just source-timing-example-probe-report-local` uses the tracked local-example
   expectations file for the documented Beat/DH examples. It is an optional local
   regression command because the source WAV files are deliberately outside Git.

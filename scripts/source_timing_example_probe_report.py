@@ -36,9 +36,14 @@ class ReportRow:
     manual_confirm: str = "-"
     grid_use: str = "-"
     bpm: str = "-"
+    confidence: str = "-"
+    drift: str = "-"
     beat: str = "-"
+    beat_score: str = "-"
     downbeat: str = "-"
+    downbeat_score: str = "-"
     phrase: str = "-"
+    alternate_evidence: str = "-"
     warnings: str = "-"
     anchors: str = "-"
     groove: str = "-"
@@ -178,9 +183,14 @@ def row_from_payload(
         manual_confirm=yes_no(require_bool(payload, "requires_manual_confirm")),
         grid_use=require_string(payload, "grid_use"),
         bpm=format_bpm(payload.get("primary_bpm")),
+        confidence=require_string(payload, "confidence_result"),
+        drift=require_string(payload, "drift_status"),
         beat=require_string(payload, "beat_status"),
+        beat_score=format_optional_score(payload.get("primary_beat_score")),
         downbeat=require_string(payload, "downbeat_status"),
+        downbeat_score=format_optional_score(payload.get("primary_downbeat_score")),
         phrase=require_string(payload, "phrase_status"),
+        alternate_evidence=str(require_int(payload, "alternate_evidence_count")),
         warnings="none" if not warnings else ",".join(warnings),
         anchors=format_anchors(anchors),
         groove=str(require_int(groove, "primary_groove_residual_count")),
@@ -194,8 +204,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Beat | Downbeat | Phrase | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Downbeat | Downbeat score | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | --- | ---: | --- | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -209,9 +219,14 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.manual_confirm,
                     row.grid_use,
                     row.bpm,
+                    row.confidence,
+                    row.drift,
                     row.beat,
+                    row.beat_score,
                     row.downbeat,
+                    row.downbeat_score,
                     row.phrase,
+                    row.alternate_evidence,
                     row.warnings,
                     row.anchors,
                     row.groove,
@@ -245,10 +260,15 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_string(payload, expectation, issues, "readiness")
     compare_bool(payload, expectation, issues, "requires_manual_confirm")
     compare_string(payload, expectation, issues, "grid_use")
+    compare_string(payload, expectation, issues, "confidence_result")
+    compare_string(payload, expectation, issues, "drift_status")
     compare_string(payload, expectation, issues, "beat_status")
     compare_string(payload, expectation, issues, "downbeat_status")
     compare_string(payload, expectation, issues, "phrase_status")
+    compare_int(payload, expectation, issues, "alternate_evidence_count")
     compare_bpm(payload, expectation, issues)
+    compare_number_range(payload, expectation, issues, "primary_beat_score")
+    compare_number_range(payload, expectation, issues, "primary_downbeat_score")
     compare_warning_includes(payload, expectation, issues)
     return issues
 
@@ -281,6 +301,20 @@ def compare_bool(
         issues.append(f"{key} expected {expected!r} got {actual!r}")
 
 
+def compare_int(
+    payload: dict[str, Any],
+    expectation: dict[str, Any],
+    issues: list[str],
+    key: str,
+) -> None:
+    if key not in expectation:
+        return
+    expected = require_int(expectation, key)
+    actual = require_int(payload, key)
+    if actual != expected:
+        issues.append(f"{key} expected {expected!r} got {actual!r}")
+
+
 def compare_bpm(
     payload: dict[str, Any],
     expectation: dict[str, Any],
@@ -302,6 +336,28 @@ def compare_bpm(
         issues.append(
             f"primary_bpm delta {delta:.6f} exceeds tolerance {tolerance:.6f}"
         )
+
+
+def compare_number_range(
+    payload: dict[str, Any],
+    expectation: dict[str, Any],
+    issues: list[str],
+    key: str,
+) -> None:
+    if key not in expectation:
+        return
+    expected = require_object(expectation[key], f"{key} expectation")
+    minimum = require_number(expected, "min") if "min" in expected else None
+    maximum = require_number(expected, "max") if "max" in expected else None
+    actual = payload.get(key)
+    if type(actual) not in {int, float}:
+        issues.append(f"{key} expected numeric value got none")
+        return
+    actual_value = float(actual)
+    if minimum is not None and actual_value < minimum:
+        issues.append(f"{key} {actual_value:.6f} below minimum {minimum:.6f}")
+    if maximum is not None and actual_value > maximum:
+        issues.append(f"{key} {actual_value:.6f} above maximum {maximum:.6f}")
 
 
 def compare_warning_includes(
@@ -331,6 +387,14 @@ def format_bpm(value: Any) -> str:
         return "none"
     if not isinstance(value, (int, float)):
         raise TypeError("primary_bpm must be a number or null")
+    return f"{value:.3f}"
+
+
+def format_optional_score(value: Any) -> str:
+    if value is None:
+        return "none"
+    if not isinstance(value, (int, float)):
+        raise TypeError("score fields must be numbers or null")
     return f"{value:.3f}"
 
 
