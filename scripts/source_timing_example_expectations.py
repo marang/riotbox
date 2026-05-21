@@ -9,6 +9,7 @@ from typing import Any
 
 EXPECTATION_KEYS = {
     "cue",
+    "actionability",
     "readiness",
     "requires_manual_confirm",
     "grid_use",
@@ -65,6 +66,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     require_warning_expectation_mode(expectation, "expectation")
     issues = []
     compare_string(payload, expectation, issues, "cue")
+    compare_string(payload, expectation, issues, "actionability")
     compare_string(payload, expectation, issues, "readiness")
     compare_bool(payload, expectation, issues, "requires_manual_confirm")
     compare_string(payload, expectation, issues, "grid_use")

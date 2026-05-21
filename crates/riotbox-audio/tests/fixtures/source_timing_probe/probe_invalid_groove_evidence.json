@@ -4,6 +4,7 @@
   "source_path": "source.wav",
   "source_id": "source.wav",
   "cue": "grid locked",
+  "actionability": "grid can steer moves",
   "readiness": "ready",
   "requires_manual_confirm": false,
   "primary_bpm": 128.0,

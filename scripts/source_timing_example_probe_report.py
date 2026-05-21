@@ -34,6 +34,7 @@ class ReportRow:
     source: str
     status: str
     cue: str = "-"
+    actionability: str = "-"
     readiness: str = "-"
     manual_confirm: str = "-"
     grid_use: str = "-"
@@ -175,6 +176,7 @@ def row_from_payload(
         source=source_name,
         status="probed",
         cue=require_string(payload, "cue"),
+        actionability=require_string(payload, "actionability"),
         readiness=require_string(payload, "readiness"),
         manual_confirm=yes_no(require_bool(payload, "requires_manual_confirm")),
         grid_use=require_string(payload, "grid_use"),
@@ -205,8 +207,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -216,6 +218,7 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.source,
                     row.status,
                     row.cue,
+                    row.actionability,
                     row.readiness,
                     row.manual_confirm,
                     row.grid_use,
