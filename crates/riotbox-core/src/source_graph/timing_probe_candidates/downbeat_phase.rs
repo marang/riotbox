@@ -64,6 +64,11 @@ pub fn source_timing_probe_downbeat_evidence_report(
     let alternate_phase_count = ambiguous_downbeat_phases(&phases, policy).count();
     let status = match primary {
         None => SourceTimingProbeDownbeatEvidenceStatus::Unavailable,
+        Some(phase)
+            if alternate_phase_count > 0 && phase.score >= MIN_AMBIGUOUS_DOWNBEAT_PHASE_SCORE =>
+        {
+            SourceTimingProbeDownbeatEvidenceStatus::Ambiguous
+        }
         Some(phase) if phase.score < MIN_STABLE_DOWNBEAT_PHASE_SCORE => {
             SourceTimingProbeDownbeatEvidenceStatus::Weak
         }
