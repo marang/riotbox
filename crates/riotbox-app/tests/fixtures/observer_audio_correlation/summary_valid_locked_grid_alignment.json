@@ -47,6 +47,7 @@
       "hypothesis_count": 1,
       "phrase_count": 1,
       "phrase_status": "phrase_locked",
+      "primary_anchor_cue": "anchors 16 | kick+backbeat",
       "primary_downbeat_offset_beats": 0,
       "primary_hypothesis_id": "locked-primary",
       "primary_warning_code": null,

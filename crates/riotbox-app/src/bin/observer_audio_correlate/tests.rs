@@ -82,20 +82,16 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert_eq!(summary.source_timing_bpm_delta, Some(0.0));
     assert_eq!(summary.commit_count, 1);
     assert_eq!(summary.commit_boundaries, ["NextBar"]);
+    let observer_timing = summary
+        .observer_source_timing
+        .as_ref()
+        .expect("observer timing");
+    assert_eq!(observer_timing.quality, "medium");
     assert_eq!(
-        summary
-            .observer_source_timing
-            .as_ref()
-            .map(|timing| timing.quality.as_str()),
-        Some("medium")
+        observer_timing.primary_anchor_cue,
+        "anchors 8 | kick+backbeat"
     );
-    assert_eq!(
-        summary
-            .observer_source_timing
-            .as_ref()
-            .map(|timing| timing.phrase_status.as_str()),
-        Some("uncertain")
-    );
+    assert_eq!(observer_timing.phrase_status, "uncertain");
     assert!(summary.full_mix_rms.is_some_and(|rms| rms > 0.01));
     assert!(summary.full_mix_low_band_rms.is_some_and(|rms| rms > 0.01));
     assert_eq!(summary.mc202_question_answer_delta_rms, None);
@@ -305,7 +301,7 @@ fn strict_evidence_rejects_collapsed_output_metrics() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_anchor_cue":"anchors none","primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,

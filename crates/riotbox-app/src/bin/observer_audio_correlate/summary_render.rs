@@ -122,6 +122,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "primary_hypothesis_id": &timing.primary_hypothesis_id,
                 "hypothesis_count": timing.hypothesis_count,
                 "anchor_evidence": timing.anchor_evidence.as_ref().map(source_timing_anchor_evidence_json),
+                "primary_anchor_cue": &timing.primary_anchor_cue,
                 "groove_evidence": timing.groove_evidence.as_ref().map(source_timing_groove_evidence_json),
                 "primary_warning_code": &timing.primary_warning_code,
                 "warning_codes": &timing.warning_codes,

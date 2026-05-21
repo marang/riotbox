@@ -188,6 +188,7 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
         "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(timing),
+        "primary_anchor_cue": timing.primary_anchor_cue.as_str(),
         "groove_evidence": source_timing_groove_evidence_observer_snapshot(timing),
         "primary_warning_code": timing.primary_warning.as_deref(),
         "warning_codes": graph
