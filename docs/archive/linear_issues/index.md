@@ -460,4 +460,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review observer/audio summary validator hardening after RIOTBOX-847-852
 - [RIOTBOX-854.md](./RIOTBOX-854.md)
   Require Source Timing grid_use in observer/audio summary validation
+- [RIOTBOX-855.md](./RIOTBOX-855.md)
+  Require W-30 loop-closure key in observer/audio summary validation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
