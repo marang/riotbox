@@ -69,6 +69,7 @@ jq -s -e \
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_transient_anchor_count == 0)
     and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_residual_count == 0)
     and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_preview == [])
+    and all(.[]; .snapshot.source_timing.primary_downbeat_offset_beats == null)
     and all(.[]; .snapshot.source_timing.primary_warning_code == "phrase_uncertain")
     and any(.[]; .event == "key_outcome" and .key == "f" and .outcome == "queue_tr909_fill")
     and any(.[]; .event == "key_outcome" and .key == "g" and .outcome == "queue_mc202_generate_follower")' \
@@ -88,6 +89,7 @@ jq -e \
     and .source_timing.readiness == "needs_review"
     and .source_timing.requires_manual_confirm == true
     and .source_timing.grid_use == "short_loop_manual_confirm"
+    and .source_timing.primary_downbeat_offset_beats == 0
     and .source_timing.anchor_evidence.primary_anchor_count > 0
     and .metrics.tr909_groove_timing.applied == false
     and .metrics.tr909_groove_timing.reason == "source_timing_not_locked"
@@ -127,6 +129,9 @@ jq -e \
     and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
     and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
     and .output_path.source_timing_alignment.grid_use_compatibility == "compatible"
+    and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
+    and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
+    and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
     and .output_path.source_timing_anchor_alignment.status == "partial"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 0
     and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
@@ -161,6 +166,7 @@ jq -e \
     and .source_timing_bpm_delta <= 1.0
     and .source_timing.bpm_agrees_with_grid == true
     and .source_timing.primary_bpm != null
+    and .source_timing.primary_downbeat_offset_beats == 0
     and .metrics.tr909_groove_timing.applied == false
     and .metrics.tr909_groove_timing.reason == "not_source_timing_grid"' \
   "$tmpdir/feral-grid-user-override/manifest.json"
@@ -189,6 +195,9 @@ jq -e \
     and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
     and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
     and .output_path.source_timing_alignment.grid_use_compatibility == "compatible"
+    and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
+    and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
+    and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.present == true
     and (.output_path.issues | length == 0)' \
@@ -214,6 +223,7 @@ jq -e \
     and .source_timing_bpm_delta > 1.0
     and .source_timing.bpm_agrees_with_grid == false
     and .source_timing.primary_bpm != null
+    and .source_timing.primary_downbeat_offset_beats == 0
     and .metrics.tr909_groove_timing.applied == false
     and .metrics.tr909_groove_timing.reason == "not_source_timing_grid"
     and .metrics.source_grid_output_drift.hit_ratio >= 0.5
@@ -243,6 +253,9 @@ jq -e \
     and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
     and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
     and .output_path.source_timing_alignment.grid_use_compatibility == "compatible"
+    and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
+    and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
+    and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.metrics.source_grid_output_drift.hit_ratio >= 0.5
     and .output_path.metrics.source_grid_output_drift.max_peak_offset_ms <= .output_path.metrics.source_grid_output_drift.max_allowed_peak_offset_ms
@@ -268,6 +281,7 @@ jq -s -e \
     and all(.[]; .snapshot.source_timing.cue == "fallback grid")
     and all(.[]; .snapshot.source_timing.beat_status == "unknown")
     and all(.[]; .snapshot.source_timing.downbeat_status == "unknown")
+    and all(.[]; .snapshot.source_timing.primary_downbeat_offset_beats == null)
     and all(.[]; .snapshot.source_timing.phrase_status == "unknown")
     and all(.[]; .snapshot.source_timing.anchor_evidence.primary_anchor_count == 0)
     and all(.[]; .snapshot.source_timing.groove_evidence.primary_groove_residual_count == 0)
@@ -295,6 +309,7 @@ jq -e \
     and .source_timing.primary_bpm == null
     and .source_timing.beat_status == "unavailable"
     and .source_timing.downbeat_status == "unavailable"
+    and .source_timing.primary_downbeat_offset_beats == null
     and .source_timing.phrase_status == "unavailable"
     and .source_timing.anchor_evidence.primary_anchor_count == 0
     and .metrics.tr909_groove_timing.applied == false
@@ -326,6 +341,9 @@ jq -e \
     and .output_path.source_timing_alignment.observer_grid_use == "unavailable"
     and .output_path.source_timing_alignment.manifest_grid_use == "unavailable"
     and .output_path.source_timing_alignment.grid_use_compatibility == "aligned"
+    and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
+    and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == null
+    and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
     and (.output_path.source_timing_alignment.warning_overlap | index("low_timing_confidence")) != null
     and (.output_path.source_timing_alignment.warning_overlap | index("weak_kick_anchor")) != null
     and (.output_path.source_timing_alignment.issues | length == 0)
@@ -356,6 +374,7 @@ jq -s -e \
     and all(.[]; .snapshot.source_timing.beat_status == "grid")
     and all(.[]; .snapshot.source_timing.beat_count == 16)
     and all(.[]; .snapshot.source_timing.downbeat_status == "bar_locked")
+    and all(.[]; .snapshot.source_timing.primary_downbeat_offset_beats == 0)
     and all(.[]; .snapshot.source_timing.bar_count == 4)
     and all(.[]; .snapshot.source_timing.phrase_status == "phrase_locked")
     and all(.[]; .snapshot.source_timing.phrase_count == 1)
@@ -386,6 +405,7 @@ jq -e \
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == false
     and .source_timing.grid_use == "locked_grid"
+    and .source_timing.primary_downbeat_offset_beats == 0
     and .source_timing.phrase_status == "stable"
     and .source_timing.anchor_evidence.primary_kick_anchor_count > 0
     and .source_timing.anchor_evidence.primary_backbeat_anchor_count > 0
@@ -413,6 +433,7 @@ jq -e \
     and .control_path.observer_source_timing.beat_status == "grid"
     and .control_path.observer_source_timing.beat_count == 16
     and .control_path.observer_source_timing.downbeat_status == "bar_locked"
+    and .control_path.observer_source_timing.primary_downbeat_offset_beats == 0
     and .control_path.observer_source_timing.bar_count == 4
     and .control_path.observer_source_timing.phrase_status == "phrase_locked"
     and .control_path.observer_source_timing.phrase_count == 1
@@ -425,6 +446,9 @@ jq -e \
     and .output_path.source_timing_alignment.observer_grid_use == "locked_grid"
     and .output_path.source_timing_alignment.manifest_grid_use == "locked_grid"
     and .output_path.source_timing_alignment.grid_use_compatibility == "aligned"
+    and .output_path.source_timing_alignment.observer_downbeat_offset_beats == 0
+    and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
+    and .output_path.source_timing_alignment.downbeat_offset_compatibility == "aligned"
     and .output_path.source_timing_anchor_alignment.status == "aligned"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 16
     and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
