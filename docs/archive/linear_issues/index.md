@@ -514,4 +514,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Centralize Source Timing readiness cue and actionability labels for Rust producers
 - [RIOTBOX-882.md](./RIOTBOX-882.md)
   Require Source Timing cue and actionability in generated Feral-grid manifest validation
+- [RIOTBOX-883.md](./RIOTBOX-883.md)
+  Prioritize unavailable Source Timing cue over manual-confirm wording
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
