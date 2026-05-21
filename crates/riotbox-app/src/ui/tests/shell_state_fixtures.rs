@@ -128,7 +128,13 @@ fn sample_shell_state() -> JamShellState {
         confidence: 0.76,
         score: 0.68,
         beat_grid: Vec::new(),
-        bar_grid: Vec::new(),
+        bar_grid: vec![BarSpan {
+            bar_index: 1,
+            start_seconds: 0.0,
+            end_seconds: 1.904_761_9,
+            downbeat_confidence: 0.71,
+            phrase_index: None,
+        }],
         phrase_grid: Vec::new(),
         anchors: vec![
             SourceTimingAnchor {

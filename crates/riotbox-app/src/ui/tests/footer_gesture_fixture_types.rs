@@ -20,7 +20,7 @@ use riotbox_core::{
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
-        DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
+        BarSpan, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
         RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
         SourceTimingAnchor, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
         TimingHypothesisKind, TimingQuality, TimingWarning, TimingWarningCode,

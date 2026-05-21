@@ -90,6 +90,10 @@ It must expose:
   timing summary, not from screen-local Source Graph remapping. This keeps Jam,
   Help, Source, observer snapshots, and observer/audio QA aligned while the
   Source Graph remains the durable timing truth.
+- the shared Jam source timing summary includes the primary downbeat offset in
+  beats when a primary bar grid exists; the Source screen should surface that
+  compactly as the selected bar phase, for example `downbeat ambiguous offset 0`
+  or `offset none`.
 - Jam may collapse the timing cue to an instrument-sized line such as
   `timing needs confirm | grid manual_confirm_only | low | kick+bb`; the Source
   screen should carry the slightly fuller anchor count such as `anchors 2

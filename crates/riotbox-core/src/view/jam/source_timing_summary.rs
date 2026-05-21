@@ -12,6 +12,7 @@ pub struct SourceTimingSummaryView {
     pub degraded_policy: String,
     pub grid_use: String,
     pub primary_warning: Option<String>,
+    pub primary_downbeat_offset_beats: Option<u32>,
     pub primary_anchor_count: usize,
     pub primary_kick_anchor_count: usize,
     pub primary_backbeat_anchor_count: usize,
@@ -30,6 +31,7 @@ impl Default for SourceTimingSummaryView {
             degraded_policy: "disabled".into(),
             grid_use: "unavailable".into(),
             primary_warning: None,
+            primary_downbeat_offset_beats: None,
             primary_anchor_count: 0,
             primary_kick_anchor_count: 0,
             primary_backbeat_anchor_count: 0,
@@ -77,6 +79,7 @@ impl SourceTimingSummaryView {
                 .into(),
             primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
+            primary_downbeat_offset_beats: primary_source_timing_downbeat_offset_beats(primary_hypothesis),
             primary_anchor_count,
             primary_kick_anchor_count,
             primary_backbeat_anchor_count,
@@ -130,6 +133,23 @@ fn source_timing_groove_subdivision_label(
     }
 }
 
+fn primary_source_timing_downbeat_offset_beats(
+    hypothesis: Option<&crate::source_graph::TimingHypothesis>,
+) -> Option<u32> {
+    let hypothesis = hypothesis?;
+    let first_bar = hypothesis.bar_grid.first()?;
+    if hypothesis.bpm <= 0.0 || !hypothesis.bpm.is_finite() {
+        return None;
+    }
+    let beats_per_bar = u32::from(hypothesis.meter.beats_per_bar);
+    if beats_per_bar == 0 {
+        return None;
+    }
+    let beat_seconds = 60.0 / hypothesis.bpm;
+    let offset_beats = (first_bar.start_seconds / beat_seconds).round() as i64;
+    Some(offset_beats.rem_euclid(i64::from(beats_per_bar)) as u32)
+}
+
 fn primary_source_timing_warning(
     warnings: &[crate::source_graph::TimingWarning],
 ) -> Option<&crate::source_graph::TimingWarning> {
@@ -171,6 +191,7 @@ mod source_timing_summary_tests {
         assert_eq!(timing.degraded_policy, "disabled");
         assert_eq!(timing.cue, "not available");
         assert_eq!(timing.grid_use, "unavailable");
+        assert_eq!(timing.primary_downbeat_offset_beats, None);
     }
 
     #[test]
@@ -211,6 +232,7 @@ mod source_timing_summary_tests {
         assert_eq!(timing.cue, "needs confirm");
         assert_eq!(timing.grid_use, "manual_confirm_only");
         assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
+        assert_eq!(timing.primary_downbeat_offset_beats, None);
         assert_eq!(timing.primary_anchor_count, 4);
         assert_eq!(timing.primary_kick_anchor_count, 1);
         assert_eq!(timing.primary_backbeat_anchor_count, 1);
@@ -231,6 +253,13 @@ mod source_timing_summary_tests {
             TimingHypothesisKind::Primary,
             vec![source_anchor("kick-1", SourceTimingAnchorType::Kick)],
         ));
+        graph.timing.hypotheses[0].bar_grid = vec![crate::source_graph::BarSpan {
+            bar_index: 1,
+            start_seconds: 0.9375,
+            end_seconds: 2.8125,
+            downbeat_confidence: 0.91,
+            phrase_index: Some(1),
+        }];
 
         let timing = SourceTimingSummaryView::from_graph(&graph);
 
@@ -239,6 +268,7 @@ mod source_timing_summary_tests {
         assert_eq!(timing.cue, "grid locked");
         assert_eq!(timing.grid_use, "locked_grid");
         assert_eq!(timing.primary_warning, None);
+        assert_eq!(timing.primary_downbeat_offset_beats, Some(2));
         assert_eq!(timing.primary_anchor_count, 1);
         assert_eq!(timing.primary_anchor_cue, "anchors 1 | kick");
         assert_eq!(timing.primary_groove_residual_count, 0);
