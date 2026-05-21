@@ -424,4 +424,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split observer/audio Source Timing alignment tests by evidence family
 - [RIOTBOX-836.md](./RIOTBOX-836.md)
   Assert downbeat-offset compatibility in generated Feral-grid observer/audio gate
+- [RIOTBOX-837.md](./RIOTBOX-837.md)
+  Surface downbeat offset in Jam/Source timing summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
