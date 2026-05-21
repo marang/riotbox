@@ -229,6 +229,9 @@ feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" star
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"
 
+beat08-auto-feral-grid-proof date="local-beat08-feral-grid-auto-proof":
+    scripts/validate_auto_feral_grid_source_timing_pack.sh beat08 "{{date}}"
+
 dh-beatc-auto-feral-grid-proof date="local-dh-beatc-feral-grid-auto-proof":
     scripts/validate_auto_feral_grid_source_timing_pack.sh dh-beatc "{{date}}"
 
