@@ -331,6 +331,7 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
     assert!(rendered.contains("beat tempo only | downbeat ambiguous offset 0 | phrase uncertain"));
     assert!(rendered.contains("meter 4/4 | hypotheses 1 | anchors 2 | kick+backbeat"));
     assert!(rendered.contains("mode manual confirm | grid manual_confirm_only | trust low"));
+    assert!(rendered.contains("action confirm grid first"));
     assert!(rendered.contains("warning ambiguous_downbeat"));
     assert!(rendered.contains("feral ready"));
     assert!(rendered.contains("break high"));
@@ -365,6 +366,7 @@ fn renders_source_shell_snapshot_with_grid_locked_timing_summary() {
         rendered.contains("mode locked | grid locked_grid | trust high"),
         "{rendered}"
     );
+    assert!(rendered.contains("action grid can steer moves"), "{rendered}");
     assert!(rendered.contains("warning none"), "{rendered}");
     assert!(
         rendered.contains("meter 4/4 | hypotheses 1 | anchors 2 | kick+backbeat"),
@@ -389,6 +391,7 @@ fn renders_source_shell_snapshot_with_missing_source_timing_summary() {
         rendered.contains("mode disabled | grid unavailable | warning none"),
         "{rendered}"
     );
+    assert!(rendered.contains("action timing unavailable"), "{rendered}");
     assert!(rendered.contains("no timing information available"), "{rendered}");
 }
 

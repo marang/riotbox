@@ -15,6 +15,7 @@ fn default_summary_keeps_policy_and_cue_contract_aligned() {
 
     assert_eq!(timing.degraded_policy, "disabled");
     assert_eq!(timing.cue, "not available");
+    assert_eq!(timing.actionability, "timing unavailable");
     assert_eq!(timing.grid_use, "unavailable");
     assert_eq!(timing.beat_status, "unknown");
     assert_eq!(timing.beat_count, 0);
@@ -61,6 +62,7 @@ fn manual_confirm_summary_preserves_musician_cue_warning_and_anchor_counts() {
     assert_eq!(timing.quality, "low");
     assert_eq!(timing.degraded_policy, "manual_confirm");
     assert_eq!(timing.cue, "needs confirm");
+    assert_eq!(timing.actionability, "confirm grid first");
     assert_eq!(timing.grid_use, "manual_confirm_only");
     assert_eq!(timing.beat_status, "tempo_only");
     assert_eq!(timing.beat_count, 0);
@@ -103,6 +105,7 @@ fn locked_summary_preserves_grid_locked_cue_without_primary_warning() {
     assert_eq!(timing.quality, "high");
     assert_eq!(timing.degraded_policy, "locked");
     assert_eq!(timing.cue, "grid locked");
+    assert_eq!(timing.actionability, "grid can steer moves");
     assert_eq!(timing.grid_use, "locked_grid");
     assert_eq!(timing.beat_status, "tempo_only");
     assert_eq!(timing.downbeat_status, "unknown");
@@ -133,6 +136,7 @@ fn summary_falls_back_to_primary_kind_when_primary_id_is_missing() {
     assert_eq!(timing.quality, "medium");
     assert_eq!(timing.degraded_policy, "cautious");
     assert_eq!(timing.cue, "listen first");
+    assert_eq!(timing.actionability, "listen first");
     assert_eq!(timing.grid_use, "manual_confirm_only");
     assert_eq!(timing.primary_anchor_count, 1);
     assert_eq!(timing.primary_kick_anchor_count, 0);
@@ -220,6 +224,7 @@ fn fallback_grid_summary_surfaces_fallback_grid_use() {
     let timing = SourceTimingSummaryView::from_graph(&graph);
 
     assert_eq!(timing.cue, "fallback grid");
+    assert_eq!(timing.actionability, "using safe fallback grid");
     assert_eq!(timing.grid_use, "fallback_grid");
 }
 
