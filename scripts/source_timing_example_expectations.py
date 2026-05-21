@@ -26,6 +26,7 @@ EXPECTATION_KEYS = {
     "primary_beat_median_distance_ratio",
     "primary_downbeat_score",
     "warning_codes_include",
+    "warning_codes_exact",
 }
 
 
@@ -38,6 +39,7 @@ def load_expectations(path: Path) -> dict[str, dict[str, Any]]:
             raise TypeError("expectation source keys must be non-empty strings")
         expectation_object = require_object(expectation, f"expectations[{source}]")
         require_known_expectation_keys(expectation_object, f"expectations[{source}]")
+        require_warning_expectation_mode(expectation_object, f"expectations[{source}]")
         expectations[source] = expectation_object
     return expectations
 
@@ -59,6 +61,7 @@ def format_expectation(
 
 def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> list[str]:
     require_known_expectation_keys(expectation, "expectation")
+    require_warning_expectation_mode(expectation, "expectation")
     issues = []
     compare_string(payload, expectation, issues, "cue")
     compare_string(payload, expectation, issues, "readiness")
@@ -78,6 +81,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_number_range(payload, expectation, issues, "primary_beat_median_distance_ratio")
     compare_number_range(payload, expectation, issues, "primary_downbeat_score")
     compare_warning_includes(payload, expectation, issues)
+    compare_warning_exact(payload, expectation, issues)
     return issues
 
 
@@ -85,6 +89,13 @@ def require_known_expectation_keys(expectation: dict[str, Any], label: str) -> N
     unknown_keys = sorted(set(expectation) - EXPECTATION_KEYS)
     if unknown_keys:
         raise ValueError(f"{label} has unknown keys: {', '.join(unknown_keys)}")
+
+
+def require_warning_expectation_mode(expectation: dict[str, Any], label: str) -> None:
+    if "warning_codes_include" in expectation and "warning_codes_exact" in expectation:
+        raise ValueError(
+            f"{label} must not mix warning_codes_include and warning_codes_exact"
+        )
 
 
 def compare_string(
@@ -201,6 +212,25 @@ def compare_warning_includes(
     for warning in expected_warnings:
         if warning not in actual_warnings:
             issues.append(f"warning_codes missing {warning!r}")
+
+
+def compare_warning_exact(
+    payload: dict[str, Any],
+    expectation: dict[str, Any],
+    issues: list[str],
+) -> None:
+    if "warning_codes_exact" not in expectation:
+        return
+    expected_warnings = sorted(
+        set(require_string_list(expectation, "warning_codes_exact"))
+    )
+    actual_warnings = sorted(set(require_string_list(payload, "warning_codes")))
+    if actual_warnings != expected_warnings:
+        message = (
+            f"warning_codes expected exactly {expected_warnings!r} "
+            f"got {actual_warnings!r}"
+        )
+        issues.append(message)
 
 
 def require_object(value: Any, label: str) -> dict[str, Any]:

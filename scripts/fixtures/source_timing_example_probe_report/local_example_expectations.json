@@ -23,7 +23,7 @@
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "phrase_uncertain"
       ],
       "primary_beat_matched_onset_ratio": {
@@ -60,7 +60,7 @@
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "phrase_uncertain"
       ],
       "primary_beat_matched_onset_ratio": {
@@ -97,7 +97,7 @@
       "beat_status": "stable",
       "downbeat_status": "weak",
       "phrase_status": "not_enough_material",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "phrase_uncertain",
         "ambiguous_downbeat"
       ],
@@ -135,7 +135,7 @@
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "phrase_uncertain"
       ],
       "primary_beat_matched_onset_ratio": {
@@ -172,7 +172,7 @@
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "phrase_uncertain"
       ],
       "primary_beat_matched_onset_ratio": {
@@ -197,7 +197,7 @@
       "beat_status": "unavailable",
       "downbeat_status": "unavailable",
       "phrase_status": "unavailable",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "low_timing_confidence",
         "weak_kick_anchor"
       ],
@@ -215,7 +215,7 @@
       "beat_status": "unavailable",
       "downbeat_status": "unavailable",
       "phrase_status": "unavailable",
-      "warning_codes_include": [
+      "warning_codes_exact": [
         "low_timing_confidence",
         "weak_kick_anchor"
       ],
