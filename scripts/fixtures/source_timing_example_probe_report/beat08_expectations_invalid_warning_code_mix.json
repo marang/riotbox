@@ -1,0 +1,12 @@
+{
+  "sources": {
+    "Beat08_128BPM(Full).wav": {
+      "warning_codes_include": [
+        "phrase_uncertain"
+      ],
+      "warning_codes_exact": [
+        "phrase_uncertain"
+      ]
+    }
+  }
+}

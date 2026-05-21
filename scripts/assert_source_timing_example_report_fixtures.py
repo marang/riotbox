@@ -136,6 +136,7 @@ def main() -> int:
     assert_markdown_renders(rows)
     assert_missing_expected_source_skips()
     assert_mismatch_expectations_fail()
+    assert_exact_warning_expectations_fail()
     assert_invalid_expectations_fail()
     assert_malformed_fixture_cli_error()
     return 0
@@ -200,12 +201,26 @@ def assert_mismatch_expectations_fail() -> None:
         raise AssertionError("expected mismatched source timing expectations to fail")
 
 
+def assert_exact_warning_expectations_fail() -> None:
+    expectations = load_expectations(
+        FIXTURE_DIR / "beat08_expectations_warning_exact_mismatch.json"
+    )
+    row = row_from_payload(
+        load_json(FIXTURE_DIR / "beat08_source_timing_probe.json"),
+        expectations,
+    )
+    failures = expectation_failures([row])
+    if not failures or "warning_codes expected exactly" not in failures[0]:
+        raise AssertionError("expected exact warning code expectations to fail")
+
+
 def assert_invalid_expectations_fail() -> None:
     invalid_paths = [
         FIXTURE_DIR / "beat08_expectations_invalid_empty_range.json",
         FIXTURE_DIR / "beat08_expectations_invalid_inverted_range.json",
         FIXTURE_DIR / "beat08_expectations_invalid_unknown_range_key.json",
         FIXTURE_DIR / "beat08_expectations_invalid_unknown_key.json",
+        FIXTURE_DIR / "beat08_expectations_invalid_warning_code_mix.json",
     ]
     for path in invalid_paths:
         assert_raises(

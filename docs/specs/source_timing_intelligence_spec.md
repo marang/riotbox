@@ -562,14 +562,18 @@ primary timing hypothesis:
   local regression checks. Expectations should cover stable review fields such
   as cue, readiness, manual-confirm, BPM tolerance, beat/downbeat/phrase status,
   confidence result, drift status, alternate evidence count, bounded
-  beat/downbeat score ranges, and warning-code presence; missing local WAVs must
-  remain skipped instead of failing fresh clones.
+  beat/downbeat score ranges, and warning-code presence or exact warning-code
+  sets; missing local WAVs must remain skipped instead of failing fresh clones.
 - example report expectation fixtures must be strict enough to catch fixture
   typos. Unknown top-level expectation keys must fail the fixture gate instead
   of being silently ignored. Numeric range expectations must include `min` or
   `max`, must reject `min > max`, and must reject unknown range keys. This keeps
   local regression expectations from weakening accidentally when report fields
   are renamed or expanded.
+- `warning_codes_include` may be used for presence-only checks on unstable rows.
+  `warning_codes_exact` should be used when a stable row must be warning-free or
+  must carry only a known degraded-warning set. A single expectation row must not
+  mix `warning_codes_include` and `warning_codes_exact`.
 - `just source-timing-example-probe-report-local` uses the tracked local-example
   expectations file for the documented Beat/DH examples. It is an optional local
   regression command because the source WAV files are deliberately outside Git.
