@@ -406,4 +406,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject unknown Source Timing example expectation keys
 - [RIOTBOX-827.md](./RIOTBOX-827.md)
   Document strict Source Timing example expectation schema
+- [RIOTBOX-828.md](./RIOTBOX-828.md)
+  Review P012 Source Timing report expectation gate after schema hardening
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
