@@ -224,6 +224,8 @@ mod tests {
             assert!(text.contains("Source timing readiness: `"));
             assert!(text.contains("Source timing downbeat: `"));
             assert!(text.contains("Source timing phrase: `"));
+            assert!(text.contains("phrases="));
+            assert!(text.contains("bars="));
             assert!(text.contains("confidence="));
             assert!(text.contains("drift="));
             assert!(text.contains("Source timing warnings: `"));

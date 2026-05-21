@@ -252,6 +252,8 @@ def validate_source_timing(source_timing: Any) -> None:
     require_one_of(source_timing, "confidence_result", SOURCE_TIMING_CONFIDENCE_RESULTS)
     require_one_of(source_timing, "drift_status", SOURCE_TIMING_DRIFT_STATUSES)
     require_one_of(source_timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
+    require_non_negative_int(source_timing, "primary_phrase_count", "source_timing")
+    require_non_negative_int(source_timing, "primary_phrase_bar_count", "source_timing")
     validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
     validate_source_timing_groove_evidence(source_timing.get("groove_evidence"))
     require_non_negative_int(

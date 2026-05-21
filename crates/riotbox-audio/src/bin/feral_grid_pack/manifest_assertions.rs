@@ -5,10 +5,7 @@ mod manifest_assertions {
     use super::*;
 
     pub(super) fn assert_manifest_smoke_gate(manifest: &serde_json::Value, output_dir: &Path) {
-        assert_eq!(
-            manifest["schema_version"],
-            LISTENING_MANIFEST_SCHEMA_VERSION
-        );
+        assert_eq!(manifest["schema_version"], LISTENING_MANIFEST_SCHEMA_VERSION);
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["result"], "pass");
         assert_eq!(manifest["bars"], 2);
@@ -419,6 +416,8 @@ mod manifest_assertions {
                 "stable",
             ],
         );
+        assert!(source_timing["primary_phrase_count"].is_u64());
+        assert!(source_timing["primary_phrase_bar_count"].is_u64());
         let anchor_evidence = &source_timing["anchor_evidence"];
         let primary_anchor_count = anchor_evidence["primary_anchor_count"]
             .as_u64()
