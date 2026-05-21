@@ -721,6 +721,12 @@ just feral-grid-pack "data/test_audio/examples/Beat08_128BPM(Full).wav" local-be
 just feral-grid-pack "data/test_audio/examples/DH_BeatC_120-01.wav" local-dh-beatc-feral-grid-auto auto 8 1.0 0.0
 ```
 
+To validate the current Recipe 15 auto-BPM contract in one local pass:
+
+```bash
+just recipe15-feral-grid-auto-proof
+```
+
 How to interpret `auto`:
 
 - `grid_bpm_source: source_timing` means the current readiness report drove the
