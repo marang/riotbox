@@ -408,4 +408,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Document strict Source Timing example expectation schema
 - [RIOTBOX-828.md](./RIOTBOX-828.md)
   Review P012 Source Timing report expectation gate after schema hardening
+- [RIOTBOX-829.md](./RIOTBOX-829.md)
+  Catch malformed Source Timing example report fixture TypeErrors
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
