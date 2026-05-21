@@ -118,6 +118,9 @@ fn source_timing_probe_downbeat_evidence_accepts_moderate_downbeat_contrast() {
     assert_eq!(report.status, SourceTimingProbeDownbeatEvidenceStatus::Stable);
     assert_eq!(report.primary_offset_beats, Some(0));
     assert!(report.primary_score.is_some_and(|score| score >= 0.30));
+    assert!(report
+        .primary_margin_to_next_phase
+        .is_some_and(|margin| margin > SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness().downbeat_ambiguity_margin));
     assert_eq!(report.alternate_phase_count, 0);
 }
 
@@ -142,6 +145,9 @@ fn source_timing_probe_downbeat_evidence_reports_near_stable_phase_conflict_as_a
     assert!(report.primary_score.is_some_and(|score| {
         (MIN_AMBIGUOUS_DOWNBEAT_PHASE_SCORE..MIN_STABLE_DOWNBEAT_PHASE_SCORE).contains(&score)
     }));
+    assert!(report
+        .primary_margin_to_next_phase
+        .is_some_and(|margin| margin <= SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness().downbeat_ambiguity_margin));
     assert!(report.alternate_phase_count > 0);
 }
 

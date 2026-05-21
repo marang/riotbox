@@ -14,6 +14,7 @@
   "primary_beat_median_distance_ratio": null,
   "primary_downbeat_offset_beats": null,
   "primary_downbeat_score": null,
+  "primary_downbeat_margin": null,
   "beat_status": "unavailable",
   "downbeat_status": "unavailable",
   "confidence_result": "degraded",

@@ -29,6 +29,7 @@ pub fn source_timing_probe_readiness_report(
         primary_bpm: confidence.primary_bpm,
         primary_downbeat_offset_beats: downbeat.primary_offset_beats,
         primary_downbeat_score: downbeat.primary_score,
+        primary_downbeat_margin: downbeat.primary_margin_to_next_phase,
         alternate_downbeat_phase_count: downbeat.alternate_phase_count,
         beat_status: beat.status,
         downbeat_status: downbeat.status,

@@ -88,6 +88,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_unit_number(summary, "primary_beat_median_distance_ratio")
     require_optional_int(summary, "primary_downbeat_offset_beats")
     require_optional_unit_number(summary, "primary_downbeat_score")
+    require_optional_unit_number(summary, "primary_downbeat_margin")
     require_one_of(summary, "beat_status", {"unavailable", "weak", "stable", "ambiguous"})
     require_one_of(summary, "downbeat_status", {"unavailable", "weak", "stable", "ambiguous"})
     require_one_of(

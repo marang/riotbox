@@ -235,6 +235,12 @@ def validate_source_timing(source_timing: Any) -> None:
         "source_timing primary_downbeat_score",
         require_present=False,
     )
+    require_optional_unit_float_or_null(
+        source_timing,
+        "primary_downbeat_margin",
+        "source_timing primary_downbeat_margin",
+        require_present=False,
+    )
     if "alternate_downbeat_phase_count" in source_timing:
         require_non_negative_int(
             source_timing,
@@ -274,6 +280,12 @@ def validate_generated_feral_grid_source_timing(source_timing: Any | None) -> No
         timing,
         "primary_downbeat_score",
         "source_timing primary_downbeat_score",
+        require_present=True,
+    )
+    require_optional_unit_float_or_null(
+        timing,
+        "primary_downbeat_margin",
+        "source_timing primary_downbeat_margin",
         require_present=True,
     )
     require_non_negative_int(

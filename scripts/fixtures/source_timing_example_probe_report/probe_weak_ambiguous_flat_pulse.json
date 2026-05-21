@@ -14,6 +14,7 @@
   "primary_beat_median_distance_ratio": 0.006248999,
   "primary_downbeat_offset_beats": 0,
   "primary_downbeat_score": 0.26792318,
+  "primary_downbeat_margin": 0.021,
   "beat_status": "stable",
   "downbeat_status": "weak",
   "confidence_result": "candidate_ambiguous",

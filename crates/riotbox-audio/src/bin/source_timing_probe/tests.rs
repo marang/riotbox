@@ -60,6 +60,11 @@ fn renders_probe_summary_for_accented_loop() {
             .primary_downbeat_score
             .is_some_and(|score| score > 0.0)
     );
+    assert!(
+        summary
+            .primary_downbeat_margin
+            .is_some_and(|margin| margin >= 0.0)
+    );
     assert!(text.contains("cue: "));
     assert!(text.contains("action: "));
     assert!(text.contains("grid_use="));
@@ -73,6 +78,7 @@ fn renders_probe_summary_for_accented_loop() {
     assert!(json["grid_use"].is_string());
     assert!(json["primary_beat_score"].is_number());
     assert!(json["primary_downbeat_score"].is_number());
+    assert!(json["primary_downbeat_margin"].is_number());
     assert!(json["anchor_evidence"]["primary_anchor_count"].is_number());
     assert!(json["anchor_evidence"]["primary_anchor_preview"].is_array());
     assert!(json["groove_evidence"]["primary_groove_residual_count"].is_number());
@@ -127,6 +133,7 @@ fn readiness_report(
         primary_bpm: Some(128.0),
         primary_downbeat_offset_beats: Some(0),
         primary_downbeat_score: Some(0.75),
+        primary_downbeat_margin: Some(0.25),
         alternate_downbeat_phase_count: 0,
         beat_status: SourceTimingProbeBeatEvidenceStatus::Stable,
         downbeat_status: SourceTimingProbeDownbeatEvidenceStatus::Stable,

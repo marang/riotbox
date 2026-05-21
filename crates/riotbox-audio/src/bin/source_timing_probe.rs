@@ -52,6 +52,7 @@ struct ProbeSummary {
     primary_beat_median_distance_ratio: Option<f32>,
     primary_downbeat_offset_beats: Option<u8>,
     primary_downbeat_score: Option<f32>,
+    primary_downbeat_margin: Option<f32>,
     beat_status: &'static str,
     downbeat_status: &'static str,
     confidence_result: &'static str,
@@ -185,6 +186,7 @@ impl ProbeSummary {
             primary_beat_median_distance_ratio: beat.primary_median_distance_ratio,
             primary_downbeat_offset_beats: report.primary_downbeat_offset_beats,
             primary_downbeat_score: downbeat.primary_score,
+            primary_downbeat_margin: report.primary_downbeat_margin,
             beat_status: beat_status_label(report.beat_status),
             downbeat_status: downbeat_status_label(report.downbeat_status),
             confidence_result: confidence_result_label(report.confidence_result),
@@ -220,6 +222,9 @@ fn render_text(summary: &ProbeSummary) -> String {
     let downbeat_score = summary
         .primary_downbeat_score
         .map_or_else(|| "none".to_string(), |score| format!("{score:.3}"));
+    let downbeat_margin = summary
+        .primary_downbeat_margin
+        .map_or_else(|| "none".to_string(), |margin| format!("{margin:.3}"));
     let warnings = if summary.warning_codes.is_empty() {
         "none".to_string()
     } else {
@@ -237,7 +242,7 @@ fn render_text(summary: &ProbeSummary) -> String {
             "readiness: {readiness} manual_confirm={manual_confirm} grid_use={grid_use}\n",
             "bpm: {bpm}\n",
             "beat: {beat} downbeat: {downbeat_status} offset_beats={downbeat}\n",
-            "scores: beat={beat_score} downbeat={downbeat_score}\n",
+            "scores: beat={beat_score} downbeat={downbeat_score} downbeat_margin={downbeat_margin}\n",
             "phrase: {phrase} drift: {drift} confidence: {confidence}\n",
             "anchors: total={anchor_total} kick={kick_anchors} backbeat={backbeat_anchors} transient={transient_anchors}\n",
             "groove: residuals={groove_residuals} max_abs_offset_ms={groove_max_abs_offset:.3}\n",
@@ -256,6 +261,7 @@ fn render_text(summary: &ProbeSummary) -> String {
         downbeat = downbeat,
         beat_score = beat_score,
         downbeat_score = downbeat_score,
+        downbeat_margin = downbeat_margin,
         phrase = summary.phrase_status,
         drift = summary.drift_status,
         confidence = summary.confidence_result,

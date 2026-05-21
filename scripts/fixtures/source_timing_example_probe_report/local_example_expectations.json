@@ -21,6 +21,10 @@
         "min": 0.25,
         "max": 0.7
       },
+      "primary_downbeat_margin": {
+        "min": 0.05,
+        "max": 1.0
+      },
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
@@ -28,7 +32,7 @@
         "phrase_uncertain"
       ],
       "primary_beat_matched_onset_ratio": {
-        "min": 0.90,
+        "min": 0.9,
         "max": 0.93
       },
       "primary_beat_median_distance_ratio": {
@@ -58,6 +62,10 @@
       "primary_downbeat_score": {
         "min": 0.25,
         "max": 0.7
+      },
+      "primary_downbeat_margin": {
+        "min": 0.05,
+        "max": 1.0
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
@@ -96,6 +104,10 @@
       "primary_downbeat_score": {
         "min": 0.2,
         "max": 0.4
+      },
+      "primary_downbeat_margin": {
+        "min": 0.0,
+        "max": 0.05
       },
       "beat_status": "stable",
       "downbeat_status": "ambiguous",
@@ -136,6 +148,10 @@
         "min": 0.25,
         "max": 0.7
       },
+      "primary_downbeat_margin": {
+        "min": 0.05,
+        "max": 1.0
+      },
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
@@ -173,6 +189,10 @@
       "primary_downbeat_score": {
         "min": 0.25,
         "max": 0.7
+      },
+      "primary_downbeat_margin": {
+        "min": 0.05,
+        "max": 1.0
       },
       "beat_status": "stable",
       "downbeat_status": "stable",

@@ -373,22 +373,21 @@ mod manifest_assertions {
             source_timing["policy_profile"],
             SourceTimingProbeBpmCandidatePolicy::DANCE_LOOP_AUTO_READINESS_PROFILE
         );
-        let readiness = source_timing["readiness"].as_str();
-        assert!(readiness.is_some_and(|value| matches!(
-            value,
-            "unavailable" | "weak" | "needs_review" | "ready"
-        )));
+        assert_string_one_of(
+            &source_timing["readiness"],
+            &["unavailable", "weak", "needs_review", "ready"],
+        );
         assert!(source_timing["requires_manual_confirm"].is_boolean());
-        assert!(source_timing["grid_use"].as_str().is_some_and(|value| {
-            matches!(
-                value,
-                "locked_grid"
-                    | "short_loop_manual_confirm"
-                    | "manual_confirm_only"
-                    | "fallback_grid"
-                    | "unavailable"
-            )
-        }));
+        assert_string_one_of(
+            &source_timing["grid_use"],
+            &[
+                "locked_grid",
+                "short_loop_manual_confirm",
+                "manual_confirm_only",
+                "fallback_grid",
+                "unavailable",
+            ],
+        );
         assert!(source_timing["bpm_agrees_with_grid"].is_boolean());
         assert!(
             source_timing["primary_downbeat_offset_beats"].is_null()
@@ -396,44 +395,30 @@ mod manifest_assertions {
                     .as_u64()
                     .is_some_and(|value| value < 4)
         );
-        assert!(
-            source_timing["primary_downbeat_score"].is_null()
-                || source_timing["primary_downbeat_score"]
-                    .as_f64()
-                    .is_some_and(|value| (0.0..=1.0).contains(&value))
-        );
+        assert_optional_unit_float(&source_timing["primary_downbeat_score"]);
+        assert_optional_unit_float(&source_timing["primary_downbeat_margin"]);
         assert!(source_timing["alternate_downbeat_phase_count"].is_u64());
-        assert!(source_timing["beat_status"].as_str().is_some_and(|value| {
-            matches!(value, "unavailable" | "weak" | "stable" | "ambiguous")
-        }));
-        assert!(source_timing["downbeat_status"]
-            .as_str()
-            .is_some_and(|value| matches!(
-                value,
-                "unavailable" | "weak" | "stable" | "ambiguous"
-            )));
-        assert!(source_timing["confidence_result"]
-            .as_str()
-            .is_some_and(|value| matches!(
-                value,
-                "degraded" | "candidate_cautious" | "candidate_ambiguous"
-            )));
-        assert!(source_timing["drift_status"].as_str().is_some_and(|value| {
-            matches!(
-                value,
-                "unavailable" | "not_enough_material" | "stable" | "high"
-            )
-        }));
-        assert!(source_timing["phrase_status"].as_str().is_some_and(|value| {
-            matches!(
-                value,
-                "unavailable"
-                    | "not_enough_material"
-                    | "ambiguous_downbeat"
-                    | "high_drift"
-                    | "stable"
-            )
-        }));
+        let evidence_statuses = ["unavailable", "weak", "stable", "ambiguous"];
+        assert_string_one_of(&source_timing["beat_status"], &evidence_statuses);
+        assert_string_one_of(&source_timing["downbeat_status"], &evidence_statuses);
+        assert_string_one_of(
+            &source_timing["confidence_result"],
+            &["degraded", "candidate_cautious", "candidate_ambiguous"],
+        );
+        assert_string_one_of(
+            &source_timing["drift_status"],
+            &["unavailable", "not_enough_material", "stable", "high"],
+        );
+        assert_string_one_of(
+            &source_timing["phrase_status"],
+            &[
+                "unavailable",
+                "not_enough_material",
+                "ambiguous_downbeat",
+                "high_drift",
+                "stable",
+            ],
+        );
         let anchor_evidence = &source_timing["anchor_evidence"];
         let primary_anchor_count = anchor_evidence["primary_anchor_count"]
             .as_u64()
@@ -466,6 +451,14 @@ mod manifest_assertions {
                 .as_f64()
                 .expect("high energy");
         assert!((spectral_sum - 1.0).abs() < 0.000_001);
+    }
+
+    fn assert_string_one_of(value: &serde_json::Value, allowed: &[&str]) {
+        assert!(value.as_str().is_some_and(|value| allowed.contains(&value)));
+    }
+
+    fn assert_optional_unit_float(value: &serde_json::Value) {
+        assert!(value.is_null() || value.as_f64().is_some_and(|value| (0.0..=1.0).contains(&value)));
     }
 
     fn assert_manifest_artifact(

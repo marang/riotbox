@@ -13,6 +13,7 @@
   "primary_beat_median_distance_ratio": 0.006250029,
   "primary_downbeat_offset_beats": 3,
   "primary_downbeat_score": 0.31510773,
+  "primary_downbeat_margin": 0.125,
   "beat_status": "stable",
   "downbeat_status": "stable",
   "confidence_result": "candidate_cautious",

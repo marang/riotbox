@@ -96,6 +96,12 @@ def main() -> int:
         lambda value: value >= 0.3,
         "at least 0.3",
     )
+    require_number(
+        summary,
+        "primary_downbeat_margin",
+        lambda value: value > 0.05,
+        "above ambiguity margin",
+    )
     require_int(summary, "alternate_evidence_count", lambda value: value == 0, "zero")
     require_int(summary, "alternate_beat_candidate_count", lambda value: value == 0, "zero")
     require_int(summary, "alternate_downbeat_phase_count", lambda value: value == 0, "zero")

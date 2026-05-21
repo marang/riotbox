@@ -166,6 +166,11 @@ require(
     downbeat_score is None or 0.0 <= downbeat_score <= 1.0,
     "primary downbeat score is not null or a unit score",
 )
+downbeat_margin = source_timing["primary_downbeat_margin"]
+require(
+    downbeat_margin is None or 0.0 <= downbeat_margin <= 1.0,
+    "primary downbeat margin is not null or a unit score",
+)
 require(
     isinstance(source_timing["alternate_downbeat_phase_count"], int)
     and source_timing["alternate_downbeat_phase_count"] >= 0,

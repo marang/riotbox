@@ -87,6 +87,7 @@ pub struct SourceTimingProbeDownbeatEvidenceReport {
     pub phase_count: usize,
     pub primary_offset_beats: Option<u8>,
     pub primary_score: Option<f32>,
+    pub primary_margin_to_next_phase: Option<f32>,
     pub alternate_phase_count: usize,
     pub status: SourceTimingProbeDownbeatEvidenceStatus,
 }
@@ -107,6 +108,7 @@ pub struct SourceTimingProbeReadinessReport {
     pub primary_bpm: Option<f32>,
     pub primary_downbeat_offset_beats: Option<u8>,
     pub primary_downbeat_score: Option<f32>,
+    pub primary_downbeat_margin: Option<f32>,
     pub alternate_downbeat_phase_count: usize,
     pub beat_status: SourceTimingProbeBeatEvidenceStatus,
     pub downbeat_status: SourceTimingProbeDownbeatEvidenceStatus,

@@ -48,6 +48,7 @@
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
     "primary_downbeat_score": 0.268,
+    "primary_downbeat_margin": 0.005,
     "alternate_downbeat_phase_count": 3,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",

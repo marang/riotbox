@@ -49,6 +49,7 @@ class ReportRow:
     downbeat: str = "-"
     downbeat_offset: str = "-"
     downbeat_score: str = "-"
+    downbeat_margin: str = "-"
     downbeat_alternates: str = "-"
     phrase: str = "-"
     alternate_evidence: str = "-"
@@ -191,6 +192,7 @@ def row_from_payload(
         downbeat=require_string(payload, "downbeat_status"),
         downbeat_offset=format_optional_int(payload.get("primary_downbeat_offset_beats")),
         downbeat_score=format_optional_score(payload.get("primary_downbeat_score")),
+        downbeat_margin=format_optional_score(payload.get("primary_downbeat_margin")),
         downbeat_alternates=str(require_int(payload, "alternate_downbeat_phase_count")),
         phrase=require_string(payload, "phrase_status"),
         alternate_evidence=str(require_int(payload, "alternate_evidence_count")),
@@ -207,8 +209,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -233,6 +235,7 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.downbeat,
                     row.downbeat_offset,
                     row.downbeat_score,
+                    row.downbeat_margin,
                     row.downbeat_alternates,
                     row.phrase,
                     row.alternate_evidence,
