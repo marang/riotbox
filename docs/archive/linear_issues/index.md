@@ -538,4 +538,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Promote stable long real-loop timing evidence to locked-grid readiness
 - [RIOTBOX-895.md](./RIOTBOX-895.md)
   Add sparse-onset Source Timing warning for very low-onset sources
+- [RIOTBOX-896.md](./RIOTBOX-896.md)
+  Run P012 Source Timing broad review after readiness and warning slices
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
