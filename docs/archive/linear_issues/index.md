@@ -468,4 +468,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Clarify automatic next-ticket continuation in workflow conventions
 - [RIOTBOX-859.md](./RIOTBOX-859.md)
   Consolidate autonomous workflow documentation
+- [RIOTBOX-860.md](./RIOTBOX-860.md)
+  Document point-in-time review follow-up handling
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
