@@ -1498,3 +1498,17 @@ Why: P012 timing trust is only useful if musicians can see the same meaning ever
 Evidence: RIOTBOX-874 added `SourceTimingSummaryView.actionability`, used it in Help / Source / observer surfaces, and the cadence review in `docs/reviews/p012_jam_source_timing_surface_review_2026-05-21.md` found the remaining Jam compact-readiness gap as a follow-up rather than a new timing architecture problem.
 Consequences: future Jam / Source timing wording should reuse the shared summary phrase first. If a surface needs shorter wording, add a summary-owned compact variant or document why that surface intentionally omits actionability.
 Status: accepted
+
+---
+
+### RBX-034
+
+Date: 2026-05-21
+Topic: P012 readiness actionability labels should use shared producer helpers
+Phase: Source Timing Intelligence / QA Surface
+Question: after Jam, observer/audio, Feral-grid manifests, P012 proof summaries, and the probe CLI all expose actionability, should each Rust producer keep its own readiness/manual-confirm-to-language mapping?
+Decision: do not add more Rust producer-local mappings for Source Timing readiness cue or actionability. Keep downstream validators as independent compatibility checks, but move runtime producer vocabulary behind a shared helper before extending the actionability contract further.
+Why: P012 actionability only helps musicians if the same state means the same thing everywhere. Repeated local match tables are easy to keep aligned today but become brittle when new readiness states, manual-confirm policies, or shorter surface variants arrive.
+Evidence: `docs/reviews/p012_source_timing_actionability_surface_review_2026-05-21.md` found the current labels coherent but duplicated in the Feral-grid manifest builder, standalone probe CLI, and observer/audio summary fallback.
+Consequences: the next implementation work should centralize the Rust readiness label helper, then tighten manifest validators so generated Feral-grid manifests cannot silently drop `cue` or `actionability`.
+Status: accepted
