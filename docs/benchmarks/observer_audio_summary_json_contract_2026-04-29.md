@@ -106,15 +106,18 @@ When non-null, `source_timing` should include:
 - `grid_use`: `null` or the manifest-side Source Timing grid-use
   classification, such as `locked_grid`, `short_loop_manual_confirm`,
   `manual_confirm_only`, `fallback_grid`, or `unavailable`.
-- `readiness`
+- `readiness`: one of `unavailable`, `weak`, `needs_review`, or `ready`.
 - `requires_manual_confirm`
-- `beat_status`
-- `downbeat_status`
+- `beat_status`: one of `unavailable`, `weak`, `stable`, or `ambiguous`.
+- `downbeat_status`: one of `unavailable`, `weak`, `stable`, or `ambiguous`.
 - `primary_downbeat_offset_beats`
-- `confidence_result`
-- `drift_status`
-- `phrase_status`
-- `alternate_evidence_count`
+- `confidence_result`: one of `degraded`, `candidate_cautious`, or
+  `candidate_ambiguous`.
+- `drift_status`: one of `unavailable`, `not_enough_material`, `stable`, or
+  `high`.
+- `phrase_status`: one of `unavailable`, `not_enough_material`,
+  `ambiguous_downbeat`, `high_drift`, or `stable`.
+- `alternate_evidence_count`: non-negative integer.
 - `anchor_evidence`: `null` or compact primary anchor counts copied from
   manifest source-timing readiness evidence.
 - `groove_evidence`: `null` or compact primary groove residual evidence copied
@@ -334,10 +337,11 @@ The committed fixture JSON smoke currently requires:
 - validator fixtures cover a valid failure summary with `null` metrics, a
   rejected invalid schema marker, a rejected missing metric key, rejected grid
   BPM decision mismatches, rejected BPM-delta contradictions, rejected
-  impossible scalar metric ranges, rejected Source Timing alignment
-  status/BPM-issue contradictions, rejected impossible source-grid metric
-  ranges, rejected malformed W-30 loop-closure evidence, rejected Source Timing
-  shape/cue mismatches, and rejected malformed lane recipe case evidence
+  impossible scalar metric ranges, rejected unknown Source Timing status enums
+  and counts, rejected Source Timing alignment status/BPM-issue
+  contradictions, rejected impossible source-grid metric ranges, rejected
+  malformed W-30 loop-closure evidence, rejected Source Timing shape/cue
+  mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source

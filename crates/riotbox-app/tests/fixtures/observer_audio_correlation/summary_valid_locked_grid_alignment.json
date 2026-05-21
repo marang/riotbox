@@ -113,7 +113,7 @@
       },
       "beat_status": "stable",
       "bpm_agrees_with_grid": true,
-      "confidence_result": "candidate_locked",
+      "confidence_result": "candidate_cautious",
       "cue": "grid locked",
       "downbeat_status": "stable",
       "drift_status": "stable",
@@ -134,7 +134,7 @@
         "primary_groove_residual_count": 2,
         "primary_max_abs_offset_ms": 6.0
       },
-      "phrase_status": "phrase_locked",
+      "phrase_status": "stable",
       "policy_profile": "dance_loop_auto_readiness",
       "primary_bpm": 128.0,
       "primary_downbeat_offset_beats": 0,
