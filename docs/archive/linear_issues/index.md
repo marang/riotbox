@@ -522,4 +522,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P012 proof summary and timing actionability surfaces after RIOTBOX-880-884
 - [RIOTBOX-886.md](./RIOTBOX-886.md)
   Expose generated Feral-grid observer/audio path details in P012 proof summary
+- [RIOTBOX-887.md](./RIOTBOX-887.md)
+  Centralize app-side Source Timing readiness actionability fallback
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
