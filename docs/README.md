@@ -89,6 +89,7 @@ docs/
   plans/
     source_timing_intelligence_plan.md
   reviews/
+    README.md
     whole_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-13.md
     periodic_codebase_review_2026-04-17.md
@@ -182,6 +183,7 @@ docs/
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
 - `benchmarks/capture_do_next_readability_baseline_2026-04-25.md`: Capture `Do Next` readability baseline captured
 - `benchmarks/capture_pending_do_next_readability_baseline_2026-04-25.md`: Capture pending `Do Next` readability baseline captured
+- `reviews/README.md`: review artifact handling and follow-up freshness rule captured
 - `reviews/whole_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-13.md`: review captured
 - `reviews/periodic_codebase_review_2026-04-17.md`: review captured

@@ -727,6 +727,12 @@ Default decision inputs:
 - the most relevant active feature spec
 - the real current repo state after the most recent merge
 
+Review artifacts under `docs/reviews/` are point-in-time evidence, not the live
+backlog. Before creating a ticket from an older review finding, verify the
+finding against current `main`, current Linear issues, and archived ticket
+history when needed. If it already shipped, mark the candidate as duplicate or
+superseded instead of opening another implementation branch.
+
 Decision rule:
 
 - prefer the smallest coherent slice that closes the nearest real gap in the current product path
