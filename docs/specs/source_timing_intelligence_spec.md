@@ -216,14 +216,16 @@ Use the shared Jam source timing summary, currently
 
 - TUI Jam / Help / Source timing cues
 - user-session observer cue, quality, degraded-policy, primary-warning, and
-  compact primary-anchor evidence
+  compact beat/downbeat/phrase status and primary-anchor evidence
 - observer/audio correlation control-path timing readiness
 
 That summary may collapse Source Graph detail into bounded musician language
 such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or
-`not available`. Detailed diagnostics such as raw beat-grid count, bar-grid
-count, phrase-grid count, hypothesis ids, and full warning-code lists should
-still come directly from Source Graph timing state when a surface needs them.
+`not available`. It also owns the compact `beat_status`, `downbeat_status`,
+`phrase_status`, and corresponding counts when those fields are used by Jam /
+Source UI or observer snapshots. Detailed diagnostics such as hypothesis ids,
+alternate grids, raw timing hypotheses, and full warning-code lists should still
+come directly from Source Graph timing state when a surface needs them.
 
 When the shared summary exposes one `primary_warning`, it should pick the most
 musically actionable timing risk, not the first warning in Source Graph storage

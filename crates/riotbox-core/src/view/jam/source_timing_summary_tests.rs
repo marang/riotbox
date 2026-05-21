@@ -16,7 +16,13 @@ fn default_summary_keeps_policy_and_cue_contract_aligned() {
     assert_eq!(timing.degraded_policy, "disabled");
     assert_eq!(timing.cue, "not available");
     assert_eq!(timing.grid_use, "unavailable");
+    assert_eq!(timing.beat_status, "unknown");
+    assert_eq!(timing.beat_count, 0);
+    assert_eq!(timing.downbeat_status, "unknown");
     assert_eq!(timing.primary_downbeat_offset_beats, None);
+    assert_eq!(timing.bar_count, 0);
+    assert_eq!(timing.phrase_status, "unknown");
+    assert_eq!(timing.phrase_count, 0);
 }
 
 #[test]
@@ -56,8 +62,14 @@ fn manual_confirm_summary_preserves_musician_cue_warning_and_anchor_counts() {
     assert_eq!(timing.degraded_policy, "manual_confirm");
     assert_eq!(timing.cue, "needs confirm");
     assert_eq!(timing.grid_use, "manual_confirm_only");
+    assert_eq!(timing.beat_status, "tempo_only");
+    assert_eq!(timing.beat_count, 0);
+    assert_eq!(timing.downbeat_status, "ambiguous");
     assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
     assert_eq!(timing.primary_downbeat_offset_beats, None);
+    assert_eq!(timing.bar_count, 0);
+    assert_eq!(timing.phrase_status, "unknown");
+    assert_eq!(timing.phrase_count, 0);
     assert_eq!(timing.primary_anchor_count, 4);
     assert_eq!(timing.primary_kick_anchor_count, 1);
     assert_eq!(timing.primary_backbeat_anchor_count, 1);
@@ -92,6 +104,8 @@ fn locked_summary_preserves_grid_locked_cue_without_primary_warning() {
     assert_eq!(timing.degraded_policy, "locked");
     assert_eq!(timing.cue, "grid locked");
     assert_eq!(timing.grid_use, "locked_grid");
+    assert_eq!(timing.beat_status, "tempo_only");
+    assert_eq!(timing.downbeat_status, "unknown");
     assert_eq!(timing.primary_warning, None);
     assert_eq!(timing.primary_downbeat_offset_beats, Some(2));
     assert_eq!(timing.primary_anchor_count, 1);
@@ -191,6 +205,11 @@ fn cautious_short_loop_summary_surfaces_short_loop_grid_use() {
     let timing = SourceTimingSummaryView::from_graph(&graph);
 
     assert_eq!(timing.grid_use, "short_loop_manual_confirm");
+    assert_eq!(timing.beat_status, "grid");
+    assert_eq!(timing.beat_count, 1);
+    assert_eq!(timing.downbeat_status, "bar_locked");
+    assert_eq!(timing.bar_count, 1);
+    assert_eq!(timing.phrase_status, "uncertain");
     assert_eq!(timing.primary_warning.as_deref(), Some("phrase_uncertain"));
 }
 

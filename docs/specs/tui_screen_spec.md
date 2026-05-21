@@ -90,6 +90,9 @@ It must expose:
   timing summary, not from screen-local Source Graph remapping. This keeps Jam,
   Help, Source, observer snapshots, and observer/audio QA aligned while the
   Source Graph remains the durable timing truth.
+- compact beat, downbeat, and phrase status labels shown on Jam / Source should
+  also come from the shared Jam source timing summary, with raw Source Graph
+  detail reserved for diagnostic drill-down.
 - the shared Jam source timing summary includes the primary downbeat offset in
   beats when a primary bar grid exists; the Source screen should surface that
   compactly as the selected bar phase, for example `downbeat ambiguous offset 0`

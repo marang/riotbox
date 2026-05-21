@@ -12,7 +12,7 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .unwrap_or_else(|| "unknown".into()),
                 graph.timing.bpm_confidence
             )),
-            source_timing_grid_readiness_line(graph, timing),
+            source_timing_grid_readiness_line(timing),
             Line::from(format!(
                 "meter {} | hypotheses {} | {}",
                 graph
@@ -52,15 +52,14 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn source_timing_grid_readiness_line(
-    graph: &riotbox_core::source_graph::SourceGraph,
     timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> Line<'static> {
     Line::from(format!(
         "beat {} | downbeat {} offset {} | phrase {}",
-        beat_grid_status_label(graph),
-        downbeat_status_label(graph),
+        source_timing_beat_display_label(timing),
+        source_timing_status_display_label(&timing.downbeat_status),
         downbeat_offset_label(timing),
-        phrase_status_label(graph)
+        source_timing_status_display_label(&timing.phrase_status)
     ))
 }
 
@@ -70,44 +69,18 @@ fn downbeat_offset_label(timing: &riotbox_core::view::jam::SourceTimingSummaryVi
         .map_or_else(|| "none".into(), |offset| offset.to_string())
 }
 
-fn beat_grid_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> String {
-    if !graph.timing.beat_grid.is_empty() {
-        return format!("grid {}", graph.timing.beat_grid.len());
-    }
-    if graph.timing.bpm_estimate.is_some() {
-        return "tempo only".into();
-    }
-    "unknown".into()
+fn source_timing_status_display_label(status: &str) -> String {
+    status.replace('_', " ")
 }
 
-fn downbeat_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> &'static str {
-    if graph
-        .timing
-        .warnings
-        .iter()
-        .any(|warning| warning.code == TimingWarningCode::AmbiguousDownbeat)
-    {
-        return "ambiguous";
+fn source_timing_beat_display_label(
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
+) -> String {
+    if timing.beat_status == "grid" {
+        format!("grid {}", timing.beat_count)
+    } else {
+        source_timing_status_display_label(&timing.beat_status)
     }
-    if !graph.timing.bar_grid.is_empty() {
-        return "bar locked";
-    }
-    "unknown"
-}
-
-fn phrase_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> &'static str {
-    if graph
-        .timing
-        .warnings
-        .iter()
-        .any(|warning| warning.code == TimingWarningCode::PhraseUncertain)
-    {
-        return "uncertain";
-    }
-    if !graph.timing.phrase_grid.is_empty() {
-        return "phrase locked";
-    }
-    "unknown"
 }
 
 fn source_timing_degraded_policy_display_label(policy: &str) -> &'static str {
