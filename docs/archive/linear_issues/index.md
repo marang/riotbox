@@ -476,4 +476,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Improve real-source short-loop timing confidence on Beat20
 - [RIOTBOX-863.md](./RIOTBOX-863.md)
   Refresh Source Timing example report snapshot after Beat20 ambiguity update
+- [RIOTBOX-864.md](./RIOTBOX-864.md)
+  Document and pin Beat03 auto-BPM Feral grid Source Timing path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
