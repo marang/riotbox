@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-usage="usage: validate_auto_feral_grid_source_timing_pack.sh <beat03|dh-beatc> [date]"
+usage="usage: validate_auto_feral_grid_source_timing_pack.sh"
+usage="${usage} <beat03|beat08|dh-beatc> [date]"
 profile="${1:?${usage}}"
 
 case "${profile}" in
@@ -11,6 +12,13 @@ case "${profile}" in
     bpm_min="129.5"
     bpm_max="131.0"
     downbeat_offset="2"
+    ;;
+  beat08)
+    source_path="data/test_audio/examples/Beat08_128BPM(Full).wav"
+    date="${2:-local-beat08-feral-grid-auto-proof}"
+    bpm_min="127.5"
+    bpm_max="129.0"
+    downbeat_offset="3"
     ;;
   dh-beatc)
     source_path="data/test_audio/examples/DH_BeatC_120-01.wav"
