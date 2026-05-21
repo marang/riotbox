@@ -43,6 +43,37 @@ This operational loop is the execution form of the roadmap's core delivery loop:
 each bounded ticket should move one spec/research/vertical-slice/test/benchmark
 step forward, then leave a clean review and closeout trail before the next slice.
 
+Ticket closeout is not an agent stop condition. After closeout, the agent must
+either continue with the next bounded roadmap-aligned slice or name the concrete
+stop condition that prevents continuation.
+
+Allowed stop conditions:
+
+- missing permissions, authentication, required token, or unavailable external
+  system access
+- a destructive Git or filesystem operation would be required and has not been
+  explicitly requested
+- unrelated user changes block the current slice and cannot be worked around
+  without risking data loss or undoing user work
+- the next product decision is genuinely ambiguous and a reasonable assumption
+  would create architecture, workflow, or musician-facing risk
+- CI, tests, or local validation are failing and the cause cannot yet be
+  classified after a reasonable investigation
+
+Non-stop conditions:
+
+- the current ticket is merged, archived, deleted from Linear, or otherwise
+  fully closed
+- a PR is open, CI is running, or CI is green for a locally clean branch
+- local `main` is clean and synced
+- Linear has been tidied or the current branch has been deleted
+- the next slice needs to be derived from roadmap, specs, Linear, and repo state
+- the agent has just given a status update or final-looking progress summary
+
+If none of the allowed stop conditions applies, continue the loop. Choose one
+small coherent next slice, keep Linear state honest, and do not open multiple
+parallel tickets just to avoid stopping.
+
 ---
 
 ## 3. Normal Slice Flow
