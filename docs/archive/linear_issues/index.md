@@ -464,4 +464,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Require W-30 loop-closure key in observer/audio summary validation
 - [RIOTBOX-856.md](./RIOTBOX-856.md)
   Validate lane recipe case result enum in observer/audio summary
+- [RIOTBOX-857.md](./RIOTBOX-857.md)
+  Clarify automatic next-ticket continuation in workflow conventions
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
