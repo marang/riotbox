@@ -64,6 +64,8 @@ Current benchmark artifacts:
   Refreshed local real-example Source Timing report baseline after Beat20 moved from generic weak timing to reviewable downbeat ambiguity.
 - [beat03_auto_feral_grid_source_timing_2026-05-21.md](./beat03_auto_feral_grid_source_timing_2026-05-21.md)
   Local Beat03 Feral-grid auto-BPM proof showing Source Timing drives the grid with visible manual-confirm evidence.
+- [dh_beatc_auto_feral_grid_source_timing_2026-05-21.md](./dh_beatc_auto_feral_grid_source_timing_2026-05-21.md)
+  Local DH_BeatC Feral-grid auto-BPM proof showing the same cautious Source Timing grid path.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
