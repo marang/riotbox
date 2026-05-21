@@ -266,8 +266,10 @@ fn source_timing_downbeat_line(report: &SourceTimingProbeReadinessReport) -> Str
 
 fn source_timing_phrase_line(report: &SourceTimingProbeReadinessReport) -> String {
     format!(
-        "{} confidence={} drift={} alternates={}",
+        "{} phrases={} bars={} confidence={} drift={} alternates={}",
         phrase_status_label(report.phrase_status),
+        report.primary_phrase_count,
+        report.primary_phrase_bar_count,
         confidence_result_label(report.confidence_result),
         drift_status_label(report.drift_status),
         report.alternate_evidence_count

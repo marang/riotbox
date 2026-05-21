@@ -689,6 +689,12 @@ bounded BPM policy:
   `primary_downbeat_offset_beats`, so reviewers can tell whether a bar-start
   choice is stable, near-tied, ambiguous, or unavailable without opening raw
   probe output
+- generated Feral grid manifests must preserve bounded phrase-grid evidence
+  under `source_timing.primary_phrase_count` and
+  `source_timing.primary_phrase_bar_count` beside `phrase_status`, so
+  output-path QA can distinguish no phrase grid, short-loop material, ambiguous
+  phrase evidence, and stable preliminary phrase material without opening raw
+  probe output
 - generated Feral grid manifests must preserve compact musician-facing
   `source_timing.cue` and `source_timing.actionability` fields beside
   readiness, manual-confirm, and grid-use evidence, so the P012 all-lane proof
