@@ -32,10 +32,10 @@
       "bpm_tolerance": 1.0,
       "observer_grid_use": "manual_confirm_only",
       "manifest_grid_use": "locked_grid",
-      "grid_use_compatibility": "mismatch",
-      "observer_downbeat_offset_beats": null,
-      "manifest_downbeat_offset_beats": 0,
-      "downbeat_offset_compatibility": "partial",
+      "grid_use_compatibility": "compatible",
+      "observer_downbeat_offset_beats": 0,
+      "manifest_downbeat_offset_beats": 2,
+      "downbeat_offset_compatibility": "aligned",
       "warning_overlap": [
         "phrase_uncertain"
       ],

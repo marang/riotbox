@@ -147,9 +147,12 @@
       "bpm_delta": 0.0,
       "bpm_tolerance": 1.0,
       "grid_use_compatibility": "aligned",
+      "downbeat_offset_compatibility": "aligned",
       "issues": [],
       "manifest_grid_use": "locked_grid",
+      "manifest_downbeat_offset_beats": 0,
       "observer_grid_use": "locked_grid",
+      "observer_downbeat_offset_beats": 0,
       "status": "aligned",
       "warning_overlap": []
     },

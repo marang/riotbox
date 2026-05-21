@@ -36,6 +36,9 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
     assert_eq!(alignment.observer_grid_use, "manual_confirm_only");
     assert_eq!(alignment.manifest_grid_use.as_deref(), Some("locked_grid"));
     assert_eq!(alignment.grid_use_compatibility, "compatible");
+    assert_eq!(alignment.observer_downbeat_offset_beats, Some(0));
+    assert_eq!(alignment.manifest_downbeat_offset_beats, Some(0));
+    assert_eq!(alignment.downbeat_offset_compatibility, "aligned");
     assert!(alignment.issues.is_empty());
     let anchor_alignment = summary
         .source_timing_anchor_alignment
@@ -113,6 +116,18 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
         json["output_path"]["source_timing_alignment"]["grid_use_compatibility"],
         "compatible"
     );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["observer_downbeat_offset_beats"],
+        0
+    );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["manifest_downbeat_offset_beats"],
+        0
+    );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["downbeat_offset_compatibility"],
+        "aligned"
+    );
 }
 
 #[test]
@@ -146,6 +161,44 @@ fn strict_evidence_rejects_source_timing_alignment_mismatch() {
             .contains("source_timing_alignment.warning_codes=no_overlap")
     );
     assert!(markdown.contains("Source timing alignment: `mismatch"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
+#[test]
+fn strict_evidence_rejects_source_timing_downbeat_offset_mismatch() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_with_source_timing(128.0, "phrase_uncertain"),
+    )
+    .expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_grid_use_source_timing(
+            128.397,
+            &["PhraseUncertain", "AmbiguousDownbeat"],
+            "locked_grid",
+        )
+        .replace(
+            r#""primary_downbeat_offset_beats": 0,"#,
+            r#""primary_downbeat_offset_beats": 2,"#,
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("downbeat offset mismatch");
+    let markdown = render_markdown(&summary);
+
+    assert!(
+        error
+            .to_string()
+            .contains("source_timing_alignment.downbeat_offset observer=0 manifest=2")
+    );
+    assert!(markdown.contains("Source timing alignment: `mismatch"));
+    assert!(markdown.contains("downbeat_offset=mismatch"));
     assert!(markdown.contains("Output path present: `no`"));
 }
 
@@ -353,7 +406,7 @@ fn strict_evidence_rejects_static_default_with_locked_grid_use() {
 
 fn observer_with_source_timing(bpm: f64, warning_code: &str) -> String {
     format!(
-        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"unknown","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"anchor_evidence":{{"primary_anchor_count":4,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":2,"primary_transient_anchor_count":1}},"groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":12.5,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-12.5,"confidence":0.72}},{{"subdivision":"sixteenth","offset_ms":6.25,"confidence":0.61}}]}},"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
+        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_offset_beats":0,"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"anchor_evidence":{{"primary_anchor_count":4,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":2,"primary_transient_anchor_count":1}},"groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":12.5,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-12.5,"confidence":0.72}},{{"subdivision":"sixteenth","offset_ms":6.25,"confidence":0.61}}]}},"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
     ) + "\n"
         + r#"{"event":"audio_runtime","status":"started"}"#
         + "\n"
@@ -363,7 +416,7 @@ fn observer_with_source_timing(bpm: f64, warning_code: &str) -> String {
 
 fn locked_observer_with_source_timing(bpm: f64) -> String {
     format!(
-        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.92,"quality":"high","degraded_policy":"locked","cue":"grid locked","grid_use":"locked_grid","beat_status":"grid","beat_count":16,"downbeat_status":"bar_locked","bar_count":4,"phrase_status":"phrase_locked","phrase_count":1,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{{"primary_anchor_count":16,"primary_kick_anchor_count":4,"primary_backbeat_anchor_count":8,"primary_transient_anchor_count":4}},"groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":6.0,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-6.0,"confidence":0.78}},{{"subdivision":"sixteenth","offset_ms":3.5,"confidence":0.66}}]}},"primary_warning_code":null,"warning_codes":[]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
+        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.92,"quality":"high","degraded_policy":"locked","cue":"grid locked","grid_use":"locked_grid","beat_status":"grid","beat_count":16,"downbeat_status":"bar_locked","primary_downbeat_offset_beats":0,"bar_count":4,"phrase_status":"phrase_locked","phrase_count":1,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{{"primary_anchor_count":16,"primary_kick_anchor_count":4,"primary_backbeat_anchor_count":8,"primary_transient_anchor_count":4}},"groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":6.0,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-6.0,"confidence":0.78}},{{"subdivision":"sixteenth","offset_ms":3.5,"confidence":0.66}}]}},"primary_warning_code":null,"warning_codes":[]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
     ) + "\n"
         + r#"{"event":"audio_runtime","status":"started"}"#
         + "\n"
