@@ -540,4 +540,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add sparse-onset Source Timing warning for very low-onset sources
 - [RIOTBOX-896.md](./RIOTBOX-896.md)
   Run P012 Source Timing broad review after readiness and warning slices
+- [RIOTBOX-897.md](./RIOTBOX-897.md)
+  Use shared Source Timing primary warning in Jam Trust
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
