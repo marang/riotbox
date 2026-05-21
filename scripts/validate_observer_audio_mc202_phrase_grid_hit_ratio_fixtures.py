@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Exercise observer/audio MC-202 phrase-grid pass validator edge cases."""
+"""Exercise observer/audio MC-202 phrase-grid hit-ratio validator edge cases."""
 
 from __future__ import annotations
 
@@ -24,49 +24,36 @@ def main() -> int:
 
     with tempfile.TemporaryDirectory() as tmp:
         tmpdir = pathlib.Path(tmp)
-        validate_case(base, tmpdir / "valid_mc202_phrase_grid_pass.json")
+        validate_case(base, tmpdir / "valid_mc202_phrase_grid_hit_ratio.json")
 
         reject_case(
-            with_phrase_grid_field(base, "starts_on_phrase_boundary", False),
-            "mc202_phrase_grid.passed requires starts_on_phrase_boundary",
-            tmpdir / "passed_without_phrase_boundary.json",
+            with_phrase_grid_fields(
+                base,
+                {
+                    "grid_aligned_onset_count": 1,
+                    "candidate_onset_count": 4,
+                    "hit_ratio": 1.0,
+                    "passed": False,
+                },
+            ),
+            "mc202_phrase_grid.hit_ratio must match grid_aligned_onset_count / candidate_onset_count",
+            tmpdir / "hit_ratio_mismatches_counts.json",
         )
         reject_case(
             with_phrase_grid_fields(
                 base,
                 {
-                    "candidate_onset_count": 0,
                     "grid_aligned_onset_count": 0,
-                    "hit_ratio": 0.0,
+                    "candidate_onset_count": 0,
+                    "hit_ratio": 0.5,
+                    "passed": False,
                 },
             ),
-            "mc202_phrase_grid.passed requires candidate_onset_count > 0",
-            tmpdir / "passed_without_candidate_onsets.json",
-        )
-        reject_case(
-            with_phrase_grid_fields(
-                base,
-                {
-                    "candidate_onset_count": 100,
-                    "grid_aligned_onset_count": 94,
-                    "hit_ratio": 0.94,
-                },
-            ),
-            "mc202_phrase_grid.passed requires hit_ratio >= 0.95",
-            tmpdir / "passed_with_low_hit_ratio.json",
-        )
-        reject_case(
-            with_phrase_grid_field(base, "max_onset_offset_ms", 8.1),
-            "mc202_phrase_grid.passed requires max_onset_offset_ms <= max_allowed_onset_offset_ms",
-            tmpdir / "passed_with_high_onset_offset.json",
-        )
-        reject_case(
-            with_phrase_grid_field(base, "passed", False),
-            "mc202_phrase_grid.passed=false contradicts passing phrase-grid evidence",
-            tmpdir / "failed_with_passing_evidence.json",
+            "mc202_phrase_grid.hit_ratio must match grid_aligned_onset_count / candidate_onset_count",
+            tmpdir / "zero_candidate_onsets_nonzero_hit_ratio.json",
         )
 
-    print("observer/audio MC-202 phrase-grid pass validator fixtures ok")
+    print("observer/audio MC-202 phrase-grid hit-ratio validator fixtures ok")
     return 0
 
 
@@ -74,10 +61,6 @@ def valid_phrase_grid_summary() -> dict[str, Any]:
     data = read_json(SUMMARY_FIXTURE)
     data["output_path"]["lane_recipe_cases"][0]["mc202_phrase_grid"]["hit_ratio"] = 1.0
     return data
-
-
-def with_phrase_grid_field(base: dict[str, Any], field: str, value: Any) -> dict[str, Any]:
-    return with_phrase_grid_fields(base, {field: value})
 
 
 def with_phrase_grid_fields(base: dict[str, Any], fields: dict[str, Any]) -> dict[str, Any]:
@@ -102,7 +85,7 @@ def reject_case(data: dict[str, Any], expected_error: str, path: pathlib.Path) -
         check=False,
     )
     if result.returncode == 0:
-        raise SystemExit(f"expected invalid MC-202 phrase-grid pass fixture to fail: {path}")
+        raise SystemExit(f"expected invalid MC-202 phrase-grid hit-ratio fixture to fail: {path}")
     if expected_error not in result.stderr:
         raise SystemExit(
             f"expected {expected_error!r} in validator error for {path}, got:\n{result.stderr}"

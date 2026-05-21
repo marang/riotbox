@@ -266,6 +266,7 @@ observer-audio-summary-validator-fixtures:
     python3 scripts/validate_observer_audio_scalar_metric_fixtures.py
     python3 scripts/validate_observer_audio_source_timing_status_fixtures.py
     python3 scripts/validate_observer_audio_lane_recipe_metric_fixtures.py
+    python3 scripts/validate_observer_audio_mc202_phrase_grid_hit_ratio_fixtures.py
     python3 scripts/validate_observer_audio_mc202_phrase_grid_pass_fixtures.py
     python3 scripts/validate_observer_audio_mc202_source_phrase_slot_fixtures.py
     python3 scripts/validate_observer_audio_source_timing_alignment_fixtures.py
