@@ -31,6 +31,7 @@ ISSUES_WITH_VALUES = {
     "missing_alternative",
 }
 TIMING_WARNING_CODES = {
+    "SparseOnsets",
     "WeakKickAnchor",
     "WeakBackbeatAnchor",
     "AmbiguousDownbeat",

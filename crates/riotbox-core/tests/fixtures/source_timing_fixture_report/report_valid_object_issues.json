@@ -16,6 +16,7 @@
       "primary_max_mean_abs_drift_ms": 35.0,
       "primary_max_drift_ms": 70.0,
       "issues": [
+        { "missing_warning": "SparseOnsets" },
         { "missing_warning": "PhraseUncertain" },
         { "missing_alternative": "HalfTime" }
       ]
