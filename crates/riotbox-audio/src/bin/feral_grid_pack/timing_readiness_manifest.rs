@@ -108,6 +108,7 @@ fn manifest_source_timing_readiness(
     anchor_evidence: &ManifestSourceTimingAnchorEvidence,
     groove_evidence: &ManifestSourceTimingGrooveEvidence,
 ) -> ManifestSourceTimingReadiness {
+    let labels = source_timing_readiness_report_labels(report);
     ManifestSourceTimingReadiness {
         schema: report.schema,
         schema_version: report.schema_version,
@@ -115,8 +116,8 @@ fn manifest_source_timing_readiness(
         policy_profile: SOURCE_TIMING_POLICY_PROFILE.name,
         readiness: readiness_status_label(report.readiness),
         requires_manual_confirm: report.requires_manual_confirm,
-        cue: source_timing_readiness_cue(report),
-        actionability: source_timing_readiness_actionability(report),
+        cue: labels.cue,
+        actionability: labels.actionability,
         grid_use: source_timing_grid_use(report).label(),
         primary_bpm: report.primary_bpm,
         bpm_agrees_with_grid: source_timing_bpm_agrees(grid_bpm.source_delta_bpm),
@@ -134,34 +135,6 @@ fn manifest_source_timing_readiness(
             .iter()
             .map(|code| format!("{code:?}"))
             .collect(),
-    }
-}
-
-fn source_timing_readiness_cue(report: &SourceTimingProbeReadinessReport) -> &'static str {
-    if report.requires_manual_confirm {
-        return "needs confirm";
-    }
-    match report.readiness {
-        SourceTimingProbeReadinessStatus::Ready => "grid locked",
-        SourceTimingProbeReadinessStatus::NeedsReview | SourceTimingProbeReadinessStatus::Weak => {
-            "listen first"
-        }
-        SourceTimingProbeReadinessStatus::Unavailable => "not available",
-    }
-}
-
-fn source_timing_readiness_actionability(
-    report: &SourceTimingProbeReadinessReport,
-) -> &'static str {
-    if report.requires_manual_confirm {
-        return "confirm grid first";
-    }
-    match report.readiness {
-        SourceTimingProbeReadinessStatus::Ready => "grid can steer moves",
-        SourceTimingProbeReadinessStatus::NeedsReview | SourceTimingProbeReadinessStatus::Weak => {
-            "listen first"
-        }
-        SourceTimingProbeReadinessStatus::Unavailable => "timing unavailable",
     }
 }
 

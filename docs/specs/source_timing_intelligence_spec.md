@@ -598,6 +598,12 @@ primary timing hypothesis:
   builders. Downstream JSON validators may independently recompute the same
   contract as an external compatibility check, but runtime producers should have
   one Rust policy source.
+- Rust producers must derive readiness cue/actionability pairs through the shared
+  `source_timing_readiness_labels(...)` or
+  `source_timing_readiness_report_labels(...)` core helpers rather than repeating
+  local readiness/manual-confirm string mappings in each manifest or CLI surface.
+  Downstream JSON validators may still recompute those labels independently as
+  compatibility checks.
 
 The candidate confidence report summarizes this early detector state for QA:
 

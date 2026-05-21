@@ -20,6 +20,49 @@ impl SourceTimingGridUse {
     }
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SourceTimingReadinessLabels {
+    pub cue: &'static str,
+    pub actionability: &'static str,
+}
+
+#[must_use]
+pub fn source_timing_readiness_labels(
+    readiness: SourceTimingProbeReadinessStatus,
+    requires_manual_confirm: bool,
+) -> SourceTimingReadinessLabels {
+    if requires_manual_confirm {
+        return SourceTimingReadinessLabels {
+            cue: "needs confirm",
+            actionability: "confirm grid first",
+        };
+    }
+
+    match readiness {
+        SourceTimingProbeReadinessStatus::Ready => SourceTimingReadinessLabels {
+            cue: "grid locked",
+            actionability: "grid can steer moves",
+        },
+        SourceTimingProbeReadinessStatus::NeedsReview | SourceTimingProbeReadinessStatus::Weak => {
+            SourceTimingReadinessLabels {
+                cue: "listen first",
+                actionability: "listen first",
+            }
+        }
+        SourceTimingProbeReadinessStatus::Unavailable => SourceTimingReadinessLabels {
+            cue: "not available",
+            actionability: "timing unavailable",
+        },
+    }
+}
+
+#[must_use]
+pub fn source_timing_readiness_report_labels(
+    report: &SourceTimingProbeReadinessReport,
+) -> SourceTimingReadinessLabels {
+    source_timing_readiness_labels(report.readiness, report.requires_manual_confirm)
+}
+
 #[must_use]
 pub fn source_timing_grid_use(report: &SourceTimingProbeReadinessReport) -> SourceTimingGridUse {
     if report.primary_bpm.is_none()

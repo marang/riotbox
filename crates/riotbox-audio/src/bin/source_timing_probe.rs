@@ -23,7 +23,7 @@ use riotbox_core::source_graph::{
     SourceTimingProbeReadinessReport, SourceTimingProbeReadinessStatus, TimingWarningCode,
     source_timing_grid_use, source_timing_probe_beat_evidence_report,
     source_timing_probe_downbeat_evidence_report, source_timing_probe_readiness_report,
-    timing_model_from_probe_bpm_candidates,
+    source_timing_readiness_labels, timing_model_from_probe_bpm_candidates,
 };
 use serde::Serialize;
 
@@ -167,16 +167,15 @@ impl ProbeSummary {
         timing: &riotbox_core::source_graph::TimingModel,
         probe: &riotbox_audio::source_timing_probe::SourceTimingProbe,
     ) -> Self {
+        let labels =
+            source_timing_readiness_labels(report.readiness, report.requires_manual_confirm);
         Self {
             schema: "riotbox.source_timing_probe_cli.v1",
             schema_version: 1,
             source_path: source_path.display().to_string(),
             source_id: report.source_id.clone(),
-            cue: source_timing_readiness_cue(report.readiness, report.requires_manual_confirm),
-            actionability: source_timing_readiness_actionability(
-                report.readiness,
-                report.requires_manual_confirm,
-            ),
+            cue: labels.cue,
+            actionability: labels.actionability,
             readiness: readiness_status_label(report.readiness),
             requires_manual_confirm: report.requires_manual_confirm,
             grid_use: source_timing_grid_use(report).label(),
@@ -276,38 +275,6 @@ fn render_text(summary: &ProbeSummary) -> String {
 
 fn usage() -> String {
     "usage: source_timing_probe [--json] <source.wav>".to_string()
-}
-
-fn source_timing_readiness_cue(
-    readiness: SourceTimingProbeReadinessStatus,
-    requires_manual_confirm: bool,
-) -> &'static str {
-    if requires_manual_confirm {
-        return "needs confirm";
-    }
-    match readiness {
-        SourceTimingProbeReadinessStatus::Ready => "grid locked",
-        SourceTimingProbeReadinessStatus::NeedsReview | SourceTimingProbeReadinessStatus::Weak => {
-            "listen first"
-        }
-        SourceTimingProbeReadinessStatus::Unavailable => "not available",
-    }
-}
-
-fn source_timing_readiness_actionability(
-    readiness: SourceTimingProbeReadinessStatus,
-    requires_manual_confirm: bool,
-) -> &'static str {
-    if requires_manual_confirm {
-        return "confirm grid first";
-    }
-    match readiness {
-        SourceTimingProbeReadinessStatus::Ready => "grid can steer moves",
-        SourceTimingProbeReadinessStatus::NeedsReview | SourceTimingProbeReadinessStatus::Weak => {
-            "listen first"
-        }
-        SourceTimingProbeReadinessStatus::Unavailable => "timing unavailable",
-    }
 }
 
 fn readiness_status_label(status: SourceTimingProbeReadinessStatus) -> &'static str {
