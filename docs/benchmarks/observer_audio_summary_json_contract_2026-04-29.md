@@ -131,6 +131,11 @@ When non-null, `source_timing_alignment` should include:
 - `issues`: mismatch reasons. Strict evidence treats any issue as an output-path
   failure.
 
+The summary validator derives the BPM-delta issue contract from these numeric
+fields: `bpm_delta > bpm_tolerance` requires a
+`source_timing_alignment.bpm_delta...` mismatch issue, while an absent or
+in-tolerance `bpm_delta` must not carry a BPM-delta issue.
+
 `source_timing_alignment` compares musical timing evidence, not source identity.
 Observer source ids and manifest artifact/source ids may intentionally differ in
 generated probes, so source ids are reported separately and are not an alignment
@@ -320,7 +325,11 @@ The committed fixture JSON smoke currently requires:
 - every stable metric key is present, with a number or `null` value
 - `source_grid_output_drift`, when non-null, has the three numeric fields listed above
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
-- validator fixtures cover a valid failure summary with `null` metrics, a rejected invalid schema marker, a rejected missing metric key, rejected grid BPM decision mismatches, rejected BPM-delta contradictions, rejected Source Timing shape/cue mismatches, and rejected malformed lane recipe case evidence
+- validator fixtures cover a valid failure summary with `null` metrics, a
+  rejected invalid schema marker, a rejected missing metric key, rejected grid
+  BPM decision mismatches, rejected BPM-delta contradictions, rejected Source
+  Timing alignment status/BPM-issue contradictions, rejected Source Timing
+  shape/cue mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source

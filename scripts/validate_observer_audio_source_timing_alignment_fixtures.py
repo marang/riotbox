@@ -57,6 +57,38 @@ def main() -> int:
             tmpdir / "source_timing_mismatch_wrong_issue_prefix.json",
         )
         reject_case(
+            with_source_timing_alignment(
+                base,
+                status="aligned",
+                bpm_delta=2.0,
+                issues=[],
+            ),
+            "source_timing_alignment BPM mismatch must include an issue",
+            tmpdir / "source_timing_bpm_mismatch_without_issue.json",
+        )
+        reject_case(
+            with_source_timing_alignment(
+                base,
+                status="mismatch",
+                bpm_delta=0.0,
+                issues=[
+                    "source_timing_alignment.bpm_delta=0.000000 > tolerance 1.000000"
+                ],
+            ),
+            "source_timing_alignment BPM issue present without mismatch",
+            tmpdir / "source_timing_bpm_issue_inside_tolerance.json",
+        )
+        reject_case(
+            with_source_timing_alignment(
+                base,
+                status="mismatch",
+                bpm_delta=None,
+                issues=["source_timing_alignment.bpm_delta=missing"],
+            ),
+            "source_timing_alignment BPM issue present without mismatch",
+            tmpdir / "source_timing_bpm_issue_without_delta.json",
+        )
+        reject_case(
             with_alignment_issues(
                 base,
                 "source_timing_anchor_alignment",
@@ -97,6 +129,21 @@ def with_alignment_issues(
     data = copy.deepcopy(base)
     alignment = data["output_path"][field]
     alignment["status"] = status
+    alignment["issues"] = issues
+    return data
+
+
+def with_source_timing_alignment(
+    base: dict[str, Any],
+    *,
+    status: str,
+    bpm_delta: float | None,
+    issues: list[str],
+) -> dict[str, Any]:
+    data = copy.deepcopy(base)
+    alignment = data["output_path"]["source_timing_alignment"]
+    alignment["status"] = status
+    alignment["bpm_delta"] = bpm_delta
     alignment["issues"] = issues
     return data
 

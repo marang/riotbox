@@ -197,11 +197,16 @@ def require_int_value(parent: dict[str, Any], field: str) -> int:
 
 
 def require_optional_number(parent: dict[str, Any], field: str) -> None:
+    require_optional_number_value(parent, field)
+
+
+def require_optional_number_value(parent: dict[str, Any], field: str) -> float | int | None:
     if field not in parent:
         raise TypeError(f"{field} must be present as a number or null")
     value = parent.get(field)
     if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
         raise TypeError(f"{field} must be a number or null")
+    return value
 
 
 def require_optional_source_grid_output_drift(parent: dict[str, Any]) -> None:
@@ -260,8 +265,8 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
         return
     alignment = require_object(value, field)
     status = require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
-    require_optional_number(alignment, "bpm_delta")
-    require_number(alignment, "bpm_tolerance")
+    bpm_delta = require_optional_number_value(alignment, "bpm_delta")
+    bpm_tolerance = require_number_value(alignment, "bpm_tolerance")
     observer_grid_use = require_one_of(
         alignment, "observer_grid_use", SOURCE_TIMING_GRID_USE
     )
@@ -296,6 +301,11 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
         status,
         issues,
         "source_timing_alignment.",
+    )
+    require_source_timing_bpm_delta_alignment_match(
+        bpm_delta,
+        bpm_tolerance,
+        issues,
     )
 
 
@@ -773,6 +783,21 @@ def require_source_timing_downbeat_offset_compatibility_match(
         raise ValueError(
             "source_timing_alignment downbeat-offset issue present without mismatch"
         )
+
+
+def require_source_timing_bpm_delta_alignment_match(
+    bpm_delta: float | int | None,
+    bpm_tolerance: float | int,
+    issues: list[str],
+) -> None:
+    has_bpm_issue = any(
+        issue.startswith("source_timing_alignment.bpm_delta") for issue in issues
+    )
+    out_of_tolerance = bpm_delta is not None and bpm_delta > bpm_tolerance
+    if out_of_tolerance and not has_bpm_issue:
+        raise ValueError("source_timing_alignment BPM mismatch must include an issue")
+    if not out_of_tolerance and has_bpm_issue:
+        raise ValueError("source_timing_alignment BPM issue present without mismatch")
 
 
 def source_timing_downbeat_offset_compatibility(
