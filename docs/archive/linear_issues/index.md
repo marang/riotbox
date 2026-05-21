@@ -462,4 +462,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Require Source Timing grid_use in observer/audio summary validation
 - [RIOTBOX-855.md](./RIOTBOX-855.md)
   Require W-30 loop-closure key in observer/audio summary validation
+- [RIOTBOX-856.md](./RIOTBOX-856.md)
+  Validate lane recipe case result enum in observer/audio summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
