@@ -416,4 +416,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose downbeat offset in Source Timing example report
 - [RIOTBOX-832.md](./RIOTBOX-832.md)
   Preserve downbeat offset in user-session observer snapshots
+- [RIOTBOX-833.md](./RIOTBOX-833.md)
+  Propagate observer downbeat offset into observer/audio summaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
