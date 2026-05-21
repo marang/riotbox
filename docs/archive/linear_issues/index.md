@@ -440,4 +440,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate Source Timing alignment BPM-delta issue derivation
 - [RIOTBOX-844.md](./RIOTBOX-844.md)
   Reject negative Source Timing alignment BPM numbers
+- [RIOTBOX-845.md](./RIOTBOX-845.md)
+  Validate observer/audio source-grid metric numeric ranges
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
