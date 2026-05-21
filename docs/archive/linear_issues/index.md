@@ -434,4 +434,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate Source Timing anchor/groove alignment status consistency
 - [RIOTBOX-841.md](./RIOTBOX-841.md)
   Show Source Timing downbeat phase in Jam compact timing lines
+- [RIOTBOX-842.md](./RIOTBOX-842.md)
+  Validate Source Timing main alignment status consistency
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
