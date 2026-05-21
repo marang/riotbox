@@ -564,6 +564,12 @@ primary timing hypothesis:
   confidence result, drift status, alternate evidence count, bounded
   beat/downbeat score ranges, and warning-code presence; missing local WAVs must
   remain skipped instead of failing fresh clones.
+- example report expectation fixtures must be strict enough to catch fixture
+  typos. Unknown top-level expectation keys must fail the fixture gate instead
+  of being silently ignored. Numeric range expectations must include `min` or
+  `max`, must reject `min > max`, and must reject unknown range keys. This keeps
+  local regression expectations from weakening accidentally when report fields
+  are renamed or expanded.
 - `just source-timing-example-probe-report-local` uses the tracked local-example
   expectations file for the documented Beat/DH examples. It is an optional local
   regression command because the source WAV files are deliberately outside Git.
