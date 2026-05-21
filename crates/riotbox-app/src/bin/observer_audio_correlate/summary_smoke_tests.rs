@@ -199,6 +199,14 @@ fn summarizes_synthetic_observer_and_manifest() {
         "manual_confirm_only"
     );
     assert_eq!(
+        json["output_path"]["source_timing"]["primary_phrase_count"],
+        0
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["primary_phrase_bar_count"],
+        8
+    );
+    assert_eq!(
         json["control_path"]["observer_source_timing"]["warning_codes"][1],
         "phrase_uncertain"
     );
@@ -272,6 +280,8 @@ fn synthetic_manifest() -> String {
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
+    "primary_phrase_count": 0,
+    "primary_phrase_bar_count": 8,
     "alternate_evidence_count": 2,
     "warning_codes": ["AmbiguousDownbeat", "PhraseUncertain"]
   },

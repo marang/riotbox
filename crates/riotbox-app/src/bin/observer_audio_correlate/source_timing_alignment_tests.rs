@@ -130,6 +130,8 @@ fn manifest_with_source_timing_anchor_and_groove(
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
+    "primary_phrase_count": 0,
+    "primary_phrase_bar_count": 8,
     "alternate_evidence_count": 2,
     "anchor_evidence": {{
       "primary_anchor_count": {},
@@ -207,6 +209,8 @@ fn manifest_with_static_manual_confirm_source_timing(primary_bpm: f64) -> String
     "confidence_result": "candidate_cautious",
     "drift_status": "stable",
     "phrase_status": "stable",
+    "primary_phrase_count": 1,
+    "primary_phrase_bar_count": 8,
     "alternate_evidence_count": 0,
     "anchor_evidence": {{
       "primary_anchor_count": 16,

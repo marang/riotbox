@@ -763,6 +763,12 @@ bounded BPM policy:
   `output_path.source_timing.grid_use` when a generated manifest provides it,
   and validators must keep it aligned with the same conservative evidence used
   by the manifest and probe surfaces.
+- observer/audio summaries should preserve manifest-side
+  `output_path.source_timing.primary_phrase_count` and
+  `output_path.source_timing.primary_phrase_bar_count` beside
+  `phrase_status`, so downstream QA can distinguish no phrase grid,
+  short-loop material, and stable preliminary phrase evidence without reopening
+  the source manifest.
 - strict observer/audio correlation should reject clear contradictions between
   manifest-side `grid_use` and the manifest grid BPM decision, while leaving
   explicit user BPM overrides as manual choices.

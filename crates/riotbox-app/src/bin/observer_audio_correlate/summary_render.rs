@@ -153,6 +153,8 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "confidence_result": &timing.confidence_result,
                 "drift_status": &timing.drift_status,
                 "phrase_status": &timing.phrase_status,
+                "primary_phrase_count": timing.primary_phrase_count,
+                "primary_phrase_bar_count": timing.primary_phrase_bar_count,
                 "alternate_evidence_count": timing.alternate_evidence_count,
                 "anchor_evidence": timing.anchor_evidence.as_ref().map(source_timing_anchor_evidence_json),
                 "groove_evidence": timing.groove_evidence.as_ref().map(source_timing_groove_evidence_json),
@@ -294,8 +296,10 @@ fn format_source_timing_phrase(summary: &CorrelationSummary) -> String {
         || "unknown".to_string(),
         |timing| {
             format!(
-                "{} confidence={} drift={} alternates={}",
+                "{} phrases={} bars={} confidence={} drift={} alternates={}",
                 timing.phrase_status,
+                timing.primary_phrase_count,
+                timing.primary_phrase_bar_count,
                 timing.confidence_result,
                 timing.drift_status,
                 timing.alternate_evidence_count

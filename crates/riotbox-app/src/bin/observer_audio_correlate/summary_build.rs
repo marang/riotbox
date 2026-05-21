@@ -38,7 +38,6 @@ struct CorrelationSummary {
     w30_source_loop_closure_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
 }
-
 #[derive(Debug, PartialEq)]
 struct SourceTimingEvidence {
     source_id: String,
@@ -55,19 +54,19 @@ struct SourceTimingEvidence {
     confidence_result: String,
     drift_status: String,
     phrase_status: String,
+    primary_phrase_count: u64,
+    primary_phrase_bar_count: u64,
     alternate_evidence_count: u64,
     anchor_evidence: Option<SourceTimingAnchorEvidence>,
     groove_evidence: Option<SourceTimingGrooveEvidence>,
     warning_codes: Vec<String>,
 }
-
 #[derive(Debug, PartialEq)]
 struct SourceGridOutputDriftEvidence {
     hit_ratio: f64,
     max_peak_offset_ms: f64,
     max_allowed_peak_offset_ms: f64,
 }
-
 #[derive(Debug, PartialEq)]
 struct W30SourceLoopClosureEvidence {
     passed: bool,
@@ -78,7 +77,6 @@ struct W30SourceLoopClosureEvidence {
     max_allowed_edge_abs: f64,
     source_contains_selection: bool,
 }
-
 #[cfg(test)]
 fn build_summary(
     observer_path: &Path,
@@ -286,6 +284,14 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
             None => return (None, true),
         },
         phrase_status: match source_timing_string(source_timing, "phrase_status") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        primary_phrase_count: match source_timing["primary_phrase_count"].as_u64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        primary_phrase_bar_count: match source_timing["primary_phrase_bar_count"].as_u64() {
             Some(value) => value,
             None => return (None, true),
         },
