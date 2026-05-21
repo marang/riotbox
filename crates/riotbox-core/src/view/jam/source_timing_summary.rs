@@ -11,8 +11,14 @@ pub struct SourceTimingSummaryView {
     pub quality: String,
     pub degraded_policy: String,
     pub grid_use: String,
+    pub beat_status: String,
+    pub beat_count: usize,
+    pub downbeat_status: String,
     pub primary_warning: Option<String>,
     pub primary_downbeat_offset_beats: Option<u32>,
+    pub bar_count: usize,
+    pub phrase_status: String,
+    pub phrase_count: usize,
     pub primary_anchor_count: usize,
     pub primary_kick_anchor_count: usize,
     pub primary_backbeat_anchor_count: usize,
@@ -30,8 +36,14 @@ impl Default for SourceTimingSummaryView {
             quality: "unknown".into(),
             degraded_policy: "disabled".into(),
             grid_use: "unavailable".into(),
+            beat_status: "unknown".into(),
+            beat_count: 0,
+            downbeat_status: "unknown".into(),
             primary_warning: None,
             primary_downbeat_offset_beats: None,
+            bar_count: 0,
+            phrase_status: "unknown".into(),
+            phrase_count: 0,
             primary_anchor_count: 0,
             primary_kick_anchor_count: 0,
             primary_backbeat_anchor_count: 0,
@@ -77,9 +89,15 @@ impl SourceTimingSummaryView {
             grid_use: crate::source_graph::source_timing_grid_use_from_timing_model(&graph.timing)
                 .label()
                 .into(),
+            beat_status: source_timing_beat_status_label(&graph.timing).into(),
+            beat_count: graph.timing.beat_grid.len(),
+            downbeat_status: source_timing_downbeat_status_label(&graph.timing).into(),
             primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
             primary_downbeat_offset_beats: primary_source_timing_downbeat_offset_beats(primary_hypothesis),
+            bar_count: graph.timing.bar_grid.len(),
+            phrase_status: source_timing_phrase_status_label(&graph.timing).into(),
+            phrase_count: graph.timing.phrase_grid.len(),
             primary_anchor_count,
             primary_kick_anchor_count,
             primary_backbeat_anchor_count,
@@ -99,6 +117,44 @@ impl SourceTimingSummaryView {
                 .collect(),
         }
     }
+}
+
+fn source_timing_beat_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
+    if !timing.beat_grid.is_empty() {
+        return "grid";
+    }
+    if timing.bpm_estimate.is_some() {
+        return "tempo_only";
+    }
+    "unknown"
+}
+
+fn source_timing_downbeat_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
+    if timing
+        .warnings
+        .iter()
+        .any(|warning| warning.code == crate::source_graph::TimingWarningCode::AmbiguousDownbeat)
+    {
+        return "ambiguous";
+    }
+    if !timing.bar_grid.is_empty() {
+        return "bar_locked";
+    }
+    "unknown"
+}
+
+fn source_timing_phrase_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
+    if timing
+        .warnings
+        .iter()
+        .any(|warning| warning.code == crate::source_graph::TimingWarningCode::PhraseUncertain)
+    {
+        return "uncertain";
+    }
+    if !timing.phrase_grid.is_empty() {
+        return "phrase_locked";
+    }
+    "unknown"
 }
 
 fn primary_source_timing_hypothesis(

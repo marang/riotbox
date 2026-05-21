@@ -177,13 +177,13 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "degraded_policy": timing.degraded_policy.as_str(),
         "cue": timing.cue.as_str(),
         "grid_use": timing.grid_use.as_str(),
-        "beat_status": observer_source_timing_beat_status(graph),
-        "beat_count": graph.timing.beat_grid.len(),
-        "downbeat_status": observer_source_timing_downbeat_status(graph),
+        "beat_status": timing.beat_status.as_str(),
+        "beat_count": timing.beat_count,
+        "downbeat_status": timing.downbeat_status.as_str(),
         "primary_downbeat_offset_beats": timing.primary_downbeat_offset_beats,
-        "bar_count": graph.timing.bar_grid.len(),
-        "phrase_status": observer_source_timing_phrase_status(graph),
-        "phrase_count": graph.timing.phrase_grid.len(),
+        "bar_count": timing.bar_count,
+        "phrase_status": timing.phrase_status.as_str(),
+        "phrase_count": timing.phrase_count,
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
         "hypothesis_count": graph.timing.hypotheses.len(),
         "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(timing),
@@ -227,46 +227,6 @@ fn source_timing_anchor_evidence_observer_snapshot(
         "primary_backbeat_anchor_count": timing.primary_backbeat_anchor_count,
         "primary_transient_anchor_count": timing.primary_transient_anchor_count,
     })
-}
-
-fn observer_source_timing_beat_status(
-    graph: &riotbox_core::source_graph::SourceGraph,
-) -> &'static str {
-    if !graph.timing.beat_grid.is_empty() {
-        return "grid";
-    }
-    if graph.timing.bpm_estimate.is_some() {
-        return "tempo_only";
-    }
-    "unknown"
-}
-
-fn observer_source_timing_downbeat_status(
-    graph: &riotbox_core::source_graph::SourceGraph,
-) -> &'static str {
-    if graph.timing.warnings.iter().any(|warning| {
-        warning.code == riotbox_core::source_graph::TimingWarningCode::AmbiguousDownbeat
-    }) {
-        return "ambiguous";
-    }
-    if !graph.timing.bar_grid.is_empty() {
-        return "bar_locked";
-    }
-    "unknown"
-}
-
-fn observer_source_timing_phrase_status(
-    graph: &riotbox_core::source_graph::SourceGraph,
-) -> &'static str {
-    if graph.timing.warnings.iter().any(|warning| {
-        warning.code == riotbox_core::source_graph::TimingWarningCode::PhraseUncertain
-    }) {
-        return "uncertain";
-    }
-    if !graph.timing.phrase_grid.is_empty() {
-        return "phrase_locked";
-    }
-    "unknown"
 }
 
 fn observer_timing_warning_code_label(
