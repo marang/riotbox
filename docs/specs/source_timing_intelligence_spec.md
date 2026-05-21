@@ -711,9 +711,12 @@ bounded BPM policy:
   `primary_downbeat_offset_beats` beside the observed downbeat status so
   reviewers can compare control-path and manifest-side bar-phase evidence in
   one artifact. The current summary contract reports this as
-  `output_path.source_timing_alignment`, using BPM delta plus normalized
-  warning-code overlap as bounded proof that the control path and generated
-  output path are using compatible timing evidence.
+  `output_path.source_timing_alignment`, using BPM delta, normalized
+  warning-code overlap, grid-use compatibility, and downbeat-offset
+  compatibility as bounded proof that the control path and generated output
+  path are using compatible timing evidence. Missing offsets remain partial
+  evidence; clear numeric observer/manifest offset contradictions should fail
+  strict observer/audio evidence.
 - observer/audio summaries should expose manifest-side
   `output_path.source_timing.grid_use` when a generated manifest provides it,
   and validators must keep it aligned with the same conservative evidence used

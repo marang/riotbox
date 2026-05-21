@@ -162,6 +162,9 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "observer_grid_use": &alignment.observer_grid_use,
                 "manifest_grid_use": &alignment.manifest_grid_use,
                 "grid_use_compatibility": &alignment.grid_use_compatibility,
+                "observer_downbeat_offset_beats": alignment.observer_downbeat_offset_beats,
+                "manifest_downbeat_offset_beats": alignment.manifest_downbeat_offset_beats,
+                "downbeat_offset_compatibility": &alignment.downbeat_offset_compatibility,
                 "warning_overlap": &alignment.warning_overlap,
                 "issues": &alignment.issues,
             })),
@@ -303,7 +306,7 @@ fn format_source_timing_alignment(summary: &CorrelationSummary) -> String {
                 alignment.issues.join(",")
             };
             format!(
-                "{} bpm_delta={} tolerance={:.6} grid_use={} observer_grid_use={} manifest_grid_use={} warning_overlap={} issues={}",
+                "{} bpm_delta={} tolerance={:.6} grid_use={} observer_grid_use={} manifest_grid_use={} downbeat_offset={} observer_downbeat_offset={} manifest_downbeat_offset={} warning_overlap={} issues={}",
                 alignment.status,
                 format_optional_f64(alignment.bpm_delta),
                 alignment.bpm_tolerance,
@@ -313,6 +316,13 @@ fn format_source_timing_alignment(summary: &CorrelationSummary) -> String {
                     .manifest_grid_use
                     .as_deref()
                     .unwrap_or("unknown"),
+                alignment.downbeat_offset_compatibility,
+                alignment
+                    .observer_downbeat_offset_beats
+                    .map_or_else(|| "unknown".to_string(), |value| value.to_string()),
+                alignment
+                    .manifest_downbeat_offset_beats
+                    .map_or_else(|| "unknown".to_string(), |value| value.to_string()),
                 warnings,
                 issues
             )

@@ -6,6 +6,9 @@ struct SourceTimingAlignmentEvidence {
     observer_grid_use: String,
     manifest_grid_use: Option<String>,
     grid_use_compatibility: String,
+    observer_downbeat_offset_beats: Option<u64>,
+    manifest_downbeat_offset_beats: Option<u64>,
+    downbeat_offset_compatibility: String,
     warning_overlap: Vec<String>,
     issues: Vec<String>,
 }
@@ -54,6 +57,11 @@ fn collect_source_timing_alignment(
     let manifest_grid_use = manifest.grid_use.clone();
     let (grid_use_compatibility, grid_use_issues) =
         source_timing_grid_use_compatibility(&observer.grid_use, manifest_grid_use.as_deref());
+    let (downbeat_offset_compatibility, downbeat_offset_issues) =
+        source_timing_downbeat_offset_compatibility(
+            observer.primary_downbeat_offset_beats,
+            manifest.primary_downbeat_offset_beats,
+        );
 
     let mut issues = Vec::new();
     if let Some(delta) = bpm_delta
@@ -68,12 +76,14 @@ fn collect_source_timing_alignment(
         issues.push("source_timing_alignment.warning_codes=no_overlap".to_string());
     }
     issues.extend(grid_use_issues);
+    issues.extend(downbeat_offset_issues);
 
     let status = if !issues.is_empty() {
         "mismatch"
     } else if bpm_delta.is_some()
         || !warning_overlap.is_empty()
         || matches!(grid_use_compatibility.as_str(), "aligned" | "compatible")
+        || downbeat_offset_compatibility == "aligned"
     {
         "aligned"
     } else {
@@ -87,6 +97,9 @@ fn collect_source_timing_alignment(
         observer_grid_use: observer.grid_use.clone(),
         manifest_grid_use,
         grid_use_compatibility,
+        observer_downbeat_offset_beats: observer.primary_downbeat_offset_beats,
+        manifest_downbeat_offset_beats: manifest.primary_downbeat_offset_beats,
+        downbeat_offset_compatibility,
         warning_overlap,
         issues,
     })
@@ -133,6 +146,24 @@ fn source_timing_grid_use_compatibility(
     }
 
     ("partial".to_string(), Vec::new())
+}
+
+fn source_timing_downbeat_offset_compatibility(
+    observer_offset: Option<u64>,
+    manifest_offset: Option<u64>,
+) -> (String, Vec<String>) {
+    match (observer_offset, manifest_offset) {
+        (Some(observer), Some(manifest)) if observer == manifest => {
+            ("aligned".to_string(), Vec::new())
+        }
+        (Some(observer), Some(manifest)) => (
+            "mismatch".to_string(),
+            vec![format!(
+                "source_timing_alignment.downbeat_offset observer={observer} manifest={manifest}"
+            )],
+        ),
+        _ => ("partial".to_string(), Vec::new()),
+    }
 }
 
 fn collect_source_timing_anchor_alignment(

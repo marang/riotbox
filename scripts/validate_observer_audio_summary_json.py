@@ -271,10 +271,25 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
     grid_use_compatibility = require_one_of(
         alignment, "grid_use_compatibility", SOURCE_TIMING_GRID_USE_COMPATIBILITY
     )
+    observer_downbeat_offset = require_optional_int_value(
+        alignment, "observer_downbeat_offset_beats"
+    )
+    manifest_downbeat_offset = require_optional_int_value(
+        alignment, "manifest_downbeat_offset_beats"
+    )
+    downbeat_offset_compatibility = require_one_of(
+        alignment, "downbeat_offset_compatibility", {"aligned", "partial", "mismatch"}
+    )
     require_string_list(alignment, "warning_overlap")
     issues = require_string_list(alignment, "issues")
     require_source_timing_grid_use_compatibility_match(
         observer_grid_use, manifest_grid_use, grid_use_compatibility, issues
+    )
+    require_source_timing_downbeat_offset_compatibility_match(
+        observer_downbeat_offset,
+        manifest_downbeat_offset,
+        downbeat_offset_compatibility,
+        issues,
     )
 
 
@@ -571,11 +586,16 @@ def require_number_value(parent: dict[str, Any], field: str) -> float | int:
 
 
 def require_optional_int(parent: dict[str, Any], field: str) -> None:
+    require_optional_int_value(parent, field)
+
+
+def require_optional_int_value(parent: dict[str, Any], field: str) -> int | None:
     if field not in parent:
         raise TypeError(f"{field} must be present as an integer or null")
     value = parent.get(field)
     if value is not None and (not isinstance(value, int) or isinstance(value, bool)):
         raise TypeError(f"{field} must be an integer or null")
+    return value
 
 
 def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
@@ -694,6 +714,42 @@ def require_source_timing_grid_use_compatibility_match(
         raise ValueError("source_timing_alignment grid-use mismatch must include an issue")
     if not should_have_issue and has_grid_use_issue:
         raise ValueError("source_timing_alignment grid-use issue present without mismatch")
+
+
+def require_source_timing_downbeat_offset_compatibility_match(
+    observer_offset: int | None,
+    manifest_offset: int | None,
+    downbeat_offset_compatibility: str,
+    issues: list[str],
+) -> None:
+    expected, should_have_issue = source_timing_downbeat_offset_compatibility(
+        observer_offset, manifest_offset
+    )
+    if downbeat_offset_compatibility != expected:
+        raise ValueError(
+            "source_timing_alignment.downbeat_offset_compatibility must match "
+            "observer/manifest offsets: "
+            f"expected {expected!r}, got {downbeat_offset_compatibility!r}"
+        )
+    has_offset_issue = any(
+        issue.startswith("source_timing_alignment.downbeat_offset") for issue in issues
+    )
+    if should_have_issue and not has_offset_issue:
+        raise ValueError("source_timing_alignment downbeat-offset mismatch must include an issue")
+    if not should_have_issue and has_offset_issue:
+        raise ValueError(
+            "source_timing_alignment downbeat-offset issue present without mismatch"
+        )
+
+
+def source_timing_downbeat_offset_compatibility(
+    observer_offset: int | None, manifest_offset: int | None
+) -> tuple[str, bool]:
+    if observer_offset is None or manifest_offset is None:
+        return ("partial", False)
+    if observer_offset == manifest_offset:
+        return ("aligned", False)
+    return ("mismatch", True)
 
 
 def source_timing_grid_use_compatibility(
