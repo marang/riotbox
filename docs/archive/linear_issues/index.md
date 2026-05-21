@@ -492,4 +492,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Fold Recipe 15 auto timing proof into the P012 all-lane output gate
 - [RIOTBOX-871.md](./RIOTBOX-871.md)
   Review the current P012 all-lane timing proof surface after Recipe 15 integration
+- [RIOTBOX-872.md](./RIOTBOX-872.md)
+  Make Recipe 15 strict when invoked by the P012 all-lane gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
