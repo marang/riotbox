@@ -138,8 +138,8 @@ def render_summary(
             "",
             "## Recipe 15 Source-Timing Outcomes",
             "",
-            "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | Downbeat score | Downbeat margin | Alt phases | TR-909 | MC-202 | W-30 | Mix |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
+            "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | Phrase count | Phrase bars | BPM | Downbeat | Downbeat score | Downbeat margin | Alt phases | TR-909 | MC-202 | W-30 | Mix |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
 
@@ -147,7 +147,7 @@ def render_summary(
         source_timing = object_field(manifest, "source_timing")
         metrics = object_field(manifest, "metrics")
         lines.append(
-            "| {name} | `{cue}` | `{action}` | `{readiness}` | {manual_confirm} | `{grid_source}` | `{decision}` | `{grid_use}` | {bpm} | `{downbeat}` | {downbeat_score} | {downbeat_margin} | {alt_phases} | {tr909} | {mc202} | {w30} | {mix} |".format(
+            "| {name} | `{cue}` | `{action}` | `{readiness}` | {manual_confirm} | `{grid_source}` | `{decision}` | `{grid_use}` | {phrase_count} | {phrase_bars} | {bpm} | `{downbeat}` | {downbeat_score} | {downbeat_margin} | {alt_phases} | {tr909} | {mc202} | {w30} | {mix} |".format(
                 name=name,
                 cue=string_field(source_timing, "cue"),
                 action=string_field(source_timing, "actionability"),
@@ -156,6 +156,8 @@ def render_summary(
                 grid_source=string_field(manifest, "grid_bpm_source"),
                 decision=string_field(manifest, "grid_bpm_decision_reason"),
                 grid_use=string_field(source_timing, "grid_use"),
+                phrase_count=int_field(source_timing, "primary_phrase_count"),
+                phrase_bars=int_field(source_timing, "primary_phrase_bar_count"),
                 bpm=format_optional_float(source_timing.get("primary_bpm")),
                 downbeat=string_field(source_timing, "downbeat_status"),
                 downbeat_score=format_optional_float(source_timing.get("primary_downbeat_score")),
@@ -179,6 +181,7 @@ def render_summary(
             "- `source_timing` rows used the current Source Timing BPM while still carrying visible manual-confirm policy where required.",
             "- `static_default` rows prove the conservative fallback boundary; Beat20 currently has useful BPM evidence but ambiguous downbeat evidence.",
             "- `Cue` and `Action` are the compact musician-facing consequence from each manifest's Source Timing evidence.",
+            "- `Phrase count` and `Phrase bars` expose the bounded phrase-grid evidence behind short-loop/manual-confirm and locked-grid classifications.",
             "- `Downbeat score`, `Downbeat margin`, and `Alt phases` expose the bounded bar-phase confidence behind the selected downbeat offset.",
             "- Lane columns are hit ratios from the underlying manifests; values at or above `0.5` pass the current bounded P012 smoke threshold.",
             "",
