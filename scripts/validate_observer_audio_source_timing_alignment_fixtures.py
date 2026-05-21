@@ -29,6 +29,36 @@ def main() -> int:
         reject_case(
             with_alignment_issues(
                 base,
+                "source_timing_alignment",
+                "aligned",
+                ["source_timing_alignment.bpm_delta=2.000000 > tolerance 1.000000"],
+            ),
+            "source_timing_alignment non-mismatch status must not include issues",
+            tmpdir / "source_timing_aligned_with_issues.json",
+        )
+        reject_case(
+            with_alignment_issues(
+                base,
+                "source_timing_alignment",
+                "mismatch",
+                [],
+            ),
+            "source_timing_alignment mismatch must include an issue",
+            tmpdir / "source_timing_mismatch_without_issues.json",
+        )
+        reject_case(
+            with_alignment_issues(
+                base,
+                "source_timing_alignment",
+                "mismatch",
+                ["source_timing_anchor_alignment.manifest_anchor_count=0"],
+            ),
+            "source_timing_alignment mismatch issue must start",
+            tmpdir / "source_timing_mismatch_wrong_issue_prefix.json",
+        )
+        reject_case(
+            with_alignment_issues(
+                base,
                 "source_timing_anchor_alignment",
                 "aligned",
                 ["source_timing_anchor_alignment.manifest_anchor_count=0"],

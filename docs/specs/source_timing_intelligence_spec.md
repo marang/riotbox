@@ -749,10 +749,10 @@ bounded BPM policy:
   evidence density. Strict evidence should reject clear contradictions, such as
   locked observer groove residuals with no manifest residuals, while keeping
   missing or non-comparable evidence `partial`.
-- observer/audio summary validators must keep anchor/groove alignment status
-  coherent with their issue lists: `mismatch` requires at least one
-  corresponding prefixed issue, while `aligned` and `partial` must not carry
-  alignment issues.
+- observer/audio summary validators must keep the main Source Timing alignment
+  plus anchor/groove alignment status coherent with their issue lists:
+  `mismatch` requires at least one corresponding prefixed issue, while
+  `aligned` and `partial` must not carry alignment issues.
 - app observer snapshots should preserve compact Source Timing detail fields
   derived from Source Graph timing state, including `beat_status`,
   `beat_count`, `downbeat_status`, `primary_downbeat_offset_beats`,
