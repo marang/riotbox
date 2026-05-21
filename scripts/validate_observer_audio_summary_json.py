@@ -67,6 +67,27 @@ SOURCE_TIMING_GRID_USE_COMPATIBILITY = {
     "partial",
     "mismatch",
 }
+SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
+SOURCE_TIMING_BEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
+SOURCE_TIMING_DOWNBEAT_STATUSES = {"unavailable", "weak", "stable", "ambiguous"}
+SOURCE_TIMING_CONFIDENCE_RESULTS = {
+    "degraded",
+    "candidate_cautious",
+    "candidate_ambiguous",
+}
+SOURCE_TIMING_DRIFT_STATUSES = {
+    "unavailable",
+    "not_enough_material",
+    "stable",
+    "high",
+}
+SOURCE_TIMING_PHRASE_STATUSES = {
+    "unavailable",
+    "not_enough_material",
+    "ambiguous_downbeat",
+    "high_drift",
+    "stable",
+}
 
 
 def main() -> int:
@@ -275,18 +296,18 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
     require_string(timing, "policy_profile")
     grid_use = require_optional_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
-    readiness = require_string(timing, "readiness")
+    readiness = require_one_of(timing, "readiness", SOURCE_TIMING_READINESS)
     requires_manual_confirm = require_bool(timing, "requires_manual_confirm")
     require_source_timing_readiness_cue_match(cue, readiness, requires_manual_confirm)
     require_optional_number(timing, "primary_bpm")
     require_optional_bool(timing, "bpm_agrees_with_grid")
-    require_string(timing, "beat_status")
-    require_string(timing, "downbeat_status")
+    require_one_of(timing, "beat_status", SOURCE_TIMING_BEAT_STATUSES)
+    require_one_of(timing, "downbeat_status", SOURCE_TIMING_DOWNBEAT_STATUSES)
     require_optional_int(timing, "primary_downbeat_offset_beats")
-    require_string(timing, "confidence_result")
-    require_string(timing, "drift_status")
-    require_string(timing, "phrase_status")
-    require_int(timing, "alternate_evidence_count")
+    require_one_of(timing, "confidence_result", SOURCE_TIMING_CONFIDENCE_RESULTS)
+    require_one_of(timing, "drift_status", SOURCE_TIMING_DRIFT_STATUSES)
+    require_one_of(timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
+    require_non_negative_int(timing, "alternate_evidence_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")
     require_string_list(timing, "warning_codes")
