@@ -2,6 +2,7 @@
 struct ObserverSourceTimingReadiness {
     source_id: String,
     cue: String,
+    actionability: Option<String>,
     bpm_estimate: Option<f64>,
     bpm_confidence: f64,
     quality: String,
@@ -53,6 +54,21 @@ fn collect_observer_source_timing(
     if cue != expected_cue {
         return (None, true);
     }
+    let actionability = match optional_source_timing_string(source_timing, "actionability") {
+        Ok(Some(value)) => {
+            let Some(expected_actionability) =
+                observer_source_timing_policy_actionability(&degraded_policy)
+            else {
+                return (None, true);
+            };
+            if value != expected_actionability {
+                return (None, true);
+            }
+            Some(value)
+        }
+        Ok(None) => None,
+        Err(()) => return (None, true),
+    };
     let grid_use = match non_empty_string(source_timing, "grid_use") {
         Some(value)
             if matches!(
@@ -78,6 +94,7 @@ fn collect_observer_source_timing(
             None => return (None, true),
         },
         cue,
+        actionability,
         bpm_estimate: match source_timing.get("bpm_estimate") {
             Some(value) if value.is_null() => None,
             Some(value) => match value.as_f64() {
@@ -216,6 +233,17 @@ fn observer_source_timing_policy_cue(policy: &str) -> Option<&'static str> {
             Some(riotbox_app::source_timing_cues::source_timing_policy_cue_label(
                 policy,
             ))
+        }
+        _ => None,
+    }
+}
+
+fn observer_source_timing_policy_actionability(policy: &str) -> Option<&'static str> {
+    match policy {
+        "locked" | "manual_confirm" | "cautious" | "fallback_grid" | "disabled" | "unknown" => {
+            Some(
+                riotbox_app::source_timing_cues::source_timing_policy_actionability_label(policy),
+            )
         }
         _ => None,
     }
