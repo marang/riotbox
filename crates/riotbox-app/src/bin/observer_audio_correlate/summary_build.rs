@@ -43,6 +43,7 @@ struct CorrelationSummary {
 struct SourceTimingEvidence {
     source_id: String,
     policy_profile: String,
+    actionability: Option<String>,
     grid_use: Option<String>,
     readiness: String,
     requires_manual_confirm: bool,
@@ -227,6 +228,10 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
         policy_profile: match source_timing_string(source_timing, "policy_profile") {
             Some(value) => value,
             None => return (None, true),
+        },
+        actionability: match optional_source_timing_string(source_timing, "actionability") {
+            Ok(value) => value,
+            Err(()) => return (None, true),
         },
         grid_use: match optional_source_timing_string(source_timing, "grid_use") {
             Ok(value) => value,

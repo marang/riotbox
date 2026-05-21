@@ -20,6 +20,13 @@ SOURCE_TIMING_BPM_MATCH_TOLERANCE = 1.0
 EPSILON = 0.000001
 SOURCE_TIMING_POLICY_PROFILES = {"broad_research", "dance_loop_auto_readiness"}
 SOURCE_TIMING_READINESS = {"unavailable", "weak", "needs_review", "ready"}
+SOURCE_TIMING_CUES = {"grid locked", "needs confirm", "listen first", "not available"}
+SOURCE_TIMING_ACTIONABILITY = {
+    "grid can steer moves",
+    "confirm grid first",
+    "listen first",
+    "timing unavailable",
+}
 SOURCE_TIMING_GRID_USE = {
     "locked_grid",
     "short_loop_manual_confirm",
@@ -193,6 +200,20 @@ def validate_source_timing(source_timing: Any) -> None:
     require_one_of(source_timing, "policy_profile", SOURCE_TIMING_POLICY_PROFILES)
     require_one_of(source_timing, "readiness", SOURCE_TIMING_READINESS)
     require_bool(source_timing, "requires_manual_confirm", "source_timing")
+    if "cue" in source_timing:
+        require_one_of(source_timing, "cue", SOURCE_TIMING_CUES)
+        require_source_timing_readiness_cue_match(
+            source_timing["cue"],
+            source_timing["readiness"],
+            source_timing["requires_manual_confirm"],
+        )
+    if "actionability" in source_timing:
+        require_one_of(source_timing, "actionability", SOURCE_TIMING_ACTIONABILITY)
+        require_source_timing_readiness_actionability_match(
+            source_timing["actionability"],
+            source_timing["readiness"],
+            source_timing["requires_manual_confirm"],
+        )
     if "grid_use" in source_timing:
         require_one_of(source_timing, "grid_use", SOURCE_TIMING_GRID_USE)
         require_source_timing_grid_use_match(source_timing, source_timing["grid_use"])
@@ -226,6 +247,54 @@ def require_source_timing_grid_use_match(source_timing: dict[str, Any], grid_use
     expected = source_timing_grid_use(source_timing)
     if grid_use != expected:
         raise ValueError(f"source_timing grid_use must be {expected!r}, got {grid_use!r}")
+
+
+def require_source_timing_readiness_cue_match(
+    cue: str, readiness: str, requires_manual_confirm: bool
+) -> None:
+    expected = source_timing_readiness_cue(readiness, requires_manual_confirm)
+    if cue != expected:
+        raise ValueError(
+            "source_timing cue must match readiness/manual-confirm state "
+            f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {cue!r}"
+        )
+
+
+def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -> str:
+    if requires_manual_confirm:
+        return "needs confirm"
+    if readiness == "ready":
+        return "grid locked"
+    if readiness in {"needs_review", "weak"}:
+        return "listen first"
+    if readiness == "unavailable":
+        return "not available"
+    return "unknown"
+
+
+def require_source_timing_readiness_actionability_match(
+    actionability: str, readiness: str, requires_manual_confirm: bool
+) -> None:
+    expected = source_timing_readiness_actionability(readiness, requires_manual_confirm)
+    if actionability != expected:
+        raise ValueError(
+            "source_timing actionability must match readiness/manual-confirm state "
+            f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {actionability!r}"
+        )
+
+
+def source_timing_readiness_actionability(
+    readiness: str, requires_manual_confirm: bool
+) -> str:
+    if requires_manual_confirm:
+        return "confirm grid first"
+    if readiness == "ready":
+        return "grid can steer moves"
+    if readiness in {"needs_review", "weak"}:
+        return "listen first"
+    if readiness == "unavailable":
+        return "timing unavailable"
+    return "unknown"
 
 
 def source_timing_grid_use(source_timing: dict[str, Any]) -> str:

@@ -139,6 +139,11 @@ else:
     require(0.0 < delta < 1.0, "source timing BPM delta is not a bounded fallback delta")
 require(source_timing["readiness"] == "needs_review", "readiness is not needs_review")
 require(source_timing["requires_manual_confirm"] is True, "manual confirmation is not required")
+require(source_timing["cue"] == "needs confirm", "cue is not needs confirm")
+require(
+    source_timing["actionability"] == "confirm grid first",
+    "actionability is not confirm grid first",
+)
 require(
     source_timing["grid_use"] == expected_grid_use,
     f"grid_use is not {expected_grid_use}",
