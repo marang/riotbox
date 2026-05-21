@@ -11,10 +11,12 @@ REQUIRED_SNIPPETS = (
     "Observer/audio generated Feral-grid correlation: `pass`",
     "Recipe 2 observer/audio gate: `pass`",
     "Recipe 15 real-source auto/fallback proof: `pass`",
-    "| Beat03 | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` |",
-    "| Beat08 | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` |",
-    "| DH_BeatC | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` |",
-    "| Beat20 | `static_default` | `source_timing_requires_manual_confirm` | `manual_confirm_only` |",
+    "| Source | Grid source | Decision | Grid use | Action | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
+    "| Beat03 | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` | `confirm grid first` |",
+    "| Beat08 | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` | `confirm grid first` |",
+    "| DH_BeatC | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` | `confirm grid first` |",
+    "| Beat20 | `static_default` | `source_timing_requires_manual_confirm` | `manual_confirm_only` | `confirm grid first` |",
+    "`Action` is the compact musician-facing consequence",
 )
 
 

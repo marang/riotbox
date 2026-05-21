@@ -73,19 +73,20 @@ def render_summary(manifests: list[tuple[str, dict[str, Any]]]) -> str:
         "",
         "## Recipe 15 Source-Timing Outcomes",
         "",
-        "| Source | Grid source | Decision | Grid use | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
-        "| --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |",
+        "| Source | Grid source | Decision | Grid use | Action | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
+        "| --- | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |",
     ]
 
     for name, manifest in manifests:
         source_timing = object_field(manifest, "source_timing")
         metrics = object_field(manifest, "metrics")
         lines.append(
-            "| {name} | `{grid_source}` | `{decision}` | `{grid_use}` | {bpm} | `{downbeat}` | {tr909} | {mc202} | {w30} | {mix} |".format(
+            "| {name} | `{grid_source}` | `{decision}` | `{grid_use}` | `{action}` | {bpm} | `{downbeat}` | {tr909} | {mc202} | {w30} | {mix} |".format(
                 name=name,
                 grid_source=string_field(manifest, "grid_bpm_source"),
                 decision=string_field(manifest, "grid_bpm_decision_reason"),
                 grid_use=string_field(source_timing, "grid_use"),
+                action=string_field(source_timing, "actionability"),
                 bpm=format_optional_float(source_timing.get("primary_bpm")),
                 downbeat=string_field(source_timing, "downbeat_status"),
                 tr909=format_metric_hit_ratio(metrics, "tr909_source_grid_alignment"),
@@ -102,6 +103,7 @@ def render_summary(manifests: list[tuple[str, dict[str, Any]]]) -> str:
             "",
             "- `source_timing` rows used the current Source Timing BPM while still carrying visible manual-confirm policy where required.",
             "- `static_default` rows prove the conservative fallback boundary; Beat20 currently has useful BPM evidence but ambiguous downbeat evidence.",
+            "- `Action` is the compact musician-facing consequence from each manifest's Source Timing evidence.",
             "- Lane columns are hit ratios from the underlying manifests; values at or above `0.5` pass the current bounded P012 smoke threshold.",
             "",
         ]

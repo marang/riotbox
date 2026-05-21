@@ -145,7 +145,9 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(
         markdown.contains("beat=tempo_only(0) downbeat=unknown(0) offset=none phrase=uncertain(0)")
     );
-    assert!(markdown.contains("Source timing readiness: `grid locked readiness=ready"));
+    assert!(markdown.contains(
+        "Source timing readiness: `grid locked actionability=grid can steer moves readiness=ready"
+    ));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("TR-909 source-grid alignment: `hit_ratio=1.000000"));
     assert!(markdown.contains("W-30 source-grid alignment: `hit_ratio=1.000000"));

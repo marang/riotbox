@@ -26,6 +26,14 @@ SOURCE_TIMING_CUE_BY_POLICY = {
     "unknown": "unknown",
 }
 SOURCE_TIMING_CUES = set(SOURCE_TIMING_CUE_BY_POLICY.values())
+SOURCE_TIMING_ACTIONABILITY = {
+    "grid can steer moves",
+    "confirm grid first",
+    "listen first",
+    "timing unavailable",
+    "using safe fallback grid",
+    "unknown",
+}
 GROOVE_SUBDIVISIONS = {
     "eighth",
     "triplet",
@@ -296,11 +304,18 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     timing = require_object(value, field)
     require_string(timing, "source_id")
     cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
+    actionability = require_optional_one_of(
+        timing, "actionability", SOURCE_TIMING_ACTIONABILITY
+    )
     require_string(timing, "policy_profile")
     grid_use = require_nullable_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
     readiness = require_one_of(timing, "readiness", SOURCE_TIMING_READINESS)
     requires_manual_confirm = require_bool(timing, "requires_manual_confirm")
     require_source_timing_readiness_cue_match(cue, readiness, requires_manual_confirm)
+    if actionability is not None:
+        require_source_timing_readiness_actionability_match(
+            actionability, readiness, requires_manual_confirm
+        )
     require_optional_number(timing, "primary_bpm")
     require_optional_bool(timing, "bpm_agrees_with_grid")
     require_one_of(timing, "beat_status", SOURCE_TIMING_BEAT_STATUSES)
@@ -1027,6 +1042,31 @@ def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -
         return "listen first"
     if readiness == "unavailable":
         return "not available"
+    return "unknown"
+
+
+def require_source_timing_readiness_actionability_match(
+    actionability: str, readiness: str, requires_manual_confirm: bool
+) -> None:
+    expected = source_timing_readiness_actionability(readiness, requires_manual_confirm)
+    if actionability != expected:
+        raise ValueError(
+            "source_timing.actionability must match readiness/manual-confirm state "
+            f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {actionability!r}"
+        )
+
+
+def source_timing_readiness_actionability(
+    readiness: str, requires_manual_confirm: bool
+) -> str:
+    if requires_manual_confirm:
+        return "confirm grid first"
+    if readiness == "ready":
+        return "grid can steer moves"
+    if readiness in {"needs_review", "weak"}:
+        return "listen first"
+    if readiness == "unavailable":
+        return "timing unavailable"
     return "unknown"
 
 

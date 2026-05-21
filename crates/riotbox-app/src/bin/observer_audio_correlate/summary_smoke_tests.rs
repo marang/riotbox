@@ -115,7 +115,9 @@ fn summarizes_synthetic_observer_and_manifest() {
         "Observer source timing: `src-timing cue=needs confirm actionability=confirm grid first grid_use=manual_confirm_only"
     ));
     assert!(markdown.contains("anchors=3(kick=1 backbeat=1 transient=1)"));
-    assert!(markdown.contains("Source timing readiness: `needs confirm readiness=weak"));
+    assert!(markdown.contains(
+        "Source timing readiness: `needs confirm actionability=confirm grid first readiness=weak"
+    ));
     assert!(markdown.contains("Source timing grid use: `manual_confirm_only`"));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
@@ -182,6 +184,10 @@ fn summarizes_synthetic_observer_and_manifest() {
         "ambiguous_downbeat"
     );
     assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
+    assert_eq!(
+        json["output_path"]["source_timing"]["actionability"],
+        "confirm grid first"
+    );
     assert_eq!(
         json["output_path"]["source_timing"]["grid_use"],
         "manual_confirm_only"
@@ -250,6 +256,8 @@ fn synthetic_manifest() -> String {
     "grid_use": "manual_confirm_only",
     "readiness": "weak",
     "requires_manual_confirm": true,
+    "cue": "needs confirm",
+    "actionability": "confirm grid first",
     "primary_bpm": 128.397,
     "bpm_agrees_with_grid": true,
     "beat_status": "stable",

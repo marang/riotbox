@@ -664,6 +664,11 @@ bounded BPM policy:
   kick, backbeat, and generic transient counts; this keeps downstream listening
   QA from trusting a readiness label without seeing what musical timing anchors
   supported it
+- generated Feral grid manifests must preserve compact musician-facing
+  `source_timing.cue` and `source_timing.actionability` fields beside
+  readiness, manual-confirm, and grid-use evidence, so the P012 all-lane proof
+  can show the timing consequence without asking reviewers to decode raw
+  policy fields
 - generated Feral grid packs should also expose a bounded output-drift smoke
   metric for the complete generated-support mix, currently
   `metrics.source_grid_output_drift`, so QA can catch obvious

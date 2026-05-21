@@ -139,6 +139,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "source_timing": summary.source_timing.as_ref().map(|timing| serde_json::json!({
                 "source_id": &timing.source_id,
                 "cue": source_timing_readiness_cue(timing),
+                "actionability": source_timing_readiness_actionability(timing),
                 "policy_profile": &timing.policy_profile,
                 "grid_use": &timing.grid_use,
                 "readiness": &timing.readiness,
@@ -228,8 +229,9 @@ fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {
         || "unknown".to_string(),
         |timing| {
             format!(
-                "{} readiness={} manual_confirm={}",
+                "{} actionability={} readiness={} manual_confirm={}",
                 source_timing_readiness_cue(timing),
+                source_timing_readiness_actionability(timing),
                 timing.readiness,
                 yes_no(timing.requires_manual_confirm)
             )
@@ -254,6 +256,21 @@ fn source_timing_readiness_cue(timing: &SourceTimingEvidence) -> &'static str {
         &timing.readiness,
         timing.requires_manual_confirm,
     )
+}
+
+fn source_timing_readiness_actionability(timing: &SourceTimingEvidence) -> &str {
+    timing.actionability.as_deref().unwrap_or({
+        if timing.requires_manual_confirm {
+            "confirm grid first"
+        } else {
+            match timing.readiness.as_str() {
+                "ready" => "grid can steer moves",
+                "needs_review" | "weak" => "listen first",
+                "unavailable" => "timing unavailable",
+                _ => "unknown",
+            }
+        }
+    })
 }
 
 fn format_source_timing_downbeat(summary: &CorrelationSummary) -> String {
