@@ -22,6 +22,7 @@
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
+      "primary_downbeat_offset_beats": 0,
       "phrase_status": "not_enough_material",
       "warning_codes_exact": [
         "phrase_uncertain"
@@ -59,6 +60,7 @@
       },
       "beat_status": "stable",
       "downbeat_status": "stable",
+      "primary_downbeat_offset_beats": 0,
       "phrase_status": "stable",
       "warning_codes_exact": [],
       "primary_beat_matched_onset_ratio": {

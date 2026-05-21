@@ -196,8 +196,10 @@ Rules:
   when unavailable.
 - source timing QA reports should expose downbeat-phase evidence behind bar-grid
   selection: primary phase offset, score, alternate-phase count, and whether the
-  evidence is unavailable, weak, stable, or ambiguous. This explains why a bar
-  phase was selected without making it a separate timing authority.
+  evidence is unavailable, weak, stable, or ambiguous. The compact example
+  report should include the selected primary downbeat offset when available and
+  render unavailable offsets explicitly as `none`. This explains why a bar phase
+  was selected without making it a separate timing authority.
 - source timing QA may also expose a combined readiness report that folds
   candidate confidence, beat-period evidence, and downbeat-phase evidence into a
   compact status such as unavailable, weak, needs-review, or ready. This report
