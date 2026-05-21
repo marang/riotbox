@@ -508,4 +508,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface Source Timing actionability in P012 all-lane proof manifests
 - [RIOTBOX-879.md](./RIOTBOX-879.md)
   Add Source Timing actionability to probe CLI summaries
+- [RIOTBOX-880.md](./RIOTBOX-880.md)
+  Review P012 Source Timing actionability surface after proof and probe alignment
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
