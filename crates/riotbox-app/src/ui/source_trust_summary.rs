@@ -353,6 +353,7 @@ fn source_timing_policy_cue_style(policy: &str) -> Style {
 
 fn jam_source_timing_warning_code_label(code: &TimingWarningCode) -> &'static str {
     match code {
+        TimingWarningCode::SparseOnsets => "sparse_onsets",
         TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
         TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
         TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",

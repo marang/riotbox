@@ -250,6 +250,7 @@ fn bounded_time(time_seconds: f32, duration_seconds: f32) -> f32 {
 
 fn timing_warning_message(code: TimingWarningCode) -> &'static str {
     match code {
+        TimingWarningCode::SparseOnsets => "too few timing onsets",
         TimingWarningCode::WeakKickAnchor => "weak kick anchor",
         TimingWarningCode::WeakBackbeatAnchor => "weak backbeat anchor",
         TimingWarningCode::AmbiguousDownbeat => "ambiguous downbeat",

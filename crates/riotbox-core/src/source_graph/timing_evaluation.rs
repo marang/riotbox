@@ -357,6 +357,7 @@ fn timing_warning_code_from_label(
     label: &str,
 ) -> Result<TimingWarningCode, String> {
     match label {
+        "sparse_onsets" => Ok(TimingWarningCode::SparseOnsets),
         "weak_kick_anchor" => Ok(TimingWarningCode::WeakKickAnchor),
         "weak_backbeat_anchor" => Ok(TimingWarningCode::WeakBackbeatAnchor),
         "ambiguous_downbeat" => Ok(TimingWarningCode::AmbiguousDownbeat),

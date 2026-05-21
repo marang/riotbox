@@ -334,6 +334,7 @@ fn probe_bpm_warning_message(
         TimingWarningCode::HalfTimePossible => "half-time BPM candidate preserved",
         TimingWarningCode::DoubleTimePossible => "double-time BPM candidate preserved",
         TimingWarningCode::LowTimingConfidence => "BPM candidate confidence is low",
+        TimingWarningCode::SparseOnsets => "BPM candidate has too few timing onsets",
         TimingWarningCode::WeakKickAnchor => "BPM candidate has no trusted kick anchor yet",
         TimingWarningCode::WeakBackbeatAnchor => "BPM candidate has no trusted backbeat anchor yet",
         TimingWarningCode::DriftHigh => {

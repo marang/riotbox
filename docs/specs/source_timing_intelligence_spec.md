@@ -237,12 +237,13 @@ order. Current priority is:
 
 1. `drift_high`
 2. `ambiguous_downbeat`
-3. `low_timing_confidence`
-4. `weak_kick_anchor`
-5. `weak_backbeat_anchor`
-6. `half_time_possible`
-7. `double_time_possible`
-8. `phrase_uncertain`
+3. `sparse_onsets`
+4. `low_timing_confidence`
+5. `weak_kick_anchor`
+6. `weak_backbeat_anchor`
+7. `half_time_possible`
+8. `double_time_possible`
+9. `phrase_uncertain`
 
 Surfaces may show only this primary warning for focus, but raw observer/source
 diagnostic fields such as `warning_codes` should still preserve the full Source
@@ -347,6 +348,7 @@ Timing confidence must be user-visible and machine-checkable.
 
 Minimum warning classes:
 
+- `sparse_onsets`
 - `weak_kick_anchor`
 - `weak_backbeat_anchor`
 - `ambiguous_downbeat`

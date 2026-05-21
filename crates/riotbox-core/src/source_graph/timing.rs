@@ -182,6 +182,7 @@ pub struct TimingWarning {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TimingWarningCode {
+    SparseOnsets,
     WeakKickAnchor,
     WeakBackbeatAnchor,
     AmbiguousDownbeat,

@@ -48,6 +48,7 @@ fn source_timing_probe_diagnostics_keep_sparse_onsets_low_confidence() {
     );
     assert!(timing.bpm_confidence < 0.5);
     assert!(has_warning(&timing, TimingWarningCode::LowTimingConfidence));
+    assert!(has_warning(&timing, TimingWarningCode::SparseOnsets));
 }
 
 #[test]

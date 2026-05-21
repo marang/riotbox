@@ -339,6 +339,7 @@ fn phrase_status_label(status: SourceTimingCandidatePhraseStatus) -> &'static st
 
 fn warning_code_label(code: TimingWarningCode) -> &'static str {
     match code {
+        TimingWarningCode::SparseOnsets => "sparse_onsets",
         TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
         TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
         TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",
