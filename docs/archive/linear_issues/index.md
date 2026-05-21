@@ -546,4 +546,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Require Recipe 15 real-source fixtures in the P012 all-lane proof gate
 - [RIOTBOX-898.md](./RIOTBOX-898.md)
   Accept SparseOnsets in Source Timing fixture-report validator
+- [RIOTBOX-899.md](./RIOTBOX-899.md)
+  Expose Source Timing phrase counts in probe and example reports
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
