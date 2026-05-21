@@ -40,6 +40,26 @@ pub fn source_timing_readiness_cue_label(
     }
 }
 
+pub fn source_timing_readiness_actionability_label(
+    readiness: &str,
+    requires_manual_confirm: bool,
+) -> &'static str {
+    if readiness == "unavailable" {
+        return "timing unavailable";
+    }
+
+    if requires_manual_confirm {
+        return "confirm grid first";
+    }
+
+    match readiness {
+        "ready" => "grid can steer moves",
+        "needs_review" | "weak" => "listen first",
+        "unavailable" => unreachable!(),
+        _ => "unknown",
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -116,6 +136,38 @@ mod tests {
         );
         assert_eq!(
             source_timing_readiness_cue_label("surprise", false),
+            "unknown"
+        );
+    }
+
+    #[test]
+    fn source_timing_readiness_actionability_prioritizes_unavailable_then_manual_confirm() {
+        assert_eq!(
+            source_timing_readiness_actionability_label("ready", false),
+            "grid can steer moves"
+        );
+        assert_eq!(
+            source_timing_readiness_actionability_label("ready", true),
+            "confirm grid first"
+        );
+        assert_eq!(
+            source_timing_readiness_actionability_label("weak", false),
+            "listen first"
+        );
+        assert_eq!(
+            source_timing_readiness_actionability_label("needs_review", false),
+            "listen first"
+        );
+        assert_eq!(
+            source_timing_readiness_actionability_label("unavailable", false),
+            "timing unavailable"
+        );
+        assert_eq!(
+            source_timing_readiness_actionability_label("unavailable", true),
+            "timing unavailable"
+        );
+        assert_eq!(
+            source_timing_readiness_actionability_label("surprise", false),
             "unknown"
         );
     }
