@@ -548,4 +548,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Accept SparseOnsets in Source Timing fixture-report validator
 - [RIOTBOX-899.md](./RIOTBOX-899.md)
   Expose Source Timing phrase counts in probe and example reports
+- [RIOTBOX-900.md](./RIOTBOX-900.md)
+  Preserve Source Timing phrase counts in Feral-grid manifests
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
