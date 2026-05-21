@@ -484,4 +484,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Pin Beat08 auto-BPM Feral grid Source Timing path
 - [RIOTBOX-867.md](./RIOTBOX-867.md)
   Pin Beat20 ambiguous auto-BPM Feral grid fallback path
+- [RIOTBOX-868.md](./RIOTBOX-868.md)
+  Add aggregate Recipe 15 Feral grid auto proof target
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
