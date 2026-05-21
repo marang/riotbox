@@ -4,6 +4,7 @@
   "source_path": "fixtures/generated/silence.wav",
   "source_id": "fixture-unavailable-silence",
   "cue": "needs confirm",
+  "actionability": "confirm grid first",
   "readiness": "unavailable",
   "requires_manual_confirm": true,
   "grid_use": "unavailable",

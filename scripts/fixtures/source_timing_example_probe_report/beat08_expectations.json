@@ -2,6 +2,7 @@
   "sources": {
     "Beat08_128BPM(Full).wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
@@ -40,6 +41,7 @@
     },
     "long_stable_lock.wav": {
       "cue": "grid locked",
+      "actionability": "grid can steer moves",
       "readiness": "ready",
       "requires_manual_confirm": false,
       "grid_use": "locked_grid",

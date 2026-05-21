@@ -568,8 +568,9 @@ primary timing hypothesis:
   smoke is `just source-timing-example-probe-report-fixtures`.
 - the example report may use an optional expectations file for conservative
   local regression checks. Expectations should cover stable review fields such
-  as cue, readiness, manual-confirm, BPM tolerance, beat/downbeat/phrase status,
-  confidence result, drift status, alternate evidence count, bounded
+  as cue, actionability, readiness, manual-confirm, BPM tolerance,
+  beat/downbeat/phrase status, confidence result, drift status, alternate
+  evidence count, bounded
   beat/downbeat score ranges, and warning-code presence or exact warning-code
   sets; missing local WAVs must remain skipped instead of failing fresh clones.
 - example report expectation fixtures must be strict enough to catch fixture

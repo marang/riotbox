@@ -4,6 +4,7 @@
   "source_path": "fixtures/generated/flat_pulse_ambiguous.wav",
   "source_id": "fixture-weak-ambiguous-flat-pulse",
   "cue": "needs confirm",
+  "actionability": "confirm grid first",
   "readiness": "weak",
   "requires_manual_confirm": true,
   "grid_use": "manual_confirm_only",

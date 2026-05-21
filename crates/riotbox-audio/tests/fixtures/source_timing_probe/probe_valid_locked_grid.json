@@ -4,6 +4,7 @@
   "source_path": "fixtures/generated/long_stable_lock.wav",
   "source_id": "fixture-long-stable-lock",
   "cue": "grid locked",
+  "actionability": "grid can steer moves",
   "readiness": "ready",
   "requires_manual_confirm": false,
   "grid_use": "locked_grid",

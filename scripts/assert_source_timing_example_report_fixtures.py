@@ -34,6 +34,7 @@ EXPECTED_ROWS = {
     "Beat08_128BPM(Full).wav": {
         "status": "probed",
         "cue": "needs confirm",
+        "actionability": "confirm grid first",
         "readiness": "needs_review",
         "manual_confirm": "yes",
         "grid_use": "short_loop_manual_confirm",
@@ -59,6 +60,7 @@ EXPECTED_ROWS = {
     "long_stable_lock.wav": {
         "status": "probed",
         "cue": "grid locked",
+        "actionability": "grid can steer moves",
         "readiness": "ready",
         "manual_confirm": "no",
         "grid_use": "locked_grid",
@@ -84,6 +86,7 @@ EXPECTED_ROWS = {
     "flat_pulse_ambiguous.wav": {
         "status": "probed",
         "cue": "needs confirm",
+        "actionability": "confirm grid first",
         "readiness": "weak",
         "manual_confirm": "yes",
         "grid_use": "manual_confirm_only",
@@ -109,6 +112,7 @@ EXPECTED_ROWS = {
     "silence.wav": {
         "status": "probed",
         "cue": "needs confirm",
+        "actionability": "confirm grid first",
         "readiness": "unavailable",
         "manual_confirm": "yes",
         "grid_use": "unavailable",

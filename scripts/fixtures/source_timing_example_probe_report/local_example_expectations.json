@@ -2,6 +2,7 @@
   "sources": {
     "Beat03_130BPM(Full).wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
@@ -39,6 +40,7 @@
     },
     "Beat08_128BPM(Full).wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
@@ -76,6 +78,7 @@
     },
     "Beat20_128BPM(Full).wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "manual_confirm_only",
@@ -114,6 +117,7 @@
     },
     "DH_BeatC_120-01.wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
@@ -151,6 +155,7 @@
     },
     "DH_BeatC_KickSnr_120-01.wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "short_loop_manual_confirm",
@@ -188,6 +193,7 @@
     },
     "DH_Fadapad_120_A.wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "unavailable",
       "requires_manual_confirm": true,
       "grid_use": "unavailable",
@@ -206,6 +212,7 @@
     },
     "DH_RushArp_120_A.wav": {
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "readiness": "unavailable",
       "requires_manual_confirm": true,
       "grid_use": "unavailable",

@@ -17,6 +17,12 @@ SOURCE_TIMING_CUES = {
     "listen first",
     "not available",
 }
+SOURCE_TIMING_ACTIONABILITY = {
+    "grid can steer moves",
+    "confirm grid first",
+    "listen first",
+    "timing unavailable",
+}
 GRID_USE = {
     "locked_grid",
     "short_loop_manual_confirm",
@@ -66,9 +72,15 @@ def validate_summary(summary: Any) -> None:
     require_string(summary, "source_path")
     require_string(summary, "source_id")
     cue = require_one_of(summary, "cue", SOURCE_TIMING_CUES)
+    actionability = require_one_of(
+        summary, "actionability", SOURCE_TIMING_ACTIONABILITY
+    )
     readiness = require_one_of(summary, "readiness", {"ready", "needs_review", "weak", "unavailable"})
     requires_manual_confirm = require_bool(summary, "requires_manual_confirm")
     require_probe_cue_match(cue, readiness, requires_manual_confirm)
+    require_probe_actionability_match(
+        actionability, readiness, requires_manual_confirm
+    )
     grid_use = require_one_of(summary, "grid_use", GRID_USE)
     require_optional_number(summary, "primary_bpm")
     require_optional_unit_number(summary, "primary_beat_score")
@@ -260,6 +272,17 @@ def require_probe_cue_match(cue: str, readiness: str, requires_manual_confirm: b
         )
 
 
+def require_probe_actionability_match(
+    actionability: str, readiness: str, requires_manual_confirm: bool
+) -> None:
+    expected = source_timing_readiness_actionability(readiness, requires_manual_confirm)
+    if actionability != expected:
+        raise ValueError(
+            "actionability must match readiness/manual-confirm state "
+            f"{readiness!r}/{requires_manual_confirm!r}: expected {expected!r}, got {actionability!r}"
+        )
+
+
 def require_grid_use_match(summary: dict[str, Any], grid_use: str) -> None:
     primary_bpm = summary.get("primary_bpm")
     readiness = summary["readiness"]
@@ -311,6 +334,18 @@ def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -
     if readiness in {"needs_review", "weak"}:
         return "listen first"
     return "not available"
+
+
+def source_timing_readiness_actionability(
+    readiness: str, requires_manual_confirm: bool
+) -> str:
+    if requires_manual_confirm:
+        return "confirm grid first"
+    if readiness == "ready":
+        return "grid can steer moves"
+    if readiness in {"needs_review", "weak"}:
+        return "listen first"
+    return "timing unavailable"
 
 
 if __name__ == "__main__":

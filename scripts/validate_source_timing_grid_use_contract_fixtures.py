@@ -27,6 +27,7 @@ SUMMARY_FIXTURE = (
 class GridUseCase:
     grid_use: str
     cue: str
+    actionability: str
     readiness: str
     requires_manual_confirm: bool
     primary_bpm: float | None
@@ -46,6 +47,7 @@ CASES = [
     GridUseCase(
         grid_use="locked_grid",
         cue="grid locked",
+        actionability="grid can steer moves",
         readiness="ready",
         requires_manual_confirm=False,
         primary_bpm=128.0,
@@ -63,6 +65,7 @@ CASES = [
     GridUseCase(
         grid_use="short_loop_manual_confirm",
         cue="needs confirm",
+        actionability="confirm grid first",
         readiness="needs_review",
         requires_manual_confirm=True,
         primary_bpm=128.0,
@@ -80,6 +83,7 @@ CASES = [
     GridUseCase(
         grid_use="manual_confirm_only",
         cue="needs confirm",
+        actionability="confirm grid first",
         readiness="needs_review",
         requires_manual_confirm=True,
         primary_bpm=128.0,
@@ -97,6 +101,7 @@ CASES = [
     GridUseCase(
         grid_use="fallback_grid",
         cue="listen first",
+        actionability="listen first",
         readiness="weak",
         requires_manual_confirm=False,
         primary_bpm=128.0,
@@ -114,6 +119,7 @@ CASES = [
     GridUseCase(
         grid_use="unavailable",
         cue="needs confirm",
+        actionability="confirm grid first",
         readiness="unavailable",
         requires_manual_confirm=True,
         primary_bpm=None,
@@ -190,6 +196,7 @@ def build_probe(base: dict[str, Any], case: GridUseCase) -> dict[str, Any]:
     data = copy.deepcopy(base)
     apply_timing_fields(data, case)
     data["cue"] = case.cue
+    data["actionability"] = case.actionability
     data["grid_use"] = case.grid_use
     return data
 
@@ -200,6 +207,8 @@ def build_manifest(base: dict[str, Any], case: GridUseCase) -> dict[str, Any]:
     data["grid_bpm_decision_reason"] = case.grid_bpm_decision_reason
     data["source_timing_bpm_delta"] = case.source_timing_bpm_delta
     apply_timing_fields(data["source_timing"], case)
+    data["source_timing"]["cue"] = case.cue
+    data["source_timing"]["actionability"] = case.actionability
     data["source_timing"]["grid_use"] = case.grid_use
     data["source_timing"]["bpm_agrees_with_grid"] = case.bpm_agrees_with_grid
     return data
@@ -213,6 +222,7 @@ def build_summary(base: dict[str, Any], case: GridUseCase) -> dict[str, Any]:
     output["source_timing_bpm_delta"] = case.source_timing_bpm_delta
     apply_timing_fields(output["source_timing"], case)
     output["source_timing"]["cue"] = case.cue
+    output["source_timing"]["actionability"] = case.actionability
     output["source_timing"]["grid_use"] = case.grid_use
     output["source_timing"]["bpm_agrees_with_grid"] = case.bpm_agrees_with_grid
     return data
