@@ -474,4 +474,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review current P012 Source Timing spine for next product slice
 - [RIOTBOX-862.md](./RIOTBOX-862.md)
   Improve real-source short-loop timing confidence on Beat20
+- [RIOTBOX-863.md](./RIOTBOX-863.md)
+  Refresh Source Timing example report snapshot after Beat20 ambiguity update
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
