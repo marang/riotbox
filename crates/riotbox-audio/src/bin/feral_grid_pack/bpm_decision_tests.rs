@@ -169,6 +169,8 @@ mod bpm_decision_tests {
             source_id: "source.wav".into(),
             primary_bpm,
             primary_downbeat_offset_beats: Some(0),
+            primary_downbeat_score: Some(0.75),
+            alternate_downbeat_phase_count: 0,
             beat_status: SourceTimingProbeBeatEvidenceStatus::Stable,
             downbeat_status: SourceTimingProbeDownbeatEvidenceStatus::Stable,
             confidence_result: SourceTimingCandidateConfidenceResult::CandidateCautious,
