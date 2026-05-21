@@ -448,4 +448,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate observer/audio scalar metric ranges
 - [RIOTBOX-848.md](./RIOTBOX-848.md)
   Validate observer/audio Source Timing status enums
+- [RIOTBOX-849.md](./RIOTBOX-849.md)
+  Validate observer/audio lane recipe metric ranges
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
