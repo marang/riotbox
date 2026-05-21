@@ -229,6 +229,18 @@ def validate_source_timing(source_timing: Any) -> None:
         "primary_downbeat_offset_beats",
         "source_timing primary_downbeat_offset_beats",
     )
+    require_optional_unit_float_or_null(
+        source_timing,
+        "primary_downbeat_score",
+        "source_timing primary_downbeat_score",
+        require_present=False,
+    )
+    if "alternate_downbeat_phase_count" in source_timing:
+        require_non_negative_int(
+            source_timing,
+            "alternate_downbeat_phase_count",
+            "source_timing",
+        )
     require_one_of(source_timing, "beat_status", SOURCE_TIMING_BEAT_STATUSES)
     require_one_of(source_timing, "downbeat_status", SOURCE_TIMING_DOWNBEAT_STATUSES)
     require_one_of(source_timing, "confidence_result", SOURCE_TIMING_CONFIDENCE_RESULTS)
@@ -257,6 +269,17 @@ def validate_generated_feral_grid_source_timing(source_timing: Any | None) -> No
         timing["actionability"],
         timing["readiness"],
         timing["requires_manual_confirm"],
+    )
+    require_optional_unit_float_or_null(
+        timing,
+        "primary_downbeat_score",
+        "source_timing primary_downbeat_score",
+        require_present=True,
+    )
+    require_non_negative_int(
+        timing,
+        "alternate_downbeat_phase_count",
+        "source_timing",
     )
 
 
@@ -703,6 +726,24 @@ def require_optional_float_or_null(parent: dict[str, Any], field: str, name: str
     value = parent.get(field)
     if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
         raise TypeError(f"{name} must be a number or null")
+
+
+def require_optional_unit_float_or_null(
+    parent: dict[str, Any],
+    field: str,
+    name: str,
+    *,
+    require_present: bool,
+) -> None:
+    if require_present and field not in parent:
+        raise TypeError(f"{name} must be present as a number or null")
+    value = parent.get(field)
+    if value is None:
+        return
+    if not isinstance(value, (int, float)) or isinstance(value, bool):
+        raise TypeError(f"{name} must be a number or null")
+    if not 0.0 <= float(value) <= 1.0:
+        raise ValueError(f"{name} must be between 0 and 1")
 
 
 def require_optional_non_negative_int_or_null(

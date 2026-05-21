@@ -169,6 +169,18 @@ def main() -> int:
             ["python3", "scripts/validate_observer_audio_summary_json.py"],
             nested=True,
         )
+        reject_manifest_source_timing_field(
+            build_manifest(manifest_base, CASES[1]),
+            "primary_downbeat_score",
+            "source_timing primary_downbeat_score must be present",
+            tmpdir / "manifest_missing_downbeat_score.json",
+        )
+        reject_manifest_source_timing_field(
+            build_manifest(manifest_base, CASES[1]),
+            "alternate_downbeat_phase_count",
+            "source_timing alternate_downbeat_phase_count must be a non-negative integer",
+            tmpdir / "manifest_missing_downbeat_phase_count.json",
+        )
 
     print(f"source timing grid_use contract fixtures ok: cases={len(CASES)} surfaces=3")
     return 0
@@ -238,7 +250,40 @@ def apply_timing_fields(target: dict[str, Any], case: GridUseCase) -> None:
     target["drift_status"] = case.drift_status
     target["phrase_status"] = case.phrase_status
     target["alternate_evidence_count"] = case.alternate_evidence_count
+    if case.downbeat_status == "unavailable":
+        target["primary_downbeat_score"] = None
+        target["alternate_downbeat_phase_count"] = 0
+    elif case.downbeat_status == "ambiguous":
+        target["primary_downbeat_score"] = 0.268
+        target["alternate_downbeat_phase_count"] = 3
+    else:
+        target["primary_downbeat_score"] = 0.565
+        target["alternate_downbeat_phase_count"] = 0
     target["warning_codes"] = []
+
+
+def reject_manifest_source_timing_field(
+    data: dict[str, Any],
+    field: str,
+    expected_error: str,
+    path: pathlib.Path,
+) -> None:
+    data["source_timing"].pop(field, None)
+    write_json(path, data)
+    result = subprocess.run(
+        ["python3", "scripts/validate_listening_manifest_json.py", str(path)],
+        cwd=REPO_ROOT,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        check=False,
+    )
+    if result.returncode == 0:
+        raise SystemExit(f"expected missing source_timing field fixture to fail: {path}")
+    if expected_error not in result.stderr:
+        raise SystemExit(
+            f"expected {expected_error!r} in validator error for {path}, got:\n{result.stderr}"
+        )
 
 
 def reject_mismatched_grid_use(

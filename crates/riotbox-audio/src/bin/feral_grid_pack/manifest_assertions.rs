@@ -396,6 +396,13 @@ mod manifest_assertions {
                     .as_u64()
                     .is_some_and(|value| value < 4)
         );
+        assert!(
+            source_timing["primary_downbeat_score"].is_null()
+                || source_timing["primary_downbeat_score"]
+                    .as_f64()
+                    .is_some_and(|value| (0.0..=1.0).contains(&value))
+        );
+        assert!(source_timing["alternate_downbeat_phase_count"].is_u64());
         assert!(source_timing["beat_status"].as_str().is_some_and(|value| {
             matches!(value, "unavailable" | "weak" | "stable" | "ambiguous")
         }));

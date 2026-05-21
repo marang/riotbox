@@ -25,6 +25,8 @@
     "primary_bpm": 128.397,
     "bpm_agrees_with_grid": true,
     "primary_downbeat_offset_beats": 0,
+    "primary_downbeat_score": 0.268,
+    "alternate_downbeat_phase_count": 3,
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "confidence_result": "candidate_ambiguous",

@@ -161,6 +161,16 @@ require(
     source_timing["primary_downbeat_offset_beats"] == downbeat_offset,
     f"unexpected {profile} downbeat offset",
 )
+downbeat_score = source_timing["primary_downbeat_score"]
+require(
+    downbeat_score is None or 0.0 <= downbeat_score <= 1.0,
+    "primary downbeat score is not null or a unit score",
+)
+require(
+    isinstance(source_timing["alternate_downbeat_phase_count"], int)
+    and source_timing["alternate_downbeat_phase_count"] >= 0,
+    "alternate downbeat phase count is not a non-negative integer",
+)
 require(
     source_timing["confidence_result"] == expected_confidence_result,
     f"confidence is not {expected_confidence_result}",

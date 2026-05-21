@@ -106,6 +106,8 @@ pub struct SourceTimingProbeReadinessReport {
     pub source_id: String,
     pub primary_bpm: Option<f32>,
     pub primary_downbeat_offset_beats: Option<u8>,
+    pub primary_downbeat_score: Option<f32>,
+    pub alternate_downbeat_phase_count: usize,
     pub beat_status: SourceTimingProbeBeatEvidenceStatus,
     pub downbeat_status: SourceTimingProbeDownbeatEvidenceStatus,
     pub confidence_result: SourceTimingCandidateConfidenceResult,

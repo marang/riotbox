@@ -17,12 +17,13 @@ REQUIRED_SNIPPETS = (
     "| risky override | `user_override` | `user_override` | `manual_confirm_only` | `short_loop_manual_confirm` | `compatible` | `partial` | `aligned` | 0 |",
     "| fallback | `static_default` | `source_timing_missing_bpm` | `unavailable` | `unavailable` | `aligned` | `partial` | `aligned` | 0 |",
     "| locked grid | `source_timing` | `source_timing_ready` | `locked_grid` | `locked_grid` | `aligned` | `aligned` | `aligned` | 0 |",
-    "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
+    "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | Downbeat score | Alt phases | TR-909 | MC-202 | W-30 | Mix |",
     "| Beat03 | `needs confirm` | `confirm grid first` | `needs_review` | `yes` | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` |",
     "| Beat08 | `needs confirm` | `confirm grid first` | `needs_review` | `yes` | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` |",
     "| DH_BeatC | `needs confirm` | `confirm grid first` | `needs_review` | `yes` | `source_timing` | `source_timing_needs_review_manual_confirm` | `short_loop_manual_confirm` |",
     "| Beat20 | `needs confirm` | `confirm grid first` | `needs_review` | `yes` | `static_default` | `source_timing_requires_manual_confirm` | `manual_confirm_only` |",
     "`Cue` and `Action` are the compact musician-facing consequence",
+    "`Downbeat score` and `Alt phases` expose the bounded bar-phase confidence",
     "Generated Feral-grid observer/audio rows show whether control-path and output-path timing evidence agreed",
 )
 

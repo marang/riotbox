@@ -47,6 +47,10 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
     assert_eq!(report.source_id, "readiness-ready-120");
     assert_bpm_close(report.primary_bpm, 120.0);
     assert_eq!(report.primary_downbeat_offset_beats, Some(0));
+    assert!(report
+        .primary_downbeat_score
+        .is_some_and(|score| score >= 0.5));
+    assert_eq!(report.alternate_downbeat_phase_count, 0);
     assert_eq!(report.beat_status, SourceTimingProbeBeatEvidenceStatus::Stable);
     assert_eq!(
         report.downbeat_status,
@@ -166,6 +170,9 @@ fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_c
         weak.downbeat_status,
         SourceTimingProbeDownbeatEvidenceStatus::Weak
     );
+    assert!(weak
+        .primary_downbeat_score
+        .is_some_and(|score| score < 0.3));
     assert!(weak.requires_manual_confirm);
 
     let review_onsets = even_onsets(0.0, 0.5, 8);
@@ -197,6 +204,23 @@ fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_c
                 .warning_codes
                 .contains(&TimingWarningCode::DoubleTimePossible)
     );
+
+    let phase_conflict_onsets = even_onsets(0.0, 0.5, 8);
+    let phase_conflict = source_timing_probe_readiness_report(
+        &weighted_candidate_input(
+            "readiness-phase-conflict-120",
+            4.0,
+            &phase_conflict_onsets,
+            &[0.60, 0.54, 0.52, 0.50, 0.60, 0.54, 0.52, 0.50],
+        ),
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert_eq!(
+        phase_conflict.downbeat_status,
+        SourceTimingProbeDownbeatEvidenceStatus::Ambiguous
+    );
+    assert!(phase_conflict.alternate_downbeat_phase_count > 0);
 }
 
 #[test]
@@ -299,6 +323,8 @@ fn grid_use_policy_report(
         source_id: "grid-use-policy".to_string(),
         primary_bpm,
         primary_downbeat_offset_beats: Some(0),
+        primary_downbeat_score: Some(0.75),
+        alternate_downbeat_phase_count: 0,
         beat_status: SourceTimingProbeBeatEvidenceStatus::Stable,
         downbeat_status: SourceTimingProbeDownbeatEvidenceStatus::Stable,
         confidence_result,

@@ -47,6 +47,8 @@
     "beat_status": "stable",
     "downbeat_status": "stable",
     "primary_downbeat_offset_beats": 0,
+    "primary_downbeat_score": 0.565,
+    "alternate_downbeat_phase_count": 0,
     "confidence_result": "candidate_cautious",
     "drift_status": "stable",
     "phrase_status": "stable",

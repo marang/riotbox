@@ -138,8 +138,8 @@ def render_summary(
             "",
             "## Recipe 15 Source-Timing Outcomes",
             "",
-            "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
-            "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |",
+            "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | Downbeat score | Alt phases | TR-909 | MC-202 | W-30 | Mix |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: | ---: | ---: |",
         ]
     )
 
@@ -147,7 +147,7 @@ def render_summary(
         source_timing = object_field(manifest, "source_timing")
         metrics = object_field(manifest, "metrics")
         lines.append(
-            "| {name} | `{cue}` | `{action}` | `{readiness}` | {manual_confirm} | `{grid_source}` | `{decision}` | `{grid_use}` | {bpm} | `{downbeat}` | {tr909} | {mc202} | {w30} | {mix} |".format(
+            "| {name} | `{cue}` | `{action}` | `{readiness}` | {manual_confirm} | `{grid_source}` | `{decision}` | `{grid_use}` | {bpm} | `{downbeat}` | {downbeat_score} | {alt_phases} | {tr909} | {mc202} | {w30} | {mix} |".format(
                 name=name,
                 cue=string_field(source_timing, "cue"),
                 action=string_field(source_timing, "actionability"),
@@ -158,6 +158,8 @@ def render_summary(
                 grid_use=string_field(source_timing, "grid_use"),
                 bpm=format_optional_float(source_timing.get("primary_bpm")),
                 downbeat=string_field(source_timing, "downbeat_status"),
+                downbeat_score=format_optional_float(source_timing.get("primary_downbeat_score")),
+                alt_phases=int_field(source_timing, "alternate_downbeat_phase_count"),
                 tr909=format_metric_hit_ratio(metrics, "tr909_source_grid_alignment"),
                 mc202=format_metric_hit_ratio(metrics, "mc202_source_grid_alignment"),
                 w30=format_metric_hit_ratio(metrics, "w30_source_grid_alignment"),
@@ -174,6 +176,7 @@ def render_summary(
             "- `source_timing` rows used the current Source Timing BPM while still carrying visible manual-confirm policy where required.",
             "- `static_default` rows prove the conservative fallback boundary; Beat20 currently has useful BPM evidence but ambiguous downbeat evidence.",
             "- `Cue` and `Action` are the compact musician-facing consequence from each manifest's Source Timing evidence.",
+            "- `Downbeat score` and `Alt phases` expose the bounded bar-phase confidence behind the selected downbeat offset.",
             "- Lane columns are hit ratios from the underlying manifests; values at or above `0.5` pass the current bounded P012 smoke threshold.",
             "",
         ]
@@ -206,6 +209,13 @@ def bool_field(parent: dict[str, Any], field: str) -> bool:
     value = parent.get(field)
     if not isinstance(value, bool):
         raise SystemExit(f"{field} must be a boolean")
+    return value
+
+
+def int_field(parent: dict[str, Any], field: str) -> int:
+    value = parent.get(field)
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise SystemExit(f"{field} must be an integer")
     return value
 
 
