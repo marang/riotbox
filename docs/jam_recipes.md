@@ -728,7 +728,9 @@ just recipe15-feral-grid-auto-proof
 ```
 
 The phase-level P012 all-lane proof also includes this Recipe 15 auto/fallback
-contract:
+contract. Unlike the standalone Recipe 15 helper, the phase-level gate is strict:
+missing required real-source fixtures fail the gate instead of being treated as
+an optional local skip.
 
 ```bash
 just p012-all-lane-source-grid-output-proof

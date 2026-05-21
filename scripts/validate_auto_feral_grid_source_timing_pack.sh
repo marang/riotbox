@@ -70,8 +70,14 @@ esac
 
 output_dir="artifacts/audio_qa/${date}/feral-grid-demo"
 manifest_path="${output_dir}/manifest.json"
+source_path="${RIOTBOX_RECIPE15_SOURCE_PATH:-${source_path}}"
+require_source_fixtures="${RIOTBOX_REQUIRE_RECIPE15_FIXTURES:-0}"
 
 if [[ ! -f "${source_path}" ]]; then
+  if [[ "${require_source_fixtures}" == "1" ]]; then
+    echo "missing required Recipe 15 source fixture for ${profile}: ${source_path}" >&2
+    exit 1
+  fi
   echo "skip: ${source_path} is not present in this checkout"
   exit 0
 fi
