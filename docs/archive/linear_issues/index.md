@@ -550,4 +550,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose Source Timing phrase counts in probe and example reports
 - [RIOTBOX-900.md](./RIOTBOX-900.md)
   Preserve Source Timing phrase counts in Feral-grid manifests
+- [RIOTBOX-901.md](./RIOTBOX-901.md)
+  Surface Source Timing phrase counts in compact P012 proof summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
