@@ -494,4 +494,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review the current P012 all-lane timing proof surface after Recipe 15 integration
 - [RIOTBOX-872.md](./RIOTBOX-872.md)
   Make Recipe 15 strict when invoked by the P012 all-lane gate
+- [RIOTBOX-873.md](./RIOTBOX-873.md)
+  Add a compact P012 all-lane proof summary artifact
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
