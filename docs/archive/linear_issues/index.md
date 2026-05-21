@@ -512,4 +512,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P012 Source Timing actionability surface after proof and probe alignment
 - [RIOTBOX-881.md](./RIOTBOX-881.md)
   Centralize Source Timing readiness cue and actionability labels for Rust producers
+- [RIOTBOX-882.md](./RIOTBOX-882.md)
+  Require Source Timing cue and actionability in generated Feral-grid manifest validation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
