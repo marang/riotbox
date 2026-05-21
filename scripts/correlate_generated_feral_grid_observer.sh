@@ -15,6 +15,10 @@ mismatched_observer_fixture="$tmpdir/feral-grid-observer/events-mismatched-sourc
 mismatch_output="$tmpdir/feral-grid-observer/mismatch-output.txt"
 user_override_bpm=128.75
 risky_user_override_bpm=135.0
+summary_artifact_dir="artifacts/audio_qa/local/generated-feral-grid-observer-audio"
+
+rm -rf "$summary_artifact_dir"
+mkdir -p "$summary_artifact_dir"
 
 python3 scripts/write_synthetic_break_wav.py "$tmpdir/source.wav" 4.0
 python3 - "$tmpdir/source-fallback.wav" <<'PY'
@@ -146,6 +150,8 @@ jq -e \
   "$tmpdir/observer-audio-summary.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary.json"
+cp "$tmpdir/observer-audio-summary.json" \
+  "$summary_artifact_dir/cautious-manual-confirm.json"
 
 cargo run -p riotbox-audio --bin feral_grid_pack -- \
   --source "$tmpdir/source.wav" \
@@ -204,6 +210,8 @@ jq -e \
   "$tmpdir/observer-audio-summary-user-override.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary-user-override.json"
+cp "$tmpdir/observer-audio-summary-user-override.json" \
+  "$summary_artifact_dir/user-override.json"
 
 cargo run -p riotbox-audio --bin feral_grid_pack -- \
   --source "$tmpdir/source.wav" \
@@ -264,6 +272,8 @@ jq -e \
   "$tmpdir/observer-audio-summary-risky-user-override.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary-risky-user-override.json"
+cp "$tmpdir/observer-audio-summary-risky-user-override.json" \
+  "$summary_artifact_dir/risky-user-override.json"
 
 cargo run -p riotbox-app --bin user_session_observer_probe -- \
   --probe feral-grid-jam-fallback \
@@ -358,6 +368,8 @@ jq -e \
   "$tmpdir/observer-audio-summary-fallback.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary-fallback.json"
+cp "$tmpdir/observer-audio-summary-fallback.json" \
+  "$summary_artifact_dir/fallback.json"
 
 cargo run -p riotbox-app --bin user_session_observer_probe -- \
   --probe feral-grid-jam-locked \
@@ -462,6 +474,8 @@ jq -e \
   "$tmpdir/observer-audio-summary-locked.json"
 python3 scripts/validate_observer_audio_summary_json.py \
   "$tmpdir/observer-audio-summary-locked.json"
+cp "$tmpdir/observer-audio-summary-locked.json" \
+  "$summary_artifact_dir/locked-grid.json"
 
 jq -c '.snapshot.source_timing.bpm_estimate = 118.0' \
   "$observer_fixture" > "$mismatched_observer_fixture"
