@@ -496,4 +496,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make Recipe 15 strict when invoked by the P012 all-lane gate
 - [RIOTBOX-873.md](./RIOTBOX-873.md)
   Add a compact P012 all-lane proof summary artifact
+- [RIOTBOX-874.md](./RIOTBOX-874.md)
+  Move Source Timing actionability language into the shared Jam summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
