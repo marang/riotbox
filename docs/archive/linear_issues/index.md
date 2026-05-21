@@ -518,4 +518,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prioritize unavailable Source Timing cue over manual-confirm wording
 - [RIOTBOX-884.md](./RIOTBOX-884.md)
   Surface Source Timing cue and readiness in P012 all-lane proof summary
+- [RIOTBOX-885.md](./RIOTBOX-885.md)
+  Review P012 proof summary and timing actionability surfaces after RIOTBOX-880-884
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
