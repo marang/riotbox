@@ -97,7 +97,7 @@ def main() -> int:
             for failure in failures:
                 print(failure, file=sys.stderr)
             return 1
-    except (OSError, ValueError, subprocess.CalledProcessError) as error:
+    except (OSError, TypeError, ValueError, subprocess.CalledProcessError) as error:
         print(f"source timing example probe report error: {error}", file=sys.stderr)
         return 1
 
