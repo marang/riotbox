@@ -526,4 +526,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Centralize app-side Source Timing readiness actionability fallback
 - [RIOTBOX-888.md](./RIOTBOX-888.md)
   Expose downbeat phase confidence in generated Feral-grid Source Timing manifests
+- [RIOTBOX-889.md](./RIOTBOX-889.md)
+  Improve Beat20 real-source downbeat confidence without relaxing fallback safety
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
