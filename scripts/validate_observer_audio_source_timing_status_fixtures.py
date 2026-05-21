@@ -26,6 +26,13 @@ def main() -> int:
         tmpdir = pathlib.Path(tmp)
         validate_case(base, tmpdir / "valid_source_timing_statuses.json")
 
+        missing_grid_use = copy.deepcopy(base)
+        missing_grid_use["output_path"]["source_timing"].pop("grid_use")
+        reject_case(
+            missing_grid_use,
+            "grid_use must be present as a string or null",
+            tmpdir / "source_timing_grid_use_missing.json",
+        )
         reject_source_timing_case(
             base,
             "readiness",

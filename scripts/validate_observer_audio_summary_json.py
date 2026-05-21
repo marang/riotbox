@@ -296,7 +296,7 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_string(timing, "source_id")
     cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
     require_string(timing, "policy_profile")
-    grid_use = require_optional_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
+    grid_use = require_nullable_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
     readiness = require_one_of(timing, "readiness", SOURCE_TIMING_READINESS)
     requires_manual_confirm = require_bool(timing, "requires_manual_confirm")
     require_source_timing_readiness_cue_match(cue, readiness, requires_manual_confirm)
@@ -827,6 +827,17 @@ def require_optional_one_of(
 ) -> str | None:
     if field not in parent:
         return None
+    value = parent.get(field)
+    if value is None:
+        return None
+    return require_one_of(parent, field, allowed)
+
+
+def require_nullable_one_of(
+    parent: dict[str, Any], field: str, allowed: set[str]
+) -> str | None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as a string or null")
     value = parent.get(field)
     if value is None:
         return None
