@@ -56,6 +56,7 @@ You may see lines like:
 ```text
 timing needs confirm [===>] next bar
 timing needs confirm | grid manual_confirm_only | p0 | low kick+bb
+action confirm grid first
 Timing: needs confirm | grid manual_confirm_only | phase 0 | low | kick+bb | source b32 bar8 p1 | confirm grid first
 readiness needs confirm | 126.0 BPM | conf 0.76
 ```
@@ -67,6 +68,10 @@ Use the cue like this:
 - `listen first`: usable timing evidence exists, but the result should be treated as cautious, not locked.
 - `fallback grid`: Riotbox is using a safe default grid instead of trusting the source timing.
 - `not available`: no useful source timing is attached; do not judge beat-sensitive gestures as timing-smart yet.
+
+The compact `action ...` line is the plain-language consequence of the cue:
+`confirm grid first`, `grid can steer moves`, `listen first`, `using safe
+fallback grid`, or `timing unavailable`.
 
 The last part is the anchor shorthand:
 
@@ -159,6 +164,8 @@ What to observe:
 
 - the Jam `Now` rail is the readable performance cue, for example
   `timing needs confirm [===>] next bar`
+- the Jam `Trust` panel also shows the direct action consequence, for example
+  `action confirm grid first`
 - the observer `source_timing.cue`, `quality`, and `degraded_policy` are the
   machine-readable version of that cue
 - `beat_status`, `downbeat_status`, and `phrase_status` tell QA whether Riotbox
