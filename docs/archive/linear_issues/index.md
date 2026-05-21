@@ -412,4 +412,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Catch malformed Source Timing example report fixture TypeErrors
 - [RIOTBOX-830.md](./RIOTBOX-830.md)
   Add exact warning-code expectations to Source Timing example report
+- [RIOTBOX-831.md](./RIOTBOX-831.md)
+  Expose downbeat offset in Source Timing example report
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
