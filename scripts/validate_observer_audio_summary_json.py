@@ -790,6 +790,10 @@ def require_source_timing_bpm_delta_alignment_match(
     bpm_tolerance: float | int,
     issues: list[str],
 ) -> None:
+    if bpm_delta is not None and bpm_delta < 0:
+        raise ValueError("source_timing_alignment.bpm_delta must be non-negative")
+    if bpm_tolerance < 0:
+        raise ValueError("source_timing_alignment.bpm_tolerance must be non-negative")
     has_bpm_issue = any(
         issue.startswith("source_timing_alignment.bpm_delta") for issue in issues
     )

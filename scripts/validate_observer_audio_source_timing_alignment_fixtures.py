@@ -89,6 +89,28 @@ def main() -> int:
             tmpdir / "source_timing_bpm_issue_without_delta.json",
         )
         reject_case(
+            with_source_timing_alignment(
+                base,
+                status="aligned",
+                bpm_delta=-0.5,
+                bpm_tolerance=1.0,
+                issues=[],
+            ),
+            "source_timing_alignment.bpm_delta must be non-negative",
+            tmpdir / "source_timing_negative_bpm_delta.json",
+        )
+        reject_case(
+            with_source_timing_alignment(
+                base,
+                status="aligned",
+                bpm_delta=0.0,
+                bpm_tolerance=-1.0,
+                issues=[],
+            ),
+            "source_timing_alignment.bpm_tolerance must be non-negative",
+            tmpdir / "source_timing_negative_bpm_tolerance.json",
+        )
+        reject_case(
             with_alignment_issues(
                 base,
                 "source_timing_anchor_alignment",
@@ -138,12 +160,14 @@ def with_source_timing_alignment(
     *,
     status: str,
     bpm_delta: float | None,
+    bpm_tolerance: float = 1.0,
     issues: list[str],
 ) -> dict[str, Any]:
     data = copy.deepcopy(base)
     alignment = data["output_path"]["source_timing_alignment"]
     alignment["status"] = status
     alignment["bpm_delta"] = bpm_delta
+    alignment["bpm_tolerance"] = bpm_tolerance
     alignment["issues"] = issues
     return data
 
