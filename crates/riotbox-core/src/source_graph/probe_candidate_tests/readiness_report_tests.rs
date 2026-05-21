@@ -255,6 +255,28 @@ fn source_timing_grid_use_policy_preserves_contract_labels() {
     assert_eq!(source_timing_grid_use(&unavailable).label(), "unavailable");
 }
 
+#[test]
+fn source_timing_readiness_labels_preserve_musician_language() {
+    let locked = source_timing_readiness_labels(SourceTimingProbeReadinessStatus::Ready, false);
+    assert_eq!(locked.cue, "grid locked");
+    assert_eq!(locked.actionability, "grid can steer moves");
+
+    let needs_confirm =
+        source_timing_readiness_labels(SourceTimingProbeReadinessStatus::Ready, true);
+    assert_eq!(needs_confirm.cue, "needs confirm");
+    assert_eq!(needs_confirm.actionability, "confirm grid first");
+
+    let listen_first =
+        source_timing_readiness_labels(SourceTimingProbeReadinessStatus::NeedsReview, false);
+    assert_eq!(listen_first.cue, "listen first");
+    assert_eq!(listen_first.actionability, "listen first");
+
+    let unavailable =
+        source_timing_readiness_labels(SourceTimingProbeReadinessStatus::Unavailable, false);
+    assert_eq!(unavailable.cue, "not available");
+    assert_eq!(unavailable.actionability, "timing unavailable");
+}
+
 fn grid_use_policy_report(
     primary_bpm: Option<f32>,
     readiness: SourceTimingProbeReadinessStatus,
