@@ -145,6 +145,9 @@ Deliverables:
 - explicit timing warnings when the detected grid is weak or ambiguous
 - source-grid drift report proving rendered lanes stay aligned to the analyzed grid
 - all-lane timing proof for TR/Kick-Bass, MC-202, and W-30 using source-vs-output audio evidence
+- P012 all-lane proof includes the Recipe 15 real-source Feral-grid auto/fallback
+  contract, so cautious auto-BPM and conservative fallback behavior stay visible
+  in the same phase-level gate
 - sections
 - first slice / loop candidates
 - Source Graph v1
