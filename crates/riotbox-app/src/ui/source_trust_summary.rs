@@ -139,7 +139,7 @@ struct TrustSummary {
     warning_count: usize,
     timing_quality: &'static str,
     section_quality: &'static str,
-    source_timing_warning: Option<&'static str>,
+    source_timing_warning: Option<String>,
 }
 
 fn trust_summary(shell: &JamShellState) -> TrustSummary {
@@ -160,11 +160,7 @@ fn trust_summary(shell: &JamShellState) -> TrustSummary {
                 warning_count: graph.analysis_summary.warnings.len(),
                 timing_quality: quality_label(&graph.analysis_summary.timing_quality),
                 section_quality: quality_label(&graph.analysis_summary.section_quality),
-                source_timing_warning: graph
-                    .timing
-                    .warnings
-                    .first()
-                    .map(|warning| jam_source_timing_warning_code_label(&warning.code)),
+                source_timing_warning: shell.app.jam_view.source.timing.primary_warning.clone(),
             }
         }
         None => TrustSummary {
@@ -348,20 +344,6 @@ fn source_timing_policy_cue_style(policy: &str) -> Style {
         "manual_confirm" | "cautious" | "fallback_grid" => style_pending_cue(),
         "disabled" | "unknown" => style_low_emphasis(),
         _ => style_low_emphasis(),
-    }
-}
-
-fn jam_source_timing_warning_code_label(code: &TimingWarningCode) -> &'static str {
-    match code {
-        TimingWarningCode::SparseOnsets => "sparse_onsets",
-        TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
-        TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
-        TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",
-        TimingWarningCode::HalfTimePossible => "half_time_possible",
-        TimingWarningCode::DoubleTimePossible => "double_time_possible",
-        TimingWarningCode::DriftHigh => "drift_high",
-        TimingWarningCode::PhraseUncertain => "phrase_uncertain",
-        TimingWarningCode::LowTimingConfidence => "low_timing_confidence",
     }
 }
 

@@ -82,6 +82,39 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
 }
 
 #[test]
+fn jam_trust_warning_uses_shared_source_timing_priority() {
+    let mut shell = sample_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("sample shell should include source graph");
+    graph.timing.warnings = vec![
+        TimingWarning {
+            code: TimingWarningCode::LowTimingConfidence,
+            message: "timing confidence is low".into(),
+        },
+        TimingWarning {
+            code: TimingWarningCode::WeakKickAnchor,
+            message: "kick anchor is weak".into(),
+        },
+        TimingWarning {
+            code: TimingWarningCode::SparseOnsets,
+            message: "too few timing onsets".into(),
+        },
+    ];
+    shell.app.refresh_view();
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("timing warning sparse_onsets"), "{rendered}");
+    assert!(
+        !rendered.contains("timing warning low_timing_confidence"),
+        "{rendered}"
+    );
+}
+
+#[test]
 fn source_timing_readiness_styles_locked_cue_as_confirmed() {
     let mut shell = sample_shell_state();
     let graph = shell
