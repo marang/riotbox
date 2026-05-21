@@ -198,8 +198,9 @@ fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(format!("grid {}", timing.grid_use)),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(timing.quality.clone()),
+        Span::raw(source_timing_downbeat_phase_chip(timing)),
         Span::styled(" | ", style_low_emphasis()),
+        Span::raw(format!("{} ", timing.quality)),
         Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
     ])
 }
@@ -266,8 +267,8 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
     let meaning = match timing.degraded_policy.as_str() {
         "locked" => "grid can steer moves",
-        "manual_confirm" => "confirm before trusting grid",
-        "cautious" => "listen before trusting grid",
+        "manual_confirm" => "confirm grid first",
+        "cautious" => "listen first",
         "fallback_grid" => "using safe fallback grid",
         "disabled" => "timing unavailable",
         _ => "timing trust unknown",
@@ -282,6 +283,8 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(format!("grid {}", timing.grid_use)),
         Span::styled(" | ", style_low_emphasis()),
+        Span::raw(source_timing_downbeat_phase_help(timing)),
+        Span::styled(" | ", style_low_emphasis()),
         Span::raw(timing.quality.clone()),
         Span::styled(" | ", style_low_emphasis()),
         Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
@@ -290,6 +293,22 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(meaning),
     ])
+}
+
+fn source_timing_downbeat_phase_chip(
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
+) -> String {
+    timing
+        .primary_downbeat_offset_beats
+        .map_or_else(|| "p-".into(), |offset| format!("p{offset}"))
+}
+
+fn source_timing_downbeat_phase_help(
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
+) -> String {
+    timing
+        .primary_downbeat_offset_beats
+        .map_or_else(|| "phase none".into(), |offset| format!("phase {offset}"))
 }
 
 fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
