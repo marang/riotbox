@@ -577,6 +577,9 @@ def require_optional_mc202_phrase_grid(parent: dict[str, Any], field: str) -> No
     grid_aligned_onset_count = require_non_negative_int(grid, "grid_aligned_onset_count")
     if grid_aligned_onset_count > candidate_onset_count:
         raise ValueError(f"{field}.grid_aligned_onset_count cannot exceed candidate_onset_count")
+    require_mc202_phrase_grid_hit_ratio_derivation(
+        field, hit_ratio, candidate_onset_count, grid_aligned_onset_count
+    )
     max_onset_offset_ms = require_non_negative_number(grid, "max_onset_offset_ms", field)
     max_allowed_onset_offset_ms = require_non_negative_number(
         grid, "max_allowed_onset_offset_ms", field
@@ -590,6 +593,24 @@ def require_optional_mc202_phrase_grid(parent: dict[str, Any], field: str) -> No
         hit_ratio,
         max_onset_offset_ms,
         max_allowed_onset_offset_ms,
+    )
+
+
+def require_mc202_phrase_grid_hit_ratio_derivation(
+    field: str,
+    hit_ratio: float | int,
+    candidate_onset_count: int,
+    grid_aligned_onset_count: int,
+) -> None:
+    expected = (
+        0.0
+        if candidate_onset_count == 0
+        else grid_aligned_onset_count / candidate_onset_count
+    )
+    if abs(float(hit_ratio) - expected) <= EPSILON:
+        return
+    raise ValueError(
+        f"{field}.hit_ratio must match grid_aligned_onset_count / candidate_onset_count"
     )
 
 

@@ -270,6 +270,9 @@ to live only inside the manifest pass/fail decision. Each item should include:
   `hit_ratio`, phrase-boundary, onset-count, onset-offset, and `passed` fields.
   `hit_ratio` must be in `[0, 1]`; onset counts and onset offsets/budgets must
   be non-negative; aligned onset count must not exceed candidate onset count.
+  `hit_ratio` must match `grid_aligned_onset_count / candidate_onset_count`
+  when candidate onsets exist and must be `0.0` when candidate onset count is
+  zero.
   `passed` must match the current MC-202 phrase-grid pass contract: phrase
   boundary start, at least one candidate onset, `hit_ratio >= 0.95`, and
   `max_onset_offset_ms <= max_allowed_onset_offset_ms`.
@@ -348,8 +351,9 @@ The committed fixture JSON smoke currently requires:
   BPM decision mismatches, rejected BPM-delta contradictions, rejected
   impossible scalar metric ranges, rejected unknown Source Timing status enums
   and counts, rejected impossible lane recipe metric ranges, rejected
-  contradictory MC-202 phrase-grid pass evidence, rejected contradictory MC-202
-  source phrase-slot evidence, rejected Source Timing alignment status/BPM-issue
+  contradictory MC-202 phrase-grid hit-ratio evidence, rejected contradictory
+  MC-202 phrase-grid pass evidence, rejected contradictory MC-202 source
+  phrase-slot evidence, rejected Source Timing alignment status/BPM-issue
   contradictions, rejected impossible source-grid metric ranges, rejected
   malformed W-30 loop-closure evidence, rejected Source Timing shape/cue
   mismatches, and rejected malformed lane recipe case evidence
