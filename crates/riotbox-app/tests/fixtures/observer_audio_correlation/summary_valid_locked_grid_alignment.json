@@ -136,6 +136,8 @@
         "primary_max_abs_offset_ms": 6.0
       },
       "phrase_status": "stable",
+      "primary_phrase_count": 1,
+      "primary_phrase_bar_count": 8,
       "policy_profile": "dance_loop_auto_readiness",
       "primary_bpm": 128.0,
       "primary_downbeat_offset_beats": 0,

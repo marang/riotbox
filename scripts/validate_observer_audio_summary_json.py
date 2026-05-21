@@ -324,6 +324,8 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_one_of(timing, "confidence_result", SOURCE_TIMING_CONFIDENCE_RESULTS)
     require_one_of(timing, "drift_status", SOURCE_TIMING_DRIFT_STATUSES)
     require_one_of(timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
+    require_non_negative_int(timing, "primary_phrase_count")
+    require_non_negative_int(timing, "primary_phrase_bar_count")
     require_non_negative_int(timing, "alternate_evidence_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")

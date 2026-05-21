@@ -39,6 +39,8 @@
       "confidence_result": "candidate_cautious",
       "drift_status": "not_enough_material",
       "phrase_status": "not_enough_material",
+      "primary_phrase_count": 0,
+      "primary_phrase_bar_count": 2,
       "alternate_evidence_count": 0,
       "anchor_evidence": {
         "primary_anchor_count": 8,

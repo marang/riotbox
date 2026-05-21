@@ -117,6 +117,10 @@ When non-null, `source_timing` should include:
   `high`.
 - `phrase_status`: one of `unavailable`, `not_enough_material`,
   `ambiguous_downbeat`, `high_drift`, or `stable`.
+- `primary_phrase_count`: non-negative integer copied from manifest-side Source
+  Timing phrase-grid evidence.
+- `primary_phrase_bar_count`: non-negative integer copied from manifest-side
+  Source Timing phrase-grid evidence.
 - `alternate_evidence_count`: non-negative integer.
 - `anchor_evidence`: `null` or compact primary anchor counts copied from
   manifest source-timing readiness evidence.

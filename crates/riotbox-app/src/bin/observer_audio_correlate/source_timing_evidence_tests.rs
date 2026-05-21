@@ -30,6 +30,8 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
             confidence_result: "candidate_ambiguous".to_string(),
             drift_status: "stable".to_string(),
             phrase_status: "ambiguous_downbeat".to_string(),
+            primary_phrase_count: 0,
+            primary_phrase_bar_count: 8,
             alternate_evidence_count: 2,
             anchor_evidence: None,
             groove_evidence: None,
@@ -46,7 +48,7 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
     assert!(markdown.contains("Source timing grid use: `manual_confirm_only`"));
     assert!(markdown.contains("Source timing BPM agrees with grid: `yes`"));
     assert!(markdown.contains(
-        "Source timing phrase: `ambiguous_downbeat confidence=candidate_ambiguous drift=stable alternates=2`"
+        "Source timing phrase: `ambiguous_downbeat phrases=0 bars=8 confidence=candidate_ambiguous drift=stable alternates=2`"
     ));
     assert_eq!(json["output_path"]["source_timing"]["cue"], "needs confirm");
     assert_eq!(
@@ -60,6 +62,14 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
     assert_eq!(
         json["output_path"]["source_timing"]["phrase_status"],
         "ambiguous_downbeat"
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["primary_phrase_count"],
+        0
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["primary_phrase_bar_count"],
+        8
     );
     assert_eq!(json["output_path"]["grid_bpm_source"], "static_default");
     assert_eq!(
@@ -124,6 +134,8 @@ fn synthetic_manifest_with_source_timing() -> String {
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
+    "primary_phrase_count": 0,
+    "primary_phrase_bar_count": 8,
     "alternate_evidence_count": 2,
     "warning_codes": ["PhraseUncertain", "AmbiguousDownbeat"]
   },
