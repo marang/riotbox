@@ -745,9 +745,10 @@ bounded BPM policy:
   missing or non-comparable evidence `partial`.
 - app observer snapshots should preserve compact Source Timing detail fields
   derived from Source Graph timing state, including `beat_status`,
-  `beat_count`, `downbeat_status`, `bar_count`, `phrase_status`, and
-  `phrase_count`, so QA can distinguish tempo-only, ambiguous-downbeat, and
-  phrase-uncertain states without scraping TUI text.
+  `beat_count`, `downbeat_status`, `primary_downbeat_offset_beats`,
+  `bar_count`, `phrase_status`, and `phrase_count`, so QA can distinguish
+  tempo-only, ambiguous-downbeat, and phrase-uncertain states without scraping
+  TUI text.
 - app observer snapshots should preserve the shared Jam Source Timing
   `grid_use` label alongside cue, quality, and degraded policy, so the
   control-path observer event, Jam/Source TUI, and output-path manifest QA use

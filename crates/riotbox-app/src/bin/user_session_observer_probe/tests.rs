@@ -237,6 +237,7 @@ fn writes_feral_grid_fallback_jam_observer_stream() {
     assert!(events.contains(r#""phrase_status":"unknown""#));
     let source_timing = first_source_timing_snapshot(&events);
     assert_eq!(source_timing["bpm_estimate"], Value::Null);
+    assert_eq!(source_timing["primary_downbeat_offset_beats"], Value::Null);
     assert_eq!(
         source_timing["primary_warning_code"],
         "low_timing_confidence"
@@ -276,6 +277,7 @@ fn writes_feral_grid_locked_jam_observer_stream() {
     assert!(events.contains(r#""phrase_status":"phrase_locked""#));
     assert!(events.contains(r#""phrase_count":1"#));
     let source_timing = first_source_timing_snapshot(&events);
+    assert_eq!(source_timing["primary_downbeat_offset_beats"], 0);
     assert_eq!(source_timing["primary_warning_code"], Value::Null);
     assert_eq!(source_timing["anchor_evidence"]["primary_anchor_count"], 16);
     assert_eq!(
