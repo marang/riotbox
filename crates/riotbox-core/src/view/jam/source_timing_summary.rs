@@ -8,6 +8,7 @@ pub struct SourceTimingGrooveResidualView {
 #[derive(Clone, Debug, PartialEq)]
 pub struct SourceTimingSummaryView {
     pub cue: String,
+    pub actionability: String,
     pub quality: String,
     pub degraded_policy: String,
     pub grid_use: String,
@@ -33,6 +34,7 @@ impl Default for SourceTimingSummaryView {
     fn default() -> Self {
         Self {
             cue: "not available".into(),
+            actionability: "timing unavailable".into(),
             quality: "unknown".into(),
             degraded_policy: "disabled".into(),
             grid_use: "unavailable".into(),
@@ -84,6 +86,7 @@ impl SourceTimingSummaryView {
 
         Self {
             cue: source_timing_policy_cue_label(degraded_policy).into(),
+            actionability: source_timing_actionability_label(degraded_policy).into(),
             quality: source_timing_quality_label(&graph.timing.effective_timing_quality()).into(),
             degraded_policy: degraded_policy.into(),
             grid_use: crate::source_graph::source_timing_grid_use_from_timing_model(&graph.timing)
@@ -127,6 +130,17 @@ fn source_timing_beat_status_label(timing: &crate::source_graph::TimingModel) ->
         return "tempo_only";
     }
     "unknown"
+}
+
+fn source_timing_actionability_label(policy: &str) -> &'static str {
+    match policy {
+        "locked" => "grid can steer moves",
+        "manual_confirm" => "confirm grid first",
+        "cautious" => "listen first",
+        "fallback_grid" => "using safe fallback grid",
+        "disabled" => "timing unavailable",
+        _ => "timing trust unknown",
+    }
 }
 
 fn source_timing_downbeat_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {

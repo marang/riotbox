@@ -83,9 +83,10 @@ It must expose:
 - compact Source Timing Intelligence readiness in Jam perform / inspect views:
   musician-readable timing cue such as `grid locked`, `needs confirm`, or
   `listen first`, plus the shared `grid_use` contract label, timing quality,
-  degraded policy, and at most one primary timing warning code. That primary
-  warning is priority-selected by the shared timing summary so high drift and
-  downbeat ambiguity outrank lower-urgency phrase or anchor warnings.
+  degraded policy, shared actionability phrase such as `confirm grid first` or
+  `grid can steer moves`, and at most one primary timing warning code. That
+  primary warning is priority-selected by the shared timing summary so high
+  drift and downbeat ambiguity outrank lower-urgency phrase or anchor warnings.
 - source timing presentation language must come from the shared Jam source
   timing summary, not from screen-local Source Graph remapping. This keeps Jam,
   Help, Source, observer snapshots, and observer/audio QA aligned while the
@@ -102,6 +103,9 @@ It must expose:
   Help and Start Here lines may use the fuller `phase 0` / `phase none`
   wording; the Source screen should carry the slightly fuller anchor count such
   as `anchors 2 kick+bb`.
+- Jam Help, Start Here, and Source timing panels should read the actionability
+  phrase from the shared Jam source timing summary instead of matching local
+  degraded-policy strings.
 - Jam should keep a one-line `Now` timing rail visible in perform mode, for
   example `timing needs confirm [===>] next bar`, so musicians can see the trust
   state and the next bar boundary without opening Inspect or Source
@@ -168,6 +172,10 @@ Show:
   the same labels as probe / manifest / observer QA (`locked_grid`,
   `short_loop_manual_confirm`, `manual_confirm_only`, `fallback_grid`,
   `unavailable`) so Jam, Source, and QA evidence do not drift apart.
+- shared actionability language from the Jam source timing summary, so Source
+  can explain whether the musician should trust the grid, confirm it, listen
+  first, or treat it as unavailable / fallback-backed without decoding internal
+  policy labels.
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings

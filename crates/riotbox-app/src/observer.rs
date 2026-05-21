@@ -176,6 +176,7 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "quality": timing.quality.as_str(),
         "degraded_policy": timing.degraded_policy.as_str(),
         "cue": timing.cue.as_str(),
+        "actionability": timing.actionability.as_str(),
         "grid_use": timing.grid_use.as_str(),
         "beat_status": timing.beat_status.as_str(),
         "beat_count": timing.beat_count,

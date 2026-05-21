@@ -265,14 +265,6 @@ fn source_timing_clock_compact(shell: &JamShellState) -> String {
 
 fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
-    let meaning = match timing.degraded_policy.as_str() {
-        "locked" => "grid can steer moves",
-        "manual_confirm" => "confirm grid first",
-        "cautious" => "listen first",
-        "fallback_grid" => "using safe fallback grid",
-        "disabled" => "timing unavailable",
-        _ => "timing trust unknown",
-    };
 
     Line::from(vec![
         Span::raw("Timing: "),
@@ -291,7 +283,7 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(source_timing_clock_compact(shell)),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(meaning),
+        Span::raw(timing.actionability.clone()),
     ])
 }
 

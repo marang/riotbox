@@ -31,8 +31,9 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 timing.quality,
             )),
             Line::from(format!(
-                "warning {}",
-                timing.primary_warning.as_deref().unwrap_or("none")
+                "action {} | warning {}",
+                timing.actionability,
+                timing.primary_warning.as_deref().unwrap_or("none"),
             )),
         ],
         None => vec![
@@ -46,6 +47,7 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 timing.grid_use,
                 timing.primary_warning.as_deref().unwrap_or("none")
             )),
+            Line::from(format!("action {}", timing.actionability)),
             Line::from("no timing information available"),
         ],
     }
