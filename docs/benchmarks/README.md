@@ -66,6 +66,8 @@ Current benchmark artifacts:
   Local Beat03 Feral-grid auto-BPM proof showing Source Timing drives the grid with visible manual-confirm evidence.
 - [beat08_auto_feral_grid_source_timing_2026-05-21.md](./beat08_auto_feral_grid_source_timing_2026-05-21.md)
   Local Beat08 Feral-grid auto-BPM proof for the primary recipe source.
+- [beat20_auto_feral_grid_fallback_2026-05-21.md](./beat20_auto_feral_grid_fallback_2026-05-21.md)
+  Local Beat20 Feral-grid auto-BPM fallback proof for ambiguous downbeat evidence.
 - [dh_beatc_auto_feral_grid_source_timing_2026-05-21.md](./dh_beatc_auto_feral_grid_source_timing_2026-05-21.md)
   Local DH_BeatC Feral-grid auto-BPM proof showing the same cautious Source Timing grid path.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
