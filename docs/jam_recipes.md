@@ -698,33 +698,34 @@ Goal: generate one local Feral grid audio pack without pretending auto timing is
 
 This is not an interactive TUI recipe. Use it when you want WAVs to audition what the current offline Feral grid seam can render.
 
-Start with one explicit-BPM example:
+Start with the current Beat03 auto-BPM example:
 
 ```bash
-just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local-beat03-feral-grid 130.0 8 1.0 0.0
+just feral-grid-pack "data/test_audio/examples/Beat03_130BPM(Full).wav" local-beat03-feral-grid-auto auto 8 1.0 0.0
 ```
 
 Then listen in this order:
 
 ```text
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/01_tr909_beat_fill.wav
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/02_w30_feral_source_chop.wav
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/stems/03_mc202_bass_pressure.wav
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/04_riotbox_source_first_mix.wav
-artifacts/audio_qa/local-beat03-feral-grid/feral-grid-demo/05_riotbox_generated_support_mix.wav
+artifacts/audio_qa/local-beat03-feral-grid-auto/feral-grid-demo/stems/01_tr909_beat_fill.wav
+artifacts/audio_qa/local-beat03-feral-grid-auto/feral-grid-demo/stems/02_w30_feral_source_chop.wav
+artifacts/audio_qa/local-beat03-feral-grid-auto/feral-grid-demo/stems/03_mc202_bass_pressure.wav
+artifacts/audio_qa/local-beat03-feral-grid-auto/feral-grid-demo/04_riotbox_source_first_mix.wav
+artifacts/audio_qa/local-beat03-feral-grid-auto/feral-grid-demo/05_riotbox_generated_support_mix.wav
 ```
 
 Try these variants:
 
 ```bash
 just feral-grid-pack "data/test_audio/examples/Beat08_128BPM(Full).wav" local-beat08-feral-grid-auto auto 8 1.0 0.0
-just feral-grid-pack "data/test_audio/examples/DH_BeatC_120-01.wav" local-dh-beatc-feral-grid 120.0 8 1.0 0.0
+just feral-grid-pack "data/test_audio/examples/DH_BeatC_120-01.wav" local-dh-beatc-feral-grid-auto auto 8 1.0 0.0
 ```
 
 How to interpret `auto`:
 
 - `grid_bpm_source: source_timing` means the current readiness report drove the
-  grid because it was ready and did not require manual confirmation.
+  grid because it was ready, or because it was a stable cautious short-loop that
+  still requires visible manual confirmation.
 - `grid_bpm_source: static_default` means auto mode fell back to the static default grid.
 - `grid_bpm_decision_reason` explains why the source was selected or why
   `static_default` was used, for example `source_timing_requires_manual_confirm`.
@@ -742,17 +743,17 @@ downbeat, phrase, and warning lines.
 
 Current local benchmark result:
 
-- `Beat03_130BPM(Full).wav`: use explicit `130 BPM`; auto currently falls back to `128 BPM`.
+- `Beat03_130BPM(Full).wav`: auto now uses Source Timing at about `130.285 BPM` with `source_timing_needs_review_manual_confirm`; the grid is usable but still marked needs-confirm because phrase evidence is short.
 - `Beat08_128BPM(Full).wav`: BPM/beat/downbeat evidence is useful, but short-loop readiness still needs confirmation.
 - `Beat20_128BPM(Full).wav`: BPM/beat evidence is useful, but competing downbeat phases still need confirmation.
-- `DH_BeatC_120-01.wav`: use explicit `120 BPM`; auto fallback is musically misleading.
+- `DH_BeatC_120-01.wav`: auto also has useful short-loop Source Timing evidence; keep the needs-confirm cue visible instead of treating it as a long locked phrase.
 - `DH_RushArp_120_A.wav`: do not use this path for Feral grid drum-support examples; use `just melodic-source-chop-showcase` to keep unavailable Source Timing explicit while proving source-backed W-30 chop output.
 
 What this proves today:
 
-- Riotbox can generate a bounded TR-909 plus W-30 Feral grid pack with manifest-backed output metrics.
+- Riotbox can generate a bounded TR-909, MC-202, and W-30 Feral grid pack with manifest-backed output metrics.
 - The pack is useful for listening and QA, not yet a full composition/export workflow.
-- Explicit BPM is still the honest path for some real examples until source timing reaches `ready`.
+- Some short-loop examples can now drive auto BPM through Source Timing while still saying `needs confirm`; ambiguous or non-drum sources must continue to fall back or use explicit paths.
 
 ## Current Limits
 

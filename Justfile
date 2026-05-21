@@ -226,6 +226,9 @@ feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" star
         cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bpm "{{bpm}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
     fi
 
+beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
+    scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"
+
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
