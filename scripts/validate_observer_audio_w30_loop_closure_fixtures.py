@@ -26,6 +26,13 @@ def main() -> int:
         tmpdir = pathlib.Path(tmp)
         validate_case(base, tmpdir / "valid_w30_loop_closure.json")
 
+        missing_loop_closure = copy.deepcopy(base)
+        missing_loop_closure["output_path"]["metrics"].pop("w30_source_loop_closure")
+        reject_case(
+            missing_loop_closure,
+            "w30_source_loop_closure must be present as an object or null",
+            tmpdir / "w30_loop_closure_missing_key.json",
+        )
         reject_case(
             with_loop_closure_value(base, "passed", "true"),
             "passed must be a boolean",

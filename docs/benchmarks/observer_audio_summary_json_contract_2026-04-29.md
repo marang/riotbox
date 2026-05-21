@@ -184,7 +184,7 @@ The current stable metric keys are:
 - `tr909_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `mc202_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `w30_source_grid_alignment`: `null` or the same source-grid alignment object shape
-- `w30_source_loop_closure`: `null` or an object with `passed`,
+- `w30_source_loop_closure`: required as `null` or an object with `passed`,
   `preview_rms`, `edge_delta_abs`, `max_allowed_edge_delta_abs`,
   `edge_abs_max`, `max_allowed_edge_abs`, and `source_contains_selection`;
   `passed` and `source_contains_selection` must be booleans, and the RMS,
@@ -351,6 +351,7 @@ The committed fixture JSON smoke currently requires:
   missing manifest Source Timing `grid_use` evidence, rejected
   impossible scalar metric ranges, rejected unknown Source Timing status enums
   and counts, rejected impossible lane recipe metric ranges, rejected
+  missing W-30 loop-closure metric keys, rejected
   contradictory MC-202 phrase-grid hit-ratio evidence, rejected contradictory
   MC-202 phrase-grid pass evidence, rejected contradictory MC-202 source
   phrase-slot evidence, rejected Source Timing alignment status/BPM-issue
