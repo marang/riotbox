@@ -727,6 +727,13 @@ To validate the current Recipe 15 auto-BPM contract in one local pass:
 just recipe15-feral-grid-auto-proof
 ```
 
+The phase-level P012 all-lane proof also includes this Recipe 15 auto/fallback
+contract:
+
+```bash
+just p012-all-lane-source-grid-output-proof
+```
+
 How to interpret `auto`:
 
 - `grid_bpm_source: source_timing` means the current readiness report drove the

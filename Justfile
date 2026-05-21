@@ -463,6 +463,7 @@ recipe2-observer-audio-gate:
 p012-all-lane-source-grid-output-proof:
     just observer-audio-correlate-generated-feral-grid
     just recipe2-observer-audio-gate
+    just recipe15-feral-grid-auto-proof
 
 offline-render-reproducibility-smoke:
     scripts/validate_offline_render_reproducibility.sh
