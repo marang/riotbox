@@ -265,6 +265,7 @@ observer-audio-summary-validator-fixtures:
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_source_timing_alignment_downbeat_offset_compatibility.json; then echo "expected invalid source timing alignment downbeat-offset compatibility fixture to fail" >&2; exit 1; fi
     python3 scripts/validate_observer_audio_source_timing_alignment_fixtures.py
     python3 scripts/validate_observer_audio_source_grid_metric_fixtures.py
+    python3 scripts/validate_observer_audio_w30_loop_closure_fixtures.py
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_lane_recipe_case_phrase_grid.json; then echo "expected invalid lane recipe phrase-grid fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_observer_audio_summary_json.py crates/riotbox-app/tests/fixtures/observer_audio_correlation/summary_invalid_lane_recipe_case_source_phrase_slot.json; then echo "expected invalid lane recipe source-phrase-slot fixture to fail" >&2; exit 1; fi
 

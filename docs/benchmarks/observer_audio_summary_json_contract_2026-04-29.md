@@ -183,7 +183,9 @@ The current stable metric keys are:
 - `w30_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `w30_source_loop_closure`: `null` or an object with `passed`,
   `preview_rms`, `edge_delta_abs`, `max_allowed_edge_delta_abs`,
-  `edge_abs_max`, `max_allowed_edge_abs`, and `source_contains_selection`
+  `edge_abs_max`, `max_allowed_edge_abs`, and `source_contains_selection`;
+  `passed` and `source_contains_selection` must be booleans, and the RMS,
+  edge, and budget fields must be non-negative numbers
 - `w30_candidate_rms`
 - `w30_candidate_active_sample_ratio`
 - `w30_rms_delta`
@@ -333,8 +335,9 @@ The committed fixture JSON smoke currently requires:
   rejected invalid schema marker, a rejected missing metric key, rejected grid
   BPM decision mismatches, rejected BPM-delta contradictions, rejected Source
   Timing alignment status/BPM-issue contradictions, rejected impossible
-  source-grid metric ranges, rejected Source Timing shape/cue mismatches, and
-  rejected malformed lane recipe case evidence
+  source-grid metric ranges, rejected malformed W-30 loop-closure evidence,
+  rejected Source Timing shape/cue mismatches, and rejected malformed lane
+  recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source
