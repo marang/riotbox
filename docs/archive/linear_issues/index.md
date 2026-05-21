@@ -542,4 +542,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Run P012 Source Timing broad review after readiness and warning slices
 - [RIOTBOX-897.md](./RIOTBOX-897.md)
   Use shared Source Timing primary warning in Jam Trust
+- [RIOTBOX-893.md](./RIOTBOX-893.md)
+  Require Recipe 15 real-source fixtures in the P012 all-lane proof gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
