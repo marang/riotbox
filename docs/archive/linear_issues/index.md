@@ -528,4 +528,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose downbeat phase confidence in generated Feral-grid Source Timing manifests
 - [RIOTBOX-889.md](./RIOTBOX-889.md)
   Improve Beat20 real-source downbeat confidence without relaxing fallback safety
+- [RIOTBOX-890.md](./RIOTBOX-890.md)
+  Expose Source Timing anchor cue in observer snapshots
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
