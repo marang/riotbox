@@ -466,4 +466,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate lane recipe case result enum in observer/audio summary
 - [RIOTBOX-857.md](./RIOTBOX-857.md)
   Clarify automatic next-ticket continuation in workflow conventions
+- [RIOTBOX-859.md](./RIOTBOX-859.md)
+  Consolidate autonomous workflow documentation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
