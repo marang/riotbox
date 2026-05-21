@@ -216,6 +216,7 @@ docs/
 - `reviews/mc202_bass_phrase_variation_showcase_review_2026-05-20.md`: MC-202 bass phrase-variation showcase review captured
 - `reviews/p013_representative_showcase_seam_review_2026-05-20.md`: P013 representative showcase seam review captured
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured
+- `reviews/p012_source_timing_report_expectation_gate_review_2026-05-21.md`: P012 Source Timing report expectation gate review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
