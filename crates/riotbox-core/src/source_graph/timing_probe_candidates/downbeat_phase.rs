@@ -61,6 +61,9 @@ pub fn source_timing_probe_downbeat_evidence_report(
         downbeat_phase_scores(input, bpm)
     };
     let primary = phases.first().copied();
+    let primary_margin_to_next_phase = primary
+        .zip(phases.get(1).copied())
+        .map(|(primary, next)| (primary.score - next.score).max(0.0));
     let alternate_phase_count = ambiguous_downbeat_phases(&phases, policy).count();
     let status = match primary {
         None => SourceTimingProbeDownbeatEvidenceStatus::Unavailable,
@@ -84,6 +87,7 @@ pub fn source_timing_probe_downbeat_evidence_report(
         phase_count: phases.len(),
         primary_offset_beats: primary.map(|phase| phase.offset_beats),
         primary_score: primary.map(|phase| phase.score),
+        primary_margin_to_next_phase,
         alternate_phase_count,
         status,
     }

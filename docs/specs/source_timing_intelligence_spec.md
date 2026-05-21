@@ -676,10 +676,12 @@ bounded BPM policy:
   QA from trusting a readiness label without seeing what musical timing anchors
   supported it
 - generated Feral grid manifests must preserve bounded downbeat-phase evidence
-  under `source_timing.primary_downbeat_score` and
+  under `source_timing.primary_downbeat_score`,
+  `source_timing.primary_downbeat_margin`, and
   `source_timing.alternate_downbeat_phase_count` beside the selected
   `primary_downbeat_offset_beats`, so reviewers can tell whether a bar-start
-  choice is stable, ambiguous, or unavailable without opening raw probe output
+  choice is stable, near-tied, ambiguous, or unavailable without opening raw
+  probe output
 - generated Feral grid manifests must preserve compact musician-facing
   `source_timing.cue` and `source_timing.actionability` fields beside
   readiness, manual-confirm, and grid-use evidence, so the P012 all-lane proof

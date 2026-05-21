@@ -20,6 +20,10 @@
         "min": 0.9,
         "max": 1.0
       },
+      "primary_downbeat_margin": {
+        "min": 0.0,
+        "max": 0.05
+      },
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "phrase_locked",

@@ -21,6 +21,10 @@
         "min": 0.5,
         "max": 0.7
       },
+      "primary_downbeat_margin": {
+        "min": 0.05,
+        "max": 1.0
+      },
       "beat_status": "stable",
       "downbeat_status": "stable",
       "primary_downbeat_offset_beats": 0,
@@ -29,7 +33,7 @@
         "phrase_uncertain"
       ],
       "primary_beat_matched_onset_ratio": {
-        "min": 0.90,
+        "min": 0.9,
         "max": 0.95
       },
       "primary_beat_median_distance_ratio": {
@@ -60,6 +64,10 @@
         "min": 0.5,
         "max": 0.7
       },
+      "primary_downbeat_margin": {
+        "min": 0.05,
+        "max": 1.0
+      },
       "beat_status": "stable",
       "downbeat_status": "stable",
       "primary_downbeat_offset_beats": 0,
@@ -70,7 +78,7 @@
         "max": 1.0
       },
       "primary_beat_median_distance_ratio": {
-        "min": 0.60,
+        "min": 0.6,
         "max": 0.75
       },
       "alternate_beat_candidate_count": 0,

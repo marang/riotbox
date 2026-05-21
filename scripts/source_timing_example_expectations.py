@@ -27,6 +27,7 @@ EXPECTATION_KEYS = {
     "primary_beat_matched_onset_ratio",
     "primary_beat_median_distance_ratio",
     "primary_downbeat_score",
+    "primary_downbeat_margin",
     "warning_codes_include",
     "warning_codes_exact",
 }
@@ -84,6 +85,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_number_range(payload, expectation, issues, "primary_beat_matched_onset_ratio")
     compare_number_range(payload, expectation, issues, "primary_beat_median_distance_ratio")
     compare_number_range(payload, expectation, issues, "primary_downbeat_score")
+    compare_number_range(payload, expectation, issues, "primary_downbeat_margin")
     compare_warning_includes(payload, expectation, issues)
     compare_warning_exact(payload, expectation, issues)
     return issues

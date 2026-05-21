@@ -69,7 +69,7 @@ missing = sorted(required_warnings - warnings)
 if missing:
     raise SystemExit(f"missing expected warning codes: {missing}")
 
-for key in ("primary_beat_score", "primary_downbeat_score"):
+for key in ("primary_beat_score", "primary_downbeat_score", "primary_downbeat_margin"):
     if summary.get(key) is not None:
         raise SystemExit(f"{key} must stay null for degraded silence, got {summary.get(key)!r}")
 

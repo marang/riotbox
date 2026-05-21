@@ -42,6 +42,7 @@ checks = {
     "primary_bpm": lambda value: 127.0 <= value <= 130.0,
     "primary_beat_score": lambda value: value >= 0.90,
     "primary_downbeat_score": lambda value: value >= 0.30,
+    "primary_downbeat_margin": lambda value: value > 0.05,
     "duration_seconds": lambda value: value >= 15.9,
     "onset_count": lambda value: value > 0,
 }
@@ -98,6 +99,7 @@ print(
     f"bpm={summary['primary_bpm']:.3f} "
     f"beat={summary['primary_beat_score']:.3f} "
     f"downbeat={summary['primary_downbeat_score']:.3f} "
+    f"downbeat_margin={summary['primary_downbeat_margin']:.3f} "
     f"anchors={anchors['primary_anchor_count']} "
     f"groove_residuals={groove['primary_groove_residual_count']}"
 )

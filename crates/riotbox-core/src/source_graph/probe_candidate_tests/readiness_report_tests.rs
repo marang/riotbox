@@ -324,6 +324,7 @@ fn grid_use_policy_report(
         primary_bpm,
         primary_downbeat_offset_beats: Some(0),
         primary_downbeat_score: Some(0.75),
+        primary_downbeat_margin: Some(0.25),
         alternate_downbeat_phase_count: 0,
         beat_status: SourceTimingProbeBeatEvidenceStatus::Stable,
         downbeat_status: SourceTimingProbeDownbeatEvidenceStatus::Stable,

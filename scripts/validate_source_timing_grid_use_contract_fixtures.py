@@ -177,6 +177,12 @@ def main() -> int:
         )
         reject_manifest_source_timing_field(
             build_manifest(manifest_base, CASES[1]),
+            "primary_downbeat_margin",
+            "source_timing primary_downbeat_margin must be present",
+            tmpdir / "manifest_missing_downbeat_margin.json",
+        )
+        reject_manifest_source_timing_field(
+            build_manifest(manifest_base, CASES[1]),
             "alternate_downbeat_phase_count",
             "source_timing alternate_downbeat_phase_count must be a non-negative integer",
             tmpdir / "manifest_missing_downbeat_phase_count.json",
@@ -252,12 +258,15 @@ def apply_timing_fields(target: dict[str, Any], case: GridUseCase) -> None:
     target["alternate_evidence_count"] = case.alternate_evidence_count
     if case.downbeat_status == "unavailable":
         target["primary_downbeat_score"] = None
+        target["primary_downbeat_margin"] = None
         target["alternate_downbeat_phase_count"] = 0
     elif case.downbeat_status == "ambiguous":
         target["primary_downbeat_score"] = 0.268
+        target["primary_downbeat_margin"] = 0.005
         target["alternate_downbeat_phase_count"] = 3
     else:
         target["primary_downbeat_score"] = 0.565
+        target["primary_downbeat_margin"] = 0.125
         target["alternate_downbeat_phase_count"] = 0
     target["warning_codes"] = []
 
