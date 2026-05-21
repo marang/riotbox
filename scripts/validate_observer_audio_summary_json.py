@@ -259,7 +259,7 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
     if value is None:
         return
     alignment = require_object(value, field)
-    require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
+    status = require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
     require_optional_number(alignment, "bpm_delta")
     require_number(alignment, "bpm_tolerance")
     observer_grid_use = require_one_of(
@@ -290,6 +290,12 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
         manifest_downbeat_offset,
         downbeat_offset_compatibility,
         issues,
+    )
+    require_alignment_status_issues_consistency(
+        field,
+        status,
+        issues,
+        "source_timing_alignment.",
     )
 
 
