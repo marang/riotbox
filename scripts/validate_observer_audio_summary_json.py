@@ -88,6 +88,7 @@ SOURCE_TIMING_PHRASE_STATUSES = {
     "high_drift",
     "stable",
 }
+MC202_PHRASE_GRID_MIN_HIT_RATIO = 0.95
 
 
 def main() -> int:
@@ -571,14 +572,57 @@ def require_optional_mc202_phrase_grid(parent: dict[str, Any], field: str) -> No
     hit_ratio = require_number_value(grid, "hit_ratio")
     if hit_ratio < 0.0 or hit_ratio > 1.0:
         raise ValueError(f"{field}.hit_ratio must be between 0 and 1")
-    require_bool(grid, "starts_on_phrase_boundary")
+    starts_on_phrase_boundary = require_bool(grid, "starts_on_phrase_boundary")
     candidate_onset_count = require_non_negative_int(grid, "candidate_onset_count")
     grid_aligned_onset_count = require_non_negative_int(grid, "grid_aligned_onset_count")
     if grid_aligned_onset_count > candidate_onset_count:
         raise ValueError(f"{field}.grid_aligned_onset_count cannot exceed candidate_onset_count")
-    require_non_negative_number(grid, "max_onset_offset_ms", field)
-    require_non_negative_number(grid, "max_allowed_onset_offset_ms", field)
-    require_bool(grid, "passed")
+    max_onset_offset_ms = require_non_negative_number(grid, "max_onset_offset_ms", field)
+    max_allowed_onset_offset_ms = require_non_negative_number(
+        grid, "max_allowed_onset_offset_ms", field
+    )
+    passed = require_bool(grid, "passed")
+    require_mc202_phrase_grid_pass_consistency(
+        field,
+        passed,
+        starts_on_phrase_boundary,
+        candidate_onset_count,
+        hit_ratio,
+        max_onset_offset_ms,
+        max_allowed_onset_offset_ms,
+    )
+
+
+def require_mc202_phrase_grid_pass_consistency(
+    field: str,
+    passed: bool,
+    starts_on_phrase_boundary: bool,
+    candidate_onset_count: int,
+    hit_ratio: float | int,
+    max_onset_offset_ms: float | int,
+    max_allowed_onset_offset_ms: float | int,
+) -> None:
+    expected = (
+        starts_on_phrase_boundary
+        and candidate_onset_count > 0
+        and hit_ratio >= MC202_PHRASE_GRID_MIN_HIT_RATIO
+        and max_onset_offset_ms <= max_allowed_onset_offset_ms
+    )
+    if passed == expected:
+        return
+    if passed:
+        if not starts_on_phrase_boundary:
+            raise ValueError(f"{field}.passed requires starts_on_phrase_boundary")
+        if candidate_onset_count == 0:
+            raise ValueError(f"{field}.passed requires candidate_onset_count > 0")
+        if hit_ratio < MC202_PHRASE_GRID_MIN_HIT_RATIO:
+            raise ValueError(
+                f"{field}.passed requires hit_ratio >= {MC202_PHRASE_GRID_MIN_HIT_RATIO}"
+            )
+        raise ValueError(
+            f"{field}.passed requires max_onset_offset_ms <= max_allowed_onset_offset_ms"
+        )
+    raise ValueError(f"{field}.passed=false contradicts passing phrase-grid evidence")
 
 
 def require_optional_mc202_source_phrase_slot(parent: dict[str, Any], field: str) -> None:
@@ -709,10 +753,13 @@ def require_number_value(parent: dict[str, Any], field: str) -> float | int:
     return value
 
 
-def require_non_negative_number(parent: dict[str, Any], field: str, prefix: str) -> None:
+def require_non_negative_number(
+    parent: dict[str, Any], field: str, prefix: str
+) -> float | int:
     value = require_number_value(parent, field)
     if value < 0.0:
         raise ValueError(f"{prefix}.{field} must be non-negative")
+    return value
 
 
 def require_optional_int(parent: dict[str, Any], field: str) -> None:
