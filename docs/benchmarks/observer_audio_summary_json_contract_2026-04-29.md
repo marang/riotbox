@@ -270,6 +270,9 @@ to live only inside the manifest pass/fail decision. Each item should include:
   `hit_ratio`, phrase-boundary, onset-count, onset-offset, and `passed` fields.
   `hit_ratio` must be in `[0, 1]`; onset counts and onset offsets/budgets must
   be non-negative; aligned onset count must not exceed candidate onset count.
+  `passed` must match the current MC-202 phrase-grid pass contract: phrase
+  boundary start, at least one candidate onset, `hit_ratio >= 0.95`, and
+  `max_onset_offset_ms <= max_allowed_onset_offset_ms`.
 - `mc202_source_phrase_slot`: `null` or compact Source Graph phrase-slot
   evidence with phrase-grid availability, selected phrase index,
   source-boundary, and `passed` fields. `phrase_index` must be non-negative
@@ -345,10 +348,11 @@ The committed fixture JSON smoke currently requires:
   BPM decision mismatches, rejected BPM-delta contradictions, rejected
   impossible scalar metric ranges, rejected unknown Source Timing status enums
   and counts, rejected impossible lane recipe metric ranges, rejected
-  contradictory MC-202 source phrase-slot evidence, rejected Source Timing
-  alignment status/BPM-issue contradictions, rejected impossible source-grid
-  metric ranges, rejected malformed W-30 loop-closure evidence, rejected Source
-  Timing shape/cue mismatches, and rejected malformed lane recipe case evidence
+  contradictory MC-202 phrase-grid pass evidence, rejected contradictory MC-202
+  source phrase-slot evidence, rejected Source Timing alignment status/BPM-issue
+  contradictions, rejected impossible source-grid metric ranges, rejected
+  malformed W-30 loop-closure evidence, rejected Source Timing shape/cue
+  mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source
