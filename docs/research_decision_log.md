@@ -1430,8 +1430,6 @@ Evidence: Stage 1-3 of `docs/reviews/mc202_typed_contract_migration_plan_2026-05
 Consequences: future MC-202 roles or phrase intents must extend the typed helpers first. A typed-field JSON migration is allowed only as part of a documented session-version migration with legacy fixture load, roundtrip, restore, deterministic replay, undo snapshot compatibility, TUI/observer label, and audio-output proof where applicable.
 Status: accepted
 
----
-
 ### RBX-029
 
 Date: 2026-05-10
@@ -1485,4 +1483,18 @@ Decision: require Feral-grid manifests and strict observer/audio correlation to 
 Why: the representative showcase can otherwise hide a drifting or weak bass-pressure stem behind stronger grid-locked TR-909, W-30, or full-mix peaks. P013 is explicitly all-lane musical depth, so the MC-202 bass lane needs its own source-grid proof in the same generated-support context.
 Evidence: RIOTBOX-810 added MC-202 source-grid alignment metrics to `feral_grid_pack`, RIOTBOX-811 surfaced them through observer/audio correlation and strict validators, and RIOTBOX-812 moved manifest ownership into a real module without changing the JSON/output contract. The local verification path included `cargo test -p riotbox-audio --bin feral_grid_pack`, `just syncopated-source-showcase-smoke`, representative showcase generation, `just audio-qa-ci`, `just ci`, and GitHub Actions Rust CI #1960.
 Consequences: the older P012 MC-202 phrase-slot proof remains the lane-recipe bridge for question/answer placement, but Feral-grid showcase packs must also prove that audible MC-202 support lands near the chosen source grid. This is still bounded showcase QA, not a full production source-derived arranger.
+Status: accepted
+
+---
+
+### RBX-033
+
+Date: 2026-05-21
+Topic: P012 Jam / Source Timing actionability should stay summary-owned
+Phase: Source Timing Intelligence / Musician UX
+Question: after Jam, Source, Help, observer snapshots, and P012 proof summaries all use Source Timing readiness language, where should the musician-facing action phrase live?
+Decision: keep the actionability phrase on the shared Jam Source Timing summary, not in screen-local policy matching. Jam / Source surfaces should consume the same summary-owned phrase when they tell the musician whether the grid can steer moves, needs confirmation, should be listened to first, or is using fallback.
+Why: P012 timing trust is only useful if musicians can see the same meaning everywhere. Local remapping of degraded-policy strings across panels makes it easy for Jam, Source, Help, observer snapshots, and QA readouts to drift apart.
+Evidence: RIOTBOX-874 added `SourceTimingSummaryView.actionability`, used it in Help / Source / observer surfaces, and the cadence review in `docs/reviews/p012_jam_source_timing_surface_review_2026-05-21.md` found the remaining Jam compact-readiness gap as a follow-up rather than a new timing architecture problem.
+Consequences: future Jam / Source timing wording should reuse the shared summary phrase first. If a surface needs shorter wording, add a summary-owned compact variant or document why that surface intentionally omits actionability.
 Status: accepted
