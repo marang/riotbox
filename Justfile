@@ -244,6 +244,20 @@ recipe15-feral-grid-auto-proof:
     just dh-beatc-auto-feral-grid-proof local-dh-beatc-feral-grid-auto-proof
     just beat20-auto-feral-grid-fallback-proof local-beat20-feral-grid-auto-fallback-proof
 
+recipe15-feral-grid-auto-proof-strict:
+    RIOTBOX_REQUIRE_RECIPE15_FIXTURES=1 just recipe15-feral-grid-auto-proof
+
+recipe15-strict-missing-fixture-fixture:
+    tmp="$(mktemp -d)" && \
+      if RIOTBOX_REQUIRE_RECIPE15_FIXTURES=1 RIOTBOX_RECIPE15_SOURCE_PATH="$tmp/missing.wav" scripts/validate_auto_feral_grid_source_timing_pack.sh beat03 local-missing-fixture-proof >"$tmp/out" 2>"$tmp/err"; then \
+        cat "$tmp/out" "$tmp/err" >&2; \
+        rm -rf "$tmp"; \
+        echo "expected strict Recipe 15 missing fixture check to fail" >&2; \
+        exit 1; \
+      fi && \
+      grep -q "missing required Recipe 15 source fixture" "$tmp/err" && \
+      rm -rf "$tmp"
+
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
@@ -463,7 +477,7 @@ recipe2-observer-audio-gate:
 p012-all-lane-source-grid-output-proof:
     just observer-audio-correlate-generated-feral-grid
     just recipe2-observer-audio-gate
-    just recipe15-feral-grid-auto-proof
+    just recipe15-feral-grid-auto-proof-strict
 
 offline-render-reproducibility-smoke:
     scripts/validate_offline_render_reproducibility.sh
