@@ -27,6 +27,11 @@ def main() -> int:
         validate_case(base, tmpdir / "valid_lane_recipe_metrics.json")
 
         reject_case(
+            with_case_field(base, "result", "maybe"),
+            "result must be one of",
+            tmpdir / "lane_recipe_result_unknown.json",
+        )
+        reject_case(
             with_case_field(base, "candidate_rms", -0.1),
             "candidate_rms must be non-negative",
             tmpdir / "candidate_rms_negative.json",
