@@ -39,6 +39,10 @@ Riotbox should be delivered through one repeating loop:
 
 No large subsystem should skip this sequence.
 
+This is the product delivery loop. The operational Linear/branch/PR/CI/archive
+loop that agents and contributors use to execute each bounded slice is maintained
+in `docs/workflow_conventions.md`.
+
 ---
 
 ## 3. Product Spine
