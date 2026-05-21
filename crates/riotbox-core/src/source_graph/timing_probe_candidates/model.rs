@@ -9,7 +9,7 @@ pub fn timing_model_from_probe_bpm_candidates(
         .copied()
         .find(|score| score.score >= policy.min_beat_period_score)
     else {
-        return timing_model_from_probe_diagnostics(
+        let mut timing = timing_model_from_probe_diagnostics(
             &SourceTimingProbeDiagnosticInput {
                 source_id: input.source_id.clone(),
                 duration_seconds: input.duration_seconds,
@@ -23,6 +23,19 @@ pub fn timing_model_from_probe_bpm_candidates(
             },
             SourceTimingProbeDiagnosticPolicy::default(),
         );
+        if !input.onset_times_seconds.is_empty()
+            && input.onset_times_seconds.len() < policy.min_onset_count
+            && !timing
+                .warnings
+                .iter()
+                .any(|warning| warning.code == TimingWarningCode::SparseOnsets)
+        {
+            timing.warnings.insert(1, TimingWarning {
+                code: TimingWarningCode::SparseOnsets,
+                message: "BPM candidate has too few timing onsets".into(),
+            });
+        }
+        return timing;
     };
     let primary_bpm = primary_period.bpm;
 

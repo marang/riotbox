@@ -48,16 +48,22 @@ pub fn timing_model_from_probe_diagnostics(
                 TimingWarningCode::PhraseUncertain,
             ],
         ),
-        (true, false) => (
-            TimingQuality::Low,
-            TimingDegradedPolicy::Disabled,
-            0.10,
-            vec![
-                TimingWarningCode::LowTimingConfidence,
+        (true, false) => {
+            let mut warnings = vec![TimingWarningCode::LowTimingConfidence];
+            if input.onset_count < policy.min_onset_count {
+                warnings.push(TimingWarningCode::SparseOnsets);
+            }
+            warnings.extend([
                 TimingWarningCode::WeakKickAnchor,
                 TimingWarningCode::PhraseUncertain,
-            ],
-        ),
+            ]);
+            (
+                TimingQuality::Low,
+                TimingDegradedPolicy::Disabled,
+                0.10,
+                warnings,
+            )
+        }
         (false, _) => (
             TimingQuality::Unknown,
             TimingDegradedPolicy::Disabled,
@@ -97,6 +103,9 @@ fn probe_timing_warning_message(
     match code {
         TimingWarningCode::LowTimingConfidence => {
             format!("probe evidence is too weak to lock timing for {}", input.source_id)
+        }
+        TimingWarningCode::SparseOnsets => {
+            "probe has too few timing onsets to estimate a grid".into()
         }
         TimingWarningCode::WeakKickAnchor => {
             "probe has no trusted low-end or downbeat anchor yet".into()

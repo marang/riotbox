@@ -225,6 +225,7 @@
       "phrase_status": "unavailable",
       "warning_codes_exact": [
         "low_timing_confidence",
+        "sparse_onsets",
         "weak_kick_anchor"
       ],
       "alternate_beat_candidate_count": 0,
@@ -244,6 +245,7 @@
       "phrase_status": "unavailable",
       "warning_codes_exact": [
         "low_timing_confidence",
+        "sparse_onsets",
         "weak_kick_anchor"
       ],
       "alternate_beat_candidate_count": 0,

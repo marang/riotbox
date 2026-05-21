@@ -187,6 +187,27 @@ fn summary_prioritizes_drift_over_other_timing_warnings() {
 }
 
 #[test]
+fn summary_prioritizes_sparse_onsets_over_generic_low_confidence() {
+    let mut graph = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::Disabled);
+    graph
+        .timing
+        .warnings
+        .push(timing_warning(TimingWarningCode::LowTimingConfidence));
+    graph
+        .timing
+        .warnings
+        .push(timing_warning(TimingWarningCode::WeakKickAnchor));
+    graph
+        .timing
+        .warnings
+        .push(timing_warning(TimingWarningCode::SparseOnsets));
+
+    let timing = SourceTimingSummaryView::from_graph(&graph);
+
+    assert_eq!(timing.primary_warning.as_deref(), Some("sparse_onsets"));
+}
+
+#[test]
 fn cautious_short_loop_summary_surfaces_short_loop_grid_use() {
     let mut graph = source_timing_graph(TimingQuality::Medium, TimingDegradedPolicy::Cautious);
     graph.timing.beat_grid = vec![crate::source_graph::BeatPoint {

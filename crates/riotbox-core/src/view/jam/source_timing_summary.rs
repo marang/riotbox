@@ -230,14 +230,15 @@ fn primary_source_timing_warning(
 
 fn source_timing_warning_priority(code: &crate::source_graph::TimingWarningCode) -> u8 {
     match code {
+        crate::source_graph::TimingWarningCode::SparseOnsets => 2,
         crate::source_graph::TimingWarningCode::DriftHigh => 0,
         crate::source_graph::TimingWarningCode::AmbiguousDownbeat => 1,
-        crate::source_graph::TimingWarningCode::LowTimingConfidence => 2,
-        crate::source_graph::TimingWarningCode::WeakKickAnchor => 3,
-        crate::source_graph::TimingWarningCode::WeakBackbeatAnchor => 4,
-        crate::source_graph::TimingWarningCode::HalfTimePossible => 5,
-        crate::source_graph::TimingWarningCode::DoubleTimePossible => 6,
-        crate::source_graph::TimingWarningCode::PhraseUncertain => 7,
+        crate::source_graph::TimingWarningCode::LowTimingConfidence => 3,
+        crate::source_graph::TimingWarningCode::WeakKickAnchor => 4,
+        crate::source_graph::TimingWarningCode::WeakBackbeatAnchor => 5,
+        crate::source_graph::TimingWarningCode::HalfTimePossible => 6,
+        crate::source_graph::TimingWarningCode::DoubleTimePossible => 7,
+        crate::source_graph::TimingWarningCode::PhraseUncertain => 8,
     }
 }
 
@@ -317,6 +318,7 @@ fn source_timing_warning_code_label(
     code: &crate::source_graph::TimingWarningCode,
 ) -> &'static str {
     match code {
+        crate::source_graph::TimingWarningCode::SparseOnsets => "sparse_onsets",
         crate::source_graph::TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
         crate::source_graph::TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
         crate::source_graph::TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",

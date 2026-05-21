@@ -235,6 +235,7 @@ fn observer_timing_warning_code_label(
     code: &riotbox_core::source_graph::TimingWarningCode,
 ) -> &'static str {
     match code {
+        riotbox_core::source_graph::TimingWarningCode::SparseOnsets => "sparse_onsets",
         riotbox_core::source_graph::TimingWarningCode::WeakKickAnchor => "weak_kick_anchor",
         riotbox_core::source_graph::TimingWarningCode::WeakBackbeatAnchor => "weak_backbeat_anchor",
         riotbox_core::source_graph::TimingWarningCode::AmbiguousDownbeat => "ambiguous_downbeat",
