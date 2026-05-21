@@ -588,10 +588,28 @@ def require_optional_mc202_source_phrase_slot(parent: dict[str, Any], field: str
     if value is None:
         return
     slot = require_object(value, field)
-    require_bool(slot, "phrase_grid_available")
-    require_optional_int(slot, "phrase_index")
-    require_bool(slot, "starts_on_source_phrase_boundary")
-    require_bool(slot, "passed")
+    phrase_grid_available = require_bool(slot, "phrase_grid_available")
+    phrase_index = require_optional_int_value(slot, "phrase_index")
+    if phrase_index is not None and phrase_index < 0:
+        raise ValueError(f"{field}.phrase_index must be non-negative")
+    starts_on_source_phrase_boundary = require_bool(slot, "starts_on_source_phrase_boundary")
+    passed = require_bool(slot, "passed")
+    if passed:
+        if not phrase_grid_available:
+            raise ValueError(f"{field}.passed requires phrase_grid_available")
+        if phrase_index is None:
+            raise ValueError(f"{field}.passed requires phrase_index")
+        if not starts_on_source_phrase_boundary:
+            raise ValueError(f"{field}.passed requires starts_on_source_phrase_boundary")
+    if not phrase_grid_available:
+        if phrase_index is not None:
+            raise ValueError(f"{field}.phrase_index requires phrase_grid_available")
+        if starts_on_source_phrase_boundary:
+            raise ValueError(
+                f"{field}.starts_on_source_phrase_boundary requires phrase_grid_available"
+            )
+    if starts_on_source_phrase_boundary and phrase_index is None:
+        raise ValueError(f"{field}.starts_on_source_phrase_boundary requires phrase_index")
 
 
 def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
