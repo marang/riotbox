@@ -404,4 +404,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate Source Timing report probe fixtures inside the field assertor
 - [RIOTBOX-826.md](./RIOTBOX-826.md)
   Reject unknown Source Timing example expectation keys
+- [RIOTBOX-827.md](./RIOTBOX-827.md)
+  Document strict Source Timing example expectation schema
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
