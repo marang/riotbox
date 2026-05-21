@@ -544,4 +544,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Use shared Source Timing primary warning in Jam Trust
 - [RIOTBOX-893.md](./RIOTBOX-893.md)
   Require Recipe 15 real-source fixtures in the P012 all-lane proof gate
+- [RIOTBOX-898.md](./RIOTBOX-898.md)
+  Accept SparseOnsets in Source Timing fixture-report validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
