@@ -102,6 +102,8 @@ def validate_summary(summary: Any) -> None:
         "phrase_status",
         {"unavailable", "not_enough_material", "ambiguous_downbeat", "high_drift", "stable"},
     )
+    require_non_negative_int(summary, "primary_phrase_count")
+    require_non_negative_int(summary, "primary_phrase_bar_count")
     require_non_negative_int(summary, "alternate_evidence_count")
     require_non_negative_int(summary, "alternate_beat_candidate_count")
     require_non_negative_int(summary, "alternate_downbeat_phase_count")

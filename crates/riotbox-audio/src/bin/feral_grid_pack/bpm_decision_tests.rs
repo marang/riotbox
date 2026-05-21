@@ -177,6 +177,8 @@ mod bpm_decision_tests {
             confidence_result: SourceTimingCandidateConfidenceResult::CandidateCautious,
             drift_status: SourceTimingCandidateDriftStatus::Stable,
             phrase_status: SourceTimingCandidatePhraseStatus::Stable,
+            primary_phrase_count: 1,
+            primary_phrase_bar_count: 8,
             alternate_evidence_count: 0,
             warning_codes: Vec::new(),
             requires_manual_confirm: false,

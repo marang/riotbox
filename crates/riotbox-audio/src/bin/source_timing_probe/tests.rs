@@ -70,6 +70,7 @@ fn renders_probe_summary_for_accented_loop() {
     assert!(text.contains("grid_use="));
     assert!(text.contains("beat: stable"));
     assert!(text.contains("downbeat: "));
+    assert!(text.contains("phrases="));
     assert!(text.contains("scores: beat="));
     assert!(text.contains("anchors: total="));
     assert!(text.contains("groove: residuals="));
@@ -79,6 +80,8 @@ fn renders_probe_summary_for_accented_loop() {
     assert!(json["primary_beat_score"].is_number());
     assert!(json["primary_downbeat_score"].is_number());
     assert!(json["primary_downbeat_margin"].is_number());
+    assert!(json["primary_phrase_count"].is_number());
+    assert!(json["primary_phrase_bar_count"].is_number());
     assert!(json["anchor_evidence"]["primary_anchor_count"].is_number());
     assert!(json["anchor_evidence"]["primary_anchor_preview"].is_array());
     assert!(json["groove_evidence"]["primary_groove_residual_count"].is_number());
@@ -140,6 +143,8 @@ fn readiness_report(
         confidence_result: SourceTimingCandidateConfidenceResult::CandidateCautious,
         drift_status: SourceTimingCandidateDriftStatus::NotEnoughMaterial,
         phrase_status: SourceTimingCandidatePhraseStatus::NotEnoughMaterial,
+        primary_phrase_count: 0,
+        primary_phrase_bar_count: 4,
         alternate_evidence_count: 0,
         warning_codes: vec![TimingWarningCode::PhraseUncertain],
         requires_manual_confirm,
