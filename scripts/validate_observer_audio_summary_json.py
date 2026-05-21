@@ -88,6 +88,7 @@ SOURCE_TIMING_PHRASE_STATUSES = {
     "high_drift",
     "stable",
 }
+LANE_RECIPE_CASE_RESULTS = {"pass", "fail"}
 MC202_PHRASE_GRID_MIN_HIT_RATIO = 0.95
 
 
@@ -552,7 +553,7 @@ def require_lane_recipe_cases(parent: dict[str, Any]) -> None:
 def require_lane_recipe_case(value: Any, name: str) -> None:
     case = require_object(value, name)
     require_string(case, "id")
-    require_string(case, "result")
+    require_one_of(case, "result", LANE_RECIPE_CASE_RESULTS)
     require_optional_non_negative_number(case, "candidate_rms")
     require_optional_non_negative_number(case, "signal_delta_rms")
     require_optional_non_negative_number(case, "min_signal_delta_rms")

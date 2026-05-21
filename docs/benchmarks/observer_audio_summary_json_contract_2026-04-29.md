@@ -256,7 +256,7 @@ The `lane_recipe_cases` array exposes pack-specific lane recipe proof that used
 to live only inside the manifest pass/fail decision. Each item should include:
 
 - `id`: stable case id from the generated lane recipe pack.
-- `result`: pack verdict such as `pass` or `fail`.
+- `result`: pack verdict, one of `pass` or `fail`.
 - `candidate_rms`: non-negative candidate output energy, or `null` when
   unavailable.
 - `signal_delta_rms`: non-negative candidate/control signal delta, or `null`
@@ -350,7 +350,8 @@ The committed fixture JSON smoke currently requires:
   BPM decision mismatches, rejected BPM-delta contradictions, rejected
   missing manifest Source Timing `grid_use` evidence, rejected
   impossible scalar metric ranges, rejected unknown Source Timing status enums
-  and counts, rejected impossible lane recipe metric ranges, rejected
+  and counts, rejected unknown lane recipe case result enums, rejected
+  impossible lane recipe metric ranges, rejected
   missing W-30 loop-closure metric keys, rejected
   contradictory MC-202 phrase-grid hit-ratio evidence, rejected contradictory
   MC-202 phrase-grid pass evidence, rejected contradictory MC-202 source
