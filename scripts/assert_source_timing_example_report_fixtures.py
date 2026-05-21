@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import subprocess
+import sys
 from pathlib import Path
 from typing import Callable
 
@@ -135,6 +137,7 @@ def main() -> int:
     assert_missing_expected_source_skips()
     assert_mismatch_expectations_fail()
     assert_invalid_expectations_fail()
+    assert_malformed_fixture_cli_error()
     return 0
 
 
@@ -212,6 +215,33 @@ def assert_invalid_expectations_fail() -> None:
             ),
             f"expected invalid source timing expectation range fixture to fail: {path}",
         )
+
+
+def assert_malformed_fixture_cli_error() -> None:
+    completed = subprocess.run(
+        [
+            sys.executable,
+            "scripts/source_timing_example_probe_report.py",
+            "--fixture-json",
+            str(FIXTURE_DIR / "probe_invalid_missing_source_path.json"),
+        ],
+        check=False,
+        text=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    )
+    if completed.returncode == 0:
+        raise AssertionError("expected malformed source timing fixture CLI to fail")
+    expected = (
+        "source timing example probe report error: "
+        "source_path must be a non-empty string"
+    )
+    if expected not in completed.stderr:
+        raise AssertionError(
+            f"expected bounded malformed fixture error, got {completed.stderr!r}"
+        )
+    if "Traceback" in completed.stderr:
+        raise AssertionError("malformed source timing fixture printed a traceback")
 
 
 def assert_raises(callback: Callable[[], object], message: str) -> None:
