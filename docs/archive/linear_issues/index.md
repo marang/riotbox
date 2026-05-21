@@ -524,4 +524,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose generated Feral-grid observer/audio path details in P012 proof summary
 - [RIOTBOX-887.md](./RIOTBOX-887.md)
   Centralize app-side Source Timing readiness actionability fallback
+- [RIOTBOX-888.md](./RIOTBOX-888.md)
+  Expose downbeat phase confidence in generated Feral-grid Source Timing manifests
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
