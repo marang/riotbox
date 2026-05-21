@@ -534,4 +534,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show Source Timing actionability in Jam Trust readiness line
 - [RIOTBOX-892.md](./RIOTBOX-892.md)
   Centralize Source Timing readiness actionability labels for Rust producers
+- [RIOTBOX-894.md](./RIOTBOX-894.md)
+  Promote stable long real-loop timing evidence to locked-grid readiness
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
