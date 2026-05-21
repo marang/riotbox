@@ -20,6 +20,7 @@ EXPECTATION_KEYS = {
     "alternate_evidence_count",
     "alternate_beat_candidate_count",
     "alternate_downbeat_phase_count",
+    "primary_downbeat_offset_beats",
     "primary_bpm",
     "primary_beat_score",
     "primary_beat_matched_onset_ratio",
@@ -75,6 +76,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_int(payload, expectation, issues, "alternate_evidence_count")
     compare_int(payload, expectation, issues, "alternate_beat_candidate_count")
     compare_int(payload, expectation, issues, "alternate_downbeat_phase_count")
+    compare_optional_int(payload, expectation, issues, "primary_downbeat_offset_beats")
     compare_bpm(payload, expectation, issues)
     compare_number_range(payload, expectation, issues, "primary_beat_score")
     compare_number_range(payload, expectation, issues, "primary_beat_matched_onset_ratio")
@@ -136,6 +138,24 @@ def compare_int(
         return
     expected = require_int(expectation, key)
     actual = require_int(payload, key)
+    if actual != expected:
+        issues.append(f"{key} expected {expected!r} got {actual!r}")
+
+
+def compare_optional_int(
+    payload: dict[str, Any],
+    expectation: dict[str, Any],
+    issues: list[str],
+    key: str,
+) -> None:
+    if key not in expectation:
+        return
+    expected = expectation.get(key)
+    if expected is not None and (type(expected) is not int or expected < 0):
+        raise TypeError(f"{key} must be a non-negative integer or null")
+    actual = payload.get(key)
+    if actual is not None and (type(actual) is not int or actual < 0):
+        raise TypeError(f"{key} must be a non-negative integer or null")
     if actual != expected:
         issues.append(f"{key} expected {expected!r} got {actual!r}")
 

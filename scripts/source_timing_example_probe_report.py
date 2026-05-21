@@ -46,6 +46,7 @@ class ReportRow:
     beat_median: str = "-"
     beat_alternates: str = "-"
     downbeat: str = "-"
+    downbeat_offset: str = "-"
     downbeat_score: str = "-"
     downbeat_alternates: str = "-"
     phrase: str = "-"
@@ -186,6 +187,7 @@ def row_from_payload(
         beat_median=format_optional_score(payload.get("primary_beat_median_distance_ratio")),
         beat_alternates=str(require_int(payload, "alternate_beat_candidate_count")),
         downbeat=require_string(payload, "downbeat_status"),
+        downbeat_offset=format_optional_int(payload.get("primary_downbeat_offset_beats")),
         downbeat_score=format_optional_score(payload.get("primary_downbeat_score")),
         downbeat_alternates=str(require_int(payload, "alternate_downbeat_phase_count")),
         phrase=require_string(payload, "phrase_status"),
@@ -203,8 +205,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat score | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -226,6 +228,7 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.beat_median,
                     row.beat_alternates,
                     row.downbeat,
+                    row.downbeat_offset,
                     row.downbeat_score,
                     row.downbeat_alternates,
                     row.phrase,
@@ -264,6 +267,14 @@ def format_optional_score(value: Any) -> str:
     if not isinstance(value, (int, float)):
         raise TypeError("score fields must be numbers or null")
     return f"{value:.3f}"
+
+
+def format_optional_int(value: Any) -> str:
+    if value is None:
+        return "none"
+    if type(value) is not int or value < 0:
+        raise TypeError("integer fields must be non-negative integers or null")
+    return str(value)
 
 
 def format_anchors(value: dict[str, Any]) -> str:
