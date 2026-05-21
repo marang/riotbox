@@ -271,7 +271,7 @@ def require_optional_source_grid_alignment(parent: dict[str, Any], field: str) -
 def require_optional_w30_source_loop_closure(parent: dict[str, Any]) -> None:
     field = "w30_source_loop_closure"
     if field not in parent:
-        return
+        raise TypeError(f"{field} must be present as an object or null")
     value = parent.get(field)
     if value is None:
         return
