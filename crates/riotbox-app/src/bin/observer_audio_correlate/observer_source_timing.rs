@@ -10,6 +10,7 @@ struct ObserverSourceTimingReadiness {
     beat_status: String,
     beat_count: u64,
     downbeat_status: String,
+    primary_downbeat_offset_beats: Option<u64>,
     bar_count: u64,
     phrase_status: String,
     phrase_count: u64,
@@ -110,6 +111,14 @@ fn collect_observer_source_timing(
             }
             None => return (None, true),
             Some(_) => return (None, true),
+        },
+        primary_downbeat_offset_beats: match source_timing.get("primary_downbeat_offset_beats") {
+            Some(value) if value.is_null() => None,
+            Some(value) => match value.as_u64() {
+                Some(value) => Some(value),
+                None => return (None, true),
+            },
+            None => None,
         },
         bar_count: match source_timing["bar_count"].as_u64() {
             Some(value) => value,

@@ -6,7 +6,7 @@ fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
         || "unknown".to_string(),
         |timing| {
             format!(
-                "{} cue={} grid_use={} quality={} policy={} bpm={} confidence={:.3} beat={}({}) downbeat={}({}) phrase={}({}) anchors={} groove={} warning={}",
+                "{} cue={} grid_use={} quality={} policy={} bpm={} confidence={:.3} beat={}({}) downbeat={}({}) offset={} phrase={}({}) anchors={} groove={} warning={}",
                 timing.source_id,
                 timing.cue,
                 timing.grid_use,
@@ -18,6 +18,9 @@ fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
                 timing.beat_count,
                 timing.downbeat_status,
                 timing.bar_count,
+                timing
+                    .primary_downbeat_offset_beats
+                    .map_or_else(|| "none".to_string(), |offset| offset.to_string()),
                 timing.phrase_status,
                 timing.phrase_count,
                 format_source_timing_anchor_counts(timing.anchor_evidence.as_ref()),

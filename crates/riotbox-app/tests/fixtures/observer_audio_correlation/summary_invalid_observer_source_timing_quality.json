@@ -23,6 +23,7 @@
       "cue": "needs confirm",
       "primary_hypothesis_id": "probe-primary",
       "hypothesis_count": 1,
+      "primary_downbeat_offset_beats": null,
       "primary_warning_code": "ambiguous_downbeat",
       "warning_codes": [
         "ambiguous_downbeat"
