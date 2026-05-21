@@ -444,4 +444,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate observer/audio source-grid metric numeric ranges
 - [RIOTBOX-846.md](./RIOTBOX-846.md)
   Validate observer/audio W-30 loop-closure metric shape
+- [RIOTBOX-847.md](./RIOTBOX-847.md)
+  Validate observer/audio scalar metric ranges
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
