@@ -103,7 +103,7 @@ When non-null, `source_timing` should include:
 
 - `cue`: musician-facing readiness cue derived from the manifest timing
   readiness and manual-confirm flag.
-- `grid_use`: `null` or the manifest-side Source Timing grid-use
+- `grid_use`: required as `null` or the manifest-side Source Timing grid-use
   classification, such as `locked_grid`, `short_loop_manual_confirm`,
   `manual_confirm_only`, `fallback_grid`, or `unavailable`.
 - `readiness`: one of `unavailable`, `weak`, `needs_review`, or `ready`.
@@ -222,13 +222,12 @@ decisions with usable source BPM evidence require a numeric delta, and
 Missing or invalid source BPM fallback reasons require a `null` delta and
 `source_timing.bpm_agrees_with_grid: null`.
 
-When `source_timing.grid_use` is present, it must match the manifest timing
+When `source_timing.grid_use` is non-null, it must match the manifest timing
 evidence instead of becoming a second timing policy. A ready timing report that
 does not require manual confirmation maps to `locked_grid`; stable short-loop
 manual-confirm evidence maps to `short_loop_manual_confirm`; other
 manual-confirm evidence maps to `manual_confirm_only`; missing/unavailable
-source BPM maps to `unavailable`; otherwise the summary reports
-`fallback_grid`.
+source BPM maps to `unavailable`; otherwise the summary reports `fallback_grid`.
 
 Strict observer/audio correlation also treats clear `grid_use` / grid BPM
 decision contradictions as output-path failures. A `source_timing_ready` grid
@@ -349,6 +348,7 @@ The committed fixture JSON smoke currently requires:
 - validator fixtures cover a valid failure summary with `null` metrics, a
   rejected invalid schema marker, a rejected missing metric key, rejected grid
   BPM decision mismatches, rejected BPM-delta contradictions, rejected
+  missing manifest Source Timing `grid_use` evidence, rejected
   impossible scalar metric ranges, rejected unknown Source Timing status enums
   and counts, rejected impossible lane recipe metric ranges, rejected
   contradictory MC-202 phrase-grid hit-ratio evidence, rejected contradictory
