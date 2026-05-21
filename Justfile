@@ -258,6 +258,10 @@ recipe15-strict-missing-fixture-fixture:
       grep -q "missing required Recipe 15 source fixture" "$tmp/err" && \
       rm -rf "$tmp"
 
+p012-all-lane-proof-summary output="artifacts/audio_qa/local/p012_all_lane_source_grid_output_proof_summary.md":
+    python3 scripts/write_p012_all_lane_proof_summary.py --output "{{output}}"
+    python3 scripts/validate_p012_all_lane_proof_summary.py "{{output}}"
+
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
@@ -478,6 +482,7 @@ p012-all-lane-source-grid-output-proof:
     just observer-audio-correlate-generated-feral-grid
     just recipe2-observer-audio-gate
     just recipe15-feral-grid-auto-proof-strict
+    just p012-all-lane-proof-summary artifacts/audio_qa/local/p012_all_lane_source_grid_output_proof_summary.md
 
 offline-render-reproducibility-smoke:
     scripts/validate_offline_render_reproducibility.sh

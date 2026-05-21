@@ -149,6 +149,9 @@ Deliverables:
   contract, so cautious auto-BPM and conservative fallback behavior stay visible
   in the same phase-level gate; missing required Recipe 15 source fixtures must
   fail that phase-level gate rather than silently skipping the real-source proof
+- P012 all-lane proof leaves a compact local summary artifact under
+  `artifacts/audio_qa/local/` so reviewers can see the source-timing auto,
+  fallback, and lane-metric outcomes without scraping command logs
 - sections
 - first slice / loop candidates
 - Source Graph v1
