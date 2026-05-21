@@ -60,6 +60,8 @@ Current benchmark artifacts:
   Generated Source Timing probe matrix covering strong grid-lock, silence degradation, and flat-pulse beat-without-downbeat ambiguity on the real CLI path.
 - [source_timing_example_probe_report_2026-05-11.md](./source_timing_example_probe_report_2026-05-11.md)
   Optional local real-example Source Timing report baseline for the documented Beat/DH example WAVs.
+- [source_timing_example_probe_report_2026-05-21.md](./source_timing_example_probe_report_2026-05-21.md)
+  Refreshed local real-example Source Timing report baseline after Beat20 moved from generic weak timing to reviewable downbeat ambiguity.
 - [jam_workflow_baseline_2026-04-17.md](./jam_workflow_baseline_2026-04-17.md)
   First workflow-budget baseline for playable Jam and successful capture on the current example-source path.
 - [scene_jump_restore_workflow_baseline_2026-04-18.md](./scene_jump_restore_workflow_baseline_2026-04-18.md)
