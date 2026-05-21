@@ -498,4 +498,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add a compact P012 all-lane proof summary artifact
 - [RIOTBOX-874.md](./RIOTBOX-874.md)
   Move Source Timing actionability language into the shared Jam summary
+- [RIOTBOX-875.md](./RIOTBOX-875.md)
+  Show Source Timing actionability in the compact Jam Trust line
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
