@@ -175,7 +175,9 @@ The current stable metric keys are:
 - `full_mix_rms`
 - `full_mix_low_band_rms`
 - `mc202_question_answer_delta_rms`
-- `source_grid_output_drift`: `null` or an object with `hit_ratio`, `max_peak_offset_ms`, and `max_allowed_peak_offset_ms`
+- `source_grid_output_drift`: `null` or an object with `hit_ratio`,
+  `max_peak_offset_ms`, and `max_allowed_peak_offset_ms`; `hit_ratio` must be
+  between `0` and `1`, and both offset fields must be non-negative
 - `tr909_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `mc202_source_grid_alignment`: `null` or the same source-grid alignment object shape
 - `w30_source_grid_alignment`: `null` or the same source-grid alignment object shape
@@ -324,13 +326,15 @@ The committed fixture JSON smoke currently requires:
 - `output_path.source_timing_groove_alignment` is present as an object or `null`
 - `output_path.lane_recipe_cases` is present as an array
 - every stable metric key is present, with a number or `null` value
-- `source_grid_output_drift`, when non-null, has the three numeric fields listed above
+- `source_grid_output_drift`, when non-null, has the three numeric fields listed
+  above with valid range semantics
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
 - validator fixtures cover a valid failure summary with `null` metrics, a
   rejected invalid schema marker, a rejected missing metric key, rejected grid
   BPM decision mismatches, rejected BPM-delta contradictions, rejected Source
-  Timing alignment status/BPM-issue contradictions, rejected Source Timing
-  shape/cue mismatches, and rejected malformed lane recipe case evidence
+  Timing alignment status/BPM-issue contradictions, rejected impossible
+  source-grid metric ranges, rejected Source Timing shape/cue mismatches, and
+  rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source

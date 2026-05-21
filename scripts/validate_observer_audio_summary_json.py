@@ -220,9 +220,17 @@ def require_optional_source_grid_alignment(parent: dict[str, Any], field: str) -
     if value is None:
         return
     drift = require_object(value, field)
-    require_number(drift, "hit_ratio")
-    require_number(drift, "max_peak_offset_ms")
-    require_number(drift, "max_allowed_peak_offset_ms")
+    hit_ratio = require_number_value(drift, "hit_ratio")
+    if hit_ratio < 0.0 or hit_ratio > 1.0:
+        raise ValueError(f"{field}.hit_ratio must be between 0 and 1")
+    max_peak_offset_ms = require_number_value(drift, "max_peak_offset_ms")
+    if max_peak_offset_ms < 0.0:
+        raise ValueError(f"{field}.max_peak_offset_ms must be non-negative")
+    max_allowed_peak_offset_ms = require_number_value(
+        drift, "max_allowed_peak_offset_ms"
+    )
+    if max_allowed_peak_offset_ms < 0.0:
+        raise ValueError(f"{field}.max_allowed_peak_offset_ms must be non-negative")
 
 
 def require_optional_source_timing(parent: dict[str, Any]) -> None:
