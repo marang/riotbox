@@ -432,4 +432,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P012 Source Timing UI and observer alignment after offset slices
 - [RIOTBOX-840.md](./RIOTBOX-840.md)
   Validate Source Timing anchor/groove alignment status consistency
+- [RIOTBOX-841.md](./RIOTBOX-841.md)
+  Show Source Timing downbeat phase in Jam compact timing lines
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
