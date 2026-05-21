@@ -26,6 +26,29 @@ RECIPE15_PROFILES = (
     ),
 )
 
+GENERATED_OBSERVER_AUDIO_SUMMARIES = (
+    (
+        "cautious/manual",
+        Path("artifacts/audio_qa/local/generated-feral-grid-observer-audio/cautious-manual-confirm.json"),
+    ),
+    (
+        "user override",
+        Path("artifacts/audio_qa/local/generated-feral-grid-observer-audio/user-override.json"),
+    ),
+    (
+        "risky override",
+        Path("artifacts/audio_qa/local/generated-feral-grid-observer-audio/risky-user-override.json"),
+    ),
+    (
+        "fallback",
+        Path("artifacts/audio_qa/local/generated-feral-grid-observer-audio/fallback.json"),
+    ),
+    (
+        "locked grid",
+        Path("artifacts/audio_qa/local/generated-feral-grid-observer-audio/locked-grid.json"),
+    ),
+)
+
 MIN_HIT_RATIO = 0.5
 
 
@@ -40,23 +63,37 @@ def main() -> int:
 
     output = Path(args.output)
     manifests = [(name, load_manifest(path)) for name, path in RECIPE15_PROFILES]
+    observer_audio_summaries = [
+        (name, load_json_summary(path)) for name, path in GENERATED_OBSERVER_AUDIO_SUMMARIES
+    ]
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render_summary(manifests), encoding="utf-8")
+    output.write_text(render_summary(manifests, observer_audio_summaries), encoding="utf-8")
     print(f"wrote {output}")
     return 0
 
 
 def load_manifest(path: Path) -> dict[str, Any]:
+    return load_json_object(path, "Recipe 15 manifest")
+
+
+def load_json_summary(path: Path) -> dict[str, Any]:
+    return load_json_object(path, "generated Feral-grid observer/audio summary")
+
+
+def load_json_object(path: Path, label: str) -> dict[str, Any]:
     if not path.is_file():
-        raise SystemExit(f"missing Recipe 15 manifest for P012 proof summary: {path}")
+        raise SystemExit(f"missing {label} for P012 proof summary: {path}")
     with path.open(encoding="utf-8") as handle:
-        manifest = json.load(handle)
-    if not isinstance(manifest, dict):
-        raise SystemExit(f"manifest is not an object: {path}")
-    return manifest
+        data = json.load(handle)
+    if not isinstance(data, dict):
+        raise SystemExit(f"{label} is not an object: {path}")
+    return data
 
 
-def render_summary(manifests: list[tuple[str, dict[str, Any]]]) -> str:
+def render_summary(
+    manifests: list[tuple[str, dict[str, Any]]],
+    observer_audio_summaries: list[tuple[str, dict[str, Any]]],
+) -> str:
     lines = [
         "# P012 All-Lane Source-Grid Output Proof Summary",
         "",
@@ -71,11 +108,40 @@ def render_summary(manifests: list[tuple[str, dict[str, Any]]]) -> str:
         "- Recipe 2 observer/audio gate: `pass`",
         "- Recipe 15 real-source auto/fallback proof: `pass`",
         "",
-        "## Recipe 15 Source-Timing Outcomes",
+        "## Generated Feral-Grid Observer/Audio Paths",
         "",
-        "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |",
+        "| Path | Grid source | Decision | Observer grid use | Manifest grid use | Grid compat | Downbeat compat | Alignment | Output issues |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | ---: |",
     ]
+
+    for name, summary in observer_audio_summaries:
+        output_path = object_field(summary, "output_path")
+        source_timing_alignment = object_field(output_path, "source_timing_alignment")
+        lines.append(
+            "| {name} | `{grid_source}` | `{decision}` | `{observer_grid_use}` | `{manifest_grid_use}` | `{grid_compat}` | `{downbeat_compat}` | `{alignment}` | {issues} |".format(
+                name=name,
+                grid_source=string_field(output_path, "grid_bpm_source"),
+                decision=string_field(output_path, "grid_bpm_decision_reason"),
+                observer_grid_use=string_field(source_timing_alignment, "observer_grid_use"),
+                manifest_grid_use=string_field(source_timing_alignment, "manifest_grid_use"),
+                grid_compat=string_field(source_timing_alignment, "grid_use_compatibility"),
+                downbeat_compat=string_field(
+                    source_timing_alignment, "downbeat_offset_compatibility"
+                ),
+                alignment=string_field(source_timing_alignment, "status"),
+                issues=list_len(output_path, "issues"),
+            )
+        )
+
+    lines.extend(
+        [
+            "",
+            "## Recipe 15 Source-Timing Outcomes",
+            "",
+            "| Source | Cue | Action | Readiness | Manual confirm | Grid source | Decision | Grid use | BPM | Downbeat | TR-909 | MC-202 | W-30 | Mix |",
+            "| --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | ---: | ---: | ---: | ---: |",
+        ]
+    )
 
     for name, manifest in manifests:
         source_timing = object_field(manifest, "source_timing")
@@ -104,6 +170,7 @@ def render_summary(manifests: list[tuple[str, dict[str, Any]]]) -> str:
             "",
             "## Interpretation",
             "",
+            "- Generated Feral-grid observer/audio rows show whether control-path and output-path timing evidence agreed for cautious/manual-confirm, user-override, fallback, and locked-grid paths.",
             "- `source_timing` rows used the current Source Timing BPM while still carrying visible manual-confirm policy where required.",
             "- `static_default` rows prove the conservative fallback boundary; Beat20 currently has useful BPM evidence but ambiguous downbeat evidence.",
             "- `Cue` and `Action` are the compact musician-facing consequence from each manifest's Source Timing evidence.",
@@ -126,6 +193,13 @@ def string_field(parent: dict[str, Any], field: str) -> str:
     if not isinstance(value, str) or not value:
         raise SystemExit(f"{field} must be a non-empty string")
     return value
+
+
+def list_len(parent: dict[str, Any], field: str) -> int:
+    value = parent.get(field)
+    if not isinstance(value, list):
+        raise SystemExit(f"{field} must be a list")
+    return len(value)
 
 
 def bool_field(parent: dict[str, Any], field: str) -> bool:
