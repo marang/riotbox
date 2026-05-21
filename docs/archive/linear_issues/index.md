@@ -414,4 +414,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add exact warning-code expectations to Source Timing example report
 - [RIOTBOX-831.md](./RIOTBOX-831.md)
   Expose downbeat offset in Source Timing example report
+- [RIOTBOX-832.md](./RIOTBOX-832.md)
+  Preserve downbeat offset in user-session observer snapshots
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
