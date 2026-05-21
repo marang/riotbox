@@ -10,10 +10,8 @@ fn renders_more_musical_jam_shell_snapshot() {
         "{rendered}"
     );
     assert!(rendered.contains("timing needs confirm | grid"), "{rendered}");
-    assert!(
-        rendered.contains("manual_confirm_only | p0 | low"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("manual_confirm_only | p0 | low"), "{rendered}");
+    assert!(rendered.contains("action confirm grid first"), "{rendered}");
     assert!(rendered.contains("kick+bb"), "{rendered}");
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
@@ -78,6 +76,7 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
 
     assert!(rendered.contains("timing grid locked | grid locked_grid"), "{rendered}");
     assert!(rendered.contains("| p0 | high kick+bb"), "{rendered}");
+    assert!(rendered.contains("action grid can steer moves"), "{rendered}");
     assert!(
         rendered.contains("timing grid locked [===>] next bar"),
         "{rendered}"

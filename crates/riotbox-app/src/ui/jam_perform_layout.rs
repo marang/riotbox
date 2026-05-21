@@ -59,9 +59,8 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
         )),
         source_timing_readiness_line(shell),
         Line::from(format!(
-            "loops {} | hooks {}",
-            shell.app.jam_view.source.loop_candidate_count,
-            shell.app.jam_view.source.hook_candidate_count
+            "action {}",
+            shell.app.jam_view.source.timing.actionability
         )),
         Line::from(primary_warning_line(shell)),
     ])
