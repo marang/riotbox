@@ -142,7 +142,9 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("Source timing BPM delta: `0.000000`"));
     assert!(markdown.contains("Source timing BPM agrees with grid: `yes`"));
     assert!(markdown.contains("Observer source timing: `src-beat08 cue=listen first"));
-    assert!(markdown.contains("beat=tempo_only(0) downbeat=unknown(0) phrase=uncertain(0)"));
+    assert!(
+        markdown.contains("beat=tempo_only(0) downbeat=unknown(0) offset=none phrase=uncertain(0)")
+    );
     assert!(markdown.contains("Source timing readiness: `grid locked readiness=ready"));
     assert!(markdown.contains("Source-grid output hit ratio: `1.000000`"));
     assert!(markdown.contains("TR-909 source-grid alignment: `hit_ratio=1.000000"));

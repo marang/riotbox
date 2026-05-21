@@ -707,7 +707,10 @@ bounded BPM policy:
   primary-anchor evidence should come from the shared Jam source timing summary.
   The primary warning is priority-selected by musician-facing timing risk, while
   raw grid/hypothesis counts and full warning-code lists remain Source Graph
-  diagnostics. The current summary contract reports this as
+  diagnostics. Observer/audio summaries should preserve app-observed
+  `primary_downbeat_offset_beats` beside the observed downbeat status so
+  reviewers can compare control-path and manifest-side bar-phase evidence in
+  one artifact. The current summary contract reports this as
   `output_path.source_timing_alignment`, using BPM delta plus normalized
   warning-code overlap as bounded proof that the control path and generated
   output path are using compatible timing evidence.

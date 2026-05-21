@@ -496,6 +496,7 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     require_one_of(timing, "beat_status", {"grid", "tempo_only", "unknown"})
     beat_count = require_int_value(timing, "beat_count")
     require_one_of(timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
+    require_optional_int(timing, "primary_downbeat_offset_beats")
     bar_count = require_int_value(timing, "bar_count")
     require_one_of(timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"})
     phrase_count = require_int_value(timing, "phrase_count")

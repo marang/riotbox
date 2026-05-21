@@ -35,6 +35,7 @@ fn summarizes_synthetic_observer_and_manifest() {
             beat_status: "tempo_only".to_string(),
             beat_count: 0,
             downbeat_status: "ambiguous".to_string(),
+            primary_downbeat_offset_beats: Some(0),
             bar_count: 0,
             phrase_status: "uncertain".to_string(),
             phrase_count: 0,
@@ -148,6 +149,10 @@ fn summarizes_synthetic_observer_and_manifest() {
         "ambiguous"
     );
     assert_eq!(
+        json["control_path"]["observer_source_timing"]["primary_downbeat_offset_beats"],
+        0
+    );
+    assert_eq!(
         json["control_path"]["observer_source_timing"]["phrase_status"],
         "uncertain"
     );
@@ -216,7 +221,7 @@ fn summarizes_synthetic_observer_and_manifest() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{"primary_anchor_count":3,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":1,"primary_transient_anchor_count":1},"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_offset_beats":0,"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{"primary_anchor_count":3,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":1,"primary_transient_anchor_count":1},"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,

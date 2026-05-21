@@ -114,6 +114,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "beat_status": &timing.beat_status,
                 "beat_count": timing.beat_count,
                 "downbeat_status": &timing.downbeat_status,
+                "primary_downbeat_offset_beats": timing.primary_downbeat_offset_beats,
                 "bar_count": timing.bar_count,
                 "phrase_status": &timing.phrase_status,
                 "phrase_count": timing.phrase_count,
