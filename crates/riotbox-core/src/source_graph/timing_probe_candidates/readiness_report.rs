@@ -17,10 +17,17 @@ pub fn source_timing_probe_readiness_report(
         + confidence.double_time_count
         + beat.alternate_candidate_count
         + downbeat.alternate_phase_count;
-    let requires_manual_confirm = confidence.requires_manual_confirm
-        || beat.status != SourceTimingProbeBeatEvidenceStatus::Stable
-        || downbeat.status != SourceTimingProbeDownbeatEvidenceStatus::Stable;
-    let readiness = timing_probe_readiness_status(&confidence, &beat, &downbeat);
+    let has_locked_readiness_evidence = timing_probe_has_locked_readiness_evidence(
+        &confidence,
+        &beat,
+        &downbeat,
+        alternate_evidence_count,
+    );
+    let requires_manual_confirm = !has_locked_readiness_evidence
+        && (confidence.requires_manual_confirm
+            || beat.status != SourceTimingProbeBeatEvidenceStatus::Stable
+            || downbeat.status != SourceTimingProbeDownbeatEvidenceStatus::Stable);
+    let readiness = timing_probe_readiness_status(&confidence, &beat, &downbeat, requires_manual_confirm);
 
     SourceTimingProbeReadinessReport {
         schema: "riotbox.source_timing_probe_readiness.v1",
@@ -47,6 +54,7 @@ fn timing_probe_readiness_status(
     confidence: &SourceTimingCandidateConfidenceReport,
     beat: &SourceTimingProbeBeatEvidenceReport,
     downbeat: &SourceTimingProbeDownbeatEvidenceReport,
+    requires_manual_confirm: bool,
 ) -> SourceTimingProbeReadinessStatus {
     if confidence.result == SourceTimingCandidateConfidenceResult::Degraded
         || beat.status == SourceTimingProbeBeatEvidenceStatus::Unavailable
@@ -58,7 +66,7 @@ fn timing_probe_readiness_status(
     {
         SourceTimingProbeReadinessStatus::Weak
     } else if confidence.result == SourceTimingCandidateConfidenceResult::CandidateAmbiguous
-        || confidence.requires_manual_confirm
+        || requires_manual_confirm
         || beat.status == SourceTimingProbeBeatEvidenceStatus::Ambiguous
         || downbeat.status == SourceTimingProbeDownbeatEvidenceStatus::Ambiguous
     {
@@ -66,4 +74,20 @@ fn timing_probe_readiness_status(
     } else {
         SourceTimingProbeReadinessStatus::Ready
     }
+}
+
+fn timing_probe_has_locked_readiness_evidence(
+    confidence: &SourceTimingCandidateConfidenceReport,
+    beat: &SourceTimingProbeBeatEvidenceReport,
+    downbeat: &SourceTimingProbeDownbeatEvidenceReport,
+    alternate_evidence_count: usize,
+) -> bool {
+    confidence.primary_bpm.is_some()
+        && confidence.result == SourceTimingCandidateConfidenceResult::CandidateCautious
+        && confidence.primary_drift_status == SourceTimingCandidateDriftStatus::Stable
+        && confidence.primary_phrase_status == SourceTimingCandidatePhraseStatus::Stable
+        && confidence.warning_codes.is_empty()
+        && alternate_evidence_count == 0
+        && beat.status == SourceTimingProbeBeatEvidenceStatus::Stable
+        && downbeat.status == SourceTimingProbeDownbeatEvidenceStatus::Stable
 }

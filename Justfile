@@ -147,7 +147,7 @@ source-timing-readiness-report:
     cargo test -p riotbox-core source_timing_probe_readiness_report -- --nocapture
     cargo test -p riotbox-audio source_timing_probe_preserves_real_loop_like_weak_readiness -- --nocapture
     cargo test -p riotbox-audio source_timing_probe_keeps_flat_loop_degraded_for_dance_auto_readiness -- --nocapture
-    cargo test -p riotbox-audio source_timing_probe_keeps_manual_confirmed_real_loop_like_grid_in_review -- --nocapture
+    cargo test -p riotbox-audio source_timing_probe_promotes_stable_long_real_loop_like_grid_to_ready -- --nocapture
     cargo test -p riotbox-audio source_timing_probe_keeps_short_real_loop_like_grid_in_review -- --nocapture
 
 source-timing-downbeat-ambiguity:
