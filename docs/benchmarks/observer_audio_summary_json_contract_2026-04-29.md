@@ -272,7 +272,10 @@ to live only inside the manifest pass/fail decision. Each item should include:
   be non-negative; aligned onset count must not exceed candidate onset count.
 - `mc202_source_phrase_slot`: `null` or compact Source Graph phrase-slot
   evidence with phrase-grid availability, selected phrase index,
-  source-boundary, and `passed` fields.
+  source-boundary, and `passed` fields. `phrase_index` must be non-negative
+  when present. Passing evidence must have phrase-grid availability, a selected
+  phrase index, and source-boundary alignment; unavailable evidence must not
+  claim a selected phrase index or source-boundary alignment.
 
 For the generated Recipe 2 MC-202 observer/audio gate, the summary must expose
 at least these MC-202 case ids:
@@ -341,11 +344,11 @@ The committed fixture JSON smoke currently requires:
   rejected invalid schema marker, a rejected missing metric key, rejected grid
   BPM decision mismatches, rejected BPM-delta contradictions, rejected
   impossible scalar metric ranges, rejected unknown Source Timing status enums
-  and counts, rejected impossible lane recipe metric ranges, rejected Source
-  Timing alignment status/BPM-issue contradictions, rejected impossible
-  source-grid metric ranges, rejected malformed W-30 loop-closure evidence,
-  rejected Source Timing shape/cue mismatches, and rejected malformed lane
-  recipe case evidence
+  and counts, rejected impossible lane recipe metric ranges, rejected
+  contradictory MC-202 source phrase-slot evidence, rejected Source Timing
+  alignment status/BPM-issue contradictions, rejected impossible source-grid
+  metric ranges, rejected malformed W-30 loop-closure evidence, rejected Source
+  Timing shape/cue mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source
