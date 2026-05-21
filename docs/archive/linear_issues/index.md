@@ -418,4 +418,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Preserve downbeat offset in user-session observer snapshots
 - [RIOTBOX-833.md](./RIOTBOX-833.md)
   Propagate observer downbeat offset into observer/audio summaries
+- [RIOTBOX-834.md](./RIOTBOX-834.md)
+  Compare observer and manifest downbeat offsets in observer/audio alignment
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
