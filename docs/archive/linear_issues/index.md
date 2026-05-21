@@ -530,4 +530,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Improve Beat20 real-source downbeat confidence without relaxing fallback safety
 - [RIOTBOX-890.md](./RIOTBOX-890.md)
   Expose Source Timing anchor cue in observer snapshots
+- [RIOTBOX-891.md](./RIOTBOX-891.md)
+  Show Source Timing actionability in Jam Trust readiness line
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
