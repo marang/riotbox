@@ -470,4 +470,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Consolidate autonomous workflow documentation
 - [RIOTBOX-860.md](./RIOTBOX-860.md)
   Document point-in-time review follow-up handling
+- [RIOTBOX-861.md](./RIOTBOX-861.md)
+  Review current P012 Source Timing spine for next product slice
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
