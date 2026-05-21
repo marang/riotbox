@@ -18,6 +18,7 @@ struct ObserverSourceTimingReadiness {
     primary_hypothesis_id: Option<String>,
     hypothesis_count: u64,
     anchor_evidence: Option<SourceTimingAnchorEvidence>,
+    primary_anchor_cue: String,
     groove_evidence: Option<SourceTimingGrooveEvidence>,
     primary_warning_code: Option<String>,
     warning_codes: Vec<String>,
@@ -167,6 +168,10 @@ fn collect_observer_source_timing(
         anchor_evidence: match collect_optional_source_timing_anchor_evidence(source_timing) {
             Ok(value) => value,
             Err(()) => return (None, true),
+        },
+        primary_anchor_cue: match non_empty_string(source_timing, "primary_anchor_cue") {
+            Some(value) => value,
+            None => return (None, true),
         },
         groove_evidence: match collect_optional_source_timing_groove_evidence(source_timing) {
             Ok(value) => value,

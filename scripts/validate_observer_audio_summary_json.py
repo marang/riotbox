@@ -723,6 +723,7 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     require_optional_string(timing, "primary_hypothesis_id")
     require_int(timing, "hypothesis_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
+    require_string(timing, "primary_anchor_cue")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")
     require_optional_string(timing, "primary_warning_code")
     warning_codes = require_string_list(timing, "warning_codes")

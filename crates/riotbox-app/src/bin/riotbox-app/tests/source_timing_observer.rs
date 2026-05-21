@@ -138,6 +138,10 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
         1
     );
     assert_eq!(
+        source_timing["primary_anchor_cue"],
+        "anchors 3 | kick+backbeat"
+    );
+    assert_eq!(
         source_timing["groove_evidence"]["primary_groove_residual_count"],
         2
     );
@@ -248,6 +252,7 @@ fn observer_snapshot_uses_shared_source_timing_summary_for_musician_cues() {
         source_timing["anchor_evidence"]["primary_anchor_count"],
         1
     );
+    assert_eq!(source_timing["primary_anchor_cue"], "anchors 1 | kick");
     assert_eq!(
         source_timing["groove_evidence"]["primary_groove_residual_count"],
         0
