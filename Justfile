@@ -238,6 +238,12 @@ beat20-auto-feral-grid-fallback-proof date="local-beat20-feral-grid-auto-fallbac
 dh-beatc-auto-feral-grid-proof date="local-dh-beatc-feral-grid-auto-proof":
     scripts/validate_auto_feral_grid_source_timing_pack.sh dh-beatc "{{date}}"
 
+recipe15-feral-grid-auto-proof:
+    just beat03-auto-feral-grid-proof local-beat03-feral-grid-auto-proof
+    just beat08-auto-feral-grid-proof local-beat08-feral-grid-auto-proof
+    just dh-beatc-auto-feral-grid-proof local-dh-beatc-feral-grid-auto-proof
+    just beat20-auto-feral-grid-fallback-proof local-beat20-feral-grid-auto-fallback-proof
+
 audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
