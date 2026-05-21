@@ -420,10 +420,16 @@ def require_optional_source_timing_anchor_alignment(parent: dict[str, Any]) -> N
     if value is None:
         return
     alignment = require_object(value, field)
-    require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
+    status = require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
     require_optional_source_timing_anchor_evidence(alignment, "observer")
     require_optional_source_timing_anchor_evidence(alignment, "manifest")
-    require_string_list(alignment, "issues")
+    issues = require_string_list(alignment, "issues")
+    require_alignment_status_issues_consistency(
+        field,
+        status,
+        issues,
+        "source_timing_anchor_alignment.",
+    )
 
 
 def require_optional_source_timing_groove_alignment(parent: dict[str, Any]) -> None:
@@ -434,10 +440,31 @@ def require_optional_source_timing_groove_alignment(parent: dict[str, Any]) -> N
     if value is None:
         return
     alignment = require_object(value, field)
-    require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
+    status = require_one_of(alignment, "status", {"aligned", "partial", "mismatch"})
     require_optional_source_timing_groove_evidence(alignment, "observer")
     require_optional_source_timing_groove_evidence(alignment, "manifest")
-    require_string_list(alignment, "issues")
+    issues = require_string_list(alignment, "issues")
+    require_alignment_status_issues_consistency(
+        field,
+        status,
+        issues,
+        "source_timing_groove_alignment.",
+    )
+
+
+def require_alignment_status_issues_consistency(
+    field: str, status: str, issues: list[str], issue_prefix: str
+) -> None:
+    if status == "mismatch":
+        if not issues:
+            raise ValueError(f"{field} mismatch must include an issue")
+        for issue in issues:
+            if not issue.startswith(issue_prefix):
+                raise ValueError(f"{field} mismatch issue must start with {issue_prefix!r}")
+        return
+
+    if issues:
+        raise ValueError(f"{field} non-mismatch status must not include issues")
 
 
 def require_lane_recipe_cases(parent: dict[str, Any]) -> None:
