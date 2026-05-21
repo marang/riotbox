@@ -156,6 +156,7 @@ def validate_manifest(manifest: Any) -> None:
         raise ValueError("source_timing must be present for feral-grid-demo grid BPM manifests")
 
     if manifest.get("pack_id") == "feral-grid-demo" and "grid_bpm_source" in manifest:
+        validate_generated_feral_grid_source_timing(source_timing)
         validate_grid_bpm_decision(manifest, source_timing)
         validate_source_timing_bpm_delta_consistency(manifest, source_timing)
 
@@ -241,6 +242,22 @@ def validate_source_timing(source_timing: Any) -> None:
         "source_timing",
     )
     require_string_list(source_timing, "warning_codes", "source_timing warning_codes")
+
+
+def validate_generated_feral_grid_source_timing(source_timing: Any | None) -> None:
+    timing = require_object(source_timing, "source_timing")
+    require_one_of(timing, "cue", SOURCE_TIMING_CUES)
+    require_source_timing_readiness_cue_match(
+        timing["cue"],
+        timing["readiness"],
+        timing["requires_manual_confirm"],
+    )
+    require_one_of(timing, "actionability", SOURCE_TIMING_ACTIONABILITY)
+    require_source_timing_readiness_actionability_match(
+        timing["actionability"],
+        timing["readiness"],
+        timing["requires_manual_confirm"],
+    )
 
 
 def require_source_timing_grid_use_match(source_timing: dict[str, Any], grid_use: str) -> None:

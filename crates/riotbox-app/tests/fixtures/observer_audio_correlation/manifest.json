@@ -20,6 +20,8 @@
     "grid_use": "locked_grid",
     "readiness": "ready",
     "requires_manual_confirm": false,
+    "cue": "grid locked",
+    "actionability": "grid can steer moves",
     "primary_bpm": 128.397,
     "bpm_agrees_with_grid": true,
     "beat_status": "stable",
