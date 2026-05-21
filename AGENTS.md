@@ -175,168 +175,29 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - workflow/docs updates when the findings change repo operation
 - If `review-codebase` is unavailable, note it and do a normal whole-codebase review pass.
 
-## PR And CI Expectations
+## Operating Workflow
 
-- Normal slice work should use a PR.
-- Direct push to `main` is only acceptable when the user explicitly asks, the change is very small, the change is repo/workflow-meta, and skipping PR does not hide meaningful review risk.
-- Every PR should include `Why This Matters`.
-- `Why This Matters` must explain:
-  - larger phase or milestone
-  - product path or architecture seam unlocked
-  - what remains bounded, stubbed, or out of scope
-- Non-trivial feature PRs should include `Drift Check`.
-- `Drift Check` should cover:
-  - new or changed `ActionCommand`
-  - queue path
-  - commit / side-effect path
-  - Session / replay consequence
-  - user-visible or observer surface
-  - test / QA proof
-  - added `JamAppState` state
-  - added or changed audio-producing behavior
-  - shadow-system risk
-- After opening a PR, inspect GitHub Actions / CI explicitly.
-- If CI is red and relevant to the slice, fix it on the same branch.
-- Treat open PRs and in-flight CI as merge gates, not a reason to pause the main implementation lane.
-- If CI is running or already green and the branch is locally clean, continue with the next bounded roadmap-aligned slice.
-- Re-check open PRs periodically when no webhook/event mechanism is available.
-- Do not emit standalone status-only progress reports when there is no blocker.
-- Pair user-facing progress updates with the next concrete action.
-- Minimum CI checks:
-  - formatter status
-  - test status
-  - lint status
-  - slice-specific workflow required by the repo
+Use `docs/workflow_conventions.md` as the canonical operational workflow for
+GitHub, Linear, PR/CI gates, branch cleanup, ticket archive/deletion, backlog
+horizon, and automatic next-ticket continuation. Keep this file focused on
+non-negotiable agent guardrails and avoid restating the full procedure here.
 
-## Linear Workflow
+Hard rules that must stay true:
 
-- Keep Linear updates human-readable.
-- Move issues to `In Progress` when work starts.
-- Move issues to `In Review` when the PR is open.
-- Move issues to `Done` when the PR is merged.
-- Keep Linear priorities explicit:
-  - `In Progress` / `In Review` -> `High (2)`
-  - honest near-next backlog -> `Medium (3)`
-  - distant work -> `Low (4)` or unset
-  - archive / repo-ops slices -> usually `Medium (3)` unless urgent
-- Keep labels orthogonal to projects:
-  - projects answer phase
-  - labels answer slice type
-- Current base labels:
-  - `workflow`
-  - `archive`
-  - `ux`
-  - `benchmark`
-  - `review-followup`
-- Treat workflow and archive obligations as real work, not optional cleanup.
-- When delegation is available and a slice is substantial, prefer two parallel lanes:
-  - main implementation lane
-  - workflow / ops lane for Linear state, project updates, archive prep, and repo-process obligations
-- The main thread still owns correctness, review, PR quality, merge readiness, and final integration.
-- Keep a small active backlog in Linear.
-- Before closing the current ticket loop, ensure Linear still has:
-  - 1 issue in progress or in review
-  - 1-5 near-next backlog issues
-  - coarse milestone-level placeholders only when honest
-- Do not fully decompose distant phases into many detailed tickets before nearer slices land.
-
-## Linear Archive And Deletion
-
-- Treat Linear as the active operations layer, not the long-term archive.
-- Archive useful context before deleting a completed Linear issue.
-- Archive under `docs/archive/linear_issues/`.
-- Do archive work as part of closeout, not as a default separate `Archive ...` ticket.
-- Use the repo archive as canonical Git-backed history.
-- Keep MemPalace focused on live product docs and specs, not archived Linear ticket files.
-- Use one archive file per Linear ticket.
-- Do not create grouped ticket archives by default.
-- Use month files such as `2026-05.md` only as indexes to per-ticket files.
-- Keep archive entries structurally uniform.
-- Use `RIOTBOX-123.md` for ticket archive files.
-- Use `YYYY-MM.md` for monthly index files.
-- Use ISO dates (`YYYY-MM-DD`) for archived ticket timestamps.
-- Keep metadata fields in the archive template order.
-- Use stable final-status terms:
-  - `Done`
-  - `Canceled`
-  - `Duplicate`
-  - `Superseded`
-- Preserve at minimum:
-  - ticket id and title
-  - Linear project
-  - milestone or phase
-  - final ticket status
-  - created date
-  - implementation start date when known
-  - done, merged, canceled, or deleted date when applicable
-  - actual repo feature branch
-  - why the ticket existed
-  - what shipped
-  - PR link
-  - merge commit
-  - follow-up tickets or bounded open questions
-- Preserve when useful:
-  - Linear-generated branch name when it differed from the actual repo branch
-  - Linear issue URL
-  - labels
-  - assignee or owner
-  - deleted-from-Linear date
-  - verification summary
-  - decision-log or spec links touched by the ticket
-- Delete a Linear issue only after:
-  - the PR is merged
-  - the issue is done
-  - the repo archive entry exists
-- Verify archive presence by exact file or metadata only:
-  - `test -f docs/archive/linear_issues/RIOTBOX-123.md`
-  - `rg --no-ignore -n '^- Ticket: `RIOTBOX-123`' docs/archive/linear_issues`
-- Do not use MemPalace as the deletion gate.
-- Prefer the archive generator before deletion:
-  - `scripts/archive_linear_issue.py --ticket RIOTBOX-123 --pr 99 --why "..." --shipped "..."`
-- Prefer the deletion helper:
-  - `scripts/linear_issue_delete.sh RIOTBOX-123`
-- Prefer the closeout helper for repeated cleanup:
-  - `scripts/closeout_ticket.sh --ticket RIOTBOX-123 --branch feature/riotbox-123-example --pr 99`
-- If `--mem-status` is used, keep it bounded with `--mem-status-timeout`; MemPalace is optional and must not block branch or Linear cleanup.
-- The archive and closeout helpers default to dry-run. Pass `--execute` only after PR merge, archive handoff, and Linear Done state are confirmed.
-- Use token auth for deletion:
-  - `LINEAR_API_TOKEN=...`
-- Do not rely on pasted browser session cookies as the normal workflow path.
-
-## Branch And Git Hygiene
-
-- Do not revert unrelated user changes.
-- Keep commits scoped to one coherent slice where possible.
-- After a PR is merged, sync local `main`.
-- Delete the merged remote feature branch after the PR is merged and local `main` is synced.
-- Prefer deleting the exact PR branch:
-  - `git push origin --delete feature/riotbox-123-example`
-- Never delete `main`, release/protected branches, branches with open PRs, or intentionally long-lived branches.
-- For squash-merged PRs, do not rely only on `git branch --merged`.
-- Verify PR merge/closed state or known archive status before bulk branch deletion.
-- If doing bulk GitHub branch cleanup, first confirm there are no open PRs and remove only stale non-`main` heads.
-- Do not amend commits unless explicitly requested.
-
-## Next-Ticket Heuristic
-
-- Derive the next ticket from:
-  - `docs/execution_roadmap.md`
-  - `docs/phase_definition_of_done.md`
-  - the active feature spec for the area
-  - actual current repo state
-- Prefer the smallest coherent slice that closes the most immediate product or architecture gap.
-- Do not define many future tickets in detail before the current slice lands.
-- Validate each next ticket:
-  - fits the current phase
-  - creates visible product progress or removes a real blocker
-  - preserves current architecture
-  - is small enough to review as one coherent slice
-- Prefer roadmap-aligned product-spine work over new side paths.
-- After clean closeout, autonomously start the next-best backlog ticket when:
-  - the previous slice is merged or fully closed
-  - no unresolved review or CI blocker remains
-  - the next ticket satisfies this heuristic
-  - the Linear backlog remains within the 1-5 near-next rule
+- Normal implementation work uses the Linear issue -> branch -> PR -> CI/review
+  -> merge -> sync `main` -> closeout loop.
+- Open PRs and in-flight CI are merge gates for that PR, not a reason to pause
+  the main implementation lane.
+- If CI is running or green and the branch is locally clean, continue with the
+  next bounded roadmap-aligned slice.
+- Keep Linear state, priority, labels, archive entries, branch cleanup, and
+  project updates aligned with the repo workflow.
+- Archive completed or canceled Linear context under
+  `docs/archive/linear_issues/` before deleting Linear issues; deletion requires
+  token-backed Linear auth and must not rely on MemPalace.
+- Derive the next ticket from `docs/execution_roadmap.md`,
+  `docs/phase_definition_of_done.md`, the active spec, and actual repo state;
+  prefer the smallest coherent slice on the product spine.
 
 ## Commands
 

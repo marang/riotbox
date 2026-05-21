@@ -8,7 +8,8 @@ Audience: contributors, reviewers, coding agents
 
 ## 1. Purpose
 
-This document records the current working GitHub and Linear convention for Riotbox.
+This document is the canonical operational workflow for Riotbox GitHub, Linear,
+PR/CI, branch cleanup, and ticket archive/deletion work.
 
 It exists so work stays:
 
@@ -17,7 +18,14 @@ It exists so work stays:
 - easy to reconstruct later
 - consistent across code, docs, and planning slices
 
-This is a workflow note, not a product spec.
+This is a workflow note, not a product spec. The documentation ownership split is:
+
+- `docs/execution_roadmap.md` owns the product delivery loop and phase direction.
+- `docs/workflow_conventions.md` owns the operational ticket/branch/PR/CI/Linear loop.
+- `AGENTS.md` owns non-negotiable agent guardrails and should point here instead of
+  restating full procedural detail.
+- The `riotbox-development` skill owns agent-local behavior and should mirror only
+  durable repo workflow rules back into this document or `AGENTS.md`.
 
 When the local `riotbox-development` skill is available, use it for Riotbox implementation work. If a recurring Riotbox failure mode or better QA pattern is discovered, update that skill, validate it, re-read it, and mirror durable workflow rules back into this document or the relevant repo spec.
 
@@ -30,6 +38,10 @@ Default workflow:
 `Linear issue -> branch -> scoped commit(s) -> PR -> review -> merge -> sync local main -> close out ticket and branch`
 
 Do not skip the PR step for normal feature or implementation work.
+
+This operational loop is the execution form of the roadmap's core delivery loop:
+each bounded ticket should move one spec/research/vertical-slice/test/benchmark
+step forward, then leave a clean review and closeout trail before the next slice.
 
 ---
 
@@ -121,6 +133,9 @@ Good examples:
 - `document PR description guideline`
 
 Avoid mixing unrelated cleanup into the same commit unless it is required for the slice to pass.
+
+Do not amend commits unless explicitly requested; prefer a new scoped commit for
+follow-up changes on an open branch.
 
 ---
 
@@ -729,6 +744,10 @@ Useful check questions:
 ---
 
 ## 16. Short Version
+
+This is a reminder, not a second source of truth. If this summary ever appears
+to conflict with the detailed sections above, update the summary instead of
+following a stale shortcut.
 
 If unsure, do this:
 
