@@ -532,4 +532,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose Source Timing anchor cue in observer snapshots
 - [RIOTBOX-891.md](./RIOTBOX-891.md)
   Show Source Timing actionability in Jam Trust readiness line
+- [RIOTBOX-892.md](./RIOTBOX-892.md)
+  Centralize Source Timing readiness actionability labels for Rust producers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
