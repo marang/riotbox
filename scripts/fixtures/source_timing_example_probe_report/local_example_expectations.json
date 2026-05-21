@@ -192,8 +192,8 @@
       "alternate_downbeat_phase_count": 0
     },
     "DH_Fadapad_120_A.wav": {
-      "cue": "needs confirm",
-      "actionability": "confirm grid first",
+      "cue": "not available",
+      "actionability": "timing unavailable",
       "readiness": "unavailable",
       "requires_manual_confirm": true,
       "grid_use": "unavailable",
@@ -211,8 +211,8 @@
       "alternate_downbeat_phase_count": 0
     },
     "DH_RushArp_120_A.wav": {
-      "cue": "needs confirm",
-      "actionability": "confirm grid first",
+      "cue": "not available",
+      "actionability": "timing unavailable",
       "readiness": "unavailable",
       "requires_manual_confirm": true,
       "grid_use": "unavailable",

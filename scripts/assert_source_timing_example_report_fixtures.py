@@ -111,8 +111,8 @@ EXPECTED_ROWS = {
     },
     "silence.wav": {
         "status": "probed",
-        "cue": "needs confirm",
-        "actionability": "confirm grid first",
+        "cue": "not available",
+        "actionability": "timing unavailable",
         "readiness": "unavailable",
         "manual_confirm": "yes",
         "grid_use": "unavailable",

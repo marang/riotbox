@@ -31,6 +31,13 @@ pub fn source_timing_readiness_labels(
     readiness: SourceTimingProbeReadinessStatus,
     requires_manual_confirm: bool,
 ) -> SourceTimingReadinessLabels {
+    if readiness == SourceTimingProbeReadinessStatus::Unavailable {
+        return SourceTimingReadinessLabels {
+            cue: "not available",
+            actionability: "timing unavailable",
+        };
+    }
+
     if requires_manual_confirm {
         return SourceTimingReadinessLabels {
             cue: "needs confirm",
@@ -49,10 +56,7 @@ pub fn source_timing_readiness_labels(
                 actionability: "listen first",
             }
         }
-        SourceTimingProbeReadinessStatus::Unavailable => SourceTimingReadinessLabels {
-            cue: "not available",
-            actionability: "timing unavailable",
-        },
+        SourceTimingProbeReadinessStatus::Unavailable => unreachable!(),
     }
 }
 
