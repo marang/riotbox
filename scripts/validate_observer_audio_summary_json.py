@@ -121,17 +121,17 @@ def validate_summary(summary: Any) -> None:
     require_lane_recipe_cases(output_path)
 
     metrics = require_object_field(output_path, "metrics")
-    require_optional_number(metrics, "full_mix_rms")
-    require_optional_number(metrics, "full_mix_low_band_rms")
-    require_optional_number(metrics, "mc202_question_answer_delta_rms")
+    require_optional_non_negative_number(metrics, "full_mix_rms")
+    require_optional_non_negative_number(metrics, "full_mix_low_band_rms")
+    require_optional_non_negative_number(metrics, "mc202_question_answer_delta_rms")
     require_optional_source_grid_output_drift(metrics)
     require_optional_source_grid_alignment(metrics, "tr909_source_grid_alignment")
     require_optional_source_grid_alignment(metrics, "mc202_source_grid_alignment")
     require_optional_source_grid_alignment(metrics, "w30_source_grid_alignment")
     require_optional_w30_source_loop_closure(metrics)
-    require_optional_number(metrics, "w30_candidate_rms")
-    require_optional_number(metrics, "w30_candidate_active_sample_ratio")
-    require_optional_number(metrics, "w30_rms_delta")
+    require_optional_non_negative_number(metrics, "w30_candidate_rms")
+    require_optional_ratio(metrics, "w30_candidate_active_sample_ratio")
+    require_optional_non_negative_number(metrics, "w30_rms_delta")
 
 
 def require_object(value: Any, name: str) -> dict[str, Any]:
@@ -208,6 +208,18 @@ def require_optional_number_value(parent: dict[str, Any], field: str) -> float |
     if value is not None and (not isinstance(value, (int, float)) or isinstance(value, bool)):
         raise TypeError(f"{field} must be a number or null")
     return value
+
+
+def require_optional_non_negative_number(parent: dict[str, Any], field: str) -> None:
+    value = require_optional_number_value(parent, field)
+    if value is not None and value < 0.0:
+        raise ValueError(f"{field} must be non-negative")
+
+
+def require_optional_ratio(parent: dict[str, Any], field: str) -> None:
+    value = require_optional_number_value(parent, field)
+    if value is not None and (value < 0.0 or value > 1.0):
+        raise ValueError(f"{field} must be between 0 and 1")
 
 
 def require_optional_source_grid_output_drift(parent: dict[str, Any]) -> None:
