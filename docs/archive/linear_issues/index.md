@@ -500,4 +500,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Move Source Timing actionability language into the shared Jam summary
 - [RIOTBOX-875.md](./RIOTBOX-875.md)
   Show Source Timing actionability in the compact Jam Trust line
+- [RIOTBOX-876.md](./RIOTBOX-876.md)
+  Surface Source Timing actionability in observer/audio correlation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
