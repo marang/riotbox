@@ -9,10 +9,8 @@ fn renders_more_musical_jam_shell_snapshot() {
         rendered.contains("timing needs confirm [===>] next bar"),
         "{rendered}"
     );
-    assert!(rendered.contains("timing needs confirm | grid"), "{rendered}");
-    assert!(rendered.contains("manual_confirm_only | p0 | low"), "{rendered}");
-    assert!(rendered.contains("action confirm grid first"), "{rendered}");
-    assert!(rendered.contains("kick+bb"), "{rendered}");
+    assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
+    assert!(rendered.contains("first | grid manual_confirm_only | p0"), "{rendered}");
     assert!(rendered.contains("timing warning ambiguous_downbeat"));
     assert!(rendered.contains("scene scene-a | energy med"));
     assert!(rendered.contains("ghost"));
@@ -74,9 +72,8 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("timing grid locked | grid locked_grid"), "{rendered}");
-    assert!(rendered.contains("| p0 | high kick+bb"), "{rendered}");
-    assert!(rendered.contains("action grid can steer moves"), "{rendered}");
+    assert!(rendered.contains("timing grid locked | grid can steer"), "{rendered}");
+    assert!(rendered.contains("moves | grid locked_grid | p0"), "{rendered}");
     assert!(
         rendered.contains("timing grid locked [===>] next bar"),
         "{rendered}"
@@ -106,7 +103,7 @@ fn source_timing_readiness_styles_locked_cue_as_confirmed() {
 
     assert_eq!(
         rendered,
-        "timing grid locked | grid locked_grid | p0 | high kick+bb"
+        "timing grid locked | grid can steer moves | grid locked_grid | p0"
     );
     assert_eq!(line.spans[1].content.as_ref(), "grid locked");
     assert_eq!(line.spans[1].style.fg, Some(Color::Green));
@@ -129,7 +126,7 @@ fn source_timing_readiness_styles_manual_confirm_as_pending() {
 
     assert_eq!(
         rendered,
-        "timing needs confirm | grid manual_confirm_only | p0 | low kick+bb"
+        "timing needs confirm | confirm grid first | grid manual_confirm_only | p0"
     );
     assert_eq!(line.spans[1].content.as_ref(), "needs confirm");
     assert_eq!(line.spans[1].style.fg, Some(Color::Yellow));

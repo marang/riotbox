@@ -58,10 +58,6 @@ fn render_overview_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             trust.timing_quality, trust.section_quality
         )),
         source_timing_readiness_line(shell),
-        Line::from(format!(
-            "action {}",
-            shell.app.jam_view.source.timing.actionability
-        )),
         Line::from(primary_warning_line(shell)),
     ])
     .block(Block::default().title("Trust").borders(Borders::ALL))
