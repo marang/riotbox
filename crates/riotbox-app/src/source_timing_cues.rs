@@ -1,3 +1,7 @@
+use riotbox_core::source_graph::{
+    SourceTimingProbeReadinessStatus, source_timing_readiness_labels,
+};
+
 pub fn source_timing_policy_cue_label(policy: &str) -> &'static str {
     match policy {
         "locked" => "grid locked",
@@ -24,39 +28,29 @@ pub fn source_timing_readiness_cue_label(
     readiness: &str,
     requires_manual_confirm: bool,
 ) -> &'static str {
-    if readiness == "unavailable" {
-        return "not available";
-    }
-
-    if requires_manual_confirm {
-        return "needs confirm";
-    }
-
-    match readiness {
-        "ready" => "grid locked",
-        "needs_review" | "weak" => "listen first",
-        "unavailable" => unreachable!(),
-        _ => "unknown",
-    }
+    source_timing_readiness_status_from_label(readiness).map_or("unknown", |status| {
+        source_timing_readiness_labels(status, requires_manual_confirm).cue
+    })
 }
 
 pub fn source_timing_readiness_actionability_label(
     readiness: &str,
     requires_manual_confirm: bool,
 ) -> &'static str {
-    if readiness == "unavailable" {
-        return "timing unavailable";
-    }
+    source_timing_readiness_status_from_label(readiness).map_or("unknown", |status| {
+        source_timing_readiness_labels(status, requires_manual_confirm).actionability
+    })
+}
 
-    if requires_manual_confirm {
-        return "confirm grid first";
-    }
-
+fn source_timing_readiness_status_from_label(
+    readiness: &str,
+) -> Option<SourceTimingProbeReadinessStatus> {
     match readiness {
-        "ready" => "grid can steer moves",
-        "needs_review" | "weak" => "listen first",
-        "unavailable" => unreachable!(),
-        _ => "unknown",
+        "ready" => Some(SourceTimingProbeReadinessStatus::Ready),
+        "needs_review" => Some(SourceTimingProbeReadinessStatus::NeedsReview),
+        "weak" => Some(SourceTimingProbeReadinessStatus::Weak),
+        "unavailable" => Some(SourceTimingProbeReadinessStatus::Unavailable),
+        _ => None,
     }
 }
 
