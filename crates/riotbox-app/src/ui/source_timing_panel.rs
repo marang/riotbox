@@ -12,7 +12,7 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                     .unwrap_or_else(|| "unknown".into()),
                 graph.timing.bpm_confidence
             )),
-            source_timing_grid_readiness_line(graph),
+            source_timing_grid_readiness_line(graph, timing),
             Line::from(format!(
                 "meter {} | hypotheses {} | {}",
                 graph
@@ -53,13 +53,21 @@ fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
 fn source_timing_grid_readiness_line(
     graph: &riotbox_core::source_graph::SourceGraph,
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> Line<'static> {
     Line::from(format!(
-        "beat {} | downbeat {} | phrase {}",
+        "beat {} | downbeat {} offset {} | phrase {}",
         beat_grid_status_label(graph),
         downbeat_status_label(graph),
+        downbeat_offset_label(timing),
         phrase_status_label(graph)
     ))
+}
+
+fn downbeat_offset_label(timing: &riotbox_core::view::jam::SourceTimingSummaryView) -> String {
+    timing
+        .primary_downbeat_offset_beats
+        .map_or_else(|| "none".into(), |offset| offset.to_string())
 }
 
 fn beat_grid_status_label(graph: &riotbox_core::source_graph::SourceGraph) -> String {
