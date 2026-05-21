@@ -124,9 +124,10 @@ When non-null, `source_timing_alignment` should include:
 
 - `status`: one of `aligned`, `partial`, or `mismatch`.
 - `bpm_delta`: absolute BPM difference between observer and manifest timing, or
-  `null` when either side does not expose a comparable BPM.
+  `null` when either side does not expose a comparable BPM. When present, this
+  must be non-negative.
 - `bpm_tolerance`: the tolerance used for this comparison. Current value:
-  `1.0` BPM.
+  `1.0` BPM. This must be non-negative.
 - `warning_overlap`: normalized warning codes present on both sides.
 - `issues`: mismatch reasons. Strict evidence treats any issue as an output-path
   failure.
