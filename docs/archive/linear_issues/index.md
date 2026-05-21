@@ -488,4 +488,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add aggregate Recipe 15 Feral grid auto proof target
 - [RIOTBOX-869.md](./RIOTBOX-869.md)
   Align Source timing panel with shared Jam timing summary
+- [RIOTBOX-870.md](./RIOTBOX-870.md)
+  Fold Recipe 15 auto timing proof into the P012 all-lane output gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
