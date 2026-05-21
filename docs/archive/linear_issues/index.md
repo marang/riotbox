@@ -502,4 +502,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show Source Timing actionability in the compact Jam Trust line
 - [RIOTBOX-876.md](./RIOTBOX-876.md)
   Surface Source Timing actionability in observer/audio correlation
+- [RIOTBOX-877.md](./RIOTBOX-877.md)
+  Refresh Jam recipe Source Timing actionability examples
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
