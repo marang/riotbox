@@ -172,9 +172,9 @@ residuals.
 
 The current stable metric keys are:
 
-- `full_mix_rms`
-- `full_mix_low_band_rms`
-- `mc202_question_answer_delta_rms`
+- `full_mix_rms`: non-negative number or `null`
+- `full_mix_low_band_rms`: non-negative number or `null`
+- `mc202_question_answer_delta_rms`: non-negative number or `null`
 - `source_grid_output_drift`: `null` or an object with `hit_ratio`,
   `max_peak_offset_ms`, and `max_allowed_peak_offset_ms`; `hit_ratio` must be
   between `0` and `1`, and both offset fields must be non-negative
@@ -186,9 +186,9 @@ The current stable metric keys are:
   `edge_abs_max`, `max_allowed_edge_abs`, and `source_contains_selection`;
   `passed` and `source_contains_selection` must be booleans, and the RMS,
   edge, and budget fields must be non-negative numbers
-- `w30_candidate_rms`
-- `w30_candidate_active_sample_ratio`
-- `w30_rms_delta`
+- `w30_candidate_rms`: non-negative number or `null`
+- `w30_candidate_active_sample_ratio`: ratio between `0` and `1`, or `null`
+- `w30_rms_delta`: non-negative number or `null`
 
 Pack-specific output evidence may still be validated from the source
 `manifest.json` outside these stable summary metric keys. For example, the
@@ -333,11 +333,11 @@ The committed fixture JSON smoke currently requires:
 - `scripts/validate_observer_audio_summary_json.py` accepts the generated summary shape
 - validator fixtures cover a valid failure summary with `null` metrics, a
   rejected invalid schema marker, a rejected missing metric key, rejected grid
-  BPM decision mismatches, rejected BPM-delta contradictions, rejected Source
-  Timing alignment status/BPM-issue contradictions, rejected impossible
-  source-grid metric ranges, rejected malformed W-30 loop-closure evidence,
-  rejected Source Timing shape/cue mismatches, and rejected malformed lane
-  recipe case evidence
+  BPM decision mismatches, rejected BPM-delta contradictions, rejected
+  impossible scalar metric ranges, rejected Source Timing alignment
+  status/BPM-issue contradictions, rejected impossible source-grid metric
+  ranges, rejected malformed W-30 loop-closure evidence, rejected Source Timing
+  shape/cue mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
 - `just observer-audio-correlate-generated-feral-grid` requires generated Feral
   Grid observer evidence and output manifest evidence to report aligned source
