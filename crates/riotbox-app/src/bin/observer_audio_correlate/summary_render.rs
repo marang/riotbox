@@ -259,18 +259,11 @@ fn source_timing_readiness_cue(timing: &SourceTimingEvidence) -> &'static str {
 }
 
 fn source_timing_readiness_actionability(timing: &SourceTimingEvidence) -> &str {
-    timing.actionability.as_deref().unwrap_or({
-        if timing.readiness == "unavailable" {
-            "timing unavailable"
-        } else if timing.requires_manual_confirm {
-            "confirm grid first"
-        } else {
-            match timing.readiness.as_str() {
-                "ready" => "grid can steer moves",
-                "needs_review" | "weak" => "listen first",
-                _ => "unknown",
-            }
-        }
+    timing.actionability.as_deref().unwrap_or_else(|| {
+        riotbox_app::source_timing_cues::source_timing_readiness_actionability_label(
+            &timing.readiness,
+            timing.requires_manual_confirm,
+        )
     })
 }
 
