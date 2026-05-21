@@ -128,6 +128,7 @@ def validate_summary(summary: Any) -> None:
     require_optional_source_grid_alignment(metrics, "tr909_source_grid_alignment")
     require_optional_source_grid_alignment(metrics, "mc202_source_grid_alignment")
     require_optional_source_grid_alignment(metrics, "w30_source_grid_alignment")
+    require_optional_w30_source_loop_closure(metrics)
     require_optional_number(metrics, "w30_candidate_rms")
     require_optional_number(metrics, "w30_candidate_active_sample_ratio")
     require_optional_number(metrics, "w30_rms_delta")
@@ -231,6 +232,23 @@ def require_optional_source_grid_alignment(parent: dict[str, Any], field: str) -
     )
     if max_allowed_peak_offset_ms < 0.0:
         raise ValueError(f"{field}.max_allowed_peak_offset_ms must be non-negative")
+
+
+def require_optional_w30_source_loop_closure(parent: dict[str, Any]) -> None:
+    field = "w30_source_loop_closure"
+    if field not in parent:
+        return
+    value = parent.get(field)
+    if value is None:
+        return
+    closure = require_object(value, field)
+    require_bool(closure, "passed")
+    require_non_negative_number(closure, "preview_rms", field)
+    require_non_negative_number(closure, "edge_delta_abs", field)
+    require_non_negative_number(closure, "max_allowed_edge_delta_abs", field)
+    require_non_negative_number(closure, "edge_abs_max", field)
+    require_non_negative_number(closure, "max_allowed_edge_abs", field)
+    require_bool(closure, "source_contains_selection")
 
 
 def require_optional_source_timing(parent: dict[str, Any]) -> None:
@@ -634,6 +652,12 @@ def require_number_value(parent: dict[str, Any], field: str) -> float | int:
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise TypeError(f"{field} must be a number")
     return value
+
+
+def require_non_negative_number(parent: dict[str, Any], field: str, prefix: str) -> None:
+    value = require_number_value(parent, field)
+    if value < 0.0:
+        raise ValueError(f"{prefix}.{field} must be non-negative")
 
 
 def require_optional_int(parent: dict[str, Any], field: str) -> None:
