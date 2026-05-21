@@ -180,6 +180,7 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "beat_status": observer_source_timing_beat_status(graph),
         "beat_count": graph.timing.beat_grid.len(),
         "downbeat_status": observer_source_timing_downbeat_status(graph),
+        "primary_downbeat_offset_beats": observer_source_timing_downbeat_offset_beats(graph),
         "bar_count": graph.timing.bar_grid.len(),
         "phrase_status": observer_source_timing_phrase_status(graph),
         "phrase_count": graph.timing.phrase_grid.len(),
@@ -226,6 +227,23 @@ fn source_timing_anchor_evidence_observer_snapshot(
         "primary_backbeat_anchor_count": timing.primary_backbeat_anchor_count,
         "primary_transient_anchor_count": timing.primary_transient_anchor_count,
     })
+}
+
+fn observer_source_timing_downbeat_offset_beats(
+    graph: &riotbox_core::source_graph::SourceGraph,
+) -> Option<u32> {
+    let hypothesis = graph.timing.primary_hypothesis()?;
+    let first_bar = hypothesis.bar_grid.first()?;
+    if hypothesis.bpm <= 0.0 || !hypothesis.bpm.is_finite() {
+        return None;
+    }
+    let beats_per_bar = u32::from(hypothesis.meter.beats_per_bar);
+    if beats_per_bar == 0 {
+        return None;
+    }
+    let beat_seconds = 60.0 / hypothesis.bpm;
+    let offset_beats = (first_bar.start_seconds / beat_seconds).round() as i64;
+    Some(offset_beats.rem_euclid(i64::from(beats_per_bar)) as u32)
 }
 
 fn observer_source_timing_beat_status(

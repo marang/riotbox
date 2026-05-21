@@ -154,6 +154,7 @@ def validate_source_timing(value: Any) -> None:
     require_one_of(source_timing, "beat_status", {"grid", "tempo_only", "unknown"})
     beat_count = require_int_value(source_timing, "beat_count")
     require_one_of(source_timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
+    require_optional_non_negative_int(source_timing, "primary_downbeat_offset_beats")
     bar_count = require_int_value(source_timing, "bar_count")
     require_one_of(source_timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"})
     phrase_count = require_int_value(source_timing, "phrase_count")
@@ -320,6 +321,17 @@ def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
     value = parent.get(field)
     if not isinstance(value, int) or isinstance(value, bool):
         raise TypeError(f"{field} must be an integer")
+    if value < 0:
+        raise ValueError(f"{field} must be non-negative")
+    return value
+
+
+def require_optional_non_negative_int(parent: dict[str, Any], field: str) -> int | None:
+    value = parent.get(field)
+    if value is None:
+        return None
+    if not isinstance(value, int) or isinstance(value, bool):
+        raise TypeError(f"{field} must be an integer or null")
     if value < 0:
         raise ValueError(f"{field} must be non-negative")
     return value
