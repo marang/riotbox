@@ -632,6 +632,11 @@ QA/listening tools to consume the timing estimate:
   policy into one report
 - `Ready` means the evidence is stable enough for bounded QA consumers; it does
   not mean Riotbox has a production-grade arbitrary-audio beat/downbeat detector
+- the readiness boundary may promote a cautious timing model to `Ready` only
+  when the combined report has finite primary BPM, stable beat/downbeat/drift/
+  phrase evidence, no warnings, no alternate timing evidence, and no manual
+  confirmation requirement; it must not treat the broader degraded-policy label
+  as the only source of truth
 - the committed probe JSON validator fixtures must include both a short
   manual-confirm case and a long stable `locked_grid` case, so fresh clones can
   prove the readiness boundary without relying on local example WAV files

@@ -126,7 +126,7 @@ fn source_timing_probe_keeps_flat_loop_degraded_for_dance_auto_readiness() {
 }
 
 #[test]
-fn source_timing_probe_keeps_manual_confirmed_real_loop_like_grid_in_review() {
+fn source_timing_probe_promotes_stable_long_real_loop_like_grid_to_ready() {
     let tempdir = tempdir().expect("create tempdir");
     let source_path = tempdir.path().join("real_loop_like_ready_128.wav");
     let samples = real_loop_like_accented_drum_samples_128_bpm();
@@ -160,11 +160,8 @@ fn source_timing_probe_keeps_manual_confirmed_real_loop_like_grid_in_review() {
         readiness.phrase_status,
         SourceTimingCandidatePhraseStatus::Stable
     );
-    assert_eq!(
-        readiness.readiness,
-        SourceTimingProbeReadinessStatus::NeedsReview
-    );
-    assert!(readiness.requires_manual_confirm);
+    assert_eq!(readiness.readiness, SourceTimingProbeReadinessStatus::Ready);
+    assert!(!readiness.requires_manual_confirm);
     assert!(
         !readiness
             .warning_codes
