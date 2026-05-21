@@ -458,4 +458,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate observer/audio MC-202 phrase-grid hit-ratio derivation
 - [RIOTBOX-853.md](./RIOTBOX-853.md)
   Review observer/audio summary validator hardening after RIOTBOX-847-852
+- [RIOTBOX-854.md](./RIOTBOX-854.md)
+  Require Source Timing grid_use in observer/audio summary validation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
