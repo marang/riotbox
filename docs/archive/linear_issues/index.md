@@ -516,4 +516,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Require Source Timing cue and actionability in generated Feral-grid manifest validation
 - [RIOTBOX-883.md](./RIOTBOX-883.md)
   Prioritize unavailable Source Timing cue over manual-confirm wording
+- [RIOTBOX-884.md](./RIOTBOX-884.md)
+  Surface Source Timing cue and readiness in P012 all-lane proof summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
