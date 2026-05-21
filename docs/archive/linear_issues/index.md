@@ -506,4 +506,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Refresh Jam recipe Source Timing actionability examples
 - [RIOTBOX-878.md](./RIOTBOX-878.md)
   Surface Source Timing actionability in P012 all-lane proof manifests
+- [RIOTBOX-879.md](./RIOTBOX-879.md)
+  Add Source Timing actionability to probe CLI summaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
