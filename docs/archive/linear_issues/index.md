@@ -490,4 +490,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Align Source timing panel with shared Jam timing summary
 - [RIOTBOX-870.md](./RIOTBOX-870.md)
   Fold Recipe 15 auto timing proof into the P012 all-lane output gate
+- [RIOTBOX-871.md](./RIOTBOX-871.md)
+  Review the current P012 all-lane timing proof surface after Recipe 15 integration
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
