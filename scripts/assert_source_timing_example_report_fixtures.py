@@ -51,6 +51,8 @@ EXPECTED_ROWS = {
         "downbeat_score": "0.565",
         "downbeat_alternates": "0",
         "phrase": "not_enough_material",
+        "phrase_count": "0",
+        "phrase_bars": "4",
         "alternate_evidence": "0",
         "warnings": "phrase_uncertain",
         "anchors": "9/2/4/3",
@@ -77,6 +79,8 @@ EXPECTED_ROWS = {
         "downbeat_score": "0.565",
         "downbeat_alternates": "0",
         "phrase": "stable",
+        "phrase_count": "2",
+        "phrase_bars": "8",
         "alternate_evidence": "0",
         "warnings": "none",
         "anchors": "11/6/3/2",
@@ -103,6 +107,8 @@ EXPECTED_ROWS = {
         "downbeat_score": "0.268",
         "downbeat_alternates": "3",
         "phrase": "ambiguous_downbeat",
+        "phrase_count": "0",
+        "phrase_bars": "8",
         "alternate_evidence": "6",
         "warnings": "phrase_uncertain,ambiguous_downbeat",
         "anchors": "16/0/0/16",
@@ -129,6 +135,8 @@ EXPECTED_ROWS = {
         "downbeat_score": "none",
         "downbeat_alternates": "0",
         "phrase": "unavailable",
+        "phrase_count": "0",
+        "phrase_bars": "0",
         "alternate_evidence": "0",
         "warnings": "low_timing_confidence,weak_kick_anchor",
         "anchors": "0/0/0/0",
@@ -205,8 +213,14 @@ def assert_mismatch_expectations_fail() -> None:
         expectations,
     )
     failures = expectation_failures([row])
-    if not failures or "mismatch:" not in failures[0]:
-        raise AssertionError("expected mismatched source timing expectations to fail")
+    if (
+        not failures
+        or "mismatch:" not in failures[0]
+        or "primary_phrase_count" not in failures[0]
+    ):
+        raise AssertionError(
+            "expected mismatched source timing phrase-count expectations to fail"
+        )
 
 
 def assert_exact_warning_expectations_fail() -> None:
