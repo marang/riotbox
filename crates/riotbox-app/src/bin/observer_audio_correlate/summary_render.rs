@@ -260,13 +260,14 @@ fn source_timing_readiness_cue(timing: &SourceTimingEvidence) -> &'static str {
 
 fn source_timing_readiness_actionability(timing: &SourceTimingEvidence) -> &str {
     timing.actionability.as_deref().unwrap_or({
-        if timing.requires_manual_confirm {
+        if timing.readiness == "unavailable" {
+            "timing unavailable"
+        } else if timing.requires_manual_confirm {
             "confirm grid first"
         } else {
             match timing.readiness.as_str() {
                 "ready" => "grid can steer moves",
                 "needs_review" | "weak" => "listen first",
-                "unavailable" => "timing unavailable",
                 _ => "unknown",
             }
         }

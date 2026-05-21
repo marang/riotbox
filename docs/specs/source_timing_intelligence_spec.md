@@ -604,6 +604,10 @@ primary timing hypothesis:
   local readiness/manual-confirm string mappings in each manifest or CLI surface.
   Downstream JSON validators may still recompute those labels independently as
   compatibility checks.
+- Readiness cue/actionability labels must prioritize unavailable timing over
+  manual-confirm wording. If no usable timing grid exists, surfaces should show
+  `not available` / `timing unavailable`, not `needs confirm` / `confirm grid
+  first`.
 
 The candidate confidence report summarizes this early detector state for QA:
 

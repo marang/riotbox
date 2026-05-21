@@ -24,6 +24,10 @@ pub fn source_timing_readiness_cue_label(
     readiness: &str,
     requires_manual_confirm: bool,
 ) -> &'static str {
+    if readiness == "unavailable" {
+        return "not available";
+    }
+
     if requires_manual_confirm {
         return "needs confirm";
     }
@@ -31,7 +35,7 @@ pub fn source_timing_readiness_cue_label(
     match readiness {
         "ready" => "grid locked",
         "needs_review" | "weak" => "listen first",
-        "unavailable" => "not available",
+        "unavailable" => unreachable!(),
         _ => "unknown",
     }
 }
@@ -85,7 +89,7 @@ mod tests {
     }
 
     #[test]
-    fn source_timing_readiness_cues_prioritize_manual_confirm() {
+    fn source_timing_readiness_cues_prioritize_unavailable_then_manual_confirm() {
         assert_eq!(
             source_timing_readiness_cue_label("ready", false),
             "grid locked"
@@ -104,6 +108,10 @@ mod tests {
         );
         assert_eq!(
             source_timing_readiness_cue_label("unavailable", false),
+            "not available"
+        );
+        assert_eq!(
+            source_timing_readiness_cue_label("unavailable", true),
             "not available"
         );
         assert_eq!(

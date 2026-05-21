@@ -1034,14 +1034,14 @@ def require_source_timing_readiness_cue_match(
 
 
 def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -> str:
+    if readiness == "unavailable":
+        return "not available"
     if requires_manual_confirm:
         return "needs confirm"
     if readiness == "ready":
         return "grid locked"
     if readiness in {"needs_review", "weak"}:
         return "listen first"
-    if readiness == "unavailable":
-        return "not available"
     return "unknown"
 
 
@@ -1059,14 +1059,14 @@ def require_source_timing_readiness_actionability_match(
 def source_timing_readiness_actionability(
     readiness: str, requires_manual_confirm: bool
 ) -> str:
+    if readiness == "unavailable":
+        return "timing unavailable"
     if requires_manual_confirm:
         return "confirm grid first"
     if readiness == "ready":
         return "grid can steer moves"
     if readiness in {"needs_review", "weak"}:
         return "listen first"
-    if readiness == "unavailable":
-        return "timing unavailable"
     return "unknown"
 
 

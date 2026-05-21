@@ -46,7 +46,8 @@ from pathlib import Path
 summary = json.loads(Path(sys.argv[1]).read_text())
 
 expected = {
-    "cue": "needs confirm",
+    "cue": "not available",
+    "actionability": "timing unavailable",
     "readiness": "unavailable",
     "requires_manual_confirm": True,
     "grid_use": "unavailable",

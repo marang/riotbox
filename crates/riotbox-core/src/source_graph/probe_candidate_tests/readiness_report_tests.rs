@@ -275,6 +275,14 @@ fn source_timing_readiness_labels_preserve_musician_language() {
         source_timing_readiness_labels(SourceTimingProbeReadinessStatus::Unavailable, false);
     assert_eq!(unavailable.cue, "not available");
     assert_eq!(unavailable.actionability, "timing unavailable");
+
+    let unavailable_manual_confirm =
+        source_timing_readiness_labels(SourceTimingProbeReadinessStatus::Unavailable, true);
+    assert_eq!(unavailable_manual_confirm.cue, "not available");
+    assert_eq!(
+        unavailable_manual_confirm.actionability,
+        "timing unavailable"
+    );
 }
 
 fn grid_use_policy_report(

@@ -118,8 +118,8 @@ CASES = [
     ),
     GridUseCase(
         grid_use="unavailable",
-        cue="needs confirm",
-        actionability="confirm grid first",
+        cue="not available",
+        actionability="timing unavailable",
         readiness="unavailable",
         requires_manual_confirm=True,
         primary_bpm=None,
