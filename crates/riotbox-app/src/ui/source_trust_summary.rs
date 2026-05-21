@@ -196,12 +196,11 @@ fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
             source_timing_policy_cue_style(&timing.degraded_policy),
         ),
         Span::styled(" | ", style_low_emphasis()),
+        Span::raw(timing.actionability.clone()),
+        Span::styled(" | ", style_low_emphasis()),
         Span::raw(format!("grid {}", timing.grid_use)),
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(source_timing_downbeat_phase_chip(timing)),
-        Span::styled(" | ", style_low_emphasis()),
-        Span::raw(format!("{} ", timing.quality)),
-        Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
     ])
 }
 

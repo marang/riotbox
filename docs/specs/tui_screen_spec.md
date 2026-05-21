@@ -99,10 +99,14 @@ It must expose:
   compactly as the selected bar phase, for example `downbeat ambiguous offset 0`
   or `offset none`.
 - Jam may collapse the timing cue to an instrument-sized line such as
-  `timing needs confirm | grid manual_confirm_only | p0 | low kick+bb`;
+  `timing needs confirm | confirm grid first | grid manual_confirm_only | p0`;
   Help and Start Here lines may use the fuller `phase 0` / `phase none`
   wording; the Source screen should carry the slightly fuller anchor count such
   as `anchors 2 kick+bb`.
+- When Jam Trust panel space is constrained, prefer cue, actionability,
+  grid-use, and selected phase over repeating source timing quality or anchor
+  class; the Source and Help surfaces should retain the fuller quality/anchor
+  wording.
 - Jam Help, Start Here, and Source timing panels should read the actionability
   phrase from the shared Jam source timing summary instead of matching local
   degraded-policy strings.
