@@ -202,6 +202,7 @@ def assert_invalid_expectations_fail() -> None:
         FIXTURE_DIR / "beat08_expectations_invalid_empty_range.json",
         FIXTURE_DIR / "beat08_expectations_invalid_inverted_range.json",
         FIXTURE_DIR / "beat08_expectations_invalid_unknown_range_key.json",
+        FIXTURE_DIR / "beat08_expectations_invalid_unknown_key.json",
     ]
     for path in invalid_paths:
         assert_raises(

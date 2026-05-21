@@ -7,6 +7,28 @@ from pathlib import Path
 from typing import Any
 
 
+EXPECTATION_KEYS = {
+    "cue",
+    "readiness",
+    "requires_manual_confirm",
+    "grid_use",
+    "confidence_result",
+    "drift_status",
+    "beat_status",
+    "downbeat_status",
+    "phrase_status",
+    "alternate_evidence_count",
+    "alternate_beat_candidate_count",
+    "alternate_downbeat_phase_count",
+    "primary_bpm",
+    "primary_beat_score",
+    "primary_beat_matched_onset_ratio",
+    "primary_beat_median_distance_ratio",
+    "primary_downbeat_score",
+    "warning_codes_include",
+}
+
+
 def load_expectations(path: Path) -> dict[str, dict[str, Any]]:
     payload = require_object(json.loads(path.read_text()), str(path))
     sources = require_object(payload.get("sources"), "expectations.sources")
@@ -14,7 +36,9 @@ def load_expectations(path: Path) -> dict[str, dict[str, Any]]:
     for source, expectation in sources.items():
         if not isinstance(source, str) or not source:
             raise TypeError("expectation source keys must be non-empty strings")
-        expectations[source] = require_object(expectation, f"expectations[{source}]")
+        expectation_object = require_object(expectation, f"expectations[{source}]")
+        require_known_expectation_keys(expectation_object, f"expectations[{source}]")
+        expectations[source] = expectation_object
     return expectations
 
 
@@ -34,6 +58,7 @@ def format_expectation(
 
 
 def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> list[str]:
+    require_known_expectation_keys(expectation, "expectation")
     issues = []
     compare_string(payload, expectation, issues, "cue")
     compare_string(payload, expectation, issues, "readiness")
@@ -54,6 +79,12 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_number_range(payload, expectation, issues, "primary_downbeat_score")
     compare_warning_includes(payload, expectation, issues)
     return issues
+
+
+def require_known_expectation_keys(expectation: dict[str, Any], label: str) -> None:
+    unknown_keys = sorted(set(expectation) - EXPECTATION_KEYS)
+    if unknown_keys:
+        raise ValueError(f"{label} has unknown keys: {', '.join(unknown_keys)}")
 
 
 def compare_string(
