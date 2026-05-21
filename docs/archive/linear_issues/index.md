@@ -454,4 +454,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate observer/audio MC-202 source phrase-slot consistency
 - [RIOTBOX-851.md](./RIOTBOX-851.md)
   Validate observer/audio MC-202 phrase-grid pass consistency
+- [RIOTBOX-852.md](./RIOTBOX-852.md)
+  Validate observer/audio MC-202 phrase-grid hit-ratio derivation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
