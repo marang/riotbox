@@ -510,4 +510,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add Source Timing actionability to probe CLI summaries
 - [RIOTBOX-880.md](./RIOTBOX-880.md)
   Review P012 Source Timing actionability surface after proof and probe alignment
+- [RIOTBOX-881.md](./RIOTBOX-881.md)
+  Centralize Source Timing readiness cue and actionability labels for Rust producers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
