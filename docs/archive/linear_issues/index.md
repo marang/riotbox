@@ -436,4 +436,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show Source Timing downbeat phase in Jam compact timing lines
 - [RIOTBOX-842.md](./RIOTBOX-842.md)
   Validate Source Timing main alignment status consistency
+- [RIOTBOX-843.md](./RIOTBOX-843.md)
+  Validate Source Timing alignment BPM-delta issue derivation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
