@@ -50,7 +50,7 @@ For a normal implementation or docs slice:
 11. move the Linear issue to `In Review`
 12. add a human-readable issue update
 13. add a project-level update in the `Riotbox Project Updates` Linear document
-14. wait for merge / approval boundary before continuing to the next ticket
+14. treat merge / approval as the boundary for closing this ticket, not as an idle point; when the current PR is locally clean and CI is running or green, continue the main implementation lane on the next bounded backlog slice
 15. after merge, sync local `main`
 16. move the issue to `Done`
 17. archive useful Linear context before deletion when the ticket should be removed from Linear
@@ -370,7 +370,7 @@ If the `review-codebase` skill is not available in the current session, fall bac
 
 Two update layers are expected:
 
-### 8.1 Issue-level update
+### 9.1 Issue-level update
 
 Add a short, human-readable update on the Linear issue when:
 
@@ -384,7 +384,7 @@ The issue update should say:
 - what was verified
 - what remains bounded or open
 
-### 8.2 Project-level update
+### 9.2 Project-level update
 
 Also add a short entry to the `Riotbox Project Updates` Linear document when:
 
@@ -451,7 +451,7 @@ Rules:
 
 ## 9.3.1 Automatic Next-Ticket Continuation
 
-If a ticket loop is fully closed, the agent may continue directly with the next-best backlog ticket without waiting for a new user prompt.
+If a ticket loop is fully closed, the agent should continue directly with the next-best backlog ticket without waiting for a new user prompt.
 
 Conditions:
 
@@ -738,5 +738,5 @@ If unsure, do this:
 4. verify locally
 5. open one PR with `Why This Matters`
 6. update the issue and project log
-7. wait for merge
-8. sync `main`
+7. inspect CI, fix slice-owned failures, and keep moving on the next bounded slice when the PR is clean instead of waiting idly for merge
+8. after merge, sync `main`
