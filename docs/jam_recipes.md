@@ -55,8 +55,8 @@ You may see lines like:
 
 ```text
 timing needs confirm [===>] next bar
-timing needs confirm | low | kick+bb
-Timing: needs confirm | low | kick+bb | source b32 bar8 p1 | confirm before trusting grid
+timing needs confirm | grid manual_confirm_only | p0 | low kick+bb
+Timing: needs confirm | grid manual_confirm_only | phase 0 | low | kick+bb | source b32 bar8 p1 | confirm grid first
 readiness needs confirm | 126.0 BPM | conf 0.76
 ```
 

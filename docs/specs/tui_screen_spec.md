@@ -95,9 +95,10 @@ It must expose:
   compactly as the selected bar phase, for example `downbeat ambiguous offset 0`
   or `offset none`.
 - Jam may collapse the timing cue to an instrument-sized line such as
-  `timing needs confirm | grid manual_confirm_only | low | kick+bb`; the Source
-  screen should carry the slightly fuller anchor count such as `anchors 2
-  kick+bb`
+  `timing needs confirm | grid manual_confirm_only | p0 | low kick+bb`;
+  Help and Start Here lines may use the fuller `phase 0` / `phase none`
+  wording; the Source screen should carry the slightly fuller anchor count such
+  as `anchors 2 kick+bb`.
 - Jam should keep a one-line `Now` timing rail visible in perform mode, for
   example `timing needs confirm [===>] next bar`, so musicians can see the trust
   state and the next bar boundary without opening Inspect or Source

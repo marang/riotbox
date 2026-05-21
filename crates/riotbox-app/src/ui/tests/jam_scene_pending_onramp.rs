@@ -383,7 +383,7 @@ fn renders_jam_shell_with_first_run_onramp() {
     );
     assert!(
         rendered.contains(
-            "Timing: needs confirm | grid manual_confirm_only | low | kick+bb | source b32 bar8 p1 | confirm before"
+            "Timing: needs confirm | grid manual_confirm_only | phase 0 | low | kick+bb | source b32 bar8 p1 | confirm grid first"
         ),
         "{rendered}"
     );
@@ -400,10 +400,7 @@ fn renders_jam_shell_with_queued_first_move_guidance() {
     assert!(rendered.contains("next bar"), "{rendered}");
     assert!(rendered.contains("confirm it in Log"), "{rendered}");
     assert!(rendered.contains("[c] capture"), "{rendered}");
-    assert!(
-        rendered.contains("confirm before trusting grid"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("confirm grid first"), "{rendered}");
 }
 
 #[test]
