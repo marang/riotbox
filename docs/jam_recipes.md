@@ -736,6 +736,12 @@ an optional local skip.
 just p012-all-lane-source-grid-output-proof
 ```
 
+After the phase-level proof passes, the compact summary is written to:
+
+```text
+artifacts/audio_qa/local/p012_all_lane_source_grid_output_proof_summary.md
+```
+
 How to interpret `auto`:
 
 - `grid_bpm_source: source_timing` means the current readiness report drove the
