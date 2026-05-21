@@ -552,9 +552,9 @@ def require_lane_recipe_case(value: Any, name: str) -> None:
     case = require_object(value, name)
     require_string(case, "id")
     require_string(case, "result")
-    require_optional_number(case, "candidate_rms")
-    require_optional_number(case, "signal_delta_rms")
-    require_optional_number(case, "min_signal_delta_rms")
+    require_optional_non_negative_number(case, "candidate_rms")
+    require_optional_non_negative_number(case, "signal_delta_rms")
+    require_optional_non_negative_number(case, "min_signal_delta_rms")
     require_bool(case, "mc202_phrase_grid_malformed")
     require_bool(case, "mc202_source_phrase_slot_malformed")
     require_optional_mc202_phrase_grid(case, "mc202_phrase_grid")
@@ -568,12 +568,16 @@ def require_optional_mc202_phrase_grid(parent: dict[str, Any], field: str) -> No
     if value is None:
         return
     grid = require_object(value, field)
-    require_number(grid, "hit_ratio")
+    hit_ratio = require_number_value(grid, "hit_ratio")
+    if hit_ratio < 0.0 or hit_ratio > 1.0:
+        raise ValueError(f"{field}.hit_ratio must be between 0 and 1")
     require_bool(grid, "starts_on_phrase_boundary")
-    require_int(grid, "candidate_onset_count")
-    require_int(grid, "grid_aligned_onset_count")
-    require_number(grid, "max_onset_offset_ms")
-    require_number(grid, "max_allowed_onset_offset_ms")
+    candidate_onset_count = require_non_negative_int(grid, "candidate_onset_count")
+    grid_aligned_onset_count = require_non_negative_int(grid, "grid_aligned_onset_count")
+    if grid_aligned_onset_count > candidate_onset_count:
+        raise ValueError(f"{field}.grid_aligned_onset_count cannot exceed candidate_onset_count")
+    require_non_negative_number(grid, "max_onset_offset_ms", field)
+    require_non_negative_number(grid, "max_allowed_onset_offset_ms", field)
     require_bool(grid, "passed")
 
 
