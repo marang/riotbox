@@ -428,4 +428,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface downbeat offset in Jam/Source timing summary
 - [RIOTBOX-838.md](./RIOTBOX-838.md)
   Split SourceTimingSummaryView tests out of the core summary module
+- [RIOTBOX-839.md](./RIOTBOX-839.md)
+  Review P012 Source Timing UI and observer alignment after offset slices
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
