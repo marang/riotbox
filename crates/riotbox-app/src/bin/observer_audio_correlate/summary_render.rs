@@ -106,6 +106,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
             "observer_source_timing": summary.observer_source_timing.as_ref().map(|timing| serde_json::json!({
                 "source_id": &timing.source_id,
                 "cue": &timing.cue,
+                "actionability": &timing.actionability,
                 "bpm_estimate": timing.bpm_estimate,
                 "bpm_confidence": timing.bpm_confidence,
                 "quality": &timing.quality,

@@ -766,9 +766,9 @@ bounded BPM policy:
   tempo-only, ambiguous-downbeat, and phrase-uncertain states without scraping
   TUI text.
 - app observer snapshots should preserve the shared Jam Source Timing
-  `grid_use` label alongside cue, quality, and degraded policy, so the
-  control-path observer event, Jam/Source TUI, and output-path manifest QA use
-  the same compact timing contract.
+  `grid_use` label and `actionability` phrase alongside cue, quality, and
+  degraded policy, so the control-path observer event, Jam/Source TUI, and
+  output-path manifest QA use the same compact timing contract.
 - app observer snapshots should also preserve compact primary timing-anchor
   evidence as `anchor_evidence`: total primary anchors plus kick, backbeat, and
   transient-cluster counts from the shared Jam source timing summary. This is a
