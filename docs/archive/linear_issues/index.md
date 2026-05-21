@@ -554,4 +554,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface Source Timing phrase counts in compact P012 proof summary
 - [RIOTBOX-902.md](./RIOTBOX-902.md)
   Review P012 phrase-evidence reporting path after RIOTBOX-897-901
+- [RIOTBOX-903.md](./RIOTBOX-903.md)
+  Carry Source Timing phrase counts into observer/audio summaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
