@@ -1,7 +1,7 @@
 # Source Timing Example Readiness
 
 Date: 2026-05-07
-Rechecked: 2026-05-10
+Rechecked: 2026-05-10, 2026-05-21
 
 Status: local real-example readiness check for Feral grid packs after the
 Source Timing readiness-to-pack bridge and explicit dance-loop auto-readiness
@@ -59,7 +59,7 @@ than pack BPM decision fields.
 | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- |
 | `Beat03_130BPM(Full).wav` | `needs confirm` | `needs_review` | yes | 130.285 | stable | stable | not_enough_material | `PhraseUncertain` | BPM, beat, and downbeat are useful, but short-loop phrase absence still blocks automatic trust. |
 | `Beat08_128BPM(Full).wav` | `needs confirm` | `needs_review` | yes | 128.397 | stable | stable | not_enough_material | `PhraseUncertain` | Same: usable grid evidence, still needs explicit confirmation for phrase-level confidence. |
-| `Beat20_128BPM(Full).wav` | `needs confirm` | `weak` | yes | 128.397 | stable | weak | not_enough_material | `PhraseUncertain`, `AmbiguousDownbeat` | Keep conservative; downbeat evidence is not stable enough. |
+| `Beat20_128BPM(Full).wav` | `needs confirm` | `needs_review` | yes | 128.397 | stable | ambiguous | not_enough_material | `PhraseUncertain`, `AmbiguousDownbeat` | Keep conservative; beat/BPM evidence is strong, but competing downbeat phases still require manual confirmation. |
 | `DH_BeatC_120-01.wav` | `needs confirm` | `needs_review` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
 | `DH_BeatC_KickSnr_120-01.wav` | `needs confirm` | `needs_review` | yes | 120.185 | stable | stable | not_enough_material | `PhraseUncertain` | Useful short-loop timing candidate; do not treat as long-phrase locked yet. |
 | `DH_Fadapad_120_A.wav` | `needs confirm` | `unavailable` | yes | none | unavailable | unavailable | unavailable | `LowTimingConfidence`, `WeakKickAnchor` | Correctly not a drum-timing source for this probe path. |
@@ -76,6 +76,9 @@ for every source:
   grids that still need a human decision are now reported as `needs_review`
 - short-loop phrase absence is currently reported as `not_enough_material` /
   `PhraseUncertain`, even when beat and downbeat are stable
+- near-stable but competing downbeat phases are reported as `needs_review` /
+  `ambiguous`, not as generic weak timing; this keeps useful BPM/beat evidence
+  visible while still blocking automatic grid trust
 - sources with a known BPM should still use explicit BPM in musician-facing
   examples when the cue remains `needs confirm`
 - melodic or non-drum sources can still fail the current TR-909 support render

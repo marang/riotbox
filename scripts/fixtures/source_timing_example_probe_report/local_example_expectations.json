@@ -76,7 +76,7 @@
     },
     "Beat20_128BPM(Full).wav": {
       "cue": "needs confirm",
-      "readiness": "weak",
+      "readiness": "needs_review",
       "requires_manual_confirm": true,
       "grid_use": "manual_confirm_only",
       "confidence_result": "candidate_ambiguous",
@@ -95,7 +95,7 @@
         "max": 0.4
       },
       "beat_status": "stable",
-      "downbeat_status": "weak",
+      "downbeat_status": "ambiguous",
       "phrase_status": "not_enough_material",
       "warning_codes_exact": [
         "phrase_uncertain",

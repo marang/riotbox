@@ -743,8 +743,8 @@ downbeat, phrase, and warning lines.
 Current local benchmark result:
 
 - `Beat03_130BPM(Full).wav`: use explicit `130 BPM`; auto currently falls back to `128 BPM`.
-- `Beat08_128BPM(Full).wav`: BPM is close in auto mode, but readiness is still weak.
-- `Beat20_128BPM(Full).wav`: similar to Beat08.
+- `Beat08_128BPM(Full).wav`: BPM/beat/downbeat evidence is useful, but short-loop readiness still needs confirmation.
+- `Beat20_128BPM(Full).wav`: BPM/beat evidence is useful, but competing downbeat phases still need confirmation.
 - `DH_BeatC_120-01.wav`: use explicit `120 BPM`; auto fallback is musically misleading.
 - `DH_RushArp_120_A.wav`: do not use this path for Feral grid drum-support examples; use `just melodic-source-chop-showcase` to keep unavailable Source Timing explicit while proving source-backed W-30 chop output.
 

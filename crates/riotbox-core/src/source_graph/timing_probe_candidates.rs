@@ -1,4 +1,7 @@
 const MIN_STABLE_DOWNBEAT_PHASE_SCORE: f32 = 0.30;
+// Near-stable but phase-conflicted evidence is reviewable ambiguity, not a
+// locked downbeat and not the same as flat weak timing.
+const MIN_AMBIGUOUS_DOWNBEAT_PHASE_SCORE: f32 = MIN_STABLE_DOWNBEAT_PHASE_SCORE * 0.90;
 
 include!("timing_probe_candidates/types.rs");
 include!("timing_probe_candidates/confidence_report.rs");
