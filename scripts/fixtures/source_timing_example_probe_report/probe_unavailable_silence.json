@@ -20,6 +20,8 @@
   "confidence_result": "degraded",
   "drift_status": "unavailable",
   "phrase_status": "unavailable",
+  "primary_phrase_count": 0,
+  "primary_phrase_bar_count": 0,
   "alternate_evidence_count": 0,
   "alternate_beat_candidate_count": 0,
   "alternate_downbeat_phase_count": 0,

@@ -65,6 +65,8 @@ fn source_timing_probe_readiness_report_summarizes_ready_candidate() {
         report.phrase_status,
         SourceTimingCandidatePhraseStatus::Stable
     );
+    assert_eq!(report.primary_phrase_count, 2);
+    assert_eq!(report.primary_phrase_bar_count, 8);
     assert_eq!(report.alternate_evidence_count, 0);
     assert!(report.warning_codes.is_empty());
     assert!(!report.requires_manual_confirm);
@@ -122,6 +124,8 @@ fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
         report.phrase_status,
         SourceTimingCandidatePhraseStatus::NotEnoughMaterial
     );
+    assert_eq!(report.primary_phrase_count, 0);
+    assert_eq!(report.primary_phrase_bar_count, 4);
     assert!(report
         .warning_codes
         .contains(&TimingWarningCode::PhraseUncertain));
@@ -331,6 +335,27 @@ fn grid_use_policy_report(
         confidence_result,
         drift_status: SourceTimingCandidateDriftStatus::Stable,
         phrase_status,
+        primary_phrase_count: if matches!(
+            phrase_status,
+            SourceTimingCandidatePhraseStatus::Unavailable
+        ) {
+            0
+        } else {
+            1
+        },
+        primary_phrase_bar_count: if matches!(
+            phrase_status,
+            SourceTimingCandidatePhraseStatus::Unavailable
+        ) {
+            0
+        } else if matches!(
+            phrase_status,
+            SourceTimingCandidatePhraseStatus::NotEnoughMaterial
+        ) {
+            4
+        } else {
+            8
+        },
         alternate_evidence_count,
         warning_codes: Vec::new(),
         requires_manual_confirm,

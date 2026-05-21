@@ -115,6 +115,8 @@ pub struct SourceTimingProbeReadinessReport {
     pub confidence_result: SourceTimingCandidateConfidenceResult,
     pub drift_status: SourceTimingCandidateDriftStatus,
     pub phrase_status: SourceTimingCandidatePhraseStatus,
+    pub primary_phrase_count: usize,
+    pub primary_phrase_bar_count: usize,
     pub alternate_evidence_count: usize,
     pub warning_codes: Vec<TimingWarningCode>,
     pub requires_manual_confirm: bool,

@@ -43,6 +43,8 @@ pub fn source_timing_probe_readiness_report(
         confidence_result: confidence.result,
         drift_status: confidence.primary_drift_status,
         phrase_status: confidence.primary_phrase_status,
+        primary_phrase_count: confidence.primary_phrase_count,
+        primary_phrase_bar_count: confidence.primary_phrase_bar_count,
         alternate_evidence_count,
         warning_codes: confidence.warning_codes,
         requires_manual_confirm,
