@@ -2,11 +2,21 @@
 // slices move to explicit child modules.
 include!("ui/types_state.rs");
 
+mod first_run_capture;
 mod recovery_prompt;
 mod source_timing_panel;
 mod source_trust_summary;
 
+use first_run_capture::{
+    FirstRunOnrampStage, capture_do_next_lines, capture_latest_lines, capture_lines,
+    capture_provenance_lines, capture_readiness_lines, capture_routing_lines,
+    first_run_onramp_stage, pending_capture_lines, recent_capture_items,
+};
+#[cfg(test)]
+use first_run_capture::{capture_pending_detail_line, capture_pending_intent_line};
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
+#[cfg(test)]
+use riotbox_core::view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView};
 use source_timing_panel::source_timing_lines;
 use source_trust_summary::{
     energy_label, source_candidate_lines, source_confidence_lines, source_provenance_lines,
@@ -23,7 +33,6 @@ include!("ui/jam_landed_warnings_source.rs");
 include!("ui/diagnostics_mc202_w30_logs.rs");
 include!("ui/w30_capture_source_helpers.rs");
 include!("ui/scene_timing_rail.rs");
-include!("ui/first_run_capture.rs");
 include!("ui/capture_log_source_lists.rs");
 
 #[cfg(test)]
