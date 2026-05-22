@@ -40,6 +40,7 @@ fn summarizes_synthetic_observer_and_manifest() {
             primary_downbeat_score: Some(0.273),
             primary_downbeat_score_gap: Some(0.005),
             alternate_downbeat_phase_count: 3,
+            has_alternate_downbeat_phase_count: true,
             bar_count: 0,
             phrase_status: "uncertain".to_string(),
             phrase_count: 0,

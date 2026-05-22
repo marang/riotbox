@@ -9,7 +9,7 @@ mod policy_tests;
 
 fn observer_with_source_timing(bpm: f64, warning_code: &str) -> String {
     format!(
-        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_offset_beats":0,"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"anchor_evidence":{{"primary_anchor_count":4,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":2,"primary_transient_anchor_count":1}},"primary_anchor_cue":"anchors 4 | kick+backbeat","groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":12.5,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-12.5,"confidence":0.72}},{{"subdivision":"sixteenth","offset_ms":6.25,"confidence":0.61}}]}},"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
+        r#"{{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{{"mode":"ingest","source":"synthetic.wav"}},"snapshot":{{"transport":{{}},"queue":{{}},"runtime":{{}},"source_timing":{{"present":true,"source_id":"src-timing","bpm_estimate":{bpm},"bpm_confidence":0.86,"quality":"medium","degraded_policy":"cautious","cue":"listen first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_offset_beats":0,"primary_downbeat_score":0.273,"primary_downbeat_score_gap":0.005,"alternate_downbeat_phase_count":3,"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":2,"anchor_evidence":{{"primary_anchor_count":4,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":2,"primary_transient_anchor_count":1}},"primary_anchor_cue":"anchors 4 | kick+backbeat","groove_evidence":{{"primary_groove_residual_count":2,"primary_max_abs_offset_ms":12.5,"primary_groove_preview":[{{"subdivision":"eighth","offset_ms":-12.5,"confidence":0.72}},{{"subdivision":"sixteenth","offset_ms":6.25,"confidence":0.61}}]}},"primary_warning_code":"{warning_code}","warning_codes":["{warning_code}"]}},"recovery":{{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}}}}"#,
     ) + "\n"
         + r#"{"event":"audio_runtime","status":"started"}"#
         + "\n"
@@ -127,6 +127,9 @@ fn manifest_with_source_timing_anchor_and_groove(
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
+    "primary_downbeat_score": 0.273,
+    "primary_downbeat_margin": 0.005,
+    "alternate_downbeat_phase_count": 3,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",

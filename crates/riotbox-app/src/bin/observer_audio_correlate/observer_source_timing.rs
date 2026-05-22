@@ -15,6 +15,7 @@ struct ObserverSourceTimingReadiness {
     primary_downbeat_score: Option<f64>,
     primary_downbeat_score_gap: Option<f64>,
     alternate_downbeat_phase_count: u64,
+    has_alternate_downbeat_phase_count: bool,
     bar_count: u64,
     phrase_status: String,
     phrase_count: u64,
@@ -164,6 +165,9 @@ fn collect_observer_source_timing(
             },
             None => 0,
         },
+        has_alternate_downbeat_phase_count: source_timing
+            .get("alternate_downbeat_phase_count")
+            .is_some(),
         bar_count: match source_timing["bar_count"].as_u64() {
             Some(value) => value,
             None => return (None, true),
