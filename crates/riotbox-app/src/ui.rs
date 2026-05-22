@@ -17,6 +17,8 @@ mod source_trust_summary;
 mod w30_cue_labels;
 #[path = "ui/diagnostics_mc202_w30_logs/w30_preview.rs"]
 mod w30_preview_labels;
+#[path = "ui/diagnostics_mc202_w30_logs/w30_resample.rs"]
+mod w30_resample_labels;
 #[path = "ui/w30_capture_source_helpers/slice_pool.rs"]
 mod w30_slice_pool_helpers;
 
@@ -60,6 +62,11 @@ use source_trust_summary::{
 use w30_cue_labels::{last_committed_w30_action, short_w30_action_label, w30_pending_cue_label};
 use w30_preview_labels::{
     w30_preview_log_compact, w30_preview_mode_profile_compact, w30_preview_source_readiness,
+};
+use w30_resample_labels::{
+    w30_capture_lineage_compact, w30_resample_lineage_active, w30_resample_log_focus_compact,
+    w30_resample_mix_log_compact, w30_resample_route_compact, w30_resample_source_compact,
+    w30_resample_tap_compact,
 };
 use w30_slice_pool_helpers::{
     w30_slice_pool_compact, w30_slice_pool_log_compact, w30_slice_pool_relevant,
