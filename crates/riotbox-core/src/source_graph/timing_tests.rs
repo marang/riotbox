@@ -156,6 +156,7 @@ mod timing_tests {
             .iter_mut()
             .find(|hypothesis| hypothesis.hypothesis_id == primary)
             .expect("primary hypothesis");
+        primary.beat_grid.truncate(4);
         primary.confidence = 0.1;
         primary.drift[0].mean_abs_drift_ms = 500.0;
         primary.drift[0].max_drift_ms = 500.0;
@@ -211,6 +212,30 @@ mod timing_tests {
     }
 
     #[test]
+    fn source_timing_fixture_evaluator_counts_primary_hypothesis_grids() {
+        let catalog: serde_json::Value =
+            serde_json::from_str(TIMING_FIXTURE_CATALOG).expect("parse timing fixture catalog");
+        let cases = catalog
+            .get("cases")
+            .and_then(serde_json::Value::as_array)
+            .expect("catalog cases");
+        let clean_case = case_by_id(cases, "fx_timing_clean_128_4x4");
+        let mut timing = analyze_source_timing_seed(&analysis_seed_from_case(clean_case));
+        timing.beat_grid.clear();
+        timing.bar_grid.clear();
+        timing.phrase_grid.clear();
+
+        let evaluation =
+            evaluate_timing_fixture_output(&timing, &evaluation_target_from_case(clean_case));
+
+        assert!(evaluation.passed, "{evaluation:?}");
+        assert_eq!(evaluation.beat_count, 32);
+        assert_eq!(evaluation.bar_count, 8);
+        assert_eq!(evaluation.phrase_count, 2);
+        assert!(evaluation.issues.is_empty(), "{evaluation:?}");
+    }
+
+    #[test]
     fn source_timing_fixture_evaluation_serializes_measurements_and_issues() {
         let catalog: serde_json::Value =
             serde_json::from_str(TIMING_FIXTURE_CATALOG).expect("parse timing fixture catalog");
@@ -246,6 +271,7 @@ mod timing_tests {
             .iter_mut()
             .find(|hypothesis| hypothesis.hypothesis_id == primary)
             .expect("primary hypothesis");
+        primary.beat_grid.truncate(4);
         primary.confidence = 0.1;
         primary.drift[0].mean_abs_drift_ms = 500.0;
         primary.drift[0].max_drift_ms = 500.0;

@@ -119,6 +119,18 @@ pub fn evaluate_timing_fixture_output(
         .and_then(|primary| max_drift_value(primary.drift.iter().map(|drift| drift.mean_abs_drift_ms)));
     let primary_max_drift_ms = primary_hypothesis
         .and_then(|primary| max_drift_value(primary.drift.iter().map(|drift| drift.max_drift_ms)));
+    let beat_count = timing_evaluation_grid_count(
+        primary_hypothesis.map(|primary| primary.beat_grid.len()),
+        timing.beat_grid.len(),
+    );
+    let bar_count = timing_evaluation_grid_count(
+        primary_hypothesis.map(|primary| primary.bar_grid.len()),
+        timing.bar_grid.len(),
+    );
+    let phrase_count = timing_evaluation_grid_count(
+        primary_hypothesis.map(|primary| primary.phrase_grid.len()),
+        timing.phrase_grid.len(),
+    );
     let bpm_error = match timing.bpm_estimate {
         Some(bpm) => (bpm - target.primary_bpm).abs(),
         None => {
@@ -130,13 +142,13 @@ pub fn evaluate_timing_fixture_output(
     if bpm_error > target.bpm_tolerance {
         issues.push(TimingFixtureEvaluationIssue::BpmOutsideTolerance);
     }
-    if timing.beat_grid.len() < target.expected_beat_count_min as usize {
+    if beat_count < target.expected_beat_count_min as usize {
         issues.push(TimingFixtureEvaluationIssue::BeatCountBelowMinimum);
     }
-    if timing.bar_grid.len() < target.expected_bar_count_min as usize {
+    if bar_count < target.expected_bar_count_min as usize {
         issues.push(TimingFixtureEvaluationIssue::BarCountBelowMinimum);
     }
-    if timing.phrase_grid.len() < target.expected_phrase_count_min as usize {
+    if phrase_count < target.expected_phrase_count_min as usize {
         issues.push(TimingFixtureEvaluationIssue::PhraseCountBelowMinimum);
     }
     if timing.effective_timing_quality() != target.quality {
@@ -199,14 +211,20 @@ pub fn evaluate_timing_fixture_output(
         fixture_id: target.fixture_id.clone(),
         passed: issues.is_empty(),
         bpm_error,
-        beat_count: timing.beat_grid.len(),
-        bar_count: timing.bar_grid.len(),
-        phrase_count: timing.phrase_grid.len(),
+        beat_count,
+        bar_count,
+        phrase_count,
         primary_confidence,
         primary_max_mean_abs_drift_ms,
         primary_max_drift_ms,
         issues,
     }
+}
+
+fn timing_evaluation_grid_count(primary_count: Option<usize>, top_level_count: usize) -> usize {
+    primary_count
+        .filter(|count| *count > 0)
+        .unwrap_or(top_level_count)
 }
 
 fn max_drift_value(values: impl Iterator<Item = f32>) -> Option<f32> {
