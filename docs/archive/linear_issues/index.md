@@ -602,4 +602,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split footer style and suggested gesture UI tests
 - [RIOTBOX-926.md](./RIOTBOX-926.md)
   Split W-30 preview and source-readiness UI tests
+- [RIOTBOX-927.md](./RIOTBOX-927.md)
+  Extract first-run capture routing UI helpers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
