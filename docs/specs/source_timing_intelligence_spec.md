@@ -603,6 +603,9 @@ primary timing hypothesis:
   `max`, must reject `min > max`, and must reject unknown range keys. This keeps
   local regression expectations from weakening accidentally when report fields
   are renamed or expanded.
+- source timing probe JSON validators must reject contradictory compact grid
+  evidence, such as stable beat/downbeat status with zero beat/bar counts or
+  unavailable beat/downbeat status with positive beat/bar counts.
 - `warning_codes_include` may be used for presence-only checks on unstable rows.
   `warning_codes_exact` should be used when a stable row must be warning-free or
   must carry only a known degraded-warning set. A single expectation row must not
