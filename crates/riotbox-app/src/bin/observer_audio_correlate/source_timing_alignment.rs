@@ -88,6 +88,7 @@ fn collect_source_timing_alignment(
         || !warning_overlap.is_empty()
         || matches!(grid_use_compatibility.as_str(), "aligned" | "compatible")
         || downbeat_offset_compatibility == "aligned"
+        || downbeat_ambiguity_compatibility == "aligned"
     {
         "aligned"
     } else {
@@ -175,37 +176,34 @@ fn source_timing_downbeat_ambiguity_compatibility(
     observer: &ObserverSourceTimingReadiness,
     manifest: &SourceTimingEvidence,
 ) -> (String, Vec<String>) {
-    let observer_has_ambiguity_evidence = observer.primary_downbeat_score.is_some()
-        || observer.primary_downbeat_score_gap.is_some()
-        || observer.alternate_downbeat_phase_count > 0;
-    let manifest_has_ambiguity_evidence = manifest.primary_downbeat_score.is_some()
-        || manifest.primary_downbeat_margin.is_some()
-        || manifest.alternate_downbeat_phase_count.is_some();
-    if !observer_has_ambiguity_evidence || !manifest_has_ambiguity_evidence {
-        return ("partial".to_string(), Vec::new());
-    }
-
     let mut issues = Vec::new();
+    let mut comparable_evidence = false;
     if let Some(manifest_count) = manifest.alternate_downbeat_phase_count
-        && observer.alternate_downbeat_phase_count != manifest_count
+        && observer.has_alternate_downbeat_phase_count
+        && (observer.alternate_downbeat_phase_count > 0 || manifest_count > 0)
     {
-        issues.push(format!(
-            "source_timing_alignment.downbeat_alternates observer={} manifest={manifest_count}",
-            observer.alternate_downbeat_phase_count
-        ));
+        comparable_evidence = true;
+        if observer.alternate_downbeat_phase_count != manifest_count {
+            issues.push(format!(
+                "source_timing_alignment.downbeat_alternates observer={} manifest={manifest_count}",
+                observer.alternate_downbeat_phase_count
+            ));
+        }
     }
-    if observer.primary_downbeat_score.is_some() != manifest.primary_downbeat_score.is_some() {
-        issues.push("source_timing_alignment.downbeat_score_presence=mismatch".into());
+    if observer.primary_downbeat_score.is_some() && manifest.primary_downbeat_score.is_some() {
+        comparable_evidence = true;
     }
-    if observer.primary_downbeat_score_gap.is_some() != manifest.primary_downbeat_margin.is_some()
+    if observer.primary_downbeat_score_gap.is_some() && manifest.primary_downbeat_margin.is_some()
     {
-        issues.push("source_timing_alignment.downbeat_gap_presence=mismatch".into());
+        comparable_evidence = true;
     }
 
-    if issues.is_empty() {
+    if !issues.is_empty() {
+        ("mismatch".to_string(), issues)
+    } else if comparable_evidence {
         ("aligned".to_string(), issues)
     } else {
-        ("mismatch".to_string(), issues)
+        ("partial".to_string(), issues)
     }
 }
 

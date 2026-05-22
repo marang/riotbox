@@ -245,3 +245,31 @@ fn strict_evidence_rejects_source_timing_downbeat_ambiguity_mismatch() {
     assert!(markdown.contains("downbeat_ambiguity=mismatch"));
     assert!(markdown.contains("Output path present: `no`"));
 }
+
+#[test]
+fn one_sided_downbeat_ambiguity_score_evidence_stays_partial() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_with_source_timing(128.0, "phrase_uncertain")
+            .replace(r#","primary_downbeat_score":0.273"#, "")
+            .replace(r#","primary_downbeat_score_gap":0.005"#, "")
+            .replace(r#","alternate_downbeat_phase_count":3"#, ""),
+    )
+    .expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_grid_use_source_timing(128.0, &["PhraseUncertain"], "locked_grid"),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let alignment = summary.source_timing_alignment.as_ref().expect("alignment");
+
+    assert_eq!(alignment.status, "aligned");
+    assert_eq!(alignment.downbeat_offset_compatibility, "aligned");
+    assert_eq!(alignment.downbeat_ambiguity_compatibility, "partial");
+    assert!(alignment.issues.is_empty());
+}
