@@ -246,6 +246,12 @@ Grid-use policy helpers that classify compact Jam/observer labels such as
 precedence before falling back to top-level `TimingModel` grids, so policy
 language does not contradict the shared Jam summary.
 
+Source timing fixture evaluators should use the same selected-primary-hypothesis
+precedence for reported beat, bar, and phrase counts and for minimum-count
+checks. This keeps QA proof aligned with the musician-facing summary and avoids
+false failures when top-level compatibility grids are absent but the selected
+primary hypothesis carries the usable grid evidence.
+
 When the shared summary exposes one `primary_warning`, it should pick the most
 musically actionable timing risk, not the first warning in Source Graph storage
 order. Current priority is:
