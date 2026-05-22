@@ -662,4 +662,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Use primary hypothesis grid counts in Jam Source Timing summary
 - [RIOTBOX-956.md](./RIOTBOX-956.md)
   Use primary hypothesis grids for short-loop grid-use policy
+- [RIOTBOX-957.md](./RIOTBOX-957.md)
+  Evaluate Source Timing grid counts from primary hypothesis
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
