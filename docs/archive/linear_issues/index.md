@@ -596,4 +596,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract W-30 slice pool helpers from capture source shard
 - [RIOTBOX-923.md](./RIOTBOX-923.md)
   Extract W-30 preview label helpers from diagnostics shard
+- [RIOTBOX-924.md](./RIOTBOX-924.md)
+  Review P015 TUI module ownership after split batch
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
