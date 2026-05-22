@@ -1,4 +1,8 @@
-fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+use ratatui::text::Line;
+
+use super::JamShellState;
+
+pub(super) fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let timing = &shell.app.jam_view.source.timing;
     match shell.app.source_graph.as_ref() {
         Some(graph) => vec![
