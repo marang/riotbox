@@ -11,6 +11,8 @@ mod jam_scene_commit_cues;
 mod recovery_prompt;
 mod source_timing_panel;
 mod source_trust_summary;
+#[path = "ui/capture_log_source_lists/w30_cue_labels.rs"]
+mod w30_cue_labels;
 
 use first_run_capture::{
     FirstRunOnrampStage, capture_do_next_lines, capture_latest_lines, capture_lines,
@@ -41,6 +43,7 @@ use source_trust_summary::{
     source_timing_performance_rail_line, source_timing_readiness_line, source_timing_warning_line,
     source_warning_lines, trust_summary,
 };
+use w30_cue_labels::{last_committed_w30_action, short_w30_action_label, w30_pending_cue_label};
 
 include!("ui/shell_render_root.rs");
 include!("ui/jam_perform_layout.rs");
