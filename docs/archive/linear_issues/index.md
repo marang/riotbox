@@ -648,4 +648,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show downbeat ambiguity compatibility in P012 proof summary
 - [RIOTBOX-949.md](./RIOTBOX-949.md)
   Add anchor and groove alignment to generated Feral-grid summary index
+- [RIOTBOX-950.md](./RIOTBOX-950.md)
+  Show anchor and groove alignment in P012 proof summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
