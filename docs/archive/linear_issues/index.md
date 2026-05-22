@@ -658,4 +658,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show generated phrase evidence in P012 proof summary
 - [RIOTBOX-954.md](./RIOTBOX-954.md)
   Show bar-grid count in Source Timing panel
+- [RIOTBOX-955.md](./RIOTBOX-955.md)
+  Use primary hypothesis grid counts in Jam Source Timing summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
