@@ -326,6 +326,7 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     require_one_of(timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
     require_non_negative_int(timing, "primary_phrase_count")
     require_non_negative_int(timing, "primary_phrase_bar_count")
+    require_source_timing_phrase_evidence_match(timing)
     require_non_negative_int(timing, "alternate_evidence_count")
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")
@@ -1110,6 +1111,27 @@ def require_source_timing_grid_use_match(
     expected = source_timing_grid_use(source_timing)
     if grid_use != expected:
         raise ValueError(f"source_timing.grid_use must be {expected!r}, got {grid_use!r}")
+
+
+def require_source_timing_phrase_evidence_match(source_timing: dict[str, Any]) -> None:
+    phrase_status = source_timing["phrase_status"]
+    phrase_count = source_timing["primary_phrase_count"]
+    phrase_bar_count = source_timing["primary_phrase_bar_count"]
+    if phrase_status == "stable" and (phrase_count == 0 or phrase_bar_count == 0):
+        raise ValueError(
+            "source_timing stable phrase evidence requires positive "
+            "primary_phrase_count and primary_phrase_bar_count"
+        )
+    if phrase_status == "unavailable" and (phrase_count != 0 or phrase_bar_count != 0):
+        raise ValueError(
+            "source_timing unavailable phrase evidence requires zero "
+            "primary_phrase_count and primary_phrase_bar_count"
+        )
+    if phrase_status == "not_enough_material" and phrase_count != 0:
+        raise ValueError(
+            "source_timing not_enough_material phrase evidence must not report "
+            "primary phrases"
+        )
 
 
 def source_timing_grid_use(source_timing: dict[str, Any]) -> str:
