@@ -37,6 +37,9 @@ If the local Beat20 WAV is missing, the proof exits as a skip.
 | `source_timing.primary_bpm` | `128.397` |
 | `source_timing.primary_downbeat_offset_beats` | `2` |
 | `source_timing.downbeat_status` | `ambiguous` |
+| `source_timing.primary_downbeat_score` | `0.27302644` |
+| `source_timing.primary_downbeat_margin` | `0.0053614676` |
+| `source_timing.alternate_downbeat_phase_count` | `3` |
 | `source_timing.confidence_result` | `candidate_ambiguous` |
 | `source_timing.alternate_evidence_count` | `6` |
 | `source_timing.warning_codes` | `PhraseUncertain`, `AmbiguousDownbeat` |

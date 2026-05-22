@@ -18,6 +18,11 @@ case "${profile}" in
     downbeat_status="stable"
     confidence_result="candidate_cautious"
     alternate_evidence_count="0"
+    downbeat_score_min="any"
+    downbeat_score_max="any"
+    downbeat_margin_min="any"
+    downbeat_margin_max="any"
+    alternate_downbeat_phase_count="any"
     warning_codes="PhraseUncertain"
     ;;
   beat08)
@@ -32,6 +37,11 @@ case "${profile}" in
     downbeat_status="stable"
     confidence_result="candidate_cautious"
     alternate_evidence_count="0"
+    downbeat_score_min="any"
+    downbeat_score_max="any"
+    downbeat_margin_min="any"
+    downbeat_margin_max="any"
+    alternate_downbeat_phase_count="any"
     warning_codes="PhraseUncertain"
     ;;
   beat20)
@@ -46,6 +56,11 @@ case "${profile}" in
     downbeat_status="ambiguous"
     confidence_result="candidate_ambiguous"
     alternate_evidence_count="6"
+    downbeat_score_min="0.27"
+    downbeat_score_max="0.28"
+    downbeat_margin_min="0.005"
+    downbeat_margin_max="0.006"
+    alternate_downbeat_phase_count="3"
     warning_codes="PhraseUncertain,AmbiguousDownbeat"
     ;;
   dh-beatc)
@@ -60,6 +75,11 @@ case "${profile}" in
     downbeat_status="stable"
     confidence_result="candidate_cautious"
     alternate_evidence_count="0"
+    downbeat_score_min="any"
+    downbeat_score_max="any"
+    downbeat_margin_min="any"
+    downbeat_margin_max="any"
+    alternate_downbeat_phase_count="any"
     warning_codes="PhraseUncertain"
     ;;
   *)
@@ -92,7 +112,9 @@ cargo run -p riotbox-audio --bin feral_grid_pack -- \
 python3 - "${manifest_path}" "${profile}" "${bpm_min}" "${bpm_max}" \
   "${downbeat_offset}" "${grid_bpm_source}" "${decision_reason}" "${grid_use}" \
   "${downbeat_status}" "${confidence_result}" "${alternate_evidence_count}" \
-  "${warning_codes}" <<'PY'
+  "${downbeat_score_min}" "${downbeat_score_max}" \
+  "${downbeat_margin_min}" "${downbeat_margin_max}" \
+  "${alternate_downbeat_phase_count}" "${warning_codes}" <<'PY'
 from __future__ import annotations
 
 import json
@@ -110,7 +132,12 @@ expected_grid_use = sys.argv[8]
 expected_downbeat_status = sys.argv[9]
 expected_confidence_result = sys.argv[10]
 expected_alternate_evidence_count = int(sys.argv[11])
-expected_warning_codes = sys.argv[12].split(",")
+downbeat_score_min = sys.argv[12]
+downbeat_score_max = sys.argv[13]
+downbeat_margin_min = sys.argv[14]
+downbeat_margin_max = sys.argv[15]
+expected_alternate_downbeat_phase_count = sys.argv[16]
+expected_warning_codes = sys.argv[17].split(",")
 
 with manifest_path.open() as fh:
     manifest = json.load(fh)
@@ -166,16 +193,34 @@ require(
     downbeat_score is None or 0.0 <= downbeat_score <= 1.0,
     "primary downbeat score is not null or a unit score",
 )
+if downbeat_score_min != "any":
+    require(downbeat_score is not None, "primary downbeat score is missing")
+    require(
+        float(downbeat_score_min) <= downbeat_score <= float(downbeat_score_max),
+        f"primary downbeat score is outside {profile} range",
+    )
 downbeat_margin = source_timing["primary_downbeat_margin"]
 require(
     downbeat_margin is None or 0.0 <= downbeat_margin <= 1.0,
     "primary downbeat margin is not null or a unit score",
 )
+if downbeat_margin_min != "any":
+    require(downbeat_margin is not None, "primary downbeat margin is missing")
+    require(
+        float(downbeat_margin_min) <= downbeat_margin <= float(downbeat_margin_max),
+        f"primary downbeat margin is outside {profile} range",
+    )
 require(
     isinstance(source_timing["alternate_downbeat_phase_count"], int)
     and source_timing["alternate_downbeat_phase_count"] >= 0,
     "alternate downbeat phase count is not a non-negative integer",
 )
+if expected_alternate_downbeat_phase_count != "any":
+    require(
+        source_timing["alternate_downbeat_phase_count"]
+        == int(expected_alternate_downbeat_phase_count),
+        f"unexpected {profile} alternate downbeat phase count",
+    )
 require(
     source_timing["confidence_result"] == expected_confidence_result,
     f"confidence is not {expected_confidence_result}",
