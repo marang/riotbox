@@ -568,4 +568,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Convert audio runtime include shell into semantic Rust modules
 - [RIOTBOX-909.md](./RIOTBOX-909.md)
   Audit TUI include shell for later semantic module conversion
+- [RIOTBOX-910.md](./RIOTBOX-910.md)
+  Convert TUI recovery prompt shard into a semantic module
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
