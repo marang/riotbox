@@ -606,4 +606,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract first-run capture routing UI helpers
 - [RIOTBOX-928.md](./RIOTBOX-928.md)
   Extract W-30 resample diagnostics label helpers
+- [RIOTBOX-929.md](./RIOTBOX-929.md)
+  Review current P012 real-source timing confidence rows
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
