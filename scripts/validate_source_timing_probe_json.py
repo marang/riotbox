@@ -104,6 +104,7 @@ def validate_summary(summary: Any) -> None:
     )
     require_non_negative_int(summary, "primary_phrase_count")
     require_non_negative_int(summary, "primary_phrase_bar_count")
+    validate_phrase_evidence(summary)
     require_non_negative_int(summary, "alternate_evidence_count")
     require_non_negative_int(summary, "alternate_beat_candidate_count")
     require_non_negative_int(summary, "alternate_downbeat_phase_count")
@@ -327,6 +328,24 @@ def is_stable_short_loop_manual_confirm(summary: dict[str, Any]) -> bool:
         and summary["confidence_result"] == "candidate_cautious"
         and summary["alternate_evidence_count"] == 0
     )
+
+
+def validate_phrase_evidence(summary: dict[str, Any]) -> None:
+    phrase_status = summary["phrase_status"]
+    phrase_count = summary["primary_phrase_count"]
+    phrase_bar_count = summary["primary_phrase_bar_count"]
+    if phrase_status == "stable" and (phrase_count == 0 or phrase_bar_count == 0):
+        raise ValueError(
+            "stable phrase evidence requires positive "
+            "primary_phrase_count and primary_phrase_bar_count"
+        )
+    if phrase_status == "unavailable" and (phrase_count != 0 or phrase_bar_count != 0):
+        raise ValueError(
+            "unavailable phrase evidence requires zero "
+            "primary_phrase_count and primary_phrase_bar_count"
+        )
+    if phrase_status == "not_enough_material" and phrase_count != 0:
+        raise ValueError("not_enough_material phrase evidence must not report primary phrases")
 
 
 def source_timing_readiness_cue(readiness: str, requires_manual_confirm: bool) -> str:
