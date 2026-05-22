@@ -19,3 +19,9 @@ open, create the smallest bounded ticket that fits the current roadmap phase.
 When a newer review refreshes an older one, link the newer document from the old
 review when doing so is useful, but do not rewrite historical findings just to
 make old reviews look current.
+
+External reviews follow the same freshness rule. Treat them as useful
+point-in-time evidence, not as automatically current backlog. If an external
+review cites source-level risks that are partly stale, capture a refresh note
+that separates the still-valid engineering risk from the already-shipped or
+superseded wording before creating Linear tickets.
