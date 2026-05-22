@@ -363,6 +363,9 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
     downbeat_offset_compatibility = require_one_of(
         alignment, "downbeat_offset_compatibility", {"aligned", "partial", "mismatch"}
     )
+    downbeat_ambiguity_compatibility = require_one_of(
+        alignment, "downbeat_ambiguity_compatibility", {"aligned", "partial", "mismatch"}
+    )
     require_string_list(alignment, "warning_overlap")
     issues = require_string_list(alignment, "issues")
     require_source_timing_grid_use_compatibility_match(
@@ -372,6 +375,10 @@ def require_optional_source_timing_alignment(parent: dict[str, Any]) -> None:
         observer_downbeat_offset,
         manifest_downbeat_offset,
         downbeat_offset_compatibility,
+        issues,
+    )
+    require_source_timing_downbeat_ambiguity_compatibility_match(
+        downbeat_ambiguity_compatibility,
         issues,
     )
     require_alignment_status_issues_consistency(
@@ -967,6 +974,30 @@ def require_source_timing_downbeat_offset_compatibility_match(
     if not should_have_issue and has_offset_issue:
         raise ValueError(
             "source_timing_alignment downbeat-offset issue present without mismatch"
+        )
+
+
+def require_source_timing_downbeat_ambiguity_compatibility_match(
+    downbeat_ambiguity_compatibility: str,
+    issues: list[str],
+) -> None:
+    has_ambiguity_issue = any(
+        issue.startswith(
+            (
+                "source_timing_alignment.downbeat_alternates",
+                "source_timing_alignment.downbeat_score",
+                "source_timing_alignment.downbeat_gap",
+            )
+        )
+        for issue in issues
+    )
+    if downbeat_ambiguity_compatibility == "mismatch" and not has_ambiguity_issue:
+        raise ValueError(
+            "source_timing_alignment downbeat-ambiguity mismatch must include an issue"
+        )
+    if downbeat_ambiguity_compatibility != "mismatch" and has_ambiguity_issue:
+        raise ValueError(
+            "source_timing_alignment downbeat-ambiguity issue present without mismatch"
         )
 
 

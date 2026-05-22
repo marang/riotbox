@@ -157,7 +157,8 @@
       "observer_grid_use": "locked_grid",
       "observer_downbeat_offset_beats": 0,
       "status": "aligned",
-      "warning_overlap": []
+      "warning_overlap": [],
+      "downbeat_ambiguity_compatibility": "partial"
     },
     "source_timing_anchor_alignment": {
       "issues": [],

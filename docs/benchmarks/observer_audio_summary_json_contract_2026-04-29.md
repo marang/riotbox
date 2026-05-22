@@ -136,6 +136,10 @@ When non-null, `source_timing_alignment` should include:
 - `bpm_tolerance`: the tolerance used for this comparison. Current value:
   `1.0` BPM. This must be non-negative.
 - `warning_overlap`: normalized warning codes present on both sides.
+- `grid_use_compatibility`: compact compatibility label, one of `aligned`,
+  `compatible`, `partial`, or `mismatch`.
+- `downbeat_offset_compatibility` and `downbeat_ambiguity_compatibility`:
+  compact compatibility labels, one of `aligned`, `partial`, or `mismatch`.
 - `issues`: mismatch reasons. Strict evidence treats any issue as an output-path
   failure.
 
@@ -360,7 +364,8 @@ The committed fixture JSON smoke currently requires:
   contradictory MC-202 phrase-grid hit-ratio evidence, rejected contradictory
   MC-202 phrase-grid pass evidence, rejected contradictory MC-202 source
   phrase-slot evidence, rejected Source Timing alignment status/BPM-issue
-  contradictions, rejected impossible source-grid metric ranges, rejected
+  contradictions, rejected downbeat-ambiguity compatibility contradictions,
+  rejected impossible source-grid metric ranges, rejected
   malformed W-30 loop-closure evidence, rejected Source Timing shape/cue
   mismatches, and rejected malformed lane recipe case evidence
 - `just first-playable-jam-probe` also exercises the W-30 source-diff metric fields against generated artifacts
