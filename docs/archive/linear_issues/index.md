@@ -630,4 +630,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Pin generated source-timing phrase evidence in observer/audio gates
 - [RIOTBOX-940.md](./RIOTBOX-940.md)
   Reject contradictory source-timing phrase evidence in observer/audio summary validator
+- [RIOTBOX-941.md](./RIOTBOX-941.md)
+  Reject contradictory source-timing phrase locks in user-session observer validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
