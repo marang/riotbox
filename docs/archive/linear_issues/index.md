@@ -626,4 +626,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate observer/audio downbeat ambiguity alignment JSON
 - [RIOTBOX-938.md](./RIOTBOX-938.md)
   Assert downbeat ambiguity compatibility in generated Feral-grid gates
+- [RIOTBOX-939.md](./RIOTBOX-939.md)
+  Pin generated source-timing phrase evidence in observer/audio gates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
