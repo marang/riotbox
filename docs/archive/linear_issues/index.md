@@ -582,4 +582,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract Jam scene commit cue helpers from landed warnings shard
 - [RIOTBOX-916.md](./RIOTBOX-916.md)
   Extract Jam footer lane perform lines into semantic module
+- [RIOTBOX-917.md](./RIOTBOX-917.md)
+  Split oversized shell state log/source UI tests by surface
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
