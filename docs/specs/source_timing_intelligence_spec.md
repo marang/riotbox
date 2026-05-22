@@ -225,11 +225,14 @@ such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or
 `not available`, plus the actionability phrase a musician should act on, such
 as `grid can steer moves`, `confirm grid first`, `listen first`, `using safe
 fallback grid`, or `timing unavailable`. It also owns the compact
-`beat_status`, `downbeat_status`, `phrase_status`, and corresponding counts when
-those fields are used by Jam / Source UI or observer snapshots. Detailed
-diagnostics such as hypothesis ids, alternate grids, raw timing hypotheses, and
-full warning-code lists should still come directly from Source Graph timing
-state when a surface needs them.
+`beat_status`, `downbeat_status`, `phrase_status`, corresponding counts, and
+compact downbeat ambiguity evidence when those fields are used by Jam / Source
+UI or observer snapshots. Downbeat ambiguity evidence is intentionally bounded
+to musician-actionable facts such as selected phase, alternate-downbeat count,
+and a compact primary-vs-alternate score gap; detailed diagnostics such as
+hypothesis ids, alternate grids, raw timing hypotheses, and full warning-code
+lists should still come directly from Source Graph timing state when a surface
+needs them.
 
 When the shared summary exposes one `primary_warning`, it should pick the most
 musically actionable timing risk, not the first warning in Source Graph storage

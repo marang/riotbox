@@ -61,10 +61,9 @@ fn source_timing_grid_readiness_line(
     timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> Line<'static> {
     Line::from(format!(
-        "beat {} | downbeat {} off {} | phrase {}",
+        "beat {} | downbeat {} | phrase {}",
         source_timing_beat_display_label(timing),
-        source_timing_status_display_label(&timing.downbeat_status),
-        downbeat_offset_label(timing),
+        source_timing_downbeat_display_label(timing),
         source_timing_phrase_display_label(timing)
     ))
 }
@@ -79,10 +78,25 @@ fn source_timing_phrase_display_label(
     )
 }
 
-fn downbeat_offset_label(timing: &riotbox_core::view::jam::SourceTimingSummaryView) -> String {
-    timing
+fn source_timing_downbeat_display_label(
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
+) -> String {
+    let status = source_timing_status_display_label(&timing.downbeat_status);
+    let offset = timing
         .primary_downbeat_offset_beats
-        .map_or_else(|| "none".into(), |offset| offset.to_string())
+        .map_or_else(|| "none".into(), |offset| offset.to_string());
+    if timing.alternate_downbeat_phase_count == 0 {
+        return format!("{status} off {offset}");
+    }
+    format!(
+        "{status} off {offset} alt {} gap {}",
+        timing.alternate_downbeat_phase_count,
+        source_timing_optional_score_label(timing.primary_downbeat_score_gap)
+    )
+}
+
+fn source_timing_optional_score_label(score: Option<f32>) -> String {
+    score.map_or_else(|| "none".into(), |score| format!("{score:.3}"))
 }
 
 fn source_timing_status_display_label(status: &str) -> String {

@@ -21,6 +21,9 @@ fn default_summary_keeps_policy_and_cue_contract_aligned() {
     assert_eq!(timing.beat_count, 0);
     assert_eq!(timing.downbeat_status, "unknown");
     assert_eq!(timing.primary_downbeat_offset_beats, None);
+    assert_eq!(timing.primary_downbeat_score, None);
+    assert_eq!(timing.primary_downbeat_score_gap, None);
+    assert_eq!(timing.alternate_downbeat_phase_count, 0);
     assert_eq!(timing.bar_count, 0);
     assert_eq!(timing.phrase_status, "unknown");
     assert_eq!(timing.phrase_count, 0);
@@ -69,6 +72,9 @@ fn manual_confirm_summary_preserves_musician_cue_warning_and_anchor_counts() {
     assert_eq!(timing.downbeat_status, "ambiguous");
     assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
     assert_eq!(timing.primary_downbeat_offset_beats, None);
+    assert_eq!(timing.primary_downbeat_score, None);
+    assert_eq!(timing.primary_downbeat_score_gap, None);
+    assert_eq!(timing.alternate_downbeat_phase_count, 0);
     assert_eq!(timing.bar_count, 0);
     assert_eq!(timing.phrase_status, "unknown");
     assert_eq!(timing.phrase_count, 0);
@@ -111,6 +117,9 @@ fn locked_summary_preserves_grid_locked_cue_without_primary_warning() {
     assert_eq!(timing.downbeat_status, "unknown");
     assert_eq!(timing.primary_warning, None);
     assert_eq!(timing.primary_downbeat_offset_beats, Some(2));
+    assert_eq!(timing.primary_downbeat_score, Some(0.91));
+    assert_eq!(timing.primary_downbeat_score_gap, None);
+    assert_eq!(timing.alternate_downbeat_phase_count, 0);
     assert_eq!(timing.primary_anchor_count, 1);
     assert_eq!(timing.primary_anchor_cue, "anchors 1 | kick");
     assert_eq!(timing.primary_groove_residual_count, 0);
@@ -236,6 +245,7 @@ fn cautious_short_loop_summary_surfaces_short_loop_grid_use() {
     assert_eq!(timing.bar_count, 1);
     assert_eq!(timing.phrase_status, "uncertain");
     assert_eq!(timing.primary_warning.as_deref(), Some("phrase_uncertain"));
+    assert_eq!(timing.alternate_downbeat_phase_count, 0);
 }
 
 #[test]
@@ -247,6 +257,58 @@ fn fallback_grid_summary_surfaces_fallback_grid_use() {
     assert_eq!(timing.cue, "fallback grid");
     assert_eq!(timing.actionability, "using safe fallback grid");
     assert_eq!(timing.grid_use, "fallback_grid");
+}
+
+#[test]
+fn ambiguous_downbeat_summary_surfaces_alternates_and_score_gap() {
+    let mut graph = source_timing_graph(TimingQuality::Medium, TimingDegradedPolicy::Cautious);
+    graph.timing.primary_hypothesis_id = Some("primary".into());
+    graph.timing.hypotheses.push(timing_hypothesis(
+        "primary",
+        TimingHypothesisKind::Primary,
+        vec![source_anchor(
+            "transient-primary",
+            SourceTimingAnchorType::TransientCluster,
+        )],
+    ));
+    graph.timing.hypotheses[0].score = 0.151;
+    graph.timing.hypotheses[0].bar_grid = vec![crate::source_graph::BarSpan {
+        bar_index: 1,
+        start_seconds: 0.9375,
+        end_seconds: 2.8125,
+        downbeat_confidence: 0.273,
+        phrase_index: None,
+    }];
+    for (index, score) in [0.146, 0.144, 0.140].into_iter().enumerate() {
+        let mut alternate = timing_hypothesis(
+            &format!("alt-downbeat-{}", index + 1),
+            TimingHypothesisKind::AlternateDownbeat,
+            vec![source_anchor(
+                &format!("transient-alt-{}", index + 1),
+                SourceTimingAnchorType::TransientCluster,
+            )],
+        );
+        alternate.score = score;
+        graph.timing.hypotheses.push(alternate);
+    }
+    graph
+        .timing
+        .warnings
+        .push(timing_warning(TimingWarningCode::AmbiguousDownbeat));
+
+    let timing = SourceTimingSummaryView::from_graph(&graph);
+
+    assert_eq!(timing.grid_use, "manual_confirm_only");
+    assert_eq!(timing.downbeat_status, "ambiguous");
+    assert_eq!(timing.primary_downbeat_offset_beats, Some(2));
+    assert_eq!(timing.primary_downbeat_score, Some(0.273));
+    assert!(
+        timing.primary_downbeat_score_gap.is_some_and(|gap| (gap - 0.005).abs() < 0.0001),
+        "{:?}",
+        timing.primary_downbeat_score_gap
+    );
+    assert_eq!(timing.alternate_downbeat_phase_count, 3);
+    assert_eq!(timing.primary_warning.as_deref(), Some("ambiguous_downbeat"));
 }
 
 fn source_timing_graph(
