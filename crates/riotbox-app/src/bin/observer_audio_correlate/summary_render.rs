@@ -153,6 +153,9 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "beat_status": &timing.beat_status,
                 "downbeat_status": &timing.downbeat_status,
                 "primary_downbeat_offset_beats": timing.primary_downbeat_offset_beats,
+                "primary_downbeat_score": timing.primary_downbeat_score,
+                "primary_downbeat_margin": timing.primary_downbeat_margin,
+                "alternate_downbeat_phase_count": timing.alternate_downbeat_phase_count,
                 "confidence_result": &timing.confidence_result,
                 "drift_status": &timing.drift_status,
                 "phrase_status": &timing.phrase_status,
@@ -281,10 +284,15 @@ fn format_source_timing_downbeat(summary: &CorrelationSummary) -> String {
         || "unknown".to_string(),
         |timing| {
             format!(
-                "{} offset={}",
+                "{} offset={} score={} margin={} alts={}",
                 timing.downbeat_status,
                 timing
                     .primary_downbeat_offset_beats
+                    .map_or_else(|| "unknown".to_string(), |value| value.to_string()),
+                format_optional_f64(timing.primary_downbeat_score),
+                format_optional_f64(timing.primary_downbeat_margin),
+                timing
+                    .alternate_downbeat_phase_count
                     .map_or_else(|| "unknown".to_string(), |value| value.to_string())
             )
         },

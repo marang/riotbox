@@ -27,6 +27,9 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
             beat_status: "stable".to_string(),
             downbeat_status: "ambiguous".to_string(),
             primary_downbeat_offset_beats: Some(0),
+            primary_downbeat_score: Some(0.273),
+            primary_downbeat_margin: Some(0.005),
+            alternate_downbeat_phase_count: Some(3),
             confidence_result: "candidate_ambiguous".to_string(),
             drift_status: "stable".to_string(),
             phrase_status: "ambiguous_downbeat".to_string(),
@@ -41,7 +44,9 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
             ],
         })
     );
-    assert!(markdown.contains("Source timing downbeat: `ambiguous offset=0`"));
+    assert!(markdown.contains(
+        "Source timing downbeat: `ambiguous offset=0 score=0.273000 margin=0.005000 alts=3`"
+    ));
     assert!(markdown.contains(
         "Source timing readiness: `needs confirm actionability=confirm grid first readiness=weak"
     ));
@@ -70,6 +75,18 @@ fn summarizes_source_timing_downbeat_and_phrase_evidence() {
     assert_eq!(
         json["output_path"]["source_timing"]["primary_phrase_bar_count"],
         8
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["primary_downbeat_score"].as_f64(),
+        Some(0.273)
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["primary_downbeat_margin"].as_f64(),
+        Some(0.005)
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["alternate_downbeat_phase_count"].as_u64(),
+        Some(3)
     );
     assert_eq!(json["output_path"]["grid_bpm_source"], "static_default");
     assert_eq!(
@@ -131,6 +148,9 @@ fn synthetic_manifest_with_source_timing() -> String {
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
+    "primary_downbeat_score": 0.273,
+    "primary_downbeat_margin": 0.005,
+    "alternate_downbeat_phase_count": 3,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
