@@ -92,6 +92,8 @@ jq -e \
     and .grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
     and .source_timing.readiness == "needs_review"
     and .source_timing.requires_manual_confirm == true
+    and .source_timing.cue == "needs confirm"
+    and .source_timing.actionability == "confirm grid first"
     and .source_timing.grid_use == "short_loop_manual_confirm"
     and .source_timing.primary_downbeat_offset_beats == 0
     and .source_timing.anchor_evidence.primary_anchor_count > 0
@@ -129,6 +131,8 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
     and .output_path.source_timing_bpm_delta == 0.0
     and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing.cue == "needs confirm"
+    and .output_path.source_timing.actionability == "confirm grid first"
     and .output_path.source_timing.phrase_status == "not_enough_material"
     and .output_path.source_timing.primary_phrase_count == 0
     and .output_path.source_timing.primary_phrase_bar_count == 3
@@ -200,6 +204,8 @@ jq -e \
     and .output_path.source_timing_bpm_delta > 0.0
     and .output_path.source_timing_bpm_delta <= 1.0
     and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing.cue == "needs confirm"
+    and .output_path.source_timing.actionability == "confirm grid first"
     and .output_path.source_timing.phrase_status == "not_enough_material"
     and .output_path.source_timing.primary_phrase_count == 0
     and .output_path.source_timing.primary_phrase_bar_count == 3
@@ -264,6 +270,8 @@ jq -e \
     and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_bpm_delta > 1.0
     and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing.cue == "needs confirm"
+    and .output_path.source_timing.actionability == "confirm grid first"
     and .output_path.source_timing.phrase_status == "not_enough_material"
     and .output_path.source_timing.primary_phrase_count == 0
     and .output_path.source_timing.primary_phrase_bar_count == 3
@@ -328,6 +336,8 @@ jq -e \
     and .source_timing_bpm_delta == null
     and .source_timing.readiness == "unavailable"
     and .source_timing.requires_manual_confirm == true
+    and .source_timing.cue == "not available"
+    and .source_timing.actionability == "timing unavailable"
     and .source_timing.primary_bpm == null
     and .source_timing.beat_status == "unavailable"
     and .source_timing.downbeat_status == "unavailable"
@@ -359,6 +369,8 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_missing_bpm"
     and .output_path.source_timing_bpm_delta == null
     and .output_path.source_timing.grid_use == "unavailable"
+    and .output_path.source_timing.cue == "not available"
+    and .output_path.source_timing.actionability == "timing unavailable"
     and .output_path.source_timing.phrase_status == "unavailable"
     and .output_path.source_timing.primary_phrase_count == 0
     and .output_path.source_timing.primary_phrase_bar_count == 0
@@ -432,6 +444,8 @@ jq -e \
     and .grid_bpm_decision_reason == "source_timing_ready"
     and .source_timing.readiness == "ready"
     and .source_timing.requires_manual_confirm == false
+    and .source_timing.cue == "grid locked"
+    and .source_timing.actionability == "grid can steer moves"
     and .source_timing.grid_use == "locked_grid"
     and .source_timing.primary_downbeat_offset_beats == 0
     and .source_timing.phrase_status == "stable"
@@ -470,6 +484,8 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_ready"
     and .output_path.source_timing_bpm_delta == 0.0
     and .output_path.source_timing.grid_use == "locked_grid"
+    and .output_path.source_timing.cue == "grid locked"
+    and .output_path.source_timing.actionability == "grid can steer moves"
     and .output_path.source_timing.phrase_status == "stable"
     and .output_path.source_timing.primary_phrase_count > 0
     and .output_path.source_timing.primary_phrase_bar_count > 0
