@@ -37,6 +37,8 @@ class GridUseCase:
     confidence_result: str
     drift_status: str
     phrase_status: str
+    primary_beat_count: int
+    primary_bar_count: int
     alternate_evidence_count: int
     grid_bpm_source: str
     grid_bpm_decision_reason: str
@@ -57,6 +59,8 @@ CASES = [
         confidence_result="candidate_cautious",
         drift_status="stable",
         phrase_status="stable",
+        primary_beat_count=32,
+        primary_bar_count=8,
         alternate_evidence_count=0,
         grid_bpm_source="source_timing",
         grid_bpm_decision_reason="source_timing_ready",
@@ -75,6 +79,8 @@ CASES = [
         confidence_result="candidate_cautious",
         drift_status="not_enough_material",
         phrase_status="not_enough_material",
+        primary_beat_count=16,
+        primary_bar_count=4,
         alternate_evidence_count=0,
         grid_bpm_source="source_timing",
         grid_bpm_decision_reason="source_timing_needs_review_manual_confirm",
@@ -93,6 +99,8 @@ CASES = [
         confidence_result="candidate_ambiguous",
         drift_status="stable",
         phrase_status="ambiguous_downbeat",
+        primary_beat_count=16,
+        primary_bar_count=4,
         alternate_evidence_count=2,
         grid_bpm_source="static_default",
         grid_bpm_decision_reason="source_timing_requires_manual_confirm",
@@ -111,6 +119,8 @@ CASES = [
         confidence_result="candidate_cautious",
         drift_status="stable",
         phrase_status="stable",
+        primary_beat_count=32,
+        primary_bar_count=8,
         alternate_evidence_count=0,
         grid_bpm_source="static_default",
         grid_bpm_decision_reason="source_timing_not_ready",
@@ -129,6 +139,8 @@ CASES = [
         confidence_result="degraded",
         drift_status="unavailable",
         phrase_status="unavailable",
+        primary_beat_count=0,
+        primary_bar_count=0,
         alternate_evidence_count=0,
         grid_bpm_source="static_default",
         grid_bpm_decision_reason="source_timing_missing_bpm",
@@ -256,15 +268,9 @@ def apply_timing_fields(target: dict[str, Any], case: GridUseCase) -> None:
     target["drift_status"] = case.drift_status
     target["phrase_status"] = case.phrase_status
     if "primary_beat_count" in target:
-        if case.beat_status == "unavailable":
-            target["primary_beat_count"] = 0
-        else:
-            target["primary_beat_count"] = 32 if case.phrase_status == "stable" else 16
+        target["primary_beat_count"] = case.primary_beat_count
     if "primary_bar_count" in target:
-        if case.downbeat_status == "unavailable":
-            target["primary_bar_count"] = 0
-        else:
-            target["primary_bar_count"] = 8 if case.phrase_status == "stable" else 4
+        target["primary_bar_count"] = case.primary_bar_count
     if case.phrase_status == "stable":
         target["primary_phrase_count"] = 1
         target["primary_phrase_bar_count"] = 8
