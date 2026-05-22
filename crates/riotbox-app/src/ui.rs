@@ -3,6 +3,8 @@
 include!("ui/types_state.rs");
 
 mod first_run_capture;
+#[path = "ui/jam_landed_warnings_source/scene_commit_cues.rs"]
+mod jam_scene_commit_cues;
 mod recovery_prompt;
 mod source_timing_panel;
 mod source_trust_summary;
@@ -14,6 +16,9 @@ use first_run_capture::{
 };
 #[cfg(test)]
 use first_run_capture::{capture_pending_detail_line, capture_pending_intent_line};
+use jam_scene_commit_cues::{
+    latest_landed_command, scene_history_trail_line, scene_post_commit_cue_line,
+};
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
 #[cfg(test)]
 use riotbox_core::view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView};
