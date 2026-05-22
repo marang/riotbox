@@ -61,8 +61,10 @@ impl Default for SourceTimingSummaryView {
 impl SourceTimingSummaryView {
     #[must_use]
     pub fn from_graph(graph: &SourceGraph) -> Self {
-        let degraded_policy =
-            source_timing_degraded_policy_label(&graph.timing.effective_degraded_policy());
+        let effective_degraded_policy = graph.timing.effective_degraded_policy();
+        let degraded_policy = source_timing_degraded_policy_label(&effective_degraded_policy);
+        let policy_labels =
+            crate::source_graph::source_timing_policy_labels(effective_degraded_policy);
         let primary_hypothesis = primary_source_timing_hypothesis(&graph.timing);
         let anchors = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.anchors.as_slice());
         let groove = primary_hypothesis.map_or(&[][..], |hypothesis| hypothesis.groove.as_slice());
@@ -85,8 +87,8 @@ impl SourceTimingSummaryView {
             .fold(0.0_f32, f32::max);
 
         Self {
-            cue: source_timing_policy_cue_label(degraded_policy).into(),
-            actionability: source_timing_actionability_label(degraded_policy).into(),
+            cue: policy_labels.cue.into(),
+            actionability: policy_labels.actionability.into(),
             quality: source_timing_quality_label(&graph.timing.effective_timing_quality()).into(),
             degraded_policy: degraded_policy.into(),
             grid_use: crate::source_graph::source_timing_grid_use_from_timing_model(&graph.timing)
@@ -130,17 +132,6 @@ fn source_timing_beat_status_label(timing: &crate::source_graph::TimingModel) ->
         return "tempo_only";
     }
     "unknown"
-}
-
-fn source_timing_actionability_label(policy: &str) -> &'static str {
-    match policy {
-        "locked" => "grid can steer moves",
-        "manual_confirm" => "confirm grid first",
-        "cautious" => "listen first",
-        "fallback_grid" => "using safe fallback grid",
-        "disabled" => "timing unavailable",
-        _ => "timing trust unknown",
-    }
 }
 
 fn source_timing_downbeat_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
@@ -300,17 +291,6 @@ fn source_timing_degraded_policy_label(
         crate::source_graph::TimingDegradedPolicy::FallbackGrid => "fallback_grid",
         crate::source_graph::TimingDegradedPolicy::Disabled => "disabled",
         crate::source_graph::TimingDegradedPolicy::Unknown => "unknown",
-    }
-}
-
-fn source_timing_policy_cue_label(policy: &str) -> &'static str {
-    match policy {
-        "locked" => "grid locked",
-        "manual_confirm" => "needs confirm",
-        "cautious" => "listen first",
-        "fallback_grid" => "fallback grid",
-        "disabled" => "not available",
-        _ => "unknown",
     }
 }
 

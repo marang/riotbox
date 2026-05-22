@@ -606,6 +606,10 @@ primary timing hypothesis:
   local readiness/manual-confirm string mappings in each manifest or CLI surface.
   Downstream JSON validators may still recompute those labels independently as
   compatibility checks.
+- Rust producers and app wrappers must derive degraded-policy cue/actionability
+  pairs through the shared `source_timing_policy_labels(...)` or
+  `source_timing_policy_labels_from_label(...)` core helpers rather than keeping
+  parallel policy string tables for Jam, Source, or observer surfaces.
 - Readiness cue/actionability labels must prioritize unavailable timing over
   manual-confirm wording. If no usable timing grid exists, surfaces should show
   `not available` / `timing unavailable`, not `needs confirm` / `confirm grid

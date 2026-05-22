@@ -26,6 +26,54 @@ pub struct SourceTimingReadinessLabels {
     pub actionability: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub struct SourceTimingPolicyLabels {
+    pub cue: &'static str,
+    pub actionability: &'static str,
+}
+
+#[must_use]
+pub fn source_timing_policy_labels(policy: TimingDegradedPolicy) -> SourceTimingPolicyLabels {
+    match policy {
+        TimingDegradedPolicy::Locked => SourceTimingPolicyLabels {
+            cue: "grid locked",
+            actionability: "grid can steer moves",
+        },
+        TimingDegradedPolicy::ManualConfirm => SourceTimingPolicyLabels {
+            cue: "needs confirm",
+            actionability: "confirm grid first",
+        },
+        TimingDegradedPolicy::Cautious => SourceTimingPolicyLabels {
+            cue: "listen first",
+            actionability: "listen first",
+        },
+        TimingDegradedPolicy::FallbackGrid => SourceTimingPolicyLabels {
+            cue: "fallback grid",
+            actionability: "using safe fallback grid",
+        },
+        TimingDegradedPolicy::Disabled => SourceTimingPolicyLabels {
+            cue: "not available",
+            actionability: "timing unavailable",
+        },
+        TimingDegradedPolicy::Unknown => SourceTimingPolicyLabels {
+            cue: "unknown",
+            actionability: "timing trust unknown",
+        },
+    }
+}
+
+#[must_use]
+pub fn source_timing_policy_labels_from_label(policy: &str) -> SourceTimingPolicyLabels {
+    match policy {
+        "locked" => source_timing_policy_labels(TimingDegradedPolicy::Locked),
+        "manual_confirm" => source_timing_policy_labels(TimingDegradedPolicy::ManualConfirm),
+        "cautious" => source_timing_policy_labels(TimingDegradedPolicy::Cautious),
+        "fallback_grid" => source_timing_policy_labels(TimingDegradedPolicy::FallbackGrid),
+        "disabled" => source_timing_policy_labels(TimingDegradedPolicy::Disabled),
+        _ => source_timing_policy_labels(TimingDegradedPolicy::Unknown),
+    }
+}
+
 #[must_use]
 pub fn source_timing_readiness_labels(
     readiness: SourceTimingProbeReadinessStatus,

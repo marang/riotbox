@@ -313,6 +313,33 @@ fn source_timing_readiness_labels_preserve_musician_language() {
     );
 }
 
+#[test]
+fn source_timing_policy_labels_preserve_musician_language() {
+    let locked = source_timing_policy_labels(TimingDegradedPolicy::Locked);
+    assert_eq!(locked.cue, "grid locked");
+    assert_eq!(locked.actionability, "grid can steer moves");
+
+    let manual_confirm = source_timing_policy_labels(TimingDegradedPolicy::ManualConfirm);
+    assert_eq!(manual_confirm.cue, "needs confirm");
+    assert_eq!(manual_confirm.actionability, "confirm grid first");
+
+    let cautious = source_timing_policy_labels(TimingDegradedPolicy::Cautious);
+    assert_eq!(cautious.cue, "listen first");
+    assert_eq!(cautious.actionability, "listen first");
+
+    let fallback = source_timing_policy_labels(TimingDegradedPolicy::FallbackGrid);
+    assert_eq!(fallback.cue, "fallback grid");
+    assert_eq!(fallback.actionability, "using safe fallback grid");
+
+    let unavailable = source_timing_policy_labels(TimingDegradedPolicy::Disabled);
+    assert_eq!(unavailable.cue, "not available");
+    assert_eq!(unavailable.actionability, "timing unavailable");
+
+    let unknown = source_timing_policy_labels_from_label("surprise");
+    assert_eq!(unknown.cue, "unknown");
+    assert_eq!(unknown.actionability, "timing trust unknown");
+}
+
 fn grid_use_policy_report(
     primary_bpm: Option<f32>,
     readiness: SourceTimingProbeReadinessStatus,
