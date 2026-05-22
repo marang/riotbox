@@ -129,6 +129,9 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_needs_review_manual_confirm"
     and .output_path.source_timing_bpm_delta == 0.0
     and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing.phrase_status == "not_enough_material"
+    and .output_path.source_timing.primary_phrase_count == 0
+    and .output_path.source_timing.primary_phrase_bar_count == 3
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
     and .output_path.source_timing_alignment.manifest_grid_use == "short_loop_manual_confirm"
@@ -197,6 +200,9 @@ jq -e \
     and .output_path.source_timing_bpm_delta > 0.0
     and .output_path.source_timing_bpm_delta <= 1.0
     and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing.phrase_status == "not_enough_material"
+    and .output_path.source_timing.primary_phrase_count == 0
+    and .output_path.source_timing.primary_phrase_bar_count == 3
     and .output_path.source_timing.bpm_agrees_with_grid == true
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
@@ -258,6 +264,9 @@ jq -e \
     and (.output_path.source_timing_bpm_delta | type == "number")
     and .output_path.source_timing_bpm_delta > 1.0
     and .output_path.source_timing.grid_use == "short_loop_manual_confirm"
+    and .output_path.source_timing.phrase_status == "not_enough_material"
+    and .output_path.source_timing.primary_phrase_count == 0
+    and .output_path.source_timing.primary_phrase_bar_count == 3
     and .output_path.source_timing.bpm_agrees_with_grid == false
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.observer_grid_use == "manual_confirm_only"
@@ -350,6 +359,9 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_missing_bpm"
     and .output_path.source_timing_bpm_delta == null
     and .output_path.source_timing.grid_use == "unavailable"
+    and .output_path.source_timing.phrase_status == "unavailable"
+    and .output_path.source_timing.primary_phrase_count == 0
+    and .output_path.source_timing.primary_phrase_bar_count == 0
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.observer_grid_use == "unavailable"
     and .output_path.source_timing_alignment.manifest_grid_use == "unavailable"
@@ -458,6 +470,9 @@ jq -e \
     and .output_path.grid_bpm_decision_reason == "source_timing_ready"
     and .output_path.source_timing_bpm_delta == 0.0
     and .output_path.source_timing.grid_use == "locked_grid"
+    and .output_path.source_timing.phrase_status == "stable"
+    and .output_path.source_timing.primary_phrase_count > 0
+    and .output_path.source_timing.primary_phrase_bar_count > 0
     and .output_path.source_timing_alignment.status == "aligned"
     and .output_path.source_timing_alignment.observer_grid_use == "locked_grid"
     and .output_path.source_timing_alignment.manifest_grid_use == "locked_grid"
