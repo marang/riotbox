@@ -254,6 +254,7 @@ def validate_source_timing(source_timing: Any) -> None:
     require_one_of(source_timing, "phrase_status", SOURCE_TIMING_PHRASE_STATUSES)
     require_non_negative_int(source_timing, "primary_phrase_count", "source_timing")
     require_non_negative_int(source_timing, "primary_phrase_bar_count", "source_timing")
+    validate_source_timing_phrase_evidence(source_timing)
     validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
     validate_source_timing_groove_evidence(source_timing.get("groove_evidence"))
     require_non_negative_int(
@@ -374,6 +375,27 @@ def is_stable_short_loop_manual_confirm(source_timing: dict[str, Any]) -> bool:
         and source_timing["confidence_result"] == "candidate_cautious"
         and source_timing["alternate_evidence_count"] == 0
     )
+
+
+def validate_source_timing_phrase_evidence(source_timing: dict[str, Any]) -> None:
+    phrase_status = source_timing["phrase_status"]
+    phrase_count = source_timing["primary_phrase_count"]
+    phrase_bar_count = source_timing["primary_phrase_bar_count"]
+    if phrase_status == "stable" and (phrase_count == 0 or phrase_bar_count == 0):
+        raise ValueError(
+            "source_timing stable phrase evidence requires positive "
+            "primary_phrase_count and primary_phrase_bar_count"
+        )
+    if phrase_status == "unavailable" and (phrase_count != 0 or phrase_bar_count != 0):
+        raise ValueError(
+            "source_timing unavailable phrase evidence requires zero "
+            "primary_phrase_count and primary_phrase_bar_count"
+        )
+    if phrase_status == "not_enough_material" and phrase_count != 0:
+        raise ValueError(
+            "source_timing not_enough_material phrase evidence must not report "
+            "primary phrases"
+        )
 
 
 def validate_source_timing_anchor_evidence(anchor_evidence: Any) -> None:
