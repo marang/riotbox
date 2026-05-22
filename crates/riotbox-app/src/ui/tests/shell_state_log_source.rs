@@ -328,7 +328,9 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
         "{rendered}"
     );
     assert!(rendered.contains("conf 0.76"), "{rendered}");
-    assert!(rendered.contains("beat tempo only | downbeat ambiguous offset 0 | phrase uncertain"));
+    assert!(
+        rendered.contains("beat tempo only | downbeat ambiguous off 0 | phrase uncertain(0)")
+    );
     assert!(rendered.contains("meter 4/4 | hypotheses 1 | anchors 2 | kick+backbeat"));
     assert!(rendered.contains("mode manual confirm | grid manual_confirm_only | trust low"));
     assert!(rendered.contains("action confirm grid first"));
