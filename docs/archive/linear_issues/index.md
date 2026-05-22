@@ -580,4 +580,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract pending Capture cue helpers from first-run capture module
 - [RIOTBOX-915.md](./RIOTBOX-915.md)
   Extract Jam scene commit cue helpers from landed warnings shard
+- [RIOTBOX-916.md](./RIOTBOX-916.md)
+  Extract Jam footer lane perform lines into semantic module
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
