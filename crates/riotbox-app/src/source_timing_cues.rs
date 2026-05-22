@@ -1,27 +1,14 @@
 use riotbox_core::source_graph::{
-    SourceTimingProbeReadinessStatus, source_timing_readiness_labels,
+    SourceTimingProbeReadinessStatus, source_timing_policy_labels_from_label,
+    source_timing_readiness_labels,
 };
 
 pub fn source_timing_policy_cue_label(policy: &str) -> &'static str {
-    match policy {
-        "locked" => "grid locked",
-        "manual_confirm" => "needs confirm",
-        "cautious" => "listen first",
-        "fallback_grid" => "fallback grid",
-        "disabled" => "not available",
-        _ => "unknown",
-    }
+    source_timing_policy_labels_from_label(policy).cue
 }
 
 pub fn source_timing_policy_actionability_label(policy: &str) -> &'static str {
-    match policy {
-        "locked" => "grid can steer moves",
-        "manual_confirm" => "confirm grid first",
-        "cautious" => "listen first",
-        "fallback_grid" => "using safe fallback grid",
-        "disabled" => "timing unavailable",
-        _ => "timing trust unknown",
-    }
+    source_timing_policy_labels_from_label(policy).actionability
 }
 
 pub fn source_timing_readiness_cue_label(
