@@ -1512,3 +1512,17 @@ Why: P012 actionability only helps musicians if the same state means the same th
 Evidence: `docs/reviews/p012_source_timing_actionability_surface_review_2026-05-21.md` found the current labels coherent but duplicated in the Feral-grid manifest builder, standalone probe CLI, and observer/audio summary fallback.
 Consequences: the next implementation work should centralize the Rust readiness label helper, then tighten manifest validators so generated Feral-grid manifests cannot silently drop `cue` or `actionability`.
 Status: accepted
+
+---
+
+### RBX-035
+
+Date: 2026-05-22
+Topic: P015 TUI module ownership should continue through semantic helper modules
+Phase: Productization Alpha / TUI Maintainability
+Question: after the first P015 TUI split batch, should remaining work continue converting mixed include shards into child modules or pause until a larger UI rewrite?
+Decision: continue with small semantic extraction slices. Do not mechanically remove every `include!`; extract only coherent responsibilities such as W-30 preview labels, first-run capture routing, W-30 resample labels, footer style-token tests, and W-30 preview/source-readiness tests.
+Why: the broad TUI review found no immediate product-spine or audio/replay blocker, but `ui.rs` still acts as a mixed registry/include root and the largest test shards still combine multiple surfaces. Small semantic modules reduce review and agent context cost without changing behavior.
+Evidence: `docs/reviews/p015_tui_module_ownership_review_2026-05-22.md` reviewed `crates/riotbox-app/src/ui` after RIOTBOX-920 through RIOTBOX-922 and identified the next bounded slices.
+Consequences: P015 TUI cleanup should keep using normal Linear/branch/PR/CI/archive slices. Future splits should name real ownership boundaries and avoid mechanical file churn.
+Status: accepted
