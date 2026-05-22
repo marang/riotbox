@@ -514,7 +514,7 @@ cp "$tmpdir/observer-audio-summary-locked.json" \
   "$summary_artifact_dir/locked-grid.json"
 
 summary_index="$summary_artifact_dir/summary.tsv"
-printf 'case\tgrid_bpm_source\tgrid_bpm_decision_reason\tcue\tactionability\tgrid_use\talignment\tdownbeat_ambiguity\tissues\n' \
+printf 'case\tgrid_bpm_source\tgrid_bpm_decision_reason\tcue\tactionability\tgrid_use\talignment\tdownbeat_ambiguity\tanchor_alignment\tgroove_alignment\tissues\n' \
   > "$summary_index"
 jq -r \
   '[(input_filename | split("/")[-1] | sub("\\.json$"; "")),
@@ -525,6 +525,8 @@ jq -r \
     .output_path.source_timing.grid_use,
     .output_path.source_timing_alignment.status,
     .output_path.source_timing_alignment.downbeat_ambiguity_compatibility,
+    .output_path.source_timing_anchor_alignment.status,
+    .output_path.source_timing_groove_alignment.status,
     (.output_path.issues | length | tostring)] | @tsv' \
   "$summary_artifact_dir/cautious-manual-confirm.json" \
   "$summary_artifact_dir/user-override.json" \
@@ -533,9 +535,9 @@ jq -r \
   "$summary_artifact_dir/locked-grid.json" \
   >> "$summary_index"
 test "$(wc -l < "$summary_index")" -eq 6
-grep -q $'cautious-manual-confirm\tsource_timing\tsource_timing_needs_review_manual_confirm\tneeds confirm\tconfirm grid first\tshort_loop_manual_confirm\taligned\tpartial\t0' "$summary_index"
-grep -q $'fallback\tstatic_default\tsource_timing_missing_bpm\tnot available\ttiming unavailable\tunavailable\taligned\tpartial\t0' "$summary_index"
-grep -q $'locked-grid\tsource_timing\tsource_timing_ready\tgrid locked\tgrid can steer moves\tlocked_grid\taligned\taligned\t0' "$summary_index"
+grep -q $'cautious-manual-confirm\tsource_timing\tsource_timing_needs_review_manual_confirm\tneeds confirm\tconfirm grid first\tshort_loop_manual_confirm\taligned\tpartial\tpartial\tpartial\t0' "$summary_index"
+grep -q $'fallback\tstatic_default\tsource_timing_missing_bpm\tnot available\ttiming unavailable\tunavailable\taligned\tpartial\tpartial\tpartial\t0' "$summary_index"
+grep -q $'locked-grid\tsource_timing\tsource_timing_ready\tgrid locked\tgrid can steer moves\tlocked_grid\taligned\taligned\taligned\taligned\t0' "$summary_index"
 
 jq -c '.snapshot.source_timing.bpm_estimate = 118.0' \
   "$observer_fixture" > "$mismatched_observer_fixture"
