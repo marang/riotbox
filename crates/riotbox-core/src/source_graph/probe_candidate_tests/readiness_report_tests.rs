@@ -142,6 +142,35 @@ fn source_timing_probe_readiness_keeps_short_loop_manual_confirm_in_review() {
 }
 
 #[test]
+fn source_timing_grid_use_policy_reads_primary_hypothesis_short_loop_grid() {
+    let onsets = even_onsets(0.0, 0.5, 16);
+    let input = weighted_candidate_input(
+        "grid-use-primary-short-loop-120",
+        8.0,
+        &onsets,
+        &downbeat_strengths(onsets.len(), 4),
+    );
+    let mut timing = timing_model_from_probe_bpm_candidates(
+        &input,
+        SourceTimingProbeBpmCandidatePolicy::dance_loop_auto_readiness(),
+    );
+
+    assert_eq!(
+        source_timing_grid_use_from_timing_model(&timing),
+        SourceTimingGridUse::ShortLoopManualConfirm
+    );
+
+    timing.beat_grid.clear();
+    timing.bar_grid.clear();
+    timing.phrase_grid.clear();
+
+    assert_eq!(
+        source_timing_grid_use_from_timing_model(&timing),
+        SourceTimingGridUse::ShortLoopManualConfirm
+    );
+}
+
+#[test]
 fn source_timing_probe_readiness_report_summarizes_unavailable_weak_and_review_candidates() {
     let unavailable = source_timing_probe_readiness_report(
         &candidate_input("readiness-unavailable", 4.0, &[0.0, 1.0]),
