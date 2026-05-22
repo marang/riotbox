@@ -43,9 +43,22 @@ This operational loop is the execution form of the roadmap's core delivery loop:
 each bounded ticket should move one spec/research/vertical-slice/test/benchmark
 step forward, then leave a clean review and closeout trail before the next slice.
 
-Ticket closeout is not an agent stop condition. After closeout, the agent must
-either continue with the next bounded roadmap-aligned slice or name the concrete
-stop condition that prevents continuation.
+Ticket closeout is a workflow transition, not an agent stop condition.
+
+After any ticket reaches closeout, the agent must immediately enter the next
+workflow state:
+
+1. verify local `main` is clean and synced
+2. inspect whether any open PR or CI run needs action
+3. if an open PR is red and the failure belongs to that slice, fix it
+4. if an open PR is green and mergeable, merge it and close it out
+5. if no active PR is blocked or red, derive the next smallest roadmap-aligned
+   slice from repo state, docs, and Linear
+6. create or pick exactly one Linear issue for that slice
+7. start the next branch and continue implementation
+
+The agent must not send a final or closing response merely because a ticket,
+PR, archive, Linear deletion, or branch cleanup is complete.
 
 Allowed stop conditions:
 
@@ -73,6 +86,29 @@ Non-stop conditions:
 If none of the allowed stop conditions applies, continue the loop. Choose one
 small coherent next slice, keep Linear state honest, and do not open multiple
 parallel tickets just to avoid stopping.
+
+### 2.1 Final Response Gate
+
+Before sending a final response, the agent must ask:
+
+`Did the user explicitly ask me to stop, pause, or only explain/status-report?`
+
+If the answer is no and no allowed stop condition applies, a final response is
+not allowed. The correct next action is to continue the workflow state machine
+above.
+
+A final response is allowed only when one of these is true:
+
+- the user explicitly says `stop`, `pause`, or asks only for status,
+  explanation, or discussion
+- an allowed stop condition from this document applies
+- the agent is blocked after reasonable investigation and can name the concrete
+  blocker
+- the user changes the task away from implementation work
+
+This rule exists to counter the agent stop-reflex after successful closeout. A
+successful closeout is evidence that the workflow should continue, not evidence
+that the work session is complete.
 
 ---
 
@@ -513,16 +549,17 @@ Rules:
 
 ## 9.3.1 Automatic Next-Ticket Continuation
 
-If a ticket loop is fully closed, the agent should continue directly with the next-best backlog ticket without waiting for a new user prompt.
+Automatic continuation is governed by the Core Rule and Final Response Gate in
+section 2. Do not keep a softer duplicate rule here.
 
-Conditions:
+Backlog hygiene supports that rule: when a ticket loop closes and no documented
+stop condition applies, the agent must choose the next smallest coherent
+roadmap-aligned slice from the active backlog or derive one from the roadmap,
+active specs, Linear, and actual repo state.
 
-- the previous ticket is merged or otherwise fully closed
-- no unresolved review or CI blocker remains on the closed slice
-- the next ticket satisfies the repo's next-ticket heuristic
-- the near-term backlog remains honest and within the 1-5 ticket rule
-
-This is meant to preserve momentum, not to bypass roadmap discipline. The agent should still prefer the smallest coherent next slice that advances the current phase instead of opening a new side path.
+This preserves momentum without bypassing roadmap discipline. Continue one
+ticket at a time; do not open multiple parallel tickets merely to avoid
+stopping.
 
 ## 9.4 Retention And Cleanup
 
