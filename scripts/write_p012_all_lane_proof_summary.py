@@ -110,11 +110,13 @@ def render_summary(
         "",
         "## Generated Feral-Grid Observer/Audio Paths",
         "",
-        "| Path | Cue | Action | Grid source | Decision | Observer grid use | Manifest grid use | Phrase count | Phrase bars | Grid compat | Downbeat compat | Downbeat ambiguity | Anchor alignment | Groove alignment | Alignment | Output issues |",
-        "| --- | --- | --- | --- | --- | --- | --- | ---: | ---: | --- | --- | --- | --- | --- | --- | ---: |",
+        "| Path | Cue | Action | Grid source | Decision | Observer grid use | Observer beats | Observer bars | Manifest grid use | Phrase count | Phrase bars | Grid compat | Downbeat compat | Downbeat ambiguity | Anchor alignment | Groove alignment | Alignment | Output issues |",
+        "| --- | --- | --- | --- | --- | --- | ---: | ---: | --- | ---: | ---: | --- | --- | --- | --- | --- | --- | ---: |",
     ]
 
     for name, summary in observer_audio_summaries:
+        control_path = object_field(summary, "control_path")
+        observer_source_timing = object_field(control_path, "observer_source_timing")
         output_path = object_field(summary, "output_path")
         source_timing = object_field(output_path, "source_timing")
         source_timing_alignment = object_field(output_path, "source_timing_alignment")
@@ -125,13 +127,15 @@ def render_summary(
             output_path, "source_timing_groove_alignment"
         )
         lines.append(
-            "| {name} | `{cue}` | `{action}` | `{grid_source}` | `{decision}` | `{observer_grid_use}` | `{manifest_grid_use}` | {phrase_count} | {phrase_bars} | `{grid_compat}` | `{downbeat_compat}` | `{downbeat_ambiguity}` | `{anchor_alignment}` | `{groove_alignment}` | `{alignment}` | {issues} |".format(
+            "| {name} | `{cue}` | `{action}` | `{grid_source}` | `{decision}` | `{observer_grid_use}` | {observer_beat_count} | {observer_bar_count} | `{manifest_grid_use}` | {phrase_count} | {phrase_bars} | `{grid_compat}` | `{downbeat_compat}` | `{downbeat_ambiguity}` | `{anchor_alignment}` | `{groove_alignment}` | `{alignment}` | {issues} |".format(
                 name=name,
                 cue=string_field(source_timing, "cue"),
                 action=string_field(source_timing, "actionability"),
                 grid_source=string_field(output_path, "grid_bpm_source"),
                 decision=string_field(output_path, "grid_bpm_decision_reason"),
                 observer_grid_use=string_field(source_timing_alignment, "observer_grid_use"),
+                observer_beat_count=int_field(observer_source_timing, "beat_count"),
+                observer_bar_count=int_field(observer_source_timing, "bar_count"),
                 manifest_grid_use=string_field(source_timing_alignment, "manifest_grid_use"),
                 phrase_count=int_field(source_timing, "primary_phrase_count"),
                 phrase_bars=int_field(source_timing, "primary_phrase_bar_count"),
@@ -195,6 +199,7 @@ def render_summary(
             "",
             "- Generated Feral-grid observer/audio rows show whether control-path and output-path timing evidence agreed for cautious/manual-confirm, user-override, fallback, and locked-grid paths.",
             "- Generated `Cue` and `Action` columns expose the musician-facing consequence for each generated path without opening the JSON summaries.",
+            "- Generated `Observer beats` and `Observer bars` expose control-path grid evidence before manifest-side output evidence.",
             "- Generated `Phrase count` and `Phrase bars` expose whether each generated path has no phrase grid, short-loop evidence, or locked phrase material.",
             "- Generated `Downbeat ambiguity` shows whether the observer and manifest agree about bar-phase ambiguity, not just selected downbeat offset.",
             "- Generated `Anchor alignment` and `Groove alignment` expose whether timing-anchor and microtiming evidence matched strongly enough or remained partial.",
