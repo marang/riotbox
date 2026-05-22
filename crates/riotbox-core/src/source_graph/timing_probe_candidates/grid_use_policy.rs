@@ -180,12 +180,40 @@ fn source_timing_is_stable_short_loop_manual_confirm(
 }
 
 fn timing_model_has_short_loop_grid(timing: &TimingModel) -> bool {
+    let beat_count = timing_model_primary_or_top_level_beat_count(timing);
+    let bar_count = timing_model_primary_or_top_level_bar_count(timing);
+    let phrase_count = timing_model_primary_or_top_level_phrase_count(timing);
+
     timing.bpm_estimate.is_some()
-        && !timing.beat_grid.is_empty()
-        && !timing.bar_grid.is_empty()
-        && timing.phrase_grid.is_empty()
+        && beat_count > 0
+        && bar_count > 0
+        && phrase_count == 0
         && timing
             .warnings
             .iter()
             .any(|warning| warning.code == TimingWarningCode::PhraseUncertain)
+}
+
+fn timing_model_primary_or_top_level_beat_count(timing: &TimingModel) -> usize {
+    timing
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.beat_grid.len())
+        .filter(|count| *count > 0)
+        .unwrap_or(timing.beat_grid.len())
+}
+
+fn timing_model_primary_or_top_level_bar_count(timing: &TimingModel) -> usize {
+    timing
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.bar_grid.len())
+        .filter(|count| *count > 0)
+        .unwrap_or(timing.bar_grid.len())
+}
+
+fn timing_model_primary_or_top_level_phrase_count(timing: &TimingModel) -> usize {
+    timing
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.phrase_grid.len())
+        .filter(|count| *count > 0)
+        .unwrap_or(timing.phrase_grid.len())
 }

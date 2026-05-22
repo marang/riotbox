@@ -234,6 +234,18 @@ hypothesis ids, alternate grids, raw timing hypotheses, and full warning-code
 lists should still come directly from Source Graph timing state when a surface
 needs them.
 
+When Source Graph carries a selected primary timing hypothesis, the shared Jam
+source timing summary should derive compact beat, bar, and phrase counts/status
+from that primary hypothesis first, then fall back to top-level `TimingModel`
+grids only when the primary hypothesis lacks the relevant grid. This keeps
+musician-facing and observer surfaces aligned with the same selected hypothesis
+that supplies anchor, groove, and downbeat-phase evidence.
+
+Grid-use policy helpers that classify compact Jam/observer labels such as
+`short_loop_manual_confirm` should follow the same selected-primary-hypothesis
+precedence before falling back to top-level `TimingModel` grids, so policy
+language does not contradict the shared Jam summary.
+
 When the shared summary exposes one `primary_warning`, it should pick the most
 musically actionable timing risk, not the first warning in Source Graph storage
 order. Current priority is:
