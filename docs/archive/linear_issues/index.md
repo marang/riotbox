@@ -678,4 +678,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show compact Source Timing counts in Jam readiness line
 - [RIOTBOX-964.md](./RIOTBOX-964.md)
   Show partial Source Timing clock when beat or phrase grid is absent
+- [RIOTBOX-965.md](./RIOTBOX-965.md)
+  Label queued timing rail counters as transport context
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
