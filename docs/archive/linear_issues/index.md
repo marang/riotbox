@@ -556,4 +556,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P012 phrase-evidence reporting path after RIOTBOX-897-901
 - [RIOTBOX-903.md](./RIOTBOX-903.md)
   Carry Source Timing phrase counts into observer/audio summaries
+- [RIOTBOX-904.md](./RIOTBOX-904.md)
+  Add phrase-count checks to Source Timing example expectations
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
