@@ -40,6 +40,7 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
     assert_eq!(alignment.observer_downbeat_offset_beats, Some(0));
     assert_eq!(alignment.manifest_downbeat_offset_beats, Some(0));
     assert_eq!(alignment.downbeat_offset_compatibility, "aligned");
+    assert_eq!(alignment.downbeat_ambiguity_compatibility, "aligned");
     assert!(alignment.issues.is_empty());
     let anchor_alignment = summary
         .source_timing_anchor_alignment
@@ -129,6 +130,10 @@ fn summarizes_aligned_observer_and_manifest_source_timing() {
         json["output_path"]["source_timing_alignment"]["downbeat_offset_compatibility"],
         "aligned"
     );
+    assert_eq!(
+        json["output_path"]["source_timing_alignment"]["downbeat_ambiguity_compatibility"],
+        "aligned"
+    );
 }
 
 #[test]
@@ -200,5 +205,43 @@ fn strict_evidence_rejects_source_timing_downbeat_offset_mismatch() {
     );
     assert!(markdown.contains("Source timing alignment: `mismatch"));
     assert!(markdown.contains("downbeat_offset=mismatch"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
+#[test]
+fn strict_evidence_rejects_source_timing_downbeat_ambiguity_mismatch() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_with_source_timing(128.0, "phrase_uncertain"),
+    )
+    .expect("write observer");
+    fs::write(
+        &manifest_path,
+        manifest_with_grid_use_source_timing(
+            128.397,
+            &["PhraseUncertain", "AmbiguousDownbeat"],
+            "locked_grid",
+        )
+        .replace(
+            r#""alternate_downbeat_phase_count": 3,"#,
+            r#""alternate_downbeat_phase_count": 1,"#,
+        ),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err("downbeat ambiguity mismatch");
+    let markdown = render_markdown(&summary);
+
+    assert!(
+        error
+            .to_string()
+            .contains("source_timing_alignment.downbeat_alternates observer=3 manifest=1")
+    );
+    assert!(markdown.contains("Source timing alignment: `mismatch"));
+    assert!(markdown.contains("downbeat_ambiguity=mismatch"));
     assert!(markdown.contains("Output path present: `no`"));
 }

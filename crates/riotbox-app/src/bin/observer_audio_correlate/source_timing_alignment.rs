@@ -9,6 +9,7 @@ struct SourceTimingAlignmentEvidence {
     observer_downbeat_offset_beats: Option<u64>,
     manifest_downbeat_offset_beats: Option<u64>,
     downbeat_offset_compatibility: String,
+    downbeat_ambiguity_compatibility: String,
     warning_overlap: Vec<String>,
     issues: Vec<String>,
 }
@@ -62,6 +63,8 @@ fn collect_source_timing_alignment(
             observer.primary_downbeat_offset_beats,
             manifest.primary_downbeat_offset_beats,
         );
+    let (downbeat_ambiguity_compatibility, downbeat_ambiguity_issues) =
+        source_timing_downbeat_ambiguity_compatibility(observer, manifest);
 
     let mut issues = Vec::new();
     if let Some(delta) = bpm_delta
@@ -77,6 +80,7 @@ fn collect_source_timing_alignment(
     }
     issues.extend(grid_use_issues);
     issues.extend(downbeat_offset_issues);
+    issues.extend(downbeat_ambiguity_issues);
 
     let status = if !issues.is_empty() {
         "mismatch"
@@ -100,6 +104,7 @@ fn collect_source_timing_alignment(
         observer_downbeat_offset_beats: observer.primary_downbeat_offset_beats,
         manifest_downbeat_offset_beats: manifest.primary_downbeat_offset_beats,
         downbeat_offset_compatibility,
+        downbeat_ambiguity_compatibility,
         warning_overlap,
         issues,
     })
@@ -163,6 +168,44 @@ fn source_timing_downbeat_offset_compatibility(
             )],
         ),
         _ => ("partial".to_string(), Vec::new()),
+    }
+}
+
+fn source_timing_downbeat_ambiguity_compatibility(
+    observer: &ObserverSourceTimingReadiness,
+    manifest: &SourceTimingEvidence,
+) -> (String, Vec<String>) {
+    let observer_has_ambiguity_evidence = observer.primary_downbeat_score.is_some()
+        || observer.primary_downbeat_score_gap.is_some()
+        || observer.alternate_downbeat_phase_count > 0;
+    let manifest_has_ambiguity_evidence = manifest.primary_downbeat_score.is_some()
+        || manifest.primary_downbeat_margin.is_some()
+        || manifest.alternate_downbeat_phase_count.is_some();
+    if !observer_has_ambiguity_evidence || !manifest_has_ambiguity_evidence {
+        return ("partial".to_string(), Vec::new());
+    }
+
+    let mut issues = Vec::new();
+    if let Some(manifest_count) = manifest.alternate_downbeat_phase_count
+        && observer.alternate_downbeat_phase_count != manifest_count
+    {
+        issues.push(format!(
+            "source_timing_alignment.downbeat_alternates observer={} manifest={manifest_count}",
+            observer.alternate_downbeat_phase_count
+        ));
+    }
+    if observer.primary_downbeat_score.is_some() != manifest.primary_downbeat_score.is_some() {
+        issues.push("source_timing_alignment.downbeat_score_presence=mismatch".into());
+    }
+    if observer.primary_downbeat_score_gap.is_some() != manifest.primary_downbeat_margin.is_some()
+    {
+        issues.push("source_timing_alignment.downbeat_gap_presence=mismatch".into());
+    }
+
+    if issues.is_empty() {
+        ("aligned".to_string(), issues)
+    } else {
+        ("mismatch".to_string(), issues)
     }
 }
 
