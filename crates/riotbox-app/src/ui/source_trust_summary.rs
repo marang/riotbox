@@ -3,7 +3,7 @@ use ratatui::{
     text::{Line, Span},
 };
 use riotbox_core::{
-    source_graph::{CandidateType, EnergyClass, QualityClass, Section, TimingDegradedPolicy},
+    source_graph::{CandidateType, EnergyClass, QualityClass, Section},
     view::jam::SourceTimingSummaryView,
 };
 
@@ -322,56 +322,84 @@ fn source_timing_optional_score_label(score: Option<f32>) -> String {
 }
 
 fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
-    let Some(graph) = shell.app.source_graph.as_ref() else {
+    if shell.app.source_graph.is_none() {
         return if compact {
             "clock unavailable".into()
         } else {
             "source clock unavailable".into()
         };
-    };
+    }
 
-    match graph.timing.effective_degraded_policy() {
-        TimingDegradedPolicy::Disabled | TimingDegradedPolicy::Unknown => {
-            if compact {
-                "clock unavailable".into()
-            } else {
-                "source clock unavailable".into()
-            }
-        }
-        _ => {
-            let clock = &shell.app.runtime.transport;
-            if compact {
-                format!(
-                    "source b{} bar{} p{}",
-                    clock.beat_index, clock.bar_index, clock.phrase_index
-                )
-            } else {
-                format!(
-                    "source clock beat {} | bar {} | phrase {}",
-                    clock.beat_index, clock.bar_index, clock.phrase_index
-                )
-            }
-        }
+    let timing = &shell.app.jam_view.source.timing;
+    if source_timing_clock_unavailable(timing) {
+        return if compact {
+            "clock unavailable".into()
+        } else {
+            "source clock unavailable".into()
+        };
+    }
+
+    let clock = &shell.app.runtime.transport;
+    let (beat, bar, phrase) = source_timing_clock_components(
+        timing,
+        clock.beat_index,
+        clock.bar_index,
+        clock.phrase_index,
+    );
+    if compact {
+        format!("source b{beat} bar{bar} p{phrase}")
+    } else {
+        format!("source clock beat {beat} | bar {bar} | phrase {phrase}")
     }
 }
 
 fn source_timing_help_clock_compact(shell: &JamShellState) -> String {
-    let Some(graph) = shell.app.source_graph.as_ref() else {
+    if shell.app.source_graph.is_none() {
         return "clock unavailable".into();
-    };
-
-    match graph.timing.effective_degraded_policy() {
-        TimingDegradedPolicy::Disabled | TimingDegradedPolicy::Unknown => {
-            "clock unavailable".into()
-        }
-        _ => {
-            let clock = &shell.app.runtime.transport;
-            format!(
-                "b{} bar{} p{}",
-                clock.beat_index, clock.bar_index, clock.phrase_index
-            )
-        }
     }
+
+    let timing = &shell.app.jam_view.source.timing;
+    if source_timing_clock_unavailable(timing) {
+        return "clock unavailable".into();
+    }
+
+    let clock = &shell.app.runtime.transport;
+    let (beat, bar, phrase) = source_timing_clock_components(
+        timing,
+        clock.beat_index,
+        clock.bar_index,
+        clock.phrase_index,
+    );
+    format!("b{beat} bar{bar} p{phrase}")
+}
+
+fn source_timing_clock_unavailable(timing: &SourceTimingSummaryView) -> bool {
+    matches!(timing.degraded_policy.as_str(), "disabled" | "unknown")
+        || (timing.beat_count == 0 && timing.bar_count == 0 && timing.phrase_count == 0)
+}
+
+fn source_timing_clock_components(
+    timing: &SourceTimingSummaryView,
+    beat_index: u64,
+    bar_index: u64,
+    phrase_index: u64,
+) -> (String, String, String) {
+    let beat = if timing.beat_count > 0 {
+        beat_index.to_string()
+    } else {
+        "-".into()
+    };
+    let bar = if timing.bar_count > 0 {
+        bar_index.to_string()
+    } else {
+        "-".into()
+    };
+    let phrase = if timing.phrase_count > 0 {
+        phrase_index.to_string()
+    } else {
+        "-".into()
+    };
+    (beat, bar, phrase)
 }
 
 pub(super) fn source_timing_warning_line(shell: &JamShellState) -> String {

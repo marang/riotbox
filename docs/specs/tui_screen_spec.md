@@ -100,10 +100,12 @@ It must expose:
   compactly as the selected bar phase and ambiguity reason, for example
   `downbeat ambiguous off 0 alt 3 gap 0.005` or `offset none`.
 - Jam may collapse the timing cue to an instrument-sized line such as
-  `timing needs confirm | confirm grid first | grid manual_confirm_only | p0`;
-  Help and Start Here lines may use compact phase wording such as `phase 0`,
-  `phase 0 amb`, or `phase none`; the Source screen should carry the slightly
-  fuller anchor count such as `anchors 2 kick+bb`.
+  `timing needs confirm | confirm grid first | manual_confirm_only | p0:b0/1/0`;
+  the final chip means selected phase plus beat/bar/phrase evidence counts from
+  the shared Jam source timing summary. Help and Start Here lines may use
+  compact phase wording such as `phase 0`, `phase 0 amb`, or `phase none`; the
+  Source screen should carry the slightly fuller anchor count such as
+  `anchors 2 kick+bb`.
 - When Jam Trust panel space is constrained, prefer cue, actionability,
   grid-use, and selected phase over repeating source timing quality or anchor
   class; the Source and Help surfaces should retain the fuller quality/anchor
@@ -116,8 +118,10 @@ It must expose:
   state and the next bar boundary without opening Inspect or Source
 - compact source timing clock in Jam perform / inspect views when available:
   current beat, bar, and phrase as derived from the existing app transport and
-  Source Graph timing state; show an unavailable cue instead of pretending the
-  clock is known
+  Source Graph timing state, gated by the shared Jam source timing summary
+  counts; show unavailable components such as `source b- bar8 p-` instead of
+  pretending beat or phrase positions are known when their evidence counts are
+  zero, and show an unavailable cue when no timing component is available
 - a compact timing rail for the next queued live gesture
 - suggested Scene launch gestures that may name the next target and energy `rise`, `drop`, or `hold`, or explain that launch waits for more scene material
 - Scene jump availability should come from the shared Jam view model, not be re-inferred separately by individual TUI surfaces

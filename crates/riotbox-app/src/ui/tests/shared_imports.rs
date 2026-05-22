@@ -19,11 +19,12 @@ use riotbox_core::{
         Snapshot, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
     },
     source_graph::{
-        AnalysisSummary, AnalysisWarning, Asset, AssetType, BarSpan, Candidate, CandidateType,
-        DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
-        RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
-        SourceTimingAnchor, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
-        TimingHypothesisKind, TimingQuality, TimingWarning, TimingWarningCode,
+        AnalysisSummary, AnalysisWarning, Asset, AssetType, BarSpan, BeatPoint, Candidate,
+        CandidateType, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, PhraseSpan,
+        QualityClass, Relationship, RelationshipType, Section, SectionLabelHint,
+        SourceDescriptor, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType,
+        TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
+        TimingWarning, TimingWarningCode,
     },
     transport::{CommitBoundaryState, TransportClockState},
 };
