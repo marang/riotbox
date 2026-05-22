@@ -674,4 +674,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make Source Timing grid-use fixture beat/bar counts explicit
 - [RIOTBOX-962.md](./RIOTBOX-962.md)
   Show observer beat/bar counts in P012 proof summary
+- [RIOTBOX-963.md](./RIOTBOX-963.md)
+  Show compact Source Timing counts in Jam readiness line
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
