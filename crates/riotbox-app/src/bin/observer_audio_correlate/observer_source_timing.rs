@@ -12,6 +12,9 @@ struct ObserverSourceTimingReadiness {
     beat_count: u64,
     downbeat_status: String,
     primary_downbeat_offset_beats: Option<u64>,
+    primary_downbeat_score: Option<f64>,
+    primary_downbeat_score_gap: Option<f64>,
+    alternate_downbeat_phase_count: u64,
     bar_count: u64,
     phrase_status: String,
     phrase_count: u64,
@@ -138,6 +141,29 @@ fn collect_observer_source_timing(
             },
             None => None,
         },
+        primary_downbeat_score: match optional_source_timing_f64(
+            source_timing,
+            "primary_downbeat_score",
+        ) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
+        },
+        primary_downbeat_score_gap: match optional_source_timing_f64(
+            source_timing,
+            "primary_downbeat_score_gap",
+        ) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
+        },
+        alternate_downbeat_phase_count: match source_timing
+            .get("alternate_downbeat_phase_count")
+        {
+            Some(value) => match value.as_u64() {
+                Some(value) => value,
+                None => return (None, true),
+            },
+            None => 0,
+        },
         bar_count: match source_timing["bar_count"].as_u64() {
             Some(value) => value,
             None => return (None, true),
@@ -230,6 +256,14 @@ fn observer_source_timing_expected_grid_use(source_timing: &Value, degraded_poli
     }
 
     "manual_confirm_only".to_string()
+}
+
+fn optional_source_timing_f64(source_timing: &Value, key: &str) -> Result<Option<f64>, ()> {
+    match source_timing.get(key) {
+        Some(value) if value.is_null() => Ok(None),
+        Some(value) => value.as_f64().map(Some).ok_or(()),
+        None => Ok(None),
+    }
 }
 
 fn observer_source_timing_policy_cue(policy: &str) -> Option<&'static str> {

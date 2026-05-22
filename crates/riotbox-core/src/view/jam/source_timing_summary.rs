@@ -17,6 +17,9 @@ pub struct SourceTimingSummaryView {
     pub downbeat_status: String,
     pub primary_warning: Option<String>,
     pub primary_downbeat_offset_beats: Option<u32>,
+    pub primary_downbeat_score: Option<f32>,
+    pub primary_downbeat_score_gap: Option<f32>,
+    pub alternate_downbeat_phase_count: usize,
     pub bar_count: usize,
     pub phrase_status: String,
     pub phrase_count: usize,
@@ -43,6 +46,9 @@ impl Default for SourceTimingSummaryView {
             downbeat_status: "unknown".into(),
             primary_warning: None,
             primary_downbeat_offset_beats: None,
+            primary_downbeat_score: None,
+            primary_downbeat_score_gap: None,
+            alternate_downbeat_phase_count: 0,
             bar_count: 0,
             phrase_status: "unknown".into(),
             phrase_count: 0,
@@ -85,6 +91,12 @@ impl SourceTimingSummaryView {
             .iter()
             .map(|residual| residual.offset_ms.abs())
             .fold(0.0_f32, f32::max);
+        let primary_downbeat_score =
+            primary_hypothesis.and_then(primary_source_timing_downbeat_score);
+        let primary_downbeat_score_gap =
+            primary_source_timing_downbeat_score_gap(primary_hypothesis, &graph.timing);
+        let alternate_downbeat_phase_count =
+            alternate_source_timing_downbeat_phase_count(&graph.timing);
 
         Self {
             cue: policy_labels.cue.into(),
@@ -100,6 +112,9 @@ impl SourceTimingSummaryView {
             primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
             primary_downbeat_offset_beats: primary_source_timing_downbeat_offset_beats(primary_hypothesis),
+            primary_downbeat_score,
+            primary_downbeat_score_gap,
+            alternate_downbeat_phase_count,
             bar_count: graph.timing.bar_grid.len(),
             phrase_status: source_timing_phrase_status_label(&graph.timing).into(),
             phrase_count: graph.timing.phrase_grid.len(),
@@ -209,6 +224,43 @@ fn primary_source_timing_downbeat_offset_beats(
     let beat_seconds = 60.0 / hypothesis.bpm;
     let offset_beats = (first_bar.start_seconds / beat_seconds).round() as i64;
     Some(offset_beats.rem_euclid(i64::from(beats_per_bar)) as u32)
+}
+
+fn primary_source_timing_downbeat_score(
+    hypothesis: &crate::source_graph::TimingHypothesis,
+) -> Option<f32> {
+    hypothesis
+        .bar_grid
+        .first()
+        .map(|bar| bar.downbeat_confidence)
+}
+
+fn primary_source_timing_downbeat_score_gap(
+    primary_hypothesis: Option<&crate::source_graph::TimingHypothesis>,
+    timing: &crate::source_graph::TimingModel,
+) -> Option<f32> {
+    let primary = primary_hypothesis?;
+    let strongest_alternate = timing
+        .hypotheses
+        .iter()
+        .filter(|hypothesis| {
+            hypothesis.kind == crate::source_graph::TimingHypothesisKind::AlternateDownbeat
+        })
+        .map(|hypothesis| hypothesis.score)
+        .max_by(f32::total_cmp)?;
+    Some((primary.score - strongest_alternate).max(0.0))
+}
+
+fn alternate_source_timing_downbeat_phase_count(
+    timing: &crate::source_graph::TimingModel,
+) -> usize {
+    timing
+        .hypotheses
+        .iter()
+        .filter(|hypothesis| {
+            hypothesis.kind == crate::source_graph::TimingHypothesisKind::AlternateDownbeat
+        })
+        .count()
 }
 
 fn primary_source_timing_warning(

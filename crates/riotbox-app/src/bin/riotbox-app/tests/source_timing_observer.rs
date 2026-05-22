@@ -117,6 +117,12 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     assert_eq!(source_timing["beat_status"], "tempo_only");
     assert_eq!(source_timing["beat_count"], 0);
     assert_eq!(source_timing["downbeat_status"], "ambiguous");
+    assert_eq!(source_timing["primary_downbeat_score"], serde_json::Value::Null);
+    assert_eq!(
+        source_timing["primary_downbeat_score_gap"],
+        serde_json::Value::Null
+    );
+    assert_eq!(source_timing["alternate_downbeat_phase_count"], 0);
     assert_eq!(source_timing["bar_count"], 0);
     assert_eq!(source_timing["phrase_status"], "uncertain");
     assert_eq!(source_timing["phrase_count"], 0);
@@ -248,6 +254,7 @@ fn observer_snapshot_uses_shared_source_timing_summary_for_musician_cues() {
     assert_eq!(source_timing["actionability"], "confirm grid first");
     assert_eq!(source_timing["grid_use"], "manual_confirm_only");
     assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
+    assert_eq!(source_timing["alternate_downbeat_phase_count"], 0);
     assert_eq!(
         source_timing["anchor_evidence"]["primary_anchor_count"],
         1

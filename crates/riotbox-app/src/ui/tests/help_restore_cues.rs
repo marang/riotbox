@@ -7,11 +7,11 @@ fn renders_help_overlay_with_first_run_guidance() {
 
     assert!(rendered.contains("First run"), "{rendered}");
     assert!(
-        rendered.contains("Timing: needs confirm | grid manual_confirm_only | phase 0 | low"),
+        rendered.contains("Timing: needs confirm | grid manual_confirm_only | phase 0 amb | low"),
         "{rendered}"
     );
-    assert!(rendered.contains("kick+bb | source b32 bar8 p1"), "{rendered}");
-    assert!(rendered.contains("source b32 bar8 p1"), "{rendered}");
+    assert!(rendered.contains("kick+bb | b32 bar8 p1"), "{rendered}");
+    assert!(rendered.contains("b32 bar8 p1"), "{rendered}");
     assert!(rendered.contains("confirm grid first"), "{rendered}");
     assert!(rendered.contains("space: start transport"), "{rendered}");
     assert!(rendered.contains("f: queue one first fill"), "{rendered}");

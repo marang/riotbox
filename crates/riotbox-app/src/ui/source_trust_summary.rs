@@ -284,7 +284,7 @@ pub(super) fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
             style_pending_detail(),
         ),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(source_timing_clock_compact(shell)),
+        Span::raw(source_timing_help_clock_compact(shell)),
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(timing.actionability.clone()),
     ])
@@ -297,9 +297,24 @@ fn source_timing_downbeat_phase_chip(timing: &SourceTimingSummaryView) -> String
 }
 
 fn source_timing_downbeat_phase_help(timing: &SourceTimingSummaryView) -> String {
-    timing
+    let phase = timing
         .primary_downbeat_offset_beats
-        .map_or_else(|| "phase none".into(), |offset| format!("phase {offset}"))
+        .map_or_else(|| "phase none".into(), |offset| format!("phase {offset}"));
+    if timing.alternate_downbeat_phase_count == 0 {
+        if timing.downbeat_status == "ambiguous" {
+            return format!("{phase} amb");
+        }
+        return phase;
+    }
+    format!(
+        "{phase} alt{} gap {}",
+        timing.alternate_downbeat_phase_count,
+        source_timing_optional_score_label(timing.primary_downbeat_score_gap)
+    )
+}
+
+fn source_timing_optional_score_label(score: Option<f32>) -> String {
+    score.map_or_else(|| "none".into(), |score| format!("{score:.3}"))
 }
 
 fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
@@ -332,6 +347,25 @@ fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
                     clock.beat_index, clock.bar_index, clock.phrase_index
                 )
             }
+        }
+    }
+}
+
+fn source_timing_help_clock_compact(shell: &JamShellState) -> String {
+    let Some(graph) = shell.app.source_graph.as_ref() else {
+        return "clock unavailable".into();
+    };
+
+    match graph.timing.effective_degraded_policy() {
+        TimingDegradedPolicy::Disabled | TimingDegradedPolicy::Unknown => {
+            "clock unavailable".into()
+        }
+        _ => {
+            let clock = &shell.app.runtime.transport;
+            format!(
+                "b{} bar{} p{}",
+                clock.beat_index, clock.bar_index, clock.phrase_index
+            )
         }
     }
 }
