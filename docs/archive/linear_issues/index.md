@@ -614,4 +614,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate Source Timing downbeat ambiguity observer fields
 - [RIOTBOX-932.md](./RIOTBOX-932.md)
   Cover valid downbeat ambiguity observer summary rendering
+- [RIOTBOX-933.md](./RIOTBOX-933.md)
+  Expose manifest downbeat ambiguity evidence in observer/audio summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
