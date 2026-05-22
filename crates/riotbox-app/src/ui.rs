@@ -5,6 +5,7 @@ include!("ui/types_state.rs");
 mod first_run_capture;
 #[path = "ui/footer_help_perform_lines/lane_perform_lines.rs"]
 mod footer_lane_perform_lines;
+mod footer_renderer;
 #[path = "ui/jam_landed_warnings_source/scene_commit_cues.rs"]
 mod jam_scene_commit_cues;
 mod recovery_prompt;
@@ -21,6 +22,12 @@ use first_run_capture::{capture_pending_detail_line, capture_pending_intent_line
 use footer_lane_perform_lines::{
     mc202_perform_lines, tr909_inspect_lines, tr909_perform_lines, w30_perform_lines,
 };
+#[cfg(test)]
+use footer_renderer::{
+    footer_advanced_line, footer_keys_line, footer_lane_ops_line, footer_primary_line,
+    footer_scene_line,
+};
+use footer_renderer::{render_footer, render_help_primary_gesture_items};
 use jam_scene_commit_cues::{
     latest_landed_command, scene_history_trail_line, scene_post_commit_cue_line,
 };
