@@ -642,4 +642,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Write compact generated Feral-grid source-timing summary index
 - [RIOTBOX-946.md](./RIOTBOX-946.md)
   Surface generated Feral-grid action cues in P012 proof summary
+- [RIOTBOX-947.md](./RIOTBOX-947.md)
+  Add downbeat ambiguity compatibility to generated Feral-grid summary index
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
