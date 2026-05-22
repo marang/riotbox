@@ -558,4 +558,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Carry Source Timing phrase counts into observer/audio summaries
 - [RIOTBOX-904.md](./RIOTBOX-904.md)
   Add phrase-count checks to Source Timing example expectations
+- [RIOTBOX-905.md](./RIOTBOX-905.md)
+  Centralize Source Timing policy cue/actionability labels
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
