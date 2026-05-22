@@ -638,4 +638,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject contradictory source-timing phrase evidence in probe JSON validator
 - [RIOTBOX-944.md](./RIOTBOX-944.md)
   Pin generated source-timing cue and actionability gates
+- [RIOTBOX-945.md](./RIOTBOX-945.md)
+  Write compact generated Feral-grid source-timing summary index
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
