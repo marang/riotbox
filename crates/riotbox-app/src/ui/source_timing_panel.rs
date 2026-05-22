@@ -61,8 +61,9 @@ fn source_timing_grid_readiness_line(
     timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> Line<'static> {
     Line::from(format!(
-        "beat {} | downbeat {} | phrase {}",
+        "beat {} | bars {} | phase {} | phrase {}",
         source_timing_beat_display_label(timing),
+        timing.bar_count,
         source_timing_downbeat_display_label(timing),
         source_timing_phrase_display_label(timing)
     ))
@@ -81,15 +82,15 @@ fn source_timing_phrase_display_label(
 fn source_timing_downbeat_display_label(
     timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> String {
-    let status = source_timing_status_display_label(&timing.downbeat_status);
+    let status = source_timing_downbeat_status_display_label(&timing.downbeat_status);
     let offset = timing
         .primary_downbeat_offset_beats
-        .map_or_else(|| "none".into(), |offset| offset.to_string());
+        .map_or_else(|| "p-".into(), |offset| format!("p{offset}"));
     if timing.alternate_downbeat_phase_count == 0 {
-        return format!("{status} off {offset}");
+        return format!("{status} {offset}");
     }
     format!(
-        "{status} off {offset} alt {} gap {}",
+        "{status} {offset} alt {} gap {}",
         timing.alternate_downbeat_phase_count,
         source_timing_optional_score_label(timing.primary_downbeat_score_gap)
     )
@@ -103,11 +104,20 @@ fn source_timing_status_display_label(status: &str) -> String {
     status.replace('_', " ")
 }
 
+fn source_timing_downbeat_status_display_label(status: &str) -> String {
+    match status {
+        "ambiguous" => "amb".into(),
+        _ => source_timing_status_display_label(status),
+    }
+}
+
 fn source_timing_beat_display_label(
     timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> String {
     if timing.beat_status == "grid" {
         format!("grid {}", timing.beat_count)
+    } else if timing.beat_status == "tempo_only" {
+        "tempo".into()
     } else {
         source_timing_status_display_label(&timing.beat_status)
     }
