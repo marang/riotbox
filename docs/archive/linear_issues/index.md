@@ -618,4 +618,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose manifest downbeat ambiguity evidence in observer/audio summary
 - [RIOTBOX-934.md](./RIOTBOX-934.md)
   Validate manifest downbeat ambiguity evidence fields
+- [RIOTBOX-935.md](./RIOTBOX-935.md)
+  Compare observer and manifest downbeat ambiguity evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
