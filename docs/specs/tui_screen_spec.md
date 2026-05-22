@@ -306,7 +306,10 @@ For queued timing rails:
 
 - countdown glyphs such as `[===>]` may use yellow + bold as the active snap-point cue
 - boundary labels such as `next bar` or `next phrase` may use the same yellow + bold emphasis when the rail is waiting on that boundary
-- transport counters such as beat, bar, and phrase indices should stay low-emphasis context rather than competing with the snap point
+- transport counters such as beat, bar, and phrase indices should stay
+  low-emphasis context rather than competing with the snap point, and should be
+  labelled as transport context such as `transport b32 bar8 p1` when shown near
+  Source Timing trust cues
 - this hierarchy does not imply new scheduler behavior or a separate timing visualization widget
 
 For pending Scene intent cues:

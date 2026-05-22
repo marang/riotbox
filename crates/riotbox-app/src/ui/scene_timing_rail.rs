@@ -116,7 +116,7 @@ fn scene_commit_pulse_line(shell: &JamShellState) -> Option<Line<'static>> {
         countdown,
         None,
         format!(
-            "b{} | b{} | p{}",
+            "| transport b{} bar{} p{}",
             transport.beat_index, transport.bar_index, transport.phrase_index
         ),
     ))
@@ -141,7 +141,7 @@ fn queued_timing_rail_line(shell: &JamShellState) -> Option<Line<'static>> {
         countdown,
         Some(quantization_boundary_label(action.quantization)),
         format!(
-            "| b{} | bar{} | p{}",
+            "| transport b{} bar{} p{}",
             transport.beat_index, transport.bar_index, transport.phrase_index
         ),
     ))
