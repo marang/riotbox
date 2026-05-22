@@ -562,4 +562,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Centralize Source Timing policy cue/actionability labels
 - [RIOTBOX-906.md](./RIOTBOX-906.md)
   Show phrase counts in the Source timing panel
+- [RIOTBOX-907.md](./RIOTBOX-907.md)
+  Document external review freshness and current Riotbox source assessment
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
