@@ -118,6 +118,46 @@ fn strict_evidence_rejects_malformed_source_timing() {
     assert!(markdown.contains("Output path present: `no`"));
 }
 
+#[test]
+fn strict_evidence_rejects_malformed_manifest_downbeat_score() {
+    assert_malformed_source_timing_manifest(
+        synthetic_manifest_with_malformed_downbeat_score(),
+        "malformed manifest downbeat score",
+    );
+}
+
+#[test]
+fn strict_evidence_rejects_malformed_manifest_downbeat_margin() {
+    assert_malformed_source_timing_manifest(
+        synthetic_manifest_with_malformed_downbeat_margin(),
+        "malformed manifest downbeat margin",
+    );
+}
+
+#[test]
+fn strict_evidence_rejects_malformed_manifest_alternate_downbeat_count() {
+    assert_malformed_source_timing_manifest(
+        synthetic_manifest_with_malformed_alternate_downbeat_count(),
+        "malformed manifest alternate downbeat count",
+    );
+}
+
+fn assert_malformed_source_timing_manifest(manifest: String, label: &str) {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(&manifest_path, manifest).expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error = validate_required_evidence(&summary).expect_err(label);
+    let markdown = render_markdown(&summary);
+
+    assert!(error.to_string().contains("source_timing=malformed"));
+    assert!(markdown.contains("Source timing downbeat: `malformed`"));
+    assert!(markdown.contains("Output path present: `no`"));
+}
+
 fn synthetic_observer() -> String {
     [
         r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"}}"#,
@@ -200,4 +240,25 @@ fn synthetic_manifest_with_malformed_source_timing() -> String {
   }
 }"#
     .to_string()
+}
+
+fn synthetic_manifest_with_malformed_downbeat_score() -> String {
+    synthetic_manifest_with_source_timing().replace(
+        r#""primary_downbeat_score": 0.273"#,
+        r#""primary_downbeat_score": "hot""#,
+    )
+}
+
+fn synthetic_manifest_with_malformed_downbeat_margin() -> String {
+    synthetic_manifest_with_source_timing().replace(
+        r#""primary_downbeat_margin": 0.005"#,
+        r#""primary_downbeat_margin": ["nope"]"#,
+    )
+}
+
+fn synthetic_manifest_with_malformed_alternate_downbeat_count() -> String {
+    synthetic_manifest_with_source_timing().replace(
+        r#""alternate_downbeat_phase_count": 3"#,
+        r#""alternate_downbeat_phase_count": "three""#,
+    )
 }
