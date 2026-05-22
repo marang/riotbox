@@ -15,10 +15,7 @@ fn renders_jam_shell_inspect_snapshot() {
         "{rendered}"
     );
     assert!(rendered.contains("timing needs confirm | confirm grid"), "{rendered}");
-    assert!(
-        rendered.contains("first | grid manual_confirm_only | p0"),
-        "{rendered}"
-    );
+    assert!(rendered.contains("p0:b0/1/0"), "{rendered}");
     assert!(rendered.contains("timing warning ambiguous_downbeat"), "{rendered}");
     assert!(rendered.contains("Material flow"), "{rendered}");
     assert!(rendered.contains("Diagnostics"), "{rendered}");

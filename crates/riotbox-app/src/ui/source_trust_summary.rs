@@ -202,7 +202,7 @@ pub(super) fn source_timing_readiness_line(shell: &JamShellState) -> Line<'stati
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(timing.actionability.clone()),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(format!("grid {}", timing.grid_use)),
+        Span::raw(timing.grid_use.clone()),
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(source_timing_downbeat_phase_chip(timing)),
     ])
@@ -291,9 +291,13 @@ pub(super) fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
 }
 
 fn source_timing_downbeat_phase_chip(timing: &SourceTimingSummaryView) -> String {
-    timing
+    let phase = timing
         .primary_downbeat_offset_beats
-        .map_or_else(|| "p-".into(), |offset| format!("p{offset}"))
+        .map_or_else(|| "p-".into(), |offset| format!("p{offset}"));
+    format!(
+        "{phase}:b{}/{}/{}",
+        timing.beat_count, timing.bar_count, timing.phrase_count
+    )
 }
 
 fn source_timing_downbeat_phase_help(timing: &SourceTimingSummaryView) -> String {
