@@ -110,8 +110,8 @@ def render_summary(
         "",
         "## Generated Feral-Grid Observer/Audio Paths",
         "",
-        "| Path | Cue | Action | Grid source | Decision | Observer grid use | Manifest grid use | Grid compat | Downbeat compat | Alignment | Output issues |",
-        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |",
+        "| Path | Cue | Action | Grid source | Decision | Observer grid use | Manifest grid use | Grid compat | Downbeat compat | Downbeat ambiguity | Alignment | Output issues |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | ---: |",
     ]
 
     for name, summary in observer_audio_summaries:
@@ -119,7 +119,7 @@ def render_summary(
         source_timing = object_field(output_path, "source_timing")
         source_timing_alignment = object_field(output_path, "source_timing_alignment")
         lines.append(
-            "| {name} | `{cue}` | `{action}` | `{grid_source}` | `{decision}` | `{observer_grid_use}` | `{manifest_grid_use}` | `{grid_compat}` | `{downbeat_compat}` | `{alignment}` | {issues} |".format(
+            "| {name} | `{cue}` | `{action}` | `{grid_source}` | `{decision}` | `{observer_grid_use}` | `{manifest_grid_use}` | `{grid_compat}` | `{downbeat_compat}` | `{downbeat_ambiguity}` | `{alignment}` | {issues} |".format(
                 name=name,
                 cue=string_field(source_timing, "cue"),
                 action=string_field(source_timing, "actionability"),
@@ -130,6 +130,9 @@ def render_summary(
                 grid_compat=string_field(source_timing_alignment, "grid_use_compatibility"),
                 downbeat_compat=string_field(
                     source_timing_alignment, "downbeat_offset_compatibility"
+                ),
+                downbeat_ambiguity=string_field(
+                    source_timing_alignment, "downbeat_ambiguity_compatibility"
                 ),
                 alignment=string_field(source_timing_alignment, "status"),
                 issues=list_len(output_path, "issues"),
@@ -182,6 +185,7 @@ def render_summary(
             "",
             "- Generated Feral-grid observer/audio rows show whether control-path and output-path timing evidence agreed for cautious/manual-confirm, user-override, fallback, and locked-grid paths.",
             "- Generated `Cue` and `Action` columns expose the musician-facing consequence for each generated path without opening the JSON summaries.",
+            "- Generated `Downbeat ambiguity` shows whether the observer and manifest agree about bar-phase ambiguity, not just selected downbeat offset.",
             "- `source_timing` rows used the current Source Timing BPM while still carrying visible manual-confirm policy where required.",
             "- `static_default` rows prove the conservative fallback boundary; Beat20 currently has useful BPM evidence but ambiguous downbeat evidence.",
             "- `Cue` and `Action` are the compact musician-facing consequence from each manifest's Source Timing evidence.",
