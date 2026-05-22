@@ -514,7 +514,7 @@ cp "$tmpdir/observer-audio-summary-locked.json" \
   "$summary_artifact_dir/locked-grid.json"
 
 summary_index="$summary_artifact_dir/summary.tsv"
-printf 'case\tgrid_bpm_source\tgrid_bpm_decision_reason\tcue\tactionability\tgrid_use\tphrase_count\tphrase_bars\talignment\tdownbeat_ambiguity\tanchor_alignment\tgroove_alignment\tissues\n' \
+printf 'case\tgrid_bpm_source\tgrid_bpm_decision_reason\tcue\tactionability\tgrid_use\tobserver_beat_count\tobserver_bar_count\tphrase_count\tphrase_bars\talignment\tdownbeat_ambiguity\tanchor_alignment\tgroove_alignment\tissues\n' \
   > "$summary_index"
 jq -r \
   '[(input_filename | split("/")[-1] | sub("\\.json$"; "")),
@@ -523,6 +523,8 @@ jq -r \
     .output_path.source_timing.cue,
     .output_path.source_timing.actionability,
     .output_path.source_timing.grid_use,
+    (.control_path.observer_source_timing.beat_count | tostring),
+    (.control_path.observer_source_timing.bar_count | tostring),
     (.output_path.source_timing.primary_phrase_count | tostring),
     (.output_path.source_timing.primary_phrase_bar_count | tostring),
     .output_path.source_timing_alignment.status,
@@ -537,9 +539,9 @@ jq -r \
   "$summary_artifact_dir/locked-grid.json" \
   >> "$summary_index"
 test "$(wc -l < "$summary_index")" -eq 6
-grep -q $'cautious-manual-confirm\tsource_timing\tsource_timing_needs_review_manual_confirm\tneeds confirm\tconfirm grid first\tshort_loop_manual_confirm\t0\t3\taligned\tpartial\tpartial\tpartial\t0' "$summary_index"
-grep -q $'fallback\tstatic_default\tsource_timing_missing_bpm\tnot available\ttiming unavailable\tunavailable\t0\t0\taligned\tpartial\tpartial\tpartial\t0' "$summary_index"
-grep -q $'locked-grid\tsource_timing\tsource_timing_ready\tgrid locked\tgrid can steer moves\tlocked_grid\t2\t9\taligned\taligned\taligned\taligned\t0' "$summary_index"
+grep -q $'cautious-manual-confirm\tsource_timing\tsource_timing_needs_review_manual_confirm\tneeds confirm\tconfirm grid first\tshort_loop_manual_confirm\t0\t0\t0\t3\taligned\tpartial\tpartial\tpartial\t0' "$summary_index"
+grep -q $'fallback\tstatic_default\tsource_timing_missing_bpm\tnot available\ttiming unavailable\tunavailable\t0\t0\t0\t0\taligned\tpartial\tpartial\tpartial\t0' "$summary_index"
+grep -q $'locked-grid\tsource_timing\tsource_timing_ready\tgrid locked\tgrid can steer moves\tlocked_grid\t16\t4\t2\t9\taligned\taligned\taligned\taligned\t0' "$summary_index"
 
 jq -c '.snapshot.source_timing.bpm_estimate = 118.0' \
   "$observer_fixture" > "$mismatched_observer_fixture"
