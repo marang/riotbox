@@ -584,4 +584,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract Jam footer lane perform lines into semantic module
 - [RIOTBOX-917.md](./RIOTBOX-917.md)
   Split oversized shell state log/source UI tests by surface
+- [RIOTBOX-918.md](./RIOTBOX-918.md)
+  Extract Jam footer renderer from screen body shard
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
