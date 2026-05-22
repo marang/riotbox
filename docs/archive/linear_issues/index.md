@@ -604,4 +604,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split W-30 preview and source-readiness UI tests
 - [RIOTBOX-927.md](./RIOTBOX-927.md)
   Extract first-run capture routing UI helpers
+- [RIOTBOX-928.md](./RIOTBOX-928.md)
+  Extract W-30 resample diagnostics label helpers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
