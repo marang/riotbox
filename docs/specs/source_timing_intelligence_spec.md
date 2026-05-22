@@ -836,7 +836,8 @@ bounded BPM policy:
   the final JSON summary by asserting `grid_bpm_source`,
   `grid_bpm_decision_reason`, observer-side `grid_use`, manifest-side
   `source_timing.grid_use`, `source_timing_alignment.grid_use_compatibility`,
-  `source_timing_alignment.downbeat_offset_compatibility`, and the strict
+  `source_timing_alignment.downbeat_offset_compatibility`,
+  `source_timing_alignment.downbeat_ambiguity_compatibility`, and the strict
   output-path verdict for fallback, cautious/manual-confirm, user-override, and
   locked-grid cases.
 

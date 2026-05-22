@@ -39,7 +39,8 @@
       "warning_overlap": [
         "phrase_uncertain"
       ],
-      "issues": []
+      "issues": [],
+      "downbeat_ambiguity_compatibility": "partial"
     },
     "source_timing_anchor_alignment": null,
     "source_timing_groove_alignment": null,
