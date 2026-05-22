@@ -564,4 +564,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show phrase counts in the Source timing panel
 - [RIOTBOX-907.md](./RIOTBOX-907.md)
   Document external review freshness and current Riotbox source assessment
+- [RIOTBOX-908.md](./RIOTBOX-908.md)
+  Convert audio runtime include shell into semantic Rust modules
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
