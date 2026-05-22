@@ -17,7 +17,8 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
     );
     assert!(rendered.contains("conf 0.76"), "{rendered}");
     assert!(
-        rendered.contains("beat tempo | bars 0 | phase amb p0 | phrase uncertain(0)")
+        rendered.contains("beat tempo | bars 1 | phase amb p0 | phrase uncertain(0)"),
+        "{rendered}"
     );
     assert!(rendered.contains("meter 4/4 | hypotheses 1 | anchors 2 | kick+backbeat"));
     assert!(rendered.contains("mode manual confirm | grid manual_confirm_only | trust low"));
