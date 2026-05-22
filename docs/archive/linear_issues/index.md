@@ -590,4 +590,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split post-commit and restore help UI tests
 - [RIOTBOX-920.md](./RIOTBOX-920.md)
   Extract W-30 cue label helpers from capture/log source shard
+- [RIOTBOX-921.md](./RIOTBOX-921.md)
+  Extract scene timing label helpers from timing rail shard
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
