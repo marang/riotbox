@@ -136,6 +136,7 @@ jq -e \
     and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
     and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
     and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
+    and .output_path.source_timing_alignment.downbeat_ambiguity_compatibility == "partial"
     and .output_path.source_timing_anchor_alignment.status == "partial"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 0
     and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
@@ -204,6 +205,7 @@ jq -e \
     and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
     and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
     and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
+    and .output_path.source_timing_alignment.downbeat_ambiguity_compatibility == "partial"
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.present == true
     and (.output_path.issues | length == 0)' \
@@ -264,6 +266,7 @@ jq -e \
     and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
     and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
     and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
+    and .output_path.source_timing_alignment.downbeat_ambiguity_compatibility == "partial"
     and (.output_path.source_timing_alignment.issues | length == 0)
     and .output_path.metrics.source_grid_output_drift.hit_ratio >= 0.5
     and .output_path.metrics.source_grid_output_drift.max_peak_offset_ms <= .output_path.metrics.source_grid_output_drift.max_allowed_peak_offset_ms
@@ -354,6 +357,7 @@ jq -e \
     and .output_path.source_timing_alignment.observer_downbeat_offset_beats == null
     and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == null
     and .output_path.source_timing_alignment.downbeat_offset_compatibility == "partial"
+    and .output_path.source_timing_alignment.downbeat_ambiguity_compatibility == "partial"
     and (.output_path.source_timing_alignment.warning_overlap | index("low_timing_confidence")) != null
     and (.output_path.source_timing_alignment.warning_overlap | index("weak_kick_anchor")) != null
     and (.output_path.source_timing_alignment.issues | length == 0)
@@ -461,6 +465,7 @@ jq -e \
     and .output_path.source_timing_alignment.observer_downbeat_offset_beats == 0
     and .output_path.source_timing_alignment.manifest_downbeat_offset_beats == 0
     and .output_path.source_timing_alignment.downbeat_offset_compatibility == "aligned"
+    and .output_path.source_timing_alignment.downbeat_ambiguity_compatibility == "aligned"
     and .output_path.source_timing_anchor_alignment.status == "aligned"
     and .output_path.source_timing_anchor_alignment.observer.primary_anchor_count == 16
     and .output_path.source_timing_anchor_alignment.manifest.primary_anchor_count > 0
