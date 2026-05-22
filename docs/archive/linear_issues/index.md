@@ -566,4 +566,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Document external review freshness and current Riotbox source assessment
 - [RIOTBOX-908.md](./RIOTBOX-908.md)
   Convert audio runtime include shell into semantic Rust modules
+- [RIOTBOX-909.md](./RIOTBOX-909.md)
+  Audit TUI include shell for later semantic module conversion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
