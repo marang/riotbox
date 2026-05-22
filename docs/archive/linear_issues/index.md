@@ -676,4 +676,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show observer beat/bar counts in P012 proof summary
 - [RIOTBOX-963.md](./RIOTBOX-963.md)
   Show compact Source Timing counts in Jam readiness line
+- [RIOTBOX-964.md](./RIOTBOX-964.md)
+  Show partial Source Timing clock when beat or phrase grid is absent
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
