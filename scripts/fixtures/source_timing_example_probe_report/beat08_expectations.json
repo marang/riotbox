@@ -26,6 +26,8 @@
         "max": 1.0
       },
       "beat_status": "stable",
+      "primary_beat_count": 16,
+      "primary_bar_count": 4,
       "downbeat_status": "stable",
       "primary_downbeat_offset_beats": 0,
       "phrase_status": "not_enough_material",
@@ -71,6 +73,8 @@
         "max": 1.0
       },
       "beat_status": "stable",
+      "primary_beat_count": 32,
+      "primary_bar_count": 8,
       "downbeat_status": "stable",
       "primary_downbeat_offset_beats": 0,
       "phrase_status": "stable",

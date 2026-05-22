@@ -12,6 +12,8 @@
   "primary_beat_score": 0.9787259,
   "primary_beat_matched_onset_ratio": 1.0,
   "primary_beat_median_distance_ratio": 0.6673554,
+  "primary_beat_count": 32,
+  "primary_bar_count": 8,
   "primary_downbeat_offset_beats": 0,
   "primary_downbeat_score": 0.5650478,
   "primary_downbeat_margin": 0.3077936,

@@ -69,6 +69,8 @@ fn renders_probe_summary_for_accented_loop() {
     assert!(text.contains("action: "));
     assert!(text.contains("grid_use="));
     assert!(text.contains("beat: stable"));
+    assert!(text.contains("beats="));
+    assert!(text.contains("bars="));
     assert!(text.contains("downbeat: "));
     assert!(text.contains("phrases="));
     assert!(text.contains("scores: beat="));
@@ -78,6 +80,8 @@ fn renders_probe_summary_for_accented_loop() {
     assert!(json["actionability"].is_string());
     assert!(json["grid_use"].is_string());
     assert!(json["primary_beat_score"].is_number());
+    assert!(json["primary_beat_count"].is_number());
+    assert!(json["primary_bar_count"].is_number());
     assert!(json["primary_downbeat_score"].is_number());
     assert!(json["primary_downbeat_margin"].is_number());
     assert!(json["primary_phrase_count"].is_number());

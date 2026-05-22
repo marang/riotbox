@@ -86,6 +86,8 @@ def validate_summary(summary: Any) -> None:
     require_optional_unit_number(summary, "primary_beat_score")
     require_optional_unit_number(summary, "primary_beat_matched_onset_ratio")
     require_optional_unit_number(summary, "primary_beat_median_distance_ratio")
+    require_non_negative_int(summary, "primary_beat_count")
+    require_non_negative_int(summary, "primary_bar_count")
     require_optional_int(summary, "primary_downbeat_offset_beats")
     require_optional_unit_number(summary, "primary_downbeat_score")
     require_optional_unit_number(summary, "primary_downbeat_margin")
