@@ -35,7 +35,7 @@ fn renders_jam_shell_with_scene_brain_summary() {
     assert!(rendered.contains("launch ->"), "{rendered}");
     assert!(rendered.contains("@ next bar"), "{rendered}");
     assert!(
-        rendered.contains("pulse [===>] b32 | b8 | p1"),
+        rendered.contains("pulse [===>] | transport b32 bar8 p1"),
         "{rendered}"
     );
     assert!(
@@ -146,7 +146,7 @@ fn renders_jam_shell_with_pending_scene_restore_summary() {
     );
     assert!(rendered.contains("policy rise"), "{rendered}");
     assert!(
-        rendered.contains("pulse [===>] b32 | b8 | p1"),
+        rendered.contains("pulse [===>] | transport b32 bar8 p1"),
         "{rendered}"
     );
     assert!(
@@ -306,7 +306,7 @@ fn queued_timing_rail_styles_define_boundary_hierarchy() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "wait [===>] next bar | b32 | bar8 | p1");
+    assert_eq!(rendered, "wait [===>] next bar | transport b32 bar8 p1");
     assert_eq!(line.spans[0].content.as_ref(), "wait ");
     assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
     assert_eq!(line.spans[1].content.as_ref(), "[===>]");
@@ -354,7 +354,7 @@ fn queued_scene_timing_rail_styles_pulse_hierarchy() {
         .map(|span| span.content.as_ref())
         .collect::<String>();
 
-    assert_eq!(rendered, "pulse [===>] b32 | b8 | p1");
+    assert_eq!(rendered, "pulse [===>] | transport b32 bar8 p1");
     assert_eq!(line.spans[0].content.as_ref(), "pulse ");
     assert_eq!(line.spans[0].style.fg, Some(Color::DarkGray));
     assert_eq!(line.spans[1].content.as_ref(), "[===>]");
