@@ -37,9 +37,9 @@ fn summarizes_synthetic_observer_and_manifest() {
             beat_count: 0,
             downbeat_status: "ambiguous".to_string(),
             primary_downbeat_offset_beats: Some(0),
-            primary_downbeat_score: None,
-            primary_downbeat_score_gap: None,
-            alternate_downbeat_phase_count: 0,
+            primary_downbeat_score: Some(0.273),
+            primary_downbeat_score_gap: Some(0.005),
+            alternate_downbeat_phase_count: 3,
             bar_count: 0,
             phrase_status: "uncertain".to_string(),
             phrase_count: 0,
@@ -118,6 +118,9 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert!(markdown.contains(
         "Observer source timing: `src-timing cue=needs confirm actionability=confirm grid first grid_use=manual_confirm_only"
     ));
+    assert!(markdown.contains("downbeat_score=0.273000"));
+    assert!(markdown.contains("downbeat_gap=0.005000"));
+    assert!(markdown.contains("downbeat_alts=3"));
     assert!(markdown.contains("anchors=3(kick=1 backbeat=1 transient=1)"));
     assert!(markdown.contains("anchor_cue=\"anchors 3 | kick+backbeat\""));
     assert!(markdown.contains(
@@ -163,6 +166,18 @@ fn summarizes_synthetic_observer_and_manifest() {
     assert_eq!(
         json["control_path"]["observer_source_timing"]["primary_downbeat_offset_beats"],
         0
+    );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["primary_downbeat_score"].as_f64(),
+        Some(0.273)
+    );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["primary_downbeat_score_gap"].as_f64(),
+        Some(0.005)
+    );
+    assert_eq!(
+        json["control_path"]["observer_source_timing"]["alternate_downbeat_phase_count"].as_u64(),
+        Some(3)
     );
     assert_eq!(
         json["control_path"]["observer_source_timing"]["phrase_status"],
@@ -249,7 +264,7 @@ fn summarizes_synthetic_observer_and_manifest() {
 
 fn synthetic_observer() -> String {
     [
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_offset_beats":0,"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{"primary_anchor_count":3,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":1,"primary_transient_anchor_count":1},"primary_anchor_cue":"anchors 3 | kick+backbeat","primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"transport":{},"queue":{},"runtime":{},"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_offset_beats":0,"primary_downbeat_score":0.273,"primary_downbeat_score_gap":0.005,"alternate_downbeat_phase_count":3,"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"anchor_evidence":{"primary_anchor_count":3,"primary_kick_anchor_count":1,"primary_backbeat_anchor_count":1,"primary_transient_anchor_count":1},"primary_anchor_cue":"anchors 3 | kick+backbeat","primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat","phrase_uncertain"]},"recovery":{"present":false,"has_manual_candidates":false,"selected_candidate":null,"candidate_count":0,"candidates":[],"manual_choice_dry_run":null}}}"#,
         r#"{"event":"audio_runtime","status":"started"}"#,
         r#"{"event":"key_outcome","key":"space","outcome":"transport started"}"#,
         r#"{"event":"key_outcome","key":"f","outcome":"queued"}"#,
