@@ -1,5 +1,7 @@
+use super::*;
+
 impl SharedW30PreviewRenderState {
-    fn new(render_state: &W30PreviewRenderState) -> Self {
+    pub(super) fn new(render_state: &W30PreviewRenderState) -> Self {
         let shared = Self {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
@@ -25,7 +27,7 @@ impl SharedW30PreviewRenderState {
         shared
     }
 
-    fn update(&self, render_state: &W30PreviewRenderState) {
+    pub(super) fn update(&self, render_state: &W30PreviewRenderState) {
         self.mode
             .store(w30_mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing
@@ -52,7 +54,7 @@ impl SharedW30PreviewRenderState {
             .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
     }
 
-    fn snapshot(&self) -> RealtimeW30PreviewRenderState {
+    pub(super) fn snapshot(&self) -> RealtimeW30PreviewRenderState {
         RealtimeW30PreviewRenderState {
             mode: w30_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: w30_routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -151,18 +153,18 @@ impl SharedW30PreviewRenderState {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeW30ResampleTapState {
-    mode: W30ResampleTapMode,
-    routing: W30ResampleTapRouting,
-    source_profile: Option<W30ResampleTapSourceProfile>,
-    lineage_capture_count: u8,
-    generation_depth: u8,
-    music_bus_level: f32,
-    grit_level: f32,
-    is_transport_running: bool,
+pub(super) struct RealtimeW30ResampleTapState {
+    pub(super) mode: W30ResampleTapMode,
+    pub(super) routing: W30ResampleTapRouting,
+    pub(super) source_profile: Option<W30ResampleTapSourceProfile>,
+    pub(super) lineage_capture_count: u8,
+    pub(super) generation_depth: u8,
+    pub(super) music_bus_level: f32,
+    pub(super) grit_level: f32,
+    pub(super) is_transport_running: bool,
 }
 
-struct SharedW30ResampleTapState {
+pub(super) struct SharedW30ResampleTapState {
     mode: AtomicU32,
     routing: AtomicU32,
     source_profile: AtomicU32,
@@ -174,7 +176,7 @@ struct SharedW30ResampleTapState {
 }
 
 impl SharedW30ResampleTapState {
-    fn new(render_state: &W30ResampleTapState) -> Self {
+    pub(super) fn new(render_state: &W30ResampleTapState) -> Self {
         let shared = Self {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
@@ -189,7 +191,7 @@ impl SharedW30ResampleTapState {
         shared
     }
 
-    fn update(&self, render_state: &W30ResampleTapState) {
+    pub(super) fn update(&self, render_state: &W30ResampleTapState) {
         self.mode.store(
             w30_resample_mode_to_u32(render_state.mode),
             Ordering::Relaxed,
@@ -216,7 +218,7 @@ impl SharedW30ResampleTapState {
             .store(render_state.is_transport_running, Ordering::Relaxed);
     }
 
-    fn snapshot(&self) -> RealtimeW30ResampleTapState {
+    pub(super) fn snapshot(&self) -> RealtimeW30ResampleTapState {
         RealtimeW30ResampleTapState {
             mode: w30_resample_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: w30_resample_routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -279,66 +281,66 @@ fn w30_resample_source_profile_from_u32(value: u32) -> Option<W30ResampleTapSour
 }
 
 #[derive(Debug, Default)]
-struct Tr909CallbackState {
-    beat_position: f64,
-    oscillator_phase: f32,
-    oscillator_hz: f32,
-    envelope: f32,
-    last_step: i64,
-    was_running: bool,
+pub(super) struct Tr909CallbackState {
+    pub(super) beat_position: f64,
+    pub(super) oscillator_phase: f32,
+    pub(super) oscillator_hz: f32,
+    pub(super) envelope: f32,
+    pub(super) last_step: i64,
+    pub(super) was_running: bool,
 }
 
 #[derive(Debug, Default)]
-struct TransportTimingCallbackState {
-    beat_position: f64,
-    was_running: bool,
+pub(super) struct TransportTimingCallbackState {
+    pub(super) beat_position: f64,
+    pub(super) was_running: bool,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct CallbackTimingSnapshot {
-    is_transport_running: bool,
-    tempo_bpm: f32,
-    render_position_beats: f64,
-    completed_position_beats: f64,
+pub(super) struct CallbackTimingSnapshot {
+    pub(super) is_transport_running: bool,
+    pub(super) tempo_bpm: f32,
+    pub(super) render_position_beats: f64,
+    pub(super) completed_position_beats: f64,
 }
 
 #[derive(Debug, Default)]
-struct W30PreviewCallbackState {
-    beat_position: f64,
-    oscillator_phase: f32,
-    lfo_phase: f32,
-    source_sample_cursor: f32,
-    pad_playback_cursor: f32,
-    last_source_window_signature: u64,
-    last_pad_playback_signature: u64,
-    envelope: f32,
-    last_step: i64,
-    last_trigger_revision: u64,
-    was_active: bool,
-    last_mode: Option<W30PreviewRenderMode>,
-    last_routing: Option<W30PreviewRenderRouting>,
-    last_source_profile: Option<W30PreviewSourceProfile>,
-    last_music_bus_level: f32,
-    last_grit_level: f32,
-    last_transport_running: bool,
-    last_position_beats: f64,
+pub(super) struct W30PreviewCallbackState {
+    pub(super) beat_position: f64,
+    pub(super) oscillator_phase: f32,
+    pub(super) lfo_phase: f32,
+    pub(super) source_sample_cursor: f32,
+    pub(super) pad_playback_cursor: f32,
+    pub(super) last_source_window_signature: u64,
+    pub(super) last_pad_playback_signature: u64,
+    pub(super) envelope: f32,
+    pub(super) last_step: i64,
+    pub(super) last_trigger_revision: u64,
+    pub(super) was_active: bool,
+    pub(super) last_mode: Option<W30PreviewRenderMode>,
+    pub(super) last_routing: Option<W30PreviewRenderRouting>,
+    pub(super) last_source_profile: Option<W30PreviewSourceProfile>,
+    pub(super) last_music_bus_level: f32,
+    pub(super) last_grit_level: f32,
+    pub(super) last_transport_running: bool,
+    pub(super) last_position_beats: f64,
 }
 
 #[derive(Debug, Default)]
-struct W30ResampleTapCallbackState {
-    beat_position: f64,
-    oscillator_phase: f32,
-    shimmer_phase: f32,
-    envelope: f32,
-    last_step: i64,
-    was_active: bool,
+pub(super) struct W30ResampleTapCallbackState {
+    pub(super) beat_position: f64,
+    pub(super) oscillator_phase: f32,
+    pub(super) shimmer_phase: f32,
+    pub(super) envelope: f32,
+    pub(super) last_step: i64,
+    pub(super) was_active: bool,
 }
 
-struct W30MixRenderState<'a> {
-    preview_render: &'a RealtimeW30PreviewRenderState,
-    preview_state: &'a mut W30PreviewCallbackState,
-    resample_render: &'a RealtimeW30ResampleTapState,
-    resample_state: &'a mut W30ResampleTapCallbackState,
+pub(super) struct W30MixRenderState<'a> {
+    pub(super) preview_render: &'a RealtimeW30PreviewRenderState,
+    pub(super) preview_state: &'a mut W30PreviewCallbackState,
+    pub(super) resample_render: &'a RealtimeW30ResampleTapState,
+    pub(super) resample_state: &'a mut W30ResampleTapCallbackState,
 }
 
 fn sync_w30_preview_state(
@@ -355,7 +357,7 @@ fn sync_w30_preview_state(
     state.last_position_beats = render.position_beats;
 }
 
-fn render_mix_buffer(
+pub(super) fn render_mix_buffer(
     data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
@@ -384,7 +386,7 @@ fn render_mix_buffer(
     );
 }
 
-fn advance_transport_timing(
+pub(super) fn advance_transport_timing(
     control: &RealtimeTransportTimingState,
     state: &mut TransportTimingCallbackState,
     sample_rate: u32,
@@ -419,4 +421,3 @@ fn advance_transport_timing(
         completed_position_beats,
     }
 }
-

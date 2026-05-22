@@ -1,4 +1,6 @@
-fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f32 {
+use super::*;
+
+pub(super) fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f32 {
     let base = match render.source_profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 196.0,
         Some(W30PreviewSourceProfile::PromotedRecall) | None => 261.63,
@@ -42,7 +44,7 @@ fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f
     base + step_offset + grit_offset
 }
 
-fn w30_preview_waveform(phase: f32, grit_level: f32) -> f32 {
+pub(super) fn w30_preview_waveform(phase: f32, grit_level: f32) -> f32 {
     let sine = (std::f32::consts::TAU * phase).sin();
     let overtone = (std::f32::consts::TAU * phase * 2.0).sin();
     let grit = grit_level.clamp(0.0, 1.0);
@@ -51,7 +53,10 @@ fn w30_preview_waveform(phase: f32, grit_level: f32) -> f32 {
     ((blended * quant_steps).round() / quant_steps).clamp(-1.0, 1.0)
 }
 
-fn w30_render_gain(render: &RealtimeW30PreviewRenderState, transport_running: bool) -> f32 {
+pub(super) fn w30_render_gain(
+    render: &RealtimeW30PreviewRenderState,
+    transport_running: bool,
+) -> f32 {
     let base = match render.mode {
         W30PreviewRenderMode::Idle => 0.0,
         W30PreviewRenderMode::LiveRecall => 0.12,
@@ -74,7 +79,7 @@ fn w30_render_gain(render: &RealtimeW30PreviewRenderState, transport_running: bo
         .clamp(0.0, 0.28)
 }
 
-fn w30_envelope_decay(render: &RealtimeW30PreviewRenderState) -> f32 {
+pub(super) fn w30_envelope_decay(render: &RealtimeW30PreviewRenderState) -> f32 {
     let base = match render.mode {
         W30PreviewRenderMode::Idle => 0.0,
         W30PreviewRenderMode::LiveRecall => 0.99983,
@@ -92,11 +97,11 @@ fn w30_envelope_decay(render: &RealtimeW30PreviewRenderState) -> f32 {
     (base + profile_offset - grit_offset).clamp(0.0, 1.0)
 }
 
-fn w30_preview_idle_bpm(render: &RealtimeW30PreviewRenderState) -> f32 {
+pub(super) fn w30_preview_idle_bpm(render: &RealtimeW30PreviewRenderState) -> f32 {
     render.tempo_bpm.max(92.0)
 }
 
-const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
+pub(super) const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
     let base = if let Some(adoption) = render.pattern_adoption {
         match adoption {
             Tr909PatternAdoption::SupportPulse => 1,
@@ -144,7 +149,7 @@ const fn render_subdivision(render: &RealtimeTr909RenderState) -> u32 {
     }
 }
 
-fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
+pub(super) fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
     let base = if let Some(adoption) = render.pattern_adoption {
         match adoption {
             Tr909PatternAdoption::SupportPulse => step % 2 == 0,
@@ -176,7 +181,7 @@ fn should_trigger_step(render: &RealtimeTr909RenderState, step: i64) -> bool {
     }
 }
 
-fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
+pub(super) fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
     let base = match render.routing {
         Tr909RenderRouting::SourceOnly => 0.0,
         Tr909RenderRouting::DrumBusSupport => 0.22,
@@ -220,7 +225,7 @@ fn trigger_envelope(render: &RealtimeTr909RenderState) -> f32 {
         .clamp(0.0, 0.8)
 }
 
-fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
+pub(super) fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
     let accent = match render.pattern_adoption {
         Some(Tr909PatternAdoption::SupportPulse) | None => {
             if step % 2 == 0 {
@@ -271,7 +276,7 @@ fn trigger_frequency(render: &RealtimeTr909RenderState, step: i64) -> f32 {
     }
 }
 
-fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
+pub(super) fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
     let routing_gain = match render.routing {
         Tr909RenderRouting::SourceOnly => 0.0,
         Tr909RenderRouting::DrumBusSupport => 0.12,
@@ -299,4 +304,3 @@ fn render_gain(render: &RealtimeTr909RenderState) -> f32 {
         * render.drum_bus_level.clamp(0.0, 1.0))
     .clamp(0.0, 0.25)
 }
-

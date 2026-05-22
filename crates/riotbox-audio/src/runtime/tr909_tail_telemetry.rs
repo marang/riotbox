@@ -1,4 +1,6 @@
-fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
+use super::*;
+
+pub(super) fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
     let slam = render.slam_intensity.clamp(0.0, 1.0);
     let base = match render.mode {
         Tr909RenderMode::Idle => 0.0,
@@ -28,7 +30,7 @@ fn envelope_decay(render: &RealtimeTr909RenderState) -> f32 {
     (base - pattern_decay - phrase_decay).clamp(0.0, 1.0)
 }
 
-const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {
+pub(super) const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {
     match mode {
         Tr909RenderMode::Idle => 0,
         Tr909RenderMode::SourceSupport => 1,
@@ -38,7 +40,7 @@ const fn mode_to_u32(mode: Tr909RenderMode) -> u32 {
     }
 }
 
-const fn mode_from_u32(value: u32) -> Tr909RenderMode {
+pub(super) const fn mode_from_u32(value: u32) -> Tr909RenderMode {
     match value {
         1 => Tr909RenderMode::SourceSupport,
         2 => Tr909RenderMode::Fill,
@@ -48,7 +50,7 @@ const fn mode_from_u32(value: u32) -> Tr909RenderMode {
     }
 }
 
-const fn routing_to_u32(routing: Tr909RenderRouting) -> u32 {
+pub(super) const fn routing_to_u32(routing: Tr909RenderRouting) -> u32 {
     match routing {
         Tr909RenderRouting::SourceOnly => 0,
         Tr909RenderRouting::DrumBusSupport => 1,
@@ -56,7 +58,7 @@ const fn routing_to_u32(routing: Tr909RenderRouting) -> u32 {
     }
 }
 
-const fn routing_from_u32(value: u32) -> Tr909RenderRouting {
+pub(super) const fn routing_from_u32(value: u32) -> Tr909RenderRouting {
     match value {
         1 => Tr909RenderRouting::DrumBusSupport,
         2 => Tr909RenderRouting::DrumBusTakeover,
@@ -64,7 +66,7 @@ const fn routing_from_u32(value: u32) -> Tr909RenderRouting {
     }
 }
 
-const fn support_profile_to_u32(profile: Option<Tr909SourceSupportProfile>) -> u32 {
+pub(super) const fn support_profile_to_u32(profile: Option<Tr909SourceSupportProfile>) -> u32 {
     match profile {
         None => 0,
         Some(Tr909SourceSupportProfile::SteadyPulse) => 1,
@@ -73,7 +75,7 @@ const fn support_profile_to_u32(profile: Option<Tr909SourceSupportProfile>) -> u
     }
 }
 
-const fn support_profile_from_u32(value: u32) -> Option<Tr909SourceSupportProfile> {
+pub(super) const fn support_profile_from_u32(value: u32) -> Option<Tr909SourceSupportProfile> {
     match value {
         1 => Some(Tr909SourceSupportProfile::SteadyPulse),
         2 => Some(Tr909SourceSupportProfile::BreakLift),
@@ -82,7 +84,7 @@ const fn support_profile_from_u32(value: u32) -> Option<Tr909SourceSupportProfil
     }
 }
 
-const fn support_context_to_u32(context: Option<Tr909SourceSupportContext>) -> u32 {
+pub(super) const fn support_context_to_u32(context: Option<Tr909SourceSupportContext>) -> u32 {
     match context {
         None => 0,
         Some(Tr909SourceSupportContext::SceneTarget) => 1,
@@ -90,7 +92,7 @@ const fn support_context_to_u32(context: Option<Tr909SourceSupportContext>) -> u
     }
 }
 
-const fn support_context_from_u32(value: u32) -> Option<Tr909SourceSupportContext> {
+pub(super) const fn support_context_from_u32(value: u32) -> Option<Tr909SourceSupportContext> {
     match value {
         1 => Some(Tr909SourceSupportContext::SceneTarget),
         2 => Some(Tr909SourceSupportContext::TransportBar),
@@ -98,7 +100,7 @@ const fn support_context_from_u32(value: u32) -> Option<Tr909SourceSupportContex
     }
 }
 
-const fn pattern_adoption_to_u32(pattern: Option<Tr909PatternAdoption>) -> u32 {
+pub(super) const fn pattern_adoption_to_u32(pattern: Option<Tr909PatternAdoption>) -> u32 {
     match pattern {
         None => 0,
         Some(Tr909PatternAdoption::SupportPulse) => 1,
@@ -107,7 +109,7 @@ const fn pattern_adoption_to_u32(pattern: Option<Tr909PatternAdoption>) -> u32 {
     }
 }
 
-const fn pattern_adoption_from_u32(value: u32) -> Option<Tr909PatternAdoption> {
+pub(super) const fn pattern_adoption_from_u32(value: u32) -> Option<Tr909PatternAdoption> {
     match value {
         1 => Some(Tr909PatternAdoption::SupportPulse),
         2 => Some(Tr909PatternAdoption::MainlineDrive),
@@ -116,7 +118,7 @@ const fn pattern_adoption_from_u32(value: u32) -> Option<Tr909PatternAdoption> {
     }
 }
 
-const fn phrase_variation_to_u32(variation: Option<Tr909PhraseVariation>) -> u32 {
+pub(super) const fn phrase_variation_to_u32(variation: Option<Tr909PhraseVariation>) -> u32 {
     match variation {
         None => 0,
         Some(Tr909PhraseVariation::PhraseAnchor) => 1,
@@ -126,7 +128,7 @@ const fn phrase_variation_to_u32(variation: Option<Tr909PhraseVariation>) -> u32
     }
 }
 
-const fn phrase_variation_from_u32(value: u32) -> Option<Tr909PhraseVariation> {
+pub(super) const fn phrase_variation_from_u32(value: u32) -> Option<Tr909PhraseVariation> {
     match value {
         1 => Some(Tr909PhraseVariation::PhraseAnchor),
         2 => Some(Tr909PhraseVariation::PhraseLift),
@@ -136,7 +138,7 @@ const fn phrase_variation_from_u32(value: u32) -> Option<Tr909PhraseVariation> {
     }
 }
 
-const fn takeover_profile_to_u32(profile: Option<Tr909TakeoverRenderProfile>) -> u32 {
+pub(super) const fn takeover_profile_to_u32(profile: Option<Tr909TakeoverRenderProfile>) -> u32 {
     match profile {
         None => 0,
         Some(Tr909TakeoverRenderProfile::ControlledPhrase) => 1,
@@ -144,7 +146,7 @@ const fn takeover_profile_to_u32(profile: Option<Tr909TakeoverRenderProfile>) ->
     }
 }
 
-const fn takeover_profile_from_u32(value: u32) -> Option<Tr909TakeoverRenderProfile> {
+pub(super) const fn takeover_profile_from_u32(value: u32) -> Option<Tr909TakeoverRenderProfile> {
     match value {
         1 => Some(Tr909TakeoverRenderProfile::ControlledPhrase),
         2 => Some(Tr909TakeoverRenderProfile::SceneLock),
@@ -152,7 +154,7 @@ const fn takeover_profile_from_u32(value: u32) -> Option<Tr909TakeoverRenderProf
     }
 }
 
-const fn w30_mode_to_u32(mode: W30PreviewRenderMode) -> u32 {
+pub(super) const fn w30_mode_to_u32(mode: W30PreviewRenderMode) -> u32 {
     match mode {
         W30PreviewRenderMode::Idle => 0,
         W30PreviewRenderMode::LiveRecall => 1,
@@ -161,7 +163,7 @@ const fn w30_mode_to_u32(mode: W30PreviewRenderMode) -> u32 {
     }
 }
 
-const fn w30_mode_from_u32(value: u32) -> W30PreviewRenderMode {
+pub(super) const fn w30_mode_from_u32(value: u32) -> W30PreviewRenderMode {
     match value {
         1 => W30PreviewRenderMode::LiveRecall,
         2 => W30PreviewRenderMode::RawCaptureAudition,
@@ -170,21 +172,21 @@ const fn w30_mode_from_u32(value: u32) -> W30PreviewRenderMode {
     }
 }
 
-const fn w30_routing_to_u32(routing: W30PreviewRenderRouting) -> u32 {
+pub(super) const fn w30_routing_to_u32(routing: W30PreviewRenderRouting) -> u32 {
     match routing {
         W30PreviewRenderRouting::Silent => 0,
         W30PreviewRenderRouting::MusicBusPreview => 1,
     }
 }
 
-const fn w30_routing_from_u32(value: u32) -> W30PreviewRenderRouting {
+pub(super) const fn w30_routing_from_u32(value: u32) -> W30PreviewRenderRouting {
     match value {
         1 => W30PreviewRenderRouting::MusicBusPreview,
         _ => W30PreviewRenderRouting::Silent,
     }
 }
 
-const fn w30_source_profile_to_u32(profile: Option<W30PreviewSourceProfile>) -> u32 {
+pub(super) const fn w30_source_profile_to_u32(profile: Option<W30PreviewSourceProfile>) -> u32 {
     match profile {
         Some(W30PreviewSourceProfile::PinnedRecall) => 1,
         Some(W30PreviewSourceProfile::PromotedRecall) => 2,
@@ -195,7 +197,7 @@ const fn w30_source_profile_to_u32(profile: Option<W30PreviewSourceProfile>) -> 
     }
 }
 
-const fn w30_source_profile_from_u32(value: u32) -> Option<W30PreviewSourceProfile> {
+pub(super) const fn w30_source_profile_from_u32(value: u32) -> Option<W30PreviewSourceProfile> {
     match value {
         1 => Some(W30PreviewSourceProfile::PinnedRecall),
         2 => Some(W30PreviewSourceProfile::PromotedRecall),
@@ -207,15 +209,15 @@ const fn w30_source_profile_from_u32(value: u32) -> Option<W30PreviewSourceProfi
 }
 
 #[derive(Default)]
-struct RuntimeTelemetrySnapshot {
-    callback_count: u64,
-    max_callback_gap_micros: Option<u64>,
-    stream_error_count: u64,
-    last_stream_error: Option<String>,
-    timing: AudioRuntimeTimingSnapshot,
+pub(super) struct RuntimeTelemetrySnapshot {
+    pub(super) callback_count: u64,
+    pub(super) max_callback_gap_micros: Option<u64>,
+    pub(super) stream_error_count: u64,
+    pub(super) last_stream_error: Option<String>,
+    pub(super) timing: AudioRuntimeTimingSnapshot,
 }
 
-struct RuntimeTelemetry {
+pub(super) struct RuntimeTelemetry {
     callback_count: AtomicU64,
     max_callback_gap_micros: AtomicU64,
     last_callback_micros: AtomicU64,
@@ -227,7 +229,7 @@ struct RuntimeTelemetry {
 }
 
 impl RuntimeTelemetry {
-    fn new() -> Self {
+    pub(super) fn new() -> Self {
         Self {
             callback_count: AtomicU64::new(0),
             max_callback_gap_micros: AtomicU64::new(0),
@@ -240,7 +242,7 @@ impl RuntimeTelemetry {
         }
     }
 
-    fn record_callback_at(&self, now_micros: u64, timing: &CallbackTimingSnapshot) {
+    pub(super) fn record_callback_at(&self, now_micros: u64, timing: &CallbackTimingSnapshot) {
         let previous = self
             .last_callback_micros
             .swap(now_micros, Ordering::Relaxed);
@@ -258,7 +260,7 @@ impl RuntimeTelemetry {
             .store(timing.completed_position_beats.to_bits(), Ordering::Relaxed);
     }
 
-    fn record_stream_error(&self, message: String) {
+    pub(super) fn record_stream_error(&self, message: String) {
         self.stream_error_count.fetch_add(1, Ordering::Relaxed);
         *self
             .last_stream_error
@@ -266,7 +268,7 @@ impl RuntimeTelemetry {
             .expect("lock stream error buffer") = Some(message);
     }
 
-    fn snapshot(&self) -> RuntimeTelemetrySnapshot {
+    pub(super) fn snapshot(&self) -> RuntimeTelemetrySnapshot {
         let callback_count = self.callback_count.load(Ordering::Relaxed);
         let max_gap_micros = self.max_callback_gap_micros.load(Ordering::Relaxed);
 
@@ -287,7 +289,7 @@ impl RuntimeTelemetry {
         }
     }
 
-    fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
+    pub(super) fn timing_snapshot(&self) -> AudioRuntimeTimingSnapshot {
         self.snapshot().timing
     }
 }

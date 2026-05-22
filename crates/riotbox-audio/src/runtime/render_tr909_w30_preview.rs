@@ -1,4 +1,6 @@
-fn render_tr909_buffer(
+use super::*;
+
+pub(super) fn render_tr909_buffer(
     data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
@@ -57,7 +59,7 @@ fn render_tr909_buffer(
     }
 }
 
-fn render_w30_preview_buffer(
+pub(super) fn render_w30_preview_buffer(
     data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
@@ -245,7 +247,7 @@ fn w30_pad_playback_signature(render: &RealtimeW30PreviewRenderState) -> u64 {
         .wrapping_add(u64::from(render.pad_playback.loop_enabled))
 }
 
-fn render_w30_resample_tap_buffer(
+pub(super) fn render_w30_resample_tap_buffer(
     data: &mut [f32],
     sample_rate: u32,
     channel_count: usize,
@@ -439,4 +441,3 @@ fn w30_trigger_envelope(render: &RealtimeW30PreviewRenderState) -> f32 {
     };
     (0.32 + mode_boost + profile_boost + render.grit_level.clamp(0.0, 1.0) * 0.18).clamp(0.0, 0.9)
 }
-
