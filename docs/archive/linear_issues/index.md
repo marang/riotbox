@@ -586,4 +586,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split oversized shell state log/source UI tests by surface
 - [RIOTBOX-918.md](./RIOTBOX-918.md)
   Extract Jam footer renderer from screen body shard
+- [RIOTBOX-919.md](./RIOTBOX-919.md)
+  Split post-commit and restore help UI tests
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
