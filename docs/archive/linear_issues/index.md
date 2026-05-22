@@ -628,4 +628,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Assert downbeat ambiguity compatibility in generated Feral-grid gates
 - [RIOTBOX-939.md](./RIOTBOX-939.md)
   Pin generated source-timing phrase evidence in observer/audio gates
+- [RIOTBOX-940.md](./RIOTBOX-940.md)
+  Reject contradictory source-timing phrase evidence in observer/audio summary validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
