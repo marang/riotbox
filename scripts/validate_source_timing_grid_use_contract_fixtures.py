@@ -255,6 +255,16 @@ def apply_timing_fields(target: dict[str, Any], case: GridUseCase) -> None:
     target["confidence_result"] = case.confidence_result
     target["drift_status"] = case.drift_status
     target["phrase_status"] = case.phrase_status
+    if "primary_beat_count" in target:
+        if case.beat_status == "unavailable":
+            target["primary_beat_count"] = 0
+        else:
+            target["primary_beat_count"] = 32 if case.phrase_status == "stable" else 16
+    if "primary_bar_count" in target:
+        if case.downbeat_status == "unavailable":
+            target["primary_bar_count"] = 0
+        else:
+            target["primary_bar_count"] = 8 if case.phrase_status == "stable" else 4
     if case.phrase_status == "stable":
         target["primary_phrase_count"] = 1
         target["primary_phrase_bar_count"] = 8

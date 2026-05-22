@@ -86,13 +86,19 @@ def validate_summary(summary: Any) -> None:
     require_optional_unit_number(summary, "primary_beat_score")
     require_optional_unit_number(summary, "primary_beat_matched_onset_ratio")
     require_optional_unit_number(summary, "primary_beat_median_distance_ratio")
-    require_non_negative_int(summary, "primary_beat_count")
-    require_non_negative_int(summary, "primary_bar_count")
+    primary_beat_count = require_non_negative_int(summary, "primary_beat_count")
+    primary_bar_count = require_non_negative_int(summary, "primary_bar_count")
     require_optional_int(summary, "primary_downbeat_offset_beats")
     require_optional_unit_number(summary, "primary_downbeat_score")
     require_optional_unit_number(summary, "primary_downbeat_margin")
-    require_one_of(summary, "beat_status", {"unavailable", "weak", "stable", "ambiguous"})
-    require_one_of(summary, "downbeat_status", {"unavailable", "weak", "stable", "ambiguous"})
+    beat_status = require_one_of(summary, "beat_status", {"unavailable", "weak", "stable", "ambiguous"})
+    downbeat_status = require_one_of(summary, "downbeat_status", {"unavailable", "weak", "stable", "ambiguous"})
+    validate_beat_bar_counts(
+        beat_status,
+        downbeat_status,
+        primary_beat_count,
+        primary_bar_count,
+    )
     require_one_of(
         summary,
         "confidence_result",
@@ -136,6 +142,24 @@ def validate_anchor_evidence(summary: dict[str, Any]) -> None:
         )
     for index, item in enumerate(preview):
         validate_anchor_preview(require_object(item, f"primary_anchor_preview[{index}]"))
+
+
+def validate_beat_bar_counts(
+    beat_status: str,
+    downbeat_status: str,
+    primary_beat_count: int,
+    primary_bar_count: int,
+) -> None:
+    if beat_status == "stable" and primary_beat_count == 0:
+        raise ValueError("stable beat_status requires positive primary_beat_count")
+    if downbeat_status == "stable" and primary_bar_count == 0:
+        raise ValueError("stable downbeat_status requires positive primary_bar_count")
+    if beat_status == "unavailable" and primary_beat_count != 0:
+        raise ValueError("unavailable beat_status requires zero primary_beat_count")
+    if downbeat_status == "unavailable" and primary_bar_count != 0:
+        raise ValueError("unavailable downbeat_status requires zero primary_bar_count")
+    if primary_bar_count > 0 and primary_beat_count == 0:
+        raise ValueError("positive primary_bar_count requires positive primary_beat_count")
 
 
 def validate_anchor_preview(anchor: dict[str, Any]) -> None:
