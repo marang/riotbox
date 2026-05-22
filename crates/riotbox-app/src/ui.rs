@@ -15,6 +15,8 @@ mod source_timing_panel;
 mod source_trust_summary;
 #[path = "ui/capture_log_source_lists/w30_cue_labels.rs"]
 mod w30_cue_labels;
+#[path = "ui/diagnostics_mc202_w30_logs/w30_preview.rs"]
+mod w30_preview_labels;
 #[path = "ui/w30_capture_source_helpers/slice_pool.rs"]
 mod w30_slice_pool_helpers;
 
@@ -56,6 +58,9 @@ use source_trust_summary::{
     source_warning_lines, trust_summary,
 };
 use w30_cue_labels::{last_committed_w30_action, short_w30_action_label, w30_pending_cue_label};
+use w30_preview_labels::{
+    w30_preview_log_compact, w30_preview_mode_profile_compact, w30_preview_source_readiness,
+};
 use w30_slice_pool_helpers::{
     w30_slice_pool_compact, w30_slice_pool_log_compact, w30_slice_pool_relevant,
 };

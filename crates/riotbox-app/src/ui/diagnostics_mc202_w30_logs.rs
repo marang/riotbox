@@ -211,104 +211,6 @@ fn w30_log_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
-fn w30_preview_mode_profile_compact(shell: &JamShellState) -> String {
-    let render = &shell.app.runtime.w30_preview;
-    let mode = match render.mode {
-        W30PreviewRenderMode::Idle => "idle",
-        W30PreviewRenderMode::LiveRecall => "recall",
-        W30PreviewRenderMode::RawCaptureAudition => "audition raw",
-        W30PreviewRenderMode::PromotedAudition => "audition",
-    };
-    let profile = match render.source_profile {
-        None => "unset",
-        Some(riotbox_audio::w30::W30PreviewSourceProfile::PinnedRecall) => "pinned",
-        Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedRecall) => "promoted",
-        Some(riotbox_audio::w30::W30PreviewSourceProfile::SlicePoolBrowse) => "browse",
-        Some(riotbox_audio::w30::W30PreviewSourceProfile::RawCaptureAudition) => "raw",
-        Some(riotbox_audio::w30::W30PreviewSourceProfile::PromotedAudition) => "audition",
-    };
-
-    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
-        return format!(
-            "{mode}/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
-        );
-    }
-
-    if matches!(render.mode, W30PreviewRenderMode::PromotedAudition) {
-        return format!(
-            "{mode}/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
-        );
-    }
-
-    if matches!(render.mode, W30PreviewRenderMode::LiveRecall) {
-        return format!(
-            "{mode}/{profile}/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
-        );
-    }
-
-    format!("{mode}/{profile}")
-}
-
-fn w30_preview_log_compact(shell: &JamShellState) -> String {
-    let render = &shell.app.runtime.w30_preview;
-    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
-        return format!(
-            "raw/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
-        );
-    }
-
-    if matches!(render.mode, W30PreviewRenderMode::PromotedAudition) {
-        return format!(
-            "audition/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
-        );
-    }
-
-    if matches!(render.mode, W30PreviewRenderMode::LiveRecall) {
-        return format!(
-            "recall/{}",
-            w30_preview_source_suffix(render).unwrap_or("fallback")
-        );
-    }
-
-    w30_preview_mode_profile_compact(shell)
-}
-
-fn w30_preview_source_suffix(
-    render: &riotbox_audio::w30::W30PreviewRenderState,
-) -> Option<&'static str> {
-    if matches!(render.mode, W30PreviewRenderMode::Idle) {
-        return None;
-    }
-
-    if render.source_window_preview.is_some() {
-        Some("src")
-    } else {
-        Some("fallback")
-    }
-}
-
-fn w30_preview_source_readiness(shell: &JamShellState) -> Option<&'static str> {
-    let render = &shell.app.runtime.w30_preview;
-    if matches!(render.mode, W30PreviewRenderMode::RawCaptureAudition) {
-        return match w30_preview_source_suffix(render)? {
-            "src" => Some("source-backed"),
-            "fallback" => Some("fallback"),
-            _ => None,
-        };
-    }
-
-    if render.source_window_preview.is_some() {
-        Some("source-backed")
-    } else {
-        None
-    }
-}
-
 fn w30_target_compact(shell: &JamShellState) -> String {
     format!(
         "{}/{}",
@@ -440,4 +342,3 @@ fn w30_resample_mix_log_compact(shell: &JamShellState) -> String {
         shell.app.runtime.w30_resample_tap.grit_level
     )
 }
-
