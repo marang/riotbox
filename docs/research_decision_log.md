@@ -1526,3 +1526,17 @@ Why: the broad TUI review found no immediate product-spine or audio/replay block
 Evidence: `docs/reviews/p015_tui_module_ownership_review_2026-05-22.md` reviewed `crates/riotbox-app/src/ui` after RIOTBOX-920 through RIOTBOX-922 and identified the next bounded slices.
 Consequences: P015 TUI cleanup should keep using normal Linear/branch/PR/CI/archive slices. Future splits should name real ownership boundaries and avoid mechanical file churn.
 Status: accepted
+
+---
+
+### RBX-036
+
+Date: 2026-05-22
+Topic: P012 compact proof surfaces should keep generated phrase evidence visible
+Phase: Source Timing Intelligence / Audio QA
+Question: after generated Feral-grid proof surfaces gained cue/action, downbeat ambiguity, anchor alignment, and groove alignment, what remaining timing evidence should be surfaced next?
+Decision: add generated-path phrase count and phrase-bar evidence to the compact P012 Markdown summary after the equivalent generated TSV index surface lands.
+Why: the Source Timing spec requires observer/audio summaries to preserve phrase count and phrase-bar evidence so QA can distinguish no phrase grid, short-loop material, and stable preliminary phrase evidence without reopening manifests. The Markdown phase proof now exposes most generated-path timing evidence but still hides phrase counts in JSON.
+Evidence: `docs/reviews/p012_proof_surface_review_2026-05-22.md` found no blocker after `RIOTBOX-946` through `RIOTBOX-950`, but identified the remaining Markdown phrase-evidence gap as the next bounded implementation slice.
+Consequences: this is display/validator work only. It must not change analyzer behavior or treat bounded generated phrase evidence as production-grade arbitrary-audio phrase detection.
+Status: accepted
