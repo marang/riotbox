@@ -9,6 +9,8 @@ mod footer_renderer;
 #[path = "ui/jam_landed_warnings_source/scene_commit_cues.rs"]
 mod jam_scene_commit_cues;
 mod recovery_prompt;
+#[path = "ui/scene_timing_rail/labels.rs"]
+mod scene_timing_labels;
 mod source_timing_panel;
 mod source_trust_summary;
 #[path = "ui/capture_log_source_lists/w30_cue_labels.rs"]
@@ -36,6 +38,14 @@ use jam_scene_commit_cues::{
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
 #[cfg(test)]
 use riotbox_core::view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView};
+use scene_timing_labels::{
+    compact_energy_delta_label, compact_scene_label, current_scene_compact_label,
+    current_scene_target_compact_label, energy_delta_label, next_action_line,
+    next_scene_jump_suggestion, next_scene_target_compact_label, now_line,
+    quantization_boundary_label, restore_scene_energy_direction_label, restore_scene_label,
+    restore_scene_now_compact_label, restore_scene_target_compact_label,
+    scene_energy_label_for_scene_id, scene_restore_contrast_line,
+};
 use source_timing_panel::source_timing_lines;
 use source_trust_summary::{
     energy_label, source_candidate_lines, source_confidence_lines, source_provenance_lines,
