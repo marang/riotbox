@@ -624,4 +624,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Pin Beat20 real-source downbeat ambiguity proof fields
 - [RIOTBOX-937.md](./RIOTBOX-937.md)
   Validate observer/audio downbeat ambiguity alignment JSON
+- [RIOTBOX-938.md](./RIOTBOX-938.md)
+  Assert downbeat ambiguity compatibility in generated Feral-grid gates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
