@@ -51,6 +51,9 @@ struct SourceTimingEvidence {
     beat_status: String,
     downbeat_status: String,
     primary_downbeat_offset_beats: Option<u64>,
+    primary_downbeat_score: Option<f64>,
+    primary_downbeat_margin: Option<f64>,
+    alternate_downbeat_phase_count: Option<u64>,
     confidence_result: String,
     drift_status: String,
     phrase_status: String,
@@ -275,6 +278,27 @@ fn collect_source_timing(manifest: &Value) -> (Option<SourceTimingEvidence>, boo
             },
             None => return (None, true),
         },
+        primary_downbeat_score: match optional_manifest_source_timing_f64(
+            source_timing,
+            "primary_downbeat_score",
+        ) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
+        },
+        primary_downbeat_margin: match optional_manifest_source_timing_f64(
+            source_timing,
+            "primary_downbeat_margin",
+        ) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
+        },
+        alternate_downbeat_phase_count: match optional_manifest_source_timing_u64(
+            source_timing,
+            "alternate_downbeat_phase_count",
+        ) {
+            Ok(value) => value,
+            Err(()) => return (None, true),
+        },
         confidence_result: match source_timing_string(source_timing, "confidence_result") {
             Some(value) => value,
             None => return (None, true),
@@ -328,6 +352,28 @@ fn optional_source_timing_string(source_timing: &Value, field: &str) -> Result<O
             .filter(|value| !value.is_empty())
             .map(|value| Some(value.to_string()))
             .ok_or(()),
+        None => Ok(None),
+    }
+}
+
+fn optional_manifest_source_timing_f64(
+    source_timing: &Value,
+    field: &str,
+) -> Result<Option<f64>, ()> {
+    match source_timing.get(field) {
+        Some(value) if value.is_null() => Ok(None),
+        Some(value) => value.as_f64().map(Some).ok_or(()),
+        None => Ok(None),
+    }
+}
+
+fn optional_manifest_source_timing_u64(
+    source_timing: &Value,
+    field: &str,
+) -> Result<Option<u64>, ()> {
+    match source_timing.get(field) {
+        Some(value) if value.is_null() => Ok(None),
+        Some(value) => value.as_u64().map(Some).ok_or(()),
         None => Ok(None),
     }
 }

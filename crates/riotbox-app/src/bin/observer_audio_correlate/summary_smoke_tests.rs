@@ -127,6 +127,9 @@ fn summarizes_synthetic_observer_and_manifest() {
         "Source timing readiness: `needs confirm actionability=confirm grid first readiness=weak"
     ));
     assert!(markdown.contains("Source timing grid use: `manual_confirm_only`"));
+    assert!(markdown.contains(
+        "Source timing downbeat: `ambiguous offset=0 score=0.273000 margin=0.005000 alts=3`"
+    ));
     assert!(markdown.contains("Control path present: `yes`"));
     assert!(markdown.contains("Output path present: `yes`"));
     assert!(markdown.contains("Output path issues: `none`"));
@@ -225,6 +228,18 @@ fn summarizes_synthetic_observer_and_manifest() {
         8
     );
     assert_eq!(
+        json["output_path"]["source_timing"]["primary_downbeat_score"].as_f64(),
+        Some(0.273)
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["primary_downbeat_margin"].as_f64(),
+        Some(0.005)
+    );
+    assert_eq!(
+        json["output_path"]["source_timing"]["alternate_downbeat_phase_count"].as_u64(),
+        Some(3)
+    );
+    assert_eq!(
         json["control_path"]["observer_source_timing"]["warning_codes"][1],
         "phrase_uncertain"
     );
@@ -295,6 +310,9 @@ fn synthetic_manifest() -> String {
     "beat_status": "stable",
     "downbeat_status": "ambiguous",
     "primary_downbeat_offset_beats": 0,
+    "primary_downbeat_score": 0.273,
+    "primary_downbeat_margin": 0.005,
+    "alternate_downbeat_phase_count": 3,
     "confidence_result": "candidate_ambiguous",
     "drift_status": "stable",
     "phrase_status": "ambiguous_downbeat",
