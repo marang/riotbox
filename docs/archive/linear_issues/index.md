@@ -644,4 +644,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface generated Feral-grid action cues in P012 proof summary
 - [RIOTBOX-947.md](./RIOTBOX-947.md)
   Add downbeat ambiguity compatibility to generated Feral-grid summary index
+- [RIOTBOX-948.md](./RIOTBOX-948.md)
+  Show downbeat ambiguity compatibility in P012 proof summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
