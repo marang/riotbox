@@ -640,4 +640,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Pin generated source-timing cue and actionability gates
 - [RIOTBOX-945.md](./RIOTBOX-945.md)
   Write compact generated Feral-grid source-timing summary index
+- [RIOTBOX-946.md](./RIOTBOX-946.md)
+  Surface generated Feral-grid action cues in P012 proof summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
