@@ -656,4 +656,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review P012 proof surfaces after generated evidence hardening
 - [RIOTBOX-953.md](./RIOTBOX-953.md)
   Show generated phrase evidence in P012 proof summary
+- [RIOTBOX-954.md](./RIOTBOX-954.md)
+  Show bar-grid count in Source Timing panel
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
