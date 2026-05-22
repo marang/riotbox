@@ -1,8 +1,12 @@
 use std::path::Path;
 
-use crate::jam_app::RecoveryCandidateTrust;
+use ratatui::text::Line;
 
-fn recovery_warning_line(shell: &JamShellState) -> Option<String> {
+use crate::jam_app::{RecoveryCandidateTrust, SessionRecoverySurface};
+
+use super::{JamShellState, compact_restore_replay_label};
+
+pub(super) fn recovery_warning_line(shell: &JamShellState) -> Option<String> {
     let surface = shell.recovery_surface.as_ref()?;
     if !surface.has_manual_candidates() {
         return None;
@@ -13,7 +17,7 @@ fn recovery_warning_line(shell: &JamShellState) -> Option<String> {
     ))
 }
 
-fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
+pub(super) fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
     let surface = shell.recovery_surface.as_ref()?;
     if !surface.has_manual_candidates() {
         return None;
@@ -80,7 +84,7 @@ fn recovery_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
     Some(lines)
 }
 
-fn manual_choice_guide_lines(surface: &crate::jam_app::SessionRecoverySurface) -> Option<Vec<String>> {
+fn manual_choice_guide_lines(surface: &SessionRecoverySurface) -> Option<Vec<String>> {
     let candidate = surface
         .candidates
         .iter()
@@ -96,8 +100,14 @@ fn manual_choice_guide_lines(surface: &crate::jam_app::SessionRecoverySurface) -
             "Review candidate: {file} | {decision} | {}",
             candidate.status_label
         ),
-        format!("Replay/artifacts: {replay} | {artifact} | {}", candidate.payload_readiness_label),
-        format!("Dry-run result: {} | no restore selected", dry_run.safety_note),
+        format!(
+            "Replay/artifacts: {replay} | {artifact} | {}",
+            candidate.payload_readiness_label
+        ),
+        format!(
+            "Dry-run result: {} | no restore selected",
+            dry_run.safety_note
+        ),
         "Next: inspect that file outside Riotbox; restart with --session only if you choose it."
             .into(),
     ])
