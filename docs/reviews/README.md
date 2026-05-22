@@ -25,3 +25,10 @@ point-in-time evidence, not as automatically current backlog. If an external
 review cites source-level risks that are partly stale, capture a refresh note
 that separates the still-valid engineering risk from the already-shipped or
 superseded wording before creating Linear tickets.
+
+Current module-ownership refreshes:
+
+- `external_review_refresh_2026-05-22.md`: external-review freshness check for
+  `jam_app`, audio QA, and runtime ownership findings.
+- `tui_include_shell_audit_2026-05-22.md`: TUI include-shell audit and
+  leaf-first module-conversion recommendation.
