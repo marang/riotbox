@@ -666,4 +666,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Evaluate Source Timing grid counts from primary hypothesis
 - [RIOTBOX-958.md](./RIOTBOX-958.md)
   Expose beat/bar counts in Source Timing example probe report
+- [RIOTBOX-959.md](./RIOTBOX-959.md)
+  Validate Source Timing probe beat/bar count consistency
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
