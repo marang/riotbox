@@ -57,12 +57,22 @@ fn source_timing_grid_readiness_line(
     timing: &riotbox_core::view::jam::SourceTimingSummaryView,
 ) -> Line<'static> {
     Line::from(format!(
-        "beat {} | downbeat {} offset {} | phrase {}",
+        "beat {} | downbeat {} off {} | phrase {}",
         source_timing_beat_display_label(timing),
         source_timing_status_display_label(&timing.downbeat_status),
         downbeat_offset_label(timing),
-        source_timing_status_display_label(&timing.phrase_status)
+        source_timing_phrase_display_label(timing)
     ))
+}
+
+fn source_timing_phrase_display_label(
+    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
+) -> String {
+    format!(
+        "{}({})",
+        source_timing_status_display_label(&timing.phrase_status),
+        timing.phrase_count
+    )
 }
 
 fn downbeat_offset_label(timing: &riotbox_core::view::jam::SourceTimingSummaryView) -> String {
