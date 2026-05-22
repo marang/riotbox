@@ -654,4 +654,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add phrase evidence to generated Feral-grid summary index
 - [RIOTBOX-952.md](./RIOTBOX-952.md)
   Review P012 proof surfaces after generated evidence hardening
+- [RIOTBOX-953.md](./RIOTBOX-953.md)
+  Show generated phrase evidence in P012 proof summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
