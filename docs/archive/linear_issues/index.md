@@ -610,4 +610,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review current P012 real-source timing confidence rows
 - [RIOTBOX-930.md](./RIOTBOX-930.md)
   Surface downbeat ambiguity in shared Source Timing summary
+- [RIOTBOX-931.md](./RIOTBOX-931.md)
+  Validate Source Timing downbeat ambiguity observer fields
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
