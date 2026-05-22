@@ -670,4 +670,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Validate Source Timing probe beat/bar count consistency
 - [RIOTBOX-960.md](./RIOTBOX-960.md)
   Validate observer/audio source timing count consistency
+- [RIOTBOX-961.md](./RIOTBOX-961.md)
+  Make Source Timing grid-use fixture beat/bar counts explicit
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
