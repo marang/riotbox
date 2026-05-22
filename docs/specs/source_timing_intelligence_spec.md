@@ -836,6 +836,10 @@ bounded BPM policy:
   `bar_count`, `phrase_status`, and `phrase_count`, so QA can distinguish
   tempo-only, ambiguous-downbeat, and phrase-uncertain states without scraping
   TUI text.
+- observer/audio summary validators should reject contradictory compact
+  observer-side count evidence, such as grid/bar-locked statuses without
+  positive beat/bar counts or phrase-locked status without positive bar and
+  phrase counts.
 - app observer snapshots should preserve the shared Jam Source Timing
   `grid_use` label and `actionability` phrase alongside cue, quality, and
   degraded policy, so the control-path observer event, Jam/Source TUI, and
