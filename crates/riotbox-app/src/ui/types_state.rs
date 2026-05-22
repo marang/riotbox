@@ -10,7 +10,7 @@ use ratatui::{
 use riotbox_audio::w30::W30PreviewRenderMode;
 use riotbox_core::source_graph::{DecodeProfile, Section, SectionLabelHint};
 use riotbox_core::{
-    action::{ActionCommand, ActionStatus, GhostMode},
+    action::GhostMode,
     view::jam::{
         SceneJumpAvailabilityView, SceneTransitionKindView, SceneTransitionPolicyView,
     },
