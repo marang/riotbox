@@ -608,4 +608,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract W-30 resample diagnostics label helpers
 - [RIOTBOX-929.md](./RIOTBOX-929.md)
   Review current P012 real-source timing confidence rows
+- [RIOTBOX-930.md](./RIOTBOX-930.md)
+  Surface downbeat ambiguity in shared Source Timing summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
