@@ -224,6 +224,7 @@ docs/
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured
 - `reviews/p012_current_source_timing_spine_review_2026-05-21.md`: P012 current Source Timing spine review captured
 - `reviews/p012_source_timing_report_expectation_gate_review_2026-05-21.md`: P012 Source Timing report expectation gate review captured
+- `reviews/p012_source_timing_validator_surface_review_2026-05-22.md`: P012 Source Timing validator surface review captured
 - `spikes/cpal_audio_latency_spike.md`: draft started
 - `spikes/mempalace_evaluation.md`: draft started
 - `spikes/rust_python_sidecar_transport_spike.md`: draft started
