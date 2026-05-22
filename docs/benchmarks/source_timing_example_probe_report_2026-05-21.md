@@ -25,20 +25,20 @@ failing, so the command stays safe for fresh clones.
 
 ## Captured Local Result
 
-Refreshed after `RIOTBOX-889` added explicit downbeat phase margin evidence to
-the probe report while keeping Beat20 manual-confirm-only.
+Refreshed after `RIOTBOX-958` added explicit beat/bar count evidence to the
+probe report while keeping Beat20 manual-confirm-only.
 
 Captured from this checkout with the local example WAVs present.
 
-| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |
-| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | --- | --- | ---: | --- |
-| Beat03_130BPM(Full).wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 130.285 | candidate_cautious | not_enough_material | stable | 0.902 | 0.909 | 0.017 | 0 | stable | 2 | 0.356 | 0.136 | 0 | not_enough_material | 0 | phrase_uncertain | 11/4/3/4 | 4 | ok |
-| Beat08_128BPM(Full).wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 128.397 | candidate_cautious | not_enough_material | stable | 0.992 | 1.000 | 0.006 | 0 | stable | 3 | 0.315 | 0.074 | 0 | not_enough_material | 0 | phrase_uncertain | 9/3/2/4 | 4 | ok |
-| Beat20_128BPM(Full).wav | probed | needs confirm | confirm grid first | needs_review | yes | manual_confirm_only | 128.397 | candidate_ambiguous | not_enough_material | stable | 0.992 | 1.000 | 0.006 | 0 | ambiguous | 2 | 0.273 | 0.005 | 3 | not_enough_material | 6 | phrase_uncertain,ambiguous_downbeat | 11/0/0/11 | 4 | ok |
-| DH_BeatC_120-01.wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 120.185 | candidate_cautious | not_enough_material | stable | 0.997 | 1.000 | 0.000 | 0 | stable | 0 | 0.304 | 0.057 | 0 | not_enough_material | 0 | phrase_uncertain | 8/2/4/2 | 4 | ok |
-| DH_BeatC_KickSnr_120-01.wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 120.185 | candidate_cautious | not_enough_material | stable | 0.997 | 1.000 | 0.000 | 0 | stable | 0 | 0.304 | 0.057 | 0 | not_enough_material | 0 | phrase_uncertain | 8/2/4/2 | 4 | ok |
-| DH_Fadapad_120_A.wav | probed | not available | timing unavailable | unavailable | yes | unavailable | none | degraded | unavailable | unavailable | none | none | none | 0 | unavailable | none | none | none | 0 | unavailable | 0 | low_timing_confidence,weak_kick_anchor | 0/0/0/0 | 0 | ok |
-| DH_RushArp_120_A.wav | probed | not available | timing unavailable | unavailable | yes | unavailable | none | degraded | unavailable | unavailable | none | none | none | 0 | unavailable | none | none | none | 0 | unavailable | 0 | low_timing_confidence,weak_kick_anchor | 0/0/0/0 | 0 | ok |
+| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat count | Bar count | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Phrase count | Phrase bars | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |
+| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | ---: | --- |
+| Beat03_130BPM(Full).wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 130.285 | candidate_cautious | not_enough_material | stable | 9 | 2 | 0.902 | 0.909 | 0.017 | 0 | stable | 2 | 0.356 | 0.136 | 0 | not_enough_material | 0 | 2 | 0 | phrase_uncertain | 11/4/3/4 | 4 | ok |
+| Beat08_128BPM(Full).wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 128.397 | candidate_cautious | not_enough_material | stable | 9 | 2 | 0.992 | 1.000 | 0.006 | 0 | stable | 3 | 0.315 | 0.074 | 0 | not_enough_material | 0 | 2 | 0 | phrase_uncertain | 9/3/2/4 | 4 | ok |
+| Beat20_128BPM(Full).wav | probed | needs confirm | confirm grid first | needs_review | yes | manual_confirm_only | 128.397 | candidate_ambiguous | not_enough_material | stable | 9 | 2 | 0.992 | 1.000 | 0.006 | 0 | ambiguous | 2 | 0.273 | 0.005 | 3 | not_enough_material | 0 | 2 | 6 | phrase_uncertain,ambiguous_downbeat | 11/0/0/11 | 4 | ok |
+| DH_BeatC_120-01.wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 120.185 | candidate_cautious | not_enough_material | stable | 9 | 3 | 0.997 | 1.000 | 0.000 | 0 | stable | 0 | 0.304 | 0.057 | 0 | not_enough_material | 0 | 3 | 0 | phrase_uncertain | 8/2/4/2 | 4 | ok |
+| DH_BeatC_KickSnr_120-01.wav | probed | needs confirm | confirm grid first | needs_review | yes | short_loop_manual_confirm | 120.185 | candidate_cautious | not_enough_material | stable | 9 | 3 | 0.997 | 1.000 | 0.000 | 0 | stable | 0 | 0.304 | 0.057 | 0 | not_enough_material | 0 | 3 | 0 | phrase_uncertain | 8/2/4/2 | 4 | ok |
+| DH_Fadapad_120_A.wav | probed | not available | timing unavailable | unavailable | yes | unavailable | none | degraded | unavailable | unavailable | 0 | 0 | none | none | none | 0 | unavailable | none | none | none | 0 | unavailable | 0 | 0 | 0 | low_timing_confidence,sparse_onsets,weak_kick_anchor | 0/0/0/0 | 0 | ok |
+| DH_RushArp_120_A.wav | probed | not available | timing unavailable | unavailable | yes | unavailable | none | degraded | unavailable | unavailable | 0 | 0 | none | none | none | 0 | unavailable | none | none | none | 0 | unavailable | 0 | 0 | 0 | low_timing_confidence,sparse_onsets,weak_kick_anchor | 0/0/0/0 | 0 | ok |
 
 ## Interpretation
 
@@ -50,9 +50,9 @@ Captured from this checkout with the local example WAVs present.
 - Pad/arp examples remain unavailable instead of being promoted as drum timing
   sources.
 - The evidence columns make the readiness decision reviewable without opening
-  the raw probe JSON: short drum loops show cautious confidence and
-  not-enough-material drift/phrase evidence, while the Beat20 row shows
-  ambiguous confidence, downbeat-phase alternate evidence, and a near-zero
-  phase margin.
+  the raw probe JSON: short drum loops show cautious confidence, compact
+  beat/bar grid counts, and not-enough-material drift/phrase evidence, while
+  the Beat20 row shows ambiguous confidence, downbeat-phase alternate evidence,
+  and a near-zero phase margin.
 - This is a conservative P012 review surface. It should catch accidental shifts
   in the current timing contract without pretending the detector is finished.

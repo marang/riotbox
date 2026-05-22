@@ -25,6 +25,8 @@
         "max": 0.05
       },
       "beat_status": "stable",
+      "primary_beat_count": 99,
+      "primary_bar_count": 99,
       "downbeat_status": "stable",
       "phrase_status": "phrase_locked",
       "primary_phrase_count": 99,

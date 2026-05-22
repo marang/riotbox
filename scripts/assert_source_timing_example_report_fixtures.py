@@ -42,6 +42,8 @@ EXPECTED_ROWS = {
         "confidence": "candidate_cautious",
         "drift": "not_enough_material",
         "beat": "stable",
+        "beat_count": "16",
+        "bar_count": "4",
         "beat_score": "0.979",
         "beat_match": "0.920",
         "beat_median": "0.990",
@@ -70,6 +72,8 @@ EXPECTED_ROWS = {
         "confidence": "candidate_cautious",
         "drift": "stable",
         "beat": "stable",
+        "beat_count": "32",
+        "bar_count": "8",
         "beat_score": "0.979",
         "beat_match": "1.000",
         "beat_median": "0.667",
@@ -98,6 +102,8 @@ EXPECTED_ROWS = {
         "confidence": "candidate_ambiguous",
         "drift": "stable",
         "beat": "stable",
+        "beat_count": "32",
+        "bar_count": "8",
         "beat_score": "0.977",
         "beat_match": "1.000",
         "beat_median": "0.006",
@@ -126,6 +132,8 @@ EXPECTED_ROWS = {
         "confidence": "degraded",
         "drift": "unavailable",
         "beat": "unavailable",
+        "beat_count": "0",
+        "bar_count": "0",
         "beat_score": "none",
         "beat_match": "none",
         "beat_median": "none",
@@ -216,10 +224,10 @@ def assert_mismatch_expectations_fail() -> None:
     if (
         not failures
         or "mismatch:" not in failures[0]
-        or "primary_phrase_count" not in failures[0]
+        or "primary_beat_count" not in failures[0]
     ):
         raise AssertionError(
-            "expected mismatched source timing phrase-count expectations to fail"
+            "expected mismatched source timing beat-count expectations to fail"
         )
 
 

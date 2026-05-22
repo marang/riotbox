@@ -42,6 +42,8 @@ class ReportRow:
     confidence: str = "-"
     drift: str = "-"
     beat: str = "-"
+    beat_count: str = "-"
+    bar_count: str = "-"
     beat_score: str = "-"
     beat_match: str = "-"
     beat_median: str = "-"
@@ -187,6 +189,8 @@ def row_from_payload(
         confidence=require_string(payload, "confidence_result"),
         drift=require_string(payload, "drift_status"),
         beat=require_string(payload, "beat_status"),
+        beat_count=str(require_int(payload, "primary_beat_count")),
+        bar_count=str(require_int(payload, "primary_bar_count")),
         beat_score=format_optional_score(payload.get("primary_beat_score")),
         beat_match=format_optional_score(payload.get("primary_beat_matched_onset_ratio")),
         beat_median=format_optional_score(payload.get("primary_beat_median_distance_ratio")),
@@ -213,8 +217,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Phrase count | Phrase bars | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | ---: | --- |",
+        "| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat count | Bar count | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Phrase count | Phrase bars | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -232,6 +236,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
                     row.confidence,
                     row.drift,
                     row.beat,
+                    row.beat_count,
+                    row.bar_count,
                     row.beat_score,
                     row.beat_match,
                     row.beat_median,

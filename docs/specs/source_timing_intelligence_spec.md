@@ -593,9 +593,10 @@ primary timing hypothesis:
   local regression checks. Expectations should cover stable review fields such
   as cue, actionability, readiness, manual-confirm, BPM tolerance,
   beat/downbeat/phrase status, confidence result, drift status, alternate
-  evidence count, exact primary phrase count/bar count, bounded
-  beat/downbeat score ranges, and warning-code presence or exact warning-code
-  sets; missing local WAVs must remain skipped instead of failing fresh clones.
+  evidence count, exact primary beat count/bar count and phrase count/bar
+  count, bounded beat/downbeat score ranges, and warning-code presence or exact
+  warning-code sets; missing local WAVs must remain skipped instead of failing
+  fresh clones.
 - example report expectation fixtures must be strict enough to catch fixture
   typos. Unknown top-level expectation keys must fail the fixture gate instead
   of being silently ignored. Numeric range expectations must include `min` or

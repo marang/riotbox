@@ -26,6 +26,8 @@
         "max": 1.0
       },
       "beat_status": "stable",
+      "primary_beat_count": 9,
+      "primary_bar_count": 2,
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
       "primary_phrase_count": 0,
@@ -70,6 +72,8 @@
         "max": 1.0
       },
       "beat_status": "stable",
+      "primary_beat_count": 9,
+      "primary_bar_count": 2,
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
       "primary_phrase_count": 0,
@@ -114,6 +118,8 @@
         "max": 0.05
       },
       "beat_status": "stable",
+      "primary_beat_count": 9,
+      "primary_bar_count": 2,
       "downbeat_status": "ambiguous",
       "phrase_status": "not_enough_material",
       "primary_phrase_count": 0,
@@ -159,6 +165,8 @@
         "max": 1.0
       },
       "beat_status": "stable",
+      "primary_beat_count": 9,
+      "primary_bar_count": 3,
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
       "primary_phrase_count": 0,
@@ -203,6 +211,8 @@
         "max": 1.0
       },
       "beat_status": "stable",
+      "primary_beat_count": 9,
+      "primary_bar_count": 3,
       "downbeat_status": "stable",
       "phrase_status": "not_enough_material",
       "primary_phrase_count": 0,
@@ -231,6 +241,8 @@
       "drift_status": "unavailable",
       "alternate_evidence_count": 0,
       "beat_status": "unavailable",
+      "primary_beat_count": 0,
+      "primary_bar_count": 0,
       "downbeat_status": "unavailable",
       "phrase_status": "unavailable",
       "primary_phrase_count": 0,
@@ -253,6 +265,8 @@
       "drift_status": "unavailable",
       "alternate_evidence_count": 0,
       "beat_status": "unavailable",
+      "primary_beat_count": 0,
+      "primary_bar_count": 0,
       "downbeat_status": "unavailable",
       "phrase_status": "unavailable",
       "primary_phrase_count": 0,

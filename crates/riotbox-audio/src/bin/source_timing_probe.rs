@@ -50,6 +50,8 @@ struct ProbeSummary {
     primary_beat_score: Option<f32>,
     primary_beat_matched_onset_ratio: Option<f32>,
     primary_beat_median_distance_ratio: Option<f32>,
+    primary_beat_count: usize,
+    primary_bar_count: usize,
     primary_downbeat_offset_beats: Option<u8>,
     primary_downbeat_score: Option<f32>,
     primary_downbeat_margin: Option<f32>,
@@ -186,6 +188,18 @@ impl ProbeSummary {
             primary_beat_score: beat.primary_score,
             primary_beat_matched_onset_ratio: beat.primary_matched_onset_ratio,
             primary_beat_median_distance_ratio: beat.primary_median_distance_ratio,
+            primary_beat_count: timing_grid_count(
+                timing
+                    .primary_hypothesis()
+                    .map(|hypothesis| hypothesis.beat_grid.len()),
+                timing.beat_grid.len(),
+            ),
+            primary_bar_count: timing_grid_count(
+                timing
+                    .primary_hypothesis()
+                    .map(|hypothesis| hypothesis.bar_grid.len()),
+                timing.bar_grid.len(),
+            ),
             primary_downbeat_offset_beats: report.primary_downbeat_offset_beats,
             primary_downbeat_score: downbeat.primary_score,
             primary_downbeat_margin: report.primary_downbeat_margin,
@@ -245,7 +259,7 @@ fn render_text(summary: &ProbeSummary) -> String {
             "action: {actionability}\n",
             "readiness: {readiness} manual_confirm={manual_confirm} grid_use={grid_use}\n",
             "bpm: {bpm}\n",
-            "beat: {beat} downbeat: {downbeat_status} offset_beats={downbeat}\n",
+            "beat: {beat} beats={beat_count} bars={bar_count} downbeat: {downbeat_status} offset_beats={downbeat}\n",
             "scores: beat={beat_score} downbeat={downbeat_score} downbeat_margin={downbeat_margin}\n",
             "phrase: {phrase} phrases={phrase_count} bars={phrase_bars} drift: {drift} confidence: {confidence}\n",
             "anchors: total={anchor_total} kick={kick_anchors} backbeat={backbeat_anchors} transient={transient_anchors}\n",
@@ -261,6 +275,8 @@ fn render_text(summary: &ProbeSummary) -> String {
         grid_use = summary.grid_use,
         bpm = bpm,
         beat = summary.beat_status,
+        beat_count = summary.primary_beat_count,
+        bar_count = summary.primary_bar_count,
         downbeat_status = summary.downbeat_status,
         downbeat = downbeat,
         beat_score = beat_score,
@@ -283,6 +299,12 @@ fn render_text(summary: &ProbeSummary) -> String {
         density = summary.onset_density_per_second,
         duration = summary.duration_seconds,
     )
+}
+
+fn timing_grid_count(primary_count: Option<usize>, top_level_count: usize) -> usize {
+    primary_count
+        .filter(|count| *count > 0)
+        .unwrap_or(top_level_count)
 }
 
 fn usage() -> String {

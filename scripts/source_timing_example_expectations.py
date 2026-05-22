@@ -16,6 +16,8 @@ EXPECTATION_KEYS = {
     "confidence_result",
     "drift_status",
     "beat_status",
+    "primary_beat_count",
+    "primary_bar_count",
     "downbeat_status",
     "phrase_status",
     "primary_phrase_count",
@@ -76,6 +78,8 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_string(payload, expectation, issues, "confidence_result")
     compare_string(payload, expectation, issues, "drift_status")
     compare_string(payload, expectation, issues, "beat_status")
+    compare_int(payload, expectation, issues, "primary_beat_count")
+    compare_int(payload, expectation, issues, "primary_bar_count")
     compare_string(payload, expectation, issues, "downbeat_status")
     compare_string(payload, expectation, issues, "phrase_status")
     compare_int(payload, expectation, issues, "primary_phrase_count")
