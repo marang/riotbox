@@ -668,4 +668,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose beat/bar counts in Source Timing example probe report
 - [RIOTBOX-959.md](./RIOTBOX-959.md)
   Validate Source Timing probe beat/bar count consistency
+- [RIOTBOX-960.md](./RIOTBOX-960.md)
+  Validate observer/audio source timing count consistency
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
