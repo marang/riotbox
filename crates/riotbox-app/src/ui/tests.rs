@@ -19,6 +19,7 @@ include!("tests/regression_fixture_shells.rs");
 include!("tests/shell_state_log.rs");
 include!("tests/shell_state_source.rs");
 include!("tests/shell_state_capture.rs");
+include!("tests/w30_preview_source_readiness.rs");
 include!("tests/capture_w30_cues.rs");
 include!("tests/w30_diagnostics_capture.rs");
 include!("tests/w30_resample_diagnostics.rs");
