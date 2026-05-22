@@ -650,4 +650,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add anchor and groove alignment to generated Feral-grid summary index
 - [RIOTBOX-950.md](./RIOTBOX-950.md)
   Show anchor and groove alignment in P012 proof summary
+- [RIOTBOX-951.md](./RIOTBOX-951.md)
+  Add phrase evidence to generated Feral-grid summary index
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
