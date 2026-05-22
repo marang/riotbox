@@ -1,3 +1,5 @@
+use super::*;
+
 impl AudioRuntimeShell {
     pub fn start_default_output() -> Result<Self, AudioRuntimeError> {
         Self::start_default_output_with_render_states(
@@ -212,7 +214,7 @@ impl AudioRuntimeShell {
     }
 
     #[cfg(test)]
-    fn from_test_parts(parts: AudioRuntimeShellTestParts) -> Self {
+    pub(super) fn from_test_parts(parts: AudioRuntimeShellTestParts) -> Self {
         Self {
             lifecycle: parts.lifecycle,
             output: parts.output,
@@ -228,15 +230,15 @@ impl AudioRuntimeShell {
 }
 
 #[cfg(test)]
-struct AudioRuntimeShellTestParts {
-    lifecycle: AudioRuntimeLifecycle,
-    output: Option<AudioOutputInfo>,
-    telemetry: Arc<RuntimeTelemetry>,
-    transport: Arc<SharedTransportTimingState>,
-    tr909_render: Arc<SharedTr909RenderState>,
-    mc202_render: Arc<SharedMc202RenderState>,
-    w30_preview: Arc<SharedW30PreviewRenderState>,
-    w30_resample_tap: Arc<SharedW30ResampleTapState>,
+pub(super) struct AudioRuntimeShellTestParts {
+    pub(super) lifecycle: AudioRuntimeLifecycle,
+    pub(super) output: Option<AudioOutputInfo>,
+    pub(super) telemetry: Arc<RuntimeTelemetry>,
+    pub(super) transport: Arc<SharedTransportTimingState>,
+    pub(super) tr909_render: Arc<SharedTr909RenderState>,
+    pub(super) mc202_render: Arc<SharedMc202RenderState>,
+    pub(super) w30_preview: Arc<SharedW30PreviewRenderState>,
+    pub(super) w30_resample_tap: Arc<SharedW30ResampleTapState>,
 }
 
 impl Drop for AudioRuntimeShell {
@@ -245,7 +247,7 @@ impl Drop for AudioRuntimeShell {
     }
 }
 
-fn build_silent_output_stream<T>(
+pub(super) fn build_silent_output_stream<T>(
     device: &cpal::Device,
     config: &cpal::StreamConfig,
     shared: AudioRuntimeSharedState,
@@ -323,7 +325,7 @@ where
 }
 
 #[derive(Clone)]
-struct AudioRuntimeSharedState {
+pub(super) struct AudioRuntimeSharedState {
     telemetry: Arc<RuntimeTelemetry>,
     transport: Arc<SharedTransportTimingState>,
     tr909_render: Arc<SharedTr909RenderState>,
@@ -333,20 +335,20 @@ struct AudioRuntimeSharedState {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeTransportTimingState {
-    is_transport_running: bool,
-    tempo_bpm: f32,
-    position_beats: f64,
+pub(super) struct RealtimeTransportTimingState {
+    pub(super) is_transport_running: bool,
+    pub(super) tempo_bpm: f32,
+    pub(super) position_beats: f64,
 }
 
-struct SharedTransportTimingState {
+pub(super) struct SharedTransportTimingState {
     is_transport_running: AtomicBool,
     tempo_bpm_bits: AtomicU32,
     position_beats_bits: AtomicU64,
 }
 
 impl SharedTransportTimingState {
-    fn new(is_transport_running: bool, tempo_bpm: f32, position_beats: f64) -> Self {
+    pub(super) fn new(is_transport_running: bool, tempo_bpm: f32, position_beats: f64) -> Self {
         Self {
             is_transport_running: AtomicBool::new(is_transport_running),
             tempo_bpm_bits: AtomicU32::new(tempo_bpm.to_bits()),
@@ -354,7 +356,7 @@ impl SharedTransportTimingState {
         }
     }
 
-    fn update(&self, is_transport_running: bool, tempo_bpm: f32, position_beats: f64) {
+    pub(super) fn update(&self, is_transport_running: bool, tempo_bpm: f32, position_beats: f64) {
         self.is_transport_running
             .store(is_transport_running, Ordering::Relaxed);
         self.tempo_bpm_bits
@@ -363,7 +365,7 @@ impl SharedTransportTimingState {
             .store(position_beats.to_bits(), Ordering::Relaxed);
     }
 
-    fn snapshot(&self) -> RealtimeTransportTimingState {
+    pub(super) fn snapshot(&self) -> RealtimeTransportTimingState {
         RealtimeTransportTimingState {
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
@@ -373,33 +375,32 @@ impl SharedTransportTimingState {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeTr909RenderState {
-    mode: Tr909RenderMode,
-    routing: Tr909RenderRouting,
-    source_support_profile: Option<Tr909SourceSupportProfile>,
-    source_support_context: Option<Tr909SourceSupportContext>,
-    pattern_adoption: Option<Tr909PatternAdoption>,
-    phrase_variation: Option<Tr909PhraseVariation>,
-    takeover_profile: Option<Tr909TakeoverRenderProfile>,
-    drum_bus_level: f32,
-    slam_intensity: f32,
-    is_transport_running: bool,
-    tempo_bpm: f32,
-    position_beats: f64,
+pub(super) struct RealtimeTr909RenderState {
+    pub(super) mode: Tr909RenderMode,
+    pub(super) routing: Tr909RenderRouting,
+    pub(super) source_support_profile: Option<Tr909SourceSupportProfile>,
+    pub(super) source_support_context: Option<Tr909SourceSupportContext>,
+    pub(super) pattern_adoption: Option<Tr909PatternAdoption>,
+    pub(super) phrase_variation: Option<Tr909PhraseVariation>,
+    pub(super) takeover_profile: Option<Tr909TakeoverRenderProfile>,
+    pub(super) drum_bus_level: f32,
+    pub(super) slam_intensity: f32,
+    pub(super) is_transport_running: bool,
+    pub(super) tempo_bpm: f32,
+    pub(super) position_beats: f64,
 }
 
-struct SharedTr909RenderState {
-    mode: AtomicU32,
-    routing: AtomicU32,
-    source_support_profile: AtomicU32,
-    source_support_context: AtomicU32,
-    pattern_adoption: AtomicU32,
-    phrase_variation: AtomicU32,
-    takeover_profile: AtomicU32,
-    drum_bus_level_bits: AtomicU32,
-    slam_intensity_bits: AtomicU32,
-    is_transport_running: AtomicBool,
-    tempo_bpm_bits: AtomicU32,
-    position_beats_bits: AtomicU64,
+pub(super) struct SharedTr909RenderState {
+    pub(super) mode: AtomicU32,
+    pub(super) routing: AtomicU32,
+    pub(super) source_support_profile: AtomicU32,
+    pub(super) source_support_context: AtomicU32,
+    pub(super) pattern_adoption: AtomicU32,
+    pub(super) phrase_variation: AtomicU32,
+    pub(super) takeover_profile: AtomicU32,
+    pub(super) drum_bus_level_bits: AtomicU32,
+    pub(super) slam_intensity_bits: AtomicU32,
+    pub(super) is_transport_running: AtomicBool,
+    pub(super) tempo_bpm_bits: AtomicU32,
+    pub(super) position_beats_bits: AtomicU64,
 }
-

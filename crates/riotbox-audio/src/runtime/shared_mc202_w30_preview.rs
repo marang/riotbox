@@ -1,5 +1,7 @@
+use super::*;
+
 impl SharedTr909RenderState {
-    fn new(render_state: &Tr909RenderState) -> Self {
+    pub(super) fn new(render_state: &Tr909RenderState) -> Self {
         let shared = Self {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
@@ -18,7 +20,7 @@ impl SharedTr909RenderState {
         shared
     }
 
-    fn update(&self, render_state: &Tr909RenderState) {
+    pub(super) fn update(&self, render_state: &Tr909RenderState) {
         self.mode
             .store(mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing
@@ -55,7 +57,7 @@ impl SharedTr909RenderState {
             .store(render_state.position_beats.to_bits(), Ordering::Relaxed);
     }
 
-    fn snapshot(&self) -> RealtimeTr909RenderState {
+    pub(super) fn snapshot(&self) -> RealtimeTr909RenderState {
         RealtimeTr909RenderState {
             mode: mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -84,18 +86,18 @@ impl SharedTr909RenderState {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeMc202RenderState {
-    mode: Mc202RenderMode,
-    routing: Mc202RenderRouting,
-    phrase_shape: Mc202PhraseShape,
-    note_budget: Mc202NoteBudget,
-    contour_hint: Mc202ContourHint,
-    hook_response: Mc202HookResponse,
-    touch: f32,
-    music_bus_level: f32,
-    tempo_bpm: f32,
-    position_beats: f64,
-    is_transport_running: bool,
+pub(super) struct RealtimeMc202RenderState {
+    pub(super) mode: Mc202RenderMode,
+    pub(super) routing: Mc202RenderRouting,
+    pub(super) phrase_shape: Mc202PhraseShape,
+    pub(super) note_budget: Mc202NoteBudget,
+    pub(super) contour_hint: Mc202ContourHint,
+    pub(super) hook_response: Mc202HookResponse,
+    pub(super) touch: f32,
+    pub(super) music_bus_level: f32,
+    pub(super) tempo_bpm: f32,
+    pub(super) position_beats: f64,
+    pub(super) is_transport_running: bool,
 }
 
 impl From<RealtimeMc202RenderState> for Mc202RenderState {
@@ -116,7 +118,7 @@ impl From<RealtimeMc202RenderState> for Mc202RenderState {
     }
 }
 
-struct SharedMc202RenderState {
+pub(super) struct SharedMc202RenderState {
     mode: AtomicU32,
     routing: AtomicU32,
     phrase_shape: AtomicU32,
@@ -131,7 +133,7 @@ struct SharedMc202RenderState {
 }
 
 impl SharedMc202RenderState {
-    fn new(render_state: &Mc202RenderState) -> Self {
+    pub(super) fn new(render_state: &Mc202RenderState) -> Self {
         let shared = Self {
             mode: AtomicU32::new(0),
             routing: AtomicU32::new(0),
@@ -149,7 +151,7 @@ impl SharedMc202RenderState {
         shared
     }
 
-    fn update(&self, render_state: &Mc202RenderState) {
+    pub(super) fn update(&self, render_state: &Mc202RenderState) {
         self.mode
             .store(mc202_mode_to_u32(render_state.mode), Ordering::Relaxed);
         self.routing.store(
@@ -184,7 +186,7 @@ impl SharedMc202RenderState {
             .store(render_state.is_transport_running, Ordering::Relaxed);
     }
 
-    fn snapshot(&self) -> RealtimeMc202RenderState {
+    pub(super) fn snapshot(&self) -> RealtimeMc202RenderState {
         RealtimeMc202RenderState {
             mode: mc202_mode_from_u32(self.mode.load(Ordering::Relaxed)),
             routing: mc202_routing_from_u32(self.routing.load(Ordering::Relaxed)),
@@ -310,36 +312,36 @@ fn mc202_hook_response_from_u32(value: u32) -> Mc202HookResponse {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeW30PreviewRenderState {
-    mode: W30PreviewRenderMode,
-    routing: W30PreviewRenderRouting,
-    source_profile: Option<W30PreviewSourceProfile>,
-    trigger_revision: u64,
-    trigger_velocity: f32,
-    source_window_preview: RealtimeW30PreviewSampleWindow,
-    pad_playback: RealtimeW30PadPlaybackSampleWindow,
-    music_bus_level: f32,
-    grit_level: f32,
-    is_transport_running: bool,
-    tempo_bpm: f32,
-    position_beats: f64,
+pub(super) struct RealtimeW30PreviewRenderState {
+    pub(super) mode: W30PreviewRenderMode,
+    pub(super) routing: W30PreviewRenderRouting,
+    pub(super) source_profile: Option<W30PreviewSourceProfile>,
+    pub(super) trigger_revision: u64,
+    pub(super) trigger_velocity: f32,
+    pub(super) source_window_preview: RealtimeW30PreviewSampleWindow,
+    pub(super) pad_playback: RealtimeW30PadPlaybackSampleWindow,
+    pub(super) music_bus_level: f32,
+    pub(super) grit_level: f32,
+    pub(super) is_transport_running: bool,
+    pub(super) tempo_bpm: f32,
+    pub(super) position_beats: f64,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeW30PreviewSampleWindow {
-    source_start_frame: u64,
-    source_end_frame: u64,
-    sample_count: usize,
-    samples: [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
+pub(super) struct RealtimeW30PreviewSampleWindow {
+    pub(super) source_start_frame: u64,
+    pub(super) source_end_frame: u64,
+    pub(super) sample_count: usize,
+    pub(super) samples: [f32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
-struct RealtimeW30PadPlaybackSampleWindow {
-    source_start_frame: u64,
-    source_end_frame: u64,
-    sample_count: usize,
-    loop_enabled: bool,
-    samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+pub(super) struct RealtimeW30PadPlaybackSampleWindow {
+    pub(super) source_start_frame: u64,
+    pub(super) source_end_frame: u64,
+    pub(super) sample_count: usize,
+    pub(super) loop_enabled: bool,
+    pub(super) samples: [f32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
 }
 
 impl Default for RealtimeW30PreviewSampleWindow {
@@ -365,25 +367,24 @@ impl Default for RealtimeW30PadPlaybackSampleWindow {
     }
 }
 
-struct SharedW30PreviewRenderState {
-    mode: AtomicU32,
-    routing: AtomicU32,
-    source_profile: AtomicU32,
-    trigger_revision: AtomicU64,
-    trigger_velocity_bits: AtomicU32,
-    source_start_frame: AtomicU64,
-    source_end_frame: AtomicU64,
-    source_sample_count: AtomicU32,
-    source_samples: [AtomicU32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
-    pad_start_frame: AtomicU64,
-    pad_end_frame: AtomicU64,
-    pad_sample_count: AtomicU32,
-    pad_loop_enabled: AtomicBool,
-    pad_samples: [AtomicU32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
-    music_bus_level_bits: AtomicU32,
-    grit_level_bits: AtomicU32,
-    is_transport_running: AtomicBool,
-    tempo_bpm_bits: AtomicU32,
-    position_beats_bits: AtomicU64,
+pub(super) struct SharedW30PreviewRenderState {
+    pub(super) mode: AtomicU32,
+    pub(super) routing: AtomicU32,
+    pub(super) source_profile: AtomicU32,
+    pub(super) trigger_revision: AtomicU64,
+    pub(super) trigger_velocity_bits: AtomicU32,
+    pub(super) source_start_frame: AtomicU64,
+    pub(super) source_end_frame: AtomicU64,
+    pub(super) source_sample_count: AtomicU32,
+    pub(super) source_samples: [AtomicU32; W30_PREVIEW_SAMPLE_WINDOW_LEN],
+    pub(super) pad_start_frame: AtomicU64,
+    pub(super) pad_end_frame: AtomicU64,
+    pub(super) pad_sample_count: AtomicU32,
+    pub(super) pad_loop_enabled: AtomicBool,
+    pub(super) pad_samples: [AtomicU32; W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN],
+    pub(super) music_bus_level_bits: AtomicU32,
+    pub(super) grit_level_bits: AtomicU32,
+    pub(super) is_transport_running: AtomicBool,
+    pub(super) tempo_bpm_bits: AtomicU32,
+    pub(super) position_beats_bits: AtomicU64,
 }
-

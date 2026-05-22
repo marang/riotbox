@@ -1,29 +1,11 @@
 use std::{
     error::Error,
     fmt::{self, Display, Formatter},
-    sync::{
-        Arc, Mutex,
-        atomic::{AtomicBool, AtomicU32, AtomicU64, Ordering},
-    },
-    time::Instant,
 };
 
-use crate::mc202::{
-    Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-    Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
-};
-use crate::tr909::{
-    Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
-    Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
-    Tr909TakeoverRenderProfile,
-};
-use crate::w30::{
-    W30_PAD_PLAYBACK_SAMPLE_WINDOW_LEN, W30_PREVIEW_SAMPLE_WINDOW_LEN, W30PadPlaybackSampleWindow,
-    W30PreviewRenderMode, W30PreviewRenderRouting, W30PreviewRenderState, W30PreviewSampleWindow,
-    W30PreviewSourceProfile, W30ResampleTapMode, W30ResampleTapRouting,
-    W30ResampleTapSourceProfile, W30ResampleTapState,
-};
-use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
+use crate::mc202::render_mc202_buffer;
+
+use super::*;
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum AudioRuntimeLifecycle {
@@ -344,7 +326,9 @@ pub fn signal_metrics_with_grid(
 pub fn signal_delta_metrics(left: &[f32], right: &[f32]) -> OfflineAudioMetrics {
     let sample_count = left.len().max(right.len());
     let delta = (0..sample_count)
-        .map(|index| left.get(index).copied().unwrap_or(0.0) - right.get(index).copied().unwrap_or(0.0))
+        .map(|index| {
+            left.get(index).copied().unwrap_or(0.0) - right.get(index).copied().unwrap_or(0.0)
+        })
         .collect::<Vec<_>>();
     signal_metrics(&delta)
 }
@@ -412,13 +396,13 @@ fn event_density_per_bar(
 }
 
 pub struct AudioRuntimeShell {
-    lifecycle: AudioRuntimeLifecycle,
-    output: Option<AudioOutputInfo>,
-    telemetry: Arc<RuntimeTelemetry>,
-    transport: Arc<SharedTransportTimingState>,
-    tr909_render: Arc<SharedTr909RenderState>,
-    mc202_render: Arc<SharedMc202RenderState>,
-    w30_preview: Arc<SharedW30PreviewRenderState>,
-    w30_resample_tap: Arc<SharedW30ResampleTapState>,
-    stream: Option<cpal::Stream>,
+    pub(super) lifecycle: AudioRuntimeLifecycle,
+    pub(super) output: Option<AudioOutputInfo>,
+    pub(super) telemetry: Arc<RuntimeTelemetry>,
+    pub(super) transport: Arc<SharedTransportTimingState>,
+    pub(super) tr909_render: Arc<SharedTr909RenderState>,
+    pub(super) mc202_render: Arc<SharedMc202RenderState>,
+    pub(super) w30_preview: Arc<SharedW30PreviewRenderState>,
+    pub(super) w30_resample_tap: Arc<SharedW30ResampleTapState>,
+    pub(super) stream: Option<cpal::Stream>,
 }
