@@ -12,8 +12,7 @@ use riotbox_core::source_graph::{DecodeProfile, Section, SectionLabelHint};
 use riotbox_core::{
     action::{ActionCommand, ActionStatus, GhostMode},
     view::jam::{
-        CaptureHandoffReadinessView, CaptureTargetKindView, SceneJumpAvailabilityView,
-        SceneTransitionKindView, SceneTransitionPolicyView, W30PendingAuditionKind,
+        SceneJumpAvailabilityView, SceneTransitionKindView, SceneTransitionPolicyView,
     },
 };
 

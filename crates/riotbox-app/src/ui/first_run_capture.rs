@@ -1,11 +1,32 @@
+use ratatui::{
+    text::{Line, Span},
+    widgets::ListItem,
+};
+use riotbox_core::{
+    action::ActionStatus,
+    view::jam::{
+        CaptureHandoffReadinessView, CaptureSummaryView, CaptureTargetKindView,
+        W30PendingAuditionKind,
+    },
+};
+
+use super::{
+    JamShellState, capture_or_recall_cue_label, style_pending_cue, style_pending_detail,
+    transport_label, w30_bank_manager_compact, w30_capture_lineage_compact,
+    w30_damage_profile_compact, w30_loop_freeze_compact, w30_pending_cue_label,
+    w30_preview_source_readiness, w30_resample_lineage_active, w30_resample_mix_log_compact,
+    w30_resample_route_compact, w30_resample_source_compact, w30_resample_tap_compact,
+    w30_slice_pool_compact, w30_slice_pool_relevant, w30_target_compact,
+};
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-enum FirstRunOnrampStage {
+pub(super) enum FirstRunOnrampStage {
     Start,
     QueuedFirstMove,
     FirstResult,
 }
 
-fn first_run_onramp_stage(shell: &JamShellState) -> Option<FirstRunOnrampStage> {
+pub(super) fn first_run_onramp_stage(shell: &JamShellState) -> Option<FirstRunOnrampStage> {
     if !shell.first_run_onramp {
         return None;
     }
@@ -16,7 +37,7 @@ fn first_run_onramp_stage(shell: &JamShellState) -> Option<FirstRunOnrampStage> 
         .action_log
         .actions
         .iter()
-        .filter(|action| action.status == riotbox_core::action::ActionStatus::Committed)
+        .filter(|action| action.status == ActionStatus::Committed)
         .count();
     let has_pending = !shell.app.jam_view.pending_actions.is_empty();
     let capture_count = shell.app.jam_view.capture.capture_count;
@@ -36,7 +57,7 @@ fn first_run_onramp_stage(shell: &JamShellState) -> Option<FirstRunOnrampStage> 
     Some(FirstRunOnrampStage::FirstResult)
 }
 
-fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
     vec![
         Line::from(format!("captures {}", capture.capture_count)),
@@ -61,7 +82,7 @@ fn capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
-fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let pending_capture_count = shell.app.jam_view.capture.pending_capture_count;
     let bank = shell
         .app
@@ -92,7 +113,7 @@ fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
-fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
     vec![
         Line::from(format!("captures total {}", capture.capture_count)),
@@ -123,7 +144,7 @@ fn capture_latest_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]
 }
 
-fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
     let handoff_readiness = capture_handoff_readiness_label(shell);
     if let Some(lines) = pending_capture_do_next_lines(capture, handoff_readiness) {
@@ -223,7 +244,7 @@ fn pending_w30_audition_do_next_lines(shell: &JamShellState) -> Option<Vec<Line<
 }
 
 fn pending_capture_do_next_lines(
-    capture: &riotbox_core::view::jam::CaptureSummaryView,
+    capture: &CaptureSummaryView,
     handoff_readiness: &'static str,
 ) -> Option<Vec<Line<'static>>> {
     let pending = capture.pending_capture_items.first()?;
@@ -272,15 +293,15 @@ fn pending_capture_do_next_lines(
     None
 }
 
-fn capture_pending_intent_line(message: impl Into<String>) -> Line<'static> {
+pub(super) fn capture_pending_intent_line(message: impl Into<String>) -> Line<'static> {
     Line::from(Span::styled(message.into(), style_pending_cue()))
 }
 
-fn capture_pending_detail_line(message: impl Into<String>) -> Line<'static> {
+pub(super) fn capture_pending_detail_line(message: impl Into<String>) -> Line<'static> {
     Line::from(Span::styled(message.into(), style_pending_detail()))
 }
 
-fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let lines = &shell.app.jam_view.capture.latest_capture_provenance_lines;
     if lines.is_empty() {
         return vec![Line::from("no captured material yet")];
@@ -289,7 +310,7 @@ fn capture_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     lines.iter().cloned().map(Line::from).collect()
 }
 
-fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let pending = &shell.app.jam_view.capture.pending_capture_items;
     if pending.is_empty() {
         return vec![Line::from("no queued capture actions")];
@@ -315,7 +336,7 @@ fn pending_capture_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     lines
 }
 
-fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
+pub(super) fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
     let rows = &shell.app.jam_view.capture.recent_capture_rows;
     if rows.is_empty() {
         return vec![ListItem::new("no captures stored yet")];
@@ -324,7 +345,7 @@ fn recent_capture_items(shell: &JamShellState) -> Vec<ListItem<'static>> {
     rows.iter().cloned().map(ListItem::new).collect()
 }
 
-fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn capture_routing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let latest_promoted = shell
         .app
         .jam_view
