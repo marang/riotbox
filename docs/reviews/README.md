@@ -32,3 +32,8 @@ Current module-ownership refreshes:
   `jam_app`, audio QA, and runtime ownership findings.
 - `tui_include_shell_audit_2026-05-22.md`: TUI include-shell audit and
   leaf-first module-conversion recommendation.
+
+Current P012 source-timing refreshes:
+
+- `p012_real_source_timing_confidence_review_2026-05-22.md`: current local
+  example confidence rows and the next downbeat-ambiguity surface slice.
