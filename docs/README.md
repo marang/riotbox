@@ -95,6 +95,7 @@ docs/
     periodic_codebase_review_2026-04-17.md
     periodic_codebase_review_2026-04-17_w30_followup.md
     scene_launch_audio_coupling_2026-04-25.md
+    external_review_refresh_2026-05-22.md
   spikes/
     cpal_audio_latency_spike.md
     mempalace_evaluation.md
@@ -178,6 +179,7 @@ docs/
 - `benchmarks/observer_audio_correlation_template_2026-04-29.md`: observer/audio correlation template captured
 - `benchmarks/observer_audio_summary_json_contract_2026-04-29.md`: observer/audio summary JSON contract captured
 - `benchmarks/p011_exit_evidence_manifest.json`: machine-checkable P011 exit evidence index captured
+- `reviews/external_review_refresh_2026-05-22.md`: external review freshness, audio-QA, and runtime module-cut refresh captured
 - `benchmarks/product_export_reproducibility_boundary_2026-05-07.md`: normalized product-export reproducibility boundary captured
 - `benchmarks/stage_style_stability_proof_2026-05-07.md`: normalized stage-style repeated-run stability proof captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured

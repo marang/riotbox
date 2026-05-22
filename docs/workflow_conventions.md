@@ -330,6 +330,22 @@ exit "$status"
 
 If the log matters for review or later debugging, keep it in `/tmp` for the current session and summarize the important finding in Linear or the PR. Do not commit transient command logs.
 
+## 8.1.5 External Review Freshness
+
+External reviews are point-in-time evidence. Before creating tickets from an
+external review finding:
+
+- verify the finding against current `main`
+- check current Linear, including done or archived issues when the finding may
+  already have shipped
+- check `docs/reviews/` for newer refreshes or bounded audits
+- classify the finding as open, stale, duplicate, superseded, or intentionally
+  deferred
+
+If the review wording is stale but the underlying risk remains valid, create a
+new bounded ticket for the current risk instead of reopening the old issue or
+copying the stale wording.
+
 ## 8.2 CI Check After PR Open
 
 After opening a PR, explicitly inspect the GitHub Actions / CI status.
