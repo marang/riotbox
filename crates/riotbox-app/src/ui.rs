@@ -3,8 +3,10 @@
 include!("ui/types_state.rs");
 
 mod recovery_prompt;
+mod source_timing_panel;
 
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
+use source_timing_panel::source_timing_lines;
 
 include!("ui/shell_render_root.rs");
 include!("ui/jam_perform_layout.rs");
@@ -15,7 +17,6 @@ include!("ui/diagnostics_mc202_w30_logs.rs");
 include!("ui/w30_capture_source_helpers.rs");
 include!("ui/scene_timing_rail.rs");
 include!("ui/first_run_capture.rs");
-include!("ui/source_timing_panel.rs");
 include!("ui/capture_log_source_lists.rs");
 include!("ui/source_trust_summary.rs");
 
