@@ -588,4 +588,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract Jam footer renderer from screen body shard
 - [RIOTBOX-919.md](./RIOTBOX-919.md)
   Split post-commit and restore help UI tests
+- [RIOTBOX-920.md](./RIOTBOX-920.md)
+  Extract W-30 cue label helpers from capture/log source shard
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
