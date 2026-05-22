@@ -97,6 +97,9 @@ impl SourceTimingSummaryView {
             primary_source_timing_downbeat_score_gap(primary_hypothesis, &graph.timing);
         let alternate_downbeat_phase_count =
             alternate_source_timing_downbeat_phase_count(&graph.timing);
+        let beat_count = primary_source_timing_beat_count(primary_hypothesis, &graph.timing);
+        let bar_count = primary_source_timing_bar_count(primary_hypothesis, &graph.timing);
+        let phrase_count = primary_source_timing_phrase_count(primary_hypothesis, &graph.timing);
 
         Self {
             cue: policy_labels.cue.into(),
@@ -106,18 +109,18 @@ impl SourceTimingSummaryView {
             grid_use: crate::source_graph::source_timing_grid_use_from_timing_model(&graph.timing)
                 .label()
                 .into(),
-            beat_status: source_timing_beat_status_label(&graph.timing).into(),
-            beat_count: graph.timing.beat_grid.len(),
-            downbeat_status: source_timing_downbeat_status_label(&graph.timing).into(),
+            beat_status: source_timing_beat_status_label(&graph.timing, beat_count).into(),
+            beat_count,
+            downbeat_status: source_timing_downbeat_status_label(&graph.timing, bar_count).into(),
             primary_warning: primary_source_timing_warning(&graph.timing.warnings)
                 .map(|warning| source_timing_warning_code_label(&warning.code).into()),
             primary_downbeat_offset_beats: primary_source_timing_downbeat_offset_beats(primary_hypothesis),
             primary_downbeat_score,
             primary_downbeat_score_gap,
             alternate_downbeat_phase_count,
-            bar_count: graph.timing.bar_grid.len(),
-            phrase_status: source_timing_phrase_status_label(&graph.timing).into(),
-            phrase_count: graph.timing.phrase_grid.len(),
+            bar_count,
+            phrase_status: source_timing_phrase_status_label(&graph.timing, phrase_count).into(),
+            phrase_count,
             primary_anchor_count,
             primary_kick_anchor_count,
             primary_backbeat_anchor_count,
@@ -139,8 +142,11 @@ impl SourceTimingSummaryView {
     }
 }
 
-fn source_timing_beat_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
-    if !timing.beat_grid.is_empty() {
+fn source_timing_beat_status_label(
+    timing: &crate::source_graph::TimingModel,
+    beat_count: usize,
+) -> &'static str {
+    if beat_count > 0 {
         return "grid";
     }
     if timing.bpm_estimate.is_some() {
@@ -149,7 +155,10 @@ fn source_timing_beat_status_label(timing: &crate::source_graph::TimingModel) ->
     "unknown"
 }
 
-fn source_timing_downbeat_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
+fn source_timing_downbeat_status_label(
+    timing: &crate::source_graph::TimingModel,
+    bar_count: usize,
+) -> &'static str {
     if timing
         .warnings
         .iter()
@@ -157,13 +166,16 @@ fn source_timing_downbeat_status_label(timing: &crate::source_graph::TimingModel
     {
         return "ambiguous";
     }
-    if !timing.bar_grid.is_empty() {
+    if bar_count > 0 {
         return "bar_locked";
     }
     "unknown"
 }
 
-fn source_timing_phrase_status_label(timing: &crate::source_graph::TimingModel) -> &'static str {
+fn source_timing_phrase_status_label(
+    timing: &crate::source_graph::TimingModel,
+    phrase_count: usize,
+) -> &'static str {
     if timing
         .warnings
         .iter()
@@ -171,7 +183,7 @@ fn source_timing_phrase_status_label(timing: &crate::source_graph::TimingModel) 
     {
         return "uncertain";
     }
-    if !timing.phrase_grid.is_empty() {
+    if phrase_count > 0 {
         return "phrase_locked";
     }
     "unknown"
@@ -186,6 +198,36 @@ fn primary_source_timing_hypothesis(
             .iter()
             .find(|hypothesis| hypothesis.kind == crate::source_graph::TimingHypothesisKind::Primary)
     })
+}
+
+fn primary_source_timing_beat_count(
+    primary_hypothesis: Option<&crate::source_graph::TimingHypothesis>,
+    timing: &crate::source_graph::TimingModel,
+) -> usize {
+    primary_hypothesis
+        .map(|hypothesis| hypothesis.beat_grid.len())
+        .filter(|count| *count > 0)
+        .unwrap_or(timing.beat_grid.len())
+}
+
+fn primary_source_timing_bar_count(
+    primary_hypothesis: Option<&crate::source_graph::TimingHypothesis>,
+    timing: &crate::source_graph::TimingModel,
+) -> usize {
+    primary_hypothesis
+        .map(|hypothesis| hypothesis.bar_grid.len())
+        .filter(|count| *count > 0)
+        .unwrap_or(timing.bar_grid.len())
+}
+
+fn primary_source_timing_phrase_count(
+    primary_hypothesis: Option<&crate::source_graph::TimingHypothesis>,
+    timing: &crate::source_graph::TimingModel,
+) -> usize {
+    primary_hypothesis
+        .map(|hypothesis| hypothesis.phrase_grid.len())
+        .filter(|count| *count > 0)
+        .unwrap_or(timing.phrase_grid.len())
 }
 
 fn source_timing_groove_residual_view(

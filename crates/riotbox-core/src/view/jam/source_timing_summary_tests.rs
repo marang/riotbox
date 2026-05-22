@@ -114,16 +114,62 @@ fn locked_summary_preserves_grid_locked_cue_without_primary_warning() {
     assert_eq!(timing.actionability, "grid can steer moves");
     assert_eq!(timing.grid_use, "locked_grid");
     assert_eq!(timing.beat_status, "tempo_only");
-    assert_eq!(timing.downbeat_status, "unknown");
+    assert_eq!(timing.downbeat_status, "bar_locked");
     assert_eq!(timing.primary_warning, None);
     assert_eq!(timing.primary_downbeat_offset_beats, Some(2));
     assert_eq!(timing.primary_downbeat_score, Some(0.91));
     assert_eq!(timing.primary_downbeat_score_gap, None);
     assert_eq!(timing.alternate_downbeat_phase_count, 0);
+    assert_eq!(timing.bar_count, 1);
     assert_eq!(timing.primary_anchor_count, 1);
     assert_eq!(timing.primary_anchor_cue, "anchors 1 | kick");
     assert_eq!(timing.primary_groove_residual_count, 0);
     assert_eq!(timing.primary_groove_preview, Vec::new());
+}
+
+#[test]
+fn summary_uses_primary_hypothesis_grid_counts_when_top_level_grids_are_empty() {
+    let mut graph = source_timing_graph(TimingQuality::High, TimingDegradedPolicy::Locked);
+    graph.timing.primary_hypothesis_id = Some("primary".into());
+    graph.timing.hypotheses.push(timing_hypothesis(
+        "primary",
+        TimingHypothesisKind::Primary,
+        Vec::new(),
+    ));
+    graph.timing.hypotheses[0].beat_grid = vec![
+        crate::source_graph::BeatPoint {
+            beat_index: 1,
+            time_seconds: 0.0,
+            confidence: 0.91,
+        },
+        crate::source_graph::BeatPoint {
+            beat_index: 2,
+            time_seconds: 0.468_75,
+            confidence: 0.88,
+        },
+    ];
+    graph.timing.hypotheses[0].bar_grid = vec![crate::source_graph::BarSpan {
+        bar_index: 1,
+        start_seconds: 0.0,
+        end_seconds: 1.875,
+        downbeat_confidence: 0.91,
+        phrase_index: Some(1),
+    }];
+    graph.timing.hypotheses[0].phrase_grid = vec![crate::source_graph::PhraseSpan {
+        phrase_index: 1,
+        start_bar: 1,
+        end_bar: 4,
+        confidence: 0.83,
+    }];
+
+    let timing = SourceTimingSummaryView::from_graph(&graph);
+
+    assert_eq!(timing.beat_status, "grid");
+    assert_eq!(timing.beat_count, 2);
+    assert_eq!(timing.downbeat_status, "bar_locked");
+    assert_eq!(timing.bar_count, 1);
+    assert_eq!(timing.phrase_status, "phrase_locked");
+    assert_eq!(timing.phrase_count, 1);
 }
 
 #[test]
