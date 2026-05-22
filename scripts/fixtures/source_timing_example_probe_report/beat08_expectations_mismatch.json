@@ -27,6 +27,8 @@
       "beat_status": "stable",
       "downbeat_status": "stable",
       "phrase_status": "phrase_locked",
+      "primary_phrase_count": 99,
+      "primary_phrase_bar_count": 4,
       "warning_codes_include": [
         "drift_high"
       ],
