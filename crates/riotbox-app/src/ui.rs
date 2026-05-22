@@ -1,12 +1,19 @@
-// Keep the TUI surface textually included in one module for now so the split is
-// behavior-preserving and does not mix file-size cleanup with visibility churn.
+// Keep the remaining TUI include shards behavior-preserving while semantic
+// slices move to explicit child modules.
 include!("ui/types_state.rs");
 
 mod recovery_prompt;
 mod source_timing_panel;
+mod source_trust_summary;
 
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
 use source_timing_panel::source_timing_lines;
+use source_trust_summary::{
+    energy_label, source_candidate_lines, source_confidence_lines, source_provenance_lines,
+    source_timing_clock_compact, source_timing_clock_line, source_timing_help_line,
+    source_timing_performance_rail_line, source_timing_readiness_line, source_timing_warning_line,
+    source_warning_lines, trust_summary,
+};
 
 include!("ui/shell_render_root.rs");
 include!("ui/jam_perform_layout.rs");
@@ -18,7 +25,6 @@ include!("ui/w30_capture_source_helpers.rs");
 include!("ui/scene_timing_rail.rs");
 include!("ui/first_run_capture.rs");
 include!("ui/capture_log_source_lists.rs");
-include!("ui/source_trust_summary.rs");
 
 #[cfg(test)]
 mod tests;

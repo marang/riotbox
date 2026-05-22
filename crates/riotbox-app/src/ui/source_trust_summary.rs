@@ -1,22 +1,30 @@
-fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+use ratatui::{
+    style::Style,
+    text::{Line, Span},
+};
+use riotbox_core::{
+    source_graph::{CandidateType, EnergyClass, QualityClass, Section, TimingDegradedPolicy},
+    view::jam::SourceTimingSummaryView,
+};
+
+use super::{
+    JamShellState, scene_countdown_cue, style_confirmation_strong, style_low_emphasis,
+    style_pending_cue, style_pending_detail,
+};
+
+pub(super) fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) => {
             let scorecard = &shell.app.jam_view.source.feral_scorecard;
             let best_loop = graph
                 .candidates
                 .iter()
-                .filter(|candidate| {
-                    candidate.candidate_type
-                        == riotbox_core::source_graph::CandidateType::LoopCandidate
-                })
+                .filter(|candidate| candidate.candidate_type == CandidateType::LoopCandidate)
                 .max_by(|left, right| left.score.total_cmp(&right.score));
             let best_hook = graph
                 .candidates
                 .iter()
-                .filter(|candidate| {
-                    candidate.candidate_type
-                        == riotbox_core::source_graph::CandidateType::HookCandidate
-                })
+                .filter(|candidate| candidate.candidate_type == CandidateType::HookCandidate)
                 .max_by(|left, right| left.score.total_cmp(&right.score));
 
             vec![
@@ -71,7 +79,7 @@ fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
-fn source_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn source_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) => vec![
             Line::from(format!("sidecar {}", graph.provenance.sidecar_version)),
@@ -90,7 +98,7 @@ fn source_provenance_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
-fn source_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn source_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) if !graph.analysis_summary.warnings.is_empty() => graph
             .analysis_summary
@@ -109,7 +117,7 @@ fn source_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
-fn source_confidence_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+pub(super) fn source_confidence_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) => vec![
             Line::from(format!(
@@ -133,16 +141,16 @@ fn source_confidence_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
-struct TrustSummary {
-    headline: &'static str,
-    overall_confidence: f32,
-    warning_count: usize,
-    timing_quality: &'static str,
-    section_quality: &'static str,
-    source_timing_warning: Option<String>,
+pub(super) struct TrustSummary {
+    pub(super) headline: &'static str,
+    pub(super) overall_confidence: f32,
+    pub(super) warning_count: usize,
+    pub(super) timing_quality: &'static str,
+    pub(super) section_quality: &'static str,
+    pub(super) source_timing_warning: Option<String>,
 }
 
-fn trust_summary(shell: &JamShellState) -> TrustSummary {
+pub(super) fn trust_summary(shell: &JamShellState) -> TrustSummary {
     match shell.app.source_graph.as_ref() {
         Some(graph) => {
             let overall = graph.analysis_summary.overall_confidence;
@@ -183,7 +191,7 @@ fn quality_label(quality: &QualityClass) -> &'static str {
     }
 }
 
-fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
+pub(super) fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
     Line::from(vec![
         Span::styled("timing ", style_low_emphasis()),
@@ -200,13 +208,10 @@ fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     ])
 }
 
-fn source_timing_performance_rail_line(shell: &JamShellState) -> Line<'static> {
+pub(super) fn source_timing_performance_rail_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
     if shell.app.source_graph.is_none()
-        || matches!(
-            timing.degraded_policy.as_str(),
-            "disabled" | "unknown"
-        )
+        || matches!(timing.degraded_policy.as_str(), "disabled" | "unknown")
     {
         return Line::from(vec![
             Span::styled("timing ", style_low_emphasis()),
@@ -250,15 +255,15 @@ fn source_timing_anchor_kind_compact(shell: &JamShellState) -> &'static str {
     }
 }
 
-fn source_timing_clock_line(shell: &JamShellState) -> String {
+pub(super) fn source_timing_clock_line(shell: &JamShellState) -> String {
     source_timing_clock_label(shell, false)
 }
 
-fn source_timing_clock_compact(shell: &JamShellState) -> String {
+pub(super) fn source_timing_clock_compact(shell: &JamShellState) -> String {
     source_timing_clock_label(shell, true)
 }
 
-fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
+pub(super) fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
 
     Line::from(vec![
@@ -274,7 +279,10 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(timing.quality.clone()),
         Span::styled(" | ", style_low_emphasis()),
-        Span::styled(source_timing_anchor_kind_compact(shell), style_pending_detail()),
+        Span::styled(
+            source_timing_anchor_kind_compact(shell),
+            style_pending_detail(),
+        ),
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(source_timing_clock_compact(shell)),
         Span::styled(" | ", style_low_emphasis()),
@@ -282,17 +290,13 @@ fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
     ])
 }
 
-fn source_timing_downbeat_phase_chip(
-    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
-) -> String {
+fn source_timing_downbeat_phase_chip(timing: &SourceTimingSummaryView) -> String {
     timing
         .primary_downbeat_offset_beats
         .map_or_else(|| "p-".into(), |offset| format!("p{offset}"))
 }
 
-fn source_timing_downbeat_phase_help(
-    timing: &riotbox_core::view::jam::SourceTimingSummaryView,
-) -> String {
+fn source_timing_downbeat_phase_help(timing: &SourceTimingSummaryView) -> String {
     timing
         .primary_downbeat_offset_beats
         .map_or_else(|| "phase none".into(), |offset| format!("phase {offset}"))
@@ -308,11 +312,13 @@ fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
     };
 
     match graph.timing.effective_degraded_policy() {
-        TimingDegradedPolicy::Disabled | TimingDegradedPolicy::Unknown => if compact {
-            "clock unavailable".into()
-        } else {
-            "source clock unavailable".into()
-        },
+        TimingDegradedPolicy::Disabled | TimingDegradedPolicy::Unknown => {
+            if compact {
+                "clock unavailable".into()
+            } else {
+                "source clock unavailable".into()
+            }
+        }
         _ => {
             let clock = &shell.app.runtime.transport;
             if compact {
@@ -330,7 +336,7 @@ fn source_timing_clock_label(shell: &JamShellState, compact: bool) -> String {
     }
 }
 
-fn source_timing_warning_line(shell: &JamShellState) -> String {
+pub(super) fn source_timing_warning_line(shell: &JamShellState) -> String {
     let trust = trust_summary(shell);
     trust
         .source_timing_warning
@@ -347,7 +353,7 @@ fn source_timing_policy_cue_style(policy: &str) -> Style {
     }
 }
 
-fn energy_label(section: &Section) -> &'static str {
+pub(super) fn energy_label(section: &Section) -> &'static str {
     match section.energy_class {
         EnergyClass::Low => "low",
         EnergyClass::Medium => "medium",
