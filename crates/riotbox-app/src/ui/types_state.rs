@@ -8,9 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Clear, List, ListItem, Paragraph, Wrap},
 };
 use riotbox_audio::w30::W30PreviewRenderMode;
-use riotbox_core::source_graph::{
-    DecodeProfile, EnergyClass, QualityClass, Section, SectionLabelHint, TimingDegradedPolicy,
-};
+use riotbox_core::source_graph::{DecodeProfile, Section, SectionLabelHint};
 use riotbox_core::{
     action::{ActionCommand, ActionStatus, GhostMode},
     view::jam::{
