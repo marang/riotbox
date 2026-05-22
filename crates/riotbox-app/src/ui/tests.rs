@@ -1,6 +1,9 @@
 // Textual includes preserve the existing ui::tests::* names while keeping each
 // behavior-area test file small enough to review directly.
-include!("tests/footer_gesture_fixture_types.rs");
+include!("tests/shared_imports.rs");
+include!("tests/footer_style_tokens.rs");
+include!("tests/suggested_gesture_cues.rs");
+include!("tests/regression_fixture_types.rs");
 include!("tests/w30_fixture_helpers.rs");
 include!("tests/shell_state_fixtures.rs");
 include!("tests/shell_state_keys.rs");
