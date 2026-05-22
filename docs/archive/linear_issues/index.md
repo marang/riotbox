@@ -572,4 +572,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Convert TUI recovery prompt shard into a semantic module
 - [RIOTBOX-911.md](./RIOTBOX-911.md)
   Convert TUI Source timing panel shard into a semantic module
+- [RIOTBOX-912.md](./RIOTBOX-912.md)
+  Convert TUI Source trust summary shard into a semantic module
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
