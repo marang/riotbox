@@ -4,7 +4,7 @@ fn renders_more_musical_jam_shell_snapshot() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("trust usable"));
-    assert!(rendered.contains("idle @ 32.0 | source b32 bar8 p1"));
+    assert!(rendered.contains("idle @ 32.0 | source b- bar8 p-"));
     assert!(
         rendered.contains("timing needs confirm [===>] next bar"),
         "{rendered}"
@@ -173,6 +173,44 @@ fn source_timing_readiness_styles_manual_confirm_as_pending() {
         line.spans[1].style.add_modifier.contains(Modifier::BOLD),
         "{line:?}"
     );
+}
+
+#[test]
+fn source_timing_clock_shows_full_position_when_grid_counts_exist() {
+    let mut shell = sample_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("sample shell should include source graph");
+    let hypothesis = graph
+        .timing
+        .hypotheses
+        .first_mut()
+        .expect("sample shell should include a primary timing hypothesis");
+    hypothesis.beat_grid = vec![BeatPoint {
+        beat_index: 1,
+        time_seconds: 0.0,
+        confidence: 0.92,
+    }];
+    hypothesis.phrase_grid = vec![PhraseSpan {
+        phrase_index: 1,
+        start_bar: 1,
+        end_bar: 4,
+        confidence: 0.86,
+    }];
+    shell.app.refresh_view();
+
+    assert_eq!(source_timing_clock_compact(&shell), "source b32 bar8 p1");
+    assert_eq!(source_timing_clock_line(&shell), "source clock beat 32 | bar 8 | phrase 1");
+
+    let help_line = source_timing_help_line(&shell);
+    let rendered = help_line
+        .spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
+    assert!(rendered.contains("b32 bar8 p1"), "{rendered}");
 }
 
 #[test]
