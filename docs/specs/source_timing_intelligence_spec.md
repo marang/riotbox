@@ -220,6 +220,27 @@ Use the shared Jam source timing summary, currently
   evidence
 - observer/audio correlation control-path timing readiness
 
+### 4.4 Source Map And User Confirmation
+
+The adaptive Source Map consumes Source Timing evidence but must not become a
+second timing authority.
+
+Rules:
+
+- when `grid_use` is usable for musician action, the map may project decoded
+  source energy / peak buckets through the selected timing hypothesis and group
+  them visually by bar
+- when timing is unavailable or not usable, the map must fall back to a
+  time-uniform source view and avoid bar-accurate capture claims
+- a musician may confirm the currently selected timing hypothesis only after
+  source audition; this confirmation is a persisted trust state, not a local TUI
+  flag
+- confirmation must preserve the original timing evidence and record user
+  provenance, so replay / restore can distinguish analyzed confidence from
+  user-accepted musical trust
+- confirmation must be undoable or explicitly revertible through the action /
+  session model
+
 That summary may collapse Source Graph detail into bounded musician language
 such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or
 `not available`, plus the actionability phrase a musician should act on, such

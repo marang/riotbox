@@ -41,6 +41,7 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 18. [Phase Definition of Done](./phase_definition_of_done.md)
 19. [Research / Decision Log](./research_decision_log.md)
 20. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+21. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
 
 ## Why This Order
 
@@ -88,6 +89,7 @@ docs/
     jam_workflow_baseline_2026-04-17.md
   plans/
     source_timing_intelligence_plan.md
+    source_transport_map_capture_plan.md
   reviews/
     README.md
     whole_codebase_review_2026-04-13.md
@@ -154,6 +156,8 @@ docs/
 - `phase_definition_of_done.md`: phase DoD with current phase status captured
 - `research_decision_log.md`: architecture decisions captured
 - `plans/source_timing_intelligence_plan.md`: all-lane Rust-first timing intelligence plan captured
+- `plans/source_transport_map_capture_plan.md`: Ingenious First source transport,
+  adaptive Source Map, monitor, and capture workflow plan captured
 - `archive/linear_issues/README.md`: archive policy started
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started

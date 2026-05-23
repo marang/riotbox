@@ -106,6 +106,23 @@ Transport is the timing authority for playback.
 
 The Source Graph informs musical alignment, but callback timing belongs to the audio core.
 
+### 7.1 Source monitor playback
+
+Source monitor playback is a transport feature, not an external player.
+
+Rules:
+
+- decode and normalize the source outside the realtime callback
+- hand the callback only prepared PCM buffers and bounded realtime-safe state
+- map transport position to source frame position through the selected timing /
+  source-time contract outside expensive callback work
+- source seek updates callback-consumable cursor state without file I/O
+- monitor presets are `source`, `blend`, and `riotbox`
+- source end behavior clamps / stops by default; looping or wrapping requires an
+  explicit future mode
+- the source monitor must not mask weak generated-lane QA; source-only and
+  source-layer states must be explicit
+
 ---
 
 ## 8. Quantized Action Commit

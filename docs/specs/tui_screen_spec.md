@@ -190,6 +190,20 @@ Show:
 - Source Graph warnings
 - the shared Feral readiness label, so a user can distinguish `ready` from
   near-miss states such as `needs support`
+- adaptive Source Map rows for source orientation:
+  `energy`, `peaks`, `bars`, `play`, and `cap`. The default rendering should use
+  one or two rows of block characters rather than a dense analyzer view. Ratatui
+  `Canvas` is an allowed future Source-screen alternative once the block-map
+  contract is stable.
+- Source Map colors may support scanning, but playhead, capture range, grid trust
+  state, and fallback mode must remain readable through text or markers in
+  monochrome snapshots.
+- Source Map timing mode must be explicit: usable timing may show beat/bar
+  grouped buckets, while unavailable or untrusted timing must show a time-based
+  fallback instead of pretending that bar-accurate capture is safe.
+- section labels should be conservative. When semantic confidence is weak, show
+  neutral labels such as `section A`, `section B`, and `section C` instead of
+  inventing `hook`, `drop`, or `break` labels.
 
 This screen helps build trust when the Jam surface behaves unexpectedly.
 
@@ -209,6 +223,9 @@ Show:
 - the audible handoff path from stored capture to raw audition, promoted pad, hit, promoted audition, or recall
 - compact `src` / `fallback` readiness on W-30 hit handoffs so the user can tell whether the path is source-backed or on the safe preview fallback
 - a primary next-step cue for capture, promote, hit, and audition before lower-level routing diagnostics
+- current capture length and target boundary, such as `4 bars @ next bar` or
+  `phrase -> 4 bars fallback`, so the musician understands what `c` will queue
+  before pressing it
 
 MVP rule:
 

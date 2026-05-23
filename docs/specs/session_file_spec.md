@@ -155,6 +155,8 @@ MVP note:
 ```text
 RuntimeState {
   transport
+  source_monitor
+  source_grid_trust
   macro_state
   lane_state
   mixer_state
@@ -170,6 +172,30 @@ RuntimeState {
 - tempo basis
 - playback position if persisted
 - current scene
+
+### 8.1.1 Source monitor
+
+The source monitor mode is musical runtime state and must be restorable:
+
+- `source`: decoded source only
+- `blend`: decoded source plus Riotbox lanes
+- `riotbox`: generated / performed Riotbox lanes only
+
+If the monitor mode changes what the user hears after reload, it belongs in the
+session and replay path, not in app-local UI state.
+
+### 8.1.2 Source grid trust
+
+User-confirmed timing trust must be represented explicitly:
+
+- source id / source graph identity
+- selected timing hypothesis identity
+- confirmation actor and timestamp
+- enough provenance to distinguish analyzed confidence from user acceptance
+- undo / revert consequence
+
+The session must preserve the original Source Graph evidence. Confirming a grid
+does not silently rewrite the analysis payload.
 
 ### 8.2 Macro state
 
