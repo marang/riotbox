@@ -686,4 +686,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Document source transport map capture plan
 - [RIOTBOX-969.md](./RIOTBOX-969.md)
   Add source monitor mode to action and session contracts
+- [RIOTBOX-970.md](./RIOTBOX-970.md)
+  Route source monitor mode through audio runtime policy
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
