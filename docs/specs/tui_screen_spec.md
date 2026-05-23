@@ -202,8 +202,18 @@ Show:
 - adaptive Source Map rows for source orientation:
   `energy`, `peaks`, `bars`, `play`, and the current region. The default
   rendering should use one or two rows of block characters rather than a dense
-  analyzer view. Ratatui `Canvas` is an allowed future Source-screen alternative
-  once the block-map contract is stable.
+  analyzer view. The default should remain plain text / `Paragraph` rendering
+  so narrow terminals, monochrome snapshots, and core string tests all see the
+  same contract.
+- Ratatui `Canvas` is an optional expanded Source/Lab renderer, not the default
+  Source Map. It may be introduced only after the block-map contract is stable,
+  when the view has enough height for more than two waveform rows, and when it
+  consumes the same `SourceMapView` / source-window projection data instead of
+  creating a second Source Map truth.
+- Braille or other dense Canvas markers may support an expanded diagnostic view,
+  but they must not carry the only representation of playhead, bars, capture
+  range, or grid trust. Those states must stay readable through text or explicit
+  marker rows.
 - Source Map colors may support scanning, but playhead, capture range, grid trust
   state, and fallback mode must remain readable through text or markers in
   monochrome snapshots.

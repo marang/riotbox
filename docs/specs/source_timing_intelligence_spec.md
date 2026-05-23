@@ -232,6 +232,11 @@ Rules:
   them visually by bar
 - when timing is unavailable or not usable, the map must fall back to a
   time-uniform source view and avoid bar-accurate capture claims
+- default rendering should stay as one or two plain-text block rows plus
+  explicit marker/text rows for peaks, bars, playhead, capture range, timing
+  mode, and trust. Dense Ratatui `Canvas` / Braille rendering is an optional
+  expanded Source/Lab presentation only; it must consume the same Source Map
+  projection data and must not become a second timing or capture authority.
 - when `runtime_state.source_timing.confirmed_grid` matches the current source
   and primary hypothesis, the map may show bar-grid mode and a `grid confirmed`
   trust label even if analyzer confidence still says manual confirmation was

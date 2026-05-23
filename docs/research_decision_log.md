@@ -1652,3 +1652,17 @@ Why: manual confirmation is musician trust, not analyzer truth. Downstream lanes
 Evidence: RIOTBOX-979 wires capture source-window materialization through the shared readiness helper and tests unconfirmed vs user-confirmed manual timing.
 Consequences: later TR-909 / MC-202 / W-30 source consumers should reuse the same helper when they need to decide whether timing is only analyzed, requires user confirmation, or has been accepted by the musician.
 Status: accepted
+
+---
+
+### RBX-045
+
+Date: 2026-05-23
+Topic: Source Map waveform rendering defaults to block rows, with Canvas optional
+Phase: Source Timing Intelligence / TUI UX
+Question: should the Source Map waveform move to Ratatui Canvas now, or keep the 1-2 row block renderer as the default?
+Decision: keep the default Source Map waveform as one or two plain-text block rows, with separate marker/text rows for peaks, bars, playhead, capture range, timing mode, and trust. Ratatui `Canvas` remains an optional expanded Source/Lab renderer only after the block-map contract is stable and enough terminal height exists to make dense waveform rendering readable.
+Why: musicians need fast orientation more than sample-editor density. Block rows are readable in narrow panels, stable in monochrome snapshots, and easy to test from the shared Source Map projection. Canvas/Braille can be useful for diagnostics, but it is harder to parse at a glance and more sensitive to terminal/font and Ratatui marker behavior.
+Evidence: RIOTBOX-980 records the comparison in `docs/reviews/source_map_waveform_canvas_spike_2026-05-23.md` and updates the TUI/source-map plan contracts.
+Consequences: future Source Map implementation should improve the block renderer first. Any Canvas path must consume the same `SourceMapView` / source-window projection data and must not introduce a second Source Map truth or hide playhead/grid trust/capture range behind dense glyphs or color.
+Status: accepted
