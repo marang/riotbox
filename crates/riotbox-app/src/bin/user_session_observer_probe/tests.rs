@@ -61,6 +61,75 @@ fn writes_first_playable_jam_observer_stream() {
 }
 
 #[test]
+fn writes_source_timing_confirmation_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_source_timing_confirmation_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"source-timing-confirmation""#));
+    assert!(events.contains(r#""outcome":"confirm_source_timing_grid""#));
+    assert!(events.contains(r#""boundary":"Immediate""#));
+
+    let parsed = parse_events(&events);
+    let start = parsed
+        .iter()
+        .find(|event| event["event"] == "observer_started")
+        .expect("observer start");
+    let start_timing = &start["snapshot"]["source_timing"];
+    assert_eq!(start_timing["source_id"], "src-source-timing-confirmation");
+    assert_eq!(start_timing["degraded_policy"], "manual_confirm");
+    assert_eq!(start_timing["cue"], "needs confirm");
+    assert_eq!(start_timing["grid_use"], "manual_confirm_only");
+    assert_eq!(start_timing["primary_warning_code"], "ambiguous_downbeat");
+    assert_eq!(start_timing["grid_confirmed"], false);
+
+    let key = parsed
+        .iter()
+        .find(|event| event["event"] == "key_outcome" && event["key"] == "C")
+        .expect("confirm key outcome");
+    assert_eq!(key["outcome"], "confirm_source_timing_grid");
+    assert_eq!(key["status"], "confirmed source timing grid");
+    assert_eq!(key["snapshot"]["queue"]["pending_count"], 0);
+    assert_eq!(key["snapshot"]["queue"]["queue_history_count"], 1);
+    assert_eq!(
+        key["snapshot"]["queue"]["recent_history"][0]["command"],
+        "source_timing.confirm_grid"
+    );
+    assert_eq!(
+        key["snapshot"]["queue"]["recent_history"][0]["status"],
+        "Committed"
+    );
+    assert_eq!(
+        key["snapshot"]["queue"]["recent_history"][0]["committed_at"],
+        100
+    );
+
+    let confirmed_timing = &key["snapshot"]["source_timing"];
+    assert_eq!(confirmed_timing["cue"], "needs confirm");
+    assert_eq!(confirmed_timing["degraded_policy"], "manual_confirm");
+    assert_eq!(confirmed_timing["grid_confirmed"], true);
+    assert_eq!(
+        confirmed_timing["confirmed_grid_source_id"],
+        "src-source-timing-confirmation"
+    );
+    assert_eq!(
+        confirmed_timing["confirmed_grid_hypothesis_id"],
+        "probe-primary"
+    );
+    assert_eq!(confirmed_timing["confirmed_grid_at"], 100);
+
+    let commit = parsed
+        .iter()
+        .find(|event| event["event"] == "transport_commit")
+        .expect("immediate commit event");
+    assert_eq!(commit["committed"][0]["boundary"], "Immediate");
+    assert_eq!(commit["snapshot"]["queue"]["session_log_count"], 1);
+    assert_eq!(commit["snapshot"]["source_timing"]["grid_confirmed"], true);
+}
+
+#[test]
 fn writes_stage_style_jam_observer_stream() {
     let temp = tempfile::tempdir().expect("tempdir");
     let path = temp.path().join("events.ndjson");
@@ -320,4 +389,11 @@ fn first_source_timing_snapshot(events: &str) -> Value {
         .map(Value::Object)
         .next()
         .expect("source timing snapshot")
+}
+
+fn parse_events(events: &str) -> Vec<Value> {
+    events
+        .lines()
+        .map(|line| serde_json::from_str::<Value>(line).expect("observer event JSON"))
+        .collect()
 }

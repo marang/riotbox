@@ -255,6 +255,10 @@ Rules:
 - observer surfaces should expose `grid_confirmed`, confirmed source /
   hypothesis ids, confirming action id, and confirmation timestamp beside the
   analyzed timing evidence
+- `just source-timing-confirmation-probe` must keep this observer path
+  repeatable: it presses the real `C` confirmation control, records the
+  immediate `source_timing.confirm_grid` commit, and asserts the Source Graph
+  cue / warning evidence is not rewritten by user confirmation
 - Jam and Source TUI surfaces should derive user-confirmed wording from
   `runtime_state.source_timing.confirmed_grid` and display it as musician trust,
   for example `grid confirmed` / `user confirmed`, without changing the

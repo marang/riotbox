@@ -1622,3 +1622,17 @@ Why: the musician needs the Source Map to reflect the accepted trust decision di
 Evidence: RIOTBOX-977 adds Source Map projection tests for confirmed, unconfirmed, and mismatched confirmation state plus Source screen render coverage.
 Consequences: lane consumers should continue to read typed Session trust state directly in later slices; Source Graph confidence and warnings remain analysis evidence, not user-trust state.
 Status: accepted
+
+---
+
+### RBX-043
+
+Date: 2026-05-23
+Topic: source timing confirmation needs observer-probe proof
+Phase: Source Timing Intelligence / QA
+Question: how should the manual grid confirmation path be proven beyond unit tests and static render assertions?
+Decision: add `just source-timing-confirmation-probe` as a CI-safe headless observer probe. The probe presses the real `C` shell control, validates the normal user-session observer stream, records the immediate `source_timing.confirm_grid` commit, and asserts `grid_confirmed` runtime state without rewriting Source Graph cue or warning evidence.
+Why: confirmation is musician trust, not analyzer truth. A repeatable observer proof makes the user-visible control path auditable across key outcome, queue history, commit event, Session runtime state, and observer fields.
+Evidence: RIOTBOX-978 adds the `source-timing-confirmation` probe scenario, normal observer validation, focused probe tests, and an `audio-qa-ci` target.
+Consequences: future source timing trust changes should extend this probe or add a sibling probe instead of relying only on UI snapshots.
+Status: accepted
