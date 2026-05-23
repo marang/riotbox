@@ -1722,3 +1722,17 @@ Why: musicians read `cap next bar` as a promise that pressing `c` will land on t
 Evidence: RIOTBOX-984 changes the capture queue target, SourceMapView range projection, observer snapshot expectation, Capture screen pending cue, and focused tests.
 Consequences: follow-up capture/source-window slices must preserve this next-bar start contract when tightening committed source-window provenance and end-to-end audio QA.
 Status: accepted
+
+---
+
+### RBX-050
+
+Date: 2026-05-23
+Topic: observer snapshots expose committed capture source-window provenance
+Phase: Source Timing Intelligence / Capture Workflow QA
+Question: how should QA prove that a visible Source Map capture range landed as the committed source window?
+Decision: add a top-level `capture` observer snapshot block for the latest capture. When the capture has source-window provenance, the snapshot exposes source id, start/end seconds, duration, frame bounds, source-origin count, and the creating action id.
+Why: Source Map preview tests prove what the musician should expect before pressing `c`, but source-window QA also needs a stable observer surface for what actually landed after commit. This avoids relying only on rendered text or internal Session inspection.
+Evidence: RIOTBOX-985 adds observer fields and a committed `capture.bar_group` snapshot test at a `Bar` boundary.
+Consequences: later end-to-end workflow probes should correlate `source_map.capture_range_row`, `transport_commit` boundary, and `capture.source_window` instead of deriving capture provenance separately.
+Status: accepted

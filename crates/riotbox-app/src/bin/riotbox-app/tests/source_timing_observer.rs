@@ -204,6 +204,48 @@ fn observer_snapshot_records_source_map_capture_range_projection() {
 }
 
 #[test]
+fn observer_snapshot_records_committed_capture_source_window() {
+    let graph = observer_source_map_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state.queue_capture_bar(100);
+    let committed = state.commit_ready_actions(
+        riotbox_core::transport::CommitBoundaryState {
+            kind: riotbox_core::action::CommitBoundary::Bar,
+            beat_index: 8,
+            bar_index: 2,
+            phrase_index: 0,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        200,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert_eq!(
+        committed[0].boundary.kind,
+        riotbox_core::action::CommitBoundary::Bar
+    );
+    let shell = JamShellState::new(state, ShellLaunchMode::Ingest);
+    let snapshot = observer_snapshot(&shell);
+    let capture = &snapshot["capture"];
+
+    assert_eq!(snapshot["runtime"]["capture_length_intent"], "1 bar");
+    assert_eq!(capture["present"], true);
+    assert_eq!(capture["capture_count"], 1);
+    assert_eq!(capture["latest_capture_id"], "cap-01");
+    assert_eq!(capture["created_from_action"], 1);
+    assert_eq!(capture["source_window_available"], true);
+    assert_eq!(capture["source_window"]["source_id"], "src-map-observer");
+    assert_eq!(capture["source_window"]["start_seconds"], 4.0);
+    assert_eq!(capture["source_window"]["end_seconds"], 6.0);
+    assert_eq!(capture["source_window"]["duration_seconds"], 2.0);
+    assert_eq!(capture["source_window"]["start_frame"], 176_400);
+    assert_eq!(capture["source_window"]["end_frame"], 264_600);
+}
+
+#[test]
 fn observer_snapshot_keeps_source_map_capture_range_unavailable_for_untrusted_timing() {
     let graph = observer_source_map_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
     let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");

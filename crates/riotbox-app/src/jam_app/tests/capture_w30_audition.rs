@@ -40,7 +40,7 @@ fn committed_capture_actions_materialize_capture_refs() {
 
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
+            kind: CommitBoundary::Bar,
             beat_index: 32,
             bar_index: 8,
             phrase_index: 2,
@@ -102,7 +102,7 @@ fn capture_length_intent_controls_source_window_duration() {
     state.queue_capture_bar(300);
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
+            kind: CommitBoundary::Bar,
             beat_index: 32,
             bar_index: 8,
             phrase_index: 2,
@@ -142,7 +142,7 @@ fn phrase_capture_length_uses_phrase_grid_when_available() {
     state.queue_capture_bar(300);
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
+            kind: CommitBoundary::Bar,
             beat_index: 32,
             bar_index: 8,
             phrase_index: 2,
@@ -173,7 +173,7 @@ fn phrase_capture_length_prefers_primary_hypothesis_phrase_grid() {
     state.queue_capture_bar(300);
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
+            kind: CommitBoundary::Bar,
             beat_index: 16,
             bar_index: 4,
             phrase_index: 1,

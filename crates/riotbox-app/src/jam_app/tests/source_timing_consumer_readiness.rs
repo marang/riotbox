@@ -7,7 +7,7 @@ fn manual_confirm_capture_does_not_materialize_source_window_until_confirmed() {
     state.queue_capture_bar(300);
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
+            kind: CommitBoundary::Bar,
             beat_index: 32,
             bar_index: 8,
             phrase_index: 2,
@@ -46,7 +46,7 @@ fn user_confirmed_manual_grid_allows_capture_source_window() {
     state.queue_capture_bar(300);
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
-            kind: CommitBoundary::Phrase,
+            kind: CommitBoundary::Bar,
             beat_index: 32,
             bar_index: 8,
             phrase_index: 2,

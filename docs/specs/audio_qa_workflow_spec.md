@@ -146,6 +146,10 @@ Minimum gates:
 - user-session observer probes should assert `source_map.capture_range_available`
   for locked/bar-grid and fallback/untrusted paths so this visual capture target
   contract is covered outside unit-only snapshots.
+- observer snapshots should expose the latest committed capture source window
+  when one exists, including source id, start/end seconds, duration, and frame
+  bounds, so capture-length and boundary QA can correlate the visible `cap`
+  preview with the committed source-window provenance.
 
 ### 3.2.2 Multi-source showcase diversity gates
 
