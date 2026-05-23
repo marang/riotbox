@@ -1694,3 +1694,17 @@ Why: the capture-range marker is musician-facing projection state. Observer QA n
 Evidence: RIOTBOX-982 adds observer fields and focused tests for bar-grid timing versus untrusted fallback timing.
 Consequences: future Source Map UI changes should keep observer output aligned with `SourceMapView`; observer code must not independently recompute timing readiness, capture range, or navigation state.
 Status: accepted
+
+---
+
+### RBX-048
+
+Date: 2026-05-23
+Topic: user-session probes assert Source Map capture-range availability
+Phase: Source Timing Intelligence / QA
+Question: how should the new `source_map` observer projection be covered beyond unit-level observer snapshots?
+Decision: extend existing user-session observer probe tests to assert `source_map` mode and capture-range availability for locked/bar-grid timing and unavailable capture ranges for fallback or untrusted timing.
+Why: this keeps the visible Source Map capture target in the same headless observer stream used for broader workflow QA, and catches drift between unit snapshots and probe-generated events.
+Evidence: RIOTBOX-983 adds assertions to the Feral-grid observer probe tests for locked, cautious/manual-review, and fallback timing paths.
+Consequences: future probe scenarios that rely on capture intent should check `source_map` fields rather than scraping rendered terminal text.
+Status: accepted
