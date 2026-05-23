@@ -690,4 +690,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Route source monitor mode through audio runtime policy
 - [RIOTBOX-971.md](./RIOTBOX-971.md)
   Add adaptive block Source Map projection to Jam and Source views
+- [RIOTBOX-972.md](./RIOTBOX-972.md)
+  Add user-confirmed source timing grid contract
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
