@@ -699,6 +699,41 @@ What it does not prove yet:
 - device-level playback on the host
 - finished sampler/sequencer behavior
 
+## Planned Recipe: Source Transport Map Capture
+
+Goal: use the transport as a source-listening and capture instrument.
+
+This recipe describes the target workflow from
+`docs/plans/source_transport_map_capture_plan.md`. It is a contract for upcoming
+implementation slices, not a claim that every step is already shipped.
+
+Target flow:
+
+1. load a source WAV
+2. keep monitor mode on `source`
+3. press `Space` to hear the source through the Riotbox transport
+4. read the Source Map: `energy`, `peaks`, `bars`, `play`, and `cap`
+5. audition the grid against what you hear
+6. confirm the grid when the displayed bar / phrase position is musically usable
+7. use `Left` / `Right` to seek bars and `Up` / `Down` to seek phrases
+8. choose capture length: `1 bar`, `4 bars`, or `phrase`
+9. press `c` to queue capture on the correct musical boundary
+10. press `o` to raw-audition the latest capture
+11. press `p` to promote it
+12. press `w` to hit the promoted W-30 pad
+
+What to observe:
+
+- `Space` controls transport time; monitor mode controls what you hear
+- `source` is for checking the original material and grid
+- `blend` is for hearing source plus Riotbox lanes
+- `riotbox` is for checking the generated / performed result without source masking
+- Source Map bars are trusted only when timing is usable or user-confirmed
+- when timing is not usable, the map falls back to time-based orientation instead
+  of pretending bar-accurate capture is safe
+- phrase capture falls back visibly to `4 bars` when phrase evidence is not
+  strong enough
+
 ## Recipe 15: Render A Feral Grid Pack With Honest BPM
 
 Goal: generate one local Feral grid audio pack without pretending auto timing is stronger than it is today.

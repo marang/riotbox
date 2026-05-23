@@ -112,6 +112,26 @@ Failure classes to record:
 - anchor-preserve mode destroys promised kick or snare identity
 - destructive mode was not explicit
 
+### 3.2.1.1 Source transport monitor gates
+
+Source transport and Source Map work must prove the musician can hear, see, and
+capture the intended material.
+
+Minimum gates:
+
+- `source` monitor mode is non-silent for a decoded source
+- `blend` and `riotbox` monitor states are distinguishable from `source` when
+  generated lanes are active
+- bar / phrase seek changes the audible source excerpt and preserves the current
+  play / pause state
+- source playback does not perform file I/O or analysis in the realtime callback
+- confirmed-grid state survives save / restore and replay without changing the
+  original Source Timing evidence
+- source-map snapshots show energy, peaks, bars or time fallback, playhead, and
+  capture range without relying on color alone
+- capture length intents produce source windows that match `1 bar`, `4 bars`, or
+  phrase fallback expectations
+
 ### 3.2.2 Multi-source showcase diversity gates
 
 Source-showcase listening packs must prove source reflection across multiple

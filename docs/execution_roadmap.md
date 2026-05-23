@@ -157,6 +157,11 @@ Deliverables:
 - Source Graph v1
 - sidecar RPC path
 - Jam / Source surface shows current beat, bar, phrase, tempo confidence, and degraded timing state when applicable
+- adaptive Source Map that derives energy / peak buckets from decoded source
+  audio, projects them through a usable timing hypothesis, and falls back to a
+  time-uniform view when the grid is not usable
+- user-confirmed timing hypothesis state after source audition, represented as a
+  real action / session / replay contract rather than UI-local trust
 
 ### Phase E - Jam-first playable slice
 
@@ -169,6 +174,13 @@ Deliverables:
 - first capture path
 - visible pending actions
 - undo for recent actions
+- source monitor mode for transport listening: `source`, `blend`, and `riotbox`
+- bar and phrase seek controls that move the transport while preserving play /
+  pause state
+- musician-facing capture length selection for `1 bar`, `4 bars`, and `phrase`,
+  with visible fallback when phrase evidence is unavailable
+- capture -> raw audition -> promote -> hit flow that can be followed from a
+  real source file
 
 ### Phase F - Device MVPs
 
@@ -570,6 +582,7 @@ The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:
 
 - `docs/plans/source_timing_intelligence_plan.md`
+- `docs/plans/source_transport_map_capture_plan.md`
 - `docs/specs/source_timing_intelligence_spec.md`
 - `docs/reviews/p012_source_timing_baseline_audit_2026-05-10.md`
 - `docs/reviews/p012_source_timing_contract_review_2026-05-08.md`

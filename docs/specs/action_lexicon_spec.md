@@ -132,6 +132,29 @@ Optional target references:
 - `transport.stop`
 - `transport.seek`
 
+`transport.seek` may be used for musician-facing bar and phrase navigation. The
+seek target must be structured, not inferred from status text: bar seek and
+phrase seek preserve the current play / pause state, clamp at source bounds by
+default, and must be replayable.
+
+### 6.1.1 Source monitor and timing trust
+
+Planned source-transport actions:
+
+- `monitor.mode.set`
+- `source_grid.confirm`
+- `source_grid.revert`
+
+`monitor.mode.set` changes the persisted listening mode between `source`,
+`blend`, and `riotbox`.
+
+`source_grid.confirm` records that the user accepted the currently selected
+timing hypothesis after source audition. It must include enough structured data
+to identify the hypothesis and source graph it refers to.
+
+`source_grid.revert` or normal undo must be able to remove a user confirmation
+without deleting the original Source Timing evidence.
+
 ### 6.2 Mutation
 
 - `mutate.scene`
@@ -148,6 +171,12 @@ Optional target references:
 - `promote.capture_to_pad`
 - `promote.capture_to_scene`
 - `promote.resample`
+
+Capture actions that target source material should carry structured musical
+length intent. The planned musician-facing lengths are `1 bar`, `4 bars`, and
+`phrase`. `1 bar` and `4 bars` start on the next bar; `phrase` starts on the
+next phrase when phrase evidence is usable and otherwise falls back visibly to
+`4 bars`.
 
 ### 6.4 Scene control
 
