@@ -1750,3 +1750,17 @@ Why: musicians need to know whether `c` is going to land cleanly before they pre
 Evidence: RIOTBOX-986 adds Capture screen target labels and render coverage for listen-first, next-bar, and phrase-fallback cases.
 Consequences: future Capture screen controls should keep this label aligned with `SourceMapView` and the committed capture observer snapshot rather than recomputing unrelated UI-only state.
 Status: accepted
+
+---
+
+### RBX-052
+
+Date: 2026-05-23
+Topic: Source monitor seek proof uses the callback-equivalent offline render seam
+Phase: Source Timing Intelligence / Source Transport QA
+Question: how should QA prove that source-map bar or phrase navigation changes what the musician hears?
+Decision: prove source seeking at the source monitor mix seam by rendering a decoded source cache before and after a transport-position seek with transport still running. The fixture uses distinct bar-level markers and asserts non-silent output plus a material RMS delta between the pre-seek and post-seek excerpts.
+Why: source-map navigation already commits a `transport.seek` without pausing. The missing proof was not another UI/log assertion; it was an output-path assertion that `position_beats` selects a different decoded source window in the monitor path consumed by the realtime callback.
+Evidence: RIOTBOX-987 adds `source_monitor_seeked_running_transport_changes_audible_source_excerpt`, which renders through `render_source_monitor_mix_offline` and the same source monitor policy used by the audio callback.
+Consequences: later end-to-end probes can build on this seam when adding full user-session source transport QA, but they should keep source cache loading outside the realtime callback and compare audible output rather than only observer text.
+Status: accepted
