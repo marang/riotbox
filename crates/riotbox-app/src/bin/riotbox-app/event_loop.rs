@@ -27,6 +27,8 @@ fn run_event_loop(
             audio_runtime.update_mc202_render_state(&shell.app.runtime.mc202_render);
             audio_runtime.update_w30_preview_render_state(&shell.app.runtime.w30_preview);
             audio_runtime.update_w30_resample_tap_state(&shell.app.runtime.w30_resample_tap);
+            audio_runtime
+                .update_source_monitor_render_state(&shell.app.source_monitor_control_state());
             shell.app.set_audio_health(audio_runtime.health_snapshot());
         }
 

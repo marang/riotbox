@@ -1,6 +1,9 @@
 use std::collections::BTreeMap;
 
-use riotbox_audio::runtime::AudioRuntimeHealth;
+use riotbox_audio::runtime::{
+    AudioRuntimeHealth, SourceMonitorRenderState, source_monitor_route_for_cache,
+    source_monitor_route_for_output,
+};
 use riotbox_core::{
     queue::ActionQueue, session::SessionFile, source_graph::SourceGraph,
     transport::CommitBoundaryState, view::jam::JamViewModel,
@@ -71,6 +74,25 @@ impl JamAppState {
         );
         self.runtime.w30_resample_tap =
             build_w30_resample_tap_state(&self.session, &self.runtime.transport);
+        self.runtime.source_monitor_audio_route = match self
+            .runtime
+            .audio
+            .as_ref()
+            .and_then(|health| health.output.as_ref())
+        {
+            Some(output) => source_monitor_route_for_output(
+                self.session.runtime_state.source_monitor.mode,
+                self.source_audio_cache.as_ref(),
+                output.sample_rate,
+                output.channel_count,
+            ),
+            None => source_monitor_route_for_cache(
+                self.session.runtime_state.source_monitor.mode,
+                self.source_audio_cache.as_ref(),
+            ),
+        }
+        .label()
+        .into();
         self.jam_view = JamViewModel::build(&self.session, &self.queue, self.source_graph.as_ref());
         self.runtime_view =
             JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
@@ -86,6 +108,19 @@ impl JamAppState {
         self.runtime.sidecar = state;
         self.runtime_view =
             JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
+    }
+
+    #[must_use]
+    pub fn source_monitor_render_state(&self) -> SourceMonitorRenderState {
+        SourceMonitorRenderState::from_source_cache(
+            self.session.runtime_state.source_monitor.mode,
+            self.source_audio_cache.as_ref(),
+        )
+    }
+
+    #[must_use]
+    pub fn source_monitor_control_state(&self) -> SourceMonitorRenderState {
+        SourceMonitorRenderState::control_only(self.session.runtime_state.source_monitor.mode)
     }
 }
 

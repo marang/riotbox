@@ -27,6 +27,22 @@ impl AudioRuntimeShell {
         w30_preview_render_state: W30PreviewRenderState,
         w30_resample_tap_state: W30ResampleTapState,
     ) -> Result<Self, AudioRuntimeError> {
+        Self::start_default_output_with_render_states_and_source_monitor(
+            tr909_render_state,
+            mc202_render_state,
+            w30_preview_render_state,
+            w30_resample_tap_state,
+            SourceMonitorRenderState::default(),
+        )
+    }
+
+    pub fn start_default_output_with_render_states_and_source_monitor(
+        tr909_render_state: Tr909RenderState,
+        mc202_render_state: Mc202RenderState,
+        w30_preview_render_state: W30PreviewRenderState,
+        w30_resample_tap_state: W30ResampleTapState,
+        source_monitor_state: SourceMonitorRenderState,
+    ) -> Result<Self, AudioRuntimeError> {
         let host = cpal::default_host();
         let host_name = format!("{:?}", host.id());
 
@@ -72,6 +88,7 @@ impl AudioRuntimeShell {
         let mc202_render = Arc::new(SharedMc202RenderState::new(&mc202_render_state));
         let w30_preview = Arc::new(SharedW30PreviewRenderState::new(&w30_preview_render_state));
         let w30_resample_tap = Arc::new(SharedW30ResampleTapState::new(&w30_resample_tap_state));
+        let source_monitor = Arc::new(SharedSourceMonitorRenderState::new(&source_monitor_state));
         let stream_config = default_config.config();
         let start = Instant::now();
 
@@ -86,6 +103,7 @@ impl AudioRuntimeShell {
                     mc202_render: Arc::clone(&mc202_render),
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
+                    source_monitor: Arc::clone(&source_monitor),
                 },
                 start,
             ),
@@ -99,6 +117,7 @@ impl AudioRuntimeShell {
                     mc202_render: Arc::clone(&mc202_render),
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
+                    source_monitor: Arc::clone(&source_monitor),
                 },
                 start,
             ),
@@ -112,6 +131,7 @@ impl AudioRuntimeShell {
                     mc202_render: Arc::clone(&mc202_render),
                     w30_preview: Arc::clone(&w30_preview),
                     w30_resample_tap: Arc::clone(&w30_resample_tap),
+                    source_monitor: Arc::clone(&source_monitor),
                 },
                 start,
             ),
@@ -146,6 +166,7 @@ impl AudioRuntimeShell {
             mc202_render,
             w30_preview,
             w30_resample_tap,
+            source_monitor,
             stream: Some(stream),
         })
     }
@@ -208,6 +229,10 @@ impl AudioRuntimeShell {
         self.w30_resample_tap.update(render_state);
     }
 
+    pub fn update_source_monitor_render_state(&self, render_state: &SourceMonitorRenderState) {
+        self.source_monitor.update(render_state);
+    }
+
     pub fn stop(&mut self) {
         self.stream.take();
         self.lifecycle = AudioRuntimeLifecycle::Stopped;
@@ -224,6 +249,7 @@ impl AudioRuntimeShell {
             mc202_render: parts.mc202_render,
             w30_preview: parts.w30_preview,
             w30_resample_tap: parts.w30_resample_tap,
+            source_monitor: parts.source_monitor,
             stream: None,
         }
     }
@@ -239,6 +265,7 @@ pub(super) struct AudioRuntimeShellTestParts {
     pub(super) mc202_render: Arc<SharedMc202RenderState>,
     pub(super) w30_preview: Arc<SharedW30PreviewRenderState>,
     pub(super) w30_resample_tap: Arc<SharedW30ResampleTapState>,
+    pub(super) source_monitor: Arc<SharedSourceMonitorRenderState>,
 }
 
 impl Drop for AudioRuntimeShell {
@@ -295,6 +322,10 @@ where
             w30_preview_render_state.position_beats = callback_timing.render_position_beats;
             let mut w30_resample_render_state = shared.w30_resample_tap.snapshot();
             w30_resample_render_state.is_transport_running = callback_timing.is_transport_running;
+            let mut source_monitor_state = shared.source_monitor.snapshot();
+            source_monitor_state.is_transport_running = callback_timing.is_transport_running;
+            source_monitor_state.tempo_bpm = callback_timing.tempo_bpm;
+            source_monitor_state.position_beats = callback_timing.render_position_beats;
 
             render_mix_buffer(
                 &mut mix_buffer,
@@ -309,6 +340,12 @@ where
                     resample_render: &w30_resample_render_state,
                     resample_state: &mut w30_resample_state,
                 },
+            );
+            apply_source_monitor_policy(
+                &mut mix_buffer,
+                sample_rate,
+                channel_count,
+                &source_monitor_state,
             );
             for (output, sample) in data.iter_mut().zip(mix_buffer.iter().copied()) {
                 *output = T::from_sample(sample);
@@ -332,6 +369,7 @@ pub(super) struct AudioRuntimeSharedState {
     mc202_render: Arc<SharedMc202RenderState>,
     w30_preview: Arc<SharedW30PreviewRenderState>,
     w30_resample_tap: Arc<SharedW30ResampleTapState>,
+    source_monitor: Arc<SharedSourceMonitorRenderState>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]

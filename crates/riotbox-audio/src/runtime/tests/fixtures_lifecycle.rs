@@ -299,6 +299,9 @@ fn health_snapshot_reflects_faulted_runtime_state() {
     let w30_resample_tap_state = Arc::new(SharedW30ResampleTapState::new(
         &W30ResampleTapState::default(),
     ));
+    let source_monitor_state = Arc::new(SharedSourceMonitorRenderState::new(
+        &SourceMonitorRenderState::default(),
+    ));
     let transport = Arc::new(SharedTransportTimingState::new(false, 128.0, 0.0));
     telemetry.record_callback_at(100, &sample_timing(12.0));
     telemetry.record_callback_at(240, &sample_timing(12.25));
@@ -313,6 +316,7 @@ fn health_snapshot_reflects_faulted_runtime_state() {
         mc202_render: mc202_render_state,
         w30_preview: w30_preview_state,
         w30_resample_tap: w30_resample_tap_state,
+        source_monitor: source_monitor_state,
     });
 
     let snapshot = shell.health_snapshot();
@@ -338,6 +342,9 @@ fn stop_transitions_runtime_to_stopped() {
     let w30_resample_tap_state = Arc::new(SharedW30ResampleTapState::new(
         &W30ResampleTapState::default(),
     ));
+    let source_monitor_state = Arc::new(SharedSourceMonitorRenderState::new(
+        &SourceMonitorRenderState::default(),
+    ));
     let transport = Arc::new(SharedTransportTimingState::new(false, 128.0, 0.0));
     let mut shell = AudioRuntimeShell::from_test_parts(AudioRuntimeShellTestParts {
         lifecycle: AudioRuntimeLifecycle::Running,
@@ -348,6 +355,7 @@ fn stop_transitions_runtime_to_stopped() {
         mc202_render: mc202_render_state,
         w30_preview: w30_preview_state,
         w30_resample_tap: w30_resample_tap_state,
+        source_monitor: source_monitor_state,
     });
 
     shell.stop();
@@ -372,6 +380,9 @@ fn timing_snapshot_reflects_callback_owned_transport_progress() {
         w30_resample_tap: Arc::new(SharedW30ResampleTapState::new(
             &W30ResampleTapState::default(),
         )),
+        source_monitor: Arc::new(SharedSourceMonitorRenderState::new(
+            &SourceMonitorRenderState::default(),
+        )),
     });
 
     telemetry.record_callback_at(
@@ -389,4 +400,3 @@ fn timing_snapshot_reflects_callback_owned_transport_progress() {
     assert_eq!(snapshot.tempo_bpm, 126.0);
     assert_eq!(snapshot.position_beats, 32.5);
 }
-

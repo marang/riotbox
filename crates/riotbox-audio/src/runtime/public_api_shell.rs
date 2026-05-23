@@ -404,5 +404,6 @@ pub struct AudioRuntimeShell {
     pub(super) mc202_render: Arc<SharedMc202RenderState>,
     pub(super) w30_preview: Arc<SharedW30PreviewRenderState>,
     pub(super) w30_resample_tap: Arc<SharedW30ResampleTapState>,
+    pub(super) source_monitor: Arc<SharedSourceMonitorRenderState>,
     pub(super) stream: Option<cpal::Stream>,
 }
