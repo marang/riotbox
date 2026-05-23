@@ -95,12 +95,17 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
         message: "phrase grid needs confirmation".into(),
     });
 
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-08T00:00:00Z");
+    session.runtime_state.source_timing.confirmed_grid =
+        Some(riotbox_core::session::SourceTimingGridConfirmationState {
+            source_id: SourceId::from("src-timing"),
+            hypothesis_id: Some("probe-primary".into()),
+            confirmed_by_action: ActionId(9),
+            confirmed_at: 1_777_777,
+        });
+
     let shell = JamShellState::new(
-        JamAppState::from_parts(
-            SessionFile::new("session-1", "0.1.0", "2026-05-08T00:00:00Z"),
-            Some(graph),
-            ActionQueue::new(),
-        ),
+        JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
         ShellLaunchMode::Ingest,
     );
 
@@ -127,6 +132,11 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
     assert_eq!(source_timing["phrase_status"], "uncertain");
     assert_eq!(source_timing["phrase_count"], 0);
     assert_eq!(source_timing["primary_hypothesis_id"], "probe-primary");
+    assert_eq!(source_timing["grid_confirmed"], true);
+    assert_eq!(source_timing["confirmed_grid_source_id"], "src-timing");
+    assert_eq!(source_timing["confirmed_grid_hypothesis_id"], "probe-primary");
+    assert_eq!(source_timing["confirmed_grid_action_id"], 9);
+    assert_eq!(source_timing["confirmed_grid_at"], 1_777_777);
     assert_eq!(
         source_timing["anchor_evidence"]["primary_anchor_count"],
         3
@@ -254,6 +264,7 @@ fn observer_snapshot_uses_shared_source_timing_summary_for_musician_cues() {
     assert_eq!(source_timing["actionability"], "confirm grid first");
     assert_eq!(source_timing["grid_use"], "manual_confirm_only");
     assert_eq!(source_timing["primary_warning_code"], "ambiguous_downbeat");
+    assert_eq!(source_timing["grid_confirmed"], false);
     assert_eq!(source_timing["alternate_downbeat_phase_count"], 0);
     assert_eq!(
         source_timing["anchor_evidence"]["primary_anchor_count"],

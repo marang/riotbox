@@ -169,6 +169,17 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         return Value::Null;
     };
     let timing = &shell.app.jam_view.source.timing;
+    let confirmed_grid = shell
+        .app
+        .session
+        .runtime_state
+        .source_timing
+        .confirmed_grid
+        .as_ref();
+    let confirmed_grid_matches_current_source = confirmed_grid.is_some_and(|confirmed| {
+        confirmed.source_id == graph.source.source_id
+            && confirmed.hypothesis_id.as_deref() == graph.timing.primary_hypothesis_id.as_deref()
+    });
 
     json!({
         "present": true,
@@ -191,6 +202,11 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         "phrase_status": timing.phrase_status.as_str(),
         "phrase_count": timing.phrase_count,
         "primary_hypothesis_id": graph.timing.primary_hypothesis_id.as_deref(),
+        "grid_confirmed": confirmed_grid_matches_current_source,
+        "confirmed_grid_source_id": confirmed_grid.map(|confirmed| confirmed.source_id.to_string()),
+        "confirmed_grid_hypothesis_id": confirmed_grid.and_then(|confirmed| confirmed.hypothesis_id.as_deref()),
+        "confirmed_grid_action_id": confirmed_grid.map(|confirmed| confirmed.confirmed_by_action.0),
+        "confirmed_grid_at": confirmed_grid.map(|confirmed| confirmed.confirmed_at),
         "hypothesis_count": graph.timing.hypotheses.len(),
         "anchor_evidence": source_timing_anchor_evidence_observer_snapshot(timing),
         "primary_anchor_cue": timing.primary_anchor_cue.as_str(),

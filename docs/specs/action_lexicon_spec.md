@@ -139,18 +139,20 @@ default, and must be replayable.
 
 ### 6.1.1 Source monitor and timing trust
 
-Planned source-transport actions:
+Source monitor and timing-trust actions:
 
-- `monitor.mode.set`
-- `source_grid.confirm`
+- `source_monitor.set_mode`
+- `source_timing.confirm_grid`
 - `source_grid.revert`
 
-`monitor.mode.set` changes the persisted listening mode between `source`,
+`source_monitor.set_mode` changes the persisted listening mode between `source`,
 `blend`, and `riotbox`.
 
-`source_grid.confirm` records that the user accepted the currently selected
-timing hypothesis after source audition. It must include enough structured data
-to identify the hypothesis and source graph it refers to.
+`source_timing.confirm_grid` records that the user accepted the currently
+selected timing hypothesis after source audition. It uses `session` scope,
+commits immediately, and carries structured `source_id` plus optional
+`hypothesis_id` parameters so replay / restore can distinguish analyzed
+confidence from user-accepted musical trust.
 
 `source_grid.revert` or normal undo must be able to remove a user confirmation
 without deleting the original Source Timing evidence.

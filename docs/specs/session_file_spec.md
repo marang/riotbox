@@ -156,7 +156,7 @@ MVP note:
 RuntimeState {
   transport
   source_monitor
-  source_grid_trust
+  source_timing
   macro_state
   lane_state
   mixer_state
@@ -188,9 +188,10 @@ session and replay path, not in app-local UI state.
 
 User-confirmed timing trust must be represented explicitly:
 
-- source id / source graph identity
-- selected timing hypothesis identity
-- confirmation actor and timestamp
+- `source_timing.confirmed_grid.source_id`
+- `source_timing.confirmed_grid.hypothesis_id`
+- `source_timing.confirmed_grid.confirmed_by_action`
+- `source_timing.confirmed_grid.confirmed_at`
 - enough provenance to distinguish analyzed confidence from user acceptance
 - undo / revert consequence
 

@@ -5,7 +5,7 @@ use crate::{
         Action, ActionParams, ActionResult, ActionStatus, ActionTarget, ActorType, CommitBoundary,
         Quantization, UndoPolicy,
     },
-    ids::SnapshotId,
+    ids::{SnapshotId, SourceId},
     session::{ActionCommitRecord, ActionLog, ReplayPolicy, Snapshot},
     transport::CommitBoundaryState,
 };

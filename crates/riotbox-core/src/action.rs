@@ -3,7 +3,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     TimestampMs,
-    ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId},
+    ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SourceId},
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -198,6 +198,10 @@ pub enum ActionParams {
     SourceMonitor {
         mode: Option<SourceMonitorMode>,
     },
+    SourceTimingGrid {
+        source_id: Option<SourceId>,
+        hypothesis_id: Option<String>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -251,6 +255,7 @@ pub enum ActionCommand {
     RedoLast,
     RestoreSource,
     SourceMonitorSetMode,
+    SourceTimingConfirmGrid,
     GhostSetMode,
     GhostAcceptSuggestion,
     GhostRejectSuggestion,
@@ -310,6 +315,7 @@ impl ActionCommand {
             Self::RedoLast => "redo.last",
             Self::RestoreSource => "restore.source",
             Self::SourceMonitorSetMode => "source_monitor.set_mode",
+            Self::SourceTimingConfirmGrid => "source_timing.confirm_grid",
             Self::GhostSetMode => "ghost.set_mode",
             Self::GhostAcceptSuggestion => "ghost.accept_suggestion",
             Self::GhostRejectSuggestion => "ghost.reject_suggestion",

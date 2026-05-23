@@ -3,8 +3,8 @@ use crate::{
     ids::ActionId,
     replay::{ReplayPlanEntry, W30ArtifactReplayHydrationError},
     session::{
-        Mc202PhraseIntentState, Mc202RoleState, SessionFile, Tr909ReinforcementModeState,
-        Tr909TakeoverProfileState,
+        Mc202PhraseIntentState, Mc202RoleState, SessionFile, SourceTimingGridConfirmationState,
+        Tr909ReinforcementModeState, Tr909TakeoverProfileState,
     },
 };
 
@@ -22,6 +22,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::TransportStop,
     ActionCommand::TransportSeek,
     ActionCommand::SourceMonitorSetMode,
+    ActionCommand::SourceTimingConfirmGrid,
     ActionCommand::LockObject,
     ActionCommand::UnlockObject,
     ActionCommand::GhostSetMode,
@@ -123,6 +124,26 @@ pub fn apply_replay_entry_to_session(
                 });
             };
             session.runtime_state.source_monitor.mode = mode;
+        }
+        ActionCommand::SourceTimingConfirmGrid => {
+            let ActionParams::SourceTimingGrid {
+                source_id: Some(ref source_id),
+                ref hypothesis_id,
+            } = action.params
+            else {
+                return Err(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionParams::SourceTimingGrid { source_id: Some(_) }",
+                });
+            };
+            session.runtime_state.source_timing.confirmed_grid =
+                Some(SourceTimingGridConfirmationState {
+                    source_id: source_id.clone(),
+                    hypothesis_id: hypothesis_id.clone(),
+                    confirmed_by_action: action.id,
+                    confirmed_at: action.committed_at.unwrap_or(action.requested_at),
+                });
         }
         ActionCommand::LockObject => {
             let ActionParams::Lock { ref object_id } = action.params else {

@@ -1540,3 +1540,17 @@ Why: the Source Timing spec requires observer/audio summaries to preserve phrase
 Evidence: `docs/reviews/p012_proof_surface_review_2026-05-22.md` found no blocker after `RIOTBOX-946` through `RIOTBOX-950`, but identified the remaining Markdown phrase-evidence gap as the next bounded implementation slice.
 Consequences: this is display/validator work only. It must not change analyzer behavior or treat bounded generated phrase evidence as production-grade arbitrary-audio phrase detection.
 Status: accepted
+
+---
+
+### RBX-037
+
+Date: 2026-05-23
+Topic: user-confirmed source timing grid is session truth
+Phase: Source Timing Intelligence
+Question: where should musician acceptance of a source timing grid live?
+Decision: user grid acceptance is recorded through `source_timing.confirm_grid` and persisted in `runtime_state.source_timing.confirmed_grid` with source id, hypothesis id, confirming action id, and timestamp.
+Why: confirmation changes how much trust the musician and later workflows can place in the selected timing hypothesis after audition, so it must survive save/load and replay instead of living as TUI-local state.
+Evidence: RIOTBOX-972 added typed action params, queue / commit side effects, replay support, observer fields, session serialization coverage, and app queue/commit tests.
+Consequences: Source Graph evidence remains unchanged; analyzed confidence and user-accepted trust stay separate. Revert / undo semantics still need a dedicated follow-up before confirmation can be removed explicitly.
+Status: accepted
