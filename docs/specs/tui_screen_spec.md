@@ -258,7 +258,8 @@ Show:
 - compact `src` / `fallback` readiness on W-30 hit handoffs so the user can tell whether the path is source-backed or on the safe preview fallback
 - a primary next-step cue for capture, promote, hit, and audition before lower-level routing diagnostics
 - current capture length and target boundary, such as `4 bars @ next bar` or
-  `phrase -> 4 bars fallback`, so the musician understands what `c` will queue
+  compact phrase fallback `phrase->4bar @ next bar`, so the musician
+  understands what `c` will queue
   before pressing it
 - capture length controls should be explicit and compact. `-` selects the
   previous musical length and `=` selects the next musical length across

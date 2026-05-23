@@ -16,7 +16,7 @@ fn renders_capture_shell_snapshot_with_capture_context() {
     assert!(rendered.contains("promote keeper capture"));
     assert!(rendered.contains("promotion result pending"));
     assert!(rendered.contains("captures total 1"));
-    assert!(rendered.contains("length 4 bars | [-]/[=]"));
+    assert!(rendered.contains("target 4 bars @ listen first"));
     assert!(rendered.contains("pinned 0 | promoted 0"));
     assert!(
         rendered.contains("queued [p] promote @ next_bar"),
@@ -54,8 +54,8 @@ fn capture_screen_shows_selected_length_before_first_capture() {
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(rendered.contains("length 1 bar | [-]/[=]"), "{rendered}");
-    assert!(rendered.contains("1 [c] capture 1 bar"), "{rendered}");
+    assert!(rendered.contains("target 1 bar @ listen first"), "{rendered}");
+    assert!(rendered.contains("1 [c] 1 bar @ listen first"), "{rendered}");
 }
 
 #[test]

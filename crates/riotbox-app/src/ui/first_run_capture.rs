@@ -3,7 +3,7 @@ mod routing;
 
 use ratatui::{text::Line, widgets::ListItem};
 use riotbox_core::{
-    action::ActionStatus,
+    action::{ActionStatus, CaptureLengthIntent},
     view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView},
 };
 
@@ -94,10 +94,7 @@ pub(super) fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static
             transport_label(shell),
             shell.app.jam_view.transport.position_beats
         )),
-        Line::from(format!(
-            "length {} | [-]/[=]",
-            shell.app.session.runtime_state.capture.length_intent
-        )),
+        Line::from(format!("target {}", capture_target_boundary_label(shell))),
         Line::from(format!("pending {pending_capture_count} | w30 bank {bank}")),
         Line::from(format!(
             "last lane capture {}",
@@ -155,10 +152,7 @@ pub(super) fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>>
 
     let Some(last_capture_id) = capture.last_capture_id.as_deref() else {
         return vec![
-            Line::from(format!(
-                "1 [c] capture {}",
-                shell.app.session.runtime_state.capture.length_intent
-            )),
+            Line::from(format!("1 [c] {}", capture_target_boundary_label(shell))),
             Line::from("2 [p] promote keeper"),
             Line::from("3 [w] hit promoted pad"),
             Line::from("use Log to confirm"),
@@ -202,6 +196,28 @@ pub(super) fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>>
             )),
             Line::from(capture_handoff_help_line(handoff_readiness)),
         ],
+    }
+}
+
+fn capture_target_boundary_label(shell: &JamShellState) -> String {
+    let length_intent = shell.app.session.runtime_state.capture.length_intent;
+    let source_map = &shell.app.jam_view.source.source_map;
+    let has_capture_range =
+        source_map.capture_range_row.contains('[') || source_map.capture_range_row.contains('*');
+
+    if has_capture_range {
+        return match length_intent {
+            CaptureLengthIntent::Phrase if shell.app.jam_view.source.timing.phrase_count == 0 => {
+                "phrase->4bar @ next bar".into()
+            }
+            _ => format!("{length_intent} @ next bar"),
+        };
+    }
+
+    if source_map.capture_hint.contains("listen first") {
+        format!("{length_intent} @ listen first")
+    } else {
+        format!("{length_intent} @ unavailable")
     }
 }
 
