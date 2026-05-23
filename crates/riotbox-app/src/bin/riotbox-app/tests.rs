@@ -269,6 +269,12 @@ mod tests {
         include!("tests/source_map_navigation_control.rs");
     }
 
+    mod source_map_bucket_ingest {
+        use super::*;
+
+        include!("tests/source_map_bucket_ingest.rs");
+    }
+
     mod capture_length_control {
         use super::*;
 

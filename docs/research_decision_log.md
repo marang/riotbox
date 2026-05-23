@@ -1820,3 +1820,17 @@ Why: the compact Source Map should reflect source audio shape during normal inge
 Evidence: RIOTBOX-991 extends `json_stdio_sidecar.py` bucket extraction and the Rust sidecar client test to assert parsed bucket evidence on generated PCM WAV input.
 Consequences: future MIR work can improve bucket quality behind the same contract; bucket evidence still does not replace timing, seek, or capture-window authority.
 Status: accepted
+
+---
+
+### RBX-057
+
+Date: 2026-05-23
+Topic: Source Map bucket evidence is proven through app ingest observer projection
+Phase: Source Timing Intelligence / Source Map QA
+Question: how should QA prove decoded Source Map buckets reach the musician-facing surface after normal ingest?
+Decision: add an app-bin ingest test that analyzes a generated WAV through the stdio sidecar, builds the normal Jam shell state, and compares observer `source_map` rows with the shared `SourceMapView` projection.
+Why: sidecar-client parsing proves the JSON contract, but the musician sees the app projection. The proof must cover the bridge from decoded analysis output into Jam/observer state without scraping terminal text or adding a second Source Map derivation.
+Evidence: RIOTBOX-992 adds `source_map_bucket_ingest`, which asserts parsed bucket evidence, a multi-level bucket-backed energy contour, peak evidence, and observer snapshot parity with `SourceMapView`.
+Consequences: future Source Map UI polish should keep observer snapshots aligned with `SourceMapView` so decoded bucket evidence remains testable without terminal-only baselines.
+Status: accepted
