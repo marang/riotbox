@@ -54,6 +54,47 @@ fn commits_grid_and_reports_status() {
 }
 
 #[test]
+fn reverts_grid_and_reports_status() {
+    let graph = source_timing_confirm_graph();
+    let mut shell = JamShellState::new(
+        JamAppState::from_parts(
+            SessionFile::new("session-1", "0.1.0", "2026-05-23T14:24:00Z"),
+            Some(graph),
+            ActionQueue::new(),
+        ),
+        ShellLaunchMode::Ingest,
+    );
+
+    confirm_source_timing_grid(&mut shell, 123);
+    assert!(shell.app.session.runtime_state.source_timing.confirmed_grid.is_some());
+
+    revert_source_timing_grid(&mut shell, 124);
+
+    assert_eq!(
+        shell.status_message,
+        "reverted source timing grid confirmation"
+    );
+    assert!(shell.app.queue.pending_actions().is_empty());
+    assert!(shell.app.session.runtime_state.source_timing.confirmed_grid.is_none());
+
+    let action = shell
+        .app
+        .session
+        .action_log
+        .actions
+        .last()
+        .expect("committed revert action");
+    assert_eq!(action.command, ActionCommand::SourceTimingRevertGrid);
+    assert_eq!(action.committed_at, Some(124));
+
+    revert_source_timing_grid(&mut shell, 125);
+    assert_eq!(
+        shell.status_message,
+        "no source timing grid confirmation to revert"
+    );
+}
+
+#[test]
 fn reports_unavailable_without_graph() {
     let mut shell = JamShellState::new(
         JamAppState::from_parts(

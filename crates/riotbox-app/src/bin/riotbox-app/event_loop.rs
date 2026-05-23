@@ -386,6 +386,9 @@ fn run_event_loop(
                 ShellKeyOutcome::ConfirmSourceTimingGrid => {
                     confirm_source_timing_grid(&mut shell, timestamp_now());
                 }
+                ShellKeyOutcome::RevertSourceTimingGrid => {
+                    revert_source_timing_grid(&mut shell, timestamp_now());
+                }
                 ShellKeyOutcome::TogglePinLatestCapture => {
                     match shell.app.toggle_pin_latest_capture() {
                         Some(true) => shell.set_error_status("pinned latest capture"),

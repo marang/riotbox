@@ -36,6 +36,15 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         ),
         action(
             5,
+            ActionCommand::SourceTimingRevertGrid,
+            ActionParams::SourceTimingGrid {
+                source_id: Some(SourceId::from("src-1")),
+                hypothesis_id: Some("primary-grid".into()),
+            },
+            375,
+        ),
+        action(
+            6,
             ActionCommand::LockObject,
             ActionParams::Lock {
                 object_id: "pad-a1".into(),
@@ -43,7 +52,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             400,
         ),
         action(
-            6,
+            7,
             ActionCommand::GhostSetMode,
             ActionParams::Ghost {
                 mode: Some(GhostMode::Assist),
@@ -51,7 +60,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             },
             500,
         ),
-        action(7, ActionCommand::TransportPause, ActionParams::Empty, 600),
+        action(8, ActionCommand::TransportPause, ActionParams::Empty, 600),
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
@@ -67,7 +76,8 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             ActionId(4),
             ActionId(5),
             ActionId(6),
-            ActionId(7)
+            ActionId(7),
+            ActionId(8)
         ]
     );
     assert!(!session.runtime_state.transport.is_playing);
@@ -80,18 +90,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         session.runtime_state.source_monitor.mode,
         SourceMonitorMode::Blend
     );
-    let confirmed_grid = session
-        .runtime_state
-        .source_timing
-        .confirmed_grid
-        .expect("source timing confirmation");
-    assert_eq!(confirmed_grid.source_id, SourceId::from("src-1"));
-    assert_eq!(
-        confirmed_grid.hypothesis_id.as_deref(),
-        Some("primary-grid")
-    );
-    assert_eq!(confirmed_grid.confirmed_by_action, ActionId(4));
-    assert_eq!(confirmed_grid.confirmed_at, 350);
+    assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
     assert_eq!(session.ghost_state.mode, GhostMode::Assist);
 }
 
@@ -369,6 +368,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::TransportSeek,
             ActionCommand::SourceMonitorSetMode,
             ActionCommand::SourceTimingConfirmGrid,
+            ActionCommand::SourceTimingRevertGrid,
             ActionCommand::LockObject,
             ActionCommand::UnlockObject,
             ActionCommand::GhostSetMode,

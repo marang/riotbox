@@ -3,13 +3,15 @@ use crate::{
     ids::ActionId,
     replay::{ReplayPlanEntry, W30ArtifactReplayHydrationError},
     session::{
-        Mc202PhraseIntentState, Mc202RoleState, SessionFile, SourceTimingGridConfirmationState,
-        Tr909ReinforcementModeState, Tr909TakeoverProfileState,
+        Mc202PhraseIntentState, Mc202RoleState, SessionFile, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState,
     },
 };
 
+mod source_timing;
 mod w30;
 
+use source_timing::apply_source_timing_replay_action;
 use w30::{
     apply_capture_bar_group_hydrated_cue, apply_capture_loop_hydrated_cue,
     apply_promote_capture_to_scene, apply_promote_capture_to_w30_pad,
@@ -23,6 +25,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::TransportSeek,
     ActionCommand::SourceMonitorSetMode,
     ActionCommand::SourceTimingConfirmGrid,
+    ActionCommand::SourceTimingRevertGrid,
     ActionCommand::LockObject,
     ActionCommand::UnlockObject,
     ActionCommand::GhostSetMode,
@@ -125,25 +128,8 @@ pub fn apply_replay_entry_to_session(
             };
             session.runtime_state.source_monitor.mode = mode;
         }
-        ActionCommand::SourceTimingConfirmGrid => {
-            let ActionParams::SourceTimingGrid {
-                source_id: Some(ref source_id),
-                ref hypothesis_id,
-            } = action.params
-            else {
-                return Err(ReplayExecutionError::InvalidParams {
-                    action_id: action.id,
-                    command: action.command,
-                    expected: "ActionParams::SourceTimingGrid { source_id: Some(_) }",
-                });
-            };
-            session.runtime_state.source_timing.confirmed_grid =
-                Some(SourceTimingGridConfirmationState {
-                    source_id: source_id.clone(),
-                    hypothesis_id: hypothesis_id.clone(),
-                    confirmed_by_action: action.id,
-                    confirmed_at: action.committed_at.unwrap_or(action.requested_at),
-                });
+        ActionCommand::SourceTimingConfirmGrid | ActionCommand::SourceTimingRevertGrid => {
+            apply_source_timing_replay_action(session, action)?;
         }
         ActionCommand::LockObject => {
             let ActionParams::Lock { ref object_id } = action.params else {
