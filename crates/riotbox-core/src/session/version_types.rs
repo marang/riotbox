@@ -88,6 +88,8 @@ pub struct RuntimeState {
     pub transport: TransportRuntimeState,
     #[serde(default)]
     pub source_monitor: SourceMonitorRuntimeState,
+    #[serde(default)]
+    pub source_timing: SourceTimingRuntimeState,
     pub macro_state: MacroState,
     pub lane_state: LaneState,
     pub mixer_state: MixerState,
@@ -102,6 +104,20 @@ pub struct RuntimeState {
 pub struct SourceMonitorRuntimeState {
     #[serde(default)]
     pub mode: SourceMonitorMode,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SourceTimingRuntimeState {
+    #[serde(default)]
+    pub confirmed_grid: Option<SourceTimingGridConfirmationState>,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct SourceTimingGridConfirmationState {
+    pub source_id: SourceId,
+    pub hypothesis_id: Option<String>,
+    pub confirmed_by_action: ActionId,
+    pub confirmed_at: TimestampMs,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

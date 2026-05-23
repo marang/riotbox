@@ -27,6 +27,15 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         ),
         action(
             4,
+            ActionCommand::SourceTimingConfirmGrid,
+            ActionParams::SourceTimingGrid {
+                source_id: Some(SourceId::from("src-1")),
+                hypothesis_id: Some("primary-grid".into()),
+            },
+            350,
+        ),
+        action(
+            5,
             ActionCommand::LockObject,
             ActionParams::Lock {
                 object_id: "pad-a1".into(),
@@ -34,7 +43,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             400,
         ),
         action(
-            5,
+            6,
             ActionCommand::GhostSetMode,
             ActionParams::Ghost {
                 mode: Some(GhostMode::Assist),
@@ -42,7 +51,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             },
             500,
         ),
-        action(6, ActionCommand::TransportPause, ActionParams::Empty, 600),
+        action(7, ActionCommand::TransportPause, ActionParams::Empty, 600),
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
@@ -57,7 +66,8 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             ActionId(3),
             ActionId(4),
             ActionId(5),
-            ActionId(6)
+            ActionId(6),
+            ActionId(7)
         ]
     );
     assert!(!session.runtime_state.transport.is_playing);
@@ -70,6 +80,18 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         session.runtime_state.source_monitor.mode,
         SourceMonitorMode::Blend
     );
+    let confirmed_grid = session
+        .runtime_state
+        .source_timing
+        .confirmed_grid
+        .expect("source timing confirmation");
+    assert_eq!(confirmed_grid.source_id, SourceId::from("src-1"));
+    assert_eq!(
+        confirmed_grid.hypothesis_id.as_deref(),
+        Some("primary-grid")
+    );
+    assert_eq!(confirmed_grid.confirmed_by_action, ActionId(4));
+    assert_eq!(confirmed_grid.confirmed_at, 350);
     assert_eq!(session.ghost_state.mode, GhostMode::Assist);
 }
 
@@ -93,6 +115,34 @@ fn plan_executor_rejects_source_monitor_mode_without_mode_param() {
             action_id: ActionId(1),
             command: ActionCommand::SourceMonitorSetMode,
             expected: "ActionParams::SourceMonitor { mode: Some(_) }"
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
+fn plan_executor_rejects_source_timing_confirmation_without_source_id() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::SourceTimingConfirmGrid,
+        ActionParams::SourceTimingGrid {
+            source_id: None,
+            hypothesis_id: Some("primary-grid".into()),
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:10:00Z");
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("invalid params");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::SourceTimingConfirmGrid,
+            expected: "ActionParams::SourceTimingGrid { source_id: Some(_) }"
         }
     );
     assert_eq!(session, original_session);
@@ -318,6 +368,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::TransportStop,
             ActionCommand::TransportSeek,
             ActionCommand::SourceMonitorSetMode,
+            ActionCommand::SourceTimingConfirmGrid,
             ActionCommand::LockObject,
             ActionCommand::UnlockObject,
             ActionCommand::GhostSetMode,

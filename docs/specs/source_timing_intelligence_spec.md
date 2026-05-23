@@ -235,9 +235,18 @@ Rules:
 - a musician may confirm the currently selected timing hypothesis only after
   source audition; this confirmation is a persisted trust state, not a local TUI
   flag
+- the confirmation action is `source_timing.confirm_grid`; it is a session-scope
+  immediate action with structured `source_id` and optional `hypothesis_id`
+  params
 - confirmation must preserve the original timing evidence and record user
   provenance, so replay / restore can distinguish analyzed confidence from
   user-accepted musical trust
+- session runtime state stores the accepted grid as
+  `runtime_state.source_timing.confirmed_grid`, including source id,
+  hypothesis id, confirming action id, and confirmation timestamp
+- observer surfaces should expose `grid_confirmed`, confirmed source /
+  hypothesis ids, confirming action id, and confirmation timestamp beside the
+  analyzed timing evidence
 - confirmation must be undoable or explicitly revertible through the action /
   session model
 

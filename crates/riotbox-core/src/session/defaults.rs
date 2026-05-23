@@ -361,6 +361,50 @@ mod tests {
     }
 
     #[test]
+    fn source_timing_confirmation_defaults_empty_and_roundtrips_as_runtime_state() {
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T12:00:00Z");
+
+        assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+
+        session.runtime_state.source_timing.confirmed_grid =
+            Some(SourceTimingGridConfirmationState {
+                source_id: SourceId::from("src-1"),
+                hypothesis_id: Some("primary-grid".into()),
+                confirmed_by_action: ActionId(42),
+                confirmed_at: 1_771_156_800_000,
+            });
+
+        let decoded: SessionFile = serde_json::from_str(
+            &serde_json::to_string_pretty(&session).expect("serialize session"),
+        )
+        .expect("deserialize session");
+
+        assert_eq!(decoded.runtime_state.source_timing, session.runtime_state.source_timing);
+        let confirmed = decoded
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .expect("source timing confirmation");
+        assert_eq!(confirmed.source_id, SourceId::from("src-1"));
+        assert_eq!(confirmed.hypothesis_id.as_deref(), Some("primary-grid"));
+    }
+
+    #[test]
+    fn legacy_runtime_state_without_source_timing_defaults_to_unconfirmed_grid() {
+        let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T12:01:00Z");
+        let mut value = serde_json::to_value(&session).expect("serialize session");
+        value["runtime_state"]
+            .as_object_mut()
+            .expect("runtime state object")
+            .remove("source_timing");
+
+        let decoded: SessionFile =
+            serde_json::from_value(value).expect("deserialize legacy session");
+
+        assert!(decoded.runtime_state.source_timing.confirmed_grid.is_none());
+    }
+
+    #[test]
     fn assist_accepts_suggestion_without_implicit_musical_state_change() {
         let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-29T16:45:00Z");
         session.ghost_state.mode = GhostMode::Assist;
