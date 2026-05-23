@@ -6,3 +6,4 @@ include!("tests/w30_resample_support.rs");
 include!("tests/mix_offline_tr909.rs");
 include!("tests/fixture_regressions_variations.rs");
 include!("tests/signal_metrics.rs");
+include!("tests/source_monitor.rs");

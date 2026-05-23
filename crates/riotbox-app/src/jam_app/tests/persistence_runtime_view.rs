@@ -179,6 +179,41 @@ fn runtime_view_updates_from_audio_and_sidecar_state() {
 }
 
 #[test]
+fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_monitor.mode = SourceMonitorMode::Source;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "fallback_riotbox");
+
+    state.source_audio_cache = Some(
+        SourceAudioCache::from_interleaved_samples(
+            "source.wav",
+            44_100,
+            1,
+            vec![0.25, 0.5, 0.75, 1.0],
+        )
+        .expect("source cache"),
+    );
+    state.refresh_view();
+
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_only");
+
+    state.set_audio_health(sample_audio_health(AudioRuntimeLifecycle::Running));
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_only");
+
+    state
+        .source_audio_cache
+        .as_mut()
+        .expect("source audio cache")
+        .sample_rate = 48_000;
+    state.refresh_view();
+
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "fallback_riotbox");
+}
+
+#[test]
 fn source_monitor_mode_queues_commits_and_surfaces_in_runtime_view() {
     let graph = sample_graph();
     let session = sample_session(&graph);

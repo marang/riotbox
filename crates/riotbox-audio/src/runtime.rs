@@ -11,6 +11,7 @@ use crate::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
         Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
     },
+    source_audio::SourceAudioCache,
     tr909::{
         Tr909PatternAdoption, Tr909PhraseVariation, Tr909RenderMode, Tr909RenderRouting,
         Tr909RenderState, Tr909SourceSupportContext, Tr909SourceSupportProfile,
@@ -31,6 +32,7 @@ mod render_tr909_w30_preview;
 mod shared_mc202_w30_preview;
 mod shared_transport_tr909;
 mod shared_w30_resample_callback;
+mod source_monitor;
 mod tr909_tail_telemetry;
 mod w30_tr909_signal_helpers;
 
@@ -52,6 +54,12 @@ use shared_w30_resample_callback::{
     CallbackTimingSnapshot, RealtimeW30ResampleTapState, SharedW30ResampleTapState,
     Tr909CallbackState, TransportTimingCallbackState, W30MixRenderState, W30PreviewCallbackState,
     W30ResampleTapCallbackState, advance_transport_timing, render_mix_buffer,
+};
+use source_monitor::{SharedSourceMonitorRenderState, apply_source_monitor_policy};
+pub use source_monitor::{
+    SourceMonitorAudioRoute, SourceMonitorAudioSource, SourceMonitorRenderState,
+    render_source_monitor_mix_offline, source_monitor_route_for_cache,
+    source_monitor_route_for_output,
 };
 use tr909_tail_telemetry::{
     RuntimeTelemetry, envelope_decay, mode_from_u32, mode_to_u32, pattern_adoption_from_u32,

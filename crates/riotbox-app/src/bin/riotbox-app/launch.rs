@@ -118,11 +118,12 @@ fn run_terminal_ui(
         None => None,
     };
     let mut terminal = ManagedTerminal::enter()?;
-    let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states(
+    let mut audio_runtime = match AudioRuntimeShell::start_default_output_with_render_states_and_source_monitor(
         shell.app.runtime.tr909_render.clone(),
         shell.app.runtime.mc202_render,
         shell.app.runtime.w30_preview.clone(),
         shell.app.runtime.w30_resample_tap.clone(),
+        shell.app.source_monitor_render_state(),
     ) {
         Ok(runtime) => {
             runtime.update_transport_state(
