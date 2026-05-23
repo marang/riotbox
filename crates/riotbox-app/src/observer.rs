@@ -54,6 +54,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "warnings": runtime.runtime_warnings,
         },
         "source_timing": source_timing_observer_snapshot(shell),
+        "source_map": source_map_observer_snapshot(shell),
         "recovery": recovery_observer_snapshot(shell),
     })
 }
@@ -226,6 +227,27 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
             .iter()
             .map(|warning| observer_timing_warning_code_label(&warning.code))
             .collect::<Vec<_>>(),
+    })
+}
+
+fn source_map_observer_snapshot(shell: &JamShellState) -> Value {
+    let source_map = &shell.app.jam_view.source.source_map;
+    json!({
+        "present": source_map.mode != riotbox_core::view::jam::SourceMapModeView::Missing,
+        "mode": source_map.mode.label(),
+        "trust_label": source_map.trust_label.as_str(),
+        "width": source_map.width,
+        "energy_row": source_map.energy_row.as_str(),
+        "peak_row": source_map.peak_row.as_str(),
+        "grid_row": source_map.grid_row.as_str(),
+        "playhead_row": source_map.playhead_row.as_str(),
+        "playhead_column": source_map.playhead_column,
+        "capture_range_row": source_map.capture_range_row.as_str(),
+        "capture_range_available": source_map.capture_range_row.contains('[')
+            || source_map.capture_range_row.contains('*'),
+        "current_region_label": source_map.current_region_label.as_str(),
+        "navigation_hint": source_map.navigation_hint.as_str(),
+        "capture_hint": source_map.capture_hint.as_str(),
     })
 }
 

@@ -115,7 +115,8 @@ The acceptance order is:
 2. replay / restore fidelity: monitor mode, confirmed grid, transport position,
    capture length, and capture result restore deterministically
 3. visual accuracy: map rows, playhead, bars, capture range, grid fallback, and
-   monochrome readability are covered by focused snapshots
+   monochrome readability are covered by focused snapshots and observer
+   `source_map` projection evidence
 
 Audio proof must show that `source`, `blend`, and `riotbox` monitor states are
 not silently collapsed into one another, and that source seek changes the audible

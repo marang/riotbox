@@ -178,6 +178,57 @@ fn observer_snapshot_records_source_timing_readiness_when_graph_is_attached() {
 }
 
 #[test]
+fn observer_snapshot_records_source_map_capture_range_projection() {
+    let graph = observer_source_map_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 4.0;
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+    let shell = JamShellState::new(
+        JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+        ShellLaunchMode::Ingest,
+    );
+
+    let snapshot = observer_snapshot(&shell);
+    let source_map = &snapshot["source_map"];
+
+    assert_eq!(source_map["present"], true);
+    assert_eq!(source_map["mode"], "bar grid");
+    assert_eq!(source_map["trust_label"], "grid locked");
+    assert_eq!(source_map["playhead_column"], 8);
+    assert_eq!(source_map["capture_range_available"], true);
+    assert_eq!(
+        source_map["capture_range_row"],
+        "........[=======]..............."
+    );
+    assert_eq!(source_map["capture_hint"], "cap next bar | map bar grid | 32 cols");
+}
+
+#[test]
+fn observer_snapshot_keeps_source_map_capture_range_unavailable_for_untrusted_timing() {
+    let graph = observer_source_map_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 4.0;
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+    let shell = JamShellState::new(
+        JamAppState::from_parts(session, Some(graph), ActionQueue::new()),
+        ShellLaunchMode::Ingest,
+    );
+
+    let snapshot = observer_snapshot(&shell);
+    let source_map = &snapshot["source_map"];
+
+    assert_eq!(source_map["present"], true);
+    assert_eq!(source_map["mode"], "time fallback");
+    assert_eq!(source_map["trust_label"], "needs confirm");
+    assert_eq!(source_map["capture_range_available"], false);
+    assert_eq!(source_map["capture_range_row"], ".".repeat(32));
+    assert_eq!(
+        source_map["capture_hint"],
+        "cap listen first | map time fallback | no bar-accurate claim"
+    );
+}
+
+#[test]
 fn observer_snapshot_uses_shared_source_timing_summary_for_musician_cues() {
     let mut graph = SourceGraph::new(
         SourceDescriptor {
@@ -276,4 +327,63 @@ fn observer_snapshot_uses_shared_source_timing_summary_for_musician_cues() {
         0
     );
     assert_eq!(source_timing["warning_codes"].as_array().unwrap().len(), 0);
+}
+
+fn observer_source_map_graph(
+    policy: TimingDegradedPolicy,
+    quality: TimingQuality,
+) -> SourceGraph {
+    let mut graph = SourceGraph::new(
+        SourceDescriptor {
+            source_id: SourceId::from("src-map-observer"),
+            path: "source-map-observer.wav".into(),
+            content_hash: "hash-map-observer".into(),
+            duration_seconds: 8.0,
+            sample_rate: 44_100,
+            channel_count: 2,
+            decode_profile: DecodeProfile::Native,
+        },
+        GraphProvenance {
+            sidecar_version: "0.1.0".into(),
+            provider_set: vec!["fixture.source_map_observer".into()],
+            generated_at: "2026-05-23T00:00:00Z".into(),
+            source_hash: "hash-map-observer".into(),
+            analysis_seed: 982,
+            run_notes: None,
+        },
+    );
+    graph.timing.bpm_estimate = Some(120.0);
+    graph.timing.bpm_confidence = 0.9;
+    graph.timing.quality = quality;
+    graph.timing.degraded_policy = policy;
+    graph.timing.primary_hypothesis_id = Some("map-primary".into());
+    graph.timing.hypotheses.push(TimingHypothesis {
+        hypothesis_id: "map-primary".into(),
+        kind: TimingHypothesisKind::Primary,
+        bpm: 120.0,
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.9,
+        score: 0.9,
+        beat_grid: Vec::new(),
+        bar_grid: (0..4)
+            .map(|index| riotbox_core::source_graph::BarSpan {
+                bar_index: index + 1,
+                start_seconds: index as f32 * 2.0,
+                end_seconds: (index + 1) as f32 * 2.0,
+                downbeat_confidence: 0.9,
+                phrase_index: Some(1),
+            })
+            .collect(),
+        phrase_grid: Vec::new(),
+        anchors: Vec::new(),
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality,
+        warnings: Vec::new(),
+        provenance: vec!["fixture.source_map_observer".into()],
+    });
+    graph
 }

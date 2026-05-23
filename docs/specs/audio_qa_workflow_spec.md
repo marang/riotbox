@@ -139,6 +139,10 @@ Minimum gates:
   timing, manual-confirm-required timing, fallback timing, and unavailable
   timing through typed readiness; unconfirmed manual-confirm timing must not
   silently create a bar-accurate source-window reuse claim
+- observer snapshots expose the same Source Map projection used by the TUI,
+  including capture-range availability. QA checks should use that observer
+  evidence when validating whether the visible capture target is bar-accurate or
+  intentionally unavailable.
 
 ### 3.2.2 Multi-source showcase diversity gates
 
