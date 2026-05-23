@@ -12,6 +12,7 @@ PROTOCOL_VERSION = "0.1"
 SIDECAR_VERSION = "0.1.0"
 SUPPORTED_WAVE_SAMPLE_WIDTHS = {1, 2, 3, 4}
 TIMING_BPM_CANDIDATES = [80, 90, 100, 110, 120, 126, 128, 130, 135, 140, 145, 150, 160]
+SOURCE_MAP_BUCKET_COUNT = 32
 
 
 def write_message(message: dict) -> None:
@@ -171,6 +172,52 @@ def classify_energy(value: float) -> str:
     return "Low"
 
 
+def classify_peak(peak_abs: float, positive_flux: float) -> str:
+    if peak_abs >= 0.75 or positive_flux >= 0.18:
+        return "StrongTransient"
+    if peak_abs >= 0.45 or positive_flux >= 0.08:
+        return "Transient"
+    return "None"
+
+
+def build_source_map_buckets(
+    sample_values: list[float], duration_seconds: float
+) -> list[dict]:
+    if not sample_values or duration_seconds <= 0.0:
+        return []
+
+    bucket_count = min(SOURCE_MAP_BUCKET_COUNT, max(1, len(sample_values)))
+    buckets = []
+    previous_energy = 0.0
+
+    for bucket_index in range(bucket_count):
+        start_frame = int((bucket_index * len(sample_values)) / bucket_count)
+        end_frame = int(((bucket_index + 1) * len(sample_values)) / bucket_count)
+        end_frame = max(end_frame, start_frame + 1)
+        bucket_values = sample_values[start_frame:end_frame]
+        bucket_energy = rms(bucket_values)
+        bucket_peak = max((abs(value) for value in bucket_values), default=0.0)
+        positive_flux = max(0.0, bucket_energy - previous_energy)
+        previous_energy = bucket_energy
+
+        buckets.append(
+            {
+                "start_seconds": round(
+                    duration_seconds * bucket_index / bucket_count, 6
+                ),
+                "end_seconds": round(
+                    duration_seconds * (bucket_index + 1) / bucket_count, 6
+                ),
+                "energy_class": classify_energy(bucket_energy),
+                "peak_class": classify_peak(bucket_peak, positive_flux),
+                "confidence": round(max(0.5, min(0.92, 0.62 + bucket_peak)), 3),
+                "provenance_refs": ["provider:decoded.wav_baseline"],
+            }
+        )
+
+    return buckets
+
+
 def estimate_timing_from_duration(duration_seconds: float) -> tuple[float, float, int]:
     best_choice = None
 
@@ -233,6 +280,7 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
     first_half_energy = rms(sample_values[:midpoint])
     second_half_energy = rms(sample_values[midpoint:])
     peak_abs = max((abs(value) for value in sample_values), default=0.0)
+    source_map_buckets = build_source_map_buckets(sample_values, duration_seconds)
 
     bpm_estimate, bpm_confidence, bar_count = estimate_timing_from_duration(duration_seconds)
     bar_duration = (60.0 / bpm_estimate) * 4.0
@@ -336,6 +384,7 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
             "bar_grid": bar_grid,
             "phrase_grid": phrase_grid,
         },
+        "source_map": {"buckets": source_map_buckets},
         "sections": [
             {
                 "section_id": "section-a",

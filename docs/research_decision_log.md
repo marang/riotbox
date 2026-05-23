@@ -1806,3 +1806,17 @@ Why: the musician-facing block rows need a durable analysis contract before late
 Evidence: RIOTBOX-990 adds Source Graph bucket types, legacy JSON default handling, bucket-backed Source Map row tests, and spec updates.
 Consequences: future sidecar extraction can populate these buckets from decoded audio, and future Canvas/Braille views must consume the same bucket/projection data rather than introducing separate waveform truth.
 Status: accepted
+
+---
+
+### RBX-056
+
+Date: 2026-05-23
+Topic: Decoded WAV sidecar emits Source Map bucket evidence
+Phase: Source Timing Intelligence / Source Map
+Question: when should `source_map.buckets` become real analysis output instead of only fixture data?
+Decision: make the existing decoded-WAV stdio sidecar baseline emit a bounded deterministic bucket set. Each bucket carries time span, RMS-derived energy class, local peak / positive-flux peak class, confidence, and `provider:decoded.wav_baseline` provenance.
+Why: the compact Source Map should reflect source audio shape during normal ingest, not only tests. Keeping the algorithm bounded and simple preserves the current baseline sidecar role while making the product contract observable through Rust Serde and user-session views.
+Evidence: RIOTBOX-991 extends `json_stdio_sidecar.py` bucket extraction and the Rust sidecar client test to assert parsed bucket evidence on generated PCM WAV input.
+Consequences: future MIR work can improve bucket quality behind the same contract; bucket evidence still does not replace timing, seek, or capture-window authority.
+Status: accepted

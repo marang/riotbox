@@ -196,6 +196,9 @@ Rules:
   energy and timing anchor / asset hints
 - bucket evidence must not replace Timing as the authority for bars, phrases,
   capture windows, or transport seek targets
+- the decoded-WAV baseline sidecar provider should emit a bounded bucket set
+  with deterministic time spans, RMS-derived `energy_class`, local
+  peak/positive-flux-derived `peak_class`, and provider provenance refs
 
 ---
 
