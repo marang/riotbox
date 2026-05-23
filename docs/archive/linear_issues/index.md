@@ -684,4 +684,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add observer beat/bar counts to generated Feral-grid summary index
 - [RIOTBOX-968.md](./RIOTBOX-968.md)
   Document source transport map capture plan
+- [RIOTBOX-969.md](./RIOTBOX-969.md)
+  Add source monitor mode to action and session contracts
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
