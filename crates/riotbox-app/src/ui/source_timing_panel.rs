@@ -102,19 +102,22 @@ pub(super) fn source_map_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let peaks = source_map_compact_row(&source_map.peak_row, 18);
     let bars = source_map_compact_row(&source_map.grid_row, 8);
     let play = source_map_compact_row(&source_map.playhead_row, 8);
+    let cap = source_map_compact_row(&source_map.capture_range_row, 8);
     vec![
         Line::from(format!(
             "mode {} | {}",
             source_map.mode.label(),
             source_map.trust_label
         )),
-        Line::from(source_map.current_region_label.clone()),
+        Line::from(format!(
+            "{} | {} | {}",
+            source_map_current_compact(&source_map.current_region_label),
+            source_map_navigation_compact(&source_map.navigation_hint),
+            source_map_capture_compact(&source_map.capture_hint)
+        )),
         Line::from(format!("energy {energy}")),
         Line::from(format!("peaks  {peaks}")),
-        Line::from(format!(
-            "b {bars} p {play} | {}",
-            source_map_navigation_compact(&source_map.navigation_hint)
-        )),
+        Line::from(format!("b {bars} p {play} c {cap}")),
     ]
 }
 
@@ -134,7 +137,7 @@ fn source_map_compact_row(row: &str, width: usize) -> String {
 }
 
 fn source_map_best_bucket_char(chars: &[char]) -> char {
-    ['^', '|', '█', '▇', '▅', '▂', '▁', '.']
+    ['^', '[', ']', '=', '*', '|', '█', '▇', '▅', '▂', '▁', '.']
         .into_iter()
         .find(|candidate| chars.contains(candidate))
         .unwrap_or(' ')
@@ -147,6 +150,23 @@ fn source_map_navigation_compact(navigation_hint: &str) -> &'static str {
         "nav bar"
     } else {
         "nav -"
+    }
+}
+
+fn source_map_current_compact(current_region_label: &str) -> String {
+    current_region_label.split_once(" | ").map_or_else(
+        || current_region_label.into(),
+        |(current, _)| current.into(),
+    )
+}
+
+fn source_map_capture_compact(capture_hint: &str) -> &'static str {
+    if capture_hint.contains("next bar") {
+        "cap next"
+    } else if capture_hint.contains("listen first") {
+        "cap listen"
+    } else {
+        "cap -"
     }
 }
 

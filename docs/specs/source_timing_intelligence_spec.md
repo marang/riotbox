@@ -237,6 +237,10 @@ Rules:
   mode, and trust. Dense Ratatui `Canvas` / Braille rendering is an optional
   expanded Source/Lab presentation only; it must consume the same Source Map
   projection data and must not become a second timing or capture authority.
+- capture-range markers are derived from Session transport position and
+  `runtime_state.capture.length_intent`. They preview what the current capture
+  gesture is expected to target, but they do not create a manual selection.
+  Fallback or unconfirmed timing must not draw a bar-accurate range.
 - when `runtime_state.source_timing.confirmed_grid` matches the current source
   and primary hypothesis, the map may show bar-grid mode and a `grid confirmed`
   trust label even if analyzer confidence still says manual confirmation was

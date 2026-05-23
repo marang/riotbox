@@ -1,4 +1,5 @@
 use crate::{
+    action::CaptureLengthIntent,
     ids::{ActionId, SectionId, SourceId},
     queue::ActionQueue,
     session::{SessionFile, SourceTimingGridConfirmationState},
@@ -28,6 +29,11 @@ fn source_map_uses_bar_grid_when_locked_bar_spans_exist() {
     assert!(vm.source.source_map.grid_row.contains('|'));
     assert_eq!(vm.source.source_map.playhead_column, Some(8));
     assert!(vm.source.source_map.playhead_row.contains('^'));
+    assert_eq!(vm.source.source_map.capture_range_row.chars().nth(8), Some('['));
+    assert_eq!(
+        vm.source.source_map.capture_range_row.chars().nth(31),
+        Some(']')
+    );
     assert_eq!(
         vm.source.source_map.current_region_label,
         "now bar 2 | section A"
@@ -56,6 +62,7 @@ fn source_map_falls_back_to_time_when_grid_needs_confirmation() {
     assert_eq!(vm.source.source_map.mode, SourceMapModeView::TimeFallback);
     assert_eq!(vm.source.source_map.trust_label, "needs confirm");
     assert_eq!(vm.source.source_map.grid_row, ".".repeat(32));
+    assert_eq!(vm.source.source_map.capture_range_row, ".".repeat(32));
     assert_eq!(
         vm.source.source_map.capture_hint,
         "cap listen first | map time fallback | no bar-accurate claim"
@@ -80,6 +87,7 @@ fn source_map_uses_confirmed_grid_without_mutating_analysis_cue() {
     assert_eq!(vm.source.source_map.mode, SourceMapModeView::BarGrid);
     assert_eq!(vm.source.source_map.trust_label, "grid confirmed");
     assert!(vm.source.source_map.grid_row.contains('|'));
+    assert!(vm.source.source_map.capture_range_row.contains('['));
     assert_eq!(
         vm.source.source_map.navigation_hint,
         "nav Left/Right bar | Up/Down phrase"
@@ -106,6 +114,7 @@ fn source_map_ignores_confirmation_for_different_hypothesis() {
 
     assert_eq!(vm.source.source_map.mode, SourceMapModeView::TimeFallback);
     assert_eq!(vm.source.source_map.trust_label, "needs confirm");
+    assert_eq!(vm.source.source_map.capture_range_row, ".".repeat(32));
 }
 
 #[test]
@@ -119,7 +128,23 @@ fn source_map_defaults_to_missing_without_source_graph() {
         vm.source.source_map.capture_hint,
         "cap unavailable | no source graph"
     );
+    assert_eq!(vm.source.source_map.capture_range_row, ".".repeat(32));
     assert_eq!(vm.source.source_map.energy_row.chars().count(), 32);
+}
+
+#[test]
+fn source_map_capture_range_tracks_capture_length_intent() {
+    let graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 4.0;
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert_eq!(
+        vm.source.source_map.capture_range_row,
+        "........[=======]..............."
+    );
 }
 
 fn source_map_test_graph(policy: TimingDegradedPolicy, quality: TimingQuality) -> SourceGraph {

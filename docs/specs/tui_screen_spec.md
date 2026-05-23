@@ -220,6 +220,11 @@ Show:
 - Source Map timing mode must be explicit: usable timing may show beat/bar
   grouped buckets, while unavailable or untrusted timing must show a time-based
   fallback instead of pretending that bar-accurate capture is safe.
+- Source Map capture range is a projection of the current Session transport
+  position and runtime capture length intent. It is read-only preview state for
+  `c`, not an editor selection. Draw it only when source-window consumers may
+  use the timing grid; fallback or unconfirmed timing should show an unavailable
+  / empty range and keep the capture hint honest.
 - Source Map trust text must distinguish analyzer trust from user-confirmed
   trust. A matching `runtime_state.source_timing.confirmed_grid` should render
   as `grid confirmed` and may enable bar-grid mode without mutating Source Graph
