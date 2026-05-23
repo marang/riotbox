@@ -185,7 +185,8 @@ typed `CaptureLengthIntent` values: `one_beat`, `one_bar`, `four_bars`, and
 `phrase`. It changes the length used by subsequent source-window capture without
 creating a hidden TUI-local selector.
 
-`capture.bar_group` may omit explicit `bars`; when it does, commit uses
+`capture.bar_group` may omit explicit `bars`; when it does, the user-facing
+queue target is `next_bar` and commit uses
 `runtime_state.capture.length_intent`. `one_beat`, `one_bar`, and `four_bars`
 derive duration from Source Timing meter / beat evidence. `phrase` captures to
 the end of the matching phrase span when phrase evidence is usable and otherwise

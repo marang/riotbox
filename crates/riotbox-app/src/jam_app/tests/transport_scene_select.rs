@@ -199,7 +199,7 @@ fn queues_first_live_safe_jam_actions() {
     assert_eq!(pending[4].command, ActionCommand::Tr909SetSlam);
     assert_eq!(pending[4].quantization, Quantization::NextBeat);
     assert_eq!(pending[5].command, ActionCommand::CaptureBarGroup);
-    assert_eq!(pending[5].quantization, Quantization::NextPhrase);
+    assert_eq!(pending[5].quantization, Quantization::NextBar);
     assert_eq!(pending[6].command, ActionCommand::PromoteCaptureToPad);
     assert_eq!(pending[6].quantization, Quantization::NextBar);
     assert_eq!(
@@ -426,4 +426,3 @@ fn committed_scene_select_updates_transport_and_scene_state() {
         Some("launched scene scene-02-break at bar 9 / phrase 2")
     );
 }
-

@@ -196,7 +196,7 @@ fn source_map_capture_range_seconds(
     graph: &SourceGraph,
     session: &SessionFile,
 ) -> Option<(f32, f32)> {
-    let start_beat = session.transport().position_beats.floor().max(0.0) as u64;
+    let start_beat = source_map_next_bar_capture_start_beat(graph, session);
     let end_beat = source_map_capture_end_beat(graph, session, start_beat)?;
     let start_seconds = source_map_seconds_for_beat(graph, start_beat)?
         .max(0.0)
@@ -206,6 +206,18 @@ fn source_map_capture_range_seconds(
         .min(graph.source.duration_seconds)
         .max(start_seconds);
     Some((start_seconds, end_seconds))
+}
+
+fn source_map_next_bar_capture_start_beat(graph: &SourceGraph, session: &SessionFile) -> u64 {
+    let beats_per_bar = source_map_beats_per_bar(graph).max(1);
+    let next_beat_after_position = (session.transport().position_beats.floor().max(0.0) as u64)
+        .saturating_add(1);
+    let remainder = next_beat_after_position % beats_per_bar;
+    if remainder == 0 {
+        next_beat_after_position
+    } else {
+        next_beat_after_position.saturating_add(beats_per_bar - remainder)
+    }
 }
 
 fn source_map_capture_end_beat(

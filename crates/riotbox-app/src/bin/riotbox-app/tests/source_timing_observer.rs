@@ -198,7 +198,7 @@ fn observer_snapshot_records_source_map_capture_range_projection() {
     assert_eq!(source_map["capture_range_available"], true);
     assert_eq!(
         source_map["capture_range_row"],
-        "........[=======]..............."
+        "................[=======]......."
     );
     assert_eq!(source_map["capture_hint"], "cap next bar | map bar grid | 32 cols");
 }

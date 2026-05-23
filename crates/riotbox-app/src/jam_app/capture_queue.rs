@@ -72,7 +72,7 @@ impl JamAppState {
         let mut draft = ActionDraft::new(
             ActorType::User,
             ActionCommand::CaptureBarGroup,
-            Quantization::NextPhrase,
+            Quantization::NextBar,
             ActionTarget {
                 scope: Some(TargetScope::LaneW30),
                 ..Default::default()
