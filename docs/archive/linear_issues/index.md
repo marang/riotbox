@@ -680,4 +680,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show partial Source Timing clock when beat or phrase grid is absent
 - [RIOTBOX-965.md](./RIOTBOX-965.md)
   Label queued timing rail counters as transport context
+- [RIOTBOX-966.md](./RIOTBOX-966.md)
+  Add observer beat/bar counts to generated Feral-grid summary index
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
