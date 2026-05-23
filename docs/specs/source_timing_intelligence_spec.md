@@ -227,9 +227,10 @@ second timing authority.
 
 Rules:
 
-- when `grid_use` is usable for musician action, the map may project decoded
-  source energy / peak buckets through the selected timing hypothesis and group
-  them visually by bar
+- when `grid_use` is usable for musician action, the map may project typed
+  Source Graph `source_map.buckets` through the selected timing hypothesis and
+  group them visually by bar; when bucket evidence is absent, section energy and
+  anchor / asset hints remain the coarse fallback
 - when timing is unavailable or not usable, the map must fall back to a
   time-uniform source view and avoid bar-accurate capture claims
 - default rendering should stay as one or two plain-text block rows plus

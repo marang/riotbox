@@ -5,8 +5,8 @@ use crate::{
     session::{SessionFile, SourceTimingGridConfirmationState},
     source_graph::{
         BarSpan, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, Section,
-        SectionLabelHint, SourceDescriptor, SourceGraph, TimingDegradedPolicy, TimingHypothesis,
-        TimingHypothesisKind, TimingQuality,
+        SectionLabelHint, SourceDescriptor, SourceGraph, SourceMapBucket, SourceMapPeakClass,
+        TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality,
     },
 };
 
@@ -165,6 +165,47 @@ fn source_map_capture_range_starts_at_next_bar_boundary() {
     );
 }
 
+#[test]
+fn source_map_prefers_bucket_backed_energy_and_peak_rows() {
+    let mut graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    graph.source_map.buckets = vec![
+        source_map_bucket(0.0, 2.0, EnergyClass::Low, SourceMapPeakClass::None),
+        source_map_bucket(2.0, 4.0, EnergyClass::High, SourceMapPeakClass::None),
+        source_map_bucket(4.0, 6.0, EnergyClass::Peak, SourceMapPeakClass::StrongTransient),
+        source_map_bucket(6.0, 8.0, EnergyClass::Medium, SourceMapPeakClass::None),
+    ];
+    graph.sections[0].energy_class = EnergyClass::Peak;
+    graph.sections[1].energy_class = EnergyClass::Low;
+
+    let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert_eq!(
+        vm.source.source_map.energy_row,
+        "▂▂▂▂▂▂▂▂▇▇▇▇▇▇▇▇████████▅▅▅▅▅▅▅▅"
+    );
+    assert_eq!(
+        vm.source.source_map.peak_row,
+        "................████████........"
+    );
+}
+
+#[test]
+fn source_map_falls_back_to_sections_when_bucket_evidence_is_missing() {
+    let graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert!(graph.source_map.buckets.is_empty());
+    assert_eq!(
+        vm.source.source_map.energy_row,
+        "▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅▅████████████████"
+    );
+    assert_eq!(vm.source.source_map.peak_row.chars().next(), Some('█'));
+}
+
 fn source_map_test_graph(policy: TimingDegradedPolicy, quality: TimingQuality) -> SourceGraph {
     let mut graph = SourceGraph::new(
         SourceDescriptor {
@@ -252,4 +293,20 @@ fn source_map_test_graph(policy: TimingDegradedPolicy, quality: TimingQuality) -
         provenance: vec!["fixture".into()],
     });
     graph
+}
+
+fn source_map_bucket(
+    start_seconds: f32,
+    end_seconds: f32,
+    energy_class: EnergyClass,
+    peak_class: SourceMapPeakClass,
+) -> SourceMapBucket {
+    SourceMapBucket {
+        start_seconds,
+        end_seconds,
+        energy_class,
+        peak_class,
+        confidence: 0.92,
+        provenance_refs: vec!["fixture:source-map-bucket".into()],
+    }
 }
