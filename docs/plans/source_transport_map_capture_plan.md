@@ -81,6 +81,10 @@ Capture defaults to musical moments rather than exact manual ranges:
   phrase evidence is usable
 - when phrase evidence is not usable, phrase capture falls back visibly to
   `4 bars`
+- source-window consumers use typed timing readiness: analyzer-locked and
+  user-confirmed grids may drive bar-accurate source windows, while unconfirmed
+  manual-confirm timing stays a listening/confirmation state rather than a
+  silent W-30 reuse contract
 - `o` raw-auditions the latest committed capture before promotion
 
 ## Implementation Slices

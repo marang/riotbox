@@ -135,6 +135,10 @@ Minimum gates:
   capture range without relying on color alone
 - capture length intents produce source windows that match `1 beat`, `1 bar`,
   `4 bars`, or phrase fallback expectations
+- source-window consumers distinguish analyzer-locked timing, user-confirmed
+  timing, manual-confirm-required timing, fallback timing, and unavailable
+  timing through typed readiness; unconfirmed manual-confirm timing must not
+  silently create a bar-accurate source-window reuse claim
 
 ### 3.2.2 Multi-source showcase diversity gates
 

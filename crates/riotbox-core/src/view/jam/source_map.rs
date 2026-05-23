@@ -59,8 +59,8 @@ impl SourceMapView {
     pub fn from_graph(graph: &SourceGraph, session: &SessionFile) -> Self {
         let timing = SourceTimingSummaryView::from_graph(graph);
         let bars = source_map_bar_spans(graph);
-        let grid_confirmed = source_map_grid_confirmed(graph, session);
-        let mode = if source_map_can_use_bar_grid(&timing, &bars, grid_confirmed) {
+        let readiness = source_timing_consumer_readiness(Some(graph), session);
+        let mode = if source_map_can_use_bar_grid(&bars, readiness) {
             SourceMapModeView::BarGrid
         } else {
             SourceMapModeView::TimeFallback
@@ -69,7 +69,7 @@ impl SourceMapView {
 
         Self {
             mode,
-            trust_label: source_map_trust_label(&timing, grid_confirmed),
+            trust_label: source_map_trust_label(&timing, readiness),
             width: SOURCE_MAP_WIDTH,
             energy_row: source_map_energy_row(graph),
             peak_row: source_map_peak_row(graph),
@@ -85,34 +85,19 @@ impl SourceMapView {
 }
 
 fn source_map_can_use_bar_grid(
-    timing: &SourceTimingSummaryView,
     bars: &[crate::source_graph::BarSpan],
-    grid_confirmed: bool,
+    readiness: SourceTimingConsumerReadiness,
 ) -> bool {
-    (grid_confirmed || timing.grid_use == "locked_grid") && !bars.is_empty()
-}
-
-fn source_map_grid_confirmed(graph: &SourceGraph, session: &SessionFile) -> bool {
-    session
-        .runtime_state
-        .source_timing
-        .confirmed_grid
-        .as_ref()
-        .is_some_and(|confirmed| {
-            confirmed.source_id == graph.source.source_id
-                && confirmed.hypothesis_id.as_deref()
-                    == graph.timing.primary_hypothesis_id.as_deref()
-        })
+    readiness.can_use_source_window_grid() && !bars.is_empty()
 }
 
 fn source_map_trust_label(
     timing: &SourceTimingSummaryView,
-    grid_confirmed: bool,
+    readiness: SourceTimingConsumerReadiness,
 ) -> String {
-    if grid_confirmed {
-        "grid confirmed".into()
-    } else {
-        timing.cue.clone()
+    match readiness {
+        SourceTimingConsumerReadiness::UserConfirmed => "grid confirmed".into(),
+        _ => timing.cue.clone(),
     }
 }
 
