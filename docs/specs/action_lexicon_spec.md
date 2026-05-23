@@ -174,15 +174,22 @@ replay can distinguish the trust-state removal from analysis changes.
 - `capture.now`
 - `capture.loop`
 - `capture.bar_group`
+- `capture.set_length`
 - `promote.capture_to_pad`
 - `promote.capture_to_scene`
 - `promote.resample`
 
 Capture actions that target source material should carry structured musical
-length intent. The planned musician-facing lengths are `1 bar`, `4 bars`, and
-`phrase`. `1 bar` and `4 bars` start on the next bar; `phrase` starts on the
-next phrase when phrase evidence is usable and otherwise falls back visibly to
-`4 bars`.
+length intent. `capture.set_length` is a session-scope immediate action with
+typed `CaptureLengthIntent` values: `one_beat`, `one_bar`, `four_bars`, and
+`phrase`. It changes the length used by subsequent source-window capture without
+creating a hidden TUI-local selector.
+
+`capture.bar_group` may omit explicit `bars`; when it does, commit uses
+`runtime_state.capture.length_intent`. `one_beat`, `one_bar`, and `four_bars`
+derive duration from Source Timing meter / beat evidence. `phrase` captures to
+the end of the matching phrase span when phrase evidence is usable and otherwise
+falls back visibly to `four_bars`.
 
 ### 6.4 Scene control
 

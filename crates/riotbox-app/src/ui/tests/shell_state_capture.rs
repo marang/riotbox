@@ -16,6 +16,7 @@ fn renders_capture_shell_snapshot_with_capture_context() {
     assert!(rendered.contains("promote keeper capture"));
     assert!(rendered.contains("promotion result pending"));
     assert!(rendered.contains("captures total 1"));
+    assert!(rendered.contains("length 4 bars | [-]/[=]"));
     assert!(rendered.contains("pinned 0 | promoted 0"));
     assert!(
         rendered.contains("queued [p] promote @ next_bar"),
@@ -41,6 +42,20 @@ fn renders_capture_shell_snapshot_with_capture_context() {
     );
     assert!(rendered.contains("g0"), "{rendered}");
     assert!(rendered.contains("latest promoted none"));
+}
+
+#[test]
+fn capture_screen_shows_selected_length_before_first_capture() {
+    let mut shell = sample_shell_without_pending_queue();
+    shell.app.session.captures.clear();
+    shell.app.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+    shell.app.refresh_view();
+    shell.active_screen = ShellScreen::Capture;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("length 1 bar | [-]/[=]"), "{rendered}");
+    assert!(rendered.contains("1 [c] capture 1 bar"), "{rendered}");
 }
 
 #[test]

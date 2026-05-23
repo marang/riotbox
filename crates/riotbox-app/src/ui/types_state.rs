@@ -123,6 +123,8 @@ pub enum ShellKeyOutcome {
     NavigateSourceMapNextBar,
     NavigateSourceMapPreviousPhrase,
     NavigateSourceMapNextPhrase,
+    PreviousCaptureLength,
+    NextCaptureLength,
     TogglePinLatestCapture,
     LowerDrumBusLevel,
     RaiseDrumBusLevel,

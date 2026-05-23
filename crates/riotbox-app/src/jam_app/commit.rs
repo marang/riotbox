@@ -12,11 +12,11 @@ use riotbox_core::{
 };
 
 use super::{
-    JamAppState, apply_capture_promotion_side_effects, apply_ghost_side_effects,
-    apply_mc202_side_effects, apply_scene_side_effects, apply_source_monitor_side_effects,
-    apply_source_timing_side_effects, apply_tr909_side_effects, apply_transport_side_effects,
-    apply_w30_side_effects, capture_promotion_summary, capture_ref_from_action,
-    is_mc202_phrase_action, max_action_id, next_action_id_from_session,
+    JamAppState, apply_capture_promotion_side_effects, apply_capture_side_effects,
+    apply_ghost_side_effects, apply_mc202_side_effects, apply_scene_side_effects,
+    apply_source_monitor_side_effects, apply_source_timing_side_effects, apply_tr909_side_effects,
+    apply_transport_side_effects, apply_w30_side_effects, capture_promotion_summary,
+    capture_ref_from_action, is_mc202_phrase_action, max_action_id, next_action_id_from_session,
     update_logged_action_result,
 };
 use crate::jam_app::helpers::append_capture_note;
@@ -217,6 +217,7 @@ impl JamAppState {
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
         apply_transport_side_effects(&mut self.session, action);
+        apply_capture_side_effects(&mut self.session, action);
         apply_source_monitor_side_effects(&mut self.session, action);
         apply_source_timing_side_effects(&mut self.session, action);
         apply_scene_side_effects(

@@ -38,7 +38,10 @@ fn renders_capture_pending_cues_panel_as_first_item_with_log_overflow() {
 
     assert_eq!(rendered[0], "next user capture.bar_group");
     assert_eq!(rendered[1], "when next_phrase | target lanew30");
-    assert_eq!(rendered[2], "note capture next phrase into W-30 path");
+    assert_eq!(
+        rendered[2],
+        "note capture 4 bars from source into W-30 path"
+    );
     assert_eq!(rendered[3], "+1 more in [2] Log");
     assert_eq!(rendered.len(), 4);
 }

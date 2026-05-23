@@ -157,6 +157,7 @@ RuntimeState {
   transport
   source_monitor
   source_timing
+  capture
   macro_state
   lane_state
   mixer_state
@@ -197,6 +198,19 @@ User-confirmed timing trust must be represented explicitly:
 
 The session must preserve the original Source Graph evidence. Confirming a grid
 does not silently rewrite the analysis payload.
+
+### 8.1.3 Capture intent
+
+Capture length is musician-facing runtime state, not app-local UI state:
+
+- `capture.length_intent`
+- `capture.length_set_by_action`
+- `capture.length_set_at`
+
+Allowed length intents are `one_beat`, `one_bar`, `four_bars`, and `phrase`;
+`four_bars` is the default. The commit path for source-window capture reads this
+state when the capture action does not carry explicit bars, and replay must apply
+`capture.set_length` before later capture actions that depend on it.
 
 ### 8.2 Macro state
 

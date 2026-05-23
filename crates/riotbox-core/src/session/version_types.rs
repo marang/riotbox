@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    action::{Action, GhostMode, SourceMonitorMode},
+    action::{Action, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
     source_graph::{GraphProvenance, SourceGraph, SourceGraphVersion},
     transport::CommitBoundaryState,
@@ -90,6 +90,8 @@ pub struct RuntimeState {
     pub source_monitor: SourceMonitorRuntimeState,
     #[serde(default)]
     pub source_timing: SourceTimingRuntimeState,
+    #[serde(default)]
+    pub capture: CaptureRuntimeState,
     pub macro_state: MacroState,
     pub lane_state: LaneState,
     pub mixer_state: MixerState,
@@ -118,6 +120,16 @@ pub struct SourceTimingGridConfirmationState {
     pub hypothesis_id: Option<String>,
     pub confirmed_by_action: ActionId,
     pub confirmed_at: TimestampMs,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct CaptureRuntimeState {
+    #[serde(default)]
+    pub length_intent: CaptureLengthIntent,
+    #[serde(default)]
+    pub length_set_by_action: Option<ActionId>,
+    #[serde(default)]
+    pub length_set_at: Option<TimestampMs>,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

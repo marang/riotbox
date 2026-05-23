@@ -240,6 +240,10 @@ Show:
 - current capture length and target boundary, such as `4 bars @ next bar` or
   `phrase -> 4 bars fallback`, so the musician understands what `c` will queue
   before pressing it
+- capture length controls should be explicit and compact. `-` selects the
+  previous musical length and `=` selects the next musical length across
+  `1 beat`, `1 bar`, `4 bars`, and `phrase`; the selected length must be visible
+  before a capture lands.
 
 MVP rule:
 

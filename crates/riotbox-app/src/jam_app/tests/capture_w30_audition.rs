@@ -93,6 +93,108 @@ fn committed_capture_actions_materialize_capture_refs() {
 }
 
 #[test]
+fn capture_length_intent_controls_source_window_duration() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBeat;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let source_window = state.session.captures[1]
+        .source_window
+        .as_ref()
+        .expect("capture source window");
+    assert!((source_window.start_seconds - 15.238).abs() < 0.01);
+    assert!((source_window.end_seconds - 15.714).abs() < 0.01);
+    assert_eq!(source_window.start_frame, 731_428);
+    assert_eq!(source_window.end_frame, 754_285);
+}
+
+#[test]
+fn phrase_capture_length_uses_phrase_grid_when_available() {
+    let mut graph = sample_graph();
+    graph.timing.meter_hint = Some(riotbox_core::source_graph::MeterHint {
+        beats_per_bar: 4,
+        beat_unit: 4,
+    });
+    graph.timing.phrase_grid = vec![riotbox_core::source_graph::PhraseSpan {
+        phrase_index: 3,
+        start_bar: 9,
+        end_bar: 10,
+        confidence: 0.91,
+    }];
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let source_window = state.session.captures[1]
+        .source_window
+        .as_ref()
+        .expect("capture source window");
+    assert!((source_window.start_seconds - 15.238).abs() < 0.01);
+    assert!((source_window.end_seconds - 19.047).abs() < 0.01);
+    assert_eq!(source_window.start_frame, 731_428);
+    assert_eq!(source_window.end_frame, 914_285);
+}
+
+#[test]
+fn phrase_capture_length_prefers_primary_hypothesis_phrase_grid() {
+    let graph = source_map_navigation_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    state.session.captures.clear();
+    state.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
+
+    state.queue_capture_bar(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 16,
+            bar_index: 4,
+            phrase_index: 1,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let source_window = state.session.captures[0]
+        .source_window
+        .as_ref()
+        .expect("capture source window");
+    assert_eq!(source_window.source_id, SourceId::from("src-1"));
+    assert!((source_window.start_seconds - 8.0).abs() < 0.01);
+    assert!((source_window.end_seconds - 16.0).abs() < 0.01);
+    assert_eq!(source_window.start_frame, 384_000);
+    assert_eq!(source_window.end_frame, 768_000);
+}
+
+#[test]
 fn committed_promotion_actions_assign_target_to_existing_capture() {
     let graph = sample_graph();
     let session = sample_session(&graph);
@@ -430,4 +532,3 @@ fn committed_w30_raw_capture_audition_updates_preview_state() {
         Some("auditioned raw cap-01 on W-30 preview bank-a/pad-01")
     );
 }
-

@@ -165,6 +165,54 @@ impl Display for SourceMonitorMode {
     }
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum CaptureLengthIntent {
+    OneBeat,
+    OneBar,
+    #[default]
+    FourBars,
+    Phrase,
+}
+
+impl CaptureLengthIntent {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::OneBeat => "1 beat",
+            Self::OneBar => "1 bar",
+            Self::FourBars => "4 bars",
+            Self::Phrase => "phrase",
+        }
+    }
+
+    #[must_use]
+    pub const fn next(self) -> Self {
+        match self {
+            Self::OneBeat => Self::OneBar,
+            Self::OneBar => Self::FourBars,
+            Self::FourBars => Self::Phrase,
+            Self::Phrase => Self::OneBeat,
+        }
+    }
+
+    #[must_use]
+    pub const fn previous(self) -> Self {
+        match self {
+            Self::OneBeat => Self::Phrase,
+            Self::OneBar => Self::OneBeat,
+            Self::FourBars => Self::OneBar,
+            Self::Phrase => Self::FourBars,
+        }
+    }
+}
+
+impl Display for CaptureLengthIntent {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ActionParams {
     Empty,
@@ -177,6 +225,9 @@ pub enum ActionParams {
     },
     Capture {
         bars: Option<u32>,
+    },
+    CaptureLength {
+        intent: Option<CaptureLengthIntent>,
     },
     Promotion {
         capture_id: Option<CaptureId>,
@@ -218,6 +269,7 @@ pub enum ActionCommand {
     CaptureNow,
     CaptureLoop,
     CaptureBarGroup,
+    CaptureSetLength,
     PromoteCaptureToPad,
     PromoteCaptureToScene,
     PromoteResample,
@@ -279,6 +331,7 @@ impl ActionCommand {
             Self::CaptureNow => "capture.now",
             Self::CaptureLoop => "capture.loop",
             Self::CaptureBarGroup => "capture.bar_group",
+            Self::CaptureSetLength => "capture.set_length",
             Self::PromoteCaptureToPad => "promote.capture_to_pad",
             Self::PromoteCaptureToScene => "promote.capture_to_scene",
             Self::PromoteResample => "promote.resample",

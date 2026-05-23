@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-002
 
 Date: 2026-04-12  
@@ -1595,4 +1593,18 @@ Decision: expose typed shell intents for previous / next bar and previous / next
 Why: the musician needs fast, predictable source audition navigation, while replay / restore must have one transport truth. A separate Source Map cursor would create a hidden second selection model and weaken capture provenance.
 Evidence: RIOTBOX-975 adds Source Map navigation intents, arrow-key outcomes, immediate seek commit handling, transport side effects, observer labels, Source Map current-region rendering, and focused control/render tests.
 Consequences: capture-length and source-audition slices should consume the same transport position instead of inventing arbitrary sample-range selection. Future waveform/canvas work may visualize the position more densely but must not replace the transport seek contract.
+Status: accepted
+
+---
+
+### RBX-041
+
+Date: 2026-05-23
+Topic: capture length is session intent that drives source windows
+Phase: Source Transport / Capture Workflow
+Question: how should a musician choose “one beat”, “one bar”, “four bars”, or “phrase” without turning Source Map into a sample editor?
+Decision: add `capture.set_length` as an immediate session-scope action and persist the selected `CaptureLengthIntent` in `runtime_state.capture`. Subsequent source-window capture actions may omit explicit bars and resolve their window from the selected intent at commit time.
+Why: the musician needs to know what `c` will capture before pressing it, and replay / restore need the same length choice without a hidden TUI selector or arbitrary sample-range model.
+Evidence: RIOTBOX-976 wires typed capture-length params, queue / commit side effects, replay support, shell controls, observer state, Capture screen rendering, and source-window tests for one-beat and phrase-grid durations.
+Consequences: capture remains a musical gesture on the transport grid. Phrase length depends on Source Timing phrase evidence and falls back to the established four-bar span when phrase evidence is missing; future waveform/canvas work should visualize this range without replacing the typed intent contract.
 Status: accepted
