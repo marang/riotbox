@@ -682,4 +682,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Label queued timing rail counters as transport context
 - [RIOTBOX-966.md](./RIOTBOX-966.md)
   Add observer beat/bar counts to generated Feral-grid summary index
+- [RIOTBOX-968.md](./RIOTBOX-968.md)
+  Document source transport map capture plan
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
