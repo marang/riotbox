@@ -255,6 +255,12 @@ mod tests {
         include!("tests/source_timing_observer.rs");
     }
 
+    mod source_timing_confirm_control {
+        use super::*;
+
+        include!("tests/source_timing_confirm_control.rs");
+    }
+
     mod recovery_observer {
         use super::*;
 

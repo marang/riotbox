@@ -16,7 +16,8 @@ use riotbox_core::{
     session::{
         ActionCommitRecord, GhostSuggestionRecord, SceneMovementDirectionState,
         SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
-        Snapshot, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
+        Snapshot, SourceTimingGridConfirmationState, Tr909ReinforcementModeState,
+        Tr909TakeoverProfileState,
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, BarSpan, BeatPoint, Candidate,

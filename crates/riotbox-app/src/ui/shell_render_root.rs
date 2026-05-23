@@ -190,6 +190,10 @@ impl JamShellState {
                 self.status_message = queued_status_message(GESTURE_RESAMPLE, "next phrase");
                 ShellKeyOutcome::QueueW30Resample
             }
+            KeyCode::Char('C') => {
+                self.status_message = "confirm source timing grid requested".into();
+                ShellKeyOutcome::ConfirmSourceTimingGrid
+            }
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
                 ShellKeyOutcome::TogglePinLatestCapture

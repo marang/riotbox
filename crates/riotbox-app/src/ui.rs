@@ -55,9 +55,9 @@ use scene_timing_labels::{
 use source_timing_panel::{source_map_lines, source_timing_lines};
 use source_trust_summary::{
     energy_label, source_candidate_lines, source_confidence_lines, source_provenance_lines,
-    source_timing_clock_compact, source_timing_clock_line, source_timing_help_line,
-    source_timing_performance_rail_line, source_timing_readiness_line, source_timing_warning_line,
-    source_warning_lines, trust_summary,
+    source_timing_clock_compact, source_timing_clock_line, source_timing_grid_confirmed,
+    source_timing_help_line, source_timing_performance_rail_line, source_timing_readiness_line,
+    source_timing_warning_line, source_warning_lines, trust_summary,
 };
 use w30_cue_labels::{last_committed_w30_action, short_w30_action_label, w30_pending_cue_label};
 use w30_preview_labels::{

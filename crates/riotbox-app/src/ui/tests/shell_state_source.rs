@@ -67,6 +67,25 @@ fn renders_source_shell_snapshot_with_grid_locked_timing_summary() {
 }
 
 #[test]
+fn renders_source_shell_snapshot_with_user_confirmed_grid() {
+    let mut shell = sample_shell_state();
+    shell.app.session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: SourceId::from("src-1"),
+            hypothesis_id: Some("timing-primary".into()),
+            confirmed_by_action: ActionId(8),
+            confirmed_at: 1_777_777,
+        });
+    shell.active_screen = ShellScreen::Source;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("ready grid confirmed"), "{rendered}");
+    assert!(rendered.contains("act user confirmed"), "{rendered}");
+    assert!(rendered.contains("mode manual | grid manual"), "{rendered}");
+}
+
+#[test]
 fn renders_source_shell_snapshot_with_missing_source_timing_summary() {
     let mut shell = sample_shell_state();
     shell.app.source_graph = None;

@@ -176,6 +176,36 @@ fn source_timing_readiness_styles_manual_confirm_as_pending() {
 }
 
 #[test]
+fn source_timing_readiness_shows_user_confirmed_grid() {
+    let mut shell = sample_shell_state();
+    shell.app.session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: SourceId::from("src-1"),
+            hypothesis_id: Some("timing-primary".into()),
+            confirmed_by_action: ActionId(8),
+            confirmed_at: 1_777_777,
+        });
+
+    let line = source_timing_readiness_line(&shell);
+    let rendered = line
+        .spans
+        .iter()
+        .map(|span| span.content.as_ref())
+        .collect::<String>();
+
+    assert_eq!(
+        rendered,
+        "timing grid confirmed | user confirmed | manual_confirm_only | p0:b0/1/0"
+    );
+    assert_eq!(line.spans[1].content.as_ref(), "grid confirmed");
+    assert_eq!(line.spans[1].style.fg, Some(Color::Green));
+    assert!(
+        line.spans[1].style.add_modifier.contains(Modifier::BOLD),
+        "{line:?}"
+    );
+}
+
+#[test]
 fn source_timing_clock_shows_full_position_when_grid_counts_exist() {
     let mut shell = sample_shell_state();
     let graph = shell
