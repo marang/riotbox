@@ -78,6 +78,7 @@ fn renders_source_shell_snapshot_with_user_confirmed_grid() {
             confirmed_by_action: ActionId(8),
             confirmed_at: 1_777_777,
         });
+    shell.app.refresh_view();
     shell.active_screen = ShellScreen::Source;
 
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
@@ -85,6 +86,10 @@ fn renders_source_shell_snapshot_with_user_confirmed_grid() {
     assert!(rendered.contains("ready grid confirmed"), "{rendered}");
     assert!(rendered.contains("act user confirmed"), "{rendered}");
     assert!(rendered.contains("mode manual | grid manual"), "{rendered}");
+    assert!(
+        rendered.contains("mode bar grid | grid confirmed"),
+        "{rendered}"
+    );
 }
 
 #[test]

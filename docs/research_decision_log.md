@@ -1608,3 +1608,17 @@ Why: the musician needs to know what `c` will capture before pressing it, and re
 Evidence: RIOTBOX-976 wires typed capture-length params, queue / commit side effects, replay support, shell controls, observer state, Capture screen rendering, and source-window tests for one-beat and phrase-grid durations.
 Consequences: capture remains a musical gesture on the transport grid. Phrase length depends on Source Timing phrase evidence and falls back to the established four-bar span when phrase evidence is missing; future waveform/canvas work should visualize this range without replacing the typed intent contract.
 Status: accepted
+
+---
+
+### RBX-042
+
+Date: 2026-05-23
+Topic: Source Map trust row reads user-confirmed grid state
+Phase: Source Timing Intelligence / Musician UX
+Question: how should Source Map show a grid that the musician confirmed after listening when analyzer confidence still required manual confirmation?
+Decision: derive Source Map trust from matching `runtime_state.source_timing.confirmed_grid` before falling back to analyzer cue text. A matching source/hypothesis confirmation renders as `grid confirmed` and allows bar-grid Source Map mode without mutating Source Graph timing evidence.
+Why: the musician needs the Source Map to reflect the accepted trust decision directly, while replay and QA still need the distinction between analyzer confidence and user acceptance.
+Evidence: RIOTBOX-977 adds Source Map projection tests for confirmed, unconfirmed, and mismatched confirmation state plus Source screen render coverage.
+Consequences: lane consumers should continue to read typed Session trust state directly in later slices; Source Graph confidence and warnings remain analysis evidence, not user-trust state.
+Status: accepted

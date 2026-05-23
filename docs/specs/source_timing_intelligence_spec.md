@@ -232,6 +232,10 @@ Rules:
   them visually by bar
 - when timing is unavailable or not usable, the map must fall back to a
   time-uniform source view and avoid bar-accurate capture claims
+- when `runtime_state.source_timing.confirmed_grid` matches the current source
+  and primary hypothesis, the map may show bar-grid mode and a `grid confirmed`
+  trust label even if analyzer confidence still says manual confirmation was
+  required
 - map navigation uses typed shell intent for previous / next bar and previous /
   next phrase, but commits as `transport.seek` so the selected listening
   position remains replayable Session transport state rather than hidden
