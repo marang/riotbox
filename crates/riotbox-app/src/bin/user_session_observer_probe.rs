@@ -1,12 +1,12 @@
 use std::{
     fs::{self, File, OpenOptions},
     io::{self, BufWriter, Write},
-    path::{Path, PathBuf},
+    path::Path,
 };
 
 use crossterm::event::KeyCode;
 use riotbox_app::{
-    jam_app::JamAppState,
+    jam_app::{JamAppState, SourceMapNavigationIntent},
     observer::{compact_commit, key_code_label, observer_snapshot, shell_key_outcome_label},
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode},
 };
@@ -17,16 +17,23 @@ use riotbox_core::{
 };
 use serde_json::{Value, json};
 
+#[path = "user_session_observer_probe/cli.rs"]
+mod cli;
 #[path = "user_session_observer_probe/probe_scenarios.rs"]
 mod probe_scenarios;
+#[path = "user_session_observer_probe/source_map_navigation_control.rs"]
+mod source_map_navigation_control;
 
+use cli::{Args, print_help};
 use probe_scenarios::{
     write_feral_grid_fallback_jam_observer, write_feral_grid_jam_observer,
     write_feral_grid_locked_jam_observer, write_first_playable_jam_observer,
     write_interrupted_session_recovery_observer, write_missing_target_recovery_observer,
     write_recipe2_mc202_observer, write_source_timing_confirmation_observer,
-    write_stage_style_jam_observer, write_stage_style_restore_diversity_observer,
+    write_source_transport_map_capture_observer, write_stage_style_jam_observer,
+    write_stage_style_restore_diversity_observer,
 };
+use source_map_navigation_control::apply_source_map_navigation;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse(std::env::args().skip(1))?;
@@ -52,70 +59,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "source-timing-confirmation" => {
             write_source_timing_confirmation_observer(&args.observer_path)?
         }
+        "source-transport-map-capture" => {
+            write_source_transport_map_capture_observer(&args.observer_path)?
+        }
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked, source-timing-confirmation"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked, source-timing-confirmation, source-transport-map-capture"
             )
             .into());
         }
     }
 
     Ok(())
-}
-
-#[derive(Debug, PartialEq, Eq)]
-struct Args {
-    probe: String,
-    observer_path: PathBuf,
-    show_help: bool,
-}
-
-impl Args {
-    fn parse(args: impl IntoIterator<Item = String>) -> Result<Self, String> {
-        let mut probe = None;
-        let mut observer_path = None;
-        let mut show_help = false;
-        let mut args = args.into_iter();
-
-        while let Some(arg) = args.next() {
-            match arg.as_str() {
-                "--help" | "-h" => show_help = true,
-                "--probe" => {
-                    probe = Some(
-                        args.next()
-                            .ok_or_else(|| "--probe requires a value".to_string())?,
-                    );
-                }
-                "--observer" => {
-                    observer_path = Some(PathBuf::from(
-                        args.next()
-                            .ok_or_else(|| "--observer requires a path".to_string())?,
-                    ));
-                }
-                other => return Err(format!("unknown argument: {other}")),
-            }
-        }
-
-        if show_help {
-            return Ok(Self {
-                probe: String::new(),
-                observer_path: PathBuf::new(),
-                show_help,
-            });
-        }
-
-        Ok(Self {
-            probe: probe.ok_or_else(|| "--probe is required".to_string())?,
-            observer_path: observer_path.ok_or_else(|| "--observer is required".to_string())?,
-            show_help,
-        })
-    }
-}
-
-fn print_help() {
-    println!(
-        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-fallback|feral-grid-jam-locked|source-timing-confirmation> --observer <events.ndjson>"
-    );
 }
 
 fn probe_shell(session_id: &str) -> JamShellState {
@@ -384,6 +339,34 @@ fn apply_probe_key(
                 }
             }
         }
+        ShellKeyOutcome::NavigateSourceMapPreviousBar => {
+            immediate_committed = apply_source_map_navigation(
+                shell,
+                SourceMapNavigationIntent::PreviousBar,
+                timestamp_ms,
+            );
+        }
+        ShellKeyOutcome::NavigateSourceMapNextBar => {
+            immediate_committed = apply_source_map_navigation(
+                shell,
+                SourceMapNavigationIntent::NextBar,
+                timestamp_ms,
+            );
+        }
+        ShellKeyOutcome::NavigateSourceMapPreviousPhrase => {
+            immediate_committed = apply_source_map_navigation(
+                shell,
+                SourceMapNavigationIntent::PreviousPhrase,
+                timestamp_ms,
+            );
+        }
+        ShellKeyOutcome::NavigateSourceMapNextPhrase => {
+            immediate_committed = apply_source_map_navigation(
+                shell,
+                SourceMapNavigationIntent::NextPhrase,
+                timestamp_ms,
+            );
+        }
         other => {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -489,6 +472,9 @@ impl NdjsonWriter {
     }
 }
 
+#[cfg(test)]
+#[path = "user_session_observer_probe/source_transport_map_capture_tests.rs"]
+mod source_transport_map_capture_tests;
 #[cfg(test)]
 #[path = "user_session_observer_probe/tests.rs"]
 mod tests;

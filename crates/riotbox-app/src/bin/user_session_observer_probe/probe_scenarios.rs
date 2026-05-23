@@ -18,6 +18,8 @@ mod feral_grid;
 mod locked_timing_grid;
 #[path = "probe_scenarios/source_timing_confirmation.rs"]
 mod source_timing_confirmation;
+#[path = "probe_scenarios/source_transport_map_capture.rs"]
+mod source_transport_map_capture;
 
 use super::{
     NdjsonWriter, apply_probe_key, commit_boundary, headless_audio_health, probe_shell,
@@ -29,6 +31,7 @@ pub(super) use feral_grid::{
     write_feral_grid_locked_jam_observer,
 };
 pub(super) use source_timing_confirmation::write_source_timing_confirmation_observer;
+pub(super) use source_transport_map_capture::write_source_transport_map_capture_observer;
 
 pub(super) fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;
