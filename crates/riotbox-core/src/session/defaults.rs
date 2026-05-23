@@ -233,6 +233,7 @@ mod tests {
         session.runtime_state.transport.is_playing = true;
         session.runtime_state.transport.position_beats = 32.0;
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
+        session.runtime_state.source_monitor.mode = SourceMonitorMode::Blend;
         session.runtime_state.macro_state.scene_aggression = 0.75;
         session.runtime_state.lane_state.mc202.role = Some("follower".into());
         session
@@ -318,6 +319,45 @@ mod tests {
         let decoded: SessionFile = serde_json::from_str(&json).expect("deserialize session");
 
         assert_eq!(decoded, session);
+    }
+
+    #[test]
+    fn source_monitor_mode_defaults_to_source_and_roundtrips_as_stable_label() {
+        let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T08:00:00Z");
+
+        assert_eq!(
+            session.runtime_state.source_monitor.mode,
+            SourceMonitorMode::Source
+        );
+        assert_eq!(SourceMonitorMode::Source.as_str(), "source");
+        assert_eq!(SourceMonitorMode::Blend.as_str(), "blend");
+        assert_eq!(SourceMonitorMode::Riotbox.as_str(), "riotbox");
+        assert_eq!(
+            serde_json::to_string(&SourceMonitorMode::Blend).unwrap(),
+            "\"blend\""
+        );
+        assert_eq!(
+            serde_json::from_str::<SourceMonitorMode>("\"riotbox\"").unwrap(),
+            SourceMonitorMode::Riotbox
+        );
+    }
+
+    #[test]
+    fn legacy_runtime_state_without_source_monitor_defaults_to_source() {
+        let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T08:01:00Z");
+        let mut value = serde_json::to_value(&session).expect("serialize session");
+        value["runtime_state"]
+            .as_object_mut()
+            .expect("runtime state object")
+            .remove("source_monitor");
+
+        let decoded: SessionFile =
+            serde_json::from_value(value).expect("deserialize legacy session");
+
+        assert_eq!(
+            decoded.runtime_state.source_monitor.mode,
+            SourceMonitorMode::Source
+        );
     }
 
     #[test]

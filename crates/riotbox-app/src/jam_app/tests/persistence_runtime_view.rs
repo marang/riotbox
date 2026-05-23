@@ -160,7 +160,8 @@ fn save_materializes_payload_for_latest_explicit_snapshot_and_restore_uses_it() 
 #[test]
 fn runtime_view_updates_from_audio_and_sidecar_state() {
     let graph = sample_graph();
-    let session = sample_session(&graph);
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_monitor.mode = SourceMonitorMode::Blend;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     state.set_audio_health(sample_audio_health(AudioRuntimeLifecycle::Running));
@@ -173,7 +174,51 @@ fn runtime_view_updates_from_audio_and_sidecar_state() {
     assert_eq!(state.runtime_view.audio_callback_count, 18);
     assert_eq!(state.runtime_view.sidecar_status, "ready");
     assert_eq!(state.runtime_view.sidecar_version.as_deref(), Some("0.1.0"));
+    assert_eq!(state.runtime_view.source_monitor_mode, "blend");
     assert!(state.runtime_view.runtime_warnings.is_empty());
+}
+
+#[test]
+fn source_monitor_mode_queues_commits_and_surfaces_in_runtime_view() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(state.runtime_view.source_monitor_mode, "source");
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 100),
+        QueueControlResult::Enqueued
+    );
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 101),
+        QueueControlResult::AlreadyPending
+    );
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Source, 102),
+        QueueControlResult::AlreadyPending
+    );
+
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Immediate,
+            beat_index: 0,
+            bar_index: 0,
+            phrase_index: 0,
+            scene_id: None,
+        },
+        120,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert_eq!(
+        state.session.runtime_state.source_monitor.mode,
+        SourceMonitorMode::Riotbox
+    );
+    assert_eq!(state.runtime_view.source_monitor_mode, "riotbox");
+    assert_eq!(
+        state.queue_source_monitor_mode(SourceMonitorMode::Riotbox, 121),
+        QueueControlResult::AlreadyInState
+    );
 }
 
 #[test]

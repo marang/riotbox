@@ -219,6 +219,7 @@ fn session_with_committed_jam_state(graph: &SourceGraph) -> SessionFile {
     }];
     session.runtime_state = RuntimeState {
         transport: session.runtime_state.transport.clone(),
+        source_monitor: session.runtime_state.source_monitor.clone(),
         macro_state: session.runtime_state.macro_state.clone(),
         lane_state: session.runtime_state.lane_state.clone(),
         mixer_state: session.runtime_state.mixer_state.clone(),
