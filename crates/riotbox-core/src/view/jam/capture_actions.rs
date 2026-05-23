@@ -183,6 +183,7 @@ pub struct SourceSummaryView {
     pub bpm_estimate: Option<f32>,
     pub bpm_confidence: f32,
     pub timing: SourceTimingSummaryView,
+    pub source_map: SourceMapView,
     pub section_count: usize,
     pub loop_candidate_count: usize,
     pub hook_candidate_count: usize,

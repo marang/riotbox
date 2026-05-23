@@ -5,7 +5,8 @@ use crate::{
         Tr909TakeoverProfileState,
     },
     source_graph::{
-        AssetType, CandidateType, EnergyClass, QualityClass, RelationshipType, Section, SourceGraph,
+        AssetType, CandidateType, EnergyClass, QualityClass, RelationshipType, Section,
+        SectionLabelHint, SourceGraph,
     },
 };
 
@@ -25,4 +26,3 @@ pub struct JamViewModel {
     pub ghost: GhostStatusView,
     pub warnings: Vec<String>,
 }
-

@@ -165,7 +165,11 @@ fn render_source_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
 
     let top = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Percentage(45), Constraint::Percentage(55)])
+        .constraints([
+            Constraint::Percentage(25),
+            Constraint::Percentage(40),
+            Constraint::Percentage(35),
+        ])
         .split(rows[0]);
 
     let identity = Paragraph::new(source_identity_lines(shell))
@@ -174,9 +178,13 @@ fn render_source_body(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) 
     let timing = Paragraph::new(source_timing_lines(shell))
         .block(Block::default().title("Timing").borders(Borders::ALL))
         .wrap(Wrap { trim: true });
+    let source_map = Paragraph::new(source_map_lines(shell))
+        .block(Block::default().title("Source Map").borders(Borders::ALL))
+        .wrap(Wrap { trim: false });
 
     frame.render_widget(identity, top[0]);
     frame.render_widget(timing, top[1]);
+    frame.render_widget(source_map, top[2]);
 
     let middle = Layout::default()
         .direction(Direction::Horizontal)

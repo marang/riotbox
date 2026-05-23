@@ -10,6 +10,7 @@ fn renders_jam_shell_inspect_snapshot() {
     assert!(rendered.contains("TR-909 detail"), "{rendered}");
     assert!(rendered.contains("accent off"), "{rendered}");
     assert!(rendered.contains("Source structure"), "{rendered}");
+    assert!(rendered.contains("map time fallback"), "{rendered}");
     assert!(
         rendered.contains("source clock beat - | bar 8 | phrase -"),
         "{rendered}"
