@@ -14,9 +14,10 @@ use riotbox_core::{
 use super::{
     JamAppState, apply_capture_promotion_side_effects, apply_ghost_side_effects,
     apply_mc202_side_effects, apply_scene_side_effects, apply_source_monitor_side_effects,
-    apply_source_timing_side_effects, apply_tr909_side_effects, apply_w30_side_effects,
-    capture_promotion_summary, capture_ref_from_action, is_mc202_phrase_action, max_action_id,
-    next_action_id_from_session, update_logged_action_result,
+    apply_source_timing_side_effects, apply_tr909_side_effects, apply_transport_side_effects,
+    apply_w30_side_effects, capture_promotion_summary, capture_ref_from_action,
+    is_mc202_phrase_action, max_action_id, next_action_id_from_session,
+    update_logged_action_result,
 };
 use crate::jam_app::helpers::append_capture_note;
 
@@ -155,7 +156,7 @@ impl JamAppState {
         self.snapshot_undo_state_before_side_effects(action);
         self.materialize_capture_before_lane_side_effects(action, boundary);
         self.apply_lane_scene_and_ghost_side_effects(action, boundary);
-        self.mirror_scene_commit_to_runtime_transport(action);
+        self.mirror_committed_transport_state(action);
     }
 
     fn snapshot_undo_state_before_side_effects(&mut self, action: &Action) {
@@ -215,6 +216,7 @@ impl JamAppState {
         apply_w30_side_effects(&mut self.session, action, Some(boundary));
         apply_mc202_side_effects(&mut self.session, action, Some(boundary));
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
+        apply_transport_side_effects(&mut self.session, action);
         apply_source_monitor_side_effects(&mut self.session, action);
         apply_source_timing_side_effects(&mut self.session, action);
         apply_scene_side_effects(
@@ -226,13 +228,27 @@ impl JamAppState {
         apply_ghost_side_effects(&mut self.session, action);
     }
 
-    fn mirror_scene_commit_to_runtime_transport(&mut self, action: &Action) {
-        if matches!(
-            action.command,
-            ActionCommand::SceneLaunch | ActionCommand::SceneRestore
-        ) {
-            self.runtime.transport.current_scene =
-                self.session.runtime_state.transport.current_scene.clone();
+    fn mirror_committed_transport_state(&mut self, action: &Action) {
+        match action.command {
+            ActionCommand::TransportPlay
+            | ActionCommand::TransportPause
+            | ActionCommand::TransportStop
+            | ActionCommand::TransportSeek => {
+                self.runtime.transport = super::transport_helpers::transport_clock_from_state(
+                    &self.session,
+                    self.source_graph.as_ref(),
+                );
+                self.runtime.transport_driver.last_audio_position_beats = self
+                    .runtime
+                    .transport
+                    .is_playing
+                    .then_some(self.runtime.transport.beat_index);
+            }
+            ActionCommand::SceneLaunch | ActionCommand::SceneRestore => {
+                self.runtime.transport.current_scene =
+                    self.session.runtime_state.transport.current_scene.clone();
+            }
+            _ => {}
         }
     }
 }

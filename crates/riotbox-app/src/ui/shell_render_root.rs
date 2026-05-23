@@ -198,6 +198,22 @@ impl JamShellState {
                 self.status_message = "revert source timing grid confirmation requested".into();
                 ShellKeyOutcome::RevertSourceTimingGrid
             }
+            KeyCode::Left => {
+                self.status_message = "source map previous bar requested".into();
+                ShellKeyOutcome::NavigateSourceMapPreviousBar
+            }
+            KeyCode::Right => {
+                self.status_message = "source map next bar requested".into();
+                ShellKeyOutcome::NavigateSourceMapNextBar
+            }
+            KeyCode::Up => {
+                self.status_message = "source map previous phrase requested".into();
+                ShellKeyOutcome::NavigateSourceMapPreviousPhrase
+            }
+            KeyCode::Down => {
+                self.status_message = "source map next phrase requested".into();
+                ShellKeyOutcome::NavigateSourceMapNextPhrase
+            }
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
                 ShellKeyOutcome::TogglePinLatestCapture

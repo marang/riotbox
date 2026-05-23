@@ -175,6 +175,22 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::RevertSourceTimingGrid
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Left),
+        ShellKeyOutcome::NavigateSourceMapPreviousBar
+    );
+    assert_eq!(
+        shell.handle_key_code(KeyCode::Right),
+        ShellKeyOutcome::NavigateSourceMapNextBar
+    );
+    assert_eq!(
+        shell.handle_key_code(KeyCode::Up),
+        ShellKeyOutcome::NavigateSourceMapPreviousPhrase
+    );
+    assert_eq!(
+        shell.handle_key_code(KeyCode::Down),
+        ShellKeyOutcome::NavigateSourceMapNextPhrase
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('v')),
         ShellKeyOutcome::TogglePinLatestCapture
     );

@@ -200,16 +200,21 @@ Show:
 - the shared Feral readiness label, so a user can distinguish `ready` from
   near-miss states such as `needs support`
 - adaptive Source Map rows for source orientation:
-  `energy`, `peaks`, `bars`, `play`, and `cap`. The default rendering should use
-  one or two rows of block characters rather than a dense analyzer view. Ratatui
-  `Canvas` is an allowed future Source-screen alternative once the block-map
-  contract is stable.
+  `energy`, `peaks`, `bars`, `play`, and the current region. The default
+  rendering should use one or two rows of block characters rather than a dense
+  analyzer view. Ratatui `Canvas` is an allowed future Source-screen alternative
+  once the block-map contract is stable.
 - Source Map colors may support scanning, but playhead, capture range, grid trust
   state, and fallback mode must remain readable through text or markers in
   monochrome snapshots.
 - Source Map timing mode must be explicit: usable timing may show beat/bar
   grouped buckets, while unavailable or untrusted timing must show a time-based
   fallback instead of pretending that bar-accurate capture is safe.
+- Source Map navigation keys are transport navigation, not an editor cursor:
+  `Left` / `Right` request previous / next bar and `Up` / `Down` request
+  previous / next phrase. These controls should commit as `transport.seek`,
+  preserve play / pause state, clamp at bounds, and update the playhead / region
+  row from Session-derived transport state.
 - section labels should be conservative. When semantic confidence is weak, show
   neutral labels such as `section A`, `section B`, and `section C` instead of
   inventing `hook`, `drop`, or `break` labels.

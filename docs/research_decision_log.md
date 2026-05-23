@@ -1582,3 +1582,17 @@ Why: confirmation is musician trust, not analyzer truth. Removing that trust mus
 Evidence: RIOTBOX-974 wires the revert action through core command vocabulary, app queue/commit side effects, replay executor support, shell status handling, and focused tests.
 Consequences: downstream lane consumers can treat confirmation as reversible session truth. Full undo semantics remain separate; this action is the explicit trust-state removal path.
 Status: accepted
+
+---
+
+### RBX-040
+
+Date: 2026-05-23
+Topic: Source Map navigation uses transport seek, not an editor cursor
+Phase: Source Timing Intelligence
+Question: how should musicians move through the analyzed source map before capture without turning Riotbox into a destructive sample editor?
+Decision: expose typed shell intents for previous / next bar and previous / next phrase, but commit the result as `transport.seek` with structured `position_beats`. The Source Map renders the current region from Session transport state and Source Graph evidence.
+Why: the musician needs fast, predictable source audition navigation, while replay / restore must have one transport truth. A separate Source Map cursor would create a hidden second selection model and weaken capture provenance.
+Evidence: RIOTBOX-975 adds Source Map navigation intents, arrow-key outcomes, immediate seek commit handling, transport side effects, observer labels, Source Map current-region rendering, and focused control/render tests.
+Consequences: capture-length and source-audition slices should consume the same transport position instead of inventing arbitrary sample-range selection. Future waveform/canvas work may visualize the position more densely but must not replace the transport seek contract.
+Status: accepted

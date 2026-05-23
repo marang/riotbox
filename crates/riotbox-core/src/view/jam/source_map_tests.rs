@@ -29,6 +29,14 @@ fn source_map_uses_bar_grid_when_locked_bar_spans_exist() {
     assert_eq!(vm.source.source_map.playhead_column, Some(8));
     assert!(vm.source.source_map.playhead_row.contains('^'));
     assert_eq!(
+        vm.source.source_map.current_region_label,
+        "now bar 2 | section A"
+    );
+    assert_eq!(
+        vm.source.source_map.navigation_hint,
+        "nav Left/Right bar | Up/Down phrase"
+    );
+    assert_eq!(
         vm.source.source_map.capture_hint,
         "cap next bar | map bar grid | 32 cols"
     );

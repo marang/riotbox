@@ -23,7 +23,8 @@ fn renders_source_shell_snapshot_with_feral_scorecard() {
     assert!(rendered.contains("act confirm grid"));
     assert!(rendered.contains("warn ambiguous"));
     assert!(rendered.contains("mode time fallback | needs confirm"), "{rendered}");
-    assert!(rendered.contains("cap listen"), "{rendered}");
+    assert!(rendered.contains("now bar - | section -"), "{rendered}");
+    assert!(rendered.contains("nav -"), "{rendered}");
     assert!(rendered.contains("feral ready"));
     assert!(rendered.contains("break high"));
     assert!(rendered.contains("quote risk 1"));
@@ -57,7 +58,8 @@ fn renders_source_shell_snapshot_with_grid_locked_timing_summary() {
         "{rendered}"
     );
     assert!(rendered.contains("mode bar grid | grid locked"), "{rendered}");
-    assert!(rendered.contains("cap next bar"), "{rendered}");
+    assert!(rendered.contains("now bar - | section -"), "{rendered}");
+    assert!(rendered.contains("nav bar"), "{rendered}");
     assert!(rendered.contains("act grid steer"), "{rendered}");
     assert!(rendered.contains("warn none"), "{rendered}");
     assert!(
@@ -103,7 +105,8 @@ fn renders_source_shell_snapshot_with_missing_source_timing_summary() {
     assert!(rendered.contains("action timing unavailable"), "{rendered}");
     assert!(rendered.contains("no timing information available"), "{rendered}");
     assert!(rendered.contains("mode missing | not available"), "{rendered}");
-    assert!(rendered.contains("no cap"), "{rendered}");
+    assert!(rendered.contains("now unavailable"), "{rendered}");
+    assert!(rendered.contains("nav -"), "{rendered}");
 }
 
 #[test]

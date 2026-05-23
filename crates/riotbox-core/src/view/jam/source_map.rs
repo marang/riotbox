@@ -29,6 +29,8 @@ pub struct SourceMapView {
     pub grid_row: String,
     pub playhead_row: String,
     pub playhead_column: Option<usize>,
+    pub current_region_label: String,
+    pub navigation_hint: String,
     pub capture_hint: String,
     pub section_labels: Vec<String>,
 }
@@ -44,6 +46,8 @@ impl Default for SourceMapView {
             grid_row: ".".repeat(SOURCE_MAP_WIDTH),
             playhead_row: " ".repeat(SOURCE_MAP_WIDTH),
             playhead_column: None,
+            current_region_label: "now unavailable".into(),
+            navigation_hint: "nav unavailable".into(),
             capture_hint: "cap unavailable | no source graph".into(),
             section_labels: Vec::new(),
         }
@@ -71,6 +75,8 @@ impl SourceMapView {
             grid_row: source_map_grid_row(graph, mode, &bars),
             playhead_row: source_map_playhead_row(playhead_column),
             playhead_column,
+            current_region_label: source_map_current_region_label(graph, session),
+            navigation_hint: source_map_navigation_hint(graph, mode),
             capture_hint: source_map_capture_hint(mode),
             section_labels: source_map_section_labels(graph),
         }
@@ -149,6 +155,48 @@ fn source_map_capture_hint(mode: SourceMapModeView) -> String {
     }
 }
 
+fn source_map_navigation_hint(graph: &SourceGraph, mode: SourceMapModeView) -> String {
+    if mode != SourceMapModeView::BarGrid {
+        return "nav listen first | confirm grid before bar seek".into();
+    }
+
+    let phrase_count = graph
+        .timing
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.phrase_grid.len())
+        .filter(|count| *count > 0)
+        .or_else(|| (!graph.timing.phrase_grid.is_empty()).then_some(graph.timing.phrase_grid.len()))
+        .unwrap_or_else(|| {
+            source_map_bar_spans(graph)
+                .into_iter()
+                .filter_map(|bar| bar.phrase_index)
+                .collect::<std::collections::BTreeSet<_>>()
+                .len()
+        });
+    if phrase_count > 0 {
+        "nav Left/Right bar | Up/Down phrase".into()
+    } else {
+        "nav Left/Right bar | phrase unavailable".into()
+    }
+}
+
+fn source_map_current_region_label(graph: &SourceGraph, session: &SessionFile) -> String {
+    let Some(position_seconds) = source_map_position_seconds(graph, session) else {
+        return "now unavailable".into();
+    };
+    let bar = source_map_bar_at_time(graph, position_seconds)
+        .map_or_else(|| "bar -".into(), |bar_index| format!("bar {bar_index}"));
+    let section = source_map_section_at_time(graph, position_seconds)
+        .map_or_else(|| "section -".into(), |(index, section)| {
+            if section.confidence >= 0.8 && section.label_hint != SectionLabelHint::Unknown {
+                source_map_section_label_hint(section.label_hint).into()
+            } else {
+                format!("section {}", source_map_section_letter(index))
+            }
+        });
+    format!("now {bar} | {section}")
+}
+
 fn source_map_section_labels(graph: &SourceGraph) -> Vec<String> {
     sorted_sections(graph)
         .into_iter()
@@ -175,15 +223,40 @@ fn source_map_bar_spans(graph: &SourceGraph) -> Vec<crate::source_graph::BarSpan
         .unwrap_or_else(|| graph.timing.bar_grid.clone())
 }
 
+fn source_map_bar_at_time(graph: &SourceGraph, position_seconds: f32) -> Option<u32> {
+    source_map_bar_spans(graph)
+        .into_iter()
+        .find(|bar| position_seconds >= bar.start_seconds && position_seconds < bar.end_seconds)
+        .map(|bar| bar.bar_index)
+}
+
+fn source_map_section_at_time(
+    graph: &SourceGraph,
+    position_seconds: f32,
+) -> Option<(usize, &crate::source_graph::Section)> {
+    sorted_sections(graph)
+        .into_iter()
+        .enumerate()
+        .find(|(_, section)| {
+            position_seconds >= section.start_seconds && position_seconds < section.end_seconds
+        })
+}
+
 fn source_map_playhead_column(graph: &SourceGraph, session: &SessionFile) -> Option<usize> {
+    source_map_position_seconds(graph, session)
+        .map(|position_seconds| source_map_column_for_time(graph, position_seconds))
+}
+
+fn source_map_position_seconds(graph: &SourceGraph, session: &SessionFile) -> Option<f32> {
     let bpm = graph.timing.bpm_estimate?;
     if bpm <= 0.0 || !bpm.is_finite() || graph.source.duration_seconds <= 0.0 {
         return None;
     }
 
-    let position_seconds = (session.transport().position_beats as f32 * 60.0 / bpm)
-        .clamp(0.0, graph.source.duration_seconds);
-    Some(source_map_column_for_time(graph, position_seconds))
+    Some(
+        (session.transport().position_beats as f32 * 60.0 / bpm)
+            .clamp(0.0, graph.source.duration_seconds),
+    )
 }
 
 fn source_map_bucket_has_anchor(graph: &SourceGraph, start: f32, end: f32) -> bool {
