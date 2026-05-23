@@ -139,6 +139,32 @@ impl Display for GhostMode {
     }
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum SourceMonitorMode {
+    #[default]
+    Source,
+    Blend,
+    Riotbox,
+}
+
+impl SourceMonitorMode {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Source => "source",
+            Self::Blend => "blend",
+            Self::Riotbox => "riotbox",
+        }
+    }
+}
+
+impl Display for SourceMonitorMode {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub enum ActionParams {
     Empty,
@@ -168,6 +194,9 @@ pub enum ActionParams {
     Ghost {
         mode: Option<GhostMode>,
         proposal_id: Option<String>,
+    },
+    SourceMonitor {
+        mode: Option<SourceMonitorMode>,
     },
 }
 
@@ -221,6 +250,7 @@ pub enum ActionCommand {
     UndoLast,
     RedoLast,
     RestoreSource,
+    SourceMonitorSetMode,
     GhostSetMode,
     GhostAcceptSuggestion,
     GhostRejectSuggestion,
@@ -279,6 +309,7 @@ impl ActionCommand {
             Self::UndoLast => "undo.last",
             Self::RedoLast => "redo.last",
             Self::RestoreSource => "restore.source",
+            Self::SourceMonitorSetMode => "source_monitor.set_mode",
             Self::GhostSetMode => "ghost.set_mode",
             Self::GhostAcceptSuggestion => "ghost.accept_suggestion",
             Self::GhostRejectSuggestion => "ghost.reject_suggestion",

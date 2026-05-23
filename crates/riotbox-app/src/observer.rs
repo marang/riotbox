@@ -35,6 +35,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
             "audio_callback_count": runtime.audio_callback_count,
             "audio_last_error": runtime.audio_last_error,
             "sidecar_status": runtime.sidecar_status,
+            "source_monitor_mode": runtime.source_monitor_mode,
             "tr909_mode": runtime.tr909_render_mode,
             "tr909_routing": runtime.tr909_render_routing,
             "tr909_profile": runtime.tr909_render_profile,

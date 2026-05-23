@@ -21,6 +21,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::TransportPause,
     ActionCommand::TransportStop,
     ActionCommand::TransportSeek,
+    ActionCommand::SourceMonitorSetMode,
     ActionCommand::LockObject,
     ActionCommand::UnlockObject,
     ActionCommand::GhostSetMode,
@@ -112,6 +113,16 @@ pub fn apply_replay_entry_to_session(
                 });
             };
             session.runtime_state.transport.position_beats = position_beats as f64;
+        }
+        ActionCommand::SourceMonitorSetMode => {
+            let ActionParams::SourceMonitor { mode: Some(mode) } = action.params else {
+                return Err(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionParams::SourceMonitor { mode: Some(_) }",
+                });
+            };
+            session.runtime_state.source_monitor.mode = mode;
         }
         ActionCommand::LockObject => {
             let ActionParams::Lock { ref object_id } = action.params else {

@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    action::{Action, GhostMode},
+    action::{Action, GhostMode, SourceMonitorMode},
     ids::{ActionId, BankId, CaptureId, PadId, SceneId, SnapshotId, SourceId},
     source_graph::{GraphProvenance, SourceGraph, SourceGraphVersion},
     transport::CommitBoundaryState,
@@ -86,6 +86,8 @@ pub struct SourceGraphRef {
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]
 pub struct RuntimeState {
     pub transport: TransportRuntimeState,
+    #[serde(default)]
+    pub source_monitor: SourceMonitorRuntimeState,
     pub macro_state: MacroState,
     pub lane_state: LaneState,
     pub mixer_state: MixerState,
@@ -94,6 +96,12 @@ pub struct RuntimeState {
     pub pending_policy: PendingPolicy,
     #[serde(default)]
     pub undo_state: UndoRuntimeState,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Default, Serialize, Deserialize)]
+pub struct SourceMonitorRuntimeState {
+    #[serde(default)]
+    pub mode: SourceMonitorMode,
 }
 
 #[derive(Clone, Debug, PartialEq, Default, Serialize, Deserialize)]

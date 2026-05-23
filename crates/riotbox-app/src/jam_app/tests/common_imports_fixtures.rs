@@ -28,7 +28,8 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
-        ActorType, CommitBoundary, GhostMode, Quantization, TargetScope, UndoPolicy,
+        ActorType, CommitBoundary, GhostMode, Quantization, SourceMonitorMode, TargetScope,
+        UndoPolicy,
     },
     ghost::{
         GhostSuggestedAction, GhostSuggestionBlocker, GhostSuggestionBlockerKind,

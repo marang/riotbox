@@ -220,6 +220,7 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         | ActionCommand::TransportPause
         | ActionCommand::TransportStop
         | ActionCommand::TransportSeek => "Transport",
+        ActionCommand::SourceMonitorSetMode => "Source Monitor",
         ActionCommand::GhostSetMode
         | ActionCommand::GhostAcceptSuggestion
         | ActionCommand::GhostRejectSuggestion

@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    action::GhostMode,
+    action::{GhostMode, SourceMonitorMode},
     replay::{build_committed_replay_plan, build_replay_target_plan},
     session::SessionFile,
 };
@@ -19,22 +19,30 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         ),
         action(
             3,
-            ActionCommand::LockObject,
-            ActionParams::Lock {
-                object_id: "pad-a1".into(),
+            ActionCommand::SourceMonitorSetMode,
+            ActionParams::SourceMonitor {
+                mode: Some(SourceMonitorMode::Blend),
             },
             300,
         ),
         action(
             4,
+            ActionCommand::LockObject,
+            ActionParams::Lock {
+                object_id: "pad-a1".into(),
+            },
+            400,
+        ),
+        action(
+            5,
             ActionCommand::GhostSetMode,
             ActionParams::Ghost {
                 mode: Some(GhostMode::Assist),
                 proposal_id: None,
             },
-            400,
+            500,
         ),
-        action(5, ActionCommand::TransportPause, ActionParams::Empty, 500),
+        action(6, ActionCommand::TransportPause, ActionParams::Empty, 600),
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
@@ -48,7 +56,8 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             ActionId(2),
             ActionId(3),
             ActionId(4),
-            ActionId(5)
+            ActionId(5),
+            ActionId(6)
         ]
     );
     assert!(!session.runtime_state.transport.is_playing);
@@ -57,7 +66,36 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         session.runtime_state.lock_state.locked_object_ids,
         vec!["pad-a1".to_string()]
     );
+    assert_eq!(
+        session.runtime_state.source_monitor.mode,
+        SourceMonitorMode::Blend
+    );
     assert_eq!(session.ghost_state.mode, GhostMode::Assist);
+}
+
+#[test]
+fn plan_executor_rejects_source_monitor_mode_without_mode_param() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::SourceMonitorSetMode,
+        ActionParams::SourceMonitor { mode: None },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T08:10:00Z");
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("invalid params");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::SourceMonitorSetMode,
+            expected: "ActionParams::SourceMonitor { mode: Some(_) }"
+        }
+    );
+    assert_eq!(session, original_session);
 }
 
 #[test]
@@ -178,36 +216,44 @@ fn snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions
         ),
         action(
             3,
-            ActionCommand::LockObject,
-            ActionParams::Lock {
-                object_id: "scene-drop".into(),
+            ActionCommand::SourceMonitorSetMode,
+            ActionParams::SourceMonitor {
+                mode: Some(SourceMonitorMode::Riotbox),
             },
             300,
         ),
         action(
             4,
-            ActionCommand::GhostSetMode,
-            ActionParams::Ghost {
-                mode: Some(GhostMode::Assist),
-                proposal_id: None,
+            ActionCommand::LockObject,
+            ActionParams::Lock {
+                object_id: "scene-drop".into(),
             },
             400,
         ),
         action(
             5,
+            ActionCommand::GhostSetMode,
+            ActionParams::Ghost {
+                mode: Some(GhostMode::Assist),
+                proposal_id: None,
+            },
+            500,
+        ),
+        action(
+            6,
             ActionCommand::UnlockObject,
             ActionParams::Lock {
                 object_id: "scene-drop".into(),
             },
-            500,
+            600,
         ),
-        action(6, ActionCommand::TransportPause, ActionParams::Empty, 600),
+        action(7, ActionCommand::TransportPause, ActionParams::Empty, 700),
     ]);
-    let snapshots = vec![snapshot("snap-after-lock", 3)];
-    let origin_plan = build_replay_target_plan(&action_log, &[], 6).expect("origin plan");
+    let snapshots = vec![snapshot("snap-after-monitor", 3)];
+    let origin_plan = build_replay_target_plan(&action_log, &[], 7).expect("origin plan");
     let anchor_plan = build_replay_target_plan(&action_log, &[], 3).expect("anchor plan");
     let snapshot_plan =
-        build_replay_target_plan(&action_log, &snapshots, 6).expect("snapshot plan");
+        build_replay_target_plan(&action_log, &snapshots, 7).expect("snapshot plan");
 
     let mut origin_session =
         SessionFile::new("origin-session", "riotbox-test", "2026-04-29T20:30:00Z");
@@ -225,7 +271,7 @@ fn snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions
         snapshot_plan
             .anchor
             .map(|snapshot| snapshot.snapshot_id.as_str()),
-        Some("snap-after-lock")
+        Some("snap-after-monitor")
     );
     assert_eq!(
         origin_report.applied_action_ids,
@@ -235,7 +281,8 @@ fn snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions
             ActionId(3),
             ActionId(4),
             ActionId(5),
-            ActionId(6)
+            ActionId(6),
+            ActionId(7)
         ]
     );
     assert_eq!(
@@ -244,7 +291,7 @@ fn snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions
     );
     assert_eq!(
         suffix_report.applied_action_ids,
-        vec![ActionId(4), ActionId(5), ActionId(6)]
+        vec![ActionId(4), ActionId(5), ActionId(6), ActionId(7)]
     );
     assert_eq!(
         snapshot_session.runtime_state.transport,
@@ -253,6 +300,10 @@ fn snapshot_suffix_replay_converges_with_origin_for_supported_structural_actions
     assert_eq!(
         snapshot_session.runtime_state.lock_state,
         origin_session.runtime_state.lock_state
+    );
+    assert_eq!(
+        snapshot_session.runtime_state.source_monitor,
+        origin_session.runtime_state.source_monitor
     );
     assert_eq!(snapshot_session.ghost_state, origin_session.ghost_state);
 }
@@ -266,6 +317,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::TransportPause,
             ActionCommand::TransportStop,
             ActionCommand::TransportSeek,
+            ActionCommand::SourceMonitorSetMode,
             ActionCommand::LockObject,
             ActionCommand::UnlockObject,
             ActionCommand::GhostSetMode,
