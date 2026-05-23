@@ -363,10 +363,10 @@ fn source_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 
     vec![
         Line::from(format!(
-            "tempo {:.1} | trust {} | feral {}",
+            "tempo {:.1} | map {} | {}",
             source.bpm_estimate.unwrap_or(0.0),
-            trust_summary(shell).headline,
-            source.feral_scorecard.readiness
+            source.source_map.mode.label(),
+            source.source_map.trust_label
         )),
         Line::from(format!(
             "sections {} | loops {} | hooks {}",

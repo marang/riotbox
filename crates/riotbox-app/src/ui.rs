@@ -52,7 +52,7 @@ use scene_timing_labels::{
     restore_scene_now_compact_label, restore_scene_target_compact_label,
     scene_energy_label_for_scene_id, scene_restore_contrast_line,
 };
-use source_timing_panel::source_timing_lines;
+use source_timing_panel::{source_map_lines, source_timing_lines};
 use source_trust_summary::{
     energy_label, source_candidate_lines, source_confidence_lines, source_provenance_lines,
     source_timing_clock_compact, source_timing_clock_line, source_timing_help_line,
