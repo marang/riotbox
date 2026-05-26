@@ -708,4 +708,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Gate all-lane source consumers on confirmed timing state
 - [RIOTBOX-980.md](./RIOTBOX-980.md)
   Evaluate ratatui canvas waveform fallback for Source Map
+- [RIOTBOX-981.md](./RIOTBOX-981.md)
+  Show Source Map capture range from capture length intent
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
