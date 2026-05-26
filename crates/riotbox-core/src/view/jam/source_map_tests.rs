@@ -29,7 +29,10 @@ fn source_map_uses_bar_grid_when_locked_bar_spans_exist() {
     assert!(vm.source.source_map.grid_row.contains('|'));
     assert_eq!(vm.source.source_map.playhead_column, Some(8));
     assert!(vm.source.source_map.playhead_row.contains('^'));
-    assert_eq!(vm.source.source_map.capture_range_row.chars().nth(8), Some('['));
+    assert_eq!(
+        vm.source.source_map.capture_range_row.chars().nth(16),
+        Some('[')
+    );
     assert_eq!(
         vm.source.source_map.capture_range_row.chars().nth(31),
         Some(']')
@@ -143,7 +146,22 @@ fn source_map_capture_range_tracks_capture_length_intent() {
 
     assert_eq!(
         vm.source.source_map.capture_range_row,
-        "........[=======]..............."
+        "................[=======]......."
+    );
+}
+
+#[test]
+fn source_map_capture_range_starts_at_next_bar_boundary() {
+    let graph = source_map_test_graph(TimingDegradedPolicy::Locked, TimingQuality::High);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.transport.position_beats = 5.25;
+    session.runtime_state.capture.length_intent = CaptureLengthIntent::OneBar;
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert_eq!(
+        vm.source.source_map.capture_range_row,
+        "................[=======]......."
     );
 }
 

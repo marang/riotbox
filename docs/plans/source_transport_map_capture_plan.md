@@ -80,9 +80,10 @@ Capture defaults to musical moments rather than exact manual ranges:
 - default capture length is `4 bars`
 - selectable lengths are `1 beat`, `1 bar`, `4 bars`, and `phrase`
 - the Source Map should show a read-only capture range marker for the currently
-  selected length when timing readiness allows bar-accurate source windows
-- `1 beat`, `1 bar`, and `4 bars` use the next committed capture boundary as
-  their start and derive duration from Source Timing meter / beat evidence
+  selected length from the next bar boundary when timing readiness allows
+  bar-accurate source windows
+- `1 beat`, `1 bar`, and `4 bars` use the next committed bar boundary as their
+  start and derive duration from Source Timing meter / beat evidence
 - `phrase` captures to the end of the matching Source Timing phrase span when
   phrase evidence is usable
 - when phrase evidence is not usable, phrase capture falls back visibly to

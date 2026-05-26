@@ -8,7 +8,7 @@ fn renders_capture_do_next_with_pending_capture_state() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(
-        rendered.contains("queued [c] capture @ next_phrase"),
+        rendered.contains("queued [c] capture @ next_bar"),
         "{rendered}"
     );
     assert!(
@@ -37,7 +37,7 @@ fn renders_capture_pending_cues_panel_as_first_item_with_log_overflow() {
         .collect();
 
     assert_eq!(rendered[0], "next user capture.bar_group");
-    assert_eq!(rendered[1], "when next_phrase | target lanew30");
+    assert_eq!(rendered[1], "when next_bar | target lanew30");
     assert_eq!(
         rendered[2],
         "note capture 4 bars from source into W-30 path"

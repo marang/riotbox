@@ -717,7 +717,7 @@ Target flow:
 6. confirm the grid when the displayed bar / phrase position is musically usable
 7. use `Left` / `Right` to seek bars and `Up` / `Down` to seek phrases
 8. choose capture length: `1 bar`, `4 bars`, or `phrase`
-9. press `c` to queue capture on the correct musical boundary
+9. press `c` to queue capture on the next bar boundary
 10. press `o` to raw-audition the latest capture
 11. press `p` to promote it
 12. press `w` to hit the promoted W-30 pad

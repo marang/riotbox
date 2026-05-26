@@ -59,7 +59,7 @@ Definition for this baseline:
 
 Current expected cue:
 
-- `queued [c] capture @ next_phrase`
+- `queued [c] capture @ next_bar`
 - `wait for commit`
 - `then [p] promote keeper`
 - `[2] confirm capture`

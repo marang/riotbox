@@ -186,10 +186,10 @@ fn help_primary_gesture_line_styles_key_prefixes_without_rewriting_text() {
 
 #[test]
 fn capture_pending_do_next_styles_define_pending_hierarchy() {
-    let intent = capture_pending_intent_line("queued [c] capture @ next_phrase");
+    let intent = capture_pending_intent_line("queued [c] capture @ next_bar");
     assert_eq!(
         intent.spans[0].content.as_ref(),
-        "queued [c] capture @ next_phrase"
+        "queued [c] capture @ next_bar"
     );
     assert_eq!(intent.spans[0].style.fg, Some(Color::Yellow));
     assert!(

@@ -1708,3 +1708,17 @@ Why: this keeps the visible Source Map capture target in the same headless obser
 Evidence: RIOTBOX-983 adds assertions to the Feral-grid observer probe tests for locked, cautious/manual-review, and fallback timing paths.
 Consequences: future probe scenarios that rely on capture intent should check `source_map` fields rather than scraping rendered terminal text.
 Status: accepted
+
+---
+
+### RBX-049
+
+Date: 2026-05-23
+Topic: Source capture preview and queue target the next bar boundary
+Phase: Source Timing Intelligence / Capture Workflow
+Question: should the Source Map `cap` preview follow the current playhead beat or the boundary where pressing `c` will actually land?
+Decision: make `capture.bar_group` queue at `next_bar` and project the Source Map capture range from the next bar boundary after the current Session transport position. The range remains read-only and is derived from Session transport, Source Timing readiness, and `runtime_state.capture.length_intent`.
+Why: musicians read `cap next bar` as a promise that pressing `c` will land on the next bar. Starting the marker at the floored current beat made the map look like an editor selection and could disagree with the queued action boundary.
+Evidence: RIOTBOX-984 changes the capture queue target, SourceMapView range projection, observer snapshot expectation, Capture screen pending cue, and focused tests.
+Consequences: follow-up capture/source-window slices must preserve this next-bar start contract when tightening committed source-window provenance and end-to-end audio QA.
+Status: accepted
