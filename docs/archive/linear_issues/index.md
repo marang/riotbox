@@ -734,4 +734,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prove decoded Source Map buckets reach observer ingest surface
 - [RIOTBOX-967.md](./RIOTBOX-967.md)
   Source transport, adaptive source map, monitor, and capture workflow
+- [RIOTBOX-993.md](./RIOTBOX-993.md)
+  Make grid-use fixture phrase counts explicit
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
