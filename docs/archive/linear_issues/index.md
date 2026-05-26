@@ -742,4 +742,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make grid-use fixture downbeat evidence explicit
 - [RIOTBOX-996.md](./RIOTBOX-996.md)
   Add local example anchor-evidence expectations
+- [RIOTBOX-997.md](./RIOTBOX-997.md)
+  Assert local example downbeat offsets
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
