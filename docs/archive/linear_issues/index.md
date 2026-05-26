@@ -730,4 +730,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Back Source Map block rows with typed source energy buckets
 - [RIOTBOX-991.md](./RIOTBOX-991.md)
   Populate Source Map buckets from decoded WAV sidecar analysis
+- [RIOTBOX-992.md](./RIOTBOX-992.md)
+  Prove decoded Source Map buckets reach observer ingest surface
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
