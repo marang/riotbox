@@ -101,6 +101,7 @@ fn snapshot(snapshot_id: &str, action_cursor: usize) -> Snapshot {
 
 mod mc202;
 mod scene;
+mod source_transport;
 mod structural;
 mod tr909;
 mod w30;

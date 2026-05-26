@@ -1764,3 +1764,17 @@ Why: source-map navigation already commits a `transport.seek` without pausing. T
 Evidence: RIOTBOX-987 adds `source_monitor_seeked_running_transport_changes_audible_source_excerpt`, which renders through `render_source_monitor_mix_offline` and the same source monitor policy used by the audio callback.
 Consequences: later end-to-end probes can build on this seam when adding full user-session source transport QA, but they should keep source cache loading outside the realtime callback and compare audible output rather than only observer text.
 Status: accepted
+
+---
+
+### RBX-053
+
+Date: 2026-05-23
+Topic: Source transport restore compares projection output, not app-local flags
+Phase: Source Timing Intelligence / Restore QA
+Question: how should restore QA prove that confirmed-grid source transport state still drives capture projection after reload?
+Decision: save/restore tests should compare the full `SourceMapView` projection before and after reload while also asserting the underlying Source Graph timing evidence is unchanged. Replay coverage should apply the same durable source transport actions into `RuntimeState`: play/seek, monitor mode, source grid confirmation, and capture length intent.
+Why: the musician-visible contract is the Source Map/capture projection, not an internal boolean. Confirmed-grid state lives in Session runtime truth and must unlock bar-accurate projection without mutating analyzer evidence; unconfirmed manual-confirm timing must remain a listen-first fallback after reload.
+Evidence: RIOTBOX-988 adds confirmed and unconfirmed restore tests for Source Map capture projection plus a core replay test for the same runtime action family.
+Consequences: future end-to-end source transport QA should compare observer/TUI projection surfaces derived from Session and Source Graph state instead of adding hidden app-local restore flags.
+Status: accepted

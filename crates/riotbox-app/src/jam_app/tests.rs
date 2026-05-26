@@ -5,6 +5,7 @@ include!("tests/common_state_fixtures.rs");
 include!("tests/restore_parity_helpers.rs");
 include!("tests/restore_contracts.rs");
 include!("tests/persistence_runtime_view.rs");
+include!("tests/source_transport_restore.rs");
 include!("tests/source_timing_runtime_view.rs");
 include!("tests/source_timing_consumer_readiness.rs");
 include!("tests/source_map_navigation.rs");
