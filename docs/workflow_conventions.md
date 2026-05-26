@@ -366,7 +366,41 @@ exit "$status"
 
 If the log matters for review or later debugging, keep it in `/tmp` for the current session and summarize the important finding in Linear or the PR. Do not commit transient command logs.
 
-## 8.1.5 External Review Freshness
+## 8.1.5 Token Budget Discipline
+
+The autonomous loop must stay token-efficient. Repeatedly re-reading stable
+workflow docs, streaming large tool payloads, and writing verbose status updates
+can consume more context than the implementation itself.
+
+Default behavior:
+
+- treat `AGENTS.md`, `docs/workflow_conventions.md`, and the active skill as
+  stable after they have been read in the current session; re-read only exact
+  line ranges when the user asks about workflow, the files changed, or a
+  concrete rule must be quoted
+- do not run broad `rg` queries across `AGENTS.md`, the full workflow document,
+  skill files, archives, and specs together unless diagnosing documentation
+  drift; search the smallest relevant file set first
+- keep Linear issue descriptions, PR bodies, archive notes, and issue comments
+  concise for tiny QA/docs slices; list verification commands once and avoid
+  repeating the same long prose across Linear, PR, archive, and chat
+- poll GitHub Actions with run/job summaries only; fetch full job logs only for
+  failed, cancelled, or suspicious runs
+- while waiting for CI, do not send standalone progress updates more often than
+  necessary; prefer one short update when a gate changes state or a new action
+  starts
+- use `git diff --stat`, `git diff --name-only`, and targeted `git diff -- <file>`
+  before asking for large diffs
+- avoid creating stacked follow-up tickets that touch the same files while an
+  earlier PR is still open unless the dependency is intentional and worth the
+  extra context cost
+
+If token use becomes a concern during a session, finish the active ticket, then
+pause new feature work and run a short token-hygiene pass before continuing.
+That pass should identify the largest context sources and update this workflow
+document when the fix is durable.
+
+## 8.1.6 External Review Freshness
 
 External reviews are point-in-time evidence. Before creating tickets from an
 external review finding:
@@ -399,7 +433,10 @@ Rules:
 - if a CI failure is caused by the current slice, fix it on the same branch before treating the ticket as cleanly in review
 - mention important CI failures and fixes in the Linear issue update when they happen
 - treat CI checks as merge gates, not as a reason to pause all forward progress
-- when no event or webhook mechanism is available, poll open PR status periodically while continuing on the next bounded slice
+- when no event or webhook mechanism is available, poll open PR status
+  periodically while continuing on the next bounded slice, but keep polling
+  token-bounded by checking run/job summaries first and fetching logs only for
+  failures or unexpected states
 - do not fall back into standalone status-only updates when there is no blocker
 - if a progress update is necessary, pair it with the next concrete action already being taken
 
