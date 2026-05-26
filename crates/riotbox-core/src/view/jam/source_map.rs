@@ -2,6 +2,11 @@ const SOURCE_MAP_WIDTH: usize = 32;
 const SOURCE_MAP_BLOCKS: [char; 5] = ['▁', '▂', '▅', '▇', '█'];
 const SOURCE_MAP_CAPTURE_RANGE_FILL: char = '=';
 
+#[path = "source_map_rows.rs"]
+mod source_map_rows;
+
+use source_map_rows::{source_map_energy_row, source_map_peak_row};
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum SourceMapModeView {
     BarGrid,
@@ -103,36 +108,6 @@ fn source_map_trust_label(
         SourceTimingConsumerReadiness::UserConfirmed => "grid confirmed".into(),
         _ => timing.cue.clone(),
     }
-}
-
-fn source_map_energy_row(graph: &SourceGraph) -> String {
-    (0..SOURCE_MAP_WIDTH)
-        .map(|column| {
-            let time = source_map_column_midpoint_seconds(graph, column);
-            let energy = graph
-                .sections
-                .iter()
-                .find(|section| time >= section.start_seconds && time < section.end_seconds)
-                .map_or(EnergyClass::Unknown, |section| section.energy_class);
-            source_map_energy_block(energy)
-        })
-        .collect()
-}
-
-fn source_map_peak_row(graph: &SourceGraph) -> String {
-    (0..SOURCE_MAP_WIDTH)
-        .map(|column| {
-            let start = source_map_column_start_seconds(graph, column);
-            let end = source_map_column_end_seconds(graph, column);
-            if source_map_bucket_has_anchor(graph, start, end) {
-                SOURCE_MAP_BLOCKS[4]
-            } else if source_map_bucket_has_asset(graph, start, end) {
-                SOURCE_MAP_BLOCKS[3]
-            } else {
-                '.'
-            }
-        })
-        .collect()
 }
 
 fn source_map_grid_row(
@@ -408,22 +383,6 @@ fn source_map_seconds_for_beat_estimate(graph: &SourceGraph, beat_index: u64) ->
     beat_index as f32 * 60.0 / bpm
 }
 
-fn source_map_bucket_has_anchor(graph: &SourceGraph, start: f32, end: f32) -> bool {
-    graph
-        .timing
-        .primary_hypothesis()
-        .into_iter()
-        .flat_map(|hypothesis| hypothesis.anchors.iter())
-        .any(|anchor| anchor.time_seconds >= start && anchor.time_seconds < end)
-}
-
-fn source_map_bucket_has_asset(graph: &SourceGraph, start: f32, end: f32) -> bool {
-    graph
-        .assets
-        .iter()
-        .any(|asset| asset.start_seconds < end && asset.end_seconds > start)
-}
-
 fn source_map_column_midpoint_seconds(graph: &SourceGraph, column: usize) -> f32 {
     (source_map_column_start_seconds(graph, column) + source_map_column_end_seconds(graph, column))
         * 0.5
@@ -445,7 +404,7 @@ fn source_map_column_for_time(graph: &SourceGraph, time_seconds: f32) -> usize {
     ((normalized * SOURCE_MAP_WIDTH as f32).floor() as usize).min(SOURCE_MAP_WIDTH - 1)
 }
 
-const fn source_map_energy_block(energy: EnergyClass) -> char {
+pub(super) const fn source_map_energy_block(energy: EnergyClass) -> char {
     match energy {
         EnergyClass::Low => SOURCE_MAP_BLOCKS[1],
         EnergyClass::Medium => SOURCE_MAP_BLOCKS[2],

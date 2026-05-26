@@ -202,6 +202,27 @@ mod tests {
     }
 
     #[test]
+    fn legacy_source_graph_without_source_map_evidence_still_loads() {
+        let graph = minimal_source_graph();
+        let mut json = serde_json::to_value(&graph).expect("serialize graph");
+        json.as_object_mut()
+            .expect("source graph object")
+            .remove("source_map");
+
+        let decoded: SourceGraph =
+            serde_json::from_value(json).expect("deserialize legacy source graph");
+
+        assert!(decoded.source_map.buckets.is_empty());
+        assert_eq!(decoded.source.source_id, graph.source.source_id);
+
+        let mut json_with_empty_map = serde_json::to_value(&graph).expect("serialize graph");
+        json_with_empty_map["source_map"] = serde_json::json!({});
+        let decoded_empty_map: SourceGraph = serde_json::from_value(json_with_empty_map)
+            .expect("deserialize graph with empty source map evidence");
+        assert!(decoded_empty_map.source_map.buckets.is_empty());
+    }
+
+    #[test]
     fn rich_timing_hypotheses_roundtrip_and_select_primary_grid() {
         let mut graph = minimal_source_graph();
         graph.timing.bpm_estimate = Some(128.0);

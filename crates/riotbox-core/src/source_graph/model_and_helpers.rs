@@ -54,6 +54,8 @@ pub struct SourceGraph {
     pub graph_version: SourceGraphVersion,
     pub source: SourceDescriptor,
     pub timing: TimingModel,
+    #[serde(default)]
+    pub source_map: SourceMapEvidence,
     pub sections: Vec<Section>,
     pub assets: Vec<Asset>,
     pub candidates: Vec<Candidate>,
@@ -69,6 +71,7 @@ impl SourceGraph {
             graph_version: SourceGraphVersion::V1,
             source,
             timing: TimingModel::default(),
+            source_map: SourceMapEvidence::default(),
             sections: Vec::new(),
             assets: Vec::new(),
             candidates: Vec::new(),
@@ -128,6 +131,30 @@ impl SourceGraph {
 
         supports_break_rebuild && has_hook_or_capture_evidence
     }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Serialize, Deserialize)]
+pub struct SourceMapEvidence {
+    #[serde(default)]
+    pub buckets: Vec<SourceMapBucket>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct SourceMapBucket {
+    pub start_seconds: f32,
+    pub end_seconds: f32,
+    pub energy_class: EnergyClass,
+    pub peak_class: SourceMapPeakClass,
+    pub confidence: Confidence,
+    pub provenance_refs: Vec<String>,
+}
+
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub enum SourceMapPeakClass {
+    #[default]
+    None,
+    Transient,
+    StrongTransient,
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]

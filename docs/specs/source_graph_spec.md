@@ -75,6 +75,7 @@ SourceGraph {
   graph_version
   source
   timing
+  source_map
   sections
   assets
   candidates
@@ -159,6 +160,42 @@ Each bar should expose:
 - downstream scheduling may use the graph, but realtime commit timing remains a core responsibility
 - future timing-aware lanes must consume the shared Source Graph timing contract
   rather than adding lane-local beat-grid or downbeat models
+
+---
+
+## 7.4 Source Map Evidence
+
+The Source Map may use compact analysis-derived buckets so the terminal block
+rows have a durable source-data contract instead of only inferring shape from
+coarse sections.
+
+```text
+SourceMapEvidence {
+  buckets: Vec<SourceMapBucket>
+}
+
+SourceMapBucket {
+  start_seconds
+  end_seconds
+  energy_class
+  peak_class
+  confidence
+  provenance_refs
+}
+```
+
+Rules:
+
+- buckets summarize decoded source energy / loudness and transient emphasis for
+  display and QA; they do not create editable sample selections
+- `energy_class` uses the same low / medium / high / peak / unknown vocabulary
+  as sections so compact rows can degrade consistently
+- `peak_class` is limited to none / transient / strong transient for the
+  musician-facing row
+- when bucket evidence is absent, Source Map rendering may fall back to section
+  energy and timing anchor / asset hints
+- bucket evidence must not replace Timing as the authority for bars, phrases,
+  capture windows, or transport seek targets
 
 ---
 

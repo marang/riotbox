@@ -1792,3 +1792,17 @@ Why: the parent workflow needs one musician-path proof that joins visible Source
 Evidence: RIOTBOX-989 adds a `source-transport-map-capture` user-session observer probe, a validation script, Just target, and audio QA docs. The gate asserts unconfirmed capture range remains unavailable, confirmed range becomes available, `transport.seek` lands, capture source-window provenance appears, and W-30 candidate output differs from fallback.
 Consequences: future polish can broaden this into richer listening packs or Canvas waveform review, but the source transport recipe should keep this observer-plus-output gate as the minimum regression proof.
 Status: accepted
+
+---
+
+### RBX-055
+
+Date: 2026-05-23
+Topic: Source Map block rows read typed bucket evidence first
+Phase: Source Timing Intelligence / Source Map
+Question: how should the default block Source Map become more waveform-like without adding a second timing or editor model?
+Decision: add defaultable `source_map.buckets` evidence to Source Graph and have `SourceMapView` prefer those buckets for energy and peak rows, while preserving section-energy and anchor/asset fallbacks when bucket evidence is absent.
+Why: the musician-facing block rows need a durable analysis contract before later visual polish. Buckets let the compact map reflect decoded source energy/transient shape without turning the Source Map into sample selection state or Ratatui Canvas-specific rendering.
+Evidence: RIOTBOX-990 adds Source Graph bucket types, legacy JSON default handling, bucket-backed Source Map row tests, and spec updates.
+Consequences: future sidecar extraction can populate these buckets from decoded audio, and future Canvas/Braille views must consume the same bucket/projection data rather than introducing separate waveform truth.
+Status: accepted
