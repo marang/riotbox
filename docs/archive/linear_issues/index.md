@@ -722,4 +722,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose capture target boundary and length in Capture screen
 - [RIOTBOX-987.md](./RIOTBOX-987.md)
   Prove source seek changes audible monitored excerpt
+- [RIOTBOX-988.md](./RIOTBOX-988.md)
+  Verify source transport capture state replay and restore fidelity
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
