@@ -248,7 +248,7 @@ fn committed_scene_mutation_updates_scene_aggression_and_log_result() {
     );
     let result = state.session.action_log.actions.last().and_then(|action| {
         (action.command == ActionCommand::MutateScene)
-            .then(|| action.result.as_ref())
+            .then_some(action.result.as_ref())
             .flatten()
     });
     assert!(

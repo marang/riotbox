@@ -153,7 +153,7 @@ impl Mc202UndoSnapshotState {
     pub fn from_session(action_id: ActionId, session: &SessionFile) -> Self {
         Self {
             action_id,
-            role: session.runtime_state.lane_state.mc202.role.clone(),
+            role: session.runtime_state.lane_state.mc202.role,
             phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
             phrase_variant: session.runtime_state.lane_state.mc202.phrase_variant,
             touch: session.runtime_state.macro_state.mc202_touch,
@@ -161,7 +161,7 @@ impl Mc202UndoSnapshotState {
     }
 
     pub fn apply_to_session(&self, session: &mut SessionFile) {
-        session.runtime_state.lane_state.mc202.role = self.role.clone();
+        session.runtime_state.lane_state.mc202.role = self.role;
         session.runtime_state.lane_state.mc202.phrase_ref = self.phrase_ref.clone();
         session.runtime_state.lane_state.mc202.phrase_variant = self.phrase_variant;
         session.runtime_state.macro_state.mc202_touch = self.touch;
