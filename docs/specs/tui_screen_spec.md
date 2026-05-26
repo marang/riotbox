@@ -210,6 +210,10 @@ Show:
 - Source Map timing mode must be explicit: usable timing may show beat/bar
   grouped buckets, while unavailable or untrusted timing must show a time-based
   fallback instead of pretending that bar-accurate capture is safe.
+- Source Map trust text must distinguish analyzer trust from user-confirmed
+  trust. A matching `runtime_state.source_timing.confirmed_grid` should render
+  as `grid confirmed` and may enable bar-grid mode without mutating Source Graph
+  confidence or warning evidence.
 - Source Map navigation keys are transport navigation, not an editor cursor:
   `Left` / `Right` request previous / next bar and `Up` / `Down` request
   previous / next phrase. These controls should commit as `transport.seek`,

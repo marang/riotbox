@@ -1,7 +1,7 @@
 use crate::{
-    ids::{SectionId, SourceId},
+    ids::{ActionId, SectionId, SourceId},
     queue::ActionQueue,
-    session::SessionFile,
+    session::{SessionFile, SourceTimingGridConfirmationState},
     source_graph::{
         BarSpan, DecodeProfile, EnergyClass, GraphProvenance, MeterHint, Section,
         SectionLabelHint, SourceDescriptor, SourceGraph, TimingDegradedPolicy, TimingHypothesis,
@@ -60,6 +60,52 @@ fn source_map_falls_back_to_time_when_grid_needs_confirmation() {
         vm.source.source_map.capture_hint,
         "cap listen first | map time fallback | no bar-accurate claim"
     );
+}
+
+#[test]
+fn source_map_uses_confirmed_grid_without_mutating_analysis_cue() {
+    let graph = source_map_test_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: graph.source.source_id.clone(),
+            hypothesis_id: graph.timing.primary_hypothesis_id.clone(),
+            confirmed_by_action: ActionId(42),
+            confirmed_at: 123,
+        });
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert_eq!(SourceTimingSummaryView::from_graph(&graph).cue, "needs confirm");
+    assert_eq!(vm.source.source_map.mode, SourceMapModeView::BarGrid);
+    assert_eq!(vm.source.source_map.trust_label, "grid confirmed");
+    assert!(vm.source.source_map.grid_row.contains('|'));
+    assert_eq!(
+        vm.source.source_map.navigation_hint,
+        "nav Left/Right bar | Up/Down phrase"
+    );
+    assert_eq!(
+        vm.source.source_map.capture_hint,
+        "cap next bar | map bar grid | 32 cols"
+    );
+}
+
+#[test]
+fn source_map_ignores_confirmation_for_different_hypothesis() {
+    let graph = source_map_test_graph(TimingDegradedPolicy::ManualConfirm, TimingQuality::Low);
+    let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: graph.source.source_id.clone(),
+            hypothesis_id: Some("alternate".into()),
+            confirmed_by_action: ActionId(42),
+            confirmed_at: 123,
+        });
+
+    let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+    assert_eq!(vm.source.source_map.mode, SourceMapModeView::TimeFallback);
+    assert_eq!(vm.source.source_map.trust_label, "needs confirm");
 }
 
 #[test]
