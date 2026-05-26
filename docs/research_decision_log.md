@@ -1778,3 +1778,17 @@ Why: the musician-visible contract is the Source Map/capture projection, not an 
 Evidence: RIOTBOX-988 adds confirmed and unconfirmed restore tests for Source Map capture projection plus a core replay test for the same runtime action family.
 Consequences: future end-to-end source transport QA should compare observer/TUI projection surfaces derived from Session and Source Graph state instead of adding hidden app-local restore flags.
 Status: accepted
+
+---
+
+### RBX-054
+
+Date: 2026-05-23
+Topic: Source transport map/capture workflow gets one observer-plus-output gate
+Phase: Source Timing Intelligence / Workflow QA
+Question: how should the complete Source Transport / Map / Capture recipe be proven without relying on a manual terminal session?
+Decision: add `just source-transport-map-capture-probe`, a CI-safe workflow proof that starts with manual-confirm timing in listen-first mode, confirms the grid, seeks the Source Map, captures a source-window-backed bar group, raw-auditions, promotes, triggers W-30, and correlates the observer path with a W-30 source-vs-fallback output comparison.
+Why: the parent workflow needs one musician-path proof that joins visible Source Map trust/range evidence, committed Session/action evidence, and actual output metrics. Separate unit tests prove pieces; this gate proves they compose without inventing a second QA path.
+Evidence: RIOTBOX-989 adds a `source-transport-map-capture` user-session observer probe, a validation script, Just target, and audio QA docs. The gate asserts unconfirmed capture range remains unavailable, confirmed range becomes available, `transport.seek` lands, capture source-window provenance appears, and W-30 candidate output differs from fallback.
+Consequences: future polish can broaden this into richer listening packs or Canvas waveform review, but the source transport recipe should keep this observer-plus-output gate as the minimum regression proof.
+Status: accepted

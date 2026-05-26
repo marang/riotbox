@@ -703,9 +703,16 @@ What it does not prove yet:
 
 Goal: use the transport as a source-listening and capture instrument.
 
-This recipe describes the target workflow from
-`docs/plans/source_transport_map_capture_plan.md`. It is a contract for upcoming
-implementation slices, not a claim that every step is already shipped.
+This recipe describes the Source Transport / Map / Capture workflow from
+`docs/plans/source_transport_map_capture_plan.md`. The CI-safe proof for this
+path is:
+
+```bash
+just source-transport-map-capture-probe
+```
+
+That probe drives the musician path in a headless observer session and pairs it
+with W-30 source-vs-fallback output evidence.
 
 Target flow:
 
