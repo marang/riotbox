@@ -19,9 +19,8 @@ impl JamAppState {
         let jam_view = JamViewModel::build(&session, &queue, source_graph.as_ref());
         let runtime_view =
             JamRuntimeView::build(&AppRuntimeState::default(), &session, source_graph.as_ref());
-        let source_audio_cache = source_graph
-            .as_ref()
-            .and_then(|graph| SourceAudioCache::load_pcm_wav(&graph.source.path).ok());
+        let (source_audio_cache, source_audio_status) =
+            load_source_audio_cache_for_graph(source_graph.as_ref());
         let mut state = Self {
             files: Some(JamFileSet {
                 session_path,
@@ -34,6 +33,9 @@ impl JamAppState {
             queue,
             runtime: AppRuntimeState {
                 transport,
+                source_audio: SourceAudioRuntimeState {
+                    status: source_audio_status,
+                },
                 last_commit_boundary,
                 ..AppRuntimeState::default()
             },
@@ -96,6 +98,25 @@ impl JamAppState {
         }
 
         Ok(())
+    }
+}
+
+fn load_source_audio_cache_for_graph(
+    source_graph: Option<&SourceGraph>,
+) -> (Option<SourceAudioCache>, SourceAudioStatus) {
+    let Some(graph) = source_graph else {
+        return (None, SourceAudioStatus::NotRequested);
+    };
+
+    match SourceAudioCache::load_pcm_wav(&graph.source.path) {
+        Ok(cache) => {
+            let status = SourceAudioStatus::loaded(&cache);
+            (Some(cache), status)
+        }
+        Err(error) => (
+            None,
+            SourceAudioStatus::unavailable(graph.source.path.clone(), error.to_string()),
+        ),
     }
 }
 

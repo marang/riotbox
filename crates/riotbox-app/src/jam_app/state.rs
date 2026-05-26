@@ -100,6 +100,7 @@ pub struct AppRuntimeState {
     pub mc202_render: Mc202RenderState,
     pub w30_preview: W30PreviewRenderState,
     pub w30_resample_tap: W30ResampleTapState,
+    pub source_audio: SourceAudioRuntimeState,
     pub source_monitor_audio_route: String,
     pub current_ghost_suggestion: Option<GhostWatchSuggestion>,
     pub last_commit_boundary: Option<CommitBoundaryState>,
@@ -116,9 +117,49 @@ impl Default for AppRuntimeState {
             mc202_render: Mc202RenderState::default(),
             w30_preview: W30PreviewRenderState::default(),
             w30_resample_tap: W30ResampleTapState::default(),
+            source_audio: SourceAudioRuntimeState::default(),
             source_monitor_audio_route: "fallback_riotbox".into(),
             current_ghost_suggestion: None,
             last_commit_boundary: None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub struct SourceAudioRuntimeState {
+    pub status: SourceAudioStatus,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Eq)]
+pub enum SourceAudioStatus {
+    #[default]
+    NotRequested,
+    Loaded {
+        path: String,
+        sample_rate: u32,
+        channel_count: u16,
+        frame_count: usize,
+    },
+    Unavailable {
+        path: String,
+        reason: String,
+    },
+}
+
+impl SourceAudioStatus {
+    pub fn loaded(cache: &SourceAudioCache) -> Self {
+        Self::Loaded {
+            path: cache.path.to_string_lossy().into_owned(),
+            sample_rate: cache.sample_rate,
+            channel_count: cache.channel_count,
+            frame_count: cache.frame_count(),
+        }
+    }
+
+    pub fn unavailable(path: impl Into<String>, reason: impl Into<String>) -> Self {
+        Self::Unavailable {
+            path: path.into(),
+            reason: reason.into(),
         }
     }
 }

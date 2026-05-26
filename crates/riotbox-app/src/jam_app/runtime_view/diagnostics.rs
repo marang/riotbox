@@ -1,5 +1,6 @@
 use super::super::{
-    AppRuntimeState, SidecarState, runtime_replay_warnings::derive_replay_summary_warnings,
+    AppRuntimeState, SidecarState, SourceAudioStatus,
+    runtime_replay_warnings::derive_replay_summary_warnings,
 };
 use riotbox_audio::{
     mc202::{Mc202RenderMode, Mc202RenderRouting, Mc202RenderState},
@@ -10,7 +11,7 @@ use riotbox_audio::{
         W30ResampleTapRouting, W30ResampleTapState,
     },
 };
-use riotbox_core::session::SessionFile;
+use riotbox_core::{action::SourceMonitorMode, session::SessionFile};
 
 pub(super) fn derive_runtime_warnings(
     runtime: &AppRuntimeState,
@@ -35,6 +36,7 @@ pub(super) fn derive_runtime_warnings(
         SidecarState::Unknown | SidecarState::Ready { .. } => {}
     }
 
+    warnings.extend(derive_source_audio_warnings(runtime, session));
     warnings.extend(derive_tr909_render_warnings(&runtime.tr909_render, session));
     warnings.extend(derive_mc202_render_warnings(&runtime.mc202_render, session));
     warnings.extend(derive_w30_preview_warnings(&runtime.w30_preview, session));
@@ -44,6 +46,34 @@ pub(super) fn derive_runtime_warnings(
     ));
     warnings.extend(derive_replay_summary_warnings(session));
     warnings
+}
+
+fn derive_source_audio_warnings(runtime: &AppRuntimeState, session: &SessionFile) -> Vec<String> {
+    if matches!(
+        session.runtime_state.source_monitor.mode,
+        SourceMonitorMode::Riotbox
+    ) {
+        return Vec::new();
+    }
+
+    match &runtime.source_audio.status {
+        SourceAudioStatus::Unavailable { path, reason } => {
+            vec![format!(
+                "source audio unavailable for source monitor: {path} ({reason})"
+            )]
+        }
+        SourceAudioStatus::Loaded {
+            sample_rate,
+            channel_count,
+            frame_count,
+            ..
+        } if runtime.source_monitor_audio_route == "fallback_riotbox" => {
+            vec![format!(
+                "source monitor fell back to riotbox output: source audio format is {sample_rate} Hz, {channel_count} ch, {frame_count} frames"
+            )]
+        }
+        SourceAudioStatus::NotRequested | SourceAudioStatus::Loaded { .. } => Vec::new(),
+    }
 }
 
 fn derive_tr909_render_warnings(render: &Tr909RenderState, session: &SessionFile) -> Vec<String> {
