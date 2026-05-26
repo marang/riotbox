@@ -706,4 +706,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source timing confirmation observer probe
 - [RIOTBOX-979.md](./RIOTBOX-979.md)
   Gate all-lane source consumers on confirmed timing state
+- [RIOTBOX-980.md](./RIOTBOX-980.md)
+  Evaluate ratatui canvas waveform fallback for Source Map
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
