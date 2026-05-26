@@ -39,6 +39,8 @@ class GridUseCase:
     phrase_status: str
     primary_beat_count: int
     primary_bar_count: int
+    primary_phrase_count: int
+    primary_phrase_bar_count: int
     alternate_evidence_count: int
     grid_bpm_source: str
     grid_bpm_decision_reason: str
@@ -61,6 +63,8 @@ CASES = [
         phrase_status="stable",
         primary_beat_count=32,
         primary_bar_count=8,
+        primary_phrase_count=1,
+        primary_phrase_bar_count=8,
         alternate_evidence_count=0,
         grid_bpm_source="source_timing",
         grid_bpm_decision_reason="source_timing_ready",
@@ -81,6 +85,8 @@ CASES = [
         phrase_status="not_enough_material",
         primary_beat_count=16,
         primary_bar_count=4,
+        primary_phrase_count=0,
+        primary_phrase_bar_count=8,
         alternate_evidence_count=0,
         grid_bpm_source="source_timing",
         grid_bpm_decision_reason="source_timing_needs_review_manual_confirm",
@@ -101,6 +107,8 @@ CASES = [
         phrase_status="ambiguous_downbeat",
         primary_beat_count=16,
         primary_bar_count=4,
+        primary_phrase_count=0,
+        primary_phrase_bar_count=8,
         alternate_evidence_count=2,
         grid_bpm_source="static_default",
         grid_bpm_decision_reason="source_timing_requires_manual_confirm",
@@ -121,6 +129,8 @@ CASES = [
         phrase_status="stable",
         primary_beat_count=32,
         primary_bar_count=8,
+        primary_phrase_count=1,
+        primary_phrase_bar_count=8,
         alternate_evidence_count=0,
         grid_bpm_source="static_default",
         grid_bpm_decision_reason="source_timing_not_ready",
@@ -141,6 +151,8 @@ CASES = [
         phrase_status="unavailable",
         primary_beat_count=0,
         primary_bar_count=0,
+        primary_phrase_count=0,
+        primary_phrase_bar_count=0,
         alternate_evidence_count=0,
         grid_bpm_source="static_default",
         grid_bpm_decision_reason="source_timing_missing_bpm",
@@ -271,15 +283,8 @@ def apply_timing_fields(target: dict[str, Any], case: GridUseCase) -> None:
         target["primary_beat_count"] = case.primary_beat_count
     if "primary_bar_count" in target:
         target["primary_bar_count"] = case.primary_bar_count
-    if case.phrase_status == "stable":
-        target["primary_phrase_count"] = 1
-        target["primary_phrase_bar_count"] = 8
-    elif case.phrase_status == "unavailable":
-        target["primary_phrase_count"] = 0
-        target["primary_phrase_bar_count"] = 0
-    else:
-        target["primary_phrase_count"] = 0
-        target["primary_phrase_bar_count"] = 8
+    target["primary_phrase_count"] = case.primary_phrase_count
+    target["primary_phrase_bar_count"] = case.primary_phrase_bar_count
     target["alternate_evidence_count"] = case.alternate_evidence_count
     if case.downbeat_status == "unavailable":
         target["primary_downbeat_score"] = None
