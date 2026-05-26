@@ -740,4 +740,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review current P012 source timing spine after source transport closeout
 - [RIOTBOX-995.md](./RIOTBOX-995.md)
   Make grid-use fixture downbeat evidence explicit
+- [RIOTBOX-996.md](./RIOTBOX-996.md)
+  Add local example anchor-evidence expectations
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
