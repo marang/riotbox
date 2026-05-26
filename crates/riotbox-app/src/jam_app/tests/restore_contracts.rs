@@ -93,6 +93,42 @@ fn rejects_session_with_external_source_graph_hash_mismatch() {
 }
 
 #[test]
+fn loads_and_saves_external_source_graph_path_relative_to_session_file() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("jam-session.json");
+    let graph_path = dir.path().join("graphs").join("source-graph.json");
+    let graph = sample_graph();
+    save_source_graph_json(&graph_path, &graph).expect("save external source graph fixture");
+
+    let mut session = sample_session(&graph);
+    let graph_ref = &mut session.source_graph_refs[0];
+    graph_ref.storage_mode = GraphStorageMode::External;
+    graph_ref.embedded_graph = None;
+    graph_ref.external_path = Some("../graphs/source-graph.json".into());
+    save_session_json(&session_path, &session).expect("save relative external graph fixture");
+
+    let mut state =
+        JamAppState::from_json_files(&session_path, None::<&Path>).expect("load app state");
+    assert_eq!(state.source_graph, Some(graph));
+
+    state
+        .source_graph
+        .as_mut()
+        .expect("loaded source graph")
+        .source
+        .duration_seconds = 121.0;
+    state.save().expect("save relative external graph");
+
+    let persisted_session = load_session_json(&session_path).expect("reload session");
+    let persisted_graph = load_source_graph_json(&graph_path).expect("reload graph");
+    assert_eq!(
+        persisted_session.source_graph_refs[0].external_path.as_deref(),
+        Some("../graphs/source-graph.json")
+    );
+    assert_eq!(persisted_graph.source.duration_seconds, 121.0);
+}
+
+#[test]
 fn rejects_session_with_explicit_source_graph_path_hash_mismatch() {
     let dir = tempdir().expect("create temp dir");
     let session_path = dir.path().join("jam-session.json");

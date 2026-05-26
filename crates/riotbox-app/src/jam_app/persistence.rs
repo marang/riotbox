@@ -10,7 +10,11 @@ impl JamAppState {
         normalize_w30_preview_mode(&mut session);
         validate_mvp_session_restore_contracts(&session)?;
         let explicit_source_graph_path = source_graph_path.map(|path| path.as_ref().to_path_buf());
-        let source_graph = resolve_source_graph(&session, explicit_source_graph_path.as_deref())?;
+        let source_graph = resolve_source_graph(
+            &session,
+            &session_path,
+            explicit_source_graph_path.as_deref(),
+        )?;
         normalize_scene_candidates(&mut session, source_graph.as_ref());
         let mut queue = ActionQueue::new();
         queue.reserve_action_ids_after(max_action_id(&session));
@@ -90,6 +94,7 @@ impl JamAppState {
             if let Some(source_graph) = &self.source_graph
                 && let Some(source_graph_path) = resolve_external_graph_path(
                     &session_to_save,
+                    &files.session_path,
                     files.source_graph_path.as_deref(),
                 )
             {
@@ -122,6 +127,7 @@ fn load_source_audio_cache_for_graph(
 
 fn resolve_source_graph(
     session: &SessionFile,
+    session_path: &Path,
     explicit_source_graph_path: Option<&Path>,
 ) -> Result<Option<SourceGraph>, JamAppError> {
     if let Some(path) = explicit_source_graph_path {
@@ -143,7 +149,10 @@ fn resolve_source_graph(
             )
         }),
         GraphStorageMode::External => match graph_ref.external_path.as_deref() {
-            Some(path) => Ok(load_source_graph_json(path)?),
+            Some(path) => Ok(load_source_graph_json(resolve_session_relative_path(
+                session_path,
+                path,
+            ))?),
             None => Err(JamAppError::InvalidSession(
                 "source graph ref is external but external_path is missing".into(),
             )),
@@ -330,10 +339,11 @@ fn sync_graph_refs_with_state(
 
 fn resolve_external_graph_path<'a>(
     session: &'a SessionFile,
+    session_path: &Path,
     explicit_source_graph_path: Option<&'a Path>,
-) -> Option<&'a Path> {
+) -> Option<PathBuf> {
     if let Some(path) = explicit_source_graph_path {
-        return Some(path);
+        return Some(path.to_path_buf());
     }
 
     session
@@ -341,7 +351,19 @@ fn resolve_external_graph_path<'a>(
         .iter()
         .find(|graph_ref| graph_ref.storage_mode == GraphStorageMode::External)
         .and_then(|graph_ref| graph_ref.external_path.as_deref())
-        .map(Path::new)
+        .map(|path| resolve_session_relative_path(session_path, path))
+}
+
+fn resolve_session_relative_path(session_path: &Path, stored_path: &str) -> PathBuf {
+    let path = Path::new(stored_path);
+    if path.is_absolute() {
+        return path.to_path_buf();
+    }
+
+    session_path
+        .parent()
+        .unwrap_or_else(|| Path::new("."))
+        .join(path)
 }
 
 fn session_from_ingested_graph(
