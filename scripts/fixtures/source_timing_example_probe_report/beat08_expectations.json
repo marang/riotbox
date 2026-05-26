@@ -51,6 +51,9 @@
         "primary_kick_anchor_count": 2,
         "primary_backbeat_anchor_count": 4,
         "primary_transient_anchor_count": 3
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 1
       }
     },
     "long_stable_lock.wav": {
@@ -102,6 +105,9 @@
         "primary_kick_anchor_count": 6,
         "primary_backbeat_anchor_count": 3,
         "primary_transient_anchor_count": 2
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 4
       }
     }
   }

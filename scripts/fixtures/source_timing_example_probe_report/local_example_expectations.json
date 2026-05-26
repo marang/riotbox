@@ -51,6 +51,9 @@
         "primary_kick_anchor_count": 4,
         "primary_backbeat_anchor_count": 3,
         "primary_transient_anchor_count": 4
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 4
       }
     },
     "Beat08_128BPM(Full).wav": {
@@ -104,6 +107,9 @@
         "primary_kick_anchor_count": 3,
         "primary_backbeat_anchor_count": 2,
         "primary_transient_anchor_count": 4
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 4
       }
     },
     "Beat20_128BPM(Full).wav": {
@@ -158,6 +164,9 @@
         "primary_kick_anchor_count": 0,
         "primary_backbeat_anchor_count": 0,
         "primary_transient_anchor_count": 11
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 4
       }
     },
     "DH_BeatC_120-01.wav": {
@@ -211,6 +220,9 @@
         "primary_kick_anchor_count": 2,
         "primary_backbeat_anchor_count": 4,
         "primary_transient_anchor_count": 2
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 4
       }
     },
     "DH_BeatC_KickSnr_120-01.wav": {
@@ -264,6 +276,9 @@
         "primary_kick_anchor_count": 2,
         "primary_backbeat_anchor_count": 4,
         "primary_transient_anchor_count": 2
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 4
       }
     },
     "DH_Fadapad_120_A.wav": {
@@ -294,6 +309,9 @@
         "primary_kick_anchor_count": 0,
         "primary_backbeat_anchor_count": 0,
         "primary_transient_anchor_count": 0
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 0
       }
     },
     "DH_RushArp_120_A.wav": {
@@ -324,6 +342,9 @@
         "primary_kick_anchor_count": 0,
         "primary_backbeat_anchor_count": 0,
         "primary_transient_anchor_count": 0
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 0
       }
     }
   }

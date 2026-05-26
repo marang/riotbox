@@ -162,6 +162,7 @@ def main() -> int:
     assert_mismatch_expectations_fail()
     assert_anchor_expectations_fail()
     assert_downbeat_offset_expectations_fail()
+    assert_groove_expectations_fail()
     assert_exact_warning_expectations_fail()
     assert_invalid_expectations_fail()
     assert_malformed_fixture_cli_error()
@@ -263,6 +264,21 @@ def assert_downbeat_offset_expectations_fail() -> None:
         raise AssertionError("expected mismatched downbeat offset to fail")
 
 
+def assert_groove_expectations_fail() -> None:
+    expectations = load_expectations(FIXTURE_DIR / "beat08_expectations_mismatch.json")
+    row = row_from_payload(
+        load_json(FIXTURE_DIR / "beat08_source_timing_probe.json"),
+        expectations,
+    )
+    failures = expectation_failures([row])
+    if (
+        not failures
+        or "mismatch:" not in failures[0]
+        or "groove_evidence.primary_groove_residual_count" not in failures[0]
+    ):
+        raise AssertionError("expected mismatched groove evidence to fail")
+
+
 def assert_exact_warning_expectations_fail() -> None:
     expectations = load_expectations(
         FIXTURE_DIR / "beat08_expectations_warning_exact_mismatch.json"
@@ -281,6 +297,9 @@ def assert_invalid_expectations_fail() -> None:
         FIXTURE_DIR / "beat08_expectations_invalid_anchor_evidence_empty.json",
         FIXTURE_DIR / "beat08_expectations_invalid_anchor_evidence_negative.json",
         FIXTURE_DIR / "beat08_expectations_invalid_anchor_evidence_unknown_key.json",
+        FIXTURE_DIR / "beat08_expectations_invalid_groove_evidence_empty.json",
+        FIXTURE_DIR / "beat08_expectations_invalid_groove_evidence_negative.json",
+        FIXTURE_DIR / "beat08_expectations_invalid_groove_evidence_unknown_key.json",
         FIXTURE_DIR / "beat08_expectations_invalid_empty_range.json",
         FIXTURE_DIR / "beat08_expectations_invalid_inverted_range.json",
         FIXTURE_DIR / "beat08_expectations_invalid_unknown_range_key.json",
