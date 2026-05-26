@@ -696,4 +696,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose source timing grid confirmation in Jam and Source controls
 - [RIOTBOX-974.md](./RIOTBOX-974.md)
   Add explicit source timing grid revert action
+- [RIOTBOX-975.md](./RIOTBOX-975.md)
+  Add source map audition navigator controls
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
