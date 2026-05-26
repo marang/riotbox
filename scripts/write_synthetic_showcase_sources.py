@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Write deterministic synthetic source WAVs for representative Riotbox showcase QA."""
+"""Write deterministic synthetic source WAVs for fixture QA.
+
+These sources are intentionally repeatable. They are not real listening-demo
+material and must not be used as musician-facing examples of Riotbox output.
+"""
 
 from __future__ import annotations
 

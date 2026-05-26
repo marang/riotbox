@@ -13,5 +13,6 @@ artifacts/audio_qa/
 data/**
 !data/**/
 !data/**/*.md
+!data/showcase_sources/**/*.json
 
 .env.local

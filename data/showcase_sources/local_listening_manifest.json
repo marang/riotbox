@@ -1,0 +1,133 @@
+{
+  "schema": "riotbox.real_source_listening_showcase.v1",
+  "schema_version": 1,
+  "description": "Local real-source listening showcase manifest. Audio files are local-only examples and are not committed by default.",
+  "sources": [
+    {
+      "id": "beat03_full",
+      "path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "dense_break",
+      "bpm": 130.0,
+      "expected_outcome": "Riotbox should produce a rebuild-only result with readable drum support, source-aware W-30 movement, and an audible MC-202 response that does not disappear behind the break.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 3.692,
+          "bars": 2
+        }
+      ]
+    },
+    {
+      "id": "beat08_full",
+      "path": "data/test_audio/examples/Beat08_128BPM(Full).wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "clean_rhythm",
+      "bpm": 128.0,
+      "expected_outcome": "Riotbox should keep the grid stable while making TR-909 and MC-202 roles clearly distinguishable from the source window.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 3.75,
+          "bars": 2
+        }
+      ]
+    },
+    {
+      "id": "beat20_full",
+      "path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "break_variant",
+      "bpm": 128.0,
+      "expected_outcome": "Riotbox should react differently than it does for Beat08, with source-reflective W-30 chop behavior and non-identical support-lane movement.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 3.75,
+          "bars": 2
+        }
+      ]
+    },
+    {
+      "id": "dh_beatc",
+      "path": "data/test_audio/examples/DH_BeatC_120-01.wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "clean_rhythm",
+      "bpm": 120.0,
+      "expected_outcome": "Riotbox should add support without masking the clean rhythm, and MC-202 should be audible enough to judge as a musical lane.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 4.0,
+          "bars": 2
+        }
+      ]
+    },
+    {
+      "id": "dh_beatc_kicksnr",
+      "path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "kick_snare_loop",
+      "bpm": 120.0,
+      "expected_outcome": "Riotbox should not simply double the kick and snare. It should create useful support around the anchors and keep the mix from becoming low-band heavy.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 4.0,
+          "bars": 2
+        }
+      ]
+    },
+    {
+      "id": "dh_fadapad",
+      "path": "data/test_audio/examples/DH_Fadapad_120_A.wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "tonal_pad",
+      "bpm": 120.0,
+      "expected_outcome": "Riotbox should avoid treating a pad as a drum break. MC-202 and W-30 output should provide musical contrast rather than low-end knocking.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 4.0,
+          "bars": 2
+        }
+      ]
+    },
+    {
+      "id": "dh_rusharp",
+      "path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "usage": "local_only",
+      "license_note": "Local example audio. Do not commit downloaded source audio unless license is explicitly cleared.",
+      "do_not_commit_audio": true,
+      "role": "tonal_hook",
+      "bpm": 120.0,
+      "expected_outcome": "Riotbox should generate a source-aware response to a tonal hook, with MC-202 phrase movement clearly audible as a musical answer.",
+      "windows": [
+        {
+          "id": "main_loop",
+          "start_seconds": 0.0,
+          "duration_seconds": 4.0,
+          "bars": 2
+        }
+      ]
+    }
+  ]
+}

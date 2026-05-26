@@ -6,6 +6,8 @@ date_label="${2:-local-representative-source-showcase}"
 source_seconds="${3:-8.0}"
 bars="${4:-4}"
 
+echo "Synthetic fixture showcase: deterministic developer QA, not a musician-facing listening demo." >&2
+
 repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
 case "$output_dir" in
     "$repo_root"/artifacts/audio_qa/*|/tmp/riotbox-*) ;;
@@ -131,11 +133,13 @@ python3 scripts/validate_observer_audio_summary_json.py \
     "$output_dir/observer/observer-audio-summary.json"
 
 cat >"$output_dir/README.md" <<EOF
-# Representative Source Showcase
+# Synthetic Fixture Source Showcase
 
 Result: \`pass\`
 
-This is a local, ignored Riotbox source-showcase pack generated from deterministic synthetic fixture sources. It is meant to prove that the current Feral grid path reacts differently to distinct source material after the source-diversity, mix-balance, source-aware TR-909, and W-30 source-chop fixes.
+This is a local, ignored Riotbox fixture pack generated from deterministic synthetic sources. It is meant for developer QA, reproducibility, source-diversity, and regression checks.
+
+It is not a musician-facing listening showcase and must not be used as the answer to "what can Riotbox already do?"
 
 ## Listening Order
 
@@ -156,9 +160,9 @@ For each \`packs/<case>/<window>/\` directory:
 
 ## Boundary
 
-This pack now marks at least one \`musically_convincing_candidate\` in \`validation/musical-quality.md\`, based on source identity, W-30 chop strength, TR-909 support audibility, MC-202 bass pressure, low-end support, bar movement, and mix balance.
+This pack may mark at least one \`musically_convincing_candidate\` in \`validation/musical-quality.md\`, but that verdict is limited to deterministic fixture QA. It does not prove product-level listening quality.
 
-This pack does not claim full kick/snare/bass source separation, automatic taste scoring, or release-quality output. It is a representative source-response pack with one explicit listening candidate for product review.
+This pack does not claim full kick/snare/bass source separation, automatic taste scoring, release-quality output, or real-source product readiness. Use the real-source listening showcase for musician-facing review.
 EOF
 
 cat >"$output_dir/validation/pack-index.txt" <<EOF
@@ -166,4 +170,4 @@ Representative source showcase packs:
 $(printf '%s\n' "${all_packs[@]}")
 EOF
 
-echo "representative source showcase written to $output_dir"
+echo "synthetic fixture source showcase written to $output_dir"

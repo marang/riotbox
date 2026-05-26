@@ -408,8 +408,18 @@ listening-manifest-validator-fixtures:
 source-showcase-diversity manifests:
     python3 scripts/validate_source_showcase_diversity.py {{manifests}}
 
+synthetic-fixture-showcase output="artifacts/audio_qa/local-synthetic-fixture-showcase" date="local-synthetic-fixture-showcase" source_seconds="8.0" bars="4":
+    scripts/generate_synthetic_fixture_showcase.sh "{{output}}" "{{date}}" "{{source_seconds}}" "{{bars}}"
+
 representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase" source_seconds="8.0" bars="4":
+    echo "Deprecated alias: representative-source-showcase is synthetic fixture QA, not a listening demo." >&2
     scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}" "{{source_seconds}}" "{{bars}}"
+
+real-source-listening-showcase manifest="data/showcase_sources/local_listening_manifest.json" output="artifacts/audio_qa/local-real-source-listening-showcase" date="local-real-source-listening-showcase":
+    python3 scripts/generate_real_source_listening_showcase.py --manifest "{{manifest}}" --output "{{output}}" --date "{{date}}"
+
+real-source-listening-showcase-validate manifest="data/showcase_sources/local_listening_manifest.json":
+    python3 scripts/generate_real_source_listening_showcase.py --manifest "{{manifest}}" --validate-only
 
 representative-source-showcase-musical-quality showcase="artifacts/audio_qa/local-representative-source-showcase":
     python3 scripts/validate_representative_showcase_musical_quality.py --json-output "{{showcase}}/validation/musical-quality.json" --markdown-output "{{showcase}}/validation/musical-quality.md" "{{showcase}}"
