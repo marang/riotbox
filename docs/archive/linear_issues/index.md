@@ -692,4 +692,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add adaptive block Source Map projection to Jam and Source views
 - [RIOTBOX-972.md](./RIOTBOX-972.md)
   Add user-confirmed source timing grid contract
+- [RIOTBOX-973.md](./RIOTBOX-973.md)
+  Expose source timing grid confirmation in Jam and Source controls
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
