@@ -718,4 +718,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Align Source Map capture range with next capture boundary
 - [RIOTBOX-985.md](./RIOTBOX-985.md)
   Apply capture length boundary semantics to committed source windows
+- [RIOTBOX-986.md](./RIOTBOX-986.md)
+  Expose capture target boundary and length in Capture screen
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
