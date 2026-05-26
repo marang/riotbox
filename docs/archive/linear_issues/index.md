@@ -750,4 +750,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Assert unavailable local timing null metrics
 - [RIOTBOX-1000.md](./RIOTBOX-1000.md)
   Review source timing expectation harness after local evidence tightening
+- [RIOTBOX-1001.md](./RIOTBOX-1001.md)
+  Assert rendered downbeat margin in example row fixtures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
