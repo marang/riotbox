@@ -141,7 +141,7 @@ pub struct UndoRuntimeState {
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Mc202UndoSnapshotState {
     pub action_id: ActionId,
-    pub role: Option<String>,
+    pub role: Option<Mc202RoleState>,
     pub phrase_ref: Option<String>,
     #[serde(default)]
     pub phrase_variant: Option<Mc202PhraseVariantState>,

@@ -422,7 +422,7 @@ fn runtime_view_surfaces_tr909_render_diagnostics() {
 fn runtime_view_surfaces_mc202_render_diagnostics() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("answer".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Answer);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("answer-scene-1".into());
     session.runtime_state.macro_state.mc202_touch = 0.82;
     session.runtime_state.mixer_state.music_level = 0.0;
@@ -471,7 +471,7 @@ fn mc202_render_contour_hint_follows_source_section_context() {
     graph.sections[0].label_hint = SectionLabelHint::Build;
     graph.sections[0].energy_class = EnergyClass::Medium;
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -494,7 +494,7 @@ fn mc202_hook_section_does_not_inject_synthetic_answer_guardrail() {
     graph.sections[0].energy_class = EnergyClass::High;
     graph.sections[0].tags.push("hook".into());
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 

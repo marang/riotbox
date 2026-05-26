@@ -2,7 +2,7 @@ use super::*;
 use crate::{
     action::TargetScope,
     replay::{build_committed_replay_plan, build_replay_target_plan},
-    session::SessionFile,
+    session::{Mc202RoleState, SessionFile},
 };
 
 #[test]
@@ -102,8 +102,8 @@ fn mc202_set_role_uses_explicit_role_target() {
     apply_replay_plan_to_session(&mut session, &plan).expect("role replay succeeds");
 
     assert_eq!(
-        session.runtime_state.lane_state.mc202.role.as_deref(),
-        Some("leader")
+        session.runtime_state.lane_state.mc202.role,
+        Some(Mc202RoleState::Leader)
     );
     assert_eq!(
         session.runtime_state.lane_state.mc202.phrase_ref.as_deref(),
@@ -180,7 +180,7 @@ fn mc202_mutate_phrase_rejects_unknown_intent_target_without_mutating_session() 
     )]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     let original_session = session.clone();
 
     let error =
@@ -210,7 +210,7 @@ fn mc202_mutate_phrase_rejects_base_intent_without_mutating_session() {
     )]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     let original_session = session.clone();
 
     let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("base intent");

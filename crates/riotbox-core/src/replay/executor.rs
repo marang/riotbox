@@ -308,20 +308,12 @@ pub fn apply_replay_entry_to_session(
             );
         }
         ActionCommand::Mc202MutatePhrase => {
-            let current_role_label = session
+            let current_role = session
                 .runtime_state
                 .lane_state
                 .mc202
                 .role
-                .clone()
-                .unwrap_or_else(|| "follower".into());
-            let current_role = Mc202RoleState::from_label(&current_role_label).ok_or(
-                ReplayExecutionError::InvalidParams {
-                    action_id: action.id,
-                    command: action.command,
-                    expected: "known current MC-202 role label",
-                },
-            )?;
+                .unwrap_or(Mc202RoleState::Follower);
             let intent = mc202_phrase_intent_from_action(action)?;
             let bar_index = entry.commit_record.boundary.bar_index.max(1);
             let phrase_ref = format!(
@@ -331,7 +323,7 @@ pub fn apply_replay_entry_to_session(
             );
             let touch = mc202_touch_or(action, 0.88);
 
-            session.runtime_state.lane_state.mc202.role = Some(current_role.label().into());
+            session.runtime_state.lane_state.mc202.role = Some(current_role);
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref);
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
             session.runtime_state.macro_state.mc202_touch =
@@ -426,7 +418,7 @@ fn apply_mc202_role(
     touch: f32,
 ) {
     let role_label = role.label();
-    session.runtime_state.lane_state.mc202.role = Some(role_label.into());
+    session.runtime_state.lane_state.mc202.role = Some(role);
     session.runtime_state.lane_state.mc202.phrase_ref =
         Some(mc202_boundary_phrase_ref(entry, role_label));
     session.runtime_state.lane_state.mc202.phrase_variant = None;

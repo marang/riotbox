@@ -351,7 +351,13 @@ impl JamViewModel {
                 tr909_slam: session.runtime_state.macro_state.tr909_slam,
             },
             lanes: LaneSummaryView {
-                mc202_role: session.runtime_state.lane_state.mc202.role.clone(),
+                mc202_role: session
+                    .runtime_state
+                    .lane_state
+                    .mc202
+                    .role
+                    .map(crate::session::Mc202RoleState::label)
+                    .map(str::to_string),
                 mc202_pending_role,
                 mc202_pending_follower_generation,
                 mc202_pending_answer_generation,

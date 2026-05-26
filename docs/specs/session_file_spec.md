@@ -242,10 +242,11 @@ Session v1 persisted JSON. Current examples include `leader`, `follower`,
 
 These labels are behavior-relevant persisted contract values, not ad-hoc
 implementation strings. Session v1 intentionally keeps the compatibility-label
-JSON shape for MC-202 lane state and MC-202 undo snapshots. Behavior consumers
-must parse labels through typed core helpers such as `Mc202RoleState`,
-`Mc202PhraseIntentState`, and `Mc202PhraseVariantState` before making queue,
-replay, render, observer, or QA decisions.
+JSON shape for MC-202 lane state and MC-202 undo snapshots, while the in-memory
+session model stores MC-202 role state as `Mc202RoleState`. Behavior consumers
+must use typed core helpers such as `Mc202RoleState`, `Mc202PhraseIntentState`,
+and `Mc202PhraseVariantState` before making queue, replay, render, observer, or
+QA decisions.
 
 Rules:
 

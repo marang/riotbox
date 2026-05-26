@@ -5,6 +5,7 @@ use super::{
 use riotbox_core::{
     TimestampMs,
     action::{ActionCommand, Quantization, TargetScope},
+    session::Mc202RoleState,
 };
 
 impl JamAppState {
@@ -27,9 +28,9 @@ impl JamAppState {
             return QueueControlResult::AlreadyPending;
         }
 
-        let next_role = match self.session.runtime_state.lane_state.mc202.role.as_deref() {
-            Some("follower") => "leader",
-            Some("leader") => "follower",
+        let next_role = match self.session.runtime_state.lane_state.mc202.role {
+            Some(Mc202RoleState::Follower) => "leader",
+            Some(Mc202RoleState::Leader) => "follower",
             Some(_) | None => "follower",
         };
         let target_touch = if next_role == "leader" { 0.85 } else { 0.65 };

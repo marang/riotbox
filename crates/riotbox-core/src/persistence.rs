@@ -122,6 +122,8 @@ where
 
 #[cfg(test)]
 mod tests {
+    use crate::session::Mc202RoleState;
+
     use tempfile::tempdir;
 
     use crate::{
@@ -243,7 +245,7 @@ mod tests {
         session.runtime_state.transport.position_beats = 32.0;
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.macro_state.scene_aggression = 0.75;
-        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
         session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));
         session.runtime_state.lane_state.w30.last_capture = Some(CaptureId::from("cap-01"));

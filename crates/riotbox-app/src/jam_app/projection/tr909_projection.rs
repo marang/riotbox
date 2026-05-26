@@ -188,10 +188,7 @@ pub(super) fn build_mc202_render_state(
     source_graph: Option<&SourceGraph>,
 ) -> Mc202RenderState {
     let mc202 = &session.runtime_state.lane_state.mc202;
-    let Some(role) = mc202.role.as_deref() else {
-        return Mc202RenderState::default();
-    };
-    let Some(role) = Mc202RoleState::from_label(role) else {
+    let Some(role) = mc202.role else {
         return Mc202RenderState::default();
     };
 

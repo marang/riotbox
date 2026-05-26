@@ -235,14 +235,14 @@ mod tests {
         session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
         session.runtime_state.source_monitor.mode = SourceMonitorMode::Blend;
         session.runtime_state.macro_state.scene_aggression = 0.75;
-        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
         session
             .runtime_state
             .undo_state
             .mc202_snapshots
             .push(Mc202UndoSnapshotState {
                 action_id: ActionId(2),
-                role: Some("follower".into()),
+                role: Some(Mc202RoleState::Follower),
                 phrase_ref: Some("follower-scene-1".into()),
                 phrase_variant: Some(Mc202PhraseVariantState::MutatedDrive),
                 touch: 0.78,

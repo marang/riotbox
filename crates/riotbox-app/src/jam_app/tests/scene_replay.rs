@@ -13,7 +13,7 @@ fn graph_aware_scene_replay_matches_committed_movement_projection() {
     session.runtime_state.lane_state.tr909.reinforcement_mode =
         Some(Tr909ReinforcementModeState::SourceSupport);
     session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-replay-support".into());
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_variant = None;
 
     let base_session = session.clone();
@@ -123,7 +123,7 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
     session.runtime_state.lane_state.tr909.reinforcement_mode =
         Some(Tr909ReinforcementModeState::SourceSupport);
     session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-restore-support".into());
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_variant = None;
 
     let base_session = session.clone();

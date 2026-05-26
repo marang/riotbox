@@ -185,7 +185,7 @@ fn session_with_committed_jam_state(graph: &SourceGraph) -> SessionFile {
     session.runtime_state.transport.position_beats = 16.0;
     session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-1"));
     session.runtime_state.scene_state.scenes = vec![SceneId::from("scene-1")];
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(crate::session::Mc202RoleState::Follower);
     session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
     session.runtime_state.lane_state.w30.focused_pad = Some("pad-01".into());
     session.runtime_state.lane_state.w30.last_capture = Some("cap-01".into());
