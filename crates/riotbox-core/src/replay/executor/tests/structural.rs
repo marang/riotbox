@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    action::{GhostMode, SourceMonitorMode},
+    action::{CaptureLengthIntent, GhostMode, SourceMonitorMode},
     replay::{build_committed_replay_plan, build_replay_target_plan},
     session::SessionFile,
 };
@@ -45,6 +45,14 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         ),
         action(
             6,
+            ActionCommand::CaptureSetLength,
+            ActionParams::CaptureLength {
+                intent: Some(CaptureLengthIntent::OneBar),
+            },
+            390,
+        ),
+        action(
+            7,
             ActionCommand::LockObject,
             ActionParams::Lock {
                 object_id: "pad-a1".into(),
@@ -52,7 +60,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             400,
         ),
         action(
-            7,
+            8,
             ActionCommand::GhostSetMode,
             ActionParams::Ghost {
                 mode: Some(GhostMode::Assist),
@@ -60,7 +68,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             },
             500,
         ),
-        action(8, ActionCommand::TransportPause, ActionParams::Empty, 600),
+        action(9, ActionCommand::TransportPause, ActionParams::Empty, 600),
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
@@ -77,7 +85,8 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
             ActionId(5),
             ActionId(6),
             ActionId(7),
-            ActionId(8)
+            ActionId(8),
+            ActionId(9)
         ]
     );
     assert!(!session.runtime_state.transport.is_playing);
@@ -91,7 +100,41 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         SourceMonitorMode::Blend
     );
     assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert_eq!(
+        session.runtime_state.capture.length_intent,
+        CaptureLengthIntent::OneBar
+    );
+    assert_eq!(
+        session.runtime_state.capture.length_set_by_action,
+        Some(ActionId(6))
+    );
+    assert_eq!(session.runtime_state.capture.length_set_at, Some(390));
     assert_eq!(session.ghost_state.mode, GhostMode::Assist);
+}
+
+#[test]
+fn plan_executor_rejects_capture_length_without_intent_param() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::CaptureSetLength,
+        ActionParams::CaptureLength { intent: None },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T08:10:00Z");
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("invalid params");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::CaptureSetLength,
+            expected: "ActionParams::CaptureLength { intent: Some(_) }"
+        }
+    );
+    assert_eq!(session, original_session);
 }
 
 #[test]
@@ -376,6 +419,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::SceneRestore,
             ActionCommand::PromoteCaptureToPad,
             ActionCommand::PromoteCaptureToScene,
+            ActionCommand::CaptureSetLength,
             ActionCommand::CaptureNow,
             ActionCommand::CaptureLoop,
             ActionCommand::CaptureBarGroup,

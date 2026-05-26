@@ -23,6 +23,7 @@ use riotbox_audio::runtime::AudioRuntimeTimingSnapshot;
 
 mod capture_artifacts;
 mod capture_helpers;
+mod capture_queue;
 mod commit;
 mod controls;
 mod ghost_candidates;
@@ -63,9 +64,9 @@ pub use recovery::{
 };
 pub use runtime_view::JamRuntimeView;
 use side_effects::{
-    apply_ghost_side_effects, apply_mc202_side_effects, apply_scene_side_effects,
-    apply_source_monitor_side_effects, apply_source_timing_side_effects, apply_tr909_side_effects,
-    apply_transport_side_effects, apply_w30_side_effects,
+    apply_capture_side_effects, apply_ghost_side_effects, apply_mc202_side_effects,
+    apply_scene_side_effects, apply_source_monitor_side_effects, apply_source_timing_side_effects,
+    apply_tr909_side_effects, apply_transport_side_effects, apply_w30_side_effects,
 };
 pub use source_map_navigation::{SourceMapNavigationIntent, SourceMapNavigationResult};
 pub use state::{

@@ -129,8 +129,8 @@ Minimum gates:
   original Source Timing evidence
 - source-map snapshots show energy, peaks, bars or time fallback, playhead, and
   capture range without relying on color alone
-- capture length intents produce source windows that match `1 bar`, `4 bars`, or
-  phrase fallback expectations
+- capture length intents produce source windows that match `1 beat`, `1 bar`,
+  `4 bars`, or phrase fallback expectations
 
 ### 3.2.2 Multi-source showcase diversity gates
 

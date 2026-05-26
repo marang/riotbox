@@ -1,5 +1,5 @@
 use riotbox_core::{
-    action::{Action, ActionCommand, ActionParams},
+    action::{Action, ActionCommand, ActionParams, CaptureLengthIntent},
     ids::{BankId, CaptureId, PadId},
     session::{CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, SessionFile},
     source_graph::SourceGraph,
@@ -71,7 +71,8 @@ pub(in crate::jam_app) fn capture_ref_from_action(
         source_capture
             .and_then(|capture| capture.source_window.clone())
             .or_else(|| {
-                source_graph.and_then(|graph| capture_source_window(graph, action, boundary))
+                source_graph
+                    .and_then(|graph| capture_source_window(session, graph, action, boundary))
             })
     };
     let mut lineage_capture_refs = source_capture
@@ -108,6 +109,7 @@ pub(in crate::jam_app) fn capture_ref_from_action(
 }
 
 fn capture_source_window(
+    session: &SessionFile,
     graph: &SourceGraph,
     action: &Action,
     boundary: &CommitBoundaryState,
@@ -125,17 +127,13 @@ fn capture_source_window(
     let start_seconds = seconds_for_beat(graph, boundary.beat_index)?
         .max(0.0)
         .min(graph.source.duration_seconds);
-    let bars = match action.params {
-        ActionParams::Capture { bars } => bars.unwrap_or(1),
-        _ => 1,
-    };
     let beats_per_bar = graph
         .timing
-        .meter_hint
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.meter)
+        .or(graph.timing.meter_hint)
         .map_or(4_u64, |meter| u64::from(meter.beats_per_bar));
-    let end_beat = boundary
-        .beat_index
-        .saturating_add(u64::from(bars).saturating_mul(beats_per_bar));
+    let end_beat = capture_end_beat(session, graph, action, boundary, beats_per_bar);
     let end_seconds = seconds_for_beat(graph, end_beat)
         .unwrap_or_else(|| seconds_for_beat_estimate(graph, end_beat))
         .min(graph.source.duration_seconds)
@@ -148,6 +146,65 @@ fn capture_source_window(
         start_frame: seconds_to_frame(start_seconds, graph.source.sample_rate),
         end_frame: seconds_to_frame(end_seconds, graph.source.sample_rate),
     })
+}
+
+fn capture_end_beat(
+    session: &SessionFile,
+    graph: &SourceGraph,
+    action: &Action,
+    boundary: &CommitBoundaryState,
+    beats_per_bar: u64,
+) -> u64 {
+    if let ActionParams::Capture { bars: Some(bars) } = action.params {
+        return boundary
+            .beat_index
+            .saturating_add(u64::from(bars).saturating_mul(beats_per_bar));
+    }
+
+    match session.runtime_state.capture.length_intent {
+        CaptureLengthIntent::OneBeat => boundary.beat_index.saturating_add(1),
+        CaptureLengthIntent::OneBar => boundary.beat_index.saturating_add(beats_per_bar),
+        CaptureLengthIntent::FourBars => boundary
+            .beat_index
+            .saturating_add(4_u64.saturating_mul(beats_per_bar)),
+        CaptureLengthIntent::Phrase => phrase_capture_end_beat(graph, boundary, beats_per_bar)
+            .unwrap_or_else(|| {
+                boundary
+                    .beat_index
+                    .saturating_add(4_u64.saturating_mul(beats_per_bar))
+            }),
+    }
+}
+
+fn phrase_capture_end_beat(
+    graph: &SourceGraph,
+    boundary: &CommitBoundaryState,
+    beats_per_bar: u64,
+) -> Option<u64> {
+    let start_bar = boundary
+        .beat_index
+        .checked_div(beats_per_bar.max(1))
+        .unwrap_or(0)
+        .saturating_add(1);
+    let phrase_grid = graph
+        .timing
+        .primary_hypothesis()
+        .map(|hypothesis| hypothesis.phrase_grid.as_slice())
+        .filter(|phrases| !phrases.is_empty())
+        .unwrap_or(graph.timing.phrase_grid.as_slice());
+
+    phrase_grid
+        .iter()
+        .find(|phrase| {
+            u64::from(phrase.start_bar) <= start_bar && start_bar <= u64::from(phrase.end_bar)
+        })
+        .or_else(|| {
+            phrase_grid
+                .iter()
+                .find(|phrase| u64::from(phrase.start_bar) >= start_bar)
+        })
+        .map(|phrase| u64::from(phrase.end_bar).saturating_mul(beats_per_bar))
+        .filter(|end_beat| *end_beat > boundary.beat_index)
 }
 
 fn seconds_for_beat(graph: &SourceGraph, beat_index: u64) -> Option<f32> {

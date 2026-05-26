@@ -33,6 +33,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::SceneRestore,
     ActionCommand::PromoteCaptureToPad,
     ActionCommand::PromoteCaptureToScene,
+    ActionCommand::CaptureSetLength,
     ActionCommand::CaptureNow,
     ActionCommand::CaptureLoop,
     ActionCommand::CaptureBarGroup,
@@ -212,6 +213,21 @@ pub fn apply_replay_entry_to_session(
         }
         ActionCommand::PromoteCaptureToPad => apply_promote_capture_to_w30_pad(session, entry)?,
         ActionCommand::PromoteCaptureToScene => apply_promote_capture_to_scene(session, entry)?,
+        ActionCommand::CaptureSetLength => {
+            let ActionParams::CaptureLength {
+                intent: Some(intent),
+            } = action.params
+            else {
+                return Err(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionParams::CaptureLength { intent: Some(_) }",
+                });
+            };
+            session.runtime_state.capture.length_intent = intent;
+            session.runtime_state.capture.length_set_by_action = Some(action.id);
+            session.runtime_state.capture.length_set_at = action.committed_at;
+        }
         ActionCommand::CaptureNow | ActionCommand::CaptureLoop => {
             apply_capture_loop_hydrated_cue(session, entry)?
         }

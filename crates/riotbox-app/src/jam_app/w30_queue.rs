@@ -12,22 +12,6 @@ use riotbox_core::{
 };
 
 impl JamAppState {
-    pub fn queue_capture_bar(&mut self, requested_at: TimestampMs) {
-        let mut draft = ActionDraft::new(
-            ActorType::User,
-            ActionCommand::CaptureBarGroup,
-            Quantization::NextPhrase,
-            ActionTarget {
-                scope: Some(TargetScope::LaneW30),
-                ..Default::default()
-            },
-        );
-        draft.params = ActionParams::Capture { bars: Some(4) };
-        draft.explanation = Some("capture next phrase into W-30 path".into());
-        self.queue.enqueue(draft, requested_at);
-        self.refresh_view();
-    }
-
     pub fn queue_promote_last_capture(&mut self, requested_at: TimestampMs) -> bool {
         let Some(capture) = self
             .session

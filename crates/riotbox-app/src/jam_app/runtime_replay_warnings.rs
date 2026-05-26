@@ -204,6 +204,7 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         ActionCommand::CaptureNow
         | ActionCommand::CaptureLoop
         | ActionCommand::CaptureBarGroup
+        | ActionCommand::CaptureSetLength
         | ActionCommand::PromoteCaptureToPad
         | ActionCommand::PromoteResample
         | ActionCommand::W30CaptureToPad

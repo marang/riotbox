@@ -127,6 +127,14 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::QueueCaptureBar
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Char('-')),
+        ShellKeyOutcome::PreviousCaptureLength
+    );
+    assert_eq!(
+        shell.handle_key_code(KeyCode::Char('=')),
+        ShellKeyOutcome::NextCaptureLength
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('p')),
         ShellKeyOutcome::PromoteLastCapture
     );

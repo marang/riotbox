@@ -214,6 +214,14 @@ impl JamShellState {
                 self.status_message = "source map next phrase requested".into();
                 ShellKeyOutcome::NavigateSourceMapNextPhrase
             }
+            KeyCode::Char('-') => {
+                self.status_message = "previous capture length requested".into();
+                ShellKeyOutcome::PreviousCaptureLength
+            }
+            KeyCode::Char('=') => {
+                self.status_message = "next capture length requested".into();
+                ShellKeyOutcome::NextCaptureLength
+            }
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
                 ShellKeyOutcome::TogglePinLatestCapture

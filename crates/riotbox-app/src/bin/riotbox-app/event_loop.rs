@@ -417,6 +417,12 @@ fn run_event_loop(
                         timestamp_now(),
                     );
                 }
+                ShellKeyOutcome::PreviousCaptureLength => {
+                    commit_capture_length_change(&mut shell, timestamp_now(), false);
+                }
+                ShellKeyOutcome::NextCaptureLength => {
+                    commit_capture_length_change(&mut shell, timestamp_now(), true);
+                }
                 ShellKeyOutcome::TogglePinLatestCapture => {
                     match shell.app.toggle_pin_latest_capture() {
                         Some(true) => shell.set_error_status("pinned latest capture"),

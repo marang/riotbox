@@ -12,7 +12,7 @@ The target workflow is:
 3. see an adaptive Source Map
 4. audition and confirm the timing hypothesis
 5. seek by bar or phrase
-6. capture a 1-bar, 4-bar, or phrase-length moment
+6. capture a 1-beat, 1-bar, 4-bar, or phrase-length moment
 7. raw-audition the capture
 8. promote and hit it through the W-30 path
 9. restore the same monitor, timing, transport, and capture state from Session
@@ -74,9 +74,11 @@ Navigation uses the transport, not a separate editor cursor:
 Capture defaults to musical moments rather than exact manual ranges:
 
 - default capture length is `4 bars`
-- selectable lengths are `1 bar`, `4 bars`, and `phrase`
-- `1 bar` and `4 bars` start at the next bar
-- `phrase` starts at the next phrase when phrase evidence is usable
+- selectable lengths are `1 beat`, `1 bar`, `4 bars`, and `phrase`
+- `1 beat`, `1 bar`, and `4 bars` use the next committed capture boundary as
+  their start and derive duration from Source Timing meter / beat evidence
+- `phrase` captures to the end of the matching Source Timing phrase span when
+  phrase evidence is usable
 - when phrase evidence is not usable, phrase capture falls back visibly to
   `4 bars`
 - `o` raw-auditions the latest committed capture before promotion

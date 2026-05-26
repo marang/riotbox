@@ -94,8 +94,11 @@ pub(super) fn capture_readiness_lines(shell: &JamShellState) -> Vec<Line<'static
             transport_label(shell),
             shell.app.jam_view.transport.position_beats
         )),
-        Line::from(format!("pending capture actions {pending_capture_count}")),
-        Line::from(format!("w30 bank {bank}")),
+        Line::from(format!(
+            "length {} | [-]/[=]",
+            shell.app.session.runtime_state.capture.length_intent
+        )),
+        Line::from(format!("pending {pending_capture_count} | w30 bank {bank}")),
         Line::from(format!(
             "last lane capture {}",
             shell
@@ -152,7 +155,10 @@ pub(super) fn capture_do_next_lines(shell: &JamShellState) -> Vec<Line<'static>>
 
     let Some(last_capture_id) = capture.last_capture_id.as_deref() else {
         return vec![
-            Line::from("1 [c] capture phrase"),
+            Line::from(format!(
+                "1 [c] capture {}",
+                shell.app.session.runtime_state.capture.length_intent
+            )),
             Line::from("2 [p] promote keeper"),
             Line::from("3 [w] hit promoted pad"),
             Line::from("use Log to confirm"),

@@ -3,7 +3,8 @@ use riotbox_core::{
     TimestampMs,
     action::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus,
-        ActionTarget, ActorType, GhostMode, Quantization, TargetScope, UndoPolicy,
+        ActionTarget, ActorType, CaptureLengthIntent, GhostMode, Quantization, TargetScope,
+        UndoPolicy,
     },
     ghost::{
         GhostSuggestedAction, GhostSuggestionConfidence, GhostSuggestionSafety,

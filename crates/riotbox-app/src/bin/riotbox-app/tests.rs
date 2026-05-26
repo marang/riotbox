@@ -2,7 +2,9 @@
 mod tests {
     use super::*;
     use riotbox_core::{
-        action::{ActionCommand, ActionTarget, GhostMode, Quantization, TargetScope},
+        action::{
+            ActionCommand, ActionTarget, CaptureLengthIntent, GhostMode, Quantization, TargetScope,
+        },
         ghost::{
             GhostSuggestedAction, GhostSuggestionConfidence, GhostSuggestionSafety,
             GhostWatchSuggestion, GhostWatchTool,
@@ -265,6 +267,12 @@ mod tests {
         use super::*;
 
         include!("tests/source_map_navigation_control.rs");
+    }
+
+    mod capture_length_control {
+        use super::*;
+
+        include!("tests/capture_length_control.rs");
     }
 
     mod recovery_observer {

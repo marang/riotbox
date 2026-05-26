@@ -1,3 +1,4 @@
+mod capture;
 mod ghost;
 mod mc202;
 mod scene;
@@ -7,6 +8,7 @@ mod tr909;
 mod transport;
 mod w30;
 
+pub(super) use capture::apply_capture_side_effects;
 pub(super) use ghost::apply_ghost_side_effects;
 pub(super) use mc202::apply_mc202_side_effects;
 pub(super) use scene::apply_scene_side_effects;

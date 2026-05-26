@@ -28,8 +28,8 @@ use riotbox_audio::{
 use riotbox_core::{
     action::{
         Action, ActionCommand, ActionDraft, ActionParams, ActionResult, ActionStatus, ActionTarget,
-        ActorType, CommitBoundary, GhostMode, Quantization, SourceMonitorMode, TargetScope,
-        UndoPolicy,
+        ActorType, CaptureLengthIntent, CommitBoundary, GhostMode, Quantization,
+        SourceMonitorMode, TargetScope, UndoPolicy,
     },
     ghost::{
         GhostSuggestedAction, GhostSuggestionBlocker, GhostSuggestionBlockerKind,
@@ -49,8 +49,9 @@ use riotbox_core::{
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
-        DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Relationship, RelationshipType,
-        Section, SectionLabelHint, SourceDescriptor, SourceGraph, SourceGraphVersion,
+        DecodeProfile, EnergyClass, GraphProvenance, QualityClass, Relationship,
+        RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
+        SourceGraphVersion,
     },
     transport::TransportClockState,
     view::jam::{
