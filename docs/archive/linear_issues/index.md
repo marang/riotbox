@@ -694,4 +694,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add user-confirmed source timing grid contract
 - [RIOTBOX-973.md](./RIOTBOX-973.md)
   Expose source timing grid confirmation in Jam and Source controls
+- [RIOTBOX-974.md](./RIOTBOX-974.md)
+  Add explicit source timing grid revert action
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
