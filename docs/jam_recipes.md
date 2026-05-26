@@ -716,7 +716,8 @@ Target flow:
 5. audition the grid against what you hear
 6. confirm the grid when the displayed bar / phrase position is musically usable
 7. use `Left` / `Right` to seek bars and `Up` / `Down` to seek phrases
-8. choose capture length: `1 bar`, `4 bars`, or `phrase`
+8. choose capture length: `1 bar`, `4 bars`, or `phrase` and check the Capture
+   target line, such as `4 bars @ next bar`
 9. press `c` to queue capture on the next bar boundary
 10. press `o` to raw-audition the latest capture
 11. press `p` to promote it

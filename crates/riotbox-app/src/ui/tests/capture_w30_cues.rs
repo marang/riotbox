@@ -47,6 +47,67 @@ fn renders_capture_pending_cues_panel_as_first_item_with_log_overflow() {
 }
 
 #[test]
+fn renders_capture_target_boundary_when_grid_needs_listening() {
+    let mut shell = first_run_shell_state();
+    shell.active_screen = ShellScreen::Capture;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("target 4 bars @ listen first"), "{rendered}");
+    assert!(
+        rendered.contains("1 [c] 4 bars @ listen first"),
+        "{rendered}"
+    );
+}
+
+#[test]
+fn renders_capture_target_boundary_when_grid_is_locked() {
+    let mut shell = first_run_shell_state();
+    lock_capture_source_map(&mut shell);
+    shell.active_screen = ShellScreen::Capture;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("target 4 bars @ next bar"), "{rendered}");
+    assert!(
+        rendered.contains("1 [c] 4 bars @ next bar"),
+        "{rendered}"
+    );
+}
+
+#[test]
+fn renders_capture_phrase_fallback_target_boundary() {
+    let mut shell = first_run_shell_state();
+    lock_capture_source_map(&mut shell);
+    shell.app.session.runtime_state.capture.length_intent = CaptureLengthIntent::Phrase;
+    shell.app.refresh_view();
+    shell.active_screen = ShellScreen::Capture;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(
+        rendered.contains("target phrase->4bar @ next bar"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("1 [c] phrase->4bar @ next bar"),
+        "{rendered}"
+    );
+}
+
+fn lock_capture_source_map(shell: &mut JamShellState) {
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("capture shell fixture keeps source graph");
+    graph.timing.quality = TimingQuality::High;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+    graph.timing.bpm_confidence = 0.9;
+    shell.app.refresh_view();
+}
+
+#[test]
 fn renders_capture_shell_snapshot_with_w30_live_recall_cue() {
     let mut shell = sample_shell_state();
     shell.app.session.captures[0].assigned_target =

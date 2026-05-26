@@ -1736,3 +1736,17 @@ Why: Source Map preview tests prove what the musician should expect before press
 Evidence: RIOTBOX-985 adds observer fields and a committed `capture.bar_group` snapshot test at a `Bar` boundary.
 Consequences: later end-to-end workflow probes should correlate `source_map.capture_range_row`, `transport_commit` boundary, and `capture.source_window` instead of deriving capture provenance separately.
 Status: accepted
+
+---
+
+### RBX-051
+
+Date: 2026-05-23
+Topic: Capture screen states the capture target boundary before queueing
+Phase: Source Timing Intelligence / Capture Workflow UX
+Question: how should the Capture screen explain what `c` will queue before the musician commits a capture?
+Decision: show a compact target label in the Capture screen derived from runtime capture length intent and the shared Source Map readiness/range projection. Trusted or user-confirmed timing renders labels such as `4 bars @ next bar`; untrusted timing renders `4 bars @ listen first`; phrase capture without phrase evidence renders compact fallback as `phrase->4bar @ next bar`.
+Why: musicians need to know whether `c` is going to land cleanly before they press it. The label must not invent a second selector; it should describe the same projection used by Source Map and committed source-window QA.
+Evidence: RIOTBOX-986 adds Capture screen target labels and render coverage for listen-first, next-bar, and phrase-fallback cases.
+Consequences: future Capture screen controls should keep this label aligned with `SourceMapView` and the committed capture observer snapshot rather than recomputing unrelated UI-only state.
+Status: accepted
