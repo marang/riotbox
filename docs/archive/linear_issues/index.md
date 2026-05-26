@@ -724,4 +724,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prove source seek changes audible monitored excerpt
 - [RIOTBOX-988.md](./RIOTBOX-988.md)
   Verify source transport capture state replay and restore fidelity
+- [RIOTBOX-989.md](./RIOTBOX-989.md)
+  Add end-to-end source transport map capture workflow QA proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
