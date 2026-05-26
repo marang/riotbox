@@ -33,6 +33,7 @@ EXPECTATION_KEYS = {
     "primary_downbeat_score",
     "primary_downbeat_margin",
     "anchor_evidence",
+    "groove_evidence",
     "warning_codes_include",
     "warning_codes_exact",
 }
@@ -42,6 +43,10 @@ ANCHOR_EVIDENCE_KEYS = {
     "primary_kick_anchor_count",
     "primary_backbeat_anchor_count",
     "primary_transient_anchor_count",
+}
+
+GROOVE_EVIDENCE_KEYS = {
+    "primary_groove_residual_count",
 }
 
 
@@ -103,6 +108,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_number_range(payload, expectation, issues, "primary_downbeat_score")
     compare_number_range(payload, expectation, issues, "primary_downbeat_margin")
     compare_anchor_evidence(payload, expectation, issues)
+    compare_groove_evidence(payload, expectation, issues)
     compare_warning_includes(payload, expectation, issues)
     compare_warning_exact(payload, expectation, issues)
     return issues
@@ -301,6 +307,39 @@ def require_anchor_evidence_expectation(value: Any) -> dict[str, int]:
         )
     if not expected:
         raise ValueError("anchor_evidence expectation must include at least one key")
+    return {
+        key: require_int(expected, key)
+        for key in sorted(expected)
+    }
+
+
+def compare_groove_evidence(
+    payload: dict[str, Any],
+    expectation: dict[str, Any],
+    issues: list[str],
+) -> None:
+    if "groove_evidence" not in expectation:
+        return
+    expected = require_groove_evidence_expectation(expectation["groove_evidence"])
+    actual = require_object(payload.get("groove_evidence"), "groove_evidence")
+    for key in sorted(expected):
+        expected_value = expected[key]
+        actual_value = require_int(actual, key)
+        if actual_value != expected_value:
+            issues.append(
+                f"groove_evidence.{key} expected {expected_value!r} got {actual_value!r}"
+            )
+
+
+def require_groove_evidence_expectation(value: Any) -> dict[str, int]:
+    expected = require_object(value, "groove_evidence expectation")
+    unknown_keys = sorted(set(expected) - GROOVE_EVIDENCE_KEYS)
+    if unknown_keys:
+        raise ValueError(
+            f"groove_evidence expectation has unknown keys: {', '.join(unknown_keys)}"
+        )
+    if not expected:
+        raise ValueError("groove_evidence expectation must include at least one key")
     return {
         key: require_int(expected, key)
         for key in sorted(expected)

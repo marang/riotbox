@@ -50,6 +50,9 @@
         "primary_kick_anchor_count": 99,
         "primary_backbeat_anchor_count": 99,
         "primary_transient_anchor_count": 99
+      },
+      "groove_evidence": {
+        "primary_groove_residual_count": 99
       }
     }
   }
