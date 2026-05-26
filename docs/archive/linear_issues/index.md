@@ -720,4 +720,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Apply capture length boundary semantics to committed source windows
 - [RIOTBOX-986.md](./RIOTBOX-986.md)
   Expose capture target boundary and length in Capture screen
+- [RIOTBOX-987.md](./RIOTBOX-987.md)
+  Prove source seek changes audible monitored excerpt
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
