@@ -9,8 +9,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import subprocess
 import sys
+import wave
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -33,6 +35,12 @@ DEFAULT_SOURCES = [
 class ReportRow:
     source: str
     status: str
+    duration_seconds: str = "-"
+    sample_rate: str = "-"
+    channels: str = "-"
+    audio_rms_dbfs: str = "-"
+    audio_peak_abs: str = "-"
+    zero_crossings_per_second: str = "-"
     cue: str = "-"
     actionability: str = "-"
     readiness: str = "-"
@@ -176,10 +184,17 @@ def row_from_payload(
     anchors = require_object(payload.get("anchor_evidence"), "anchor_evidence")
     groove = require_object(payload.get("groove_evidence"), "groove_evidence")
     source_name = Path(source_path).name
+    audio = audio_descriptor_fields(Path(source_path))
 
     return ReportRow(
         source=source_name,
         status="probed",
+        duration_seconds=audio["duration_seconds"],
+        sample_rate=audio["sample_rate"],
+        channels=audio["channels"],
+        audio_rms_dbfs=audio["audio_rms_dbfs"],
+        audio_peak_abs=audio["audio_peak_abs"],
+        zero_crossings_per_second=audio["zero_crossings_per_second"],
         cue=require_string(payload, "cue"),
         actionability=require_string(payload, "actionability"),
         readiness=require_string(payload, "readiness"),
@@ -217,8 +232,8 @@ def render_markdown(rows: list[ReportRow]) -> str:
         "",
         "Missing rows mean the local example WAV is not present in this checkout.",
         "",
-        "| Source | Status | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat count | Bar count | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Phrase count | Phrase bars | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
-        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | ---: | --- |",
+        "| Source | Status | Duration s | Sample rate | Channels | Audio RMS dBFS | Audio peak | ZCR/s | Cue | Action | Readiness | Manual confirm | Grid use | BPM | Confidence | Drift | Beat | Beat count | Bar count | Beat score | Beat match | Beat median | Beat alts | Downbeat | Downbeat offset | Downbeat score | Downbeat margin | Downbeat alts | Phrase | Phrase count | Phrase bars | Alternate evidence | Warnings | Anchors total/kick/backbeat/transient | Groove residuals | Expectation |",
+        "| --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | --- | --- | --- | --- | --- | ---: | --- | --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | ---: | --- | ---: | ---: | ---: | --- | --- | ---: | --- |",
     ]
     for row in rows:
         lines.append(
@@ -227,6 +242,12 @@ def render_markdown(rows: list[ReportRow]) -> str:
                 [
                     row.source,
                     row.status,
+                    row.duration_seconds,
+                    row.sample_rate,
+                    row.channels,
+                    row.audio_rms_dbfs,
+                    row.audio_peak_abs,
+                    row.zero_crossings_per_second,
                     row.cue,
                     row.actionability,
                     row.readiness,
@@ -261,6 +282,82 @@ def render_markdown(rows: list[ReportRow]) -> str:
         )
     lines.append("")
     return "\n".join(lines)
+
+
+def audio_descriptor_fields(source: Path) -> dict[str, str]:
+    if not source.exists():
+        return {
+            "duration_seconds": "-",
+            "sample_rate": "-",
+            "channels": "-",
+            "audio_rms_dbfs": "-",
+            "audio_peak_abs": "-",
+            "zero_crossings_per_second": "-",
+        }
+
+    with wave.open(str(source), "rb") as wav:
+        sample_rate = wav.getframerate()
+        channels = wav.getnchannels()
+        sample_width = wav.getsampwidth()
+        frame_count = wav.getnframes()
+        frames = wav.readframes(frame_count)
+
+    sample_sum_sq = 0.0
+    peak_abs = 0.0
+    zero_crossings = 0
+    previous: float | None = None
+    mono_count = 0
+
+    for frame in pcm_frames(frames, sample_width, channels):
+        mono = sum(frame) / len(frame)
+        sample_sum_sq += mono * mono
+        peak_abs = max(peak_abs, abs(mono))
+        if previous is not None and ((previous < 0.0 <= mono) or (previous >= 0.0 > mono)):
+            zero_crossings += 1
+        previous = mono
+        mono_count += 1
+
+    duration = frame_count / sample_rate if sample_rate else 0.0
+    rms = math.sqrt(sample_sum_sq / mono_count) if mono_count else 0.0
+    dbfs = 20.0 * math.log10(rms + 1e-12)
+    zcr_per_second = zero_crossings / duration if duration > 0.0 else 0.0
+    return {
+        "duration_seconds": f"{duration:.3f}",
+        "sample_rate": str(sample_rate),
+        "channels": str(channels),
+        "audio_rms_dbfs": f"{dbfs:.1f}",
+        "audio_peak_abs": f"{peak_abs:.3f}",
+        "zero_crossings_per_second": f"{zcr_per_second:.1f}",
+    }
+
+
+def pcm_frames(raw: bytes, sample_width: int, channels: int) -> list[tuple[float, ...]]:
+    if channels <= 0:
+        raise ValueError("WAV channel count must be positive")
+    if sample_width not in {2, 3, 4}:
+        raise ValueError(f"unsupported WAV sample width: {sample_width}")
+
+    stride = sample_width * channels
+    frames: list[tuple[float, ...]] = []
+    for offset in range(0, len(raw) - stride + 1, stride):
+        values = []
+        for channel in range(channels):
+            start = offset + channel * sample_width
+            sample = pcm_sample(raw[start : start + sample_width], sample_width)
+            values.append(sample)
+        frames.append(tuple(values))
+    return frames
+
+
+def pcm_sample(raw: bytes, sample_width: int) -> float:
+    if sample_width == 2:
+        return int.from_bytes(raw, "little", signed=True) / 32768.0
+    if sample_width == 3:
+        unsigned = int.from_bytes(raw, "little", signed=False)
+        if unsigned & 0x800000:
+            unsigned -= 0x1000000
+        return unsigned / 8388608.0
+    return int.from_bytes(raw, "little", signed=True) / 2147483648.0
 
 
 def expectation_failures(rows: list[ReportRow]) -> list[str]:

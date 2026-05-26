@@ -655,9 +655,12 @@ primary timing hypothesis:
   transient evidence before lane policies consume it
 - `just source-timing-example-probe-report` may run the probe over local
   example WAVs when they exist and emit a compact Markdown table for review.
-  Missing local WAVs must be reported as skipped rows, not CI failures, because
-  the example audio files are intentionally not committed. The committed fixture
-  smoke is `just source-timing-example-probe-report-fixtures`.
+  The report includes both Source Timing evidence and basic audio descriptors
+  such as duration, sample rate, channels, RMS dBFS, peak, and zero-crossing
+  rate so reviewers can reason about the local examples without loading full
+  WAV dumps into chat. Missing local WAVs must be reported as skipped rows, not
+  CI failures, because the example audio files are intentionally not committed.
+  The committed fixture smoke is `just source-timing-example-probe-report-fixtures`.
 - the example report may use an optional expectations file for conservative
   local regression checks. Expectations should cover stable review fields such
   as cue, actionability, readiness, manual-confirm, BPM tolerance,
