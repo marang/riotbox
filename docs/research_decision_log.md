@@ -1666,3 +1666,17 @@ Why: musicians need fast orientation more than sample-editor density. Block rows
 Evidence: RIOTBOX-980 records the comparison in `docs/reviews/source_map_waveform_canvas_spike_2026-05-23.md` and updates the TUI/source-map plan contracts.
 Consequences: future Source Map implementation should improve the block renderer first. Any Canvas path must consume the same `SourceMapView` / source-window projection data and must not introduce a second Source Map truth or hide playhead/grid trust/capture range behind dense glyphs or color.
 Status: accepted
+
+---
+
+### RBX-046
+
+Date: 2026-05-23
+Topic: Source Map capture range is read-only capture-intent projection
+Phase: Source Timing Intelligence / Capture Workflow
+Question: how should the Source Map show what `c` is likely to capture without becoming a sample editor?
+Decision: add a compact capture-range marker row to the Source Map view model. The row is derived from Session transport position, Source Timing readiness, and `runtime_state.capture.length_intent`; it appears only when timing readiness permits bar-accurate source-window reuse.
+Why: musicians need to see the practical effect of `1 beat`, `1 bar`, `4 bars`, or `phrase` before pressing capture, but arbitrary start/end selection would create a second editor cursor and weaken replayable transport truth.
+Evidence: RIOTBOX-981 projects the range in `SourceMapView`, renders it on the Source screen, and tests locked/confirmed timing versus fallback/manual-confirm timing.
+Consequences: later capture UI may make the marker richer, but it must remain projection-only unless a future action/session contract explicitly adds manual selection.
+Status: accepted
