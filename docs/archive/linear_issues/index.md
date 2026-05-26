@@ -698,4 +698,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add explicit source timing grid revert action
 - [RIOTBOX-975.md](./RIOTBOX-975.md)
   Add source map audition navigator controls
+- [RIOTBOX-976.md](./RIOTBOX-976.md)
+  Add capture length intent controls for source windows
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
