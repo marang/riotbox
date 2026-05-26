@@ -24,8 +24,8 @@ use probe_scenarios::{
     write_feral_grid_fallback_jam_observer, write_feral_grid_jam_observer,
     write_feral_grid_locked_jam_observer, write_first_playable_jam_observer,
     write_interrupted_session_recovery_observer, write_missing_target_recovery_observer,
-    write_recipe2_mc202_observer, write_stage_style_jam_observer,
-    write_stage_style_restore_diversity_observer,
+    write_recipe2_mc202_observer, write_source_timing_confirmation_observer,
+    write_stage_style_jam_observer, write_stage_style_restore_diversity_observer,
 };
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,9 +49,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "feral-grid-jam" => write_feral_grid_jam_observer(&args.observer_path)?,
         "feral-grid-jam-fallback" => write_feral_grid_fallback_jam_observer(&args.observer_path)?,
         "feral-grid-jam-locked" => write_feral_grid_locked_jam_observer(&args.observer_path)?,
+        "source-timing-confirmation" => {
+            write_source_timing_confirmation_observer(&args.observer_path)?
+        }
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked, source-timing-confirmation"
             )
             .into());
         }
@@ -111,7 +114,7 @@ impl Args {
 
 fn print_help() {
     println!(
-        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-fallback|feral-grid-jam-locked> --observer <events.ndjson>"
+        "Usage:\n  user_session_observer_probe --probe <recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-fallback|feral-grid-jam-locked|source-timing-confirmation> --observer <events.ndjson>"
     );
 }
 
@@ -179,6 +182,7 @@ fn apply_probe_key(
     key: KeyCode,
 ) -> io::Result<()> {
     let outcome = shell.handle_key_code(key);
+    let mut immediate_committed = Vec::new();
 
     match outcome {
         ShellKeyOutcome::ToggleTransport => {
@@ -345,6 +349,41 @@ fn apply_probe_key(
             let touch = shell.app.adjust_mc202_touch(0.08);
             shell.set_error_status(format!("MC-202 touch {touch:.2}"));
         }
+        ShellKeyOutcome::ConfirmSourceTimingGrid => {
+            match shell
+                .app
+                .queue_source_timing_grid_confirmation(timestamp_ms)
+            {
+                riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                    let transport = shell.app.runtime.transport.clone();
+                    immediate_committed = shell.app.commit_ready_actions(
+                        CommitBoundaryState {
+                            kind: CommitBoundary::Immediate,
+                            beat_index: transport.beat_index,
+                            bar_index: transport.bar_index,
+                            phrase_index: transport.phrase_index,
+                            scene_id: transport.current_scene,
+                        },
+                        timestamp_ms,
+                    );
+                    if immediate_committed.is_empty() {
+                        shell.set_error_status("source timing grid confirmation queued");
+                    } else {
+                        shell.set_error_status("confirmed source timing grid");
+                    }
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                    shell.set_error_status("source timing grid trust change already queued");
+                }
+                riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                    if shell.app.source_graph.is_some() {
+                        shell.set_error_status("source timing grid already confirmed");
+                    } else {
+                        shell.set_error_status("no source timing grid available to confirm");
+                    }
+                }
+            }
+        }
         other => {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -360,7 +399,18 @@ fn apply_probe_key(
         "outcome": shell_key_outcome_label(outcome),
         "status": shell.status_message,
         "snapshot": observer_snapshot(shell),
-    }))
+    }))?;
+
+    if !immediate_committed.is_empty() {
+        writer.record(json!({
+            "event": "transport_commit",
+            "timestamp_ms": timestamp_ms,
+            "committed": immediate_committed.iter().map(compact_commit).collect::<Vec<_>>(),
+            "snapshot": observer_snapshot(shell),
+        }))?;
+    }
+
+    Ok(())
 }
 
 fn commit_boundary(

@@ -127,6 +127,10 @@ Minimum gates:
 - source playback does not perform file I/O or analysis in the realtime callback
 - confirmed-grid state survives save / restore and replay without changing the
   original Source Timing evidence
+- manual source-timing confirmation has a CI-safe observer probe that presses
+  the real `C` control, records the immediate commit, and proves the observer
+  exposes confirmed runtime state while analyzer cue / warning evidence remains
+  unchanged
 - source-map snapshots show energy, peaks, bars or time fallback, playhead, and
   capture range without relying on color alone
 - capture length intents produce source windows that match `1 beat`, `1 bar`,
@@ -668,6 +672,7 @@ Today the repo already has:
 - a W-30 source-vs-fallback control wrapper that renders synthetic fallback as baseline, source-backed WAV preview as candidate, and requires minimum RMS / sum deltas so fallback collapse is caught
 - a CI-safe generated W-30 source-vs-fallback smoke that uses deterministic synthetic source material, checks minimum source-vs-fallback deltas, validates the generated listening manifest, and runs under `just audio-qa-ci`
 - a CI-safe first-playable Jam probe, `just first-playable-jam-probe`, that combines synthetic source material, W-30 source-vs-fallback output evidence, and a generated app-level observer probe for the current `space -> capture -> raw audition -> promote -> W-30 hit` user path
+- a CI-safe source timing confirmation probe, `just source-timing-confirmation-probe`, that presses the real `C` control against a manual-confirm Source Graph, validates the normal observer stream, asserts the immediate `source_timing.confirm_grid` commit, and proves `grid_confirmed` runtime state appears without changing analyzer cue / warning evidence
 - a CI-safe stage-style Jam probe, `just stage-style-jam-probe`, that uses generated app-level multi-boundary observer evidence, generated W-30 source-vs-fallback output evidence, and summary-level commit boundary assertions for `Phrase`, `Bar`, and `Beat`
 - a CI-safe stage-style snapshot convergence smoke, `just stage-style-snapshot-convergence-smoke`, that drives a supported Scene / MC-202 / TR-909 stage-style sequence, restores from a mid-run snapshot payload, asserts latest-snapshot replay summary readiness, rejects unsupported suffix commands, and compares the replayed final mix buffer against the committed final mix
 - a bounded repeated stage-style stability smoke/proof, `just stage-style-stability-smoke` / `just stage-style-stability-proof`, that runs the generated stage-style restore-diversity observer/audio path multiple times, validates observer and summary contracts for every run, rejects collapsed output metrics, requires the generated full-grid mix WAV hash to remain stable across repetitions, and validates normalized proof data for run count, commit-boundary coverage, observer/audio evidence, and stable output hash

@@ -16,6 +16,8 @@ use serde_json::{Value, json};
 mod feral_grid;
 #[path = "locked_timing_grid.rs"]
 mod locked_timing_grid;
+#[path = "probe_scenarios/source_timing_confirmation.rs"]
+mod source_timing_confirmation;
 
 use super::{
     NdjsonWriter, apply_probe_key, commit_boundary, headless_audio_health, probe_shell,
@@ -26,6 +28,7 @@ pub(super) use feral_grid::{
     write_feral_grid_fallback_jam_observer, write_feral_grid_jam_observer,
     write_feral_grid_locked_jam_observer,
 };
+pub(super) use source_timing_confirmation::write_source_timing_confirmation_observer;
 
 pub(super) fn write_recipe2_mc202_observer(path: &Path) -> io::Result<()> {
     let mut writer = NdjsonWriter::open(path)?;

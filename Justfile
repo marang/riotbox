@@ -62,6 +62,7 @@ audio-qa-ci:
     just w30-smoke-generated-source-diff
     just observer-audio-correlate-generated-feral-grid
     just first-playable-jam-probe
+    just source-timing-confirmation-probe
     just stage-style-jam-probe
     just stage-style-restore-diversity-probe
     just stage-style-snapshot-convergence-smoke
@@ -473,6 +474,9 @@ observer-audio-correlate-generated-feral-grid:
 
 first-playable-jam-probe:
     scripts/validate_first_playable_jam_probe.sh
+
+source-timing-confirmation-probe:
+    scripts/validate_source_timing_confirmation_probe.sh
 
 stage-style-jam-probe:
     scripts/validate_stage_style_jam_probe.sh
