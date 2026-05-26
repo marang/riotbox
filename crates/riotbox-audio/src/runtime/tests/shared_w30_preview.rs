@@ -84,7 +84,7 @@ fn shared_mc202_render_state_tracks_updates() {
         phrase_shape: Mc202PhraseShape::InstigatorSpike,
         note_budget: Mc202NoteBudget::Push,
         contour_hint: Mc202ContourHint::Lift,
-        hook_response: Mc202HookResponse::AnswerSpace,
+        hook_response: Mc202HookResponse::Direct,
         touch: 0.90,
         music_bus_level: 0.64,
         is_transport_running: true,
@@ -100,7 +100,7 @@ fn shared_mc202_render_state_tracks_updates() {
     assert_eq!(snapshot.phrase_shape, Mc202PhraseShape::InstigatorSpike);
     assert_eq!(snapshot.note_budget, Mc202NoteBudget::Push);
     assert_eq!(snapshot.contour_hint, Mc202ContourHint::Lift);
-    assert_eq!(snapshot.hook_response, Mc202HookResponse::AnswerSpace);
+    assert_eq!(snapshot.hook_response, Mc202HookResponse::Direct);
     assert_eq!(snapshot.touch, 0.90);
     assert_eq!(snapshot.music_bus_level, 0.64);
     assert!(snapshot.is_transport_running);

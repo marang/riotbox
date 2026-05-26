@@ -25,6 +25,7 @@ If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pat
 - Use one archive file per Linear ticket under `docs/archive/linear_issues/RIOTBOX-123.md`; month files are indexes only.
 - Search archives and generated artifacts only when needed. Default `rg` should respect `.rgignore`.
 - Do not read `docs/research_decision_log.md` wholesale during normal implementation work; use bounded MemPalace search, exact `rg`, or targeted line ranges.
+- Prefer `just decision-search "query"` for research-decision retrieval; it syncs the MemPalace corpus, avoids surprise auto-mining when the index is stale, and falls back to bounded `rg`.
 - Keep command output token-bounded. Redirect long CI/QA logs to `/tmp/...log` and report only exit status plus relevant tail/error lines.
 - Use `scripts/run_compact.sh /tmp/name.log <command...>` for noisy validation commands unless full output is explicitly needed.
 - Never revert unrelated user changes.
@@ -224,6 +225,7 @@ just source-timing-wav-probe
 just source-timing-readiness-report
 just mem-status
 just mem-search "replay truth"
+just decision-search "source timing"
 ```
 
 Common audio and user-session probes:

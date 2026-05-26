@@ -243,7 +243,6 @@ fn mc202_phrase_shape_to_u32(shape: Mc202PhraseShape) -> u32 {
     match shape {
         Mc202PhraseShape::RootPulse => 0,
         Mc202PhraseShape::FollowerDrive => 1,
-        Mc202PhraseShape::AnswerHook => 2,
         Mc202PhraseShape::MutatedDrive => 3,
         Mc202PhraseShape::PressureCell => 4,
         Mc202PhraseShape::InstigatorSpike => 5,
@@ -253,7 +252,7 @@ fn mc202_phrase_shape_to_u32(shape: Mc202PhraseShape) -> u32 {
 fn mc202_phrase_shape_from_u32(value: u32) -> Mc202PhraseShape {
     match value {
         1 => Mc202PhraseShape::FollowerDrive,
-        2 => Mc202PhraseShape::AnswerHook,
+        2 => Mc202PhraseShape::RootPulse,
         3 => Mc202PhraseShape::MutatedDrive,
         4 => Mc202PhraseShape::PressureCell,
         5 => Mc202PhraseShape::InstigatorSpike,
@@ -298,17 +297,12 @@ fn mc202_contour_hint_from_u32(value: u32) -> Mc202ContourHint {
 }
 
 fn mc202_hook_response_to_u32(response: Mc202HookResponse) -> u32 {
-    match response {
-        Mc202HookResponse::Direct => 0,
-        Mc202HookResponse::AnswerSpace => 1,
-    }
+    let _ = response;
+    0
 }
 
-fn mc202_hook_response_from_u32(value: u32) -> Mc202HookResponse {
-    match value {
-        1 => Mc202HookResponse::AnswerSpace,
-        _ => Mc202HookResponse::Direct,
-    }
+fn mc202_hook_response_from_u32(_value: u32) -> Mc202HookResponse {
+    Mc202HookResponse::Direct
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]

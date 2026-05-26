@@ -13,6 +13,7 @@ struct Tr909KickPressureProof {
 
 #[derive(Serialize)]
 struct ManifestTr909KickPressureProof {
+    pattern_origin: &'static str,
     applied: bool,
     anchor_count: usize,
     pressure_gain: f32,
@@ -45,6 +46,7 @@ fn manifest_tr909_kick_pressure_proof(
     proof: Tr909KickPressureProof,
 ) -> ManifestTr909KickPressureProof {
     ManifestTr909KickPressureProof {
+        pattern_origin: "primitive_renderer",
         applied: proof.applied,
         anchor_count: proof.anchor_count,
         pressure_gain: proof.pressure_gain,
@@ -78,20 +80,7 @@ fn apply_tr909_kick_pressure(
             continue;
         }
 
-        let bar = beat / grid.beats_per_bar;
-        let bar_pressure = match bar % 4 {
-            0 => 1.00,
-            1 => 0.86,
-            2 => 1.12,
-            _ => 0.94,
-        };
-        render_tr909_kick_pressure_anchor(
-            samples,
-            grid,
-            beat as f32,
-            policy,
-            accent * bar_pressure,
-        );
+        render_tr909_kick_pressure_anchor(samples, grid, beat as f32, policy, accent);
         anchor_count += 1;
     }
 

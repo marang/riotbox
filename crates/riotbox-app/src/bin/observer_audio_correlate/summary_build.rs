@@ -32,6 +32,8 @@ struct CorrelationSummary {
     tr909_source_grid_alignment_malformed: bool,
     mc202_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
     mc202_source_grid_alignment_malformed: bool,
+    mc202_bass_pressure_pattern_origin: String,
+    mc202_bass_pressure_applied: Option<bool>,
     w30_source_grid_alignment: Option<SourceGridOutputDriftEvidence>,
     w30_source_grid_alignment_malformed: bool,
     w30_source_loop_closure: Option<W30SourceLoopClosureEvidence>,
@@ -128,6 +130,11 @@ fn build_summary_from_events(
         collect_source_grid_alignment(&manifest, "tr909_source_grid_alignment");
     let (mc202_source_grid_alignment, mc202_source_grid_alignment_malformed) =
         collect_source_grid_alignment(&manifest, "mc202_source_grid_alignment");
+    let mc202_bass_pressure_pattern_origin =
+        collect_metric_string(&manifest, "mc202_bass_pressure", "pattern_origin")
+            .unwrap_or_else(|| "unknown".to_string());
+    let mc202_bass_pressure_applied =
+        collect_metric_bool(&manifest, "mc202_bass_pressure", "applied");
     let (w30_source_grid_alignment, w30_source_grid_alignment_malformed) =
         collect_source_grid_alignment(&manifest, "w30_source_grid_alignment");
     let (w30_source_loop_closure, w30_source_loop_closure_malformed) =
@@ -205,6 +212,8 @@ fn build_summary_from_events(
         tr909_source_grid_alignment_malformed,
         mc202_source_grid_alignment,
         mc202_source_grid_alignment_malformed,
+        mc202_bass_pressure_pattern_origin,
+        mc202_bass_pressure_applied,
         w30_source_grid_alignment,
         w30_source_grid_alignment_malformed,
         w30_source_loop_closure,
@@ -424,6 +433,24 @@ fn collect_source_grid_alignment(
     };
 
     (Some(evidence), false)
+}
+
+fn collect_metric_string(manifest: &Value, metric_key: &str, field: &str) -> Option<String> {
+    manifest
+        .get("metrics")?
+        .get(metric_key)?
+        .get(field)?
+        .as_str()
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+fn collect_metric_bool(manifest: &Value, metric_key: &str, field: &str) -> Option<bool> {
+    manifest
+        .get("metrics")?
+        .get(metric_key)?
+        .get(field)?
+        .as_bool()
 }
 
 fn collect_w30_source_loop_closure(

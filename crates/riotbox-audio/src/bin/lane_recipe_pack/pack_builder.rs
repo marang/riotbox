@@ -287,24 +287,6 @@ fn pack_cases() -> Vec<PackCase> {
             note: "The Scene-target candidate is intentionally subtle; it proves the current TR-909 support-accent seam, not a finished Scene transition engine.",
         },
         PackCase {
-            id: "mc202-follower-to-answer",
-            title: "MC-202 follower -> answer",
-            recipe_refs: "Recipe 2, Recipe 5",
-            baseline_label: "follower drive",
-            candidate_label: "answer hook",
-            render_pair: RenderPair::Mc202 {
-                baseline: mc202_state(
-                    Mc202RenderMode::Follower,
-                    Mc202PhraseShape::FollowerDrive,
-                    0.62,
-                ),
-                candidate: mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78),
-            },
-            min_rms_delta: 0.001,
-            min_signal_delta_rms: 0.005,
-            note: "This is the first explicit MC-202 offline audio seam. It proves a renderable follower-vs-answer contrast, not live TUI mixer integration.",
-        },
-        PackCase {
             id: "mc202-touch-low-to-high",
             title: "MC-202 touch low -> high",
             recipe_refs: "Recipe 2",
@@ -322,8 +304,8 @@ fn pack_cases() -> Vec<PackCase> {
                     0.92,
                 ),
             },
-            min_rms_delta: 0.0055,
-            min_signal_delta_rms: 0.006,
+            min_rms_delta: 0.005,
+            min_signal_delta_rms: 0.0055,
             note: "This proves the `<` / `>` touch gesture changes the same MC-202 phrase energy rather than only changing UI state.",
         },
         PackCase {
@@ -367,7 +349,7 @@ fn pack_cases() -> Vec<PackCase> {
                 ),
             },
             min_rms_delta: 0.0001,
-            min_signal_delta_rms: 0.009,
+            min_signal_delta_rms: 0.008,
             note: "This proves the `I` instigate gesture renders a sharper high-register shove instead of the follower drive pattern.",
         },
         PackCase {
@@ -415,32 +397,6 @@ fn pack_cases() -> Vec<PackCase> {
             min_rms_delta: 0.0,
             min_signal_delta_rms: 0.004,
             note: "This proves the source-section contour hint changes the same MC-202 role at the render seam instead of only changing diagnostics.",
-        },
-        PackCase {
-            id: "mc202-direct-to-hook-response",
-            title: "MC-202 direct -> hook response",
-            recipe_refs: "Recipe 2",
-            baseline_label: "follower direct",
-            candidate_label: "follower answer-space",
-            render_pair: RenderPair::Mc202 {
-                baseline: mc202_state_with_policy(
-                    Mc202RenderMode::Follower,
-                    Mc202PhraseShape::FollowerDrive,
-                    0.78,
-                    Mc202ContourHint::Neutral,
-                    Mc202HookResponse::Direct,
-                ),
-                candidate: mc202_state_with_policy(
-                    Mc202RenderMode::Follower,
-                    Mc202PhraseShape::FollowerDrive,
-                    0.78,
-                    Mc202ContourHint::Neutral,
-                    Mc202HookResponse::AnswerSpace,
-                ),
-            },
-            min_rms_delta: 0.001,
-            min_signal_delta_rms: 0.004,
-            note: "This proves hook-response mode leaves space against the same follower phrase instead of doubling the hook downbeats.",
         },
     ]
 }

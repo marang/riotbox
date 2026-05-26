@@ -1,5 +1,5 @@
 #[test]
-fn feral_break_support_bias_changes_mc202_hook_response_output() {
+fn feral_break_support_no_longer_injects_mc202_hook_response_output() {
     let mut control_graph = sample_graph();
     control_graph.sections.clear();
     control_graph.sections.push(Section {
@@ -79,17 +79,17 @@ fn feral_break_support_bias_changes_mc202_hook_response_output() {
     );
     assert_eq!(
         feral_state.runtime.mc202_render.hook_response,
-        Mc202HookResponse::AnswerSpace
+        Mc202HookResponse::Direct
     );
     assert_eq!(
         feral_state.runtime.mc202_render.note_budget,
-        riotbox_audio::mc202::Mc202NoteBudget::Sparse
+        riotbox_audio::mc202::Mc202NoteBudget::Balanced
     );
     assert!(
         feral_state
             .runtime_view
             .mc202_render_mix_summary
-            .contains("hook answer_space")
+            .contains("hook direct")
     );
 
     let frame_count = 44_100;
@@ -107,14 +107,14 @@ fn feral_break_support_bias_changes_mc202_hook_response_output() {
     );
     assert!(
         feral_metrics.rms > 0.001,
-        "Feral MC-202 hook-response render collapsed to silence: {}",
+        "Feral MC-202 direct render collapsed to silence: {}",
         feral_metrics.rms
     );
-    assert_recipe_buffers_differ(
-        "Feral MC-202 hook response",
+    assert_recipe_buffers_match(
+        "Feral MC-202 direct response",
         &control_buffer,
         &feral_buffer,
-        0.002,
+        0.000001,
     );
 }
 
@@ -282,11 +282,11 @@ fn feral_break_support_evidence_drives_current_lane_consumers_consistently() {
     );
     assert_eq!(
         feral_mc202_state.runtime.mc202_render.hook_response,
-        Mc202HookResponse::AnswerSpace
+        Mc202HookResponse::Direct
     );
     assert_eq!(
         feral_mc202_state.runtime.mc202_render.note_budget,
-        riotbox_audio::mc202::Mc202NoteBudget::Sparse
+        riotbox_audio::mc202::Mc202NoteBudget::Balanced
     );
 }
 
@@ -415,4 +415,3 @@ fn adjusting_mc202_touch_updates_session_and_runtime_view() {
         "music bus 0.64 | touch 0.00 | budget balanced | contour drop | hook direct"
     );
 }
-

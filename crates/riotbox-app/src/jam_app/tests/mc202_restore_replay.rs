@@ -17,7 +17,7 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
-    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let committed_answer = render_mc202_recipe_silent_buffer(&committed_state.runtime.mc202_render);
 
     let replayed_state = run_snapshot_payload_restore_probe(
         base_session,
@@ -36,7 +36,7 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         },
         |_| {},
     );
-    let replayed_answer = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
+    let replayed_answer = render_mc202_recipe_silent_buffer(&replayed_state.runtime.mc202_render);
 
     assert_eq!(
         replayed_state.session.runtime_state.lane_state.mc202,
@@ -54,7 +54,7 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         0.00001,
     );
     assert_recipe_buffers_differ(
-        "snapshot payload restore MC-202 follower -> answer",
+        "snapshot payload restore MC-202 follower -> answer intent silence",
         &committed_follower,
         &replayed_answer,
         0.005,
@@ -79,7 +79,7 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
-    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let committed_answer = render_mc202_recipe_silent_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
         committed_state.queue_mc202_generate_pressure(700),

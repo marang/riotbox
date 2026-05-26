@@ -16,12 +16,9 @@ use riotbox_core::source_graph::{
 };
 
 use riotbox_audio::{
-    mc202::{
-        Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-        Mc202RenderRouting, Mc202RenderState,
-    },
+    mc202::{Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode},
     runtime::{
-        OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, render_w30_preview_offline,
+        OfflineAudioMetrics, render_tr909_offline, render_w30_preview_offline,
         signal_metrics_with_grid,
     },
     source_audio::{SourceAudioCache, SourceAudioError, write_interleaved_pcm16_wav},

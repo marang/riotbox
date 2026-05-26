@@ -63,14 +63,12 @@ jq -e \
     and (.control_path.commit_boundaries | index("Phrase")) != null
     and .output_path.present == true
     and (.output_path.issues | length == 0)
-    and (.output_path.lane_recipe_cases | length) >= 7
-    and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-answer")) != null
+    and (.output_path.lane_recipe_cases | length) >= 5
     and ([.output_path.lane_recipe_cases[].id] | index("mc202-touch-low-to-high")) != null
     and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-pressure")) != null
     and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-instigator")) != null
     and ([.output_path.lane_recipe_cases[].id] | index("mc202-follower-to-mutated-drive")) != null
     and ([.output_path.lane_recipe_cases[].id] | index("mc202-neutral-to-lift-contour")) != null
-    and ([.output_path.lane_recipe_cases[].id] | index("mc202-direct-to-hook-response")) != null
     and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .result == "pass")
     and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .candidate_rms > 0.000001)
     and all(.output_path.lane_recipe_cases[] | select(.id | startswith("mc202-")); .signal_delta_rms >= .min_signal_delta_rms)
@@ -88,13 +86,11 @@ python3 scripts/validate_observer_audio_summary_json.py "$summary"
 jq -e \
   '.pack_id == "lane-recipe-listening-pack"
     and .result == "pass"
-    and ([.cases[].id] | index("mc202-follower-to-answer")) != null
     and ([.cases[].id] | index("mc202-touch-low-to-high")) != null
     and ([.cases[].id] | index("mc202-follower-to-pressure")) != null
     and ([.cases[].id] | index("mc202-follower-to-instigator")) != null
     and ([.cases[].id] | index("mc202-follower-to-mutated-drive")) != null
     and ([.cases[].id] | index("mc202-neutral-to-lift-contour")) != null
-    and ([.cases[].id] | index("mc202-direct-to-hook-response")) != null
     and all(.cases[] | select(.id | startswith("mc202-")); .result == "pass")
     and all(.cases[] | select(.id | startswith("mc202-")); .metrics.candidate.rms > 0.000001)
     and all(.cases[] | select(.id | startswith("mc202-")); .metrics.signal_delta.rms >= .thresholds.min_signal_delta_rms)

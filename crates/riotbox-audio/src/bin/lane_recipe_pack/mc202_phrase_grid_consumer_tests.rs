@@ -10,7 +10,7 @@ mod mc202_phrase_grid_consumer_tests {
             .collect::<Vec<_>>();
 
         assert!(
-            mc202_cases.len() >= 7,
+            mc202_cases.len() >= 5,
             "expected current MC-202 recipe coverage"
         );
         for case in mc202_cases {
@@ -94,7 +94,8 @@ mod mc202_phrase_grid_consumer_tests {
 
     #[test]
     fn mc202_phrase_grid_gate_rejects_non_phrase_boundary_candidate() {
-        let mut candidate = mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78);
+        let mut candidate =
+            mc202_state(Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive, 0.78);
         candidate.position_beats = 4.0;
         let pair = RenderPair::Mc202 {
             baseline: mc202_state(Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive, 0.62),
@@ -117,7 +118,8 @@ mod mc202_phrase_grid_consumer_tests {
     #[test]
     fn mc202_source_phrase_slot_gate_rejects_non_source_phrase_boundary_candidate() {
         let source_timing = lane_recipe_source_timing_model();
-        let mut candidate = mc202_state(Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook, 0.78);
+        let mut candidate =
+            mc202_state(Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive, 0.78);
         candidate.position_beats = 28.0;
         let pair = RenderPair::Mc202 {
             baseline: mc202_state(Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive, 0.62),

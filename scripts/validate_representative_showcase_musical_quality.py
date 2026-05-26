@@ -152,6 +152,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             metrics["mix_balance"]["source_first_generated_to_source_rms_ratio"]
         ),
         "w30_preview_rms": number(metrics["w30_source_chop_profile"]["preview_rms"]),
+        "w30_pattern_origin": str(w30_variation.get("pattern_origin", "unknown")),
         "w30_trigger_variation_applied": bool(w30_variation.get("applied", False)),
         "w30_offbeat_trigger_count": int(w30_variation.get("offbeat_trigger_count", 0)),
         "w30_distinct_bar_pattern_count": int(
@@ -168,11 +169,13 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             w30_slice_choice.get("selected_offset_span_samples", 0)
         ),
         "tr909_kick_pressure_applied": bool(tr909_kick_pressure.get("applied", False)),
+        "tr909_pattern_origin": str(tr909_kick_pressure.get("pattern_origin", "unknown")),
         "tr909_kick_pressure_anchor_count": int(tr909_kick_pressure.get("anchor_count", 0)),
         "tr909_kick_pressure_low_band_ratio": number(
             tr909_kick_pressure.get("low_band_rms_ratio", 0.0)
         ),
         "mc202_bass_pressure_applied": bool(mc202_bass_pressure.get("applied", False)),
+        "mc202_pattern_origin": str(mc202_bass_pressure.get("pattern_origin", "unknown")),
         "mc202_phrase_variation_applied": bool(
             mc202_bass_pressure.get("phrase_variation_applied", False)
         ),
@@ -217,12 +220,8 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "w30_trigger_variation_not_applied",
         ),
         (
-            metrics["w30_offbeat_trigger_count"] >= MIN_W30_OFFBEAT_TRIGGERS,
-            "w30_trigger_variation_has_no_offbeats",
-        ),
-        (
             metrics["w30_distinct_bar_pattern_count"] >= MIN_W30_DISTINCT_BAR_PATTERNS,
-            "w30_trigger_variation_too_static",
+            "w30_source_offset_variation_too_static",
         ),
         (
             metrics["w30_slice_choice_applied"],
@@ -241,34 +240,6 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             >= MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
             "tr909_kick_pressure_too_decorative",
         ),
-        (
-            metrics["mc202_bass_pressure_applied"],
-            "mc202_bass_pressure_not_applied",
-        ),
-        (
-            metrics["mc202_bass_pressure_rms"] >= MIN_MC202_BASS_PRESSURE_RMS,
-            "mc202_bass_pressure_too_weak",
-        ),
-        (
-            metrics["mc202_bass_pressure_low_band_rms"] >= MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
-            "mc202_bass_pressure_low_band_too_weak",
-        ),
-        (
-            metrics["mc202_phrase_variation_applied"],
-            "mc202_phrase_variation_not_applied",
-        ),
-        (
-            metrics["mc202_distinct_bar_profile_count"] >= MIN_MC202_DISTINCT_BAR_PROFILES,
-            "mc202_phrase_variation_too_static",
-        ),
-        (
-            metrics["mc202_bar_similarity"] <= MAX_MC202_BAR_SIMILARITY,
-            "mc202_bar_variation_too_static",
-        ),
-        (
-            metrics["mc202_source_grid_hit_ratio"] >= MIN_MC202_SOURCE_GRID_HIT_RATIO,
-            "mc202_source_grid_alignment_too_weak",
-        ),
         (metrics["source_anchor_count"] >= MIN_ANCHORS, "missing_source_anchor_evidence"),
         (metrics["bar_similarity"] <= MAX_BAR_SIMILARITY, "full_mix_too_static"),
         (
@@ -283,7 +254,7 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
     support = clamp(metrics["support_generated_to_source_rms_ratio"] / 0.30, 0.0, 1.4)
     low = clamp(metrics["low_band_rms"] / 0.030, 0.0, 1.3)
     chop = clamp(metrics["w30_preview_rms"] / 0.24, 0.0, 1.3)
-    trigger_variation = clamp(metrics["w30_offbeat_trigger_count"] / 4.0, 0.0, 1.0)
+    trigger_variation = 1.0 if metrics["w30_trigger_variation_applied"] else 0.0
     pattern_variation = clamp(metrics["w30_distinct_bar_pattern_count"] / 4.0, 0.0, 1.0)
     slice_variation = clamp(metrics["w30_unique_slice_offset_count"] / 6.0, 0.0, 1.0)
     kick_pressure = clamp(
@@ -291,9 +262,6 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         0.0,
         1.0,
     )
-    bass_pressure = clamp(metrics["mc202_bass_pressure_rms"] / 0.012, 0.0, 1.0)
-    bass_variation = clamp(metrics["mc202_distinct_bar_profile_count"] / 4.0, 0.0, 1.0)
-    bass_grid_lock = clamp(metrics["mc202_source_grid_hit_ratio"] / 0.90, 0.0, 1.0)
     movement = clamp((1.0 - metrics["bar_similarity"]) / 0.020, 0.0, 1.0)
     density = clamp(metrics["event_density_per_bar"] / 280.0, 0.0, 1.2)
     anchors = clamp(metrics["source_anchor_count"] / 8.0, 0.0, 1.0)
@@ -306,9 +274,6 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         + pattern_variation
         + slice_variation
         + kick_pressure
-        + bass_pressure
-        + bass_variation
-        + bass_grid_lock
         + movement
         + density
         + anchors

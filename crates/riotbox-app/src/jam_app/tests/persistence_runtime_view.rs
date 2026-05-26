@@ -355,11 +355,11 @@ fn runtime_view_surfaces_mc202_render_diagnostics() {
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
     assert_eq!(
         state.runtime.mc202_render.routing,
-        Mc202RenderRouting::MusicBusBass
+        Mc202RenderRouting::Silent
     );
     assert_eq!(
         state.runtime.mc202_render.phrase_shape,
-        Mc202PhraseShape::AnswerHook
+        Mc202PhraseShape::RootPulse
     );
     assert_eq!(
         state.runtime.mc202_render.contour_hint,
@@ -370,8 +370,8 @@ fn runtime_view_surfaces_mc202_render_diagnostics() {
         Mc202HookResponse::Direct
     );
     assert_eq!(state.runtime_view.mc202_render_mode, "answer");
-    assert_eq!(state.runtime_view.mc202_render_routing, "music_bus_bass");
-    assert_eq!(state.runtime_view.mc202_render_phrase_shape, "answer_hook");
+    assert_eq!(state.runtime_view.mc202_render_routing, "silent");
+    assert_eq!(state.runtime_view.mc202_render_phrase_shape, "root_pulse");
     assert_eq!(
         state.runtime_view.mc202_render_mix_summary,
         "music bus 0.00 | touch 0.82 | budget balanced | contour drop | hook direct"
@@ -384,7 +384,7 @@ fn runtime_view_surfaces_mc202_render_diagnostics() {
     );
     assert!(
         state.runtime_view.runtime_warnings.iter().any(
-            |warning| warning == "MC-202 render is routed to the music bus at zero music level"
+            |warning| warning == "MC-202 render is active but not routed to music_bus_bass"
         )
     );
 }
@@ -412,7 +412,7 @@ fn mc202_render_contour_hint_follows_source_section_context() {
 }
 
 #[test]
-fn mc202_hook_section_uses_answer_space_guardrail() {
+fn mc202_hook_section_does_not_inject_synthetic_answer_guardrail() {
     let mut graph = sample_graph();
     graph.sections[0].label_hint = SectionLabelHint::Chorus;
     graph.sections[0].energy_class = EnergyClass::High;
@@ -424,16 +424,16 @@ fn mc202_hook_section_uses_answer_space_guardrail() {
 
     assert_eq!(
         state.runtime.mc202_render.hook_response,
-        Mc202HookResponse::AnswerSpace
+        Mc202HookResponse::Direct
     );
     assert_eq!(
         state.runtime.mc202_render.note_budget,
-        riotbox_audio::mc202::Mc202NoteBudget::Sparse
+        riotbox_audio::mc202::Mc202NoteBudget::Balanced
     );
     assert!(
         state
             .runtime_view
             .mc202_render_mix_summary
-            .contains("hook answer_space")
+            .contains("hook direct")
     );
 }

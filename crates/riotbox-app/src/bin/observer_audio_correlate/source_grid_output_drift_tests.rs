@@ -121,6 +121,26 @@ fn strict_evidence_rejects_lane_source_grid_alignment_failures() {
 }
 
 #[test]
+fn strict_evidence_allows_mc202_compatibility_silent_alignment() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(&observer_path, synthetic_observer()).expect("write observer");
+    fs::write(
+        &manifest_path,
+        synthetic_manifest_with_mc202_compatibility_silent_alignment(),
+    )
+    .expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+
+    validate_required_evidence(&summary).expect("compatibility-silent mc202 evidence");
+    let markdown = render_markdown(&summary);
+    assert!(markdown.contains("MC-202 bass-pressure origin: `compatibility_silent` applied `no`"));
+    assert!(markdown.contains("Output path present: `yes`"));
+}
+
+#[test]
 fn strict_evidence_rejects_malformed_lane_source_grid_alignment() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -311,6 +331,64 @@ fn synthetic_manifest_with_malformed_lane_alignment() -> String {
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 3.25,
       "max_allowed_peak_offset_ms": 70.0
+    }
+  }
+}"#
+    .to_string()
+}
+
+fn synthetic_manifest_with_mc202_compatibility_silent_alignment() -> String {
+    r#"{
+  "pack_id": "feral-grid-demo",
+  "result": "pass",
+  "artifacts": [{}, {}, {}, {}, {}],
+  "metrics": {
+    "full_grid_mix": {
+      "signal": { "rms": 0.1 },
+      "low_band": { "rms": 0.08 }
+    },
+    "source_grid_output_drift": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "tr909_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 1.27,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "mc202_bass_pressure": {
+      "pattern_origin": "compatibility_silent",
+      "applied": false
+    },
+    "mc202_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 0,
+      "hit_ratio": 0.0,
+      "max_peak_offset_ms": 0.0,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_grid_alignment": {
+      "beat_count": 8,
+      "hit_count": 8,
+      "hit_ratio": 1.0,
+      "max_peak_offset_ms": 5.13,
+      "max_allowed_peak_offset_ms": 70.0
+    },
+    "w30_source_loop_closure": {
+      "passed": true,
+      "selected_frame_count": 2048,
+      "preview_rms": 0.145,
+      "edge_delta_abs": 0.01,
+      "max_allowed_edge_delta_abs": 0.06,
+      "edge_abs_max": 0.02,
+      "max_allowed_edge_abs": 0.04,
+      "source_contains_selection": true,
+      "reason": "source_chop_loop_closed"
     }
   }
 }"#

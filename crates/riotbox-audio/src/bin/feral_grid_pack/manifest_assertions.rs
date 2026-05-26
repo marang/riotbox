@@ -152,6 +152,7 @@ mod manifest_assertions {
             .is_some_and(|reason| !reason.is_empty()));
         assert!(manifest["metrics"]["tr909_groove_timing"]["offset_ms"].is_number());
         let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
+        assert_eq!(tr909_kick_pressure["pattern_origin"], "primitive_renderer");
         assert_eq!(tr909_kick_pressure["applied"], true);
         assert!(
             tr909_kick_pressure["anchor_count"]
@@ -172,43 +173,16 @@ mod manifest_assertions {
                 <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
         );
         let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
-        assert_eq!(mc202_bass_pressure["applied"], true);
-        assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
-        assert!(
-            mc202_bass_pressure["distinct_bar_profile_count"]
-                .as_u64()
-                .expect("mc202 bass pressure distinct bar profiles")
-                >= MC202_BASS_PRESSURE_MIN_DISTINCT_BAR_PROFILES as u64
+        assert_eq!(mc202_bass_pressure["pattern_origin"], "compatibility_silent");
+        assert_eq!(mc202_bass_pressure["applied"], false);
+        assert_eq!(mc202_bass_pressure["phrase_variation_applied"], false);
+        assert_eq!(
+            mc202_bass_pressure["reason"],
+            "mc202_bass_pressure_removed_pending_source_derived_phrase_planner"
         );
-        assert!(
-            mc202_bass_pressure["bar_similarity"]
-                .as_f64()
-                .expect("mc202 bass pressure bar similarity")
-                <= f64::from(MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY)
-        );
-        assert!(
-            mc202_bass_pressure["signal_rms"]
-                .as_f64()
-                .expect("mc202 bass pressure rms")
-                >= f64::from(MC202_BASS_PRESSURE_MIN_RMS)
-        );
-        assert!(
-            mc202_bass_pressure["low_band_rms"]
-                .as_f64()
-                .expect("mc202 bass pressure low-band rms")
-                >= f64::from(MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS)
-        );
-        assert!(
-            mc202_bass_pressure["peak_abs"]
-                .as_f64()
-                .expect("mc202 bass pressure peak")
-                <= f64::from(MC202_BASS_PRESSURE_MAX_PEAK_ABS)
-        );
-        assert!(
-            manifest["metrics"]["mc202_bass_pressure_stem"]["signal"]["rms"]
-                .as_f64()
-                .expect("mc202 bass pressure stem rms")
-                >= f64::from(MC202_BASS_PRESSURE_MIN_RMS)
+        assert_eq!(
+            manifest["metrics"]["mc202_bass_pressure_stem"]["signal"]["rms"],
+            0.0
         );
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
@@ -229,13 +203,13 @@ mod manifest_assertions {
                 >= 0.85
         );
         let w30_trigger_variation = &manifest["metrics"]["w30_source_trigger_variation"];
+        assert_eq!(w30_trigger_variation["pattern_origin"], "source_derived");
         assert_eq!(w30_trigger_variation["applied"], true);
         assert_eq!(w30_trigger_variation["grid_subdivision"], 2);
-        assert!(
-            w30_trigger_variation["offbeat_trigger_count"]
-                .as_u64()
-                .expect("w30 trigger variation offbeats")
-                > 0
+        assert_eq!(w30_trigger_variation["offbeat_trigger_count"], 0);
+        assert_eq!(
+            w30_trigger_variation["skipped_beat_anchor_count"],
+            0
         );
         assert!(
             w30_trigger_variation["distinct_bar_pattern_count"]
@@ -314,14 +288,7 @@ mod manifest_assertions {
             manifest["metrics"]["source_grid_output_drift"]["beat_count"]
         );
         let mc202_alignment = &manifest["metrics"]["mc202_source_grid_alignment"];
-        let mc202_hit_ratio = mc202_alignment["hit_ratio"]
-            .as_f64()
-            .expect("mc202 alignment hit ratio");
-        assert!(mc202_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
-        assert_eq!(
-            mc202_alignment["beat_count"],
-            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
-        );
+        assert_eq!(mc202_alignment["hit_ratio"], 0.0);
         let w30_alignment = &manifest["metrics"]["w30_source_grid_alignment"];
         let w30_hit_ratio = w30_alignment["hit_ratio"]
             .as_f64()
@@ -343,7 +310,6 @@ mod manifest_assertions {
                 .expect("mc202 bar similarity")
                 <= 1.0
         );
-        assert_spectral_sum(&manifest["metrics"]["spectral_energy"]["mc202_bass_pressure_stem"]);
         assert!(
             manifest["metrics"]["bar_variation"]["full_grid_mix"]["bar_similarity"]
                 .as_f64()

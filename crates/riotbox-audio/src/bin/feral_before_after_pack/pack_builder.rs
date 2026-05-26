@@ -385,7 +385,7 @@ fn mc202_instigator_state() -> Mc202RenderState {
         phrase_shape: Mc202PhraseShape::InstigatorSpike,
         note_budget: Mc202NoteBudget::Push,
         contour_hint: Mc202ContourHint::Lift,
-        hook_response: Mc202HookResponse::AnswerSpace,
+        hook_response: Mc202HookResponse::Direct,
         touch: 0.9,
         music_bus_level: 0.74,
         is_transport_running: true,

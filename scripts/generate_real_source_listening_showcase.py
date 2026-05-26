@@ -451,7 +451,7 @@ def write_case_report(
         "- `00_source_window.wav`: source comparison window only",
         "- `stems/01_tr909_beat_fill.wav`: Riotbox TR-909 lane",
         "- `stems/02_w30_feral_source_chop.wav`: Riotbox W-30 lane",
-        "- `stems/03_mc202_bass_pressure.wav`: Riotbox MC-202 lane",
+        "- `stems/03_mc202_bass_pressure.wav`: silent MC-202 compatibility lane; hardcoded bass-pressure support is removed until source-derived phrase planning exists",
         "- `04_riotbox_source_first_mix.wav`: source-first Riotbox render",
         "- `05_riotbox_generated_support_mix.wav`: Riotbox generated-support mix",
         "",

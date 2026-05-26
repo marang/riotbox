@@ -42,7 +42,6 @@ impl Mc202RenderRouting {
 pub enum Mc202PhraseShape {
     RootPulse,
     FollowerDrive,
-    AnswerHook,
     MutatedDrive,
     PressureCell,
     InstigatorSpike,
@@ -54,7 +53,6 @@ impl Mc202PhraseShape {
         match self {
             Self::RootPulse => "root_pulse",
             Self::FollowerDrive => "follower_drive",
-            Self::AnswerHook => "answer_hook",
             Self::MutatedDrive => "mutated_drive",
             Self::PressureCell => "pressure_cell",
             Self::InstigatorSpike => "instigator_spike",
@@ -114,7 +112,6 @@ impl Mc202ContourHint {
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
 pub enum Mc202HookResponse {
     Direct,
-    AnswerSpace,
 }
 
 impl Mc202HookResponse {
@@ -122,7 +119,6 @@ impl Mc202HookResponse {
     pub const fn label(self) -> &'static str {
         match self {
             Self::Direct => "direct",
-            Self::AnswerSpace => "answer_space",
         }
     }
 }
@@ -168,6 +164,7 @@ pub fn render_mc202_buffer(
 ) {
     if channel_count == 0
         || matches!(render.mode, Mc202RenderMode::Idle)
+        || matches!(render.mode, Mc202RenderMode::Answer)
         || matches!(render.routing, Mc202RenderRouting::Silent)
         || !render.is_transport_running
         || render.music_bus_level <= 0.0
@@ -205,7 +202,6 @@ pub fn render_mc202_buffer(
         let frequency = 110.0_f64 * 2.0_f64.powf((semitone as f64 + octave_drop) / 12.0);
 
         let gate_len = match render.phrase_shape {
-            Mc202PhraseShape::AnswerHook => 0.42,
             Mc202PhraseShape::PressureCell => 0.50,
             Mc202PhraseShape::InstigatorSpike => 0.30,
             _ => 0.62,
@@ -277,24 +273,6 @@ fn pattern_for_shape(shape: Mc202PhraseShape) -> &'static [Option<i8>; 16] {
             Some(10),
             Some(7),
             None,
-        ],
-        Mc202PhraseShape::AnswerHook => &[
-            None,
-            Some(12),
-            Some(10),
-            None,
-            Some(7),
-            None,
-            Some(10),
-            Some(12),
-            None,
-            Some(15),
-            Some(12),
-            None,
-            Some(10),
-            Some(7),
-            None,
-            Some(12),
         ],
         Mc202PhraseShape::MutatedDrive => &[
             Some(0),
@@ -392,23 +370,14 @@ fn contour_offset(hint: Mc202ContourHint, sixteenth: usize) -> i8 {
     }
 }
 
-fn within_hook_response(response: Mc202HookResponse, sixteenth: usize) -> bool {
+fn within_hook_response(response: Mc202HookResponse, _sixteenth: usize) -> bool {
     match response {
         Mc202HookResponse::Direct => true,
-        Mc202HookResponse::AnswerSpace => matches!(sixteenth % 4, 1 | 3),
     }
 }
 
-fn hook_response_offset(response: Mc202HookResponse, sixteenth: usize) -> i8 {
+fn hook_response_offset(response: Mc202HookResponse, _sixteenth: usize) -> i8 {
     match response {
         Mc202HookResponse::Direct => 0,
-        Mc202HookResponse::AnswerSpace => {
-            if sixteenth % 8 >= 4 {
-                12
-            } else {
-                7
-            }
-        }
     }
 }
-

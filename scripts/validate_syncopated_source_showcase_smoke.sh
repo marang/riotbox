@@ -51,18 +51,20 @@ jq -e \
     and .metrics.source_grid_output_drift.max_peak_offset_ms <= .metrics.source_grid_output_drift.max_allowed_peak_offset_ms
     and .metrics.tr909_source_grid_alignment.hit_ratio >= 0.95
     and .metrics.tr909_source_grid_alignment.max_peak_offset_ms <= .metrics.tr909_source_grid_alignment.max_allowed_peak_offset_ms
+    and .metrics.tr909_kick_pressure.pattern_origin == "primitive_renderer"
     and .metrics.tr909_kick_pressure.applied == true
     and .metrics.tr909_kick_pressure.low_band_rms_ratio >= 1.06
-    and .metrics.mc202_bass_pressure.applied == true
-    and .metrics.mc202_bass_pressure.signal_rms >= 0.003
-    and .metrics.mc202_bass_pressure.low_band_rms >= 0.001
-    and .metrics.mc202_source_grid_alignment.hit_ratio >= 0.50
-    and .metrics.mc202_source_grid_alignment.max_peak_offset_ms <= .metrics.mc202_source_grid_alignment.max_allowed_peak_offset_ms
+    and .metrics.mc202_bass_pressure.pattern_origin == "compatibility_silent"
+    and .metrics.mc202_bass_pressure.applied == false
+    and .metrics.mc202_bass_pressure.reason == "mc202_bass_pressure_removed_pending_source_derived_phrase_planner"
+    and .metrics.mc202_bass_pressure.signal_rms == 0
     and .metrics.w30_source_grid_alignment.hit_ratio >= 0.50
     and .metrics.w30_source_grid_alignment.max_peak_offset_ms <= .metrics.w30_source_grid_alignment.max_allowed_peak_offset_ms
     and .metrics.w30_source_loop_closure.passed == true
+    and .metrics.w30_source_trigger_variation.pattern_origin == "source_derived"
     and .metrics.w30_source_trigger_variation.applied == true
-    and .metrics.w30_source_trigger_variation.offbeat_trigger_count > 0
+    and .metrics.w30_source_trigger_variation.offbeat_trigger_count == 0
+    and .metrics.w30_source_trigger_variation.skipped_beat_anchor_count == 0
     and .metrics.w30_source_trigger_variation.distinct_bar_pattern_count >= 2
     and .metrics.w30_source_slice_choice.applied == true
     and .metrics.w30_source_slice_choice.unique_source_offset_count >= 4

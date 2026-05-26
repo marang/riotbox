@@ -186,7 +186,7 @@ mod tests {
 
     #[test]
     fn mc202_phrase_intent_rejects_unknown_behavior_labels() {
-        for label in ["", "leader", "mutated", "answer_space"] {
+        for label in ["", "leader", "mutated", "answer_hook"] {
             assert_eq!(Mc202PhraseIntentState::from_label(label), None);
         }
     }

@@ -23,12 +23,12 @@ fn write_report(
              - TR-909 support profile: `{}` / pattern `{}` / phrase `{}`\n\
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
-             - TR-909 kick pressure: `{}` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
-             - MC-202 bass pressure: `{}` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
+             - TR-909 kick pressure: `{}` origin `primitive_renderer` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
+             - MC-202 bass pressure: `{}` origin `compatibility_silent` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - W-30 source-loop closure: `{}` edge delta `{:.6}` (max `{:.6}`), edge abs `{:.6}` (max `{:.6}`)\n\
-             - W-30 trigger variation: `{}` triggers `{}` beat anchors `{}` offbeats `{}` skipped beat anchors `{}` distinct bar patterns `{}` max quantized offset `{:.6}` ms\n\
+             - W-30 trigger variation: `{}` origin `source_derived` triggers `{}` beat anchors `{}` offbeats `{}` skipped beat anchors `{}` distinct bar patterns `{}` max quantized offset `{:.6}` ms\n\
              - W-30 slice choice: `{}` unique offsets `{}` span `{}` samples min `{}` max `{}`\n\
              - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
@@ -194,9 +194,9 @@ fn write_readme(
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop with articulate source-window selection and bounded loudness normalization.\n\
-             - `stems/03_mc202_bass_pressure.wav`: generated MC-202 bass-pressure support rendered on the same grid.\n\
+             - `stems/03_mc202_bass_pressure.wav`: compatibility stem; currently silent because the old hardcoded MC-202 bass-pressure generator was removed until source-derived phrase planning exists.\n\
              - `04_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated support stays secondary.\n\
-             - `05_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 and MC-202 add low-end and movement without proving source extraction by themselves.\n\
+             - `05_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 adds low-end movement while MC-202 remains silent until source-derived phrase planning exists.\n\
              - `grid-report.md`: timing, source-timing readiness, and output metrics.\n\
              - `manifest.json`: machine-readable pack metadata, artifact paths, thresholds, and key metrics.\n\
 \n\

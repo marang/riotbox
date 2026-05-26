@@ -219,7 +219,7 @@ pub(super) fn build_mc202_render_state(
 
     Mc202RenderState {
         mode,
-        routing: Mc202RenderRouting::MusicBusBass,
+        routing: mc202_routing_for_role(role),
         phrase_shape,
         note_budget: mc202_note_budget_for_shape_and_hook_response(phrase_shape, hook_response),
         contour_hint,
@@ -240,12 +240,19 @@ fn mc202_render_mode_and_shape(role: Mc202RoleState) -> (Mc202RenderMode, Mc202P
     match role {
         Mc202RoleState::Leader => (Mc202RenderMode::Leader, Mc202PhraseShape::RootPulse),
         Mc202RoleState::Follower => (Mc202RenderMode::Follower, Mc202PhraseShape::FollowerDrive),
-        Mc202RoleState::Answer => (Mc202RenderMode::Answer, Mc202PhraseShape::AnswerHook),
+        Mc202RoleState::Answer => (Mc202RenderMode::Answer, Mc202PhraseShape::RootPulse),
         Mc202RoleState::Pressure => (Mc202RenderMode::Pressure, Mc202PhraseShape::PressureCell),
         Mc202RoleState::Instigator => (
             Mc202RenderMode::Instigator,
             Mc202PhraseShape::InstigatorSpike,
         ),
+    }
+}
+
+fn mc202_routing_for_role(role: Mc202RoleState) -> Mc202RenderRouting {
+    match role {
+        Mc202RoleState::Answer => Mc202RenderRouting::Silent,
+        _ => Mc202RenderRouting::MusicBusBass,
     }
 }
 
@@ -321,44 +328,24 @@ fn mc202_contour_hint_for_section(section: &Section) -> Mc202ContourHint {
 }
 
 fn mc202_hook_response_for_role_graph_and_section(
-    role: Mc202RoleState,
-    source_graph: Option<&SourceGraph>,
-    section: Option<&Section>,
+    _role: Mc202RoleState,
+    _source_graph: Option<&SourceGraph>,
+    _section: Option<&Section>,
 ) -> Mc202HookResponse {
-    if !matches!(role, Mc202RoleState::Follower | Mc202RoleState::Leader) {
-        return Mc202HookResponse::Direct;
-    }
-
-    let is_hook_like = section.is_some_and(|section| {
-        matches!(section.label_hint, SectionLabelHint::Chorus)
-            || section
-                .tags
-                .iter()
-                .any(|tag| matches!(tag.as_str(), "hook" | "chorus"))
-    });
-
-    if is_hook_like || source_graph.is_some_and(SourceGraph::has_feral_break_support_evidence) {
-        Mc202HookResponse::AnswerSpace
-    } else {
-        Mc202HookResponse::Direct
-    }
+    Mc202HookResponse::Direct
 }
 
 fn mc202_note_budget_for_shape_and_hook_response(
     shape: Mc202PhraseShape,
     hook_response: Mc202HookResponse,
 ) -> Mc202NoteBudget {
-    if hook_response == Mc202HookResponse::AnswerSpace {
-        return Mc202NoteBudget::Sparse;
-    }
+    let _ = hook_response;
 
     match shape {
         Mc202PhraseShape::PressureCell => Mc202NoteBudget::Sparse,
         Mc202PhraseShape::InstigatorSpike => Mc202NoteBudget::Push,
         Mc202PhraseShape::MutatedDrive => Mc202NoteBudget::Wide,
-        Mc202PhraseShape::RootPulse
-        | Mc202PhraseShape::FollowerDrive
-        | Mc202PhraseShape::AnswerHook => Mc202NoteBudget::Balanced,
+        Mc202PhraseShape::RootPulse | Mc202PhraseShape::FollowerDrive => Mc202NoteBudget::Balanced,
     }
 }
 

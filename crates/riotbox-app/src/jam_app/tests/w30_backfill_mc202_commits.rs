@@ -384,11 +384,11 @@ fn committed_mc202_answer_generation_updates_phrase_ref_and_touch() {
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
     assert_eq!(
         state.runtime.mc202_render.phrase_shape,
-        Mc202PhraseShape::AnswerHook
+        Mc202PhraseShape::RootPulse
     );
     assert_eq!(
         state.runtime.mc202_render.routing,
-        Mc202RenderRouting::MusicBusBass
+        Mc202RenderRouting::Silent
     );
     assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("answer"));
     assert!(!state.jam_view.lanes.mc202_pending_follower_generation);

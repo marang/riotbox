@@ -77,6 +77,7 @@ struct ManifestW30SourceLoopClosureProof {
 
 #[derive(Serialize)]
 struct ManifestW30SourceTriggerVariationProof {
+    pattern_origin: &'static str,
     applied: bool,
     grid_subdivision: u32,
     trigger_count: u32,
@@ -227,6 +228,7 @@ fn manifest_w30_source_trigger_variation_proof(
     proof: W30SourceTriggerVariationProof,
 ) -> ManifestW30SourceTriggerVariationProof {
     ManifestW30SourceTriggerVariationProof {
+        pattern_origin: "source_derived",
         applied: proof.applied,
         grid_subdivision: proof.grid_subdivision,
         trigger_count: proof.trigger_count,
@@ -248,19 +250,14 @@ fn w30_source_trigger_events_with_slice_plan(
 
     for bar in 0..grid.bars {
         let bar_start = bar.saturating_mul(grid.beats_per_bar) as f32;
-        let pattern = bar % 4;
-        let positions: &[(f32, f32, usize)] = match pattern {
-            0 => &[(0.0, 0.94, 0), (1.0, 0.78, 1), (2.0, 0.88, 2), (3.0, 0.72, 3)],
-            1 => &[(0.0, 0.96, 0), (0.5, 0.66, 4), (2.0, 0.84, 2), (3.0, 0.76, 5)],
-            2 => &[(0.0, 0.92, 1), (1.0, 0.74, 3), (2.5, 0.72, 5), (3.0, 0.86, 0)],
-            _ => &[(0.0, 0.98, 0), (1.5, 0.70, 4), (2.0, 0.82, 2), (3.5, 0.68, 6)],
-        };
-
-        for (beat_offset, velocity, source_stride) in positions {
+        for beat_offset in 0..grid.beats_per_bar {
+            let source_stride = (bar as usize)
+                .saturating_mul(grid.beats_per_bar as usize)
+                .saturating_add(beat_offset as usize);
             events.push(W30SourceTriggerEvent {
-                beat_position: bar_start + beat_offset,
-                velocity: *velocity,
-                source_offset_samples: slice_plan.offset_for_stride(*source_stride),
+                beat_position: bar_start + beat_offset as f32,
+                velocity: 0.84,
+                source_offset_samples: slice_plan.offset_for_stride(source_stride),
             });
         }
     }
@@ -280,12 +277,17 @@ fn w30_source_trigger_variation_proof(
     let skipped_beat_anchor_count = grid
         .total_beats
         .saturating_sub(beat_anchor_trigger_count.min(grid.total_beats));
-    let distinct_bar_pattern_count = grid.bars.min(4) as usize;
+    let distinct_bar_pattern_count = events
+        .iter()
+        .map(|event| event.source_offset_samples)
+        .collect::<std::collections::BTreeSet<_>>()
+        .len();
     let max_quantized_offset_ms = events
         .iter()
         .map(|event| quantized_offset_ms(event.beat_position, grid.bpm))
         .fold(0.0_f32, f32::max);
-    let applied = offbeat_trigger_count > 0
+    let applied = beat_anchor_trigger_count == grid.total_beats
+        && skipped_beat_anchor_count == 0
         && distinct_bar_pattern_count > 1
         && max_quantized_offset_ms <= W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS;
 
@@ -300,7 +302,7 @@ fn w30_source_trigger_variation_proof(
         max_quantized_offset_ms,
         max_allowed_quantized_offset_ms: W30_SOURCE_TRIGGER_MAX_QUANTIZED_OFFSET_MS,
         reason: if applied {
-            "source_grid_locked_trigger_variation"
+            "source_grid_locked_beat_anchor_triggers"
         } else {
             "source_trigger_variation_not_applied"
         },

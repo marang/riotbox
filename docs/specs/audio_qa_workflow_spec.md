@@ -72,6 +72,28 @@ These checks validate behavior against product intent rather than "beauty":
 - source-layer modes are explicit and optional, not an implicit requirement for Riotbox to sound complete
 - anchor-preservation modes keep promised kick / snare anchors readable, while destructive or replacement modes are allowed to rebuild the beat
 
+Every musical pattern used by a listening pack, benchmark, demo, or generated
+artifact must carry an explicit origin. The allowed origin labels are:
+
+- `source_derived`: derived from Source Graph, Source Timing, capture, source
+  windows, anchors, transient evidence, or section evidence
+- `user_confirmed`: explicitly accepted or performed by the musician
+- `primitive_renderer`: transparent engine or preset vocabulary, useful as a
+  renderer/control surface but not proof of source-aware musical intelligence
+- `fixture`: deterministic QA material created to exercise one specific seam
+- `fallback`: degraded or safe placeholder chosen because better evidence is
+  unavailable
+- `compatibility_silent`: an output slot kept for manifest/schema continuity
+  while the musical implementation is intentionally silent
+
+Generated packs must not present `primitive_renderer`, `fixture`, `fallback`, or
+`compatibility_silent` output as source-derived behavior. A source showcase can
+include those lanes only when the manifest and README keep the origin visible and
+when source-independent support is not loud enough to mask source-backed output.
+If a fixed pattern is a renderer vocabulary or preset, label it as such; if a
+pattern is claimed to react to a source, prove the source relation in the
+manifest.
+
 ### 3.2.1 Source-derived rebuild gates
 
 Riotbox must distinguish three related but different output modes:
@@ -259,8 +281,8 @@ Early P011 guardrail defaults:
 - Feral grid packs expose explicit lane stems plus two listening mixes so source
   extraction is not judged from a drum-dominant render:
   `04_riotbox_source_first_mix.wav` leads with the source-backed W-30 chop, while
-  `05_riotbox_generated_support_mix.wav` keeps the generated TR-909 / MC-202
-  support secondary and records generated/source RMS ratios in `metrics.mix_balance`
+  `05_riotbox_generated_support_mix.wav` keeps generated support secondary and
+  records generated/source RMS ratios in `metrics.mix_balance`
 - Feral grid pack-level `metrics.source_grid_output_drift` is measured from the
   complete generated-support mix, not an individual lane. Lane-specific timing
   evidence remains separate under `metrics.tr909_source_grid_alignment`,
@@ -714,19 +736,19 @@ Today the repo already has:
 - a CI-safe missing-target recovery probe, `just missing-target-recovery-probe`, that covers a missing requested session path plus adjacent autosave clue without silently choosing the autosave
 - an opt-in file-backed user-session observer for `riotbox-app` that writes launch, keypress, queue / commit, transport, and runtime evidence to NDJSON outside the realtime audio callback
 - a shared local listening-review template and `just audio-qa-notes <path>` helper for writing ignored `notes.md` files beside generated audio QA artifacts
-- MC-202 audio proof cases in the lane recipe listening pack, covering follower-vs-answer, touch low-vs-high, follower-vs-pressure, follower-vs-instigator, follower-vs-mutated-drive, neutral-vs-lift contour, and direct-vs-hook-response contrasts without claiming a finished synth engine
-- a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/answer/pressure/instigator state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam
+- MC-202 audio proof cases in the lane recipe listening pack, covering touch low-vs-high, follower-vs-pressure, follower-vs-instigator, follower-vs-mutated-drive, and neutral-vs-lift contour contrasts without claiming a finished synth engine; `mc202.generate_answer` stays control-path only until source-derived phrase planning exists
+- a first live MC-202 callback/mix seam that projects committed MC-202 role/follower/pressure/instigator state into typed render state, mirrors it through `AudioRuntimeShell`, and verifies active bass output at the mixbuffer seam; answer remains a control-path intent until source-derived phrase planning exists
 - a live MC-202 touch-control regression that proves the same committed phrase changes buffer energy when the performer raises or lowers touch
 - a quantized MC-202 phrase-mutation regression that proves a committed phrase variant changes the render buffer against the follower-drive control
 - a first MC-202 note-budget regression that proves density can be reduced without silencing the phrase
 - a first MC-202 source-section contour regression that proves a section-derived contour hint changes the rendered phrase without relying on UI/log state alone
-- a first MC-202 hook-response regression that proves hook-like sections can force answer-space restraint instead of doubling the same follower phrase
-- a first MC-202 recipe replay regression that drives the musician-facing follower/answer/pressure/instigator/mutation/touch flow through queue, commit, render state, and audio-buffer deltas
+- a regression guard that hook-like sections no longer inject a hardcoded MC-202 answer phrase before the source-derived question/answer placement engine exists
+- a first MC-202 recipe replay regression that drives the musician-facing follower/pressure/instigator/mutation/touch flow through queue, commit, render state, and audio-buffer deltas, while answer asserts control-path state without synthetic output
 - a first MC-202 undo rollback regression that restores committed lane state from session undo state and proves the rendered buffer returns to the previous audible seam
 - an initial lane recipe listening pack that writes baseline/candidate WAVs, metrics, Markdown comparisons, pack summary, and `manifest.json` for TR-909, Scene-coupled TR-909, and MC-202 cases
 - sample-by-sample signal delta RMS checks in that pack, so shape differences with similar loudness are not hidden by plain RMS comparison
 - a first local Feral before/after render pack that writes a source excerpt, Riotbox-transformed after render, before-then-after listening file, W-30 / TR-909 / MC-202 stems, metrics, comparison report, README, and `manifest.json` for a source WAV without committing generated audio
-- a first local grid-locked Feral demo render pack that writes TR-909 beat/fill, W-30/Feral source-chop, and combined mix WAVs from one shared beat/bar/frame grid, then checks stem activity and low-band support without injecting a hardcoded MC-202 question/answer phrase
+- a first local grid-locked Feral demo render pack that writes TR-909 beat/fill, W-30/Feral source-chop, a silent MC-202 compatibility stem, and combined mix WAVs from one shared beat/bar/frame grid, then checks stem activity and low-band support without injecting a hardcoded MC-202 question/answer phrase
 - first machine-readable `manifest.json` files beside the W-30 preview smoke, Feral grid demo, lane recipe, and Feral before/after pack outputs, recording pack metadata, artifact paths, thresholds, key metrics, and pass status
 - a first shared `riotbox-audio` listening-manifest helper for local pack artifact records, signal/render metric records, and pretty JSON writes, currently used by the W-30 preview smoke comparison, Feral grid, lane recipe, and Feral before/after pack runners
 - widened signal diagnostics across the current local QA outputs, including active/silence ratios, DC offset, onset count, first grid-aware event-density-per-bar diagnostics for lane recipe and Feral grid outputs, first Feral grid bar-variation diagnostics for bar similarity and identical-bar runs, and first Feral grid spectral energy ratio diagnostics for low/mid/high-band shape
@@ -799,7 +821,7 @@ Today the repo already has:
 - `just generated-source-timing-probe-json-smoke` runs the real source timing probe CLI against a deterministic generated WAV, validates the emitted JSON contract, and asserts stable grid-locked timing plus visible kick/backbeat anchor evidence before the aggregate audio QA gate can pass
 - `just generated-degraded-source-timing-probe-json-smoke` runs the same CLI contract against generated silence and asserts degraded/manual-confirm evidence so weak material cannot falsely pass as grid-locked
 - `just generated-ambiguous-source-timing-probe-json-smoke` runs a flat-pulse generated source with strong beat evidence but weak downbeat/phrase evidence and asserts it remains manual-confirm with generic transient anchors instead of falsely becoming grid-locked or semantically classified
-- `just syncopated-source-showcase-smoke` runs the deterministic syncopated source showcase case through `feral_grid_pack` and validates source timing, source-grid output drift, TR-909/MC-202/W-30 lane alignment, loop closure, and non-silent full-grid audio before `just audio-qa-ci` can pass
+- `just syncopated-source-showcase-smoke` runs the deterministic syncopated source showcase case through `feral_grid_pack` and validates source timing, source-grid output drift, TR-909/W-30 lane alignment, MC-202 compatibility-silent origin, loop closure, and non-silent full-grid audio before `just audio-qa-ci` can pass
 - strict observer/audio correlation now rejects malformed observer stream evidence before accepting committed control-path evidence
 - `just user-session-observer-validator-fixtures` validates the committed observer fixture streams plus valid and invalid recovery-snapshot fixtures, and is wired into `just audio-qa-ci`
 - a shared manifest v1 envelope validator that checks stable top-level fields and artifact records for current local audio QA producer shapes while leaving pack-specific metrics flexible

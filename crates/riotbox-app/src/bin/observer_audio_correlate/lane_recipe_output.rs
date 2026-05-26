@@ -1,13 +1,11 @@
 use serde_json::{Value, json};
 
 const REQUIRED_RECIPE2_MC202_CASES: &[&str] = &[
-    "mc202-follower-to-answer",
     "mc202-touch-low-to-high",
     "mc202-follower-to-pressure",
     "mc202-follower-to-instigator",
     "mc202-follower-to-mutated-drive",
     "mc202-neutral-to-lift-contour",
-    "mc202-direct-to-hook-response",
 ];
 
 #[derive(Debug, PartialEq)]

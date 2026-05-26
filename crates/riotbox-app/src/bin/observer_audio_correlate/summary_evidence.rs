@@ -55,11 +55,15 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
         &summary.tr909_source_grid_alignment,
         summary.tr909_source_grid_alignment_malformed,
     ));
-    failures.extend(required_source_grid_alignment_failures(
-        "mc202_source_grid_alignment",
-        &summary.mc202_source_grid_alignment,
-        summary.mc202_source_grid_alignment_malformed,
-    ));
+    if summary.mc202_bass_pressure_pattern_origin == "compatibility_silent" {
+        failures.extend(mc202_compatibility_silent_failures(summary));
+    } else {
+        failures.extend(required_source_grid_alignment_failures(
+            "mc202_source_grid_alignment",
+            &summary.mc202_source_grid_alignment,
+            summary.mc202_source_grid_alignment_malformed,
+        ));
+    }
     failures.extend(required_source_grid_alignment_failures(
         "w30_source_grid_alignment",
         &summary.w30_source_grid_alignment,
@@ -67,6 +71,14 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     ));
     failures.extend(w30_source_loop_closure_failures(summary));
     failures
+}
+
+fn mc202_compatibility_silent_failures(summary: &CorrelationSummary) -> Vec<String> {
+    match summary.mc202_bass_pressure_applied {
+        Some(false) => Vec::new(),
+        Some(true) => vec!["mc202_bass_pressure.applied=true for compatibility_silent".to_string()],
+        None => vec!["mc202_bass_pressure.applied=missing for compatibility_silent".to_string()],
+    }
 }
 
 fn source_timing_alignment_failures(summary: &CorrelationSummary) -> Vec<String> {

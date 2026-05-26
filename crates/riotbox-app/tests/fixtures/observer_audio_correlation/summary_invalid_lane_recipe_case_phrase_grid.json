@@ -31,7 +31,7 @@
     "source_timing_groove_alignment": null,
     "lane_recipe_cases": [
       {
-        "id": "mc202-follower-to-answer",
+        "id": "mc202-touch-low-to-high",
         "result": "pass",
         "candidate_rms": 0.005675,
         "signal_delta_rms": 0.008565,

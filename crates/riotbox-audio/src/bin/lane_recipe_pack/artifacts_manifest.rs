@@ -16,6 +16,7 @@ struct ListeningPackManifest {
 struct ManifestCase {
     id: &'static str,
     title: &'static str,
+    pattern_origin: &'static str,
     recipe_refs: &'static str,
     baseline_label: &'static str,
     candidate_label: &'static str,
@@ -103,6 +104,7 @@ impl From<&CaseReport> for ManifestCase {
         Self {
             id: report.id,
             title: report.title,
+            pattern_origin: "primitive_renderer",
             recipe_refs: report.recipe_refs,
             baseline_label: report.baseline_label,
             candidate_label: report.candidate_label,
@@ -207,7 +209,7 @@ mod tests {
     fn pack_cases_produce_distinct_audio_metrics() {
         let cases = pack_cases();
 
-        assert_eq!(cases.len(), 10);
+        assert_eq!(cases.len(), 8);
         for case in cases {
             let (baseline, candidate) = render_pair(&case.render_pair, 88_200);
             let baseline_metrics = signal_metrics_with_grid(
@@ -287,12 +289,13 @@ mod tests {
         assert_eq!(manifest["pack_id"], PACK_ID);
         assert_eq!(manifest["date"], "manifest-smoke");
         assert_eq!(manifest["result"], "pass");
-        assert_eq!(manifest["case_count"], 10);
+        assert_eq!(manifest["case_count"], 8);
 
         let cases = manifest["cases"].as_array().expect("cases");
-        assert_eq!(cases.len(), 10);
+        assert_eq!(cases.len(), 8);
         let first_case = &cases[0];
         assert_eq!(first_case["id"], "tr909-support-to-fill");
+        assert_eq!(first_case["pattern_origin"], "primitive_renderer");
         assert_eq!(first_case["result"], "pass");
         assert!(
             first_case["metrics"]["baseline"]["rms"]
@@ -324,8 +327,9 @@ mod tests {
 
         let mc202_case = cases
             .iter()
-            .find(|case| case["id"] == "mc202-follower-to-answer")
+            .find(|case| case["id"] == "mc202-touch-low-to-high")
             .expect("mc202 case");
+        assert_eq!(mc202_case["pattern_origin"], "primitive_renderer");
         assert_eq!(mc202_case["metrics"]["mc202_phrase_grid"]["passed"], true);
         assert_eq!(
             mc202_case["metrics"]["mc202_source_phrase_slot"]["passed"],
@@ -356,7 +360,7 @@ mod tests {
         );
 
         let artifacts = manifest["artifacts"].as_array().expect("artifacts");
-        assert_eq!(artifacts.len(), 31);
+        assert_eq!(artifacts.len(), 25);
         for artifact in artifacts {
             let path = PathBuf::from(artifact["path"].as_str().expect("artifact path"));
             assert!(path.is_file(), "{} missing", path.display());

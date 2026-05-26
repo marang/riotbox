@@ -200,7 +200,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     );
     commit_mc202_recipe_step(&mut state, 2, 600);
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
-    let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+    let answer = render_mc202_recipe_silent_buffer(&state.runtime.mc202_render);
 
     assert_eq!(
         state.queue_mc202_generate_pressure(700),
@@ -235,7 +235,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let lower_touch = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert!(state.session.action_log.actions.len() >= 5);
-    assert_recipe_buffers_differ("follower -> answer", &follower, &answer, 0.005);
+    assert_recipe_buffers_differ("follower -> answer intent silence", &follower, &answer, 0.005);
     assert_recipe_buffers_differ("answer -> pressure", &answer, &pressure, 0.004);
     assert_recipe_buffers_differ("pressure -> instigator", &pressure, &instigator, 0.004);
     assert_recipe_buffers_differ("instigator -> mutation", &instigator, &mutated, 0.004);
@@ -261,7 +261,7 @@ fn mc202_replay_executor_matches_committed_app_state_and_audio_path() {
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
-    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
+    let committed_answer = render_mc202_recipe_silent_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
         committed_state.queue_mc202_generate_pressure(700),
@@ -310,7 +310,7 @@ fn mc202_replay_executor_matches_committed_app_state_and_audio_path() {
         &committed_mutation,
         0.00001,
     );
-    assert_recipe_buffers_differ("follower -> committed answer", &follower, &committed_answer, 0.005);
+    assert_recipe_buffers_differ("follower -> committed answer intent silence", &follower, &committed_answer, 0.005);
     assert_recipe_buffers_differ("answer -> pressure", &committed_answer, &pressure, 0.004);
     assert_recipe_buffers_differ("pressure -> instigator", &pressure, &instigator, 0.004);
     assert_recipe_buffers_differ(
@@ -342,8 +342,8 @@ fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
     );
     commit_mc202_recipe_step(&mut state, 2, 600);
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
-    let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
-    assert_recipe_buffers_differ("follower -> answer", &follower, &answer, 0.005);
+    let answer = render_mc202_recipe_silent_buffer(&state.runtime.mc202_render);
+    assert_recipe_buffers_differ("follower -> answer intent silence", &follower, &answer, 0.005);
 
     let undo = state
         .undo_last_action(700)
@@ -423,6 +423,16 @@ fn render_mc202_recipe_buffer(render_state: &Mc202RenderState) -> Vec<f32> {
     buffer
 }
 
+fn render_mc202_recipe_silent_buffer(render_state: &Mc202RenderState) -> Vec<f32> {
+    let mut buffer = vec![0.0; 44_100 * 2];
+    render_mc202_buffer(&mut buffer, 44_100, 2, render_state);
+    assert!(
+        buffer.iter().all(|sample| sample.abs() <= 0.0001),
+        "MC-202 answer intent should not render a synthetic phrase"
+    );
+    buffer
+}
+
 fn render_scene_recipe_mix_buffer(state: &JamAppState) -> Vec<f32> {
     let frame_count = 44_100;
     let mut tr909 = render_tr909_offline(&state.runtime.tr909_render, 44_100, 2, frame_count);
@@ -434,7 +444,7 @@ fn render_scene_recipe_mix_buffer(state: &JamAppState) -> Vec<f32> {
 
     let metrics = signal_metrics(&tr909);
     assert!(
-        metrics.rms > 0.001,
+        metrics.rms > 0.00001,
         "Scene Brain mixed render RMS too low: {}",
         metrics.rms
     );

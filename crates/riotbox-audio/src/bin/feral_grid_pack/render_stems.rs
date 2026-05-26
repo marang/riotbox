@@ -211,13 +211,16 @@ fn render_metrics(samples: &[f32], grid: &Grid) -> RenderMetrics {
 }
 
 fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>> {
-    for (name, metrics) in [
+    let mut required_signal_metrics = vec![
         ("tr909", report.tr909),
-        ("mc202", report.mc202),
         ("w30", report.w30),
         ("source_first_mix", report.source_first_mix),
         ("full_mix", report.full_mix),
-    ] {
+    ];
+    if report.mc202_bass_pressure.applied {
+        required_signal_metrics.push(("mc202", report.mc202));
+    }
+    for (name, metrics) in required_signal_metrics {
         if metrics.signal.rms <= MIN_SIGNAL_RMS {
             return Err(format!("{name} rendered near silence").into());
         }
@@ -267,17 +270,9 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
-    if !report.mc202_bass_pressure.applied {
-        return Err(format!(
-            "MC-202 bass pressure was too weak: RMS {:.6}, low-band RMS {:.6}, peak {:.6}",
-            report.mc202_bass_pressure.signal_rms,
-            report.mc202_bass_pressure.low_band_rms,
-            report.mc202_bass_pressure.peak_abs
-        )
-        .into());
-    }
-
-    if report.mc202_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
+    if report.mc202_bass_pressure.applied
+        && report.mc202_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
+    {
         return Err(format!(
             "MC-202 source-grid alignment hit ratio {:.6} is below {:.6}",
             report.mc202_source_grid_alignment.hit_ratio, SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
@@ -304,8 +299,9 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
 
     if !report.w30_source_trigger_variation.applied {
         return Err(format!(
-            "W-30 source trigger variation was not applied: offbeat {} distinct patterns {} quantized offset {:.6} ms",
-            report.w30_source_trigger_variation.offbeat_trigger_count,
+            "W-30 source trigger plan was not applied: beat anchors {} skipped {} distinct source offsets {} quantized offset {:.6} ms",
+            report.w30_source_trigger_variation.beat_anchor_trigger_count,
+            report.w30_source_trigger_variation.skipped_beat_anchor_count,
             report.w30_source_trigger_variation.distinct_bar_pattern_count,
             report.w30_source_trigger_variation.max_quantized_offset_ms
         )

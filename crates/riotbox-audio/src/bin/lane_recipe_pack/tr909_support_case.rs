@@ -60,17 +60,15 @@ fn mc202_note_budget_for_shape_and_hook_response(
     shape: Mc202PhraseShape,
     hook_response: Mc202HookResponse,
 ) -> riotbox_audio::mc202::Mc202NoteBudget {
-    if hook_response == Mc202HookResponse::AnswerSpace {
-        return riotbox_audio::mc202::Mc202NoteBudget::Sparse;
-    }
+    let _ = hook_response;
 
     match shape {
         Mc202PhraseShape::PressureCell => riotbox_audio::mc202::Mc202NoteBudget::Sparse,
         Mc202PhraseShape::InstigatorSpike => riotbox_audio::mc202::Mc202NoteBudget::Push,
         Mc202PhraseShape::MutatedDrive => riotbox_audio::mc202::Mc202NoteBudget::Wide,
-        Mc202PhraseShape::RootPulse
-        | Mc202PhraseShape::FollowerDrive
-        | Mc202PhraseShape::AnswerHook => riotbox_audio::mc202::Mc202NoteBudget::Balanced,
+        Mc202PhraseShape::RootPulse | Mc202PhraseShape::FollowerDrive => {
+            riotbox_audio::mc202::Mc202NoteBudget::Balanced
+        }
     }
 }
 
@@ -415,7 +413,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
          - Output dir: `{}`\n\
          - Duration seconds: `{:.3}`\n\n\
          This pack is the first local recipe-level audio proof outside the W-30 source-preview path.\n\
-         It renders bounded TR-909, MC-202, and Scene-coupled support comparisons as WAV files plus sibling metrics and `manifest.json`.\n\n\
+         It renders bounded TR-909, MC-202, and Scene-coupled support comparisons as WAV files plus sibling metrics and `manifest.json`. All cases are labeled `primitive_renderer`; this pack proves renderer contrasts, not source-derived musical intelligence.\n\n\
          ## Cases\n\n\
          | Case | Active delta | Peak delta | RMS delta | Min RMS delta | Signal delta RMS | Min signal delta RMS | Sum delta |\n\
          | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |\n",
@@ -448,7 +446,7 @@ fn render_pack_summary(args: &Args, output_dir: &Path, reports: &[CaseReport]) -
 
     summary.push_str(
         "\n## Current MC-202 Status\n\n\
-         MC-202 now has explicit offline audio cases for follower-vs-answer, touch energy, pressure, instigator, phrase mutation, note budget, source-section contour hints, and hook-response restraint. These cases prove bounded renderable contrasts for the current `g`, `a`, `P`, `I`, `G`, `<`, and `>` gestures, not a finished MC-202 synth engine.\n\n\
+         MC-202 now has explicit offline audio cases for touch energy, pressure, instigator, phrase mutation, note budget, and source-section contour hints. These cases prove bounded renderable contrasts for the current `g`, `P`, `I`, `G`, `<`, and `>` gestures without injecting a hardcoded answer hook; `a` remains control-path only until source-derived phrase planning exists.\n\n\
          ## Current Scene Status\n\n\
          Scene Brain is represented here only through the current TR-909 `scene_target` support-accent seam. This does not claim a finished Scene transition engine.\n",
     );

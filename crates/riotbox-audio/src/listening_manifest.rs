@@ -204,14 +204,14 @@ mod tests {
     #[test]
     fn artifact_with_case_id_keeps_case_id_field() {
         let artifact = ListeningPackArtifact::case_markdown_report(
-            "mc202-follower-to-answer",
+            "mc202-touch-low-to-high",
             "comparison",
             Path::new("out/comparison.md"),
         );
 
         let json = serde_json::to_value(artifact).expect("json");
 
-        assert_eq!(json["case_id"], "mc202-follower-to-answer");
+        assert_eq!(json["case_id"], "mc202-touch-low-to-high");
         assert_eq!(json["role"], "comparison");
         assert_eq!(json["kind"], "markdown_report");
         assert_eq!(json["metrics_path"], serde_json::Value::Null);

@@ -12,7 +12,7 @@ fn strict_evidence_accepts_lane_recipe_manifest_for_recipe2_mc202_cases() {
     let summary = build_summary(&observer_path, &manifest_path).expect("summary");
 
     assert_eq!(summary.pack_id, "lane-recipe-listening-pack");
-    assert_eq!(summary.lane_recipe_cases.len(), 7);
+    assert_eq!(summary.lane_recipe_cases.len(), 5);
     assert!(output_path_present(&summary));
     validate_required_evidence(&summary).expect("lane recipe evidence");
 
@@ -20,8 +20,8 @@ fn strict_evidence_accepts_lane_recipe_manifest_for_recipe2_mc202_cases() {
     let cases = json["output_path"]["lane_recipe_cases"]
         .as_array()
         .expect("lane recipe cases");
-    assert_eq!(cases.len(), 7);
-    assert_eq!(cases[0]["id"], "mc202-follower-to-answer");
+    assert_eq!(cases.len(), 5);
+    assert_eq!(cases[0]["id"], "mc202-touch-low-to-high");
     assert_eq!(cases[0]["result"], "pass");
     assert_eq!(cases[0]["mc202_phrase_grid"]["passed"], true);
     assert_eq!(cases[0]["mc202_phrase_grid"]["hit_ratio"], 1.0);
@@ -51,7 +51,7 @@ fn strict_evidence_rejects_missing_lane_recipe_case() {
     let summary = build_summary(&observer_path, &manifest_path).expect("summary");
     let error = validate_required_evidence(&summary).expect_err("missing recipe case");
 
-    assert!(error.to_string().contains("mc202-direct-to-hook-response"));
+    assert!(error.to_string().contains("mc202-touch-low-to-high"));
 }
 
 #[test]
@@ -80,7 +80,7 @@ fn strict_evidence_rejects_missing_mc202_phrase_grid_metric() {
     let summary = build_summary(&observer_path, &manifest_path).expect("summary");
     let error = validate_required_evidence(&summary).expect_err("missing phrase grid metric");
 
-    assert!(error.to_string().contains("mc202-follower-to-answer"));
+    assert!(error.to_string().contains("mc202-touch-low-to-high"));
     assert!(error.to_string().contains("mc202_phrase_grid=missing"));
 }
 
@@ -100,7 +100,7 @@ fn strict_evidence_rejects_missing_mc202_source_phrase_slot_metric() {
     let error =
         validate_required_evidence(&summary).expect_err("missing source phrase slot metric");
 
-    assert!(error.to_string().contains("mc202-follower-to-answer"));
+    assert!(error.to_string().contains("mc202-touch-low-to-high"));
     assert!(
         error
             .to_string()
@@ -131,13 +131,6 @@ fn recipe2_mc202_observer() -> String {
 
 fn lane_recipe_manifest() -> String {
     lane_recipe_manifest_with_cases(&[
-        lane_recipe_case(
-            "mc202-follower-to-answer",
-            "pass",
-            0.005675,
-            0.008565,
-            0.005,
-        ),
         lane_recipe_case("mc202-touch-low-to-high", "pass", 0.009559, 0.006182, 0.006),
         lane_recipe_case(
             "mc202-follower-to-pressure",
@@ -167,26 +160,11 @@ fn lane_recipe_manifest() -> String {
             0.007847,
             0.004,
         ),
-        lane_recipe_case(
-            "mc202-direct-to-hook-response",
-            "pass",
-            0.003446,
-            0.008681,
-            0.004,
-        ),
     ])
 }
 
 fn lane_recipe_manifest_missing_case() -> String {
     lane_recipe_manifest_with_cases(&[
-        lane_recipe_case(
-            "mc202-follower-to-answer",
-            "pass",
-            0.005675,
-            0.008565,
-            0.005,
-        ),
-        lane_recipe_case("mc202-touch-low-to-high", "pass", 0.009559, 0.006182, 0.006),
         lane_recipe_case(
             "mc202-follower-to-pressure",
             "pass",
@@ -220,13 +198,6 @@ fn lane_recipe_manifest_missing_case() -> String {
 
 fn lane_recipe_manifest_collapsed_case() -> String {
     lane_recipe_manifest_with_cases(&[
-        lane_recipe_case(
-            "mc202-follower-to-answer",
-            "pass",
-            0.005675,
-            0.008565,
-            0.005,
-        ),
         lane_recipe_case("mc202-touch-low-to-high", "pass", 0.009559, 0.006182, 0.006),
         lane_recipe_case(
             "mc202-follower-to-pressure",
@@ -256,26 +227,18 @@ fn lane_recipe_manifest_collapsed_case() -> String {
             0.007847,
             0.004,
         ),
-        lane_recipe_case(
-            "mc202-direct-to-hook-response",
-            "pass",
-            0.003446,
-            0.008681,
-            0.004,
-        ),
     ])
 }
 
 fn lane_recipe_manifest_missing_phrase_grid() -> String {
     lane_recipe_manifest_with_cases(&[
         lane_recipe_case_without_phrase_grid(
-            "mc202-follower-to-answer",
+            "mc202-touch-low-to-high",
             "pass",
-            0.005675,
-            0.008565,
-            0.005,
+            0.009559,
+            0.006182,
+            0.006,
         ),
-        lane_recipe_case("mc202-touch-low-to-high", "pass", 0.009559, 0.006182, 0.006),
         lane_recipe_case(
             "mc202-follower-to-pressure",
             "pass",
@@ -302,13 +265,6 @@ fn lane_recipe_manifest_missing_phrase_grid() -> String {
             "pass",
             0.008217,
             0.007847,
-            0.004,
-        ),
-        lane_recipe_case(
-            "mc202-direct-to-hook-response",
-            "pass",
-            0.003446,
-            0.008681,
             0.004,
         ),
     ])
@@ -317,13 +273,12 @@ fn lane_recipe_manifest_missing_phrase_grid() -> String {
 fn lane_recipe_manifest_missing_source_phrase_slot() -> String {
     lane_recipe_manifest_with_cases(&[
         lane_recipe_case_without_source_phrase_slot(
-            "mc202-follower-to-answer",
+            "mc202-touch-low-to-high",
             "pass",
-            0.005675,
-            0.008565,
-            0.005,
+            0.009559,
+            0.006182,
+            0.006,
         ),
-        lane_recipe_case("mc202-touch-low-to-high", "pass", 0.009559, 0.006182, 0.006),
         lane_recipe_case(
             "mc202-follower-to-pressure",
             "pass",
@@ -350,13 +305,6 @@ fn lane_recipe_manifest_missing_source_phrase_slot() -> String {
             "pass",
             0.008217,
             0.007847,
-            0.004,
-        ),
-        lane_recipe_case(
-            "mc202-direct-to-hook-response",
-            "pass",
-            0.003446,
-            0.008681,
             0.004,
         ),
     ])

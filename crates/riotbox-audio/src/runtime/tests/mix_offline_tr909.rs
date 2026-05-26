@@ -99,7 +99,7 @@ fn offline_tr909_render_produces_reviewable_metrics_for_fill() {
 }
 
 #[test]
-fn offline_mc202_render_produces_distinct_follower_and_answer_metrics() {
+fn offline_mc202_render_keeps_answer_intent_silent_until_source_phrase_exists() {
     let follower = render_mc202_offline(
         &Mc202RenderState {
             mode: Mc202RenderMode::Follower,
@@ -119,7 +119,7 @@ fn offline_mc202_render_produces_distinct_follower_and_answer_metrics() {
         &Mc202RenderState {
             mode: Mc202RenderMode::Answer,
             routing: Mc202RenderRouting::MusicBusBass,
-            phrase_shape: Mc202PhraseShape::AnswerHook,
+            phrase_shape: Mc202PhraseShape::RootPulse,
             touch: 0.78,
             is_transport_running: true,
             tempo_bpm: 128.0,
@@ -134,8 +134,8 @@ fn offline_mc202_render_produces_distinct_follower_and_answer_metrics() {
     let answer_metrics = signal_metrics(&answer);
 
     assert!(follower_metrics.active_samples > 10_000);
-    assert!(answer_metrics.active_samples > 10_000);
-    assert!((follower_metrics.rms - answer_metrics.rms).abs() > 0.001);
+    assert_eq!(answer_metrics.active_samples, 0);
+    assert_eq!(answer_metrics.rms, 0.0);
 }
 
 #[test]
@@ -443,4 +443,3 @@ fn fixture_backed_tr909_audio_regressions_hold() {
         }
     }
 }
-

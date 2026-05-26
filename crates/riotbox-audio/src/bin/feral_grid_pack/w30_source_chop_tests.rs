@@ -104,7 +104,7 @@ mod w30_source_chop_tests {
     }
 
     #[test]
-    fn w30_source_chop_trigger_variation_adds_offbeats_without_grid_drift() {
+    fn w30_source_chop_trigger_plan_uses_source_offsets_without_grid_drift() {
         let grid = Grid::new(128.0, 4, 4).expect("grid");
         let pulse_source = delayed_pulse_source(frames_for_beats(128.0, 16), 0, 0.01, 0.65);
         let pulse_preview = source_chop_preview_from_interleaved(
@@ -120,13 +120,13 @@ mod w30_source_chop_tests {
             render_w30_source_chop_with_variation(&grid, &pulse_preview);
         let legacy_render = render_w30_source_chop_legacy(&grid, pulse_preview);
         let varied_alignment = source_grid_output_drift_metrics(&varied_render, &grid);
-        let legacy_bars = bar_variation_metrics(&legacy_render, &grid);
-        let varied_bars = bar_variation_metrics(&varied_render, &grid);
+        let delta = riotbox_audio::runtime::signal_delta_metrics(&legacy_render, &varied_render);
 
         assert!(proof.applied, "{proof:?}");
         assert_eq!(proof.grid_subdivision, W30_SOURCE_TRIGGER_GRID_SUBDIVISION);
-        assert!(proof.offbeat_trigger_count > 0);
-        assert!(proof.distinct_bar_pattern_count >= 2);
+        assert_eq!(proof.offbeat_trigger_count, 0);
+        assert_eq!(proof.skipped_beat_anchor_count, 0);
+        assert!(proof.distinct_bar_pattern_count >= 4);
         assert!(proof.max_quantized_offset_ms <= proof.max_allowed_quantized_offset_ms);
         assert!(slice_choice.applied, "{slice_choice:?}");
         assert!(slice_choice.unique_source_offset_count >= 4);
@@ -135,10 +135,7 @@ mod w30_source_chop_tests {
             varied_alignment.hit_ratio >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
             "{varied_alignment:?}"
         );
-        assert!(
-            varied_bars.bar_similarity < legacy_bars.bar_similarity,
-            "varied bars {varied_bars:?} should be less static than legacy {legacy_bars:?}"
-        );
+        assert!(delta.rms > 0.001, "source-offset trigger plan should differ from legacy {delta:?}");
     }
 
     #[test]

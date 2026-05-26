@@ -183,11 +183,11 @@ Restart the app with the same source and compare these one by one:
 
 - `y` scene jump
 - `g` MC-202 follow
-- `a` MC-202 answer
+- `a` MC-202 answer intent
 - `P` MC-202 pressure
 - `I` MC-202 instigator
-- `G` MC-202 phrase mutation after `g`, `a`, `P`, or `I` lands
-- `<` / `>` MC-202 touch lower / higher after `g`, `a`, `P`, or `I` lands
+- `G` MC-202 phrase mutation after `g`, `P`, or `I` lands
+- `<` / `>` MC-202 touch lower / higher after `g`, `P`, or `I` lands
 - `f` TR-909 fill
 - `w` W-30 hit
 
@@ -201,20 +201,20 @@ For each run:
 What to observe:
 
 - each lane has a different feel
-- after `g`, `a`, `P`, or `I` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
+- after `g`, `P`, or `I` commits, the MC-202 lane now has a first bounded bass audio seam in the live runtime
 - after `P` commits, the MC-202 lane should hold a sparser offbeat pressure cell rather than the follower drive line
 - after `I` commits, the MC-202 lane should shove with a sharper high-register instigator spike rather than the follower drive line
-- MC-202 phrases now carry a small note budget; `pressure` stays sparse, `instigate` stays punchy, and follower/answer avoid filling every available step
+- MC-202 phrases now carry a small note budget; `pressure` stays sparse, `instigate` stays punchy, and follower avoids filling every available step
 - when source sections are known, MC-202 also gets a first contour hint (`lift`, `drop`, or `hold`) from the current source/scene section; this is a small interval nudge, not full melody extraction
-- on hook-like chorus sections, follower/leader material uses `answer_space` response so MC-202 answers around the hook instead of doubling the hook downbeats
+- hook-like chorus sections no longer inject a hardcoded MC-202 answer phrase; source-derived question/answer placement remains future work
 - after the MC-202 line is audible, press `G` to queue a phrase mutation for the next phrase; the Jam card should switch to `variant mutated_drive`
 - after the MC-202 line is audible, tap `>` to push the touch harder or `<` to back it off; the Jam card should show the touch value changing
-- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-follower-to-answer`, `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, `mc202-follower-to-mutated-drive`, `mc202-neutral-to-lift-contour`, and `mc202-direct-to-hook-response`; each MC-202 case also carries `mc202_phrase_grid` and `mc202_source_phrase_slot` metrics proving the rendered candidate starts on the phrase boundary, its note onsets land on the sixteenth grid, and the candidate is attached to a selected Source Graph phrase slot
+- if you want an offline proof before listening live, run `just lane-recipe-pack local-mc202` and compare `mc202-touch-low-to-high`, `mc202-follower-to-pressure`, `mc202-follower-to-instigator`, `mc202-follower-to-mutated-drive`, and `mc202-neutral-to-lift-contour`; each MC-202 case also carries `mc202_phrase_grid` and `mc202_source_phrase_slot` metrics proving the rendered candidate starts on the phrase boundary, its note onsets land on the sixteenth grid, and the candidate is attached to a selected Source Graph phrase slot
 - the first result is easier to compare when you only change one thing per run
 - when Riotbox can infer the next scene, the `y` suggestion may name it as `[y] jump <scene> (rise/drop/hold)`
 - if source energy is known, the named Scene may skip over an adjacent same-energy section and choose the next contrast section instead
 - if there is not enough scene material yet, the same slot may say `[y] jump waits for 2 scenes` instead of pretending a jump is ready
-- MC-202 is still not a finished synth engine; treat this as first follower/answer/pressure/instigator/contour/hook-response bass feedback, not full sound design
+- MC-202 is still not a finished synth engine; treat this as first follower/pressure/instigator/contour bass feedback, not full sound design or source-derived phrase composition. The answer key is currently control-path only and does not render a synthetic phrase.
 
 Current offline MC-202 proof:
 
@@ -224,7 +224,6 @@ just lane-recipe-pack local-mc202
 
 Listen to these files under `artifacts/audio_qa/local-mc202/lane-recipe-listening-pack/`:
 
-- `mc202-follower-to-answer/baseline.wav` vs `candidate.wav`
 - `mc202-touch-low-to-high/baseline.wav` vs `candidate.wav`
 - `mc202-follower-to-pressure/baseline.wav` vs `candidate.wav`
 - `mc202-follower-to-instigator/baseline.wav` vs `candidate.wav`
@@ -603,10 +602,10 @@ What to observe:
 
 - `feral ready` means the Source Graph has high break-rebuild potential plus supported hook or capture evidence
 - `feral needs support` means Riotbox sees promising material, but the shared `supports_break_rebuild` evidence is missing
-- on `Jam`, `feral ready` promotes existing keys such as `[j] browse`, `[f] fill`, `[g] follow`, `[a] answer`, and `[c] capture`
+- on `Jam`, `feral ready` promotes existing keys such as `[j] browse`, `[f] fill`, `[g] follow`, `[a] answer intent`, and `[c] capture`
 - `j` exercises the current W-30 slice-pool preference path
 - `f` exercises the current TR-909 support/fill path
-- `g` and `a` exercise the current MC-202 follow/answer path
+- `g` exercises the current MC-202 follow path; `a` is currently control-path answer intent only until source-derived phrase planning exists
 - `c` captures the moment so you can reuse it through Recipe 11
 
 What this teaches:
@@ -804,7 +803,7 @@ How to interpret `auto`:
 - `source_timing.bpm_agrees_with_grid: false` means the generated pack is timing-risky and should not be judged as a successful beat-grid example.
 - `source_timing.readiness: weak` means the detector saw useful evidence but not enough downbeat/phrase confidence for automatic trust.
 - `metrics.tr909_source_grid_alignment.hit_ratio` is the lane-specific TR-909 support proof; values below `0.5` mean the drum support is not landing reliably near the chosen grid.
-- `metrics.mc202_source_grid_alignment.hit_ratio` is the lane-specific MC-202 bass proof; values below `0.5` mean the bass-pressure stem is not landing reliably near the chosen grid.
+- `metrics.mc202_source_grid_alignment.hit_ratio` is currently expected to stay `0` for the silent MC-202 compatibility stem; it must not be used as bass-proof until source-derived MC-202 phrase planning exists.
 - `metrics.w30_source_grid_alignment.hit_ratio` is the lane-specific W-30 source-chop proof; values below `0.5` mean the sample/chop lane is not landing reliably near the chosen grid.
 - `metrics.source_grid_output_drift.hit_ratio` is an early generated-output smoke metric; values below `0.5` mean the support render is not landing reliably near the chosen grid.
 
@@ -822,7 +821,7 @@ Current local benchmark result:
 
 What this proves today:
 
-- Riotbox can generate a bounded TR-909, MC-202, and W-30 Feral grid pack with manifest-backed output metrics.
+- Riotbox can generate a bounded TR-909 and W-30 Feral grid pack with manifest-backed output metrics plus an explicit silent MC-202 compatibility lane.
 - The pack is useful for listening and QA, not yet a full composition/export workflow.
 - Some short-loop examples can now drive auto BPM through Source Timing while still saying `needs confirm`; ambiguous or non-drum sources must continue to fall back or use explicit paths.
 

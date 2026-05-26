@@ -13,7 +13,7 @@ mod tests {
     }
 
     #[test]
-    fn follower_and_answer_shapes_are_audible_and_distinct() {
+    fn answer_mode_does_not_render_synthetic_phrase() {
         let mut follower = vec![0.0; 44_100 * 2];
         let mut answer = vec![0.0; 44_100 * 2];
 
@@ -37,7 +37,7 @@ mod tests {
             &Mc202RenderState {
                 mode: Mc202RenderMode::Answer,
                 routing: Mc202RenderRouting::MusicBusBass,
-                phrase_shape: Mc202PhraseShape::AnswerHook,
+                phrase_shape: Mc202PhraseShape::RootPulse,
                 touch: 0.78,
                 is_transport_running: true,
                 ..Mc202RenderState::default()
@@ -48,8 +48,8 @@ mod tests {
         let answer_metrics = metrics(&answer);
 
         assert!(follower_metrics.0 > 10_000);
-        assert!(answer_metrics.0 > 10_000);
-        assert!((follower_metrics.2 - answer_metrics.2).abs() > 0.001);
+        assert_eq!(answer_metrics.0, 0);
+        assert_eq!(answer_metrics.2, 0.0);
     }
 
     #[test]
@@ -311,7 +311,7 @@ mod tests {
     }
 
     #[test]
-    fn hook_response_leaves_space_without_silencing_phrase() {
+    fn hook_response_no_longer_adds_synthetic_answer_shape() {
         let mut direct = vec![0.0; 44_100 * 2 * 2];
         let mut response = vec![0.0; 44_100 * 2 * 2];
         let base = Mc202RenderState {
@@ -333,7 +333,7 @@ mod tests {
             44_100,
             2,
             &Mc202RenderState {
-                hook_response: Mc202HookResponse::AnswerSpace,
+                hook_response: Mc202HookResponse::Direct,
                 ..base
             },
         );
@@ -349,9 +349,11 @@ mod tests {
             .sqrt();
 
         assert!(direct_metrics.0 > 10_000);
-        assert!(response_metrics.0 > 5_000);
-        assert!(response_metrics.2 < direct_metrics.2);
-        assert!(delta_rms > 0.004, "hook-response delta RMS {delta_rms}");
+        assert!(response_metrics.0 > 10_000);
+        assert!(
+            delta_rms <= f32::EPSILON,
+            "direct hook response should not inject a hardcoded answer shape: {delta_rms}"
+        );
     }
 
     #[test]
