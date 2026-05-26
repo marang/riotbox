@@ -1,0 +1,12 @@
+{
+  "sources": {
+    "Beat08_128BPM(Full).wav": {
+      "primary_bpm": null,
+      "primary_beat_score": null,
+      "primary_beat_matched_onset_ratio": null,
+      "primary_beat_median_distance_ratio": null,
+      "primary_downbeat_score": null,
+      "primary_downbeat_margin": null
+    }
+  }
+}

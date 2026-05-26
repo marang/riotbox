@@ -194,6 +194,11 @@ def compare_bpm(
 ) -> None:
     if "primary_bpm" not in expectation:
         return
+    if expectation["primary_bpm"] is None:
+        actual = payload.get("primary_bpm")
+        if actual is not None:
+            issues.append(f"primary_bpm expected None got {actual!r}")
+        return
     expected = require_object(expectation["primary_bpm"], "primary_bpm expectation")
     target = require_number(expected, "target")
     tolerance = require_number(expected, "tolerance")
@@ -217,6 +222,11 @@ def compare_number_range(
     key: str,
 ) -> None:
     if key not in expectation:
+        return
+    if expectation[key] is None:
+        actual = payload.get(key)
+        if actual is not None:
+            issues.append(f"{key} expected None got {actual!r}")
         return
     expected = require_number_range_expectation(expectation[key], f"{key} expectation")
     minimum = require_number(expected, "min") if "min" in expected else None
