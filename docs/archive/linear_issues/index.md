@@ -732,4 +732,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Populate Source Map buckets from decoded WAV sidecar analysis
 - [RIOTBOX-992.md](./RIOTBOX-992.md)
   Prove decoded Source Map buckets reach observer ingest surface
+- [RIOTBOX-967.md](./RIOTBOX-967.md)
+  Source transport, adaptive source map, monitor, and capture workflow
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
