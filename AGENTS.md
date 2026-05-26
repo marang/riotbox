@@ -24,6 +24,7 @@ If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pat
 - Keep Linear current: issue state, priority, labels, project, archive, deletion, and branch cleanup are part of the work.
 - Use one archive file per Linear ticket under `docs/archive/linear_issues/RIOTBOX-123.md`; month files are indexes only.
 - Search archives and generated artifacts only when needed. Default `rg` should respect `.rgignore`.
+- Do not read `docs/research_decision_log.md` wholesale during normal implementation work; use bounded MemPalace search, exact `rg`, or targeted line ranges.
 - Keep command output token-bounded. Redirect long CI/QA logs to `/tmp/...log` and report only exit status plus relevant tail/error lines.
 - Use `scripts/run_compact.sh /tmp/name.log <command...>` for noisy validation commands unless full output is explicitly needed.
 - Never revert unrelated user changes.
@@ -153,6 +154,7 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Search `docs/archive/linear_issues/` only when ticket history is needed.
 - Search ignored archive or audio paths explicitly with `rg --no-ignore "..." <path>`.
 - Do not paste large generated manifests, WAV metadata dumps, archive batches, or raw transcript sections unless directly needed.
+- Treat `docs/research_decision_log.md` as a large canonical log: append durable decisions when needed, but query it by exact search or bounded MemPalace retrieval instead of loading the full file.
 - Prefer specific files and line ranges over entire long documents.
 
 ## Review And QA
