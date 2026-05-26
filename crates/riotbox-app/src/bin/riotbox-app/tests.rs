@@ -261,6 +261,12 @@ mod tests {
         include!("tests/source_timing_confirm_control.rs");
     }
 
+    mod source_map_navigation_control {
+        use super::*;
+
+        include!("tests/source_map_navigation_control.rs");
+    }
+
     mod recovery_observer {
         use super::*;
 

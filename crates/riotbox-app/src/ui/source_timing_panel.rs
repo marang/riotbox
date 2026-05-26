@@ -100,20 +100,20 @@ pub(super) fn source_map_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let source_map = &shell.app.jam_view.source.source_map;
     let energy = source_map_compact_row(&source_map.energy_row, 18);
     let peaks = source_map_compact_row(&source_map.peak_row, 18);
-    let bars = source_map_compact_row(&source_map.grid_row, 18);
-    let play = source_map_compact_row(&source_map.playhead_row, 18);
+    let bars = source_map_compact_row(&source_map.grid_row, 8);
+    let play = source_map_compact_row(&source_map.playhead_row, 8);
     vec![
         Line::from(format!(
             "mode {} | {}",
             source_map.mode.label(),
             source_map.trust_label
         )),
+        Line::from(source_map.current_region_label.clone()),
         Line::from(format!("energy {energy}")),
         Line::from(format!("peaks  {peaks}")),
-        Line::from(format!("bars   {bars}")),
         Line::from(format!(
-            "play  {play} | {}",
-            source_map_capture_compact(&source_map.capture_hint)
+            "b {bars} p {play} | {}",
+            source_map_navigation_compact(&source_map.navigation_hint)
         )),
     ]
 }
@@ -140,13 +140,13 @@ fn source_map_best_bucket_char(chars: &[char]) -> char {
         .unwrap_or(' ')
 }
 
-fn source_map_capture_compact(capture_hint: &str) -> &'static str {
-    if capture_hint.starts_with("cap next bar") {
-        "cap next bar"
-    } else if capture_hint.starts_with("cap listen first") {
-        "cap listen first"
+fn source_map_navigation_compact(navigation_hint: &str) -> &'static str {
+    if navigation_hint.contains("Up/Down") {
+        "nav b/p"
+    } else if navigation_hint.contains("Left/Right") {
+        "nav bar"
     } else {
-        "no cap"
+        "nav -"
     }
 }
 

@@ -132,9 +132,11 @@ Optional target references:
 - `transport.stop`
 - `transport.seek`
 
-`transport.seek` may be used for musician-facing bar and phrase navigation. The
-seek target must be structured, not inferred from status text: bar seek and
-phrase seek preserve the current play / pause state, clamp at source bounds by
+`transport.seek` may be used for musician-facing Source Map bar and phrase
+navigation. The shell may expose typed intents such as previous / next bar and
+previous / next phrase, but the committed product truth remains a structured
+`transport.seek` action with `ActionParams::Transport { position_beats }`.
+Seek preserves the current play / pause state, clamps at source bounds by
 default, and must be replayable.
 
 ### 6.1.1 Source monitor and timing trust

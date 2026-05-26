@@ -232,6 +232,10 @@ Rules:
   them visually by bar
 - when timing is unavailable or not usable, the map must fall back to a
   time-uniform source view and avoid bar-accurate capture claims
+- map navigation uses typed shell intent for previous / next bar and previous /
+  next phrase, but commits as `transport.seek` so the selected listening
+  position remains replayable Session transport state rather than hidden
+  TUI-local cursor state
 - a musician may confirm the currently selected timing hypothesis only after
   source audition; this confirmation is a persisted trust state, not a local TUI
   flag

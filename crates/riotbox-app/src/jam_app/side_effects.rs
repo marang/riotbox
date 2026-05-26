@@ -4,6 +4,7 @@ mod scene;
 mod source_monitor;
 mod source_timing;
 mod tr909;
+mod transport;
 mod w30;
 
 pub(super) use ghost::apply_ghost_side_effects;
@@ -12,4 +13,5 @@ pub(super) use scene::apply_scene_side_effects;
 pub(super) use source_monitor::apply_source_monitor_side_effects;
 pub(super) use source_timing::apply_source_timing_side_effects;
 pub(super) use tr909::apply_tr909_side_effects;
+pub(super) use transport::apply_transport_side_effects;
 pub(super) use w30::apply_w30_side_effects;
