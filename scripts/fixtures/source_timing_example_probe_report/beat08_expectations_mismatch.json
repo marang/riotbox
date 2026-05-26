@@ -43,7 +43,13 @@
         "max": 0.1
       },
       "alternate_beat_candidate_count": 3,
-      "alternate_downbeat_phase_count": 4
+      "alternate_downbeat_phase_count": 4,
+      "anchor_evidence": {
+        "primary_anchor_count": 99,
+        "primary_kick_anchor_count": 99,
+        "primary_backbeat_anchor_count": 99,
+        "primary_transient_anchor_count": 99
+      }
     }
   }
 }

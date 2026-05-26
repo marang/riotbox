@@ -45,7 +45,13 @@
         "max": 1.0
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 9,
+        "primary_kick_anchor_count": 2,
+        "primary_backbeat_anchor_count": 4,
+        "primary_transient_anchor_count": 3
+      }
     },
     "long_stable_lock.wav": {
       "cue": "grid locked",
@@ -90,7 +96,13 @@
         "max": 0.75
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 11,
+        "primary_kick_anchor_count": 6,
+        "primary_backbeat_anchor_count": 3,
+        "primary_transient_anchor_count": 2
+      }
     }
   }
 }

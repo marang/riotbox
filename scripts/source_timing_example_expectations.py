@@ -32,8 +32,16 @@ EXPECTATION_KEYS = {
     "primary_beat_median_distance_ratio",
     "primary_downbeat_score",
     "primary_downbeat_margin",
+    "anchor_evidence",
     "warning_codes_include",
     "warning_codes_exact",
+}
+
+ANCHOR_EVIDENCE_KEYS = {
+    "primary_anchor_count",
+    "primary_kick_anchor_count",
+    "primary_backbeat_anchor_count",
+    "primary_transient_anchor_count",
 }
 
 
@@ -94,6 +102,7 @@ def expectation_issues(payload: dict[str, Any], expectation: dict[str, Any]) -> 
     compare_number_range(payload, expectation, issues, "primary_beat_median_distance_ratio")
     compare_number_range(payload, expectation, issues, "primary_downbeat_score")
     compare_number_range(payload, expectation, issues, "primary_downbeat_margin")
+    compare_anchor_evidence(payload, expectation, issues)
     compare_warning_includes(payload, expectation, issues)
     compare_warning_exact(payload, expectation, issues)
     return issues
@@ -263,6 +272,39 @@ def compare_warning_exact(
             f"got {actual_warnings!r}"
         )
         issues.append(message)
+
+
+def compare_anchor_evidence(
+    payload: dict[str, Any],
+    expectation: dict[str, Any],
+    issues: list[str],
+) -> None:
+    if "anchor_evidence" not in expectation:
+        return
+    expected = require_anchor_evidence_expectation(expectation["anchor_evidence"])
+    actual = require_object(payload.get("anchor_evidence"), "anchor_evidence")
+    for key in sorted(expected):
+        expected_value = expected[key]
+        actual_value = require_int(actual, key)
+        if actual_value != expected_value:
+            issues.append(
+                f"anchor_evidence.{key} expected {expected_value!r} got {actual_value!r}"
+            )
+
+
+def require_anchor_evidence_expectation(value: Any) -> dict[str, int]:
+    expected = require_object(value, "anchor_evidence expectation")
+    unknown_keys = sorted(set(expected) - ANCHOR_EVIDENCE_KEYS)
+    if unknown_keys:
+        raise ValueError(
+            f"anchor_evidence expectation has unknown keys: {', '.join(unknown_keys)}"
+        )
+    if not expected:
+        raise ValueError("anchor_evidence expectation must include at least one key")
+    return {
+        key: require_int(expected, key)
+        for key in sorted(expected)
+    }
 
 
 def require_object(value: Any, label: str) -> dict[str, Any]:
