@@ -44,7 +44,13 @@
         "max": 0.05
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 11,
+        "primary_kick_anchor_count": 4,
+        "primary_backbeat_anchor_count": 3,
+        "primary_transient_anchor_count": 4
+      }
     },
     "Beat08_128BPM(Full).wav": {
       "cue": "needs confirm",
@@ -90,7 +96,13 @@
         "max": 0.05
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 9,
+        "primary_kick_anchor_count": 3,
+        "primary_backbeat_anchor_count": 2,
+        "primary_transient_anchor_count": 4
+      }
     },
     "Beat20_128BPM(Full).wav": {
       "cue": "needs confirm",
@@ -137,7 +149,13 @@
         "max": 0.05
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 3
+      "alternate_downbeat_phase_count": 3,
+      "anchor_evidence": {
+        "primary_anchor_count": 11,
+        "primary_kick_anchor_count": 0,
+        "primary_backbeat_anchor_count": 0,
+        "primary_transient_anchor_count": 11
+      }
     },
     "DH_BeatC_120-01.wav": {
       "cue": "needs confirm",
@@ -183,7 +201,13 @@
         "max": 0.05
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 8,
+        "primary_kick_anchor_count": 2,
+        "primary_backbeat_anchor_count": 4,
+        "primary_transient_anchor_count": 2
+      }
     },
     "DH_BeatC_KickSnr_120-01.wav": {
       "cue": "needs confirm",
@@ -229,7 +253,13 @@
         "max": 0.05
       },
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 8,
+        "primary_kick_anchor_count": 2,
+        "primary_backbeat_anchor_count": 4,
+        "primary_transient_anchor_count": 2
+      }
     },
     "DH_Fadapad_120_A.wav": {
       "cue": "not available",
@@ -253,7 +283,13 @@
         "weak_kick_anchor"
       ],
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 0,
+        "primary_kick_anchor_count": 0,
+        "primary_backbeat_anchor_count": 0,
+        "primary_transient_anchor_count": 0
+      }
     },
     "DH_RushArp_120_A.wav": {
       "cue": "not available",
@@ -277,7 +313,13 @@
         "weak_kick_anchor"
       ],
       "alternate_beat_candidate_count": 0,
-      "alternate_downbeat_phase_count": 0
+      "alternate_downbeat_phase_count": 0,
+      "anchor_evidence": {
+        "primary_anchor_count": 0,
+        "primary_kick_anchor_count": 0,
+        "primary_backbeat_anchor_count": 0,
+        "primary_transient_anchor_count": 0
+      }
     }
   }
 }
