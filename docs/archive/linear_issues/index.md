@@ -748,4 +748,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Assert local example groove residual counts
 - [RIOTBOX-999.md](./RIOTBOX-999.md)
   Assert unavailable local timing null metrics
+- [RIOTBOX-1000.md](./RIOTBOX-1000.md)
+  Review source timing expectation harness after local evidence tightening
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
