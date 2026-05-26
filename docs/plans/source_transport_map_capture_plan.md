@@ -117,7 +117,9 @@ The acceptance order is:
    capture length, and capture result restore deterministically
 3. visual accuracy: map rows, playhead, bars, capture range, grid fallback, and
    monochrome readability are covered by focused snapshots and observer
-   `source_map` projection evidence
+   `source_map` projection evidence; committed captures expose source-window
+   provenance in observer snapshots so preview and landed capture can be
+   compared
 
 Audio proof must show that `source`, `blend`, and `riotbox` monitor states are
 not silently collapsed into one another, and that source seek changes the audible

@@ -55,6 +55,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
         },
         "source_timing": source_timing_observer_snapshot(shell),
         "source_map": source_map_observer_snapshot(shell),
+        "capture": capture_observer_snapshot(shell),
         "recovery": recovery_observer_snapshot(shell),
     })
 }
@@ -248,6 +249,39 @@ fn source_map_observer_snapshot(shell: &JamShellState) -> Value {
         "current_region_label": source_map.current_region_label.as_str(),
         "navigation_hint": source_map.navigation_hint.as_str(),
         "capture_hint": source_map.capture_hint.as_str(),
+    })
+}
+
+fn capture_observer_snapshot(shell: &JamShellState) -> Value {
+    let Some(capture) = shell.app.session.captures.last() else {
+        return json!({
+            "present": false,
+            "capture_count": 0,
+            "latest_capture_id": null,
+            "source_window_available": false,
+            "source_window": null,
+        });
+    };
+    let source_window = capture.source_window.as_ref().map(|window| {
+        json!({
+            "source_id": window.source_id.to_string(),
+            "start_seconds": window.start_seconds,
+            "end_seconds": window.end_seconds,
+            "duration_seconds": window.end_seconds - window.start_seconds,
+            "start_frame": window.start_frame,
+            "end_frame": window.end_frame,
+        })
+    });
+
+    json!({
+        "present": true,
+        "capture_count": shell.app.session.captures.len(),
+        "latest_capture_id": capture.capture_id.to_string(),
+        "latest_capture_type": format!("{:?}", capture.capture_type),
+        "created_from_action": capture.created_from_action.map(|action_id| action_id.0),
+        "source_origin_count": capture.source_origin_refs.len(),
+        "source_window_available": capture.source_window.is_some(),
+        "source_window": source_window,
     })
 }
 
