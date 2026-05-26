@@ -28,6 +28,7 @@
       "primary_beat_count": 99,
       "primary_bar_count": 99,
       "downbeat_status": "stable",
+      "primary_downbeat_offset_beats": 3,
       "phrase_status": "phrase_locked",
       "primary_phrase_count": 99,
       "primary_phrase_bar_count": 4,

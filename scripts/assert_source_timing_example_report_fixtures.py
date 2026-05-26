@@ -161,6 +161,7 @@ def main() -> int:
     assert_missing_expected_source_skips()
     assert_mismatch_expectations_fail()
     assert_anchor_expectations_fail()
+    assert_downbeat_offset_expectations_fail()
     assert_exact_warning_expectations_fail()
     assert_invalid_expectations_fail()
     assert_malformed_fixture_cli_error()
@@ -245,6 +246,21 @@ def assert_anchor_expectations_fail() -> None:
         or "anchor_evidence.primary_anchor_count" not in failures[0]
     ):
         raise AssertionError("expected mismatched anchor evidence to fail")
+
+
+def assert_downbeat_offset_expectations_fail() -> None:
+    expectations = load_expectations(FIXTURE_DIR / "beat08_expectations_mismatch.json")
+    row = row_from_payload(
+        load_json(FIXTURE_DIR / "beat08_source_timing_probe.json"),
+        expectations,
+    )
+    failures = expectation_failures([row])
+    if (
+        not failures
+        or "mismatch:" not in failures[0]
+        or "primary_downbeat_offset_beats" not in failures[0]
+    ):
+        raise AssertionError("expected mismatched downbeat offset to fail")
 
 
 def assert_exact_warning_expectations_fail() -> None:
