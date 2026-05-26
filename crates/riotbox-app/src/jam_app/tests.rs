@@ -6,6 +6,7 @@ include!("tests/restore_parity_helpers.rs");
 include!("tests/restore_contracts.rs");
 include!("tests/persistence_runtime_view.rs");
 include!("tests/source_timing_runtime_view.rs");
+include!("tests/source_timing_consumer_readiness.rs");
 include!("tests/source_map_navigation.rs");
 include!("tests/replay_hardening.rs");
 include!("tests/snapshot_payload_restore_failures.rs");

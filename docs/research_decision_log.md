@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-002
 
 Date: 2026-04-12  
@@ -1635,4 +1637,18 @@ Decision: add `just source-timing-confirmation-probe` as a CI-safe headless obse
 Why: confirmation is musician trust, not analyzer truth. A repeatable observer proof makes the user-visible control path auditable across key outcome, queue history, commit event, Session runtime state, and observer fields.
 Evidence: RIOTBOX-978 adds the `source-timing-confirmation` probe scenario, normal observer validation, focused probe tests, and an `audio-qa-ci` target.
 Consequences: future source timing trust changes should extend this probe or add a sibling probe instead of relying only on UI snapshots.
+Status: accepted
+
+---
+
+### RBX-044
+
+Date: 2026-05-23
+Topic: lane consumers gate source windows on typed timing readiness
+Phase: Source Timing Intelligence / Capture Workflow
+Question: how should source-window consumers distinguish analyzer-locked timing, manual-confirm-required timing, and user-confirmed timing?
+Decision: add shared typed `SourceTimingConsumerReadiness` in the Jam view/core contract. Source-window capture may use analyzer-locked timing or a matching user-confirmed grid, but unconfirmed manual-confirm timing does not silently materialize bar-accurate source-window reuse.
+Why: manual confirmation is musician trust, not analyzer truth. Downstream lanes need a stable typed contract instead of branching on raw `grid_use` strings or app-local UI state.
+Evidence: RIOTBOX-979 wires capture source-window materialization through the shared readiness helper and tests unconfirmed vs user-confirmed manual timing.
+Consequences: later TR-909 / MC-202 / W-30 source consumers should reuse the same helper when they need to decide whether timing is only analyzed, requires user confirmation, or has been accepted by the musician.
 Status: accepted

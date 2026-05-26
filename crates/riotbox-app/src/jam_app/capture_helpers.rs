@@ -4,6 +4,7 @@ use riotbox_core::{
     session::{CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType, SessionFile},
     source_graph::SourceGraph,
     transport::CommitBoundaryState,
+    view::jam::source_timing_consumer_readiness,
 };
 
 pub(in crate::jam_app) fn capture_ref_from_action(
@@ -121,6 +122,9 @@ fn capture_source_window(
             | ActionCommand::CaptureBarGroup
             | ActionCommand::W30CaptureToPad
     ) {
+        return None;
+    }
+    if !source_timing_consumer_readiness(Some(graph), session).can_use_source_window_grid() {
         return None;
     }
 

@@ -199,6 +199,12 @@ User-confirmed timing trust must be represented explicitly:
 The session must preserve the original Source Graph evidence. Confirming a grid
 does not silently rewrite the analysis payload.
 
+Source-window consumers must read this session trust state through the shared
+consumer readiness contract. A source graph that still requires manual
+confirmation must not become a bar-accurate capture / W-30 reuse source merely
+because it has a BPM estimate; the matching `confirmed_grid` state is what
+turns that same analyzed timing into user-accepted source-window truth.
+
 ### 8.1.3 Capture intent
 
 Capture length is musician-facing runtime state, not app-local UI state:

@@ -263,6 +263,12 @@ Rules:
   `runtime_state.source_timing.confirmed_grid` and display it as musician trust,
   for example `grid confirmed` / `user confirmed`, without changing the
   analyzed Source Graph hypothesis, confidence, or warning payloads
+- lane/source-window consumers must use the shared typed consumer readiness
+  helper, not raw `grid_use` strings or `JamAppState`-local flags. A locked
+  analyzer grid and a matching user-confirmed grid may drive bar-accurate
+  source-window reuse; unconfirmed manual-confirm timing must remain visible as
+  `needs_user_confirmation` and must not silently create bar-accurate source
+  windows.
 - confirmation is explicitly revertible through `source_timing.revert_grid`;
   that action clears a matching `runtime_state.source_timing.confirmed_grid`
   value through queue / commit / replay rather than deleting or weakening the

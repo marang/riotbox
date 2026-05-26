@@ -1,6 +1,7 @@
 use crossterm::event::KeyCode;
 use riotbox_core::{
     action::Action, persistence::SessionRecoveryCandidateKind, queue::CommittedActionRef,
+    view::jam::source_timing_confirmation_matches_graph,
 };
 use serde_json::{Value, json};
 
@@ -185,10 +186,8 @@ fn source_timing_observer_snapshot(shell: &JamShellState) -> Value {
         .source_timing
         .confirmed_grid
         .as_ref();
-    let confirmed_grid_matches_current_source = confirmed_grid.is_some_and(|confirmed| {
-        confirmed.source_id == graph.source.source_id
-            && confirmed.hypothesis_id.as_deref() == graph.timing.primary_hypothesis_id.as_deref()
-    });
+    let confirmed_grid_matches_current_source =
+        source_timing_confirmation_matches_graph(graph, &shell.app.session);
 
     json!({
         "present": true,

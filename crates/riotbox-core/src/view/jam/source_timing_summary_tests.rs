@@ -1,6 +1,7 @@
 use super::*;
 use crate::{
-    ids::SourceId,
+    ids::{ActionId, SourceId},
+    session::{SessionFile, SourceTimingGridConfirmationState},
     source_graph::{
         DecodeProfile, GraphProvenance, GrooveResidual, GrooveSubdivision, MeterHint,
         SourceDescriptor, SourceGraph, SourceTimingAnchor, SourceTimingAnchorType,
@@ -27,6 +28,68 @@ fn default_summary_keeps_policy_and_cue_contract_aligned() {
     assert_eq!(timing.bar_count, 0);
     assert_eq!(timing.phrase_status, "unknown");
     assert_eq!(timing.phrase_count, 0);
+}
+
+#[test]
+fn consumer_readiness_distinguishes_analyzer_user_and_manual_trust() {
+    let locked = source_timing_graph(TimingQuality::High, TimingDegradedPolicy::Locked);
+    let session = SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&locked), &session),
+        SourceTimingConsumerReadiness::AnalyzerLocked
+    );
+    assert!(
+        source_timing_consumer_readiness(Some(&locked), &session).can_use_source_window_grid()
+    );
+
+    let mut manual = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::ManualConfirm);
+    manual.timing.primary_hypothesis_id = Some("primary".into());
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&manual), &session),
+        SourceTimingConsumerReadiness::NeedsUserConfirmation
+    );
+    assert!(
+        !source_timing_consumer_readiness(Some(&manual), &session).can_use_source_window_grid()
+    );
+
+    let mut confirmed_session =
+        SessionFile::new("session-1", "0.1.0", "2026-05-23T00:00:00Z");
+    confirmed_session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: manual.source.source_id.clone(),
+            hypothesis_id: manual.timing.primary_hypothesis_id.clone(),
+            confirmed_by_action: ActionId(9),
+            confirmed_at: 900,
+        });
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&manual), &confirmed_session),
+        SourceTimingConsumerReadiness::UserConfirmed
+    );
+    assert!(
+        source_timing_consumer_readiness(Some(&manual), &confirmed_session)
+            .can_use_source_window_grid()
+    );
+
+    let fallback = source_timing_graph(TimingQuality::Low, TimingDegradedPolicy::FallbackGrid);
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&fallback), &session),
+        SourceTimingConsumerReadiness::FallbackGrid
+    );
+    confirmed_session
+        .runtime_state
+        .source_timing
+        .confirmed_grid
+        .as_mut()
+        .expect("confirmed grid")
+        .hypothesis_id = fallback.timing.primary_hypothesis_id.clone();
+    assert_eq!(
+        source_timing_consumer_readiness(Some(&fallback), &confirmed_session),
+        SourceTimingConsumerReadiness::FallbackGrid
+    );
+    assert_eq!(
+        source_timing_consumer_readiness(None, &session),
+        SourceTimingConsumerReadiness::Unavailable
+    );
 }
 
 #[test]

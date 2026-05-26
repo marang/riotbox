@@ -1,7 +1,4 @@
-use riotbox_core::source_graph::{
-    BarSpan, MeterHint, PhraseSpan, TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind,
-    TimingQuality,
-};
+use riotbox_core::source_graph::{BarSpan, PhraseSpan};
 
 #[test]
 fn source_map_navigation_queues_commits_and_restores_transport_position() {
