@@ -716,4 +716,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Assert Source Map capture range in user-session observer probes
 - [RIOTBOX-984.md](./RIOTBOX-984.md)
   Align Source Map capture range with next capture boundary
+- [RIOTBOX-985.md](./RIOTBOX-985.md)
+  Apply capture length boundary semantics to committed source windows
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
