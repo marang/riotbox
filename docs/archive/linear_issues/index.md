@@ -712,4 +712,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Show Source Map capture range from capture length intent
 - [RIOTBOX-982.md](./RIOTBOX-982.md)
   Expose Source Map capture range in observer snapshots
+- [RIOTBOX-983.md](./RIOTBOX-983.md)
+  Assert Source Map capture range in user-session observer probes
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
