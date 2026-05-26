@@ -1680,3 +1680,17 @@ Why: musicians need to see the practical effect of `1 beat`, `1 bar`, `4 bars`, 
 Evidence: RIOTBOX-981 projects the range in `SourceMapView`, renders it on the Source screen, and tests locked/confirmed timing versus fallback/manual-confirm timing.
 Consequences: later capture UI may make the marker richer, but it must remain projection-only unless a future action/session contract explicitly adds manual selection.
 Status: accepted
+
+---
+
+### RBX-047
+
+Date: 2026-05-23
+Topic: observer snapshots expose Source Map projection state
+Phase: Source Timing Intelligence / QA
+Question: how should QA verify Source Map capture-range visibility without relying only on terminal snapshots?
+Decision: add a top-level `source_map` observer snapshot block sourced from the shared `SourceMapView`. It exposes mode, trust label, playhead column, capture range row / availability, navigation hint, and capture hint.
+Why: the capture-range marker is musician-facing projection state. Observer QA needs to prove the same visible truth as the TUI while avoiding a second observer-only Source Map derivation.
+Evidence: RIOTBOX-982 adds observer fields and focused tests for bar-grid timing versus untrusted fallback timing.
+Consequences: future Source Map UI changes should keep observer output aligned with `SourceMapView`; observer code must not independently recompute timing readiness, capture range, or navigation state.
+Status: accepted

@@ -264,6 +264,11 @@ Rules:
 - observer surfaces should expose `grid_confirmed`, confirmed source /
   hypothesis ids, confirming action id, and confirmation timestamp beside the
   analyzed timing evidence
+- observer snapshots should expose the shared Source Map projection beside
+  Source Timing evidence, including mode, trust label, playhead column,
+  navigation hint, capture hint, and capture-range row / availability. This is
+  QA evidence for what the TUI shows; it must be sourced from `SourceMapView`,
+  not independently re-derived in observer code.
 - `just source-timing-confirmation-probe` must keep this observer path
   repeatable: it presses the real `C` confirmation control, records the
   immediate `source_timing.confirm_grid` commit, and asserts the Source Graph
