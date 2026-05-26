@@ -728,4 +728,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add end-to-end source transport map capture workflow QA proof
 - [RIOTBOX-990.md](./RIOTBOX-990.md)
   Back Source Map block rows with typed source energy buckets
+- [RIOTBOX-991.md](./RIOTBOX-991.md)
+  Populate Source Map buckets from decoded WAV sidecar analysis
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
