@@ -193,14 +193,16 @@ fn quality_label(quality: &QualityClass) -> &'static str {
 
 pub(super) fn source_timing_readiness_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
+    let cue = source_timing_cue_label(shell);
+    let actionability = source_timing_actionability_label(shell);
     Line::from(vec![
         Span::styled("timing ", style_low_emphasis()),
         Span::styled(
-            timing.cue.clone(),
-            source_timing_policy_cue_style(&timing.degraded_policy),
+            cue,
+            source_timing_policy_cue_style(shell, &timing.degraded_policy),
         ),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(timing.actionability.clone()),
+        Span::raw(actionability),
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(timing.grid_use.clone()),
         Span::styled(" | ", style_low_emphasis()),
@@ -210,14 +212,15 @@ pub(super) fn source_timing_readiness_line(shell: &JamShellState) -> Line<'stati
 
 pub(super) fn source_timing_performance_rail_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
+    let cue = source_timing_cue_label(shell);
     if shell.app.source_graph.is_none()
         || matches!(timing.degraded_policy.as_str(), "disabled" | "unknown")
     {
         return Line::from(vec![
             Span::styled("timing ", style_low_emphasis()),
             Span::styled(
-                timing.cue.clone(),
-                source_timing_policy_cue_style(&timing.degraded_policy),
+                cue,
+                source_timing_policy_cue_style(shell, &timing.degraded_policy),
             ),
             Span::styled(" | ", style_low_emphasis()),
             Span::styled("no clock", style_low_emphasis()),
@@ -228,8 +231,8 @@ pub(super) fn source_timing_performance_rail_line(shell: &JamShellState) -> Line
     Line::from(vec![
         Span::styled("timing ", style_low_emphasis()),
         Span::styled(
-            timing.cue.clone(),
-            source_timing_policy_cue_style(&timing.degraded_policy),
+            cue,
+            source_timing_policy_cue_style(shell, &timing.degraded_policy),
         ),
         Span::styled(" ", style_low_emphasis()),
         Span::styled(
@@ -265,12 +268,14 @@ pub(super) fn source_timing_clock_compact(shell: &JamShellState) -> String {
 
 pub(super) fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
     let timing = &shell.app.jam_view.source.timing;
+    let cue = source_timing_cue_label(shell);
+    let actionability = source_timing_actionability_label(shell);
 
     Line::from(vec![
         Span::raw("Timing: "),
         Span::styled(
-            timing.cue.clone(),
-            source_timing_policy_cue_style(&timing.degraded_policy),
+            cue,
+            source_timing_policy_cue_style(shell, &timing.degraded_policy),
         ),
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(format!("grid {}", timing.grid_use)),
@@ -286,7 +291,7 @@ pub(super) fn source_timing_help_line(shell: &JamShellState) -> Line<'static> {
         Span::styled(" | ", style_low_emphasis()),
         Span::raw(source_timing_help_clock_compact(shell)),
         Span::styled(" | ", style_low_emphasis()),
-        Span::raw(timing.actionability.clone()),
+        Span::raw(actionability),
     ])
 }
 
@@ -410,7 +415,44 @@ pub(super) fn source_timing_warning_line(shell: &JamShellState) -> String {
         .unwrap_or_else(|| "timing warning none".into())
 }
 
-fn source_timing_policy_cue_style(policy: &str) -> Style {
+pub(super) fn source_timing_grid_confirmed(shell: &JamShellState) -> bool {
+    let Some(graph) = shell.app.source_graph.as_ref() else {
+        return false;
+    };
+    shell
+        .app
+        .session
+        .runtime_state
+        .source_timing
+        .confirmed_grid
+        .as_ref()
+        .is_some_and(|confirmed| {
+            confirmed.source_id == graph.source.source_id
+                && confirmed.hypothesis_id.as_deref()
+                    == graph.timing.primary_hypothesis_id.as_deref()
+        })
+}
+
+fn source_timing_cue_label(shell: &JamShellState) -> String {
+    if source_timing_grid_confirmed(shell) {
+        "grid confirmed".into()
+    } else {
+        shell.app.jam_view.source.timing.cue.clone()
+    }
+}
+
+fn source_timing_actionability_label(shell: &JamShellState) -> String {
+    if source_timing_grid_confirmed(shell) {
+        "user confirmed".into()
+    } else {
+        shell.app.jam_view.source.timing.actionability.clone()
+    }
+}
+
+fn source_timing_policy_cue_style(shell: &JamShellState, policy: &str) -> Style {
+    if source_timing_grid_confirmed(shell) {
+        return style_confirmation_strong();
+    }
     match policy {
         "locked" => style_confirmation_strong(),
         "manual_confirm" | "cautious" | "fallback_grid" => style_pending_cue(),

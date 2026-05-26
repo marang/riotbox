@@ -117,6 +117,7 @@ pub enum ShellKeyOutcome {
     QueueW30LiveRecall,
     QueueW30Audition,
     QueueW30Resample,
+    ConfirmSourceTimingGrid,
     TogglePinLatestCapture,
     LowerDrumBusLevel,
     RaiseDrumBusLevel,

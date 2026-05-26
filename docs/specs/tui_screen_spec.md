@@ -113,6 +113,11 @@ It must expose:
 - Jam Help, Start Here, and Source timing panels should read the actionability
   phrase from the shared Jam source timing summary instead of matching local
   degraded-policy strings.
+- When the current source timing grid has been accepted through the
+  `source_timing.confirm_grid` action, Jam and Source timing surfaces should
+  show that session truth as `grid confirmed` / `user confirmed` while leaving
+  the analyzed Source Graph timing confidence and warnings visible as separate
+  evidence.
 - Jam should keep a one-line `Now` timing rail visible in perform mode, for
   example `timing needs confirm [===>] next bar`, so musicians can see the trust
   state and the next bar boundary without opening Inspect or Source
@@ -185,6 +190,9 @@ Show:
   can explain whether the musician should trust the grid, confirm it, listen
   first, or treat it as unavailable / fallback-backed without decoding internal
   policy labels.
+- user-confirmed grid state from session runtime truth, not by rewriting Source
+  Graph evidence. The Source timing panel may compact this to `ready grid
+  confirmed` and `act user confirmed` after the confirmation action lands.
 - section list
 - loop and hook candidate summaries
 - Source Graph warnings

@@ -1554,3 +1554,17 @@ Why: confirmation changes how much trust the musician and later workflows can pl
 Evidence: RIOTBOX-972 added typed action params, queue / commit side effects, replay support, observer fields, session serialization coverage, and app queue/commit tests.
 Consequences: Source Graph evidence remains unchanged; analyzed confidence and user-accepted trust stay separate. Revert / undo semantics still need a dedicated follow-up before confirmation can be removed explicitly.
 Status: accepted
+
+---
+
+### RBX-038
+
+Date: 2026-05-23
+Topic: confirmed grid wording is musician trust, not analysis mutation
+Phase: Source Timing Intelligence / Musician UX
+Question: how should Jam and Source show a user-confirmed timing grid after the action commits?
+Decision: display confirmed grid state from `runtime_state.source_timing.confirmed_grid` as `grid confirmed` / `user confirmed` on Jam and Source timing surfaces, while preserving Source Graph confidence, warning, and degraded-policy evidence as separate analysis facts.
+Why: the musician needs a clear “I accepted this after listening” cue, but replay and QA still need to distinguish that acceptance from analyzer certainty.
+Evidence: RIOTBOX-973 wires the confirmation key outcome into the shell event loop, commits the immediate action, and renders the confirmation state in Jam/Source timing text.
+Consequences: future Source Map trust-row and lane-consumer slices should read the same session truth instead of inventing TUI-local confirmation flags or mutating Source Graph analysis.
+Status: accepted

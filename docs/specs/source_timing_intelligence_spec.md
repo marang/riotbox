@@ -247,6 +247,10 @@ Rules:
 - observer surfaces should expose `grid_confirmed`, confirmed source /
   hypothesis ids, confirming action id, and confirmation timestamp beside the
   analyzed timing evidence
+- Jam and Source TUI surfaces should derive user-confirmed wording from
+  `runtime_state.source_timing.confirmed_grid` and display it as musician trust,
+  for example `grid confirmed` / `user confirmed`, without changing the
+  analyzed Source Graph hypothesis, confidence, or warning payloads
 - confirmation must be undoable or explicitly revertible through the action /
   session model
 

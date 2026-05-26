@@ -1,6 +1,6 @@
 use ratatui::text::Line;
 
-use super::JamShellState;
+use super::{JamShellState, source_timing_grid_confirmed};
 
 pub(super) fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let timing = &shell.app.jam_view.source.timing;
@@ -8,7 +8,7 @@ pub(super) fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         Some(graph) => vec![
             Line::from(format!(
                 "ready {} | {} | c{:.2}",
-                timing.cue,
+                source_timing_cue_compact_label(shell),
                 graph
                     .timing
                     .bpm_estimate
@@ -36,7 +36,7 @@ pub(super) fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             )),
             Line::from(format!(
                 "act {} | warn {}",
-                source_timing_action_compact_label(&timing.actionability),
+                source_timing_action_compact_label(shell, &timing.actionability),
                 source_timing_warning_compact_label(timing.primary_warning.as_deref()),
             )),
         ],
@@ -60,7 +60,18 @@ pub(super) fn source_timing_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     }
 }
 
-fn source_timing_action_compact_label(actionability: &str) -> &'static str {
+fn source_timing_cue_compact_label(shell: &JamShellState) -> String {
+    if source_timing_grid_confirmed(shell) {
+        "grid confirmed".into()
+    } else {
+        shell.app.jam_view.source.timing.cue.clone()
+    }
+}
+
+fn source_timing_action_compact_label(shell: &JamShellState, actionability: &str) -> &'static str {
+    if source_timing_grid_confirmed(shell) {
+        return "user confirmed";
+    }
     match actionability {
         "confirm grid first" => "confirm grid",
         "grid can steer moves" => "grid steer",
