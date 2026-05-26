@@ -9,7 +9,12 @@ use std::{
     io::{self, BufRead, BufReader, Write},
     path::Path,
     process::{Child, ChildStdin, ChildStdout, Command, Stdio},
+    sync::mpsc::{self, Receiver, RecvTimeoutError},
+    thread,
+    time::Duration,
 };
+
+const DEFAULT_RESPONSE_TIMEOUT: Duration = Duration::from_secs(10);
 
 #[derive(Debug)]
 pub enum ClientError {
@@ -21,6 +26,9 @@ pub enum ClientError {
     UnexpectedEof,
     Sidecar(SidecarErrorPayload),
     UnexpectedResponse(&'static str),
+    ResponseTimeout {
+        timeout: Duration,
+    },
     RequestIdMismatch {
         expected: String,
         received: Option<String>,
@@ -38,6 +46,11 @@ impl Display for ClientError {
             Self::UnexpectedEof => write!(f, "sidecar closed stdout before replying"),
             Self::Sidecar(error) => write!(f, "sidecar returned {}: {}", error.code, error.message),
             Self::UnexpectedResponse(kind) => write!(f, "unexpected sidecar response: {kind}"),
+            Self::ResponseTimeout { timeout } => write!(
+                f,
+                "sidecar did not reply within {:.1}s",
+                timeout.as_secs_f32()
+            ),
             Self::RequestIdMismatch { expected, received } => write!(
                 f,
                 "sidecar response request_id mismatch: expected {expected}, got {}",
@@ -57,6 +70,7 @@ impl Error for ClientError {
             | Self::UnexpectedEof
             | Self::Sidecar(_)
             | Self::UnexpectedResponse(_)
+            | Self::ResponseTimeout { .. }
             | Self::RequestIdMismatch { .. } => None,
         }
     }
@@ -77,8 +91,9 @@ impl From<crate::protocol::ProtocolError> for ClientError {
 pub struct StdioSidecarClient {
     child: Child,
     stdin: ChildStdin,
-    stdout: BufReader<ChildStdout>,
+    stdout_rx: Receiver<Result<String, io::Error>>,
     next_request_id: u64,
+    response_timeout: Duration,
 }
 
 impl StdioSidecarClient {
@@ -97,9 +112,16 @@ impl StdioSidecarClient {
         Ok(Self {
             child,
             stdin,
-            stdout: BufReader::new(stdout),
+            stdout_rx: spawn_stdout_reader(stdout),
             next_request_id: 1,
+            response_timeout: DEFAULT_RESPONSE_TIMEOUT,
         })
+    }
+
+    #[must_use]
+    pub fn with_response_timeout(mut self, response_timeout: Duration) -> Self {
+        self.response_timeout = response_timeout;
+        self
     }
 
     pub fn ping(&mut self) -> Result<PongPayload, ClientError> {
@@ -193,15 +215,42 @@ impl StdioSidecarClient {
     }
 
     fn read_response(&mut self) -> Result<SidecarResponse, ClientError> {
-        let mut line = String::new();
-        let bytes_read = self.stdout.read_line(&mut line)?;
-
-        if bytes_read == 0 {
-            return Err(ClientError::UnexpectedEof);
-        }
+        let line = match self.stdout_rx.recv_timeout(self.response_timeout) {
+            Ok(Ok(line)) => line,
+            Ok(Err(error)) => return Err(ClientError::Io(error)),
+            Err(RecvTimeoutError::Timeout) => {
+                return Err(ClientError::ResponseTimeout {
+                    timeout: self.response_timeout,
+                });
+            }
+            Err(RecvTimeoutError::Disconnected) => return Err(ClientError::UnexpectedEof),
+        };
 
         Ok(decode_json_line(&line)?)
     }
+}
+
+fn spawn_stdout_reader(stdout: ChildStdout) -> Receiver<Result<String, io::Error>> {
+    let (tx, rx) = mpsc::channel();
+    thread::spawn(move || {
+        let mut stdout = BufReader::new(stdout);
+        loop {
+            let mut line = String::new();
+            match stdout.read_line(&mut line) {
+                Ok(0) => break,
+                Ok(_) => {
+                    if tx.send(Ok(line)).is_err() {
+                        break;
+                    }
+                }
+                Err(error) => {
+                    let _ = tx.send(Err(error));
+                    break;
+                }
+            }
+        }
+    });
+    rx
 }
 
 fn validate_request_id(expected: &str, received: Option<&str>) -> Result<(), ClientError> {
@@ -364,6 +413,30 @@ mod tests {
 
         match error {
             ClientError::Sidecar(payload) => assert_eq!(payload.code, "source_unsupported"),
+            other => panic!("unexpected error: {other}"),
+        }
+    }
+
+    #[test]
+    fn stdio_sidecar_times_out_when_child_stops_replying() {
+        let temp_dir = tempfile::tempdir().expect("create temp dir");
+        let script_path = temp_dir.path().join("hung_sidecar.py");
+        fs::write(
+            &script_path,
+            "import sys, time\nsys.stdin.readline()\ntime.sleep(5)\n",
+        )
+        .expect("write hung sidecar fixture");
+
+        let mut client = StdioSidecarClient::spawn_python(&script_path)
+            .expect("spawn hung python sidecar")
+            .with_response_timeout(Duration::from_millis(50));
+
+        let error = client.ping().expect_err("hung sidecar should time out");
+
+        match error {
+            ClientError::ResponseTimeout { timeout } => {
+                assert_eq!(timeout, Duration::from_millis(50));
+            }
             other => panic!("unexpected error: {other}"),
         }
     }
