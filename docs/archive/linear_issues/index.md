@@ -702,4 +702,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add capture length intent controls for source windows
 - [RIOTBOX-977.md](./RIOTBOX-977.md)
   Make Source Map trust row confirmation-aware
+- [RIOTBOX-978.md](./RIOTBOX-978.md)
+  Add source timing confirmation observer probe
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
