@@ -251,8 +251,10 @@ Rules:
   `runtime_state.source_timing.confirmed_grid` and display it as musician trust,
   for example `grid confirmed` / `user confirmed`, without changing the
   analyzed Source Graph hypothesis, confidence, or warning payloads
-- confirmation must be undoable or explicitly revertible through the action /
-  session model
+- confirmation is explicitly revertible through `source_timing.revert_grid`;
+  that action clears a matching `runtime_state.source_timing.confirmed_grid`
+  value through queue / commit / replay rather than deleting or weakening the
+  original Source Graph timing evidence
 
 That summary may collapse Source Graph detail into bounded musician language
 such as `grid locked`, `needs confirm`, `listen first`, `fallback grid`, or

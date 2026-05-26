@@ -1568,3 +1568,17 @@ Why: the musician needs a clear “I accepted this after listening” cue, but r
 Evidence: RIOTBOX-973 wires the confirmation key outcome into the shell event loop, commits the immediate action, and renders the confirmation state in Jam/Source timing text.
 Consequences: future Source Map trust-row and lane-consumer slices should read the same session truth instead of inventing TUI-local confirmation flags or mutating Source Graph analysis.
 Status: accepted
+
+---
+
+### RBX-039
+
+Date: 2026-05-23
+Topic: source timing grid confirmation has an explicit revert action
+Phase: Source Timing Intelligence
+Question: how should user-accepted timing trust be removed without corrupting analysis evidence?
+Decision: add `source_timing.revert_grid` as the explicit counterpart to `source_timing.confirm_grid`. It is a session-scope immediate action carrying the confirmed source id and optional hypothesis id, and it clears matching `runtime_state.source_timing.confirmed_grid` through queue, commit side effect, and replay.
+Why: confirmation is musician trust, not analyzer truth. Removing that trust must be auditable and replayable, and must not delete Source Graph timing evidence or rely on UI-local state.
+Evidence: RIOTBOX-974 wires the revert action through core command vocabulary, app queue/commit side effects, replay executor support, shell status handling, and focused tests.
+Consequences: downstream lane consumers can treat confirmation as reversible session truth. Full undo semantics remain separate; this action is the explicit trust-state removal path.
+Status: accepted

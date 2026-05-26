@@ -112,6 +112,7 @@ pub fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::QueueW30Audition => "queue_w30_audition",
         ShellKeyOutcome::QueueW30Resample => "queue_w30_resample",
         ShellKeyOutcome::ConfirmSourceTimingGrid => "confirm_source_timing_grid",
+        ShellKeyOutcome::RevertSourceTimingGrid => "revert_source_timing_grid",
         ShellKeyOutcome::TogglePinLatestCapture => "toggle_pin_latest_capture",
         ShellKeyOutcome::LowerDrumBusLevel => "lower_drum_bus_level",
         ShellKeyOutcome::RaiseDrumBusLevel => "raise_drum_bus_level",

@@ -117,7 +117,8 @@ It must expose:
   `source_timing.confirm_grid` action, Jam and Source timing surfaces should
   show that session truth as `grid confirmed` / `user confirmed` while leaving
   the analyzed Source Graph timing confidence and warnings visible as separate
-  evidence.
+  evidence. The explicit revert control must return those surfaces to the
+  summary-owned timing cue instead of keeping a stale local confirmation label.
 - Jam should keep a one-line `Now` timing rail visible in perform mode, for
   example `timing needs confirm [===>] next bar`, so musicians can see the trust
   state and the next bar boundary without opening Inspect or Source

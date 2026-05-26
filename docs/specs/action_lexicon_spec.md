@@ -143,7 +143,7 @@ Source monitor and timing-trust actions:
 
 - `source_monitor.set_mode`
 - `source_timing.confirm_grid`
-- `source_grid.revert`
+- `source_timing.revert_grid`
 
 `source_monitor.set_mode` changes the persisted listening mode between `source`,
 `blend`, and `riotbox`.
@@ -154,8 +154,10 @@ commits immediately, and carries structured `source_id` plus optional
 `hypothesis_id` parameters so replay / restore can distinguish analyzed
 confidence from user-accepted musical trust.
 
-`source_grid.revert` or normal undo must be able to remove a user confirmation
-without deleting the original Source Timing evidence.
+`source_timing.revert_grid` removes a matching user confirmation through the
+same session-scope action path without deleting the original Source Timing
+evidence. It carries the confirmed `source_id` plus optional `hypothesis_id` so
+replay can distinguish the trust-state removal from analysis changes.
 
 ### 6.2 Mutation
 

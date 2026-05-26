@@ -194,6 +194,10 @@ impl JamShellState {
                 self.status_message = "confirm source timing grid requested".into();
                 ShellKeyOutcome::ConfirmSourceTimingGrid
             }
+            KeyCode::Char('R') => {
+                self.status_message = "revert source timing grid confirmation requested".into();
+                ShellKeyOutcome::RevertSourceTimingGrid
+            }
             KeyCode::Char('v') => {
                 self.status_message = "toggle pin for latest capture".into();
                 ShellKeyOutcome::TogglePinLatestCapture

@@ -7,24 +7,51 @@ pub(in crate::jam_app) fn apply_source_timing_side_effects(
     session: &mut SessionFile,
     action: &Action,
 ) -> bool {
-    if action.command != ActionCommand::SourceTimingConfirmGrid {
-        return false;
-    }
-    let ActionParams::SourceTimingGrid {
-        source_id: Some(source_id),
-        hypothesis_id,
-    } = &action.params
-    else {
-        return false;
-    };
+    match action.command {
+        ActionCommand::SourceTimingConfirmGrid => {
+            let ActionParams::SourceTimingGrid {
+                source_id: Some(source_id),
+                hypothesis_id,
+            } = &action.params
+            else {
+                return false;
+            };
 
-    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
-        source_id: source_id.clone(),
-        hypothesis_id: hypothesis_id.clone(),
-        confirmed_by_action: action.id,
-        confirmed_at: action.committed_at.unwrap_or(action.requested_at),
-    });
-    true
+            session.runtime_state.source_timing.confirmed_grid =
+                Some(SourceTimingGridConfirmationState {
+                    source_id: source_id.clone(),
+                    hypothesis_id: hypothesis_id.clone(),
+                    confirmed_by_action: action.id,
+                    confirmed_at: action.committed_at.unwrap_or(action.requested_at),
+                });
+            true
+        }
+        ActionCommand::SourceTimingRevertGrid => {
+            let ActionParams::SourceTimingGrid {
+                source_id: Some(source_id),
+                hypothesis_id,
+            } = &action.params
+            else {
+                return false;
+            };
+            if session
+                .runtime_state
+                .source_timing
+                .confirmed_grid
+                .as_ref()
+                .is_some_and(|confirmed| {
+                    confirmed.source_id == *source_id
+                        && confirmed.hypothesis_id.as_deref() == hypothesis_id.as_deref()
+                })
+            {
+                session.runtime_state.source_timing.confirmed_grid = None;
+                true
+            } else {
+                false
+            }
+        }
+        _ => false,
+    }
 }
 
 #[cfg(test)]
@@ -72,6 +99,30 @@ mod tests {
         assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
     }
 
+    #[test]
+    fn source_timing_side_effect_reverts_matching_grid_in_session_runtime_state() {
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:22:00Z");
+        let confirm = confirm_grid_action("src-1", Some("primary-grid"), 100);
+        assert!(apply_source_timing_side_effects(&mut session, &confirm));
+
+        let revert = revert_grid_action("src-1", Some("primary-grid"), 120);
+
+        assert!(apply_source_timing_side_effects(&mut session, &revert));
+        assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+    }
+
+    #[test]
+    fn source_timing_side_effect_preserves_unmatched_confirmation_on_revert() {
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:23:00Z");
+        let confirm = confirm_grid_action("src-1", Some("primary-grid"), 100);
+        assert!(apply_source_timing_side_effects(&mut session, &confirm));
+
+        let revert = revert_grid_action("src-1", Some("alternate-grid"), 120);
+
+        assert!(!apply_source_timing_side_effects(&mut session, &revert));
+        assert!(session.runtime_state.source_timing.confirmed_grid.is_some());
+    }
+
     fn confirm_grid_action(
         source_id: &str,
         hypothesis_id: Option<&str>,
@@ -94,5 +145,16 @@ mod tests {
             undo_policy: UndoPolicy::Undoable,
             explanation: None,
         }
+    }
+
+    fn revert_grid_action(
+        source_id: &str,
+        hypothesis_id: Option<&str>,
+        requested_at: TimestampMs,
+    ) -> Action {
+        let mut action = confirm_grid_action(source_id, hypothesis_id, requested_at);
+        action.id = ActionId(2);
+        action.command = ActionCommand::SourceTimingRevertGrid;
+        action
     }
 }

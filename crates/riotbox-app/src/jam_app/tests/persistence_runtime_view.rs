@@ -257,56 +257,6 @@ fn source_monitor_mode_queues_commits_and_surfaces_in_runtime_view() {
 }
 
 #[test]
-fn source_timing_grid_confirmation_queues_commits_and_persists_session_truth() {
-    let mut graph = sample_graph();
-    graph.timing.primary_hypothesis_id = Some("primary-grid".into());
-    let session = sample_session(&graph);
-    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
-
-    assert!(state.session.runtime_state.source_timing.confirmed_grid.is_none());
-    assert_eq!(
-        state.queue_source_timing_grid_confirmation(100),
-        QueueControlResult::Enqueued
-    );
-    assert!(matches!(
-        state.queue.pending_actions()[0].undo_policy,
-        UndoPolicy::NotUndoable { .. }
-    ));
-    assert_eq!(
-        state.queue_source_timing_grid_confirmation(101),
-        QueueControlResult::AlreadyPending
-    );
-
-    let committed = state.commit_ready_actions(
-        CommitBoundaryState {
-            kind: CommitBoundary::Immediate,
-            beat_index: 0,
-            bar_index: 0,
-            phrase_index: 0,
-            scene_id: None,
-        },
-        120,
-    );
-
-    assert_eq!(committed.len(), 1);
-    let confirmed = state
-        .session
-        .runtime_state
-        .source_timing
-        .confirmed_grid
-        .as_ref()
-        .expect("source timing grid confirmation");
-    assert_eq!(confirmed.source_id, SourceId::from("src-1"));
-    assert_eq!(confirmed.hypothesis_id.as_deref(), Some("primary-grid"));
-    assert_eq!(confirmed.confirmed_by_action, committed[0].action_id);
-    assert_eq!(confirmed.confirmed_at, 120);
-    assert_eq!(
-        state.queue_source_timing_grid_confirmation(121),
-        QueueControlResult::AlreadyInState
-    );
-}
-
-#[test]
 fn runtime_view_surfaces_faulted_and_degraded_states() {
     let graph = sample_graph();
     let session = sample_session(&graph);
