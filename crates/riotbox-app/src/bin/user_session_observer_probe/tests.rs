@@ -255,7 +255,11 @@ fn writes_feral_grid_jam_observer_stream() {
     assert!(events.contains(r#""degraded_policy":"cautious""#));
     assert!(events.contains(r#""cue":"listen first""#));
     let source_timing = first_source_timing_snapshot(&events);
+    let source_map = first_source_map_snapshot(&events);
     assert_eq!(source_timing["primary_warning_code"], "phrase_uncertain");
+    assert_eq!(source_map["mode"], "time fallback");
+    assert_eq!(source_map["capture_range_available"], false);
+    assert_eq!(source_map["capture_range_row"], ".".repeat(32));
     assert_eq!(source_timing["anchor_evidence"]["primary_anchor_count"], 0);
     assert_eq!(
         source_timing["anchor_evidence"]["primary_kick_anchor_count"],
@@ -305,7 +309,11 @@ fn writes_feral_grid_fallback_jam_observer_stream() {
     assert!(events.contains(r#""downbeat_status":"unknown""#));
     assert!(events.contains(r#""phrase_status":"unknown""#));
     let source_timing = first_source_timing_snapshot(&events);
+    let source_map = first_source_map_snapshot(&events);
     assert_eq!(source_timing["bpm_estimate"], Value::Null);
+    assert_eq!(source_map["mode"], "time fallback");
+    assert_eq!(source_map["capture_range_available"], false);
+    assert_eq!(source_map["capture_range_row"], ".".repeat(32));
     assert_eq!(source_timing["primary_downbeat_offset_beats"], Value::Null);
     assert_eq!(
         source_timing["primary_warning_code"],
@@ -346,7 +354,17 @@ fn writes_feral_grid_locked_jam_observer_stream() {
     assert!(events.contains(r#""phrase_status":"phrase_locked""#));
     assert!(events.contains(r#""phrase_count":1"#));
     let source_timing = first_source_timing_snapshot(&events);
+    let source_map = first_source_map_snapshot(&events);
     assert_eq!(source_timing["primary_downbeat_offset_beats"], 0);
+    assert_eq!(source_map["mode"], "bar grid");
+    assert_eq!(source_map["trust_label"], "grid locked");
+    assert_eq!(source_map["capture_range_available"], true);
+    assert!(
+        source_map["capture_range_row"]
+            .as_str()
+            .expect("capture range row")
+            .contains('[')
+    );
     assert_eq!(source_timing["primary_warning_code"], Value::Null);
     assert_eq!(source_timing["anchor_evidence"]["primary_anchor_count"], 16);
     assert_eq!(
@@ -389,6 +407,16 @@ fn first_source_timing_snapshot(events: &str) -> Value {
         .map(Value::Object)
         .next()
         .expect("source timing snapshot")
+}
+
+fn first_source_map_snapshot(events: &str) -> Value {
+    events
+        .lines()
+        .filter_map(|line| serde_json::from_str::<Value>(line).ok())
+        .filter_map(|event| event["snapshot"]["source_map"].as_object().cloned())
+        .map(Value::Object)
+        .next()
+        .expect("source map snapshot")
 }
 
 fn parse_events(events: &str) -> Vec<Value> {

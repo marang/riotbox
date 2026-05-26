@@ -143,6 +143,9 @@ Minimum gates:
   including capture-range availability. QA checks should use that observer
   evidence when validating whether the visible capture target is bar-accurate or
   intentionally unavailable.
+- user-session observer probes should assert `source_map.capture_range_available`
+  for locked/bar-grid and fallback/untrusted paths so this visual capture target
+  contract is covered outside unit-only snapshots.
 
 ### 3.2.2 Multi-source showcase diversity gates
 
