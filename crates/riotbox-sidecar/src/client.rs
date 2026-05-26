@@ -332,6 +332,21 @@ mod tests {
         assert_eq!(graph.provenance.provider_set, vec!["decoded.wav_baseline"]);
         assert!(graph.loop_candidate_count() >= 1);
         assert!(graph.timing.bpm_estimate.is_some());
+        assert_eq!(graph.source_map.buckets.len(), 32);
+        assert_eq!(graph.source_map.buckets[0].start_seconds, 0.0);
+        assert!(graph.source_map.buckets[0].end_seconds > 0.0);
+        assert!(
+            graph
+                .source_map
+                .buckets
+                .iter()
+                .any(|bucket| bucket.energy_class != riotbox_core::source_graph::EnergyClass::Low)
+        );
+        assert!(
+            graph.source_map.buckets.iter().all(
+                |bucket| bucket.provenance_refs.as_slice() == ["provider:decoded.wav_baseline"]
+            )
+        );
     }
 
     #[test]
