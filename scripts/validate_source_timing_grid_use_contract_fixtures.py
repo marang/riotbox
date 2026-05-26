@@ -34,6 +34,9 @@ class GridUseCase:
     bpm_agrees_with_grid: bool | None
     beat_status: str
     downbeat_status: str
+    primary_downbeat_score: float | None
+    primary_downbeat_margin: float | None
+    alternate_downbeat_phase_count: int
     confidence_result: str
     drift_status: str
     phrase_status: str
@@ -58,6 +61,9 @@ CASES = [
         bpm_agrees_with_grid=True,
         beat_status="stable",
         downbeat_status="stable",
+        primary_downbeat_score=0.565,
+        primary_downbeat_margin=0.125,
+        alternate_downbeat_phase_count=0,
         confidence_result="candidate_cautious",
         drift_status="stable",
         phrase_status="stable",
@@ -80,6 +86,9 @@ CASES = [
         bpm_agrees_with_grid=True,
         beat_status="stable",
         downbeat_status="stable",
+        primary_downbeat_score=0.565,
+        primary_downbeat_margin=0.125,
+        alternate_downbeat_phase_count=0,
         confidence_result="candidate_cautious",
         drift_status="not_enough_material",
         phrase_status="not_enough_material",
@@ -102,6 +111,9 @@ CASES = [
         bpm_agrees_with_grid=True,
         beat_status="stable",
         downbeat_status="ambiguous",
+        primary_downbeat_score=0.268,
+        primary_downbeat_margin=0.005,
+        alternate_downbeat_phase_count=3,
         confidence_result="candidate_ambiguous",
         drift_status="stable",
         phrase_status="ambiguous_downbeat",
@@ -124,6 +136,9 @@ CASES = [
         bpm_agrees_with_grid=True,
         beat_status="stable",
         downbeat_status="weak",
+        primary_downbeat_score=0.565,
+        primary_downbeat_margin=0.125,
+        alternate_downbeat_phase_count=0,
         confidence_result="candidate_cautious",
         drift_status="stable",
         phrase_status="stable",
@@ -146,6 +161,9 @@ CASES = [
         bpm_agrees_with_grid=None,
         beat_status="unavailable",
         downbeat_status="unavailable",
+        primary_downbeat_score=None,
+        primary_downbeat_margin=None,
+        alternate_downbeat_phase_count=0,
         confidence_result="degraded",
         drift_status="unavailable",
         phrase_status="unavailable",
@@ -286,18 +304,9 @@ def apply_timing_fields(target: dict[str, Any], case: GridUseCase) -> None:
     target["primary_phrase_count"] = case.primary_phrase_count
     target["primary_phrase_bar_count"] = case.primary_phrase_bar_count
     target["alternate_evidence_count"] = case.alternate_evidence_count
-    if case.downbeat_status == "unavailable":
-        target["primary_downbeat_score"] = None
-        target["primary_downbeat_margin"] = None
-        target["alternate_downbeat_phase_count"] = 0
-    elif case.downbeat_status == "ambiguous":
-        target["primary_downbeat_score"] = 0.268
-        target["primary_downbeat_margin"] = 0.005
-        target["alternate_downbeat_phase_count"] = 3
-    else:
-        target["primary_downbeat_score"] = 0.565
-        target["primary_downbeat_margin"] = 0.125
-        target["alternate_downbeat_phase_count"] = 0
+    target["primary_downbeat_score"] = case.primary_downbeat_score
+    target["primary_downbeat_margin"] = case.primary_downbeat_margin
+    target["alternate_downbeat_phase_count"] = case.alternate_downbeat_phase_count
     target["warning_codes"] = []
 
 
