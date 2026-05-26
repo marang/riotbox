@@ -710,4 +710,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Evaluate ratatui canvas waveform fallback for Source Map
 - [RIOTBOX-981.md](./RIOTBOX-981.md)
   Show Source Map capture range from capture length intent
+- [RIOTBOX-982.md](./RIOTBOX-982.md)
+  Expose Source Map capture range in observer snapshots
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
