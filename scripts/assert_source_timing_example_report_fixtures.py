@@ -163,6 +163,7 @@ def main() -> int:
     assert_anchor_expectations_fail()
     assert_downbeat_offset_expectations_fail()
     assert_groove_expectations_fail()
+    assert_null_metric_expectations_fail()
     assert_exact_warning_expectations_fail()
     assert_invalid_expectations_fail()
     assert_malformed_fixture_cli_error()
@@ -277,6 +278,19 @@ def assert_groove_expectations_fail() -> None:
         or "groove_evidence.primary_groove_residual_count" not in failures[0]
     ):
         raise AssertionError("expected mismatched groove evidence to fail")
+
+
+def assert_null_metric_expectations_fail() -> None:
+    expectations = load_expectations(
+        FIXTURE_DIR / "beat08_expectations_null_metric_mismatch.json"
+    )
+    row = row_from_payload(
+        load_json(FIXTURE_DIR / "beat08_source_timing_probe.json"),
+        expectations,
+    )
+    failures = expectation_failures([row])
+    if not failures or "primary_bpm expected None" not in failures[0]:
+        raise AssertionError("expected mismatched null metric expectations to fail")
 
 
 def assert_exact_warning_expectations_fail() -> None:
