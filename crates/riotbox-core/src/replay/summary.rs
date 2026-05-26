@@ -426,7 +426,7 @@ mod tests {
         let mut action_log = action_log();
         action_log
             .actions
-            .push(action(4, ActionCommand::MutateScene, 400));
+            .push(action(4, ActionCommand::MutateLane, 400));
         action_log
             .commit_records
             .push(commit_record(4, 16, 4, 1, 400));
@@ -437,21 +437,18 @@ mod tests {
 
         assert_eq!(summary.origin_action_count, 4);
         assert_eq!(summary.origin_replay_entry_count, 4);
-        assert_eq!(summary.origin_unsupported_action_count, 2);
-        assert_eq!(
-            summary.origin_unsupported_action_ids,
-            vec![ActionId(1), ActionId(4)]
-        );
+        assert_eq!(summary.origin_unsupported_action_count, 1);
+        assert_eq!(summary.origin_unsupported_action_ids, vec![ActionId(4)]);
         assert_eq!(
             summary.origin_unsupported_commands,
-            vec![ActionCommand::MutateScene, ActionCommand::MutateScene]
+            vec![ActionCommand::MutateLane]
         );
         assert_eq!(summary.suffix_action_count, 1);
         assert_eq!(summary.suffix_unsupported_action_count, 1);
         assert_eq!(summary.suffix_unsupported_action_ids, vec![ActionId(4)]);
         assert_eq!(
             summary.suffix_unsupported_commands,
-            vec![ActionCommand::MutateScene]
+            vec![ActionCommand::MutateLane]
         );
     }
 

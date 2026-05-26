@@ -245,10 +245,55 @@ fn plan_executor_handles_stop_unlock_and_duplicate_lock_deterministically() {
 }
 
 #[test]
+fn plan_executor_applies_scene_mutation_to_session_macro_state() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::MutateScene,
+        ActionParams::Mutation {
+            intensity: 0.8,
+            target_id: Some("scene-1".into()),
+        },
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-26T12:00:00Z");
+    session.runtime_state.macro_state.scene_aggression = 0.4;
+
+    apply_replay_plan_to_session(&mut session, &plan).expect("supported replay plan");
+
+    assert!((session.runtime_state.macro_state.scene_aggression - 0.6).abs() < f32::EPSILON);
+}
+
+#[test]
+fn plan_executor_rejects_scene_mutation_without_mutation_params() {
+    let action_log = action_log(vec![action(
+        1,
+        ActionCommand::MutateScene,
+        ActionParams::Empty,
+        100,
+    )]);
+    let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
+    let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-26T12:05:00Z");
+    let original_session = session.clone();
+
+    let error = apply_replay_plan_to_session(&mut session, &plan).expect_err("invalid params");
+
+    assert_eq!(
+        error,
+        ReplayExecutionError::InvalidParams {
+            action_id: ActionId(1),
+            command: ActionCommand::MutateScene,
+            expected: "ActionParams::Mutation { intensity, .. }"
+        }
+    );
+    assert_eq!(session, original_session);
+}
+
+#[test]
 fn plan_executor_rejects_unsupported_actions_without_mutating_session() {
     let action_log = action_log(vec![
         action(1, ActionCommand::TransportPlay, ActionParams::Empty, 100),
-        action(2, ActionCommand::MutateScene, ActionParams::Empty, 200),
+        action(2, ActionCommand::MutateLane, ActionParams::Empty, 200),
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
@@ -260,7 +305,7 @@ fn plan_executor_rejects_unsupported_actions_without_mutating_session() {
         error,
         ReplayExecutionError::UnsupportedAction {
             action_id: ActionId(2),
-            command: ActionCommand::MutateScene
+            command: ActionCommand::MutateLane
         }
     );
     assert_eq!(session, original_session);
@@ -415,6 +460,7 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::LockObject,
             ActionCommand::UnlockObject,
             ActionCommand::GhostSetMode,
+            ActionCommand::MutateScene,
             ActionCommand::SceneLaunch,
             ActionCommand::SceneRestore,
             ActionCommand::PromoteCaptureToPad,

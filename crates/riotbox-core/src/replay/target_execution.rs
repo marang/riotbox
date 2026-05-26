@@ -312,7 +312,7 @@ mod tests {
     fn target_suffix_execution_rejects_unsupported_suffix_without_mutating_session() {
         let action_log = action_log(vec![
             action(1, ActionCommand::TransportPlay, ActionParams::Empty, 100),
-            action(2, ActionCommand::MutateScene, ActionParams::Empty, 200),
+            action(2, ActionCommand::MutateLane, ActionParams::Empty, 200),
         ]);
         let mut session = session_with_log(action_log, vec![snapshot("snap-after-play", 1)]);
         session.runtime_state.transport.is_playing = true;
@@ -325,7 +325,7 @@ mod tests {
             error,
             ReplayTargetExecutionError::Execution(ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(2),
-                command: ActionCommand::MutateScene,
+                command: ActionCommand::MutateLane,
             })
         );
         assert_eq!(session, original_session);

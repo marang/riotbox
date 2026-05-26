@@ -16,19 +16,21 @@ fn replay_from_zero_restore_rebuilds_commit_boundary_and_queue_cursor() {
         ),
         300,
     );
-    let second = live.queue.enqueue(
-        ActionDraft::new(
-            ActorType::User,
-            ActionCommand::MutateScene,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::Scene),
-                scene_id: Some(SceneId::from("scene-1")),
-                ..Default::default()
-            },
-        ),
-        301,
+    let mut scene_mutation = ActionDraft::new(
+        ActorType::User,
+        ActionCommand::MutateScene,
+        Quantization::NextBar,
+        ActionTarget {
+            scope: Some(TargetScope::Scene),
+            scene_id: Some(SceneId::from("scene-1")),
+            ..Default::default()
+        },
     );
+    scene_mutation.params = ActionParams::Mutation {
+        intensity: 0.5,
+        target_id: Some("scene-1".into()),
+    };
+    let second = live.queue.enqueue(scene_mutation, 301);
     let boundary = CommitBoundaryState {
         kind: CommitBoundary::Bar,
         beat_index: 80,
@@ -385,7 +387,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let unsupported_action = Action {
         id: ActionId(77),
         actor: ActorType::User,
-        command: ActionCommand::MutateScene,
+        command: ActionCommand::MutateLane,
         params: ActionParams::Mutation {
             intensity: 0.5,
             target_id: Some("scene-a".into()),
@@ -400,10 +402,10 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         committed_at: Some(500),
         result: Some(ActionResult {
             accepted: true,
-            summary: "scene mutation committed".into(),
+            summary: "lane mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
-        explanation: Some("unsupported scene mutation action".into()),
+        explanation: Some("unsupported lane mutation action".into()),
     };
     session.action_log.actions.push(unsupported_action);
     session.action_log.commit_records.push(ActionCommitRecord {
@@ -446,7 +448,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
         riotbox_core::replay::ReplayTargetExecutionError::Execution(
             riotbox_core::replay::ReplayExecutionError::UnsupportedAction {
                 action_id: ActionId(77),
-                command: ActionCommand::MutateScene,
+                command: ActionCommand::MutateLane,
             }
         )
     ));
@@ -465,7 +467,7 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         dry_run_summary.suffix_unsupported_commands,
-        vec![ActionCommand::MutateScene]
+        vec![ActionCommand::MutateLane]
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_status,
@@ -477,11 +479,11 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_suffix,
-        "suffix 1 action(s): mutate.scene"
+        "suffix 1 action(s): mutate.lane"
     );
     assert_eq!(
         diagnostic_state.runtime_view.replay_restore_unsupported,
-        "unsupported suffix 1: mutate.scene"
+        "unsupported suffix 1: mutate.lane"
     );
     let tempdir = tempdir().expect("create unsupported replay warning tempdir");
     let session_path = tempdir.path().join("unsupported-replay-session.json");
@@ -489,6 +491,6 @@ fn restored_runtime_view_warns_about_unsupported_replay_commands() {
     let restored =
         JamAppState::from_json_files(&session_path, None::<&Path>).expect("restore from session");
     assert!(restored.runtime_view.runtime_warnings.iter().any(|warning| {
-        warning == "replay cannot cover 1 unsupported command(s) after snapshot: mutate.scene"
+        warning == "replay cannot cover 1 unsupported command(s) after snapshot: mutate.lane"
     }));
 }

@@ -179,10 +179,10 @@ fn w30_step_focus_rejects_unexpected_params_without_mutating_session() {
 #[test]
 fn w30_artifact_producing_actions_reject_without_partial_mutation() {
     let artifact_actions = vec![(
-        ActionCommand::MutateScene,
+        ActionCommand::MutateLane,
         ActionParams::Mutation {
             intensity: 0.5,
-            target_id: Some("scene-a".into()),
+            target_id: Some("lane-a".into()),
         },
     )];
 

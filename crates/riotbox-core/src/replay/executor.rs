@@ -29,6 +29,7 @@ const REPLAY_SUPPORTED_ACTION_COMMANDS: &[ActionCommand] = &[
     ActionCommand::LockObject,
     ActionCommand::UnlockObject,
     ActionCommand::GhostSetMode,
+    ActionCommand::MutateScene,
     ActionCommand::SceneLaunch,
     ActionCommand::SceneRestore,
     ActionCommand::PromoteCaptureToPad,
@@ -179,6 +180,19 @@ pub fn apply_replay_entry_to_session(
                 });
             };
             session.ghost_state.mode = mode;
+        }
+        ActionCommand::MutateScene => {
+            let ActionParams::Mutation { intensity, .. } = &action.params else {
+                return Err(ReplayExecutionError::InvalidParams {
+                    action_id: action.id,
+                    command: action.command,
+                    expected: "ActionParams::Mutation { intensity, .. }",
+                });
+            };
+            session.runtime_state.macro_state.scene_aggression = mutated_scene_aggression(
+                session.runtime_state.macro_state.scene_aggression,
+                *intensity,
+            );
         }
         ActionCommand::SceneLaunch | ActionCommand::SceneRestore => {
             let scene_id = action
@@ -476,6 +490,11 @@ fn tr909_boundary_pattern_ref(entry: &ReplayPlanEntry<'_>, prefix: &str) -> Stri
         },
         |scene_id| format!("{prefix}-{scene_id}"),
     )
+}
+
+fn mutated_scene_aggression(previous_aggression: f32, intensity: f32) -> f32 {
+    let bump = intensity.clamp(0.0, 1.0).max(0.10) * 0.25;
+    (previous_aggression + bump).clamp(0.0, 1.0)
 }
 
 pub fn apply_replay_plan_to_session(
