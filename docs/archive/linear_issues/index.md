@@ -736,4 +736,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Source transport, adaptive source map, monitor, and capture workflow
 - [RIOTBOX-993.md](./RIOTBOX-993.md)
   Make grid-use fixture phrase counts explicit
+- [RIOTBOX-994.md](./RIOTBOX-994.md)
+  Review current P012 source timing spine after source transport closeout
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
