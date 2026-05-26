@@ -41,8 +41,12 @@ The Source Map is an adaptive musical map, not a DAW editor:
 - the second row shows peaks or transient emphasis
 - separate rows or markers show bars, playhead, and capture range
 - colors may improve scanning but must not carry the only meaning
-- Ratatui `Canvas` remains a planned dense Source-screen alternative once the
-  first block-map contract is stable
+- Ratatui `Canvas` remains an optional expanded Source/Lab alternative, not the
+  default Source Map. It should be used only when it adds readable height and
+  still consumes the same Source Map projection contract as the block rows.
+- Braille and other dense Canvas markers are diagnostic options; default
+  musician orientation should prefer one or two block rows plus explicit text /
+  marker rows for trust, bars, playhead, and capture range.
 
 The map is musical when the timing contract is usable and honest when it is not:
 
