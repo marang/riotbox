@@ -744,4 +744,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add local example anchor-evidence expectations
 - [RIOTBOX-997.md](./RIOTBOX-997.md)
   Assert local example downbeat offsets
+- [RIOTBOX-998.md](./RIOTBOX-998.md)
+  Assert local example groove residual counts
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
