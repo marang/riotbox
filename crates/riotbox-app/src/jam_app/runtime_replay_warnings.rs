@@ -239,3 +239,18 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         | ActionCommand::MutateHook => "Mutation",
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn replay_warning_family_labels_cover_every_action_command() {
+        for command in ActionCommand::all() {
+            assert!(
+                !replay_command_family(*command).is_empty(),
+                "{command} must have a replay warning family label"
+            );
+        }
+    }
+}

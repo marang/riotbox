@@ -1,6 +1,6 @@
 use super::*;
 use crate::{
-    action::{CaptureLengthIntent, GhostMode, SourceMonitorMode},
+    action::{ActionReplayCoverage, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     replay::{build_committed_replay_plan, build_replay_target_plan},
     session::SessionFile,
 };
@@ -494,4 +494,32 @@ fn supported_action_list_documents_the_initial_executor_subset() {
             ActionCommand::PromoteResample,
         ]
     );
+}
+
+#[test]
+fn replay_supported_action_list_matches_command_coverage_contract() {
+    for command in replay_supported_action_commands() {
+        assert_eq!(
+            command.replay_coverage(),
+            ActionReplayCoverage::Supported,
+            "{command} is in the executor supported list but the command contract marks it differently"
+        );
+    }
+
+    let supported_from_contract = ActionCommand::all()
+        .iter()
+        .copied()
+        .filter(|command| command.replay_coverage() == ActionReplayCoverage::Supported)
+        .collect::<Vec<_>>();
+
+    assert_eq!(
+        replay_supported_action_commands().len(),
+        supported_from_contract.len()
+    );
+    for command in supported_from_contract {
+        assert!(
+            replay_supported_action_commands().contains(&command),
+            "{command} is marked replay-supported but is missing from the executor list"
+        );
+    }
 }
