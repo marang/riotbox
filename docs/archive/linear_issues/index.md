@@ -700,4 +700,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source map audition navigator controls
 - [RIOTBOX-976.md](./RIOTBOX-976.md)
   Add capture length intent controls for source windows
+- [RIOTBOX-977.md](./RIOTBOX-977.md)
+  Make Source Map trust row confirmation-aware
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
