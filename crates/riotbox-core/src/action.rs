@@ -429,9 +429,9 @@ impl ActionCommand {
             | Self::SourceMonitorSetMode
             | Self::SourceTimingConfirmGrid
             | Self::SourceTimingRevertGrid
-            | Self::GhostSetMode => ActionReplayCoverage::Supported,
-            Self::MutateScene
-            | Self::MutateLane
+            | Self::GhostSetMode
+            | Self::MutateScene => ActionReplayCoverage::Supported,
+            Self::MutateLane
             | Self::MutateLoop
             | Self::MutatePattern
             | Self::MutateHook
@@ -615,7 +615,7 @@ mod tests {
             .count();
         let unsupported = ActionCommand::all().len() - supported;
 
-        assert_eq!(supported, 41);
-        assert_eq!(unsupported, 15);
+        assert_eq!(supported, 42);
+        assert_eq!(unsupported, 14);
     }
 }
