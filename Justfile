@@ -50,6 +50,7 @@ audio-qa-ci:
     just user-session-observer-validator-fixtures
     just source-timing-probe-json-validator-fixtures
     just source-timing-grid-use-contract-fixtures
+    just recipe15-strict-missing-fixture-fixture
     just generated-source-timing-probe-json-smoke
     just generated-degraded-source-timing-probe-json-smoke
     just generated-ambiguous-source-timing-probe-json-smoke
