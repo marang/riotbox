@@ -139,19 +139,19 @@ mod tests {
         assert_ne!(low_render, legacy_low_render);
         assert!(kick_pressure.applied, "{kick_pressure:?}");
         assert!(kick_pressure.low_band_rms_ratio >= TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO);
-        assert!(!mc202_pressure.applied, "{mc202_pressure:?}");
-        assert!(!mc202_pressure.phrase_variation_applied, "{mc202_pressure:?}");
-        assert_eq!(mc202_pressure.distinct_bar_profile_count, 0);
+        assert!(mc202_pressure.applied, "{mc202_pressure:?}");
+        assert!(mc202_pressure.phrase_variation_applied, "{mc202_pressure:?}");
+        assert!(mc202_pressure.distinct_bar_profile_count >= 2);
         assert_eq!(
             mc202_pressure.reason,
-            "mc202_bass_pressure_removed_pending_source_derived_phrase_planner"
+            "mc202_source_grid_proof_renderer"
         );
         assert!(signal_metrics(&low_render).rms > MIN_SIGNAL_RMS);
         assert!(signal_metrics(&high_render).rms > MIN_SIGNAL_RMS);
-        assert_eq!(signal_metrics(&mc202_low_render).rms, 0.0);
-        assert_eq!(
-            source_grid_output_drift_metrics(&mc202_low_render, &grid).hit_ratio,
-            0.0
+        assert!(signal_metrics(&mc202_low_render).rms > MIN_SIGNAL_RMS);
+        assert!(
+            source_grid_output_drift_metrics(&mc202_low_render, &grid).hit_ratio
+                >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
         );
     }
 
