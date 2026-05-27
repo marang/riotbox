@@ -151,16 +151,25 @@ def validate_source_timing(value: Any) -> None:
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
     grid_use = require_one_of(source_timing, "grid_use", SOURCE_TIMING_GRID_USE)
-    require_one_of(source_timing, "beat_status", {"grid", "tempo_only", "unknown"})
+    beat_status = require_one_of(source_timing, "beat_status", {"grid", "tempo_only", "unknown"})
     beat_count = require_int_value(source_timing, "beat_count")
-    require_one_of(source_timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"})
+    downbeat_status = require_one_of(
+        source_timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"}
+    )
     require_optional_non_negative_int(source_timing, "primary_downbeat_offset_beats")
     bar_count = require_int_value(source_timing, "bar_count")
     phrase_status = require_one_of(
         source_timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"}
     )
     phrase_count = require_int_value(source_timing, "phrase_count")
-    require_source_timing_phrase_lock_match(phrase_status, bar_count, phrase_count)
+    require_source_timing_count_match(
+        beat_status,
+        beat_count,
+        downbeat_status,
+        bar_count,
+        phrase_status,
+        phrase_count,
+    )
     primary = source_timing.get("primary_hypothesis_id")
     if primary is not None and not isinstance(primary, str):
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
@@ -403,13 +412,24 @@ def require_source_timing_grid_use_match(
         )
 
 
-def require_source_timing_phrase_lock_match(
-    phrase_status: str, bar_count: int, phrase_count: int
+def require_source_timing_count_match(
+    beat_status: str,
+    beat_count: int,
+    downbeat_status: str,
+    bar_count: int,
+    phrase_status: str,
+    phrase_count: int,
 ) -> None:
+    if beat_count < 0:
+        raise ValueError("source_timing.beat_count must be non-negative")
     if bar_count < 0:
         raise ValueError("source_timing.bar_count must be non-negative")
     if phrase_count < 0:
         raise ValueError("source_timing.phrase_count must be non-negative")
+    if beat_status == "grid" and beat_count == 0:
+        raise ValueError("source_timing grid beat_status requires positive beat_count")
+    if downbeat_status == "bar_locked" and bar_count == 0:
+        raise ValueError("source_timing bar_locked downbeat_status requires positive bar_count")
     if phrase_status == "phrase_locked" and (phrase_count == 0 or bar_count == 0):
         raise ValueError(
             "source_timing phrase_locked requires positive bar_count and phrase_count"
