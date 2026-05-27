@@ -34,7 +34,7 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             };
             let role_label = role.label();
 
-            session.runtime_state.lane_state.mc202.role = Some(role_label.into());
+            session.runtime_state.lane_state.mc202.role = Some(role);
             session.runtime_state.lane_state.mc202.phrase_ref =
                 Some(boundary_phrase_ref(boundary, role_label));
             session.runtime_state.lane_state.mc202.phrase_variant = None;
@@ -65,22 +65,12 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             apply_generated_role(session, action, boundary, Mc202RoleState::Instigator);
         }
         ActionCommand::Mc202MutatePhrase => {
-            let current_role_label = session
+            let current_role = session
                 .runtime_state
                 .lane_state
                 .mc202
                 .role
-                .clone()
-                .unwrap_or_else(|| "follower".into());
-            let Some(current_role) = Mc202RoleState::from_label(&current_role_label) else {
-                set_logged_mc202_result(
-                    session,
-                    action,
-                    false,
-                    format!("rejected unknown MC-202 role {current_role_label}"),
-                );
-                return;
-            };
+                .unwrap_or(Mc202RoleState::Follower);
             let Some(intent) = mc202_phrase_intent_from_action(action) else {
                 set_logged_mc202_result(
                     session,
@@ -99,7 +89,7 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
                 _ => 0.88,
             };
 
-            session.runtime_state.lane_state.mc202.role = Some(current_role_label.into());
+            session.runtime_state.lane_state.mc202.role = Some(current_role);
             session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
             session.runtime_state.macro_state.mc202_touch =
@@ -129,7 +119,7 @@ fn apply_generated_role(
         _ => role.default_touch(),
     };
 
-    session.runtime_state.lane_state.mc202.role = Some(role_label.into());
+    session.runtime_state.lane_state.mc202.role = Some(role);
     session.runtime_state.lane_state.mc202.phrase_ref = Some(phrase_ref.clone());
     session.runtime_state.lane_state.mc202.phrase_variant = None;
     session.runtime_state.macro_state.mc202_touch =

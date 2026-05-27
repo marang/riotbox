@@ -115,13 +115,13 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(55),
         actor: ActorType::User,
-        command: ActionCommand::MutateScene,
+        command: ActionCommand::MutateLane,
         params: ActionParams::Mutation {
             intensity: 0.5,
-            target_id: Some("scene-a".into()),
+            target_id: Some("lane-a".into()),
         },
         target: ActionTarget {
-            scope: Some(TargetScope::Scene),
+            scope: Some(TargetScope::Global),
             ..Default::default()
         },
         requested_at: 700,
@@ -130,7 +130,7 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "scene mutation committed".into(),
+            summary: "lane mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -169,13 +169,13 @@ fn renders_manual_recovery_prompt_with_blocked_restore_replay_state() {
     assert!(rendered.contains("multi-blocked"), "{rendered}");
     assert!(rendered.contains("parseable session JSON"), "{rendered}");
     assert!(
-        rendered.contains("Replay/artifacts: families Scene | suffix 1"),
+        rendered.contains("Replay/artifacts: families Mutation | suffix 1"),
         "{rendered}"
     );
     assert!(rendered.contains("artifacts blocked"), "{rendered}");
     assert!(rendered.contains("1 missing"), "{rendered}");
     assert!(rendered.contains("payload ready"), "{rendered}");
-    assert!(rendered.contains("families Scene"), "{rendered}");
+    assert!(rendered.contains("families Mutation"), "{rendered}");
     assert!(rendered.contains("multi-blocked"), "{rendered}");
 }
 
@@ -208,13 +208,13 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
     shell.app.session.action_log.actions.push(Action {
         id: ActionId(56),
         actor: ActorType::User,
-        command: ActionCommand::MutateScene,
+        command: ActionCommand::MutateLane,
         params: ActionParams::Mutation {
             intensity: 0.5,
-            target_id: Some("scene-a".into()),
+            target_id: Some("lane-a".into()),
         },
         target: ActionTarget {
-            scope: Some(TargetScope::Scene),
+            scope: Some(TargetScope::Global),
             ..Default::default()
         },
         requested_at: 700,
@@ -223,7 +223,7 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
         committed_at: Some(900),
         result: Some(ActionResult {
             accepted: true,
-            summary: "scene mutation committed".into(),
+            summary: "lane mutation committed".into(),
         }),
         undo_policy: UndoPolicy::Undoable,
         explanation: None,
@@ -262,7 +262,10 @@ fn renders_artifact_ready_replay_blocker_hint_without_selecting_candidate() {
 
     assert!(rendered.contains("decision"), "{rendered}");
     assert!(rendered.contains("replay-blocked"), "{rendered}");
-    assert!(rendered.contains("families Scene | suffix 1"), "{rendered}");
+    assert!(
+        rendered.contains("families Mutation | suffix 1"),
+        "{rendered}"
+    );
     assert!(
         rendered.contains("artifacts ready: 1"),
         "{rendered}"

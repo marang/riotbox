@@ -53,7 +53,7 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
         dry_run["payload_readiness"],
         "payload ready | snapshot restore ok"
     );
-    assert_eq!(dry_run["replay_family"], "families Scene | suffix 1");
+    assert_eq!(dry_run["replay_family"], "families Mutation | suffix 1");
 
     let candidates = recovery["candidates"].as_array().expect("candidate array");
     assert_eq!(candidates[0]["kind"], "normal session path");
@@ -72,9 +72,9 @@ fn observer_snapshot_records_recovery_startup_probe_without_selecting_candidate(
     assert_eq!(autosave["payload_readiness"], "payload ready | snapshot restore ok");
     assert_eq!(
         autosave["replay_unsupported"],
-        "unsupported suffix 1: mutate.scene"
+        "unsupported suffix 1: mutate.lane"
     );
-    assert_eq!(autosave["replay_family"], "families Scene | suffix 1");
+    assert_eq!(autosave["replay_family"], "families Mutation | suffix 1");
     assert_eq!(autosave["guidance"], serde_json::Value::Null);
     assert!(session_path.exists());
     assert!(autosave_path.exists());
@@ -179,13 +179,13 @@ fn artifact_ready_blocked_autosave_session() -> SessionFile {
     session.action_log.actions.push(riotbox_core::action::Action {
         id: ActionId(88),
         actor: riotbox_core::action::ActorType::User,
-        command: ActionCommand::MutateScene,
+        command: ActionCommand::MutateLane,
         params: riotbox_core::action::ActionParams::Mutation {
             intensity: 0.5,
-            target_id: Some("scene-a".into()),
+            target_id: Some("lane-a".into()),
         },
         target: ActionTarget {
-            scope: Some(TargetScope::Scene),
+            scope: Some(TargetScope::Global),
             ..Default::default()
         },
         requested_at: 480,
@@ -194,7 +194,7 @@ fn artifact_ready_blocked_autosave_session() -> SessionFile {
         committed_at: Some(500),
         result: None,
         undo_policy: riotbox_core::action::UndoPolicy::Undoable,
-        explanation: Some("unsupported scene mutation action".into()),
+        explanation: Some("unsupported lane mutation action".into()),
     });
     session.action_log.commit_records.push(ActionCommitRecord {
         action_id: ActionId(88),

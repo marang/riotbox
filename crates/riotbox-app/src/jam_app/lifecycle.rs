@@ -16,7 +16,7 @@ use super::{
         build_w30_resample_tap_state, normalize_w30_preview_mode,
     },
     runtime_view::JamRuntimeView,
-    state::{AppRuntimeState, JamAppState, SidecarState},
+    state::{AppRuntimeState, JamAppState, SidecarState, SourceAudioStatus},
     transport_helpers::{normalize_scene_candidates, transport_clock_from_state},
 };
 
@@ -55,6 +55,10 @@ impl JamAppState {
     }
 
     pub fn refresh_view(&mut self) {
+        if let Some(cache) = self.source_audio_cache.as_ref() {
+            self.runtime.source_audio.status = SourceAudioStatus::loaded(cache);
+        }
+
         self.runtime.tr909_render = build_tr909_render_state(
             &self.session,
             &self.runtime.transport,
@@ -100,8 +104,7 @@ impl JamAppState {
 
     pub fn set_audio_health(&mut self, health: AudioRuntimeHealth) {
         self.runtime.audio = Some(health);
-        self.runtime_view =
-            JamRuntimeView::build(&self.runtime, &self.session, self.source_graph.as_ref());
+        self.refresh_view();
     }
 
     pub fn set_sidecar_state(&mut self, state: SidecarState) {

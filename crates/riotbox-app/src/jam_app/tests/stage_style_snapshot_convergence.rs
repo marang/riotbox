@@ -14,7 +14,7 @@ fn stage_style_snapshot_payload_restore_converges_supported_multi_lane_suffix() 
         Some(Tr909ReinforcementModeState::SourceSupport);
     session.runtime_state.lane_state.tr909.pattern_ref =
         Some("stage-style-snapshot-support".into());
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_variant = None;
 
     let base_session = session.clone();

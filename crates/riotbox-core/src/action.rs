@@ -315,7 +315,139 @@ pub enum ActionCommand {
     GhostExecuteTool,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum ActionReplayCoverage {
+    Supported,
+    Unsupported,
+}
+
 impl ActionCommand {
+    pub const ALL: &'static [Self] = &[
+        Self::TransportPlay,
+        Self::TransportPause,
+        Self::TransportStop,
+        Self::TransportSeek,
+        Self::MutateScene,
+        Self::MutateLane,
+        Self::MutateLoop,
+        Self::MutatePattern,
+        Self::MutateHook,
+        Self::CaptureNow,
+        Self::CaptureLoop,
+        Self::CaptureBarGroup,
+        Self::CaptureSetLength,
+        Self::PromoteCaptureToPad,
+        Self::PromoteCaptureToScene,
+        Self::PromoteResample,
+        Self::SceneLaunch,
+        Self::SceneRestore,
+        Self::SceneRegenerate,
+        Self::SceneReinterpret,
+        Self::Mc202GenerateFollower,
+        Self::Mc202GenerateAnswer,
+        Self::Mc202GeneratePressure,
+        Self::Mc202GenerateInstigator,
+        Self::Mc202MutatePhrase,
+        Self::Mc202SetRole,
+        Self::W30CaptureToPad,
+        Self::W30LiveRecall,
+        Self::W30TriggerPad,
+        Self::W30AuditionRawCapture,
+        Self::W30AuditionPromoted,
+        Self::W30SwapBank,
+        Self::W30BrowseSlicePool,
+        Self::W30StepFocus,
+        Self::W30ApplyDamageProfile,
+        Self::W30LoopFreeze,
+        Self::Tr909FillNext,
+        Self::Tr909SetSlam,
+        Self::Tr909ReinforceBreak,
+        Self::Tr909Takeover,
+        Self::Tr909SceneLock,
+        Self::Tr909Release,
+        Self::LockObject,
+        Self::UnlockObject,
+        Self::SnapshotSave,
+        Self::SnapshotLoad,
+        Self::UndoLast,
+        Self::RedoLast,
+        Self::RestoreSource,
+        Self::SourceMonitorSetMode,
+        Self::SourceTimingConfirmGrid,
+        Self::SourceTimingRevertGrid,
+        Self::GhostSetMode,
+        Self::GhostAcceptSuggestion,
+        Self::GhostRejectSuggestion,
+        Self::GhostExecuteTool,
+    ];
+
+    #[must_use]
+    pub const fn all() -> &'static [Self] {
+        Self::ALL
+    }
+
+    #[must_use]
+    pub const fn replay_coverage(self) -> ActionReplayCoverage {
+        match self {
+            Self::TransportPlay
+            | Self::TransportPause
+            | Self::TransportStop
+            | Self::TransportSeek
+            | Self::CaptureNow
+            | Self::CaptureLoop
+            | Self::CaptureBarGroup
+            | Self::CaptureSetLength
+            | Self::PromoteCaptureToPad
+            | Self::PromoteCaptureToScene
+            | Self::PromoteResample
+            | Self::SceneLaunch
+            | Self::SceneRestore
+            | Self::Mc202GenerateFollower
+            | Self::Mc202GenerateAnswer
+            | Self::Mc202GeneratePressure
+            | Self::Mc202GenerateInstigator
+            | Self::Mc202MutatePhrase
+            | Self::Mc202SetRole
+            | Self::W30CaptureToPad
+            | Self::W30LiveRecall
+            | Self::W30TriggerPad
+            | Self::W30AuditionRawCapture
+            | Self::W30AuditionPromoted
+            | Self::W30SwapBank
+            | Self::W30BrowseSlicePool
+            | Self::W30StepFocus
+            | Self::W30ApplyDamageProfile
+            | Self::W30LoopFreeze
+            | Self::Tr909FillNext
+            | Self::Tr909SetSlam
+            | Self::Tr909ReinforceBreak
+            | Self::Tr909Takeover
+            | Self::Tr909SceneLock
+            | Self::Tr909Release
+            | Self::LockObject
+            | Self::UnlockObject
+            | Self::SourceMonitorSetMode
+            | Self::SourceTimingConfirmGrid
+            | Self::SourceTimingRevertGrid
+            | Self::GhostSetMode
+            | Self::MutateScene => ActionReplayCoverage::Supported,
+            Self::MutateLane
+            | Self::MutateLoop
+            | Self::MutatePattern
+            | Self::MutateHook
+            | Self::SceneRegenerate
+            | Self::SceneReinterpret
+            | Self::SnapshotSave
+            | Self::SnapshotLoad
+            | Self::UndoLast
+            | Self::RedoLast
+            | Self::RestoreSource
+            | Self::GhostAcceptSuggestion
+            | Self::GhostRejectSuggestion
+            | Self::GhostExecuteTool => ActionReplayCoverage::Unsupported,
+        }
+    }
+
     #[must_use]
     pub const fn as_str(self) -> &'static str {
         match self {
@@ -453,5 +585,37 @@ impl ActionDraft {
             undo_policy: UndoPolicy::Undoable,
             explanation: None,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::collections::BTreeSet;
+
+    use super::*;
+
+    #[test]
+    fn action_command_lexicon_labels_are_unique_and_complete() {
+        assert_eq!(ActionCommand::all().len(), 56);
+
+        let labels = ActionCommand::all()
+            .iter()
+            .map(|command| command.as_str())
+            .collect::<BTreeSet<_>>();
+
+        assert_eq!(labels.len(), ActionCommand::all().len());
+        assert!(!labels.contains(""));
+    }
+
+    #[test]
+    fn action_command_replay_coverage_is_declared_for_every_command() {
+        let supported = ActionCommand::all()
+            .iter()
+            .filter(|command| command.replay_coverage() == ActionReplayCoverage::Supported)
+            .count();
+        let unsupported = ActionCommand::all().len() - supported;
+
+        assert_eq!(supported, 42);
+        assert_eq!(unsupported, 14);
     }
 }

@@ -7,7 +7,9 @@ fn mc202_fixture_backed_committed_state_regressions_hold() {
     for fixture in fixtures {
         let graph = sample_graph();
         let mut session = sample_session(&graph);
-        session.runtime_state.lane_state.mc202.role = Some(fixture.initial_role.clone());
+        session.runtime_state.lane_state.mc202.role = Some(
+            Mc202RoleState::from_label(&fixture.initial_role).expect("fixture role is known"),
+        );
         let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
         let queue_result = match fixture.action {
@@ -44,7 +46,7 @@ fn mc202_fixture_backed_committed_state_regressions_hold() {
         );
 
         assert_eq!(
-            state.session.runtime_state.lane_state.mc202.role.as_deref(),
+            state.session.runtime_state.lane_state.mc202.role_label(),
             Some(fixture.expected.role.as_str()),
             "{} role drifted",
             fixture.name
@@ -110,7 +112,7 @@ fn mc202_fixture_backed_committed_state_regressions_hold() {
         let loaded = load_session_json(&session_path).expect("reload MC-202 regression session");
 
         assert_eq!(
-            loaded.runtime_state.lane_state.mc202.role.as_deref(),
+            loaded.runtime_state.lane_state.mc202.role_label(),
             Some(fixture.expected.role.as_str()),
             "{} role did not survive replay roundtrip",
             fixture.name
@@ -403,4 +405,3 @@ fn committed_tr909_slam_action_updates_lane_state_and_macro_intensity() {
         Some("enabled TR-909 slam at 0.85")
     );
 }
-

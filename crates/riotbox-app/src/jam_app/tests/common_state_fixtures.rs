@@ -155,7 +155,7 @@ fn sample_session(graph: &SourceGraph) -> SessionFile {
     session.runtime_state.transport.current_scene = Some(SceneId::from("scene-1"));
     session.runtime_state.macro_state.scene_aggression = 0.75;
     session.runtime_state.macro_state.tr909_slam = 0.55;
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.w30.preview_mode = Some(W30PreviewModeState::LiveRecall);
     session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
     session.runtime_state.lane_state.w30.focused_pad = Some(PadId::from("pad-01"));

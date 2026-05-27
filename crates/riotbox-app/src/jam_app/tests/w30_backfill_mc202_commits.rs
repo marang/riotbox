@@ -192,7 +192,7 @@ fn committed_mc202_role_change_updates_lane_state_and_macro_touch() {
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
-        state.session.runtime_state.lane_state.mc202.role.as_deref(),
+        state.session.runtime_state.lane_state.mc202.role_label(),
         Some("leader")
     );
     assert_eq!(
@@ -301,7 +301,7 @@ fn committed_mc202_follower_generation_updates_phrase_ref_and_touch() {
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
-        state.session.runtime_state.lane_state.mc202.role.as_deref(),
+        state.session.runtime_state.lane_state.mc202.role_label(),
         Some("follower")
     );
     assert_eq!(
@@ -367,7 +367,7 @@ fn committed_mc202_answer_generation_updates_phrase_ref_and_touch() {
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
-        state.session.runtime_state.lane_state.mc202.role.as_deref(),
+        state.session.runtime_state.lane_state.mc202.role_label(),
         Some("answer")
     );
     assert_eq!(
@@ -433,7 +433,7 @@ fn committed_mc202_pressure_generation_updates_phrase_ref_touch_and_render_shape
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
-        state.session.runtime_state.lane_state.mc202.role.as_deref(),
+        state.session.runtime_state.lane_state.mc202.role_label(),
         Some("pressure")
     );
     assert_eq!(

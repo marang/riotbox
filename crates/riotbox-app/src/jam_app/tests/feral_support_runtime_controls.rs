@@ -52,7 +52,7 @@ fn feral_break_support_no_longer_injects_mc202_hook_response_output() {
 
     fn follower_session(graph: &SourceGraph) -> SessionFile {
         let mut session = sample_session(graph);
-        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
         session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-feral".into());
         session.runtime_state.transport.position_beats = 4.0;
         session
@@ -260,7 +260,7 @@ fn feral_break_support_evidence_drives_current_lane_consumers_consistently() {
 
     fn follower_session(graph: &SourceGraph) -> SessionFile {
         let mut session = sample_session(graph);
-        session.runtime_state.lane_state.mc202.role = Some("follower".into());
+        session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
         session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-feral".into());
         session.runtime_state.transport.position_beats = 4.0;
         session
@@ -382,7 +382,7 @@ fn adjusting_drum_bus_level_updates_session_and_runtime_view() {
 fn adjusting_mc202_touch_updates_session_and_runtime_view() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     session.runtime_state.macro_state.mc202_touch = 0.40;
     session.runtime_state.mixer_state.music_level = 0.64;

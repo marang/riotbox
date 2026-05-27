@@ -56,6 +56,74 @@ fn loads_pcm24_source_audio_cache_from_app_files() {
     assert_eq!(cache.interleaved_samples()[0], -1.0);
     assert_eq!(cache.interleaved_samples()[1], 0.0);
     assert!((cache.interleaved_samples()[2] - 1.0).abs() < 0.000001);
+    assert!(
+        state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .all(|warning| !warning.contains("source audio"))
+    );
+}
+
+#[test]
+fn source_audio_load_failure_surfaces_runtime_warning() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+    let graph_path = dir.path().join("graphs").join("source-graph.json");
+    let missing_source_path = dir.path().join("missing-source.wav");
+
+    let mut graph = sample_graph();
+    graph.source.path = missing_source_path.to_string_lossy().into_owned();
+    let session = sample_session(&graph);
+    save_session_json(&session_path, &session).expect("save session fixture");
+    save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
+
+    let state =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+
+    assert!(state.source_audio_cache.is_none());
+    assert_eq!(
+        state.runtime_view.source_monitor_audio_route,
+        "fallback_riotbox"
+    );
+    assert!(
+        state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| warning.contains("source audio unavailable for source monitor")
+                && warning.contains("missing-source.wav")
+                && warning.contains("source audio I/O failed"))
+    );
+}
+
+#[test]
+fn invalid_source_audio_surfaces_decode_warning() {
+    let dir = tempdir().expect("create temp dir");
+    let session_path = dir.path().join("sessions").join("session.json");
+    let graph_path = dir.path().join("graphs").join("source-graph.json");
+    let invalid_source_path = dir.path().join("not-a-wave.wav");
+
+    fs::write(&invalid_source_path, b"not a wave").expect("write invalid source fixture");
+
+    let mut graph = sample_graph();
+    graph.source.path = invalid_source_path.to_string_lossy().into_owned();
+    let session = sample_session(&graph);
+    save_session_json(&session_path, &session).expect("save session fixture");
+    save_source_graph_json(&graph_path, &graph).expect("save graph fixture");
+
+    let state =
+        JamAppState::from_json_files(&session_path, Some(&graph_path)).expect("load app state");
+
+    assert!(state.source_audio_cache.is_none());
+    assert!(
+        state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| warning.contains("source audio unavailable for source monitor")
+                && warning.contains("invalid WAV source audio"))
+    );
 }
 
 #[test]
@@ -211,6 +279,14 @@ fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
     state.refresh_view();
 
     assert_eq!(state.runtime_view.source_monitor_audio_route, "fallback_riotbox");
+    assert!(
+        state
+            .runtime_view
+            .runtime_warnings
+            .iter()
+            .any(|warning| warning.contains("source monitor fell back to riotbox output")
+                && warning.contains("48000 Hz"))
+    );
 }
 
 #[test]
@@ -346,7 +422,7 @@ fn runtime_view_surfaces_tr909_render_diagnostics() {
 fn runtime_view_surfaces_mc202_render_diagnostics() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("answer".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Answer);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("answer-scene-1".into());
     session.runtime_state.macro_state.mc202_touch = 0.82;
     session.runtime_state.mixer_state.music_level = 0.0;
@@ -395,7 +471,7 @@ fn mc202_render_contour_hint_follows_source_section_context() {
     graph.sections[0].label_hint = SectionLabelHint::Build;
     graph.sections[0].energy_class = EnergyClass::Medium;
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -418,7 +494,7 @@ fn mc202_hook_section_does_not_inject_synthetic_answer_guardrail() {
     graph.sections[0].energy_class = EnergyClass::High;
     graph.sections[0].tags.push("hook".into());
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 

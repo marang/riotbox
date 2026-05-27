@@ -10,7 +10,7 @@ fn sample_shell_state() -> JamShellState {
     session.runtime_state.macro_state.tr909_slam = 0.9;
     session.runtime_state.mixer_state.drum_level = 0.82;
     session.runtime_state.mixer_state.music_level = 0.64;
-    session.runtime_state.lane_state.mc202.role = Some("leader".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Leader);
     session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));
     session.runtime_state.lane_state.tr909.takeover_enabled = true;
     session.runtime_state.lane_state.tr909.takeover_profile =

@@ -71,7 +71,7 @@ use side_effects::{
 pub use source_map_navigation::{SourceMapNavigationIntent, SourceMapNavigationResult};
 pub use state::{
     AppRuntimeState, JamAppError, JamAppState, JamFileSet, QueueControlResult, SidecarState,
-    TransportDriverState,
+    SourceAudioRuntimeState, SourceAudioStatus, TransportDriverState,
 };
 use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
 

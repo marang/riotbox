@@ -86,7 +86,7 @@ fn recovery_surface_reports_replay_family_for_unsupported_suffix() {
     candidate_session
         .action_log
         .actions
-        .push(family_action(44, ActionCommand::MutateScene));
+        .push(family_action(44, ActionCommand::MutateLane));
     candidate_session
         .action_log
         .commit_records
@@ -106,10 +106,10 @@ fn recovery_surface_reports_replay_family_for_unsupported_suffix() {
         candidate.replay_readiness_label,
         "blocked: 1 unsupported suffix action(s)"
     );
-    assert_eq!(candidate.replay_family_label, "families Scene | suffix 1");
+    assert_eq!(candidate.replay_family_label, "families Mutation | suffix 1");
     assert_eq!(
         candidate.replay_unsupported_label,
-        "unsupported suffix 1: mutate.scene"
+        "unsupported suffix 1: mutate.lane"
     );
     assert_eq!(
         candidate.decision_label,

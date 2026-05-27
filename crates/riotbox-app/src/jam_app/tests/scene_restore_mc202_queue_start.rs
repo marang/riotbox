@@ -233,7 +233,7 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
     session.runtime_state.lane_state.tr909.reinforcement_mode =
         Some(Tr909ReinforcementModeState::SourceSupport);
     session.runtime_state.lane_state.tr909.pattern_ref = Some("scene-recipe-support".into());
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_variant = None;
 
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());

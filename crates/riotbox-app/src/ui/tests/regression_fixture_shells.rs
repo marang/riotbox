@@ -36,7 +36,9 @@ fn mc202_committed_shell_state(fixture: &Mc202RegressionFixture) -> JamShellStat
     session.action_log.actions.clear();
     session.captures.clear();
     session.runtime_state.lane_state.w30.last_capture = None;
-    session.runtime_state.lane_state.mc202.role = Some(fixture.initial_role.clone());
+    session.runtime_state.lane_state.mc202.role = Some(
+        Mc202RoleState::from_label(&fixture.initial_role).expect("fixture role is known"),
+    );
     session.runtime_state.lane_state.mc202.phrase_ref = None;
     session.runtime_state.macro_state.mc202_touch = 0.4;
 
@@ -88,8 +90,7 @@ fn mc202_committed_shell_state(fixture: &Mc202RegressionFixture) -> JamShellStat
             .runtime_state
             .lane_state
             .mc202
-            .role
-            .as_deref(),
+            .role_label(),
         Some(fixture.expected.role.as_str()),
         "{} role drifted",
         fixture.name
@@ -434,4 +435,3 @@ fn w30_fixture_backed_shell_regressions_hold() {
         }
     }
 }
-

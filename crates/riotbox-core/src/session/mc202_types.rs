@@ -1,9 +1,16 @@
 #[derive(Clone, Debug, PartialEq, Default, serde::Serialize, serde::Deserialize)]
 pub struct Mc202LaneState {
-    pub role: Option<String>,
+    pub role: Option<Mc202RoleState>,
     pub phrase_ref: Option<String>,
     #[serde(default)]
     pub phrase_variant: Option<Mc202PhraseVariantState>,
+}
+
+impl Mc202LaneState {
+    #[must_use]
+    pub fn role_label(&self) -> Option<&'static str> {
+        self.role.map(Mc202RoleState::label)
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

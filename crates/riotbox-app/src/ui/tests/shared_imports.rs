@@ -15,7 +15,7 @@ use riotbox_core::{
     },
     queue::ActionQueue,
     session::{
-        ActionCommitRecord, GhostSuggestionRecord, SceneMovementDirectionState,
+        ActionCommitRecord, GhostSuggestionRecord, Mc202RoleState, SceneMovementDirectionState,
         SceneMovementKindState, SceneMovementLaneIntentState, SceneMovementState, SessionFile,
         Snapshot, SourceTimingGridConfirmationState, Tr909ReinforcementModeState,
         Tr909TakeoverProfileState,

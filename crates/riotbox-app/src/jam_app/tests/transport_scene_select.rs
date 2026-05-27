@@ -120,18 +120,20 @@ fn commits_ready_actions_into_session_log_in_stable_order() {
         ),
         300,
     );
-    let second = state.queue.enqueue(
-        ActionDraft::new(
-            ActorType::Ghost,
-            ActionCommand::MutateScene,
-            Quantization::NextBar,
-            ActionTarget {
-                scope: Some(TargetScope::Scene),
-                ..Default::default()
-            },
-        ),
-        301,
+    let mut scene_mutation = ActionDraft::new(
+        ActorType::Ghost,
+        ActionCommand::MutateScene,
+        Quantization::NextBar,
+        ActionTarget {
+            scope: Some(TargetScope::Scene),
+            ..Default::default()
+        },
     );
+    scene_mutation.params = ActionParams::Mutation {
+        intensity: 0.5,
+        target_id: Some("scene-1".into()),
+    };
+    let second = state.queue.enqueue(scene_mutation, 301);
 
     let boundary = CommitBoundaryState {
         kind: CommitBoundary::Bar,
@@ -218,6 +220,42 @@ fn queues_first_live_safe_jam_actions() {
     );
     assert!(state.jam_view.lanes.tr909_fill_armed_next_bar);
     assert_eq!(state.jam_view.pending_actions.len(), 7);
+}
+
+#[test]
+fn committed_scene_mutation_updates_scene_aggression_and_log_result() {
+    let graph = sample_graph();
+    let mut session = sample_session(&graph);
+    session.runtime_state.macro_state.chaos = 0.8;
+    session.runtime_state.macro_state.scene_aggression = 0.4;
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state.queue_scene_mutation(300);
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Bar,
+            beat_index: 40,
+            bar_index: 10,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert!(
+        (state.session.runtime_state.macro_state.scene_aggression - 0.6).abs() < f32::EPSILON
+    );
+    let result = state.session.action_log.actions.last().and_then(|action| {
+        (action.command == ActionCommand::MutateScene)
+            .then_some(action.result.as_ref())
+            .flatten()
+    });
+    assert!(
+        result.is_some_and(|result| result.accepted
+            && result.summary.contains("mutated scene scene-1")
+            && result.summary.contains("0.40 -> 0.60"))
+    );
 }
 
 #[test]

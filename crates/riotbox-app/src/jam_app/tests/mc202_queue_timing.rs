@@ -132,7 +132,7 @@ fn queueing_mc202_phrase_mutation_requires_committed_voice_and_blocks_duplicates
         QueueControlResult::AlreadyInState
     );
 
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
@@ -227,7 +227,7 @@ fn queueing_mc202_role_and_generation_blocks_conflicting_phrase_controls() {
     );
 
     let mut mutation_session = sample_session(&graph);
-    mutation_session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    mutation_session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     let mut mutation_state =
         JamAppState::from_parts(mutation_session, Some(graph), ActionQueue::new());
     assert_eq!(

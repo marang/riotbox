@@ -22,7 +22,7 @@ fn committed_mc202_instigator_generation_updates_phrase_ref_touch_and_render_sha
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
-        state.session.runtime_state.lane_state.mc202.role.as_deref(),
+        state.session.runtime_state.lane_state.mc202.role_label(),
         Some("instigator")
     );
     assert_eq!(
@@ -74,7 +74,7 @@ fn committed_mc202_instigator_generation_updates_phrase_ref_touch_and_render_sha
 fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("follower".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Follower);
     session.runtime_state.lane_state.mc202.phrase_ref = Some("follower-scene-1".into());
     session.runtime_state.macro_state.mc202_touch = 0.78;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
@@ -97,7 +97,7 @@ fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
 
     assert_eq!(committed.len(), 1);
     assert_eq!(
-        state.session.runtime_state.lane_state.mc202.role.as_deref(),
+        state.session.runtime_state.lane_state.mc202.role_label(),
         Some("follower")
     );
     assert_eq!(
@@ -140,7 +140,7 @@ fn committed_mc202_phrase_mutation_updates_variant_and_render_shape() {
 fn mc202_render_projection_consumes_typed_role_and_phrase_intent_contract() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Pressure.label().into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Pressure);
     session.runtime_state.lane_state.mc202.phrase_variant =
         Mc202PhraseIntentState::MutatedDrive.phrase_variant();
     session.runtime_state.macro_state.mc202_touch = Mc202RoleState::Pressure.default_touch();
@@ -162,22 +162,24 @@ fn mc202_render_projection_consumes_typed_role_and_phrase_intent_contract() {
 }
 
 #[test]
-fn mc202_render_projection_rejects_unknown_role_label_without_rendering() {
+fn mc202_session_restore_rejects_unknown_role_label_before_render_projection() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
-    session.runtime_state.lane_state.mc202.role = Some("future_role".into());
+    session.runtime_state.lane_state.mc202.role = Some(Mc202RoleState::Pressure);
     session.runtime_state.lane_state.mc202.phrase_variant =
         Mc202PhraseIntentState::MutatedDrive.phrase_variant();
     session.runtime_state.macro_state.mc202_touch = 0.90;
 
-    let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+    let mut session_json = serde_json::to_string(&session).expect("serialize typed role session");
+    session_json = session_json.replace("\"role\":\"pressure\"", "\"role\":\"future_role\"");
 
-    assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Idle);
-    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
-    let mut rendered = vec![0.0; 44_100 * 2];
-    render_mc202_buffer(&mut rendered, 44_100, 2, &state.runtime.mc202_render);
-    let metrics = signal_metrics(&rendered);
-    assert_eq!(metrics.rms, 0.0, "unknown MC-202 role should not render");
+    let error =
+        serde_json::from_str::<SessionFile>(&session_json).expect_err("unknown role is rejected");
+
+    assert!(
+        error.to_string().contains("unknown variant `future_role`"),
+        "{error}"
+    );
 }
 
 #[test]

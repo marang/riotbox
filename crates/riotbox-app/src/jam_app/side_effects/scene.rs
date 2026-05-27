@@ -12,6 +12,11 @@ pub(in crate::jam_app) fn apply_scene_side_effects(
     boundary: Option<&CommitBoundaryState>,
     source_graph: Option<&SourceGraph>,
 ) {
+    if matches!(action.command, ActionCommand::MutateScene) {
+        apply_scene_mutation_side_effects(session, action, boundary);
+        return;
+    }
+
     if !matches!(
         action.command,
         ActionCommand::SceneLaunch | ActionCommand::SceneRestore
@@ -93,4 +98,62 @@ pub(in crate::jam_app) fn apply_scene_side_effects(
             summary: format!("{verb} {target_kind} {scene_id} at {position}"),
         });
     }
+}
+
+fn apply_scene_mutation_side_effects(
+    session: &mut SessionFile,
+    action: &Action,
+    boundary: Option<&CommitBoundaryState>,
+) {
+    let ActionParams::Mutation {
+        intensity,
+        target_id,
+    } = &action.params
+    else {
+        return;
+    };
+
+    let previous_aggression = session.runtime_state.macro_state.scene_aggression;
+    let next_aggression = mutated_scene_aggression(previous_aggression, *intensity);
+    session.runtime_state.macro_state.scene_aggression = next_aggression;
+
+    if let Some(logged_action) = session
+        .action_log
+        .actions
+        .iter_mut()
+        .rev()
+        .find(|logged_action| logged_action.id == action.id)
+    {
+        let position = boundary.map_or_else(
+            || "pending scene boundary".to_string(),
+            |boundary| {
+                format!(
+                    "bar {} / phrase {}",
+                    boundary.bar_index, boundary.phrase_index
+                )
+            },
+        );
+        let scene_label = target_id
+            .as_deref()
+            .or_else(|| {
+                action
+                    .target
+                    .scene_id
+                    .as_ref()
+                    .map(|scene_id| scene_id.as_str())
+            })
+            .unwrap_or("current scene");
+        logged_action.result = Some(ActionResult {
+            accepted: true,
+            summary: format!(
+                "mutated scene {scene_label} at {position}; aggression {:.2} -> {:.2}",
+                previous_aggression, next_aggression
+            ),
+        });
+    }
+}
+
+fn mutated_scene_aggression(previous_aggression: f32, intensity: f32) -> f32 {
+    let bump = intensity.clamp(0.0, 1.0).max(0.10) * 0.25;
+    (previous_aggression + bump).clamp(0.0, 1.0)
 }

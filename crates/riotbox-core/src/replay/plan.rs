@@ -1,4 +1,7 @@
-use std::cmp::Ordering;
+use std::{
+    cmp::Ordering,
+    collections::{BTreeMap, BTreeSet},
+};
 
 use crate::{
     TimestampMs,
@@ -70,8 +73,9 @@ pub fn build_committed_replay_plan(
     action_log: &ActionLog,
 ) -> Result<Vec<ReplayPlanEntry<'_>>, ReplayPlanError> {
     let mut entries = Vec::with_capacity(action_log.commit_records.len());
-    let mut seen_action_ids = Vec::with_capacity(action_log.commit_records.len());
-    let mut seen_boundary_sequences = Vec::with_capacity(action_log.commit_records.len());
+    let action_by_id = action_index_by_id(&action_log.actions);
+    let mut seen_action_ids = BTreeSet::new();
+    let mut seen_boundary_sequences = BTreeSet::new();
 
     for commit_record in &action_log.commit_records {
         if commit_record.commit_sequence == 0 {
@@ -80,32 +84,20 @@ pub fn build_committed_replay_plan(
             });
         }
 
-        if seen_action_ids.contains(&commit_record.action_id) {
+        if !seen_action_ids.insert(commit_record.action_id) {
             return Err(ReplayPlanError::DuplicateActionRecord {
                 action_id: commit_record.action_id,
             });
         }
 
-        if seen_boundary_sequences.iter().any(|(boundary, sequence)| {
-            boundary == &commit_record.boundary && sequence == &commit_record.commit_sequence
-        }) {
+        if !seen_boundary_sequences.insert(boundary_sequence_key(commit_record)) {
             return Err(ReplayPlanError::DuplicateCommitSequence {
                 boundary: commit_record.boundary.clone(),
                 commit_sequence: commit_record.commit_sequence,
             });
         }
 
-        seen_action_ids.push(commit_record.action_id);
-        seen_boundary_sequences.push((
-            commit_record.boundary.clone(),
-            commit_record.commit_sequence,
-        ));
-
-        let Some(action) = action_log
-            .actions
-            .iter()
-            .find(|action| action.id == commit_record.action_id)
-        else {
+        let Some(action) = action_by_id.get(&commit_record.action_id).copied() else {
             return Err(ReplayPlanError::MissingAction {
                 action_id: commit_record.action_id,
             });
@@ -154,12 +146,7 @@ pub fn build_snapshot_replay_plan_comparison<'a>(
     }
 
     let origin = build_committed_replay_plan(action_log)?;
-    let applied_action_ids: Vec<ActionId> = action_log
-        .actions
-        .iter()
-        .take(snapshot.action_cursor)
-        .map(|action| action.id)
-        .collect();
+    let applied_action_ids = action_ids_before_cursor(&action_log.actions, snapshot.action_cursor);
     let snapshot_suffix = origin
         .iter()
         .filter(|entry| !applied_action_ids.contains(&entry.action.id))
@@ -223,18 +210,8 @@ pub fn build_replay_target_plan<'a>(
         select_replay_snapshot_anchor(snapshots, target_action_cursor, action_log.actions.len())?;
     let origin = build_committed_replay_plan(action_log)?;
     let anchor_cursor = anchor.map_or(0, |snapshot| snapshot.action_cursor);
-    let skipped_action_ids: Vec<ActionId> = action_log
-        .actions
-        .iter()
-        .take(anchor_cursor)
-        .map(|action| action.id)
-        .collect();
-    let target_action_ids: Vec<ActionId> = action_log
-        .actions
-        .iter()
-        .take(target_action_cursor)
-        .map(|action| action.id)
-        .collect();
+    let skipped_action_ids = action_ids_before_cursor(&action_log.actions, anchor_cursor);
+    let target_action_ids = action_ids_before_cursor(&action_log.actions, target_action_cursor);
     let suffix = origin
         .iter()
         .filter(|entry| target_action_ids.contains(&entry.action.id))
@@ -248,6 +225,35 @@ pub fn build_replay_target_plan<'a>(
         anchor,
         target_action_cursor,
     })
+}
+
+fn action_index_by_id(actions: &[Action]) -> BTreeMap<ActionId, &Action> {
+    let mut index = BTreeMap::new();
+    for action in actions {
+        index.entry(action.id).or_insert(action);
+    }
+    index
+}
+
+fn action_ids_before_cursor(actions: &[Action], cursor: usize) -> BTreeSet<ActionId> {
+    actions
+        .iter()
+        .take(cursor)
+        .map(|action| action.id)
+        .collect()
+}
+
+fn boundary_sequence_key(
+    commit_record: &ActionCommitRecord,
+) -> (u64, u64, u64, u8, Option<crate::ids::SceneId>, u32) {
+    (
+        commit_record.boundary.beat_index,
+        commit_record.boundary.bar_index,
+        commit_record.boundary.phrase_index,
+        boundary_rank(commit_record.boundary.kind),
+        commit_record.boundary.scene_id.clone(),
+        commit_record.commit_sequence,
+    )
 }
 
 fn compare_replay_entries(left: &ReplayPlanEntry<'_>, right: &ReplayPlanEntry<'_>) -> Ordering {
