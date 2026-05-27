@@ -803,7 +803,7 @@ How to interpret `auto`:
 - `source_timing.bpm_agrees_with_grid: false` means the generated pack is timing-risky and should not be judged as a successful beat-grid example.
 - `source_timing.readiness: weak` means the detector saw useful evidence but not enough downbeat/phrase confidence for automatic trust.
 - `metrics.tr909_source_grid_alignment.hit_ratio` is the lane-specific TR-909 support proof; values below `0.5` mean the drum support is not landing reliably near the chosen grid.
-- `metrics.mc202_source_grid_alignment.hit_ratio` is currently expected to stay `0` for the silent MC-202 compatibility stem; it must not be used as bass-proof until source-derived MC-202 phrase planning exists.
+- `metrics.mc202_source_grid_alignment.hit_ratio` is the lane-specific MC-202 proof; values below `0.5` mean the primitive bass-pressure support is not landing reliably near the chosen grid. It is still labeled `primitive_renderer`, not source-derived phrase planning.
 - `metrics.w30_source_grid_alignment.hit_ratio` is the lane-specific W-30 source-chop proof; values below `0.5` mean the sample/chop lane is not landing reliably near the chosen grid.
 - `metrics.source_grid_output_drift.hit_ratio` is an early generated-output smoke metric; values below `0.5` mean the support render is not landing reliably near the chosen grid.
 
@@ -821,7 +821,7 @@ Current local benchmark result:
 
 What this proves today:
 
-- Riotbox can generate a bounded TR-909 and W-30 Feral grid pack with manifest-backed output metrics plus an explicit silent MC-202 compatibility lane.
+- Riotbox can generate a bounded TR-909, MC-202, and W-30 Feral grid pack with manifest-backed output metrics. MC-202 currently proves grid-bound primitive bass-pressure support, not source-derived phrase planning.
 - The pack is useful for listening and QA, not yet a full composition/export workflow.
 - Some short-loop examples can now drive auto BPM through Source Timing while still saying `needs confirm`; ambiguous or non-drum sources must continue to fall back or use explicit paths.
 
