@@ -54,10 +54,11 @@ jq -e \
     and .metrics.tr909_kick_pressure.pattern_origin == "primitive_renderer"
     and .metrics.tr909_kick_pressure.applied == true
     and .metrics.tr909_kick_pressure.low_band_rms_ratio >= 1.06
-    and .metrics.mc202_bass_pressure.pattern_origin == "compatibility_silent"
-    and .metrics.mc202_bass_pressure.applied == false
-    and .metrics.mc202_bass_pressure.reason == "mc202_bass_pressure_removed_pending_source_derived_phrase_planner"
-    and .metrics.mc202_bass_pressure.signal_rms == 0
+    and .metrics.mc202_bass_pressure.pattern_origin == "primitive_renderer"
+    and .metrics.mc202_bass_pressure.applied == true
+    and .metrics.mc202_bass_pressure.reason == "mc202_source_grid_proof_renderer"
+    and .metrics.mc202_bass_pressure.signal_rms > 0.000001
+    and .metrics.mc202_source_grid_alignment.hit_ratio >= 0.50
     and .metrics.w30_source_grid_alignment.hit_ratio >= 0.50
     and .metrics.w30_source_grid_alignment.max_peak_offset_ms <= .metrics.w30_source_grid_alignment.max_allowed_peak_offset_ms
     and .metrics.w30_source_loop_closure.passed == true

@@ -44,7 +44,7 @@ fn manifest_mc202_bass_pressure_proof(
     proof: Mc202BassPressureProof,
 ) -> ManifestMc202BassPressureProof {
     ManifestMc202BassPressureProof {
-        pattern_origin: "compatibility_silent",
+        pattern_origin: "primitive_renderer",
         applied: proof.applied,
         mode: proof.mode.label(),
         phrase_shape: proof.phrase_shape.label(),
@@ -66,28 +66,110 @@ fn manifest_mc202_bass_pressure_proof(
 
 fn render_mc202_bass_pressure(
     grid: &Grid,
-    _tr909_profile: SourceAwareTr909Profile,
+    tr909_profile: SourceAwareTr909Profile,
 ) -> (Vec<f32>, Mc202BassPressureProof) {
-    let samples = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
+    let mut samples = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
+    let channel_count = usize::from(CHANNEL_COUNT);
+    let primary_state = mc202_bass_pressure_state(grid, tr909_profile, 0);
+
+    for bar in 0..grid.bars {
+        let start = grid.bar_start_frame(bar).saturating_mul(channel_count);
+        let end = grid.bar_end_frame(bar).saturating_mul(channel_count);
+        let mut state = mc202_bass_pressure_state(grid, tr909_profile, bar);
+        state.position_beats = f64::from(bar.saturating_mul(grid.beats_per_bar));
+        render_mc202_buffer(&mut samples[start..end], SAMPLE_RATE, channel_count, &state);
+    }
+
+    let metrics = render_metrics(&samples, grid);
+    let low_band_metrics = metrics.low_band;
+    let phrase_variation_applied = grid.bars > 1;
+    let distinct_bar_profile_count = if phrase_variation_applied { 2 } else { 1 };
+    let applied =
+        metrics.signal.rms > MIN_SIGNAL_RMS && metrics.low_band.rms > 0.0 && metrics.signal.peak_abs > 0.0;
+    let active_sample_ratio = if samples.is_empty() {
+        0.0
+    } else {
+        metrics.signal.active_samples as f32 / samples.len() as f32
+    };
 
     (
         samples,
         Mc202BassPressureProof {
-            applied: false,
-            mode: Mc202RenderMode::Idle,
-            phrase_shape: Mc202PhraseShape::RootPulse,
-            note_budget: Mc202NoteBudget::Balanced,
-            phrase_variation_applied: false,
-            distinct_bar_profile_count: 0,
-            bar_similarity: 1.0,
-            identical_bar_run_length: grid.bars as usize,
-            touch: 0.0,
-            music_bus_level: 0.0,
-            signal_rms: 0.0,
-            low_band_rms: 0.0,
-            active_sample_ratio: 0.0,
-            peak_abs: 0.0,
-            reason: "mc202_bass_pressure_removed_pending_source_derived_phrase_planner",
+            applied,
+            mode: primary_state.mode,
+            phrase_shape: primary_state.phrase_shape,
+            note_budget: primary_state.note_budget,
+            phrase_variation_applied,
+            distinct_bar_profile_count,
+            bar_similarity: metrics.bar_variation.bar_similarity,
+            identical_bar_run_length: metrics.bar_variation.identical_bar_run_length,
+            touch: primary_state.touch,
+            music_bus_level: primary_state.music_bus_level,
+            signal_rms: metrics.signal.rms,
+            low_band_rms: low_band_metrics.rms,
+            active_sample_ratio,
+            peak_abs: metrics.signal.peak_abs,
+            reason: if applied {
+                "mc202_source_grid_proof_renderer"
+            } else {
+                "mc202_source_grid_proof_too_weak"
+            },
         },
     )
+}
+
+fn mc202_bass_pressure_state(
+    grid: &Grid,
+    profile: SourceAwareTr909Profile,
+    bar: u32,
+) -> Mc202RenderState {
+    let (mode, primary_shape, note_budget, touch, music_bus_level, contour_hint) =
+        match profile.support_profile {
+            Tr909SourceSupportProfile::DropDrive => (
+                Mc202RenderMode::Pressure,
+                Mc202PhraseShape::FollowerDrive,
+                Mc202NoteBudget::Balanced,
+                0.54,
+                0.30,
+                Mc202ContourHint::Drop,
+            ),
+            Tr909SourceSupportProfile::BreakLift => (
+                Mc202RenderMode::Follower,
+                Mc202PhraseShape::FollowerDrive,
+                Mc202NoteBudget::Sparse,
+                0.48,
+                0.26,
+                Mc202ContourHint::Lift,
+            ),
+            Tr909SourceSupportProfile::SteadyPulse => (
+                Mc202RenderMode::Follower,
+                Mc202PhraseShape::RootPulse,
+                Mc202NoteBudget::Balanced,
+                0.44,
+                0.24,
+                Mc202ContourHint::Neutral,
+            ),
+        };
+    let phrase_shape = if bar % 2 == 1 {
+        match primary_shape {
+            Mc202PhraseShape::RootPulse => Mc202PhraseShape::FollowerDrive,
+            _ => Mc202PhraseShape::MutatedDrive,
+        }
+    } else {
+        primary_shape
+    };
+
+    Mc202RenderState {
+        mode,
+        routing: Mc202RenderRouting::MusicBusBass,
+        phrase_shape,
+        note_budget,
+        contour_hint,
+        touch,
+        music_bus_level,
+        tempo_bpm: grid.bpm,
+        position_beats: 0.0,
+        is_transport_running: true,
+        ..Mc202RenderState::default()
+    }
 }

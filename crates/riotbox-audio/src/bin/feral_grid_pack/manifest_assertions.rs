@@ -173,16 +173,18 @@ mod manifest_assertions {
                 <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
         );
         let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
-        assert_eq!(mc202_bass_pressure["pattern_origin"], "compatibility_silent");
-        assert_eq!(mc202_bass_pressure["applied"], false);
-        assert_eq!(mc202_bass_pressure["phrase_variation_applied"], false);
+        assert_eq!(mc202_bass_pressure["pattern_origin"], "primitive_renderer");
+        assert_eq!(mc202_bass_pressure["applied"], true);
+        assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
         assert_eq!(
             mc202_bass_pressure["reason"],
-            "mc202_bass_pressure_removed_pending_source_derived_phrase_planner"
+            "mc202_source_grid_proof_renderer"
         );
-        assert_eq!(
-            manifest["metrics"]["mc202_bass_pressure_stem"]["signal"]["rms"],
-            0.0
+        assert!(
+            manifest["metrics"]["mc202_bass_pressure_stem"]["signal"]["rms"]
+                .as_f64()
+                .expect("mc202 stem rms")
+                > f64::from(MIN_SIGNAL_RMS)
         );
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
@@ -288,7 +290,14 @@ mod manifest_assertions {
             manifest["metrics"]["source_grid_output_drift"]["beat_count"]
         );
         let mc202_alignment = &manifest["metrics"]["mc202_source_grid_alignment"];
-        assert_eq!(mc202_alignment["hit_ratio"], 0.0);
+        let mc202_hit_ratio = mc202_alignment["hit_ratio"]
+            .as_f64()
+            .expect("mc202 alignment hit ratio");
+        assert!(mc202_hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
+        assert_eq!(
+            mc202_alignment["beat_count"],
+            manifest["metrics"]["source_grid_output_drift"]["beat_count"]
+        );
         let w30_alignment = &manifest["metrics"]["w30_source_grid_alignment"];
         let w30_hit_ratio = w30_alignment["hit_ratio"]
             .as_f64()

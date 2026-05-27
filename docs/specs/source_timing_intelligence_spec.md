@@ -823,6 +823,11 @@ bounded BPM policy:
   `metrics.mc202_source_grid_alignment`, so the bass-pressure stem cannot pass
   strict showcase QA only because stronger TR-909, W-30, or full-mix peaks stay
   grid-locked
+- Current Feral-grid MC-202 bass support may use a `primitive_renderer` proof
+  phrase to satisfy lane-specific source-grid output evidence. It must stay
+  labeled as primitive support until a source-derived phrase planner exists, and
+  it must not be presented as extracted or source-derived MC-202 musical
+  intelligence.
 - W-30 source chop should also expose bounded loop-closure evidence under
   `metrics.w30_source_loop_closure`, proving that the selected source-backed
   preview is non-silent, still points at its source window, and has repeat-safe
