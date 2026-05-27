@@ -341,6 +341,10 @@ fn synthetic_manifest() -> String {
       "max_peak_offset_ms": 12.5,
       "max_allowed_peak_offset_ms": 70.0
     },
+    "mc202_bass_pressure": {
+      "pattern_origin": "primitive_renderer",
+      "applied": true
+    },
     "mc202_source_grid_alignment": {
       "beat_count": 8,
       "hit_count": 8,

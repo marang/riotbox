@@ -121,7 +121,7 @@ fn strict_evidence_rejects_lane_source_grid_alignment_failures() {
 }
 
 #[test]
-fn strict_evidence_allows_mc202_compatibility_silent_alignment() {
+fn strict_evidence_rejects_mc202_compatibility_silent_alignment() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
     let manifest_path = temp.path().join("manifest.json");
@@ -134,10 +134,26 @@ fn strict_evidence_allows_mc202_compatibility_silent_alignment() {
 
     let summary = build_summary(&observer_path, &manifest_path).expect("summary");
 
-    validate_required_evidence(&summary).expect("compatibility-silent mc202 evidence");
+    let error =
+        validate_required_evidence(&summary).expect_err("compatibility-silent mc202 evidence");
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_bass_pressure.pattern_origin=compatibility_silent")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_bass_pressure.applied=false")
+    );
+    assert!(
+        error
+            .to_string()
+            .contains("mc202_source_grid_alignment.hit_ratio=0.000000")
+    );
     let markdown = render_markdown(&summary);
     assert!(markdown.contains("MC-202 bass-pressure origin: `compatibility_silent` applied `no`"));
-    assert!(markdown.contains("Output path present: `yes`"));
+    assert!(markdown.contains("Output path present: `no`"));
 }
 
 #[test]
@@ -284,6 +300,10 @@ fn synthetic_manifest_with_lane_alignment_failures() -> String {
       "hit_ratio": 1.0,
       "max_peak_offset_ms": 1.27,
       "max_allowed_peak_offset_ms": 70.0
+    },
+    "mc202_bass_pressure": {
+      "pattern_origin": "primitive_renderer",
+      "applied": true
     },
     "mc202_source_grid_alignment": {
       "beat_count": 8,
