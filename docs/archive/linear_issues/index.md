@@ -782,4 +782,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012: Restore MC-202 source-grid proof in Recipe 15
 - [RIOTBOX-1016.md](./RIOTBOX-1016.md)
   P012: Align audio QA spec with MC-202 Feral-grid proof output
+- [RIOTBOX-1017.md](./RIOTBOX-1017.md)
+  P012: Reject silent MC-202 Feral-grid output in observer/audio strict evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
