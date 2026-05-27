@@ -1834,3 +1834,17 @@ Why: sidecar-client parsing proves the JSON contract, but the musician sees the 
 Evidence: RIOTBOX-992 adds `source_map_bucket_ingest`, which asserts parsed bucket evidence, a multi-level bucket-backed energy contour, peak evidence, and observer snapshot parity with `SourceMapView`.
 Consequences: future Source Map UI polish should keep observer snapshots aligned with `SourceMapView` so decoded bucket evidence remains testable without terminal-only baselines.
 Status: accepted
+
+---
+
+### RBX-058
+
+Date: 2026-05-27
+Topic: Beat20 real-source downbeat remains ambiguous without stronger anchor evidence
+Phase: Source Timing Intelligence / Real-source timing confidence
+Question: should the current Beat20 local example be promoted by simple low-band downbeat scoring?
+Decision: keep Beat20-like rows as manual-confirm-only / ambiguous-downbeat unless a future detector adds stronger musical evidence such as trusted kick/backbeat anchors, a clearly larger downbeat phase margin, or another documented downbeat cue.
+Why: the current local report has stable BPM/beat evidence but downbeat margin `0.005`, three alternate downbeat phases, and transient-only anchors. A bounded 165 Hz low-band RMS/flux probe raised the best observed phase margin only to about `0.027`, still below the existing `0.05` ambiguity margin and not enough to justify locked or short-loop-manual-confirm behavior.
+Evidence: RIOTBOX-1014 records the Beat20 feasibility guardrail in `docs/reviews/p012_beat20_downbeat_feasibility_2026-05-27.md`.
+Consequences: future P012 detector work can still target Beat20, but it must add new evidence and preserve the current fallback for sources without defensible bar-one support.
+Status: accepted
