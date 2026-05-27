@@ -768,4 +768,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012: Add sidecar request timeout and degraded startup behavior
 - [RIOTBOX-1010.md](./RIOTBOX-1010.md)
   P012: Replace replay-plan linear scans with indexed lookups
+- [RIOTBOX-1013.md](./RIOTBOX-1013.md)
+  P012: Reject contradictory user-session Source Timing count evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
