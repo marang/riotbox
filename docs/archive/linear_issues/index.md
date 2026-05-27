@@ -752,4 +752,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Review source timing expectation harness after local evidence tightening
 - [RIOTBOX-1001.md](./RIOTBOX-1001.md)
   Assert rendered downbeat margin in example row fixtures
+- [RIOTBOX-1011.md](./RIOTBOX-1011.md)
+  P012: Wire Recipe 15 strict missing-fixture guard into audio QA CI
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
