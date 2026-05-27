@@ -778,4 +778,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012: Reject contradictory user-session Source Timing count evidence
 - [RIOTBOX-1014.md](./RIOTBOX-1014.md)
   P012: Record Beat20 downbeat feasibility guardrail
+- [RIOTBOX-1015.md](./RIOTBOX-1015.md)
+  P012: Restore MC-202 source-grid proof in Recipe 15
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
