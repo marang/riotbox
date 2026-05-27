@@ -754,4 +754,18 @@ This index tracks archived Linear ticket history that has been removed from the 
   Assert rendered downbeat margin in example row fixtures
 - [RIOTBOX-1011.md](./RIOTBOX-1011.md)
   P012: Wire Recipe 15 strict missing-fixture guard into audio QA CI
+- [RIOTBOX-1004.md](./RIOTBOX-1004.md)
+  P012: Surface source-audio load failures and monitor fallback
+- [RIOTBOX-1005.md](./RIOTBOX-1005.md)
+  P012: Resolve external Source Graph paths relative to session files
+- [RIOTBOX-1006.md](./RIOTBOX-1006.md)
+  P012: Give scene mutation a real product effect or remove the live gesture
+- [RIOTBOX-1007.md](./RIOTBOX-1007.md)
+  P012: Add ActionCommand coverage guardrails
+- [RIOTBOX-1008.md](./RIOTBOX-1008.md)
+  P012: Migrate MC-202 role session state to typed contract
+- [RIOTBOX-1009.md](./RIOTBOX-1009.md)
+  P012: Add sidecar request timeout and degraded startup behavior
+- [RIOTBOX-1010.md](./RIOTBOX-1010.md)
+  P012: Replace replay-plan linear scans with indexed lookups
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
