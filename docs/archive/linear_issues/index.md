@@ -780,4 +780,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012: Record Beat20 downbeat feasibility guardrail
 - [RIOTBOX-1015.md](./RIOTBOX-1015.md)
   P012: Restore MC-202 source-grid proof in Recipe 15
+- [RIOTBOX-1016.md](./RIOTBOX-1016.md)
+  P012: Align audio QA spec with MC-202 Feral-grid proof output
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
