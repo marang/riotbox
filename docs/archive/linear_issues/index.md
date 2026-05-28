@@ -792,4 +792,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Require observer source timing actionability in control path validators
 - [RIOTBOX-1021.md](./RIOTBOX-1021.md)
   Require observer source timing primary anchor cue in user-session snapshots
+- [RIOTBOX-1022.md](./RIOTBOX-1022.md)
+  Require observer downbeat phase evidence in source timing validators
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
