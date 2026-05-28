@@ -304,18 +304,15 @@ def require_optional_source_timing(parent: dict[str, Any]) -> None:
     timing = require_object(value, field)
     require_string(timing, "source_id")
     cue = require_one_of(timing, "cue", SOURCE_TIMING_CUES)
-    actionability = require_optional_one_of(
-        timing, "actionability", SOURCE_TIMING_ACTIONABILITY
-    )
+    actionability = require_one_of(timing, "actionability", SOURCE_TIMING_ACTIONABILITY)
     require_string(timing, "policy_profile")
     grid_use = require_nullable_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
     readiness = require_one_of(timing, "readiness", SOURCE_TIMING_READINESS)
     requires_manual_confirm = require_bool(timing, "requires_manual_confirm")
     require_source_timing_readiness_cue_match(cue, readiness, requires_manual_confirm)
-    if actionability is not None:
-        require_source_timing_readiness_actionability_match(
-            actionability, readiness, requires_manual_confirm
-        )
+    require_source_timing_readiness_actionability_match(
+        actionability, readiness, requires_manual_confirm
+    )
     require_optional_number(timing, "primary_bpm")
     require_optional_bool(timing, "bpm_agrees_with_grid")
     require_one_of(timing, "beat_status", SOURCE_TIMING_BEAT_STATUSES)

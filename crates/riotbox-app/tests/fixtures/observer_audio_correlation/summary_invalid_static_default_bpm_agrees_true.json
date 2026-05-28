@@ -28,6 +28,7 @@
     "source_timing": {
       "source_id": "source.wav",
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "policy_profile": "dance_loop_auto_readiness",
       "readiness": "weak",
       "requires_manual_confirm": true,

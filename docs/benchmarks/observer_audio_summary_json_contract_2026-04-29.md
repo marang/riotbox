@@ -103,6 +103,9 @@ When non-null, `source_timing` should include:
 
 - `cue`: musician-facing readiness cue derived from the manifest timing
   readiness and manual-confirm flag.
+- `actionability`: musician-facing next action derived from the manifest timing
+  readiness and manual-confirm flag, such as `grid can steer moves`,
+  `confirm grid first`, `listen first`, or `timing unavailable`.
 - `grid_use`: required as `null` or the manifest-side Source Timing grid-use
   classification, such as `locked_grid`, `short_loop_manual_confirm`,
   `manual_confirm_only`, `fallback_grid`, or `unavailable`.
