@@ -923,9 +923,11 @@ bounded BPM policy:
   output-path manifest QA use the same compact timing contract.
 - app observer snapshots should also preserve compact primary timing-anchor
   evidence as `anchor_evidence`: total primary anchors plus kick, backbeat, and
-  transient-cluster counts from the shared Jam source timing summary. This is a
-  control-path proof that the app observed real anchor evidence or honestly
-  observed none; it is not a replacement for manifest-side output comparison.
+  transient-cluster counts from the shared Jam source timing summary, plus the
+  shared `primary_anchor_cue` string that explains those counts in musician
+  language. This is a control-path proof that the app observed real anchor
+  evidence or honestly observed none; it is not a replacement for manifest-side
+  output comparison.
 - app observer snapshots should preserve compact primary groove evidence as
   `groove_evidence`: residual count, max absolute offset, and a short preview
   from the shared Jam source timing summary. This keeps control-path session
