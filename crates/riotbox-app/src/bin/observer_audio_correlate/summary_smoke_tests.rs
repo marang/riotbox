@@ -29,7 +29,7 @@ fn summarizes_synthetic_observer_and_manifest() {
             bpm_estimate: Some(128.0),
             bpm_confidence: 0.72,
             cue: "needs confirm".to_string(),
-            actionability: Some("confirm grid first".to_string()),
+            actionability: "confirm grid first".to_string(),
             quality: "low".to_string(),
             degraded_policy: "manual_confirm".to_string(),
             grid_use: "manual_confirm_only".to_string(),

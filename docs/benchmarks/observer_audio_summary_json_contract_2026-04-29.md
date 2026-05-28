@@ -39,6 +39,9 @@ When non-null, `control_path.observer_source_timing` should include:
 - `source_id`
 - `cue`: musician-facing Source Timing trust cue such as `grid locked`,
   `needs confirm`, `listen first`, `fallback grid`, or `not available`.
+- `actionability`: musician-facing next action derived from `degraded_policy`,
+  such as `grid can steer moves`, `confirm grid first`, `listen first`,
+  `using safe fallback grid`, or `timing unavailable`.
 - `bpm_estimate`
 - `bpm_confidence`
 - `quality`
@@ -52,7 +55,7 @@ When non-null, `control_path.observer_source_timing` should include:
 - `primary_warning_code`
 - `warning_codes`
 
-The observer should source `cue`, `quality`, `degraded_policy`,
+The observer should source `cue`, `actionability`, `quality`, `degraded_policy`,
 `primary_warning_code`, compact `anchor_evidence`, and compact
 `groove_evidence` from the shared Jam source timing summary. Raw
 beat/downbeat/phrase detail, hypothesis ids, counts, and full warning-code lists
@@ -66,6 +69,8 @@ The `cue` must match the shared musician-facing label for `degraded_policy`; a
 summary that says `degraded_policy=manual_confirm` but `cue=listen first` is
 malformed because the control path would no longer explain timing trust
 consistently.
+`actionability` follows the same rule: it must match the shared
+musician-facing next-action label for `degraded_policy`.
 
 The `output_path` object should include:
 

@@ -21,6 +21,7 @@
       "quality": "maybe",
       "degraded_policy": "manual_confirm",
       "cue": "needs confirm",
+      "actionability": "confirm grid first",
       "primary_hypothesis_id": "probe-primary",
       "hypothesis_count": 1,
       "primary_downbeat_offset_beats": null,

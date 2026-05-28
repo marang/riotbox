@@ -9,7 +9,7 @@ fn format_observer_source_timing(summary: &CorrelationSummary) -> String {
                 "{} cue={} actionability={} grid_use={} quality={} policy={} bpm={} confidence={:.3} beat={}({}) downbeat={}({}) offset={} downbeat_score={} downbeat_gap={} downbeat_alts={} phrase={}({}) anchors={} anchor_cue=\"{}\" groove={} warning={}",
                 timing.source_id,
                 timing.cue,
-                timing.actionability.as_deref().unwrap_or("missing"),
+                timing.actionability,
                 timing.grid_use,
                 timing.quality,
                 timing.degraded_policy,

@@ -65,6 +65,30 @@ fn strict_evidence_rejects_observer_source_timing_actionability_policy_mismatch(
 }
 
 #[test]
+fn strict_evidence_rejects_missing_observer_source_timing_actionability() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let observer_path = temp.path().join("events.ndjson");
+    let manifest_path = temp.path().join("manifest.json");
+    fs::write(
+        &observer_path,
+        observer_without_source_timing_actionability(),
+    )
+    .expect("write observer");
+    fs::write(&manifest_path, passing_manifest()).expect("write manifest");
+
+    let summary = build_summary(&observer_path, &manifest_path).expect("summary");
+    let error =
+        validate_required_evidence(&summary).expect_err("missing observer timing actionability");
+
+    assert!(
+        error
+            .to_string()
+            .contains("malformed observer source timing")
+    );
+    assert!(render_markdown(&summary).contains("Observer source timing: `malformed`"));
+}
+
+#[test]
 fn strict_evidence_rejects_unknown_observer_source_timing_policy() {
     let temp = tempfile::tempdir().expect("tempdir");
     let observer_path = temp.path().join("events.ndjson");
@@ -245,7 +269,7 @@ fn assert_rejects_malformed_observer_counts(observer: String, context: &str) {
 
 fn observer_with_malformed_source_timing() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":"nope","quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":"nope","quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
@@ -267,7 +291,7 @@ fn observer_with_unknown_source_timing_policy() -> &'static str {
 
 fn observer_with_mismatched_source_timing_cue() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"listen first","grid_use":"manual_confirm_only","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"listen first","actionability":"confirm grid first","grid_use":"manual_confirm_only","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
@@ -287,9 +311,20 @@ fn observer_with_mismatched_source_timing_actionability() -> &'static str {
     )
 }
 
+fn observer_without_source_timing_actionability() -> &'static str {
+    concat!(
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        "\n",
+        r#"{"event":"audio_runtime","status":"started"}"#,
+        "\n",
+        r#"{"event":"transport_commit","committed":[{"action_id":2,"boundary":"NextBar","beat_index":8,"bar_index":2,"phrase_index":0,"commit_sequence":1}]}"#,
+        "\n",
+    )
+}
+
 fn observer_with_invalid_source_timing_detail() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"surprise","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","beat_status":"surprise","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
@@ -300,7 +335,7 @@ fn observer_with_invalid_source_timing_detail() -> &'static str {
 
 fn observer_with_invalid_source_timing_downbeat_score() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_score":"hot","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_score":"hot","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
@@ -311,7 +346,7 @@ fn observer_with_invalid_source_timing_downbeat_score() -> &'static str {
 
 fn observer_with_invalid_source_timing_downbeat_score_gap() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_score_gap":["nope"],"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","primary_downbeat_score_gap":["nope"],"bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
@@ -322,7 +357,7 @@ fn observer_with_invalid_source_timing_downbeat_score_gap() -> &'static str {
 
 fn observer_with_invalid_source_timing_alternate_downbeat_count() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","alternate_downbeat_phase_count":"three","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"manual_confirm_only","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","alternate_downbeat_phase_count":"three","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
@@ -333,7 +368,7 @@ fn observer_with_invalid_source_timing_alternate_downbeat_count() -> &'static st
 
 fn observer_with_mismatched_source_timing_grid_use() -> &'static str {
     concat!(
-        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","grid_use":"locked_grid","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
+        r#"{"event":"observer_started","schema":"riotbox.user_session_observer.v1","launch":{"mode":"ingest","source":"synthetic.wav"},"snapshot":{"source_timing":{"present":true,"source_id":"src-timing","bpm_estimate":128.0,"bpm_confidence":0.72,"quality":"low","degraded_policy":"manual_confirm","cue":"needs confirm","actionability":"confirm grid first","grid_use":"locked_grid","beat_status":"tempo_only","beat_count":0,"downbeat_status":"ambiguous","bar_count":0,"phrase_status":"uncertain","phrase_count":0,"primary_hypothesis_id":"probe-primary","hypothesis_count":1,"primary_warning_code":"ambiguous_downbeat","warning_codes":["ambiguous_downbeat"]}}}"#,
         "\n",
         r#"{"event":"audio_runtime","status":"started"}"#,
         "\n",
