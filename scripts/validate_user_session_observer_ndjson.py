@@ -189,6 +189,7 @@ def validate_source_timing(value: Any) -> None:
         raise TypeError("source_timing.primary_hypothesis_id must be a string or null")
     require_int(source_timing, "hypothesis_count")
     validate_source_timing_anchor_evidence(source_timing.get("anchor_evidence"))
+    require_string(source_timing, "primary_anchor_cue")
     validate_source_timing_groove_evidence(source_timing.get("groove_evidence"))
     warning = source_timing.get("primary_warning_code")
     if warning is not None and not isinstance(warning, str):
