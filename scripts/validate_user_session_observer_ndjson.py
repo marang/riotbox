@@ -300,11 +300,13 @@ def validate_source_map(value: Any) -> None:
         raise ValueError("source_map.playhead_column must be within width")
 
     capture_range_available = require_bool_value(source_map, "capture_range_available")
-    has_capture_range = "[" in capture_range_row or "*" in capture_range_row
+    has_capture_range = any(marker in capture_range_row for marker in "[]=*")
     if capture_range_available != has_capture_range:
         raise ValueError(
             "source_map.capture_range_available must match capture_range_row markers"
         )
+    if mode != "bar grid" and has_capture_range:
+        raise ValueError("source_map non-bar-grid mode must not carry capture range markers")
     require_string(source_map, "current_region_label")
     require_string(source_map, "navigation_hint")
     require_string(source_map, "capture_hint")
