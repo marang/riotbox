@@ -377,6 +377,7 @@ The committed fixture JSON smoke currently requires:
   and counts, rejected unknown lane recipe case result enums, rejected
   impossible lane recipe metric ranges, rejected
   missing W-30 loop-closure metric keys, rejected
+  mismatched observer primary warning priority, rejected
   contradictory MC-202 phrase-grid hit-ratio evidence, rejected contradictory
   MC-202 phrase-grid pass evidence, rejected contradictory MC-202 source
   phrase-slot evidence, rejected Source Timing alignment status/BPM-issue
