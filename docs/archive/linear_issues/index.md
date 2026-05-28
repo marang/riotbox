@@ -786,4 +786,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012: Reject silent MC-202 Feral-grid output in observer/audio strict evidence
 - [RIOTBOX-1018.md](./RIOTBOX-1018.md)
   Reject contradictory observer source timing counts in Rust summary correlation
+- [RIOTBOX-1019.md](./RIOTBOX-1019.md)
+  Require output source timing actionability in observer audio summaries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
