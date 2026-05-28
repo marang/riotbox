@@ -788,4 +788,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Reject contradictory observer source timing counts in Rust summary correlation
 - [RIOTBOX-1019.md](./RIOTBOX-1019.md)
   Require output source timing actionability in observer audio summaries
+- [RIOTBOX-1020.md](./RIOTBOX-1020.md)
+  Require observer source timing actionability in control path validators
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
