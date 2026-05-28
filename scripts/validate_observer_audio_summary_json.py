@@ -41,6 +41,17 @@ GROOVE_SUBDIVISIONS = {
     "sixteenth",
     "thirty_second",
 }
+SOURCE_TIMING_WARNING_PRIORITY = (
+    "drift_high",
+    "ambiguous_downbeat",
+    "sparse_onsets",
+    "low_timing_confidence",
+    "weak_kick_anchor",
+    "weak_backbeat_anchor",
+    "half_time_possible",
+    "double_time_possible",
+    "phrase_uncertain",
+)
 GRID_BPM_SOURCES = {
     "unknown",
     "user_override",
@@ -760,8 +771,11 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     require_optional_source_timing_anchor_evidence(timing, "anchor_evidence")
     require_string(timing, "primary_anchor_cue")
     require_optional_source_timing_groove_evidence(timing, "groove_evidence")
-    require_optional_string(timing, "primary_warning_code")
+    primary_warning_code = require_optional_string_value(timing, "primary_warning_code")
     warning_codes = require_string_list(timing, "warning_codes")
+    require_observer_source_timing_primary_warning_match(
+        primary_warning_code, warning_codes
+    )
     require_observer_source_timing_grid_use_match(
         grid_use,
         degraded_policy,
@@ -858,11 +872,16 @@ def require_non_negative_int(parent: dict[str, Any], field: str) -> int:
 
 
 def require_optional_string(parent: dict[str, Any], field: str) -> None:
+    require_optional_string_value(parent, field)
+
+
+def require_optional_string_value(parent: dict[str, Any], field: str) -> str | None:
     if field not in parent:
         raise TypeError(f"{field} must be present as a string or null")
     value = parent.get(field)
     if value is not None and (not isinstance(value, str) or not value):
         raise TypeError(f"{field} must be a non-empty string or null")
+    return value
 
 
 def require_one_of(parent: dict[str, Any], field: str, allowed: set[str]) -> str:
@@ -995,6 +1014,37 @@ def observer_source_timing_grid_use(
     ):
         return "short_loop_manual_confirm"
     return "manual_confirm_only"
+
+
+def require_observer_source_timing_primary_warning_match(
+    primary_warning_code: str | None, warning_codes: list[str]
+) -> None:
+    if not warning_codes:
+        if primary_warning_code is not None:
+            raise ValueError(
+                "observer_source_timing.primary_warning_code must be null when warning_codes is empty"
+            )
+        return
+
+    expected = primary_source_timing_warning(warning_codes)
+    if primary_warning_code != expected:
+        raise ValueError(
+            "observer_source_timing.primary_warning_code must match warning priority "
+            f"expected {expected!r}, got {primary_warning_code!r}"
+        )
+
+
+def primary_source_timing_warning(warning_codes: list[str]) -> str:
+    priority = {
+        code: index for index, code in enumerate(SOURCE_TIMING_WARNING_PRIORITY)
+    }
+    return min(
+        enumerate(warning_codes),
+        key=lambda indexed_code: (
+            priority.get(indexed_code[1], len(SOURCE_TIMING_WARNING_PRIORITY)),
+            indexed_code[0],
+        ),
+    )[1]
 
 
 def require_source_timing_grid_use_compatibility_match(

@@ -44,6 +44,17 @@ GROOVE_SUBDIVISIONS = {
     "sixteenth",
     "thirty_second",
 }
+SOURCE_TIMING_WARNING_PRIORITY = (
+    "drift_high",
+    "ambiguous_downbeat",
+    "sparse_onsets",
+    "low_timing_confidence",
+    "weak_kick_anchor",
+    "weak_backbeat_anchor",
+    "half_time_possible",
+    "double_time_possible",
+    "phrase_uncertain",
+)
 
 
 def main() -> int:
@@ -206,6 +217,7 @@ def validate_source_timing(value: Any) -> None:
         raise TypeError("source_timing.warning_codes must contain non-empty strings")
     if degraded_policy == "locked" and (warning is not None or warning_codes):
         raise ValueError("locked source_timing must not carry warning evidence")
+    require_source_timing_primary_warning_match(warning, warning_codes)
     require_source_timing_grid_use_match(
         grid_use,
         degraded_policy,
@@ -517,6 +529,37 @@ def source_timing_grid_use(
     ):
         return "short_loop_manual_confirm"
     return "manual_confirm_only"
+
+
+def require_source_timing_primary_warning_match(
+    primary_warning_code: str | None, warning_codes: list[Any]
+) -> None:
+    if not warning_codes:
+        if primary_warning_code is not None:
+            raise ValueError(
+                "source_timing.primary_warning_code must be null when warning_codes is empty"
+            )
+        return
+
+    expected = primary_source_timing_warning(warning_codes)
+    if primary_warning_code != expected:
+        raise ValueError(
+            "source_timing.primary_warning_code must match warning priority "
+            f"expected {expected!r}, got {primary_warning_code!r}"
+        )
+
+
+def primary_source_timing_warning(warning_codes: list[Any]) -> str:
+    priority = {
+        code: index for index, code in enumerate(SOURCE_TIMING_WARNING_PRIORITY)
+    }
+    return min(
+        enumerate(warning_codes),
+        key=lambda indexed_code: (
+            priority.get(indexed_code[1], len(SOURCE_TIMING_WARNING_PRIORITY)),
+            indexed_code[0],
+        ),
+    )[1]
 
 
 def require_replay_family(parent: dict[str, Any], field: str) -> str:
