@@ -221,7 +221,25 @@ fn collect_observer_source_timing(
         },
     };
 
+    if observer_source_timing_counts_contradict(&evidence) {
+        return (None, true);
+    }
+
     (Some(evidence), false)
+}
+
+fn observer_source_timing_counts_contradict(timing: &ObserverSourceTimingReadiness) -> bool {
+    if timing.beat_status == "grid" && timing.beat_count == 0 {
+        return true;
+    }
+    if timing.downbeat_status == "bar_locked" && timing.bar_count == 0 {
+        return true;
+    }
+    if timing.phrase_status == "phrase_locked" && (timing.bar_count == 0 || timing.phrase_count == 0)
+    {
+        return true;
+    }
+    timing.phrase_status != "phrase_locked" && timing.phrase_count != 0
 }
 
 fn observer_source_timing_expected_grid_use(source_timing: &Value, degraded_policy: &str) -> String {
