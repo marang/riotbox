@@ -910,9 +910,10 @@ bounded BPM policy:
 - app observer snapshots should preserve compact Source Timing detail fields
   derived from Source Graph timing state, including `beat_status`,
   `beat_count`, `downbeat_status`, `primary_downbeat_offset_beats`,
-  `bar_count`, `phrase_status`, and `phrase_count`, so QA can distinguish
-  tempo-only, ambiguous-downbeat, and phrase-uncertain states without scraping
-  TUI text.
+  `primary_downbeat_score`, `primary_downbeat_score_gap`,
+  `alternate_downbeat_phase_count`, `bar_count`, `phrase_status`, and
+  `phrase_count`, so QA can distinguish tempo-only, ambiguous-downbeat, and
+  phrase-uncertain states without scraping TUI text.
 - observer/audio summary validators should reject contradictory compact
   observer-side count evidence, such as grid/bar-locked statuses without
   positive beat/bar counts or phrase-locked status without positive bar and

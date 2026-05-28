@@ -730,7 +730,18 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
     downbeat_status = require_one_of(
         timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"}
     )
-    require_optional_int(timing, "primary_downbeat_offset_beats")
+    offset = require_optional_int_value(timing, "primary_downbeat_offset_beats")
+    if offset is not None and offset < 0:
+        raise ValueError(
+            "observer_source_timing.primary_downbeat_offset_beats must be non-negative"
+    )
+    score = require_optional_number_value(timing, "primary_downbeat_score")
+    if score is not None and (score < 0 or score > 1):
+        raise ValueError(
+            "observer_source_timing.primary_downbeat_score must be between 0 and 1"
+        )
+    require_optional_non_negative_number(timing, "primary_downbeat_score_gap")
+    require_non_negative_int(timing, "alternate_downbeat_phase_count")
     bar_count = require_int_value(timing, "bar_count")
     phrase_status = require_one_of(
         timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"}

@@ -170,7 +170,14 @@ def validate_source_timing(value: Any) -> None:
     downbeat_status = require_one_of(
         source_timing, "downbeat_status", {"ambiguous", "bar_locked", "unknown"}
     )
-    require_optional_non_negative_int(source_timing, "primary_downbeat_offset_beats")
+    require_nullable_non_negative_int(source_timing, "primary_downbeat_offset_beats")
+    primary_downbeat_score = require_nullable_number(source_timing, "primary_downbeat_score")
+    if primary_downbeat_score is not None and (
+        primary_downbeat_score < 0 or primary_downbeat_score > 1
+    ):
+        raise ValueError("source_timing.primary_downbeat_score must be between 0 and 1")
+    require_nullable_non_negative_number(source_timing, "primary_downbeat_score_gap")
+    require_non_negative_int(source_timing, "alternate_downbeat_phase_count")
     bar_count = require_int_value(source_timing, "bar_count")
     phrase_status = require_one_of(
         source_timing, "phrase_status", {"uncertain", "phrase_locked", "unknown"}
@@ -364,6 +371,12 @@ def require_optional_non_negative_int(parent: dict[str, Any], field: str) -> int
     return value
 
 
+def require_nullable_non_negative_int(parent: dict[str, Any], field: str) -> int | None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as an integer or null")
+    return require_optional_non_negative_int(parent, field)
+
+
 def require_number(parent: dict[str, Any], field: str) -> float | int:
     value = parent.get(field)
     if not isinstance(value, (int, float)) or isinstance(value, bool):
@@ -377,6 +390,21 @@ def require_optional_number(parent: dict[str, Any], field: str) -> float | int |
         return None
     if not isinstance(value, (int, float)) or isinstance(value, bool):
         raise TypeError(f"{field} must be a number or null")
+    return value
+
+
+def require_nullable_number(parent: dict[str, Any], field: str) -> float | int | None:
+    if field not in parent:
+        raise TypeError(f"{field} must be present as a number or null")
+    return require_optional_number(parent, field)
+
+
+def require_nullable_non_negative_number(
+    parent: dict[str, Any], field: str
+) -> float | int | None:
+    value = require_nullable_number(parent, field)
+    if value is not None and value < 0:
+        raise ValueError(f"{field} must be non-negative")
     return value
 
 
