@@ -28,6 +28,7 @@
     "source_timing": {
       "source_id": "source.wav",
       "cue": "grid locked",
+      "actionability": "grid can steer moves",
       "policy_profile": "dance_loop_auto_readiness",
       "readiness": "ready",
       "requires_manual_confirm": false,
