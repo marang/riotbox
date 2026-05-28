@@ -141,7 +141,7 @@ fn summarizes_committed_fixture_observer_and_manifest() {
     assert!(markdown.contains("beat=tempo_only(0) downbeat=unknown(0) offset=none"));
     assert!(markdown.contains("downbeat_score=unknown"));
     assert!(markdown.contains("downbeat_gap=unknown"));
-    assert!(markdown.contains("downbeat_alts=0"));
+    assert!(markdown.contains("downbeat_alts=3"));
     assert!(markdown.contains(
         "Source timing readiness: `grid locked actionability=grid can steer moves readiness=ready"
     ));

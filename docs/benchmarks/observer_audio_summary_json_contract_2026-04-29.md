@@ -46,6 +46,14 @@ When non-null, `control_path.observer_source_timing` should include:
 - `bpm_confidence`
 - `quality`
 - `degraded_policy`
+- `primary_downbeat_offset_beats`: selected observer-side bar phase offset, as
+  an integer or `null` when unavailable.
+- `primary_downbeat_score`: observer-side selected downbeat phase confidence,
+  as a number from 0 to 1 or `null` when unavailable.
+- `primary_downbeat_score_gap`: gap between the selected downbeat phase and the
+  nearest alternate, as a non-negative number or `null` when unavailable.
+- `alternate_downbeat_phase_count`: non-negative count of plausible alternate
+  downbeat phases.
 - `primary_hypothesis_id`
 - `hypothesis_count`
 - `anchor_evidence`: `null` or compact primary anchor counts copied from the
