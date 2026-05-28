@@ -38,6 +38,11 @@ SOURCE_TIMING_GRID_USE = {
     "fallback_grid",
     "unavailable",
 }
+SOURCE_MAP_MODES = {
+    "bar grid",
+    "time fallback",
+    "missing",
+}
 GROOVE_SUBDIVISIONS = {
     "eighth",
     "triplet",
@@ -146,6 +151,7 @@ def validate_snapshot_if_present(event: dict[str, Any]) -> None:
     require_object_field(snapshot, "queue")
     require_object_field(snapshot, "runtime")
     validate_source_timing(snapshot.get("source_timing"))
+    validate_source_map(snapshot.get("source_map"))
     validate_recovery(require_object_field(snapshot, "recovery"))
 
 
@@ -271,6 +277,46 @@ def validate_source_timing_groove_residual(value: Any, index: int) -> None:
         raise ValueError("source_timing.groove_evidence confidence must be between 0 and 1")
 
 
+def validate_source_map(value: Any) -> None:
+    if value is None:
+        return
+    source_map = require_object(value, "source_map")
+    present = require_bool_value(source_map, "present")
+    mode = require_one_of(source_map, "mode", SOURCE_MAP_MODES)
+    if present != (mode != "missing"):
+        raise ValueError("source_map.present must match non-missing mode")
+
+    require_string(source_map, "trust_label")
+    width = require_non_negative_int(source_map, "width")
+    if width == 0:
+        raise ValueError("source_map.width must be positive")
+    require_source_map_row(source_map, "energy_row", width)
+    require_source_map_row(source_map, "peak_row", width)
+    require_source_map_row(source_map, "grid_row", width)
+    require_source_map_row(source_map, "playhead_row", width)
+    capture_range_row = require_source_map_row(source_map, "capture_range_row", width)
+    playhead_column = require_nullable_non_negative_int(source_map, "playhead_column")
+    if playhead_column is not None and playhead_column >= width:
+        raise ValueError("source_map.playhead_column must be within width")
+
+    capture_range_available = require_bool_value(source_map, "capture_range_available")
+    has_capture_range = "[" in capture_range_row or "*" in capture_range_row
+    if capture_range_available != has_capture_range:
+        raise ValueError(
+            "source_map.capture_range_available must match capture_range_row markers"
+        )
+    require_string(source_map, "current_region_label")
+    require_string(source_map, "navigation_hint")
+    require_string(source_map, "capture_hint")
+
+
+def require_source_map_row(parent: dict[str, Any], field: str, width: int) -> str:
+    row = require_string(parent, field)
+    if len(row) != width:
+        raise ValueError(f"source_map.{field} length must match width")
+    return row
+
+
 def validate_recovery(recovery: dict[str, Any]) -> None:
     require_bool(recovery, "present")
     require_bool(recovery, "has_manual_candidates")
@@ -348,8 +394,13 @@ def require_equal(parent: dict[str, Any], field: str, expected: Any) -> None:
 
 
 def require_bool(parent: dict[str, Any], field: str) -> None:
+    require_bool_value(parent, field)
+
+
+def require_bool_value(parent: dict[str, Any], field: str) -> bool:
     if not isinstance(parent.get(field), bool):
         raise TypeError(f"{field} must be a boolean")
+    return parent[field]
 
 
 def require_int(parent: dict[str, Any], field: str) -> None:
