@@ -947,6 +947,15 @@ bounded BPM policy:
   output-path verdict for fallback, cautious/manual-confirm, user-override, and
   locked-grid cases.
 
+P012 bounded foundation status:
+
+- the bounded P012 phase is closed as of 2026-05-28 when
+  `just p012-all-lane-source-grid-output-proof` passed locally
+- the proof is now a regression baseline for P013 musical-depth work
+- future P012+ timing improvements may strengthen detector quality, but must
+  preserve the current honest fallback/manual-confirm/locked-grid boundaries and
+  reuse this Source Graph / Source Timing / observer-audio contract
+
 This skeleton is a contract/output-shape proof. It is not yet a production
 BPM/downbeat detector and must not be presented as robust source analysis.
 

@@ -64,6 +64,11 @@ Done when:
 Current note:
 
 - the initial Analysis v1 contract exists, but Source Timing Intelligence reopens the timing foundation as a stricter all-lane analysis track; these criteria define the next timing-ready analysis bar and do not retroactively invalidate later bounded MVP exits
+- status: closed for bounded P012 Source Timing foundation on 2026-05-28 after
+  the all-lane source-grid output proof passed across generated Feral-grid
+  observer/audio paths, Recipe 2 observer/audio, and Recipe 15 real-source
+  auto/fallback proof; production-grade arbitrary-audio beat/downbeat detection
+  remains deferred to later bounded P012+ work
 
 Done when:
 
