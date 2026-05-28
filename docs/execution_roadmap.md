@@ -268,16 +268,20 @@ The original immediate build sequence has largely landed: core contracts, Jam / 
 Near-next roadmap-aligned work:
 
 1. treat `P011 | Pro Hardening` as closed for bounded MVP-spine hardening after the 2026-05-10 aggregate evidence gate
-2. start the Source Timing Intelligence program from `docs/plans/source_timing_intelligence_plan.md` as the first Post-MVP foundation track
-3. keep all timing work Rust-first at the product-contract layer and prove TR/Kick-Bass, MC-202, and W-30 output paths against the source grid
-4. keep the P011 aggregate gate green as a regression baseline while P012 changes land
-5. update specs and decision log as the timing contract freezes into implementation
+2. treat `P012 | Source Timing Intelligence` as closed for the bounded
+   foundation phase after the 2026-05-28 all-lane source-grid output proof
+3. keep the P011 aggregate gate and P012 all-lane source-grid proof green as
+   regression baselines while P013 musical-depth changes land
+4. start P013 from the existing Source Graph, Source Timing summary,
+   observer/audio, and lane-output proof contracts instead of creating a second
+   timing or arrangement truth
+5. update specs and decision log when P013 changes the musical-depth contract
 
 Linear project / phase map:
 
 1. `P011 | Pro Hardening` - closed bounded MVP-spine hardening baseline
-2. `P012 | Source Timing Intelligence` - active first Post-MVP foundation phase
-3. `P013 | All-Lane Musical Depth`
+2. `P012 | Source Timing Intelligence` - closed bounded Post-MVP timing foundation
+3. `P013 | All-Lane Musical Depth` - active next phase
 4. `P014 | Arrangement / Scene System`
 5. `P015 | Productization Alpha`
 6. `P016 | Pro Workflow / Export`
@@ -286,11 +290,15 @@ Linear project / phase map:
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
 
-This is a project / phase overview, not a ticket list. Keep P012 active-next and keep P013-P020 coarse until the timing foundation is strong enough to justify deeper musical expansion.
+This is a project / phase overview, not a ticket list. Keep P012 as a
+regression baseline and keep P014-P020 coarse until P013 proves deeper musical
+expansion on top of the timing foundation.
 
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
-- Source Timing Intelligence is the next major musical foundation needed before deeper source-derived rebuilds, timing-sensitive Ghost suggestions, and stronger all-lane generated output.
+- Source Timing Intelligence now has a bounded P012 regression gate for
+  source-derived BPM, beat, downbeat, bar, phrase, drift, groove, confidence,
+  degraded policy, Source Map, and all-lane output alignment.
 - Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing behavior must extend them instead of creating a parallel analysis or arranger path.
 
 ---
@@ -576,27 +584,28 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 
 ## 15. Next Concrete Step
 
-The immediate execution track is `P012 | Source Timing Intelligence`.
+The immediate execution track is `P013 | All-Lane Musical Depth`.
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:
 
-- `docs/plans/source_timing_intelligence_plan.md`
-- `docs/plans/source_transport_map_capture_plan.md`
+- `docs/reviews/p012_exit_review_2026-05-28.md`
 - `docs/specs/source_timing_intelligence_spec.md`
-- `docs/reviews/p012_source_timing_baseline_audit_2026-05-10.md`
-- `docs/reviews/p012_source_timing_contract_review_2026-05-08.md`
+- `docs/specs/audio_qa_workflow_spec.md`
+- `docs/specs/preset_style_spec.md`
+- `docs/specs/tui_screen_spec.md`
 - `docs/phase_definition_of_done.md`
 
-Near-next P012 slices should keep advancing the current source-timing spine:
+Near-next P013 slices should build musical depth on the P012 timing spine:
 
-- improve real-source timing confidence without overstating detector maturity
-- keep Jam / Source / observer timing language aligned through the shared Jam
-  Source Timing summary
-- prove lane output against source-grid timing with concrete metrics and
+- improve TR-909, MC-202, W-30, and mix behavior without weakening the P012
+  source-grid regression proof
+- prove every audible lane-depth change with concrete metrics and
   non-collapsed audio evidence
-- keep fallback, manual-confirm, and explicit-BPM paths visible instead of
-  pretending every source is grid-locked
+- preserve fallback, manual-confirm, explicit-BPM, and locked-grid timing
+  boundaries instead of pretending every source is grid-locked
+- keep Jam / Source / observer timing language aligned through the shared Jam
+  Source Timing summary whenever timing evidence is surfaced
 
-Keep P013+ coarse until P012 timing evidence is strong enough to support deeper
-musical expansion.
+Keep P014+ coarse until P013 proves deeper musical expansion on top of the
+closed P012 timing foundation.
