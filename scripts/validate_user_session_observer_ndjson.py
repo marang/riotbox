@@ -23,6 +23,14 @@ SOURCE_TIMING_CUE_BY_POLICY = {
     "disabled": "not available",
     "unknown": "unknown",
 }
+SOURCE_TIMING_ACTIONABILITY_BY_POLICY = {
+    "locked": "grid can steer moves",
+    "manual_confirm": "confirm grid first",
+    "cautious": "listen first",
+    "fallback_grid": "using safe fallback grid",
+    "disabled": "timing unavailable",
+    "unknown": "unknown",
+}
 SOURCE_TIMING_GRID_USE = {
     "locked_grid",
     "short_loop_manual_confirm",
@@ -150,6 +158,12 @@ def validate_source_timing(value: Any) -> None:
         set(SOURCE_TIMING_CUE_BY_POLICY),
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
+    actionability = require_one_of(
+        source_timing,
+        "actionability",
+        set(SOURCE_TIMING_ACTIONABILITY_BY_POLICY.values()),
+    )
+    require_source_timing_policy_actionability_match(actionability, degraded_policy)
     grid_use = require_one_of(source_timing, "grid_use", SOURCE_TIMING_GRID_USE)
     beat_status = require_one_of(source_timing, "beat_status", {"grid", "tempo_only", "unknown"})
     beat_count = require_int_value(source_timing, "beat_count")
@@ -385,6 +399,17 @@ def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> No
         raise ValueError(
             "source_timing.cue must match degraded_policy "
             f"{degraded_policy!r}: expected {expected!r}, got {cue!r}"
+        )
+
+
+def require_source_timing_policy_actionability_match(
+    actionability: str, degraded_policy: str
+) -> None:
+    expected = SOURCE_TIMING_ACTIONABILITY_BY_POLICY[degraded_policy]
+    if actionability != expected:
+        raise ValueError(
+            "source_timing.actionability must match degraded_policy "
+            f"{degraded_policy!r}: expected {expected!r}, got {actionability!r}"
         )
 
 

@@ -26,14 +26,15 @@ SOURCE_TIMING_CUE_BY_POLICY = {
     "unknown": "unknown",
 }
 SOURCE_TIMING_CUES = set(SOURCE_TIMING_CUE_BY_POLICY.values())
-SOURCE_TIMING_ACTIONABILITY = {
-    "grid can steer moves",
-    "confirm grid first",
-    "listen first",
-    "timing unavailable",
-    "using safe fallback grid",
-    "unknown",
+SOURCE_TIMING_ACTIONABILITY_BY_POLICY = {
+    "locked": "grid can steer moves",
+    "manual_confirm": "confirm grid first",
+    "cautious": "listen first",
+    "fallback_grid": "using safe fallback grid",
+    "disabled": "timing unavailable",
+    "unknown": "unknown",
 }
+SOURCE_TIMING_ACTIONABILITY = set(SOURCE_TIMING_ACTIONABILITY_BY_POLICY.values())
 GROOVE_SUBDIVISIONS = {
     "eighth",
     "triplet",
@@ -719,6 +720,8 @@ def require_optional_observer_source_timing(parent: dict[str, Any]) -> None:
         set(SOURCE_TIMING_CUE_BY_POLICY),
     )
     require_source_timing_policy_cue_match(cue, degraded_policy)
+    actionability = require_one_of(timing, "actionability", SOURCE_TIMING_ACTIONABILITY)
+    require_source_timing_policy_actionability_match(actionability, degraded_policy)
     grid_use = require_one_of(timing, "grid_use", SOURCE_TIMING_GRID_USE)
     beat_status = require_one_of(
         timing, "beat_status", {"grid", "tempo_only", "unknown"}
@@ -888,6 +891,17 @@ def require_source_timing_policy_cue_match(cue: str, degraded_policy: str) -> No
         raise ValueError(
             "observer_source_timing.cue must match degraded_policy "
             f"{degraded_policy!r}: expected {expected!r}, got {cue!r}"
+        )
+
+
+def require_source_timing_policy_actionability_match(
+    actionability: str, degraded_policy: str
+) -> None:
+    expected = SOURCE_TIMING_ACTIONABILITY_BY_POLICY[degraded_policy]
+    if actionability != expected:
+        raise ValueError(
+            "observer_source_timing.actionability must match degraded_policy "
+            f"{degraded_policy!r}: expected {expected!r}, got {actionability!r}"
         )
 
 

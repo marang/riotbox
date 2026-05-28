@@ -2,7 +2,7 @@
 struct ObserverSourceTimingReadiness {
     source_id: String,
     cue: String,
-    actionability: Option<String>,
+    actionability: String,
     bpm_estimate: Option<f64>,
     bpm_confidence: f64,
     quality: String,
@@ -59,8 +59,8 @@ fn collect_observer_source_timing(
     if cue != expected_cue {
         return (None, true);
     }
-    let actionability = match optional_source_timing_string(source_timing, "actionability") {
-        Ok(Some(value)) => {
+    let actionability = match non_empty_string(source_timing, "actionability") {
+        Some(value) => {
             let Some(expected_actionability) =
                 observer_source_timing_policy_actionability(&degraded_policy)
             else {
@@ -69,10 +69,9 @@ fn collect_observer_source_timing(
             if value != expected_actionability {
                 return (None, true);
             }
-            Some(value)
+            value
         }
-        Ok(None) => None,
-        Err(()) => return (None, true),
+        None => return (None, true),
     };
     let grid_use = match non_empty_string(source_timing, "grid_use") {
         Some(value)
