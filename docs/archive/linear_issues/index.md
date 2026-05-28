@@ -784,4 +784,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P012: Align audio QA spec with MC-202 Feral-grid proof output
 - [RIOTBOX-1017.md](./RIOTBOX-1017.md)
   P012: Reject silent MC-202 Feral-grid output in observer/audio strict evidence
+- [RIOTBOX-1018.md](./RIOTBOX-1018.md)
+  Reject contradictory observer source timing counts in Rust summary correlation
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
