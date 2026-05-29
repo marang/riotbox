@@ -225,6 +225,7 @@ docs/
 - `reviews/w30_chop_articulation_showcase_review_2026-05-14.md`: W-30 chop articulation showcase review captured
 - `reviews/mc202_bass_phrase_variation_showcase_review_2026-05-20.md`: MC-202 bass phrase-variation showcase review captured
 - `reviews/p013_representative_showcase_seam_review_2026-05-20.md`: P013 representative showcase seam review captured
+- `reviews/p013_mc202_representative_quality_gate_review_2026-05-29.md`: P013 MC-202 representative quality-gate review captured
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured
 - `reviews/p012_current_source_timing_spine_review_2026-05-21.md`: P012 current Source Timing spine review captured
 - `reviews/p012_source_timing_report_expectation_gate_review_2026-05-21.md`: P012 Source Timing report expectation gate review captured

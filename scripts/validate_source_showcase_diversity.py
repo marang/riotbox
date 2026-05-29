@@ -483,9 +483,15 @@ def full_mix_similarity_failures(
         if not is_full_mix_role(role):
             continue
         normalized_rms_delta = metric.get("normalized_signal_rms_delta")
+        spectral_distance = metric.get("spectral_energy_distance")
+        spectrally_similar = (
+            spectral_distance is None
+            or spectral_distance < thresholds.min_full_mix_spectral_distance
+        )
         if (
             normalized_rms_delta is not None
             and normalized_rms_delta < thresholds.min_full_mix_normalized_rms_delta
+            and spectrally_similar
         ):
             failures.append(
                 Failure(
@@ -511,7 +517,6 @@ def full_mix_similarity_failures(
                     ),
                 )
             )
-        spectral_distance = metric.get("spectral_energy_distance")
         if (
             spectral_distance is not None
             and spectral_distance < thresholds.min_full_mix_spectral_distance

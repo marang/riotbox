@@ -140,6 +140,14 @@ mod tests {
         assert!(kick_pressure.applied, "{kick_pressure:?}");
         assert!(kick_pressure.low_band_rms_ratio >= TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO);
         assert!(mc202_pressure.applied, "{mc202_pressure:?}");
+        assert!(
+            mc202_pressure.signal_rms >= MC202_BASS_PRESSURE_MIN_SIGNAL_RMS,
+            "{mc202_pressure:?}"
+        );
+        assert!(
+            mc202_pressure.low_band_rms >= MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS,
+            "{mc202_pressure:?}"
+        );
         assert!(mc202_pressure.phrase_variation_applied, "{mc202_pressure:?}");
         assert!(mc202_pressure.distinct_bar_profile_count >= 2);
         assert_eq!(

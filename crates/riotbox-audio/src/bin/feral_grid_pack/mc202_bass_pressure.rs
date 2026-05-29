@@ -39,6 +39,8 @@ struct ManifestMc202BassPressureProof {
 }
 
 const MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY: f32 = 0.985;
+const MC202_BASS_PRESSURE_MIN_SIGNAL_RMS: f32 = 0.003;
+const MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.001;
 
 fn manifest_mc202_bass_pressure_proof(
     proof: Mc202BassPressureProof,
@@ -84,8 +86,9 @@ fn render_mc202_bass_pressure(
     let low_band_metrics = metrics.low_band;
     let phrase_variation_applied = grid.bars > 1;
     let distinct_bar_profile_count = if phrase_variation_applied { 2 } else { 1 };
-    let applied =
-        metrics.signal.rms > MIN_SIGNAL_RMS && metrics.low_band.rms > 0.0 && metrics.signal.peak_abs > 0.0;
+    let applied = metrics.signal.rms >= MC202_BASS_PRESSURE_MIN_SIGNAL_RMS
+        && metrics.low_band.rms >= MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS
+        && metrics.signal.peak_abs > 0.0;
     let active_sample_ratio = if samples.is_empty() {
         0.0
     } else {
@@ -129,24 +132,24 @@ fn mc202_bass_pressure_state(
                 Mc202RenderMode::Pressure,
                 Mc202PhraseShape::FollowerDrive,
                 Mc202NoteBudget::Balanced,
-                0.54,
-                0.30,
+                0.68,
+                0.48,
                 Mc202ContourHint::Drop,
             ),
             Tr909SourceSupportProfile::BreakLift => (
                 Mc202RenderMode::Follower,
                 Mc202PhraseShape::FollowerDrive,
                 Mc202NoteBudget::Sparse,
+                0.66,
                 0.48,
-                0.26,
                 Mc202ContourHint::Lift,
             ),
             Tr909SourceSupportProfile::SteadyPulse => (
                 Mc202RenderMode::Follower,
                 Mc202PhraseShape::RootPulse,
                 Mc202NoteBudget::Balanced,
-                0.44,
-                0.24,
+                0.64,
+                0.46,
                 Mc202ContourHint::Neutral,
             ),
         };

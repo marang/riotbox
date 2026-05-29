@@ -118,13 +118,33 @@ cat >"$output_dir/validation/reproducibility.md" <<EOF
 - Result: \`pass\`
 EOF
 
+observer_probe="feral-grid-jam"
+observer_manifest="${primary_packs[0]}/manifest.json"
+if fallback_manifest="$(
+    python3 - "${primary_packs[@]}" <<'PY'
+import json
+import sys
+from pathlib import Path
+
+for pack in sys.argv[1:]:
+    manifest_path = Path(pack) / "manifest.json"
+    manifest = json.loads(manifest_path.read_text())
+    if manifest.get("source_timing", {}).get("grid_use") == "unavailable":
+        print(manifest_path)
+        break
+PY
+)"; [[ -n "$fallback_manifest" ]]; then
+    observer_probe="feral-grid-jam-fallback"
+    observer_manifest="$fallback_manifest"
+fi
+
 cargo run -p riotbox-app --bin user_session_observer_probe -- \
-    --probe feral-grid-jam \
+    --probe "$observer_probe" \
     --observer "$output_dir/observer/events.ndjson" \
     >/dev/null
 cargo run -p riotbox-app --bin observer_audio_correlate -- \
     --observer "$output_dir/observer/events.ndjson" \
-    --manifest "${primary_packs[0]}/manifest.json" \
+    --manifest "$observer_manifest" \
     --output "$output_dir/observer/observer-audio-summary.json" \
     --json \
     --require-evidence \
