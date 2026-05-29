@@ -804,4 +804,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source-accented TR-909 support dynamics to representative showcase
 - [RIOTBOX-1027.md](./RIOTBOX-1027.md)
   Add all-lane mix movement proof to representative showcase
+- [RIOTBOX-1028.md](./RIOTBOX-1028.md)
+  Add source-section MC-202 contour proof to representative showcase
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
