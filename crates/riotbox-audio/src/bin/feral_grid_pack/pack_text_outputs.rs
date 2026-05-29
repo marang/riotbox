@@ -34,6 +34,7 @@ fn write_report(
              - W-30 source-accent dynamics: `{}` origin `source_derived` distinct velocities `{}` span `{:.6}` source-energy span `{:.6}`\n\
              - Source-first generated/source RMS ratio: `{:.6}` (max `{MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
              - Support generated/source RMS ratio: `{:.6}` (max `{MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO:.6}`)\n\
+             - All-lane mix movement: `{}` source-first/support delta `{:.6}` correlation `{:.6}` TR-909 `{:.6}` MC-202 `{:.6}` W-30 `{:.6}` generated/W-30 `{:.6}`\n\
              - Generated-support mix low-band RMS: `{:.6}`\n\
              - Minimum full mix low-band RMS: `{MIN_LOW_BAND_RMS:.6}`\n\
              - TR-909 source-grid alignment hit ratio: `{:.6}` (min `{SOURCE_GRID_OUTPUT_MIN_HIT_RATIO:.6}`), max peak offset `{:.3}` ms\n\
@@ -115,6 +116,13 @@ fn write_report(
             report.w30_source_accent_dynamics.source_energy_span,
             report.source_first_generated_to_source_rms_ratio,
             report.support_generated_to_source_rms_ratio,
+            report.all_lane_mix_movement.reason,
+            report.all_lane_mix_movement.source_first_to_support_rms_delta,
+            report.all_lane_mix_movement.source_first_to_support_correlation,
+            report.all_lane_mix_movement.tr909_contribution_ratio,
+            report.all_lane_mix_movement.mc202_contribution_ratio,
+            report.all_lane_mix_movement.w30_contribution_ratio,
+            report.all_lane_mix_movement.generated_to_w30_contribution_ratio,
             report.full_mix.low_band.rms,
             report.tr909_source_grid_alignment.hit_ratio,
             report.tr909_source_grid_alignment.max_peak_offset_ms,

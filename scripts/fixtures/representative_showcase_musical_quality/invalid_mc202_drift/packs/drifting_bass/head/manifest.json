@@ -18,6 +18,15 @@
       "support_generated_to_source_rms_ratio": 0.2725277,
       "source_first_generated_to_source_rms_ratio": 0.063978344
     },
+    "all_lane_mix_movement": {
+      "applied": true,
+      "source_first_to_support_rms_delta": 0.0389,
+      "source_first_to_support_correlation": 0.997,
+      "tr909_contribution_ratio": 0.12,
+      "mc202_contribution_ratio": 0.08,
+      "w30_contribution_ratio": 0.49,
+      "generated_to_w30_contribution_ratio": 0.27
+    },
     "w30_source_chop_profile": {
       "preview_rms": 0.17958371
     },

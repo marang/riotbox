@@ -200,6 +200,7 @@ struct PackReport {
     w30_source_trigger_variation: W30SourceTriggerVariationProof,
     w30_source_slice_choice: W30SourceSliceChoiceProof,
     w30_source_accent_dynamics: W30SourceAccentDynamicsProof,
+    all_lane_mix_movement: AllLaneMixMovementProof,
     tr909: RenderMetrics,
     mc202: RenderMetrics,
     w30: RenderMetrics,
@@ -318,6 +319,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         render_w30_source_chop_with_variation(&grid, &w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &mc202, &w30);
     let full_mix = render_generated_support_mix(&tr909, &mc202, &w30);
+    let all_lane_mix_movement =
+        all_lane_mix_movement_proof(&tr909, &mc202, &w30, &source_first_mix, &full_mix, &grid);
 
     assert_grid_len("tr909", &tr909, &grid);
     assert_grid_len("mc202", &mc202, &grid);
@@ -351,6 +354,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         w30_source_trigger_variation,
         w30_source_slice_choice,
         w30_source_accent_dynamics,
+        all_lane_mix_movement,
         tr909: render_metrics(&tr909, &grid),
         mc202: render_metrics(&mc202, &grid),
         w30: render_metrics(&w30, &grid),

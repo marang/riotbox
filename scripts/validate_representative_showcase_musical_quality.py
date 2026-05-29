@@ -35,6 +35,10 @@ MIN_MC202_DISTINCT_BAR_PROFILES = 2
 MAX_MC202_BAR_SIMILARITY = 0.985
 MIN_MC202_SOURCE_GRID_HIT_RATIO = 0.50
 MAX_MC202_SOURCE_GRID_PEAK_OFFSET_MS = 70.0
+MIN_ALL_LANE_MIX_RMS_DELTA = 0.012
+MAX_ALL_LANE_MIX_CORRELATION = 0.999
+MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO = 0.015
+MIN_ALL_LANE_MIX_GENERATED_TO_W30_RATIO = 0.08
 
 
 @dataclass(frozen=True)
@@ -94,6 +98,10 @@ def main() -> int:
             "max_mc202_bar_similarity": MAX_MC202_BAR_SIMILARITY,
             "min_mc202_source_grid_hit_ratio": MIN_MC202_SOURCE_GRID_HIT_RATIO,
             "max_mc202_source_grid_peak_offset_ms": MAX_MC202_SOURCE_GRID_PEAK_OFFSET_MS,
+            "min_all_lane_mix_rms_delta": MIN_ALL_LANE_MIX_RMS_DELTA,
+            "max_all_lane_mix_correlation": MAX_ALL_LANE_MIX_CORRELATION,
+            "min_all_lane_mix_contribution_ratio": MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO,
+            "min_all_lane_mix_generated_to_w30_ratio": MIN_ALL_LANE_MIX_GENERATED_TO_W30_RATIO,
         },
     }
 
@@ -152,6 +160,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     tr909_accent_dynamics = metrics.get("tr909_source_accent_dynamics", {})
     mc202_bass_pressure = metrics.get("mc202_bass_pressure", {})
     mc202_source_grid_alignment = metrics.get("mc202_source_grid_alignment", {})
+    mix_movement = metrics.get("all_lane_mix_movement", {})
     return {
         "full_rms": number(full["signal"]["rms"]),
         "low_band_rms": number(full["low_band"]["rms"]),
@@ -225,6 +234,25 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             mc202_source_grid_alignment.get(
                 "max_allowed_peak_offset_ms", MAX_MC202_SOURCE_GRID_PEAK_OFFSET_MS
             )
+        ),
+        "all_lane_mix_movement_applied": bool(mix_movement.get("applied", False)),
+        "all_lane_mix_rms_delta": number(
+            mix_movement.get("source_first_to_support_rms_delta", 0.0)
+        ),
+        "all_lane_mix_correlation": number(
+            mix_movement.get("source_first_to_support_correlation", 1.0)
+        ),
+        "all_lane_mix_tr909_contribution_ratio": number(
+            mix_movement.get("tr909_contribution_ratio", 0.0)
+        ),
+        "all_lane_mix_mc202_contribution_ratio": number(
+            mix_movement.get("mc202_contribution_ratio", 0.0)
+        ),
+        "all_lane_mix_w30_contribution_ratio": number(
+            mix_movement.get("w30_contribution_ratio", 0.0)
+        ),
+        "all_lane_mix_generated_to_w30_contribution_ratio": number(
+            mix_movement.get("generated_to_w30_contribution_ratio", 0.0)
         ),
         "source_anchor_count": int(source_timing["anchor_evidence"]["primary_anchor_count"]),
         "tr909_reason": metrics["tr909_source_profile"]["reason"],
@@ -330,6 +358,38 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             <= metrics["mc202_source_grid_max_allowed_peak_offset_ms"],
             "mc202_source_grid_peak_offset_too_high",
         ),
+        (
+            metrics["all_lane_mix_movement_applied"],
+            "all_lane_mix_movement_not_applied",
+        ),
+        (
+            metrics["all_lane_mix_rms_delta"] >= MIN_ALL_LANE_MIX_RMS_DELTA,
+            "all_lane_mix_delta_too_low",
+        ),
+        (
+            metrics["all_lane_mix_correlation"] <= MAX_ALL_LANE_MIX_CORRELATION,
+            "all_lane_mix_correlation_too_high",
+        ),
+        (
+            metrics["all_lane_mix_tr909_contribution_ratio"]
+            >= MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO,
+            "all_lane_mix_tr909_too_weak",
+        ),
+        (
+            metrics["all_lane_mix_mc202_contribution_ratio"]
+            >= MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO,
+            "all_lane_mix_mc202_too_weak",
+        ),
+        (
+            metrics["all_lane_mix_w30_contribution_ratio"]
+            >= MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO,
+            "all_lane_mix_w30_too_weak",
+        ),
+        (
+            metrics["all_lane_mix_generated_to_w30_contribution_ratio"]
+            >= MIN_ALL_LANE_MIX_GENERATED_TO_W30_RATIO,
+            "all_lane_mix_generated_support_too_weak",
+        ),
         (metrics["source_anchor_count"] >= MIN_ANCHORS, "missing_source_anchor_evidence"),
         (metrics["bar_similarity"] <= MAX_BAR_SIMILARITY, "full_mix_too_static"),
         (
@@ -361,6 +421,23 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
     bass_variation = clamp(metrics["mc202_distinct_bar_profile_count"] / 3.0, 0.0, 1.0)
     bass_movement = clamp((1.0 - metrics["mc202_bar_similarity"]) / 0.150, 0.0, 1.0)
     bass_alignment = clamp(metrics["mc202_source_grid_hit_ratio"], 0.0, 1.0)
+    mix_delta = clamp(metrics["all_lane_mix_rms_delta"] / 0.035, 0.0, 1.1)
+    mix_decorr = clamp((1.0 - metrics["all_lane_mix_correlation"]) / 0.120, 0.0, 1.0)
+    mix_lane_contribution = clamp(
+        min(
+            metrics["all_lane_mix_tr909_contribution_ratio"],
+            metrics["all_lane_mix_mc202_contribution_ratio"],
+            metrics["all_lane_mix_w30_contribution_ratio"],
+        )
+        / 0.070,
+        0.0,
+        1.0,
+    )
+    mix_generated_support = clamp(
+        metrics["all_lane_mix_generated_to_w30_contribution_ratio"] / 0.22,
+        0.0,
+        1.0,
+    )
     movement = clamp((1.0 - metrics["bar_similarity"]) / 0.020, 0.0, 1.0)
     density = clamp(metrics["event_density_per_bar"] / 280.0, 0.0, 1.2)
     anchors = clamp(metrics["source_anchor_count"] / 8.0, 0.0, 1.0)
@@ -382,6 +459,10 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         + bass_variation
         + bass_movement
         + bass_alignment
+        + mix_delta
+        + mix_decorr
+        + mix_lane_contribution
+        + mix_generated_support
         + movement
         + density
         + anchors
@@ -424,6 +505,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It requires MC-202 bass-pressure proof so the bass lane is audible, not only named in the manifest.",
         "- It requires MC-202 phrase variation so the bass lane does not collapse into one repeated support cell.",
         "- It requires MC-202 source-grid proof so the bass lane cannot drift behind stronger aligned stems.",
+        "- It requires all-lane mix movement so the two listening mixes differ and every lane contributes.",
         "- It requires W-30 source-chop energy, low-end support, source-anchor evidence, and non-static bar movement.",
         "- It requires W-30 trigger variation to be applied rather than relying on a static repeated chop.",
         "- It requires W-30 slice-choice variation so repeated triggers do not keep reading the same source offset.",

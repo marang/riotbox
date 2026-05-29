@@ -306,6 +306,7 @@ mod manifest_assertions {
                 .expect("support generated/source ratio")
                 < f64::from(MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO)
         );
+        super::manifest_mix_assertions::assert_all_lane_mix_movement(manifest);
         let output_drift = &manifest["metrics"]["source_grid_output_drift"];
         let hit_ratio = output_drift["hit_ratio"].as_f64().expect("hit ratio");
         assert!(hit_ratio >= f64::from(SOURCE_GRID_OUTPUT_MIN_HIT_RATIO));
