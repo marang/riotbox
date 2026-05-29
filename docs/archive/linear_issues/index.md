@@ -794,4 +794,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Require observer source timing primary anchor cue in user-session snapshots
 - [RIOTBOX-1022.md](./RIOTBOX-1022.md)
   Require observer downbeat phase evidence in source timing validators
+- [RIOTBOX-1023.md](./RIOTBOX-1023.md)
+  Tighten representative showcase musical-depth gates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
