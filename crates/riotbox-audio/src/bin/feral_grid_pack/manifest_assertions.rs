@@ -241,6 +241,23 @@ mod manifest_assertions {
                 .expect("w30 slice choice span")
                 > 0
         );
+        let w30_accent_dynamics = &manifest["metrics"]["w30_source_accent_dynamics"];
+        assert_eq!(w30_accent_dynamics["pattern_origin"], "source_derived");
+        assert_eq!(w30_accent_dynamics["applied"], true);
+        assert!(
+            w30_accent_dynamics["distinct_velocity_count"]
+                .as_u64()
+                .expect("w30 accent distinct velocity count")
+                >= 3
+        );
+        assert!(
+            w30_accent_dynamics["velocity_span"]
+                .as_f64()
+                .expect("w30 accent velocity span")
+                >= w30_accent_dynamics["min_required_velocity_span"]
+                    .as_f64()
+                    .expect("w30 accent velocity span budget")
+        );
         let w30_loop_closure = &manifest["metrics"]["w30_source_loop_closure"];
         assert_eq!(w30_loop_closure["passed"], true);
         assert!(

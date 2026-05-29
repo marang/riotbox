@@ -238,10 +238,10 @@ just representative-source-showcase-musical-quality
 The gate is intentionally separate from source-diversity and non-silence checks.
 It marks at least one pack as a `musically_convincing_candidate` only when the
 case keeps source-first masking under control, makes generated TR-909 support
-audible rather than decorative, preserves W-30 source-chop energy, exposes
-source-anchor evidence, carries low-end support, and avoids a fully static bar
-loop. This is a fixture review aid, not automatic taste scoring and not a
-product listening verdict.
+audible rather than decorative, preserves W-30 source-chop energy, requires
+source-derived W-30 accent dynamics, exposes source-anchor evidence, carries
+low-end support, and avoids a fully static bar loop. This is a fixture review
+aid, not automatic taste scoring and not a product listening verdict.
 
 The full synthetic fixture showcase stays a local review pack because it is
 larger than a normal CI smoke. The aggregate audio QA gate instead includes
@@ -302,6 +302,10 @@ Early P011 guardrail defaults:
   RMS, normalized preview RMS/peak, selected source frame, gain, and reason label
   so reviewers can tell whether the W-30 stem used an articulate source segment
   and did not collapse back to a generic preview/control tone.
+- Feral grid W-30 source-chop output must expose source-derived accent dynamics
+  under `metrics.w30_source_accent_dynamics`. The proof checks that selected
+  source offsets produce multiple trigger velocities and enough velocity span
+  to avoid a flat repeated chop while staying on the same source grid.
 - Feral grid W-30 source-chop output must also expose bounded repeat-safety
   evidence under `metrics.w30_source_loop_closure`. The first proof checks that
   the selected preview is non-silent, maps back to the selected source window,
