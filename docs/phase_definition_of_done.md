@@ -217,7 +217,47 @@ Current boundary:
 
 ---
 
-## 12. Feral Layer Done Criteria
+## 12. P013 - All-Lane Musical Depth
+
+Boundary:
+
+- `P013 | All-Lane Musical Depth` is the bounded representative showcase
+  musical-depth phase on top of the P012 timing foundation.
+- It closes only when TR-909, W-30, MC-202, and generated-support mix behavior
+  have concrete output proof without weakening P012 source-grid timing
+  boundaries.
+- It is not a finished arranger, full source-derived MC-202 phrase planner,
+  final W-30 loop detector, or product taste oracle.
+
+Done when:
+
+- the P012 all-lane source-grid output proof still passes
+- representative showcase musical-quality validation passes with at least one
+  musically convincing candidate
+- TR-909 support exposes source profile, kick pressure, source-grid alignment,
+  groove timing, and source-accent dynamics proof
+- W-30 source chop exposes source identity, loop closure, trigger/slice
+  variation, source-grid alignment, and source-accent dynamics proof
+- MC-202 support exposes audible pressure, phrase/bar variation, source-grid
+  alignment, and bounded source-section contour proof while staying labeled as
+  primitive support until phrase planning exists
+- generated-support mix exposes all-lane mix movement proof so source-first and
+  generated-support listening mixes are distinct and all three lanes contribute
+- relevant P013 specs, validator fixtures, review notes, and roadmap state are
+  updated
+
+Current review:
+
+- `docs/reviews/p013_exit_review_2026-05-29.md`
+- status: closed for bounded representative all-lane musical depth on
+  2026-05-29 after the P012 all-lane source-grid proof, representative showcase
+  musical-quality gate, `just audio-qa-ci`, and `just ci` passed with TR-909,
+  W-30, MC-202, and all-lane mix output proof. Full arrangement / scene system
+  work moves to P014.
+
+---
+
+## 13. Feral Layer Done Criteria
 
 The feral layer is done for MVP purposes when:
 
@@ -235,7 +275,7 @@ Current review:
 
 ---
 
-## 13. 1.0 / Stage-Ready Product Readiness
+## 14. 1.0 / Stage-Ready Product Readiness
 
 Riotbox is close to product-ready when:
 
