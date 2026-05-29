@@ -57,6 +57,7 @@ audio-qa-ci:
     just listening-manifest-validator-fixtures
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
+    just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
@@ -431,9 +432,9 @@ source-showcase-diversity manifests:
 synthetic-fixture-showcase output="artifacts/audio_qa/local-synthetic-fixture-showcase" date="local-synthetic-fixture-showcase" source_seconds="8.0" bars="4":
     scripts/generate_synthetic_fixture_showcase.sh "{{output}}" "{{date}}" "{{source_seconds}}" "{{bars}}"
 
-representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase" source_seconds="8.0" bars="4":
+representative-source-showcase output="artifacts/audio_qa/local-representative-source-showcase" date="local-representative-source-showcase" source_seconds="8.0" bars="4" force_output_reset="":
     echo "Deprecated alias: representative-source-showcase is synthetic fixture QA, not a listening demo." >&2
-    scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}" "{{source_seconds}}" "{{bars}}"
+    scripts/generate_representative_source_showcase.sh "{{output}}" "{{date}}" "{{source_seconds}}" "{{bars}}" "{{force_output_reset}}"
 
 real-source-listening-showcase manifest="data/showcase_sources/local_listening_manifest.json" output="artifacts/audio_qa/local-real-source-listening-showcase" date="local-real-source-listening-showcase":
     python3 scripts/generate_real_source_listening_showcase.py --manifest "{{manifest}}" --output "{{output}}" --date "{{date}}"
@@ -443,6 +444,9 @@ real-source-listening-showcase-validate manifest="data/showcase_sources/local_li
 
 representative-source-showcase-musical-quality showcase="artifacts/audio_qa/local-representative-source-showcase":
     python3 scripts/validate_representative_showcase_musical_quality.py --json-output "{{showcase}}/validation/musical-quality.json" --markdown-output "{{showcase}}/validation/musical-quality.md" "{{showcase}}"
+
+representative-source-showcase-output-guard-fixtures:
+    scripts/validate_representative_showcase_output_guard.sh
 
 representative-source-showcase-musical-quality-fixtures:
     tmp="$(mktemp -d)" && python3 scripts/validate_representative_showcase_musical_quality.py --json-output "$tmp/musical-quality.json" --markdown-output "$tmp/musical-quality.md" scripts/fixtures/representative_showcase_musical_quality/valid && jq -e '.schema == "riotbox.representative_showcase_musical_quality.v1" and .result == "pass" and .selected_candidate.listening_verdict == "musically_convincing_candidate" and .selected_candidate.case_id == "tonal_hook_chop" and .passing_candidate_count == 1' "$tmp/musical-quality.json" && grep -q "musically_convincing_candidate" "$tmp/musical-quality.md" && rm -rf "$tmp"
