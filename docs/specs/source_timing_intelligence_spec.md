@@ -828,6 +828,11 @@ bounded BPM policy:
   labeled as primitive support until a source-derived phrase planner exists, and
   it must not be presented as extracted or source-derived MC-202 musical
   intelligence.
+- P013 may add bounded source-section MC-202 contour evidence under
+  `metrics.mc202_source_contour`, where source energy/density shapes contour,
+  touch, or support level and is compared against a primitive support control.
+  This remains contour support evidence, not source-derived MC-202 phrase
+  extraction.
 - W-30 source chop should also expose bounded loop-closure evidence under
   `metrics.w30_source_loop_closure`, proving that the selected source-backed
   preview is non-silent, still points at its source window, and has repeat-safe

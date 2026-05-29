@@ -26,6 +26,7 @@ fn write_report(
              - TR-909 kick pressure: `{}` origin `primitive_renderer` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
              - TR-909 source-accent dynamics: `{}` origin `source_derived` distinct accents `{}` span `{:.6}` source-energy span `{:.6}`\n\
              - MC-202 bass pressure: `{}` origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
+             - MC-202 source contour: `{}` origin `source_derived_contour` contour `{}` budget `{}` delta RMS `{:.6}` touch boost `{:.3}` level boost `{:.3}` low/mid/high `{:.6}` / `{:.6}` / `{:.6}` density `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
              - W-30 source-loop closure: `{}` edge delta `{:.6}` (max `{:.6}`), edge abs `{:.6}` (max `{:.6}`)\n\
@@ -89,6 +90,16 @@ fn write_report(
             report.mc202_bass_pressure.touch,
             report.mc202_bass_pressure.music_bus_level,
             report.mc202_bass_pressure.peak_abs,
+            report.mc202_source_contour.reason,
+            report.mc202_source_contour.contour_hint.label(),
+            report.mc202_source_contour.note_budget.label(),
+            report.mc202_source_contour.source_contour_delta_rms,
+            report.mc202_source_contour.touch_boost,
+            report.mc202_source_contour.music_bus_boost,
+            report.mc202_source_contour.low_band_energy_ratio,
+            report.mc202_source_contour.mid_band_energy_ratio,
+            report.mc202_source_contour.high_band_energy_ratio,
+            report.mc202_source_contour.event_density_per_bar,
             report.w30_source_chop_profile.reason,
             report.w30_source_chop_profile.preview_rms,
             report.w30_source_chop_profile.source_window_rms,

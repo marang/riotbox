@@ -35,6 +35,7 @@ MIN_MC202_DISTINCT_BAR_PROFILES = 2
 MAX_MC202_BAR_SIMILARITY = 0.985
 MIN_MC202_SOURCE_GRID_HIT_RATIO = 0.50
 MAX_MC202_SOURCE_GRID_PEAK_OFFSET_MS = 70.0
+MIN_MC202_SOURCE_CONTOUR_DELTA_RMS = 0.00025
 MIN_ALL_LANE_MIX_RMS_DELTA = 0.012
 MAX_ALL_LANE_MIX_CORRELATION = 0.999
 MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO = 0.015
@@ -98,6 +99,7 @@ def main() -> int:
             "max_mc202_bar_similarity": MAX_MC202_BAR_SIMILARITY,
             "min_mc202_source_grid_hit_ratio": MIN_MC202_SOURCE_GRID_HIT_RATIO,
             "max_mc202_source_grid_peak_offset_ms": MAX_MC202_SOURCE_GRID_PEAK_OFFSET_MS,
+            "min_mc202_source_contour_delta_rms": MIN_MC202_SOURCE_CONTOUR_DELTA_RMS,
             "min_all_lane_mix_rms_delta": MIN_ALL_LANE_MIX_RMS_DELTA,
             "max_all_lane_mix_correlation": MAX_ALL_LANE_MIX_CORRELATION,
             "min_all_lane_mix_contribution_ratio": MIN_ALL_LANE_MIX_CONTRIBUTION_RATIO,
@@ -159,6 +161,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     tr909_kick_pressure = metrics.get("tr909_kick_pressure", {})
     tr909_accent_dynamics = metrics.get("tr909_source_accent_dynamics", {})
     mc202_bass_pressure = metrics.get("mc202_bass_pressure", {})
+    mc202_source_contour = metrics.get("mc202_source_contour", {})
     mc202_source_grid_alignment = metrics.get("mc202_source_grid_alignment", {})
     mix_movement = metrics.get("all_lane_mix_movement", {})
     return {
@@ -234,6 +237,20 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             mc202_source_grid_alignment.get(
                 "max_allowed_peak_offset_ms", MAX_MC202_SOURCE_GRID_PEAK_OFFSET_MS
             )
+        ),
+        "mc202_source_contour_applied": bool(mc202_source_contour.get("applied", False)),
+        "mc202_source_contour_origin": str(
+            mc202_source_contour.get("pattern_origin", "unknown")
+        ),
+        "mc202_source_contour_hint": str(mc202_source_contour.get("contour_hint", "unknown")),
+        "mc202_source_contour_delta_rms": number(
+            mc202_source_contour.get("source_contour_delta_rms", 0.0)
+        ),
+        "mc202_source_contour_low_band_energy_ratio": number(
+            mc202_source_contour.get("low_band_energy_ratio", 0.0)
+        ),
+        "mc202_source_contour_event_density_per_bar": number(
+            mc202_source_contour.get("event_density_per_bar", 0.0)
         ),
         "all_lane_mix_movement_applied": bool(mix_movement.get("applied", False)),
         "all_lane_mix_rms_delta": number(
@@ -359,6 +376,18 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "mc202_source_grid_peak_offset_too_high",
         ),
         (
+            metrics["mc202_source_contour_applied"],
+            "mc202_source_contour_not_applied",
+        ),
+        (
+            metrics["mc202_source_contour_origin"] == "source_derived_contour",
+            "mc202_source_contour_origin_not_source_derived",
+        ),
+        (
+            metrics["mc202_source_contour_delta_rms"] >= MIN_MC202_SOURCE_CONTOUR_DELTA_RMS,
+            "mc202_source_contour_delta_too_low",
+        ),
+        (
             metrics["all_lane_mix_movement_applied"],
             "all_lane_mix_movement_not_applied",
         ),
@@ -421,6 +450,15 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
     bass_variation = clamp(metrics["mc202_distinct_bar_profile_count"] / 3.0, 0.0, 1.0)
     bass_movement = clamp((1.0 - metrics["mc202_bar_similarity"]) / 0.150, 0.0, 1.0)
     bass_alignment = clamp(metrics["mc202_source_grid_hit_ratio"], 0.0, 1.0)
+    bass_contour = clamp(metrics["mc202_source_contour_delta_rms"] / 0.0012, 0.0, 1.0)
+    bass_contour_energy = clamp(
+        max(
+            metrics["mc202_source_contour_low_band_energy_ratio"],
+            metrics["mc202_source_contour_event_density_per_bar"] / 12.0,
+        ),
+        0.0,
+        1.0,
+    )
     mix_delta = clamp(metrics["all_lane_mix_rms_delta"] / 0.035, 0.0, 1.1)
     mix_decorr = clamp((1.0 - metrics["all_lane_mix_correlation"]) / 0.120, 0.0, 1.0)
     mix_lane_contribution = clamp(
@@ -459,6 +497,8 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         + bass_variation
         + bass_movement
         + bass_alignment
+        + bass_contour
+        + bass_contour_energy
         + mix_delta
         + mix_decorr
         + mix_lane_contribution
@@ -505,6 +545,7 @@ def render_markdown(result: dict[str, Any]) -> str:
         "- It requires MC-202 bass-pressure proof so the bass lane is audible, not only named in the manifest.",
         "- It requires MC-202 phrase variation so the bass lane does not collapse into one repeated support cell.",
         "- It requires MC-202 source-grid proof so the bass lane cannot drift behind stronger aligned stems.",
+        "- It requires MC-202 source-contour proof so source sections shape bass contour without claiming phrase extraction.",
         "- It requires all-lane mix movement so the two listening mixes differ and every lane contributes.",
         "- It requires W-30 source-chop energy, low-end support, source-anchor evidence, and non-static bar movement.",
         "- It requires W-30 trigger variation to be applied rather than relying on a static repeated chop.",

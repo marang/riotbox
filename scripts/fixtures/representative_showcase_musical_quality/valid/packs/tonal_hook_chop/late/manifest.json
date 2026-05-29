@@ -69,6 +69,14 @@
       "signal_rms": 0.006,
       "low_band_rms": 0.002
     },
+    "mc202_source_contour": {
+      "pattern_origin": "source_derived_contour",
+      "applied": true,
+      "contour_hint": "drop",
+      "source_contour_delta_rms": 0.00068,
+      "low_band_energy_ratio": 0.74,
+      "event_density_per_bar": 20.0
+    },
     "mc202_source_grid_alignment": {
       "hit_ratio": 0.875,
       "max_peak_offset_ms": 23.0

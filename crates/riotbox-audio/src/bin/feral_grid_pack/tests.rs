@@ -155,7 +155,9 @@ mod tests {
         let legacy_low_render = render_tr909_source_support_legacy(&grid, low_profile);
         let (_, kick_pressure, tr909_accent_dynamics) =
             render_tr909_source_support_with_pressure_and_accents(&grid, low_profile);
-        let (mc202_low_render, mc202_pressure) = render_mc202_bass_pressure(&grid, low_profile);
+        let source_contour = Mc202SourceContourProfile::from_source_window(&low_source, &grid);
+        let (mc202_low_render, mc202_pressure, mc202_source_contour) =
+            render_mc202_bass_pressure_with_source_contour(&grid, low_profile, source_contour);
 
         assert_eq!(low_profile.support_profile, Tr909SourceSupportProfile::DropDrive);
         assert_eq!(high_profile.support_profile, Tr909SourceSupportProfile::BreakLift);
@@ -186,6 +188,13 @@ mod tests {
         );
         assert!(mc202_pressure.phrase_variation_applied, "{mc202_pressure:?}");
         assert!(mc202_pressure.distinct_bar_profile_count >= 2);
+        assert!(mc202_source_contour.applied, "{mc202_source_contour:?}");
+        assert_eq!(mc202_source_contour.contour_hint, Mc202ContourHint::Drop);
+        assert!(
+            mc202_source_contour.source_contour_delta_rms
+                >= MC202_SOURCE_CONTOUR_MIN_DELTA_RMS,
+            "{mc202_source_contour:?}"
+        );
         assert_eq!(
             mc202_pressure.reason,
             "mc202_source_grid_proof_renderer"
