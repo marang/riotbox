@@ -1848,3 +1848,17 @@ Why: the current local report has stable BPM/beat evidence but downbeat margin `
 Evidence: RIOTBOX-1014 records the Beat20 feasibility guardrail in `docs/reviews/p012_beat20_downbeat_feasibility_2026-05-27.md`.
 Consequences: future P012 detector work can still target Beat20, but it must add new evidence and preserve the current fallback for sources without defensible bar-one support.
 Status: accepted
+
+---
+
+### RBX-059
+
+Date: 2026-05-29
+Topic: P013 closes as bounded representative all-lane musical-depth baseline
+Phase: P013 / All-Lane Musical Depth
+Question: when is P013 complete enough to move the active roadmap to P014?
+Decision: close P013 after the representative showcase carries explicit output proof for W-30 source accent/slice/chop behavior, TR-909 source accent/kick-pressure behavior, MC-202 pressure/grid/source-contour behavior, and all-lane generated-support mix movement, while the P012 all-lane source-grid proof still passes.
+Why: P013's roadmap goal was deeper TR-909, MC-202, W-30, and mix behavior on the P012 timing spine, not a finished arranger, source-derived MC-202 phrase planner, final W-30 loop detector, or taste oracle. Keeping P013 bounded prevents the musical-depth phase from swallowing P014 arrangement / scene work.
+Evidence: RIOTBOX-1029 records the P013 exit review in `docs/reviews/p013_exit_review_2026-05-29.md`; `just p012-all-lane-source-grid-output-proof` and the representative showcase musical-quality gate passed on 2026-05-29 with a selected `tonal_hook_chop/head` candidate.
+Consequences: P014 becomes the active next execution track. Future arrangement / scene work must preserve the P012 timing and P013 representative musical-depth regression baselines instead of creating a parallel timing, arrangement, or mix truth.
+Status: accepted

@@ -270,19 +270,22 @@ Near-next roadmap-aligned work:
 1. treat `P011 | Pro Hardening` as closed for bounded MVP-spine hardening after the 2026-05-10 aggregate evidence gate
 2. treat `P012 | Source Timing Intelligence` as closed for the bounded
    foundation phase after the 2026-05-28 all-lane source-grid output proof
-3. keep the P011 aggregate gate and P012 all-lane source-grid proof green as
-   regression baselines while P013 musical-depth changes land
-4. start P013 from the existing Source Graph, Source Timing summary,
-   observer/audio, and lane-output proof contracts instead of creating a second
-   timing or arrangement truth
-5. update specs and decision log when P013 changes the musical-depth contract
+3. treat `P013 | All-Lane Musical Depth` as closed for bounded representative
+   showcase depth after the 2026-05-29 exit evidence review
+4. keep the P011 aggregate gate, P012 all-lane source-grid proof, and P013
+   representative musical-quality gate green as regression baselines while P014
+   arrangement / scene work lands
+5. start P014 from the existing Source Graph, Source Timing summary,
+   observer/audio, lane-output, and representative musical-depth proof contracts
+   instead of creating a second timing, arrangement, or mix truth
+6. update specs and decision log when P014 changes the arrangement contract
 
 Linear project / phase map:
 
 1. `P011 | Pro Hardening` - closed bounded MVP-spine hardening baseline
 2. `P012 | Source Timing Intelligence` - closed bounded Post-MVP timing foundation
-3. `P013 | All-Lane Musical Depth` - active next phase
-4. `P014 | Arrangement / Scene System`
+3. `P013 | All-Lane Musical Depth` - closed bounded representative musical-depth baseline
+4. `P014 | Arrangement / Scene System` - active next phase
 5. `P015 | Productization Alpha`
 6. `P016 | Pro Workflow / Export`
 7. `P017 | Live Performance Readiness`
@@ -290,15 +293,18 @@ Linear project / phase map:
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
 
-This is a project / phase overview, not a ticket list. Keep P012 as a
-regression baseline and keep P014-P020 coarse until P013 proves deeper musical
-expansion on top of the timing foundation.
+This is a project / phase overview, not a ticket list. Keep P012 and P013 as
+regression baselines and keep P015-P020 coarse until P014 proves arrangement /
+scene expansion on top of the timing and musical-depth foundations.
 
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
 - Source Timing Intelligence now has a bounded P012 regression gate for
   source-derived BPM, beat, downbeat, bar, phrase, drift, groove, confidence,
   degraded policy, Source Map, and all-lane output alignment.
+- P013 now has a bounded representative showcase baseline for TR-909 source
+  accent dynamics, W-30 source accent/slice/chop proof, MC-202 pressure/grid/
+  source-contour proof, and all-lane generated-support mix movement.
 - Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing behavior must extend them instead of creating a parallel analysis or arranger path.
 
 ---
@@ -584,28 +590,30 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 
 ## 15. Next Concrete Step
 
-The immediate execution track is `P013 | All-Lane Musical Depth`.
+The immediate execution track is `P014 | Arrangement / Scene System`.
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:
 
 - `docs/reviews/p012_exit_review_2026-05-28.md`
+- `docs/reviews/p013_exit_review_2026-05-29.md`
 - `docs/specs/source_timing_intelligence_spec.md`
 - `docs/specs/audio_qa_workflow_spec.md`
 - `docs/specs/preset_style_spec.md`
 - `docs/specs/tui_screen_spec.md`
 - `docs/phase_definition_of_done.md`
 
-Near-next P013 slices should build musical depth on the P012 timing spine:
+Near-next P014 slices should build arrangement and scene behavior on the P012
+timing spine and P013 musical-depth baseline:
 
-- improve TR-909, MC-202, W-30, and mix behavior without weakening the P012
-  source-grid regression proof
-- prove every audible lane-depth change with concrete metrics and
+- introduce arrangement / scene behavior without weakening the P012 source-grid
+  regression proof or the P013 representative musical-quality gate
+- prove every audible arrangement or scene change with concrete metrics and
   non-collapsed audio evidence
 - preserve fallback, manual-confirm, explicit-BPM, and locked-grid timing
   boundaries instead of pretending every source is grid-locked
 - keep Jam / Source / observer timing language aligned through the shared Jam
   Source Timing summary whenever timing evidence is surfaced
 
-Keep P014+ coarse until P013 proves deeper musical expansion on top of the
-closed P012 timing foundation.
+Keep P015+ coarse until P014 proves arrangement expansion on top of the closed
+P012 timing and P013 musical-depth foundations.
