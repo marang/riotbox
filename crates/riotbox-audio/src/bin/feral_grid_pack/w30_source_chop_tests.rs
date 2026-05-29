@@ -116,7 +116,7 @@ mod w30_source_chop_tests {
         .expect("pulse preview")
         .0;
 
-        let (varied_render, proof, slice_choice) =
+        let (varied_render, proof, slice_choice, accent_dynamics) =
             render_w30_source_chop_with_variation(&grid, &pulse_preview);
         let legacy_render = render_w30_source_chop_legacy(&grid, pulse_preview);
         let varied_alignment = source_grid_output_drift_metrics(&varied_render, &grid);
@@ -131,6 +131,15 @@ mod w30_source_chop_tests {
         assert!(slice_choice.applied, "{slice_choice:?}");
         assert!(slice_choice.unique_source_offset_count >= 4);
         assert!(slice_choice.selected_offset_span_samples > 0);
+        assert!(accent_dynamics.applied, "{accent_dynamics:?}");
+        assert!(
+            accent_dynamics.distinct_velocity_count >= W30_SOURCE_ACCENT_MIN_DISTINCT_VELOCITIES,
+            "{accent_dynamics:?}"
+        );
+        assert!(
+            accent_dynamics.velocity_span >= W30_SOURCE_ACCENT_MIN_VELOCITY_SPAN,
+            "{accent_dynamics:?}"
+        );
         assert!(
             varied_alignment.hit_ratio >= SOURCE_GRID_OUTPUT_MIN_HIT_RATIO,
             "{varied_alignment:?}"

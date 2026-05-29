@@ -24,6 +24,8 @@ MAX_EVENT_DENSITY = 650.0
 MIN_W30_OFFBEAT_TRIGGERS = 1
 MIN_W30_DISTINCT_BAR_PATTERNS = 2
 MIN_W30_UNIQUE_SLICE_OFFSETS = 4
+MIN_W30_ACCENT_DISTINCT_VELOCITIES = 3
+MIN_W30_ACCENT_VELOCITY_SPAN = 0.12
 MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO = 1.06
 MIN_MC202_BASS_PRESSURE_RMS = 0.003
 MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS = 0.001
@@ -79,6 +81,8 @@ def main() -> int:
             "min_w30_offbeat_trigger_count": MIN_W30_OFFBEAT_TRIGGERS,
             "min_w30_distinct_bar_pattern_count": MIN_W30_DISTINCT_BAR_PATTERNS,
             "min_w30_unique_slice_offset_count": MIN_W30_UNIQUE_SLICE_OFFSETS,
+            "min_w30_accent_distinct_velocity_count": MIN_W30_ACCENT_DISTINCT_VELOCITIES,
+            "min_w30_accent_velocity_span": MIN_W30_ACCENT_VELOCITY_SPAN,
             "min_tr909_kick_pressure_low_band_ratio": MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
             "min_mc202_bass_pressure_rms": MIN_MC202_BASS_PRESSURE_RMS,
             "min_mc202_bass_pressure_low_band_rms": MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
@@ -139,6 +143,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     source_timing = manifest["source_timing"]
     w30_variation = metrics.get("w30_source_trigger_variation", {})
     w30_slice_choice = metrics.get("w30_source_slice_choice", {})
+    w30_accent_dynamics = metrics.get("w30_source_accent_dynamics", {})
     tr909_kick_pressure = metrics.get("tr909_kick_pressure", {})
     mc202_bass_pressure = metrics.get("mc202_bass_pressure", {})
     mc202_source_grid_alignment = metrics.get("mc202_source_grid_alignment", {})
@@ -169,6 +174,14 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         ),
         "w30_slice_offset_span_samples": int(
             w30_slice_choice.get("selected_offset_span_samples", 0)
+        ),
+        "w30_accent_dynamics_applied": bool(w30_accent_dynamics.get("applied", False)),
+        "w30_accent_distinct_velocity_count": int(
+            w30_accent_dynamics.get("distinct_velocity_count", 0)
+        ),
+        "w30_accent_velocity_span": number(w30_accent_dynamics.get("velocity_span", 0.0)),
+        "w30_accent_source_energy_span": number(
+            w30_accent_dynamics.get("source_energy_span", 0.0)
         ),
         "tr909_kick_pressure_applied": bool(tr909_kick_pressure.get("applied", False)),
         "tr909_pattern_origin": str(tr909_kick_pressure.get("pattern_origin", "unknown")),
@@ -239,6 +252,18 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "w30_slice_choice_too_static",
         ),
         (
+            metrics["w30_accent_dynamics_applied"],
+            "w30_accent_dynamics_not_applied",
+        ),
+        (
+            metrics["w30_accent_distinct_velocity_count"] >= MIN_W30_ACCENT_DISTINCT_VELOCITIES,
+            "w30_accent_velocity_count_too_low",
+        ),
+        (
+            metrics["w30_accent_velocity_span"] >= MIN_W30_ACCENT_VELOCITY_SPAN,
+            "w30_accent_velocity_span_too_flat",
+        ),
+        (
             metrics["tr909_kick_pressure_applied"],
             "tr909_kick_pressure_not_applied",
         ),
@@ -297,6 +322,8 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
     trigger_variation = 1.0 if metrics["w30_trigger_variation_applied"] else 0.0
     pattern_variation = clamp(metrics["w30_distinct_bar_pattern_count"] / 4.0, 0.0, 1.0)
     slice_variation = clamp(metrics["w30_unique_slice_offset_count"] / 6.0, 0.0, 1.0)
+    w30_accent_variation = clamp(metrics["w30_accent_velocity_span"] / 0.28, 0.0, 1.1)
+    w30_accent_count = clamp(metrics["w30_accent_distinct_velocity_count"] / 5.0, 0.0, 1.0)
     kick_pressure = clamp(
         (metrics["tr909_kick_pressure_low_band_ratio"] - 1.0) / 0.18,
         0.0,
@@ -318,6 +345,8 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         + trigger_variation
         + pattern_variation
         + slice_variation
+        + w30_accent_variation
+        + w30_accent_count
         + kick_pressure
         + bass_pressure
         + bass_low

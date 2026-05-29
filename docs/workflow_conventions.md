@@ -77,6 +77,8 @@ Non-stop conditions:
 
 - the current ticket is merged, archived, deleted from Linear, or otherwise
   fully closed
+- a bounded slice within an active phase is complete while the user has asked
+  for phase completion or autonomous continuation
 - a PR is open, CI is running, or CI is green for a locally clean branch
 - local `main` is clean and synced
 - Linear has been tidied or the current branch has been deleted
@@ -86,6 +88,11 @@ Non-stop conditions:
 If none of the allowed stop conditions applies, continue the loop. Choose one
 small coherent next slice, keep Linear state honest, and do not open multiple
 parallel tickets just to avoid stopping.
+
+When the user asks to implement a full active phase, such as P013, completing a
+single slice is only a handoff point inside the loop. Do the PR/CI/merge/archive
+closeout for that slice, then derive and start the next phase-aligned slice
+without sending a final status report unless an allowed stop condition applies.
 
 ### 2.1 Final Response Gate
 

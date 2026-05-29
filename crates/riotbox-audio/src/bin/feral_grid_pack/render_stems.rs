@@ -33,11 +33,13 @@ fn render_w30_source_chop_with_variation(
     Vec<f32>,
     W30SourceTriggerVariationProof,
     W30SourceSliceChoiceProof,
+    W30SourceAccentDynamicsProof,
 ) {
     let slice_plan = w30_source_slice_choice_plan(source_window_preview);
-    let events = w30_source_trigger_events_with_slice_plan(grid, &slice_plan);
+    let events = w30_source_trigger_events_with_slice_plan(grid, source_window_preview, &slice_plan);
     let proof = w30_source_trigger_variation_proof(grid, &events);
     let slice_proof = slice_plan.proof;
+    let accent_proof = w30_source_accent_dynamics_proof(&events);
     let profile_gain = w30_source_trigger_profile_gain(source_window_preview);
     let mut output = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
 
@@ -49,7 +51,7 @@ fn render_w30_source_chop_with_variation(
         *sample = sample.clamp(-0.95, 0.95);
     }
 
-    (output, proof, slice_proof)
+    (output, proof, slice_proof, accent_proof)
 }
 
 fn render_w30_source_trigger_event(
@@ -313,6 +315,15 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
             "W-30 source slice choice was too static: unique offsets {} span {} samples",
             report.w30_source_slice_choice.unique_source_offset_count,
             report.w30_source_slice_choice.selected_offset_span_samples
+        )
+        .into());
+    }
+
+    if !report.w30_source_accent_dynamics.applied {
+        return Err(format!(
+            "W-30 source-accent dynamics were too flat: distinct velocities {} span {:.6}",
+            report.w30_source_accent_dynamics.distinct_velocity_count,
+            report.w30_source_accent_dynamics.velocity_span
         )
         .into());
     }

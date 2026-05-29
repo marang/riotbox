@@ -32,6 +32,12 @@
       "unique_source_offset_count": 1,
       "selected_offset_span_samples": 0
     },
+    "w30_source_accent_dynamics": {
+      "applied": false,
+      "distinct_velocity_count": 1,
+      "velocity_span": 0.0,
+      "source_energy_span": 0.0
+    },
     "tr909_source_profile": {
       "reason": "source_low_drive"
     },

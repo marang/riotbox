@@ -44,6 +44,7 @@ struct W30SourceTriggerVariationProof {
 struct W30SourceTriggerEvent {
     beat_position: f32,
     velocity: f32,
+    source_energy_score: f32,
     source_offset_samples: usize,
 }
 
@@ -244,6 +245,7 @@ fn manifest_w30_source_trigger_variation_proof(
 
 fn w30_source_trigger_events_with_slice_plan(
     grid: &Grid,
+    source_window_preview: &W30PreviewSampleWindow,
     slice_plan: &W30SourceSliceChoicePlan,
 ) -> Vec<W30SourceTriggerEvent> {
     let mut events = Vec::with_capacity(grid.total_beats as usize + grid.bars as usize);
@@ -254,10 +256,13 @@ fn w30_source_trigger_events_with_slice_plan(
             let source_stride = (bar as usize)
                 .saturating_mul(grid.beats_per_bar as usize)
                 .saturating_add(beat_offset as usize);
+            let source_offset_samples = slice_plan.offset_for_stride(source_stride);
+            let accent = w30_source_accent_features(source_window_preview, source_offset_samples);
             events.push(W30SourceTriggerEvent {
                 beat_position: bar_start + beat_offset as f32,
-                velocity: 0.84,
-                source_offset_samples: slice_plan.offset_for_stride(source_stride),
+                velocity: accent.velocity,
+                source_energy_score: accent.source_energy_score,
+                source_offset_samples,
             });
         }
     }

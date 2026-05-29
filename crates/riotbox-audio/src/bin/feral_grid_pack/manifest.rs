@@ -12,15 +12,16 @@ use super::{
     MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO, MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
     MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS, ManifestMc202BassPressureProof,
     ManifestSourceTimingReadiness, ManifestTr909KickPressureProof, ManifestTr909SourceProfile,
-    ManifestW30SourceChopProfile, ManifestW30SourceLoopClosureProof,
-    ManifestW30SourceSliceChoiceProof, ManifestW30SourceTriggerVariationProof, PACK_ID, PackReport,
-    RenderMetrics, SAMPLE_RATE, SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest,
-    SpectralEnergyMetrics, Tr909GrooveTimingPolicy, grid_bpm_decision_reason_label,
-    grid_bpm_source_label, manifest_mc202_bass_pressure_proof, manifest_source_timing_readiness,
+    ManifestW30SourceAccentDynamicsProof, ManifestW30SourceChopProfile,
+    ManifestW30SourceLoopClosureProof, ManifestW30SourceSliceChoiceProof,
+    ManifestW30SourceTriggerVariationProof, PACK_ID, PackReport, RenderMetrics, SAMPLE_RATE,
+    SourceGridOutputDriftMetrics, SourceTimingAnalysisForManifest, SpectralEnergyMetrics,
+    Tr909GrooveTimingPolicy, grid_bpm_decision_reason_label, grid_bpm_source_label,
+    manifest_mc202_bass_pressure_proof, manifest_source_timing_readiness,
     manifest_tr909_kick_pressure_proof, manifest_tr909_source_profile,
-    manifest_w30_source_chop_profile, manifest_w30_source_loop_closure_proof,
-    manifest_w30_source_slice_choice_proof, manifest_w30_source_trigger_variation_proof,
-    metrics_path_for, verification_command,
+    manifest_w30_source_accent_dynamics_proof, manifest_w30_source_chop_profile,
+    manifest_w30_source_loop_closure_proof, manifest_w30_source_slice_choice_proof,
+    manifest_w30_source_trigger_variation_proof, metrics_path_for, verification_command,
 };
 
 #[derive(Serialize)]
@@ -85,6 +86,7 @@ struct ManifestPackMetrics {
     w30_source_loop_closure: ManifestW30SourceLoopClosureProof,
     w30_source_trigger_variation: ManifestW30SourceTriggerVariationProof,
     w30_source_slice_choice: ManifestW30SourceSliceChoiceProof,
+    w30_source_accent_dynamics: ManifestW30SourceAccentDynamicsProof,
     tr909_beat_fill: ManifestRenderMetrics,
     mc202_bass_pressure_stem: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
@@ -181,6 +183,9 @@ pub(super) fn write_manifest(
             ),
             w30_source_slice_choice: manifest_w30_source_slice_choice_proof(
                 report.w30_source_slice_choice,
+            ),
+            w30_source_accent_dynamics: manifest_w30_source_accent_dynamics_proof(
+                report.w30_source_accent_dynamics,
             ),
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             mc202_bass_pressure_stem: manifest_render_metrics(report.mc202),
