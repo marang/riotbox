@@ -798,4 +798,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Tighten representative showcase musical-depth gates
 - [RIOTBOX-1024.md](./RIOTBOX-1024.md)
   Add source-accented W-30 chop dynamics to representative showcase
+- [RIOTBOX-1025.md](./RIOTBOX-1025.md)
+  Guard representative showcase output reset paths
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
