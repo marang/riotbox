@@ -242,10 +242,10 @@ The gate is intentionally separate from source-diversity and non-silence checks.
 It marks at least one pack as a `musically_convincing_candidate` only when the
 case keeps source-first masking under control, makes generated TR-909 support
 audible rather than decorative, preserves W-30 source-chop energy, requires
-source-derived W-30 accent dynamics, proves all-lane mix movement, exposes
-source-anchor evidence, carries low-end support, and avoids a fully static bar
-loop. This is a fixture review aid, not automatic taste scoring and not a
-product listening verdict.
+source-derived W-30 accent dynamics, proves MC-202 source-section contour and
+all-lane mix movement, exposes source-anchor evidence, carries low-end support,
+and avoids a fully static bar loop. This is a fixture review aid, not automatic
+taste scoring and not a product listening verdict.
 
 The full synthetic fixture showcase stays a local review pack because it is
 larger than a normal CI smoke. The aggregate audio QA gate instead includes
@@ -309,6 +309,12 @@ Early P011 guardrail defaults:
   generated-support listening mixes are audibly distinct and that TR-909,
   MC-202, and W-30 all contribute measurable energy instead of passing only
   aggregate mix-balance or non-silence checks.
+- Feral grid MC-202 support must expose bounded source-section contour evidence
+  under `metrics.mc202_source_contour` before being treated as deeper P013 bass
+  behavior. The proof may shape contour, touch, and support level from source
+  energy/density and must compare against the primitive neutral support control;
+  it is not a source-derived phrase planner and must not be described as
+  extracted MC-202 question/answer placement.
 - Feral grid W-30 source-chop output must carry audible source identity, not only
   prove that a source window exists. The generated manifest records
   `metrics.w30_source_chop_profile` with source-window RMS, selected segment

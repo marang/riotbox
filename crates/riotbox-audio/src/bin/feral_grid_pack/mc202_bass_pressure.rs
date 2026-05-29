@@ -17,6 +17,35 @@ struct Mc202BassPressureProof {
     reason: &'static str,
 }
 
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Mc202SourceContourProfile {
+    contour_hint: Mc202ContourHint,
+    note_budget: Mc202NoteBudget,
+    touch_boost: f32,
+    music_bus_boost: f32,
+    low_band_energy_ratio: f32,
+    mid_band_energy_ratio: f32,
+    high_band_energy_ratio: f32,
+    event_density_per_bar: f32,
+    reason: &'static str,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+struct Mc202SourceContourProof {
+    applied: bool,
+    contour_hint: Mc202ContourHint,
+    note_budget: Mc202NoteBudget,
+    touch_boost: f32,
+    music_bus_boost: f32,
+    low_band_energy_ratio: f32,
+    mid_band_energy_ratio: f32,
+    high_band_energy_ratio: f32,
+    event_density_per_bar: f32,
+    source_contour_delta_rms: f32,
+    min_required_delta_rms: f32,
+    reason: &'static str,
+}
+
 #[derive(Serialize)]
 struct ManifestMc202BassPressureProof {
     pattern_origin: &'static str,
@@ -38,9 +67,27 @@ struct ManifestMc202BassPressureProof {
     reason: &'static str,
 }
 
+#[derive(Serialize)]
+struct ManifestMc202SourceContourProof {
+    pattern_origin: &'static str,
+    applied: bool,
+    contour_hint: &'static str,
+    note_budget: &'static str,
+    touch_boost: f32,
+    music_bus_boost: f32,
+    low_band_energy_ratio: f32,
+    mid_band_energy_ratio: f32,
+    high_band_energy_ratio: f32,
+    event_density_per_bar: f32,
+    source_contour_delta_rms: f32,
+    min_required_delta_rms: f32,
+    reason: &'static str,
+}
+
 const MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY: f32 = 0.985;
 const MC202_BASS_PRESSURE_MIN_SIGNAL_RMS: f32 = 0.003;
 const MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.001;
+const MC202_SOURCE_CONTOUR_MIN_DELTA_RMS: f32 = 0.00025;
 
 fn manifest_mc202_bass_pressure_proof(
     proof: Mc202BassPressureProof,
@@ -66,20 +113,55 @@ fn manifest_mc202_bass_pressure_proof(
     }
 }
 
-fn render_mc202_bass_pressure(
+fn manifest_mc202_source_contour_proof(
+    proof: Mc202SourceContourProof,
+) -> ManifestMc202SourceContourProof {
+    ManifestMc202SourceContourProof {
+        pattern_origin: "source_derived_contour",
+        applied: proof.applied,
+        contour_hint: proof.contour_hint.label(),
+        note_budget: proof.note_budget.label(),
+        touch_boost: proof.touch_boost,
+        music_bus_boost: proof.music_bus_boost,
+        low_band_energy_ratio: proof.low_band_energy_ratio,
+        mid_band_energy_ratio: proof.mid_band_energy_ratio,
+        high_band_energy_ratio: proof.high_band_energy_ratio,
+        event_density_per_bar: proof.event_density_per_bar,
+        source_contour_delta_rms: proof.source_contour_delta_rms,
+        min_required_delta_rms: proof.min_required_delta_rms,
+        reason: proof.reason,
+    }
+}
+
+fn render_mc202_bass_pressure_with_source_contour(
     grid: &Grid,
     tr909_profile: SourceAwareTr909Profile,
-) -> (Vec<f32>, Mc202BassPressureProof) {
+    source_contour: Mc202SourceContourProfile,
+) -> (
+    Vec<f32>,
+    Mc202BassPressureProof,
+    Mc202SourceContourProof,
+) {
     let mut samples = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
+    let mut control_samples = vec![0.0; grid.total_frames * usize::from(CHANNEL_COUNT)];
     let channel_count = usize::from(CHANNEL_COUNT);
-    let primary_state = mc202_bass_pressure_state(grid, tr909_profile, 0);
+    let primary_state = mc202_bass_pressure_state(grid, tr909_profile, Some(source_contour), 0);
 
     for bar in 0..grid.bars {
         let start = grid.bar_start_frame(bar).saturating_mul(channel_count);
         let end = grid.bar_end_frame(bar).saturating_mul(channel_count);
-        let mut state = mc202_bass_pressure_state(grid, tr909_profile, bar);
+        let mut state = mc202_bass_pressure_state(grid, tr909_profile, Some(source_contour), bar);
         state.position_beats = f64::from(bar.saturating_mul(grid.beats_per_bar));
         render_mc202_buffer(&mut samples[start..end], SAMPLE_RATE, channel_count, &state);
+
+        let mut control_state = mc202_bass_pressure_state(grid, tr909_profile, None, bar);
+        control_state.position_beats = f64::from(bar.saturating_mul(grid.beats_per_bar));
+        render_mc202_buffer(
+            &mut control_samples[start..end],
+            SAMPLE_RATE,
+            channel_count,
+            &control_state,
+        );
     }
 
     let metrics = render_metrics(&samples, grid);
@@ -94,6 +176,9 @@ fn render_mc202_bass_pressure(
     } else {
         metrics.signal.active_samples as f32 / samples.len() as f32
     };
+    let source_contour_delta_rms = rms_delta(&samples, &control_samples, grid);
+    let source_contour_applied =
+        source_contour_delta_rms >= MC202_SOURCE_CONTOUR_MIN_DELTA_RMS;
 
     (
         samples,
@@ -118,12 +203,86 @@ fn render_mc202_bass_pressure(
                 "mc202_source_grid_proof_too_weak"
             },
         },
+        Mc202SourceContourProof {
+            applied: source_contour_applied,
+            contour_hint: source_contour.contour_hint,
+            note_budget: source_contour.note_budget,
+            touch_boost: source_contour.touch_boost,
+            music_bus_boost: source_contour.music_bus_boost,
+            low_band_energy_ratio: source_contour.low_band_energy_ratio,
+            mid_band_energy_ratio: source_contour.mid_band_energy_ratio,
+            high_band_energy_ratio: source_contour.high_band_energy_ratio,
+            event_density_per_bar: source_contour.event_density_per_bar,
+            source_contour_delta_rms,
+            min_required_delta_rms: MC202_SOURCE_CONTOUR_MIN_DELTA_RMS,
+            reason: if source_contour_applied {
+                source_contour.reason
+            } else {
+                "mc202_source_contour_too_weak"
+            },
+        },
     )
+}
+
+impl Mc202SourceContourProfile {
+    fn from_source_window(samples: &[f32], grid: &Grid) -> Self {
+        let spectral = spectral_energy_metrics(samples);
+        let signal = signal_metrics_with_grid(
+            samples,
+            SAMPLE_RATE,
+            CHANNEL_COUNT,
+            grid.bpm,
+            grid.beats_per_bar,
+        );
+
+        if spectral.low_band_energy_ratio >= spectral.high_band_energy_ratio
+            && spectral.low_band_energy_ratio >= spectral.mid_band_energy_ratio
+        {
+            Self {
+                contour_hint: Mc202ContourHint::Drop,
+                note_budget: Mc202NoteBudget::Balanced,
+                touch_boost: 0.055,
+                music_bus_boost: 0.040,
+                low_band_energy_ratio: spectral.low_band_energy_ratio,
+                mid_band_energy_ratio: spectral.mid_band_energy_ratio,
+                high_band_energy_ratio: spectral.high_band_energy_ratio,
+                event_density_per_bar: signal.event_density_per_bar,
+                reason: "source_low_section_drop_contour",
+            }
+        } else if signal.event_density_per_bar >= 3.0
+            || spectral.high_band_energy_ratio >= spectral.mid_band_energy_ratio
+        {
+            Self {
+                contour_hint: Mc202ContourHint::Lift,
+                note_budget: Mc202NoteBudget::Push,
+                touch_boost: 0.045,
+                music_bus_boost: 0.035,
+                low_band_energy_ratio: spectral.low_band_energy_ratio,
+                mid_band_energy_ratio: spectral.mid_band_energy_ratio,
+                high_band_energy_ratio: spectral.high_band_energy_ratio,
+                event_density_per_bar: signal.event_density_per_bar,
+                reason: "source_busy_section_lift_contour",
+            }
+        } else {
+            Self {
+                contour_hint: Mc202ContourHint::Hold,
+                note_budget: Mc202NoteBudget::Sparse,
+                touch_boost: 0.035,
+                music_bus_boost: 0.025,
+                low_band_energy_ratio: spectral.low_band_energy_ratio,
+                mid_band_energy_ratio: spectral.mid_band_energy_ratio,
+                high_band_energy_ratio: spectral.high_band_energy_ratio,
+                event_density_per_bar: signal.event_density_per_bar,
+                reason: "source_mid_section_hold_contour",
+            }
+        }
+    }
 }
 
 fn mc202_bass_pressure_state(
     grid: &Grid,
     profile: SourceAwareTr909Profile,
+    source_contour: Option<Mc202SourceContourProfile>,
     bar: u32,
 ) -> Mc202RenderState {
     let (mode, primary_shape, note_budget, touch, music_bus_level, contour_hint) =
@@ -153,6 +312,18 @@ fn mc202_bass_pressure_state(
                 Mc202ContourHint::Neutral,
             ),
         };
+    let note_budget = source_contour
+        .map(|contour| contour.note_budget)
+        .unwrap_or(note_budget);
+    let contour_hint = source_contour
+        .map(|contour| contour.contour_hint)
+        .unwrap_or(contour_hint);
+    let touch = source_contour
+        .map(|contour| (touch + contour.touch_boost).clamp(0.0, 1.0))
+        .unwrap_or(touch);
+    let music_bus_level = source_contour
+        .map(|contour| (music_bus_level + contour.music_bus_boost).clamp(0.0, 1.0))
+        .unwrap_or(music_bus_level);
     let phrase_shape = if bar % 2 == 1 {
         match primary_shape {
             Mc202PhraseShape::RootPulse => Mc202PhraseShape::FollowerDrive,

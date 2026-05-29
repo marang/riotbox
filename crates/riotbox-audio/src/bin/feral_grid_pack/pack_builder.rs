@@ -195,6 +195,7 @@ struct PackReport {
     tr909_kick_pressure: Tr909KickPressureProof,
     tr909_source_accent_dynamics: Tr909SourceAccentDynamicsProof,
     mc202_bass_pressure: Mc202BassPressureProof,
+    mc202_source_contour: Mc202SourceContourProof,
     w30_source_chop_profile: W30SourceChopProfile,
     w30_source_loop_closure: W30SourceLoopClosureProof,
     w30_source_trigger_variation: W30SourceTriggerVariationProof,
@@ -314,7 +315,14 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let (tr909_source_support, tr909_kick_pressure, tr909_source_accent_dynamics) =
         render_tr909_source_support_with_pressure_and_accents(&grid, tr909_source_profile);
     let tr909 = apply_tr909_groove_timing(&tr909_source_support, tr909_groove_timing);
-    let (mc202, mc202_bass_pressure) = render_mc202_bass_pressure(&grid, tr909_source_profile);
+    let mc202_source_contour_profile =
+        Mc202SourceContourProfile::from_source_window(source_window_samples, &grid);
+    let (mc202, mc202_bass_pressure, mc202_source_contour) =
+        render_mc202_bass_pressure_with_source_contour(
+            &grid,
+            tr909_source_profile,
+            mc202_source_contour_profile,
+        );
     let (w30, w30_source_trigger_variation, w30_source_slice_choice, w30_source_accent_dynamics) =
         render_w30_source_chop_with_variation(&grid, &w30_preview);
     let source_first_mix = render_source_first_mix(&tr909, &mc202, &w30);
@@ -349,6 +357,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         tr909_kick_pressure,
         tr909_source_accent_dynamics,
         mc202_bass_pressure,
+        mc202_source_contour,
         w30_source_chop_profile,
         w30_source_loop_closure,
         w30_source_trigger_variation,

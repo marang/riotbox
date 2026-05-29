@@ -184,20 +184,7 @@ mod manifest_assertions {
             .as_f64()
             .expect("tr909 source accent span budget");
         assert!(tr909_accent_span >= min_tr909_accent_span);
-        let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
-        assert_eq!(mc202_bass_pressure["pattern_origin"], "primitive_renderer");
-        assert_eq!(mc202_bass_pressure["applied"], true);
-        assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
-        assert_eq!(
-            mc202_bass_pressure["reason"],
-            "mc202_source_grid_proof_renderer"
-        );
-        assert!(
-            manifest["metrics"]["mc202_bass_pressure_stem"]["signal"]["rms"]
-                .as_f64()
-                .expect("mc202 stem rms")
-                > f64::from(MIN_SIGNAL_RMS)
-        );
+        super::manifest_mc202_assertions::assert_mc202_manifest(manifest);
         assert!(
             manifest["metrics"]["w30_source_chop_profile"]["preview_rms"]
                 .as_f64()
