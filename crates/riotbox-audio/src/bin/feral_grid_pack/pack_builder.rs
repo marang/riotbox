@@ -193,6 +193,7 @@ struct PackReport {
     tr909_source_profile: SourceAwareTr909Profile,
     tr909_groove_timing: Tr909GrooveTimingPolicy,
     tr909_kick_pressure: Tr909KickPressureProof,
+    tr909_source_accent_dynamics: Tr909SourceAccentDynamicsProof,
     mc202_bass_pressure: Mc202BassPressureProof,
     w30_source_chop_profile: W30SourceChopProfile,
     w30_source_loop_closure: W30SourceLoopClosureProof,
@@ -309,8 +310,8 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
     let tr909_source_profile = derive_source_aware_tr909_profile(source_window_samples, &grid);
     let tr909_groove_timing =
         tr909_groove_timing_policy(grid_bpm, &source_timing_analysis.groove_evidence);
-    let (tr909_source_support, tr909_kick_pressure) =
-        render_tr909_source_support_with_pressure(&grid, tr909_source_profile);
+    let (tr909_source_support, tr909_kick_pressure, tr909_source_accent_dynamics) =
+        render_tr909_source_support_with_pressure_and_accents(&grid, tr909_source_profile);
     let tr909 = apply_tr909_groove_timing(&tr909_source_support, tr909_groove_timing);
     let (mc202, mc202_bass_pressure) = render_mc202_bass_pressure(&grid, tr909_source_profile);
     let (w30, w30_source_trigger_variation, w30_source_slice_choice, w30_source_accent_dynamics) =
@@ -343,6 +344,7 @@ fn render_pack(args: &Args) -> Result<(), Box<dyn std::error::Error>> {
         tr909_source_profile,
         tr909_groove_timing,
         tr909_kick_pressure,
+        tr909_source_accent_dynamics,
         mc202_bass_pressure,
         w30_source_chop_profile,
         w30_source_loop_closure,

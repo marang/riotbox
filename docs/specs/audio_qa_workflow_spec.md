@@ -299,6 +299,10 @@ Early P011 guardrail defaults:
   evidence, chosen support profile, pattern adoption, phrase variation,
   drum-bus level, slam intensity, and reason label so reviewers can see why the
   support pattern changed.
+- Feral grid TR-909 support must expose source-derived accent dynamics under
+  `metrics.tr909_source_accent_dynamics`, proving that kick/support accents have
+  enough distinct source-shaped levels to avoid a flat decorative pulse while
+  staying on the source grid.
 - Feral grid W-30 source-chop output must carry audible source identity, not only
   prove that a source window exists. The generated manifest records
   `metrics.w30_source_chop_profile` with source-window RMS, selected segment

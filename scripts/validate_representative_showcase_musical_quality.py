@@ -27,6 +27,8 @@ MIN_W30_UNIQUE_SLICE_OFFSETS = 4
 MIN_W30_ACCENT_DISTINCT_VELOCITIES = 3
 MIN_W30_ACCENT_VELOCITY_SPAN = 0.12
 MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO = 1.06
+MIN_TR909_ACCENT_DISTINCT_ACCENTS = 3
+MIN_TR909_ACCENT_SPAN = 0.22
 MIN_MC202_BASS_PRESSURE_RMS = 0.003
 MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS = 0.001
 MIN_MC202_DISTINCT_BAR_PROFILES = 2
@@ -84,6 +86,8 @@ def main() -> int:
             "min_w30_accent_distinct_velocity_count": MIN_W30_ACCENT_DISTINCT_VELOCITIES,
             "min_w30_accent_velocity_span": MIN_W30_ACCENT_VELOCITY_SPAN,
             "min_tr909_kick_pressure_low_band_ratio": MIN_TR909_KICK_PRESSURE_LOW_BAND_RATIO,
+            "min_tr909_accent_distinct_accent_count": MIN_TR909_ACCENT_DISTINCT_ACCENTS,
+            "min_tr909_accent_span": MIN_TR909_ACCENT_SPAN,
             "min_mc202_bass_pressure_rms": MIN_MC202_BASS_PRESSURE_RMS,
             "min_mc202_bass_pressure_low_band_rms": MIN_MC202_BASS_PRESSURE_LOW_BAND_RMS,
             "min_mc202_distinct_bar_profiles": MIN_MC202_DISTINCT_BAR_PROFILES,
@@ -145,6 +149,7 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     w30_slice_choice = metrics.get("w30_source_slice_choice", {})
     w30_accent_dynamics = metrics.get("w30_source_accent_dynamics", {})
     tr909_kick_pressure = metrics.get("tr909_kick_pressure", {})
+    tr909_accent_dynamics = metrics.get("tr909_source_accent_dynamics", {})
     mc202_bass_pressure = metrics.get("mc202_bass_pressure", {})
     mc202_source_grid_alignment = metrics.get("mc202_source_grid_alignment", {})
     return {
@@ -188,6 +193,14 @@ def candidate_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         "tr909_kick_pressure_anchor_count": int(tr909_kick_pressure.get("anchor_count", 0)),
         "tr909_kick_pressure_low_band_ratio": number(
             tr909_kick_pressure.get("low_band_rms_ratio", 0.0)
+        ),
+        "tr909_accent_dynamics_applied": bool(tr909_accent_dynamics.get("applied", False)),
+        "tr909_accent_distinct_accent_count": int(
+            tr909_accent_dynamics.get("distinct_accent_count", 0)
+        ),
+        "tr909_accent_span": number(tr909_accent_dynamics.get("accent_span", 0.0)),
+        "tr909_accent_source_energy_span": number(
+            tr909_accent_dynamics.get("source_energy_span", 0.0)
         ),
         "mc202_bass_pressure_applied": bool(mc202_bass_pressure.get("applied", False)),
         "mc202_pattern_origin": str(mc202_bass_pressure.get("pattern_origin", "unknown")),
@@ -273,6 +286,18 @@ def candidate_issues(metrics: dict[str, Any]) -> list[str]:
             "tr909_kick_pressure_too_decorative",
         ),
         (
+            metrics["tr909_accent_dynamics_applied"],
+            "tr909_accent_dynamics_not_applied",
+        ),
+        (
+            metrics["tr909_accent_distinct_accent_count"] >= MIN_TR909_ACCENT_DISTINCT_ACCENTS,
+            "tr909_accent_count_too_low",
+        ),
+        (
+            metrics["tr909_accent_span"] >= MIN_TR909_ACCENT_SPAN,
+            "tr909_accent_span_too_flat",
+        ),
+        (
             metrics["mc202_bass_pressure_applied"],
             "mc202_bass_pressure_not_applied",
         ),
@@ -329,6 +354,8 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         0.0,
         1.0,
     )
+    tr909_accent_variation = clamp(metrics["tr909_accent_span"] / 0.50, 0.0, 1.0)
+    tr909_accent_count = clamp(metrics["tr909_accent_distinct_accent_count"] / 4.0, 0.0, 1.0)
     bass_pressure = clamp(metrics["mc202_bass_pressure_rms"] / 0.008, 0.0, 1.1)
     bass_low = clamp(metrics["mc202_bass_pressure_low_band_rms"] / 0.004, 0.0, 1.1)
     bass_variation = clamp(metrics["mc202_distinct_bar_profile_count"] / 3.0, 0.0, 1.0)
@@ -348,6 +375,8 @@ def candidate_score(metrics: dict[str, Any], issues: list[str]) -> float:
         + w30_accent_variation
         + w30_accent_count
         + kick_pressure
+        + tr909_accent_variation
+        + tr909_accent_count
         + bass_pressure
         + bass_low
         + bass_variation

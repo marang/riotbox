@@ -272,6 +272,15 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.tr909_source_accent_dynamics.applied {
+        return Err(format!(
+            "TR-909 source-accent dynamics were too flat: distinct accents {} span {:.6}",
+            report.tr909_source_accent_dynamics.distinct_accent_count,
+            report.tr909_source_accent_dynamics.accent_span
+        )
+        .into());
+    }
+
     if report.mc202_bass_pressure.applied
         && report.mc202_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
     {

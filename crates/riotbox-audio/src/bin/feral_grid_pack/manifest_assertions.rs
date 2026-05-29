@@ -154,12 +154,10 @@ mod manifest_assertions {
         let tr909_kick_pressure = &manifest["metrics"]["tr909_kick_pressure"];
         assert_eq!(tr909_kick_pressure["pattern_origin"], "primitive_renderer");
         assert_eq!(tr909_kick_pressure["applied"], true);
-        assert!(
-            tr909_kick_pressure["anchor_count"]
-                .as_u64()
-                .expect("tr909 kick pressure anchors")
-                >= 2
-        );
+        let tr909_pressure_anchors = tr909_kick_pressure["anchor_count"]
+            .as_u64()
+            .expect("tr909 kick pressure anchors");
+        assert!(tr909_pressure_anchors >= 2);
         assert!(
             tr909_kick_pressure["low_band_rms_ratio"]
                 .as_f64()
@@ -172,6 +170,20 @@ mod manifest_assertions {
                 .expect("tr909 kick pressure peak")
                 <= f64::from(TR909_KICK_PRESSURE_MAX_PEAK_ABS)
         );
+        let tr909_accent_dynamics = &manifest["metrics"]["tr909_source_accent_dynamics"];
+        assert_eq!(tr909_accent_dynamics["pattern_origin"], "source_derived");
+        assert_eq!(tr909_accent_dynamics["applied"], true);
+        let tr909_accent_count = tr909_accent_dynamics["distinct_accent_count"]
+            .as_u64()
+            .expect("tr909 source accent count");
+        assert!(tr909_accent_count >= 3);
+        let tr909_accent_span = tr909_accent_dynamics["accent_span"]
+            .as_f64()
+            .expect("tr909 source accent span");
+        let min_tr909_accent_span = tr909_accent_dynamics["min_required_accent_span"]
+            .as_f64()
+            .expect("tr909 source accent span budget");
+        assert!(tr909_accent_span >= min_tr909_accent_span);
         let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
         assert_eq!(mc202_bass_pressure["pattern_origin"], "primitive_renderer");
         assert_eq!(mc202_bass_pressure["applied"], true);
@@ -432,7 +444,6 @@ mod manifest_assertions {
         assert!(source_timing["alternate_evidence_count"].is_u64());
         assert!(source_timing["warning_codes"].is_array());
     }
-
     fn assert_spectral_sum(spectral: &serde_json::Value) {
         let spectral_sum = spectral["low_band_energy_ratio"]
             .as_f64()
@@ -443,11 +454,9 @@ mod manifest_assertions {
                 .expect("high energy");
         assert!((spectral_sum - 1.0).abs() < 0.000_001);
     }
-
     fn assert_string_one_of(value: &serde_json::Value, allowed: &[&str]) {
         assert!(value.as_str().is_some_and(|value| allowed.contains(&value)));
     }
-
     fn assert_optional_unit_float(value: &serde_json::Value) {
         assert!(value.is_null() || value.as_f64().is_some_and(|value| (0.0..=1.0).contains(&value)));
     }
