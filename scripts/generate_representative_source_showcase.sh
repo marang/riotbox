@@ -5,17 +5,14 @@ output_dir="$(realpath -m "${1:-artifacts/audio_qa/local-representative-source-s
 date_label="${2:-local-representative-source-showcase}"
 source_seconds="${3:-8.0}"
 bars="${4:-4}"
+force_output_reset="${5:-}"
 
 echo "Synthetic fixture showcase: deterministic developer QA, not a musician-facing listening demo." >&2
 
-repo_root="$(git rev-parse --show-toplevel 2>/dev/null || pwd)"
-case "$output_dir" in
-    "$repo_root"/artifacts/audio_qa/*|/tmp/riotbox-*) ;;
-    *)
-        echo "refusing to reset representative showcase output outside artifacts/audio_qa or /tmp/riotbox-*: $output_dir" >&2
-        exit 1
-        ;;
-esac
+scripts/guard_showcase_output_dir.sh \
+    "$output_dir" \
+    "representative showcase" \
+    ${force_output_reset:+"$force_output_reset"}
 
 rm -rf "$output_dir"
 mkdir -p "$output_dir"/{sources,packs,validation,observer}

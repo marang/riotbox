@@ -216,6 +216,9 @@ Do not use this command as the answer to "what can Riotbox already do?"
 
 The old `just representative-source-showcase` target remains as a deprecated
 compatibility alias for the same synthetic fixture path.
+The representative showcase generator refuses to reset output directories
+outside repo-local `artifacts/audio_qa/` or `/tmp/riotbox-*` paths unless the
+caller passes the explicit `--force-output-reset` escape hatch.
 
 For musician-facing local review, use the real-source listening showcase:
 
