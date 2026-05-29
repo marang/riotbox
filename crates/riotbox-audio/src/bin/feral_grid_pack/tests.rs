@@ -128,7 +128,8 @@ mod tests {
         let high_render = render_tr909_source_support(&grid, high_profile);
         let low_render_repeat = render_tr909_source_support(&grid, low_profile);
         let legacy_low_render = render_tr909_source_support_legacy(&grid, low_profile);
-        let (_, kick_pressure) = render_tr909_source_support_with_pressure(&grid, low_profile);
+        let (_, kick_pressure, tr909_accent_dynamics) =
+            render_tr909_source_support_with_pressure_and_accents(&grid, low_profile);
         let (mc202_low_render, mc202_pressure) = render_mc202_bass_pressure(&grid, low_profile);
 
         assert_eq!(low_profile.support_profile, Tr909SourceSupportProfile::DropDrive);
@@ -139,6 +140,16 @@ mod tests {
         assert_ne!(low_render, legacy_low_render);
         assert!(kick_pressure.applied, "{kick_pressure:?}");
         assert!(kick_pressure.low_band_rms_ratio >= TR909_KICK_PRESSURE_MIN_LOW_BAND_RATIO);
+        assert!(tr909_accent_dynamics.applied, "{tr909_accent_dynamics:?}");
+        assert!(
+            tr909_accent_dynamics.distinct_accent_count
+                >= TR909_SOURCE_ACCENT_MIN_DISTINCT_ACCENTS,
+            "{tr909_accent_dynamics:?}"
+        );
+        assert!(
+            tr909_accent_dynamics.accent_span >= TR909_SOURCE_ACCENT_MIN_ACCENT_SPAN,
+            "{tr909_accent_dynamics:?}"
+        );
         assert!(mc202_pressure.applied, "{mc202_pressure:?}");
         assert!(
             mc202_pressure.signal_rms >= MC202_BASS_PRESSURE_MIN_SIGNAL_RMS,

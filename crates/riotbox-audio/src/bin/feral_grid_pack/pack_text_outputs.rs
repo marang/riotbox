@@ -24,6 +24,7 @@ fn write_report(
              - TR-909 groove timing: `{}` applied `{}` offset `{:.3}` ms subdivision `{}`\n\
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - TR-909 kick pressure: `{}` origin `primitive_renderer` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
+             - TR-909 source-accent dynamics: `{}` origin `source_derived` distinct accents `{}` span `{:.6}` source-energy span `{:.6}`\n\
              - MC-202 bass pressure: `{}` origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
@@ -71,6 +72,10 @@ fn write_report(
             report.tr909_kick_pressure.low_band_rms_ratio,
             report.tr909_kick_pressure.low_band_rms_delta,
             report.tr909_kick_pressure.post_peak_abs,
+            report.tr909_source_accent_dynamics.reason,
+            report.tr909_source_accent_dynamics.distinct_accent_count,
+            report.tr909_source_accent_dynamics.accent_span,
+            report.tr909_source_accent_dynamics.source_energy_span,
             report.mc202_bass_pressure.reason,
             report.mc202_bass_pressure.mode.label(),
             report.mc202_bass_pressure.phrase_shape.label(),

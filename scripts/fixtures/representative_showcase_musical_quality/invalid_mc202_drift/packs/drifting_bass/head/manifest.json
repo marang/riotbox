@@ -46,6 +46,12 @@
       "anchor_count": 8,
       "low_band_rms_ratio": 1.12
     },
+    "tr909_source_accent_dynamics": {
+      "applied": true,
+      "distinct_accent_count": 4,
+      "accent_span": 0.78,
+      "source_energy_span": 0.36
+    },
     "mc202_bass_pressure": {
       "applied": true,
       "phrase_variation_applied": true,
