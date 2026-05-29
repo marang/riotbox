@@ -806,4 +806,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add all-lane mix movement proof to representative showcase
 - [RIOTBOX-1028.md](./RIOTBOX-1028.md)
   Add source-section MC-202 contour proof to representative showcase
+- [RIOTBOX-1029.md](./RIOTBOX-1029.md)
+  Close P013 all-lane musical depth exit evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
