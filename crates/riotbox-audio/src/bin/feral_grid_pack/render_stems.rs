@@ -281,6 +281,19 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.all_lane_mix_movement.applied {
+        return Err(format!(
+            "all-lane mix movement proof failed: delta {:.6}, correlation {:.6}, tr909 {:.6}, mc202 {:.6}, w30 {:.6}, generated/w30 {:.6}",
+            report.all_lane_mix_movement.source_first_to_support_rms_delta,
+            report.all_lane_mix_movement.source_first_to_support_correlation,
+            report.all_lane_mix_movement.tr909_contribution_ratio,
+            report.all_lane_mix_movement.mc202_contribution_ratio,
+            report.all_lane_mix_movement.w30_contribution_ratio,
+            report.all_lane_mix_movement.generated_to_w30_contribution_ratio
+        )
+        .into());
+    }
+
     if report.mc202_bass_pressure.applied
         && report.mc202_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO
     {

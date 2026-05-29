@@ -25,6 +25,7 @@ include!("feral_grid_pack/source_grid_output_drift.rs");
 include!("feral_grid_pack/pack_text_outputs.rs");
 include!("feral_grid_pack/render_stems.rs");
 include!("feral_grid_pack/manifest_assertions.rs");
+include!("feral_grid_pack/manifest_mix_assertions.rs");
 include!("feral_grid_pack/tests.rs");
 include!("feral_grid_pack/bpm_decision_tests.rs");
 include!("feral_grid_pack/w30_source_chop_tests.rs");

@@ -117,6 +117,31 @@ mod tests {
     }
 
     #[test]
+    fn all_lane_mix_movement_proof_rejects_collapsed_support_mix() {
+        let grid = Grid::new(128.0, 4, 2).expect("grid");
+        let tr909 = bar_pattern_samples(&grid, |_, frame, bar_frames| frame < bar_frames / 10);
+        let mc202 =
+            bar_pattern_samples(&grid, |_, frame, bar_frames| frame > bar_frames / 2 && frame < bar_frames / 2 + bar_frames / 12);
+        let w30 = bar_pattern_samples(&grid, |bar, frame, bar_frames| {
+            if bar.is_multiple_of(2) {
+                frame < bar_frames / 6
+            } else {
+                frame > bar_frames / 3 && frame < bar_frames / 3 + bar_frames / 6
+            }
+        });
+        let source_first = render_source_first_mix(&tr909, &mc202, &w30);
+        let support = render_generated_support_mix(&tr909, &mc202, &w30);
+        let proof = all_lane_mix_movement_proof(&tr909, &mc202, &w30, &source_first, &support, &grid);
+        let collapsed = all_lane_mix_movement_proof(&tr909, &mc202, &w30, &support, &support, &grid);
+
+        assert!(proof.applied, "{proof:?}");
+        assert!(proof.source_first_to_support_rms_delta >= ALL_LANE_MIX_MIN_RMS_DELTA);
+        assert!(proof.source_first_to_support_correlation <= ALL_LANE_MIX_MAX_CORRELATION);
+        assert!(collapsed.source_first_to_support_rms_delta < ALL_LANE_MIX_MIN_RMS_DELTA);
+        assert!(!collapsed.applied, "{collapsed:?}");
+    }
+
+    #[test]
     fn source_aware_tr909_profile_changes_for_same_bpm_sources() {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let low_source = tone_samples(80.0, frames_for_beats(128.0, 8));

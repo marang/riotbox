@@ -228,6 +228,7 @@ docs/
 - `reviews/p013_mc202_representative_quality_gate_review_2026-05-29.md`: P013 MC-202 representative quality-gate review captured
 - `reviews/p013_w30_source_accent_dynamics_review_2026-05-29.md`: P013 W-30 source accent-dynamics review captured
 - `reviews/p013_tr909_source_accent_dynamics_review_2026-05-29.md`: P013 TR-909 source accent-dynamics review captured
+- `reviews/p013_all_lane_mix_movement_review_2026-05-29.md`: P013 all-lane mix movement review captured
 - `reviews/p012_source_timing_qa_contract_review_2026-05-20.md`: P012 Source Timing QA contract review captured
 - `reviews/p012_current_source_timing_spine_review_2026-05-21.md`: P012 current Source Timing spine review captured
 - `reviews/p012_source_timing_report_expectation_gate_review_2026-05-21.md`: P012 Source Timing report expectation gate review captured

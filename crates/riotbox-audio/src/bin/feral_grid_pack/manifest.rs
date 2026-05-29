@@ -8,7 +8,7 @@ use riotbox_audio::listening_manifest::{
 };
 
 use super::{
-    Args, BarVariationMetrics, CHANNEL_COUNT, Grid, GridBpmDecision,
+    AllLaneMixMovementProof, Args, BarVariationMetrics, CHANNEL_COUNT, Grid, GridBpmDecision,
     MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO, MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
     MIN_LOW_BAND_RMS, MIN_SIGNAL_RMS, ManifestMc202BassPressureProof,
     ManifestSourceTimingReadiness, ManifestTr909KickPressureProof,
@@ -90,6 +90,7 @@ struct ManifestPackMetrics {
     w30_source_trigger_variation: ManifestW30SourceTriggerVariationProof,
     w30_source_slice_choice: ManifestW30SourceSliceChoiceProof,
     w30_source_accent_dynamics: ManifestW30SourceAccentDynamicsProof,
+    all_lane_mix_movement: AllLaneMixMovementProof,
     tr909_beat_fill: ManifestRenderMetrics,
     mc202_bass_pressure_stem: ManifestRenderMetrics,
     w30_feral_source_chop: ManifestRenderMetrics,
@@ -193,6 +194,7 @@ pub(super) fn write_manifest(
             w30_source_accent_dynamics: manifest_w30_source_accent_dynamics_proof(
                 report.w30_source_accent_dynamics,
             ),
+            all_lane_mix_movement: report.all_lane_mix_movement,
             tr909_beat_fill: manifest_render_metrics(report.tr909),
             mc202_bass_pressure_stem: manifest_render_metrics(report.mc202),
             w30_feral_source_chop: manifest_render_metrics(report.w30),
