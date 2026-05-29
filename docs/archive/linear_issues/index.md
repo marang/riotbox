@@ -800,4 +800,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source-accented W-30 chop dynamics to representative showcase
 - [RIOTBOX-1025.md](./RIOTBOX-1025.md)
   Guard representative showcase output reset paths
+- [RIOTBOX-1026.md](./RIOTBOX-1026.md)
+  Add source-accented TR-909 support dynamics to representative showcase
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
