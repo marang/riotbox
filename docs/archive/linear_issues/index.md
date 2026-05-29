@@ -802,4 +802,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Guard representative showcase output reset paths
 - [RIOTBOX-1026.md](./RIOTBOX-1026.md)
   Add source-accented TR-909 support dynamics to representative showcase
+- [RIOTBOX-1027.md](./RIOTBOX-1027.md)
+  Add all-lane mix movement proof to representative showcase
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
