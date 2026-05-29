@@ -274,7 +274,9 @@ Early P011 guardrail defaults:
 - identical full-mix hashes across different sources always fail
 - source-backed stems with identical hashes across different sources fail unless
   the fixture explicitly proves the same selected source window
-- full-mix normalized RMS delta below `0.05` is treated as too similar
+- full-mix normalized RMS delta below `0.05` is treated as too similar when no
+  spectral-energy evidence is available or the spectral-energy distance is also
+  below `0.02`
 - full-mix waveform correlation at or above `0.995` is treated as too similar
 - identical generated support with generated/source-backed RMS ratio at or above
   `0.75` is treated as dominant
