@@ -84,6 +84,10 @@ The first P014 contract does not implement:
 - export arrangement packages
 
 Those may land as later P014+ or P016+ slices only by extending this contract.
+Manual scene-chain proofs may still use repeated `scene.launch` plus
+`scene.restore` actions when they stay inside the existing Action Lexicon,
+Session scene state, queue / commit records, replay executor, and output QA
+surfaces. That is transition proof, not an automatic chain scheduler.
 
 ## 5. Proof Baselines
 
@@ -97,3 +101,11 @@ Keep these green while P014 lands:
 For a contract-only slice that changes no audible output, targeted core/app tests
 plus docs/spec updates are sufficient. The first audible P014 slice must add
 non-collapsed output evidence.
+
+Current P014 transition proof:
+
+- `cargo test -p riotbox-app p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix -- --nocapture`
+  proves a three-step manual scene chain (`scene.launch`, `scene.launch`,
+  `scene.restore`) through Session scene state, queue / commit records,
+  graph-aware replay, Jam view movement projection, and non-collapsed mixed
+  TR-909 / MC-202 output deltas.
