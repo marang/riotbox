@@ -62,6 +62,7 @@ pub struct ArrangementSceneContractView {
     pub has_restore_scene: bool,
     pub has_pending_scene_transition: bool,
     pub has_landed_movement: bool,
+    pub can_use_source_locked_scene_movement: bool,
     pub requires_p012_source_grid_gate: bool,
     pub requires_p013_musical_quality_gate: bool,
     pub requires_replay_state_proof: bool,
@@ -102,6 +103,7 @@ pub fn arrangement_scene_contract_view(
             )
         }),
         has_landed_movement: session.runtime_state.scene_state.last_movement.is_some(),
+        can_use_source_locked_scene_movement: timing_readiness.can_use_source_window_grid(),
         requires_p012_source_grid_gate: true,
         requires_p013_musical_quality_gate: true,
         requires_replay_state_proof: true,
