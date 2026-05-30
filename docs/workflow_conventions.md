@@ -228,7 +228,16 @@ PR descriptions should include:
 
 - what larger phase or milestone the slice belongs to
 - what product path or architecture seam it unlocks
+- what the change practically gives the software, stated in product-runtime
+  terms rather than file names only
+- what the change practically gives the musician, stated in one short
+  musician-facing sentence
 - what remains intentionally bounded, stubbed, or out of scope
+
+`Summary` / `Changes` must describe the practical behavior change, not only a
+code or documentation diff. Keep it concise: mention the contract, workflow,
+screen, audio path, replay behavior, or QA proof the software gains, and the
+musician-facing effect when there is one.
 
 `Drift Check` should answer:
 
