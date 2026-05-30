@@ -34,6 +34,9 @@ jq -s -e \
       and .snapshot.scene.last_movement.from_scene == "scene-01-break"
       and .snapshot.scene.last_movement.to_scene == "scene-02-drop"
       and .snapshot.scene.arrangement_contract.can_use_source_locked_scene_movement == true
+      and .snapshot.scene.arrangement_contract.bounded_extension == "manual_scene_chain_ready"
+      and .snapshot.scene.arrangement_contract.allows_manual_scene_chain_extension == true
+      and .snapshot.scene.arrangement_contract.allows_automatic_scene_chain_scheduler == false
       and .snapshot.scene.source_monitor.source_anchor_seconds == 16.0
       and .snapshot.scene.source_monitor.source_anchor_position_beats == 36.0)' \
   "$observer_fixture"

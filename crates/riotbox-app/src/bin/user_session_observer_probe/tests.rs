@@ -159,6 +159,18 @@ fn writes_p014_scene_movement_observer_stream() {
         scene["arrangement_contract"]["can_use_source_locked_scene_movement"],
         true
     );
+    assert_eq!(
+        scene["arrangement_contract"]["bounded_extension"],
+        "manual_scene_chain_ready"
+    );
+    assert_eq!(
+        scene["arrangement_contract"]["allows_manual_scene_chain_extension"],
+        true
+    );
+    assert_eq!(
+        scene["arrangement_contract"]["allows_automatic_scene_chain_scheduler"],
+        false
+    );
     assert_eq!(scene["source_monitor"]["source_anchor_seconds"], 16.0);
     assert_eq!(
         scene["source_monitor"]["source_anchor_position_beats"],
