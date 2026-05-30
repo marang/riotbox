@@ -5,6 +5,8 @@ Notes:
 - normalized from the current Jam inspect regression fixture
 - intended as a review/update artifact, not a pixel-perfect golden render
 - records the bounded inspect mode without restoring the old all-at-once Jam dashboard
+- refreshed for `RIOTBOX-1037` so inspect records the P015 Arrangement / Scene
+  contract detail behind the perform-facing taste cue
 
 Expected inspect surface after this slice:
 
@@ -22,10 +24,13 @@ Inspect-mode hierarchy:
 - the lower row gives just enough supporting depth:
   - `Source structure`
   - `Material flow`
-  - `Diagnostics`
+  - `Diagnostics`, including Arrangement / Scene contract readiness, product
+    spine truth, timing readiness, action surface, and proof obligations
 
 Interpretation:
 
 - Riotbox now has a clearer split between the default instrument surface and a deeper read-only Jam inspection layer
 - the inspect surface reuses existing `Log`, `SourceGraph`, capture, and runtime seams instead of inventing a second hidden model
+- Arrangement / Scene proof details stay inspectable without crowding the
+  perform surface or claiming that UI/log state alone proves audible movement
 - `Log`, `Source`, and `Capture` remain separate screens; inspect mode only adds bounded confidence depth inside `Jam`
