@@ -20,5 +20,10 @@ fn renders_jam_shell_inspect_snapshot() {
     assert!(rendered.contains("timing warning ambiguous_downbeat"), "{rendered}");
     assert!(rendered.contains("Material flow"), "{rendered}");
     assert!(rendered.contains("Diagnostics"), "{rendered}");
+    assert!(rendered.contains("scene contract"), "{rendered}");
+    assert!(rendered.contains("needs_timing_confirmation"), "{rendered}");
+    assert!(rendered.contains("truth product spine"), "{rendered}");
+    assert!(rendered.contains("timing needs_user_confirmation"), "{rendered}");
+    assert!(rendered.contains("proof p012/p013/replay/output yes"), "{rendered}");
     assert!(!rendered.contains("Suggested gestures"), "{rendered}");
 }

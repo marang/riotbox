@@ -41,7 +41,8 @@ fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         })
         .unwrap_or_else(|| "none".into());
 
-    vec![
+    let mut lines = arrangement_inspect_lines(shell);
+    lines.extend([
         Line::from(format!(
             "audio {} | sidecar {}",
             shell.app.runtime_view.audio_status, shell.app.runtime_view.sidecar_status
@@ -57,8 +58,9 @@ fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             shell.app.jam_view.pending_actions.len(),
             shell.app.jam_view.recent_actions.len()
         )),
-        Line::from(primary_warning_line(shell)),
-    ]
+    ]);
+    lines.push(Line::from(primary_warning_line(shell)));
+    lines
 }
 
 fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {

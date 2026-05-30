@@ -4,6 +4,22 @@ fn renders_more_musical_jam_shell_snapshot() {
     let rendered = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(rendered.contains("trust usable"));
+    assert!(
+        rendered.contains("taste cautious | confirm grid"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("before scene moves"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("proof none yet | audible moves"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("need output evidence"),
+        "{rendered}"
+    );
     assert!(rendered.contains("idle @ 32.0 | source b- bar8 p-"));
     assert!(
         rendered.contains("timing needs confirm [===>] next bar"),
@@ -82,6 +98,14 @@ fn renders_locked_source_timing_as_grid_locked_cue() {
     );
     assert!(
         rendered.contains("timing grid locked [===>] next bar"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("taste scene-ready | trusted grid"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("can steer scene moves"),
         "{rendered}"
     );
     assert!(rendered.contains("timing warning none"), "{rendered}");
