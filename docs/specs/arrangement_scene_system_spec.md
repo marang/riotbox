@@ -88,6 +88,10 @@ Manual scene-chain proofs may still use repeated `scene.launch` plus
 `scene.restore` actions when they stay inside the existing Action Lexicon,
 Session scene state, queue / commit records, replay executor, and output QA
 surfaces. That is transition proof, not an automatic chain scheduler.
+The first section-aware source playback seam may reposition Source Monitor
+playback to the landed scene section only when Source Timing is analyzer-locked
+or user-confirmed. Fallback and manual-confirm-only timing must keep transport
+position playback until the user trust boundary is explicit.
 
 ## 5. Proof Baselines
 
@@ -109,3 +113,10 @@ Current P014 transition proof:
   `scene.restore`) through Session scene state, queue / commit records,
   graph-aware replay, Jam view movement projection, and non-collapsed mixed
   TR-909 / MC-202 output deltas.
+
+Current P014 source playback reposition proof:
+
+- `cargo test -p riotbox-app source_monitor_scene_reposition -- --nocapture`
+  proves section-aware Source Monitor repositioning from landed Scene movement
+  and trusted Source Timing, including replay equivalence and a fallback-timing
+  guardrail.
