@@ -55,6 +55,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
         },
         "source_timing": source_timing_observer_snapshot(shell),
         "source_map": source_map_observer_snapshot(shell),
+        "scene": scene_observer_snapshot(shell),
         "capture": capture_observer_snapshot(shell),
         "recovery": recovery_observer_snapshot(shell),
     })
@@ -250,6 +251,66 @@ fn source_map_observer_snapshot(shell: &JamShellState) -> Value {
         "navigation_hint": source_map.navigation_hint.as_str(),
         "capture_hint": source_map.capture_hint.as_str(),
     })
+}
+
+fn scene_observer_snapshot(shell: &JamShellState) -> Value {
+    let scene = &shell.app.jam_view.scene;
+    let contract = &scene.arrangement_contract;
+    let source_monitor = shell.app.source_monitor_control_state();
+    json!({
+        "present": true,
+        "active_scene": scene.active_scene.as_deref(),
+        "restore_scene": scene.restore_scene.as_deref(),
+        "next_scene": scene.next_scene.as_deref(),
+        "scene_count": scene.scene_count,
+        "scene_jump_availability": scene_jump_availability_label(scene.scene_jump_availability),
+        "active_scene_energy": scene.active_scene_energy.as_deref(),
+        "restore_scene_energy": scene.restore_scene_energy.as_deref(),
+        "next_scene_energy": scene.next_scene_energy.as_deref(),
+        "last_movement": scene.last_movement.as_ref().map(|movement| json!({
+            "kind": movement.kind.as_str(),
+            "direction": movement.direction.as_str(),
+            "tr909_intent": movement.tr909_intent.as_str(),
+            "mc202_intent": movement.mc202_intent.as_str(),
+            "intensity": movement.intensity,
+            "from_scene": movement.from_scene.as_deref(),
+            "to_scene": movement.to_scene.as_str(),
+            "committed_bar_index": movement.committed_bar_index,
+            "committed_phrase_index": movement.committed_phrase_index,
+        })),
+        "arrangement_contract": {
+            "readiness": contract.readiness.label(),
+            "timing_readiness": contract.timing_readiness.label(),
+            "scene_count": contract.scene_count,
+            "has_active_scene": contract.has_active_scene,
+            "has_next_scene": contract.has_next_scene,
+            "has_restore_scene": contract.has_restore_scene,
+            "has_pending_scene_transition": contract.has_pending_scene_transition,
+            "has_landed_movement": contract.has_landed_movement,
+            "can_use_source_locked_scene_movement": contract.can_use_source_locked_scene_movement,
+            "requires_p012_source_grid_gate": contract.requires_p012_source_grid_gate,
+            "requires_p013_musical_quality_gate": contract.requires_p013_musical_quality_gate,
+            "requires_replay_state_proof": contract.requires_replay_state_proof,
+            "requires_output_path_proof_for_audible_changes": contract.requires_output_path_proof_for_audible_changes,
+        },
+        "source_monitor": {
+            "source_anchor_seconds": source_monitor.source_anchor_seconds,
+            "source_anchor_position_beats": source_monitor.source_anchor_position_beats,
+            "audio_route": shell.app.runtime_view.source_monitor_audio_route.as_str(),
+        },
+    })
+}
+
+fn scene_jump_availability_label(
+    availability: riotbox_core::view::jam::SceneJumpAvailabilityView,
+) -> &'static str {
+    match availability {
+        riotbox_core::view::jam::SceneJumpAvailabilityView::Ready => "ready",
+        riotbox_core::view::jam::SceneJumpAvailabilityView::WaitingForMoreScenes => {
+            "waiting_for_more_scenes"
+        }
+        riotbox_core::view::jam::SceneJumpAvailabilityView::Unknown => "unknown",
+    }
 }
 
 fn capture_observer_snapshot(shell: &JamShellState) -> Value {

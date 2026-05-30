@@ -29,9 +29,9 @@ use probe_scenarios::{
     write_feral_grid_fallback_jam_observer, write_feral_grid_jam_observer,
     write_feral_grid_locked_jam_observer, write_first_playable_jam_observer,
     write_interrupted_session_recovery_observer, write_missing_target_recovery_observer,
-    write_recipe2_mc202_observer, write_source_timing_confirmation_observer,
-    write_source_transport_map_capture_observer, write_stage_style_jam_observer,
-    write_stage_style_restore_diversity_observer,
+    write_p014_scene_movement_observer, write_recipe2_mc202_observer,
+    write_source_timing_confirmation_observer, write_source_transport_map_capture_observer,
+    write_stage_style_jam_observer, write_stage_style_restore_diversity_observer,
 };
 use source_map_navigation_control::apply_source_map_navigation;
 
@@ -62,9 +62,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         "source-transport-map-capture" => {
             write_source_transport_map_capture_observer(&args.observer_path)?
         }
+        "p014-scene-movement" => write_p014_scene_movement_observer(&args.observer_path)?,
         other => {
             return Err(format!(
-                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked, source-timing-confirmation, source-transport-map-capture"
+                "unknown probe {other:?}; supported probes: recipe2-mc202, first-playable-jam, stage-style-jam, stage-style-restore-diversity, interrupted-session-recovery, missing-target-recovery, feral-grid-jam, feral-grid-jam-fallback, feral-grid-jam-locked, source-timing-confirmation, source-transport-map-capture, p014-scene-movement"
             )
             .into());
         }
@@ -218,6 +219,28 @@ fn apply_probe_key(
             shell.app.queue_tr909_fill(timestamp_ms);
             shell.set_error_status("queued TR-909 fill for next bar");
         }
+        ShellKeyOutcome::QueueSceneSelect => match shell.app.queue_scene_select(timestamp_ms) {
+            riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                shell.set_error_status("queued scene select for next bar");
+            }
+            riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                shell.set_error_status("scene transition already queued");
+            }
+            riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                shell.set_error_status("no next scene available");
+            }
+        },
+        ShellKeyOutcome::QueueSceneRestore => match shell.app.queue_scene_restore(timestamp_ms) {
+            riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                shell.set_error_status("queued scene restore for next bar");
+            }
+            riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                shell.set_error_status("scene transition already queued");
+            }
+            riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                shell.set_error_status("no restore scene available");
+            }
+        },
         ShellKeyOutcome::QueueTr909Reinforce => {
             shell.app.queue_tr909_reinforce(timestamp_ms);
             shell.set_error_status("queued TR-909 reinforcement for next phrase");
@@ -414,6 +437,47 @@ fn commit_boundary(
         },
         timestamp_ms,
     );
+    record_boundary_commit(
+        shell,
+        writer,
+        timestamp_ms,
+        committed,
+        kind,
+        index,
+        expected_count,
+    )
+}
+
+fn commit_boundary_for_scene(
+    shell: &mut JamShellState,
+    writer: &mut NdjsonWriter,
+    timestamp_ms: u64,
+    boundary: CommitBoundaryState,
+    expected_count: usize,
+) -> io::Result<()> {
+    let kind = boundary.kind;
+    let phrase_index = boundary.phrase_index;
+    let committed = shell.app.commit_ready_actions(boundary, timestamp_ms);
+    record_boundary_commit(
+        shell,
+        writer,
+        timestamp_ms,
+        committed,
+        kind,
+        phrase_index,
+        expected_count,
+    )
+}
+
+fn record_boundary_commit(
+    shell: &mut JamShellState,
+    writer: &mut NdjsonWriter,
+    timestamp_ms: u64,
+    committed: Vec<riotbox_core::queue::CommittedActionRef>,
+    kind: CommitBoundary,
+    index: u64,
+    expected_count: usize,
+) -> io::Result<()> {
     if committed.len() != expected_count {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,

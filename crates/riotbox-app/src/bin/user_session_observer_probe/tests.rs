@@ -130,6 +130,43 @@ fn writes_source_timing_confirmation_observer_stream() {
 }
 
 #[test]
+fn writes_p014_scene_movement_observer_stream() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let path = temp.path().join("events.ndjson");
+
+    write_p014_scene_movement_observer(&path).expect("write observer");
+
+    let events = fs::read_to_string(path).expect("read observer");
+    assert!(events.contains(r#""probe":"p014-scene-movement""#));
+    assert!(events.contains(r#""outcome":"queue_scene_select""#));
+    assert!(events.contains(r#""command":"scene.launch""#));
+    assert!(events.contains(r#""boundary":"Bar""#));
+
+    let parsed = parse_events(&events);
+    let commit = parsed
+        .iter()
+        .find(|event| event["event"] == "transport_commit")
+        .expect("scene commit event");
+    let scene = &commit["snapshot"]["scene"];
+    assert_eq!(scene["active_scene"], "scene-02-drop");
+    assert_eq!(scene["last_movement"]["kind"], "launch");
+    assert_eq!(scene["last_movement"]["direction"], "rise");
+    assert_eq!(scene["last_movement"]["tr909_intent"], "drive");
+    assert_eq!(scene["last_movement"]["mc202_intent"], "lift");
+    assert_eq!(scene["last_movement"]["from_scene"], "scene-01-break");
+    assert_eq!(scene["last_movement"]["to_scene"], "scene-02-drop");
+    assert_eq!(
+        scene["arrangement_contract"]["can_use_source_locked_scene_movement"],
+        true
+    );
+    assert_eq!(scene["source_monitor"]["source_anchor_seconds"], 16.0);
+    assert_eq!(
+        scene["source_monitor"]["source_anchor_position_beats"],
+        36.0
+    );
+}
+
+#[test]
 fn writes_stage_style_jam_observer_stream() {
     let temp = tempfile::tempdir().expect("tempdir");
     let path = temp.path().join("events.ndjson");

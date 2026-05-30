@@ -66,6 +66,7 @@ audio-qa-ci:
     just first-playable-jam-probe
     just source-timing-confirmation-probe
     just source-transport-map-capture-probe
+    just p014-scene-movement-observer-probe
     just stage-style-jam-probe
     just stage-style-restore-diversity-probe
     just stage-style-snapshot-convergence-smoke
@@ -516,6 +517,9 @@ source-timing-confirmation-probe:
 
 source-transport-map-capture-probe:
     scripts/validate_source_transport_map_capture_probe.sh
+
+p014-scene-movement-observer-probe:
+    scripts/validate_p014_scene_movement_observer_probe.sh
 
 stage-style-jam-probe:
     scripts/validate_stage_style_jam_probe.sh

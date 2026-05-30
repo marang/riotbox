@@ -1,6 +1,6 @@
 use std::path::PathBuf;
 
-const SUPPORTED_PROBES: &str = "recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-fallback|feral-grid-jam-locked|source-timing-confirmation|source-transport-map-capture";
+const SUPPORTED_PROBES: &str = "recipe2-mc202|first-playable-jam|stage-style-jam|stage-style-restore-diversity|interrupted-session-recovery|missing-target-recovery|feral-grid-jam|feral-grid-jam-fallback|feral-grid-jam-locked|source-timing-confirmation|source-transport-map-capture|p014-scene-movement";
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct Args {

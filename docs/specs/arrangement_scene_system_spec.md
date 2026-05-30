@@ -137,3 +137,10 @@ Current P014 source playback reposition proof:
   proves section-aware Source Monitor repositioning from landed Scene movement
   and trusted Source Timing, including replay equivalence and a fallback-timing
   guardrail.
+
+Current P014 observer / audio correlation proof:
+
+- `just p014-scene-movement-observer-probe` proves a headless `scene.launch`
+  user path through queue, Bar commit, Session/Jam landed movement projection,
+  Source Monitor scene anchor evidence, observer NDJSON shape, and strict
+  observer/audio JSON correlation with non-collapsed output metrics.
