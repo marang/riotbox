@@ -366,6 +366,7 @@ pub struct SceneSummaryView {
     pub next_scene_policy: Option<SceneTransitionPolicyView>,
     pub restore_scene_policy: Option<SceneTransitionPolicyView>,
     pub last_movement: Option<SceneMovementView>,
+    pub arrangement_contract: ArrangementSceneContractView,
     pub scene_count: usize,
 }
 

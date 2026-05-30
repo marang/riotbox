@@ -1862,3 +1862,17 @@ Why: P013's roadmap goal was deeper TR-909, MC-202, W-30, and mix behavior on th
 Evidence: RIOTBOX-1029 records the P013 exit review in `docs/reviews/p013_exit_review_2026-05-29.md`; `just p012-all-lane-source-grid-output-proof` and the representative showcase musical-quality gate passed on 2026-05-29 with a selected `tonal_hook_chop/head` candidate.
 Consequences: P014 becomes the active next execution track. Future arrangement / scene work must preserve the P012 timing and P013 representative musical-depth regression baselines instead of creating a parallel timing, arrangement, or mix truth.
 Status: accepted
+
+---
+
+### RBX-060
+
+Date: 2026-05-30
+Topic: P014 starts with a read-only Arrangement / Scene contract on the product spine
+Phase: P014 / Arrangement / Scene System
+Question: how should Arrangement / Scene work begin without creating a second arranger or scene truth?
+Decision: add a shared `ArrangementSceneContractView` to the Jam/Core view layer and document P014 in `docs/specs/arrangement_scene_system_spec.md`. The view is read-only: it derives readiness from Source Graph presence, Source Timing consumer readiness, Session scene state, queued scene transitions, and landed Scene movement state.
+Why: P014 needs an explicit contract before adding source playback repositioning, scene chains, or richer transition policy. Keeping the first slice as a derived contract makes later P014 behavior reviewable against Source Graph, Session, Action Lexicon, queue / commit, replay, observer/audio, and P012/P013 regression baselines instead of letting a shadow arranger appear in app-local state.
+Evidence: RIOTBOX-1030 adds the contract view, targeted Jam view tests for ready/manual-confirm/fallback boundaries, `docs/specs/arrangement_scene_system_spec.md`, and `docs/architecture_phase_map.md`.
+Consequences: future P014 slices must extend this contract and prove output path for audible changes. Contract-only changes may use targeted core/app tests plus docs/spec updates; audible arrangement behavior must add non-collapsed audio evidence.
+Status: accepted

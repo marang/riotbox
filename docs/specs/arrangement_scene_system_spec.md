@@ -1,0 +1,99 @@
+# Arrangement / Scene System Spec
+
+Version: 0.1
+Status: Draft
+Audience: core, app, TUI, audio QA, replay
+
+---
+
+## 1. Purpose
+
+P014 turns the existing Scene Brain seam into a bounded Arrangement / Scene
+System without adding a second arranger, timing model, replay model, mix truth,
+or Ghost/Feral-only path.
+
+The first contract is intentionally small:
+
+- Source Graph remains the source-structure authority.
+- Source Timing summary remains the timing trust authority.
+- Session `scene_state` remains the durable scene / restore / landed-movement
+  state.
+- Action Lexicon `scene.launch` and `scene.restore` remain the user and replay
+  control surface.
+- Queue / commit records remain the musical-boundary authority.
+- Existing TR-909, MC-202, W-30, observer/audio, and QA seams remain the output
+  proof surfaces.
+
+## 2. Contract View
+
+The shared Jam view exposes an `ArrangementSceneContractView`. It is a
+read-only contract surface, not new product state.
+
+It records:
+
+- readiness for arrangement / scene expansion
+- whether a Source Graph is present
+- Source Timing consumer readiness
+- scene material state: scene count, active scene, next scene, restore scene
+- whether a scene transition is pending
+- whether a landed movement already exists in Session state
+- the controlling truth source: Source Graph + Session + Action Lexicon +
+  queue / commit
+- proof obligations for P014 slices
+
+Readiness values:
+
+- `ready`: graph, scene material, and locked or user-confirmed timing are
+  available
+- `missing_source_graph`: no Source Graph is available
+- `needs_scene_material`: not enough queueable scene material exists yet
+- `needs_timing_evidence`: a graph exists but timing is unavailable
+- `needs_timing_confirmation`: timing exists but needs explicit user trust
+- `fallback_timing_only`: only fallback timing is available
+
+`ready` does not mean a finished arranger exists. It means a later P014 slice may
+attempt source-locked scene behavior without bypassing the product spine.
+
+## 3. P014 Rules
+
+Every P014 arrangement or scene slice must:
+
+- use existing `scene.launch` / `scene.restore` or document any new
+  `ActionCommand` against the ActionCommand rule before implementation
+- persist replay-, restore-, or product-contract state in core/session models,
+  not in app-local state
+- preserve P012 source-grid timing gates
+- preserve P013 representative musical-quality gates
+- prove control path through Session, queue, commit, replay, Jam view, or
+  observer state
+- prove output path for any audible arrangement or scene behavior
+- label fallback, manual-confirm, explicit-BPM, and locked-grid behavior
+  honestly instead of treating every source as grid-locked
+
+## 4. Out Of Scope For The First Contract
+
+The first P014 contract does not implement:
+
+- a full arranger
+- a separate Scene Graph
+- source playback repositioning
+- strip / build / slam scheduling
+- automatic scene chains
+- source-derived MC-202 phrase planning
+- final W-30 loop detection
+- export arrangement packages
+
+Those may land as later P014+ or P016+ slices only by extending this contract.
+
+## 5. Proof Baselines
+
+Keep these green while P014 lands:
+
+- `just p012-all-lane-source-grid-output-proof`
+- representative source showcase musical-quality gates from P013
+- `just audio-qa-ci`
+- `just ci`
+
+For a contract-only slice that changes no audible output, targeted core/app tests
+plus docs/spec updates are sufficient. The first audible P014 slice must add
+non-collapsed output evidence.

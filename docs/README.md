@@ -23,25 +23,27 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 
 1. [PRD v1](./prd_v1.md)
 2. [Execution Roadmap](./execution_roadmap.md)
-3. [Technology Stack Spec](./specs/technology_stack_spec.md)
-4. [Rust Engineering Guidelines](./specs/rust_engineering_guidelines.md)
-5. [Source Graph Spec](./specs/source_graph_spec.md)
-6. [Session File Spec](./specs/session_file_spec.md)
-7. [Action Lexicon Spec](./specs/action_lexicon_spec.md)
-8. [Replay Model Spec](./specs/replay_model_spec.md)
-9. [Audio Core Spec](./specs/audio_core_spec.md)
-10. [TUI Screen Spec](./specs/tui_screen_spec.md)
-11. [Ghost API Spec](./specs/ghost_api_spec.md)
-12. [Preset & Style Spec](./specs/preset_style_spec.md)
-13. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
-14. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
-15. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
-16. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
-17. [Recovery Notes](./recovery_notes.md)
-18. [Phase Definition of Done](./phase_definition_of_done.md)
-19. [Research / Decision Log](./research_decision_log.md)
-20. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
-21. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+3. [Architecture And Phase Map](./architecture_phase_map.md)
+4. [Technology Stack Spec](./specs/technology_stack_spec.md)
+5. [Rust Engineering Guidelines](./specs/rust_engineering_guidelines.md)
+6. [Source Graph Spec](./specs/source_graph_spec.md)
+7. [Session File Spec](./specs/session_file_spec.md)
+8. [Action Lexicon Spec](./specs/action_lexicon_spec.md)
+9. [Replay Model Spec](./specs/replay_model_spec.md)
+10. [Audio Core Spec](./specs/audio_core_spec.md)
+11. [TUI Screen Spec](./specs/tui_screen_spec.md)
+12. [Ghost API Spec](./specs/ghost_api_spec.md)
+13. [Preset & Style Spec](./specs/preset_style_spec.md)
+14. [Validation & Benchmark Spec](./specs/validation_benchmark_spec.md)
+15. [Fixture Corpus Spec](./specs/fixture_corpus_spec.md)
+16. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
+17. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+18. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
+19. [Recovery Notes](./recovery_notes.md)
+20. [Phase Definition of Done](./phase_definition_of_done.md)
+21. [Research / Decision Log](./research_decision_log.md)
+22. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+23. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
 
 ## Why This Order
 
@@ -71,6 +73,7 @@ docs/
   README.md
   jam_recipes.md
   prd_v1.md
+  architecture_phase_map.md
   execution_roadmap.md
   workflow_conventions.md
   recovery_notes.md
@@ -130,11 +133,13 @@ docs/
     validation_benchmark_spec.md
     fixture_corpus_spec.md
     audio_qa_workflow_spec.md
+    arrangement_scene_system_spec.md
 ```
 
 ## Current Status
 
 - `prd_v1.md`: product spine and MVP framing captured
+- `architecture_phase_map.md`: component and P000-P020 phase map captured
 - `execution_roadmap.md`: active roadmap with Source Timing Intelligence anchored
 - `workflow_conventions.md`: active contributor / agent workflow conventions captured
 - `jam_recipes.md`: learning-path guide captured
@@ -153,6 +158,7 @@ docs/
 - `specs/validation_benchmark_spec.md`: validation and benchmark contract captured
 - `specs/fixture_corpus_spec.md`: fixture corpus contract captured
 - `specs/audio_qa_workflow_spec.md`: audio QA workflow plan captured
+- `specs/arrangement_scene_system_spec.md`: P014 Arrangement / Scene System contract captured
 - `phase_definition_of_done.md`: phase DoD with current phase status captured
 - `research_decision_log.md`: architecture decisions captured
 - `plans/source_timing_intelligence_plan.md`: all-lane Rust-first timing intelligence plan captured
