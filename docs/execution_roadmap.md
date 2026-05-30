@@ -595,8 +595,10 @@ The immediate execution track is `P014 | Arrangement / Scene System`.
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:
 
+- `docs/architecture_phase_map.md`
 - `docs/reviews/p012_exit_review_2026-05-28.md`
 - `docs/reviews/p013_exit_review_2026-05-29.md`
+- `docs/specs/arrangement_scene_system_spec.md`
 - `docs/specs/source_timing_intelligence_spec.md`
 - `docs/specs/audio_qa_workflow_spec.md`
 - `docs/specs/preset_style_spec.md`

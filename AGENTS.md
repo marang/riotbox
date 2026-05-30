@@ -67,6 +67,7 @@ Read these before structural changes:
 13. `docs/specs/tui_screen_spec.md`
 14. `docs/specs/ghost_api_spec.md`
 15. `docs/specs/preset_style_spec.md`
+16. `docs/specs/arrangement_scene_system_spec.md`
 
 Strategic context:
 
