@@ -113,8 +113,22 @@ impl ExportArtifactSetEntry {
 #[serde(rename_all = "snake_case")]
 pub enum ExportArtifactRole {
     FullGridMix,
+    StemDrums,
+    StemBass,
+    StemMusic,
+    StemVocals,
     ProductExportProof,
     ExportManifest,
+}
+
+impl ExportArtifactRole {
+    #[must_use]
+    pub const fn is_stem_role(self) -> bool {
+        matches!(
+            self,
+            Self::StemDrums | Self::StemBass | Self::StemMusic | Self::StemVocals
+        )
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
