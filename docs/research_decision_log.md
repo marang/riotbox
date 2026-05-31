@@ -58,6 +58,20 @@ Status: accepted
 
 ---
 
+### RBX-061
+
+Date: 2026-05-31
+Topic: P016 export spine broad review after artifact-set and stem-QA slices
+Phase: P016 / Pro Workflow / Export
+Question: what must be fixed before wider stem, DAW, or live export scopes build on the current product-export spine?
+Decision: keep the current bounded product-mix export spine, typed artifact-set contract, and stem QA skeleton, but add follow-ups before widening export scope: recovery preflight must validate artifact-set entries, and `export_qa.rs` tests should be split before another gate expansion pushes the file over the Rust review budget.
+Why: product-mix receipts are now compatible with typed artifact evidence, but recovery still validates legacy receipt paths only; the QA gate is cohesive but close to the soft 500-line file budget.
+Evidence: `docs/reviews/p016_export_spine_broad_review_2026-05-31.md`, RIOTBOX-1076, and RIOTBOX-1077.
+Consequences: future P016 stem/DAW/live work should address artifact-set-aware recovery and export-QA test/module hygiene before claiming wider export readiness.
+Status: accepted
+
+---
+
 ### RBX-002
 
 Date: 2026-04-12  
