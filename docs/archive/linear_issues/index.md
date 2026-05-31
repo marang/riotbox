@@ -856,4 +856,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add export receipt replay and missing-artifact fixtures
 - [RIOTBOX-1067.md](./RIOTBOX-1067.md)
   Emit export product-mix observer lifecycle events
+- [RIOTBOX-1068.md](./RIOTBOX-1068.md)
+  Add musician-facing export trigger and receipt feedback
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
