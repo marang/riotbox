@@ -864,4 +864,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add typed export artifact-set contract to product receipts
 - [RIOTBOX-1072.md](./RIOTBOX-1072.md)
   Add stem package export QA gate skeleton without writing stems
+- [RIOTBOX-1070.md](./RIOTBOX-1070.md)
+  Split riotbox-app event loop controls before more key handlers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
