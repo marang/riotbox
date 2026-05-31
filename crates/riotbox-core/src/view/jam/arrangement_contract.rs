@@ -50,6 +50,26 @@ impl ArrangementSceneActionSurfaceView {
     }
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ArrangementSceneBoundedExtensionView {
+    ManualSceneChainReady,
+    MissingSourceGraph,
+    NeedsSceneMaterial,
+    NeedsTimingTrust,
+}
+
+impl ArrangementSceneBoundedExtensionView {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::ManualSceneChainReady => "manual_scene_chain_ready",
+            Self::MissingSourceGraph => "missing_source_graph",
+            Self::NeedsSceneMaterial => "needs_scene_material",
+            Self::NeedsTimingTrust => "needs_timing_trust",
+        }
+    }
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ArrangementSceneContractView {
     pub readiness: ArrangementSceneContractReadinessView,
@@ -63,6 +83,9 @@ pub struct ArrangementSceneContractView {
     pub has_pending_scene_transition: bool,
     pub has_landed_movement: bool,
     pub can_use_source_locked_scene_movement: bool,
+    pub bounded_extension: ArrangementSceneBoundedExtensionView,
+    pub allows_manual_scene_chain_extension: bool,
+    pub allows_automatic_scene_chain_scheduler: bool,
     pub requires_p012_source_grid_gate: bool,
     pub requires_p013_musical_quality_gate: bool,
     pub requires_replay_state_proof: bool,
@@ -104,10 +127,34 @@ pub fn arrangement_scene_contract_view(
         }),
         has_landed_movement: session.runtime_state.scene_state.last_movement.is_some(),
         can_use_source_locked_scene_movement: timing_readiness.can_use_source_window_grid(),
+        bounded_extension: arrangement_scene_bounded_extension(readiness),
+        allows_manual_scene_chain_extension: readiness == ArrangementSceneContractReadinessView::Ready,
+        allows_automatic_scene_chain_scheduler: false,
         requires_p012_source_grid_gate: true,
         requires_p013_musical_quality_gate: true,
         requires_replay_state_proof: true,
         requires_output_path_proof_for_audible_changes: true,
+    }
+}
+
+fn arrangement_scene_bounded_extension(
+    readiness: ArrangementSceneContractReadinessView,
+) -> ArrangementSceneBoundedExtensionView {
+    match readiness {
+        ArrangementSceneContractReadinessView::Ready => {
+            ArrangementSceneBoundedExtensionView::ManualSceneChainReady
+        }
+        ArrangementSceneContractReadinessView::MissingSourceGraph => {
+            ArrangementSceneBoundedExtensionView::MissingSourceGraph
+        }
+        ArrangementSceneContractReadinessView::NeedsSceneMaterial => {
+            ArrangementSceneBoundedExtensionView::NeedsSceneMaterial
+        }
+        ArrangementSceneContractReadinessView::NeedsTimingEvidence
+        | ArrangementSceneContractReadinessView::NeedsTimingConfirmation
+        | ArrangementSceneContractReadinessView::FallbackTimingOnly => {
+            ArrangementSceneBoundedExtensionView::NeedsTimingTrust
+        }
     }
 }
 

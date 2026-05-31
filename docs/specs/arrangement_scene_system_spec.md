@@ -35,6 +35,7 @@ It records:
 - whether a Source Graph is present
 - Source Timing consumer readiness
 - whether source-locked scene movement may use source-window timing
+- the bounded P014 extension permission for manual scene-chain proofs
 - scene material state: scene count, active scene, next scene, restore scene
 - whether a scene transition is pending
 - whether a landed movement already exists in Session state
@@ -69,6 +70,23 @@ readiness:
 
 The movement flag is a timing-trust gate, not a second arranger state. Session
 scene state, queue / commit records, and replay remain the durable truth.
+
+Bounded extension values:
+
+- `manual_scene_chain_ready`: later P014 slices may extend manual
+  `scene.launch` / `scene.restore` chains when they keep using Session scene
+  state, queue / commit records, replay, observer, and output QA
+- `missing_source_graph`: no arrangement extension may claim source-structure
+  authority yet
+- `needs_scene_material`: add or derive enough scene material before extending
+  arrange behavior
+- `needs_timing_trust`: do not add source-locked arrange behavior until timing
+  is analyzer-locked or user-confirmed
+
+`allows_manual_scene_chain_extension` may be true only for
+`manual_scene_chain_ready`. `allows_automatic_scene_chain_scheduler` remains
+false in P014; automatic chains need a later explicit Action Lexicon,
+Session/replay, observer, and output-QA expansion.
 
 ## 3. P014 Rules
 

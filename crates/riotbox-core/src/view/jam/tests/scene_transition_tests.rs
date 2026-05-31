@@ -73,6 +73,18 @@
             vm.scene.arrangement_contract.timing_readiness,
             SourceTimingConsumerReadiness::AnalyzerLocked
         );
+        assert_eq!(
+            vm.scene.arrangement_contract.bounded_extension,
+            ArrangementSceneBoundedExtensionView::ManualSceneChainReady
+        );
+        assert!(vm
+            .scene
+            .arrangement_contract
+            .allows_manual_scene_chain_extension);
+        assert!(!vm
+            .scene
+            .arrangement_contract
+            .allows_automatic_scene_chain_scheduler);
         assert!(vm.scene.arrangement_contract.has_next_scene);
         assert!(vm
             .scene
@@ -131,6 +143,7 @@
             expected_readiness: ArrangementSceneContractReadinessView,
             expected_timing: SourceTimingConsumerReadiness,
             expected_source_locked_scene_movement: bool,
+            expected_extension: ArrangementSceneBoundedExtensionView,
         }
 
         let cases = [
@@ -142,6 +155,7 @@
                 expected_readiness: ArrangementSceneContractReadinessView::Ready,
                 expected_timing: SourceTimingConsumerReadiness::AnalyzerLocked,
                 expected_source_locked_scene_movement: true,
+                expected_extension: ArrangementSceneBoundedExtensionView::ManualSceneChainReady,
             },
             TimingTrustCase {
                 name: "manual confirm without user trust",
@@ -151,6 +165,7 @@
                 expected_readiness: ArrangementSceneContractReadinessView::NeedsTimingConfirmation,
                 expected_timing: SourceTimingConsumerReadiness::NeedsUserConfirmation,
                 expected_source_locked_scene_movement: false,
+                expected_extension: ArrangementSceneBoundedExtensionView::NeedsTimingTrust,
             },
             TimingTrustCase {
                 name: "manual confirm with user trust",
@@ -160,6 +175,7 @@
                 expected_readiness: ArrangementSceneContractReadinessView::Ready,
                 expected_timing: SourceTimingConsumerReadiness::UserConfirmed,
                 expected_source_locked_scene_movement: true,
+                expected_extension: ArrangementSceneBoundedExtensionView::ManualSceneChainReady,
             },
             TimingTrustCase {
                 name: "fallback grid",
@@ -169,6 +185,7 @@
                 expected_readiness: ArrangementSceneContractReadinessView::FallbackTimingOnly,
                 expected_timing: SourceTimingConsumerReadiness::FallbackGrid,
                 expected_source_locked_scene_movement: false,
+                expected_extension: ArrangementSceneBoundedExtensionView::NeedsTimingTrust,
             },
             TimingTrustCase {
                 name: "disabled timing",
@@ -178,6 +195,7 @@
                 expected_readiness: ArrangementSceneContractReadinessView::NeedsTimingEvidence,
                 expected_timing: SourceTimingConsumerReadiness::Unavailable,
                 expected_source_locked_scene_movement: false,
+                expected_extension: ArrangementSceneBoundedExtensionView::NeedsTimingTrust,
             },
             TimingTrustCase {
                 name: "missing bpm",
@@ -187,6 +205,7 @@
                 expected_readiness: ArrangementSceneContractReadinessView::NeedsTimingEvidence,
                 expected_timing: SourceTimingConsumerReadiness::Unavailable,
                 expected_source_locked_scene_movement: false,
+                expected_extension: ArrangementSceneBoundedExtensionView::NeedsTimingTrust,
             },
         ];
 
@@ -233,6 +252,23 @@
                 "{} source-locked scene movement gate",
                 case.name
             );
+            assert_eq!(
+                vm.scene.arrangement_contract.bounded_extension, case.expected_extension,
+                "{} bounded extension",
+                case.name
+            );
+            assert_eq!(
+                vm.scene
+                    .arrangement_contract
+                    .allows_manual_scene_chain_extension,
+                case.expected_extension == ArrangementSceneBoundedExtensionView::ManualSceneChainReady,
+                "{} manual scene-chain extension permission",
+                case.name
+            );
+            assert!(!vm
+                .scene
+                .arrangement_contract
+                .allows_automatic_scene_chain_scheduler);
             assert!(vm.scene.arrangement_contract.requires_p012_source_grid_gate);
             assert!(vm
                 .scene
@@ -255,6 +291,18 @@
             .scene
             .arrangement_contract
             .can_use_source_locked_scene_movement);
+        assert_eq!(
+            vm.scene.arrangement_contract.bounded_extension,
+            ArrangementSceneBoundedExtensionView::MissingSourceGraph
+        );
+        assert!(!vm
+            .scene
+            .arrangement_contract
+            .allows_manual_scene_chain_extension);
+        assert!(!vm
+            .scene
+            .arrangement_contract
+            .allows_automatic_scene_chain_scheduler);
     }
 
     #[test]
