@@ -285,7 +285,8 @@ Linear project / phase map:
 1. `P011 | Pro Hardening` - closed bounded MVP-spine hardening baseline
 2. `P012 | Source Timing Intelligence` - closed bounded Post-MVP timing foundation
 3. `P013 | All-Lane Musical Depth` - closed bounded representative musical-depth baseline
-4. `P014 | Arrangement / Scene System` - active next phase
+4. `P014 | Arrangement / Scene System` - exit candidate pending stacked PR CI /
+   merge
 5. `P015 | Productization Alpha`
 6. `P016 | Pro Workflow / Export`
 7. `P017 | Live Performance Readiness`
@@ -294,8 +295,8 @@ Linear project / phase map:
 10. `P020 | Riotbox 1.0 Release Cut`
 
 This is a project / phase overview, not a ticket list. Keep P012 and P013 as
-regression baselines and keep P015-P020 coarse until P014 proves arrangement /
-scene expansion on top of the timing and musical-depth foundations.
+regression baselines and keep P015-P020 coarse until the P014 exit candidate
+stack clears GitHub CI and is merged.
 
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
@@ -305,7 +306,7 @@ Reason:
 - P013 now has a bounded representative showcase baseline for TR-909 source
   accent dynamics, W-30 source accent/slice/chop proof, MC-202 pressure/grid/
   source-contour proof, and all-lane generated-support mix movement.
-- Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing behavior must extend them instead of creating a parallel analysis or arranger path.
+- Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing or arrangement behavior must extend them instead of creating a parallel analysis or arranger path.
 
 ---
 
@@ -590,7 +591,9 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 
 ## 15. Next Concrete Step
 
-The immediate execution track is `P014 | Arrangement / Scene System`.
+The immediate execution track is `P014 | Arrangement / Scene System` closeout:
+inspect and merge the stacked P014 PRs, then mark P014 closed and move to
+`P015 | Productization Alpha`.
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:
@@ -605,8 +608,8 @@ not restart from spec scaffolding. Use these live references instead:
 - `docs/specs/tui_screen_spec.md`
 - `docs/phase_definition_of_done.md`
 
-Near-next P014 slices should build arrangement and scene behavior on the P012
-timing spine and P013 musical-depth baseline:
+The P014 exit candidate stack has built arrangement and scene behavior on the
+P012 timing spine and P013 musical-depth baseline:
 
 - introduce arrangement / scene behavior without weakening the P012 source-grid
   regression proof or the P013 representative musical-quality gate
@@ -617,5 +620,5 @@ timing spine and P013 musical-depth baseline:
 - keep Jam / Source / observer timing language aligned through the shared Jam
   Source Timing summary whenever timing evidence is surfaced
 
-Keep P015+ coarse until P014 proves arrangement expansion on top of the closed
-P012 timing and P013 musical-depth foundations.
+Keep new P015 implementation work behind P014 PR/merge closeout so phase state
+stays sequential and auditable.

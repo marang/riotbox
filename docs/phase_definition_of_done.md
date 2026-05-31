@@ -257,7 +257,35 @@ Current review:
 
 ---
 
-## 13. Feral Layer Done Criteria
+## 13. Arrangement / Scene System Done Criteria
+
+The Arrangement / Scene System is done for the bounded P014 exit when:
+
+- scene behavior extends Source Graph, Source Timing, Session scene state,
+  Action Lexicon, queue / commit, replay, observer, and output QA instead of
+  creating a second arranger
+- manual `scene.launch` / `scene.restore` chains prove landed movement through
+  Session, graph-aware replay, Jam projection, and non-collapsed lane/mix output
+- Source Monitor scene repositioning only uses analyzer-locked or
+  user-confirmed Source Timing, while manual-confirm pending, fallback,
+  disabled, unavailable, or missing-BPM timing keep transport-position playback
+- observer/audio QA exposes landed scene movement, bounded extension state,
+  Source Monitor anchor evidence, and non-collapsed output metrics
+- the Arrangement Scene contract explicitly keeps automatic scene-chain
+  scheduling out of P014 until a later Action Lexicon, Session/replay,
+  observer, and output-QA expansion exists
+
+Current review:
+
+- `docs/reviews/p014_exit_candidate_review_2026-05-30.md`
+- status: exit candidate pending stacked PR CI / merge on 2026-05-31 after the
+  local stacked P014 branches passed `just p014-scene-movement-observer-probe`,
+  `just audio-qa-ci`, and `just ci`; formal closure waits for GitHub CI
+  inspection and merge of the remaining stacked P014 PRs
+
+---
+
+## 14. Feral Layer Done Criteria
 
 The feral layer is done for MVP purposes when:
 
@@ -275,7 +303,7 @@ Current review:
 
 ---
 
-## 14. 1.0 / Stage-Ready Product Readiness
+## 15. 1.0 / Stage-Ready Product Readiness
 
 Riotbox is close to product-ready when:
 
