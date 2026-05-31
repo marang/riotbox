@@ -814,4 +814,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add scene movement observer and audio correlation gate
 - [RIOTBOX-1047.md](./RIOTBOX-1047.md)
   Define bounded P014 scene arrange extension contract
+- [RIOTBOX-1048.md](./RIOTBOX-1048.md)
+  Close P014 exit evidence and roadmap state
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
