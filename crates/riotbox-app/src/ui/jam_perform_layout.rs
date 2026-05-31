@@ -162,7 +162,7 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
         Some(FirstRunOnrampStage::FirstResult) => vec![
             Line::from(format!("What changed: {}", latest_landed_text(shell))),
             Line::from("What next: [c] capture it or [u] undo it if it missed."),
-            Line::from("Then try one more move: [y] jump or [g] follow."),
+            Line::from(first_result_next_move_line(shell)),
             source_timing_help_line(shell),
         ],
         None => Vec::new(),
@@ -173,6 +173,27 @@ fn render_first_run_onramp_row(frame: &mut Frame<'_>, area: Rect, shell: &JamShe
         .wrap(Wrap { trim: true });
 
     frame.render_widget(paragraph, area);
+}
+
+fn first_result_next_move_line(shell: &JamShellState) -> &'static str {
+    match shell.app.jam_view.scene.arrangement_contract.readiness {
+        ArrangementSceneContractReadinessView::Ready => {
+            "Then try one more move: [y] jump or [g] follow."
+        }
+        ArrangementSceneContractReadinessView::NeedsTimingConfirmation => {
+            "Then try [g] follow or [f] fill; use [y] after grid trust."
+        }
+        ArrangementSceneContractReadinessView::FallbackTimingOnly => {
+            "Then try [g] follow or [f] fill; scene timing is fallback."
+        }
+        ArrangementSceneContractReadinessView::NeedsSceneMaterial => {
+            "Then try [g] follow or [f] fill; scene jump waits for material."
+        }
+        ArrangementSceneContractReadinessView::NeedsTimingEvidence
+        | ArrangementSceneContractReadinessView::MissingSourceGraph => {
+            "Then try [g] follow or [f] fill; scene timing is unknown."
+        }
+    }
 }
 
 fn render_action_rows(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {

@@ -417,9 +417,31 @@ fn renders_jam_shell_with_first_result_guidance() {
         "{rendered}"
     );
     assert!(
+        rendered.contains("Then try [g] follow or [f] fill; use [y] after grid trust."),
+        "{rendered}"
+    );
+}
+
+#[test]
+fn first_result_guidance_allows_scene_jump_when_grid_is_locked() {
+    let mut shell = first_result_shell_state();
+    let graph = shell
+        .app
+        .source_graph
+        .as_mut()
+        .expect("first-result shell should include source graph");
+    graph.timing.quality = TimingQuality::High;
+    graph.timing.degraded_policy = TimingDegradedPolicy::Locked;
+    graph.timing.warnings.clear();
+    shell.app.refresh_view();
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(
         rendered.contains("Then try one more move: [y] jump or [g] follow."),
         "{rendered}"
     );
+    assert!(!rendered.contains("use [y] after grid trust"), "{rendered}");
 }
 
 #[test]
