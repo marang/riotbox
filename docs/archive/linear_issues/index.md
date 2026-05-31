@@ -868,4 +868,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split riotbox-app event loop controls before more key handlers
 - [RIOTBOX-1073.md](./RIOTBOX-1073.md)
   Add per-artifact audio metrics to export artifact sets
+- [RIOTBOX-1074.md](./RIOTBOX-1074.md)
+  Enforce stem non-silence in QA gate when artifact metrics exist
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
