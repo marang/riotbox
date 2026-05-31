@@ -325,6 +325,9 @@ Rules:
   snapshots
 - replay may validate receipt metadata or report missing artifacts, but must not
   blindly rewrite files without an explicit export request
+- recovery / hydration preflight must validate local-path entries from
+  `artifact_set[]` as well as the legacy product-mix artifact/proof fields;
+  URI entries are identity-only until a fetch/cache contract exists
 - the first P016 receipt boundary is `full_grid_mix` from the deterministic
   Feral-grid generated-support export proof
 - current `export.product_mix` receipts populate a one-entry artifact set for

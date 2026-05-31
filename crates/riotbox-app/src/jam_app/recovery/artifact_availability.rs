@@ -56,6 +56,9 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
             Err(
                 product_export::ExportReceiptArtifactPreflightError::MissingArtifactPath { .. }
                 | product_export::ExportReceiptArtifactPreflightError::MissingProofPath { .. }
+                | product_export::ExportReceiptArtifactPreflightError::MissingArtifactSetPath {
+                    ..
+                }
                 | product_export::ExportReceiptArtifactPreflightError::MissingSessionFileSet {
                     ..
                 },
@@ -66,11 +69,18 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
                 }
                 | product_export::ExportReceiptArtifactPreflightError::MissingProofArtifact {
                     ..
+                }
+                | product_export::ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
+                    ..
                 },
             ) => missing += 1,
             Err(
                 product_export::ExportReceiptArtifactPreflightError::UnreadableArtifact { .. }
-                | product_export::ExportReceiptArtifactPreflightError::NotFile { .. },
+                | product_export::ExportReceiptArtifactPreflightError::NotFile { .. }
+                | product_export::ExportReceiptArtifactPreflightError::ArtifactSetNotFile { .. }
+                | product_export::ExportReceiptArtifactPreflightError::UnreadableArtifactSetArtifact {
+                    ..
+                },
             ) => unreadable += 1,
         }
     }

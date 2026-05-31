@@ -94,6 +94,103 @@ fn export_receipt_hydration_preflight_reports_missing_proof_path_identity() {
     );
 }
 
+#[test]
+fn export_receipt_hydration_preflight_accepts_extra_local_artifact_set_entry() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("drums.wav"), b"drums").expect("write stem artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    receipt.artifact_set.push(ExportArtifactSetEntry {
+        role: ExportArtifactRole::StemDrums,
+        location: ExportArtifactLocation::LocalPath {
+            path: "exports/drums.wav".into(),
+        },
+        media_type: ExportArtifactMediaType::AudioWav,
+        sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    });
+
+    preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect("all local artifact-set entries exist");
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_artifact_set_entry() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    receipt.artifact_set.push(ExportArtifactSetEntry {
+        role: ExportArtifactRole::StemDrums,
+        location: ExportArtifactLocation::LocalPath {
+            path: "exports/missing-drums.wav".into(),
+        },
+        media_type: ExportArtifactMediaType::AudioWav,
+        sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    });
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing artifact-set entry should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::StemDrums,
+            path: dir.path().join("exports/missing-drums.wav"),
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_treats_uri_artifact_set_entry_as_identity_only() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    receipt.artifact_set.push(ExportArtifactSetEntry {
+        role: ExportArtifactRole::StemDrums,
+        location: ExportArtifactLocation::Uri {
+            uri: "s3://riotbox/stems/drums.wav".into(),
+        },
+        media_type: ExportArtifactMediaType::AudioWav,
+        sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    });
+
+    preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect("URI artifact-set entry is identity-only until fetch contract exists");
+}
+
 fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
     ExportReceiptState {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
