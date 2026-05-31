@@ -822,4 +822,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Productize Jam inspect and taste surfaces around musical proof
 - [RIOTBOX-1050.md](./RIOTBOX-1050.md)
   Add P015 perform-first Jam taste recipe proof
+- [RIOTBOX-1051.md](./RIOTBOX-1051.md)
+  Add P015 in-app Jam taste/proof help cues
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
