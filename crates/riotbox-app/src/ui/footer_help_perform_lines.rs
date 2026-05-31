@@ -104,7 +104,7 @@ fn footer_scene_affordance_cue(shell: &JamShellState) -> Option<String> {
 }
 
 fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState) {
-    let popup = centered_rect(60, 55, area);
+    let popup = centered_rect(60, 85, area);
     let mut lines = vec![
         Line::from("Jam shell keys"),
         line_with_primary_key_prefixes("q or Esc: quit"),
