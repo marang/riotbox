@@ -836,4 +836,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add P015 Help overlay height/readability audit
 - [RIOTBOX-1057.md](./RIOTBOX-1057.md)
   Draft P015 exit evidence checklist
+- [RIOTBOX-1058.md](./RIOTBOX-1058.md)
+  Run P015 final evidence gate and draft exit review
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
