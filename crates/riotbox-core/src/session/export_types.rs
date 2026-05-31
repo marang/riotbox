@@ -79,6 +79,8 @@ pub struct ExportArtifactSetEntry {
     pub media_type: ExportArtifactMediaType,
     pub sha256: String,
     #[serde(default)]
+    pub audio_metrics: Option<ExportArtifactAudioMetrics>,
+    #[serde(default)]
     pub sample_rate_hz: Option<u32>,
     #[serde(default)]
     pub channel_count: Option<u16>,
@@ -94,6 +96,7 @@ impl ExportArtifactSetEntry {
             location: ExportArtifactLocation::LocalPath { path: path.into() },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: sha256.into(),
+            audio_metrics: None,
             sample_rate_hz: None,
             channel_count: None,
             duration_ms: None,
@@ -143,6 +146,22 @@ pub enum ExportArtifactLocation {
 pub enum ExportArtifactMediaType {
     AudioWav,
     Json,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportArtifactAudioMetrics {
+    #[serde(default)]
+    pub peak_milli_dbfs: Option<i32>,
+    #[serde(default)]
+    pub rms_milli_dbfs: Option<i32>,
+    #[serde(default)]
+    pub peak_amplitude_micros: Option<u32>,
+    #[serde(default)]
+    pub rms_amplitude_micros: Option<u32>,
+    #[serde(default)]
+    pub silent_frame_count: Option<u64>,
+    #[serde(default)]
+    pub total_frame_count: Option<u64>,
 }
 
 #[cfg(test)]
@@ -262,5 +281,55 @@ mod tests {
                 "aaaa"
             )]
         );
+    }
+
+    #[test]
+    fn artifact_set_entries_roundtrip_optional_audio_metrics() {
+        let entry = ExportArtifactSetEntry {
+            role: ExportArtifactRole::StemDrums,
+            location: ExportArtifactLocation::LocalPath {
+                path: "exports/stems/drums.wav".into(),
+            },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            audio_metrics: Some(ExportArtifactAudioMetrics {
+                peak_milli_dbfs: Some(-120),
+                rms_milli_dbfs: Some(-6_000),
+                peak_amplitude_micros: Some(986_000),
+                rms_amplitude_micros: Some(125_000),
+                silent_frame_count: Some(0),
+                total_frame_count: Some(96_000),
+            }),
+            sample_rate_hz: Some(48_000),
+            channel_count: Some(2),
+            duration_ms: Some(2_000),
+        };
+
+        let json = serde_json::to_string_pretty(&entry).expect("serialize artifact entry");
+        let roundtrip: ExportArtifactSetEntry =
+            serde_json::from_str(&json).expect("deserialize artifact entry");
+
+        assert_eq!(roundtrip, entry);
+    }
+
+    #[test]
+    fn missing_audio_metrics_defaults_to_none_for_older_artifact_entries() {
+        let mut json = serde_json::json!({
+            "role": "stem_drums",
+            "location": {
+                "kind": "local_path",
+                "path": "exports/stems/drums.wav"
+            },
+            "media_type": "audio_wav",
+            "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+        });
+        json.as_object_mut()
+            .expect("entry json object")
+            .remove("audio_metrics");
+
+        let entry: ExportArtifactSetEntry =
+            serde_json::from_value(json).expect("deserialize older artifact entry");
+
+        assert_eq!(entry.audio_metrics, None);
     }
 }

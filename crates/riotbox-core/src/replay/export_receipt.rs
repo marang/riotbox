@@ -185,6 +185,7 @@ mod tests {
             },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".into(),
+            audio_metrics: None,
             sample_rate_hz: Some(48_000),
             channel_count: Some(2),
             duration_ms: Some(12_000),
