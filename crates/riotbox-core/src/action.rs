@@ -3,6 +3,7 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     TimestampMs,
+    export_readiness::{ProductExportBoundary, ProductExportDestinationKind, ProductExportRole},
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SourceId},
 };
 
@@ -253,6 +254,13 @@ pub enum ActionParams {
         source_id: Option<SourceId>,
         hypothesis_id: Option<String>,
     },
+    ProductExport {
+        export_role: ProductExportRole,
+        boundary: ProductExportBoundary,
+        include_manifest: bool,
+        destination_kind: ProductExportDestinationKind,
+        destination_path: Option<String>,
+    },
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -309,6 +317,7 @@ pub enum ActionCommand {
     SourceMonitorSetMode,
     SourceTimingConfirmGrid,
     SourceTimingRevertGrid,
+    ExportProductMix,
     GhostSetMode,
     GhostAcceptSuggestion,
     GhostRejectSuggestion,
@@ -375,6 +384,7 @@ impl ActionCommand {
         Self::SourceMonitorSetMode,
         Self::SourceTimingConfirmGrid,
         Self::SourceTimingRevertGrid,
+        Self::ExportProductMix,
         Self::GhostSetMode,
         Self::GhostAcceptSuggestion,
         Self::GhostRejectSuggestion,
@@ -442,6 +452,7 @@ impl ActionCommand {
             | Self::UndoLast
             | Self::RedoLast
             | Self::RestoreSource
+            | Self::ExportProductMix
             | Self::GhostAcceptSuggestion
             | Self::GhostRejectSuggestion
             | Self::GhostExecuteTool => ActionReplayCoverage::Unsupported,
@@ -503,6 +514,7 @@ impl ActionCommand {
             Self::SourceMonitorSetMode => "source_monitor.set_mode",
             Self::SourceTimingConfirmGrid => "source_timing.confirm_grid",
             Self::SourceTimingRevertGrid => "source_timing.revert_grid",
+            Self::ExportProductMix => "export.product_mix",
             Self::GhostSetMode => "ghost.set_mode",
             Self::GhostAcceptSuggestion => "ghost.accept_suggestion",
             Self::GhostRejectSuggestion => "ghost.reject_suggestion",
@@ -596,7 +608,7 @@ mod tests {
 
     #[test]
     fn action_command_lexicon_labels_are_unique_and_complete() {
-        assert_eq!(ActionCommand::all().len(), 56);
+        assert_eq!(ActionCommand::all().len(), 57);
 
         let labels = ActionCommand::all()
             .iter()
@@ -616,6 +628,6 @@ mod tests {
         let unsupported = ActionCommand::all().len() - supported;
 
         assert_eq!(supported, 42);
-        assert_eq!(unsupported, 14);
+        assert_eq!(unsupported, 15);
     }
 }

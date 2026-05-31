@@ -298,8 +298,8 @@ Rules:
 
 ### 8.8 Export receipts
 
-Future product export actions must create explicit export receipts instead of
-hiding file-writing truth in app-local state.
+Product export actions create explicit export receipts instead of hiding
+file-writing truth in app-local state.
 
 Minimum receipt fields:
 
@@ -309,6 +309,8 @@ Minimum receipt fields:
 - export role
 - export boundary
 - artifact path or artifact URI
+- proof path
+- optional manifest path
 - export hash
 - normalized manifest hash
 - readiness status

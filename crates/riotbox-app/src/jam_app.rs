@@ -32,6 +32,7 @@ mod helpers;
 mod lifecycle;
 mod mc202_queue;
 mod persistence;
+mod product_export;
 mod projection;
 mod recovery;
 mod restore_replay;

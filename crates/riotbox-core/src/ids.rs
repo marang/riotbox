@@ -49,6 +49,7 @@ string_id!(SnapshotId);
 string_id!(SourceId);
 string_id!(AssetId);
 string_id!(CandidateId);
+string_id!(ExportReceiptId);
 
 #[derive(
     Copy, Clone, Debug, PartialEq, Eq, Hash, PartialOrd, Ord, Default, Serialize, Deserialize,
