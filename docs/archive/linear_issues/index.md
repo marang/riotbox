@@ -808,4 +808,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source-section MC-202 contour proof to representative showcase
 - [RIOTBOX-1029.md](./RIOTBOX-1029.md)
   Close P013 all-lane musical depth exit evidence
+- [RIOTBOX-1045.md](./RIOTBOX-1045.md)
+  Add P014 scene timing trust safety matrix
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
