@@ -259,6 +259,56 @@ fn recovery_surface_reports_capture_artifact_availability_for_parseable_candidat
 }
 
 #[test]
+fn recovery_surface_reports_export_receipt_artifact_availability_for_parseable_candidates() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let ready_path = dir.path().join("session.autosave.ready-export.json");
+    let identity_path = dir.path().join("session.autosave.identity-export.json");
+    let missing_path = dir.path().join("session.autosave.missing-export.json");
+    let export_dir = dir.path().join("exports");
+
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    save_session_json(
+        &target_path,
+        &SessionFile::new("canonical", "riotbox-test", "2026-04-30T08:50:00Z"),
+    )
+    .expect("save canonical session");
+
+    let mut ready_session = SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:51:00Z");
+    ready_session.export_receipts.push(export_receipt(
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    ));
+    save_session_json(&ready_path, &ready_session).expect("save ready export autosave session");
+
+    let mut missing_session = ready_session.clone();
+    missing_session.export_receipts[0].artifact_path = "exports/missing_full_grid_mix.wav".into();
+    save_session_json(&missing_path, &missing_session)
+        .expect("save missing export artifact autosave session");
+
+    let mut identity_session = ready_session.clone();
+    identity_session.export_receipts[0].proof_path = " ".into();
+    save_session_json(&identity_path, &identity_session)
+        .expect("save missing export identity autosave session");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+    let artifact_labels = surface
+        .candidates
+        .iter()
+        .filter(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .map(|candidate| candidate.artifact_availability_label.as_str())
+        .collect::<Vec<_>>();
+
+    assert!(artifact_labels.contains(&"artifacts ready: 1 export receipt(s)"));
+    assert!(artifact_labels.contains(&"artifacts blocked: 1 of 1 | 1 missing"));
+    assert!(artifact_labels.contains(&"artifacts blocked: 1 of 1 | 1 missing identity"));
+    assert_eq!(surface.selected_candidate, None);
+}
+
+#[test]
 fn recovery_surface_reports_missing_target_without_selecting_candidate() {
     let dir = tempdir().expect("create temp dir");
     let target_path = dir.path().join("missing").join("session.json");

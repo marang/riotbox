@@ -1,5 +1,6 @@
 mod artifact_hydration;
 mod executor;
+mod export_receipt;
 mod plan;
 mod scene_movement;
 mod summary;
@@ -13,6 +14,10 @@ pub use artifact_hydration::{
 pub use executor::{
     ReplayExecutionError, ReplayExecutionReport, apply_replay_entry_to_session,
     apply_replay_plan_to_session, replay_supported_action_commands,
+};
+pub use export_receipt::{
+    ExportReceiptReplayValidationError, ExportReceiptReplayValidationPlan,
+    plan_export_receipt_replay_validation,
 };
 pub use plan::{
     ReplayPlanEntry, ReplayPlanError, ReplayTargetPlan, SnapshotReplayPlanComparison,

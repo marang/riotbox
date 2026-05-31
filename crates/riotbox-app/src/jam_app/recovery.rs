@@ -6,13 +6,15 @@ use riotbox_core::persistence::{
 };
 
 use super::{
-    capture_artifacts, runtime_replay_warnings,
+    runtime_replay_warnings,
     state::{JamAppError, JamAppState},
 };
 
+mod artifact_availability;
 mod hydration_guidance;
 mod payload_guidance;
 
+use artifact_availability::recovery_artifact_availability_label;
 use hydration_guidance::supported_artifact_replay_hydration_blocker;
 use payload_guidance::missing_snapshot_payload_guidance;
 
@@ -215,75 +217,6 @@ fn recovery_candidate_view(candidate: &SessionRecoveryCandidate) -> SessionRecov
         detail: recovery_detail(&candidate.kind, &candidate.status, payload_invalid),
         action_hint: recovery_action_hint(trust),
     }
-}
-
-fn recovery_artifact_availability_label(candidate: &SessionRecoveryCandidate) -> String {
-    if !matches!(
-        candidate.status,
-        SessionRecoveryCandidateStatus::ParseableSession
-    ) {
-        return "artifacts unchecked".into();
-    }
-
-    let Ok(session) = load_session_json(&candidate.path) else {
-        return "artifacts unreadable".into();
-    };
-
-    let capture_count = session.captures.len();
-    if capture_count == 0 {
-        return "artifacts n/a | no captures".into();
-    }
-
-    let base_dir = candidate.path.parent();
-    let mut ready = 0usize;
-    let mut missing = 0usize;
-    let mut unreadable = 0usize;
-    let mut missing_identity = 0usize;
-
-    for capture in &session.captures {
-        match capture_artifacts::preflight_capture_artifact_hydration(capture, base_dir) {
-            Ok(_) => ready += 1,
-            Err(
-                capture_artifacts::CaptureArtifactHydrationPreflightError::MissingStoragePath {
-                    ..
-                }
-                | capture_artifacts::CaptureArtifactHydrationPreflightError::MissingSessionFileSet {
-                    ..
-                },
-            ) => missing_identity += 1,
-            Err(capture_artifacts::CaptureArtifactHydrationPreflightError::MissingArtifact {
-                ..
-            }) => missing += 1,
-            Err(
-                capture_artifacts::CaptureArtifactHydrationPreflightError::UnreadableArtifact {
-                    ..
-                }
-                | capture_artifacts::CaptureArtifactHydrationPreflightError::NotFile { .. },
-            ) => unreadable += 1,
-        }
-    }
-
-    if ready == capture_count {
-        return format!("artifacts ready: {capture_count} capture(s)");
-    }
-
-    let mut blockers = Vec::new();
-    if missing_identity > 0 {
-        blockers.push(format!("{missing_identity} missing identity"));
-    }
-    if missing > 0 {
-        blockers.push(format!("{missing} missing"));
-    }
-    if unreadable > 0 {
-        blockers.push(format!("{unreadable} unreadable"));
-    }
-
-    format!(
-        "artifacts blocked: {} of {} | {}",
-        capture_count - ready,
-        capture_count,
-        blockers.join(", ")
-    )
 }
 
 fn recovery_candidate_guidance(
