@@ -844,4 +844,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Seed P016 first implementation slice after P015 closeout
 - [RIOTBOX-1061.md](./RIOTBOX-1061.md)
   Define first P016 export readiness contract from product-export proof
+- [RIOTBOX-1062.md](./RIOTBOX-1062.md)
+  Surface export readiness without claiming full export polish
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
