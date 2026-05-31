@@ -1,6 +1,9 @@
-use riotbox_core::export_readiness::{
-    ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
-    default_unsupported_export_scopes,
+use riotbox_core::{
+    export_readiness::{
+        ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
+        default_unsupported_export_scopes,
+    },
+    session::ExportReceiptState,
 };
 
 fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -30,7 +33,7 @@ fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .unwrap_or("no capture note yet")
         )),
     ];
-    lines.extend(export_readiness_lines());
+    lines.extend(export_readiness_lines(shell));
     lines
 }
 
@@ -70,19 +73,66 @@ fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     lines
 }
 
-fn export_readiness_lines() -> Vec<Line<'static>> {
-    let role = ProductExportRole::FullGridMix.as_str();
-    let boundary = export_boundary_short_label(ProductExportBoundary::FeralGridGeneratedSupport);
-    let unsupported = default_unsupported_export_scopes()
-        .into_iter()
+fn export_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    let Some(receipt) = shell.app.session.export_receipts.last() else {
+        let role = ProductExportRole::FullGridMix.as_str();
+        let boundary =
+            export_boundary_short_label(ProductExportBoundary::FeralGridGeneratedSupport);
+        let unsupported = default_unsupported_export_scopes()
+            .into_iter()
+            .map(unsupported_export_scope_short_label)
+            .collect::<Vec<_>>()
+            .join("/");
+
+        return vec![
+            Line::from(format!("export {role} | {boundary}")),
+            Line::from(format!("reproducible | no {unsupported}")),
+        ];
+    };
+
+    export_receipt_lines(receipt)
+}
+
+fn export_receipt_lines(receipt: &ExportReceiptState) -> Vec<Line<'static>> {
+    let role = receipt.export_role.as_str();
+    let boundary = export_boundary_short_label(receipt.export_boundary);
+    let unsupported = receipt
+        .unsupported_scopes
+        .iter()
+        .copied()
         .map(unsupported_export_scope_short_label)
         .collect::<Vec<_>>()
         .join("/");
+    let path_status = if receipt.artifact_path.is_empty() || receipt.proof_path.is_empty() {
+        "path missing"
+    } else {
+        "paths"
+    };
 
     vec![
         Line::from(format!("export {role} | {boundary}")),
-        Line::from(format!("reproducible | no {unsupported}")),
+        Line::from(format!(
+            "rcpt {} {} | {path_status} | no {unsupported}",
+            compact_export_receipt_id(receipt),
+            export_readiness_status_label(receipt.readiness_status)
+        )),
     ]
+}
+
+fn compact_export_receipt_id(receipt: &ExportReceiptState) -> &str {
+    receipt
+        .receipt_id
+        .as_str()
+        .strip_prefix("export-receipt-")
+        .unwrap_or_else(|| receipt.receipt_id.as_str())
+}
+
+fn export_readiness_status_label(
+    status: riotbox_core::export_readiness::ExportReadinessStatus,
+) -> &'static str {
+    match status {
+        riotbox_core::export_readiness::ExportReadinessStatus::Reproducible => "ok",
+    }
 }
 
 fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str {
