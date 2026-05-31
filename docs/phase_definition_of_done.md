@@ -278,10 +278,10 @@ The Arrangement / Scene System is done for the bounded P014 exit when:
 Current review:
 
 - `docs/reviews/p014_exit_candidate_review_2026-05-30.md`
-- status: exit candidate pending stacked PR CI / merge on 2026-05-31 after the
-  local stacked P014 branches passed `just p014-scene-movement-observer-probe`,
-  `just audio-qa-ci`, and `just ci`; formal closure waits for GitHub CI
-  inspection and merge of the remaining stacked P014 PRs
+- status: closed bounded P014 exit on 2026-05-31 after PRs #1019, #1021,
+  #1022, #1023, and #1024 merged with GitHub `rust-ci` success; the stack
+  passed `just p014-scene-movement-observer-probe`, `just audio-qa-ci`, and
+  `just ci` before review, and P015 is now the active implementation phase
 
 ---
 

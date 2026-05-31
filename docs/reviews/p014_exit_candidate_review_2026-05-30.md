@@ -1,7 +1,8 @@
-# P014 Exit Candidate Review
+# P014 Exit Review
 
 Date: 2026-05-30
-Status: exit candidate pending stacked PR CI / merge
+Closed: 2026-05-31
+Status: closed bounded P014 exit
 
 ## Scope Reviewed
 
@@ -37,11 +38,18 @@ The candidate stack proves:
 
 ## Exit Decision
 
-P014 is an exit candidate, not yet formally closed in the roadmap.
+P014 is closed for the bounded Arrangement / Scene System exit.
 
-Reason: implementation branches are pushed, represented as stacked PRs, and
-locally green. Formal closure should happen after GitHub CI is inspected on the
-remaining stacked P014 PRs and the stack is merged into `main`.
+Reason: the stacked P014 PRs were represented on GitHub, GitHub CI was
+inspected, and the stack merged into `main`:
+
+- PR #1019: section-aware Source Monitor repositioning
+- PR #1021: scene timing trust safety matrix
+- PR #1022: scene movement observer/audio gate
+- PR #1023: bounded scene arrange extension contract
+- PR #1024: exit evidence and roadmap state
+
+P015 Productization Alpha is the next active implementation phase.
 
 ## Deferred Beyond P014
 
