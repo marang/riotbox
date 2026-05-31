@@ -880,4 +880,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add structural export QA gate for stem lineage evidence
 - [RIOTBOX-1079.md](./RIOTBOX-1079.md)
   Add structural export QA gate for fallback-collapse evidence
+- [RIOTBOX-1080.md](./RIOTBOX-1080.md)
+  Tighten export QA evidence identity validation before stem scopes
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
