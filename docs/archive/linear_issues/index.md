@@ -834,4 +834,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Point in-app first-run help at Recipe 16 taste/proof path
 - [RIOTBOX-1056.md](./RIOTBOX-1056.md)
   Add P015 Help overlay height/readability audit
+- [RIOTBOX-1057.md](./RIOTBOX-1057.md)
+  Draft P015 exit evidence checklist
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
