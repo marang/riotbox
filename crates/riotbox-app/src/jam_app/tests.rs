@@ -19,6 +19,7 @@ include!("tests/recovery_hydration_guidance.rs");
 include!("tests/recovery_payload_guidance.rs");
 include!("tests/recovery_replay_family_diagnostics.rs");
 include!("tests/artifact_hydration_preflight.rs");
+include!("tests/export_receipt_hydration_preflight.rs");
 include!("tests/feral_support_runtime_controls.rs");
 include!("tests/transport_scene_select.rs");
 include!("tests/commit_pipeline_order.rs");

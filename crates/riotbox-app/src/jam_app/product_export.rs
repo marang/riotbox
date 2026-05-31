@@ -1,5 +1,5 @@
 use std::{
-    fs,
+    fs, io,
     io::Read,
     path::{Path, PathBuf},
 };
@@ -21,6 +21,36 @@ use riotbox_core::{
 use sha2::{Digest, Sha256};
 
 use super::{JamAppError, JamAppState, QueueControlResult, helpers::update_logged_action_result};
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub(in crate::jam_app) enum ExportReceiptArtifactPreflightError {
+    MissingArtifactPath {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+    },
+    MissingProofPath {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+    },
+    MissingSessionFileSet {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+    },
+    MissingExportArtifact {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+        path: PathBuf,
+    },
+    MissingProofArtifact {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+        path: PathBuf,
+    },
+    NotFile {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+        path: PathBuf,
+    },
+    UnreadableArtifact {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+        path: PathBuf,
+        reason: String,
+    },
+}
 
 impl JamAppState {
     pub fn queue_product_mix_export(
@@ -235,4 +265,96 @@ fn copy_file_if_distinct(from: &Path, to: &Path) -> Result<(), JamAppError> {
         fs::copy(from, to)?;
     }
     Ok(())
+}
+
+pub(in crate::jam_app) fn preflight_export_receipt_artifacts(
+    receipt: &ExportReceiptState,
+    base_dir: Option<&Path>,
+) -> Result<(PathBuf, PathBuf), ExportReceiptArtifactPreflightError> {
+    let artifact_path = resolve_receipt_path(
+        receipt,
+        &receipt.artifact_path,
+        base_dir,
+        ReceiptPathKind::Artifact,
+    )?;
+    let proof_path = resolve_receipt_path(
+        receipt,
+        &receipt.proof_path,
+        base_dir,
+        ReceiptPathKind::Proof,
+    )?;
+
+    require_receipt_file(receipt, artifact_path, ReceiptPathKind::Artifact).and_then(|artifact| {
+        require_receipt_file(receipt, proof_path, ReceiptPathKind::Proof)
+            .map(|proof| (artifact, proof))
+    })
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+enum ReceiptPathKind {
+    Artifact,
+    Proof,
+}
+
+fn resolve_receipt_path(
+    receipt: &ExportReceiptState,
+    path: &str,
+    base_dir: Option<&Path>,
+    kind: ReceiptPathKind,
+) -> Result<PathBuf, ExportReceiptArtifactPreflightError> {
+    let path = path.trim();
+    if path.is_empty() {
+        return Err(match kind {
+            ReceiptPathKind::Artifact => ExportReceiptArtifactPreflightError::MissingArtifactPath {
+                receipt_id: receipt.receipt_id.clone(),
+            },
+            ReceiptPathKind::Proof => ExportReceiptArtifactPreflightError::MissingProofPath {
+                receipt_id: receipt.receipt_id.clone(),
+            },
+        });
+    }
+
+    let path = Path::new(path);
+    if path.is_absolute() {
+        return Ok(path.to_path_buf());
+    }
+
+    let base_dir =
+        base_dir.ok_or_else(
+            || ExportReceiptArtifactPreflightError::MissingSessionFileSet {
+                receipt_id: receipt.receipt_id.clone(),
+            },
+        )?;
+    Ok(base_dir.join(path))
+}
+
+fn require_receipt_file(
+    receipt: &ExportReceiptState,
+    path: PathBuf,
+    kind: ReceiptPathKind,
+) -> Result<PathBuf, ExportReceiptArtifactPreflightError> {
+    match std::fs::metadata(&path) {
+        Ok(metadata) if metadata.is_file() => Ok(path),
+        Ok(_) => Err(ExportReceiptArtifactPreflightError::NotFile {
+            receipt_id: receipt.receipt_id.clone(),
+            path,
+        }),
+        Err(error) if error.kind() == io::ErrorKind::NotFound => Err(match kind {
+            ReceiptPathKind::Artifact => {
+                ExportReceiptArtifactPreflightError::MissingExportArtifact {
+                    receipt_id: receipt.receipt_id.clone(),
+                    path,
+                }
+            }
+            ReceiptPathKind::Proof => ExportReceiptArtifactPreflightError::MissingProofArtifact {
+                receipt_id: receipt.receipt_id.clone(),
+                path,
+            },
+        }),
+        Err(error) => Err(ExportReceiptArtifactPreflightError::UnreadableArtifact {
+            receipt_id: receipt.receipt_id.clone(),
+            path,
+            reason: error.to_string(),
+        }),
+    }
 }

@@ -31,18 +31,23 @@ use riotbox_core::{
         ActorType, CaptureLengthIntent, CommitBoundary, GhostMode, Quantization,
         SourceMonitorMode, TargetScope, UndoPolicy,
     },
-    export_readiness::{ProductExportBoundary, ProductExportRole, UnsupportedExportScope},
+    export_readiness::{
+        ExportReadinessStatus, ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
+    },
     ghost::{
         GhostSuggestedAction, GhostSuggestionBlocker, GhostSuggestionBlockerKind,
         GhostSuggestionConfidence, GhostSuggestionSafety, GhostWatchSuggestion, GhostWatchTool,
     },
-    ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SectionId, SnapshotId, SourceId},
+    ids::{
+        ActionId, AssetId, BankId, CaptureId, ExportReceiptId, PadId, SceneId, SectionId,
+        SnapshotId, SourceId,
+    },
     persistence::{
         load_session_json, load_source_graph_json, save_session_json, save_source_graph_json,
     },
     session::{
         ActionCommitRecord, CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType,
-        GhostBudgetState, GhostState, GhostSuggestionRecord, GraphStorageMode,
+        ExportReceiptState, GhostBudgetState, GhostState, GhostSuggestionRecord, GraphStorageMode,
         Mc202PhraseIntentState, Mc202PhraseVariantState, Mc202RoleState,
         SceneMovementDirectionState, SceneMovementLaneIntentState, SessionFile, Snapshot,
         SourceGraphRef, SourceRef, SourceTimingGridConfirmationState,
