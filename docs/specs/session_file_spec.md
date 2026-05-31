@@ -296,6 +296,35 @@ Rules:
 - snapshots are only for undo restore, not a second arrangement or phrase system
 - undo must refresh the typed render projection after applying a snapshot
 
+### 8.8 Export receipts
+
+Future product export actions must create explicit export receipts instead of
+hiding file-writing truth in app-local state.
+
+Minimum receipt fields:
+
+- receipt id
+- created by action id
+- created at timestamp
+- export role
+- export boundary
+- artifact path or artifact URI
+- export hash
+- normalized manifest hash
+- readiness status
+- unsupported-scope flags
+
+Rules:
+
+- export receipts describe completed side effects; they are not musical undo
+  snapshots
+- replay may validate receipt metadata or report missing artifacts, but must not
+  blindly rewrite files without an explicit export request
+- the first P016 receipt boundary is `full_grid_mix` from the deterministic
+  Feral-grid generated-support export proof
+- stem package export, live recording export, DAW export, and host-audio soak
+  require later receipt fields and QA gates before they are claimed
+
 ---
 
 ## 9. Action Log
