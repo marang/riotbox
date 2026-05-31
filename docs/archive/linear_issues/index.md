@@ -842,4 +842,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Mark P015 closed in roadmap and phase DoD
 - [RIOTBOX-1060.md](./RIOTBOX-1060.md)
   Seed P016 first implementation slice after P015 closeout
+- [RIOTBOX-1061.md](./RIOTBOX-1061.md)
+  Define first P016 export readiness contract from product-export proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
