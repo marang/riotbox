@@ -175,6 +175,10 @@ fn shell_state_handles_help_refresh_and_action_keys() {
         ShellKeyOutcome::QueueW30Resample
     );
     assert_eq!(
+        shell.handle_key_code(KeyCode::Char('E')),
+        ShellKeyOutcome::QueueProductMixExport
+    );
+    assert_eq!(
         shell.handle_key_code(KeyCode::Char('C')),
         ShellKeyOutcome::ConfirmSourceTimingGrid
     );

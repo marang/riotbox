@@ -117,6 +117,7 @@ pub enum ShellKeyOutcome {
     QueueW30LiveRecall,
     QueueW30Audition,
     QueueW30Resample,
+    QueueProductMixExport,
     ConfirmSourceTimingGrid,
     RevertSourceTimingGrid,
     NavigateSourceMapPreviousBar,
@@ -162,6 +163,7 @@ const GESTURE_FREEZE: &str = "freeze";
 const GESTURE_RECALL: &str = "recall";
 const GESTURE_AUDITION: &str = "audition";
 const GESTURE_RESAMPLE: &str = "resample";
+const GESTURE_EXPORT: &str = "export";
 const GESTURE_TOUCH: &str = "touch";
 const GESTURE_UNDO: &str = "undo";
 
@@ -219,6 +221,7 @@ const HELP_ADVANCED_GESTURES_C: &[(&str, &str)] = &[
 ];
 
 const HELP_ADVANCED_GESTURES_D: &[(&str, &str)] = &[
+    ("E", GESTURE_EXPORT),
     ("D", GESTURE_DAMAGE),
     ("z", GESTURE_FREEZE),
     ("l", GESTURE_RECALL),

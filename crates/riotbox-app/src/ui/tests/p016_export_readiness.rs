@@ -39,13 +39,45 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
     assert!(inspect.contains("export full_grid_mix | feral-grid"), "{inspect}");
-    assert!(inspect.contains("rcpt a-0004 ok | paths | no stem/DAW"), "{inspect}");
+    assert!(
+        inspect.contains("a-0004 ok | wav+proof | no stem/DAW"),
+        "{inspect}"
+    );
     assert!(!inspect.contains("queue export"), "{inspect}");
 
     shell.jam_mode = JamViewMode::Perform;
     let perform = render_jam_shell_snapshot(&shell, 120, 34);
     assert!(!perform.contains("receipt export-receipt-a-0004"), "{perform}");
     assert!(!perform.contains("queue export"), "{perform}");
+}
+
+#[test]
+fn jam_inspect_surfaces_export_failure_feedback() {
+    let mut shell = sample_shell_state();
+    shell.app.queue_product_mix_export(900, None);
+    let action_id = shell
+        .app
+        .queue
+        .pending_actions()
+        .into_iter()
+        .find(|action| action.command == ActionCommand::ExportProductMix)
+        .expect("pending export action")
+        .id;
+    assert!(
+        shell
+            .app
+            .queue
+            .reject(action_id, "export artifact hash mismatch for full_grid_mix")
+    );
+    shell.jam_mode = JamViewMode::Inspect;
+
+    let inspect = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(inspect.contains("export full_grid_mix | failed"), "{inspect}");
+    assert!(
+        inspect.contains("a-0004 | export artifact hash"),
+        "{inspect}"
+    );
 }
 
 #[test]

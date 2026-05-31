@@ -1,4 +1,5 @@
 use riotbox_core::{
+    action::{Action, ActionCommand, ActionStatus},
     export_readiness::{
         ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
         default_unsupported_export_scopes,
@@ -74,7 +75,17 @@ fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn export_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
-    let Some(receipt) = shell.app.session.export_receipts.last() else {
+    let latest_receipt = shell.app.session.export_receipts.last();
+    let latest_failure = latest_export_failure(shell);
+    if let Some(failure) = latest_failure
+        && latest_receipt
+            .map(|receipt| failure.requested_at > receipt.created_at)
+            .unwrap_or(true)
+    {
+        return export_failure_lines(failure);
+    }
+
+    let Some(receipt) = latest_receipt else {
         let role = ProductExportRole::FullGridMix.as_str();
         let boundary =
             export_boundary_short_label(ProductExportBoundary::FeralGridGeneratedSupport);
@@ -106,17 +117,52 @@ fn export_receipt_lines(receipt: &ExportReceiptState) -> Vec<Line<'static>> {
     let path_status = if receipt.artifact_path.is_empty() || receipt.proof_path.is_empty() {
         "path missing"
     } else {
-        "paths"
+        "wav+proof"
     };
 
     vec![
         Line::from(format!("export {role} | {boundary}")),
         Line::from(format!(
-            "rcpt {} {} | {path_status} | no {unsupported}",
+            "{} {} | {path_status} | no {unsupported}",
             compact_export_receipt_id(receipt),
             export_readiness_status_label(receipt.readiness_status)
         )),
     ]
+}
+
+fn latest_export_failure(shell: &JamShellState) -> Option<&Action> {
+    shell
+        .app
+        .queue
+        .history()
+        .iter()
+        .rev()
+        .find(|action| {
+            action.command == ActionCommand::ExportProductMix
+                && matches!(action.status, ActionStatus::Rejected | ActionStatus::Failed)
+        })
+}
+
+fn export_failure_lines(action: &Action) -> Vec<Line<'static>> {
+    let reason = action
+        .result
+        .as_ref()
+        .map(|result| compact_export_failure_reason(&result.summary))
+        .unwrap_or_else(|| "unknown reason".into());
+
+    vec![
+        Line::from("export full_grid_mix | failed"),
+        Line::from(format!("a-{:04} | {reason}", action.id.0)),
+    ]
+}
+
+fn compact_export_failure_reason(reason: &str) -> String {
+    const MAX_LEN: usize = 52;
+    let reason = reason.trim();
+    if reason.len() <= MAX_LEN {
+        return reason.into();
+    }
+    format!("{}...", reason.chars().take(MAX_LEN).collect::<String>())
 }
 
 fn compact_export_receipt_id(receipt: &ExportReceiptState) -> &str {
