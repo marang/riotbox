@@ -846,4 +846,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Define first P016 export readiness contract from product-export proof
 - [RIOTBOX-1062.md](./RIOTBOX-1062.md)
   Surface export readiness without claiming full export polish
+- [RIOTBOX-1063.md](./RIOTBOX-1063.md)
+  Draft P016 export action boundary before file-writing workflow
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
