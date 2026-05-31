@@ -31,6 +31,8 @@ Key shell cues after this slice:
 - `Jam -> Warnings / trust` may show proof reminders such as `proof none yet |
   audible moves need output evidence`; this is deliberately not a claim that an
   audio proof passed
+- `docs/screenshots/jam_taste_proof_glossary.md` is the compact interpretation
+  guide for the taste/proof vocabulary used by this baseline
 
 Interpretation:
 
