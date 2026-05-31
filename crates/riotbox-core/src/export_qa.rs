@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::session::{ExportArtifactRole, ExportArtifactSetEntry};
+use crate::session::{ExportArtifactAudioMetrics, ExportArtifactRole, ExportArtifactSetEntry};
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StemPackageArtifactSetQaReport {
@@ -40,6 +40,8 @@ pub enum StemPackageArtifactSetQaFailureKind {
     DuplicateRoleArtifact,
     MissingArtifactLocation,
     MissingArtifactHash,
+    InsufficientNonSilenceMetrics,
+    SilentArtifactMetrics,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -89,7 +91,7 @@ pub fn validate_stem_package_artifact_set_evidence(
         claimed_roles: claimed_roles.to_vec(),
         checked_artifact_count: artifact_set.len(),
         failures,
-        deferred_checks: deferred_stem_audio_checks(),
+        deferred_checks: deferred_stem_audio_checks(artifact_set, claimed_roles),
     }
 }
 
@@ -142,6 +144,55 @@ fn validate_stem_artifact_identity(
             StemPackageArtifactSetQaFailureKind::MissingArtifactHash,
         ));
     }
+    if let Some(metrics) = &artifact.audio_metrics {
+        validate_non_silence_metrics(role, metrics, failures);
+    }
+}
+
+fn validate_non_silence_metrics(
+    role: ExportArtifactRole,
+    metrics: &ExportArtifactAudioMetrics,
+    failures: &mut Vec<StemPackageArtifactSetQaFailure>,
+) {
+    if metrics_prove_silence(metrics) {
+        failures.push(failure(
+            Some(role),
+            StemPackageArtifactSetQaFailureKind::SilentArtifactMetrics,
+        ));
+        return;
+    }
+
+    if !metrics_can_prove_activity(metrics) {
+        failures.push(failure(
+            Some(role),
+            StemPackageArtifactSetQaFailureKind::InsufficientNonSilenceMetrics,
+        ));
+    }
+}
+
+fn metrics_prove_silence(metrics: &ExportArtifactAudioMetrics) -> bool {
+    if matches!(metrics.total_frame_count, Some(0)) {
+        return true;
+    }
+    if matches!(
+        (metrics.silent_frame_count, metrics.total_frame_count),
+        (Some(silent), Some(total)) if total > 0 && silent >= total
+    ) {
+        return true;
+    }
+    matches!(
+        (metrics.peak_amplitude_micros, metrics.rms_amplitude_micros),
+        (Some(0), Some(0))
+    )
+}
+
+fn metrics_can_prove_activity(metrics: &ExportArtifactAudioMetrics) -> bool {
+    matches!(metrics.peak_amplitude_micros, Some(value) if value > 0)
+        || matches!(metrics.rms_amplitude_micros, Some(value) if value > 0)
+        || matches!(
+            (metrics.silent_frame_count, metrics.total_frame_count),
+            (Some(silent), Some(total)) if total > 0 && silent < total
+        )
 }
 
 fn failure(
@@ -151,19 +202,33 @@ fn failure(
     StemPackageArtifactSetQaFailure { role, kind }
 }
 
-fn deferred_stem_audio_checks() -> Vec<StemPackageDeferredQaCheck> {
-    vec![
-        StemPackageDeferredQaCheck {
+fn deferred_stem_audio_checks(
+    artifact_set: &[ExportArtifactSetEntry],
+    claimed_roles: &[ExportArtifactRole],
+) -> Vec<StemPackageDeferredQaCheck> {
+    let mut checks = Vec::new();
+    if claimed_roles
+        .iter()
+        .filter(|role| role.is_stem_role())
+        .any(|role| {
+            artifact_set
+                .iter()
+                .find(|artifact| artifact.role == *role)
+                .is_none_or(|artifact| artifact.audio_metrics.is_none())
+        })
+    {
+        checks.push(StemPackageDeferredQaCheck {
             check: StemPackageDeferredQaCheckKind::PerStemNonSilence,
             status: StemPackageDeferredQaCheckStatus::AspirationalUntilAudioEvidenceAttached,
             reason: "stem export does not yet attach per-stem audio metrics".into(),
-        },
-        StemPackageDeferredQaCheck {
-            check: StemPackageDeferredQaCheckKind::PerStemFallbackCollapse,
-            status: StemPackageDeferredQaCheckStatus::AspirationalUntilAudioEvidenceAttached,
-            reason: "stem export does not yet attach source-vs-fallback comparison metrics".into(),
-        },
-    ]
+        });
+    }
+    checks.push(StemPackageDeferredQaCheck {
+        check: StemPackageDeferredQaCheckKind::PerStemFallbackCollapse,
+        status: StemPackageDeferredQaCheckStatus::AspirationalUntilAudioEvidenceAttached,
+        reason: "stem export does not yet attach source-vs-fallback comparison metrics".into(),
+    });
+    checks
 }
 
 #[cfg(test)]
@@ -197,6 +262,82 @@ mod tests {
                 && check.status
                     == StemPackageDeferredQaCheckStatus::AspirationalUntilAudioEvidenceAttached
         }));
+    }
+
+    #[test]
+    fn stem_package_gate_enforces_non_silence_when_metrics_exist() {
+        let artifact_set = vec![stem_artifact_with_metrics(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "a",
+            active_metrics(),
+        )];
+
+        let report = validate_stem_package_artifact_set_evidence(
+            &artifact_set,
+            &[ExportArtifactRole::StemDrums],
+        );
+
+        assert!(report.passed_structure_only());
+        assert!(
+            !report
+                .deferred_checks
+                .iter()
+                .any(|check| check.check == StemPackageDeferredQaCheckKind::PerStemNonSilence)
+        );
+        assert!(report
+            .deferred_checks
+            .iter()
+            .any(|check| check.check == StemPackageDeferredQaCheckKind::PerStemFallbackCollapse));
+    }
+
+    #[test]
+    fn stem_package_gate_fails_metrics_that_prove_silence() {
+        let artifact_set = vec![stem_artifact_with_metrics(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "a",
+            silent_metrics(),
+        )];
+
+        let report = validate_stem_package_artifact_set_evidence(
+            &artifact_set,
+            &[ExportArtifactRole::StemDrums],
+        );
+
+        assert_eq!(report.status, StemPackageArtifactSetQaStatus::Failed);
+        assert!(report.failures.contains(&failure(
+            Some(ExportArtifactRole::StemDrums),
+            StemPackageArtifactSetQaFailureKind::SilentArtifactMetrics,
+        )));
+    }
+
+    #[test]
+    fn stem_package_gate_fails_metrics_without_activity_evidence() {
+        let artifact_set = vec![stem_artifact_with_metrics(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "a",
+            ExportArtifactAudioMetrics {
+                peak_milli_dbfs: Some(-12_000),
+                rms_milli_dbfs: None,
+                peak_amplitude_micros: None,
+                rms_amplitude_micros: None,
+                silent_frame_count: None,
+                total_frame_count: None,
+            },
+        )];
+
+        let report = validate_stem_package_artifact_set_evidence(
+            &artifact_set,
+            &[ExportArtifactRole::StemDrums],
+        );
+
+        assert_eq!(report.status, StemPackageArtifactSetQaStatus::Failed);
+        assert!(report.failures.contains(&failure(
+            Some(ExportArtifactRole::StemDrums),
+            StemPackageArtifactSetQaFailureKind::InsufficientNonSilenceMetrics,
+        )));
     }
 
     #[test]
@@ -285,6 +426,39 @@ mod tests {
             sample_rate_hz: None,
             channel_count: None,
             duration_ms: None,
+        }
+    }
+
+    fn stem_artifact_with_metrics(
+        role: ExportArtifactRole,
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+        metrics: ExportArtifactAudioMetrics,
+    ) -> ExportArtifactSetEntry {
+        let mut artifact = stem_artifact(role, path, sha256);
+        artifact.audio_metrics = Some(metrics);
+        artifact
+    }
+
+    fn active_metrics() -> ExportArtifactAudioMetrics {
+        ExportArtifactAudioMetrics {
+            peak_milli_dbfs: Some(-120),
+            rms_milli_dbfs: Some(-6_000),
+            peak_amplitude_micros: Some(986_000),
+            rms_amplitude_micros: Some(125_000),
+            silent_frame_count: Some(0),
+            total_frame_count: Some(96_000),
+        }
+    }
+
+    fn silent_metrics() -> ExportArtifactAudioMetrics {
+        ExportArtifactAudioMetrics {
+            peak_milli_dbfs: None,
+            rms_milli_dbfs: None,
+            peak_amplitude_micros: Some(0),
+            rms_amplitude_micros: Some(0),
+            silent_frame_count: Some(96_000),
+            total_frame_count: Some(96_000),
         }
     }
 }

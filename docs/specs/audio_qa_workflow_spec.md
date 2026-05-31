@@ -962,11 +962,12 @@ Today the repo already has:
   is the current CI-safe stem-package gate skeleton. It validates only
   structure: claimed roles must be stem roles, each claimed role must have
   exactly one artifact-set entry, and each entry must carry a location plus
-  sha256. Export artifact-set entries can now carry optional per-artifact audio
-  metrics, but this skeleton still reports per-stem non-silence and
-  fallback-collapse checks as deferred/aspirational until those metrics are
-  populated by a real render/export path and comparison evidence exists.
-  Passing this skeleton does not claim a full stem package export.
+  sha256. When a claimed stem artifact includes audio metrics, the gate fails
+  metrics that prove silence or do not contain enough activity evidence. Missing
+  metrics keep per-stem non-silence deferred/aspirational, and
+  fallback-collapse remains deferred until source-vs-fallback comparison
+  evidence exists. Passing this skeleton does not claim a full stem package
+  export.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
