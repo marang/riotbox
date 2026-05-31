@@ -76,6 +76,19 @@ fn renders_help_overlay_with_jam_taste_and_proof_guidance() {
 }
 
 #[test]
+fn help_overlay_keeps_core_sections_visible_in_first_run() {
+    let mut shell = first_run_shell_state();
+    shell.show_help = true;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("First run"), "{rendered}");
+    assert!(rendered.contains("Jam taste / proof"), "{rendered}");
+    assert!(rendered.contains("Primary gestures"), "{rendered}");
+    assert!(rendered.contains("Advanced / lane gestures"), "{rendered}");
+}
+
+#[test]
 fn renders_help_overlay_with_pending_scene_jump_cue() {
     let mut shell = sample_shell_state();
     assert_eq!(
@@ -99,6 +112,22 @@ fn renders_help_overlay_with_pending_scene_jump_cue() {
         rendered.contains("2: confirm the landed trail on Log"),
         "{rendered}"
     );
+}
+
+#[test]
+fn help_overlay_keeps_scene_taste_and_primary_sections_visible_together() {
+    let mut shell = sample_shell_state();
+    assert_eq!(
+        shell.app.queue_scene_select(300),
+        crate::jam_app::QueueControlResult::Enqueued
+    );
+    shell.show_help = true;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("Scene timing"), "{rendered}");
+    assert!(rendered.contains("Jam taste / proof"), "{rendered}");
+    assert!(rendered.contains("Primary gestures"), "{rendered}");
 }
 
 #[test]
