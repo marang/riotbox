@@ -874,4 +874,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make export recovery preflight artifact-set aware before wider scopes
 - [RIOTBOX-1075.md](./RIOTBOX-1075.md)
   Add source and capture lineage refs to export artifact evidence
+- [RIOTBOX-1077.md](./RIOTBOX-1077.md)
+  Split export QA tests before next gate expansion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
