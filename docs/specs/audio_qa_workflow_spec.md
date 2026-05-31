@@ -793,6 +793,16 @@ Today the repo already has:
 - the committed-fixture JSON summary path is smoke-tested in `just audio-qa-ci` and the named GitHub Actions audio QA step
 - observer/audio JSON summaries include a top-level `schema` and `schema_version` marker plus control-path `commit_count`, `commit_boundaries`, and optional observer-side Source Timing Intelligence readiness fields so automation can reject unexpected summary shapes and assert boundary/timing coverage before making QA decisions
 - the committed-fixture JSON smoke requires both `control_path.present` and `output_path.present`, keeping the machine-readable path aligned with the control-plus-output proof rule
+- observer snapshots include P014 Scene evidence: active / restore / next scene,
+  landed movement intent, Arrangement Scene contract readiness, source-locked
+  movement permission, and Source Monitor scene-anchor state
+- observer/audio JSON summaries include `observer_scene_movement` and
+  `scene_movement_audio_evidence`; strict evidence rejects source-locked scene
+  movement when the observer lacks a Source Monitor anchor or output metrics are
+  missing / collapsed
+- `just p014-scene-movement-observer-probe` is wired into `just audio-qa-ci` and
+  proves a headless `scene.launch` path through observer NDJSON validation and
+  strict observer/audio JSON correlation
 - observer/audio summaries can surface Feral-grid `source_grid_output_drift`
   evidence and strict correlation requires Feral-grid manifests to include
   pack-level `source_grid_output_drift` plus lane-specific

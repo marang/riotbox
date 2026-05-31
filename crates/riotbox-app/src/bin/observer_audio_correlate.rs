@@ -79,6 +79,9 @@ mod lane_recipe_tests;
 #[path = "observer_audio_correlate/observer_source_timing_tests.rs"]
 mod observer_source_timing_tests;
 #[cfg(test)]
+#[path = "observer_audio_correlate/scene_movement_tests.rs"]
+mod scene_movement_tests;
+#[cfg(test)]
 #[path = "observer_audio_correlate/source_grid_output_drift_tests.rs"]
 mod source_grid_output_drift_tests;
 #[cfg(test)]

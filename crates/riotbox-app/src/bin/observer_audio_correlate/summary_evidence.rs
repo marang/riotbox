@@ -30,6 +30,7 @@ fn output_path_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
         feral_grid_metric_failures(summary)
     };
     failures.extend(metric_failures);
+    failures.extend(scene_movement_audio_evidence_failures(summary));
 
     failures
 }
@@ -68,6 +69,46 @@ fn feral_grid_metric_failures(summary: &CorrelationSummary) -> Vec<String> {
     ));
     failures.extend(w30_source_loop_closure_failures(summary));
     failures
+}
+
+fn scene_movement_audio_evidence_failures(summary: &CorrelationSummary) -> Vec<String> {
+    let mut failures = Vec::new();
+
+    if summary.observer_scene_movement_malformed {
+        failures.push("observer_scene_movement=malformed".to_string());
+        return failures;
+    }
+
+    let Some(movement) = summary.observer_scene_movement.as_ref() else {
+        return failures;
+    };
+
+    if summary.manifest_result != "pass" {
+        failures.push(format!(
+            "scene_movement.manifest_result={}",
+            summary.manifest_result
+        ));
+    }
+    if !scene_movement_has_noncollapsed_output_metric(summary) {
+        failures.push("scene_movement.output_metric=missing_or_collapsed".to_string());
+    }
+    if movement.can_use_source_locked_scene_movement && movement.source_anchor_seconds.is_none() {
+        failures.push("scene_movement.source_anchor_seconds=missing".to_string());
+    }
+
+    failures
+}
+
+fn scene_movement_has_noncollapsed_output_metric(summary: &CorrelationSummary) -> bool {
+    [
+        summary.full_mix_rms,
+        summary.full_mix_low_band_rms,
+        summary.mc202_question_answer_delta_rms,
+        summary.w30_candidate_rms,
+        summary.w30_rms_delta,
+    ]
+    .into_iter()
+    .any(metric_is_noncollapsed)
 }
 
 fn mc202_bass_pressure_failures(summary: &CorrelationSummary) -> Vec<String> {

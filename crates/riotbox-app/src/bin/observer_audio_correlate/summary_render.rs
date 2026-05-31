@@ -10,6 +10,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - Commit count: `{}`\n\
          - Commit boundaries: `{}`\n\n\
          - Observer source timing: `{}`\n\n\
+         - Observer scene movement: `{}`\n\n\
          ## Output Path\n\n\
          - Pack id: `{}`\n\
          - Manifest result: `{}`\n\
@@ -35,6 +36,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
          - MC-202 bass-pressure origin: `{}` applied `{}`\n\
          - W-30 source-grid alignment: `{}`\n\n\
          - W-30 source-loop closure: `{}`\n\n\
+         - Scene movement/audio evidence: `{}`\n\n\
          - W-30 candidate RMS: `{}`\n\
          - W-30 candidate active-sample ratio: `{}`\n\
          - W-30 RMS delta: `{}`\n\n\
@@ -59,6 +61,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
             summary.commit_boundaries.join(", ")
         },
         format_observer_source_timing(summary),
+        format_observer_scene_movement(summary),
         summary.pack_id,
         summary.manifest_result,
         summary.artifact_count,
@@ -84,6 +87,7 @@ fn render_markdown(summary: &CorrelationSummary) -> String {
         format_optional_bool(summary.mc202_bass_pressure_applied),
         format_source_grid_alignment(&summary.w30_source_grid_alignment),
         format_w30_source_loop_closure(summary),
+        format_scene_movement_audio_evidence(summary),
         format_optional_f64(summary.w30_candidate_rms),
         format_optional_f64(summary.w30_candidate_active_sample_ratio),
         format_optional_f64(summary.w30_rms_delta),
@@ -133,6 +137,7 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "primary_warning_code": &timing.primary_warning_code,
                 "warning_codes": &timing.warning_codes,
             })),
+            "observer_scene_movement": summary.observer_scene_movement.as_ref().map(observer_scene_movement_json),
         },
         "output_path": {
             "present": output_path_present(summary),
@@ -196,6 +201,10 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
                 "issues": &alignment.issues,
             })),
             "lane_recipe_cases": lane_recipe_cases_json(&summary.lane_recipe_cases),
+            "scene_movement_audio_evidence": serde_json::json!({
+                "present": summary.observer_scene_movement.is_some(),
+                "issues": scene_movement_audio_evidence_failures(summary),
+            }),
             "metrics": {
                 "full_mix_rms": summary.full_mix_rms,
                 "full_mix_low_band_rms": summary.full_mix_low_band_rms,
@@ -221,6 +230,24 @@ fn render_json(summary: &CorrelationSummary) -> Result<String, serde_json::Error
     .map(|json| json + "\n")
 }
 
+fn observer_scene_movement_json(movement: &ObserverSceneMovementEvidence) -> serde_json::Value {
+    serde_json::json!({
+        "active_scene": &movement.active_scene,
+        "kind": &movement.kind,
+        "direction": &movement.direction,
+        "tr909_intent": &movement.tr909_intent,
+        "mc202_intent": &movement.mc202_intent,
+        "intensity": movement.intensity,
+        "from_scene": &movement.from_scene,
+        "to_scene": &movement.to_scene,
+        "committed_bar_index": movement.committed_bar_index,
+        "committed_phrase_index": movement.committed_phrase_index,
+        "can_use_source_locked_scene_movement": movement.can_use_source_locked_scene_movement,
+        "source_anchor_seconds": movement.source_anchor_seconds,
+        "source_anchor_position_beats": movement.source_anchor_position_beats,
+    })
+}
+
 fn format_optional_f64(value: Option<f64>) -> String {
     value.map_or_else(|| "unknown".to_string(), |value| format!("{value:.6}"))
 }
@@ -238,6 +265,43 @@ fn format_source_timing_bpm_agreement(summary: &CorrelationSummary) -> String {
         .as_ref()
         .and_then(|timing| timing.bpm_agrees_with_grid)
         .map_or_else(|| "unknown".to_string(), |value| yes_no(value).to_string())
+}
+
+fn format_observer_scene_movement(summary: &CorrelationSummary) -> String {
+    if summary.observer_scene_movement_malformed {
+        return "malformed".to_string();
+    }
+    summary.observer_scene_movement.as_ref().map_or_else(
+        || "none".to_string(),
+        |movement| {
+            format!(
+                "{} {} -> {} direction={} 909={} 202={} intensity={:.3} bar={} phrase={} source_locked={} source_anchor={}",
+                movement.kind,
+                movement.from_scene.as_deref().unwrap_or("none"),
+                movement.to_scene,
+                movement.direction,
+                movement.tr909_intent,
+                movement.mc202_intent,
+                movement.intensity,
+                movement.committed_bar_index,
+                movement.committed_phrase_index,
+                yes_no(movement.can_use_source_locked_scene_movement),
+                format_optional_f64(movement.source_anchor_seconds)
+            )
+        },
+    )
+}
+
+fn format_scene_movement_audio_evidence(summary: &CorrelationSummary) -> String {
+    let failures = scene_movement_audio_evidence_failures(summary);
+    if summary.observer_scene_movement.is_none() && !summary.observer_scene_movement_malformed {
+        return "none".to_string();
+    }
+    if failures.is_empty() {
+        "pass".to_string()
+    } else {
+        failures.join(", ")
+    }
 }
 
 fn format_source_timing_readiness(summary: &CorrelationSummary) -> String {

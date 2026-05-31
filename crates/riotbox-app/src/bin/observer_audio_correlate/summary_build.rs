@@ -9,6 +9,8 @@ struct CorrelationSummary {
     commit_boundaries: Vec<String>,
     observer_source_timing: Option<ObserverSourceTimingReadiness>,
     observer_source_timing_malformed: bool,
+    observer_scene_movement: Option<ObserverSceneMovementEvidence>,
+    observer_scene_movement_malformed: bool,
     pack_id: String,
     manifest_result: String,
     artifact_count: usize,
@@ -39,6 +41,22 @@ struct CorrelationSummary {
     w30_source_loop_closure: Option<W30SourceLoopClosureEvidence>,
     w30_source_loop_closure_malformed: bool,
     lane_recipe_cases: Vec<LaneRecipeCaseEvidence>,
+}
+#[derive(Clone, Debug, PartialEq)]
+struct ObserverSceneMovementEvidence {
+    active_scene: Option<String>,
+    kind: String,
+    direction: String,
+    tr909_intent: String,
+    mc202_intent: String,
+    intensity: f64,
+    from_scene: Option<String>,
+    to_scene: String,
+    committed_bar_index: u64,
+    committed_phrase_index: u64,
+    can_use_source_locked_scene_movement: bool,
+    source_anchor_seconds: Option<f64>,
+    source_anchor_position_beats: Option<f64>,
 }
 #[derive(Debug, PartialEq)]
 struct SourceTimingEvidence {
@@ -123,6 +141,8 @@ fn build_summary_from_events(
     let (commit_count, commit_boundaries) = collect_commit_summary(observer_events);
     let (observer_source_timing, observer_source_timing_malformed) =
         collect_observer_source_timing(observer_events);
+    let (observer_scene_movement, observer_scene_movement_malformed) =
+        collect_observer_scene_movement(observer_events);
 
     let (source_grid_output_drift, source_grid_output_drift_malformed) =
         collect_source_grid_output_drift(&manifest);
@@ -178,6 +198,8 @@ fn build_summary_from_events(
         commit_boundaries,
         observer_source_timing,
         observer_source_timing_malformed,
+        observer_scene_movement,
+        observer_scene_movement_malformed,
         pack_id: manifest["pack_id"]
             .as_str()
             .unwrap_or("unknown")
@@ -400,6 +422,89 @@ fn string_list(value: &Value, field: &str) -> Option<Vec<String>> {
         .iter()
         .map(|item| item.as_str().filter(|value| !value.is_empty()).map(str::to_string))
         .collect()
+}
+
+fn collect_observer_scene_movement(
+    events: &[Value],
+) -> (Option<ObserverSceneMovementEvidence>, bool) {
+    let Some(scene) = events
+        .iter()
+        .rev()
+        .filter_map(|event| event["snapshot"].get("scene"))
+        .find(|scene| scene["last_movement"].is_object())
+    else {
+        return (None, false);
+    };
+
+    let movement = &scene["last_movement"];
+    let contract = &scene["arrangement_contract"];
+    let source_monitor = &scene["source_monitor"];
+    let evidence = ObserverSceneMovementEvidence {
+        active_scene: optional_observer_scene_string(scene, "active_scene"),
+        kind: match non_empty_string(movement, "kind") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        direction: match non_empty_string(movement, "direction") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        tr909_intent: match non_empty_string(movement, "tr909_intent") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        mc202_intent: match non_empty_string(movement, "mc202_intent") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        intensity: match movement["intensity"].as_f64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        from_scene: optional_observer_scene_string(movement, "from_scene"),
+        to_scene: match non_empty_string(movement, "to_scene") {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        committed_bar_index: match movement["committed_bar_index"].as_u64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        committed_phrase_index: match movement["committed_phrase_index"].as_u64() {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        can_use_source_locked_scene_movement: match contract
+            ["can_use_source_locked_scene_movement"]
+            .as_bool()
+        {
+            Some(value) => value,
+            None => return (None, true),
+        },
+        source_anchor_seconds: optional_observer_scene_f64(source_monitor, "source_anchor_seconds"),
+        source_anchor_position_beats: optional_observer_scene_f64(
+            source_monitor,
+            "source_anchor_position_beats",
+        ),
+    };
+
+    (Some(evidence), false)
+}
+
+fn optional_observer_scene_string(value: &Value, field: &str) -> Option<String> {
+    value
+        .get(field)
+        .and_then(Value::as_str)
+        .filter(|value| !value.is_empty())
+        .map(ToOwned::to_owned)
+}
+
+fn optional_observer_scene_f64(value: &Value, field: &str) -> Option<f64> {
+    match value.get(field) {
+        Some(field) if field.is_null() => None,
+        Some(field) => field.as_f64(),
+        None => None,
+    }
 }
 
 fn collect_source_grid_output_drift(manifest: &Value) -> (Option<SourceGridOutputDriftEvidence>, bool) {
