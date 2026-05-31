@@ -818,4 +818,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Close P014 exit evidence and roadmap state
 - [RIOTBOX-1049.md](./RIOTBOX-1049.md)
   Mark P014 closed and activate P015
+- [RIOTBOX-1037.md](./RIOTBOX-1037.md)
+  Productize Jam inspect and taste surfaces around musical proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
