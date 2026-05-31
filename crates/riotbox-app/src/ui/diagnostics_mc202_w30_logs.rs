@@ -1,6 +1,11 @@
+use riotbox_core::export_readiness::{
+    ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
+    default_unsupported_export_scopes,
+};
+
 fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
-    vec![
+    let mut lines = vec![
         Line::from(format!(
             "captures {} | pending {}",
             capture.capture_count, capture.pending_capture_count
@@ -24,7 +29,9 @@ fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .as_deref()
                 .unwrap_or("no capture note yet")
         )),
-    ]
+    ];
+    lines.extend(export_readiness_lines());
+    lines
 }
 
 fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
@@ -61,6 +68,36 @@ fn jam_diagnostic_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     ]);
     lines.push(Line::from(primary_warning_line(shell)));
     lines
+}
+
+fn export_readiness_lines() -> Vec<Line<'static>> {
+    let role = ProductExportRole::FullGridMix.as_str();
+    let boundary = export_boundary_short_label(ProductExportBoundary::FeralGridGeneratedSupport);
+    let unsupported = default_unsupported_export_scopes()
+        .into_iter()
+        .map(unsupported_export_scope_short_label)
+        .collect::<Vec<_>>()
+        .join("/");
+
+    vec![
+        Line::from(format!("export {role} | {boundary}")),
+        Line::from(format!("reproducible | no {unsupported}")),
+    ]
+}
+
+fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str {
+    match boundary {
+        ProductExportBoundary::FeralGridGeneratedSupport => "feral-grid",
+    }
+}
+
+fn unsupported_export_scope_short_label(scope: UnsupportedExportScope) -> &'static str {
+    match scope {
+        UnsupportedExportScope::StemPackage => "stem",
+        UnsupportedExportScope::LiveRecording => "live",
+        UnsupportedExportScope::DawExport => "DAW",
+        UnsupportedExportScope::HostAudioSoak => "host",
+    }
 }
 
 fn mc202_pending_role_label(shell: &JamShellState) -> &'static str {

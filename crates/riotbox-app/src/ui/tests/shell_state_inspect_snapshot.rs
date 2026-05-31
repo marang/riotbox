@@ -25,5 +25,6 @@ fn renders_jam_shell_inspect_snapshot() {
     assert!(rendered.contains("truth product spine"), "{rendered}");
     assert!(rendered.contains("timing needs_user_confirmation"), "{rendered}");
     assert!(rendered.contains("proof p012/p013/replay/output yes"), "{rendered}");
+    assert!(rendered.contains("export full_grid_mix | feral-grid"), "{rendered}");
     assert!(!rendered.contains("Suggested gestures"), "{rendered}");
 }
