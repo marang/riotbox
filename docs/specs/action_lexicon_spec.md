@@ -267,6 +267,43 @@ labels. The typed migration plan is documented in
 - `ghost.reject_suggestion`
 - `ghost.execute_tool`
 
+### 6.8 Product export
+
+Reserved future export action:
+
+- `export.product_mix`
+
+Boundary:
+
+- The first export action should target the current `full_grid_mix` product
+  export role from the deterministic Feral-grid generated-support proof.
+- It is a session-scope, immediate, user-triggered side-effect action.
+- It may write a product mix artifact plus proof/manifest receipt only after the
+  export path succeeds.
+- It is not undoable; the action result and future export receipt describe a
+  completed file side effect rather than musical state to roll back.
+- Replay must not blindly rewrite files as a hidden side effect.
+- Stem package export, live recording export, DAW session export, host-audio
+  soak, automatic arranger export, and automatic Ghost export remain out of
+  scope until separate ActionCommand, Session/replay, observer, and audio-QA
+  contracts exist.
+
+Required params for the first bounded action:
+
+- `export_role`: initially `full_grid_mix`
+- `boundary`: initially `feral-grid generated-support export`
+- `include_manifest`: initially `true`
+- `destination_kind`: initially local artifact directory / file path
+
+Required result fields:
+
+- export receipt id
+- exported artifact path
+- manifest/proof path
+- export hash
+- normalized manifest hash
+- unsupported-scope flags
+
 ---
 
 ## 7. Required Fields Per Action
