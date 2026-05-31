@@ -196,6 +196,8 @@ docs/
   exit-candidate evidence and PR/merge blocker captured
 - `reviews/p015_exit_evidence_checklist_2026-05-31.md`: P015 Productization
   Alpha exit evidence checklist captured
+- `reviews/p015_exit_review_2026-05-31.md`: P015 bounded Productization Alpha
+  exit review captured
 - `benchmarks/product_export_reproducibility_boundary_2026-05-07.md`: normalized product-export reproducibility boundary captured
 - `benchmarks/stage_style_stability_proof_2026-05-07.md`: normalized stage-style repeated-run stability proof captured
 - `benchmarks/jam_footer_color_hierarchy_baseline_2026-04-25.md`: Jam footer color hierarchy readability baseline captured
