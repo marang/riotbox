@@ -194,6 +194,7 @@ mod tests {
             }),
             source_capture_refs: vec![crate::ids::CaptureId::from("cap-source")],
             lineage_capture_refs: vec![crate::ids::CaptureId::from("cap-root")],
+            fallback_comparison: None,
             audio_metrics: None,
             sample_rate_hz: Some(48_000),
             channel_count: Some(2),

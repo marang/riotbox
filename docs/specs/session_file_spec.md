@@ -315,8 +315,8 @@ Minimum receipt fields:
 - normalized manifest hash
 - `artifact_set[]` entries with role, local path or URI, media type, sha256,
   optional source graph ref, source capture refs, capture-lineage refs,
-  optional audio metrics, and optional sample rate, channel count, and duration
-  milliseconds when known
+  optional fallback/source comparison evidence, optional audio metrics, and
+  optional sample rate, channel count, and duration milliseconds when known
 - readiness status
 - unsupported-scope flags
 

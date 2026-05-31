@@ -2,7 +2,10 @@ use super::*;
 
 use crate::{
     ids::{CaptureId, SourceId},
-    session::{ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactSourceGraphRef},
+    session::{
+        ExportArtifactFallbackComparisonEvidence, ExportArtifactFallbackComparisonKind,
+        ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactSourceGraphRef,
+    },
     source_graph::SourceGraphVersion,
 };
 
@@ -95,6 +98,7 @@ fn stem_package_gate_can_require_lineage_evidence() {
         &[ExportArtifactRole::StemDrums],
         StemPackageArtifactSetQaPolicy {
             require_lineage_evidence: true,
+            ..Default::default()
         },
     );
 
@@ -119,6 +123,7 @@ fn stem_package_gate_accepts_source_or_capture_lineage_evidence_when_required() 
             &[ExportArtifactRole::StemDrums],
             StemPackageArtifactSetQaPolicy {
                 require_lineage_evidence: true,
+                ..Default::default()
             },
         );
 
@@ -128,6 +133,70 @@ fn stem_package_gate_accepts_source_or_capture_lineage_evidence_when_required() 
             StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
         )));
     }
+}
+
+#[test]
+fn stem_package_gate_preserves_default_without_fallback_comparison_requirement() {
+    let artifact_set = vec![stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    )];
+
+    let report = validate_stem_package_artifact_set_evidence(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums],
+    );
+
+    assert!(report.passed_structure_only());
+    assert!(!report.failures.contains(&failure(
+        Some(ExportArtifactRole::StemDrums),
+        StemPackageArtifactSetQaFailureKind::MissingFallbackComparisonEvidence,
+    )));
+}
+
+#[test]
+fn stem_package_gate_can_require_fallback_comparison_evidence() {
+    let artifact_set = vec![stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    )];
+
+    let report = validate_stem_package_artifact_set_evidence_with_policy(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums],
+        StemPackageArtifactSetQaPolicy {
+            require_fallback_comparison_evidence: true,
+            ..Default::default()
+        },
+    );
+
+    assert_eq!(report.status, StemPackageArtifactSetQaStatus::Failed);
+    assert!(report.failures.contains(&failure(
+        Some(ExportArtifactRole::StemDrums),
+        StemPackageArtifactSetQaFailureKind::MissingFallbackComparisonEvidence,
+    )));
+}
+
+#[test]
+fn stem_package_gate_accepts_fallback_comparison_evidence_when_required() {
+    let artifact_set = vec![stem_artifact_with_fallback_comparison()];
+
+    let report = validate_stem_package_artifact_set_evidence_with_policy(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums],
+        StemPackageArtifactSetQaPolicy {
+            require_fallback_comparison_evidence: true,
+            ..Default::default()
+        },
+    );
+
+    assert!(report.passed_structure_only());
+    assert!(!report.failures.contains(&failure(
+        Some(ExportArtifactRole::StemDrums),
+        StemPackageArtifactSetQaFailureKind::MissingFallbackComparisonEvidence,
+    )));
 }
 
 #[test]
@@ -218,6 +287,7 @@ fn stem_package_gate_fails_missing_location_hash_and_duplicates() {
             source_graph_ref: None,
             source_capture_refs: Vec::new(),
             lineage_capture_refs: Vec::new(),
+            fallback_comparison: None,
             audio_metrics: None,
             sample_rate_hz: None,
             channel_count: None,
@@ -267,6 +337,7 @@ fn stem_artifact(
         source_graph_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
+        fallback_comparison: None,
         audio_metrics: None,
         sample_rate_hz: None,
         channel_count: None,
@@ -316,6 +387,21 @@ fn stem_artifact_with_lineage_capture_ref() -> ExportArtifactSetEntry {
         "a",
     );
     artifact.lineage_capture_refs = vec![CaptureId::from("cap-root")];
+    artifact
+}
+
+fn stem_artifact_with_fallback_comparison() -> ExportArtifactSetEntry {
+    let mut artifact = stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    );
+    artifact.fallback_comparison = Some(ExportArtifactFallbackComparisonEvidence {
+        comparison_kind: ExportArtifactFallbackComparisonKind::SourceVsFallback,
+        reference_identity: "fallback://stem-drums".into(),
+        rms_difference_micros: Some(125_000),
+        normalized_correlation_micros: Some(420_000),
+    });
     artifact
 }
 
