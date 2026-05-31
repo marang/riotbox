@@ -10,7 +10,7 @@ When the local `riotbox-development` skill is available, use it for Riotbox deve
 
 When Riotbox work affects audible character, pattern quality, slices, loops, presets, demos, drum/bass behavior, or performance controls, also use the local `riotbox-rave-punk-production` skill when available. That skill captures the aggressive sample-based rave/punk production pressure Riotbox should be shaped by: hard hooks, physical drums, bass pressure, destructive variations, live triggerability, and clear failure modes for polite, generic, or placeholder output.
 
-If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pattern, update that skill, re-read it, and mirror durable project rules into this file, `docs/workflow_conventions.md`, or the relevant spec.
+If Riotbox work reveals a recurring product failure mode or better QA pattern, update that skill, re-read it, and mirror durable project rules into this file or the relevant spec. Keep operational GitHub, Linear, PR, CI, branch, archive, and closeout procedure in `docs/workflow_conventions.md`.
 
 ## Critical Rules
 
@@ -46,7 +46,7 @@ Use `docs/README.md` as the documentation map. Before structural changes, read o
 
 - product and roadmap: `docs/prd_v1.md`, `docs/execution_roadmap.md`, `docs/phase_definition_of_done.md`
 - architecture spine: `docs/specs/source_graph_spec.md`, `docs/specs/session_file_spec.md`, `docs/specs/action_lexicon_spec.md`, `docs/specs/replay_model_spec.md`
-- audio/runtime: `docs/specs/audio_core_spec.md`, `docs/specs/audio_qa_workflow_spec.md`, `docs/specs/fixture_corpus_spec.md`
+- audio/runtime: `docs/specs/audio_core_spec.md`, `docs/specs/audio_qa_workflow_spec.md`, `docs/specs/fixture_corpus_spec.md`, `docs/specs/validation_benchmark_spec.md`
 - TUI/Ghost/style: `docs/specs/tui_screen_spec.md`, `docs/specs/ghost_api_spec.md`, `docs/specs/preset_style_spec.md`
 - Rust/stack: `docs/specs/rust_engineering_guidelines.md`, `docs/specs/technology_stack_spec.md`
 - source timing/scenes: `docs/specs/source_timing_intelligence_spec.md`, `docs/specs/arrangement_scene_system_spec.md`
@@ -136,6 +136,7 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Treat `docs/research_decision_log.md` as a large canonical log: append durable decisions when needed, but query it by exact search or bounded MemPalace retrieval instead of loading the full file.
 - Prefer specific files and line ranges over entire long documents.
 - MemPalace is optional dev memory, not product core or source of truth. Operational details live in `docs/dev_environment.md`.
+- If something matters, write it into repo docs, specs, Linear, or Git history; do not leave it only in MemPalace.
 
 ## Review And QA
 
@@ -199,6 +200,9 @@ just clippy
 Common development helpers:
 
 ```bash
+just source-timing-fixture-catalog
+just source-timing-wav-probe
+just source-timing-readiness-report
 just mem-status
 just mem-search "replay truth"
 just decision-search "source timing"
