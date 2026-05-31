@@ -8,6 +8,8 @@ Riotbox is transitioning from planning into implementation. Keep implementation 
 
 When the local `riotbox-development` skill is available, use it for Riotbox development work. That skill captures the expectation that agents act as senior software engineers, senior audio engineers, and musician-users of the instrument.
 
+When Riotbox work affects audible character, pattern quality, slices, loops, presets, demos, drum/bass behavior, or performance controls, also use the local `riotbox-rave-punk-production` skill when available. That skill captures the aggressive sample-based rave/punk production pressure Riotbox should be shaped by: hard hooks, physical drums, bass pressure, destructive variations, live triggerability, and clear failure modes for polite, generic, or placeholder output.
+
 If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pattern, update that skill, re-read it, and mirror durable project rules into this file, `docs/workflow_conventions.md`, or the relevant spec.
 
 ## Critical Rules
@@ -34,53 +36,24 @@ If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pat
 - Use `scripts/run_compact.sh /tmp/name.log <command...>` for noisy validation commands unless full output is explicitly needed.
 - Never revert unrelated user changes.
 
-## Current State
+## Orientation
 
-- Planning and spec layers exist under `docs/` and `plan/`.
-- Rust workspace is active at the repo root:
-  - `crates/riotbox-core`
-  - `crates/riotbox-app`
-  - `crates/riotbox-audio`
-  - `crates/riotbox-sidecar`
-- The product spine is beyond a minimal shell:
-  - Source Graph and Session v1 are real.
-  - Queue / commit semantics and action history are real.
-  - `Jam`, `Log`, `Source`, and `Capture` shells are real.
-  - TR-909, MC-202, W-30, and Scene Brain slices exist behind the Jam workflow.
-- Read the active roadmap phase from live docs:
-  - `docs/README.md`
-  - `docs/execution_roadmap.md`
-  - `docs/phase_definition_of_done.md`
+- Planning and implementation contracts live under `docs/`; strategy and historical planning live under `plan/`.
+- Rust workspace crates: `riotbox-core`, `riotbox-app`, `riotbox-audio`, and `riotbox-sidecar`.
+- Read the active roadmap phase from `docs/README.md`, `docs/execution_roadmap.md`, and `docs/phase_definition_of_done.md`.
 
 ## Source Of Truth
 
-Read these before structural changes:
+Use `docs/README.md` as the documentation map. Before structural changes, read only the relevant contracts:
 
-1. `docs/prd_v1.md`
-2. `docs/execution_roadmap.md`
-3. `docs/specs/technology_stack_spec.md`
-4. `docs/specs/rust_engineering_guidelines.md`
-5. `docs/specs/source_graph_spec.md`
-6. `docs/specs/source_timing_intelligence_spec.md`
-7. `docs/specs/session_file_spec.md`
-8. `docs/specs/action_lexicon_spec.md`
-9. `docs/specs/audio_core_spec.md`
-10. `docs/specs/validation_benchmark_spec.md`
-11. `docs/specs/fixture_corpus_spec.md`
-12. `docs/specs/audio_qa_workflow_spec.md`
-13. `docs/specs/tui_screen_spec.md`
-14. `docs/specs/ghost_api_spec.md`
-15. `docs/specs/preset_style_spec.md`
-16. `docs/specs/arrangement_scene_system_spec.md`
+- product and roadmap: `docs/prd_v1.md`, `docs/execution_roadmap.md`, `docs/phase_definition_of_done.md`
+- architecture spine: `docs/specs/source_graph_spec.md`, `docs/specs/session_file_spec.md`, `docs/specs/action_lexicon_spec.md`, `docs/specs/replay_model_spec.md`
+- audio/runtime: `docs/specs/audio_core_spec.md`, `docs/specs/audio_qa_workflow_spec.md`, `docs/specs/fixture_corpus_spec.md`
+- TUI/Ghost/style: `docs/specs/tui_screen_spec.md`, `docs/specs/ghost_api_spec.md`, `docs/specs/preset_style_spec.md`
+- Rust/stack: `docs/specs/rust_engineering_guidelines.md`, `docs/specs/technology_stack_spec.md`
+- source timing/scenes: `docs/specs/source_timing_intelligence_spec.md`, `docs/specs/arrangement_scene_system_spec.md`
 
-Strategic context:
-
-- `plan/riotbox_masterplan.md`
-- `plan/riotbox_liam_howlett_feral_addendum.md`
-
-Agent-facing drift guardrails:
-
-- `docs/reviews/riotbox_drift_guardrails_2026-05-10.md`
+Strategic context lives in `plan/riotbox_masterplan.md` and `plan/riotbox_liam_howlett_feral_addendum.md`. Agent-facing drift guardrails live in `docs/reviews/riotbox_drift_guardrails_2026-05-10.md`.
 
 ## Architecture Guardrails
 
@@ -131,19 +104,21 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - explicit PR or working-context notes when a stronger audio QA layer is still aspirational
 - When fuller harnesses land, tighten this rule to the spec's stronger release gates.
 
+## Musical Direction
+
+- Shape Riotbox toward aggressive sample-based rave/punk and breakbeat instrument behavior, not generic EDM preset browsing.
+- Prefer short, forceful loops with a memorable hook, stab, riff, break, bass gesture, vocal hit, or silence cut.
+- Make live gestures audibly dramatic: trigger, mute, choke, retrigger, reverse, pitch dive, filter slam, bitcrush, fill, and dropout should change the room immediately.
+- Treat repeated placeholder tones, fallback-only output, polite loops, and technically correct but hookless demos as product failures unless they are explicitly diagnostic.
+- Tie taste critique to one concrete implementation or QA follow-up: sample transform, drum policy, trigger behavior, preset change, fixture, threshold, or UI cue.
+
 ## Rust Guidance
 
 - Keep core types explicit and boring.
 - Keep tests close to the modules they validate.
 - Avoid unnecessary dependencies during early model stabilization.
-- Treat roughly 500 lines per Rust file, including tests and bin helpers, as a soft review/context budget.
-- Treat any `.rs` file over that budget as a refactor candidate.
-- Never split files mechanically just to satisfy line count.
-- Split only when resulting modules have clearer semantic responsibility, lower review cost, and lower agent context cost.
-- Do not hide context cost in giant `tests.rs` files.
-- Split large tests by behavior area, fixture family, screen, lane, or helper responsibility only when ownership gets clearer.
-- Name split Rust shards after their responsibility, such as `event_loop.rs`, `w30_projection.rs`, or `render_policy_tests.rs`.
-- Do not use durable `01_...rs`, `02_...rs` numbering.
+- For Rust reviews, use `code-review`; Rust context should also apply `code-review-rust` when available.
+- Detailed Rust file-size, module-split, and test-organization rules live in `docs/specs/rust_engineering_guidelines.md`, `docs/workflow_conventions.md`, and the `code-review-rust` skill.
 
 ## Documentation Rules
 
@@ -162,6 +137,7 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Do not paste large generated manifests, WAV metadata dumps, archive batches, or raw transcript sections unless directly needed.
 - Treat `docs/research_decision_log.md` as a large canonical log: append durable decisions when needed, but query it by exact search or bounded MemPalace retrieval instead of loading the full file.
 - Prefer specific files and line ranges over entire long documents.
+- MemPalace is optional dev memory, not product core or source of truth. Operational details live in `docs/dev_environment.md`.
 
 ## Review And QA
 
@@ -209,7 +185,7 @@ Hard rules that must stay true:
 
 ## Commands
 
-Keep this section as a short command shortlist. Use `just --list` and `Justfile` for the full command catalog.
+Keep this section as a short command shortlist. Use `just --list` and `Justfile` for the full command catalog. Environment and sandbox notes live in `docs/dev_environment.md`.
 
 Default checks:
 
@@ -225,9 +201,6 @@ just clippy
 Common development helpers:
 
 ```bash
-just source-timing-fixture-catalog
-just source-timing-wav-probe
-just source-timing-readiness-report
 just mem-status
 just mem-search "replay truth"
 just decision-search "source timing"
@@ -261,129 +234,18 @@ Current CI baseline:
   - `cargo clippy --all-targets --all-features -- -D warnings`
 - Before opening or updating a PR, prefer running `just ci` locally.
 
-## MemPalace / Memory Notes
-
-- MemPalace is optional dev memory.
-- It is not product core.
-- It is not a source of truth.
-- Canonical truth lives in `docs/`, `plan/`, Linear, and Git history.
-- Use MemPalace to complement `rg`, not replace it.
-- Do not store new canonical decisions only in MemPalace.
-- If something matters, write it into repo docs or Linear.
-
-Repo-local layout:
-
-- `.mempalace/palace/` stores the persistent Chroma database.
-- `.mempalace/cache/` stores model and package cache.
-- `.mempalace/results/` stores captured evaluation outputs.
-- `.mempalace/corpus/` stores copied project corpus for mining.
-
-Operational path:
-
-- Use `just mem-init` for first setup.
-- Use `just mem-status` and `just mem-search "..."` for normal work.
-- Use `just mem-repair` for index metadata drift such as missing cosine-distance metadata.
-- The wrapper uses rootless Podman with pinned `python:3.14.4-slim` and `mempalace==3.3.4`.
-- Normal runtime commands run with container networking disabled.
-- Image builds require normal registry/network access.
-- The wrapper re-mines when mined repo sources changed.
-- The wrapper uses a repo-local lock to prevent concurrent mining.
-- Do not hand-edit `.mempalace/corpus/mempalace.yaml`.
-- The wrapper syncs selected live repo sources into room-specific folders.
-- Active rooms: `specs`, `workflow`, `reviews`, `audio_qa`, `plan`, `decisions`, `code`, `documentation`, and `general`.
-- If room structure changes, the wrapper rebuilds the palace index on the next mine/status/search.
-- The wrapper rebuilds the MemPalace container image only when compose/container files change.
-
 ## Sandbox And Environment Notes
-
-### Audio And Device Probing
 
 - Do not assume a failed audio probe inside the sandbox means the machine audio stack is broken.
 - Record whether Linux audio validation came from sandbox or real user session.
 - Treat sandbox-only audio failures as inconclusive.
+- Detailed sandbox, Arch, Podman, MemPalace, SSH, and host-service notes live in `docs/dev_environment.md`.
 
-### Agent Sandbox Self-Checks
+## Stack And Layout
 
-Run these when Riotbox runs inside `agent-sandbox` and host capability is unclear:
+The stack freeze is documented in `docs/specs/technology_stack_spec.md`. Defaults: Rust for core/runtime/TUI/audio, Python later for analysis sidecar, JSON for early persistence, `cpal` for audio I/O, `tokio` for control-plane async, and `ratatui` for terminal UI. Do not replace Rust with Go for the main core.
 
-```bash
-command -v git
-command -v cargo
-command -v pkg-config
-command -v podman
-pkg-config --libs --cflags alsa
-test -S "/run/user/$(id -u)/podman/podman.sock" && echo podman-socket-ok
-```
-
-Interpretation:
-
-- If `pkg-config --libs --cflags alsa` fails, the sandbox cannot build the current Linux audio path cleanly.
-- If `podman` is missing or the Podman socket is unavailable, MemPalace operational commands cannot run from inside the sandbox.
-- `just` is convenient but not required; prefer direct script commands if `just` is absent.
-
-Preferred solution:
-
-- Bake needed tooling into the sandbox image.
-- Use mounts only for host-specific assets or sockets.
-
-### Arch Host Requirements
-
-Audio build requirements:
-
-- `pkg-config` available in the sandbox.
-- ALSA headers and pkg-config data visible in the sandbox.
-- `PKG_CONFIG_PATH=/usr/lib/pkgconfig`.
-
-Useful Arch host mounts:
-
-- `/usr/include/alsa` -> `/usr/include/alsa`
-- `/usr/lib/pkgconfig` -> `/usr/lib/pkgconfig`
-- `/usr/lib/libasound.so` -> `/usr/lib/libasound.so`
-- `/usr/lib/libasound.so.2` -> `/usr/lib/libasound.so.2`
-
-MemPalace operational requirements:
-
-- `podman` client available in the sandbox.
-- `podman compose` support available in the sandbox.
-
-If using host rootless Podman instead of nested Podman:
-
-- Mount `/run/user/<host-uid>/podman/podman.sock`.
-- Expose it at the same path or a known sandbox path.
-- Set `CONTAINER_HOST=unix:///run/user/<host-uid>/podman/podman.sock`.
-
-In that setup, `scripts/mempalace.sh` can use the host container runtime without full nested container support.
-
-### Git Push Ergonomics
-
-- Ensure SSH auth is available.
-- Ensure GitHub host trust is available.
-- A temporary `known_hosts` file is a workaround.
-- Better sandbox setup: writable `~/.ssh/known_hosts` or pre-seeded GitHub host keys.
-
-### Host Services
-
-- Use `host.containers.internal` for host-local TCP services.
-- Do not assume `localhost` means the host. In the sandbox it is container-local.
-
-## Frozen Stack v1
-
-The stack freeze is documented in `docs/specs/technology_stack_spec.md`.
-
-Use these defaults unless a documented spike disproves them:
-
-- `Rust` for core, runtime-facing state, TUI, and audio path.
-- `Python` later for the analysis sidecar.
-- `JSON` for early persistence and inspection.
-- Planned runtime:
-  - `cpal` for audio I/O
-  - `tokio` for control-plane async work
-  - `ratatui` for terminal UI
-- Do not replace Rust with Go for the main core.
-
-## Repo Layout
-
-Important paths:
+Important repo paths:
 
 - `crates/riotbox-core`: shared core models and logic.
 - `crates/riotbox-app`: app-level orchestration and Jam state wiring.
@@ -392,22 +254,6 @@ Important paths:
 - `docs/`: implementation-facing contracts.
 - `plan/`: strategy and historical planning material.
 - `python/sidecar`: analysis process path.
-
-## Historical Near-Term Build Order
-
-Follow the live roadmap first. This historical order remains useful when orienting early skeleton work:
-
-1. Stabilize core data models.
-2. Add serialization roundtrips for `SourceGraph` and `SessionFile`.
-3. Build app-level Jam state wiring.
-4. Run bounded spikes:
-   - audio latency
-   - Rust/Python transport
-   - deterministic replay
-   - session serialization
-5. Move into core skeleton runtime work.
-
-Do not jump to advanced DSP, Ghost `perform`, or export-heavy workflows early.
 
 ## When In Doubt
 

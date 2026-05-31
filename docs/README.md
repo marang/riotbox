@@ -76,6 +76,7 @@ docs/
   architecture_phase_map.md
   execution_roadmap.md
   workflow_conventions.md
+  dev_environment.md
   recovery_notes.md
   phase_definition_of_done.md
   research_decision_log.md
@@ -142,6 +143,7 @@ docs/
 - `architecture_phase_map.md`: component and P000-P020 phase map captured
 - `execution_roadmap.md`: active roadmap with Source Timing Intelligence anchored
 - `workflow_conventions.md`: active contributor / agent workflow conventions captured
+- `dev_environment.md`: sandbox, host, MemPalace, and environment notes captured
 - `jam_recipes.md`: learning-path guide captured
 - `recovery_notes.md`: current manual recovery and snapshot-payload label guidance captured
 - `specs/technology_stack_spec.md`: Stack Freeze v1 captured with current timing-contract clarification
