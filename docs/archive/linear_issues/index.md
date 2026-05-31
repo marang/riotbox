@@ -820,4 +820,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Mark P014 closed and activate P015
 - [RIOTBOX-1037.md](./RIOTBOX-1037.md)
   Productize Jam inspect and taste surfaces around musical proof
+- [RIOTBOX-1050.md](./RIOTBOX-1050.md)
+  Add P015 perform-first Jam taste recipe proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
