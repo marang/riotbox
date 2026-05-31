@@ -281,11 +281,56 @@ Current review:
 - status: closed bounded P014 exit on 2026-05-31 after PRs #1019, #1021,
   #1022, #1023, and #1024 merged with GitHub `rust-ci` success; the stack
   passed `just p014-scene-movement-observer-probe`, `just audio-qa-ci`, and
-  `just ci` before review, and P015 is now the active implementation phase
+  `just ci` before review, then the next implementation lane moved to P015
 
 ---
 
-## 14. Feral Layer Done Criteria
+## 14. P015 - Productization Alpha
+
+Boundary:
+
+- `P015 | Productization Alpha` is the bounded Jam productization phase on top
+  of the P012 Source Timing, P013 all-lane musical-depth, and P014
+  Arrangement / Scene baselines.
+- It closes when the proof-heavy Jam surfaces are understandable enough for a
+  musician to read taste/proof, trust or distrust scene movement, and choose a
+  safer next move without weakening the underlying proof contracts.
+- It is not full product completion, automatic arranging, arbitrary-source
+  polish, host-audio soak evidence, a product taste oracle, full DAW/stem export
+  readiness, or autonomous Ghost performance.
+
+Done when:
+
+- P012 all-lane source-grid output proof still passes
+- P013 representative musical-quality validation still passes
+- P014 scene-movement observer/audio proof still passes
+- P015 Jam taste/proof recipe proof passes
+- Jam perform and inspect surfaces expose compact musician-facing taste/proof
+  language while keeping detailed proof inspectable
+- first-run next-move guidance and Recipe 16 respect scene/timing trust
+  boundaries instead of promoting scene jump under cautious or unknown evidence
+- Help overlay and docs explain the taste/proof path without hiding primary
+  gesture guidance
+- explicit P015 deferrals are recorded so later phases do not mistake bounded
+  productization for full product completion
+
+Current review:
+
+- `docs/reviews/p015_exit_evidence_checklist_2026-05-31.md`
+- `docs/reviews/p015_exit_review_2026-05-31.md`
+- status: closed bounded Productization Alpha exit on 2026-05-31 after
+  RIOTBOX-1037 and RIOTBOX-1050 through RIOTBOX-1058 landed Jam taste/proof,
+  Recipe 16, first-run next-move, Help overlay, glossary, checklist, and exit
+  evidence surfaces; the stack passed `just p015-jam-taste-recipe-proof`,
+  `just p014-scene-movement-observer-probe`,
+  `just p012-all-lane-source-grid-output-proof`,
+  `just representative-source-showcase-musical-quality` after regenerating a
+  stale local representative showcase, and `just ci` before review. P016 is now
+  the active implementation phase.
+
+---
+
+## 15. Feral Layer Done Criteria
 
 The feral layer is done for MVP purposes when:
 
