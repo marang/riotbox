@@ -848,4 +848,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Surface export readiness without claiming full export polish
 - [RIOTBOX-1063.md](./RIOTBOX-1063.md)
   Draft P016 export action boundary before file-writing workflow
+- [RIOTBOX-1064.md](./RIOTBOX-1064.md)
+  Implement export.product_mix action and export receipt model
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
