@@ -272,13 +272,14 @@ Near-next roadmap-aligned work:
    foundation phase after the 2026-05-28 all-lane source-grid output proof
 3. treat `P013 | All-Lane Musical Depth` as closed for bounded representative
    showcase depth after the 2026-05-29 exit evidence review
-4. keep the P011 aggregate gate, P012 all-lane source-grid proof, and P013
-   representative musical-quality gate green as regression baselines while P014
-   arrangement / scene work lands
-5. start P014 from the existing Source Graph, Source Timing summary,
-   observer/audio, lane-output, and representative musical-depth proof contracts
-   instead of creating a second timing, arrangement, or mix truth
-6. update specs and decision log when P014 changes the arrangement contract
+4. treat `P014 | Arrangement / Scene System` as closed for bounded Arrangement /
+   Scene behavior after the 2026-05-31 exit-candidate evidence and final stack
+5. treat `P015 | Productization Alpha` as closed for bounded Jam
+   productization after the 2026-05-31 exit review
+6. keep the P011 aggregate gate, P012 all-lane source-grid proof, P013
+   representative musical-quality gate, P014 scene-movement observer/audio
+   proof, and P015 Jam taste/proof gate green as regression baselines while
+   P016 starts from the existing product spine
 
 Linear project / phase map:
 
@@ -287,16 +288,16 @@ Linear project / phase map:
 3. `P013 | All-Lane Musical Depth` - closed bounded representative musical-depth baseline
 4. `P014 | Arrangement / Scene System` - closed bounded Arrangement / Scene
    exit
-5. `P015 | Productization Alpha` - active immediate track
-6. `P016 | Pro Workflow / Export`
+5. `P015 | Productization Alpha` - closed bounded Productization Alpha baseline
+6. `P016 | Pro Workflow / Export` - active immediate track
 7. `P017 | Live Performance Readiness`
 8. `P018 | Ghost + Feral Autonomy Expansion`
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
 
-This is a project / phase overview, not a ticket list. Keep P012, P013, and
-P014 as regression baselines and keep P016-P020 coarse while P015 turns the
-proof surfaces into product-facing behavior.
+This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
+and P015 as regression baselines and keep P017-P020 coarse while P016 turns the
+bounded product spine toward pro workflow and export behavior.
 
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
@@ -306,6 +307,12 @@ Reason:
 - P013 now has a bounded representative showcase baseline for TR-909 source
   accent dynamics, W-30 source accent/slice/chop proof, MC-202 pressure/grid/
   source-contour proof, and all-lane generated-support mix movement.
+- P014 now has a bounded Arrangement / Scene baseline for manual scene launch /
+  restore movement through Session, replay, observer, and non-collapsed output
+  proof.
+- P015 now has a bounded Productization Alpha baseline for Jam taste/proof,
+  first-run next-move guidance, Recipe 16, Help overlay readability, and
+  explicit product-scope deferrals.
 - Source Graph, session, actions, audio core, TUI, and QA contracts remain the controlling architecture; new timing or arrangement behavior must extend them instead of creating a parallel analysis or arranger path.
 
 ---
@@ -591,10 +598,11 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 
 ## 15. Next Concrete Step
 
-The immediate execution track is `P015 | Productization Alpha`: turn the P012,
-P013, and P014 proof surfaces into product-facing behavior without weakening
-the Source Timing, all-lane musical-depth, or Arrangement / Scene regression
-baselines.
+The immediate execution track is `P016 | Pro Workflow / Export`: start from the
+P011 replay/recovery/export hardening baseline plus the P012, P013, P014, and
+P015 product-spine proof surfaces, then add bounded pro workflow / export
+behavior without weakening replay, timing, musical-depth, scene, or Jam
+taste/proof regression gates.
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:
@@ -602,6 +610,8 @@ not restart from spec scaffolding. Use these live references instead:
 - `docs/architecture_phase_map.md`
 - `docs/reviews/p012_exit_review_2026-05-28.md`
 - `docs/reviews/p013_exit_review_2026-05-29.md`
+- `docs/reviews/p014_exit_candidate_review_2026-05-30.md`
+- `docs/reviews/p015_exit_review_2026-05-31.md`
 - `docs/specs/arrangement_scene_system_spec.md`
 - `docs/specs/source_timing_intelligence_spec.md`
 - `docs/specs/audio_qa_workflow_spec.md`
@@ -621,6 +631,7 @@ spine and P013 musical-depth baseline:
 - keep Jam / Source / observer timing language aligned through the shared Jam
   Source Timing summary whenever timing evidence is surfaced
 
-P015 work may now proceed, but it must preserve the P014 bounded exit: no
-automatic arranger, second Scene Graph, or hidden replay/timing truth without a
-new Action Lexicon, Session/replay, observer, and output-QA contract.
+P016 work may now proceed, but it must preserve the P015 bounded exit: no
+automatic arranger, second Scene Graph, hidden replay/timing truth, product
+taste oracle, host-audio soak claim, or full DAW/stem export claim without a new
+Action Lexicon, Session/replay, observer, and output-QA contract.
