@@ -872,4 +872,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Enforce stem non-silence in QA gate when artifact metrics exist
 - [RIOTBOX-1076.md](./RIOTBOX-1076.md)
   Make export recovery preflight artifact-set aware before wider scopes
+- [RIOTBOX-1075.md](./RIOTBOX-1075.md)
+  Add source and capture lineage refs to export artifact evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
