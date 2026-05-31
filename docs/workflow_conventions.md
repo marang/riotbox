@@ -597,6 +597,37 @@ Rules:
 - the main coordinating agent still owns correctness, final review, and final integration
 - delegation should reduce workflow drift, not hide responsibility for it
 
+## 9.2.2 Linear / Codex Integration
+
+Use the Linear / Codex integration as an operational accelerator, not as a
+product source of truth.
+
+Good uses:
+
+- pull the Linear issue, project, priority, acceptance criteria, and attachments
+  into the working context before starting a branch
+- keep issue state aligned with the workflow: `In Progress`, `In Review`,
+  `Done`, `Canceled`
+- attach PR links, branch links, and short human-readable issue updates
+- maintain the near-term backlog horizon from roadmap, specs, and current repo
+  state
+- inspect Linear-visible diffs and PR metadata as a cross-check alongside `gh`
+- delegate workflow / ops lane tasks such as issue comments, PR link updates,
+  project update entries, archive preparation, and backlog hygiene when the
+  integration can do them reliably
+
+Limits:
+
+- do not treat Linear / Codex output as canonical product truth unless the
+  decision is mirrored into repo docs, specs, decision log, or Git history
+- do not use Linear comments as the only record for architecture, replay,
+  source-timing, Action Lexicon, audio QA, or musician-facing product contracts
+- do not let delegated workflow updates hide responsibility from the main
+  coordinating agent
+- use `gh` for GitHub PR creation, PR status, CI/check summaries, and PR merges;
+  Linear-visible PR data is supporting evidence, not the primary GitHub control
+  plane
+
 ## 9.3 Backlog Horizon
 
 Linear should not hold only the current ticket.
