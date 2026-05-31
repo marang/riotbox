@@ -1890,3 +1890,17 @@ Why: P014 needs an explicit contract before adding source playback repositioning
 Evidence: RIOTBOX-1030 adds the contract view, targeted Jam view tests for ready/manual-confirm/fallback boundaries, `docs/specs/arrangement_scene_system_spec.md`, and `docs/architecture_phase_map.md`.
 Consequences: future P014 slices must extend this contract and prove output path for audible changes. Contract-only changes may use targeted core/app tests plus docs/spec updates; audible arrangement behavior must add non-collapsed audio evidence.
 Status: accepted
+
+---
+
+### RBX-062
+
+Date: 2026-05-31
+Topic: P016 export QA evidence policies need identity validation before real stem claims
+Phase: P016 / Pro Workflow / Export
+Question: after adding typed artifact-set lineage and fallback comparison evidence slots, is presence-only structural QA enough for future stem export scopes?
+Decision: keep the current lineage and fallback comparison policies as opt-in structural gates, but require a follow-up validation slice before any real stem export scope depends on them. The follow-up should reject blank source graph hashes, blank capture ids, blank fallback reference identities, and comparison evidence with no metric fields.
+Why: the P016 export spine now has the right typed places for evidence, but a `Some` evidence object or non-empty list is not enough to prove useful provenance. Tightening the identity shape before stem writing prevents future PRs from claiming stronger QA with placeholder data.
+Evidence: `docs/reviews/p016_export_qa_evidence_broad_review_2026-05-31.md` records the finding after RIOTBOX-1076, RIOTBOX-1075, RIOTBOX-1077, RIOTBOX-1078, and RIOTBOX-1079.
+Consequences: the next P016 slice should strengthen structural validation only. It should not implement stem writing, DAW export, live recording export, real source-vs-fallback rendering, or threshold interpretation.
+Status: accepted
