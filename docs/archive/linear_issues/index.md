@@ -828,4 +828,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add P015 musician-facing proof glossary to docs and screenshots
 - [RIOTBOX-1053.md](./RIOTBOX-1053.md)
   Add P015 first-run next-move cue audit
+- [RIOTBOX-1054.md](./RIOTBOX-1054.md)
+  Align Recipe 16 scene-jump step with timing trust
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
