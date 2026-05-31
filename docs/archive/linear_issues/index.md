@@ -852,4 +852,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Implement export.product_mix action and export receipt model
 - [RIOTBOX-1065.md](./RIOTBOX-1065.md)
   Surface export receipts in inspect surfaces
+- [RIOTBOX-1066.md](./RIOTBOX-1066.md)
+  Add export receipt replay and missing-artifact fixtures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
