@@ -860,4 +860,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add musician-facing export trigger and receipt feedback
 - [RIOTBOX-1069.md](./RIOTBOX-1069.md)
   Specify next export scope fields before stems or DAW export
+- [RIOTBOX-1071.md](./RIOTBOX-1071.md)
+  Add typed export artifact-set contract to product receipts
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
