@@ -15,6 +15,8 @@ pub struct StemPackageArtifactSetQaReport {
 pub struct StemPackageArtifactSetQaPolicy {
     #[serde(default)]
     pub require_lineage_evidence: bool,
+    #[serde(default)]
+    pub require_fallback_comparison_evidence: bool,
 }
 
 impl StemPackageArtifactSetQaReport {
@@ -47,6 +49,7 @@ pub enum StemPackageArtifactSetQaFailureKind {
     MissingArtifactLocation,
     MissingArtifactHash,
     MissingLineageEvidence,
+    MissingFallbackComparisonEvidence,
     InsufficientNonSilenceMetrics,
     SilentArtifactMetrics,
 }
@@ -169,6 +172,12 @@ fn validate_stem_artifact_identity(
         failures.push(failure(
             Some(role),
             StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
+        ));
+    }
+    if policy.require_fallback_comparison_evidence && artifact.fallback_comparison.is_none() {
+        failures.push(failure(
+            Some(role),
+            StemPackageArtifactSetQaFailureKind::MissingFallbackComparisonEvidence,
         ));
     }
     if let Some(metrics) = &artifact.audio_metrics {

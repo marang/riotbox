@@ -307,7 +307,7 @@ Required result fields:
 - normalized manifest hash
 - typed `artifact_set[]` with the current full-grid WAV role, local path,
   media type, sha256, optional source graph / capture lineage refs, and
-  optional audio metrics
+  optional fallback/source comparison and audio metrics
 - unsupported-scope flags
 
 Reserved wider export commands:

@@ -1,7 +1,8 @@
 mod export_types;
 
 pub use export_types::{
-    ExportArtifactAudioMetrics, ExportArtifactLocation, ExportArtifactMediaType,
+    ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
+    ExportArtifactFallbackComparisonKind, ExportArtifactLocation, ExportArtifactMediaType,
     ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportReceiptState,
 };
 

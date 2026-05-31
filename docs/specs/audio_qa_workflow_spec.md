@@ -968,9 +968,11 @@ Today the repo already has:
   the structural lineage policy to require each claimed stem artifact to carry
   source graph, source capture, or capture-lineage evidence before a wider stem
   scope is accepted. The default gate remains compatible with current
-  product-mix callers. Fallback-collapse remains deferred until
-  source-vs-fallback comparison evidence exists. Passing this skeleton does not
-  claim a full stem package export.
+  product-mix callers. Callers may also enable the structural fallback policy
+  to require typed source-vs-fallback comparison evidence before accepting a
+  claimed stem artifact, but threshold interpretation and real render
+  comparison remain deferred. Passing this skeleton does not claim a full stem
+  package export.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary

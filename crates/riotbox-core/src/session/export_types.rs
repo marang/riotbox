@@ -86,6 +86,8 @@ pub struct ExportArtifactSetEntry {
     #[serde(default)]
     pub lineage_capture_refs: Vec<CaptureId>,
     #[serde(default)]
+    pub fallback_comparison: Option<ExportArtifactFallbackComparisonEvidence>,
+    #[serde(default)]
     pub audio_metrics: Option<ExportArtifactAudioMetrics>,
     #[serde(default)]
     pub sample_rate_hz: Option<u32>,
@@ -106,6 +108,7 @@ impl ExportArtifactSetEntry {
             source_graph_ref: None,
             source_capture_refs: Vec::new(),
             lineage_capture_refs: Vec::new(),
+            fallback_comparison: None,
             audio_metrics: None,
             sample_rate_hz: None,
             channel_count: None,
@@ -127,6 +130,22 @@ pub struct ExportArtifactSourceGraphRef {
     pub source_id: SourceId,
     pub graph_version: SourceGraphVersion,
     pub graph_hash: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportArtifactFallbackComparisonEvidence {
+    pub comparison_kind: ExportArtifactFallbackComparisonKind,
+    pub reference_identity: String,
+    #[serde(default)]
+    pub rms_difference_micros: Option<u32>,
+    #[serde(default)]
+    pub normalized_correlation_micros: Option<i32>,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExportArtifactFallbackComparisonKind {
+    SourceVsFallback,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -312,6 +331,7 @@ mod tests {
             source_graph_ref: None,
             source_capture_refs: Vec::new(),
             lineage_capture_refs: Vec::new(),
+            fallback_comparison: None,
             audio_metrics: Some(ExportArtifactAudioMetrics {
                 peak_milli_dbfs: Some(-120),
                 rms_milli_dbfs: Some(-6_000),
@@ -348,6 +368,12 @@ mod tests {
             }),
             source_capture_refs: vec![CaptureId::from("cap-source")],
             lineage_capture_refs: vec![CaptureId::from("cap-root"), CaptureId::from("cap-print")],
+            fallback_comparison: Some(ExportArtifactFallbackComparisonEvidence {
+                comparison_kind: ExportArtifactFallbackComparisonKind::SourceVsFallback,
+                reference_identity: "fallback://stem-drums".into(),
+                rms_difference_micros: Some(125_000),
+                normalized_correlation_micros: Some(420_000),
+            }),
             audio_metrics: None,
             sample_rate_hz: Some(48_000),
             channel_count: Some(2),
@@ -383,5 +409,6 @@ mod tests {
         assert_eq!(entry.source_graph_ref, None);
         assert!(entry.source_capture_refs.is_empty());
         assert!(entry.lineage_capture_refs.is_empty());
+        assert_eq!(entry.fallback_comparison, None);
     }
 }
