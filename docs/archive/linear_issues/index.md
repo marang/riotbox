@@ -858,4 +858,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Emit export product-mix observer lifecycle events
 - [RIOTBOX-1068.md](./RIOTBOX-1068.md)
   Add musician-facing export trigger and receipt feedback
+- [RIOTBOX-1069.md](./RIOTBOX-1069.md)
+  Specify next export scope fields before stems or DAW export
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
