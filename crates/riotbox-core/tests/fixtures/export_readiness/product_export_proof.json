@@ -1,0 +1,16 @@
+{
+  "audio_artifact_sha256": {
+    "full_grid_mix": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "generated_support_mix": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "source_first_mix": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+  },
+  "boundary": "feral-grid generated-support export",
+  "export_artifact": "run-a/full_grid_mix.wav",
+  "export_role": "full_grid_mix",
+  "export_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "normalized_manifest_sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+  "pack_id": "feral-grid-demo",
+  "schema": "riotbox.product_export_reproducibility.v1",
+  "schema_version": 1,
+  "source_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+}
