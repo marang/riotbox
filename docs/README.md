@@ -252,6 +252,7 @@ docs/
 - `screenshots/jam_log_screen_baseline.txt`: baseline captured
 - `screenshots/jam_perform_first_baseline.txt`: baseline captured
 - `screenshots/jam_inspect_mode_baseline.txt`: baseline captured
+- `screenshots/jam_taste_proof_glossary.md`: P015 Jam taste/proof glossary captured
 - `screenshots/jam_first_30_seconds_baseline.txt`: baseline captured
 - `screenshots/jam_gesture_language_baseline.txt`: baseline captured
 - `screenshots/jam_tr909_takeover_baseline.txt`: baseline captured

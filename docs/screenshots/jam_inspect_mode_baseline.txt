@@ -33,4 +33,6 @@ Interpretation:
 - the inspect surface reuses existing `Log`, `SourceGraph`, capture, and runtime seams instead of inventing a second hidden model
 - Arrangement / Scene proof details stay inspectable without crowding the
   perform surface or claiming that UI/log state alone proves audible movement
+- `docs/screenshots/jam_taste_proof_glossary.md` keeps the perform-facing
+  taste/proof vocabulary separate from the deeper inspect contract details
 - `Log`, `Source`, and `Capture` remain separate screens; inspect mode only adds bounded confidence depth inside `Jam`
