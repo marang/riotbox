@@ -11,6 +11,12 @@ pub struct StemPackageArtifactSetQaReport {
     pub deferred_checks: Vec<StemPackageDeferredQaCheck>,
 }
 
+#[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StemPackageArtifactSetQaPolicy {
+    #[serde(default)]
+    pub require_lineage_evidence: bool,
+}
+
 impl StemPackageArtifactSetQaReport {
     #[must_use]
     pub fn passed_structure_only(&self) -> bool {
@@ -40,6 +46,7 @@ pub enum StemPackageArtifactSetQaFailureKind {
     DuplicateRoleArtifact,
     MissingArtifactLocation,
     MissingArtifactHash,
+    MissingLineageEvidence,
     InsufficientNonSilenceMetrics,
     SilentArtifactMetrics,
 }
@@ -68,6 +75,18 @@ pub fn validate_stem_package_artifact_set_evidence(
     artifact_set: &[ExportArtifactSetEntry],
     claimed_roles: &[ExportArtifactRole],
 ) -> StemPackageArtifactSetQaReport {
+    validate_stem_package_artifact_set_evidence_with_policy(
+        artifact_set,
+        claimed_roles,
+        StemPackageArtifactSetQaPolicy::default(),
+    )
+}
+
+pub fn validate_stem_package_artifact_set_evidence_with_policy(
+    artifact_set: &[ExportArtifactSetEntry],
+    claimed_roles: &[ExportArtifactRole],
+    policy: StemPackageArtifactSetQaPolicy,
+) -> StemPackageArtifactSetQaReport {
     let mut failures = Vec::new();
     if claimed_roles.is_empty() {
         failures.push(failure(
@@ -77,7 +96,7 @@ pub fn validate_stem_package_artifact_set_evidence(
     }
 
     for role in claimed_roles {
-        validate_claimed_role(*role, artifact_set, &mut failures);
+        validate_claimed_role(*role, artifact_set, policy, &mut failures);
     }
 
     let status = if failures.is_empty() {
@@ -98,6 +117,7 @@ pub fn validate_stem_package_artifact_set_evidence(
 fn validate_claimed_role(
     role: ExportArtifactRole,
     artifact_set: &[ExportArtifactSetEntry],
+    policy: StemPackageArtifactSetQaPolicy,
     failures: &mut Vec<StemPackageArtifactSetQaFailure>,
 ) {
     if !role.is_stem_role() {
@@ -124,12 +144,13 @@ fn validate_claimed_role(
         return;
     }
 
-    validate_stem_artifact_identity(role, artifact, failures);
+    validate_stem_artifact_identity(role, artifact, policy, failures);
 }
 
 fn validate_stem_artifact_identity(
     role: ExportArtifactRole,
     artifact: &ExportArtifactSetEntry,
+    policy: StemPackageArtifactSetQaPolicy,
     failures: &mut Vec<StemPackageArtifactSetQaFailure>,
 ) {
     if artifact.location_identity().trim().is_empty() {
@@ -144,9 +165,21 @@ fn validate_stem_artifact_identity(
             StemPackageArtifactSetQaFailureKind::MissingArtifactHash,
         ));
     }
+    if policy.require_lineage_evidence && !artifact_has_lineage_evidence(artifact) {
+        failures.push(failure(
+            Some(role),
+            StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
+        ));
+    }
     if let Some(metrics) = &artifact.audio_metrics {
         validate_non_silence_metrics(role, metrics, failures);
     }
+}
+
+fn artifact_has_lineage_evidence(artifact: &ExportArtifactSetEntry) -> bool {
+    artifact.source_graph_ref.is_some()
+        || !artifact.source_capture_refs.is_empty()
+        || !artifact.lineage_capture_refs.is_empty()
 }
 
 fn validate_non_silence_metrics(

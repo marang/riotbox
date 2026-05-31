@@ -1,6 +1,10 @@
 use super::*;
 
-use crate::session::{ExportArtifactLocation, ExportArtifactMediaType};
+use crate::{
+    ids::{CaptureId, SourceId},
+    session::{ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactSourceGraphRef},
+    source_graph::SourceGraphVersion,
+};
 
 #[test]
 fn stem_package_gate_passes_structure_without_claiming_audio_evidence() {
@@ -56,6 +60,74 @@ fn stem_package_gate_enforces_non_silence_when_metrics_exist() {
             .iter()
             .any(|check| check.check == StemPackageDeferredQaCheckKind::PerStemFallbackCollapse)
     );
+}
+
+#[test]
+fn stem_package_gate_preserves_default_without_lineage_requirement() {
+    let artifact_set = vec![stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    )];
+
+    let report = validate_stem_package_artifact_set_evidence(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums],
+    );
+
+    assert!(report.passed_structure_only());
+    assert!(!report.failures.contains(&failure(
+        Some(ExportArtifactRole::StemDrums),
+        StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
+    )));
+}
+
+#[test]
+fn stem_package_gate_can_require_lineage_evidence() {
+    let artifact_set = vec![stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    )];
+
+    let report = validate_stem_package_artifact_set_evidence_with_policy(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums],
+        StemPackageArtifactSetQaPolicy {
+            require_lineage_evidence: true,
+        },
+    );
+
+    assert_eq!(report.status, StemPackageArtifactSetQaStatus::Failed);
+    assert!(report.failures.contains(&failure(
+        Some(ExportArtifactRole::StemDrums),
+        StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
+    )));
+}
+
+#[test]
+fn stem_package_gate_accepts_source_or_capture_lineage_evidence_when_required() {
+    for artifact in [
+        stem_artifact_with_source_graph_ref(),
+        stem_artifact_with_source_capture_ref(),
+        stem_artifact_with_lineage_capture_ref(),
+    ] {
+        let artifact_set = vec![artifact];
+
+        let report = validate_stem_package_artifact_set_evidence_with_policy(
+            &artifact_set,
+            &[ExportArtifactRole::StemDrums],
+            StemPackageArtifactSetQaPolicy {
+                require_lineage_evidence: true,
+            },
+        );
+
+        assert!(report.passed_structure_only());
+        assert!(!report.failures.contains(&failure(
+            Some(ExportArtifactRole::StemDrums),
+            StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
+        )));
+    }
 }
 
 #[test]
@@ -210,6 +282,40 @@ fn stem_artifact_with_metrics(
 ) -> ExportArtifactSetEntry {
     let mut artifact = stem_artifact(role, path, sha256);
     artifact.audio_metrics = Some(metrics);
+    artifact
+}
+
+fn stem_artifact_with_source_graph_ref() -> ExportArtifactSetEntry {
+    let mut artifact = stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    );
+    artifact.source_graph_ref = Some(ExportArtifactSourceGraphRef {
+        source_id: SourceId::from("src-1"),
+        graph_version: SourceGraphVersion::V1,
+        graph_hash: "graph-hash-1".into(),
+    });
+    artifact
+}
+
+fn stem_artifact_with_source_capture_ref() -> ExportArtifactSetEntry {
+    let mut artifact = stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    );
+    artifact.source_capture_refs = vec![CaptureId::from("cap-source")];
+    artifact
+}
+
+fn stem_artifact_with_lineage_capture_ref() -> ExportArtifactSetEntry {
+    let mut artifact = stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "a",
+    );
+    artifact.lineage_capture_refs = vec![CaptureId::from("cap-root")];
     artifact
 }
 
