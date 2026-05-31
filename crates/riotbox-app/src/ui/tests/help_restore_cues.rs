@@ -50,6 +50,28 @@ fn renders_help_overlay_with_locked_source_timing_guidance() {
 }
 
 #[test]
+fn renders_help_overlay_with_jam_taste_and_proof_guidance() {
+    let mut shell = sample_shell_state();
+    shell.show_help = true;
+
+    let rendered = render_jam_shell_snapshot(&shell, 120, 34);
+
+    assert!(rendered.contains("Jam taste / proof"), "{rendered}");
+    assert!(
+        rendered.contains("Taste now: cautious; confirm grid before trusting scene"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Proof now: none yet; no landed audible move has output"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Taste is confidence language, not autonomous arranger"),
+        "{rendered}"
+    );
+}
+
+#[test]
 fn renders_help_overlay_with_pending_scene_jump_cue() {
     let mut shell = sample_shell_state();
     assert_eq!(

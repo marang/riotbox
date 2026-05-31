@@ -42,6 +42,7 @@ use jam_scene_commit_cues::{
     latest_landed_command, scene_history_trail_line, scene_post_commit_cue_line,
 };
 use recovery_prompt::{recovery_help_lines, recovery_warning_line};
+use riotbox_core::view::jam::ArrangementSceneContractReadinessView;
 #[cfg(test)]
 use riotbox_core::view::jam::{CaptureHandoffReadinessView, CaptureTargetKindView};
 use scene_timing_labels::{

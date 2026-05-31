@@ -166,6 +166,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
     if let Some(ghost_help_lines) = ghost_help_lines(shell) {
         lines.extend(ghost_help_lines);
     }
+    lines.extend(arrangement_help_lines(shell));
 
     lines.extend([
         Line::from(""),
@@ -199,6 +200,57 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
 
     frame.render_widget(Clear, popup);
     frame.render_widget(help, popup);
+}
+
+fn arrangement_help_lines(shell: &JamShellState) -> Vec<Line<'static>> {
+    vec![
+        Line::from(""),
+        Line::from("Jam taste / proof"),
+        Line::from(format!(
+            "Taste now: {}",
+            arrangement_taste_help_text(shell)
+        )),
+        Line::from(format!(
+            "Proof now: {}",
+            arrangement_proof_help_text(shell)
+        )),
+        Line::from("Taste is confidence language, not autonomous arranger proof"),
+    ]
+}
+
+fn arrangement_taste_help_text(shell: &JamShellState) -> &'static str {
+    match shell.app.jam_view.scene.arrangement_contract.readiness {
+        ArrangementSceneContractReadinessView::Ready => {
+            "scene-ready; trusted grid can steer manual scene moves"
+        }
+        ArrangementSceneContractReadinessView::NeedsTimingConfirmation => {
+            "cautious; confirm grid before trusting scene moves"
+        }
+        ArrangementSceneContractReadinessView::FallbackTimingOnly => {
+            "sketch; fallback timing only"
+        }
+        ArrangementSceneContractReadinessView::NeedsSceneMaterial => {
+            "waiting; needs two scenes"
+        }
+        ArrangementSceneContractReadinessView::NeedsTimingEvidence => {
+            "unknown; timing unavailable"
+        }
+        ArrangementSceneContractReadinessView::MissingSourceGraph => {
+            "unknown; load source graph"
+        }
+    }
+}
+
+fn arrangement_proof_help_text(shell: &JamShellState) -> &'static str {
+    let contract = &shell.app.jam_view.scene.arrangement_contract;
+
+    if contract.has_pending_scene_transition {
+        "pending scene move; wait for commit plus output evidence"
+    } else if contract.has_landed_movement {
+        "landed movement; inspect replay/output trail before trusting audio"
+    } else {
+        "none yet; no landed audible move has output evidence in this run"
+    }
 }
 
 fn pending_scene_help_lines(shell: &JamShellState) -> Option<Vec<Line<'static>>> {
