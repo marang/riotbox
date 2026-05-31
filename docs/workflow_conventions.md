@@ -24,10 +24,18 @@ This is a workflow note, not a product spec. The documentation ownership split i
 - `docs/workflow_conventions.md` owns the operational ticket/branch/PR/CI/Linear loop.
 - `AGENTS.md` owns non-negotiable agent guardrails and should point here instead of
   restating full procedural detail.
-- The `riotbox-development` skill owns agent-local behavior and should mirror only
-  durable repo workflow rules back into this document or `AGENTS.md`.
+- The `riotbox-development` skill owns Riotbox product, audio, and
+  musician-facing judgment. It should not own operational GitHub / Linear /
+  branch workflow. If a durable product or QA rule emerges there, mirror it into
+  `AGENTS.md` or the relevant spec. If an operational workflow rule emerges,
+  keep it in this document.
 
-When the local `riotbox-development` skill is available, use it for Riotbox implementation work. If a recurring Riotbox failure mode or better QA pattern is discovered, update that skill, validate it, re-read it, and mirror durable workflow rules back into this document or the relevant repo spec.
+When the local `riotbox-development` skill is available, use it for Riotbox
+product/audio implementation judgment. If a recurring Riotbox product failure
+mode or better audio QA pattern is discovered, update that skill when it belongs
+there, validate it, re-read it, and mirror durable repo-facing rules into
+`AGENTS.md` or the relevant spec. Keep GitHub, Linear, PR, CI, branch, archive,
+and closeout procedure in this workflow document.
 
 ---
 
@@ -270,12 +278,16 @@ Once a PR is open for a ticket:
 
 This keeps review history and Linear issue history aligned.
 
-Environment note: do not plan around a local `gh` CLI for Riotbox work; it is
-not installed. Prefer the GitHub connector for PR creation, PR metadata updates,
-and PR merges. For read-only status checks, public GitHub API responses and
-Linear diff metadata are acceptable supporting evidence. If the connector is
-unavailable and a PR is already green and merge-ready, SSH `git` may be used as
-the repository-level merge/push fallback, followed by an explicit PR state check.
+Environment note: use the authenticated local `gh` CLI as the primary GitHub
+PR tool for Riotbox work. Agents must verify `gh auth status` before relying on
+it. Use `gh` for PR creation, PR metadata/status inspection, CI/check summaries,
+and PR merges when available. The GitHub connector may be used as a fallback
+when it is authenticated and working. For read-only status checks, public GitHub
+API responses and Linear diff metadata are acceptable supporting evidence. If
+neither authenticated `gh` nor connector auth is available, the agent can push
+the branch and prepare the PR URL/body, but cannot complete PR creation itself.
+If a PR is already green and merge-ready, SSH `git` may be used as the
+repository-level merge/push fallback, followed by an explicit PR state check.
 
 ## 8.1 Branch-Level Review Before PR
 
@@ -793,7 +805,7 @@ Current practical split:
 
 - local branch creation
 - commit and push flow
-- PR creation
+- PR creation, PR status inspection, and PR merges through authenticated `gh`
 - issue state transitions
 - issue deletion through the token-backed `issueDelete` helper after archive handoff
 - issue comments
