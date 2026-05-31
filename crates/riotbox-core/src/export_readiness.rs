@@ -73,6 +73,13 @@ impl ProductExportRole {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+pub enum ProductExportDestinationKind {
+    LocalArtifactDirectory,
+    LocalFilePath,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum UnsupportedExportScope {
     StemPackage,
     LiveRecording,

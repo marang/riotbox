@@ -26,6 +26,8 @@ pub struct SessionFile {
     pub action_log: ActionLog,
     pub snapshots: Vec<Snapshot>,
     pub captures: Vec<CaptureRef>,
+    #[serde(default)]
+    pub export_receipts: Vec<ExportReceiptState>,
     pub ghost_state: GhostState,
     pub notes: Option<String>,
 }
@@ -51,6 +53,7 @@ impl SessionFile {
             action_log: ActionLog::default(),
             snapshots: Vec::new(),
             captures: Vec::new(),
+            export_receipts: Vec::new(),
             ghost_state: GhostState::default(),
             notes: None,
         }

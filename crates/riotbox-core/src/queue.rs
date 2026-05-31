@@ -135,6 +135,40 @@ impl ActionQueue {
         committed
     }
 
+    pub fn commit_pending_after_side_effect(
+        &mut self,
+        action_id: ActionId,
+        boundary: CommitBoundaryState,
+        committed_at: TimestampMs,
+        result_summary: impl Into<String>,
+    ) -> Option<CommittedActionRef> {
+        let mut remaining = VecDeque::with_capacity(self.pending.len());
+        let mut committed = None;
+        let result_summary = result_summary.into();
+
+        while let Some(mut action) = self.pending.pop_front() {
+            if action.id == action_id && action.quantization.is_ready_for(boundary.kind) {
+                action.status = ActionStatus::Committed;
+                action.committed_at = Some(committed_at);
+                action.result = Some(ActionResult {
+                    accepted: true,
+                    summary: result_summary.clone(),
+                });
+                committed = Some(CommittedActionRef {
+                    action_id: action.id,
+                    boundary: boundary.clone(),
+                    commit_sequence: 1,
+                });
+                self.history.push(action);
+            } else {
+                remaining.push_back(action);
+            }
+        }
+
+        self.pending = remaining;
+        committed
+    }
+
     pub fn reject(&mut self, action_id: ActionId, reason: impl Into<String>) -> bool {
         let reason = reason.into();
         let mut remaining = VecDeque::with_capacity(self.pending.len());
@@ -340,5 +374,62 @@ mod tests {
         );
 
         assert_eq!(action_id, ActionId(10));
+    }
+
+    #[test]
+    fn commits_one_side_effect_action_only_after_caller_reports_success() {
+        let mut queue = ActionQueue::new();
+
+        let export_action = queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::ExportProductMix,
+                Quantization::Immediate,
+                crate::action::ActionTarget {
+                    scope: Some(TargetScope::Session),
+                    ..Default::default()
+                },
+            ),
+            100,
+        );
+        let scene_action = queue.enqueue(
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::SceneLaunch,
+                Quantization::NextBar,
+                crate::action::ActionTarget {
+                    scope: Some(TargetScope::Scene),
+                    ..Default::default()
+                },
+            ),
+            101,
+        );
+
+        let committed = queue
+            .commit_pending_after_side_effect(
+                export_action,
+                CommitBoundaryState {
+                    kind: CommitBoundary::Immediate,
+                    beat_index: 0,
+                    bar_index: 0,
+                    phrase_index: 0,
+                    scene_id: None,
+                },
+                200,
+                "export wrote full_grid_mix",
+            )
+            .expect("export action commits after side effect success");
+
+        assert_eq!(committed.action_id, export_action);
+        assert_eq!(queue.pending_actions().len(), 1);
+        assert_eq!(queue.pending_actions()[0].id, scene_action);
+        assert_eq!(queue.history().len(), 1);
+        assert_eq!(
+            queue.history()[0]
+                .result
+                .as_ref()
+                .map(|result| result.summary.as_str()),
+            Some("export wrote full_grid_mix")
+        );
     }
 }

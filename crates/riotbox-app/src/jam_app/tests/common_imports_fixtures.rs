@@ -31,6 +31,7 @@ use riotbox_core::{
         ActorType, CaptureLengthIntent, CommitBoundary, GhostMode, Quantization,
         SourceMonitorMode, TargetScope, UndoPolicy,
     },
+    export_readiness::{ProductExportBoundary, ProductExportRole, UnsupportedExportScope},
     ghost::{
         GhostSuggestedAction, GhostSuggestionBlocker, GhostSuggestionBlockerKind,
         GhostSuggestionConfidence, GhostSuggestionSafety, GhostWatchSuggestion, GhostWatchTool,

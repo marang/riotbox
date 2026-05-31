@@ -940,9 +940,9 @@ Today the repo already has:
   export with `full_grid_mix` as the current export role, `reproducible` status,
   and explicit unsupported-scope flags for stem package export, live recording
   export, DAW export, and host-audio soak.
-- the first future export action boundary is `export.product_mix`, which should
-  write a `full_grid_mix` product artifact plus proof/manifest receipt only
-  after the existing product-export reproducibility proof succeeds. It is not a
+- the first export action boundary is `export.product_mix`, which writes a
+  `full_grid_mix` product artifact plus proof receipt only after the existing
+  product-export reproducibility proof and artifact hash check succeed. It is not a
   stem package, live recording, DAW session, host-audio capture, automatic
   arranger export, or automatic Ghost export gate.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
