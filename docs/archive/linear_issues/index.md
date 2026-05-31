@@ -830,4 +830,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add P015 first-run next-move cue audit
 - [RIOTBOX-1054.md](./RIOTBOX-1054.md)
   Align Recipe 16 scene-jump step with timing trust
+- [RIOTBOX-1055.md](./RIOTBOX-1055.md)
+  Point in-app first-run help at Recipe 16 taste/proof path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
