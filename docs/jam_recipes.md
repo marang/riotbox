@@ -843,12 +843,14 @@ Then:
 1. press `Space`
 2. stay on `Jam`
 3. read the compact taste and proof lines in `Warnings / trust`
-4. if a scene jump is offered, press `y`; otherwise press `f` or `g`
-5. wait for the queued move to land
-6. press `i` to open Jam inspect
-7. compare the inspect contract details with the short perform cues
-8. quit with `q`
-9. validate the observer stream
+4. if the taste line is `scene-ready`, press `y` when a scene jump is offered
+5. if the taste line is `cautious`, `sketch`, or `unknown`, press `g` or `f`
+   first and treat `y` as a later move after grid trust improves
+6. wait for the queued move to land
+7. press `i` to open Jam inspect
+8. compare the inspect contract details with the short perform cues
+9. quit with `q`
+10. validate the observer stream
 
 ```bash
 scripts/validate_user_session_observer_ndjson.py artifacts/audio_qa/local/user-session/events.ndjson
@@ -858,6 +860,8 @@ What to observe on `Jam`:
 
 - `taste cautious | confirm grid before scene moves` means the move can still be
   tried, but timing-sensitive scene movement should not be treated as trusted.
+  Prefer a lane gesture such as `g` or `f` before treating `y` as the next safe
+  move.
 - `taste scene-ready | trusted grid can steer scene moves` means the current
   timing contract is strong enough for the bounded manual scene path.
 - `proof none yet | audible moves need output evidence` means Riotbox has not
