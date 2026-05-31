@@ -5,8 +5,11 @@ use riotbox_audio::runtime::{
     source_monitor_route_for_output,
 };
 use riotbox_core::{
-    queue::ActionQueue, session::SessionFile, source_graph::SourceGraph,
-    transport::CommitBoundaryState, view::jam::JamViewModel,
+    queue::ActionQueue,
+    session::SessionFile,
+    source_graph::{SourceGraph, section_for_projected_scene},
+    transport::CommitBoundaryState,
+    view::jam::{JamViewModel, source_timing_consumer_readiness},
 };
 
 use super::{
@@ -115,16 +118,74 @@ impl JamAppState {
 
     #[must_use]
     pub fn source_monitor_render_state(&self) -> SourceMonitorRenderState {
-        SourceMonitorRenderState::from_source_cache(
-            self.session.runtime_state.source_monitor.mode,
-            self.source_audio_cache.as_ref(),
-        )
+        self.source_monitor_render_state_for_cache(self.source_audio_cache.as_ref())
     }
 
     #[must_use]
     pub fn source_monitor_control_state(&self) -> SourceMonitorRenderState {
-        SourceMonitorRenderState::control_only(self.session.runtime_state.source_monitor.mode)
+        self.source_monitor_render_state_for_cache(None)
     }
+
+    fn source_monitor_render_state_for_cache(
+        &self,
+        cache: Option<&riotbox_audio::source_audio::SourceAudioCache>,
+    ) -> SourceMonitorRenderState {
+        let mut render = SourceMonitorRenderState::from_source_cache(
+            self.session.runtime_state.source_monitor.mode,
+            cache,
+        );
+        render.is_transport_running = self.runtime.transport.is_playing;
+        render.tempo_bpm = self
+            .source_graph
+            .as_ref()
+            .and_then(|graph| graph.timing.bpm_estimate)
+            .unwrap_or(self.runtime.tr909_render.tempo_bpm);
+        render.position_beats = self.runtime.transport.position_beats;
+        if let Some(anchor) = source_monitor_scene_anchor(&self.session, self.source_graph.as_ref())
+        {
+            render.source_anchor_seconds = Some(anchor.source_start_seconds);
+            render.source_anchor_position_beats = anchor.transport_position_beats;
+        }
+        render
+    }
+}
+
+struct SourceMonitorSceneAnchor {
+    source_start_seconds: f64,
+    transport_position_beats: f64,
+}
+
+fn source_monitor_scene_anchor(
+    session: &SessionFile,
+    source_graph: Option<&SourceGraph>,
+) -> Option<SourceMonitorSceneAnchor> {
+    let graph = source_graph?;
+    if !source_timing_consumer_readiness(Some(graph), session).can_use_source_window_grid() {
+        return None;
+    }
+
+    let movement = session.runtime_state.scene_state.last_movement.as_ref()?;
+    let active_scene = session
+        .runtime_state
+        .scene_state
+        .active_scene
+        .as_ref()
+        .or(session.runtime_state.transport.current_scene.as_ref())?;
+    if movement.to_scene != *active_scene {
+        return None;
+    }
+
+    let section = section_for_projected_scene(graph, &movement.to_scene)?;
+    let commit_record = session
+        .action_log
+        .commit_records
+        .iter()
+        .find(|record| record.action_id == movement.action_id)?;
+
+    Some(SourceMonitorSceneAnchor {
+        source_start_seconds: f64::from(section.start_seconds),
+        transport_position_beats: commit_record.boundary.beat_index as f64,
+    })
 }
 
 pub(in crate::jam_app) fn latest_commit_boundary_from_log(

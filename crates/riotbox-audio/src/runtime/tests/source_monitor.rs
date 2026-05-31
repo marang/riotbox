@@ -16,6 +16,7 @@ fn source_monitor_source_mode_replaces_generated_output_with_source_pcm() {
         is_transport_running: true,
         tempo_bpm: 120.0,
         position_beats: 0.0,
+        ..SourceMonitorRenderState::default()
     };
 
     let output = render_source_monitor_mix_offline(&generated, 44_100, 2, &render);
@@ -41,6 +42,7 @@ fn source_monitor_blend_keeps_generated_and_source_energy() {
         is_transport_running: true,
         tempo_bpm: 120.0,
         position_beats: 0.0,
+        ..SourceMonitorRenderState::default()
     };
 
     let output = render_source_monitor_mix_offline(&generated, 44_100, 2, &render);
@@ -58,6 +60,7 @@ fn source_monitor_falls_back_to_riotbox_when_source_cache_is_absent() {
         is_transport_running: true,
         tempo_bpm: 120.0,
         position_beats: 0.0,
+        ..SourceMonitorRenderState::default()
     };
 
     let output = render_source_monitor_mix_offline(&generated, 44_100, 2, &render);
@@ -86,6 +89,7 @@ fn source_monitor_seeked_running_transport_changes_audible_source_excerpt() {
         is_transport_running: true,
         tempo_bpm,
         position_beats: 0.0,
+        ..SourceMonitorRenderState::default()
     };
     let after_seek = SourceMonitorRenderState {
         position_beats: 16.0,
@@ -107,6 +111,85 @@ fn source_monitor_seeked_running_transport_changes_audible_source_excerpt() {
     assert!(delta_metrics.rms > 0.3);
     assert_eq!(before_output[0], 0.18 * 0.88);
     assert_eq!(after_output[0], -0.62 * 0.88);
+}
+
+#[test]
+fn source_monitor_scene_anchor_repositions_source_excerpt_from_commit_boundary() {
+    let sample_rate = 480;
+    let channel_count = 2;
+    let tempo_bpm = 120.0;
+    let frames_per_beat = 240;
+    let frames_per_bar = frames_per_beat * 4;
+    let source = SourceAudioCache::from_interleaved_samples(
+        "source.wav",
+        sample_rate,
+        channel_count,
+        source_with_bar_markers(frames_per_bar),
+    )
+    .expect("source cache");
+    let generated = vec![0.0; 128];
+    let transport_only = SourceMonitorRenderState {
+        mode: SourceMonitorMode::Source,
+        source: Some(SourceMonitorAudioSource::from_cache(&source)),
+        is_transport_running: true,
+        tempo_bpm,
+        position_beats: 16.0,
+        source_anchor_seconds: None,
+        source_anchor_position_beats: 0.0,
+    };
+    let scene_anchored = SourceMonitorRenderState {
+        source_anchor_seconds: Some(0.0),
+        source_anchor_position_beats: 16.0,
+        ..transport_only.clone()
+    };
+
+    let transport_output =
+        render_source_monitor_mix_offline(&generated, sample_rate, channel_count, &transport_only);
+    let anchored_output =
+        render_source_monitor_mix_offline(&generated, sample_rate, channel_count, &scene_anchored);
+    let delta_metrics = signal_delta_metrics(&transport_output, &anchored_output);
+
+    assert_eq!(transport_output[0], -0.62 * 0.88);
+    assert_eq!(anchored_output[0], 0.18 * 0.88);
+    assert!(delta_metrics.rms > 0.4);
+}
+
+#[test]
+fn source_monitor_shared_state_updates_scene_anchor_without_replacing_source() {
+    let source = SourceAudioCache::from_interleaved_samples(
+        "source.wav",
+        480,
+        2,
+        source_with_bar_markers(960),
+    )
+    .expect("source cache");
+    let render = SourceMonitorRenderState {
+        mode: SourceMonitorMode::Source,
+        source: Some(SourceMonitorAudioSource::from_cache(&source)),
+        is_transport_running: true,
+        tempo_bpm: 120.0,
+        position_beats: 16.0,
+        source_anchor_seconds: Some(4.0),
+        source_anchor_position_beats: 16.0,
+    };
+    let shared = SharedSourceMonitorRenderState::new(&render);
+    let snapshot = shared.snapshot();
+
+    assert!(snapshot.source.is_some());
+    assert_eq!(snapshot.source_anchor_seconds, Some(4.0));
+    assert_eq!(snapshot.source_anchor_position_beats, 16.0);
+
+    shared.update(&SourceMonitorRenderState {
+        source: None,
+        source_anchor_seconds: None,
+        source_anchor_position_beats: 0.0,
+        ..render
+    });
+    let cleared_anchor = shared.snapshot();
+
+    assert!(cleared_anchor.source.is_some());
+    assert_eq!(cleared_anchor.source_anchor_seconds, None);
+    assert_eq!(cleared_anchor.source_anchor_position_beats, 0.0);
 }
 
 fn source_with_bar_markers(frames_per_bar: usize) -> Vec<f32> {

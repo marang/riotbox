@@ -41,6 +41,8 @@
             confidence: 0.9,
             tags: vec![],
         });
+        graph.timing.bpm_estimate = Some(128.0);
+        graph.timing.degraded_policy = crate::source_graph::TimingDegradedPolicy::Locked;
 
         let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-12T18:00:00Z");
         session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-02-drop"));
@@ -59,6 +61,23 @@
             vm.scene.scene_jump_availability,
             SceneJumpAvailabilityView::Ready
         );
+        assert_eq!(
+            vm.scene.arrangement_contract.readiness,
+            ArrangementSceneContractReadinessView::Ready
+        );
+        assert_eq!(
+            vm.scene.arrangement_contract.truth_source,
+            ArrangementSceneTruthSourceView::ProductSpine
+        );
+        assert_eq!(
+            vm.scene.arrangement_contract.timing_readiness,
+            SourceTimingConsumerReadiness::AnalyzerLocked
+        );
+        assert!(vm.scene.arrangement_contract.has_next_scene);
+        assert!(vm
+            .scene
+            .arrangement_contract
+            .requires_output_path_proof_for_audible_changes);
         assert_eq!(vm.scene.active_scene_energy.as_deref(), Some("high"));
         assert_eq!(vm.scene.restore_scene_energy.as_deref(), Some("medium"));
         assert_eq!(vm.scene.next_scene_energy.as_deref(), Some("medium"));
@@ -94,8 +113,53 @@
             vm.scene.scene_jump_availability,
             SceneJumpAvailabilityView::WaitingForMoreScenes
         );
+        assert_eq!(
+            vm.scene.arrangement_contract.readiness,
+            ArrangementSceneContractReadinessView::NeedsSceneMaterial
+        );
         assert_eq!(vm.scene.next_scene_energy, None);
         assert_eq!(vm.scene.next_scene_policy, None);
+    }
+
+    #[test]
+    fn arrangement_scene_contract_preserves_timing_boundaries() {
+        let mut graph = sample_graph_with_sections(&["intro".into(), "drop".into()]);
+        graph.timing.bpm_estimate = Some(128.0);
+        graph.timing.degraded_policy = crate::source_graph::TimingDegradedPolicy::ManualConfirm;
+
+        let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-30T08:20:00Z");
+        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+        session.runtime_state.scene_state.scenes = vec![
+            SceneId::from("scene-01-intro"),
+            SceneId::from("scene-02-drop"),
+        ];
+
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+        assert_eq!(
+            vm.scene.arrangement_contract.readiness,
+            ArrangementSceneContractReadinessView::NeedsTimingConfirmation
+        );
+        assert_eq!(
+            vm.scene.arrangement_contract.timing_readiness,
+            SourceTimingConsumerReadiness::NeedsUserConfirmation
+        );
+        assert!(vm.scene.arrangement_contract.requires_p012_source_grid_gate);
+        assert!(vm
+            .scene
+            .arrangement_contract
+            .requires_p013_musical_quality_gate);
+
+        let mut fallback_graph = graph;
+        fallback_graph.timing.degraded_policy =
+            crate::source_graph::TimingDegradedPolicy::FallbackGrid;
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&fallback_graph));
+
+        assert_eq!(
+            vm.scene.arrangement_contract.readiness,
+            ArrangementSceneContractReadinessView::FallbackTimingOnly
+        );
     }
 
     #[test]

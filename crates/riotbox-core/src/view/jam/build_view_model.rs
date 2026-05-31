@@ -313,6 +313,13 @@ impl JamViewModel {
             active_scene_energy.as_deref(),
             restore_scene_energy.as_deref(),
         );
+        let arrangement_contract = arrangement_scene_contract_view(
+            session,
+            queue,
+            graph,
+            scene_jump_availability,
+            next_scene.is_some(),
+        );
 
         Self {
             transport: JamTransportView {
@@ -341,6 +348,7 @@ impl JamViewModel {
                 next_scene_policy,
                 restore_scene_policy,
                 last_movement: scene_movement_view(session),
+                arrangement_contract,
                 scene_count: session.runtime_state.scene_state.scenes.len(),
             },
             macros: MacroStripView {

@@ -57,6 +57,8 @@ pub struct SourceMonitorRenderState {
     pub is_transport_running: bool,
     pub tempo_bpm: f32,
     pub position_beats: f64,
+    pub source_anchor_seconds: Option<f64>,
+    pub source_anchor_position_beats: f64,
 }
 
 impl Default for SourceMonitorRenderState {
@@ -67,6 +69,8 @@ impl Default for SourceMonitorRenderState {
             is_transport_running: false,
             tempo_bpm: 128.0,
             position_beats: 0.0,
+            source_anchor_seconds: None,
+            source_anchor_position_beats: 0.0,
         }
     }
 }
@@ -103,6 +107,9 @@ pub(super) struct SharedSourceMonitorRenderState {
     mode: AtomicU32,
     source_gain_bits: AtomicU32,
     riotbox_gain_bits: AtomicU32,
+    source_anchor_present: AtomicBool,
+    source_anchor_seconds_bits: AtomicU64,
+    source_anchor_position_beats_bits: AtomicU64,
     source: Option<SourceMonitorAudioSource>,
 }
 
@@ -112,6 +119,9 @@ impl SharedSourceMonitorRenderState {
             mode: AtomicU32::new(source_monitor_mode_to_u32(render_state.mode)),
             source_gain_bits: AtomicU32::new(SOURCE_GAIN.to_bits()),
             riotbox_gain_bits: AtomicU32::new(1.0_f32.to_bits()),
+            source_anchor_present: AtomicBool::new(false),
+            source_anchor_seconds_bits: AtomicU64::new(0.0_f64.to_bits()),
+            source_anchor_position_beats_bits: AtomicU64::new(0.0_f64.to_bits()),
             source: render_state.source.clone(),
         };
         shared.update(render_state);
@@ -143,6 +153,18 @@ impl SharedSourceMonitorRenderState {
                     .store(1.0_f32.to_bits(), Ordering::Relaxed);
             }
         }
+        self.source_anchor_present.store(
+            render_state.source_anchor_seconds.is_some(),
+            Ordering::Relaxed,
+        );
+        self.source_anchor_seconds_bits.store(
+            render_state.source_anchor_seconds.unwrap_or(0.0).to_bits(),
+            Ordering::Relaxed,
+        );
+        self.source_anchor_position_beats_bits.store(
+            render_state.source_anchor_position_beats.to_bits(),
+            Ordering::Relaxed,
+        );
     }
 
     pub(super) fn snapshot(&self) -> RealtimeSourceMonitorRenderState {
@@ -154,6 +176,14 @@ impl SharedSourceMonitorRenderState {
             is_transport_running: false,
             tempo_bpm: 128.0,
             position_beats: 0.0,
+            source_anchor_seconds: self
+                .source_anchor_present
+                .load(Ordering::Relaxed)
+                .then(|| f64::from_bits(self.source_anchor_seconds_bits.load(Ordering::Relaxed))),
+            source_anchor_position_beats: f64::from_bits(
+                self.source_anchor_position_beats_bits
+                    .load(Ordering::Relaxed),
+            ),
         }
     }
 }
@@ -167,6 +197,8 @@ pub(super) struct RealtimeSourceMonitorRenderState {
     pub(super) is_transport_running: bool,
     pub(super) tempo_bpm: f32,
     pub(super) position_beats: f64,
+    pub(super) source_anchor_seconds: Option<f64>,
+    pub(super) source_anchor_position_beats: f64,
 }
 
 pub(super) fn source_monitor_mode_to_u32(mode: SourceMonitorMode) -> u32 {
@@ -328,6 +360,8 @@ pub fn render_source_monitor_mix_offline(
         is_transport_running: render_state.is_transport_running,
         tempo_bpm: render_state.tempo_bpm,
         position_beats: render_state.position_beats,
+        source_anchor_seconds: render_state.source_anchor_seconds,
+        source_anchor_position_beats: render_state.source_anchor_position_beats,
     };
     apply_source_monitor_policy(
         &mut output,
@@ -351,8 +385,15 @@ fn source_start_frame(
         return 0;
     }
 
-    let seconds = render.position_beats.max(0.0) * 60.0 / f64::from(render.tempo_bpm);
-    ((seconds * f64::from(source.sample_rate)).floor() as usize) % source.frame_count
+    let transport_seconds = match render.source_anchor_seconds {
+        Some(anchor_seconds) => {
+            let relative_beats =
+                (render.position_beats - render.source_anchor_position_beats).max(0.0);
+            anchor_seconds.max(0.0) + relative_beats * 60.0 / f64::from(render.tempo_bpm)
+        }
+        None => render.position_beats.max(0.0) * 60.0 / f64::from(render.tempo_bpm),
+    };
+    ((transport_seconds * f64::from(source.sample_rate)).floor() as usize) % source.frame_count
 }
 
 fn source_sample(
