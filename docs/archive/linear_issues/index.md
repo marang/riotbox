@@ -816,4 +816,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Define bounded P014 scene arrange extension contract
 - [RIOTBOX-1048.md](./RIOTBOX-1048.md)
   Close P014 exit evidence and roadmap state
+- [RIOTBOX-1049.md](./RIOTBOX-1049.md)
+  Mark P014 closed and activate P015
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
