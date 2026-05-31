@@ -314,6 +314,7 @@ Minimum receipt fields:
 - export hash
 - normalized manifest hash
 - `artifact_set[]` entries with role, local path or URI, media type, sha256,
+  optional source graph ref, source capture refs, capture-lineage refs,
   optional audio metrics, and optional sample rate, channel count, and duration
   milliseconds when known
 - readiness status
@@ -343,9 +344,12 @@ Additional receipt fields required before wider export scopes:
 - wider artifact set roles, per-artifact normalized manifest references,
   source/capture lineage links, and stem/DAW/live-recording media roles beyond
   the current full-grid WAV entry
-- source graph id/hash and timing-grid reference used for placement-sensitive
+- source graph ref/hash and timing-grid reference used for placement-sensitive
   exports
-- capture lineage refs for source-backed stems or resample-derived artifacts
+- source capture refs and capture-lineage refs for source-backed stems or
+  resample-derived artifacts; these refs live on each `artifact_set[]` entry,
+  default empty for older receipts, and must point back to Session/Core truth
+  rather than filenames, app-local state, or observer-only metadata
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - render profile or recipe id so replay can validate which deterministic path
   produced the artifacts

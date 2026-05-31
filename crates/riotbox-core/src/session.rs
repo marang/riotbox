@@ -2,7 +2,7 @@ mod export_types;
 
 pub use export_types::{
     ExportArtifactAudioMetrics, ExportArtifactLocation, ExportArtifactMediaType,
-    ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState,
+    ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportReceiptState,
 };
 
 // Textual includes keep this large file split mechanical and behavior-preserving.

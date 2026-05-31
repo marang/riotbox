@@ -6,7 +6,8 @@ use crate::{
         ExportReadinessContract, ExportReadinessStatus, ProductExportBoundary, ProductExportRole,
         UnsupportedExportScope,
     },
-    ids::{ActionId, ExportReceiptId},
+    ids::{ActionId, CaptureId, ExportReceiptId, SourceId},
+    source_graph::SourceGraphVersion,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -79,6 +80,12 @@ pub struct ExportArtifactSetEntry {
     pub media_type: ExportArtifactMediaType,
     pub sha256: String,
     #[serde(default)]
+    pub source_graph_ref: Option<ExportArtifactSourceGraphRef>,
+    #[serde(default)]
+    pub source_capture_refs: Vec<CaptureId>,
+    #[serde(default)]
+    pub lineage_capture_refs: Vec<CaptureId>,
+    #[serde(default)]
     pub audio_metrics: Option<ExportArtifactAudioMetrics>,
     #[serde(default)]
     pub sample_rate_hz: Option<u32>,
@@ -96,6 +103,9 @@ impl ExportArtifactSetEntry {
             location: ExportArtifactLocation::LocalPath { path: path.into() },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: sha256.into(),
+            source_graph_ref: None,
+            source_capture_refs: Vec::new(),
+            lineage_capture_refs: Vec::new(),
             audio_metrics: None,
             sample_rate_hz: None,
             channel_count: None,
@@ -110,6 +120,13 @@ impl ExportArtifactSetEntry {
             | ExportArtifactLocation::Uri { uri: path } => path,
         }
     }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportArtifactSourceGraphRef {
+    pub source_id: SourceId,
+    pub graph_version: SourceGraphVersion,
+    pub graph_hash: String,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -292,6 +309,9 @@ mod tests {
             },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            source_graph_ref: None,
+            source_capture_refs: Vec::new(),
+            lineage_capture_refs: Vec::new(),
             audio_metrics: Some(ExportArtifactAudioMetrics {
                 peak_milli_dbfs: Some(-120),
                 rms_milli_dbfs: Some(-6_000),
@@ -313,7 +333,36 @@ mod tests {
     }
 
     #[test]
-    fn missing_audio_metrics_defaults_to_none_for_older_artifact_entries() {
+    fn artifact_set_entries_roundtrip_source_and_capture_lineage_refs() {
+        let entry = ExportArtifactSetEntry {
+            role: ExportArtifactRole::StemDrums,
+            location: ExportArtifactLocation::LocalPath {
+                path: "exports/stems/drums.wav".into(),
+            },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+            source_graph_ref: Some(ExportArtifactSourceGraphRef {
+                source_id: SourceId::from("src-1"),
+                graph_version: SourceGraphVersion::V1,
+                graph_hash: "graph-hash-1".into(),
+            }),
+            source_capture_refs: vec![CaptureId::from("cap-source")],
+            lineage_capture_refs: vec![CaptureId::from("cap-root"), CaptureId::from("cap-print")],
+            audio_metrics: None,
+            sample_rate_hz: Some(48_000),
+            channel_count: Some(2),
+            duration_ms: Some(2_000),
+        };
+
+        let json = serde_json::to_string_pretty(&entry).expect("serialize artifact entry");
+        let roundtrip: ExportArtifactSetEntry =
+            serde_json::from_str(&json).expect("deserialize artifact entry");
+
+        assert_eq!(roundtrip, entry);
+    }
+
+    #[test]
+    fn missing_optional_evidence_defaults_for_older_artifact_entries() {
         let mut json = serde_json::json!({
             "role": "stem_drums",
             "location": {
@@ -331,5 +380,8 @@ mod tests {
             serde_json::from_value(json).expect("deserialize older artifact entry");
 
         assert_eq!(entry.audio_metrics, None);
+        assert_eq!(entry.source_graph_ref, None);
+        assert!(entry.source_capture_refs.is_empty());
+        assert!(entry.lineage_capture_refs.is_empty());
     }
 }
