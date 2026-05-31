@@ -8,6 +8,8 @@ use serde_json::{Value, json};
 use crate::jam_app::{RecoveryCandidateTrust, SessionRecoverySurface};
 use crate::ui::{JamShellState, ShellKeyOutcome};
 
+mod export;
+
 pub fn observer_snapshot(shell: &JamShellState) -> Value {
     let transport = &shell.app.runtime.transport;
     let runtime = &shell.app.runtime_view;
@@ -57,6 +59,7 @@ pub fn observer_snapshot(shell: &JamShellState) -> Value {
         "source_map": source_map_observer_snapshot(shell),
         "scene": scene_observer_snapshot(shell),
         "capture": capture_observer_snapshot(shell),
+        "export": export::export_observer_snapshot(shell),
         "recovery": recovery_observer_snapshot(shell),
     })
 }
