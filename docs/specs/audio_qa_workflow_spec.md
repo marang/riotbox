@@ -945,6 +945,12 @@ Today the repo already has:
   product-export reproducibility proof and artifact hash check succeed. It is not a
   stem package, live recording, DAW session, host-audio capture, automatic
   arranger export, or automatic Ghost export gate.
+- the observer export surface derives `requested`, `started`, `completed`, and
+  `failed` lifecycle records from the existing `export.product_mix`
+  ActionCommand, queue/action history, and export receipts. Completed records
+  include receipt id, role, artifact/proof paths, hashes, readiness status, and
+  unsupported scopes; failed records include the action id and failure reason.
+  This is an observer projection, not a second export truth.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
