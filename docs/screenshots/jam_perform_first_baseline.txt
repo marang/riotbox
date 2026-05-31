@@ -5,6 +5,8 @@ Notes:
 - normalized from the current Jam shell regression fixture
 - intended as a review/update artifact, not a pixel-perfect golden render
 - records the perform-first Jam reduction without introducing a separate inspect mode
+- refreshed for `RIOTBOX-1037` so the baseline includes the P015
+  Arrangement / Scene taste and proof language
 
 Key shell cues after this slice:
 
@@ -23,11 +25,19 @@ Key shell cues after this slice:
   - next lane change
   - one compact live-relevant secondary cue
 - `Jam -> Pending / landed`, `Suggested gestures`, and `Warnings / trust` now replace the older Source / Sections / Macros row on the main performance surface
+- `Jam -> Trust` / `Warnings / trust` now includes contract-derived taste
+  language such as `taste cautious | confirm grid before scene moves` or
+  `taste scene-ready | trusted grid can steer scene moves`
+- `Jam -> Warnings / trust` may show proof reminders such as `proof none yet |
+  audible moves need output evidence`; this is deliberately not a claim that an
+  audio proof passed
 
 Interpretation:
 
 - the Jam screen now behaves more like a playable surface and less like an operator dashboard
 - deep analysis structure, section lists, and capture lineage still exist, but they now live on `Source`, `Capture`, `Log`, or `Help` instead of competing for first-rank space on `Jam`
+- Arrangement / Scene confidence is now visible in musician language while the
+  deeper contract remains on inspect and source/log surfaces
 - the shell keeps one Jam surface for now, but it now explicitly prioritizes:
   - what is happening now
   - what lands next

@@ -136,6 +136,19 @@ It must expose:
 - post-commit Scene cues that keep a readable monochrome sentence while visually separating the live scene/result, restore target, compact support hints such as `909 lift`, and next perform keys
 - pending Scene cues may include typed transition policy intent such as `policy rise | 909 drive | 202 lift`; this is read-only intent, not a new control surface
 - post-commit Scene cues may include landed movement intent such as `move rise 909 drive 202 lift`; this names persisted session movement that is allowed to shape current render projections, not a separate arranger UI
+- Jam perform should translate the shared Arrangement / Scene contract into one
+  musician-facing taste line such as `taste cautious | confirm grid before
+  scene moves` or `taste scene-ready | trusted grid can steer scene moves`.
+  This line is confidence language, not proof that a finished arranger or
+  autonomous performance exists.
+- Jam perform / warnings may show a compact proof reminder such as `proof none
+  yet | audible moves need output evidence` or `proof landed movement | inspect
+  replay/audio evidence`. It should not claim an audio proof passed unless an
+  actual output-path proof exists.
+- Jam inspect may expose the deeper Arrangement / Scene contract readiness,
+  timing-readiness, truth-source, action-surface, and proof-obligation details.
+  Those details must remain derived from the shared Jam view model and Session
+  state, not screen-local inference.
 - when the shared Feral scorecard is `ready`, Suggested gestures may promote
   existing bounded Feral paths such as W-30 browse, TR-909 fill, MC-202
   follow / answer, and capture; this must not create new controls or bypass

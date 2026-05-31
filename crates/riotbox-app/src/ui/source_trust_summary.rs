@@ -12,6 +12,12 @@ use super::{
     style_pending_cue, style_pending_detail,
 };
 
+mod arrangement;
+
+pub(super) use arrangement::{
+    arrangement_inspect_lines, arrangement_proof_line, arrangement_taste_line,
+};
+
 pub(super) fn source_candidate_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     match shell.app.source_graph.as_ref() {
         Some(graph) => {

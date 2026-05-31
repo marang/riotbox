@@ -317,15 +317,29 @@ fn jam_warning_lines(shell: &JamShellState) -> Vec<Line<'static>> {
         "tentative"
     };
 
-    vec![
-        Line::from(format!("trust {} | {}", trust.headline, readiness)),
+    let mut lines = vec![Line::from(format!("trust {} | {}", trust.headline, readiness))];
+
+    let recovery = recovery_warning_line(shell);
+    if let Some(recovery) = recovery.as_ref() {
+        lines.push(Line::from(recovery.clone()));
+    }
+
+    lines.extend([
+        arrangement_taste_line(shell),
+        Line::from(arrangement_proof_line(shell)),
         Line::from(source_timing_warning_line(shell)),
-        Line::from(primary_warning_line(shell)),
-        Line::from(format!(
-            "audio {} | sidecar {}",
-            shell.app.runtime_view.audio_status, shell.app.runtime_view.sidecar_status
-        )),
-    ]
+    ]);
+
+    if recovery.is_none() {
+        lines.push(Line::from(primary_warning_line(shell)));
+    }
+
+    lines.push(Line::from(format!(
+        "audio {} | sidecar {}",
+        shell.app.runtime_view.audio_status, shell.app.runtime_view.sidecar_status
+    )));
+
+    lines
 }
 
 fn primary_warning_line(shell: &JamShellState) -> String {
