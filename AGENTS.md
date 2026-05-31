@@ -21,6 +21,10 @@ If Riotbox work reveals a recurring failure mode, workflow gap, or better QA pat
 - Treat `JamAppState` as an app facade, not a second product truth.
 - Run branch-level review before PRs when the `code-review` skill is available.
 - Inspect GitHub Actions / CI explicitly after opening a PR.
+- Do not rely on a local `gh` CLI in this environment; it is not installed.
+  Use the GitHub connector for PR write operations, public GitHub/Linear
+  metadata for read-only status checks when available, and SSH `git` only for
+  repository-level push/merge fallback when the connector is unavailable.
 - Keep Linear current: issue state, priority, labels, project, archive, deletion, and branch cleanup are part of the work.
 - Use one archive file per Linear ticket under `docs/archive/linear_issues/RIOTBOX-123.md`; month files are indexes only.
 - Search archives and generated artifacts only when needed. Default `rg` should respect `.rgignore`.

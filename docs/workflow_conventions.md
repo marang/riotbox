@@ -270,6 +270,13 @@ Once a PR is open for a ticket:
 
 This keeps review history and Linear issue history aligned.
 
+Environment note: do not plan around a local `gh` CLI for Riotbox work; it is
+not installed. Prefer the GitHub connector for PR creation, PR metadata updates,
+and PR merges. For read-only status checks, public GitHub API responses and
+Linear diff metadata are acceptable supporting evidence. If the connector is
+unavailable and a PR is already green and merge-ready, SSH `git` may be used as
+the repository-level merge/push fallback, followed by an explicit PR state check.
+
 ## 8.1 Branch-Level Review Before PR
 
 Before opening a PR for a finished feature branch:
