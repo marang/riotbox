@@ -970,7 +970,9 @@ Today the repo already has:
   scope is accepted. The default gate remains compatible with current
   product-mix callers. Callers may also enable the structural fallback policy
   to require typed source-vs-fallback comparison evidence before accepting a
-  claimed stem artifact, but threshold interpretation and real render
+  claimed stem artifact. Enabled structural policies reject blank lineage
+  identities, blank fallback reference identities, and fallback comparison
+  payloads with no metric fields, but threshold interpretation and real render
   comparison remain deferred. Passing this skeleton does not claim a full stem
   package export.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.

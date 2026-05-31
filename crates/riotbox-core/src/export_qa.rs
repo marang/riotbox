@@ -49,7 +49,9 @@ pub enum StemPackageArtifactSetQaFailureKind {
     MissingArtifactLocation,
     MissingArtifactHash,
     MissingLineageEvidence,
+    InvalidLineageEvidence,
     MissingFallbackComparisonEvidence,
+    InvalidFallbackComparisonEvidence,
     InsufficientNonSilenceMetrics,
     SilentArtifactMetrics,
 }
@@ -174,11 +176,24 @@ fn validate_stem_artifact_identity(
             StemPackageArtifactSetQaFailureKind::MissingLineageEvidence,
         ));
     }
-    if policy.require_fallback_comparison_evidence && artifact.fallback_comparison.is_none() {
+    if policy.require_lineage_evidence && artifact_has_invalid_lineage_evidence(artifact) {
         failures.push(failure(
             Some(role),
-            StemPackageArtifactSetQaFailureKind::MissingFallbackComparisonEvidence,
+            StemPackageArtifactSetQaFailureKind::InvalidLineageEvidence,
         ));
+    }
+    if policy.require_fallback_comparison_evidence {
+        match &artifact.fallback_comparison {
+            Some(comparison) if fallback_comparison_evidence_is_valid(comparison) => {}
+            Some(_) => failures.push(failure(
+                Some(role),
+                StemPackageArtifactSetQaFailureKind::InvalidFallbackComparisonEvidence,
+            )),
+            None => failures.push(failure(
+                Some(role),
+                StemPackageArtifactSetQaFailureKind::MissingFallbackComparisonEvidence,
+            )),
+        }
     }
     if let Some(metrics) = &artifact.audio_metrics {
         validate_non_silence_metrics(role, metrics, failures);
@@ -189,6 +204,32 @@ fn artifact_has_lineage_evidence(artifact: &ExportArtifactSetEntry) -> bool {
     artifact.source_graph_ref.is_some()
         || !artifact.source_capture_refs.is_empty()
         || !artifact.lineage_capture_refs.is_empty()
+}
+
+fn artifact_has_invalid_lineage_evidence(artifact: &ExportArtifactSetEntry) -> bool {
+    artifact
+        .source_graph_ref
+        .as_ref()
+        .is_some_and(|source_graph| {
+            source_graph.source_id.as_str().trim().is_empty()
+                || source_graph.graph_hash.trim().is_empty()
+        })
+        || artifact
+            .source_capture_refs
+            .iter()
+            .any(|capture_id| capture_id.as_str().trim().is_empty())
+        || artifact
+            .lineage_capture_refs
+            .iter()
+            .any(|capture_id| capture_id.as_str().trim().is_empty())
+}
+
+fn fallback_comparison_evidence_is_valid(
+    comparison: &crate::session::ExportArtifactFallbackComparisonEvidence,
+) -> bool {
+    !comparison.reference_identity.trim().is_empty()
+        && (comparison.rms_difference_micros.is_some()
+            || comparison.normalized_correlation_micros.is_some())
 }
 
 fn validate_non_silence_metrics(
@@ -273,5 +314,7 @@ fn deferred_stem_audio_checks(
     checks
 }
 
+#[cfg(test)]
+mod stem_package_evidence_tests;
 #[cfg(test)]
 mod stem_package_tests;
