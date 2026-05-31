@@ -20,10 +20,15 @@ Expected first-run sequence after this slice:
 - once the first result is committed, the shell only presents the next immediate fork:
   - keep it with `[c]`
   - reject it with `[u]`
-  - then try one more gesture such as `[y]`, `[g]`, or `[w]`
+  - if timing still needs confirmation, stay with lane gestures such as `[g]`
+    follow or `[f]` fill before trusting `[y]` scene jump
+  - if the grid is locked, `[y] jump` can be promoted beside `[g] follow`
 
 Interpretation:
 
 - the first-run path is now less about “here are some possible things” and more about “do this, verify that it landed, then choose keep or undo”
+- the next-move copy now respects the same timing-trust boundary as the P015
+  taste cue: cautious timing should not make scene movement look equally safe
+  as lane gestures
 - Riotbox still stays inside the existing Jam shell and help overlay
 - this remains a bounded guidance layer, not a separate onboarding mode or wizard
