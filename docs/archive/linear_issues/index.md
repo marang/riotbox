@@ -878,4 +878,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Split export QA tests before next gate expansion
 - [RIOTBOX-1078.md](./RIOTBOX-1078.md)
   Add structural export QA gate for stem lineage evidence
+- [RIOTBOX-1079.md](./RIOTBOX-1079.md)
+  Add structural export QA gate for fallback-collapse evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
