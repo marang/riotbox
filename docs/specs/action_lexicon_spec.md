@@ -306,7 +306,8 @@ Required result fields:
 - export hash
 - normalized manifest hash
 - typed `artifact_set[]` with the current full-grid WAV role, local path,
-  media type, sha256, and optional audio metrics
+  media type, sha256, optional source graph / capture lineage refs, and
+  optional audio metrics
 - unsupported-scope flags
 
 Reserved wider export commands:
@@ -320,7 +321,8 @@ must define:
 
 - target scope and source of truth (`Session`, arrangement scene, capture
   lineage, or host-audio run)
-- artifact set shape, including per-artifact roles and hashes
+- artifact set shape, including per-artifact roles, hashes, source graph refs,
+  source capture refs, and capture-lineage refs
 - timing contract, including tempo map, source-grid confidence, and bar/beat
   placement where relevant
 - receipt fields needed for replay/restore validation without hidden file

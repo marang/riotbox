@@ -138,8 +138,10 @@ mod tests {
         replay::build_committed_replay_plan,
         session::{
             ActionCommitRecord, ActionLog, ExportArtifactLocation, ExportArtifactMediaType,
-            ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState, ReplayPolicy,
+            ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef,
+            ExportReceiptState, ReplayPolicy,
         },
+        source_graph::SourceGraphVersion,
         transport::CommitBoundaryState,
     };
 
@@ -185,6 +187,13 @@ mod tests {
             },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".into(),
+            source_graph_ref: Some(ExportArtifactSourceGraphRef {
+                source_id: crate::ids::SourceId::from("src-1"),
+                graph_version: SourceGraphVersion::V1,
+                graph_hash: "graph-hash-1".into(),
+            }),
+            source_capture_refs: vec![crate::ids::CaptureId::from("cap-source")],
+            lineage_capture_refs: vec![crate::ids::CaptureId::from("cap-root")],
             audio_metrics: None,
             sample_rate_hz: Some(48_000),
             channel_count: Some(2),
@@ -202,6 +211,22 @@ mod tests {
         assert_eq!(validation.artifact_set[0].sample_rate_hz, Some(48_000));
         assert_eq!(validation.artifact_set[0].channel_count, Some(2));
         assert_eq!(validation.artifact_set[0].duration_ms, Some(12_000));
+        assert_eq!(
+            validation.artifact_set[0].source_graph_ref,
+            Some(ExportArtifactSourceGraphRef {
+                source_id: crate::ids::SourceId::from("src-1"),
+                graph_version: SourceGraphVersion::V1,
+                graph_hash: "graph-hash-1".into(),
+            })
+        );
+        assert_eq!(
+            validation.artifact_set[0].source_capture_refs,
+            vec![crate::ids::CaptureId::from("cap-source")]
+        );
+        assert_eq!(
+            validation.artifact_set[0].lineage_capture_refs,
+            vec![crate::ids::CaptureId::from("cap-root")]
+        );
     }
 
     #[test]
