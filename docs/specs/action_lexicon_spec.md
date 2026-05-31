@@ -307,6 +307,30 @@ Required result fields:
 - normalized manifest hash
 - unsupported-scope flags
 
+Reserved wider export commands:
+
+- `export.stem_package`
+- `export.live_recording`
+- `export.daw_session`
+
+These commands are not implemented. Before any of them can ship, the command
+must define:
+
+- target scope and source of truth (`Session`, arrangement scene, capture
+  lineage, or host-audio run)
+- artifact set shape, including per-artifact roles and hashes
+- timing contract, including tempo map, source-grid confidence, and bar/beat
+  placement where relevant
+- receipt fields needed for replay/restore validation without hidden file
+  rewrites
+- observer lifecycle fields for requested, started, completed, and failed
+  states
+- audio-QA gates that prove non-silent, non-collapsed output for every claimed
+  artifact role
+
+Host-audio soak is evidence for live recording readiness, not a product export
+command by itself until a separate contract says otherwise.
+
 ---
 
 ## 7. Required Fields Per Action

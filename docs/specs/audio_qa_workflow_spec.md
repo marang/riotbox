@@ -951,6 +951,13 @@ Today the repo already has:
   include receipt id, role, artifact/proof paths, hashes, readiness status, and
   unsupported scopes; failed records include the action id and failure reason.
   This is an observer projection, not a second export truth.
+- wider P016 export scopes require stronger gates before they are claimed:
+  stem packages require per-stem non-silence, role labeling, hash stability, and
+  source/capture lineage checks; live recordings require real-session
+  host-audio evidence with callback-gap and stream-error summaries; DAW session
+  export requires tempo-map and arrangement placement validation against the
+  Source Graph/Session timing truth. None of those are covered by the current
+  product-export reproducibility smoke.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
