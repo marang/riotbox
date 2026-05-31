@@ -810,4 +810,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Close P013 all-lane musical depth exit evidence
 - [RIOTBOX-1045.md](./RIOTBOX-1045.md)
   Add P014 scene timing trust safety matrix
+- [RIOTBOX-1046.md](./RIOTBOX-1046.md)
+  Add scene movement observer and audio correlation gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
