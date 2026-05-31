@@ -282,6 +282,9 @@ Boundary:
   export path succeeds.
 - It is not undoable; the action result and export receipt describe a
   completed file side effect rather than musical state to roll back.
+- The bounded Jam/TUI trigger is `E`; it queues the existing
+  `export.product_mix` action and surfaces receipt/failure feedback without
+  adding a second export state model.
 - Replay must not blindly rewrite files as a hidden side effect.
 - Stem package export, live recording export, DAW session export, host-audio
   soak, automatic arranger export, and automatic Ghost export remain out of

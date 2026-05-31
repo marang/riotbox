@@ -119,6 +119,7 @@ pub fn shell_key_outcome_label(outcome: ShellKeyOutcome) -> &'static str {
         ShellKeyOutcome::QueueW30LiveRecall => "queue_w30_live_recall",
         ShellKeyOutcome::QueueW30Audition => "queue_w30_audition",
         ShellKeyOutcome::QueueW30Resample => "queue_w30_resample",
+        ShellKeyOutcome::QueueProductMixExport => "queue_product_mix_export",
         ShellKeyOutcome::ConfirmSourceTimingGrid => "confirm_source_timing_grid",
         ShellKeyOutcome::RevertSourceTimingGrid => "revert_source_timing_grid",
         ShellKeyOutcome::NavigateSourceMapPreviousBar => "navigate_source_map_previous_bar",

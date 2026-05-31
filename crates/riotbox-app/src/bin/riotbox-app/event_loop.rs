@@ -383,6 +383,21 @@ fn run_event_loop(
                             .set_error_status("no committed W-30 capture available to resample"),
                     }
                 }
+                ShellKeyOutcome::QueueProductMixExport => {
+                    match shell.app.queue_product_mix_export(timestamp_now(), None) {
+                        riotbox_app::jam_app::QueueControlResult::Enqueued => {
+                            shell.set_error_status(
+                                "queued export full_grid_mix | proof handoff writes receipt",
+                            );
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyPending => {
+                            shell.set_error_status("export full_grid_mix already queued");
+                        }
+                        riotbox_app::jam_app::QueueControlResult::AlreadyInState => {
+                            shell.set_error_status("export full_grid_mix already available");
+                        }
+                    }
+                }
                 ShellKeyOutcome::ConfirmSourceTimingGrid => {
                     confirm_source_timing_grid(&mut shell, timestamp_now());
                 }

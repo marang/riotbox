@@ -190,6 +190,10 @@ impl JamShellState {
                 self.status_message = queued_status_message(GESTURE_RESAMPLE, "next phrase");
                 ShellKeyOutcome::QueueW30Resample
             }
+            KeyCode::Char('E') => {
+                self.status_message = "export full_grid_mix requested".into();
+                ShellKeyOutcome::QueueProductMixExport
+            }
             KeyCode::Char('C') => {
                 self.status_message = "confirm source timing grid requested".into();
                 ShellKeyOutcome::ConfirmSourceTimingGrid

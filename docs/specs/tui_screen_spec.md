@@ -167,6 +167,10 @@ It must expose:
 - safe for live use
 - not flooded by low-level parameters
 - keep always-visible footer copy compact; detailed key explanations belong in Help
+- the bounded P016 product-mix export trigger is `E`: it queues
+  `export.product_mix` through the existing action path and reports success or
+  failure through receipt/action-derived feedback, without claiming stem, DAW,
+  live-recording, or host-audio export
 
 ### 5.2 Jam regions
 
