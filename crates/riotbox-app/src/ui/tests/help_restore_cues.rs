@@ -20,7 +20,11 @@ fn renders_help_overlay_with_first_run_guidance() {
         "{rendered}"
     );
     assert!(
-        rendered.contains("After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5"),
+        rendered.contains("After first loop: Recipe 16 taste/proof"),
+        "{rendered}"
+    );
+    assert!(
+        rendered.contains("Recipe 2/5 gestures/sources"),
         "{rendered}"
     );
 }

@@ -147,7 +147,7 @@ fn render_help_overlay(frame: &mut Frame<'_>, area: Rect, shell: &JamShellState)
             }
         }
         lines.push(Line::from(
-            "After first loop: docs/jam_recipes.md -> Recipe 2 / Recipe 5",
+            "After first loop: Recipe 16 taste/proof | Recipe 2/5 gestures/sources",
         ));
     }
 
