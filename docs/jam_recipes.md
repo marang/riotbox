@@ -825,6 +825,71 @@ What this proves today:
 - The pack is useful for listening and QA, not yet a full composition/export workflow.
 - Some short-loop examples can now drive auto BPM through Source Timing while still saying `needs confirm`; ambiguous or non-drum sources must continue to fall back or use explicit paths.
 
+## Recipe 16: Read Jam Taste And Proof Before The Next Move
+
+Goal: use the perform-first Jam surface as a quick musical decision aid without
+turning the main Jam screen into a diagnostics wall.
+
+Launch Riotbox with the observer enabled:
+
+```bash
+cargo run -p riotbox-app --bin riotbox-app -- \
+  --source "data/test_audio/examples/Beat08_128BPM(Full).wav" \
+  --observer artifacts/audio_qa/local/user-session/events.ndjson
+```
+
+Then:
+
+1. press `Space`
+2. stay on `Jam`
+3. read the compact taste and proof lines in `Warnings / trust`
+4. if a scene jump is offered, press `y`; otherwise press `f` or `g`
+5. wait for the queued move to land
+6. press `i` to open Jam inspect
+7. compare the inspect contract details with the short perform cues
+8. quit with `q`
+9. validate the observer stream
+
+```bash
+scripts/validate_user_session_observer_ndjson.py artifacts/audio_qa/local/user-session/events.ndjson
+```
+
+What to observe on `Jam`:
+
+- `taste cautious | confirm grid before scene moves` means the move can still be
+  tried, but timing-sensitive scene movement should not be treated as trusted.
+- `taste scene-ready | trusted grid can steer scene moves` means the current
+  timing contract is strong enough for the bounded manual scene path.
+- `proof none yet | audible moves need output evidence` means Riotbox has not
+  shown landed audio proof for this run.
+- `proof landed movement | inspect replay/audio evidence` means a landed scene
+  movement exists and inspect can show the proof obligations that keep it tied
+  to replay and output evidence.
+
+What this gives the musician:
+
+- a quick go / be careful read before the next gesture
+- a clear reason to confirm timing before trusting scene motion
+- a short proof reminder that does not hide the play controls
+- an inspect path for the deeper arrangement contract when something feels off
+
+What this proves today:
+
+- the perform surface exposes taste/proof language without adding a new control
+  or runtime truth
+- Jam inspect still owns the deeper contract details: timing readiness, product
+  spine truth, manual action surface, replay, and output proof obligations
+- observer validation proves the recorded control trail for the user run
+- `just p015-jam-taste-recipe-proof` checks the perform/inspect split and
+  reuses the P014 scene-movement observer/audio gate for landed movement proof
+
+What it does not prove yet:
+
+- a final product taste oracle
+- device-level playback on the host
+- automatic arrangement scheduling
+- that every source will produce a hard, stage-ready result without listening
+
 ## Current Limits
 
 The current prototype is still not a finished “load a loop and instantly get a polished remix” instrument.
@@ -842,6 +907,8 @@ So if two runs feel similar:
 - use `Recipe 13` if you want an offline W-30 source-vs-fallback proof before judging the live TUI path
 - use `Recipe 14` if you want a CI-safe first-playable control-plus-output probe
 - use `Recipe 15` if you want a local Feral grid listening pack and need to choose `auto` versus explicit BPM honestly
+- use `Recipe 16` if you want the fastest Jam taste/proof read before trusting
+  a scene or lane gesture
 - use capture/reuse instead of only the first fill
 - look at `Log` to understand what actually happened
 
