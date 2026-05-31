@@ -2,6 +2,10 @@ use ratatui::{
     style::Style,
     text::{Line, Span},
 };
+use riotbox_core::view::jam::{
+    ArrangementSceneActionSurfaceView, ArrangementSceneContractReadinessView,
+    ArrangementSceneTruthSourceView,
+};
 
 use super::{JamShellState, style_confirmation_strong, style_low_emphasis, style_pending_cue};
 
@@ -33,14 +37,13 @@ pub(crate) fn arrangement_inspect_lines(shell: &JamShellState) -> Vec<Line<'stat
 
     vec![
         Line::from(format!("scene contract {}", contract.readiness.label())),
-        Line::from(match contract.truth_source.label() {
-            "source_graph_session_actions_queue_commit" => "truth product spine",
-            _ => "truth unknown",
+        Line::from(match contract.truth_source {
+            ArrangementSceneTruthSourceView::ProductSpine => "truth product spine",
         }),
         Line::from(format!(
             "timing {} | action {}",
             contract.timing_readiness.label(),
-            arrangement_action_surface_label(contract.action_surface.label())
+            arrangement_action_surface_label(contract.action_surface)
         )),
         Line::from(format!(
             "proof p012/p013/replay/output {}",
@@ -65,29 +68,29 @@ pub(crate) fn arrangement_inspect_lines(shell: &JamShellState) -> Vec<Line<'stat
 }
 
 fn arrangement_taste_parts(shell: &JamShellState) -> (&'static str, &'static str, Style) {
-    match shell
-        .app
-        .jam_view
-        .scene
-        .arrangement_contract
-        .readiness
-        .label()
-    {
-        "ready" => (
+    match shell.app.jam_view.scene.arrangement_contract.readiness {
+        ArrangementSceneContractReadinessView::Ready => (
             "scene-ready",
             "trusted grid can steer scene moves",
             style_confirmation_strong(),
         ),
-        "needs_timing_confirmation" => (
+        ArrangementSceneContractReadinessView::NeedsTimingConfirmation => (
             "cautious",
             "confirm grid before scene moves",
             style_pending_cue(),
         ),
-        "fallback_timing_only" => ("sketch", "fallback timing only", style_pending_cue()),
-        "needs_scene_material" => ("waiting", "needs two scenes", style_pending_cue()),
-        "needs_timing_evidence" => ("unknown", "timing unavailable", style_low_emphasis()),
-        "missing_source_graph" => ("unknown", "load source graph", style_low_emphasis()),
-        _ => ("unknown", "arrangement trust unknown", style_low_emphasis()),
+        ArrangementSceneContractReadinessView::FallbackTimingOnly => {
+            ("sketch", "fallback timing only", style_pending_cue())
+        }
+        ArrangementSceneContractReadinessView::NeedsSceneMaterial => {
+            ("waiting", "needs two scenes", style_pending_cue())
+        }
+        ArrangementSceneContractReadinessView::NeedsTimingEvidence => {
+            ("unknown", "timing unavailable", style_low_emphasis())
+        }
+        ArrangementSceneContractReadinessView::MissingSourceGraph => {
+            ("unknown", "load source graph", style_low_emphasis())
+        }
     }
 }
 
@@ -95,9 +98,8 @@ fn yes_no(value: bool) -> &'static str {
     if value { "yes" } else { "no" }
 }
 
-fn arrangement_action_surface_label(label: &str) -> &str {
-    match label {
-        "scene.launch_scene.restore" => "scene launch/restore",
-        _ => label,
+fn arrangement_action_surface_label(surface: ArrangementSceneActionSurfaceView) -> &'static str {
+    match surface {
+        ArrangementSceneActionSurfaceView::SceneLaunchRestore => "scene launch/restore",
     }
 }
