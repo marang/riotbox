@@ -19,10 +19,10 @@ use riotbox_core::{
     },
     queue::ActionQueue,
     session::{
-        ActionCommitRecord, ExportReceiptState, GhostSuggestionRecord, Mc202RoleState,
-        SceneMovementDirectionState, SceneMovementKindState, SceneMovementLaneIntentState,
-        SceneMovementState, SessionFile, Snapshot, SourceTimingGridConfirmationState,
-        Tr909ReinforcementModeState, Tr909TakeoverProfileState,
+        ActionCommitRecord, ExportArtifactSetEntry, ExportReceiptState, GhostSuggestionRecord,
+        Mc202RoleState, SceneMovementDirectionState, SceneMovementKindState,
+        SceneMovementLaneIntentState, SceneMovementState, SessionFile, Snapshot,
+        SourceTimingGridConfirmationState, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
     },
     source_graph::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, BarSpan, BeatPoint, Candidate,

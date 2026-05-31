@@ -122,6 +122,7 @@ fn export_lifecycle_record(
 }
 
 fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
+    let artifact_set = receipt.artifact_set_or_legacy();
     json!({
         "receipt_id": receipt.receipt_id.to_string(),
         "created_by_action": receipt.created_by_action.0,
@@ -132,6 +133,7 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
         "manifest_path": receipt.manifest_path,
         "export_hash": receipt.export_hash,
         "normalized_manifest_hash": receipt.normalized_manifest_hash,
+        "artifact_set": artifact_set,
         "readiness_status": receipt.readiness_status,
         "unsupported_scopes": receipt
             .unsupported_scopes

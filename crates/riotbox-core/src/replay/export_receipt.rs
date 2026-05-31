@@ -2,7 +2,7 @@ use crate::{
     action::ActionCommand,
     ids::{ActionId, ExportReceiptId},
     replay::ReplayPlanEntry,
-    session::{ExportReceiptState, SessionFile},
+    session::{ExportArtifactSetEntry, ExportReceiptState, SessionFile},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -13,6 +13,7 @@ pub struct ExportReceiptReplayValidationPlan {
     pub proof_path: String,
     pub export_hash: String,
     pub normalized_manifest_hash: String,
+    pub artifact_set: Vec<ExportArtifactSetEntry>,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -33,6 +34,14 @@ pub enum ExportReceiptReplayValidationError {
     },
     MissingProofPath {
         receipt_id: ExportReceiptId,
+    },
+    MissingArtifactSetLocation {
+        receipt_id: ExportReceiptId,
+        role: crate::session::ExportArtifactRole,
+    },
+    MissingArtifactSetHash {
+        receipt_id: ExportReceiptId,
+        role: crate::session::ExportArtifactRole,
     },
 }
 
@@ -59,6 +68,23 @@ pub fn plan_export_receipt_replay_validation(
             receipt_id: receipt.receipt_id.clone(),
         });
     }
+    let artifact_set = receipt.artifact_set_or_legacy();
+    for artifact in &artifact_set {
+        if artifact.location_identity().trim().is_empty() {
+            return Err(
+                ExportReceiptReplayValidationError::MissingArtifactSetLocation {
+                    receipt_id: receipt.receipt_id.clone(),
+                    role: artifact.role,
+                },
+            );
+        }
+        if artifact.sha256.trim().is_empty() {
+            return Err(ExportReceiptReplayValidationError::MissingArtifactSetHash {
+                receipt_id: receipt.receipt_id.clone(),
+                role: artifact.role,
+            });
+        }
+    }
 
     Ok(ExportReceiptReplayValidationPlan {
         action_id: action.id,
@@ -67,6 +93,7 @@ pub fn plan_export_receipt_replay_validation(
         proof_path: receipt.proof_path.clone(),
         export_hash: receipt.export_hash.clone(),
         normalized_manifest_hash: receipt.normalized_manifest_hash.clone(),
+        artifact_set,
     })
 }
 
@@ -109,7 +136,10 @@ mod tests {
         },
         ids::ExportReceiptId,
         replay::build_committed_replay_plan,
-        session::{ActionCommitRecord, ActionLog, ExportReceiptState, ReplayPolicy},
+        session::{
+            ActionCommitRecord, ActionLog, ExportArtifactLocation, ExportArtifactMediaType,
+            ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState, ReplayPolicy,
+        },
         transport::CommitBoundaryState,
     };
 
@@ -135,6 +165,42 @@ mod tests {
             validation.export_hash,
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
         );
+        assert_eq!(
+            validation.artifact_set,
+            vec![ExportArtifactSetEntry::product_mix(
+                "exports/full_grid_mix.wav",
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+            )]
+        );
+    }
+
+    #[test]
+    fn export_receipt_replay_validation_reads_typed_artifact_set() {
+        let mut session =
+            session_with_export_receipt("exports/full_grid_mix.wav", "exports/proof.json");
+        session.export_receipts[0].artifact_set = vec![ExportArtifactSetEntry {
+            role: ExportArtifactRole::FullGridMix,
+            location: ExportArtifactLocation::Uri {
+                uri: "s3://riotbox/full_grid_mix.wav".into(),
+            },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".into(),
+            sample_rate_hz: Some(48_000),
+            channel_count: Some(2),
+            duration_ms: Some(12_000),
+        }];
+        let plan = build_committed_replay_plan(&session.action_log).expect("replay plan");
+
+        let validation =
+            plan_export_receipt_replay_validation(&session, &plan[0]).expect("receipt validation");
+
+        assert_eq!(
+            validation.artifact_set[0].location_identity(),
+            "s3://riotbox/full_grid_mix.wav"
+        );
+        assert_eq!(validation.artifact_set[0].sample_rate_hz, Some(48_000));
+        assert_eq!(validation.artifact_set[0].channel_count, Some(2));
+        assert_eq!(validation.artifact_set[0].duration_ms, Some(12_000));
     }
 
     #[test]
@@ -202,6 +268,10 @@ mod tests {
             export_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
             normalized_manifest_hash:
                 "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into(),
+            artifact_set: vec![ExportArtifactSetEntry::product_mix(
+                artifact_path,
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            )],
             readiness_status: ExportReadinessStatus::Reproducible,
             unsupported_scopes: vec![
                 UnsupportedExportScope::StemPackage,

@@ -305,6 +305,8 @@ Required result fields:
 - proof path
 - export hash
 - normalized manifest hash
+- typed `artifact_set[]` with the current full-grid WAV role, local path,
+  media type, sha256, and optional audio metrics
 - unsupported-scope flags
 
 Reserved wider export commands:
