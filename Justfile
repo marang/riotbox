@@ -521,6 +521,9 @@ source-transport-map-capture-probe:
 p014-scene-movement-observer-probe:
     scripts/validate_p014_scene_movement_observer_probe.sh
 
+p015-jam-taste-recipe-proof:
+    scripts/validate_p015_jam_taste_recipe_proof.sh
+
 stage-style-jam-probe:
     scripts/validate_stage_style_jam_probe.sh
 
