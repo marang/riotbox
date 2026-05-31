@@ -862,4 +862,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Specify next export scope fields before stems or DAW export
 - [RIOTBOX-1071.md](./RIOTBOX-1071.md)
   Add typed export artifact-set contract to product receipts
+- [RIOTBOX-1072.md](./RIOTBOX-1072.md)
+  Add stem package export QA gate skeleton without writing stems
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
