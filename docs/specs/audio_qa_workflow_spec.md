@@ -934,6 +934,12 @@ Today the repo already has:
 - `just p011-stage-style-evidence-gate` is the fourth bounded executable category gate for the P011 evidence index. It validates and runs the `stage_style_stability` category's proof commands, covering generated repeated-run restore-diversity observer/audio evidence and stable full-mix hashes without claiming host-audio soak or multi-hour endurance coverage.
 - `just p011-exit-evidence-category-gate-fixtures` keeps the category runner honest with a replay dry-run and a negative missing-category fixture.
 - `just full-grid-export-reproducibility-smoke` / `just product-export-reproducibility-smoke` is a CI-safe bounded export reproducibility check that renders the deterministic Feral grid/source-first plus generated-support pack twice from generated source material, validates both listening manifests, rejects collapsed full-mix output metrics, compares the exported generated-support WAV hashes, and validates a normalized product-export proof with temp paths removed; it is still not the full arrangement export workflow
+- `riotbox-core::export_readiness` turns the current product-export
+  reproducibility proof into a typed `ExportReadinessContract` for P016. The
+  first contract boundary is the deterministic Feral-grid generated-support
+  export with `full_grid_mix` as the current export role, `reproducible` status,
+  and explicit unsupported-scope flags for stem package export, live recording
+  export, DAW export, and host-audio soak.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
