@@ -824,4 +824,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add P015 perform-first Jam taste recipe proof
 - [RIOTBOX-1051.md](./RIOTBOX-1051.md)
   Add P015 in-app Jam taste/proof help cues
+- [RIOTBOX-1052.md](./RIOTBOX-1052.md)
+  Add P015 musician-facing proof glossary to docs and screenshots
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
