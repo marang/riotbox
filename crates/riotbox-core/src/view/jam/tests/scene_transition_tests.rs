@@ -122,44 +122,139 @@
     }
 
     #[test]
-    fn arrangement_scene_contract_preserves_timing_boundaries() {
-        let mut graph = sample_graph_with_sections(&["intro".into(), "drop".into()]);
-        graph.timing.bpm_estimate = Some(128.0);
-        graph.timing.degraded_policy = crate::source_graph::TimingDegradedPolicy::ManualConfirm;
+    fn arrangement_scene_contract_preserves_timing_trust_matrix() {
+        struct TimingTrustCase {
+            name: &'static str,
+            policy: crate::source_graph::TimingDegradedPolicy,
+            bpm: Option<f32>,
+            confirmed_grid: bool,
+            expected_readiness: ArrangementSceneContractReadinessView,
+            expected_timing: SourceTimingConsumerReadiness,
+            expected_source_locked_scene_movement: bool,
+        }
 
-        let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-30T08:20:00Z");
-        session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
-        session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
-        session.runtime_state.scene_state.scenes = vec![
-            SceneId::from("scene-01-intro"),
-            SceneId::from("scene-02-drop"),
+        let cases = [
+            TimingTrustCase {
+                name: "locked analyzer timing",
+                policy: crate::source_graph::TimingDegradedPolicy::Locked,
+                bpm: Some(128.0),
+                confirmed_grid: false,
+                expected_readiness: ArrangementSceneContractReadinessView::Ready,
+                expected_timing: SourceTimingConsumerReadiness::AnalyzerLocked,
+                expected_source_locked_scene_movement: true,
+            },
+            TimingTrustCase {
+                name: "manual confirm without user trust",
+                policy: crate::source_graph::TimingDegradedPolicy::ManualConfirm,
+                bpm: Some(128.0),
+                confirmed_grid: false,
+                expected_readiness: ArrangementSceneContractReadinessView::NeedsTimingConfirmation,
+                expected_timing: SourceTimingConsumerReadiness::NeedsUserConfirmation,
+                expected_source_locked_scene_movement: false,
+            },
+            TimingTrustCase {
+                name: "manual confirm with user trust",
+                policy: crate::source_graph::TimingDegradedPolicy::ManualConfirm,
+                bpm: Some(128.0),
+                confirmed_grid: true,
+                expected_readiness: ArrangementSceneContractReadinessView::Ready,
+                expected_timing: SourceTimingConsumerReadiness::UserConfirmed,
+                expected_source_locked_scene_movement: true,
+            },
+            TimingTrustCase {
+                name: "fallback grid",
+                policy: crate::source_graph::TimingDegradedPolicy::FallbackGrid,
+                bpm: Some(128.0),
+                confirmed_grid: false,
+                expected_readiness: ArrangementSceneContractReadinessView::FallbackTimingOnly,
+                expected_timing: SourceTimingConsumerReadiness::FallbackGrid,
+                expected_source_locked_scene_movement: false,
+            },
+            TimingTrustCase {
+                name: "disabled timing",
+                policy: crate::source_graph::TimingDegradedPolicy::Disabled,
+                bpm: Some(128.0),
+                confirmed_grid: false,
+                expected_readiness: ArrangementSceneContractReadinessView::NeedsTimingEvidence,
+                expected_timing: SourceTimingConsumerReadiness::Unavailable,
+                expected_source_locked_scene_movement: false,
+            },
+            TimingTrustCase {
+                name: "missing bpm",
+                policy: crate::source_graph::TimingDegradedPolicy::Locked,
+                bpm: None,
+                confirmed_grid: false,
+                expected_readiness: ArrangementSceneContractReadinessView::NeedsTimingEvidence,
+                expected_timing: SourceTimingConsumerReadiness::Unavailable,
+                expected_source_locked_scene_movement: false,
+            },
         ];
 
-        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+        for case in cases {
+            let mut graph = sample_graph_with_sections(&["intro".into(), "drop".into()]);
+            graph.timing.bpm_estimate = case.bpm;
+            graph.timing.primary_hypothesis_id = Some("scene-grid".into());
+            graph.timing.degraded_policy = case.policy;
+
+            let mut session = SessionFile::new("session-1", "0.1.0", "2026-05-30T08:20:00Z");
+            session.runtime_state.scene_state.active_scene = Some(SceneId::from("scene-01-intro"));
+            session.runtime_state.transport.current_scene = Some(SceneId::from("scene-01-intro"));
+            session.runtime_state.scene_state.scenes = vec![
+                SceneId::from("scene-01-intro"),
+                SceneId::from("scene-02-drop"),
+            ];
+            if case.confirmed_grid {
+                session.runtime_state.source_timing.confirmed_grid =
+                    Some(crate::session::SourceTimingGridConfirmationState {
+                        source_id: graph.source.source_id.clone(),
+                        hypothesis_id: Some("scene-grid".into()),
+                        confirmed_by_action: crate::ids::ActionId(7),
+                        confirmed_at: 1_777_777,
+                    });
+            }
+
+            let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&graph));
+
+            assert_eq!(
+                vm.scene.arrangement_contract.readiness, case.expected_readiness,
+                "{} readiness",
+                case.name
+            );
+            assert_eq!(
+                vm.scene.arrangement_contract.timing_readiness, case.expected_timing,
+                "{} timing readiness",
+                case.name
+            );
+            assert_eq!(
+                vm.scene
+                    .arrangement_contract
+                    .can_use_source_locked_scene_movement,
+                case.expected_source_locked_scene_movement,
+                "{} source-locked scene movement gate",
+                case.name
+            );
+            assert!(vm.scene.arrangement_contract.requires_p012_source_grid_gate);
+            assert!(vm
+                .scene
+                .arrangement_contract
+                .requires_p013_musical_quality_gate);
+        }
+
+        let session = SessionFile::new("session-1", "0.1.0", "2026-05-30T08:20:00Z");
+        let vm = JamViewModel::build(&session, &ActionQueue::new(), None);
 
         assert_eq!(
             vm.scene.arrangement_contract.readiness,
-            ArrangementSceneContractReadinessView::NeedsTimingConfirmation
+            ArrangementSceneContractReadinessView::MissingSourceGraph
         );
         assert_eq!(
             vm.scene.arrangement_contract.timing_readiness,
-            SourceTimingConsumerReadiness::NeedsUserConfirmation
+            SourceTimingConsumerReadiness::Unavailable
         );
-        assert!(vm.scene.arrangement_contract.requires_p012_source_grid_gate);
-        assert!(vm
+        assert!(!vm
             .scene
             .arrangement_contract
-            .requires_p013_musical_quality_gate);
-
-        let mut fallback_graph = graph;
-        fallback_graph.timing.degraded_policy =
-            crate::source_graph::TimingDegradedPolicy::FallbackGrid;
-        let vm = JamViewModel::build(&session, &ActionQueue::new(), Some(&fallback_graph));
-
-        assert_eq!(
-            vm.scene.arrangement_contract.readiness,
-            ArrangementSceneContractReadinessView::FallbackTimingOnly
-        );
+            .can_use_source_locked_scene_movement);
     }
 
     #[test]

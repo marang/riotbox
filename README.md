@@ -22,9 +22,36 @@ If you only want the fastest possible first run:
 
 1. load one WAV
 2. press `Space`
-3. press `f` for a TR-909 fill or `c` for a capture
+3. press either `f` for a TR-909 fill or `c` for a capture
 4. switch to `Log` with `2`
 5. confirm what Riotbox queued, when it committed, and what changed
+
+What those steps mean:
+
+1. **Load one WAV** so Riotbox can build a Source Graph, timing hints, and a
+   Session around one piece of material. In the current prototype the source is
+   the thing every gesture is trying to steer, mark, or reuse.
+2. **Press `Space` once** to start transport. Leave it running after the next
+   gesture; most first gestures do not fire instantly, they wait for a musical
+   boundary. For the quickstart, wait until the next bar lands. At 120-130 BPM
+   that is roughly two seconds for one 4/4 bar; if you pressed the gesture just
+   after a bar line, wait one full bar.
+3. **Press one first gesture, not all of them.** `f` queues a TR-909 fill: a
+   short drum-lane variation for the next bar, useful for proving that Riotbox
+   can arm a change now and land it in time. `c` queues a capture into the W-30
+   path: Riotbox records a source-window reference using the current capture
+   length, keeps provenance, and prepares material that later W-30 actions can
+   audition, promote, or reuse. If you want the clearest first proof, start with
+   `f`; use `c` after you hear or see something worth keeping.
+4. **Switch to `Log` with `2`** because `Jam` is the performance view, while
+   `Log` is the trust view. It shows the exact action Riotbox accepted, its
+   target lane, and whether it is still pending or has committed.
+5. **Confirm three things in `Log`:** first, the action appeared as queued /
+   pending with `NextBar`; second, after transport crosses the next bar, it
+   changed to committed; third, the result text says what state changed, such as
+   a TR-909 fill landing on a bar or a new capture becoming the latest W-30
+   capture. After that, either capture the keeper with `c`, undo a miss with
+   `u`, or move to `Recipe 2` to compare a different first gesture.
 
 That is the current core loop: **load material, queue one gesture, let it land in time, keep the good accident**.
 

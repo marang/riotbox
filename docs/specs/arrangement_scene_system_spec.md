@@ -34,6 +34,7 @@ It records:
 - readiness for arrangement / scene expansion
 - whether a Source Graph is present
 - Source Timing consumer readiness
+- whether source-locked scene movement may use source-window timing
 - scene material state: scene count, active scene, next scene, restore scene
 - whether a scene transition is pending
 - whether a landed movement already exists in Session state
@@ -53,6 +54,21 @@ Readiness values:
 
 `ready` does not mean a finished arranger exists. It means a later P014 slice may
 attempt source-locked scene behavior without bypassing the product spine.
+
+Source-locked scene movement uses a stricter timing gate than generic scene
+readiness:
+
+| Source Timing state | Contract readiness | `can_use_source_locked_scene_movement` | Source Monitor scene anchor |
+| --- | --- | --- | --- |
+| Analyzer locked | `ready` | `true` | may reposition to the landed scene section |
+| User confirmed | `ready` | `true` | may reposition to the landed scene section |
+| Needs user confirmation | `needs_timing_confirmation` | `false` | keep transport-position playback |
+| Fallback grid | `fallback_timing_only` | `false` | keep transport-position playback |
+| Unavailable / disabled / missing BPM | `needs_timing_evidence` | `false` | keep transport-position playback |
+| Missing Source Graph | `missing_source_graph` | `false` | keep transport-position playback |
+
+The movement flag is a timing-trust gate, not a second arranger state. Session
+scene state, queue / commit records, and replay remain the durable truth.
 
 ## 3. P014 Rules
 
@@ -76,7 +92,8 @@ The first P014 contract does not implement:
 
 - a full arranger
 - a separate Scene Graph
-- source playback repositioning
+- untrusted or automatic source playback repositioning beyond landed scene
+  sections
 - strip / build / slam scheduling
 - automatic scene chains
 - source-derived MC-202 phrase planning
