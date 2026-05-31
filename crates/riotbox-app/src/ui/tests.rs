@@ -11,6 +11,7 @@ include!("tests/shell_state_jam_snapshot.rs");
 include!("tests/shell_state_ghost_controls.rs");
 include!("tests/shell_state_inspect_snapshot.rs");
 include!("tests/p015_jam_taste_recipe.rs");
+include!("tests/p016_export_readiness.rs");
 include!("tests/jam_scene_pending_onramp.rs");
 include!("tests/post_commit_cues.rs");
 include!("tests/help_restore_cues.rs");
