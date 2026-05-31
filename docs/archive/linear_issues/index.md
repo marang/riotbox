@@ -838,4 +838,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Draft P015 exit evidence checklist
 - [RIOTBOX-1058.md](./RIOTBOX-1058.md)
   Run P015 final evidence gate and draft exit review
+- [RIOTBOX-1059.md](./RIOTBOX-1059.md)
+  Mark P015 closed in roadmap and phase DoD
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
