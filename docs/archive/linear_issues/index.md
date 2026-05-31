@@ -876,4 +876,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source and capture lineage refs to export artifact evidence
 - [RIOTBOX-1077.md](./RIOTBOX-1077.md)
   Split export QA tests before next gate expansion
+- [RIOTBOX-1078.md](./RIOTBOX-1078.md)
+  Add structural export QA gate for stem lineage evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
