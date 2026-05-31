@@ -313,6 +313,8 @@ Minimum receipt fields:
 - optional manifest path
 - export hash
 - normalized manifest hash
+- `artifact_set[]` entries with role, local path or URI, media type, sha256,
+  and optional sample rate, channel count, and duration milliseconds when known
 - readiness status
 - unsupported-scope flags
 
@@ -324,6 +326,9 @@ Rules:
   blindly rewrite files without an explicit export request
 - the first P016 receipt boundary is `full_grid_mix` from the deterministic
   Feral-grid generated-support export proof
+- current `export.product_mix` receipts populate a one-entry artifact set for
+  the full-grid WAV while preserving the legacy `artifact_path`, `proof_path`,
+  `export_hash`, and `normalized_manifest_hash` fields for older readers
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
@@ -331,8 +336,9 @@ Additional receipt fields required before wider export scopes:
 
 - export scope, distinct from export role, such as `product_mix`,
   `stem_package`, `live_recording`, or `daw_session`
-- artifact set entries with role, path or URI, media type, hash, sample rate,
-  channel count, duration frames, and optional normalized manifest hash
+- wider artifact set roles, per-artifact normalized manifest references,
+  source/capture lineage links, and stem/DAW/live-recording media roles beyond
+  the current full-grid WAV entry
 - source graph id/hash and timing-grid reference used for placement-sensitive
   exports
 - capture lineage refs for source-backed stems or resample-derived artifacts

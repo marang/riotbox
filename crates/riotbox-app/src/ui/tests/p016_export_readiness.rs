@@ -27,6 +27,10 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
         export_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
         normalized_manifest_hash: "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
             .into(),
+        artifact_set: vec![ExportArtifactSetEntry::product_mix(
+            "exports/full_grid_mix.wav",
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )],
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: vec![
             UnsupportedExportScope::StemPackage,

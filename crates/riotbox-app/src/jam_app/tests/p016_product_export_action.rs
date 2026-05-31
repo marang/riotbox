@@ -29,6 +29,13 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
     );
     assert_eq!(receipt.export_hash, artifact_hash);
     assert_eq!(
+        receipt.artifact_set,
+        vec![ExportArtifactSetEntry::product_mix(
+            destination.join("full_grid_mix.wav").to_string_lossy().into_owned(),
+            artifact_hash.clone(),
+        )]
+    );
+    assert_eq!(
         receipt.unsupported_scopes,
         vec![
             UnsupportedExportScope::StemPackage,

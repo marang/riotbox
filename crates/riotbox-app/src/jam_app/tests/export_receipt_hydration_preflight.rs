@@ -107,6 +107,10 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
         export_hash: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
         normalized_manifest_hash: "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
             .into(),
+        artifact_set: vec![ExportArtifactSetEntry::product_mix(
+            artifact_path,
+            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        )],
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: vec![
             UnsupportedExportScope::StemPackage,
