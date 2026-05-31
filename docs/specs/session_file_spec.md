@@ -327,6 +327,26 @@ Rules:
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
+Additional receipt fields required before wider export scopes:
+
+- export scope, distinct from export role, such as `product_mix`,
+  `stem_package`, `live_recording`, or `daw_session`
+- artifact set entries with role, path or URI, media type, hash, sample rate,
+  channel count, duration frames, and optional normalized manifest hash
+- source graph id/hash and timing-grid reference used for placement-sensitive
+  exports
+- capture lineage refs for source-backed stems or resample-derived artifacts
+- arrangement scene refs and bar/beat ranges for arrangement or DAW packages
+- render profile or recipe id so replay can validate which deterministic path
+  produced the artifacts
+- QA gate ids and results that prove the claimed artifact roles are not silent,
+  fallback-collapsed, or hash-unstable
+- host-audio evidence refs for live recording only, including device/host,
+  callback-gap summary, stream errors, and recording duration
+
+These fields must remain in Session/Core models. They must not be hidden in
+JamAppState or observer-only state.
+
 ---
 
 ## 9. Action Log
