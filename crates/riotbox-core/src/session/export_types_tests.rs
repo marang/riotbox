@@ -37,6 +37,28 @@ fn fixture_receipt() -> ExportReceiptState {
 }
 
 #[test]
+fn product_export_proof_artifact_entry_uses_json_media_type() {
+    let entry = ExportArtifactSetEntry::product_export_proof(
+        "exports/product_export_proof.json",
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    );
+
+    assert_eq!(entry.role, ExportArtifactRole::ProductExportProof);
+    assert_eq!(
+        entry.location,
+        ExportArtifactLocation::LocalPath {
+            path: "exports/product_export_proof.json".into()
+        }
+    );
+    assert_eq!(entry.media_type, ExportArtifactMediaType::Json);
+    assert_eq!(
+        entry.sha256,
+        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    );
+    assert_eq!(entry.audio_metrics, None);
+}
+
+#[test]
 fn export_receipts_roundtrip_with_session_file() {
     let mut session = SessionFile::new("session-export", "0.1.0", "2026-05-31T00:00:00Z");
     session.export_receipts.push(fixture_receipt());

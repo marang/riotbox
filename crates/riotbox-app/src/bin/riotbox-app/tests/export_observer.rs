@@ -20,6 +20,7 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
     let artifact_hash = sha256_bytes(&artifact_bytes);
     let proof_path = proof_dir.join("product_export_proof.json");
     write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
+    let proof_hash = sha256_bytes(&fs::read(&proof_path).expect("read product proof"));
 
     let mut session = SessionFile::new("observer-export", "0.1.0", "2026-05-31T00:00:00Z");
     session.source_graph_refs.push(SourceGraphRef {
@@ -77,6 +78,13 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
             .into_owned()
     );
     assert_eq!(lifecycle[2]["receipt"]["export_hash"], artifact_hash);
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"]
+            .as_array()
+            .expect("artifact set")
+            .len(),
+        2
+    );
     assert_eq!(
         lifecycle[2]["receipt"]["artifact_set"][0]["role"],
         "full_grid_mix"
@@ -152,6 +160,26 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
         lifecycle[2]["receipt"]["artifact_set"][0]["timing_grid_ref"]["confirmed_at"],
         880
     );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][1]["role"],
+        "product_export_proof"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][1]["location"]["kind"],
+        "local_path"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][1]["location"]["path"],
+        destination
+            .join("product_export_proof.json")
+            .to_string_lossy()
+            .into_owned()
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][1]["media_type"],
+        "json"
+    );
+    assert_eq!(lifecycle[2]["receipt"]["artifact_set"][1]["sha256"], proof_hash);
     assert_eq!(
         lifecycle[2]["receipt"]["qa_gates"][0]["gate_id"],
         "product_export_reproducibility_smoke"

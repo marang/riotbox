@@ -12,6 +12,7 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
     let artifact_hash = sha256_bytes(&artifact_bytes);
     let proof_path = proof_dir.join("product_export_proof.json");
     write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
+    let proof_hash = sha256_bytes(&fs::read(&proof_path).expect("read product proof"));
 
     let graph = sample_graph();
     let mut session = sample_session(&graph);
@@ -34,7 +35,7 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
         ProductExportBoundary::FeralGridGeneratedSupport
     );
     assert_eq!(receipt.export_hash, artifact_hash);
-    assert_eq!(receipt.artifact_set.len(), 1);
+    assert_eq!(receipt.artifact_set.len(), 2);
     let artifact = &receipt.artifact_set[0];
     assert_eq!(artifact.role, ExportArtifactRole::FullGridMix);
     assert_eq!(
@@ -76,6 +77,20 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
     assert_eq!(artifact.sample_rate_hz, Some(1_000));
     assert_eq!(artifact.channel_count, Some(1));
     assert_eq!(artifact.duration_ms, Some(10));
+    let proof_artifact = &receipt.artifact_set[1];
+    assert_eq!(proof_artifact.role, ExportArtifactRole::ProductExportProof);
+    assert_eq!(
+        proof_artifact.location,
+        ExportArtifactLocation::LocalPath {
+            path: destination
+                .join("product_export_proof.json")
+                .to_string_lossy()
+                .into_owned()
+        }
+    );
+    assert_eq!(proof_artifact.media_type, ExportArtifactMediaType::Json);
+    assert_eq!(proof_artifact.sha256, proof_hash);
+    assert_eq!(proof_artifact.audio_metrics, None);
     assert_eq!(
         receipt.unsupported_scopes,
         vec![
