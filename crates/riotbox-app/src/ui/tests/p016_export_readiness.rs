@@ -20,6 +20,7 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
         created_by_action: ActionId(4),
         created_at: 900,
         export_scope: ExportScope::ProductMix,
+        pack_id: riotbox_core::export_readiness::PRODUCT_EXPORT_PACK_ID.into(),
         export_role: ProductExportRole::FullGridMix,
         export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
         artifact_path: "exports/full_grid_mix.wav".into(),

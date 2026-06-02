@@ -209,6 +209,7 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
         created_by_action: ActionId(4),
         created_at: 900,
         export_scope: ExportScope::ProductMix,
+        pack_id: riotbox_core::export_readiness::PRODUCT_EXPORT_PACK_ID.into(),
         export_role: ProductExportRole::FullGridMix,
         export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
         artifact_path: artifact_path.into(),

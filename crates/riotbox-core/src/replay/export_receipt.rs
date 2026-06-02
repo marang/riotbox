@@ -288,6 +288,7 @@ mod tests {
             created_by_action: ActionId(4),
             created_at: 900,
             export_scope: ExportScope::ProductMix,
+            pack_id: crate::export_readiness::PRODUCT_EXPORT_PACK_ID.into(),
             export_role: ProductExportRole::FullGridMix,
             export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
             artifact_path: artifact_path.into(),

@@ -5,6 +5,11 @@ pub const PRODUCT_EXPORT_PROOF_SCHEMA: &str = "riotbox.product_export_reproducib
 pub const EXPORT_READINESS_CONTRACT_SCHEMA: &str = "riotbox.export_readiness_contract.v1";
 pub const PRODUCT_EXPORT_PACK_ID: &str = "feral-grid-demo";
 
+#[must_use]
+pub fn default_product_export_pack_id() -> String {
+    PRODUCT_EXPORT_PACK_ID.to_owned()
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ProductExportReproducibilityProof {
     pub schema: String,
