@@ -337,6 +337,11 @@ Rules:
 - recovery / hydration preflight must validate local-path entries from
   `artifact_set[]` as well as the legacy product-mix artifact/proof fields;
   URI entries are identity-only until a fetch/cache contract exists
+- future stem-package manifest and proof entries use the same recovery /
+  hydration preflight rule: local `export_manifest` and proof JSON
+  `artifact_set[]` entries must exist as files, while URI manifest/proof
+  entries remain identity-only until a fetch/cache contract exists. This is
+  preflight evidence only and does not make `export.stem_package` runnable.
 - the first P016 receipt boundary is `full_grid_mix` from the deterministic
   Feral-grid generated-support export proof
 - current `export.product_mix` receipts populate artifact-set entries for the

@@ -131,6 +131,84 @@ fn export_receipt_hydration_preflight_accepts_extra_local_artifact_set_entry() {
 }
 
 #[test]
+fn export_receipt_hydration_preflight_accepts_stem_package_manifest_and_proof_entries() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    fs::write(export_dir.join("stem_package_manifest.json"), b"{}").expect("write manifest");
+    fs::write(export_dir.join("stem_package_proof.json"), b"{}")
+        .expect("write stem package proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    push_stem_package_json_entries(&mut receipt);
+
+    preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect("manifest and proof artifact-set entries exist");
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_stem_package_manifest_entry() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    fs::write(export_dir.join("stem_package_proof.json"), b"{}")
+        .expect("write stem package proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    push_stem_package_json_entries(&mut receipt);
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing manifest artifact-set entry should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::ExportManifest,
+            path: dir.path().join("exports/stem_package_manifest.json"),
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_stem_package_proof_entry() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    fs::write(export_dir.join("stem_package_manifest.json"), b"{}").expect("write manifest");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    push_stem_package_json_entries(&mut receipt);
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing proof artifact-set entry should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::ProductExportProof,
+            path: dir.path().join("exports/stem_package_proof.json"),
+        }
+    );
+}
+
+#[test]
 fn export_receipt_hydration_preflight_reports_missing_artifact_set_entry() {
     let dir = tempdir().expect("create temp dir");
     let export_dir = dir.path().join("exports");
@@ -209,6 +287,24 @@ fn export_receipt_hydration_preflight_treats_uri_artifact_set_entry_as_identity_
         .expect("URI artifact-set entry is identity-only until fetch contract exists");
 }
 
+#[test]
+fn export_receipt_hydration_preflight_treats_stem_package_manifest_and_proof_uri_entries_as_identity_only() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    push_stem_package_json_uri_entries(&mut receipt);
+
+    preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect("URI manifest/proof entries are identity-only until fetch contract exists");
+}
+
 fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
     ExportReceiptState {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
@@ -238,6 +334,56 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
             UnsupportedExportScope::HostAudioSoak,
         ],
     }
+}
+
+fn push_stem_package_json_entries(receipt: &mut ExportReceiptState) {
+    receipt.artifact_set.push(ExportArtifactSetEntry::export_manifest(
+        "exports/stem_package_manifest.json",
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    ));
+    receipt.artifact_set.push(ExportArtifactSetEntry::stem_package_proof(
+        "exports/stem_package_proof.json",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    ));
+}
+
+fn push_stem_package_json_uri_entries(receipt: &mut ExportReceiptState) {
+    receipt.artifact_set.push(ExportArtifactSetEntry {
+        role: ExportArtifactRole::ExportManifest,
+        location: ExportArtifactLocation::Uri {
+            uri: "s3://riotbox/export/stem_package_manifest.json".into(),
+        },
+        media_type: ExportArtifactMediaType::Json,
+        sha256: "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc".into(),
+        normalized_manifest_hash: None,
+        source_graph_ref: None,
+        timing_grid_ref: None,
+        source_capture_refs: Vec::new(),
+        lineage_capture_refs: Vec::new(),
+        fallback_comparison: None,
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    });
+    receipt.artifact_set.push(ExportArtifactSetEntry {
+        role: ExportArtifactRole::ProductExportProof,
+        location: ExportArtifactLocation::Uri {
+            uri: "s3://riotbox/export/stem_package_proof.json".into(),
+        },
+        media_type: ExportArtifactMediaType::Json,
+        sha256: "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into(),
+        normalized_manifest_hash: None,
+        source_graph_ref: None,
+        timing_grid_ref: None,
+        source_capture_refs: Vec::new(),
+        lineage_capture_refs: Vec::new(),
+        fallback_comparison: None,
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    });
 }
 
 fn expected_receipt_path(dir: &Path, receipt_path: &str) -> PathBuf {
