@@ -1006,6 +1006,14 @@ Today the repo already has:
   `qa_gates[]`. Structural failures become `failed`; structural acceptance with
   deferred audio/fallback proof becomes `deferred`, not `passed`, so receipts
   can explain why a stem package is blocked without claiming readiness.
+- `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
+  CI-safe schema contract for future stem-package manifests. It serializes
+  stable schema id/version, `export_scope: stem_package`, receipt/action
+  references, claimed stem roles, typed per-stem WAV artifact identities,
+  manifest JSON identity, proof JSON identity, and QA gate summaries. Its
+  constructor enforces identity consistency, but it is not a writer, not a
+  render path, and not evidence that the actual stem audio is non-silent or
+  fallback-safe.
 - Observer export snapshots project those receipt `qa_gates[]` values as-is,
   including non-product stem-package evidence. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and
