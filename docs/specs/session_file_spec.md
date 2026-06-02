@@ -426,6 +426,11 @@ Rules:
   but records `deferred` while repeated package-writer/render hash comparison
   is still aspirational. Missing, duplicate, non-stem, or hashless claimed
   stems record `failed`.
+- per-stem non-silence QA reports may be recorded as
+  `stem_package_per_stem_non_silence` receipt gates. This gate records
+  `passed` only when every claimed stem has metrics proving audible activity,
+  `deferred` when metrics are missing, and `failed` when metrics prove silence,
+  cannot prove activity, or claimed stem roles are missing/duplicated/non-stem.
 - `validate_stem_package_receipt_readiness` is the typed receipt-level guard
   for future stem-package readiness. It reports `blocked` while the receipt is
   not `export_scope: stem_package`, while `unsupported_scopes[]` still includes

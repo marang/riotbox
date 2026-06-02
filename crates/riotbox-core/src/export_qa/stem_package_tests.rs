@@ -292,6 +292,140 @@ fn stem_package_hash_stability_gate_fails_empty_claims() {
     )));
 }
 
+#[test]
+fn stem_package_non_silence_gate_passes_when_all_claimed_stems_have_active_metrics() {
+    let artifact_set = vec![
+        stem_artifact_with_metrics(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "drums-sha",
+            active_metrics(),
+        ),
+        stem_artifact_with_metrics(
+            ExportArtifactRole::StemBass,
+            "exports/stems/bass.wav",
+            "bass-sha",
+            active_metrics(),
+        ),
+    ];
+
+    let report = validate_stem_package_non_silence_evidence(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+    );
+    let gate = crate::session::ExportReceiptQaGateResult::stem_package_non_silence(&report);
+
+    assert!(report.passed());
+    assert!(report.failures.is_empty());
+    assert!(report.deferred_checks.is_empty());
+    assert_eq!(
+        gate.gate_id,
+        crate::session::STEM_PACKAGE_NON_SILENCE_QA_GATE_ID
+    );
+    assert_eq!(
+        gate.status,
+        crate::session::ExportReceiptQaGateStatus::Passed
+    );
+}
+
+#[test]
+fn stem_package_non_silence_gate_defers_missing_metrics() {
+    let artifact_set = vec![stem_artifact(
+        ExportArtifactRole::StemDrums,
+        "exports/stems/drums.wav",
+        "drums-sha",
+    )];
+
+    let report =
+        validate_stem_package_non_silence_evidence(&artifact_set, &[ExportArtifactRole::StemDrums]);
+    let gate = crate::session::ExportReceiptQaGateResult::stem_package_non_silence(&report);
+
+    assert_eq!(report.status, StemPackageNonSilenceQaStatus::Deferred);
+    assert!(report.failures.is_empty());
+    assert_eq!(report.deferred_checks.len(), 1);
+    assert_eq!(
+        report.deferred_checks[0].check,
+        StemPackageNonSilenceDeferredCheckKind::MissingAudioMetrics
+    );
+    assert_eq!(
+        gate.status,
+        crate::session::ExportReceiptQaGateStatus::Deferred
+    );
+}
+
+#[test]
+fn stem_package_non_silence_gate_fails_silent_insufficient_and_role_errors() {
+    let artifact_set = vec![
+        stem_artifact_with_metrics(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "drums-sha",
+            silent_metrics(),
+        ),
+        stem_artifact_with_metrics(
+            ExportArtifactRole::StemBass,
+            "exports/stems/bass-a.wav",
+            "bass-a-sha",
+            ExportArtifactAudioMetrics {
+                peak_milli_dbfs: Some(-12_000),
+                rms_milli_dbfs: None,
+                peak_amplitude_micros: None,
+                rms_amplitude_micros: None,
+                silent_frame_count: None,
+                total_frame_count: None,
+            },
+        ),
+        stem_artifact(
+            ExportArtifactRole::StemVocals,
+            "exports/stems/vocals-a.wav",
+            "vocals-a-sha",
+        ),
+        stem_artifact(
+            ExportArtifactRole::StemVocals,
+            "exports/stems/vocals-b.wav",
+            "vocals-b-sha",
+        ),
+    ];
+
+    let report = validate_stem_package_non_silence_evidence(
+        &artifact_set,
+        &[
+            ExportArtifactRole::StemDrums,
+            ExportArtifactRole::StemBass,
+            ExportArtifactRole::StemMusic,
+            ExportArtifactRole::StemVocals,
+            ExportArtifactRole::FullGridMix,
+        ],
+    );
+    let gate = crate::session::ExportReceiptQaGateResult::stem_package_non_silence(&report);
+
+    assert_eq!(report.status, StemPackageNonSilenceQaStatus::Failed);
+    assert!(report.failures.contains(&StemPackageNonSilenceQaFailure {
+        role: Some(ExportArtifactRole::StemDrums),
+        kind: StemPackageNonSilenceQaFailureKind::SilentArtifactMetrics,
+    }));
+    assert!(report.failures.contains(&StemPackageNonSilenceQaFailure {
+        role: Some(ExportArtifactRole::StemBass),
+        kind: StemPackageNonSilenceQaFailureKind::InsufficientNonSilenceMetrics,
+    }));
+    assert!(report.failures.contains(&StemPackageNonSilenceQaFailure {
+        role: Some(ExportArtifactRole::StemMusic),
+        kind: StemPackageNonSilenceQaFailureKind::MissingRoleArtifact,
+    }));
+    assert!(report.failures.contains(&StemPackageNonSilenceQaFailure {
+        role: Some(ExportArtifactRole::StemVocals),
+        kind: StemPackageNonSilenceQaFailureKind::DuplicateRoleArtifact,
+    }));
+    assert!(report.failures.contains(&StemPackageNonSilenceQaFailure {
+        role: Some(ExportArtifactRole::FullGridMix),
+        kind: StemPackageNonSilenceQaFailureKind::NonStemRoleClaimed,
+    }));
+    assert_eq!(
+        gate.status,
+        crate::session::ExportReceiptQaGateStatus::Failed
+    );
+}
+
 fn stem_artifact(
     role: ExportArtifactRole,
     path: impl Into<String>,

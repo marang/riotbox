@@ -1013,6 +1013,13 @@ Today the repo already has:
   `stem_package_per_stem_hash_stability` in receipt `qa_gates[]`. Successful
   identity evidence remains `deferred`, not `passed`, until a package writer or
   repeated render proof can compare stable hashes across actual outputs.
+- `riotbox-core::export_qa::validate_stem_package_non_silence_evidence`
+  is the current CI-safe per-stem non-silence receipt gate. It records
+  `stem_package_per_stem_non_silence` as `passed` only when every claimed stem
+  has audio metrics that prove activity, `deferred` when metrics are absent,
+  and `failed` when metrics prove silence, cannot prove activity, or claimed
+  roles are missing, duplicated, or non-stem. It is metrics evidence, not a
+  package writer or listening-pack approval.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
   CI-safe schema contract for future stem-package manifests. It serializes
   stable schema id/version, `export_scope: stem_package`, receipt/action
