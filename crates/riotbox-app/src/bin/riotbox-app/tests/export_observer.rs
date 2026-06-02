@@ -9,9 +9,15 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
     let destination = temp.path().join("export");
     fs::create_dir_all(&proof_dir).expect("create proof dir");
     let artifact_path = proof_dir.join("full_grid_mix.wav");
-    let artifact_bytes = b"riotbox observer product mix";
-    fs::write(&artifact_path, artifact_bytes).expect("write product artifact");
-    let artifact_hash = sha256_bytes(artifact_bytes);
+    riotbox_audio::source_audio::write_interleaved_pcm16_wav(
+        &artifact_path,
+        1_000,
+        1,
+        &[0.0, 0.25, -0.25, 0.0],
+    )
+    .expect("write product artifact");
+    let artifact_bytes = fs::read(&artifact_path).expect("read product artifact");
+    let artifact_hash = sha256_bytes(&artifact_bytes);
     let proof_path = proof_dir.join("product_export_proof.json");
     write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
 
@@ -91,6 +97,29 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
         "audio_wav"
     );
     assert_eq!(lifecycle[2]["receipt"]["artifact_set"][0]["sha256"], artifact_hash);
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["audio_metrics"]["total_frame_count"],
+        4
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["audio_metrics"]["silent_frame_count"],
+        2
+    );
+    assert!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["audio_metrics"]["peak_amplitude_micros"]
+            .as_u64()
+            .expect("peak amplitude")
+            > 200_000
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["sample_rate_hz"],
+        1_000
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["channel_count"],
+        1
+    );
+    assert_eq!(lifecycle[2]["receipt"]["artifact_set"][0]["duration_ms"], 4);
     assert_eq!(
         lifecycle[2]["receipt"]["artifact_set"][0]["normalized_manifest_hash"],
         "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"

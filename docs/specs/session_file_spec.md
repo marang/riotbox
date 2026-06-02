@@ -350,6 +350,11 @@ Rules:
   `timing_grid_ref` when `runtime_state.source_timing.confirmed_grid` exists,
   preserving source id, optional hypothesis id, confirming action, and
   confirmation timestamp without claiming arrangement placement ranges
+- current `export.product_mix` artifact-set entries attach deterministic
+  `audio_metrics` plus sample rate, channel count, and duration when the
+  written full-grid local artifact can be decoded as PCM WAV outside realtime
+  audio; older or unreadable receipts keep those fields absent rather than
+  becoming incompatible
 - current `export.product_mix` receipts explicitly store `export_scope:
   product_mix` so later stem package, live recording, and DAW session work does
   not infer export scope from the full-grid mix role

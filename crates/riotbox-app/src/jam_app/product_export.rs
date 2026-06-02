@@ -21,8 +21,11 @@ use riotbox_core::{
 use sha2::{Digest, Sha256};
 
 use super::{
-    JamAppError, JamAppState, QueueControlResult, helpers::update_logged_action_result,
-    product_export_receipt::attach_product_export_artifact_lineage,
+    JamAppError, JamAppState, QueueControlResult,
+    helpers::update_logged_action_result,
+    product_export_receipt::{
+        attach_product_export_artifact_audio_metrics, attach_product_export_artifact_lineage,
+    },
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -159,6 +162,7 @@ impl JamAppState {
             None,
         );
         attach_product_export_artifact_lineage(&mut receipt, &self.session);
+        attach_product_export_artifact_audio_metrics(&mut receipt);
         let result_summary = format!(
             "exported {} receipt {} hash {}",
             written.contract.export_role.as_str(),
