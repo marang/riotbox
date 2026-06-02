@@ -5,6 +5,7 @@ use crate::{
     export_readiness::{
         ExportReadinessContract, ExportReadinessStatus, ExportScope, ProductExportBoundary,
         ProductExportRole, UnsupportedExportScope, default_export_scope,
+        default_product_export_pack_id,
     },
     ids::{ActionId, CaptureId, ExportReceiptId, SourceId},
     source_graph::SourceGraphVersion,
@@ -17,6 +18,8 @@ pub struct ExportReceiptState {
     pub created_at: TimestampMs,
     #[serde(default = "default_export_scope")]
     pub export_scope: ExportScope,
+    #[serde(default = "default_product_export_pack_id")]
+    pub pack_id: String,
     pub export_role: ProductExportRole,
     pub export_boundary: ProductExportBoundary,
     pub artifact_path: String,
@@ -47,6 +50,7 @@ impl ExportReceiptState {
             created_by_action,
             created_at,
             export_scope: contract.export_scope,
+            pack_id: contract.pack_id.clone(),
             export_role: contract.export_role,
             export_boundary: contract.boundary,
             artifact_path: artifact_path.clone(),
@@ -251,6 +255,10 @@ mod tests {
         );
         assert_eq!(receipt.created_by_action, ActionId(7));
         assert_eq!(receipt.export_scope, ExportScope::ProductMix);
+        assert_eq!(
+            receipt.pack_id,
+            crate::export_readiness::PRODUCT_EXPORT_PACK_ID
+        );
         assert_eq!(receipt.export_role, ProductExportRole::FullGridMix);
         assert_eq!(
             receipt.export_boundary,
@@ -358,6 +366,44 @@ mod tests {
             serde_json::from_value(json).expect("deserialize older receipt");
 
         assert_eq!(receipt.export_scope, ExportScope::ProductMix);
+    }
+
+    #[test]
+    fn missing_pack_id_defaults_to_product_export_pack_for_older_receipts() {
+        let contract = ExportReadinessContract {
+            schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
+            status: ExportReadinessStatus::Reproducible,
+            proof_schema: PRODUCT_EXPORT_PROOF_SCHEMA.into(),
+            export_scope: ExportScope::ProductMix,
+            boundary: ProductExportBoundary::FeralGridGeneratedSupport,
+            pack_id: crate::export_readiness::PRODUCT_EXPORT_PACK_ID.into(),
+            export_role: ProductExportRole::FullGridMix,
+            export_artifact: "run-a/full_grid_mix.wav".into(),
+            source_sha256: "eeee".into(),
+            export_sha256: "aaaa".into(),
+            normalized_manifest_sha256: "dddd".into(),
+            unsupported_scopes: vec![UnsupportedExportScope::StemPackage],
+        };
+        let receipt = ExportReceiptState::from_readiness_contract(
+            ActionId(7),
+            900,
+            &contract,
+            "exports/full_grid_mix.wav",
+            "exports/product_export_proof.json",
+            Some("exports/manifest.json".into()),
+        );
+        let mut json = serde_json::to_value(&receipt).expect("serialize receipt");
+        json.as_object_mut()
+            .expect("receipt json object")
+            .remove("pack_id");
+
+        let receipt: ExportReceiptState =
+            serde_json::from_value(json).expect("deserialize older receipt");
+
+        assert_eq!(
+            receipt.pack_id,
+            crate::export_readiness::PRODUCT_EXPORT_PACK_ID
+        );
     }
 
     #[test]

@@ -308,6 +308,8 @@ Minimum receipt fields:
 - created at timestamp
 - export scope, distinct from export role; current P016 receipts use
   `product_mix`
+- pack id / render recipe identity; current P016 receipts use
+  `feral-grid-demo`
 - export role
 - export boundary
 - artifact path or artifact URI
@@ -339,6 +341,9 @@ Rules:
 - current `export.product_mix` receipts explicitly store `export_scope:
   product_mix` so later stem package, live recording, and DAW session work does
   not infer export scope from the full-grid mix role
+- current `export.product_mix` receipts explicitly store `pack_id:
+  feral-grid-demo` from the product-export proof so replay and observer
+  surfaces retain the deterministic recipe identity that produced the artifact
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
@@ -356,8 +361,8 @@ Additional receipt fields required before wider export scopes:
   default empty for older receipts, and must point back to Session/Core truth
   rather than filenames, app-local state, or observer-only metadata
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
-- render profile or recipe id so replay can validate which deterministic path
-  produced the artifacts
+- new render profile or recipe ids beyond current `feral-grid-demo` so replay
+  can validate which deterministic path produced the artifacts
 - QA gate ids and results that prove the claimed artifact roles are not silent,
   fallback-collapsed, or hash-unstable
 - host-audio evidence refs for live recording only, including device/host,
