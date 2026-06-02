@@ -49,8 +49,8 @@ use riotbox_core::{
     session::{
         ActionCommitRecord, CaptureRef, CaptureSourceWindow, CaptureTarget, CaptureType,
         ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole,
-        ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportReceiptQaGateResult,
-        ExportArtifactTimingGridRef, ExportReceiptState, GhostBudgetState, GhostState,
+        ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
+        ExportReceiptQaGateResult, ExportReceiptState, GhostBudgetState, GhostState,
         GhostSuggestionRecord, GraphStorageMode, Mc202PhraseIntentState, Mc202PhraseVariantState,
         Mc202RoleState, SceneMovementDirectionState, SceneMovementLaneIntentState, SessionFile,
         Snapshot, SourceGraphRef, SourceRef, SourceTimingGridConfirmationState,

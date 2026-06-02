@@ -7,9 +7,9 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
     let destination = temp.path().join("export");
     fs::create_dir_all(&proof_dir).expect("create proof dir");
     let artifact_path = proof_dir.join("full_grid_mix.wav");
-    let artifact_bytes = b"riotbox full grid product mix";
-    fs::write(&artifact_path, artifact_bytes).expect("write product artifact");
-    let artifact_hash = sha256_bytes(artifact_bytes);
+    write_pcm16_wave(&artifact_path, 1_000, 1, 0.01);
+    let artifact_bytes = fs::read(&artifact_path).expect("read product artifact");
+    let artifact_hash = sha256_bytes(&artifact_bytes);
     let proof_path = proof_dir.join("product_export_proof.json");
     write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
 
@@ -34,23 +34,48 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
         ProductExportBoundary::FeralGridGeneratedSupport
     );
     assert_eq!(receipt.export_hash, artifact_hash);
-    let mut expected_artifact = ExportArtifactSetEntry::product_mix(
-        destination.join("full_grid_mix.wav").to_string_lossy().into_owned(),
-        artifact_hash.clone(),
-        Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
+    assert_eq!(receipt.artifact_set.len(), 1);
+    let artifact = &receipt.artifact_set[0];
+    assert_eq!(artifact.role, ExportArtifactRole::FullGridMix);
+    assert_eq!(
+        artifact.location,
+        ExportArtifactLocation::LocalPath {
+            path: destination.join("full_grid_mix.wav").to_string_lossy().into_owned()
+        }
     );
-    expected_artifact.source_graph_ref = Some(ExportArtifactSourceGraphRef {
+    assert_eq!(artifact.media_type, ExportArtifactMediaType::AudioWav);
+    assert_eq!(artifact.sha256, artifact_hash);
+    assert_eq!(
+        artifact.normalized_manifest_hash.as_deref(),
+        Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd")
+    );
+    assert_eq!(
+        artifact.source_graph_ref,
+        Some(ExportArtifactSourceGraphRef {
         source_id: SourceId::from("src-1"),
         graph_version: SourceGraphVersion::V1,
         graph_hash: state.session.source_graph_refs[0].graph_hash.clone(),
-    });
-    expected_artifact.timing_grid_ref = Some(ExportArtifactTimingGridRef {
+        })
+    );
+    assert_eq!(
+        artifact.timing_grid_ref,
+        Some(ExportArtifactTimingGridRef {
         source_id: SourceId::from("src-1"),
         hypothesis_id: Some("primary-grid".into()),
         confirmed_by_action: ActionId(1),
         confirmed_at: 850,
-    });
-    assert_eq!(receipt.artifact_set, vec![expected_artifact]);
+        })
+    );
+    let metrics = artifact.audio_metrics.as_ref().expect("audio metrics");
+    assert!(metrics.peak_milli_dbfs.expect("peak dbfs") < 0);
+    assert!(metrics.rms_milli_dbfs.expect("rms dbfs") < 0);
+    assert!(metrics.peak_amplitude_micros.expect("peak amplitude") > 200_000);
+    assert!(metrics.rms_amplitude_micros.expect("rms amplitude") > 100_000);
+    assert_eq!(metrics.silent_frame_count, Some(1));
+    assert_eq!(metrics.total_frame_count, Some(10));
+    assert_eq!(artifact.sample_rate_hz, Some(1_000));
+    assert_eq!(artifact.channel_count, Some(1));
+    assert_eq!(artifact.duration_ms, Some(10));
     assert_eq!(
         receipt.unsupported_scopes,
         vec![
