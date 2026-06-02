@@ -167,6 +167,26 @@ fn product_export_receipt_records_reproducibility_gate_result() {
 }
 
 #[test]
+fn receipt_can_attach_source_graph_ref_to_matching_artifact_role() {
+    let mut receipt = fixture_receipt();
+    let source_graph_ref = ExportArtifactSourceGraphRef {
+        source_id: SourceId::from("src-1"),
+        graph_version: SourceGraphVersion::V1,
+        graph_hash: "graph-hash-1".into(),
+    };
+
+    receipt.attach_artifact_source_graph_ref(
+        ExportArtifactRole::FullGridMix,
+        source_graph_ref.clone(),
+    );
+
+    assert_eq!(
+        receipt.artifact_set[0].source_graph_ref,
+        Some(source_graph_ref)
+    );
+}
+
+#[test]
 fn artifact_set_entries_roundtrip_optional_audio_metrics() {
     let entry = ExportArtifactSetEntry {
         role: ExportArtifactRole::StemDrums,

@@ -83,6 +83,18 @@ impl ExportReceiptState {
 
         self.artifact_set.clone()
     }
+
+    pub fn attach_artifact_source_graph_ref(
+        &mut self,
+        role: ExportArtifactRole,
+        source_graph_ref: ExportArtifactSourceGraphRef,
+    ) {
+        for artifact in &mut self.artifact_set {
+            if artifact.role == role {
+                artifact.source_graph_ref = Some(source_graph_ref.clone());
+            }
+        }
+    }
 }
 
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
