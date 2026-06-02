@@ -15,11 +15,31 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
     let proof_path = proof_dir.join("product_export_proof.json");
     write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
 
-    let mut state = JamAppState::from_parts(
-        SessionFile::new("observer-export", "0.1.0", "2026-05-31T00:00:00Z"),
-        None,
-        ActionQueue::new(),
-    );
+    let mut session = SessionFile::new("observer-export", "0.1.0", "2026-05-31T00:00:00Z");
+    session.source_graph_refs.push(SourceGraphRef {
+        source_id: SourceId::from("src-1"),
+        graph_version: SourceGraphVersion::V1,
+        graph_hash: "graph-hash-1".into(),
+        storage_mode: GraphStorageMode::External,
+        embedded_graph: None,
+        external_path: Some("source_graph.json".into()),
+        provenance: GraphProvenance {
+            sidecar_version: "0.1.0".into(),
+            provider_set: vec!["beat".into(), "section".into()],
+            generated_at: "2026-06-02T18:00:00Z".into(),
+            source_hash: "source-hash-1".into(),
+            analysis_seed: 7,
+            run_notes: Some("observer export lineage".into()),
+        },
+    });
+    session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: SourceId::from("src-1"),
+            hypothesis_id: Some("primary-grid".into()),
+            confirmed_by_action: ActionId(8),
+            confirmed_at: 880,
+        });
+    let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
     let receipt = state
         .commit_product_mix_export_from_proof(&proof_path, &destination, 900)
         .expect("commit product export");
@@ -74,6 +94,34 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
     assert_eq!(
         lifecycle[2]["receipt"]["artifact_set"][0]["normalized_manifest_hash"],
         "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["source_graph_ref"]["source_id"],
+        "src-1"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["source_graph_ref"]["graph_version"],
+        "V1"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["source_graph_ref"]["graph_hash"],
+        "graph-hash-1"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["timing_grid_ref"]["source_id"],
+        "src-1"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["timing_grid_ref"]["hypothesis_id"],
+        "primary-grid"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["timing_grid_ref"]["confirmed_by_action"],
+        8
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["timing_grid_ref"]["confirmed_at"],
+        880
     );
     assert_eq!(
         lifecycle[2]["receipt"]["qa_gates"][0]["gate_id"],
