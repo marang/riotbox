@@ -169,10 +169,14 @@ Hard rules that must stay true:
 
 - Normal implementation work uses the Linear issue -> branch -> PR -> CI/review
   -> merge -> sync `main` -> closeout loop.
+- Linear is first in that loop: before creating or reusing a feature branch for
+  implementation, create or pick exactly one Linear issue for the slice and move
+  it to `In Progress`. Autonomous continuation, "do not stop", or "keep
+  implementing" never permits backfilling Linear after the branch/PR/merge.
 - Open PRs and in-flight CI are merge gates for that PR, not a reason to pause
   the main implementation lane.
 - If CI is running or green and the branch is locally clean, continue with the
-  next bounded roadmap-aligned slice.
+  next bounded roadmap-aligned slice through the same Linear-first loop.
 - Keep Linear state, priority, labels, archive entries, branch cleanup, and
   project updates aligned with the repo workflow.
 - Archive completed or canceled Linear context under

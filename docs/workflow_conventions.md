@@ -41,11 +41,26 @@ and closeout procedure in this workflow document.
 
 ## 2. Core Rule
 
+Workflow priority order, from highest to lowest:
+
+1. Preserve user work and avoid destructive operations.
+2. Keep product truth in repo docs/specs, Git history, and Linear; do not
+   leave execution state only in chat, MemPalace, or local memory.
+3. Keep the Linear issue loop honest before touching Git branches: exactly one
+   issue must represent the active slice and must be `In Progress` before a
+   feature branch is created or reused for implementation.
+4. Keep PR/CI/review/merge gates intact for every normal implementation slice.
+5. Continue autonomously when requested, but only through the same Linear-first
+   workflow loop. "Do not stop" is never permission to skip Linear, branch
+   naming, PR, CI, review, or closeout state.
+
 Default workflow:
 
 `Linear issue -> branch -> scoped commit(s) -> PR -> review -> merge -> sync local main -> close out ticket and branch`
 
 Do not skip the PR step for normal feature or implementation work.
+Do not skip or backfill the Linear issue step for normal feature or
+implementation work.
 
 This operational loop is the execution form of the roadmap's core delivery loop:
 each bounded ticket should move one spec/research/vertical-slice/test/benchmark
@@ -63,7 +78,8 @@ workflow state:
 5. if no active PR is blocked or red, derive the next smallest roadmap-aligned
    slice from repo state, docs, and Linear
 6. create or pick exactly one Linear issue for that slice
-7. start the next branch and continue implementation
+7. move that issue to `In Progress`
+8. start the next branch and continue implementation
 
 The agent must not send a final or closing response merely because a ticket,
 PR, archive, Linear deletion, or branch cleanup is complete.
@@ -96,6 +112,17 @@ Non-stop conditions:
 If none of the allowed stop conditions applies, continue the loop. Choose one
 small coherent next slice, keep Linear state honest, and do not open multiple
 parallel tickets just to avoid stopping.
+
+No Ticket, No Branch:
+
+- before creating or switching to a feature branch for implementation, confirm
+  the current slice has a Linear issue
+- if no issue exists, create the issue first from roadmap/spec/repo context
+- move that issue to `In Progress` before branch creation or reuse
+- if branch work has already started without a Linear issue, stop expanding the
+  code diff and repair Linear immediately before continuing
+- do not treat later Linear cleanup as equivalent to issue-first execution;
+  backfilled Done tickets are only damage repair, not a valid normal path
 
 When the user asks to implement a full active phase, such as P013, completing a
 single slice is only a handoff point inside the loop. Do the PR/CI/merge/archive
@@ -131,8 +158,10 @@ that the work session is complete.
 
 For a normal implementation or docs slice:
 
-1. move the Linear issue to `In Progress`
-2. create a dedicated branch for that issue
+0. create or pick exactly one Linear issue for the slice; if the issue does not
+   exist yet, create it before any branch work
+1. move that Linear issue to `In Progress`
+2. create or switch to a dedicated branch for that issue
 3. make one coherent slice of changes
 4. run the relevant local verification
 5. run `code-review` on the branch diff when that skill is available
@@ -152,6 +181,12 @@ For a normal implementation or docs slice:
 19. delete the completed Linear issue only after the archive entry exists
 
 This is the default unless the user explicitly asks for something else.
+
+Explicit user instructions such as "weiter", "warte nicht", "bleib im Loop",
+or "keine Stops bei Slice-Abschluss" change only whether the agent should
+continue to the next workflow iteration. They do not change the order of steps
+0-19 and must not be interpreted as permission to branch, commit, open PRs, or
+merge without an active Linear issue.
 
 ---
 
@@ -650,9 +685,13 @@ Rules:
 
 - do not leave the working backlog empty if the next likely slices are already clear
 - treat this as a standing workflow rule, not just a planning preference
-- before closing the current ticket loop, ensure Linear still has:
-  - 1 ticket in progress or in review
-  - 1-5 near-next tickets in backlog
+- before creating the next branch, ensure Linear has:
+  - exactly one active slice ticket moved to `In Progress`
+  - 1-5 near-next tickets in backlog when the next likely slices are already clear
+- after merging and closing one ticket, it is acceptable for there to be no
+  `In Progress` ticket only for the short transition while selecting the next
+  issue; the next branch must not be created until the next issue is
+  `In Progress`
 - do not over-decompose distant phases into many detailed tickets too early
 - prefer a small, honest backlog over a large speculative ticket tree
 - derive backlog tickets from the roadmap, active specs, and current repo state
