@@ -15,7 +15,10 @@ use riotbox_core::{
         ProductExportReproducibilityProof, ProductExportRole,
     },
     ids::ActionId,
-    session::{ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole, ExportReceiptState},
+    session::{
+        ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole,
+        ExportArtifactSourceGraphRef, ExportReceiptState,
+    },
     transport::CommitBoundaryState,
 };
 use sha2::{Digest, Sha256};
@@ -147,7 +150,7 @@ impl JamAppState {
             phrase_index: self.runtime.transport.phrase_index,
             scene_id: self.runtime.transport.current_scene.clone(),
         };
-        let receipt = ExportReceiptState::from_readiness_contract(
+        let mut receipt = ExportReceiptState::from_readiness_contract(
             action_id,
             requested_at,
             &written.contract,
@@ -155,6 +158,12 @@ impl JamAppState {
             written.proof_path.to_string_lossy().into_owned(),
             None,
         );
+        if let Some(source_graph_ref) = self.export_artifact_source_graph_ref() {
+            receipt.attach_artifact_source_graph_ref(
+                ExportArtifactRole::FullGridMix,
+                source_graph_ref,
+            );
+        }
         let result_summary = format!(
             "exported {} receipt {} hash {}",
             written.contract.export_role.as_str(),
@@ -210,6 +219,17 @@ impl JamAppState {
             .into_iter()
             .find(|action| action.command == ActionCommand::ExportProductMix)
             .map(|action| action.id)
+    }
+
+    fn export_artifact_source_graph_ref(&self) -> Option<ExportArtifactSourceGraphRef> {
+        self.session
+            .source_graph_refs
+            .first()
+            .map(|graph_ref| ExportArtifactSourceGraphRef {
+                source_id: graph_ref.source_id.clone(),
+                graph_version: graph_ref.graph_version,
+                graph_hash: graph_ref.graph_hash.clone(),
+            })
     }
 }
 

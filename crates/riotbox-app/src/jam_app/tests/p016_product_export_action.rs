@@ -28,14 +28,17 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
         ProductExportBoundary::FeralGridGeneratedSupport
     );
     assert_eq!(receipt.export_hash, artifact_hash);
-    assert_eq!(
-        receipt.artifact_set,
-        vec![ExportArtifactSetEntry::product_mix(
-            destination.join("full_grid_mix.wav").to_string_lossy().into_owned(),
-            artifact_hash.clone(),
-            Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
-        )]
+    let mut expected_artifact = ExportArtifactSetEntry::product_mix(
+        destination.join("full_grid_mix.wav").to_string_lossy().into_owned(),
+        artifact_hash.clone(),
+        Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
     );
+    expected_artifact.source_graph_ref = Some(ExportArtifactSourceGraphRef {
+        source_id: SourceId::from("src-1"),
+        graph_version: SourceGraphVersion::V1,
+        graph_hash: state.session.source_graph_refs[0].graph_hash.clone(),
+    });
+    assert_eq!(receipt.artifact_set, vec![expected_artifact]);
     assert_eq!(
         receipt.unsupported_scopes,
         vec![
