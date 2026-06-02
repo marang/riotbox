@@ -75,6 +75,15 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
         lifecycle[2]["receipt"]["artifact_set"][0]["normalized_manifest_hash"],
         "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
     );
+    assert_eq!(
+        lifecycle[2]["receipt"]["qa_gates"][0]["gate_id"],
+        "product_export_reproducibility_smoke"
+    );
+    assert_eq!(lifecycle[2]["receipt"]["qa_gates"][0]["status"], "passed");
+    assert_eq!(
+        lifecycle[2]["receipt"]["qa_gates"][0]["artifact_roles"][0],
+        "full_grid_mix"
+    );
     assert_eq!(lifecycle[2]["receipt"]["readiness_status"], "reproducible");
     assert_eq!(
         lifecycle[2]["receipt"]["unsupported_scopes"]

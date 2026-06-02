@@ -226,6 +226,7 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
             Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
         )],
+        qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: vec![
             UnsupportedExportScope::StemPackage,

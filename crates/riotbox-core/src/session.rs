@@ -3,7 +3,9 @@ mod export_types;
 pub use export_types::{
     ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
     ExportArtifactFallbackComparisonKind, ExportArtifactLocation, ExportArtifactMediaType,
-    ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportReceiptState,
+    ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef,
+    ExportReceiptQaGateResult, ExportReceiptQaGateStatus, ExportReceiptState,
+    PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID,
 };
 
 // Textual includes keep this large file split mechanical and behavior-preserving.
