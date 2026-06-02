@@ -390,6 +390,11 @@ Rules:
   roles and a concise summary; a structurally accepted skeleton with deferred
   audio or fallback proof records `deferred`, while structural evidence
   failures record `failed`
+- `validate_stem_package_receipt_readiness` is the typed receipt-level guard
+  for future stem-package readiness. It reports `blocked` while the receipt is
+  not `export_scope: stem_package`, while `unsupported_scopes[]` still includes
+  `stem_package`, while the stem-package artifact-set QA gate is missing, or
+  while that gate is `failed` or `deferred`.
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 

@@ -107,6 +107,11 @@ impl ExportReceiptState {
             }
         }
     }
+
+    #[must_use]
+    pub fn stem_package_readiness_report(&self) -> StemPackageReceiptReadinessReport {
+        validate_stem_package_receipt_readiness(self)
+    }
 }
 
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
@@ -177,6 +182,71 @@ pub enum ExportReceiptQaGateStatus {
     Passed,
     Failed,
     Deferred,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StemPackageReceiptReadinessReport {
+    pub status: StemPackageReceiptReadinessStatus,
+    pub blockers: Vec<StemPackageReceiptReadinessBlocker>,
+}
+
+impl StemPackageReceiptReadinessReport {
+    #[must_use]
+    pub fn ready(&self) -> bool {
+        self.status == StemPackageReceiptReadinessStatus::Ready
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageReceiptReadinessStatus {
+    Ready,
+    Blocked,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageReceiptReadinessBlocker {
+    NotStemPackageScope,
+    UnsupportedScopeFlagPresent,
+    MissingArtifactSetQaGate,
+    DeferredArtifactSetQaGate,
+    FailedArtifactSetQaGate,
+}
+
+#[must_use]
+pub fn validate_stem_package_receipt_readiness(
+    receipt: &ExportReceiptState,
+) -> StemPackageReceiptReadinessReport {
+    let mut blockers = Vec::new();
+    if receipt.export_scope != ExportScope::StemPackage {
+        blockers.push(StemPackageReceiptReadinessBlocker::NotStemPackageScope);
+    }
+    if receipt
+        .unsupported_scopes
+        .contains(&UnsupportedExportScope::StemPackage)
+    {
+        blockers.push(StemPackageReceiptReadinessBlocker::UnsupportedScopeFlagPresent);
+    }
+    match receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID)
+    {
+        Some(gate) if gate.status == ExportReceiptQaGateStatus::Passed => {}
+        Some(gate) if gate.status == ExportReceiptQaGateStatus::Deferred => {
+            blockers.push(StemPackageReceiptReadinessBlocker::DeferredArtifactSetQaGate)
+        }
+        Some(_) => blockers.push(StemPackageReceiptReadinessBlocker::FailedArtifactSetQaGate),
+        None => blockers.push(StemPackageReceiptReadinessBlocker::MissingArtifactSetQaGate),
+    }
+
+    let status = if blockers.is_empty() {
+        StemPackageReceiptReadinessStatus::Ready
+    } else {
+        StemPackageReceiptReadinessStatus::Blocked
+    };
+    StemPackageReceiptReadinessReport { status, blockers }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -366,3 +436,6 @@ pub struct ExportArtifactAudioMetrics {
 #[cfg(test)]
 #[path = "export_types_tests.rs"]
 mod export_types_tests;
+#[cfg(test)]
+#[path = "stem_package_readiness_tests.rs"]
+mod stem_package_readiness_tests;

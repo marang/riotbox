@@ -6,7 +6,9 @@ pub use export_types::{
     ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef,
     ExportArtifactTimingGridRef, ExportReceiptQaGateResult, ExportReceiptQaGateStatus,
     ExportReceiptState, PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID,
-    STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+    STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID, StemPackageReceiptReadinessBlocker,
+    StemPackageReceiptReadinessReport, StemPackageReceiptReadinessStatus,
+    validate_stem_package_receipt_readiness,
 };
 
 // Textual includes keep this large file split mechanical and behavior-preserving.
