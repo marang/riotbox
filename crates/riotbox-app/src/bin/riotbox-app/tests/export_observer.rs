@@ -1,6 +1,13 @@
 use sha2::{Digest, Sha256};
 
-use riotbox_core::action::ActionStatus;
+use riotbox_core::{
+    action::ActionStatus,
+    export_qa::validate_stem_package_artifact_set_evidence,
+    session::{
+        ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole,
+        ExportArtifactSetEntry, ExportReceiptQaGateResult, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+    },
+};
 
 #[test]
 fn observer_snapshot_reports_completed_product_export_lifecycle() {
@@ -208,6 +215,64 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
 }
 
 #[test]
+fn observer_snapshot_projects_stem_package_qa_gate_evidence_from_receipt() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let proof_dir = temp.path().join("proof");
+    let destination = temp.path().join("export");
+    fs::create_dir_all(&proof_dir).expect("create proof dir");
+    let artifact_path = proof_dir.join("full_grid_mix.wav");
+    riotbox_audio::source_audio::write_interleaved_pcm16_wav(
+        &artifact_path,
+        1_000,
+        1,
+        &[0.0, 0.25, -0.25, 0.0],
+    )
+    .expect("write product artifact");
+    let artifact_hash = sha256_bytes(&fs::read(&artifact_path).expect("read product artifact"));
+    let proof_path = proof_dir.join("product_export_proof.json");
+    write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
+
+    let mut state = JamAppState::from_parts(
+        SessionFile::new("observer-stem-qa", "0.1.0", "2026-05-31T00:00:00Z"),
+        None,
+        ActionQueue::new(),
+    );
+    state
+        .commit_product_mix_export_from_proof(&proof_path, &destination, 903)
+        .expect("commit product export");
+
+    let report = validate_stem_package_artifact_set_evidence(
+        &[stem_receipt_artifact(ExportArtifactRole::StemDrums)],
+        &[ExportArtifactRole::StemDrums],
+    );
+    state.session.export_receipts[0]
+        .qa_gates
+        .push(ExportReceiptQaGateResult::stem_package_artifact_set_evidence(&report));
+
+    let shell = JamShellState::new(state, ShellLaunchMode::Load);
+    let snapshot = observer_snapshot(&shell);
+    let lifecycle = snapshot["export"]["lifecycle"]
+        .as_array()
+        .expect("lifecycle array");
+    let receipt = &lifecycle[2]["receipt"];
+    let qa_gates = receipt["qa_gates"].as_array().expect("qa gates");
+    let stem_gate = qa_gates
+        .iter()
+        .find(|gate| gate["gate_id"] == STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID)
+        .expect("stem package qa gate");
+
+    assert_eq!(stem_gate["status"], "deferred");
+    assert_eq!(stem_gate["artifact_roles"][0], "stem_drums");
+    assert!(
+        stem_gate["summary"]
+            .as_str()
+            .expect("summary")
+            .contains("deferred QA check(s) remain")
+    );
+    assert_eq!(receipt["unsupported_scopes"][0], "stem_package");
+}
+
+#[test]
 fn observer_snapshot_reports_failed_product_export_lifecycle() {
     let temp = tempfile::tempdir().expect("tempdir");
     let proof_dir = temp.path().join("proof");
@@ -304,4 +369,25 @@ fn sha256_bytes(bytes: &[u8]) -> String {
     let mut digest = Sha256::new();
     digest.update(bytes);
     format!("{:x}", digest.finalize())
+}
+
+fn stem_receipt_artifact(role: ExportArtifactRole) -> ExportArtifactSetEntry {
+    ExportArtifactSetEntry {
+        role,
+        location: ExportArtifactLocation::LocalPath {
+            path: "exports/stems/drums.wav".into(),
+        },
+        media_type: ExportArtifactMediaType::AudioWav,
+        sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+        normalized_manifest_hash: None,
+        source_graph_ref: None,
+        timing_grid_ref: None,
+        source_capture_refs: Vec::new(),
+        lineage_capture_refs: Vec::new(),
+        fallback_comparison: None,
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    }
 }

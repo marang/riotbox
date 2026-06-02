@@ -997,6 +997,10 @@ Today the repo already has:
   `qa_gates[]`. Structural failures become `failed`; structural acceptance with
   deferred audio/fallback proof becomes `deferred`, not `passed`, so receipts
   can explain why a stem package is blocked without claiming readiness.
+- Observer export snapshots project those receipt `qa_gates[]` values as-is,
+  including non-product stem-package evidence. The observer surface is evidence
+  projection from Session/Core receipt truth, not a second readiness engine and
+  not permission to surface `export.stem_package` as runnable.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
