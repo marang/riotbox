@@ -234,8 +234,34 @@ impl ExportArtifactSetEntry {
 
     #[must_use]
     pub fn product_export_proof(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self::local_json_artifact(ExportArtifactRole::ProductExportProof, path, sha256)
+    }
+
+    #[must_use]
+    pub fn stem_package_proof(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self::local_json_artifact(ExportArtifactRole::ProductExportProof, path, sha256)
+    }
+
+    #[must_use]
+    pub fn export_manifest(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self::local_json_artifact(ExportArtifactRole::ExportManifest, path, sha256)
+    }
+
+    #[must_use]
+    pub fn location_identity(&self) -> &str {
+        match &self.location {
+            ExportArtifactLocation::LocalPath { path }
+            | ExportArtifactLocation::Uri { uri: path } => path,
+        }
+    }
+
+    fn local_json_artifact(
+        role: ExportArtifactRole,
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+    ) -> Self {
         Self {
-            role: ExportArtifactRole::ProductExportProof,
+            role,
             location: ExportArtifactLocation::LocalPath { path: path.into() },
             media_type: ExportArtifactMediaType::Json,
             sha256: sha256.into(),
@@ -249,14 +275,6 @@ impl ExportArtifactSetEntry {
             sample_rate_hz: None,
             channel_count: None,
             duration_ms: None,
-        }
-    }
-
-    #[must_use]
-    pub fn location_identity(&self) -> &str {
-        match &self.location {
-            ExportArtifactLocation::LocalPath { path }
-            | ExportArtifactLocation::Uri { uri: path } => path,
         }
     }
 }

@@ -60,6 +60,36 @@ fn product_export_proof_artifact_entry_uses_json_media_type() {
 }
 
 #[test]
+fn stem_package_proof_artifact_entry_uses_json_proof_identity() {
+    let entry = ExportArtifactSetEntry::stem_package_proof(
+        "exports/stem_package/proof.json",
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    );
+
+    assert_json_artifact_entry(
+        &entry,
+        ExportArtifactRole::ProductExportProof,
+        "exports/stem_package/proof.json",
+        "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    );
+}
+
+#[test]
+fn export_manifest_artifact_entry_uses_json_manifest_identity() {
+    let entry = ExportArtifactSetEntry::export_manifest(
+        "exports/stem_package/manifest.json",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    );
+
+    assert_json_artifact_entry(
+        &entry,
+        ExportArtifactRole::ExportManifest,
+        "exports/stem_package/manifest.json",
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+    );
+}
+
+#[test]
 fn export_receipts_roundtrip_with_session_file() {
     let mut session = SessionFile::new("session-export", "0.1.0", "2026-05-31T00:00:00Z");
     session.export_receipts.push(fixture_receipt());
@@ -349,6 +379,29 @@ fn stem_artifact(
         channel_count: None,
         duration_ms: None,
     }
+}
+
+fn assert_json_artifact_entry(
+    entry: &ExportArtifactSetEntry,
+    role: ExportArtifactRole,
+    path: &str,
+    sha256: &str,
+) {
+    assert_eq!(entry.role, role);
+    assert_eq!(
+        entry.location,
+        ExportArtifactLocation::LocalPath { path: path.into() }
+    );
+    assert_eq!(entry.media_type, ExportArtifactMediaType::Json);
+    assert_eq!(entry.sha256, sha256);
+    assert_eq!(entry.audio_metrics, None);
+
+    let json = serde_json::to_value(entry).expect("serialize json artifact");
+    assert_eq!(json["role"], serde_json::to_value(role).expect("role"));
+    assert_eq!(json["location"]["kind"], "local_path");
+    assert_eq!(json["location"]["path"], path);
+    assert_eq!(json["media_type"], "json");
+    assert_eq!(json["sha256"], sha256);
 }
 
 #[test]

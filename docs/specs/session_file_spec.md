@@ -346,6 +346,12 @@ Rules:
 - current `export.product_mix` proof entries use role `product_export_proof`,
   media type `json`, local proof path, and SHA-256 of the copied proof file so
   the receipt pack can reason about all written files through `artifact_set[]`
+- `ExportArtifactSetEntry::export_manifest` is the typed local JSON identity
+  helper for export manifest files; `ExportArtifactSetEntry::stem_package_proof`
+  is the typed local JSON identity helper for future stem-package proof files
+  using the existing product-export proof role. These helpers only build
+  receipt artifact identity; they do not write files or claim a runnable stem
+  export.
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent
