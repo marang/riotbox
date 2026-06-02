@@ -371,6 +371,10 @@ Rules:
 - current `export.product_mix` receipts explicitly store `export_scope:
   product_mix` so later stem package, live recording, and DAW session work does
   not infer export scope from the full-grid mix role
+- `export_scope: stem_package` is a reserved typed receipt value for future
+  stem-package receipts. Its presence alone does not remove
+  `unsupported_scopes[]`, does not make `export.stem_package` runnable, and
+  does not claim readiness without the required artifact-set and QA gates.
 - current `export.product_mix` receipts explicitly store `pack_id:
   feral-grid-demo` from the product-export proof so replay and observer
   surfaces retain the deterministic recipe identity that produced the artifact
@@ -391,8 +395,8 @@ Rules:
 
 Additional receipt fields required before wider export scopes:
 
-- new export scope variants beyond current `product_mix`, such as
-  `stem_package`, `live_recording`, or `daw_session`
+- future export scope variants beyond current `product_mix` and reserved
+  `stem_package`, such as `live_recording` or `daw_session`
 - wider artifact set roles, source/capture lineage links, and
   stem/DAW/live-recording media roles beyond the current full-grid WAV entry
 - stem-package receipts must include one artifact-set entry per claimed stem

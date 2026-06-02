@@ -971,6 +971,10 @@ Today the repo already has:
   metrics, and the policy-required source/capture lineage and fallback
   comparison evidence. A UI, Ghost, or CLI path must not show it as ready while
   those gates are absent.
+- `ExportScope::StemPackage` is a reserved typed receipt scope only. It lets
+  future receipts state `export_scope: stem_package` explicitly, but it does not
+  remove unsupported-scope flags or turn the current QA skeleton into full
+  stem-package export readiness.
 - Stem-package QA gates must fail when a claimed role is missing, duplicated,
   mislabeled, hashless, locationless, silent by metrics, or missing required
   lineage/fallback evidence. Hash stability and non-silence must be checked per

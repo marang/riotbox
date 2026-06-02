@@ -80,6 +80,7 @@ impl ProductExportRole {
 #[serde(rename_all = "snake_case")]
 pub enum ExportScope {
     ProductMix,
+    StemPackage,
 }
 
 impl ExportScope {
@@ -87,6 +88,7 @@ impl ExportScope {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::ProductMix => "product_mix",
+            Self::StemPackage => "stem_package",
         }
     }
 
@@ -94,6 +96,7 @@ impl ExportScope {
     pub const fn musician_label(self) -> &'static str {
         match self {
             Self::ProductMix => "product mix export",
+            Self::StemPackage => "stem package export",
         }
     }
 }
@@ -286,6 +289,17 @@ mod tests {
                 "DAW export",
                 "host-audio soak"
             ]
+        );
+    }
+
+    #[test]
+    fn stem_package_scope_is_reserved_without_changing_product_mix_default() {
+        assert_eq!(default_export_scope(), ExportScope::ProductMix);
+        assert_eq!(ExportScope::ProductMix.as_str(), "product_mix");
+        assert_eq!(ExportScope::StemPackage.as_str(), "stem_package");
+        assert_eq!(
+            ExportScope::StemPackage.musician_label(),
+            "stem package export"
         );
     }
 
