@@ -13,14 +13,15 @@ mod tests {
         persistence::save_session_json,
         queue::ActionQueue,
         session::{
-            ActionCommitRecord, CaptureRef, CaptureTarget, CaptureType, SessionFile, Snapshot,
-            SnapshotPayload,
+            ActionCommitRecord, CaptureRef, CaptureTarget, CaptureType, GraphStorageMode,
+            SessionFile, Snapshot, SnapshotPayload, SourceGraphRef,
+            SourceTimingGridConfirmationState,
         },
         source_graph::{
             AnalysisSummary, Candidate, CandidateType, DecodeProfile, GraphProvenance,
             GrooveResidual, GrooveSubdivision, MeterHint, QualityClass, SourceDescriptor,
-            SourceGraph, SourceTimingAnchor, SourceTimingAnchorType, TimingDegradedPolicy,
-            TimingHypothesis, TimingHypothesisKind, TimingQuality, TimingWarning,
+            SourceGraph, SourceGraphVersion, SourceTimingAnchor, SourceTimingAnchorType,
+            TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind, TimingQuality, TimingWarning,
             TimingWarningCode,
         },
     };
