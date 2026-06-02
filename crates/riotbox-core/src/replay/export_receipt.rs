@@ -131,8 +131,8 @@ mod tests {
             CommitBoundary, Quantization, TargetScope, UndoPolicy,
         },
         export_readiness::{
-            ExportReadinessStatus, ProductExportBoundary, ProductExportDestinationKind,
-            ProductExportRole, UnsupportedExportScope,
+            ExportReadinessStatus, ExportScope, ProductExportBoundary,
+            ProductExportDestinationKind, ProductExportRole, UnsupportedExportScope,
         },
         ids::ExportReceiptId,
         replay::build_committed_replay_plan,
@@ -287,6 +287,7 @@ mod tests {
             receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
             created_by_action: ActionId(4),
             created_at: 900,
+            export_scope: ExportScope::ProductMix,
             export_role: ProductExportRole::FullGridMix,
             export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
             artifact_path: artifact_path.into(),
@@ -316,6 +317,7 @@ mod tests {
             actor: ActorType::User,
             command: ActionCommand::ExportProductMix,
             params: ActionParams::ProductExport {
+                export_scope: ExportScope::ProductMix,
                 export_role: ProductExportRole::FullGridMix,
                 boundary: ProductExportBoundary::FeralGridGeneratedSupport,
                 include_manifest: true,

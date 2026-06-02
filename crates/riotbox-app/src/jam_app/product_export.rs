@@ -11,7 +11,7 @@ use riotbox_core::{
         TargetScope, UndoPolicy,
     },
     export_readiness::{
-        ExportReadinessContract, ProductExportBoundary, ProductExportDestinationKind,
+        ExportReadinessContract, ExportScope, ProductExportBoundary, ProductExportDestinationKind,
         ProductExportReproducibilityProof, ProductExportRole,
     },
     ids::ActionId,
@@ -97,6 +97,7 @@ impl JamAppState {
             },
         );
         draft.params = ActionParams::ProductExport {
+            export_scope: ExportScope::ProductMix,
             export_role: ProductExportRole::FullGridMix,
             boundary: ProductExportBoundary::FeralGridGeneratedSupport,
             include_manifest: true,

@@ -936,10 +936,11 @@ Today the repo already has:
 - `just full-grid-export-reproducibility-smoke` / `just product-export-reproducibility-smoke` is a CI-safe bounded export reproducibility check that renders the deterministic Feral grid/source-first plus generated-support pack twice from generated source material, validates both listening manifests, rejects collapsed full-mix output metrics, compares the exported generated-support WAV hashes, and validates a normalized product-export proof with temp paths removed; it is still not the full arrangement export workflow
 - `riotbox-core::export_readiness` turns the current product-export
   reproducibility proof into a typed `ExportReadinessContract` for P016. The
-  first contract boundary is the deterministic Feral-grid generated-support
-  export with `full_grid_mix` as the current export role, `reproducible` status,
-  and explicit unsupported-scope flags for stem package export, live recording
-  export, DAW export, and host-audio soak.
+  first contract scope is `product_mix`; the first boundary is the
+  deterministic Feral-grid generated-support export with `full_grid_mix` as the
+  current export role, `reproducible` status, and explicit unsupported-scope
+  flags for stem package export, live recording export, DAW export, and
+  host-audio soak.
 - the first export action boundary is `export.product_mix`, which writes a
   `full_grid_mix` product artifact plus proof receipt only after the existing
   product-export reproducibility proof and artifact hash check succeed. It is not a
@@ -948,9 +949,10 @@ Today the repo already has:
 - the observer export surface derives `requested`, `started`, `completed`, and
   `failed` lifecycle records from the existing `export.product_mix`
   ActionCommand, queue/action history, and export receipts. Completed records
-  include receipt id, role, artifact/proof paths, hashes, readiness status, and
-  unsupported scopes; failed records include the action id and failure reason.
-  This is an observer projection, not a second export truth.
+  include receipt id, export scope, role, artifact/proof paths, hashes,
+  readiness status, and unsupported scopes; failed records include the action
+  id and failure reason. This is an observer projection, not a second export
+  truth.
 - wider P016 export scopes require stronger gates before they are claimed:
   stem packages require per-stem non-silence, role labeling, hash stability, and
   source/capture lineage checks against the per-artifact evidence fields; live recordings require real-session

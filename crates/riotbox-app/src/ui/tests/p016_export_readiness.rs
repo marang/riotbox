@@ -19,6 +19,7 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
         created_by_action: ActionId(4),
         created_at: 900,
+        export_scope: ExportScope::ProductMix,
         export_role: ProductExportRole::FullGridMix,
         export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
         artifact_path: "exports/full_grid_mix.wav".into(),

@@ -208,6 +208,7 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
         created_by_action: ActionId(4),
         created_at: 900,
+        export_scope: ExportScope::ProductMix,
         export_role: ProductExportRole::FullGridMix,
         export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
         artifact_path: artifact_path.into(),

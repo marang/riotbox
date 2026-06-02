@@ -306,6 +306,8 @@ Minimum receipt fields:
 - receipt id
 - created by action id
 - created at timestamp
+- export scope, distinct from export role; current P016 receipts use
+  `product_mix`
 - export role
 - export boundary
 - artifact path or artifact URI
@@ -334,12 +336,15 @@ Rules:
 - current `export.product_mix` receipts populate a one-entry artifact set for
   the full-grid WAV while preserving the legacy `artifact_path`, `proof_path`,
   `export_hash`, and `normalized_manifest_hash` fields for older readers
+- current `export.product_mix` receipts explicitly store `export_scope:
+  product_mix` so later stem package, live recording, and DAW session work does
+  not infer export scope from the full-grid mix role
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
 Additional receipt fields required before wider export scopes:
 
-- export scope, distinct from export role, such as `product_mix`,
+- new export scope variants beyond current `product_mix`, such as
   `stem_package`, `live_recording`, or `daw_session`
 - wider artifact set roles, per-artifact normalized manifest references,
   source/capture lineage links, and stem/DAW/live-recording media roles beyond
