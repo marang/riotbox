@@ -136,6 +136,7 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
         "export_hash": receipt.export_hash,
         "normalized_manifest_hash": receipt.normalized_manifest_hash,
         "artifact_set": artifact_set,
+        "qa_gates": receipt.qa_gates,
         "readiness_status": receipt.readiness_status,
         "unsupported_scopes": receipt
             .unsupported_scopes

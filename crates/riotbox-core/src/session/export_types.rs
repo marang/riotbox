@@ -30,6 +30,8 @@ pub struct ExportReceiptState {
     pub normalized_manifest_hash: String,
     #[serde(default)]
     pub artifact_set: Vec<ExportArtifactSetEntry>,
+    #[serde(default)]
+    pub qa_gates: Vec<ExportReceiptQaGateResult>,
     pub readiness_status: ExportReadinessStatus,
     pub unsupported_scopes: Vec<UnsupportedExportScope>,
 }
@@ -63,6 +65,7 @@ impl ExportReceiptState {
                 contract.export_sha256.clone(),
                 Some(contract.normalized_manifest_sha256.clone()),
             )],
+            qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
             readiness_status: contract.status,
             unsupported_scopes: contract.unsupported_scopes.clone(),
         }
@@ -80,6 +83,36 @@ impl ExportReceiptState {
 
         self.artifact_set.clone()
     }
+}
+
+pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportReceiptQaGateResult {
+    pub gate_id: String,
+    pub status: ExportReceiptQaGateStatus,
+    #[serde(default)]
+    pub artifact_roles: Vec<ExportArtifactRole>,
+    #[serde(default)]
+    pub summary: Option<String>,
+}
+
+impl ExportReceiptQaGateResult {
+    #[must_use]
+    pub fn product_export_reproducibility() -> Self {
+        Self {
+            gate_id: PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![ExportArtifactRole::FullGridMix],
+            summary: Some("product export proof and artifact hash accepted".into()),
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum ExportReceiptQaGateStatus {
+    Passed,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

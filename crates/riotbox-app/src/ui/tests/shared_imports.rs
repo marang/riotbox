@@ -20,8 +20,9 @@ use riotbox_core::{
     },
     queue::ActionQueue,
     session::{
-        ActionCommitRecord, ExportArtifactSetEntry, ExportReceiptState, GhostSuggestionRecord,
-        Mc202RoleState, SceneMovementDirectionState, SceneMovementKindState,
+        ActionCommitRecord, ExportArtifactSetEntry, ExportReceiptQaGateResult,
+        ExportReceiptState, GhostSuggestionRecord, Mc202RoleState, SceneMovementDirectionState,
+        SceneMovementKindState,
         SceneMovementLaneIntentState, SceneMovementState, SessionFile, Snapshot,
         SourceTimingGridConfirmationState, Tr909ReinforcementModeState, Tr909TakeoverProfileState,
     },

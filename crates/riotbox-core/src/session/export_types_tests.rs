@@ -70,6 +70,10 @@ fn export_receipts_roundtrip_with_session_file() {
             Some("dddd".into()),
         )]
     );
+    assert_eq!(
+        receipt.qa_gates,
+        vec![ExportReceiptQaGateResult::product_export_reproducibility()]
+    );
 }
 
 #[test]
@@ -132,6 +136,34 @@ fn missing_pack_id_defaults_to_product_export_pack_for_older_receipts() {
         serde_json::from_value(json).expect("deserialize older receipt");
 
     assert_eq!(receipt.pack_id, PRODUCT_EXPORT_PACK_ID);
+}
+
+#[test]
+fn missing_qa_gates_defaults_to_empty_for_older_receipts() {
+    let mut json = serde_json::to_value(fixture_receipt()).expect("serialize receipt");
+    json.as_object_mut()
+        .expect("receipt json object")
+        .remove("qa_gates");
+
+    let receipt: ExportReceiptState =
+        serde_json::from_value(json).expect("deserialize older receipt");
+
+    assert!(receipt.qa_gates.is_empty());
+}
+
+#[test]
+fn product_export_receipt_records_reproducibility_gate_result() {
+    let receipt = fixture_receipt();
+
+    assert_eq!(
+        receipt.qa_gates,
+        vec![ExportReceiptQaGateResult {
+            gate_id: PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID.into(),
+            status: ExportReceiptQaGateStatus::Passed,
+            artifact_roles: vec![ExportArtifactRole::FullGridMix],
+            summary: Some("product export proof and artifact hash accepted".into()),
+        }]
+    );
 }
 
 #[test]

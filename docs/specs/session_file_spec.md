@@ -348,6 +348,10 @@ Rules:
 - current `export.product_mix` receipts explicitly store `pack_id:
   feral-grid-demo` from the product-export proof so replay and observer
   surfaces retain the deterministic recipe identity that produced the artifact
+- current `export.product_mix` receipts populate `qa_gates[]` with
+  `product_export_reproducibility_smoke: passed` for the `full_grid_mix`
+  artifact role after the product-export proof and artifact hash gate accepts
+  the export
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
@@ -366,8 +370,9 @@ Additional receipt fields required before wider export scopes:
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts
-- QA gate ids and results that prove the claimed artifact roles are not silent,
-  fallback-collapsed, or hash-unstable
+- stronger QA gate ids and results that prove future claimed artifact roles are
+  not silent, fallback-collapsed, misplaced, or hash-unstable beyond the current
+  product-export reproducibility smoke gate
 - host-audio evidence refs for live recording only, including device/host,
   callback-gap summary, stream errors, and recording duration
 

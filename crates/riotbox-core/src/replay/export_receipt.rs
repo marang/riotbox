@@ -139,7 +139,7 @@ mod tests {
         session::{
             ActionCommitRecord, ActionLog, ExportArtifactLocation, ExportArtifactMediaType,
             ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef,
-            ExportReceiptState, ReplayPolicy,
+            ExportReceiptQaGateResult, ExportReceiptState, ReplayPolicy,
         },
         source_graph::SourceGraphVersion,
         transport::CommitBoundaryState,
@@ -304,6 +304,7 @@ mod tests {
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
                 Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
             )],
+            qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
             readiness_status: ExportReadinessStatus::Reproducible,
             unsupported_scopes: vec![
                 UnsupportedExportScope::StemPackage,
