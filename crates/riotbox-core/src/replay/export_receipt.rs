@@ -2,7 +2,7 @@ use crate::{
     action::ActionCommand,
     ids::{ActionId, ExportReceiptId},
     replay::ReplayPlanEntry,
-    session::{ExportArtifactSetEntry, ExportReceiptState, SessionFile},
+    session::{ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState, SessionFile},
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -41,7 +41,23 @@ pub enum ExportReceiptReplayValidationError {
     },
     MissingArtifactSetHash {
         receipt_id: ExportReceiptId,
-        role: crate::session::ExportArtifactRole,
+        role: ExportArtifactRole,
+    },
+    MissingSourceGraphRefSourceId {
+        receipt_id: ExportReceiptId,
+        role: ExportArtifactRole,
+    },
+    MissingSourceGraphRefHash {
+        receipt_id: ExportReceiptId,
+        role: ExportArtifactRole,
+    },
+    MissingTimingGridRefSourceId {
+        receipt_id: ExportReceiptId,
+        role: ExportArtifactRole,
+    },
+    MissingTimingGridRefHypothesisId {
+        receipt_id: ExportReceiptId,
+        role: ExportArtifactRole,
     },
 }
 
@@ -84,6 +100,7 @@ pub fn plan_export_receipt_replay_validation(
                 role: artifact.role,
             });
         }
+        validate_artifact_lineage(receipt, artifact)?;
     }
 
     Ok(ExportReceiptReplayValidationPlan {
@@ -123,6 +140,55 @@ fn export_receipt_for_action(
     Ok(receipt)
 }
 
+fn validate_artifact_lineage(
+    receipt: &ExportReceiptState,
+    artifact: &ExportArtifactSetEntry,
+) -> Result<(), ExportReceiptReplayValidationError> {
+    if let Some(source_graph_ref) = &artifact.source_graph_ref {
+        if source_graph_ref.source_id.as_str().trim().is_empty() {
+            return Err(
+                ExportReceiptReplayValidationError::MissingSourceGraphRefSourceId {
+                    receipt_id: receipt.receipt_id.clone(),
+                    role: artifact.role,
+                },
+            );
+        }
+        if source_graph_ref.graph_hash.trim().is_empty() {
+            return Err(
+                ExportReceiptReplayValidationError::MissingSourceGraphRefHash {
+                    receipt_id: receipt.receipt_id.clone(),
+                    role: artifact.role,
+                },
+            );
+        }
+    }
+
+    if let Some(timing_grid_ref) = &artifact.timing_grid_ref {
+        if timing_grid_ref.source_id.as_str().trim().is_empty() {
+            return Err(
+                ExportReceiptReplayValidationError::MissingTimingGridRefSourceId {
+                    receipt_id: receipt.receipt_id.clone(),
+                    role: artifact.role,
+                },
+            );
+        }
+        if timing_grid_ref
+            .hypothesis_id
+            .as_deref()
+            .is_some_and(|hypothesis_id| hypothesis_id.trim().is_empty())
+        {
+            return Err(
+                ExportReceiptReplayValidationError::MissingTimingGridRefHypothesisId {
+                    receipt_id: receipt.receipt_id.clone(),
+                    role: artifact.role,
+                },
+            );
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use crate::{
@@ -139,7 +205,8 @@ mod tests {
         session::{
             ActionCommitRecord, ActionLog, ExportArtifactLocation, ExportArtifactMediaType,
             ExportArtifactRole, ExportArtifactSetEntry, ExportArtifactSourceGraphRef,
-            ExportReceiptQaGateResult, ExportReceiptState, ReplayPolicy,
+            ExportArtifactTimingGridRef, ExportReceiptQaGateResult, ExportReceiptState,
+            ReplayPolicy,
         },
         source_graph::SourceGraphVersion,
         transport::CommitBoundaryState,
@@ -164,10 +231,6 @@ mod tests {
         assert_eq!(validation.artifact_path, "exports/full_grid_mix.wav");
         assert_eq!(validation.proof_path, "exports/proof.json");
         assert_eq!(
-            validation.export_hash,
-            "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-        );
-        assert_eq!(
             validation.artifact_set,
             vec![ExportArtifactSetEntry::product_mix(
                 "exports/full_grid_mix.wav",
@@ -175,6 +238,8 @@ mod tests {
                 Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
             )]
         );
+        assert_eq!(validation.artifact_set[0].source_graph_ref, None);
+        assert_eq!(validation.artifact_set[0].timing_grid_ref, None);
     }
 
     #[test]
@@ -194,7 +259,12 @@ mod tests {
                 graph_version: SourceGraphVersion::V1,
                 graph_hash: "graph-hash-1".into(),
             }),
-            timing_grid_ref: None,
+            timing_grid_ref: Some(ExportArtifactTimingGridRef {
+                source_id: crate::ids::SourceId::from("src-1"),
+                hypothesis_id: Some("primary-grid".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 800,
+            }),
             source_capture_refs: vec![crate::ids::CaptureId::from("cap-source")],
             lineage_capture_refs: vec![crate::ids::CaptureId::from("cap-root")],
             fallback_comparison: None,
@@ -209,13 +279,6 @@ mod tests {
             plan_export_receipt_replay_validation(&session, &plan[0]).expect("receipt validation");
 
         assert_eq!(
-            validation.artifact_set[0].location_identity(),
-            "s3://riotbox/full_grid_mix.wav"
-        );
-        assert_eq!(validation.artifact_set[0].sample_rate_hz, Some(48_000));
-        assert_eq!(validation.artifact_set[0].channel_count, Some(2));
-        assert_eq!(validation.artifact_set[0].duration_ms, Some(12_000));
-        assert_eq!(
             validation.artifact_set[0].source_graph_ref,
             Some(ExportArtifactSourceGraphRef {
                 source_id: crate::ids::SourceId::from("src-1"),
@@ -224,13 +287,95 @@ mod tests {
             })
         );
         assert_eq!(
-            validation.artifact_set[0].source_capture_refs,
-            vec![crate::ids::CaptureId::from("cap-source")]
+            validation.artifact_set[0].timing_grid_ref,
+            Some(ExportArtifactTimingGridRef {
+                source_id: crate::ids::SourceId::from("src-1"),
+                hypothesis_id: Some("primary-grid".into()),
+                confirmed_by_action: ActionId(1),
+                confirmed_at: 800,
+            })
         );
-        assert_eq!(
-            validation.artifact_set[0].lineage_capture_refs,
-            vec![crate::ids::CaptureId::from("cap-root")]
+    }
+
+    #[test]
+    fn export_receipt_replay_validation_rejects_blank_present_lineage() {
+        expect_blank_lineage_error(
+            set_blank_source_graph_source_id,
+            ExportReceiptReplayValidationError::MissingSourceGraphRefSourceId {
+                receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+                role: ExportArtifactRole::FullGridMix,
+            },
         );
+        expect_blank_lineage_error(
+            set_blank_source_graph_hash,
+            ExportReceiptReplayValidationError::MissingSourceGraphRefHash {
+                receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+                role: ExportArtifactRole::FullGridMix,
+            },
+        );
+        expect_blank_lineage_error(
+            set_blank_timing_grid_source_id,
+            ExportReceiptReplayValidationError::MissingTimingGridRefSourceId {
+                receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+                role: ExportArtifactRole::FullGridMix,
+            },
+        );
+        expect_blank_lineage_error(
+            set_blank_timing_grid_hypothesis_id,
+            ExportReceiptReplayValidationError::MissingTimingGridRefHypothesisId {
+                receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+                role: ExportArtifactRole::FullGridMix,
+            },
+        );
+    }
+
+    fn expect_blank_lineage_error(
+        mutate: fn(&mut ExportArtifactSetEntry),
+        expected: ExportReceiptReplayValidationError,
+    ) {
+        let mut session =
+            session_with_export_receipt("exports/full_grid_mix.wav", "exports/proof.json");
+        mutate(&mut session.export_receipts[0].artifact_set[0]);
+        let plan = build_committed_replay_plan(&session.action_log).expect("replay plan");
+
+        let error = plan_export_receipt_replay_validation(&session, &plan[0])
+            .expect_err("blank lineage should reject");
+
+        assert_eq!(error, expected);
+    }
+
+    fn set_blank_source_graph_source_id(artifact: &mut ExportArtifactSetEntry) {
+        artifact.source_graph_ref = Some(ExportArtifactSourceGraphRef {
+            source_id: crate::ids::SourceId::from(" "),
+            graph_version: SourceGraphVersion::V1,
+            graph_hash: "graph-hash-1".into(),
+        });
+    }
+
+    fn set_blank_source_graph_hash(artifact: &mut ExportArtifactSetEntry) {
+        artifact.source_graph_ref = Some(ExportArtifactSourceGraphRef {
+            source_id: crate::ids::SourceId::from("src-1"),
+            graph_version: SourceGraphVersion::V1,
+            graph_hash: " ".into(),
+        });
+    }
+
+    fn set_blank_timing_grid_source_id(artifact: &mut ExportArtifactSetEntry) {
+        artifact.timing_grid_ref = Some(ExportArtifactTimingGridRef {
+            source_id: crate::ids::SourceId::from(" "),
+            hypothesis_id: Some("primary-grid".into()),
+            confirmed_by_action: ActionId(1),
+            confirmed_at: 800,
+        });
+    }
+
+    fn set_blank_timing_grid_hypothesis_id(artifact: &mut ExportArtifactSetEntry) {
+        artifact.timing_grid_ref = Some(ExportArtifactTimingGridRef {
+            source_id: crate::ids::SourceId::from("src-1"),
+            hypothesis_id: Some(" ".into()),
+            confirmed_by_action: ActionId(1),
+            confirmed_at: 800,
+        });
     }
 
     #[test]

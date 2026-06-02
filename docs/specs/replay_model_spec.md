@@ -376,6 +376,10 @@ Decision:
 
 - replay does not rerun analysis as part of normal restore
 - replay consumes the frozen Source Graph used by the session
+- export receipt replay validation consumes Session/Core receipt truth only:
+  legacy receipts may omit optional artifact lineage, but present
+  `source_graph_ref` and `timing_grid_ref` identities must be non-blank so
+  corrupted export evidence is rejected before it is trusted
 
 ### 10.2 Ghost
 
