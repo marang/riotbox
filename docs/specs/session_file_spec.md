@@ -435,6 +435,13 @@ Rules:
   `passed` only when every claimed stem has metrics proving audible activity,
   `deferred` when metrics are missing, and `failed` when metrics prove silence,
   cannot prove activity, or claimed stem roles are missing/duplicated/non-stem.
+- per-stem lineage QA reports may be recorded as
+  `stem_package_per_stem_lineage` receipt gates. This gate records `passed`
+  only when every claimed stem artifact carries Session/Core lineage evidence
+  through source graph, source capture, or capture-lineage refs, and `failed`
+  when claimed roles are missing, duplicated, non-stem, lineage-free, or carry
+  blank lineage identities. It validates receipt evidence only and does not
+  write package files.
 - `validate_stem_package_receipt_readiness` is the typed receipt-level guard
   for future stem-package readiness. It reports `blocked` while the receipt is
   not `export_scope: stem_package`, while `unsupported_scopes[]` still includes
@@ -465,7 +472,7 @@ Additional receipt fields required before wider export scopes:
   rather than filenames, app-local state, or observer-only metadata
 - stem-package receipts must record which QA gates passed, failed, or remained
   deferred, including claimed-role structure, per-stem hash stability, per-stem
-  non-silence, lineage evidence, and source-vs-fallback comparison when
+  non-silence, per-stem lineage evidence, and source-vs-fallback comparison when
   required; a receipt without those gates, or with deferred gates, must not
   claim `stem_package` readiness
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages

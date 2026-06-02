@@ -6,6 +6,7 @@ pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_repr
 pub const STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID: &str = "stem_package_artifact_set_evidence";
 pub const STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID: &str = "stem_package_per_stem_hash_stability";
 pub const STEM_PACKAGE_NON_SILENCE_QA_GATE_ID: &str = "stem_package_per_stem_non_silence";
+pub const STEM_PACKAGE_LINEAGE_QA_GATE_ID: &str = "stem_package_per_stem_lineage";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -92,6 +93,25 @@ impl ExportReceiptQaGateResult {
             summary: Some(stem_package_non_silence_summary(report)),
         }
     }
+
+    #[must_use]
+    pub fn stem_package_lineage(report: &crate::export_qa::StemPackageLineageQaReport) -> Self {
+        let status = match report.status {
+            crate::export_qa::StemPackageLineageQaStatus::Passed => {
+                ExportReceiptQaGateStatus::Passed
+            }
+            crate::export_qa::StemPackageLineageQaStatus::Failed => {
+                ExportReceiptQaGateStatus::Failed
+            }
+        };
+
+        Self {
+            gate_id: STEM_PACKAGE_LINEAGE_QA_GATE_ID.into(),
+            status,
+            artifact_roles: report.claimed_roles.clone(),
+            summary: Some(stem_package_lineage_summary(report)),
+        }
+    }
 }
 
 fn stem_package_artifact_set_summary(
@@ -144,6 +164,19 @@ fn stem_package_non_silence_summary(
             "stem package per-stem non-silence failed with {} failure(s); {} deferred check(s) remain",
             report.failures.len(),
             report.deferred_checks.len()
+        ),
+    }
+}
+
+fn stem_package_lineage_summary(report: &crate::export_qa::StemPackageLineageQaReport) -> String {
+    match report.status {
+        crate::export_qa::StemPackageLineageQaStatus::Passed => format!(
+            "stem package per-stem lineage accepted for {} claimed stem role(s)",
+            report.claimed_roles.len()
+        ),
+        crate::export_qa::StemPackageLineageQaStatus::Failed => format!(
+            "stem package per-stem lineage failed with {} failure(s)",
+            report.failures.len()
         ),
     }
 }
