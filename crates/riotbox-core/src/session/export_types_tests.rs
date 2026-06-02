@@ -179,6 +179,32 @@ fn missing_export_scope_defaults_to_product_mix_for_older_receipts() {
 }
 
 #[test]
+fn stem_package_export_scope_roundtrips_as_reserved_receipt_scope() {
+    let mut receipt = fixture_receipt();
+    receipt.export_scope = ExportScope::StemPackage;
+
+    let json = serde_json::to_value(&receipt).expect("serialize receipt");
+    assert_eq!(json["export_scope"], "stem_package");
+
+    let roundtrip: ExportReceiptState = serde_json::from_value(json).expect("deserialize receipt");
+    assert_eq!(roundtrip.export_scope, ExportScope::StemPackage);
+    assert!(
+        roundtrip
+            .unsupported_scopes
+            .contains(&UnsupportedExportScope::StemPackage)
+    );
+}
+
+#[test]
+fn stem_package_export_scope_has_stable_identity_and_musician_label() {
+    assert_eq!(ExportScope::StemPackage.as_str(), "stem_package");
+    assert_eq!(
+        ExportScope::StemPackage.musician_label(),
+        "stem package export"
+    );
+}
+
+#[test]
 fn missing_pack_id_defaults_to_product_export_pack_for_older_receipts() {
     let mut json = serde_json::to_value(fixture_receipt()).expect("serialize receipt");
     json.as_object_mut()
