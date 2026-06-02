@@ -1,5 +1,6 @@
 use super::*;
 use crate::{
+    export_qa::validate_stem_package_artifact_set_evidence,
     export_readiness::{
         ExportReadinessContract, ExportReadinessStatus, ExportScope, PRODUCT_EXPORT_PACK_ID,
         PRODUCT_EXPORT_PROOF_SCHEMA, ProductExportBoundary, ProductExportRole,
@@ -10,6 +11,8 @@ use crate::{
         ExportArtifactAudioMetrics, ExportArtifactLocation, ExportArtifactMediaType,
         ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptQaGateResult,
         ExportReceiptQaGateStatus, ExportReceiptState, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+        StemPackageReceiptReadinessBlocker, StemPackageReceiptReadinessStatus,
+        validate_stem_package_receipt_readiness,
     },
 };
 
@@ -50,6 +53,38 @@ fn stem_package_manifest_from_receipt_preserves_receipt_evidence() {
         "exports/stem_package_proof.json"
     );
     assert_eq!(manifest.qa_gates, receipt.qa_gates);
+}
+
+#[test]
+fn stem_package_manifest_fixture_roundtrips_json_and_keeps_readiness_blocked() {
+    let mut receipt = stem_package_receipt();
+    let claimed_roles = vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass];
+    let qa_report =
+        validate_stem_package_artifact_set_evidence(&receipt.artifact_set, &claimed_roles);
+    let gate = ExportReceiptQaGateResult::stem_package_artifact_set_evidence(&qa_report);
+    assert_eq!(gate.status, ExportReceiptQaGateStatus::Deferred);
+    receipt.qa_gates = vec![gate];
+
+    let manifest = StemPackageManifest::from_receipt(&receipt).expect("build fixture manifest");
+    let json = serde_json::to_string_pretty(&manifest).expect("serialize fixture manifest");
+    let roundtrip: StemPackageManifest =
+        serde_json::from_str(&json).expect("deserialize fixture manifest");
+    assert_eq!(roundtrip, manifest);
+    assert_eq!(roundtrip.claimed_stem_roles, claimed_roles);
+    assert_eq!(roundtrip.artifacts.len(), 2);
+
+    let readiness = validate_stem_package_receipt_readiness(&receipt);
+    assert_eq!(readiness.status, StemPackageReceiptReadinessStatus::Blocked);
+    assert!(
+        readiness
+            .blockers
+            .contains(&StemPackageReceiptReadinessBlocker::UnsupportedScopeFlagPresent)
+    );
+    assert!(
+        readiness
+            .blockers
+            .contains(&StemPackageReceiptReadinessBlocker::DeferredArtifactSetQaGate)
+    );
 }
 
 #[test]
