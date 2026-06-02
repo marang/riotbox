@@ -377,6 +377,10 @@ Rules:
   `artifact_set[]`, and preserves receipt QA gate summaries. The helper does
   not write a manifest file, rewrite receipt state, or infer package metadata
   from app-local state.
+- `StemPackageManifest::normalized_json_bytes` returns deterministic in-memory
+  pretty JSON bytes for future proof hashing. It prepares a stable proof input
+  and must not be treated as a package writer, filesystem side effect, or
+  completed stem export.
 - The current CI-safe stem-package manifest fixture builds an in-memory receipt
   with claimed drums and bass stems, manifest/proof JSON identities, and a
   deferred `stem_package_artifact_set_evidence` gate. It roundtrips the

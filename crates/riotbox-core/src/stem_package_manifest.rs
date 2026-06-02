@@ -94,6 +94,10 @@ impl StemPackageManifest {
         })
         .map_err(StemPackageManifestBuildError::Manifest)
     }
+
+    pub fn normalized_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {
+        serde_json::to_vec_pretty(self)
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
