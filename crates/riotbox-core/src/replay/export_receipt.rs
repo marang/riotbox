@@ -171,7 +171,8 @@ mod tests {
             validation.artifact_set,
             vec![ExportArtifactSetEntry::product_mix(
                 "exports/full_grid_mix.wav",
-                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
             )]
         );
     }
@@ -187,6 +188,7 @@ mod tests {
             },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff".into(),
+            normalized_manifest_hash: None,
             source_graph_ref: Some(ExportArtifactSourceGraphRef {
                 source_id: crate::ids::SourceId::from("src-1"),
                 graph_version: SourceGraphVersion::V1,
@@ -300,6 +302,7 @@ mod tests {
             artifact_set: vec![ExportArtifactSetEntry::product_mix(
                 artifact_path,
                 "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
             )],
             readiness_status: ExportReadinessStatus::Reproducible,
             unsupported_scopes: vec![

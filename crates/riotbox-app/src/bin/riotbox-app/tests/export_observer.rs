@@ -71,6 +71,10 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
         "audio_wav"
     );
     assert_eq!(lifecycle[2]["receipt"]["artifact_set"][0]["sha256"], artifact_hash);
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"][0]["normalized_manifest_hash"],
+        "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+    );
     assert_eq!(lifecycle[2]["receipt"]["readiness_status"], "reproducible");
     assert_eq!(
         lifecycle[2]["receipt"]["unsupported_scopes"]

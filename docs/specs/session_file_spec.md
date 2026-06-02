@@ -318,9 +318,10 @@ Minimum receipt fields:
 - export hash
 - normalized manifest hash
 - `artifact_set[]` entries with role, local path or URI, media type, sha256,
-  optional source graph ref, source capture refs, capture-lineage refs,
-  optional fallback/source comparison evidence, optional audio metrics, and
-  optional sample rate, channel count, and duration milliseconds when known
+  optional normalized manifest hash, optional source graph ref, source capture
+  refs, capture-lineage refs, optional fallback/source comparison evidence,
+  optional audio metrics, and optional sample rate, channel count, and duration
+  milliseconds when known
 - readiness status
 - unsupported-scope flags
 
@@ -338,6 +339,9 @@ Rules:
 - current `export.product_mix` receipts populate a one-entry artifact set for
   the full-grid WAV while preserving the legacy `artifact_path`, `proof_path`,
   `export_hash`, and `normalized_manifest_hash` fields for older readers
+- current `export.product_mix` artifact-set entries also carry the same
+  normalized manifest hash as per-artifact evidence, while older artifact-set
+  entries default that field to absent
 - current `export.product_mix` receipts explicitly store `export_scope:
   product_mix` so later stem package, live recording, and DAW session work does
   not infer export scope from the full-grid mix role
@@ -351,9 +355,8 @@ Additional receipt fields required before wider export scopes:
 
 - new export scope variants beyond current `product_mix`, such as
   `stem_package`, `live_recording`, or `daw_session`
-- wider artifact set roles, per-artifact normalized manifest references,
-  source/capture lineage links, and stem/DAW/live-recording media roles beyond
-  the current full-grid WAV entry
+- wider artifact set roles, source/capture lineage links, and
+  stem/DAW/live-recording media roles beyond the current full-grid WAV entry
 - source graph ref/hash and timing-grid reference used for placement-sensitive
   exports
 - source capture refs and capture-lineage refs for source-backed stems or
