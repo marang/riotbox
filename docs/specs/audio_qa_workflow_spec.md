@@ -1006,6 +1006,13 @@ Today the repo already has:
   `qa_gates[]`. Structural failures become `failed`; structural acceptance with
   deferred audio/fallback proof becomes `deferred`, not `passed`, so receipts
   can explain why a stem package is blocked without claiming readiness.
+- `riotbox-core::export_qa::validate_stem_package_hash_stability_evidence`
+  is the current CI-safe per-stem hash identity gate. It requires one nonblank
+  SHA-256 identity for each claimed stem role, fails missing / duplicate /
+  hashless / non-stem claims, and records
+  `stem_package_per_stem_hash_stability` in receipt `qa_gates[]`. Successful
+  identity evidence remains `deferred`, not `passed`, until a package writer or
+  repeated render proof can compare stable hashes across actual outputs.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
   CI-safe schema contract for future stem-package manifests. It serializes
   stable schema id/version, `export_scope: stem_package`, receipt/action
