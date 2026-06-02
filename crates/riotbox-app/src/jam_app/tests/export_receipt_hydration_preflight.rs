@@ -114,6 +114,7 @@ fn export_receipt_hydration_preflight_accepts_extra_local_artifact_set_entry() {
         },
         media_type: ExportArtifactMediaType::AudioWav,
         sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+        normalized_manifest_hash: None,
         source_graph_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
@@ -147,6 +148,7 @@ fn export_receipt_hydration_preflight_reports_missing_artifact_set_entry() {
         },
         media_type: ExportArtifactMediaType::AudioWav,
         sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+        normalized_manifest_hash: None,
         source_graph_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
@@ -189,6 +191,7 @@ fn export_receipt_hydration_preflight_treats_uri_artifact_set_entry_as_identity_
         },
         media_type: ExportArtifactMediaType::AudioWav,
         sha256: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".into(),
+        normalized_manifest_hash: None,
         source_graph_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
@@ -221,6 +224,7 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
         artifact_set: vec![ExportArtifactSetEntry::product_mix(
             artifact_path,
             "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+            Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
         )],
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: vec![

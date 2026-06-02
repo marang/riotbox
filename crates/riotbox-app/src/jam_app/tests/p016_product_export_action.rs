@@ -33,6 +33,7 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
         vec![ExportArtifactSetEntry::product_mix(
             destination.join("full_grid_mix.wav").to_string_lossy().into_owned(),
             artifact_hash.clone(),
+            Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
         )]
     );
     assert_eq!(

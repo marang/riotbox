@@ -201,6 +201,7 @@ fn stem_artifact() -> ExportArtifactSetEntry {
         },
         media_type: ExportArtifactMediaType::AudioWav,
         sha256: "a".into(),
+        normalized_manifest_hash: None,
         source_graph_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),

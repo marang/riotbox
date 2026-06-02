@@ -61,6 +61,7 @@ impl ExportReceiptState {
             artifact_set: vec![ExportArtifactSetEntry::product_mix(
                 artifact_path,
                 contract.export_sha256.clone(),
+                Some(contract.normalized_manifest_sha256.clone()),
             )],
             readiness_status: contract.status,
             unsupported_scopes: contract.unsupported_scopes.clone(),
@@ -73,6 +74,7 @@ impl ExportReceiptState {
             return vec![ExportArtifactSetEntry::product_mix(
                 self.artifact_path.clone(),
                 self.export_hash.clone(),
+                Some(self.normalized_manifest_hash.clone()),
             )];
         }
 
@@ -86,6 +88,8 @@ pub struct ExportArtifactSetEntry {
     pub location: ExportArtifactLocation,
     pub media_type: ExportArtifactMediaType,
     pub sha256: String,
+    #[serde(default)]
+    pub normalized_manifest_hash: Option<String>,
     #[serde(default)]
     pub source_graph_ref: Option<ExportArtifactSourceGraphRef>,
     #[serde(default)]
@@ -106,12 +110,17 @@ pub struct ExportArtifactSetEntry {
 
 impl ExportArtifactSetEntry {
     #[must_use]
-    pub fn product_mix(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+    pub fn product_mix(
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+        normalized_manifest_hash: Option<String>,
+    ) -> Self {
         Self {
             role: ExportArtifactRole::FullGridMix,
             location: ExportArtifactLocation::LocalPath { path: path.into() },
             media_type: ExportArtifactMediaType::AudioWav,
             sha256: sha256.into(),
+            normalized_manifest_hash,
             source_graph_ref: None,
             source_capture_refs: Vec::new(),
             lineage_capture_refs: Vec::new(),

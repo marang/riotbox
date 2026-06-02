@@ -66,7 +66,8 @@ fn export_receipts_roundtrip_with_session_file() {
         receipt.artifact_set,
         vec![ExportArtifactSetEntry::product_mix(
             "exports/full_grid_mix.wav",
-            "aaaa"
+            "aaaa",
+            Some("dddd".into()),
         )]
     );
 }
@@ -101,7 +102,8 @@ fn missing_artifact_set_defaults_to_empty_for_older_receipts() {
         receipt.artifact_set_or_legacy(),
         vec![ExportArtifactSetEntry::product_mix(
             "exports/full_grid_mix.wav",
-            "aaaa"
+            "aaaa",
+            Some("dddd".into()),
         )]
     );
 }
@@ -141,6 +143,7 @@ fn artifact_set_entries_roundtrip_optional_audio_metrics() {
         },
         media_type: ExportArtifactMediaType::AudioWav,
         sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+        normalized_manifest_hash: None,
         source_graph_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
@@ -174,6 +177,7 @@ fn artifact_set_entries_roundtrip_source_and_capture_lineage_refs() {
         },
         media_type: ExportArtifactMediaType::AudioWav,
         sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
+        normalized_manifest_hash: Some("manifest-hash-1".into()),
         source_graph_ref: Some(ExportArtifactSourceGraphRef {
             source_id: SourceId::from("src-1"),
             graph_version: SourceGraphVersion::V1,
@@ -218,4 +222,5 @@ fn missing_optional_evidence_defaults_for_older_artifact_entries() {
     assert!(entry.source_capture_refs.is_empty());
     assert!(entry.lineage_capture_refs.is_empty());
     assert_eq!(entry.fallback_comparison, None);
+    assert_eq!(entry.normalized_manifest_hash, None);
 }
