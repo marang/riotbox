@@ -7,7 +7,7 @@ use crate::{
         ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
         ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole,
         ExportArtifactSetEntry, ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
-        ExportReceiptQaGateResult,
+        ExportReceiptQaGateResult, ExportReceiptState, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
     },
 };
 
@@ -59,6 +59,40 @@ impl StemPackageManifest {
             proof_identity: input.proof_identity,
             qa_gates: input.qa_gates,
         })
+    }
+
+    pub fn from_receipt(
+        receipt: &ExportReceiptState,
+    ) -> Result<Self, StemPackageManifestBuildError> {
+        if receipt.export_scope != ExportScope::StemPackage {
+            return Err(StemPackageManifestBuildError::NotStemPackageScope {
+                export_scope: receipt.export_scope,
+            });
+        }
+
+        let claimed_stem_roles = claimed_stem_roles_from_receipt(receipt)?;
+        let artifacts = receipt
+            .artifact_set
+            .iter()
+            .filter(|entry| entry.role.is_stem_role())
+            .map(StemPackageManifestArtifact::from_artifact_set_entry)
+            .collect::<Result<Vec<_>, _>>()?;
+        let manifest_identity =
+            json_identity_for_role(receipt, ExportArtifactRole::ExportManifest)?;
+        let proof_identity =
+            json_identity_for_role(receipt, ExportArtifactRole::ProductExportProof)?;
+
+        Self::new(StemPackageManifestInput {
+            package_id: receipt.pack_id.clone(),
+            receipt_id: receipt.receipt_id.clone(),
+            created_by_action: receipt.created_by_action,
+            claimed_stem_roles,
+            artifacts,
+            manifest_identity,
+            proof_identity,
+            qa_gates: receipt.qa_gates.clone(),
+        })
+        .map_err(StemPackageManifestBuildError::Manifest)
     }
 }
 
@@ -245,6 +279,50 @@ pub enum StemPackageManifestError {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum StemPackageManifestBuildError {
+    NotStemPackageScope { export_scope: ExportScope },
+    MissingStemPackageArtifactSetQaGate,
+    MissingJsonIdentity { role: ExportArtifactRole },
+    MultipleJsonIdentities { role: ExportArtifactRole },
+    Manifest(StemPackageManifestError),
+}
+
+impl From<StemPackageManifestError> for StemPackageManifestBuildError {
+    fn from(value: StemPackageManifestError) -> Self {
+        Self::Manifest(value)
+    }
+}
+
+fn claimed_stem_roles_from_receipt(
+    receipt: &ExportReceiptState,
+) -> Result<Vec<ExportArtifactRole>, StemPackageManifestBuildError> {
+    receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID)
+        .map(|gate| gate.artifact_roles.clone())
+        .ok_or(StemPackageManifestBuildError::MissingStemPackageArtifactSetQaGate)
+}
+
+fn json_identity_for_role(
+    receipt: &ExportReceiptState,
+    role: ExportArtifactRole,
+) -> Result<StemPackageManifestJsonIdentity, StemPackageManifestBuildError> {
+    let mut matches = receipt
+        .artifact_set
+        .iter()
+        .filter(|entry| entry.role == role);
+    let entry = matches
+        .next()
+        .ok_or(StemPackageManifestBuildError::MissingJsonIdentity { role })?;
+    if matches.next().is_some() {
+        return Err(StemPackageManifestBuildError::MultipleJsonIdentities { role });
+    }
+
+    StemPackageManifestJsonIdentity::from_artifact_set_entry(entry).map_err(Into::into)
+}
+
 fn validate_claimed_stem_roles(
     claimed_stem_roles: &[ExportArtifactRole],
 ) -> Result<(), StemPackageManifestError> {
@@ -328,6 +406,9 @@ impl StemPackageManifestArtifact {
     }
 }
 
+#[cfg(test)]
+#[path = "stem_package_manifest_from_receipt_tests.rs"]
+mod stem_package_manifest_from_receipt_tests;
 #[cfg(test)]
 #[path = "stem_package_manifest_tests.rs"]
 mod stem_package_manifest_tests;
