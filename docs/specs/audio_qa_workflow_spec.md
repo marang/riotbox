@@ -1036,6 +1036,11 @@ Today the repo already has:
   identities in `artifact_set[]`, and carries the receipt QA gate summaries
   forward. This still proves identity wiring only; audio non-silence,
   fallback-safety, and future file writing remain separate gates.
+- `StemPackageManifest::normalized_json_bytes` is the current CI-safe proof
+  input helper. It returns deterministic in-memory pretty JSON bytes and proves
+  that stable manifest values serialize identically while artifact identity
+  changes alter the proof input. It does not write files or claim package
+  export readiness.
 - The current stem-package manifest fixture is in-memory and CI-safe: it uses
   claimed drums and bass stems, manifest/proof identities, and deferred QA gate
   evidence, then roundtrips the manifest JSON and checks receipt readiness stays

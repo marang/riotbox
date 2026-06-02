@@ -29,6 +29,31 @@ fn stem_package_manifest_roundtrips_stable_schema_scope_roles_and_identity() {
 }
 
 #[test]
+fn stem_package_manifest_normalized_json_bytes_are_stable_roundtrippable_and_identity_sensitive() {
+    let manifest = fixture_manifest();
+    let bytes = manifest
+        .normalized_json_bytes()
+        .expect("serialize normalized manifest");
+    let repeated_bytes = manifest
+        .normalized_json_bytes()
+        .expect("serialize normalized manifest again");
+    let roundtrip: StemPackageManifest =
+        serde_json::from_slice(&bytes).expect("deserialize normalized manifest");
+
+    assert_eq!(bytes, repeated_bytes);
+    assert_eq!(roundtrip, manifest);
+    assert!(bytes.starts_with(b"{\n  \"schema_id\": \"riotbox.stem_package_manifest\""));
+
+    let mut changed = manifest.clone();
+    changed.artifacts[0].sha256 = "changed-drums-sha".into();
+    let changed_bytes = changed
+        .normalized_json_bytes()
+        .expect("serialize changed normalized manifest");
+
+    assert_ne!(bytes, changed_bytes);
+}
+
+#[test]
 fn stem_package_manifest_rejects_blank_package_id() {
     let err = StemPackageManifest::new(manifest_input(
         " ",
