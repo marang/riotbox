@@ -1014,6 +1014,14 @@ Today the repo already has:
   constructor enforces identity consistency, but it is not a writer, not a
   render path, and not evidence that the actual stem audio is non-silent or
   fallback-safe.
+- `StemPackageManifest::from_receipt` is the current CI-safe bridge from
+  Session receipt truth to that manifest value. It accepts only
+  `export_scope: stem_package`, uses the
+  `stem_package_artifact_set_evidence` gate for claimed roles, requires the
+  corresponding stem WAV artifact identities plus manifest/proof JSON
+  identities in `artifact_set[]`, and carries the receipt QA gate summaries
+  forward. This still proves identity wiring only; audio non-silence,
+  fallback-safety, and future file writing remain separate gates.
 - Observer export snapshots project those receipt `qa_gates[]` values as-is,
   including non-product stem-package evidence. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and

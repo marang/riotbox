@@ -369,6 +369,14 @@ Rules:
   roles, and non-JSON manifest/proof identities. This is a schema/identity
   contract for future package writers; it does not create files, mutate
   Session, or make `export.stem_package` runnable.
+- `StemPackageManifest::from_receipt` builds that manifest value from
+  `ExportReceiptState` only when `export_scope: stem_package`. It reads claimed
+  stem roles from the `stem_package_artifact_set_evidence` receipt gate,
+  requires one stem WAV artifact per claimed role, requires exactly one
+  `export_manifest` JSON identity and one proof JSON identity in
+  `artifact_set[]`, and preserves receipt QA gate summaries. The helper does
+  not write a manifest file, rewrite receipt state, or infer package metadata
+  from app-local state.
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent
