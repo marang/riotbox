@@ -975,6 +975,11 @@ Today the repo already has:
   future receipts state `export_scope: stem_package` explicitly, but it does not
   remove unsupported-scope flags or turn the current QA skeleton into full
   stem-package export readiness.
+- `riotbox-core::session::validate_stem_package_receipt_readiness` is the
+  current receipt-level guard: missing, failed, or deferred
+  `stem_package_artifact_set_evidence` gates keep readiness blocked, and even a
+  passed gate stays blocked while the receipt still carries the
+  `stem_package` unsupported-scope flag.
 - Stem-package QA gates must fail when a claimed role is missing, duplicated,
   mislabeled, hashless, locationless, silent by metrics, or missing required
   lineage/fallback evidence. Hash stability and non-silence must be checked per
