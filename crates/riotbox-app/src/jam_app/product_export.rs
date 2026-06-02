@@ -15,15 +15,15 @@ use riotbox_core::{
         ProductExportReproducibilityProof, ProductExportRole,
     },
     ids::ActionId,
-    session::{
-        ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole,
-        ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef, ExportReceiptState,
-    },
+    session::{ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole, ExportReceiptState},
     transport::CommitBoundaryState,
 };
 use sha2::{Digest, Sha256};
 
-use super::{JamAppError, JamAppState, QueueControlResult, helpers::update_logged_action_result};
+use super::{
+    JamAppError, JamAppState, QueueControlResult, helpers::update_logged_action_result,
+    product_export_receipt::attach_product_export_artifact_lineage,
+};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(in crate::jam_app) enum ExportReceiptArtifactPreflightError {
@@ -158,16 +158,7 @@ impl JamAppState {
             written.proof_path.to_string_lossy().into_owned(),
             None,
         );
-        if let Some(source_graph_ref) = self.export_artifact_source_graph_ref() {
-            receipt.attach_artifact_source_graph_ref(
-                ExportArtifactRole::FullGridMix,
-                source_graph_ref,
-            );
-        }
-        if let Some(timing_grid_ref) = self.export_artifact_timing_grid_ref() {
-            receipt
-                .attach_artifact_timing_grid_ref(ExportArtifactRole::FullGridMix, timing_grid_ref);
-        }
+        attach_product_export_artifact_lineage(&mut receipt, &self.session);
         let result_summary = format!(
             "exported {} receipt {} hash {}",
             written.contract.export_role.as_str(),
@@ -223,31 +214,6 @@ impl JamAppState {
             .into_iter()
             .find(|action| action.command == ActionCommand::ExportProductMix)
             .map(|action| action.id)
-    }
-
-    fn export_artifact_source_graph_ref(&self) -> Option<ExportArtifactSourceGraphRef> {
-        self.session
-            .source_graph_refs
-            .first()
-            .map(|graph_ref| ExportArtifactSourceGraphRef {
-                source_id: graph_ref.source_id.clone(),
-                graph_version: graph_ref.graph_version,
-                graph_hash: graph_ref.graph_hash.clone(),
-            })
-    }
-
-    fn export_artifact_timing_grid_ref(&self) -> Option<ExportArtifactTimingGridRef> {
-        self.session
-            .runtime_state
-            .source_timing
-            .confirmed_grid
-            .as_ref()
-            .map(|confirmed_grid| ExportArtifactTimingGridRef {
-                source_id: confirmed_grid.source_id.clone(),
-                hypothesis_id: confirmed_grid.hypothesis_id.clone(),
-                confirmed_by_action: confirmed_grid.confirmed_by_action,
-                confirmed_at: confirmed_grid.confirmed_at,
-            })
     }
 }
 
