@@ -17,7 +17,7 @@ use riotbox_core::{
     ids::ActionId,
     session::{
         ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole,
-        ExportArtifactSourceGraphRef, ExportReceiptState,
+        ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef, ExportReceiptState,
     },
     transport::CommitBoundaryState,
 };
@@ -164,6 +164,10 @@ impl JamAppState {
                 source_graph_ref,
             );
         }
+        if let Some(timing_grid_ref) = self.export_artifact_timing_grid_ref() {
+            receipt
+                .attach_artifact_timing_grid_ref(ExportArtifactRole::FullGridMix, timing_grid_ref);
+        }
         let result_summary = format!(
             "exported {} receipt {} hash {}",
             written.contract.export_role.as_str(),
@@ -229,6 +233,20 @@ impl JamAppState {
                 source_id: graph_ref.source_id.clone(),
                 graph_version: graph_ref.graph_version,
                 graph_hash: graph_ref.graph_hash.clone(),
+            })
+    }
+
+    fn export_artifact_timing_grid_ref(&self) -> Option<ExportArtifactTimingGridRef> {
+        self.session
+            .runtime_state
+            .source_timing
+            .confirmed_grid
+            .as_ref()
+            .map(|confirmed_grid| ExportArtifactTimingGridRef {
+                source_id: confirmed_grid.source_id.clone(),
+                hypothesis_id: confirmed_grid.hypothesis_id.clone(),
+                confirmed_by_action: confirmed_grid.confirmed_by_action,
+                confirmed_at: confirmed_grid.confirmed_at,
             })
     }
 }

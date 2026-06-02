@@ -14,7 +14,13 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
     write_product_export_proof(&proof_path, "full_grid_mix.wav", &artifact_hash);
 
     let graph = sample_graph();
-    let session = sample_session(&graph);
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: SourceId::from("src-1"),
+        hypothesis_id: Some("primary-grid".into()),
+        confirmed_by_action: ActionId(1),
+        confirmed_at: 850,
+    });
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
     let receipt = state
@@ -37,6 +43,12 @@ fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
         source_id: SourceId::from("src-1"),
         graph_version: SourceGraphVersion::V1,
         graph_hash: state.session.source_graph_refs[0].graph_hash.clone(),
+    });
+    expected_artifact.timing_grid_ref = Some(ExportArtifactTimingGridRef {
+        source_id: SourceId::from("src-1"),
+        hypothesis_id: Some("primary-grid".into()),
+        confirmed_by_action: ActionId(1),
+        confirmed_at: 850,
     });
     assert_eq!(receipt.artifact_set, vec![expected_artifact]);
     assert_eq!(

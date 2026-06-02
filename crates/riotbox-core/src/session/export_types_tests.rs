@@ -187,6 +187,25 @@ fn receipt_can_attach_source_graph_ref_to_matching_artifact_role() {
 }
 
 #[test]
+fn receipt_can_attach_timing_grid_ref_to_matching_artifact_role() {
+    let mut receipt = fixture_receipt();
+    let timing_grid_ref = ExportArtifactTimingGridRef {
+        source_id: SourceId::from("src-1"),
+        hypothesis_id: Some("primary-grid".into()),
+        confirmed_by_action: ActionId(7),
+        confirmed_at: 900,
+    };
+
+    receipt
+        .attach_artifact_timing_grid_ref(ExportArtifactRole::FullGridMix, timing_grid_ref.clone());
+
+    assert_eq!(
+        receipt.artifact_set[0].timing_grid_ref,
+        Some(timing_grid_ref)
+    );
+}
+
+#[test]
 fn artifact_set_entries_roundtrip_optional_audio_metrics() {
     let entry = ExportArtifactSetEntry {
         role: ExportArtifactRole::StemDrums,
@@ -197,6 +216,7 @@ fn artifact_set_entries_roundtrip_optional_audio_metrics() {
         sha256: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".into(),
         normalized_manifest_hash: None,
         source_graph_ref: None,
+        timing_grid_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
         fallback_comparison: None,
@@ -235,6 +255,7 @@ fn artifact_set_entries_roundtrip_source_and_capture_lineage_refs() {
             graph_version: SourceGraphVersion::V1,
             graph_hash: "graph-hash-1".into(),
         }),
+        timing_grid_ref: None,
         source_capture_refs: vec![CaptureId::from("cap-source")],
         lineage_capture_refs: vec![CaptureId::from("cap-root"), CaptureId::from("cap-print")],
         fallback_comparison: Some(ExportArtifactFallbackComparisonEvidence {
@@ -271,6 +292,7 @@ fn missing_optional_evidence_defaults_for_older_artifact_entries() {
 
     assert_eq!(entry.audio_metrics, None);
     assert_eq!(entry.source_graph_ref, None);
+    assert_eq!(entry.timing_grid_ref, None);
     assert!(entry.source_capture_refs.is_empty());
     assert!(entry.lineage_capture_refs.is_empty());
     assert_eq!(entry.fallback_comparison, None);
