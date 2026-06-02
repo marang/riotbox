@@ -8,6 +8,7 @@ pub mod queue;
 pub mod replay;
 pub mod session;
 pub mod source_graph;
+pub mod stem_package_manifest;
 pub mod tr909_policy;
 pub mod transport;
 pub mod view;

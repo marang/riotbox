@@ -357,6 +357,18 @@ Rules:
   using the existing product-export proof role. These helpers only build
   receipt artifact identity; they do not write files or claim a runnable stem
   export.
+- `riotbox-core::stem_package_manifest::StemPackageManifest` reserves the
+  future stem-package manifest contract with schema id
+  `riotbox.stem_package_manifest` and schema version `1`. It stores package id,
+  `export_scope: stem_package`, receipt id, creating action id, claimed stem
+  roles, one typed WAV artifact per claimed stem role, explicit manifest JSON
+  identity, explicit proof JSON identity, and receipt QA gate summaries.
+- The stem-package manifest constructor rejects blank package ids, empty or
+  non-stem role claims, missing / duplicate / unclaimed stem artifacts, blank
+  artifact locations or hashes, non-WAV stem artifacts, wrong manifest/proof
+  roles, and non-JSON manifest/proof identities. This is a schema/identity
+  contract for future package writers; it does not create files, mutate
+  Session, or make `export.stem_package` runnable.
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent
@@ -414,6 +426,9 @@ Additional receipt fields required before wider export scopes:
   or proof entries needed to verify the package; each stem entry must carry
   role, local path or URI, media type, SHA-256, sample rate, channel count,
   duration, and audio metrics when the WAV can be decoded
+- stem-package manifests must mirror that receipt evidence through the typed
+  schema contract rather than inferring stem identity from filenames, folder
+  names, or observer-only state
 - bar/beat placement ranges and richer timing placement evidence beyond the
   current confirmed grid source/action reference
 - source capture refs and capture-lineage refs for source-backed stems or
