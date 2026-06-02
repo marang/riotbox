@@ -992,6 +992,11 @@ Today the repo already has:
   payloads with no metric fields, but threshold interpretation and real render
   comparison remain deferred. Passing this skeleton does not claim a full stem
   package export.
+- `riotbox-core::session::ExportReceiptQaGateResult::stem_package_artifact_set_evidence`
+  records that skeleton as `stem_package_artifact_set_evidence` in receipt
+  `qa_gates[]`. Structural failures become `failed`; structural acceptance with
+  deferred audio/fallback proof becomes `deferred`, not `passed`, so receipts
+  can explain why a stem package is blocked without claiming readiness.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary
