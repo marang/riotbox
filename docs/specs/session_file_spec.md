@@ -372,6 +372,14 @@ Rules:
   `product_export_reproducibility_smoke: passed` for the `full_grid_mix`
   artifact role after the product-export proof and artifact hash gate accepts
   the export
+- receipt QA gate status values are typed as `passed`, `failed`, or `deferred`;
+  a `deferred` gate is inspectable evidence that still blocks readiness
+  acceptance
+- stem-package artifact-set QA reports may be recorded as
+  `stem_package_artifact_set_evidence` receipt gates with the claimed stem
+  roles and a concise summary; a structurally accepted skeleton with deferred
+  audio or fallback proof records `deferred`, while structural evidence
+  failures record `failed`
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
@@ -392,10 +400,11 @@ Additional receipt fields required before wider export scopes:
   resample-derived artifacts; these refs live on each `artifact_set[]` entry,
   default empty for older receipts, and must point back to Session/Core truth
   rather than filenames, app-local state, or observer-only metadata
-- stem-package receipts must record which QA gates passed or failed, including
-  claimed-role structure, per-stem hash stability, per-stem non-silence,
-  lineage evidence, and source-vs-fallback comparison when required; a receipt
-  without those gates must not claim `stem_package` readiness
+- stem-package receipts must record which QA gates passed, failed, or remained
+  deferred, including claimed-role structure, per-stem hash stability, per-stem
+  non-silence, lineage evidence, and source-vs-fallback comparison when
+  required; a receipt without those gates, or with deferred gates, must not
+  claim `stem_package` readiness
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts

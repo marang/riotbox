@@ -110,6 +110,7 @@ impl ExportReceiptState {
 }
 
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
+pub const STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID: &str = "stem_package_artifact_set_evidence";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -131,12 +132,51 @@ impl ExportReceiptQaGateResult {
             summary: Some("product export proof and artifact hash accepted".into()),
         }
     }
+
+    #[must_use]
+    pub fn stem_package_artifact_set_evidence(
+        report: &crate::export_qa::StemPackageArtifactSetQaReport,
+    ) -> Self {
+        let status = if report.status == crate::export_qa::StemPackageArtifactSetQaStatus::Failed {
+            ExportReceiptQaGateStatus::Failed
+        } else if report.deferred_checks.is_empty() {
+            ExportReceiptQaGateStatus::Passed
+        } else {
+            ExportReceiptQaGateStatus::Deferred
+        };
+
+        Self {
+            gate_id: STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID.into(),
+            status,
+            artifact_roles: report.claimed_roles.clone(),
+            summary: Some(stem_package_artifact_set_summary(report)),
+        }
+    }
+}
+
+fn stem_package_artifact_set_summary(
+    report: &crate::export_qa::StemPackageArtifactSetQaReport,
+) -> String {
+    match report.status {
+        crate::export_qa::StemPackageArtifactSetQaStatus::PassedStructureOnly => format!(
+            "stem package artifact-set structure accepted for {} claimed stem role(s); {} deferred QA check(s) remain",
+            report.claimed_roles.len(),
+            report.deferred_checks.len()
+        ),
+        crate::export_qa::StemPackageArtifactSetQaStatus::Failed => format!(
+            "stem package artifact-set evidence failed with {} failure(s); {} deferred QA check(s) remain",
+            report.failures.len(),
+            report.deferred_checks.len()
+        ),
+    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ExportReceiptQaGateStatus {
     Passed,
+    Failed,
+    Deferred,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
