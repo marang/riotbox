@@ -381,12 +381,21 @@ Additional receipt fields required before wider export scopes:
   `stem_package`, `live_recording`, or `daw_session`
 - wider artifact set roles, source/capture lineage links, and
   stem/DAW/live-recording media roles beyond the current full-grid WAV entry
+- stem-package receipts must include one artifact-set entry per claimed stem
+  role (`stem_drums`, `stem_bass`, `stem_music`, `stem_vocals`), plus manifest
+  or proof entries needed to verify the package; each stem entry must carry
+  role, local path or URI, media type, SHA-256, sample rate, channel count,
+  duration, and audio metrics when the WAV can be decoded
 - bar/beat placement ranges and richer timing placement evidence beyond the
   current confirmed grid source/action reference
 - source capture refs and capture-lineage refs for source-backed stems or
   resample-derived artifacts; these refs live on each `artifact_set[]` entry,
   default empty for older receipts, and must point back to Session/Core truth
   rather than filenames, app-local state, or observer-only metadata
+- stem-package receipts must record which QA gates passed or failed, including
+  claimed-role structure, per-stem hash stability, per-stem non-silence,
+  lineage evidence, and source-vs-fallback comparison when required; a receipt
+  without those gates must not claim `stem_package` readiness
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts

@@ -332,6 +332,50 @@ must define:
 - audio-QA gates that prove non-silent, non-collapsed output for every claimed
   artifact role
 
+Contract for reserved `export.stem_package`:
+
+- Status: reserved contract only; not implemented and must not be surfaced as a
+  runnable TUI/Ghost/user action until implementation and QA tickets land.
+- Target scope: `Session`.
+- Queue semantics: at most one pending stem-package export at a time; it is an
+  immediate side-effect action, not a musical transform.
+- Commit semantics: commit only after all claimed stem artifacts and the package
+  manifest/proof have been written, hashed, validated by stem-package QA gates,
+  and attached to an `ExportReceiptState`.
+- Undo policy: `NotUndoable`, because the command writes files outside musical
+  undo. Recovery may report or validate artifacts, but must not delete or
+  rewrite them implicitly.
+- Required params:
+  - `export_scope`: `stem_package`
+  - `export_role`: package-level role or manifest role, distinct from per-stem
+    artifact roles
+  - `boundary`: explicit render recipe / arrangement boundary, not inferred from
+    the current product-mix Feral-grid proof
+  - `include_manifest`: `true`
+  - `destination_kind`: local artifact directory until URI/cache rules exist
+  - `claimed_stem_roles`: subset of `stem_drums`, `stem_bass`, `stem_music`,
+    and `stem_vocals`
+  - `lineage_policy`: whether each claimed stem must carry source graph,
+    source capture, or capture-lineage evidence
+  - `fallback_comparison_policy`: whether each claimed stem must carry typed
+    source-vs-fallback comparison evidence
+- Required result fields:
+  - export receipt id
+  - package manifest/proof path and hash
+  - artifact-set entries for every claimed stem role
+  - per-stem audio metrics and format evidence
+  - per-stem source graph / source capture / capture-lineage refs required by
+    policy
+  - per-stem fallback/source comparison evidence required by policy
+  - QA gate ids/results for role labeling, hash stability, non-silence,
+    fallback-collapse, and lineage
+- Observer lifecycle: `requested`, `started`, `completed`, and `failed` records
+  must project only from the action log, queue/history, and Session export
+  receipts. Observer state must not become a second package truth.
+- Replay/restore: may validate receipt metadata and local artifact availability,
+  but must not regenerate stems or rewrite export files without a fresh explicit
+  export request.
+
 Host-audio soak is evidence for live recording readiness, not a product export
 command by itself until a separate contract says otherwise.
 

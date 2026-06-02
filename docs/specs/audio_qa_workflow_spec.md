@@ -965,6 +965,16 @@ Today the repo already has:
   export requires tempo-map and arrangement placement validation against the
   Source Graph/Session timing truth. None of those are covered by the current
   product-export reproducibility smoke.
+- `export.stem_package` remains reserved until an implementation can provide a
+  package receipt whose `artifact_set[]` contains every claimed stem role, the
+  package manifest/proof entries, per-stem hashes, per-stem WAV format/audio
+  metrics, and the policy-required source/capture lineage and fallback
+  comparison evidence. A UI, Ghost, or CLI path must not show it as ready while
+  those gates are absent.
+- Stem-package QA gates must fail when a claimed role is missing, duplicated,
+  mislabeled, hashless, locationless, silent by metrics, or missing required
+  lineage/fallback evidence. Hash stability and non-silence must be checked per
+  stem, not only on a package-level manifest.
 - `riotbox-core::export_qa::validate_stem_package_artifact_set_evidence`
   is the current CI-safe stem-package gate skeleton. It validates only
   structure: claimed roles must be stem roles, each claimed role must have
