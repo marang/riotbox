@@ -331,6 +331,9 @@ Rules:
   snapshots
 - replay may validate receipt metadata or report missing artifacts, but must not
   blindly rewrite files without an explicit export request
+- replay validation treats optional per-artifact lineage as backward-compatible
+  when absent, but rejects present `source_graph_ref` or `timing_grid_ref`
+  values whose source id, graph hash, or present hypothesis id is blank
 - recovery / hydration preflight must validate local-path entries from
   `artifact_set[]` as well as the legacy product-mix artifact/proof fields;
   URI entries are identity-only until a fetch/cache contract exists
