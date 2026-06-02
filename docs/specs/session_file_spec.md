@@ -336,9 +336,13 @@ Rules:
   URI entries are identity-only until a fetch/cache contract exists
 - the first P016 receipt boundary is `full_grid_mix` from the deterministic
   Feral-grid generated-support export proof
-- current `export.product_mix` receipts populate a one-entry artifact set for
-  the full-grid WAV while preserving the legacy `artifact_path`, `proof_path`,
-  `export_hash`, and `normalized_manifest_hash` fields for older readers
+- current `export.product_mix` receipts populate artifact-set entries for the
+  full-grid WAV and the copied product-export proof JSON while preserving the
+  legacy `artifact_path`, `proof_path`, `export_hash`, and
+  `normalized_manifest_hash` fields for older readers
+- current `export.product_mix` proof entries use role `product_export_proof`,
+  media type `json`, local proof path, and SHA-256 of the copied proof file so
+  the receipt pack can reason about all written files through `artifact_set[]`
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent

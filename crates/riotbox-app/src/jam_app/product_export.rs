@@ -15,7 +15,10 @@ use riotbox_core::{
         ProductExportReproducibilityProof, ProductExportRole,
     },
     ids::ActionId,
-    session::{ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole, ExportReceiptState},
+    session::{
+        ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole, ExportArtifactSetEntry,
+        ExportReceiptState,
+    },
     transport::CommitBoundaryState,
 };
 use sha2::{Digest, Sha256};
@@ -161,6 +164,12 @@ impl JamAppState {
             written.proof_path.to_string_lossy().into_owned(),
             None,
         );
+        receipt
+            .artifact_set
+            .push(ExportArtifactSetEntry::product_export_proof(
+                written.proof_path.to_string_lossy().into_owned(),
+                written.proof_hash.clone(),
+            ));
         attach_product_export_artifact_lineage(&mut receipt, &self.session);
         attach_product_export_artifact_audio_metrics(&mut receipt);
         let result_summary = format!(
@@ -225,6 +234,7 @@ struct WrittenProductMixExport {
     contract: ExportReadinessContract,
     artifact_path: PathBuf,
     proof_path: PathBuf,
+    proof_hash: String,
 }
 
 fn prepare_product_mix_export(
@@ -255,11 +265,13 @@ fn prepare_product_mix_export(
 
     let destination_proof = destination_dir.join("product_export_proof.json");
     copy_file_if_distinct(proof_path, &destination_proof)?;
+    let proof_hash = sha256_file(&destination_proof)?;
 
     Ok(WrittenProductMixExport {
         contract,
         artifact_path: destination_artifact,
         proof_path: destination_proof,
+        proof_hash,
     })
 }
 

@@ -193,6 +193,26 @@ impl ExportArtifactSetEntry {
     }
 
     #[must_use]
+    pub fn product_export_proof(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self {
+            role: ExportArtifactRole::ProductExportProof,
+            location: ExportArtifactLocation::LocalPath { path: path.into() },
+            media_type: ExportArtifactMediaType::Json,
+            sha256: sha256.into(),
+            normalized_manifest_hash: None,
+            source_graph_ref: None,
+            timing_grid_ref: None,
+            source_capture_refs: Vec::new(),
+            lineage_capture_refs: Vec::new(),
+            fallback_comparison: None,
+            audio_metrics: None,
+            sample_rate_hz: None,
+            channel_count: None,
+            duration_ms: None,
+        }
+    }
+
+    #[must_use]
     pub fn location_identity(&self) -> &str {
         match &self.location {
             ExportArtifactLocation::LocalPath { path }
