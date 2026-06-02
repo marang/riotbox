@@ -2,6 +2,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::session::{ExportArtifactAudioMetrics, ExportArtifactRole, ExportArtifactSetEntry};
 
+mod stem_package_non_silence;
+pub use stem_package_non_silence::{
+    StemPackageNonSilenceDeferredCheck, StemPackageNonSilenceDeferredCheckKind,
+    StemPackageNonSilenceDeferredCheckStatus, StemPackageNonSilenceQaFailure,
+    StemPackageNonSilenceQaFailureKind, StemPackageNonSilenceQaReport,
+    StemPackageNonSilenceQaStatus, validate_stem_package_non_silence_evidence,
+};
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StemPackageArtifactSetQaReport {
     pub status: StemPackageArtifactSetQaStatus,
@@ -378,7 +386,7 @@ fn validate_non_silence_metrics(
     }
 }
 
-fn metrics_prove_silence(metrics: &ExportArtifactAudioMetrics) -> bool {
+pub(super) fn metrics_prove_silence(metrics: &ExportArtifactAudioMetrics) -> bool {
     if matches!(metrics.total_frame_count, Some(0)) {
         return true;
     }
@@ -394,7 +402,7 @@ fn metrics_prove_silence(metrics: &ExportArtifactAudioMetrics) -> bool {
     )
 }
 
-fn metrics_can_prove_activity(metrics: &ExportArtifactAudioMetrics) -> bool {
+pub(super) fn metrics_can_prove_activity(metrics: &ExportArtifactAudioMetrics) -> bool {
     matches!(metrics.peak_amplitude_micros, Some(value) if value > 0)
         || matches!(metrics.rms_amplitude_micros, Some(value) if value > 0)
         || matches!(

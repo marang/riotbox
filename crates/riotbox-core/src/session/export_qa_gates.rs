@@ -5,6 +5,7 @@ use super::export_types::ExportArtifactRole;
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
 pub const STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID: &str = "stem_package_artifact_set_evidence";
 pub const STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID: &str = "stem_package_per_stem_hash_stability";
+pub const STEM_PACKAGE_NON_SILENCE_QA_GATE_ID: &str = "stem_package_per_stem_non_silence";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -67,6 +68,30 @@ impl ExportReceiptQaGateResult {
             summary: Some(stem_package_hash_stability_summary(report)),
         }
     }
+
+    #[must_use]
+    pub fn stem_package_non_silence(
+        report: &crate::export_qa::StemPackageNonSilenceQaReport,
+    ) -> Self {
+        let status = match report.status {
+            crate::export_qa::StemPackageNonSilenceQaStatus::Passed => {
+                ExportReceiptQaGateStatus::Passed
+            }
+            crate::export_qa::StemPackageNonSilenceQaStatus::Deferred => {
+                ExportReceiptQaGateStatus::Deferred
+            }
+            crate::export_qa::StemPackageNonSilenceQaStatus::Failed => {
+                ExportReceiptQaGateStatus::Failed
+            }
+        };
+
+        Self {
+            gate_id: STEM_PACKAGE_NON_SILENCE_QA_GATE_ID.into(),
+            status,
+            artifact_roles: report.claimed_roles.clone(),
+            summary: Some(stem_package_non_silence_summary(report)),
+        }
+    }
 }
 
 fn stem_package_artifact_set_summary(
@@ -97,6 +122,26 @@ fn stem_package_hash_stability_summary(
         ),
         crate::export_qa::StemPackageHashStabilityQaStatus::Failed => format!(
             "stem package per-stem hash stability failed with {} failure(s); {} deferred QA check(s) remain",
+            report.failures.len(),
+            report.deferred_checks.len()
+        ),
+    }
+}
+
+fn stem_package_non_silence_summary(
+    report: &crate::export_qa::StemPackageNonSilenceQaReport,
+) -> String {
+    match report.status {
+        crate::export_qa::StemPackageNonSilenceQaStatus::Passed => format!(
+            "stem package per-stem non-silence accepted for {} claimed stem role(s)",
+            report.claimed_roles.len()
+        ),
+        crate::export_qa::StemPackageNonSilenceQaStatus::Deferred => format!(
+            "stem package per-stem non-silence deferred with {} missing metric check(s)",
+            report.deferred_checks.len()
+        ),
+        crate::export_qa::StemPackageNonSilenceQaStatus::Failed => format!(
+            "stem package per-stem non-silence failed with {} failure(s); {} deferred check(s) remain",
             report.failures.len(),
             report.deferred_checks.len()
         ),

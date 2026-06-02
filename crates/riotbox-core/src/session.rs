@@ -4,7 +4,7 @@ mod export_types;
 pub use export_qa_gates::{
     ExportReceiptQaGateResult, ExportReceiptQaGateStatus,
     PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
-    STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
+    STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID, STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,
 };
 pub use export_types::{
     ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
