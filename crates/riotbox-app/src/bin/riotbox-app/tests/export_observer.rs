@@ -36,6 +36,7 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
     assert_eq!(lifecycle[2]["stage"], "completed");
     assert_eq!(lifecycle[2]["action_id"], receipt.created_by_action.0);
     assert_eq!(lifecycle[2]["receipt"]["receipt_id"], receipt.receipt_id.to_string());
+    assert_eq!(lifecycle[2]["receipt"]["export_scope"], "product_mix");
     assert_eq!(lifecycle[2]["receipt"]["export_role"], "full_grid_mix");
     assert_eq!(
         lifecycle[2]["receipt"]["export_boundary"],

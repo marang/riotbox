@@ -73,6 +73,33 @@ impl ProductExportRole {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+pub enum ExportScope {
+    ProductMix,
+}
+
+impl ExportScope {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::ProductMix => "product_mix",
+        }
+    }
+
+    #[must_use]
+    pub const fn musician_label(self) -> &'static str {
+        match self {
+            Self::ProductMix => "product mix export",
+        }
+    }
+}
+
+#[must_use]
+pub const fn default_export_scope() -> ExportScope {
+    ExportScope::ProductMix
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ProductExportDestinationKind {
     LocalArtifactDirectory,
     LocalFilePath,
@@ -104,6 +131,8 @@ pub struct ExportReadinessContract {
     pub schema: String,
     pub status: ExportReadinessStatus,
     pub proof_schema: String,
+    #[serde(default = "default_export_scope")]
+    pub export_scope: ExportScope,
     pub boundary: ProductExportBoundary,
     pub pack_id: String,
     pub export_role: ProductExportRole,
@@ -152,6 +181,7 @@ impl ExportReadinessContract {
             schema: EXPORT_READINESS_CONTRACT_SCHEMA.to_owned(),
             status: ExportReadinessStatus::Reproducible,
             proof_schema: proof.schema.clone(),
+            export_scope: ExportScope::ProductMix,
             boundary,
             pack_id: proof.pack_id.clone(),
             export_role,
@@ -220,6 +250,7 @@ mod tests {
             contract.boundary.as_proof_str(),
             "feral-grid generated-support export"
         );
+        assert_eq!(contract.export_scope.as_str(), "product_mix");
         assert_eq!(contract.export_role.as_str(), "full_grid_mix");
         assert_eq!(contract.export_sha256, proof.export_sha256);
         assert_eq!(

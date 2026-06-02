@@ -32,7 +32,8 @@ use riotbox_core::{
         SourceMonitorMode, TargetScope, UndoPolicy,
     },
     export_readiness::{
-        ExportReadinessStatus, ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
+        ExportReadinessStatus, ExportScope, ProductExportBoundary, ProductExportRole,
+        UnsupportedExportScope,
     },
     ghost::{
         GhostSuggestedAction, GhostSuggestionBlocker, GhostSuggestionBlockerKind,

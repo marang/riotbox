@@ -126,6 +126,7 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
     json!({
         "receipt_id": receipt.receipt_id.to_string(),
         "created_by_action": receipt.created_by_action.0,
+        "export_scope": receipt.export_scope,
         "export_role": receipt.export_role,
         "export_boundary": receipt.export_boundary,
         "artifact_path": receipt.artifact_path,

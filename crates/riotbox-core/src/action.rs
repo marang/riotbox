@@ -3,7 +3,10 @@ use std::fmt::{self, Display, Formatter};
 
 use crate::{
     TimestampMs,
-    export_readiness::{ProductExportBoundary, ProductExportDestinationKind, ProductExportRole},
+    export_readiness::{
+        ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
+        default_export_scope,
+    },
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SourceId},
 };
 
@@ -255,6 +258,8 @@ pub enum ActionParams {
         hypothesis_id: Option<String>,
     },
     ProductExport {
+        #[serde(default = "default_export_scope")]
+        export_scope: ExportScope,
         export_role: ProductExportRole,
         boundary: ProductExportBoundary,
         include_manifest: bool,
@@ -629,5 +634,31 @@ mod tests {
 
         assert_eq!(supported, 42);
         assert_eq!(unsupported, 15);
+    }
+
+    #[test]
+    fn product_export_action_params_default_scope_for_older_logs() {
+        let params: ActionParams = serde_json::from_value(serde_json::json!({
+            "ProductExport": {
+                "export_role": "full_grid_mix",
+                "boundary": "feral_grid_generated_support",
+                "include_manifest": true,
+                "destination_kind": "local_artifact_directory",
+                "destination_path": "exports"
+            }
+        }))
+        .expect("older product export params deserialize");
+
+        assert_eq!(
+            params,
+            ActionParams::ProductExport {
+                export_scope: ExportScope::ProductMix,
+                export_role: ProductExportRole::FullGridMix,
+                boundary: ProductExportBoundary::FeralGridGeneratedSupport,
+                include_manifest: true,
+                destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+                destination_path: Some("exports".into()),
+            }
+        );
     }
 }
