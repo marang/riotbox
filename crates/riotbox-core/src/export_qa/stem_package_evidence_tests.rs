@@ -203,6 +203,7 @@ fn stem_artifact() -> ExportArtifactSetEntry {
         sha256: "a".into(),
         normalized_manifest_hash: None,
         source_graph_ref: None,
+        timing_grid_ref: None,
         source_capture_refs: Vec::new(),
         lineage_capture_refs: Vec::new(),
         fallback_comparison: None,

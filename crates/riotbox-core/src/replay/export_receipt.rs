@@ -194,6 +194,7 @@ mod tests {
                 graph_version: SourceGraphVersion::V1,
                 graph_hash: "graph-hash-1".into(),
             }),
+            timing_grid_ref: None,
             source_capture_refs: vec![crate::ids::CaptureId::from("cap-source")],
             lineage_capture_refs: vec![crate::ids::CaptureId::from("cap-root")],
             fallback_comparison: None,

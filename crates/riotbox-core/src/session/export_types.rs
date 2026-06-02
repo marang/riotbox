@@ -95,6 +95,18 @@ impl ExportReceiptState {
             }
         }
     }
+
+    pub fn attach_artifact_timing_grid_ref(
+        &mut self,
+        role: ExportArtifactRole,
+        timing_grid_ref: ExportArtifactTimingGridRef,
+    ) {
+        for artifact in &mut self.artifact_set {
+            if artifact.role == role {
+                artifact.timing_grid_ref = Some(timing_grid_ref.clone());
+            }
+        }
+    }
 }
 
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
@@ -138,6 +150,8 @@ pub struct ExportArtifactSetEntry {
     #[serde(default)]
     pub source_graph_ref: Option<ExportArtifactSourceGraphRef>,
     #[serde(default)]
+    pub timing_grid_ref: Option<ExportArtifactTimingGridRef>,
+    #[serde(default)]
     pub source_capture_refs: Vec<CaptureId>,
     #[serde(default)]
     pub lineage_capture_refs: Vec<CaptureId>,
@@ -167,6 +181,7 @@ impl ExportArtifactSetEntry {
             sha256: sha256.into(),
             normalized_manifest_hash,
             source_graph_ref: None,
+            timing_grid_ref: None,
             source_capture_refs: Vec::new(),
             lineage_capture_refs: Vec::new(),
             fallback_comparison: None,
@@ -191,6 +206,15 @@ pub struct ExportArtifactSourceGraphRef {
     pub source_id: SourceId,
     pub graph_version: SourceGraphVersion,
     pub graph_hash: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct ExportArtifactTimingGridRef {
+    pub source_id: SourceId,
+    #[serde(default)]
+    pub hypothesis_id: Option<String>,
+    pub confirmed_by_action: ActionId,
+    pub confirmed_at: TimestampMs,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

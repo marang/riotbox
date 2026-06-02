@@ -346,6 +346,10 @@ Rules:
   `source_graph_ref` when the Session has one, preserving source id, graph
   version, and graph hash without duplicating embedded graph storage in the
   receipt
+- current `export.product_mix` artifact-set entries attach the confirmed
+  `timing_grid_ref` when `runtime_state.source_timing.confirmed_grid` exists,
+  preserving source id, optional hypothesis id, confirming action, and
+  confirmation timestamp without claiming arrangement placement ranges
 - current `export.product_mix` receipts explicitly store `export_scope:
   product_mix` so later stem package, live recording, and DAW session work does
   not infer export scope from the full-grid mix role
@@ -365,8 +369,8 @@ Additional receipt fields required before wider export scopes:
   `stem_package`, `live_recording`, or `daw_session`
 - wider artifact set roles, source/capture lineage links, and
   stem/DAW/live-recording media roles beyond the current full-grid WAV entry
-- timing-grid reference used for placement-sensitive exports beyond the current
-  source graph id/version/hash lineage
+- bar/beat placement ranges and richer timing placement evidence beyond the
+  current confirmed grid source/action reference
 - source capture refs and capture-lineage refs for source-backed stems or
   resample-derived artifacts; these refs live on each `artifact_set[]` entry,
   default empty for older receipts, and must point back to Session/Core truth
