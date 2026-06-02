@@ -420,6 +420,12 @@ Rules:
   roles and a concise summary; a structurally accepted skeleton with deferred
   audio or fallback proof records `deferred`, while structural evidence
   failures record `failed`
+- per-stem hash-stability QA reports may be recorded as
+  `stem_package_per_stem_hash_stability` receipt gates. This gate validates
+  that every claimed stem has exactly one nonblank artifact SHA-256 identity,
+  but records `deferred` while repeated package-writer/render hash comparison
+  is still aspirational. Missing, duplicate, non-stem, or hashless claimed
+  stems record `failed`.
 - `validate_stem_package_receipt_readiness` is the typed receipt-level guard
   for future stem-package readiness. It reports `blocked` while the receipt is
   not `export_scope: stem_package`, while `unsupported_scopes[]` still includes

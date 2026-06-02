@@ -185,6 +185,113 @@ fn stem_package_gate_fails_missing_location_hash_and_duplicates() {
     )));
 }
 
+#[test]
+fn stem_package_hash_stability_gate_accepts_hash_identity_as_deferred_receipt_evidence() {
+    let artifact_set = vec![
+        stem_artifact(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "drums-sha",
+        ),
+        stem_artifact(
+            ExportArtifactRole::StemBass,
+            "exports/stems/bass.wav",
+            "bass-sha",
+        ),
+    ];
+
+    let report = validate_stem_package_hash_stability_evidence(
+        &artifact_set,
+        &[ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+    );
+    let gate = crate::session::ExportReceiptQaGateResult::stem_package_hash_stability(&report);
+
+    assert!(report.passed_identity_only());
+    assert!(report.failures.is_empty());
+    assert_eq!(report.deferred_checks.len(), 1);
+    assert_eq!(
+        report.deferred_checks[0].check,
+        StemPackageHashStabilityDeferredCheckKind::RepeatedRenderHashComparison
+    );
+    assert_eq!(
+        gate.gate_id,
+        crate::session::STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID
+    );
+    assert_eq!(
+        gate.status,
+        crate::session::ExportReceiptQaGateStatus::Deferred
+    );
+    assert_eq!(
+        gate.artifact_roles,
+        vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass]
+    );
+}
+
+#[test]
+fn stem_package_hash_stability_gate_fails_missing_duplicate_hashless_and_non_stem_roles() {
+    let artifact_set = vec![
+        stem_artifact(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            " ",
+        ),
+        stem_artifact(
+            ExportArtifactRole::StemBass,
+            "exports/stems/bass-a.wav",
+            "bass-a-sha",
+        ),
+        stem_artifact(
+            ExportArtifactRole::StemBass,
+            "exports/stems/bass-b.wav",
+            "bass-b-sha",
+        ),
+    ];
+
+    let report = validate_stem_package_hash_stability_evidence(
+        &artifact_set,
+        &[
+            ExportArtifactRole::StemDrums,
+            ExportArtifactRole::StemBass,
+            ExportArtifactRole::StemVocals,
+            ExportArtifactRole::FullGridMix,
+        ],
+    );
+    let gate = crate::session::ExportReceiptQaGateResult::stem_package_hash_stability(&report);
+
+    assert_eq!(report.status, StemPackageHashStabilityQaStatus::Failed);
+    assert!(report.failures.contains(&hash_failure(
+        Some(ExportArtifactRole::StemDrums),
+        StemPackageHashStabilityQaFailureKind::MissingArtifactHash,
+    )));
+    assert!(report.failures.contains(&hash_failure(
+        Some(ExportArtifactRole::StemBass),
+        StemPackageHashStabilityQaFailureKind::DuplicateRoleArtifact,
+    )));
+    assert!(report.failures.contains(&hash_failure(
+        Some(ExportArtifactRole::StemVocals),
+        StemPackageHashStabilityQaFailureKind::MissingRoleArtifact,
+    )));
+    assert!(report.failures.contains(&hash_failure(
+        Some(ExportArtifactRole::FullGridMix),
+        StemPackageHashStabilityQaFailureKind::NonStemRoleClaimed,
+    )));
+    assert_eq!(
+        gate.status,
+        crate::session::ExportReceiptQaGateStatus::Failed
+    );
+}
+
+#[test]
+fn stem_package_hash_stability_gate_fails_empty_claims() {
+    let report = validate_stem_package_hash_stability_evidence(&[], &[]);
+
+    assert_eq!(report.status, StemPackageHashStabilityQaStatus::Failed);
+    assert!(report.failures.contains(&hash_failure(
+        None,
+        StemPackageHashStabilityQaFailureKind::NoClaimedStemRoles,
+    )));
+}
+
 fn stem_artifact(
     role: ExportArtifactRole,
     path: impl Into<String>,

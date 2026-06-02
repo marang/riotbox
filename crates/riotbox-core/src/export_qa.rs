@@ -11,6 +11,15 @@ pub struct StemPackageArtifactSetQaReport {
     pub deferred_checks: Vec<StemPackageDeferredQaCheck>,
 }
 
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StemPackageHashStabilityQaReport {
+    pub status: StemPackageHashStabilityQaStatus,
+    pub claimed_roles: Vec<ExportArtifactRole>,
+    pub checked_artifact_count: usize,
+    pub failures: Vec<StemPackageHashStabilityQaFailure>,
+    pub deferred_checks: Vec<StemPackageHashStabilityDeferredCheck>,
+}
+
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StemPackageArtifactSetQaPolicy {
     #[serde(default)]
@@ -26,6 +35,13 @@ impl StemPackageArtifactSetQaReport {
     }
 }
 
+impl StemPackageHashStabilityQaReport {
+    #[must_use]
+    pub fn passed_identity_only(&self) -> bool {
+        self.status == StemPackageHashStabilityQaStatus::PassedIdentityOnly
+    }
+}
+
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum StemPackageArtifactSetQaStatus {
@@ -33,10 +49,23 @@ pub enum StemPackageArtifactSetQaStatus {
     Failed,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageHashStabilityQaStatus {
+    PassedIdentityOnly,
+    Failed,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StemPackageArtifactSetQaFailure {
     pub role: Option<ExportArtifactRole>,
     pub kind: StemPackageArtifactSetQaFailureKind,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StemPackageHashStabilityQaFailure {
+    pub role: Option<ExportArtifactRole>,
+    pub kind: StemPackageHashStabilityQaFailureKind,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -56,10 +85,27 @@ pub enum StemPackageArtifactSetQaFailureKind {
     SilentArtifactMetrics,
 }
 
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageHashStabilityQaFailureKind {
+    NoClaimedStemRoles,
+    NonStemRoleClaimed,
+    MissingRoleArtifact,
+    DuplicateRoleArtifact,
+    MissingArtifactHash,
+}
+
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct StemPackageDeferredQaCheck {
     pub check: StemPackageDeferredQaCheckKind,
     pub status: StemPackageDeferredQaCheckStatus,
+    pub reason: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StemPackageHashStabilityDeferredCheck {
+    pub check: StemPackageHashStabilityDeferredCheckKind,
+    pub status: StemPackageHashStabilityDeferredCheckStatus,
     pub reason: String,
 }
 
@@ -72,8 +118,20 @@ pub enum StemPackageDeferredQaCheckKind {
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
+pub enum StemPackageHashStabilityDeferredCheckKind {
+    RepeatedRenderHashComparison,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
 pub enum StemPackageDeferredQaCheckStatus {
     AspirationalUntilAudioEvidenceAttached,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageHashStabilityDeferredCheckStatus {
+    AspirationalUntilPackageWriterExists,
 }
 
 pub fn validate_stem_package_artifact_set_evidence(
@@ -85,6 +143,37 @@ pub fn validate_stem_package_artifact_set_evidence(
         claimed_roles,
         StemPackageArtifactSetQaPolicy::default(),
     )
+}
+
+pub fn validate_stem_package_hash_stability_evidence(
+    artifact_set: &[ExportArtifactSetEntry],
+    claimed_roles: &[ExportArtifactRole],
+) -> StemPackageHashStabilityQaReport {
+    let mut failures = Vec::new();
+    if claimed_roles.is_empty() {
+        failures.push(hash_failure(
+            None,
+            StemPackageHashStabilityQaFailureKind::NoClaimedStemRoles,
+        ));
+    }
+
+    for role in claimed_roles {
+        validate_claimed_role_hash_stability(*role, artifact_set, &mut failures);
+    }
+
+    let status = if failures.is_empty() {
+        StemPackageHashStabilityQaStatus::PassedIdentityOnly
+    } else {
+        StemPackageHashStabilityQaStatus::Failed
+    };
+
+    StemPackageHashStabilityQaReport {
+        status,
+        claimed_roles: claimed_roles.to_vec(),
+        checked_artifact_count: artifact_set.len(),
+        failures,
+        deferred_checks: deferred_stem_hash_stability_checks(),
+    }
 }
 
 pub fn validate_stem_package_artifact_set_evidence_with_policy(
@@ -116,6 +205,42 @@ pub fn validate_stem_package_artifact_set_evidence_with_policy(
         checked_artifact_count: artifact_set.len(),
         failures,
         deferred_checks: deferred_stem_audio_checks(artifact_set, claimed_roles),
+    }
+}
+
+fn validate_claimed_role_hash_stability(
+    role: ExportArtifactRole,
+    artifact_set: &[ExportArtifactSetEntry],
+    failures: &mut Vec<StemPackageHashStabilityQaFailure>,
+) {
+    if !role.is_stem_role() {
+        failures.push(hash_failure(
+            Some(role),
+            StemPackageHashStabilityQaFailureKind::NonStemRoleClaimed,
+        ));
+        return;
+    }
+
+    let mut matches = artifact_set.iter().filter(|artifact| artifact.role == role);
+    let Some(artifact) = matches.next() else {
+        failures.push(hash_failure(
+            Some(role),
+            StemPackageHashStabilityQaFailureKind::MissingRoleArtifact,
+        ));
+        return;
+    };
+    if matches.next().is_some() {
+        failures.push(hash_failure(
+            Some(role),
+            StemPackageHashStabilityQaFailureKind::DuplicateRoleArtifact,
+        ));
+        return;
+    }
+    if artifact.sha256.trim().is_empty() {
+        failures.push(hash_failure(
+            Some(role),
+            StemPackageHashStabilityQaFailureKind::MissingArtifactHash,
+        ));
     }
 }
 
@@ -285,6 +410,13 @@ fn failure(
     StemPackageArtifactSetQaFailure { role, kind }
 }
 
+fn hash_failure(
+    role: Option<ExportArtifactRole>,
+    kind: StemPackageHashStabilityQaFailureKind,
+) -> StemPackageHashStabilityQaFailure {
+    StemPackageHashStabilityQaFailure { role, kind }
+}
+
 fn deferred_stem_audio_checks(
     artifact_set: &[ExportArtifactSetEntry],
     claimed_roles: &[ExportArtifactRole],
@@ -312,6 +444,16 @@ fn deferred_stem_audio_checks(
         reason: "stem export does not yet attach source-vs-fallback comparison metrics".into(),
     });
     checks
+}
+
+fn deferred_stem_hash_stability_checks() -> Vec<StemPackageHashStabilityDeferredCheck> {
+    vec![StemPackageHashStabilityDeferredCheck {
+        check: StemPackageHashStabilityDeferredCheckKind::RepeatedRenderHashComparison,
+        status: StemPackageHashStabilityDeferredCheckStatus::AspirationalUntilPackageWriterExists,
+        reason:
+            "stem package writer does not yet render repeated package artifacts for hash comparison"
+                .into(),
+    }]
 }
 
 #[cfg(test)]

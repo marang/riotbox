@@ -116,6 +116,7 @@ impl ExportReceiptState {
 
 pub const PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID: &str = "product_export_reproducibility_smoke";
 pub const STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID: &str = "stem_package_artifact_set_evidence";
+pub const STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID: &str = "stem_package_per_stem_hash_stability";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -157,6 +158,27 @@ impl ExportReceiptQaGateResult {
             summary: Some(stem_package_artifact_set_summary(report)),
         }
     }
+
+    #[must_use]
+    pub fn stem_package_hash_stability(
+        report: &crate::export_qa::StemPackageHashStabilityQaReport,
+    ) -> Self {
+        let status = if report.status == crate::export_qa::StemPackageHashStabilityQaStatus::Failed
+        {
+            ExportReceiptQaGateStatus::Failed
+        } else if report.deferred_checks.is_empty() {
+            ExportReceiptQaGateStatus::Passed
+        } else {
+            ExportReceiptQaGateStatus::Deferred
+        };
+
+        Self {
+            gate_id: STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID.into(),
+            status,
+            artifact_roles: report.claimed_roles.clone(),
+            summary: Some(stem_package_hash_stability_summary(report)),
+        }
+    }
 }
 
 fn stem_package_artifact_set_summary(
@@ -170,6 +192,23 @@ fn stem_package_artifact_set_summary(
         ),
         crate::export_qa::StemPackageArtifactSetQaStatus::Failed => format!(
             "stem package artifact-set evidence failed with {} failure(s); {} deferred QA check(s) remain",
+            report.failures.len(),
+            report.deferred_checks.len()
+        ),
+    }
+}
+
+fn stem_package_hash_stability_summary(
+    report: &crate::export_qa::StemPackageHashStabilityQaReport,
+) -> String {
+    match report.status {
+        crate::export_qa::StemPackageHashStabilityQaStatus::PassedIdentityOnly => format!(
+            "stem package per-stem hash identity accepted for {} claimed stem role(s); {} deferred QA check(s) remain",
+            report.claimed_roles.len(),
+            report.deferred_checks.len()
+        ),
+        crate::export_qa::StemPackageHashStabilityQaStatus::Failed => format!(
+            "stem package per-stem hash stability failed with {} failure(s); {} deferred QA check(s) remain",
             report.failures.len(),
             report.deferred_checks.len()
         ),
