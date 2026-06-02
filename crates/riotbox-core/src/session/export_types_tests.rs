@@ -6,7 +6,7 @@ use crate::{
         EXPORT_READINESS_CONTRACT_SCHEMA, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::ActionId,
-    session::SessionFile,
+    session::{PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, SessionFile},
 };
 
 fn fixture_contract() -> ExportReadinessContract {
