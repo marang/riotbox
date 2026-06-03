@@ -142,6 +142,12 @@ fn daw_session_writer_plan_blocks_without_daw_receipt_but_reports_planned_paths(
     assert_eq!(summary["readiness_blockers"], json!(["no_daw_session_receipt"]));
     assert_eq!(summary["writer_blockers"], json!(["daw_writer_missing"]));
     assert_eq!(summary["receipt"], serde_json::Value::Null);
+    assert_eq!(summary["payload_preview"]["status"], "blocked");
+    assert_eq!(summary["payload_preview"]["ready"], false);
+    assert_eq!(
+        summary["payload_preview"]["blockers"],
+        json!(["no_daw_session_receipt"])
+    );
     assert_eq!(summary["planned_artifacts"].as_array().expect("planned artifacts").len(), 3);
     assert!(!destination_path.exists());
 }
@@ -167,6 +173,12 @@ fn daw_session_writer_plan_surfaces_missing_source_files_after_contracts_are_rea
     assert_eq!(summary["status"], "blocked");
     assert_eq!(summary["ready_for_writer"], false);
     assert_eq!(summary["readiness_blockers"], json!(["missing_local_files"]));
+    assert_eq!(summary["payload_preview"]["status"], "blocked");
+    assert_eq!(
+        summary["payload_preview"]["blockers"],
+        json!(["missing_local_files"])
+    );
+    assert_eq!(summary["payload_preview"]["manifest"], serde_json::Value::Null);
     assert_eq!(
         summary["operator_readiness"]["artifact_preflight"]["blockers"],
         json!(["missing_local_files"])
@@ -206,6 +218,27 @@ fn daw_session_writer_plan_ready_for_writer_is_read_only_and_keeps_writer_blocke
     assert_eq!(summary["planned_artifacts"][0]["role"], "arrangement_manifest");
     assert_eq!(summary["planned_artifacts"][1]["role"], "tempo_map");
     assert_eq!(summary["planned_artifacts"][2]["role"], "daw_session_proof");
+    assert_eq!(summary["payload_preview"]["status"], "ready");
+    assert_eq!(summary["payload_preview"]["ready"], true);
+    assert_eq!(summary["payload_preview"]["blockers"], json!([]));
+    assert_eq!(
+        summary["payload_preview"]["manifest"]["schema_id"],
+        "riotbox.daw_session_manifest"
+    );
+    assert_eq!(
+        summary["payload_preview"]["proof"]["schema_id"],
+        "riotbox.daw_session_proof"
+    );
+    assert_eq!(
+        summary["payload_preview"]["proof"]["manifest_sha256"],
+        summary["payload_preview"]["manifest"]["normalized_json_sha256"]
+    );
+    assert!(
+        summary["payload_preview"]["manifest"]["planned_path"]
+            .as_str()
+            .expect("manifest planned path")
+            .ends_with("daw-out/daw_session/arrangement_manifest.json")
+    );
     assert!(
         summary["planned_artifacts"][0]["path"]
             .as_str()

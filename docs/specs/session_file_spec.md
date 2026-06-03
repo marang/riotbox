@@ -712,6 +712,14 @@ Additional receipt fields required before wider export scopes:
   identities, and deterministic normalized JSON/hash helpers. They do not write
   files, mutate Session, add a CLI writer, or make `export.daw_session`
   runnable.
+- the DAW session writer plan report surfaces a read-only `payload_preview`
+  built from those Core payload contracts. When the receipt, destination,
+  placement, tempo-map, source artifacts, and local preflight are ready, the
+  preview reports schema ids, planned manifest/proof paths, normalized manifest
+  hash, and proof manifest hash. When any upstream plan/readiness blocker
+  exists, the preview stays blocked with typed blockers and no payload hashes.
+  It still writes no files, creates no directories, mutates no Session state,
+  emits no observer events, and does not make `export.daw_session` runnable.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

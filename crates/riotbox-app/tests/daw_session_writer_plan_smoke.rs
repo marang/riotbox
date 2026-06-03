@@ -1,5 +1,6 @@
-use std::{fs, process::Command};
+use std::{fs, path::Path, process::Command};
 
+use riotbox_app::jam_app::daw_session_writer_plan;
 use riotbox_core::{
     export_readiness::{
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID, EXPORT_READINESS_CONTRACT_SCHEMA,
@@ -44,6 +45,12 @@ fn daw_session_writer_plan_smoke_covers_ready_for_writer_and_missing_file() {
         Value::Array(vec!["daw_writer_missing".into()])
     );
     assert_eq!(ready_plan["readiness_blockers"], Value::Array(Vec::new()));
+    assert_eq!(ready_plan["payload_preview"]["status"], "ready");
+    assert_eq!(ready_plan["payload_preview"]["ready"], true);
+    assert_eq!(
+        ready_plan["payload_preview"]["proof"]["manifest_sha256"],
+        ready_plan["payload_preview"]["manifest"]["normalized_json_sha256"]
+    );
     assert_eq!(
         ready_plan["planned_artifacts"]
             .as_array()
@@ -53,12 +60,34 @@ fn daw_session_writer_plan_smoke_covers_ready_for_writer_and_missing_file() {
     );
     assert!(!destination_path.exists());
 
+    let missing_destination_plan =
+        daw_session_writer_plan(&session, Some(temp.path()), Path::new(""));
+    let missing_destination_plan =
+        serde_json::to_value(missing_destination_plan).expect("serialize missing destination plan");
+    assert_eq!(
+        missing_destination_plan["readiness_blockers"],
+        Value::Array(vec!["missing_destination_root".into()])
+    );
+    assert_eq!(
+        missing_destination_plan["payload_preview"]["blockers"],
+        Value::Array(vec!["missing_destination_root".into()])
+    );
+    assert_eq!(
+        missing_destination_plan["payload_preview"]["manifest"],
+        Value::Null
+    );
+
     fs::remove_file(&manifest_path).expect("remove manifest");
     let missing_plan = run_plan(&session_path, &destination_path);
     assert_eq!(missing_plan["status"], "blocked");
     assert_eq!(missing_plan["ready_for_writer"], false);
     assert_eq!(
         missing_plan["readiness_blockers"],
+        Value::Array(vec!["missing_local_files".into()])
+    );
+    assert_eq!(missing_plan["payload_preview"]["status"], "blocked");
+    assert_eq!(
+        missing_plan["payload_preview"]["blockers"],
         Value::Array(vec!["missing_local_files".into()])
     );
 }

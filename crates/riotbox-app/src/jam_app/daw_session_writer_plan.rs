@@ -10,6 +10,7 @@ use super::daw_export_operator_report::{
     DawExportOperatorReadinessReport, DawExportReadinessBlocker,
     daw_export_operator_readiness_report,
 };
+use super::daw_session_payload_preview::{DawSessionPayloadPreview, payload_preview};
 
 pub const DAW_SESSION_WRITER_PLAN_BOUNDARY_ID: &str = "daw_session.writer_plan_v1";
 pub const DAW_SESSION_PACKAGE_DIR: &str = "daw_session";
@@ -31,6 +32,7 @@ pub struct DawSessionWriterPlan {
     pub tempo_map_ref: Option<ExportDawTempoMapRef>,
     pub source_artifacts: Vec<DawSessionSourceArtifactRef>,
     pub planned_artifacts: Vec<DawSessionPlannedArtifact>,
+    pub payload_preview: DawSessionPayloadPreview,
     pub operator_readiness: DawExportOperatorReadinessReport,
 }
 
@@ -134,6 +136,7 @@ pub fn daw_session_writer_plan(
     let source_artifacts = receipt
         .map(|receipt| source_artifacts(receipt, session_base_dir))
         .unwrap_or_default();
+    let payload_preview = payload_preview(receipt, &planned_artifacts, &readiness_blockers);
 
     DawSessionWriterPlan {
         status: if ready_for_writer {
@@ -154,6 +157,7 @@ pub fn daw_session_writer_plan(
         tempo_map_ref: receipt.and_then(|receipt| receipt.daw_tempo_map_ref.clone()),
         source_artifacts,
         planned_artifacts,
+        payload_preview,
         operator_readiness,
     }
 }

@@ -27,6 +27,7 @@ mod capture_queue;
 mod commit;
 mod controls;
 mod daw_export_operator_report;
+mod daw_session_payload_preview;
 mod daw_session_writer_plan;
 mod ghost_candidates;
 mod ghost_queue;
