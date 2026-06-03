@@ -286,10 +286,12 @@ Boundary:
   `export.product_mix` action and surfaces receipt/failure feedback without
   adding a second export state model.
 - Replay must not blindly rewrite files as a hidden side effect.
-- Stem package export, live recording export, DAW session export, host-audio
-  soak, automatic arranger export, and automatic Ghost export remain out of
-  scope until separate ActionCommand, Session/replay, observer, and audio-QA
-  contracts exist.
+- Stem package export has a typed reserved Core action contract, but remains
+  out of runnable TUI/Ghost/user scope until queue, writer, Session/replay,
+  observer, and audio-QA implementation tickets land. Live recording export,
+  DAW session export, host-audio soak, automatic arranger export, and automatic
+  Ghost export remain out of scope until separate ActionCommand,
+  Session/replay, observer, and audio-QA contracts exist.
 
 Required params for the first bounded action:
 
@@ -316,8 +318,9 @@ Reserved wider export commands:
 - `export.live_recording`
 - `export.daw_session`
 
-These commands are not implemented. Before any of them can ship, the command
-must define:
+`export.stem_package` now exists as a typed reserved Core action label only;
+the other commands are not implemented. Before any of them can ship, the
+command must define:
 
 - target scope and source of truth (`Session`, arrangement scene, capture
   lineage, or host-audio run)
@@ -334,8 +337,9 @@ must define:
 
 Contract for reserved `export.stem_package`:
 
-- Status: reserved contract only; not implemented and must not be surfaced as a
-  runnable TUI/Ghost/user action until implementation and QA tickets land.
+- Status: typed reserved Core action contract only; not implemented and must
+  not be surfaced as a runnable TUI/Ghost/user action until queue, writer,
+  observer, Session/replay, and QA tickets land.
 - Target scope: `Session`.
 - Queue semantics: at most one pending stem-package export at a time; it is an
   immediate side-effect action, not a musical transform.
@@ -347,10 +351,11 @@ Contract for reserved `export.stem_package`:
   rewrite them implicitly.
 - Required params:
   - `export_scope`: `stem_package`
-  - `export_role`: package-level role or manifest role, distinct from per-stem
+  - `export_role`: currently `package_manifest`, distinct from per-stem
     artifact roles
-  - `boundary`: explicit render recipe / arrangement boundary, not inferred from
-    the current product-mix Feral-grid proof
+  - `boundary`: currently `reserved_contract_only`; future writer work must
+    replace this with an explicit render recipe / arrangement boundary, not
+    infer it from the current product-mix Feral-grid proof
   - `include_manifest`: `true`
   - `destination_kind`: local artifact directory until URI/cache rules exist
   - `claimed_stem_roles`: subset of `stem_drums`, `stem_bass`, `stem_music`,

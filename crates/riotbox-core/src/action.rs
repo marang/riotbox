@@ -8,6 +8,7 @@ use crate::{
         default_export_scope,
     },
     ids::{ActionId, AssetId, BankId, CaptureId, PadId, SceneId, SourceId},
+    session::ExportArtifactRole,
 };
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -266,6 +267,49 @@ pub enum ActionParams {
         destination_kind: ProductExportDestinationKind,
         destination_path: Option<String>,
     },
+    StemPackageExport {
+        #[serde(default = "default_stem_package_export_scope")]
+        export_scope: ExportScope,
+        export_role: StemPackageExportRole,
+        boundary: StemPackageExportBoundary,
+        include_manifest: bool,
+        destination_kind: ProductExportDestinationKind,
+        destination_path: Option<String>,
+        claimed_stem_roles: Vec<ExportArtifactRole>,
+        lineage_policy: StemPackageLineagePolicy,
+        fallback_comparison_policy: StemPackageFallbackComparisonPolicy,
+    },
+}
+
+#[must_use]
+pub const fn default_stem_package_export_scope() -> ExportScope {
+    ExportScope::StemPackage
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageExportRole {
+    PackageManifest,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageExportBoundary {
+    ReservedContractOnly,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageLineagePolicy {
+    NotRequired,
+    RequireAnyCoreLineage,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum StemPackageFallbackComparisonPolicy {
+    NotRequired,
+    Required,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -323,6 +367,7 @@ pub enum ActionCommand {
     SourceTimingConfirmGrid,
     SourceTimingRevertGrid,
     ExportProductMix,
+    ExportStemPackage,
     GhostSetMode,
     GhostAcceptSuggestion,
     GhostRejectSuggestion,
@@ -390,6 +435,7 @@ impl ActionCommand {
         Self::SourceTimingConfirmGrid,
         Self::SourceTimingRevertGrid,
         Self::ExportProductMix,
+        Self::ExportStemPackage,
         Self::GhostSetMode,
         Self::GhostAcceptSuggestion,
         Self::GhostRejectSuggestion,
@@ -458,6 +504,7 @@ impl ActionCommand {
             | Self::RedoLast
             | Self::RestoreSource
             | Self::ExportProductMix
+            | Self::ExportStemPackage
             | Self::GhostAcceptSuggestion
             | Self::GhostRejectSuggestion
             | Self::GhostExecuteTool => ActionReplayCoverage::Unsupported,
@@ -520,6 +567,7 @@ impl ActionCommand {
             Self::SourceTimingConfirmGrid => "source_timing.confirm_grid",
             Self::SourceTimingRevertGrid => "source_timing.revert_grid",
             Self::ExportProductMix => "export.product_mix",
+            Self::ExportStemPackage => "export.stem_package",
             Self::GhostSetMode => "ghost.set_mode",
             Self::GhostAcceptSuggestion => "ghost.accept_suggestion",
             Self::GhostRejectSuggestion => "ghost.reject_suggestion",
@@ -613,7 +661,7 @@ mod tests {
 
     #[test]
     fn action_command_lexicon_labels_are_unique_and_complete() {
-        assert_eq!(ActionCommand::all().len(), 57);
+        assert_eq!(ActionCommand::all().len(), 58);
 
         let labels = ActionCommand::all()
             .iter()
@@ -633,7 +681,7 @@ mod tests {
         let unsupported = ActionCommand::all().len() - supported;
 
         assert_eq!(supported, 42);
-        assert_eq!(unsupported, 15);
+        assert_eq!(unsupported, 16);
     }
 
     #[test]
@@ -659,6 +707,69 @@ mod tests {
                 destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
                 destination_path: Some("exports".into()),
             }
+        );
+    }
+
+    #[test]
+    fn stem_package_export_action_contract_roundtrips_as_reserved_scope() {
+        let action = Action {
+            id: ActionId(1),
+            actor: ActorType::User,
+            command: ActionCommand::ExportStemPackage,
+            params: ActionParams::StemPackageExport {
+                export_scope: ExportScope::StemPackage,
+                export_role: StemPackageExportRole::PackageManifest,
+                boundary: StemPackageExportBoundary::ReservedContractOnly,
+                include_manifest: true,
+                destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+                destination_path: Some("exports/stem-package".into()),
+                claimed_stem_roles: vec![
+                    ExportArtifactRole::StemDrums,
+                    ExportArtifactRole::StemBass,
+                ],
+                lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
+                fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..ActionTarget::default()
+            },
+            requested_at: 100,
+            quantization: Quantization::Immediate,
+            status: ActionStatus::Requested,
+            committed_at: None,
+            result: None,
+            undo_policy: UndoPolicy::NotUndoable {
+                reason: "reserved stem-package export writes files outside musical undo".into(),
+            },
+            explanation: Some("reserved contract only; not runnable yet".into()),
+        };
+
+        let json = serde_json::to_value(&action).expect("serialize reserved stem action");
+        assert_eq!(json["command"], "ExportStemPackage");
+        assert_eq!(
+            json["params"]["StemPackageExport"]["export_scope"],
+            "stem_package"
+        );
+        assert_eq!(
+            json["params"]["StemPackageExport"]["claimed_stem_roles"],
+            serde_json::json!(["stem_drums", "stem_bass"])
+        );
+        assert_eq!(
+            json["params"]["StemPackageExport"]["lineage_policy"],
+            "require_any_core_lineage"
+        );
+        assert_eq!(
+            json["params"]["StemPackageExport"]["fallback_comparison_policy"],
+            "required"
+        );
+
+        let roundtrip: Action =
+            serde_json::from_value(json).expect("deserialize reserved stem action");
+        assert_eq!(roundtrip, action);
+        assert_eq!(
+            roundtrip.command.replay_coverage(),
+            ActionReplayCoverage::Unsupported
         );
     }
 }
