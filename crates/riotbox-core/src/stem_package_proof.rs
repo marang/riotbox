@@ -1,0 +1,307 @@
+use serde::{Deserialize, Serialize};
+
+use crate::{
+    export_readiness::ExportScope,
+    ids::{ActionId, ExportReceiptId},
+    session::{ExportArtifactMediaType, ExportArtifactRole},
+    stem_package_manifest::StemPackageManifestJsonIdentity,
+};
+
+pub const STEM_PACKAGE_PROOF_SCHEMA_ID: &str = "riotbox.stem_package_proof";
+pub const STEM_PACKAGE_PROOF_SCHEMA_VERSION: u32 = 1;
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub struct StemPackageProof {
+    pub schema_id: String,
+    pub schema_version: u32,
+    pub package_id: String,
+    pub export_scope: ExportScope,
+    pub receipt_id: ExportReceiptId,
+    pub created_by_action: ActionId,
+    pub manifest_sha256: String,
+    pub claimed_stem_roles: Vec<ExportArtifactRole>,
+    pub manifest_identity: StemPackageManifestJsonIdentity,
+    pub proof_identity: StemPackageManifestJsonIdentity,
+}
+
+impl StemPackageProof {
+    pub fn new(input: StemPackageProofInput) -> Result<Self, StemPackageProofError> {
+        let package_id = input.package_id;
+        if package_id.trim().is_empty() {
+            return Err(StemPackageProofError::BlankPackageId);
+        }
+        let manifest_sha256 = input.manifest_sha256;
+        if manifest_sha256.trim().is_empty() {
+            return Err(StemPackageProofError::BlankManifestSha256);
+        }
+
+        validate_claimed_stem_roles(&input.claimed_stem_roles)?;
+        validate_json_identity(&input.manifest_identity, ExportArtifactRole::ExportManifest)?;
+        validate_json_identity(
+            &input.proof_identity,
+            ExportArtifactRole::ProductExportProof,
+        )?;
+
+        Ok(Self {
+            schema_id: STEM_PACKAGE_PROOF_SCHEMA_ID.into(),
+            schema_version: STEM_PACKAGE_PROOF_SCHEMA_VERSION,
+            package_id,
+            export_scope: ExportScope::StemPackage,
+            receipt_id: input.receipt_id,
+            created_by_action: input.created_by_action,
+            manifest_sha256,
+            claimed_stem_roles: input.claimed_stem_roles,
+            manifest_identity: input.manifest_identity,
+            proof_identity: input.proof_identity,
+        })
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StemPackageProofInput {
+    pub package_id: String,
+    pub receipt_id: ExportReceiptId,
+    pub created_by_action: ActionId,
+    pub manifest_sha256: String,
+    pub claimed_stem_roles: Vec<ExportArtifactRole>,
+    pub manifest_identity: StemPackageManifestJsonIdentity,
+    pub proof_identity: StemPackageManifestJsonIdentity,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum StemPackageProofError {
+    BlankPackageId,
+    BlankManifestSha256,
+    EmptyClaimedStemRoles,
+    NonStemClaimedRole {
+        role: ExportArtifactRole,
+    },
+    DuplicateClaimedStemRole {
+        role: ExportArtifactRole,
+    },
+    UnexpectedJsonIdentityRole {
+        expected: ExportArtifactRole,
+        actual: ExportArtifactRole,
+    },
+    BlankJsonIdentityLocation {
+        role: ExportArtifactRole,
+    },
+    BlankJsonIdentitySha256 {
+        role: ExportArtifactRole,
+    },
+    NonJsonIdentity {
+        role: ExportArtifactRole,
+        media_type: ExportArtifactMediaType,
+    },
+}
+
+fn validate_claimed_stem_roles(
+    claimed_stem_roles: &[ExportArtifactRole],
+) -> Result<(), StemPackageProofError> {
+    if claimed_stem_roles.is_empty() {
+        return Err(StemPackageProofError::EmptyClaimedStemRoles);
+    }
+
+    for (index, role) in claimed_stem_roles.iter().enumerate() {
+        if !role.is_stem_role() {
+            return Err(StemPackageProofError::NonStemClaimedRole { role: *role });
+        }
+        if claimed_stem_roles[index + 1..].contains(role) {
+            return Err(StemPackageProofError::DuplicateClaimedStemRole { role: *role });
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_json_identity(
+    identity: &StemPackageManifestJsonIdentity,
+    expected: ExportArtifactRole,
+) -> Result<(), StemPackageProofError> {
+    if identity.role != expected {
+        return Err(StemPackageProofError::UnexpectedJsonIdentityRole {
+            expected,
+            actual: identity.role,
+        });
+    }
+    if identity.location_identity().trim().is_empty() {
+        return Err(StemPackageProofError::BlankJsonIdentityLocation {
+            role: identity.role,
+        });
+    }
+    if identity.sha256.trim().is_empty() {
+        return Err(StemPackageProofError::BlankJsonIdentitySha256 {
+            role: identity.role,
+        });
+    }
+    if identity.media_type != ExportArtifactMediaType::Json {
+        return Err(StemPackageProofError::NonJsonIdentity {
+            role: identity.role,
+            media_type: identity.media_type,
+        });
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+    use crate::session::ExportArtifactLocation;
+
+    #[test]
+    fn stem_package_proof_roundtrips_stable_schema_scope_roles_and_identity() {
+        let proof = fixture_proof("manifest-sha");
+
+        let json = serde_json::to_value(&proof).expect("serialize proof");
+
+        assert_eq!(json["schema_id"], STEM_PACKAGE_PROOF_SCHEMA_ID);
+        assert_eq!(json["schema_version"], STEM_PACKAGE_PROOF_SCHEMA_VERSION);
+        assert_eq!(json["export_scope"], "stem_package");
+        assert_eq!(json["manifest_sha256"], "manifest-sha");
+        assert_eq!(
+            json["claimed_stem_roles"],
+            json!(["stem_drums", "stem_bass"])
+        );
+        assert_eq!(json["manifest_identity"]["role"], "export_manifest");
+        assert_eq!(json["proof_identity"]["role"], "product_export_proof");
+
+        let roundtrip: StemPackageProof = serde_json::from_value(json).expect("deserialize proof");
+        assert_eq!(roundtrip, proof);
+    }
+
+    #[test]
+    fn stem_package_proof_serialized_value_changes_with_manifest_hash() {
+        let proof = fixture_proof("manifest-sha-a");
+        let changed = fixture_proof("manifest-sha-b");
+
+        let bytes = serde_json::to_vec_pretty(&proof).expect("serialize proof");
+        let repeated_bytes = serde_json::to_vec_pretty(&proof).expect("serialize proof again");
+        let changed_bytes = serde_json::to_vec_pretty(&changed).expect("serialize changed proof");
+
+        assert_eq!(bytes, repeated_bytes);
+        assert_ne!(bytes, changed_bytes);
+    }
+
+    #[test]
+    fn stem_package_proof_rejects_blank_package_id_and_manifest_sha() {
+        let err = StemPackageProof::new(proof_input(" ", "manifest-sha"))
+            .expect_err("blank package id should fail");
+        assert_eq!(err, StemPackageProofError::BlankPackageId);
+
+        let err = StemPackageProof::new(proof_input("pkg", " "))
+            .expect_err("blank manifest sha should fail");
+        assert_eq!(err, StemPackageProofError::BlankManifestSha256);
+    }
+
+    #[test]
+    fn stem_package_proof_rejects_empty_duplicate_and_non_stem_claims() {
+        let mut input = proof_input("pkg", "manifest-sha");
+        input.claimed_stem_roles.clear();
+        let err = StemPackageProof::new(input).expect_err("empty claims should fail");
+        assert_eq!(err, StemPackageProofError::EmptyClaimedStemRoles);
+
+        let mut input = proof_input("pkg", "manifest-sha");
+        input.claimed_stem_roles = vec![ExportArtifactRole::FullGridMix];
+        let err = StemPackageProof::new(input).expect_err("non-stem claim should fail");
+        assert_eq!(
+            err,
+            StemPackageProofError::NonStemClaimedRole {
+                role: ExportArtifactRole::FullGridMix
+            }
+        );
+
+        let mut input = proof_input("pkg", "manifest-sha");
+        input.claimed_stem_roles =
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemDrums];
+        let err = StemPackageProof::new(input).expect_err("duplicate claim should fail");
+        assert_eq!(
+            err,
+            StemPackageProofError::DuplicateClaimedStemRole {
+                role: ExportArtifactRole::StemDrums
+            }
+        );
+    }
+
+    #[test]
+    fn stem_package_proof_rejects_wrong_or_invalid_json_identities() {
+        let mut input = proof_input("pkg", "manifest-sha");
+        input.manifest_identity = proof_identity("manifest.json", "manifest-id");
+        let err = StemPackageProof::new(input).expect_err("wrong manifest role should fail");
+        assert_eq!(
+            err,
+            StemPackageProofError::UnexpectedJsonIdentityRole {
+                expected: ExportArtifactRole::ExportManifest,
+                actual: ExportArtifactRole::ProductExportProof
+            }
+        );
+
+        let mut input = proof_input("pkg", "manifest-sha");
+        input.proof_identity.sha256.clear();
+        let err = StemPackageProof::new(input).expect_err("blank proof hash should fail");
+        assert_eq!(
+            err,
+            StemPackageProofError::BlankJsonIdentitySha256 {
+                role: ExportArtifactRole::ProductExportProof
+            }
+        );
+
+        let mut input = proof_input("pkg", "manifest-sha");
+        input.proof_identity.media_type = ExportArtifactMediaType::AudioWav;
+        let err = StemPackageProof::new(input).expect_err("non-json proof should fail");
+        assert_eq!(
+            err,
+            StemPackageProofError::NonJsonIdentity {
+                role: ExportArtifactRole::ProductExportProof,
+                media_type: ExportArtifactMediaType::AudioWav
+            }
+        );
+    }
+
+    fn fixture_proof(manifest_sha256: impl Into<String>) -> StemPackageProof {
+        StemPackageProof::new(proof_input("pkg-1", manifest_sha256)).expect("fixture proof")
+    }
+
+    fn proof_input(
+        package_id: impl Into<String>,
+        manifest_sha256: impl Into<String>,
+    ) -> StemPackageProofInput {
+        StemPackageProofInput {
+            package_id: package_id.into(),
+            receipt_id: ExportReceiptId::new("receipt-1"),
+            created_by_action: ActionId(7),
+            manifest_sha256: manifest_sha256.into(),
+            claimed_stem_roles: vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+            manifest_identity: manifest_identity("manifest.json", "manifest-id"),
+            proof_identity: proof_identity("proof.json", "proof-id"),
+        }
+    }
+
+    fn manifest_identity(
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+    ) -> StemPackageManifestJsonIdentity {
+        json_identity(ExportArtifactRole::ExportManifest, path, sha256)
+    }
+
+    fn proof_identity(
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+    ) -> StemPackageManifestJsonIdentity {
+        json_identity(ExportArtifactRole::ProductExportProof, path, sha256)
+    }
+
+    fn json_identity(
+        role: ExportArtifactRole,
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+    ) -> StemPackageManifestJsonIdentity {
+        StemPackageManifestJsonIdentity {
+            role,
+            location: ExportArtifactLocation::LocalPath { path: path.into() },
+            media_type: ExportArtifactMediaType::Json,
+            sha256: sha256.into(),
+        }
+    }
+}

@@ -1169,6 +1169,11 @@ Today the repo already has:
   manifest/proof artifacts can use the same deterministic identity without a
   parallel serializer. It does not write package files or claim stem export
   readiness.
+- `riotbox-core::stem_package_proof::StemPackageProof` is the current CI-safe
+  stem-package proof JSON schema contract. It records package, receipt/action,
+  manifest SHA-256, claimed roles, and manifest/proof JSON identities, but it
+  remains an in-memory proof payload only. It does not write files, render
+  stems, or make `export.stem_package` ready for musicians.
 - The current stem-package manifest fixture is in-memory and CI-safe: it uses
   claimed drums and bass stems, manifest/proof identities, and deferred QA gate
   evidence, then roundtrips the manifest JSON and checks receipt readiness stays
