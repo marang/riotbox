@@ -6,10 +6,37 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut sidecar_script_path = Some(PathBuf::from(DEFAULT_SIDECAR_PATH));
     let mut analysis_seed = 19_u64;
     let mut saw_session_flag = false;
+    let mut saw_sidecar_flag = false;
+    let mut saw_seed_flag = false;
     let mut observer_path = None;
+    let mut stem_package_local_ci_dry_run = false;
+    let mut stem_package_destination_path = None;
+    let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
+            "--stem-package-local-ci-dry-run" => stem_package_local_ci_dry_run = true,
+            "--stem-package-destination" => {
+                stem_package_destination_path =
+                    Some(next_path(&mut args, "--stem-package-destination")?);
+            }
+            "--stem-role" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| "missing value for --stem-role".to_string())?;
+                claimed_stem_roles.push(parse_export_artifact_role(&value)?);
+            }
+            "--stem-roles" => {
+                let value = args
+                    .next()
+                    .ok_or_else(|| "missing value for --stem-roles".to_string())?;
+                for role in value.split(',') {
+                    let role = role.trim();
+                    if !role.is_empty() {
+                        claimed_stem_roles.push(parse_export_artifact_role(role)?);
+                    }
+                }
+            }
             "--source" => source_path = Some(next_path(&mut args, "--source")?),
             "--session" => {
                 saw_session_flag = true;
@@ -18,9 +45,13 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--graph" => {
                 source_graph_path = Some(next_path(&mut args, "--graph")?);
             }
-            "--sidecar" => sidecar_script_path = Some(next_path(&mut args, "--sidecar")?),
+            "--sidecar" => {
+                saw_sidecar_flag = true;
+                sidecar_script_path = Some(next_path(&mut args, "--sidecar")?);
+            }
             "--observer" => observer_path = Some(next_path(&mut args, "--observer")?),
             "--seed" => {
+                saw_seed_flag = true;
                 let value = args
                     .next()
                     .ok_or_else(|| "missing value for --seed".to_string())?;
@@ -31,6 +62,41 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--help" | "-h" => return Err(help_text()),
             other => return Err(format!("unknown argument: {other}\n\n{}", help_text())),
         }
+    }
+
+    if stem_package_local_ci_dry_run {
+        if source_path.is_some()
+            || session_path.is_some()
+            || source_graph_path.is_some()
+            || observer_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+        {
+            return Err(
+                "stem package local CI dry-run cannot be combined with source/session/graph/sidecar/seed/observer launch arguments"
+                    .into(),
+            );
+        }
+        let destination_path = stem_package_destination_path.ok_or_else(|| {
+            "stem package local CI dry-run requires --stem-package-destination <dir>".to_string()
+        })?;
+        if claimed_stem_roles.is_empty() {
+            return Err("stem package local CI dry-run requires at least one --stem-role".into());
+        }
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::StemPackageLocalCiDryRun {
+                destination_path,
+                claimed_stem_roles,
+            },
+            observer_path: None,
+        });
+    }
+    if stem_package_destination_path.is_some() || !claimed_stem_roles.is_empty() {
+        return Err(
+            "--stem-package-destination, --stem-role, and --stem-roles require --stem-package-local-ci-dry-run"
+                .into(),
+        );
     }
 
     let session_path = session_path.unwrap_or_else(|| PathBuf::from(DEFAULT_SESSION_PATH));
@@ -67,9 +133,22 @@ fn next_path(args: &mut impl Iterator<Item = String>, flag: &str) -> Result<Path
         .ok_or_else(|| format!("missing value for {flag}"))
 }
 
+fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String> {
+    match value {
+        "stem_drums" | "drums" => Ok(ExportArtifactRole::StemDrums),
+        "stem_bass" | "bass" => Ok(ExportArtifactRole::StemBass),
+        "stem_music" | "music" => Ok(ExportArtifactRole::StemMusic),
+        "stem_vocals" | "vocals" => Ok(ExportArtifactRole::StemVocals),
+        "full_grid_mix" => Ok(ExportArtifactRole::FullGridMix),
+        "product_export_proof" => Ok(ExportArtifactRole::ProductExportProof),
+        "export_manifest" => Ok(ExportArtifactRole::ExportManifest),
+        other => Err(format!("unknown stem role: {other}")),
+    }
+}
+
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n\nDefaults:\n  --session {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -79,6 +158,7 @@ impl LaunchMode {
         match self {
             Self::Load { .. } => ShellLaunchMode::Load,
             Self::Ingest { .. } => ShellLaunchMode::Ingest,
+            Self::StemPackageLocalCiDryRun { .. } => ShellLaunchMode::Load,
         }
     }
 }
@@ -201,6 +281,19 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "source_graph_path": source_graph_path,
             "sidecar_script_path": sidecar_script_path,
             "analysis_seed": analysis_seed,
+            "observer_path": launch.observer_path,
+        }),
+        LaunchMode::StemPackageLocalCiDryRun {
+            destination_path,
+            claimed_stem_roles,
+        } => json!({
+            "mode": "stem_package_local_ci_dry_run",
+            "destination_path": destination_path,
+            "claimed_stem_roles": claimed_stem_roles
+                .iter()
+                .copied()
+                .map(export_artifact_role_label)
+                .collect::<Vec<_>>(),
             "observer_path": launch.observer_path,
         }),
     }

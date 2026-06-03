@@ -1,5 +1,6 @@
 // Textual includes keep this large file split mechanical and behavior-preserving.
 include!("riotbox-app/launch.rs");
+include!("riotbox-app/stem_package_export_cli.rs");
 include!("riotbox-app/event_loop.rs");
 include!("riotbox-app/event_loop_helpers.rs");
 include!("riotbox-app/capture_length_control.rs");

@@ -53,6 +53,7 @@ mod tests {
                 assert_eq!(analysis_seed, 19);
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -73,6 +74,7 @@ mod tests {
                 assert_eq!(source_graph_path, None);
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -95,6 +97,7 @@ mod tests {
                 assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected load mode"),
         }
     }
 
@@ -112,6 +115,7 @@ mod tests {
                 assert_eq!(source_graph_path, None);
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected load mode"),
         }
     }
 
@@ -256,6 +260,12 @@ mod tests {
         use super::*;
 
         include!("tests/source_timing_observer.rs");
+    }
+
+    mod stem_package_export_cli {
+        use super::*;
+
+        include!("tests/stem_package_export_cli.rs");
     }
 
     mod source_timing_confirm_control {

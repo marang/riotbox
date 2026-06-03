@@ -594,6 +594,10 @@ Additional receipt fields required before wider export scopes:
   action log, queue/history, pending queue, and Session export receipts. The
   observer may expose readiness and gate summaries from receipts, but it must
   not infer missing package state or become a second receipt truth.
+- the stem-package local CI CLI dry-run must not create or mutate Session
+  receipts. It reports the writer plan, supported/unsupported role claims, and
+  blockers only; readiness remains a property of committed Session receipt
+  evidence and required QA gates.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts

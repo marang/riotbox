@@ -1219,6 +1219,13 @@ Today the repo already has:
     destination and bounded drums/bass claims, then returns final artifact
     identities without writing WAV/JSON files, hashing outputs, running audio
     metrics, or producing listening-review evidence.
+  - current CLI dry-run exposes that plan through
+    `riotbox-app --stem-package-local-ci-dry-run`. It requires an explicit
+    local destination and claimed roles, reports planned artifact paths,
+    supported/unsupported role claims, and readiness blockers, and must keep
+    `writes_files: false`. This proves only the control-plane plan and negative
+    blocking surface; it cannot satisfy stem-package audio QA gates or claim
+    musician-ready export output.
   - current CI writer proof emits files for that boundary inside
     `riotbox-app::jam_app::stem_package_writer`: deterministic drums/bass WAVs
     are written through a staging directory and promoted into the final package
