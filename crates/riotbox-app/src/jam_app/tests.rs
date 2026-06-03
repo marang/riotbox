@@ -7,6 +7,7 @@ include!("tests/restore_contracts.rs");
 include!("tests/persistence_runtime_view.rs");
 include!("tests/p016_product_export_action.rs");
 include!("tests/p016_daw_session_export_action.rs");
+include!("tests/p016_daw_session_host_import_action.rs");
 include!("tests/source_transport_restore.rs");
 include!("tests/source_monitor_scene_reposition.rs");
 include!("tests/source_timing_runtime_view.rs");

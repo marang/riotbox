@@ -148,7 +148,9 @@ fn export_receipt_for_action<'a>(
     let (
         ActionStatus::Committed,
         ActionParams::DawSessionExport {
-            boundary: DawSessionExportBoundary::LocalProjectWriterV1,
+            boundary:
+                DawSessionExportBoundary::LocalProjectWriterV1
+                | DawSessionExportBoundary::HostImportProofV1,
             receipt_id: Some(receipt_id),
             ..
         },

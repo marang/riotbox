@@ -318,6 +318,7 @@ pub enum StemPackageExportBoundary {
 pub enum DawSessionExportBoundary {
     ReservedContractOnly,
     LocalProjectWriterV1,
+    HostImportProofV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -867,6 +868,16 @@ mod tests {
         assert_eq!(
             writer_boundary,
             DawSessionExportBoundary::LocalProjectWriterV1
+        );
+        let host_import_json = serde_json::to_value(DawSessionExportBoundary::HostImportProofV1)
+            .expect("serialize DAW host import proof boundary");
+        assert_eq!(host_import_json, "host_import_proof_v1");
+        let host_import_boundary: DawSessionExportBoundary =
+            serde_json::from_value(host_import_json)
+                .expect("deserialize DAW host import proof boundary");
+        assert_eq!(
+            host_import_boundary,
+            DawSessionExportBoundary::HostImportProofV1
         );
     }
 }

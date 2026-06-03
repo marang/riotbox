@@ -1374,6 +1374,14 @@ Today the repo already has:
     latest DAW-session receipt's host-import QA gate. It is not a DAW host
     runner, not a DAW writer, not an observer lifecycle event, and not audible
     output proof.
+  - current `export.daw_session` host-import-proof action boundary is
+    `host_import_proof_v1`. It commits an existing local
+    `riotbox.daw_session_host_import_proof` JSON report through queue/history,
+    Session action log, commit record, and matching receipt evidence only after
+    the same receipt has passed writer proof. It attaches only
+    `daw_session_host_import_proof`, emits observer lifecycle evidence, writes
+    no files, launches no host, captures no audio, and leaves
+    `developer_proof_only` plus `audible_output_proof_missing` visible.
   - current DAW audible-output proof evidence is a reserved receipt QA gate:
     `daw_session_audible_output_proof`. Missing or failed proof keeps
     `audible_output_proof_missing` visible; passed proof removes only that
@@ -1411,8 +1419,9 @@ Today the repo already has:
     attempts produce requested / started / failed records without a receipt;
     committed local-writer proof actions produce requested / started /
     completed records with the matching DAW-session receipt and proof-gate
-    summary. This is observer evidence, not host import, audible output proof,
-    live capture, or musician-facing DAW export readiness.
+    summary; committed host-import-proof actions do the same for
+    `host_import_proof_v1`. This is observer evidence, not audible output
+    proof, live capture, or musician-facing DAW export readiness.
   - current DAW-session writer proof skeleton writes only bounded local proof
     artifacts through `riotbox-app --daw-session-writer-proof-execute
     --session <session.json> --daw-session-destination <dir>`. The proof
