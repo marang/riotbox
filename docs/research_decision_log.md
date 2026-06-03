@@ -1942,3 +1942,17 @@ Why: existing representative showcase checks were too showcase-specific and coul
 Evidence: RIOTBOX-1107 adds `scripts/validate_automated_musical_fitness.py`, deterministic positive/negative fixtures, and `docs/benchmarks/automated_musical_fitness_v1_2026-06-03.md`.
 Consequences: future fixture and CI work should broaden source families and cross-source examples instead of tuning around one representative showcase. Passing automated fitness means "no known bad-output mode caught", not "this sounds good".
 Status: accepted
+
+---
+
+### RBX-064
+
+Date: 2026-06-03
+Topic: First stem-package writer boundary stays local, explicit, and gated
+Phase: P016 / Pro Workflow / Export
+Question: what is the first allowed stem-package writer boundary before `export.stem_package` can become runnable?
+Decision: reserve `stem_package.local_ci_package_v1` as the first writer boundary: a future local app-side side-effect path for an explicit Session export request, starting with deterministic offline stem render providers for proven roles such as drums/bass, a fixed local package layout, and commit only after written stems, manifest, proof, receipt evidence, and all required stem-package QA gates pass.
+Why: P016 now has receipt, manifest, proof, readiness, observer, and QA gate contracts. The next risk is a writer accidentally inferring stems from product-mix proof, filenames, observer state, or fallback placeholders. A named boundary keeps the first writer narrow and reviewable without surfacing it prematurely to musicians.
+Evidence: RIOTBOX-1126 updates the Action Lexicon, Session, and Audio QA specs with source-of-stems, destination layout, reusable/new writer pieces, commit/receipt order, and minimal output proof.
+Consequences: future implementation tickets may build only this local boundary first. UI, Ghost, or CLI surfacing still requires CI-safe writer proof with per-stem non-silence, repeated hash stability, lineage, fallback comparison, manifest/proof files, and explicit listening-review status when audible behavior changes.
+Status: accepted

@@ -1203,6 +1203,12 @@ Today the repo already has:
   fixture, not a listening pack, package writer, or proof that
   `export.stem_package` is ready for musicians.
 - Future stem-package writer QA contract:
+  - first allowed writer boundary: `stem_package.local_ci_package_v1`, a future
+    local app-side package writer for an explicit Session export request. Its
+    stem source is deterministic offline stem render providers declared by
+    role; the first implementation boundary should start with roles that
+    already have receipt/fixture proof, and must reject unsupported role claims
+    instead of producing placeholder or fallback-only stems.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,
@@ -1221,6 +1227,15 @@ Today the repo already has:
     and hash manifest/proof JSON; run stem-package artifact-set, hash-stability,
     non-silence, lineage, and fallback-comparison gates; then commit the receipt
     only if the scope is no longer unsupported and all required gates pass
+  - minimal output proof before any UI, Ghost, or CLI path may surface
+    `export.stem_package` as runnable: a CI-safe writer proof that writes the
+    final package layout, records format and audio metrics for every claimed
+    stem, proves per-stem non-silence, proves repeated writer/render hash
+    stability for identical inputs, proves per-stem source/capture lineage, and
+    proves source-vs-fallback comparison evidence for every claimed stem. If the
+    writer changes audible behavior beyond exporting already-proven buffers, it
+    also needs the current structured listening-review status or an explicit
+    `human_verdict: unverified` note.
   - realtime boundary: filesystem writes, hashing, decoding, metric extraction,
     QA comparison, Ghost/model calls, and observer emission must remain outside
     the realtime audio callback

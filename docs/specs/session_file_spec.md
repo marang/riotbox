@@ -414,6 +414,20 @@ Rules:
   receipt readiness remains blocked, so it proves contract wiring without
   claiming full stem export readiness.
 - Future stem-package writer planning contract:
+  - first allowed writer boundary: `stem_package.local_ci_package_v1`. It is a
+    future app-side side-effect boundary for an explicit Session export request,
+    not a currently runnable `export.stem_package` command. The source of stems
+    is a declared set of deterministic offline stem render providers rooted in
+    Session/Core truth; the first implementation boundary should start with
+    proven drums/bass roles and reject any claimed role without an implemented
+    renderer, lineage source, metrics path, and fallback-comparison proof.
+  - destination layout: write through a staging directory under the requested
+    local export destination and promote only after validation. Final receipt
+    identities use `stem_package/stems/<stem_role>.wav`,
+    `stem_package/stem_package_manifest.json`, and
+    `stem_package/stem_package_proof.json`; Session stores final local paths,
+    media types, hashes, metrics, lineage, fallback evidence, and QA gates, not
+    temp-file mechanics.
   - reusable product-export pieces: explicit side-effect action commit after
     success, local destination directory handling, artifact SHA-256 helpers,
     copied proof/artifact identity in `artifact_set[]`, source graph and
@@ -433,6 +447,11 @@ Rules:
     draft, manifest payload, and proof payload; write and hash manifest/proof
     JSON; validate receipt QA gates; then commit the action, commit record, and
     receipt together
+  - unsupported-scope rule: the draft may carry `unsupported_scopes:
+    [stem_package]` while writer evidence is incomplete, but the committed
+    ready receipt must remove that flag only after every required stem-package
+    QA gate records `passed`. A failed writer must not leave behind a receipt
+    that `validate_stem_package_receipt_readiness` can report as ready.
   - realtime boundary: the writer must not run blocking filesystem work,
     decoding, hashing, QA analysis, Ghost/model calls, or observer emission on
     the realtime audio callback
