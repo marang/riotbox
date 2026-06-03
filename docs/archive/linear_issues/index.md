@@ -942,4 +942,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add DAW session writer plan skeleton
 - [RIOTBOX-1143.md](./RIOTBOX-1143.md)
   P016: Add DAW session manifest/proof payload contracts
+- [RIOTBOX-1144.md](./RIOTBOX-1144.md)
+  P016: Surface DAW session payload preview in writer plan
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
