@@ -19,11 +19,13 @@ pub(super) fn export_observer_snapshot(shell: &JamShellState) -> Value {
         .iter()
         .flat_map(|action| export_lifecycle_records(shell, action))
         .collect::<Vec<_>>();
+    let daw_session_receipt = latest_daw_session_receipt_observer_snapshot(shell);
 
     json!({
         "present": !lifecycle.is_empty(),
         "receipt_count": shell.app.session.export_receipts.len(),
         "lifecycle": lifecycle,
+        "daw_session_receipt": daw_session_receipt,
         "daw_session_surface_gate": daw_session_surface_gate_observer_snapshot(
             &shell.app.daw_session_export_surface_gate()
         ),
@@ -31,6 +33,17 @@ pub(super) fn export_observer_snapshot(shell: &JamShellState) -> Value {
             &shell.app.stem_package_export_surface_gate()
         ),
     })
+}
+
+fn latest_daw_session_receipt_observer_snapshot(shell: &JamShellState) -> Option<Value> {
+    shell
+        .app
+        .session
+        .export_receipts
+        .iter()
+        .rev()
+        .find(|receipt| receipt.export_scope == ExportScope::DawSession)
+        .map(export_receipt_observer_snapshot)
 }
 
 fn export_actions(shell: &JamShellState) -> Vec<&Action> {

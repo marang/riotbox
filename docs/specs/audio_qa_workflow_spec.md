@@ -1403,6 +1403,11 @@ Today the repo already has:
   `validate_stem_package_receipt_readiness`. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and
   not permission to surface `export.stem_package` as runnable.
+  For `export_scope: daw_session` receipts, observer snapshots also project the
+  latest DAW-session receipt as top-level `daw_session_receipt` evidence so
+  package/placement/tempo-map proof is visible before `export.daw_session`
+  exists. This must remain read-only evidence projection and must not invent DAW
+  export lifecycle records.
   Current app observer lifecycle projection includes `export.stem_package`
   actions from action log, queue history, and pending queue state; failed
   reserved attempts have typed failure reasons and no receipt, and completed

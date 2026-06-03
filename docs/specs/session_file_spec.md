@@ -642,6 +642,13 @@ Additional receipt fields required before wider export scopes:
   action log, queue/history, pending queue, and Session export receipts. The
   observer may expose readiness and gate summaries from receipts, but it must
   not infer missing package state or become a second receipt truth.
+- DAW-session receipts may be projected in observer snapshots as a read-only
+  top-level `daw_session_receipt` summary even before `export.daw_session`
+  becomes runnable. That summary is derived only from the latest
+  `export_scope: daw_session` Session receipt and may include placement
+  readiness, tempo-map readiness, artifact-set evidence, QA gates, and package
+  identity. It must not create fake requested/started/completed lifecycle
+  records for a DAW export action that does not exist yet.
 - the stem-package musician surface gate is derived from Session receipts plus
   fixed product-release blockers, not hidden app-local export state. It reports
   missing local CI proof when no stem-package receipt exists, receipt QA or

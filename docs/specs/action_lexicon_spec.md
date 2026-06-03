@@ -612,7 +612,10 @@ Contract for `export.stem_package`:
   `arrangement_placement_readiness`, `arrangement_placement_refs[]`,
   `daw_tempo_map_readiness`, `daw_tempo_map_ref`, `artifact_set[]`, and
   `qa_gates[]` including `daw_session_json_package_integrity` from the Session
-  receipt.
+  receipt. Because `export.daw_session` is still not runnable, observer
+  snapshots also expose the latest DAW-session receipt as a read-only
+  top-level `daw_session_receipt` summary without inventing requested, started,
+  or completed lifecycle records.
   Observer state must not become a second package, timing, or arrangement
   truth.
   Current app observer implementation includes both `export.product_mix` and
