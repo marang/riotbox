@@ -294,6 +294,12 @@ mod tests {
         include!("tests/export_observer.rs");
     }
 
+    mod export_stem_package_observer {
+        use super::*;
+
+        include!("tests/export_stem_package_observer.rs");
+    }
+
     #[test]
     fn scene_select_unavailable_status_explains_waiting_for_scene_material() {
         let mut session = SessionFile::new("session-1", "0.1.0", "2026-04-25T00:00:00Z");
