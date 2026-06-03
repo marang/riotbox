@@ -10,6 +10,8 @@ use crate::{
     ids::{ActionId, CaptureId, ExportReceiptId, SourceId},
     session::export_qa_gates::{
         ExportReceiptQaGateResult, ExportReceiptQaGateStatus, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+        STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID, STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
+        STEM_PACKAGE_LINEAGE_QA_GATE_ID, STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,
     },
     source_graph::SourceGraphVersion,
 };
@@ -145,6 +147,18 @@ pub enum StemPackageReceiptReadinessBlocker {
     MissingArtifactSetQaGate,
     DeferredArtifactSetQaGate,
     FailedArtifactSetQaGate,
+    MissingHashStabilityQaGate,
+    DeferredHashStabilityQaGate,
+    FailedHashStabilityQaGate,
+    MissingNonSilenceQaGate,
+    DeferredNonSilenceQaGate,
+    FailedNonSilenceQaGate,
+    MissingLineageQaGate,
+    DeferredLineageQaGate,
+    FailedLineageQaGate,
+    MissingFallbackComparisonQaGate,
+    DeferredFallbackComparisonQaGate,
+    FailedFallbackComparisonQaGate,
 }
 
 #[must_use]
@@ -161,17 +175,9 @@ pub fn validate_stem_package_receipt_readiness(
     {
         blockers.push(StemPackageReceiptReadinessBlocker::UnsupportedScopeFlagPresent);
     }
-    match receipt
-        .qa_gates
-        .iter()
-        .find(|gate| gate.gate_id == STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID)
-    {
-        Some(gate) if gate.status == ExportReceiptQaGateStatus::Passed => {}
-        Some(gate) if gate.status == ExportReceiptQaGateStatus::Deferred => {
-            blockers.push(StemPackageReceiptReadinessBlocker::DeferredArtifactSetQaGate)
-        }
-        Some(_) => blockers.push(StemPackageReceiptReadinessBlocker::FailedArtifactSetQaGate),
-        None => blockers.push(StemPackageReceiptReadinessBlocker::MissingArtifactSetQaGate),
+
+    for gate in REQUIRED_STEM_PACKAGE_QA_GATES {
+        push_required_stem_package_gate_blocker(receipt, gate, &mut blockers);
     }
 
     let status = if blockers.is_empty() {
@@ -180,6 +186,66 @@ pub fn validate_stem_package_receipt_readiness(
         StemPackageReceiptReadinessStatus::Blocked
     };
     StemPackageReceiptReadinessReport { status, blockers }
+}
+
+#[derive(Copy, Clone)]
+struct RequiredStemPackageQaGate {
+    gate_id: &'static str,
+    missing_blocker: StemPackageReceiptReadinessBlocker,
+    deferred_blocker: StemPackageReceiptReadinessBlocker,
+    failed_blocker: StemPackageReceiptReadinessBlocker,
+}
+
+const REQUIRED_STEM_PACKAGE_QA_GATES: &[RequiredStemPackageQaGate] = &[
+    RequiredStemPackageQaGate {
+        gate_id: STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+        missing_blocker: StemPackageReceiptReadinessBlocker::MissingArtifactSetQaGate,
+        deferred_blocker: StemPackageReceiptReadinessBlocker::DeferredArtifactSetQaGate,
+        failed_blocker: StemPackageReceiptReadinessBlocker::FailedArtifactSetQaGate,
+    },
+    RequiredStemPackageQaGate {
+        gate_id: STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
+        missing_blocker: StemPackageReceiptReadinessBlocker::MissingHashStabilityQaGate,
+        deferred_blocker: StemPackageReceiptReadinessBlocker::DeferredHashStabilityQaGate,
+        failed_blocker: StemPackageReceiptReadinessBlocker::FailedHashStabilityQaGate,
+    },
+    RequiredStemPackageQaGate {
+        gate_id: STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,
+        missing_blocker: StemPackageReceiptReadinessBlocker::MissingNonSilenceQaGate,
+        deferred_blocker: StemPackageReceiptReadinessBlocker::DeferredNonSilenceQaGate,
+        failed_blocker: StemPackageReceiptReadinessBlocker::FailedNonSilenceQaGate,
+    },
+    RequiredStemPackageQaGate {
+        gate_id: STEM_PACKAGE_LINEAGE_QA_GATE_ID,
+        missing_blocker: StemPackageReceiptReadinessBlocker::MissingLineageQaGate,
+        deferred_blocker: StemPackageReceiptReadinessBlocker::DeferredLineageQaGate,
+        failed_blocker: StemPackageReceiptReadinessBlocker::FailedLineageQaGate,
+    },
+    RequiredStemPackageQaGate {
+        gate_id: STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID,
+        missing_blocker: StemPackageReceiptReadinessBlocker::MissingFallbackComparisonQaGate,
+        deferred_blocker: StemPackageReceiptReadinessBlocker::DeferredFallbackComparisonQaGate,
+        failed_blocker: StemPackageReceiptReadinessBlocker::FailedFallbackComparisonQaGate,
+    },
+];
+
+fn push_required_stem_package_gate_blocker(
+    receipt: &ExportReceiptState,
+    required: &RequiredStemPackageQaGate,
+    blockers: &mut Vec<StemPackageReceiptReadinessBlocker>,
+) {
+    match receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == required.gate_id)
+    {
+        Some(gate) if gate.status == ExportReceiptQaGateStatus::Passed => {}
+        Some(gate) if gate.status == ExportReceiptQaGateStatus::Deferred => {
+            blockers.push(required.deferred_blocker);
+        }
+        Some(_) => blockers.push(required.failed_blocker),
+        None => blockers.push(required.missing_blocker),
+    }
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
