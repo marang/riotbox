@@ -968,4 +968,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add DAW host-import proof evidence apply CLI
 - [RIOTBOX-1156.md](./RIOTBOX-1156.md)
   P016: Add DAW session audible-output proof gate boundary
+- [RIOTBOX-1157.md](./RIOTBOX-1157.md)
+  P016: Add DAW session audible-output proof apply CLI
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
