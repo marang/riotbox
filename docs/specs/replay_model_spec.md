@@ -391,6 +391,11 @@ Decision:
   evidence, blank scene refs, invalid bar ranges, and invalid beat ranges are
   distinct from missing local artifact files, and replay/recovery must not
   synthesize arrangement placement from observer state or current app runtime.
+- DAW tempo-map receipt validation consumes `daw_tempo_map_ref` from Session
+  receipts only. Missing tempo-map evidence, blank source refs, invalid tempo,
+  and invalid beat ranges are distinct from missing placement evidence and
+  missing local artifact files. Replay/recovery must not synthesize tempo-map
+  evidence from observer state or current app runtime.
 
 ### 10.2 Ghost
 

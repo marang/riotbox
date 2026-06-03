@@ -452,6 +452,7 @@ mod tests {
             )],
             qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
             arrangement_placement_refs: Vec::new(),
+            daw_tempo_map_ref: None,
             readiness_status: ExportReadinessStatus::Reproducible,
             unsupported_scopes: vec![
                 UnsupportedExportScope::StemPackage,

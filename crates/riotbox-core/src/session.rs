@@ -1,4 +1,5 @@
 mod arrangement_export_placement;
+mod daw_tempo_map;
 mod export_qa_gates;
 mod export_types;
 
@@ -6,6 +7,10 @@ pub use arrangement_export_placement::{
     ArrangementExportPlacementReadinessBlocker, ArrangementExportPlacementReadinessReport,
     ArrangementExportPlacementReadinessStatus, ExportArrangementPlacementRef,
     validate_arrangement_export_placement_readiness,
+};
+pub use daw_tempo_map::{
+    DawTempoMapReadinessBlocker, DawTempoMapReadinessReport, DawTempoMapReadinessStatus,
+    ExportDawTempoMapRef, validate_daw_tempo_map_readiness,
 };
 pub use export_qa_gates::{
     ExportReceiptQaGateResult, ExportReceiptQaGateStatus,

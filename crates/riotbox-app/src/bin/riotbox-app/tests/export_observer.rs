@@ -212,6 +212,12 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
             .get("arrangement_placement_refs")
             .is_none()
     );
+    assert!(
+        lifecycle[2]["receipt"]
+            .get("daw_tempo_map_readiness")
+            .is_none()
+    );
+    assert!(lifecycle[2]["receipt"].get("daw_tempo_map_ref").is_none());
     assert_eq!(
         lifecycle[2]["receipt"]["unsupported_scopes"]
             .as_array()

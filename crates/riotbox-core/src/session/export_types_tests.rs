@@ -128,6 +128,7 @@ fn export_receipts_roundtrip_with_session_file() {
         vec![ExportReceiptQaGateResult::product_export_reproducibility()]
     );
     assert!(receipt.arrangement_placement_refs.is_empty());
+    assert_eq!(receipt.daw_tempo_map_ref, None);
 }
 
 #[test]
@@ -238,6 +239,19 @@ fn missing_arrangement_placement_refs_default_to_empty_for_older_receipts() {
         serde_json::from_value(json).expect("deserialize older receipt");
 
     assert!(receipt.arrangement_placement_refs.is_empty());
+}
+
+#[test]
+fn missing_daw_tempo_map_ref_defaults_to_none_for_older_receipts() {
+    let mut json = serde_json::to_value(fixture_receipt()).expect("serialize receipt");
+    json.as_object_mut()
+        .expect("receipt json object")
+        .remove("daw_tempo_map_ref");
+
+    let receipt: ExportReceiptState =
+        serde_json::from_value(json).expect("deserialize older receipt");
+
+    assert_eq!(receipt.daw_tempo_map_ref, None);
 }
 
 #[test]

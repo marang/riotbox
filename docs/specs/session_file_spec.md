@@ -613,6 +613,12 @@ Additional receipt fields required before wider export scopes:
   `start_bar`, `end_bar`, `start_beat`, and `end_beat`. Missing refs, blank
   scene ids, reversed/zero bar ranges, and non-advancing beat ranges are
   readiness blockers distinct from missing local files.
+- DAW / arrangement receipts may carry `daw_tempo_map_ref` in Session receipt
+  truth. The ref stores `source_id`, optional `hypothesis_id`,
+  `confirmed_by_action`, `confirmed_at`, `start_beat`, `end_beat`, and
+  `bpm_micros`. Missing tempo-map refs, blank source ids, non-advancing beat
+  ranges, and zero tempo are readiness blockers distinct from missing
+  arrangement placement and missing local files.
 - bar/beat placement ranges and richer timing placement evidence beyond the
   current confirmed grid source/action reference
 - source capture refs and capture-lineage refs for source-backed stems or
@@ -663,6 +669,13 @@ Additional receipt fields required before wider export scopes:
   invalid. Recovery/preflight must report these blockers before local file
   availability so missing arrangement placement evidence is not confused with a
   missing artifact.
+- `validate_daw_tempo_map_readiness` is the typed receipt guard for the first
+  DAW tempo-map contract. It reports `blocked` when a receipt is not
+  `daw_session`, when `unsupported_scopes[]` still contains `daw_export`, when
+  tempo-map evidence is missing, or when source/tempo/beat-range evidence is
+  structurally invalid. Recovery/preflight must report placement blockers first,
+  then tempo-map blockers, then local file availability so missing tempo-map
+  evidence is not confused with missing placement or a missing artifact.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

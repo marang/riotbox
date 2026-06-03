@@ -27,6 +27,7 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
     let mut unreadable = 0usize;
     let mut missing_identity = 0usize;
     let mut missing_placement = 0usize;
+    let mut missing_tempo_map = 0usize;
 
     for capture in &session.captures {
         match capture_artifacts::preflight_capture_artifact_hydration(capture, base_dir) {
@@ -86,6 +87,9 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
             Err(product_export::ExportReceiptArtifactPreflightError::ArrangementPlacementBlocked {
                 ..
             }) => missing_placement += 1,
+            Err(product_export::ExportReceiptArtifactPreflightError::DawTempoMapBlocked {
+                ..
+            }) => missing_tempo_map += 1,
         }
     }
 
@@ -100,6 +104,9 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
     }
     if missing_placement > 0 {
         blockers.push(format!("{missing_placement} missing placement"));
+    }
+    if missing_tempo_map > 0 {
+        blockers.push(format!("{missing_tempo_map} missing tempo map"));
     }
     if missing > 0 {
         blockers.push(format!("{missing} missing"));
