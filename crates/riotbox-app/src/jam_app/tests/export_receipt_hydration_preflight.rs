@@ -305,6 +305,130 @@ fn export_receipt_hydration_preflight_treats_stem_package_manifest_and_proof_uri
         .expect("URI manifest/proof entries are identity-only until fetch contract exists");
 }
 
+#[test]
+fn export_receipt_hydration_preflight_accepts_ready_stem_package_contract() {
+    let dir = tempdir().expect("create temp dir");
+    write_ready_stem_package_files(dir.path());
+    let receipt = stem_package_receipt();
+
+    preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect("ready stem package receipt local files exist");
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_claimed_stem_artifact() {
+    let dir = tempdir().expect("create temp dir");
+    write_ready_stem_package_files(dir.path());
+    fs::remove_file(dir.path().join("exports/stems/bass.wav")).expect("remove bass stem");
+    let receipt = stem_package_receipt();
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing claimed stem local file should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::StemBass,
+            path: dir.path().join("exports/stems/bass.wav"),
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_stem_package_manifest_file() {
+    let dir = tempdir().expect("create temp dir");
+    write_ready_stem_package_files(dir.path());
+    fs::remove_file(dir.path().join("exports/stem_package_manifest.json"))
+        .expect("remove manifest");
+    let receipt = stem_package_receipt();
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing stem package manifest local file should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::ExportManifest,
+            path: dir.path().join("exports/stem_package_manifest.json"),
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_stem_package_proof_identity() {
+    let dir = tempdir().expect("create temp dir");
+    write_ready_stem_package_files(dir.path());
+    let mut receipt = stem_package_receipt();
+    receipt
+        .artifact_set
+        .retain(|artifact| artifact.role != ExportArtifactRole::ProductExportProof);
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing stem package proof artifact-set identity should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetPath {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::ProductExportProof,
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_blank_claimed_stem_identity() {
+    let dir = tempdir().expect("create temp dir");
+    write_ready_stem_package_files(dir.path());
+    let mut receipt = stem_package_receipt();
+    let bass = receipt
+        .artifact_set
+        .iter_mut()
+        .find(|artifact| artifact.role == ExportArtifactRole::StemBass)
+        .expect("bass artifact");
+    bass.location = ExportArtifactLocation::LocalPath { path: " ".into() };
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("blank claimed stem local identity should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetPath {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::StemBass,
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_legacy_stem_package_shape_as_missing_identity() {
+    let dir = tempdir().expect("create temp dir");
+    let export_dir = dir.path().join("exports");
+    fs::create_dir(&export_dir).expect("create export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write export artifact");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write proof");
+    let (_, mut receipt, _, _) = state_with_export_receipt_path(
+        dir.path(),
+        "exports/full_grid_mix.wav",
+        "exports/product_export_proof.json",
+    );
+    receipt.export_scope = ExportScope::StemPackage;
+    receipt.unsupported_scopes.clear();
+    receipt.qa_gates.clear();
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("legacy stem package shape without claimed roles should reject");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingArtifactSetPath {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            role: ExportArtifactRole::ExportManifest,
+        }
+    );
+}
+
 fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
     ExportReceiptState {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
@@ -334,6 +458,90 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
             UnsupportedExportScope::HostAudioSoak,
         ],
     }
+}
+
+fn stem_package_receipt() -> ExportReceiptState {
+    let mut receipt = export_receipt(
+        "exports/stems/drums.wav",
+        "exports/stem_package_proof.json",
+    );
+    receipt.export_scope = ExportScope::StemPackage;
+    receipt.unsupported_scopes.clear();
+    receipt.artifact_set = vec![
+        stem_audio_artifact(
+            ExportArtifactRole::StemDrums,
+            "exports/stems/drums.wav",
+            "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        ),
+        stem_audio_artifact(
+            ExportArtifactRole::StemBass,
+            "exports/stems/bass.wav",
+            "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        ),
+        ExportArtifactSetEntry::export_manifest(
+            "exports/stem_package_manifest.json",
+            "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        ),
+        ExportArtifactSetEntry::stem_package_proof(
+            "exports/stem_package_proof.json",
+            "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd",
+        ),
+    ];
+    let claimed_roles = vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass];
+    receipt.qa_gates = all_required_stem_package_gates(&claimed_roles);
+    receipt
+}
+
+fn write_ready_stem_package_files(dir: &Path) {
+    let stems_dir = dir.join("exports/stems");
+    fs::create_dir_all(&stems_dir).expect("create stems dir");
+    fs::write(stems_dir.join("drums.wav"), b"drums").expect("write drums stem");
+    fs::write(stems_dir.join("bass.wav"), b"bass").expect("write bass stem");
+    fs::write(dir.join("exports/stem_package_manifest.json"), b"{}").expect("write manifest");
+    fs::write(dir.join("exports/stem_package_proof.json"), b"{}").expect("write proof");
+}
+
+fn stem_audio_artifact(
+    role: ExportArtifactRole,
+    path: impl Into<String>,
+    sha256: impl Into<String>,
+) -> ExportArtifactSetEntry {
+    ExportArtifactSetEntry {
+        role,
+        location: ExportArtifactLocation::LocalPath { path: path.into() },
+        media_type: ExportArtifactMediaType::AudioWav,
+        sha256: sha256.into(),
+        normalized_manifest_hash: None,
+        source_graph_ref: None,
+        timing_grid_ref: None,
+        source_capture_refs: Vec::new(),
+        lineage_capture_refs: Vec::new(),
+        fallback_comparison: None,
+        audio_metrics: None,
+        sample_rate_hz: None,
+        channel_count: None,
+        duration_ms: None,
+    }
+}
+
+fn all_required_stem_package_gates(
+    claimed_roles: &[ExportArtifactRole],
+) -> Vec<ExportReceiptQaGateResult> {
+    [
+        STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+        STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
+        STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,
+        STEM_PACKAGE_LINEAGE_QA_GATE_ID,
+        STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID,
+    ]
+    .into_iter()
+    .map(|gate_id| ExportReceiptQaGateResult {
+        gate_id: gate_id.into(),
+        status: ExportReceiptQaGateStatus::Passed,
+        artifact_roles: claimed_roles.to_vec(),
+        summary: Some("stem package recovery fixture gate passed".into()),
+    })
+    .collect()
 }
 
 fn push_stem_package_json_entries(receipt: &mut ExportReceiptState) {

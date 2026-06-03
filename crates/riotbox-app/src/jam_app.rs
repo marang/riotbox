@@ -33,6 +33,7 @@ mod lifecycle;
 mod mc202_queue;
 mod persistence;
 mod product_export;
+mod product_export_artifact_preflight;
 mod product_export_receipt;
 mod projection;
 mod recovery;

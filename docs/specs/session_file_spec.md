@@ -342,6 +342,11 @@ Rules:
   `artifact_set[]` entries must exist as files, while URI manifest/proof
   entries remain identity-only until a fetch/cache contract exists. This is
   preflight evidence only and does not make `export.stem_package` runnable.
+- stem-package recovery / hydration preflight must also derive claimed stem
+  roles from the `stem_package_artifact_set_evidence` QA gate and require
+  matching `artifact_set[]` identities for every claimed local stem WAV plus
+  `export_manifest` and `product_export_proof`. Missing or blank identities are
+  reported separately from identities whose local file is absent.
 - the first P016 receipt boundary is `full_grid_mix` from the deterministic
   Feral-grid generated-support export proof
 - current `export.product_mix` receipts populate artifact-set entries for the
@@ -474,6 +479,11 @@ Rules:
   - replay/restore boundary: replay and recovery may validate receipt metadata
     and local artifact availability, but must not regenerate stems, rewrite
     packages, or mutate missing files without a fresh explicit export action
+  - recovery diagnostic boundary: restore/recovery may report stem-package
+    missing identity when claimed roles, stem entries, manifest entries, or
+    proof entries are absent or blank; it may report missing local artifact
+    when those identities point at unavailable local files. Neither diagnostic
+    path may rewrite, promote, or regenerate package artifacts.
   - manifest/proof identity rule: receipt `artifact_set[]` entries own the
     written manifest/proof JSON file hashes; manifest/proof payload identities
     own only JSON role, location, and media type. The writer must preserve that

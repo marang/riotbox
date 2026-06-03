@@ -309,6 +309,92 @@ fn recovery_surface_reports_export_receipt_artifact_availability_for_parseable_c
 }
 
 #[test]
+fn recovery_surface_reports_stem_package_artifact_availability_for_parseable_candidates() {
+    let dir = tempdir().expect("create temp dir");
+    let target_path = dir.path().join("session.json");
+    let ready_path = dir.path().join("session.autosave.stem-ready.json");
+    let missing_stem_path = dir.path().join("session.autosave.stem-missing-wav.json");
+    let missing_manifest_path = dir
+        .path()
+        .join("session.autosave.stem-missing-manifest.json");
+    let identity_path = dir.path().join("session.autosave.stem-legacy-identity.json");
+    let export_dir = dir.path().join("exports-product");
+
+    write_ready_stem_package_files(dir.path());
+    fs::create_dir(&export_dir).expect("create product export dir");
+    fs::write(export_dir.join("full_grid_mix.wav"), b"mix").expect("write product export");
+    fs::write(export_dir.join("product_export_proof.json"), b"{}").expect("write product proof");
+    save_session_json(
+        &target_path,
+        &SessionFile::new("canonical", "riotbox-test", "2026-04-30T08:50:00Z"),
+    )
+    .expect("save canonical session");
+
+    let mut ready_session =
+        SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:51:00Z");
+    ready_session.export_receipts.push(stem_package_receipt());
+    save_session_json(&ready_path, &ready_session)
+        .expect("save ready stem package autosave session");
+
+    let mut missing_stem_session = ready_session.clone();
+    let bass = missing_stem_session.export_receipts[0]
+        .artifact_set
+        .iter_mut()
+        .find(|artifact| artifact.role == ExportArtifactRole::StemBass)
+        .expect("bass artifact");
+    bass.location = ExportArtifactLocation::LocalPath {
+        path: "exports-missing/stems/bass.wav".into(),
+    };
+    save_session_json(&missing_stem_path, &missing_stem_session)
+        .expect("save missing stem autosave session");
+
+    let mut missing_manifest_session = ready_session.clone();
+    let manifest = missing_manifest_session.export_receipts[0]
+        .artifact_set
+        .iter_mut()
+        .find(|artifact| artifact.role == ExportArtifactRole::ExportManifest)
+        .expect("manifest artifact");
+    manifest.location = ExportArtifactLocation::LocalPath {
+        path: "exports-missing/stem_package_manifest.json".into(),
+    };
+    save_session_json(&missing_manifest_path, &missing_manifest_session)
+        .expect("save missing manifest autosave session");
+
+    let mut identity_session =
+        SessionFile::new("autosave", "riotbox-test", "2026-04-30T08:52:00Z");
+    let mut legacy_receipt = export_receipt(
+        "exports-product/full_grid_mix.wav",
+        "exports-product/product_export_proof.json",
+    );
+    legacy_receipt.export_scope = ExportScope::StemPackage;
+    legacy_receipt.unsupported_scopes.clear();
+    legacy_receipt.qa_gates.clear();
+    identity_session.export_receipts.push(legacy_receipt);
+    save_session_json(&identity_path, &identity_session)
+        .expect("save legacy identity autosave session");
+
+    let surface =
+        JamAppState::scan_session_recovery_surface(&target_path).expect("scan recovery surface");
+    let artifact_labels = surface
+        .candidates
+        .iter()
+        .filter(|candidate| matches!(candidate.trust, RecoveryCandidateTrust::RecoverableClue))
+        .map(|candidate| candidate.artifact_availability_label.as_str())
+        .collect::<Vec<_>>();
+
+    assert!(artifact_labels.contains(&"artifacts ready: 1 export receipt(s)"));
+    assert_eq!(
+        artifact_labels
+            .iter()
+            .filter(|label| **label == "artifacts blocked: 1 of 1 | 1 missing")
+            .count(),
+        2
+    );
+    assert!(artifact_labels.contains(&"artifacts blocked: 1 of 1 | 1 missing identity"));
+    assert_eq!(surface.selected_candidate, None);
+}
+
+#[test]
 fn recovery_surface_reports_missing_target_without_selecting_candidate() {
     let dir = tempdir().expect("create temp dir");
     let target_path = dir.path().join("missing").join("session.json");
