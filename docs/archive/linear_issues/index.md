@@ -990,4 +990,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Project committed export.daw_session writer lifecycle in observer
 - [RIOTBOX-1167.md](./RIOTBOX-1167.md)
   P016: Commit DAW host-import proof through export.daw_session action
+- [RIOTBOX-1168.md](./RIOTBOX-1168.md)
+  P016: Commit DAW audible-output proof through export.daw_session action
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
