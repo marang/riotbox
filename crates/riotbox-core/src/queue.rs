@@ -2,7 +2,7 @@ use std::collections::VecDeque;
 
 use crate::{
     TimestampMs,
-    action::{Action, ActionDraft, ActionResult, ActionStatus, CommitBoundary},
+    action::{Action, ActionCommand, ActionDraft, ActionResult, ActionStatus, CommitBoundary},
     ids::ActionId,
     transport::CommitBoundaryState,
 };
@@ -19,6 +19,12 @@ pub struct CommittedActionRef {
     pub action_id: ActionId,
     pub boundary: CommitBoundaryState,
     pub commit_sequence: u32,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum QueueEnqueueResult {
+    Enqueued(ActionId),
+    AlreadyPending { command: ActionCommand },
 }
 
 impl ActionQueue {
@@ -52,6 +58,24 @@ impl ActionQueue {
 
         self.pending.push_back(action);
         id
+    }
+
+    pub fn enqueue_if_no_pending_command(
+        &mut self,
+        draft: ActionDraft,
+        requested_at: TimestampMs,
+    ) -> QueueEnqueueResult {
+        let command = draft.command;
+        if self.has_pending_command(command) {
+            return QueueEnqueueResult::AlreadyPending { command };
+        }
+
+        QueueEnqueueResult::Enqueued(self.enqueue(draft, requested_at))
+    }
+
+    #[must_use]
+    pub fn has_pending_command(&self, command: ActionCommand) -> bool {
+        self.pending.iter().any(|action| action.command == command)
     }
 
     #[must_use]
@@ -431,5 +455,34 @@ mod tests {
                 .map(|result| result.summary.as_str()),
             Some("export wrote full_grid_mix")
         );
+    }
+
+    #[test]
+    fn enqueue_once_blocks_duplicate_pending_stem_package_export() {
+        let mut queue = ActionQueue::new();
+        let draft = || {
+            ActionDraft::new(
+                ActorType::User,
+                ActionCommand::ExportStemPackage,
+                Quantization::Immediate,
+                crate::action::ActionTarget {
+                    scope: Some(TargetScope::Session),
+                    ..Default::default()
+                },
+            )
+        };
+
+        let first = queue.enqueue_if_no_pending_command(draft(), 100);
+        assert_eq!(first, QueueEnqueueResult::Enqueued(ActionId(1)));
+        assert!(queue.has_pending_command(ActionCommand::ExportStemPackage));
+
+        let second = queue.enqueue_if_no_pending_command(draft(), 101);
+        assert_eq!(
+            second,
+            QueueEnqueueResult::AlreadyPending {
+                command: ActionCommand::ExportStemPackage
+            }
+        );
+        assert_eq!(queue.pending_actions().len(), 1);
     }
 }

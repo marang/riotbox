@@ -342,7 +342,10 @@ Contract for reserved `export.stem_package`:
   observer, Session/replay, and QA tickets land.
 - Target scope: `Session`.
 - Queue semantics: at most one pending stem-package export at a time; it is an
-  immediate side-effect action, not a musical transform.
+  immediate side-effect action, not a musical transform. The current
+  implementation has a reserved queue guard that records an attempted
+  `export.stem_package` action as rejected with an explicit non-runnable reason
+  instead of leaving it pending or creating receipt/export artifacts.
 - Commit semantics: commit only after all claimed stem artifacts and the package
   manifest/proof have been written, hashed, validated by stem-package QA gates,
   and attached to an `ExportReceiptState`.
