@@ -996,4 +996,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Summarize completed DAW proof stack in operator report
 - [RIOTBOX-1170.md](./RIOTBOX-1170.md)
   P016: Add DAW proof-stack observer summary without fake lifecycle
+- [RIOTBOX-1171.md](./RIOTBOX-1171.md)
+  P016: Define first live-recording export receipt boundary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
