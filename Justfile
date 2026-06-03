@@ -77,29 +77,8 @@ audio-qa-ci:
     just offline-render-reproducibility-smoke
     just full-grid-export-reproducibility-smoke
 
-mem-init:
-    ./scripts/mempalace.sh init
-
-mem-sync:
-    ./scripts/mempalace.sh sync
-
-mem-mine:
-    ./scripts/mempalace.sh mine
-
-mem-repair:
-    ./scripts/mempalace.sh repair
-
-mem-status:
-    ./scripts/mempalace.sh status
-
-mem-search query:
-    ./scripts/mempalace.sh search "{{query}}"
-
 decision-search query:
     ./scripts/research_decision_search.sh "{{query}}"
-
-decision-search-mine query:
-    ./scripts/research_decision_search.sh --mine "{{query}}"
 
 source-timing-fixture-catalog catalog="crates/riotbox-core/tests/fixtures/source_timing/timing_fixture_catalog.json":
     python3 scripts/validate_source_timing_fixture_catalog.py "{{catalog}}"

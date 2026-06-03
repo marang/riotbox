@@ -267,6 +267,30 @@ with `mem-repair` available for rare index maintenance rather than direct
 container invocations.
 Status: accepted
 
+### RBX-015b
+
+Date: 2026-06-03
+Topic: Remove MemPalace from active dev-memory workflow
+Phase: Pro Workflow / Export
+Question: should Riotbox keep maintaining MemPalace as an optional semantic
+project-memory tool?
+Decision: remove MemPalace from active workflow tooling and keep
+`just decision-search` as a bounded `rg` helper over
+`docs/research_decision_log.md`.
+Why: recent implementation and planning work used `rg`, targeted docs, Linear,
+Git, and GitHub rather than MemPalace. A semantic-memory tool that agents almost
+never use does not earn the maintenance cost of a container wrapper, corpus
+sync, index repair, and special workflow rules.
+Evidence: local history showed no recent meaningful `mem-search` usage and only
+a recent state touch/sync; the original bakeoff still showed MemPalace helped
+some semantic architecture questions, but normal Riotbox implementation
+continued to favor exact repo search and targeted file reads.
+Consequences: canonical truth remains in repo docs/specs, Linear, and Git
+history. Future semantic retrieval should be proposed as a new measured spike,
+with Qdrant plus a Riotbox-owned indexer as the preferred candidate if exact
+search becomes too noisy for recurring planning questions.
+Status: accepted
+
 ### RBX-016
 
 Date: 2026-04-12  
