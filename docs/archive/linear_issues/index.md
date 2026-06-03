@@ -992,4 +992,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Commit DAW host-import proof through export.daw_session action
 - [RIOTBOX-1168.md](./RIOTBOX-1168.md)
   P016: Commit DAW audible-output proof through export.daw_session action
+- [RIOTBOX-1169.md](./RIOTBOX-1169.md)
+  P016: Summarize completed DAW proof stack in operator report
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
