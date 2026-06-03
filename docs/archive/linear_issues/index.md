@@ -886,4 +886,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Move Riotbox Codex skills into project-local .codex tree
 - [RIOTBOX-1106.md](./RIOTBOX-1106.md)
   P016: Add stem-package manifest proof hash helper
+- [RIOTBOX-1116.md](./RIOTBOX-1116.md)
+  P016: Define stem-package proof JSON schema type
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
