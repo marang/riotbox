@@ -1406,6 +1406,11 @@ Today the repo already has:
     `proof_gates.writer_proof`, including gate status and matching artifact
     availability. It is still not host-import proof and not audible-output
     proof.
+  - current observer export snapshot also projects the latest DAW-session
+    receipt's `proof_gates` so observer consumers see the same JSON package,
+    writer-proof, host-import, and audible-output proof state as the operator
+    report. This is not an `export.daw_session` lifecycle claim; no lifecycle
+    records are emitted until a real queued action exists.
   - DAW-session release blockers are cleared only by their own proof layer:
     JSON package evidence clears only JSON package blockers, writer proof
     clears only `daw_writer_missing`, host-import proof clears only

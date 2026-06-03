@@ -195,6 +195,20 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
         snapshot["export"]["daw_session_receipt"]["qa_gates"][0]["gate_id"],
         "daw_session_json_package_integrity"
     );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_gates"]["json_package_integrity"]
+            ["status"],
+        "passed"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_gates"]["writer_proof"]["status"],
+        "missing"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_gates"]["writer_proof"]
+            ["artifact_available"],
+        false
+    );
 }
 
 #[test]
@@ -282,6 +296,108 @@ fn observer_snapshot_projects_daw_session_receipt_summary_without_fake_lifecycle
     assert_eq!(
         snapshot["export"]["daw_session_surface_gate"]["status"],
         "disabled"
+    );
+}
+
+#[test]
+fn observer_snapshot_projects_daw_writer_proof_without_fake_lifecycle() {
+    let mut state = JamAppState::from_parts(
+        SessionFile::new(
+            "observer-daw-writer-proof",
+            "0.1.0",
+            "2026-06-03T00:00:00Z",
+        ),
+        None,
+        ActionQueue::new(),
+    );
+    let mut receipt = product_mix_receipt_for_arrangement_observer(ActionId(42), 907);
+    receipt.export_scope = ExportScope::DawSession;
+    receipt.pack_id = ARRANGEMENT_DAW_PLACEMENT_PACK_ID.into();
+    receipt.export_role = ProductExportRole::ArrangementManifest;
+    receipt.export_boundary = ProductExportBoundary::ArrangementDawPlacementContractV1;
+    receipt.unsupported_scopes.clear();
+    receipt
+        .arrangement_placement_refs
+        .push(ExportArrangementPlacementRef::scene_range(
+            "scene-a",
+            Some(SourceId::from("src-1")),
+            1,
+            4,
+            0,
+            16,
+        ));
+    receipt.daw_tempo_map_ref = Some(ExportDawTempoMapRef::confirmed_grid(
+        "src-1",
+        Some("primary-grid".into()),
+        ActionId(8),
+        880,
+        0,
+        16,
+        128_000_000,
+    ));
+    receipt.artifact_set = vec![
+        ExportArtifactSetEntry::export_manifest(
+            "daw-out/daw_session/arrangement_manifest.json",
+            "manifest-sha",
+        ),
+        ExportArtifactSetEntry::daw_session_tempo_map(
+            "daw-out/daw_session/tempo_map.json",
+            "tempo-map-sha",
+        ),
+        ExportArtifactSetEntry::product_export_proof(
+            "daw-out/daw_session/daw_session_proof.json",
+            "proof-sha",
+        ),
+        ExportArtifactSetEntry::daw_session_writer_proof(
+            "daw-out/daw_session_writer/writer_proof.json",
+            "writer-proof-sha",
+        ),
+    ];
+    receipt.qa_gates = vec![
+        ExportReceiptQaGateResult::daw_session_json_package_integrity(
+            true,
+            &[],
+            vec![
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawSessionTempoMap,
+                ExportArtifactRole::ProductExportProof,
+            ],
+        ),
+        ExportReceiptQaGateResult::daw_session_writer_proof(
+            true,
+            &[],
+            vec![ExportArtifactRole::DawSessionWriterProof],
+        ),
+    ];
+    state.session.export_receipts.push(receipt);
+
+    let shell = JamShellState::new(state, ShellLaunchMode::Load);
+    let snapshot = observer_snapshot(&shell);
+    let proof_gates = &snapshot["export"]["daw_session_receipt"]["proof_gates"];
+
+    assert_eq!(snapshot["export"]["present"], false);
+    assert_eq!(snapshot["export"]["lifecycle"], serde_json::json!([]));
+    assert_eq!(proof_gates["writer_proof"]["status"], "passed");
+    assert_eq!(proof_gates["writer_proof"]["artifact_available"], true);
+    assert_eq!(
+        proof_gates["writer_proof"]["artifacts"][0]["role"],
+        "daw_session_writer_proof"
+    );
+    assert_eq!(
+        proof_gates["writer_proof"]["artifacts"][0]["location"],
+        "daw-out/daw_session_writer/writer_proof.json"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_surface_gate"]["blockers"],
+        serde_json::json!([
+            "developer_proof_only",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_surface_gate"]["runnable"],
+        false
     );
 }
 
