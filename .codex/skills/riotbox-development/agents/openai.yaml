@@ -1,0 +1,4 @@
+interface:
+  display_name: "Riotbox Development"
+  short_description: "Develop Riotbox as a musician-minded senior audio/software engineer."
+  default_prompt: "Use this skill when working on Riotbox implementation as a musician-minded senior audio and software engineer, especially audio/TUI features, playable workflows, QA, PRs, and Linear workflow."
