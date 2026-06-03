@@ -7,6 +7,9 @@ use riotbox_core::{
     daw_session_proof::{
         DAW_SESSION_PROOF_SCHEMA_ID, DAW_SESSION_PROOF_SCHEMA_VERSION, DawSessionProof,
     },
+    daw_session_tempo_map::{
+        DAW_SESSION_TEMPO_MAP_SCHEMA_ID, DAW_SESSION_TEMPO_MAP_SCHEMA_VERSION, DawSessionTempoMap,
+    },
     session::{ExportArtifactLocation, ExportArtifactMediaType, ExportReceiptState},
 };
 use serde::Serialize;
@@ -22,6 +25,7 @@ pub struct DawSessionPayloadPreview {
     pub blockers: Vec<DawSessionPayloadPreviewBlocker>,
     pub errors: Vec<String>,
     pub manifest: Option<DawSessionManifestPreview>,
+    pub tempo_map: Option<DawSessionTempoMapPreview>,
     pub proof: Option<DawSessionProofPreview>,
 }
 
@@ -45,11 +49,21 @@ pub enum DawSessionPayloadPreviewBlocker {
     UnreadableLocalFiles,
     ManifestPayloadInvalid,
     ManifestHashUnavailable,
+    TempoMapPayloadInvalid,
+    TempoMapHashUnavailable,
     ProofPayloadInvalid,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct DawSessionManifestPreview {
+    pub schema_id: &'static str,
+    pub schema_version: u32,
+    pub planned_path: String,
+    pub normalized_json_sha256: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Eq, Serialize)]
+pub struct DawSessionTempoMapPreview {
     pub schema_id: &'static str,
     pub schema_version: u32,
     pub planned_path: String,
@@ -109,6 +123,24 @@ pub(super) fn payload_preview(
             );
         }
     };
+    let tempo_map = match DawSessionTempoMap::from_receipt(receipt) {
+        Ok(tempo_map) => tempo_map,
+        Err(error) => {
+            return blocked_payload_preview(
+                vec![DawSessionPayloadPreviewBlocker::TempoMapPayloadInvalid],
+                vec![format!("{error:?}")],
+            );
+        }
+    };
+    let tempo_map_hash = match tempo_map.normalized_json_sha256() {
+        Ok(hash) => hash,
+        Err(error) => {
+            return blocked_payload_preview(
+                vec![DawSessionPayloadPreviewBlocker::TempoMapHashUnavailable],
+                vec![error.to_string()],
+            );
+        }
+    };
     let proof = match DawSessionProof::from_manifest(&manifest) {
         Ok(proof) => proof,
         Err(error) => {
@@ -133,6 +165,12 @@ pub(super) fn payload_preview(
             ),
             normalized_json_sha256: manifest_hash,
         }),
+        tempo_map: Some(DawSessionTempoMapPreview {
+            schema_id: DAW_SESSION_TEMPO_MAP_SCHEMA_ID,
+            schema_version: DAW_SESSION_TEMPO_MAP_SCHEMA_VERSION,
+            planned_path: planned_path(planned_artifacts, DawSessionPlannedArtifactRole::TempoMap),
+            normalized_json_sha256: tempo_map_hash,
+        }),
         proof: Some(DawSessionProofPreview {
             schema_id: DAW_SESSION_PROOF_SCHEMA_ID,
             schema_version: DAW_SESSION_PROOF_SCHEMA_VERSION,
@@ -155,6 +193,7 @@ fn blocked_payload_preview(
         blockers,
         errors,
         manifest: None,
+        tempo_map: None,
         proof: None,
     }
 }

@@ -523,11 +523,12 @@ Contract for `export.stem_package`:
   remains non-runnable.
 - Current DAW payload preview:
   the writer plan CLI report includes `payload_preview`. It builds the Core
-  manifest/proof payloads only when the upstream dry-run plan is ready and then
-  reports schema ids, planned manifest/proof paths, normalized manifest hash,
-  and proof manifest hash. If the plan is blocked, the preview mirrors typed
-  blockers such as missing receipt, missing destination, missing local files,
-  placement, or tempo-map blockers and omits payload hashes.
+  manifest, tempo-map, and proof payloads only when the upstream dry-run plan
+  is ready and then reports schema ids, planned manifest/tempo/proof paths,
+  normalized manifest and tempo-map hashes, and proof manifest hash. If the plan
+  is blocked, the preview mirrors typed blockers such as missing receipt,
+  missing destination, missing local files, placement, or tempo-map blockers and
+  omits payload hashes.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
