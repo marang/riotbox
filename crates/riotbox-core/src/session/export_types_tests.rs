@@ -3,7 +3,7 @@ use super::*;
 use crate::{
     export_readiness::{
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID, EXPORT_READINESS_CONTRACT_SCHEMA,
-        LIVE_RECORDING_RECEIPT_PACK_ID, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
+        PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::{ActionId, SourceId},
     session::{PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, SessionFile},
@@ -90,29 +90,6 @@ fn export_manifest_artifact_entry_uses_json_manifest_identity() {
 }
 
 #[test]
-fn live_recording_capture_artifact_entry_uses_wav_identity() {
-    let entry = ExportArtifactSetEntry::live_recording_capture(
-        "exports/live/recording.wav",
-        "1212121212121212121212121212121212121212121212121212121212121212",
-    );
-
-    assert_eq!(entry.role, ExportArtifactRole::LiveRecordingCapture);
-    assert_eq!(
-        entry.location,
-        ExportArtifactLocation::LocalPath {
-            path: "exports/live/recording.wav".into()
-        }
-    );
-    assert_eq!(entry.media_type, ExportArtifactMediaType::AudioWav);
-    assert_eq!(
-        entry.sha256,
-        "1212121212121212121212121212121212121212121212121212121212121212"
-    );
-    assert_eq!(entry.normalized_manifest_hash, None);
-    assert_eq!(entry.audio_metrics, None);
-}
-
-#[test]
 fn daw_session_tempo_map_artifact_entry_uses_json_identity() {
     let entry = ExportArtifactSetEntry::daw_session_tempo_map(
         "exports/daw_session/tempo_map.json",
@@ -139,62 +116,6 @@ fn daw_session_writer_proof_artifact_entry_uses_json_identity() {
         ExportArtifactRole::DawSessionWriterProof,
         "exports/daw_session_writer/writer_proof.json",
         "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-    );
-}
-
-#[test]
-fn live_recording_receipt_contract_roundtrips_without_writer_side_effects() {
-    let mut receipt = fixture_receipt();
-    receipt.export_scope = ExportScope::LiveRecording;
-    receipt.pack_id = LIVE_RECORDING_RECEIPT_PACK_ID.into();
-    receipt.export_role = ProductExportRole::LiveRecordingCapture;
-    receipt.export_boundary = ProductExportBoundary::LiveRecordingReceiptContractV1;
-    receipt.artifact_path = "exports/live/recording.wav".into();
-    receipt.proof_path = "exports/live/live_recording_proof.json".into();
-    receipt.manifest_path = Some("exports/live/manifest.json".into());
-    receipt.artifact_set = vec![
-        ExportArtifactSetEntry::live_recording_capture(
-            "exports/live/recording.wav",
-            "1212121212121212121212121212121212121212121212121212121212121212",
-        ),
-        ExportArtifactSetEntry::export_manifest(
-            "exports/live/manifest.json",
-            "3434343434343434343434343434343434343434343434343434343434343434",
-        ),
-        ExportArtifactSetEntry::product_export_proof(
-            "exports/live/live_recording_proof.json",
-            "5656565656565656565656565656565656565656565656565656565656565656",
-        ),
-    ];
-    receipt.qa_gates.clear();
-    receipt.unsupported_scopes = vec![UnsupportedExportScope::LiveRecording];
-
-    let json = serde_json::to_value(&receipt).expect("serialize live receipt");
-    assert_eq!(json["export_scope"], "live_recording");
-    assert_eq!(json["export_role"], "live_recording_capture");
-    assert_eq!(
-        json["export_boundary"],
-        "live_recording_receipt_contract_v1"
-    );
-    assert_eq!(json["artifact_set"][0]["role"], "live_recording_capture");
-
-    let roundtrip: ExportReceiptState = serde_json::from_value(json).expect("deserialize receipt");
-    assert_eq!(roundtrip.export_scope, ExportScope::LiveRecording);
-    assert_eq!(roundtrip.pack_id, LIVE_RECORDING_RECEIPT_PACK_ID);
-    assert_eq!(
-        roundtrip.export_role,
-        ProductExportRole::LiveRecordingCapture
-    );
-    assert_eq!(
-        roundtrip.export_boundary,
-        ProductExportBoundary::LiveRecordingReceiptContractV1
-    );
-    assert_eq!(roundtrip.artifact_set.len(), 3);
-    assert!(roundtrip.qa_gates.is_empty());
-    assert!(
-        roundtrip
-            .unsupported_scopes
-            .contains(&UnsupportedExportScope::LiveRecording)
     );
 }
 
@@ -333,28 +254,6 @@ fn daw_session_export_contract_names_are_stable_but_not_product_mix_defaults() {
     assert_eq!(
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID,
         "arrangement-daw-placement-contract"
-    );
-    assert_eq!(default_export_scope(), ExportScope::ProductMix);
-}
-
-#[test]
-fn live_recording_export_contract_names_are_stable_but_not_product_mix_defaults() {
-    assert_eq!(ExportScope::LiveRecording.as_str(), "live_recording");
-    assert_eq!(
-        ExportScope::LiveRecording.musician_label(),
-        "live recording export"
-    );
-    assert_eq!(
-        ProductExportRole::LiveRecordingCapture.as_str(),
-        "live_recording_capture"
-    );
-    assert_eq!(
-        ProductExportBoundary::LiveRecordingReceiptContractV1.as_proof_str(),
-        "live_recording.receipt_contract_v1"
-    );
-    assert_eq!(
-        LIVE_RECORDING_RECEIPT_PACK_ID,
-        "live-recording-receipt-contract"
     );
     assert_eq!(default_export_scope(), ExportScope::ProductMix);
 }

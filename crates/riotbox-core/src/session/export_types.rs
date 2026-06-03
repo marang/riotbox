@@ -489,6 +489,9 @@ pub struct ExportArtifactAudioMetrics {
 }
 
 #[cfg(test)]
+#[path = "export_live_recording_contract_tests.rs"]
+mod export_live_recording_contract_tests;
+#[cfg(test)]
 #[path = "export_types_tests.rs"]
 mod export_types_tests;
 #[cfg(test)]
