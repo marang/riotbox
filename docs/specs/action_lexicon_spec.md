@@ -335,11 +335,13 @@ command must define:
 - audio-QA gates that prove non-silent, non-collapsed output for every claimed
   artifact role
 
-Contract for reserved `export.stem_package`:
+Contract for `export.stem_package`:
 
-- Status: typed reserved Core action contract only; not implemented and must
-  not be surfaced as a runnable TUI/Ghost/user action until queue, writer,
-  observer, Session/replay, and QA tickets land.
+- Status: typed action contract with two current boundaries:
+  `reserved_contract_only` remains a rejected non-runnable guard, while
+  `local_ci_package_v1` is an internal app-side commit proof. It must not be
+  surfaced as a general TUI/Ghost/user export action until musician-facing
+  controls, CLI/dry-run, and recovery diagnostics land.
 - Target scope: `Session`.
 - Queue semantics: at most one pending stem-package export at a time; it is an
   immediate side-effect action, not a musical transform. The current
@@ -349,7 +351,7 @@ Contract for reserved `export.stem_package`:
 - Commit semantics: commit only after all claimed stem artifacts and the package
   manifest/proof have been written, hashed, validated by stem-package QA gates,
   and attached to an `ExportReceiptState`.
-- Future writer order:
+- Writer order:
   1. validate `StemPackageExport` params, claimed roles, destination kind, and
      render boundary before any file write
   2. render/write every claimed stem WAV outside the realtime audio callback
@@ -364,14 +366,14 @@ Contract for reserved `export.stem_package`:
      receipt QA gates, then commit the action and receipt together
   8. emit observer lifecycle records only from queue/history and Session
      receipts
-- First allowed writer boundary: `stem_package.local_ci_package_v1`. This is a
-  future app-side side-effect boundary only, not a currently runnable command.
-  It may write only a local package directory for an explicit Session export
+- First allowed writer boundary: `stem_package.local_ci_package_v1`. This is an
+  app-side internal proof boundary, not a general musician-facing command. It
+  may write only a local package directory for an explicit Session export
   request, using deterministic offline stem render providers whose roles are
-  declared in the action params. The first implementation boundary is expected
-  to start with the currently proven drums/bass contract roles and must reject
-  any claimed role that has no implemented offline stem renderer, lineage
-  source, metrics path, and fallback-comparison proof.
+  declared in the action params. The first implementation starts with the
+  currently proven drums/bass contract roles and rejects any claimed role that
+  has no implemented offline stem renderer, lineage source, metrics path, and
+  fallback-comparison proof.
 - First destination layout: a staging directory under the requested local
   export destination, promoted only after validation, with final paths shaped
   as `stem_package/stems/<stem_role>.wav`,
@@ -393,18 +395,25 @@ Contract for reserved `export.stem_package`:
   validates the local boundary request and plans final package artifact
   identities only. It accepts the bounded drums/bass role set for
   `stem_package.local_ci_package_v1`, rejects unsupported claims before side
-  effects, and does not write files, hash artifacts, build receipts, or make
-  `export.stem_package` runnable.
+  effects, and does not write files, hash artifacts, or build receipts.
 - Current CI writer proof:
   `riotbox-app::jam_app::stem_package_writer` is the first app-side
   file-emission proof for `stem_package.local_ci_package_v1`. It writes
   deterministic drums/bass fixture WAVs into a staging package directory,
   decodes/measures/hashes the promoted final files, writes manifest/proof JSON,
   records final `artifact_set[]` identities, and proves receipt readiness with
-  the required stem-package QA gates. This is still an internal proof boundary:
-  the UI, Ghost, observer command surface, and CLI must not present
-  `export.stem_package` as generally runnable until the explicit commit and
-  lifecycle slice lands.
+  the required stem-package QA gates.
+- Current internal commit proof:
+  `riotbox-app::JamAppState::commit_stem_package_export_local_ci_package` can
+  commit `export.stem_package` only for `boundary: local_ci_package_v1`,
+  `destination_kind: local_artifact_directory`, `export_role: package_manifest`,
+  manifest inclusion, drums/bass local CI roles, and the required lineage plus
+  fallback-comparison policies. It validates action params before file writes,
+  rejects unsupported roles or destinations through queue history without a ready
+  receipt, and commits the action, commit record, observer-completable lifecycle,
+  and Session `ExportReceiptState` together. This is still an internal proof
+  boundary: UI, Ghost, and CLI must not present `export.stem_package` as a
+  general musician-facing export control until explicit surface tickets land.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry only role, location, and media type,
@@ -417,9 +426,10 @@ Contract for reserved `export.stem_package`:
   - `export_scope`: `stem_package`
   - `export_role`: currently `package_manifest`, distinct from per-stem
     artifact roles
-  - `boundary`: currently `reserved_contract_only`; future writer work must
-    replace this with an explicit render recipe / arrangement boundary, not
-    infer it from the current product-mix Feral-grid proof
+  - `boundary`: `reserved_contract_only` for rejected non-runnable attempts or
+    `local_ci_package_v1` for the current internal CI package proof; future
+    writer work must add explicit render recipe / arrangement boundaries, not
+    infer them from the current product-mix Feral-grid proof
   - `include_manifest`: `true`
   - `destination_kind`: local artifact directory until URI/cache rules exist
   - `claimed_stem_roles`: subset of `stem_drums`, `stem_bass`, `stem_music`,

@@ -372,9 +372,10 @@ Rules:
 - The stem-package manifest constructor rejects blank package ids, empty or
   non-stem role claims, missing / duplicate / unclaimed stem artifacts, blank
   artifact locations or hashes, non-WAV stem artifacts, wrong manifest/proof
-  roles, and non-JSON manifest/proof identities. This is a schema/identity
-  contract for future package writers; it does not create files, mutate
-  Session, or make `export.stem_package` runnable.
+  roles, and non-JSON manifest/proof identities. This remains a schema/identity
+  contract: the constructor itself does not create files or mutate Session. The
+  current app-side local CI writer may use it while committing
+  `export.stem_package` through the normal queue / commit / receipt path.
 - `StemPackageManifest::from_receipt` builds that manifest value from
   `ExportReceiptState` only when `export_scope: stem_package`. It reads claimed
   stem roles from the `stem_package_artifact_set_evidence` receipt gate,

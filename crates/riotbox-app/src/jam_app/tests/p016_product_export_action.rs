@@ -244,6 +244,131 @@ fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
     }
 }
 
+#[test]
+fn local_ci_stem_package_export_commits_writer_receipt_and_action() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("stem-export");
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let receipt = state
+        .commit_stem_package_export_local_ci_package(
+            &destination,
+            1_131,
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        )
+        .expect("commit local CI stem package export");
+
+    assert_eq!(receipt.created_by_action, ActionId(2));
+    assert_eq!(receipt.export_scope, ExportScope::StemPackage);
+    assert!(receipt.stem_package_readiness_report().ready());
+    assert!(receipt.unsupported_scopes.is_empty());
+    assert_eq!(receipt.artifact_set.len(), 4);
+    assert_eq!(receipt.qa_gates.len(), 5);
+    assert!(destination.join("stem_package/stems/stem_drums.wav").is_file());
+    assert!(destination.join("stem_package/stems/stem_bass.wav").is_file());
+    assert!(
+        destination
+            .join("stem_package/stem_package_manifest.json")
+            .is_file()
+    );
+    assert!(
+        destination
+            .join("stem_package/stem_package_proof.json")
+            .is_file()
+    );
+    super::product_export::preflight_export_receipt_artifacts(&receipt, None)
+        .expect("committed stem package receipt artifacts should preflight");
+    assert_eq!(state.session.export_receipts, vec![receipt.clone()]);
+    assert!(state.queue.pending_actions().is_empty());
+
+    let action = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportStemPackage)
+        .expect("stem package export action logged");
+    assert_eq!(action.status, ActionStatus::Committed);
+    assert_eq!(action.committed_at, Some(1_131));
+    assert!(matches!(action.undo_policy, UndoPolicy::NotUndoable { .. }));
+    assert!(
+        action
+            .result
+            .as_ref()
+            .expect("result")
+            .summary
+            .contains("exported stem_package")
+    );
+    match &action.params {
+        ActionParams::StemPackageExport {
+            boundary,
+            claimed_stem_roles,
+            ..
+        } => {
+            assert_eq!(
+                *boundary,
+                riotbox_core::action::StemPackageExportBoundary::LocalCiPackageV1
+            );
+            assert_eq!(
+                claimed_stem_roles,
+                &vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass]
+            );
+        }
+        other => panic!("expected stem package params, got {other:?}"),
+    }
+    assert!(state.session.action_log.commit_records.iter().any(|record| {
+        record.action_id == action.id
+            && record.boundary.kind == CommitBoundary::Immediate
+            && record.committed_at == 1_131
+    }));
+}
+
+#[test]
+fn local_ci_stem_package_export_rejects_unsupported_role_without_receipt() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("stem-export");
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let error = state
+        .commit_stem_package_export_local_ci_package(
+            &destination,
+            1_131,
+            vec![ExportArtifactRole::StemMusic],
+        )
+        .expect_err("unsupported stem role should reject local CI export");
+
+    assert!(error.to_string().contains("unsupported local CI stem package role"));
+    assert!(state.session.export_receipts.is_empty());
+    assert!(!destination.join("stem_package").exists());
+    assert!(
+        state
+            .session
+            .action_log
+            .actions
+            .iter()
+            .all(|action| action.command != ActionCommand::ExportStemPackage)
+    );
+    let rejected = state
+        .queue
+        .history()
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportStemPackage)
+        .expect("rejected stem package action recorded in queue history");
+    assert_eq!(rejected.status, ActionStatus::Rejected);
+    assert!(
+        rejected
+            .result
+            .as_ref()
+            .expect("result")
+            .summary
+            .contains("unsupported local CI stem package role")
+    );
+}
+
 fn write_product_export_proof(path: &Path, export_artifact: &str, export_hash: &str) {
     fs::write(
         path,
