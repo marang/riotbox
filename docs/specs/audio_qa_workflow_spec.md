@@ -1150,6 +1150,13 @@ Today the repo already has:
   stability, per-stem non-silence, per-stem lineage, and per-stem fallback
   comparison. Missing, `deferred`, or `failed` gates keep readiness blocked with
   typed blockers.
+- The CI-safe ready stem-package receipt fixture exercises that positive
+  readiness path with explicit stem artifact identities, active audio metrics,
+  lineage, fallback comparison, manifest/proof identities, and all required
+  gates passed. It is a contract fixture only: no files are written, no package
+  writer runs, no audio proof or listening verdict is produced, and the
+  artifact-set/hash-stability gates are fixture writer-proof placeholders until
+  real writer and repeated-render evidence exist.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
   CI-safe schema contract for future stem-package manifests. It serializes
   stable schema id/version, `export_scope: stem_package`, receipt/action

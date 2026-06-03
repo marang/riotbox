@@ -518,6 +518,15 @@ Rules:
   `stem_package_per_stem_fallback_comparison`. A receipt can report `ready`
   only when all of those gates are present with `passed` status and the
   unsupported scope flag has been removed.
+- The CI-safe ready stem-package receipt fixture is a contract fixture only. It
+  uses explicit per-stem artifact evidence, metrics, lineage, fallback
+  comparison, manifest/proof JSON identities, and `passed` receipt gates to
+  exercise the positive readiness path without rendering, writing, or surfacing
+  a runnable stem-package export.
+- The fixture may mark artifact-set and hash-stability gates as passed by
+  fixture writer proof while the real package writer and repeated-render proof
+  are still absent. That keeps the readiness positive path testable without
+  claiming file-writing, audio proof, or listening approval.
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
