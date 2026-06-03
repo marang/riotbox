@@ -2,7 +2,10 @@ use std::path::{Path, PathBuf};
 
 use riotbox_core::{
     export_readiness::ExportScope,
-    session::{DAW_SESSION_HOST_IMPORT_QA_GATE_ID, ExportReceiptQaGateResult, ExportReceiptState},
+    session::{
+        DAW_SESSION_HOST_IMPORT_QA_GATE_ID, DAW_SESSION_WRITER_QA_GATE_ID,
+        ExportReceiptQaGateResult, ExportReceiptQaGateStatus, ExportReceiptState,
+    },
 };
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -11,6 +14,7 @@ use super::{JamAppError, product_export::sha256_file};
 
 pub const DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID: &str = "riotbox.daw_session_host_import_proof";
 pub const DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION: u32 = 1;
+pub const DAW_SESSION_HOST_IMPORT_WRITER_PROOF_MISSING_BLOCKER: &str = "daw_writer_proof_missing";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize)]
 pub struct DawSessionHostImportProofReport {
@@ -40,6 +44,22 @@ impl DawSessionHostImportProofReport {
                     .cloned(),
             )
             .collect()
+    }
+
+    #[must_use]
+    pub fn gate_blockers_for_receipt(&self, receipt: &ExportReceiptState) -> Vec<String> {
+        let mut blockers = self.gate_blockers();
+        if !has_passed_writer_proof(receipt) {
+            blockers.push(DAW_SESSION_HOST_IMPORT_WRITER_PROOF_MISSING_BLOCKER.into());
+        }
+        blockers.sort();
+        blockers.dedup();
+        blockers
+    }
+
+    #[must_use]
+    pub fn ready_for_receipt(&self, receipt: &ExportReceiptState) -> bool {
+        self.ready && has_passed_writer_proof(receipt)
     }
 }
 
@@ -90,14 +110,24 @@ pub fn attach_daw_session_host_import_proof_evidence_to_receipt(
         return Err(DawSessionHostImportProofReceiptEvidenceError::NotDawSessionReceipt);
     }
 
-    let blockers = report.gate_blockers();
-    let gate = ExportReceiptQaGateResult::daw_session_host_import_proof(report.ready, &blockers);
+    let blockers = report.gate_blockers_for_receipt(receipt);
+    let gate = ExportReceiptQaGateResult::daw_session_host_import_proof(
+        report.ready_for_receipt(receipt),
+        &blockers,
+    );
     receipt
         .qa_gates
         .retain(|gate| gate.gate_id != DAW_SESSION_HOST_IMPORT_QA_GATE_ID);
     receipt.qa_gates.push(gate);
 
     Ok(())
+}
+
+fn has_passed_writer_proof(receipt: &ExportReceiptState) -> bool {
+    receipt.qa_gates.iter().any(|gate| {
+        gate.gate_id == DAW_SESSION_WRITER_QA_GATE_ID
+            && gate.status == ExportReceiptQaGateStatus::Passed
+    })
 }
 
 pub fn daw_session_host_import_proof_report(

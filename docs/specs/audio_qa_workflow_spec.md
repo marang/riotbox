@@ -1364,7 +1364,9 @@ Today the repo already has:
     `daw_session_host_import_proof`. Missing or failed proof keeps
     `daw_host_import_proof_missing` visible; passed proof removes only that
     blocker and still does not prove audible output or make `export.daw_session`
-    runnable.
+    runnable. The gate may pass only after a passed `daw_session_writer_proof`
+    exists on the same receipt; out-of-order host-import evidence records
+    `daw_writer_proof_missing` and remains failed.
   - current DAW host-import proof apply path is explicit and evidence-only:
     `riotbox-app --daw-session-host-import-proof-apply --session
     <session.json> --daw-session-host-import-proof <proof.json>` reads a local

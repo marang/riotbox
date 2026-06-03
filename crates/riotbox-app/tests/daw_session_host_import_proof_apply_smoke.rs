@@ -9,8 +9,9 @@ use riotbox_core::{
     ids::{ActionId, SourceId},
     persistence::{load_session_json, save_session_json},
     session::{
-        DAW_SESSION_HOST_IMPORT_QA_GATE_ID, ExportArrangementPlacementRef, ExportArtifactSetEntry,
-        ExportDawTempoMapRef, ExportReceiptQaGateStatus, ExportReceiptState, SessionFile,
+        DAW_SESSION_HOST_IMPORT_QA_GATE_ID, ExportArrangementPlacementRef, ExportArtifactRole,
+        ExportArtifactSetEntry, ExportDawTempoMapRef, ExportReceiptQaGateResult,
+        ExportReceiptQaGateStatus, ExportReceiptState, SessionFile,
     },
 };
 use serde_json::{Value, json};
@@ -51,12 +52,20 @@ fn daw_session_host_import_proof_apply_smoke_mutates_only_receipt_gate() {
     ]);
 
     assert_eq!(summary["mode"], "daw_session_host_import_proof_apply");
-    assert_eq!(summary["status"], "ready");
+    assert_eq!(summary["status"], "blocked");
     assert_eq!(summary["writes_files"], false);
     assert_eq!(summary["mutates_session"], true);
     assert_eq!(
+        summary["readiness_blockers"],
+        Value::Array(vec!["daw_writer_proof_missing".into()])
+    );
+    assert_eq!(
         summary["receipt"]["daw_host_import_gate"]["gate_id"],
         DAW_SESSION_HOST_IMPORT_QA_GATE_ID
+    );
+    assert_eq!(
+        summary["receipt"]["daw_host_import_gate"]["status"],
+        "failed"
     );
     assert_eq!(
         summary["daw_session_surface_gate"]["blockers"],
@@ -64,11 +73,64 @@ fn daw_session_host_import_proof_apply_smoke_mutates_only_receipt_gate() {
             "json_package_evidence_missing".into(),
             "developer_proof_only".into(),
             "daw_writer_missing".into(),
+            "daw_host_import_proof_missing".into(),
             "audible_output_proof_missing".into(),
         ])
     );
 
-    let saved = load_session_json(&session_path).expect("reload applied session");
+    let mut saved = load_session_json(&session_path).expect("reload applied session");
+    let saved_receipt = saved.export_receipts.last_mut().expect("saved receipt");
+    saved_receipt
+        .artifact_set
+        .push(ExportArtifactSetEntry::daw_session_tempo_map(
+            "exports/tempo_map.json",
+            "tempo-map-sha",
+        ));
+    saved_receipt
+        .artifact_set
+        .push(ExportArtifactSetEntry::daw_session_writer_proof(
+            "exports/daw_session_writer/writer_proof.json",
+            "writer-proof-sha",
+        ));
+    saved_receipt.qa_gates.push(
+        ExportReceiptQaGateResult::daw_session_json_package_integrity(
+            true,
+            &[],
+            vec![
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawSessionTempoMap,
+                ExportArtifactRole::ProductExportProof,
+            ],
+        ),
+    );
+    saved_receipt
+        .qa_gates
+        .push(ExportReceiptQaGateResult::daw_session_writer_proof(
+            true,
+            &[],
+            vec![ExportArtifactRole::DawSessionWriterProof],
+        ));
+    save_session_json(&session_path, &saved).expect("save writer proof prerequisite");
+
+    let ordered_summary = run_riotbox_app_json([
+        "--daw-session-host-import-proof-apply",
+        "--session",
+        session_path.to_str().expect("session path"),
+        "--daw-session-host-import-proof",
+        proof_path.to_str().expect("proof path"),
+    ]);
+
+    assert_eq!(ordered_summary["status"], "ready");
+    assert_eq!(ordered_summary["readiness_blockers"], Value::Array(vec![]));
+    assert_eq!(
+        ordered_summary["daw_session_surface_gate"]["blockers"],
+        Value::Array(vec![
+            "developer_proof_only".into(),
+            "audible_output_proof_missing".into(),
+        ])
+    );
+
+    let saved = load_session_json(&session_path).expect("reload ordered session");
     let saved_receipt = saved.export_receipts.last().expect("saved receipt");
     let gate = saved_receipt
         .qa_gates
