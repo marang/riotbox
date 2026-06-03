@@ -176,6 +176,12 @@ It must expose:
   required QA gate status, and Core-derived readiness blockers. Jam Perform must
   still avoid presenting `export.stem_package` as a live play/export control
   until a musician-facing export action is explicitly implemented.
+- Jam Inspect must also show the musician-facing stem-package surface gate
+  separately from receipt readiness. A ready local CI receipt may prove written
+  package artifacts, but the surface stays `disabled` while the package is
+  developer-proof-only, DAW placement is missing, or structured listening review
+  is not verified. Jam Perform must not show a stem-package trigger while that
+  gate is disabled.
 
 ### 5.2 Jam regions
 

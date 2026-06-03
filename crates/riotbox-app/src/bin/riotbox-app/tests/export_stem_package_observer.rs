@@ -83,6 +83,22 @@ fn observer_snapshot_reports_completed_stem_package_lifecycle_from_session_recei
             .len(),
         4
     );
+    assert_eq!(
+        snapshot["export"]["stem_package_surface_gate"]["status"],
+        "disabled"
+    );
+    assert_eq!(
+        snapshot["export"]["stem_package_surface_gate"]["runnable"],
+        false
+    );
+    assert_eq!(
+        snapshot["export"]["stem_package_surface_gate"]["blockers"],
+        serde_json::json!([
+            "developer_proof_only",
+            "daw_placement_workflow_missing",
+            "structured_listening_review_missing"
+        ])
+    );
 }
 
 #[test]
@@ -115,7 +131,16 @@ fn observer_snapshot_reports_failed_reserved_stem_package_lifecycle_without_rece
         lifecycle[2]["failure_reason"]
             .as_str()
             .expect("failure reason")
-            .contains("stem package export is reserved")
+            .contains("stem package export is disabled for musicians")
+    );
+    assert_eq!(
+        snapshot["export"]["stem_package_surface_gate"]["blockers"],
+        serde_json::json!([
+            "ci_writer_proof_missing",
+            "developer_proof_only",
+            "daw_placement_workflow_missing",
+            "structured_listening_review_missing"
+        ])
     );
 }
 
@@ -169,6 +194,14 @@ fn observer_snapshot_reports_committed_local_ci_stem_package_writer_lifecycle() 
             .expect("artifact set")
             .len(),
         4
+    );
+    assert_eq!(
+        snapshot["export"]["stem_package_surface_gate"]["blockers"],
+        serde_json::json!([
+            "developer_proof_only",
+            "daw_placement_workflow_missing",
+            "structured_listening_review_missing"
+        ])
     );
 }
 

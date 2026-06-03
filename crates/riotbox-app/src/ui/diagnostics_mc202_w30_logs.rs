@@ -6,6 +6,7 @@ use riotbox_core::{
     },
     session::ExportReceiptState,
 };
+use crate::jam_app::{StemPackageExportSurfaceBlocker, StemPackageExportSurfaceGate};
 
 fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
@@ -35,7 +36,9 @@ fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .unwrap_or("no capture note yet")
         )),
     ];
-    if export_lines.len() > 2 {
+    if export_lines.len() > 4 {
+        lines.truncate(1);
+    } else if export_lines.len() > 2 {
         lines.truncate(3);
     }
     lines.extend(export_lines);
@@ -86,7 +89,7 @@ fn export_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             .map(|receipt| failure.requested_at > receipt.created_at)
             .unwrap_or(true)
     {
-        return export_failure_lines(failure);
+        return with_stem_package_surface_gate_lines(shell, export_failure_lines(failure));
     }
 
     let Some(receipt) = latest_receipt else {
@@ -99,13 +102,45 @@ fn export_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
             .collect::<Vec<_>>()
             .join("/");
 
-        return vec![
+        return with_stem_package_surface_gate_lines(shell, vec![
             Line::from(format!("export {role} | {boundary}")),
             Line::from(format!("reproducible | no {unsupported}")),
-        ];
+        ]);
     };
 
-    export_receipt_lines(receipt)
+    with_stem_package_surface_gate_lines(shell, export_receipt_lines(receipt))
+}
+
+fn with_stem_package_surface_gate_lines(
+    shell: &JamShellState,
+    mut lines: Vec<Line<'static>>,
+) -> Vec<Line<'static>> {
+    lines.extend(stem_package_surface_gate_lines(&shell.app.stem_package_export_surface_gate()));
+    lines
+}
+
+fn stem_package_surface_gate_lines(gate: &StemPackageExportSurfaceGate) -> Vec<Line<'static>> {
+    vec![
+        Line::from(format!("stem_package surface | {}", gate.status.as_str())),
+        Line::from(format!(
+            "needs {}",
+            compact_stem_package_surface_blockers(&gate.blockers)
+        )),
+    ]
+}
+
+fn compact_stem_package_surface_blockers(
+    blockers: &[StemPackageExportSurfaceBlocker],
+) -> String {
+    if blockers.is_empty() {
+        return "none".into();
+    }
+
+    blockers
+        .iter()
+        .map(|blocker| blocker.compact_label())
+        .collect::<Vec<_>>()
+        .join("/")
 }
 
 fn export_receipt_lines(receipt: &ExportReceiptState) -> Vec<Line<'static>> {

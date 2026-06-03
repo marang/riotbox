@@ -9,6 +9,14 @@ fn jam_inspect_surfaces_export_readiness_without_export_action() {
         inspect.contains("reproducible | no stem/live/DAW/host"),
         "{inspect}"
     );
+    assert!(
+        inspect.contains("stem_package surface | disabled"),
+        "{inspect}"
+    );
+    assert!(
+        inspect.contains("needs ci-proof/dev-only/DAW/listening"),
+        "{inspect}"
+    );
     assert!(!inspect.contains("queue export"), "{inspect}");
 }
 
@@ -51,6 +59,10 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
         inspect.contains("a-0004 ok | wav+proof | no stem/DAW"),
         "{inspect}"
     );
+    assert!(
+        inspect.contains("stem_package surface | disabled"),
+        "{inspect}"
+    );
     assert!(!inspect.contains("queue export"), "{inspect}");
 
     shell.jam_mode = JamViewMode::Perform;
@@ -82,7 +94,7 @@ fn jam_inspect_surfaces_ready_stem_package_receipt_without_adding_perform_contro
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(inspect.contains("export stem_package | feral-grid"), "{inspect}");
+    assert!(inspect.contains("export stem_package | stem-pkg"), "{inspect}");
     assert!(
         inspect.contains("1132 ready | bass/drums | art4"),
         "{inspect}"
@@ -92,6 +104,14 @@ fn jam_inspect_surfaces_ready_stem_package_receipt_without_adding_perform_contro
         "{inspect}"
     );
     assert!(inspect.contains("blockers none"), "{inspect}");
+    assert!(
+        inspect.contains("stem_package surface | disabled"),
+        "{inspect}"
+    );
+    assert!(
+        inspect.contains("needs dev-only/DAW/listening"),
+        "{inspect}"
+    );
     assert!(!inspect.contains("queue export"), "{inspect}");
 
     shell.jam_mode = JamViewMode::Perform;
@@ -119,7 +139,7 @@ fn jam_inspect_surfaces_blocked_stem_package_receipt() {
 
     let inspect = render_jam_shell_snapshot(&shell, 120, 34);
 
-    assert!(inspect.contains("export stem_package | feral-grid"), "{inspect}");
+    assert!(inspect.contains("export stem_package | stem-pkg"), "{inspect}");
     assert!(
         inspect.contains("1133 blocked | bass/drums | art4"),
         "{inspect}"
@@ -130,6 +150,10 @@ fn jam_inspect_surfaces_blocked_stem_package_receipt() {
     );
     assert!(
         inspect.contains("blockers unsup | miss hsh/aud/lin/cmp"),
+        "{inspect}"
+    );
+    assert!(
+        inspect.contains("needs qa/dev-only/DAW/listening"),
         "{inspect}"
     );
 }
@@ -182,10 +206,10 @@ fn stem_package_receipt(
         created_by_action: action_id,
         created_at: 900,
         export_scope: ExportScope::StemPackage,
-        pack_id: "feral-grid-demo".into(),
-        export_role: ProductExportRole::FullGridMix,
-        export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
-        artifact_path: "exports/stem_package/stems/stem_drums.wav".into(),
+        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+        export_role: ProductExportRole::PackageManifest,
+        export_boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
+        artifact_path: "exports/stem_package/stem_package_manifest.json".into(),
         proof_path: "exports/stem_package/stem_package_proof.json".into(),
         manifest_path: Some("exports/stem_package/stem_package_manifest.json".into()),
         export_hash: "drums-sha".into(),

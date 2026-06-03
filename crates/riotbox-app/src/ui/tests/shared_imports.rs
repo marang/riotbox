@@ -12,7 +12,7 @@ use riotbox_core::{
     },
     export_readiness::{
         ExportReadinessStatus, ExportScope, ProductExportBoundary, ProductExportRole,
-        UnsupportedExportScope,
+        STEM_PACKAGE_LOCAL_CI_PACK_ID, UnsupportedExportScope,
     },
     ids::{
         ActionId, AssetId, BankId, CaptureId, ExportReceiptId, PadId, SceneId, SectionId,

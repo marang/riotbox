@@ -618,6 +618,12 @@ Additional receipt fields required before wider export scopes:
   action log, queue/history, pending queue, and Session export receipts. The
   observer may expose readiness and gate summaries from receipts, but it must
   not infer missing package state or become a second receipt truth.
+- the stem-package musician surface gate is derived from Session receipts plus
+  fixed product-release blockers, not hidden app-local export state. It reports
+  missing local CI proof when no stem-package receipt exists, receipt QA or
+  identity blockers for blocked/legacy receipts, and always keeps local CI
+  packages disabled for musicians until DAW placement and structured listening
+  review are ready.
 - the stem-package local CI CLI dry-run must not create or mutate Session
   receipts. It reports the writer plan, supported/unsupported role claims, and
   blockers only; readiness remains a property of committed Session receipt

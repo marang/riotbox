@@ -64,6 +64,9 @@ pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_RE
 use helpers::{
     is_mc202_phrase_action, max_action_id, next_action_id_from_session, update_logged_action_result,
 };
+pub use product_export::{
+    StemPackageExportSurfaceBlocker, StemPackageExportSurfaceGate, StemPackageExportSurfaceStatus,
+};
 use projection::normalize_w30_preview_mode;
 pub use recovery::{
     RecoveryCandidateGuidance, RecoveryCandidateTrust, SessionRecoveryCandidateView,
