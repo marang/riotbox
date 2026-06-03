@@ -1328,6 +1328,14 @@ Today the repo already has:
     proves local JSON file emission only, not DAW audio output, host import
     correctness, observer lifecycle, Session mutation, or a musician-facing
     `export.daw_session` workflow.
+  - current DAW JSON package execute CLI exposes that proof explicitly through
+    `riotbox-app --daw-session-json-package-execute --session <session.json>
+    --daw-session-destination <dir>`. It writes only the local JSON package,
+    reports hashes plus the package report, and keeps Session mutation,
+    observer lifecycle, host import correctness, audible output, and
+    musician-facing DAW export out of scope. `just
+    daw-session-json-package-execute-smoke` is the bounded proof for that
+    real-binary path.
   - current DAW JSON package report reads a local `daw_session/` package
     without writing, validates expected schema ids, verifies proof/manifest hash
     linkage, reports final JSON SHA-256 values, and surfaces typed blockers for

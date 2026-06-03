@@ -746,6 +746,16 @@ Additional receipt fields required before wider export scopes:
   linkage. It does not create DAW audio files, DAW project/session formats,
   observer events, Session receipt mutations, or a runnable musician-facing
   `export.daw_session` action.
+- `riotbox-app --daw-session-json-package-execute --session <session.json>
+  --daw-session-destination <dir>` is the current explicit operator CLI for
+  that JSON package proof. It writes only the local `daw_session/` JSON package,
+  reports written paths/hashes and the local package report, and leaves the
+  Session file, observer stream, DAW host/project files, and musician-facing
+  DAW export surface unchanged.
+- `just daw-session-json-package-execute-smoke` is the bounded repo proof for
+  that CLI path. It runs the real binary against a temporary ready DAW receipt,
+  proves the package files are written, proves the Session file bytes are
+  unchanged, and proves an existing final package blocks instead of rewriting.
 - `riotbox-app::jam_app::daw_session_json_package_report` is the current
   read-only validator for a local `daw_session/` JSON package. It reports
   manifest, tempo-map, and proof JSON file identities, final SHA-256 values,

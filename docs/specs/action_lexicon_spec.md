@@ -545,6 +545,13 @@ Contract for `export.stem_package`:
   files, and verifies proof-to-manifest hash linkage. It is not a CLI writer,
   does not mutate Session, emits no observer events, writes no DAW audio or host
   project/session files, and does not make `export.daw_session` runnable.
+- Current DAW JSON package execute CLI:
+  `riotbox-app --daw-session-json-package-execute --session <session.json>
+  --daw-session-destination <dir>` is an explicit operator proof path for the
+  local JSON package only. It writes the `daw_session/` JSON files and reports
+  paths/hashes plus package validation, but it does not create or accept
+  `export.daw_session`, mutate Session receipt evidence, emit observer
+  lifecycle events, write a DAW host project/session, or claim audible output.
 - Current DAW JSON package report:
   `riotbox-app::jam_app::daw_session_json_package_report` is a read-only local
   validator for a written `daw_session/` JSON package. It reports manifest,

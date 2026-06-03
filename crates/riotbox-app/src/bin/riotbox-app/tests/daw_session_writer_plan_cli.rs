@@ -35,7 +35,8 @@ fn parse_args_builds_daw_session_writer_plan_mode() {
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
-        | LaunchMode::DawExportReadinessReport { .. } => {
+        | LaunchMode::DawExportReadinessReport { .. }
+        | LaunchMode::DawSessionJsonPackageExecute { .. } => {
             panic!("expected DAW session writer plan mode")
         }
     }
@@ -93,6 +94,7 @@ fn parse_args_rejects_daw_session_destination_outside_writer_plan_mode() {
     ])
     .expect_err("destination needs writer plan mode");
     assert!(dangling_destination.contains("--daw-session-writer-plan"));
+    assert!(dangling_destination.contains("--daw-session-json-package-execute"));
 
     let readiness_destination = parse_args([
         "--daw-export-readiness-report".into(),
@@ -115,6 +117,117 @@ fn parse_args_rejects_daw_session_destination_outside_writer_plan_mode() {
     ])
     .expect_err("stem package mode should not ignore DAW session destination");
     assert!(stem_destination.contains("DAW destination"));
+}
+
+#[test]
+fn daw_session_json_package_execute_writes_package_without_session_mutation() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let destination_path = temp.path().join("daw-out");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let mut session = SessionFile::new(
+        "daw-json-package-execute-ready",
+        "riotbox-test",
+        "2026-06-03T18:35:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    session.export_receipts.push(receipt);
+    save_session_json(&session_path, &session).expect("save session");
+    let before_session = fs::read(&session_path).expect("read session before execute");
+    let launch = daw_json_package_execute_launch(session_path.clone(), destination_path.clone());
+
+    let summary = daw_session_json_package_execute_summary(&launch).expect("execute summary");
+
+    assert_eq!(summary["mode"], "daw_session_json_package_execute");
+    assert_eq!(summary["status"], "ready");
+    assert_eq!(summary["ready"], true);
+    assert_eq!(summary["writes_files"], true);
+    assert_eq!(summary["mutates_session"], false);
+    assert_eq!(summary["observer_events"], false);
+    assert!(
+        summary["written_package"]["package_dir"]
+            .as_str()
+            .expect("package dir")
+            .ends_with("daw-out/daw_session")
+    );
+    assert_eq!(summary["package_report"]["status"], "ready");
+    assert_eq!(summary["package_report"]["ready"], true);
+    assert_eq!(
+        summary["daw_session_surface_gate"]["status"],
+        "disabled"
+    );
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "json_package_evidence_missing",
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
+    assert_eq!(
+        summary["release_blockers"],
+        json!([
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
+    assert!(destination_path.join("daw_session/arrangement_manifest.json").exists());
+    assert!(destination_path.join("daw_session/tempo_map.json").exists());
+    assert!(destination_path.join("daw_session/daw_session_proof.json").exists());
+    assert_eq!(
+        fs::read(&session_path).expect("read session after execute"),
+        before_session
+    );
+}
+
+#[test]
+fn daw_session_json_package_execute_blocks_without_daw_receipt() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let destination_path = temp.path().join("daw-out");
+    save_session_json(
+        &session_path,
+        &SessionFile::new(
+            "daw-json-package-execute-blocked",
+            "riotbox-test",
+            "2026-06-03T18:36:00Z",
+        ),
+    )
+    .expect("save session");
+    let launch = daw_json_package_execute_launch(session_path, destination_path.clone());
+
+    let summary = daw_session_json_package_execute_summary(&launch).expect("execute summary");
+
+    assert_eq!(summary["status"], "blocked");
+    assert_eq!(summary["ready"], false);
+    assert_eq!(summary["writes_files"], false);
+    assert_eq!(summary["mutates_session"], false);
+    assert!(
+        summary["readiness_blockers"][0]
+            .as_str()
+            .expect("blocker")
+            .contains("DAW session JSON writer blocked")
+    );
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "no_daw_session_receipt",
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
+    assert!(!destination_path.exists());
 }
 
 #[test]
@@ -275,6 +388,16 @@ fn daw_session_writer_plan_ready_for_writer_is_read_only_and_keeps_writer_blocke
 fn daw_plan_launch(session_path: PathBuf, destination_path: PathBuf) -> AppLaunch {
     AppLaunch {
         mode: LaunchMode::DawSessionWriterPlan {
+            session_path,
+            destination_path,
+        },
+        observer_path: None,
+    }
+}
+
+fn daw_json_package_execute_launch(session_path: PathBuf, destination_path: PathBuf) -> AppLaunch {
+    AppLaunch {
+        mode: LaunchMode::DawSessionJsonPackageExecute {
             session_path,
             destination_path,
         },

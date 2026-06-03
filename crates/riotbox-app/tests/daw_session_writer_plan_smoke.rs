@@ -176,6 +176,84 @@ fn daw_session_json_writer_smoke_writes_only_explicit_json_package() {
 }
 
 #[test]
+fn daw_session_json_package_execute_smoke_writes_only_explicit_json_package() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let destination_path = temp.path().join("daw-out");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let mut session = SessionFile::new(
+        "daw-session-json-package-execute-smoke",
+        "riotbox-test",
+        "2026-06-03T18:40:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    session.export_receipts.push(receipt);
+    save_session_json(&session_path, &session).expect("save smoke session");
+    let before_session = fs::read(&session_path).expect("read session before execute");
+
+    let summary = run_riotbox_app_json([
+        "--daw-session-json-package-execute",
+        "--session",
+        session_path.to_str().expect("session path"),
+        "--daw-session-destination",
+        destination_path.to_str().expect("destination path"),
+    ]);
+
+    assert_eq!(summary["mode"], "daw_session_json_package_execute");
+    assert_eq!(summary["status"], "ready");
+    assert_eq!(summary["writes_files"], true);
+    assert_eq!(summary["mutates_session"], false);
+    assert_eq!(summary["observer_events"], false);
+    assert_eq!(summary["package_report"]["status"], "ready");
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        Value::Array(vec![
+            "json_package_evidence_missing".into(),
+            "developer_proof_only".into(),
+            "daw_writer_missing".into(),
+            "daw_host_import_proof_missing".into(),
+            "audible_output_proof_missing".into(),
+        ])
+    );
+    assert!(
+        destination_path
+            .join("daw_session/arrangement_manifest.json")
+            .exists()
+    );
+    assert!(destination_path.join("daw_session/tempo_map.json").exists());
+    assert!(
+        destination_path
+            .join("daw_session/daw_session_proof.json")
+            .exists()
+    );
+    assert_eq!(
+        fs::read(&session_path).expect("read session after execute"),
+        before_session
+    );
+
+    let existing = run_riotbox_app_json([
+        "--daw-session-json-package-execute",
+        "--session",
+        session_path.to_str().expect("session path"),
+        "--daw-session-destination",
+        destination_path.to_str().expect("destination path"),
+    ]);
+    assert_eq!(existing["status"], "blocked");
+    assert_eq!(existing["writes_files"], false);
+    assert!(
+        existing["readiness_blockers"][0]
+            .as_str()
+            .expect("blocker")
+            .contains("already exists")
+    );
+}
+
+#[test]
 fn daw_session_json_package_report_smoke_validates_written_package() {
     let temp = tempfile::tempdir().expect("tempdir");
     let destination_path = temp.path().join("daw-out");
