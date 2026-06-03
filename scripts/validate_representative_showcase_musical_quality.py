@@ -57,6 +57,7 @@ def main() -> int:
     parser.add_argument("showcase_dir", type=Path)
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
+    parser.add_argument("--automated-musical-fitness-report", type=Path)
     args = parser.parse_args()
 
     candidates = collect_candidates(args.showcase_dir)
@@ -106,6 +107,12 @@ def main() -> int:
             "min_all_lane_mix_generated_to_w30_ratio": MIN_ALL_LANE_MIX_GENERATED_TO_W30_RATIO,
         },
     }
+    automated_musical_fitness = load_automated_musical_fitness_summary(
+        args.showcase_dir,
+        args.automated_musical_fitness_report,
+    )
+    if automated_musical_fitness is not None:
+        result["automated_musical_fitness"] = automated_musical_fitness
 
     if args.json_output:
         args.json_output.parent.mkdir(parents=True, exist_ok=True)
@@ -527,6 +534,64 @@ def candidate_record(candidate: Candidate) -> dict[str, Any]:
     }
 
 
+def load_automated_musical_fitness_summary(
+    showcase_dir: Path,
+    explicit_path: Path | None,
+) -> dict[str, Any] | None:
+    report_path = explicit_path or showcase_dir / "validation" / "automated-musical-fitness.json"
+    if not report_path.is_file():
+        if explicit_path is not None:
+            raise ValueError(f"automated musical fitness report not found: {report_path}")
+        return None
+    report = json.loads(report_path.read_text())
+    required = (
+        "technical_status",
+        "automated_musical_fitness_status",
+        "human_verdict",
+        "selected_candidate",
+        "failure_codes",
+        "score_breakdown",
+    )
+    missing = [key for key in required if key not in report]
+    if missing:
+        raise ValueError(
+            f"{report_path}: automated musical fitness report missing {', '.join(missing)}"
+        )
+    selected = report["selected_candidate"]
+    if not isinstance(selected, dict):
+        raise ValueError(f"{report_path}: selected_candidate must be an object")
+    return {
+        "schema": report.get("schema"),
+        "technical_status": report["technical_status"],
+        "automated_musical_fitness_status": report["automated_musical_fitness_status"],
+        "human_verdict": report["human_verdict"],
+        "selected_candidate": {
+            "case_id": selected.get("case_id"),
+            "window_id": selected.get("window_id"),
+            "manifest": selected.get("manifest"),
+            "result": selected.get("result"),
+            "score": selected.get("score"),
+        },
+        "failure_codes": report["failure_codes"],
+        "score_breakdown": compact_score_breakdown(report["score_breakdown"]),
+    }
+
+
+def compact_score_breakdown(score_breakdown: Any) -> dict[str, Any]:
+    if not isinstance(score_breakdown, dict):
+        raise ValueError("automated musical fitness score_breakdown must be an object")
+    compact = {}
+    for key, value in score_breakdown.items():
+        if not isinstance(value, dict):
+            continue
+        compact[key] = {
+            "status": value.get("status"),
+            "score": value.get("score"),
+            "failure_codes": value.get("failure_codes", []),
+        }
+    return compact
+
+
 def render_markdown(result: dict[str, Any]) -> str:
     selected = result["selected_candidate"]
     lines = [
@@ -560,6 +625,29 @@ def render_markdown(result: dict[str, Any]) -> str:
     if selected["issues"]:
         lines.extend(["", "## Issues", ""])
         lines.extend(f"- `{issue}`" for issue in selected["issues"])
+    if "automated_musical_fitness" in result:
+        fitness = result["automated_musical_fitness"]
+        fitness_selected = fitness["selected_candidate"]
+        lines.extend(
+            [
+                "",
+                "## Automated Musical Fitness",
+                "",
+                f"- Technical status: `{fitness['technical_status']}`",
+                "- Automated musical fitness status: "
+                f"`{fitness['automated_musical_fitness_status']}`",
+                f"- Human verdict: `{fitness['human_verdict']}`",
+                "- Selected automated candidate: "
+                f"`{fitness_selected.get('case_id')}/{fitness_selected.get('window_id')}`",
+            ]
+        )
+        if fitness["failure_codes"]:
+            lines.append(
+                "- Failure codes: "
+                + ", ".join(f"`{code}`" for code in fitness["failure_codes"])
+            )
+        else:
+            lines.append("- Failure codes: none")
     return "\n".join(lines) + "\n"
 
 
