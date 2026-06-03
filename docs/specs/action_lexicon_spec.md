@@ -444,6 +444,10 @@ Contract for reserved `export.stem_package`:
   include Core-derived `stem_package_readiness` status, blockers, and blocker
   labels from `validate_stem_package_receipt_readiness`. Observer state must not
   become a second package truth.
+  Current app observer implementation includes both `export.product_mix` and
+  `export.stem_package` actions in that projection; rejected reserved stem
+  attempts produce failed lifecycle records without receipts, while committed
+  stem-package receipts project readiness from Session/Core receipt evidence.
 - Replay/restore: may validate receipt metadata and local artifact availability,
   but must not regenerate stems or rewrite export files without a fresh explicit
   export request.

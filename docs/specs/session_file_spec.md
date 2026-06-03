@@ -589,6 +589,10 @@ Additional receipt fields required before wider export scopes:
   non-silence, per-stem lineage evidence, and source-vs-fallback comparison when
   required; a receipt without those gates, or with deferred gates, must not
   claim `stem_package` readiness
+- observer lifecycle records for stem-package exports must be derived from the
+  action log, queue/history, pending queue, and Session export receipts. The
+  observer may expose readiness and gate summaries from receipts, but it must
+  not infer missing package state or become a second receipt truth.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts

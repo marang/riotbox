@@ -45,9 +45,16 @@ fn push_export_action<'a>(
     seen: &mut BTreeSet<u64>,
     action: &'a Action,
 ) {
-    if action.command == ActionCommand::ExportProductMix && seen.insert(action.id.0) {
+    if is_export_action(action.command) && seen.insert(action.id.0) {
         actions.push(action);
     }
+}
+
+fn is_export_action(command: ActionCommand) -> bool {
+    matches!(
+        command,
+        ActionCommand::ExportProductMix | ActionCommand::ExportStemPackage
+    )
 }
 
 fn export_lifecycle_records(shell: &JamShellState, action: &Action) -> Vec<Value> {
