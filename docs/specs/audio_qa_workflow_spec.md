@@ -1370,6 +1370,11 @@ Today the repo already has:
     latest DAW-session receipt's host-import QA gate. It is not a DAW host
     runner, not a DAW writer, not an observer lifecycle event, and not audible
     output proof.
+  - current DAW audible-output proof evidence is a reserved receipt QA gate:
+    `daw_session_audible_output_proof`. Missing or failed proof keeps
+    `audible_output_proof_missing` visible; passed proof removes only that
+    blocker and still does not launch a host, capture audio, write DAW files, or
+    make `export.daw_session` runnable.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

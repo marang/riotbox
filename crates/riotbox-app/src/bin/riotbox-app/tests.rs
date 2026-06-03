@@ -308,6 +308,12 @@ mod tests {
         include!("tests/daw_export_report_cli.rs");
     }
 
+    mod daw_export_surface_gate_cli {
+        use super::*;
+
+        include!("tests/daw_export_surface_gate_cli.rs");
+    }
+
     mod daw_session_writer_plan_cli {
         use super::*;
 

@@ -590,6 +590,14 @@ Contract for `export.stem_package`:
   `ActionCommand`: it writes no DAW files, launches no host, emits no observer
   lifecycle events, claims no audible output, and does not make
   `export.daw_session` runnable.
+- Current DAW audible-output proof gate:
+  `daw_session_audible_output_proof` is a reserved receipt QA gate for future
+  DAW-session audio evidence. The DAW session surface gate treats missing or
+  failed audible-output proof as `audible_output_proof_missing`; a passed gate
+  removes only that blocker while `developer_proof_only` and
+  `daw_writer_missing` keep `export.daw_session` disabled. This reserves the
+  Session/Core boundary only; it does not add host audio capture, a DAW writer,
+  observer lifecycle completion, or a runnable `export.daw_session` command.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
