@@ -1,5 +1,9 @@
 use sha2::{Digest, Sha256};
 
+use super::product_export::{
+    STEM_PACKAGE_EXPORT_RESERVED_REASON, StemPackageExportQueueResult,
+};
+
 #[test]
 fn product_mix_export_writes_artifact_and_receipt_after_proof_success() {
     let temp = tempdir().expect("tempdir");
@@ -171,6 +175,73 @@ fn product_mix_export_rejects_without_receipt_when_proof_artifact_hash_fails() {
         .find(|action| action.command == ActionCommand::ExportProductMix)
         .expect("rejected export action recorded in queue history");
     assert_eq!(rejected.status, ActionStatus::Rejected);
+}
+
+#[test]
+fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let result = state.queue_stem_package_export_reserved(
+        950,
+        Some("exports/stem-package".into()),
+        vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+    );
+
+    let reason = match result {
+        StemPackageExportQueueResult::Rejected { reason } => reason,
+        other => panic!("expected reserved stem package export rejection, got {other:?}"),
+    };
+    assert!(reason.contains("stem package export is reserved"));
+    assert!(state.queue.pending_actions().is_empty());
+    assert!(state.session.export_receipts.is_empty());
+    assert!(
+        state
+            .session
+            .action_log
+            .actions
+            .iter()
+            .all(|action| action.command != ActionCommand::ExportStemPackage)
+    );
+
+    let rejected = state
+        .queue
+        .history()
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportStemPackage)
+        .expect("reserved stem package action recorded in queue history");
+    assert_eq!(rejected.status, ActionStatus::Rejected);
+    assert_eq!(
+        rejected.result.as_ref().map(|result| result.summary.as_str()),
+        Some(STEM_PACKAGE_EXPORT_RESERVED_REASON)
+    );
+    assert!(matches!(rejected.undo_policy, UndoPolicy::NotUndoable { .. }));
+    assert_eq!(rejected.target.scope, Some(TargetScope::Session));
+    match &rejected.params {
+        ActionParams::StemPackageExport {
+            export_scope,
+            claimed_stem_roles,
+            lineage_policy,
+            fallback_comparison_policy,
+            ..
+        } => {
+            assert_eq!(*export_scope, ExportScope::StemPackage);
+            assert_eq!(
+                claimed_stem_roles,
+                &vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass]
+            );
+            assert_eq!(
+                *lineage_policy,
+                riotbox_core::action::StemPackageLineagePolicy::RequireAnyCoreLineage
+            );
+            assert_eq!(
+                *fallback_comparison_policy,
+                riotbox_core::action::StemPackageFallbackComparisonPolicy::Required
+            );
+        }
+        other => panic!("expected stem package params, got {other:?}"),
+    }
 }
 
 fn write_product_export_proof(path: &Path, export_artifact: &str, export_hash: &str) {

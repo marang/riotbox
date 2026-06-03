@@ -8,13 +8,15 @@ use riotbox_core::{
     TimestampMs,
     action::{
         ActionCommand, ActionDraft, ActionParams, ActionTarget, ActorType, Quantization,
-        TargetScope, UndoPolicy,
+        StemPackageExportBoundary, StemPackageExportRole, StemPackageFallbackComparisonPolicy,
+        StemPackageLineagePolicy, TargetScope, UndoPolicy,
     },
     export_readiness::{
         ExportReadinessContract, ExportScope, ProductExportBoundary, ProductExportDestinationKind,
         ProductExportReproducibilityProof, ProductExportRole,
     },
     ids::ActionId,
+    queue::QueueEnqueueResult,
     session::{
         ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole, ExportArtifactSetEntry,
         ExportReceiptState,
@@ -30,6 +32,9 @@ use super::{
         attach_product_export_artifact_audio_metrics, attach_product_export_artifact_lineage,
     },
 };
+
+pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str =
+    "stem package export is reserved; queue, writer, observer, and QA gates are not runnable yet";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(in crate::jam_app) enum ExportReceiptArtifactPreflightError {
@@ -81,6 +86,12 @@ pub(in crate::jam_app) enum ExportReceiptArtifactPreflightError {
     },
 }
 
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum StemPackageExportQueueResult {
+    Rejected { reason: String },
+    AlreadyPending,
+}
+
 impl JamAppState {
     pub fn queue_product_mix_export(
         &mut self,
@@ -121,6 +132,53 @@ impl JamAppState {
         self.queue.enqueue(draft, requested_at);
         self.refresh_view();
         QueueControlResult::Enqueued
+    }
+
+    pub fn queue_stem_package_export_reserved(
+        &mut self,
+        requested_at: TimestampMs,
+        destination_path: Option<String>,
+        claimed_stem_roles: Vec<ExportArtifactRole>,
+    ) -> StemPackageExportQueueResult {
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::ExportStemPackage,
+            Quantization::Immediate,
+            ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::StemPackageExport {
+            export_scope: ExportScope::StemPackage,
+            export_role: StemPackageExportRole::PackageManifest,
+            boundary: StemPackageExportBoundary::ReservedContractOnly,
+            include_manifest: true,
+            destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+            destination_path,
+            claimed_stem_roles,
+            lineage_policy: StemPackageLineagePolicy::RequireAnyCoreLineage,
+            fallback_comparison_policy: StemPackageFallbackComparisonPolicy::Required,
+        };
+        draft.undo_policy = UndoPolicy::NotUndoable {
+            reason: "stem package export writes files outside musical undo".into(),
+        };
+        draft.explanation = Some("reserved stem package export contract; not runnable yet".into());
+
+        match self
+            .queue
+            .enqueue_if_no_pending_command(draft, requested_at)
+        {
+            QueueEnqueueResult::AlreadyPending { .. } => {
+                StemPackageExportQueueResult::AlreadyPending
+            }
+            QueueEnqueueResult::Enqueued(action_id) => {
+                let reason = STEM_PACKAGE_EXPORT_RESERVED_REASON.to_owned();
+                self.queue.reject(action_id, reason.clone());
+                self.refresh_view();
+                StemPackageExportQueueResult::Rejected { reason }
+            }
+        }
     }
 
     pub fn commit_product_mix_export_from_proof(
