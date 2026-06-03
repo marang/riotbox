@@ -27,7 +27,7 @@ mod capture_queue;
 mod commit;
 mod controls;
 mod daw_export_operator_report;
-mod daw_export_proof_gates;
+pub(crate) mod daw_export_proof_gates;
 mod daw_session_audible_output_proof;
 mod daw_session_host_import_proof;
 mod daw_session_json_writer;

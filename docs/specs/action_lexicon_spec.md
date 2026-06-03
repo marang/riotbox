@@ -506,6 +506,12 @@ Contract for `export.stem_package`:
   missing DAW writer, missing host-import proof, and missing audible-output
   proof remain explicit blockers rather than being hidden behind
   `ready_for_writer`.
+- Current DAW observer projection:
+  the export observer snapshot projects latest DAW-session receipt
+  `proof_gates` from Session/Core evidence so observer consumers see the same
+  JSON package, writer-proof, host-import, and audible-output proof state as the
+  operator report. It does not emit `export.daw_session` lifecycle records until
+  a real queued action exists and commits.
 - Current DAW report smoke:
   `just daw-export-readiness-report-smoke` runs the real `riotbox-app` binary
   in a temp directory, verifies the ready-for-writer report shape, removes the
