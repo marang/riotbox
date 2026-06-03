@@ -1306,14 +1306,16 @@ Today the repo already has:
     path. It runs the real binary, validates the ready-for-writer dry-run plan,
     removes the arrangement manifest source file, validates the missing-file
     blocker, and proves the destination directory was not created.
-  - current DAW-session manifest/proof payload contracts live in
-    `riotbox-core::daw_session_manifest` and
+  - current DAW-session manifest/tempo-map/proof payload contracts live in
+    `riotbox-core::daw_session_manifest`,
+    `riotbox-core::daw_session_tempo_map`, and
     `riotbox-core::daw_session_proof`. They provide deterministic normalized
-    JSON/hash contracts for the planned DAW manifest and proof from receipt
-    evidence, placement refs, tempo-map refs, source artifact identities, and
-    planned DAW JSON identities. They are schema and proof-input contracts only:
-    no DAW files are written, no Session is mutated, no audio output is
-    produced, and no musician-facing DAW export is enabled.
+    JSON/hash contracts for the planned DAW manifest, tempo map, and proof from
+    receipt evidence, placement refs, tempo-map refs, source artifact
+    identities, and planned DAW JSON identities where applicable. They are
+    schema and proof-input contracts only: no DAW files are written, no Session
+    is mutated, no audio output is produced, and no musician-facing DAW export
+    is enabled.
   - current DAW writer plan payload preview exposes those contracts through the
     read-only CLI report. A ready preview reports planned manifest/proof paths
     plus normalized manifest/proof hash linkage; a blocked preview carries typed

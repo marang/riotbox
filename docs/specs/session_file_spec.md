@@ -703,15 +703,16 @@ Additional receipt fields required before wider export scopes:
   `ready_for_writer` plan shape, removes the arrangement manifest source file,
   and verifies the missing-file blocker while proving the destination directory
   was not created.
-- `riotbox-core::daw_session_manifest::DawSessionManifest` and
+- `riotbox-core::daw_session_manifest::DawSessionManifest`,
+  `riotbox-core::daw_session_tempo_map::DawSessionTempoMap`, and
   `riotbox-core::daw_session_proof::DawSessionProof` reserve the DAW-session
-  manifest/proof JSON payload contracts behind the writer plan skeleton. They
-  derive from a ready `export_scope: daw_session` receipt plus explicit planned
-  DAW JSON identities, carry arrangement placement refs, the DAW tempo-map ref,
-  source manifest/proof artifact identities, planned manifest/tempo/proof
-  identities, and deterministic normalized JSON/hash helpers. They do not write
-  files, mutate Session, add a CLI writer, or make `export.daw_session`
-  runnable.
+  manifest/tempo-map/proof JSON payload contracts behind the writer plan
+  skeleton. They derive from a ready `export_scope: daw_session` receipt plus
+  explicit planned DAW JSON identities where applicable, carry arrangement
+  placement refs, the DAW tempo-map ref, source manifest/proof artifact
+  identities, planned manifest/tempo/proof identities, and deterministic
+  normalized JSON/hash helpers. They do not write files, mutate Session, add a
+  CLI writer, or make `export.daw_session` runnable.
 - the DAW session writer plan report surfaces a read-only `payload_preview`
   built from those Core payload contracts. When the receipt, destination,
   placement, tempo-map, source artifacts, and local preflight are ready, the
