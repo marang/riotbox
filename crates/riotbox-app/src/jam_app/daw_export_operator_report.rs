@@ -282,7 +282,7 @@ fn report_for_receipt(
 
     let ready_for_next_gate = readiness_blockers.is_empty();
     let proof_gates = proof_gates_summary(receipt);
-    let proof_stack = proof_stack_summary(&proof_gates);
+    let proof_stack = daw_export_proof_stack_summary(&proof_gates);
     DawExportOperatorReadinessReport {
         status: if ready_for_next_gate {
             DawExportOperatorReadinessStatus::ReadyForWriter
@@ -309,7 +309,9 @@ fn report_for_receipt(
     }
 }
 
-fn proof_stack_summary(proof_gates: &DawExportProofGatesSummary) -> DawExportProofStackSummary {
+pub(crate) fn daw_export_proof_stack_summary(
+    proof_gates: &DawExportProofGatesSummary,
+) -> DawExportProofStackSummary {
     let mut missing_layers = Vec::new();
     if proof_gates.json_package_integrity.status != DawExportProofGateStatus::Passed {
         missing_layers.push(DawExportProofLayer::JsonPackageIntegrity);

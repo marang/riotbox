@@ -512,10 +512,11 @@ Contract for `export.stem_package`:
   `ready_for_writer`.
 - Current DAW observer projection:
   the export observer snapshot projects latest DAW-session receipt
-  `proof_gates` from Session/Core evidence so observer consumers see the same
-  JSON package, writer-proof, host-import, and audible-output proof state as the
-  operator report. It does not emit `export.daw_session` lifecycle records until
-  a real queued action exists and commits.
+  `proof_gates` and `proof_stack` from Session/Core evidence so observer
+  consumers see the same JSON package, writer-proof, host-import, and
+  audible-output proof state as the operator report. It does not emit
+  `export.daw_session` lifecycle records until a real queued action exists and
+  commits.
 - Current DAW report smoke:
   `just daw-export-readiness-report-smoke` runs the real `riotbox-app` binary
   in a temp directory, verifies the ready-for-writer report shape, removes the
@@ -781,10 +782,11 @@ Contract for `export.stem_package`:
   `arrangement_placement_readiness`, `arrangement_placement_refs[]`,
   `daw_tempo_map_readiness`, `daw_tempo_map_ref`, `artifact_set[]`, and
   `qa_gates[]` including `daw_session_json_package_integrity` from the Session
-  receipt. Because `export.daw_session` is still not runnable, observer
-  snapshots also expose the latest DAW-session receipt as a read-only
-  top-level `daw_session_receipt` summary without inventing requested, started,
-  or completed lifecycle records.
+  receipt. They may also include the derived `proof_gates` and `proof_stack`
+  summaries for that receipt. Because `export.daw_session` is still not
+  runnable, observer snapshots also expose the latest DAW-session receipt as a
+  read-only top-level `daw_session_receipt` summary without inventing requested,
+  started, or completed lifecycle records.
   Observer state must not become a second package, timing, or arrangement
   truth.
   Current app observer implementation includes both `export.product_mix` and

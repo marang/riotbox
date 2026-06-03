@@ -717,12 +717,12 @@ Additional receipt fields required before wider export scopes:
   `json_package_integrity_blocked`; it does not remove `developer_proof_only`,
   `daw_writer_missing`, `daw_host_import_proof_missing`, or
   `audible_output_proof_missing`.
-- observer snapshots project DAW-session `proof_gates` from the latest
-  `export_scope: daw_session` receipt alongside placement, tempo-map,
-  artifact-set, and surface-gate evidence. This is a read-only receipt
-  projection only: it must not create `export.daw_session` lifecycle records
-  until that action exists in queue history, pending queue, or Session action
-  log.
+- observer snapshots project DAW-session `proof_gates` and `proof_stack` from
+  the latest `export_scope: daw_session` receipt alongside placement,
+  tempo-map, artifact-set, and surface-gate evidence. This is a read-only
+  receipt projection only: it must not create `export.daw_session` lifecycle
+  records until that action exists in queue history, pending queue, or Session
+  action log.
 - `just daw-export-readiness-report-smoke` is the bounded repo proof for that
   operator report path. It runs the real CLI in a temp directory, verifies a
   `ready_for_writer` DAW receipt report, removes the manifest file, and verifies
@@ -899,10 +899,10 @@ Additional receipt fields required before wider export scopes:
   real DAW-session action exists in queue history, pending queue, or Session
   action log. A committed local-writer proof action, host-import-proof action,
   or audible-output-proof action may produce completed lifecycle records with
-  the matching receipt and proof-gate summary. A rejected reserved attempt may
-  produce failed lifecycle records without a receipt. A DAW-session receipt by
-  itself remains read-only summary evidence and must not create fake lifecycle
-  records.
+  the matching receipt, proof-gate summary, and proof-stack summary. A rejected
+  reserved attempt may produce failed lifecycle records without a receipt. A
+  DAW-session receipt by itself remains read-only summary evidence and must not
+  create fake lifecycle records.
 - DAW-session blocker removal is intentionally one gate at a time:
   JSON package integrity removes only JSON package blockers, writer proof
   removes only `daw_writer_missing`, host-import proof removes only
