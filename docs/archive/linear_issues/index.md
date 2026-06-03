@@ -902,4 +902,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Resolve stem-package manifest/proof non-circular identity
 - [RIOTBOX-1123.md](./RIOTBOX-1123.md)
   P016: Require all stem-package receipt QA gates for readiness
+- [RIOTBOX-1124.md](./RIOTBOX-1124.md)
+  P016: Add stem-package receipt readiness observer summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
