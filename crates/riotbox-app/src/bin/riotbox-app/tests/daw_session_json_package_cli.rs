@@ -27,6 +27,8 @@ fn parse_args_builds_daw_session_json_package_execute_mode() {
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+        | LaunchMode::DawSessionWriterProofExecute { .. }
+        | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session JSON package execute mode")
         }
@@ -62,6 +64,8 @@ fn parse_args_builds_daw_session_json_package_evidence_apply_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+        | LaunchMode::DawSessionWriterProofExecute { .. }
+        | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session JSON package evidence apply mode")
         }
@@ -100,6 +104,8 @@ fn parse_args_builds_daw_session_host_import_proof_apply_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+        | LaunchMode::DawSessionWriterProofExecute { .. }
+        | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session host import proof apply mode")
         }
@@ -138,9 +144,59 @@ fn parse_args_builds_daw_session_audible_output_proof_apply_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionWriterProofExecute { .. }
+        | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session audible output proof apply mode")
         }
+    }
+}
+
+#[test]
+fn parse_args_builds_daw_session_writer_proof_execute_mode() {
+    let launch = parse_args([
+        "--daw-session-writer-proof-execute".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--daw-session-destination".into(),
+        "exports/daw-package".into(),
+    ])
+    .expect("parse DAW session writer proof execute mode");
+
+    assert_eq!(launch.observer_path, None);
+    match launch.mode {
+        LaunchMode::DawSessionWriterProofExecute {
+            session_path,
+            destination_path,
+        } => {
+            assert_eq!(session_path, PathBuf::from("session.json"));
+            assert_eq!(destination_path, PathBuf::from("exports/daw-package"));
+        }
+        _ => panic!("expected DAW session writer proof execute mode"),
+    }
+}
+
+#[test]
+fn parse_args_builds_daw_session_writer_proof_apply_mode() {
+    let launch = parse_args([
+        "--daw-session-writer-proof-apply".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--daw-session-destination".into(),
+        "exports/daw-package".into(),
+    ])
+    .expect("parse DAW session writer proof apply mode");
+
+    assert_eq!(launch.observer_path, None);
+    match launch.mode {
+        LaunchMode::DawSessionWriterProofApply {
+            session_path,
+            destination_path,
+        } => {
+            assert_eq!(session_path, PathBuf::from("session.json"));
+            assert_eq!(destination_path, PathBuf::from("exports/daw-package"));
+        }
+        _ => panic!("expected DAW session writer proof apply mode"),
     }
 }
 
@@ -184,6 +240,42 @@ fn parse_args_rejects_daw_session_json_package_execute_without_required_inputs_o
     ])
     .expect_err("execute should not mix with writer plan");
     assert!(plan_mix.contains("cannot be combined"));
+}
+
+#[test]
+fn parse_args_rejects_daw_session_writer_proof_modes_without_inputs_or_with_observer() {
+    for mode_flag in [
+        "--daw-session-writer-proof-execute",
+        "--daw-session-writer-proof-apply",
+    ] {
+        let missing_session = parse_args([
+            mode_flag.into(),
+            "--daw-session-destination".into(),
+            "exports/daw-package".into(),
+        ])
+        .expect_err("session is required");
+        assert!(missing_session.contains("--session"));
+
+        let missing_destination = parse_args([
+            mode_flag.into(),
+            "--session".into(),
+            "session.json".into(),
+        ])
+        .expect_err("destination is required");
+        assert!(missing_destination.contains("--daw-session-destination"));
+
+        let observer_arg = parse_args([
+            mode_flag.into(),
+            "--session".into(),
+            "session.json".into(),
+            "--daw-session-destination".into(),
+            "exports/daw-package".into(),
+            "--observer".into(),
+            "observer.ndjson".into(),
+        ])
+        .expect_err("writer proof should not write observer files");
+        assert!(observer_arg.contains("reads only an explicit session and destination"));
+    }
 }
 
 #[test]

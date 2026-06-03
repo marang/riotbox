@@ -99,6 +99,42 @@ fn daw_session_json_package_gate_records_ready_and_blocked_integrity() {
 }
 
 #[test]
+fn daw_session_writer_gate_records_ready_and_blocked_proof() {
+    let ready_gate = ExportReceiptQaGateResult::daw_session_writer_proof(
+        true,
+        &[],
+        vec![ExportArtifactRole::DawSessionWriterProof],
+    );
+    assert_eq!(ready_gate.gate_id, DAW_SESSION_WRITER_QA_GATE_ID);
+    assert_eq!(ready_gate.status, ExportReceiptQaGateStatus::Passed);
+    assert_eq!(
+        ready_gate.artifact_roles,
+        vec![ExportArtifactRole::DawSessionWriterProof]
+    );
+    assert!(
+        ready_gate
+            .summary
+            .as_deref()
+            .expect("summary")
+            .contains("accepted")
+    );
+
+    let blocked_gate = ExportReceiptQaGateResult::daw_session_writer_proof(
+        false,
+        &["project_skeleton_hash_mismatch".into()],
+        vec![ExportArtifactRole::DawSessionWriterProof],
+    );
+    assert_eq!(blocked_gate.status, ExportReceiptQaGateStatus::Failed);
+    assert!(
+        blocked_gate
+            .summary
+            .as_deref()
+            .expect("summary")
+            .contains("project_skeleton_hash_mismatch")
+    );
+}
+
+#[test]
 fn daw_session_host_import_gate_records_ready_and_blocked_proof() {
     let ready_gate = ExportReceiptQaGateResult::daw_session_host_import_proof(true, &[]);
     assert_eq!(ready_gate.gate_id, DAW_SESSION_HOST_IMPORT_QA_GATE_ID);

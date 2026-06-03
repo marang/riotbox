@@ -61,6 +61,8 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+            | LaunchMode::DawSessionWriterProofExecute { .. }
+            | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -90,6 +92,8 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+            | LaunchMode::DawSessionWriterProofExecute { .. }
+            | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -121,6 +125,8 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+            | LaunchMode::DawSessionWriterProofExecute { .. }
+            | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -147,6 +153,8 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+            | LaunchMode::DawSessionWriterProofExecute { .. }
+            | LaunchMode::DawSessionWriterProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }

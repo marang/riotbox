@@ -379,7 +379,6 @@ fn daw_session_json_package_report_smoke_validates_written_package() {
             .contains(&Value::String("missing_tempo_map_file".into()))
     );
 }
-
 fn run_plan(session_path: &std::path::Path, destination_path: &std::path::Path) -> Value {
     run_riotbox_app_json([
         "--daw-session-writer-plan",

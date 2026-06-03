@@ -187,7 +187,8 @@ fn stem_artifact_role_short_label(role: ExportArtifactRole) -> Option<&'static s
         ExportArtifactRole::FullGridMix
         | ExportArtifactRole::ProductExportProof
         | ExportArtifactRole::ExportManifest
-        | ExportArtifactRole::DawSessionTempoMap => None,
+        | ExportArtifactRole::DawSessionTempoMap
+        | ExportArtifactRole::DawSessionWriterProof => None,
     }
 }
 

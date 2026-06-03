@@ -4,7 +4,8 @@ use riotbox_core::{
     },
     session::{
         DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID, DAW_SESSION_HOST_IMPORT_QA_GATE_ID,
-        DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, ExportReceiptQaGateStatus, SessionFile,
+        DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, DAW_SESSION_WRITER_QA_GATE_ID,
+        ExportReceiptQaGateStatus, SessionFile,
     },
 };
 
@@ -149,10 +150,10 @@ pub fn daw_session_export_surface_gate_for_session(
         Some(_) => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageIntegrityBlocked),
         None => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing),
     }
-    blockers.extend([
-        DawSessionExportSurfaceBlocker::DeveloperProofOnly,
-        DawSessionExportSurfaceBlocker::DawWriterMissing,
-    ]);
+    blockers.push(DawSessionExportSurfaceBlocker::DeveloperProofOnly);
+    if !daw_session_qa_gate_passed(receipt, DAW_SESSION_WRITER_QA_GATE_ID) {
+        blockers.push(DawSessionExportSurfaceBlocker::DawWriterMissing);
+    }
     if !daw_session_qa_gate_passed(receipt, DAW_SESSION_HOST_IMPORT_QA_GATE_ID) {
         blockers.push(DawSessionExportSurfaceBlocker::DawHostImportProofMissing);
     }

@@ -100,6 +100,24 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "proof_path": proof_path,
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::DawSessionWriterProofExecute {
+            session_path,
+            destination_path,
+        } => json!({
+            "mode": "daw_session_writer_proof_execute",
+            "session_path": session_path,
+            "destination_path": destination_path,
+            "observer_path": launch.observer_path,
+        }),
+        LaunchMode::DawSessionWriterProofApply {
+            session_path,
+            destination_path,
+        } => json!({
+            "mode": "daw_session_writer_proof_apply",
+            "session_path": session_path,
+            "destination_path": destination_path,
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::DawSessionWriterPlan {
             session_path,
             destination_path,
