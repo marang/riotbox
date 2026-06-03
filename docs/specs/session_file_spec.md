@@ -442,6 +442,13 @@ Rules:
   when claimed roles are missing, duplicated, non-stem, lineage-free, or carry
   blank lineage identities. It validates receipt evidence only and does not
   write package files.
+- per-stem fallback-comparison QA reports may be recorded as
+  `stem_package_per_stem_fallback_comparison` receipt gates. This gate records
+  `passed` only when every claimed stem artifact carries typed source-vs-
+  fallback comparison evidence with a nonblank reference identity and at least
+  one metric field, and `failed` when claimed roles are missing, duplicated,
+  non-stem, comparison-free, blank, or metricless. It is structural receipt
+  evidence only; render comparison thresholds remain separate.
 - `validate_stem_package_receipt_readiness` is the typed receipt-level guard
   for future stem-package readiness. It reports `blocked` while the receipt is
   not `export_scope: stem_package`, while `unsupported_scopes[]` still includes

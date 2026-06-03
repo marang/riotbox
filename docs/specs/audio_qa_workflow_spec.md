@@ -1027,6 +1027,13 @@ Today the repo already has:
   from Session/Core receipt fields. Missing, duplicate, non-stem, lineage-free,
   or blank lineage identities record `failed`. It validates traceability
   evidence only and does not claim package writing or listening approval.
+- `riotbox-core::export_qa::validate_stem_package_fallback_comparison_evidence`
+  is the current CI-safe per-stem source-vs-fallback comparison receipt gate.
+  It records `stem_package_per_stem_fallback_comparison` as `passed` only when
+  every claimed stem artifact carries a nonblank fallback reference identity
+  and at least one comparison metric field. Missing, duplicate, non-stem,
+  comparison-free, blank, or metricless evidence records `failed`. It is
+  structural comparison evidence only; real render thresholds remain separate.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
   CI-safe schema contract for future stem-package manifests. It serializes
   stable schema id/version, `export_scope: stem_package`, receipt/action
