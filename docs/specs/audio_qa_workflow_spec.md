@@ -1322,6 +1322,12 @@ Today the repo already has:
     linkage; a blocked preview carries typed upstream blockers and emits no
     hashes. This proves payload shape only, not DAW file export completion, DAW
     placement correctness in a host, or audible output.
+  - current DAW JSON writer proof is internal and CI-safe only. It writes the
+    manifest, tempo-map, and proof JSON payloads through staging, promotes the
+    package, hashes final JSON files, and verifies proof/manifest linkage. This
+    proves local JSON file emission only, not DAW audio output, host import
+    correctness, observer lifecycle, Session mutation, or a musician-facing
+    `export.daw_session` workflow.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

@@ -722,6 +722,14 @@ Additional receipt fields required before wider export scopes:
   and no payload hashes. It still writes no files, creates no directories,
   mutates no Session state, emits no observer events, and does not make
   `export.daw_session` runnable.
+- `riotbox-app::jam_app::write_daw_session_json_package` is the current
+  CI-safe file-emission proof for those JSON payloads. It uses a staging
+  directory under the requested destination, writes normalized manifest,
+  tempo-map, and proof JSON, promotes the final `daw_session/` directory only
+  after validation, hashes final JSON artifacts, and verifies proof manifest
+  linkage. It does not create DAW audio files, DAW project/session formats,
+  observer events, Session receipt mutations, or a runnable musician-facing
+  `export.daw_session` action.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts
