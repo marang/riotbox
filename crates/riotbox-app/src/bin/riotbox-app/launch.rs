@@ -42,6 +42,12 @@ enum LaunchMode {
         destination_path: PathBuf,
         claimed_stem_roles: Vec<ExportArtifactRole>,
     },
+    StemPackageLocalCiExecute {
+        session_path: PathBuf,
+        source_graph_path: Option<PathBuf>,
+        destination_path: PathBuf,
+        claimed_stem_roles: Vec<ExportArtifactRole>,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -49,6 +55,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let launch = parse_args(raw_args.iter().skip(1).cloned())?;
     if matches!(launch.mode, LaunchMode::StemPackageLocalCiDryRun { .. }) {
         run_stem_package_local_ci_dry_run(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::StemPackageLocalCiExecute { .. }) {
+        run_stem_package_local_ci_execute(&launch, &raw_args)?;
         return Ok(());
     }
     let state = load_state(launch.mode.clone())?;
@@ -111,6 +121,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         ),
         LaunchMode::StemPackageLocalCiDryRun { .. } => Err(JamAppError::InvalidSession(
             "stem package local CI dry-run does not load app state".into(),
+        )),
+        LaunchMode::StemPackageLocalCiExecute { .. } => Err(JamAppError::InvalidSession(
+            "stem package local CI execute uses a non-interactive proof path".into(),
         )),
     }
 }

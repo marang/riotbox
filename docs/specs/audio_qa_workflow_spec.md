@@ -1226,6 +1226,14 @@ Today the repo already has:
     `writes_files: false`. This proves only the control-plane plan and negative
     blocking surface; it cannot satisfy stem-package audio QA gates or claim
     musician-ready export output.
+  - current CLI execute exposes the bounded writer proof through
+    `riotbox-app --stem-package-local-ci-execute`. It requires an explicit
+    Session, local destination, and supported claimed roles, writes the
+    deterministic local CI package through the committed writer/action path,
+    saves the Session receipt, and can emit observer evidence. This satisfies
+    the internal local CI writer proof for drums/bass only; it is still not a
+    structured listening-review pack, DAW export workflow, or general
+    musician-facing `export.stem_package` control.
   - current CI writer proof emits files for that boundary inside
     `riotbox-app::jam_app::stem_package_writer`: deterministic drums/bass WAVs
     are written through a staging directory and promoted into the final package
