@@ -2,7 +2,8 @@ use std::collections::BTreeSet;
 
 use riotbox_core::{
     action::{Action, ActionCommand, ActionStatus},
-    session::ExportReceiptState,
+    export_readiness::ExportScope,
+    session::{ExportReceiptState, StemPackageReceiptReadinessBlocker},
 };
 use serde_json::{Value, json};
 
@@ -138,6 +139,7 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
         "artifact_set": artifact_set,
         "qa_gates": receipt.qa_gates,
         "readiness_status": receipt.readiness_status,
+        "stem_package_readiness": stem_package_readiness_observer_snapshot(receipt),
         "unsupported_scopes": receipt
             .unsupported_scopes
             .iter()
@@ -149,4 +151,80 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
             .map(|scope| scope.musician_label())
             .collect::<Vec<_>>(),
     })
+}
+
+fn stem_package_readiness_observer_snapshot(receipt: &ExportReceiptState) -> Option<Value> {
+    if receipt.export_scope != ExportScope::StemPackage {
+        return None;
+    }
+
+    let report = receipt.stem_package_readiness_report();
+    let blockers = report.blockers.clone();
+    Some(json!({
+        "status": report.status,
+        "ready": report.ready(),
+        "blockers": blockers,
+        "blocker_labels": blockers
+            .iter()
+            .map(stem_package_readiness_blocker_label)
+            .collect::<Vec<_>>(),
+    }))
+}
+
+fn stem_package_readiness_blocker_label(
+    blocker: &StemPackageReceiptReadinessBlocker,
+) -> &'static str {
+    match blocker {
+        StemPackageReceiptReadinessBlocker::NotStemPackageScope => {
+            "receipt is not a stem package export"
+        }
+        StemPackageReceiptReadinessBlocker::UnsupportedScopeFlagPresent => {
+            "stem package export is still marked unsupported"
+        }
+        StemPackageReceiptReadinessBlocker::MissingArtifactSetQaGate => {
+            "stem package artifact-set QA gate is missing"
+        }
+        StemPackageReceiptReadinessBlocker::DeferredArtifactSetQaGate => {
+            "stem package artifact-set QA gate is deferred"
+        }
+        StemPackageReceiptReadinessBlocker::FailedArtifactSetQaGate => {
+            "stem package artifact-set QA gate failed"
+        }
+        StemPackageReceiptReadinessBlocker::MissingHashStabilityQaGate => {
+            "stem package hash-stability QA gate is missing"
+        }
+        StemPackageReceiptReadinessBlocker::DeferredHashStabilityQaGate => {
+            "stem package hash-stability QA gate is deferred"
+        }
+        StemPackageReceiptReadinessBlocker::FailedHashStabilityQaGate => {
+            "stem package hash-stability QA gate failed"
+        }
+        StemPackageReceiptReadinessBlocker::MissingNonSilenceQaGate => {
+            "stem package non-silence QA gate is missing"
+        }
+        StemPackageReceiptReadinessBlocker::DeferredNonSilenceQaGate => {
+            "stem package non-silence QA gate is deferred"
+        }
+        StemPackageReceiptReadinessBlocker::FailedNonSilenceQaGate => {
+            "stem package non-silence QA gate failed"
+        }
+        StemPackageReceiptReadinessBlocker::MissingLineageQaGate => {
+            "stem package lineage QA gate is missing"
+        }
+        StemPackageReceiptReadinessBlocker::DeferredLineageQaGate => {
+            "stem package lineage QA gate is deferred"
+        }
+        StemPackageReceiptReadinessBlocker::FailedLineageQaGate => {
+            "stem package lineage QA gate failed"
+        }
+        StemPackageReceiptReadinessBlocker::MissingFallbackComparisonQaGate => {
+            "stem package fallback-comparison QA gate is missing"
+        }
+        StemPackageReceiptReadinessBlocker::DeferredFallbackComparisonQaGate => {
+            "stem package fallback-comparison QA gate is deferred"
+        }
+        StemPackageReceiptReadinessBlocker::FailedFallbackComparisonQaGate => {
+            "stem package fallback-comparison QA gate failed"
+        }
+    }
 }

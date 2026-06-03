@@ -3,6 +3,7 @@ use sha2::{Digest, Sha256};
 use riotbox_core::{
     action::ActionStatus,
     export_qa::validate_stem_package_artifact_set_evidence,
+    export_readiness::ExportScope,
     session::{
         ExportArtifactLocation, ExportArtifactMediaType, ExportArtifactRole,
         ExportArtifactSetEntry, ExportReceiptQaGateResult, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
@@ -198,6 +199,10 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
     );
     assert_eq!(lifecycle[2]["receipt"]["readiness_status"], "reproducible");
     assert_eq!(
+        lifecycle[2]["receipt"]["stem_package_readiness"],
+        serde_json::Value::Null
+    );
+    assert_eq!(
         lifecycle[2]["receipt"]["unsupported_scopes"]
             .as_array()
             .expect("unsupported scopes")
@@ -240,6 +245,7 @@ fn observer_snapshot_projects_stem_package_qa_gate_evidence_from_receipt() {
     state
         .commit_product_mix_export_from_proof(&proof_path, &destination, 903)
         .expect("commit product export");
+    state.session.export_receipts[0].export_scope = ExportScope::StemPackage;
 
     let report = validate_stem_package_artifact_set_evidence(
         &[stem_receipt_artifact(ExportArtifactRole::StemDrums)],
@@ -269,6 +275,35 @@ fn observer_snapshot_projects_stem_package_qa_gate_evidence_from_receipt() {
             .expect("summary")
             .contains("deferred QA check(s) remain")
     );
+    assert_eq!(receipt["stem_package_readiness"]["status"], "blocked");
+    assert_eq!(receipt["stem_package_readiness"]["ready"], false);
+    let readiness_blockers = receipt["stem_package_readiness"]["blockers"]
+        .as_array()
+        .expect("readiness blockers");
+    assert!(
+        readiness_blockers
+            .iter()
+            .any(|blocker| blocker == "unsupported_scope_flag_present")
+    );
+    assert!(
+        readiness_blockers
+            .iter()
+            .any(|blocker| blocker == "deferred_artifact_set_qa_gate")
+    );
+    assert!(
+        readiness_blockers
+            .iter()
+            .any(|blocker| blocker == "missing_hash_stability_qa_gate")
+    );
+    let blocker_labels = receipt["stem_package_readiness"]["blocker_labels"]
+        .as_array()
+        .expect("blocker labels");
+    assert!(blocker_labels.iter().any(|label| {
+        label == "stem package export is still marked unsupported"
+    }));
+    assert!(blocker_labels.iter().any(|label| {
+        label == "stem package hash-stability QA gate is missing"
+    }));
     assert_eq!(receipt["unsupported_scopes"][0], "stem_package");
 }
 
