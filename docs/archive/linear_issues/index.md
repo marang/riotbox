@@ -976,4 +976,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add CI-safe DAW session writer proof skeleton
 - [RIOTBOX-1160.md](./RIOTBOX-1160.md)
   P016: Surface DAW session writer proof in readiness reports
+- [RIOTBOX-1161.md](./RIOTBOX-1161.md)
+  P016: Project DAW session proof gates through observer snapshot
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
