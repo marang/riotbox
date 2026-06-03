@@ -364,6 +364,30 @@ Contract for reserved `export.stem_package`:
      receipt QA gates, then commit the action and receipt together
   8. emit observer lifecycle records only from queue/history and Session
      receipts
+- First allowed writer boundary: `stem_package.local_ci_package_v1`. This is a
+  future app-side side-effect boundary only, not a currently runnable command.
+  It may write only a local package directory for an explicit Session export
+  request, using deterministic offline stem render providers whose roles are
+  declared in the action params. The first implementation boundary is expected
+  to start with the currently proven drums/bass contract roles and must reject
+  any claimed role that has no implemented offline stem renderer, lineage
+  source, metrics path, and fallback-comparison proof.
+- First destination layout: a staging directory under the requested local
+  export destination, promoted only after validation, with final paths shaped
+  as `stem_package/stems/<stem_role>.wav`,
+  `stem_package/stem_package_manifest.json`, and
+  `stem_package/stem_package_proof.json`. Temporary paths, retries, and atomic
+  promotion details are app-side mechanics; Session receipts record only final
+  artifact identities.
+- First commit/receipt order: validate params and create the side-effect work;
+  render/write stems; decode and measure written WAVs; hash stem WAVs; attach
+  Session/Core lineage and fallback-comparison evidence; build the receipt
+  draft plus manifest/proof payload identities; write and hash manifest/proof
+  JSON; run every required stem-package QA gate; remove the stem-package
+  unsupported-scope flag only when those gates pass; then commit the action,
+  commit record, observer completion, and `ExportReceiptState` together. A
+  failed writer may record a rejected/failed action and observer failure, but
+  must not commit a ready receipt or infer missing artifacts during replay.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry only role, location, and media type,
