@@ -306,10 +306,12 @@ Minimum receipt fields:
 - receipt id
 - created by action id
 - created at timestamp
-- export scope, distinct from export role; current P016 receipts use
-  `product_mix`
-- pack id / render recipe identity; current P016 receipts use
-  `feral-grid-demo`
+- export scope, distinct from export role; current P016 product-mix receipts
+  use `product_mix`, and current internal stem-package local CI receipts use
+  `stem_package`
+- pack id / render recipe identity; current P016 product-mix receipts use
+  `feral-grid-demo`, and current internal stem-package local CI receipts use
+  `stem-package-local-ci`
 - export role
 - export boundary
 - artifact path or artifact URI
@@ -347,8 +349,11 @@ Rules:
   matching `artifact_set[]` identities for every claimed local stem WAV plus
   `export_manifest` and `product_export_proof`. Missing or blank identities are
   reported separately from identities whose local file is absent.
-- the first P016 receipt boundary is `full_grid_mix` from the deterministic
-  Feral-grid generated-support export proof
+- the first P016 product-mix receipt boundary is the deterministic Feral-grid
+  generated-support export proof with `export_role: full_grid_mix`
+- the current internal stem-package local CI receipt boundary is
+  `stem_package.local_ci_package_v1` with `export_role: package_manifest`;
+  it must not reuse the `feral-grid-demo` product-mix identity
 - current `export.product_mix` receipts populate artifact-set entries for the
   full-grid WAV and the copied product-export proof JSON while preserving the
   legacy `artifact_path`, `proof_path`, `export_hash`, and
@@ -445,8 +450,9 @@ Rules:
     per claimed stem role, per-stem source/capture/capture-lineage evidence,
     per-stem source-vs-fallback comparison evidence, manifest JSON file
     emission, proof JSON file emission, package id / render profile identity
-    beyond the current `feral-grid-demo` product proof, and receipt construction
-    that can validate all stem-package QA gates before commit
+    `stem-package-local-ci`, receipt `export_role: package_manifest`,
+    receipt boundary `stem_package.local_ci_package_v1`, and receipt
+    construction that can validate all stem-package QA gates before commit
   - writer gate order: validate params and claimed roles; render/write stems
     outside realtime audio; decode/measure written WAVs; hash each stem; attach
     lineage and fallback evidence from Session/Core truth; build the receipt
@@ -515,6 +521,15 @@ Rules:
 - current `export.product_mix` receipts explicitly store `pack_id:
   feral-grid-demo` from the product-export proof so replay and observer
   surfaces retain the deterministic recipe identity that produced the artifact
+- current internal `export.stem_package` local CI receipts explicitly store
+  `pack_id: stem-package-local-ci`, `export_role: package_manifest`, and
+  `export_boundary: stem_package_local_ci_package_v1` / proof boundary
+  `stem_package.local_ci_package_v1`. The legacy `artifact_path` /
+  `export_hash` fields point at the package manifest, while the stem WAVs,
+  manifest, and proof JSON are the authoritative `artifact_set[]` entries.
+  Manifest and proof payloads mirror `package_id`, `export_role`, and
+  `export_boundary` so the package proof cannot collapse back into the
+  product-mix receipt identity.
 - current `export.product_mix` receipts populate `qa_gates[]` with
   `product_export_reproducibility_smoke: passed` for the `full_grid_mix`
   artifact role after the product-export proof and artifact hash gate accepts
@@ -563,15 +578,14 @@ Rules:
   `stem_package_per_stem_fallback_comparison`. A receipt can report `ready`
   only when all of those gates are present with `passed` status and the
   unsupported scope flag has been removed.
-- The CI-safe ready stem-package receipt fixture is a contract fixture only. It
-  uses explicit per-stem artifact evidence, metrics, lineage, fallback
-  comparison, manifest/proof JSON identities, and `passed` receipt gates to
-  exercise the positive readiness path without rendering, writing, or surfacing
-  a runnable stem-package export.
+- The CI-safe ready stem-package receipt fixture is the current internal writer
+  contract proof. It uses explicit per-stem artifact evidence, metrics,
+  lineage, fallback comparison, manifest/proof JSON identities, and `passed`
+  receipt gates to exercise the positive readiness path while remaining an
+  internal developer/operator path, not a final musician-facing DAW export UX.
 - The fixture may mark artifact-set and hash-stability gates as passed by
-  fixture writer proof while the real package writer and repeated-render proof
-  are still absent. That keeps the readiness positive path testable without
-  claiming file-writing, audio proof, or listening approval.
+  fixture writer proof. Future repeated-render and listening-review gates can
+  strengthen this, but must not replace the typed receipt identity.
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
@@ -621,8 +635,9 @@ Additional receipt fields required before wider export scopes:
   local package files without mutating the Session, writing observer events,
   regenerating artifacts, or treating product-mix receipts as stem packages.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
-- new render profile or recipe ids beyond current `feral-grid-demo` so replay
-  can validate which deterministic path produced the artifacts
+- new render profile or recipe ids beyond current `feral-grid-demo` and
+  `stem-package-local-ci` so replay can validate which deterministic path
+  produced the artifacts
 - stronger QA gate ids and results that prove future claimed artifact roles are
   not silent, fallback-collapsed, misplaced, or hash-unstable beyond the current
   product-export reproducibility smoke gate

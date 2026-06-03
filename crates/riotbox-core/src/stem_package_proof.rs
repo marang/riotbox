@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    export_readiness::ExportScope,
+    export_readiness::{ExportScope, ProductExportBoundary, ProductExportRole},
     ids::{ActionId, ExportReceiptId},
     session::{ExportArtifactMediaType, ExportArtifactRole},
     stem_package_manifest::{StemPackageManifest, StemPackageManifestJsonIdentity},
@@ -16,6 +16,10 @@ pub struct StemPackageProof {
     pub schema_version: u32,
     pub package_id: String,
     pub export_scope: ExportScope,
+    #[serde(default = "default_stem_package_proof_export_role")]
+    pub export_role: ProductExportRole,
+    #[serde(default = "default_stem_package_proof_boundary")]
+    pub export_boundary: ProductExportBoundary,
     pub receipt_id: ExportReceiptId,
     pub created_by_action: ActionId,
     pub manifest_sha256: String,
@@ -31,6 +35,8 @@ impl StemPackageProof {
             .map_err(|_| StemPackageProofError::ManifestSerialization)?;
         Self::new(StemPackageProofInput {
             package_id: manifest.package_id.clone(),
+            export_role: manifest.export_role,
+            export_boundary: manifest.export_boundary,
             receipt_id: manifest.receipt_id.clone(),
             created_by_action: manifest.created_by_action,
             manifest_sha256,
@@ -62,6 +68,8 @@ impl StemPackageProof {
             schema_version: STEM_PACKAGE_PROOF_SCHEMA_VERSION,
             package_id,
             export_scope: ExportScope::StemPackage,
+            export_role: input.export_role,
+            export_boundary: input.export_boundary,
             receipt_id: input.receipt_id,
             created_by_action: input.created_by_action,
             manifest_sha256,
@@ -75,12 +83,24 @@ impl StemPackageProof {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StemPackageProofInput {
     pub package_id: String,
+    pub export_role: ProductExportRole,
+    pub export_boundary: ProductExportBoundary,
     pub receipt_id: ExportReceiptId,
     pub created_by_action: ActionId,
     pub manifest_sha256: String,
     pub claimed_stem_roles: Vec<ExportArtifactRole>,
     pub manifest_identity: StemPackageManifestJsonIdentity,
     pub proof_identity: StemPackageManifestJsonIdentity,
+}
+
+#[must_use]
+pub const fn default_stem_package_proof_export_role() -> ProductExportRole {
+    ProductExportRole::PackageManifest
+}
+
+#[must_use]
+pub const fn default_stem_package_proof_boundary() -> ProductExportBoundary {
+    ProductExportBoundary::StemPackageLocalCiPackageV1
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -157,6 +177,9 @@ mod tests {
 
     use super::*;
     use crate::{
+        export_readiness::{
+            ProductExportBoundary, ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID,
+        },
         session::{ExportArtifactLocation, ExportArtifactSetEntry},
         stem_package_manifest::{
             StemPackageManifest, StemPackageManifestArtifact, StemPackageManifestInput,
@@ -171,7 +194,10 @@ mod tests {
 
         assert_eq!(json["schema_id"], STEM_PACKAGE_PROOF_SCHEMA_ID);
         assert_eq!(json["schema_version"], STEM_PACKAGE_PROOF_SCHEMA_VERSION);
+        assert_eq!(json["package_id"], STEM_PACKAGE_LOCAL_CI_PACK_ID);
         assert_eq!(json["export_scope"], "stem_package");
+        assert_eq!(json["export_role"], "package_manifest");
+        assert_eq!(json["export_boundary"], "stem_package_local_ci_package_v1");
         assert_eq!(json["manifest_sha256"], "manifest-sha");
         assert_eq!(
             json["claimed_stem_roles"],
@@ -208,6 +234,8 @@ mod tests {
             .expect("hash normalized manifest");
 
         assert_eq!(proof.package_id, manifest.package_id);
+        assert_eq!(proof.export_role, manifest.export_role);
+        assert_eq!(proof.export_boundary, manifest.export_boundary);
         assert_eq!(proof.receipt_id, manifest.receipt_id);
         assert_eq!(proof.created_by_action, manifest.created_by_action);
         assert_eq!(proof.manifest_sha256, expected_manifest_hash);
@@ -295,12 +323,15 @@ mod tests {
     }
 
     fn fixture_proof(manifest_sha256: impl Into<String>) -> StemPackageProof {
-        StemPackageProof::new(proof_input("pkg-1", manifest_sha256)).expect("fixture proof")
+        StemPackageProof::new(proof_input(STEM_PACKAGE_LOCAL_CI_PACK_ID, manifest_sha256))
+            .expect("fixture proof")
     }
 
     fn fixture_manifest() -> StemPackageManifest {
         StemPackageManifest::new(StemPackageManifestInput {
-            package_id: "pkg-1".into(),
+            package_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+            export_role: ProductExportRole::PackageManifest,
+            export_boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
             receipt_id: ExportReceiptId::new("receipt-1"),
             created_by_action: ActionId(7),
             claimed_stem_roles: vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
@@ -345,6 +376,8 @@ mod tests {
     ) -> StemPackageProofInput {
         StemPackageProofInput {
             package_id: package_id.into(),
+            export_role: ProductExportRole::PackageManifest,
+            export_boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
             receipt_id: ExportReceiptId::new("receipt-1"),
             created_by_action: ActionId(7),
             manifest_sha256: manifest_sha256.into(),

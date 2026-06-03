@@ -403,8 +403,10 @@ Contract for `export.stem_package`:
   file-emission proof for `stem_package.local_ci_package_v1`. It writes
   deterministic drums/bass fixture WAVs into a staging package directory,
   decodes/measures/hashes the promoted final files, writes manifest/proof JSON,
-  records final `artifact_set[]` identities, and proves receipt readiness with
-  the required stem-package QA gates.
+  records final `artifact_set[]` identities, stores receipt identity as
+  `pack_id: stem-package-local-ci`, `export_role: package_manifest`, and
+  `export_boundary: stem_package.local_ci_package_v1`, and proves receipt
+  readiness with the required stem-package QA gates.
 - Current internal commit proof:
   `riotbox-app::JamAppState::commit_stem_package_export_local_ci_package` can
   commit `export.stem_package` only for `boundary: local_ci_package_v1`,
@@ -446,9 +448,11 @@ Contract for `export.stem_package`:
   missing stems, or reinterpret product-mix receipts as stem packages.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
-  manifest/proof payload identities carry only role, location, and media type,
-  so `StemPackageProof.manifest_sha256` hashes the manifest payload without a
-  manifest self-hash or proof self-hash cycle.
+  manifest/proof payload identities carry package id, export role, export
+  boundary, role, location, and media type, but not the JSON file hashes. That
+  keeps `StemPackageProof.manifest_sha256` hashing the manifest payload without
+  a manifest self-hash or proof self-hash cycle while still proving that the
+  package is not a `feral-grid-demo/full_grid_mix` product-mix receipt.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

@@ -1,7 +1,9 @@
 use std::{fs, path::PathBuf};
 
 use riotbox_core::{
-    export_readiness::ExportScope,
+    export_readiness::{
+        ExportScope, ProductExportBoundary, ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID,
+    },
     ids::{ActionId, SourceId},
     session::{
         ExportArtifactFallbackComparisonEvidence, ExportArtifactFallbackComparisonKind,
@@ -35,6 +37,41 @@ fn ci_safe_stem_package_writer_promotes_final_files_and_ready_receipt() {
     assert_eq!(written.receipt.stem_package_readiness_report().blockers, []);
     assert!(written.receipt.stem_package_readiness_report().ready());
     assert_eq!(written.receipt.export_scope, ExportScope::StemPackage);
+    assert_eq!(written.receipt.pack_id, STEM_PACKAGE_LOCAL_CI_PACK_ID);
+    assert_eq!(
+        written.receipt.export_role,
+        ProductExportRole::PackageManifest
+    );
+    assert_eq!(
+        written.receipt.export_boundary,
+        ProductExportBoundary::StemPackageLocalCiPackageV1
+    );
+    assert_eq!(
+        written.receipt.artifact_path,
+        written
+            .package_dir
+            .join("stem_package_manifest.json")
+            .to_string_lossy()
+            .into_owned()
+    );
+    assert_eq!(written.manifest.package_id, STEM_PACKAGE_LOCAL_CI_PACK_ID);
+    assert_eq!(
+        written.manifest.export_role,
+        ProductExportRole::PackageManifest
+    );
+    assert_eq!(
+        written.manifest.export_boundary,
+        ProductExportBoundary::StemPackageLocalCiPackageV1
+    );
+    assert_eq!(written.proof.package_id, STEM_PACKAGE_LOCAL_CI_PACK_ID);
+    assert_eq!(
+        written.proof.export_role,
+        ProductExportRole::PackageManifest
+    );
+    assert_eq!(
+        written.proof.export_boundary,
+        ProductExportBoundary::StemPackageLocalCiPackageV1
+    );
     assert!(written.receipt.unsupported_scopes.is_empty());
     assert_eq!(written.receipt.qa_gates.len(), 5);
     assert!(written.package_dir.join("stems/stem_drums.wav").is_file());
@@ -63,7 +100,7 @@ fn ci_safe_stem_package_writer_promotes_final_files_and_ready_receipt() {
     assert_eq!(written.receipt.export_hash, primary_entry.sha256);
     assert_eq!(
         primary_artifact,
-        written.package_dir.join("stems/stem_drums.wav")
+        written.package_dir.join("stem_package_manifest.json")
     );
     assert_eq!(
         proof_artifact,

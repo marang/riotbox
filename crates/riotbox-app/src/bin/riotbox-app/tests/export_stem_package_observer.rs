@@ -6,7 +6,7 @@ use riotbox_core::{
     },
     export_readiness::{
         ExportReadinessStatus, ExportScope, ProductExportBoundary, ProductExportDestinationKind,
-        ProductExportRole,
+        ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID,
     },
     ids::ExportReceiptId,
     session::{
@@ -51,6 +51,12 @@ fn observer_snapshot_reports_completed_stem_package_lifecycle_from_session_recei
     assert_eq!(
         lifecycle[2]["receipt"]["stem_package_readiness"]["status"],
         "ready"
+    );
+    assert_eq!(lifecycle[2]["receipt"]["pack_id"], STEM_PACKAGE_LOCAL_CI_PACK_ID);
+    assert_eq!(lifecycle[2]["receipt"]["export_role"], "package_manifest");
+    assert_eq!(
+        lifecycle[2]["receipt"]["export_boundary"],
+        "stem_package_local_ci_package_v1"
     );
     assert_eq!(
         lifecycle[2]["receipt"]["stem_package_readiness"]["ready"],
@@ -151,6 +157,12 @@ fn observer_snapshot_reports_committed_local_ci_stem_package_writer_lifecycle() 
         lifecycle[2]["receipt"]["stem_package_readiness"]["status"],
         "ready"
     );
+    assert_eq!(lifecycle[2]["receipt"]["pack_id"], STEM_PACKAGE_LOCAL_CI_PACK_ID);
+    assert_eq!(lifecycle[2]["receipt"]["export_role"], "package_manifest");
+    assert_eq!(
+        lifecycle[2]["receipt"]["export_boundary"],
+        "stem_package_local_ci_package_v1"
+    );
     assert_eq!(
         lifecycle[2]["receipt"]["artifact_set"]
             .as_array()
@@ -206,13 +218,13 @@ fn ready_stem_package_receipt(action_id: ActionId, timestamp: u64) -> ExportRece
         created_by_action: action_id,
         created_at: timestamp,
         export_scope: ExportScope::StemPackage,
-        pack_id: "feral-grid-demo".into(),
-        export_role: ProductExportRole::FullGridMix,
-        export_boundary: ProductExportBoundary::FeralGridGeneratedSupport,
-        artifact_path: "exports/stem_package/stems/stem_drums.wav".into(),
+        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+        export_role: ProductExportRole::PackageManifest,
+        export_boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
+        artifact_path: "exports/stem_package/stem_package_manifest.json".into(),
         proof_path: "exports/stem_package/stem_package_proof.json".into(),
         manifest_path: Some("exports/stem_package/stem_package_manifest.json".into()),
-        export_hash: "drums-sha".into(),
+        export_hash: "manifest-sha".into(),
         normalized_manifest_hash: "manifest-sha".into(),
         artifact_set: vec![
             ready_stem_artifact(

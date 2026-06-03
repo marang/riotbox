@@ -4,6 +4,7 @@ use std::collections::BTreeMap;
 pub const PRODUCT_EXPORT_PROOF_SCHEMA: &str = "riotbox.product_export_reproducibility.v1";
 pub const EXPORT_READINESS_CONTRACT_SCHEMA: &str = "riotbox.export_readiness_contract.v1";
 pub const PRODUCT_EXPORT_PACK_ID: &str = "feral-grid-demo";
+pub const STEM_PACKAGE_LOCAL_CI_PACK_ID: &str = "stem-package-local-ci";
 
 #[must_use]
 pub fn default_product_export_pack_id() -> String {
@@ -34,6 +35,7 @@ pub enum ExportReadinessStatus {
 #[serde(rename_all = "snake_case")]
 pub enum ProductExportBoundary {
     FeralGridGeneratedSupport,
+    StemPackageLocalCiPackageV1,
 }
 
 impl ProductExportBoundary {
@@ -41,12 +43,14 @@ impl ProductExportBoundary {
     pub const fn as_proof_str(self) -> &'static str {
         match self {
             Self::FeralGridGeneratedSupport => "feral-grid generated-support export",
+            Self::StemPackageLocalCiPackageV1 => "stem_package.local_ci_package_v1",
         }
     }
 
     fn parse(value: &str) -> Result<Self, ExportReadinessError> {
         match value {
             "feral-grid generated-support export" => Ok(Self::FeralGridGeneratedSupport),
+            "stem_package.local_ci_package_v1" => Ok(Self::StemPackageLocalCiPackageV1),
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),
         }
     }
@@ -56,6 +60,7 @@ impl ProductExportBoundary {
 #[serde(rename_all = "snake_case")]
 pub enum ProductExportRole {
     FullGridMix,
+    PackageManifest,
 }
 
 impl ProductExportRole {
@@ -63,12 +68,14 @@ impl ProductExportRole {
     pub const fn as_str(self) -> &'static str {
         match self {
             Self::FullGridMix => "full_grid_mix",
+            Self::PackageManifest => "package_manifest",
         }
     }
 
     fn parse(value: &str) -> Result<Self, ExportReadinessError> {
         match value {
             "full_grid_mix" => Ok(Self::FullGridMix),
+            "package_manifest" => Ok(Self::PackageManifest),
             other => Err(ExportReadinessError::UnsupportedExportRole(
                 other.to_owned(),
             )),
@@ -300,6 +307,14 @@ mod tests {
         assert_eq!(
             ExportScope::StemPackage.musician_label(),
             "stem package export"
+        );
+        assert_eq!(
+            ProductExportBoundary::StemPackageLocalCiPackageV1.as_proof_str(),
+            "stem_package.local_ci_package_v1"
+        );
+        assert_eq!(
+            ProductExportRole::PackageManifest.as_str(),
+            "package_manifest"
         );
     }
 

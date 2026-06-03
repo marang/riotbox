@@ -7,7 +7,8 @@ use crate::{
         validate_stem_package_non_silence_evidence,
     },
     export_readiness::{
-        EXPORT_READINESS_CONTRACT_SCHEMA, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
+        EXPORT_READINESS_CONTRACT_SCHEMA, ProductExportBoundary, ProductExportRole,
+        STEM_PACKAGE_LOCAL_CI_PACK_ID,
     },
     ids::{ActionId, SourceId},
     session::{
@@ -22,12 +23,12 @@ fn stem_package_receipt() -> ExportReceiptState {
     let contract = ExportReadinessContract {
         schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
         status: ExportReadinessStatus::Reproducible,
-        proof_schema: PRODUCT_EXPORT_PROOF_SCHEMA.into(),
+        proof_schema: crate::stem_package_proof::STEM_PACKAGE_PROOF_SCHEMA_ID.into(),
         export_scope: ExportScope::StemPackage,
-        boundary: ProductExportBoundary::FeralGridGeneratedSupport,
-        pack_id: PRODUCT_EXPORT_PACK_ID.into(),
-        export_role: ProductExportRole::FullGridMix,
-        export_artifact: "run-a/stem_package.zip".into(),
+        boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
+        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+        export_role: ProductExportRole::PackageManifest,
+        export_artifact: "run-a/stem_package_manifest.json".into(),
         source_sha256: "eeee".into(),
         export_sha256: "aaaa".into(),
         normalized_manifest_sha256: "dddd".into(),
@@ -38,7 +39,7 @@ fn stem_package_receipt() -> ExportReceiptState {
         ActionId(7),
         900,
         &contract,
-        "exports/stem_package.zip",
+        "exports/stem_package_manifest.json",
         "exports/stem_package_proof.json",
         Some("exports/stem_package_manifest.json".into()),
     )

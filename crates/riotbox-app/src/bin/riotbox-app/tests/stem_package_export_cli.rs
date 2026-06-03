@@ -233,6 +233,15 @@ fn stem_package_local_ci_execute_writes_files_receipt_session_and_observer_event
     assert_eq!(summary["claimed_stem_roles"], json!(["stem_drums", "stem_bass"]));
     assert_eq!(summary["unsupported_claimed_roles"], json!([]));
     assert_eq!(summary["readiness_blockers"], json!([]));
+    assert_eq!(
+        summary["receipt"]["pack_id"],
+        riotbox_core::export_readiness::STEM_PACKAGE_LOCAL_CI_PACK_ID
+    );
+    assert_eq!(summary["receipt"]["export_role"], "package_manifest");
+    assert_eq!(
+        summary["receipt"]["export_boundary"],
+        "stem_package.local_ci_package_v1"
+    );
     assert_eq!(summary["receipt"]["artifact_count"], 4);
     assert!(destination_path.join("stem_package/stems/stem_drums.wav").is_file());
     assert!(destination_path.join("stem_package/stems/stem_bass.wav").is_file());
@@ -242,6 +251,23 @@ fn stem_package_local_ci_execute_writes_files_receipt_session_and_observer_event
     let persisted =
         riotbox_core::persistence::load_session_json(&session_path).expect("reload session");
     assert_eq!(persisted.export_receipts.len(), 1);
+    assert_eq!(
+        persisted.export_receipts[0].pack_id,
+        riotbox_core::export_readiness::STEM_PACKAGE_LOCAL_CI_PACK_ID
+    );
+    assert_eq!(
+        persisted.export_receipts[0].export_role,
+        riotbox_core::export_readiness::ProductExportRole::PackageManifest
+    );
+    assert_eq!(
+        persisted.export_receipts[0].export_boundary,
+        riotbox_core::export_readiness::ProductExportBoundary::StemPackageLocalCiPackageV1
+    );
+    assert!(
+        persisted.export_receipts[0]
+            .artifact_path
+            .ends_with("stem_package_manifest.json")
+    );
     assert_eq!(persisted.action_log.actions.len(), 1);
     assert_eq!(persisted.action_log.commit_records.len(), 1);
     assert_eq!(

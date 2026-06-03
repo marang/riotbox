@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
 use crate::{
-    export_readiness::ExportScope,
+    export_readiness::{ExportScope, ProductExportBoundary, ProductExportRole},
     ids::{ActionId, ExportReceiptId},
     session::{
         ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
@@ -21,6 +21,10 @@ pub struct StemPackageManifest {
     pub schema_version: u32,
     pub package_id: String,
     pub export_scope: ExportScope,
+    #[serde(default = "default_stem_package_manifest_export_role")]
+    pub export_role: ProductExportRole,
+    #[serde(default = "default_stem_package_manifest_boundary")]
+    pub export_boundary: ProductExportBoundary,
     pub receipt_id: ExportReceiptId,
     pub created_by_action: ActionId,
     pub claimed_stem_roles: Vec<ExportArtifactRole>,
@@ -52,6 +56,8 @@ impl StemPackageManifest {
             schema_version: STEM_PACKAGE_MANIFEST_SCHEMA_VERSION,
             package_id,
             export_scope: ExportScope::StemPackage,
+            export_role: input.export_role,
+            export_boundary: input.export_boundary,
             receipt_id: input.receipt_id,
             created_by_action: input.created_by_action,
             claimed_stem_roles: input.claimed_stem_roles,
@@ -85,6 +91,8 @@ impl StemPackageManifest {
 
         Self::new(StemPackageManifestInput {
             package_id: receipt.pack_id.clone(),
+            export_role: receipt.export_role,
+            export_boundary: receipt.export_boundary,
             receipt_id: receipt.receipt_id.clone(),
             created_by_action: receipt.created_by_action,
             claimed_stem_roles,
@@ -111,6 +119,8 @@ impl StemPackageManifest {
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct StemPackageManifestInput {
     pub package_id: String,
+    pub export_role: ProductExportRole,
+    pub export_boundary: ProductExportBoundary,
     pub receipt_id: ExportReceiptId,
     pub created_by_action: ActionId,
     pub claimed_stem_roles: Vec<ExportArtifactRole>,
@@ -118,6 +128,16 @@ pub struct StemPackageManifestInput {
     pub manifest_identity: StemPackageManifestJsonIdentity,
     pub proof_identity: StemPackageManifestJsonIdentity,
     pub qa_gates: Vec<ExportReceiptQaGateResult>,
+}
+
+#[must_use]
+pub const fn default_stem_package_manifest_export_role() -> ProductExportRole {
+    ProductExportRole::PackageManifest
+}
+
+#[must_use]
+pub const fn default_stem_package_manifest_boundary() -> ProductExportBoundary {
+    ProductExportBoundary::StemPackageLocalCiPackageV1
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

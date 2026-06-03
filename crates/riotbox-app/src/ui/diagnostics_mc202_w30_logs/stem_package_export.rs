@@ -201,5 +201,6 @@ fn compact_export_receipt_id(receipt: &ExportReceiptState) -> &str {
 fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str {
     match boundary {
         ProductExportBoundary::FeralGridGeneratedSupport => "feral-grid",
+        ProductExportBoundary::StemPackageLocalCiPackageV1 => "stem-pkg",
     }
 }

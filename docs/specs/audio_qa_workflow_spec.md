@@ -1050,6 +1050,13 @@ Today the repo already has:
   current export role, `feral-grid-demo` as the current pack/recipe identity,
   `reproducible` status, and explicit unsupported-scope flags for stem package
   export, live recording export, DAW export, and host-audio soak.
+- The current internal stem-package local CI proof uses a separate receipt and
+  package identity: `export_scope: stem_package`,
+  `pack_id: stem-package-local-ci`, `export_role: package_manifest`, and
+  boundary `stem_package.local_ci_package_v1`. Its readiness proof is the
+  stem-package artifact-set, hash-stability, non-silence, lineage, and
+  fallback-comparison gate set; it must not reuse the product-mix
+  `feral-grid-demo/full_grid_mix` identity.
 - the first export action boundary is `export.product_mix`, which writes a
   `full_grid_mix` product artifact plus proof receipt only after the existing
   product-export reproducibility proof and artifact hash check succeed. It is not a
