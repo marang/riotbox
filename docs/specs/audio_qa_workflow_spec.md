@@ -418,6 +418,46 @@ Manual listening is required because:
 - variation can exist numerically but still feel trivial or annoying
 - support layers can pass signal checks while still sounding cheap
 
+Structured listening review records the human layer as explicit artifact data,
+not chat memory and not CI-only truth. For audio-producing slices, the local
+workflow is:
+
+```bash
+just listening-review-pack RIOTBOX-123
+just listening-review-record artifacts/audio_qa/local/listening-reviews/RIOTBOX-123/review.json \
+  keep kick source_transformed_but_present clear
+```
+
+The pack command writes a local review directory with:
+
+- `prompt.md`: one-question-at-a-time listening prompt
+- `review.json`: structured verdict data, initially `human_verdict: unverified`
+- `metrics.json`: compact source/candidate file presence and byte metadata
+- `README.md`: local artifact ownership notes
+
+The record command updates `review.json` and writes `review-summary.md`.
+Required verdict fields include:
+
+- ticket, PR, command, source file, and seed/config when available
+- `technical_status`
+- `automated_musical_fitness_status`
+- `human_verdict`: `keep`, `reject`, `technically_ok_but_musically_weak`, or
+  `inconclusive`
+- strongest element: `kick`, `snare`, `bass`, `stab`, `chop`, `vocal`,
+  `silence`, or `none`
+- source-recognition verdict
+- hook verdict after two bars
+- failure reason
+- preferred direction
+- avoid list
+- concrete follow-up
+
+PRs that affect audible behavior must say whether a listening-review pack
+exists, whether a human verdict was recorded, or why the change remains
+`human_verdict: unverified`. The structured verdict complements automated
+musical fitness; it does not replace deterministic metrics, and it must not be
+stored only in agent memory.
+
 ---
 
 ## 4. Two Execution Modes

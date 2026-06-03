@@ -257,6 +257,15 @@ audio-qa-notes target="artifacts/audio_qa/local/notes.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/audio_qa_listening_review_template_2026-04-26.md "{{target}}"
 
+listening-review-pack ticket output="artifacts/audio_qa/local/listening-reviews" source="" candidate="" expected="Review whether the generated audio has a clear hook, source character, and stage-meaningful impact.":
+    python3 scripts/listening_review_workflow.py pack --ticket "{{ticket}}" --output "{{output}}/{{ticket}}" --source-file "{{source}}" --candidate "{{candidate}}" --expected "{{expected}}"
+
+listening-review-record review verdict strongest source_recognition hook failure="" direction="" avoid="" follow_up="" reviewer="":
+    python3 scripts/listening_review_workflow.py record --review "{{review}}" --human-verdict "{{verdict}}" --strongest-element "{{strongest}}" --source-recognition "{{source_recognition}}" --hook-after-two-bars "{{hook}}" --failure-reason "{{failure}}" --preferred-direction "{{direction}}" --avoid "{{avoid}}" --concrete-follow-up "{{follow_up}}" --reviewer "{{reviewer}}"
+
+listening-review-fixtures:
+    tmp="$(mktemp -d)" && python3 scripts/listening_review_workflow.py pack --ticket RIOTBOX-DRYRUN --output "$tmp/review" --candidate scripts/fixtures/automated_musical_fitness/valid/manifest.json --technical-status pass --automated-musical-fitness-status pass --expected "A dry-run fixture should prove structured review shape without audio hardware." && jq -e '.schema == "riotbox.listening_review.v1" and .human_verdict == "unverified" and .automated_musical_fitness_status == "pass"' "$tmp/review/review.json" && python3 scripts/listening_review_workflow.py record --review "$tmp/review/review.json" --human-verdict technically_ok_but_musically_weak --strongest-element chop --source-recognition source_transformed_but_present --hook-after-two-bars weak --failure-reason "dry run weak hook" --preferred-direction "harder chop contrast" --avoid "polite loop,source masking" --concrete-follow-up "tighten chop fixture" --reviewer "fixture" && python3 scripts/listening_review_workflow.py validate "$tmp/review/review.json" && jq -e '.human_verdict == "technically_ok_but_musically_weak" and .strongest_element == "chop" and .source_recognition == "source_transformed_but_present" and .hook_after_two_bars == "weak" and (.avoid | length == 2)' "$tmp/review/review.json" && grep -q "Human verdict" "$tmp/review/review-summary.md" && rm -rf "$tmp"
+
 observer-audio-correlation-notes target="artifacts/audio_qa/local/observer_audio_correlation.md":
     mkdir -p "$(dirname "{{target}}")"
     cp docs/benchmarks/observer_audio_correlation_template_2026-04-29.md "{{target}}"
