@@ -286,11 +286,12 @@ Boundary:
   `export.product_mix` action and surfaces receipt/failure feedback without
   adding a second export state model.
 - Replay must not blindly rewrite files as a hidden side effect.
-- Stem package export has a typed reserved Core action contract, but remains
-  out of runnable TUI/Ghost/user scope until queue, writer, Session/replay,
-  observer, and audio-QA implementation tickets land. Live recording export,
-  DAW session export, host-audio soak, automatic arranger export, and automatic
-  Ghost export remain out of scope until separate ActionCommand,
+- Stem package export and live recording export have typed reserved Core action
+  contracts, but remain out of runnable TUI/Ghost/user scope until queue,
+  writer/capture, Session/replay, observer, and audio-QA implementation tickets
+  land. DAW session export has a typed developer-proof action contract with
+  gated proof boundaries. Host-audio soak, automatic arranger export, and
+  automatic Ghost export remain out of scope until separate ActionCommand,
   Session/replay, observer, and audio-QA contracts exist.
 
 Required params for the first bounded action:
@@ -318,9 +319,10 @@ Reserved wider export commands:
 - `export.live_recording`
 - `export.daw_session`
 
-`export.stem_package` now exists as a typed reserved Core action label only;
-the other commands are not implemented. Before any of them can ship, the
-command must define:
+`export.stem_package` and `export.live_recording` now exist as typed reserved
+Core action labels only; `export.daw_session` exists as the current typed
+developer-proof action boundary. Before any wider musician-runnable export can
+ship, the command must define:
 
 - target scope and source of truth (`Session`, arrangement scene, capture
   lineage, or host-audio run)
@@ -334,6 +336,29 @@ command must define:
   states
 - audio-QA gates that prove non-silent, non-collapsed output for every claimed
   artifact role
+
+Current `export.live_recording` boundary:
+
+- command: `export.live_recording`
+- params variant: `LiveRecordingExport`
+- export scope: `live_recording`
+- export role: `live_recording_capture`
+- reserved action boundary: `reserved_contract_only`
+- reserved receipt boundary: `live_recording.receipt_contract_v1`
+- pack id: `live-recording-receipt-contract`
+- expected artifact role: `live_recording_capture`
+- undo policy: `NotUndoable`, because live-recording export will write files
+  outside musical undo once implemented
+- current side effects: none; no live input capture, WAV writer, filesystem
+  mutation, observer completion, Session receipt mutation, TUI affordance, Ghost
+  affordance, or replay write-back exists yet
+- observer/replay consequence: the command label is export-observer eligible
+  when a real action appears in action log, queue history, or pending queue, but
+  receipts alone must not invent lifecycle records
+- QA requirement before widening: proof must cover control path, recorded WAV
+  identity, format metrics, non-silence, duration, source/session lineage,
+  clock/source timing context when relevant, and explicit listening-review
+  status when the recorded audio is musician-facing
 
 Contract for `export.stem_package`:
 

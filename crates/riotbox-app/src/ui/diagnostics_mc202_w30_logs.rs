@@ -229,6 +229,7 @@ fn export_boundary_short_label(boundary: ProductExportBoundary) -> &'static str 
         ProductExportBoundary::FeralGridGeneratedSupport => "feral-grid",
         ProductExportBoundary::StemPackageLocalCiPackageV1 => "stem-pkg",
         ProductExportBoundary::ArrangementDawPlacementContractV1 => "arrange-daw",
+        ProductExportBoundary::LiveRecordingReceiptContractV1 => "live-rec",
     }
 }
 

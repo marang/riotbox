@@ -308,10 +308,12 @@ Minimum receipt fields:
 - created at timestamp
 - export scope, distinct from export role; current P016 product-mix receipts
   use `product_mix`, and current internal stem-package local CI receipts use
-  `stem_package`
+  `stem_package`. The first reserved live-recording receipt contract uses
+  `live_recording`
 - pack id / render recipe identity; current P016 product-mix receipts use
   `feral-grid-demo`, and current internal stem-package local CI receipts use
-  `stem-package-local-ci`
+  `stem-package-local-ci`. The reserved live-recording receipt contract uses
+  `live-recording-receipt-contract`
 - export role
 - export boundary
 - artifact path or artifact URI
@@ -354,6 +356,13 @@ Rules:
 - the current internal stem-package local CI receipt boundary is
   `stem_package.local_ci_package_v1` with `export_role: package_manifest`;
   it must not reuse the `feral-grid-demo` product-mix identity
+- the first reserved live-recording receipt boundary is
+  `live_recording.receipt_contract_v1` with
+  `export_scope: live_recording`, `export_role: live_recording_capture`,
+  `pack_id: live-recording-receipt-contract`, and artifact role
+  `live_recording_capture`. This is a typed Session/replay identity only; it
+  does not capture live audio, write WAV files, create observer lifecycle
+  records, mutate Session receipts, or make `export.live_recording` runnable.
 - current `export.product_mix` receipts populate artifact-set entries for the
   full-grid WAV and the copied product-export proof JSON while preserving the
   legacy `artifact_path`, `proof_path`, `export_hash`, and

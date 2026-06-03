@@ -279,6 +279,16 @@ pub enum ActionParams {
         lineage_policy: StemPackageLineagePolicy,
         fallback_comparison_policy: StemPackageFallbackComparisonPolicy,
     },
+    LiveRecordingExport {
+        #[serde(default = "default_live_recording_export_scope")]
+        export_scope: ExportScope,
+        export_role: LiveRecordingExportRole,
+        boundary: LiveRecordingExportBoundary,
+        include_manifest: bool,
+        destination_kind: ProductExportDestinationKind,
+        destination_path: Option<String>,
+        receipt_id: Option<String>,
+    },
     DawSessionExport {
         #[serde(default = "default_daw_session_export_scope")]
         export_scope: ExportScope,
@@ -293,6 +303,11 @@ pub enum ActionParams {
 #[must_use]
 pub const fn default_stem_package_export_scope() -> ExportScope {
     ExportScope::StemPackage
+}
+
+#[must_use]
+pub const fn default_live_recording_export_scope() -> ExportScope {
+    ExportScope::LiveRecording
 }
 
 #[must_use]
@@ -311,6 +326,18 @@ pub enum StemPackageExportRole {
 pub enum StemPackageExportBoundary {
     ReservedContractOnly,
     LocalCiPackageV1,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LiveRecordingExportRole {
+    LiveRecordingCapture,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LiveRecordingExportBoundary {
+    ReservedContractOnly,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -392,6 +419,7 @@ pub enum ActionCommand {
     SourceTimingRevertGrid,
     ExportProductMix,
     ExportStemPackage,
+    ExportLiveRecording,
     ExportDawSession,
     GhostSetMode,
     GhostAcceptSuggestion,
@@ -461,6 +489,7 @@ impl ActionCommand {
         Self::SourceTimingRevertGrid,
         Self::ExportProductMix,
         Self::ExportStemPackage,
+        Self::ExportLiveRecording,
         Self::ExportDawSession,
         Self::GhostSetMode,
         Self::GhostAcceptSuggestion,
@@ -531,6 +560,7 @@ impl ActionCommand {
             | Self::RestoreSource
             | Self::ExportProductMix
             | Self::ExportStemPackage
+            | Self::ExportLiveRecording
             | Self::ExportDawSession
             | Self::GhostAcceptSuggestion
             | Self::GhostRejectSuggestion
@@ -595,6 +625,7 @@ impl ActionCommand {
             Self::SourceTimingRevertGrid => "source_timing.revert_grid",
             Self::ExportProductMix => "export.product_mix",
             Self::ExportStemPackage => "export.stem_package",
+            Self::ExportLiveRecording => "export.live_recording",
             Self::ExportDawSession => "export.daw_session",
             Self::GhostSetMode => "ghost.set_mode",
             Self::GhostAcceptSuggestion => "ghost.accept_suggestion",
@@ -689,7 +720,7 @@ mod tests {
 
     #[test]
     fn action_command_lexicon_labels_are_unique_and_complete() {
-        assert_eq!(ActionCommand::all().len(), 59);
+        assert_eq!(ActionCommand::all().len(), 60);
 
         let labels = ActionCommand::all()
             .iter()
@@ -709,7 +740,7 @@ mod tests {
         let unsupported = ActionCommand::all().len() - supported;
 
         assert_eq!(supported, 42);
-        assert_eq!(unsupported, 17);
+        assert_eq!(unsupported, 18);
     }
 
     #[test]
@@ -807,6 +838,92 @@ mod tests {
         assert_eq!(
             local_ci_boundary,
             StemPackageExportBoundary::LocalCiPackageV1
+        );
+    }
+
+    #[test]
+    fn live_recording_export_action_contract_roundtrips_as_reserved_scope() {
+        let action = Action {
+            id: ActionId(3),
+            actor: ActorType::User,
+            command: ActionCommand::ExportLiveRecording,
+            params: ActionParams::LiveRecordingExport {
+                export_scope: ExportScope::LiveRecording,
+                export_role: LiveRecordingExportRole::LiveRecordingCapture,
+                boundary: LiveRecordingExportBoundary::ReservedContractOnly,
+                include_manifest: true,
+                destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+                destination_path: Some("exports/live-recording".into()),
+                receipt_id: Some("export-receipt-live-42".into()),
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..ActionTarget::default()
+            },
+            requested_at: 110,
+            quantization: Quantization::Immediate,
+            status: ActionStatus::Requested,
+            committed_at: None,
+            result: None,
+            undo_policy: UndoPolicy::NotUndoable {
+                reason: "reserved live recording export writes files outside musical undo".into(),
+            },
+            explanation: Some("reserved live recording export contract; not runnable yet".into()),
+        };
+
+        let json = serde_json::to_value(&action).expect("serialize reserved live action");
+        assert_eq!(json["command"], "ExportLiveRecording");
+        assert_eq!(
+            json["params"]["LiveRecordingExport"]["export_scope"],
+            "live_recording"
+        );
+        assert_eq!(
+            json["params"]["LiveRecordingExport"]["export_role"],
+            "live_recording_capture"
+        );
+        assert_eq!(
+            json["params"]["LiveRecordingExport"]["boundary"],
+            "reserved_contract_only"
+        );
+        assert_eq!(
+            json["params"]["LiveRecordingExport"]["receipt_id"],
+            "export-receipt-live-42"
+        );
+
+        let roundtrip: Action =
+            serde_json::from_value(json).expect("deserialize reserved live action");
+        assert_eq!(roundtrip, action);
+        assert_eq!(
+            roundtrip.command.replay_coverage(),
+            ActionReplayCoverage::Unsupported
+        );
+        assert_eq!(
+            ActionCommand::ExportLiveRecording.as_str(),
+            "export.live_recording"
+        );
+
+        let older_params: ActionParams = serde_json::from_value(serde_json::json!({
+            "LiveRecordingExport": {
+                "export_role": "live_recording_capture",
+                "boundary": "reserved_contract_only",
+                "include_manifest": true,
+                "destination_kind": "local_artifact_directory",
+                "destination_path": "exports/live-recording",
+                "receipt_id": null
+            }
+        }))
+        .expect("older live recording export params deserialize");
+        assert_eq!(
+            older_params,
+            ActionParams::LiveRecordingExport {
+                export_scope: ExportScope::LiveRecording,
+                export_role: LiveRecordingExportRole::LiveRecordingCapture,
+                boundary: LiveRecordingExportBoundary::ReservedContractOnly,
+                include_manifest: true,
+                destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+                destination_path: Some("exports/live-recording".into()),
+                receipt_id: None,
+            }
         );
     }
 

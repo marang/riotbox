@@ -235,6 +235,7 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         ActionCommand::RestoreSource => "Source",
         ActionCommand::ExportProductMix
         | ActionCommand::ExportStemPackage
+        | ActionCommand::ExportLiveRecording
         | ActionCommand::ExportDawSession => "Export",
         ActionCommand::MutateLane
         | ActionCommand::MutateLoop
