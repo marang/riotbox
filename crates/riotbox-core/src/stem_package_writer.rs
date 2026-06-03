@@ -10,7 +10,7 @@ pub const STEM_PACKAGE_STEMS_DIR: &str = "stems";
 pub const STEM_PACKAGE_MANIFEST_FILE: &str = "stem_package_manifest.json";
 pub const STEM_PACKAGE_PROOF_FILE: &str = "stem_package_proof.json";
 
-const SUPPORTED_LOCAL_CI_PACKAGE_STEM_ROLES: &[ExportArtifactRole] =
+pub const SUPPORTED_LOCAL_CI_PACKAGE_STEM_ROLES: &[ExportArtifactRole] =
     &[ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass];
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]

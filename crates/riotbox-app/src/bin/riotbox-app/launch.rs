@@ -18,7 +18,7 @@ use riotbox_app::{
     ui::{JamShellState, ShellKeyOutcome, ShellLaunchMode, render_jam_shell},
 };
 use riotbox_audio::runtime::AudioRuntimeShell;
-use riotbox_core::view::jam::SceneJumpAvailabilityView;
+use riotbox_core::{session::ExportArtifactRole, view::jam::SceneJumpAvailabilityView};
 use serde_json::{Value, json};
 
 const DEFAULT_SESSION_PATH: &str = "data/sessions/jam-session.json";
@@ -38,11 +38,19 @@ enum LaunchMode {
         sidecar_script_path: PathBuf,
         analysis_seed: u64,
     },
+    StemPackageLocalCiDryRun {
+        destination_path: PathBuf,
+        claimed_stem_roles: Vec<ExportArtifactRole>,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let raw_args = env::args().collect::<Vec<_>>();
     let launch = parse_args(raw_args.iter().skip(1).cloned())?;
+    if matches!(launch.mode, LaunchMode::StemPackageLocalCiDryRun { .. }) {
+        run_stem_package_local_ci_dry_run(&launch)?;
+        return Ok(());
+    }
     let state = load_state(launch.mode.clone())?;
     let shell = shell_for_loaded_state(state, &launch.mode);
     run_terminal_ui(
@@ -101,6 +109,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
             sidecar_script_path,
             analysis_seed,
         ),
+        LaunchMode::StemPackageLocalCiDryRun { .. } => Err(JamAppError::InvalidSession(
+            "stem package local CI dry-run does not load app state".into(),
+        )),
     }
 }
 

@@ -341,7 +341,8 @@ Contract for `export.stem_package`:
   `reserved_contract_only` remains a rejected non-runnable guard, while
   `local_ci_package_v1` is an internal app-side commit proof. It must not be
   surfaced as a general TUI/Ghost/user export action until musician-facing
-  controls, CLI/dry-run, and recovery diagnostics land.
+  controls, execute CLI, and recovery diagnostics land. The current CLI dry-run
+  is planning evidence only.
 - Target scope: `Session`.
 - Queue semantics: at most one pending stem-package export at a time; it is an
   immediate side-effect action, not a musical transform. The current
@@ -414,6 +415,15 @@ Contract for `export.stem_package`:
   and Session `ExportReceiptState` together. This is still an internal proof
   boundary: UI, Ghost, and CLI must not present `export.stem_package` as a
   general musician-facing export control until explicit surface tickets land.
+- Current CLI dry-run:
+  `riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir>
+  --stem-role stem_drums --stem-role stem_bass` reports the local CI package
+  plan as JSON without loading app state or writing files. It requires an
+  explicit local destination and explicit claimed stem roles, reports supported
+  roles, unsupported claims, readiness blockers, and planned final artifact
+  paths, and always reports `writes_files: false`. This surface is a developer
+  proof/control-plane diagnostic for the internal boundary, not a polished DAW
+  export workflow and not proof of audio readiness by itself.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry only role, location, and media type,
