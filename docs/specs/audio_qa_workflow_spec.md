@@ -1020,6 +1020,13 @@ Today the repo already has:
   and `failed` when metrics prove silence, cannot prove activity, or claimed
   roles are missing, duplicated, or non-stem. It is metrics evidence, not a
   package writer or listening-pack approval.
+- `riotbox-core::export_qa::validate_stem_package_lineage_evidence`
+  is the current CI-safe per-stem lineage receipt gate. It records
+  `stem_package_per_stem_lineage` as `passed` only when every claimed stem
+  artifact carries source graph, source capture, or capture-lineage evidence
+  from Session/Core receipt fields. Missing, duplicate, non-stem, lineage-free,
+  or blank lineage identities record `failed`. It validates traceability
+  evidence only and does not claim package writing or listening approval.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
   CI-safe schema contract for future stem-package manifests. It serializes
   stable schema id/version, `export_scope: stem_package`, receipt/action

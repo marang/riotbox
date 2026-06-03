@@ -2,7 +2,12 @@ use serde::{Deserialize, Serialize};
 
 use crate::session::{ExportArtifactAudioMetrics, ExportArtifactRole, ExportArtifactSetEntry};
 
+mod stem_package_lineage;
 mod stem_package_non_silence;
+pub use stem_package_lineage::{
+    StemPackageLineageQaFailure, StemPackageLineageQaFailureKind, StemPackageLineageQaReport,
+    StemPackageLineageQaStatus, validate_stem_package_lineage_evidence,
+};
 pub use stem_package_non_silence::{
     StemPackageNonSilenceDeferredCheck, StemPackageNonSilenceDeferredCheckKind,
     StemPackageNonSilenceDeferredCheckStatus, StemPackageNonSilenceQaFailure,
@@ -466,5 +471,7 @@ fn deferred_stem_hash_stability_checks() -> Vec<StemPackageHashStabilityDeferred
 
 #[cfg(test)]
 mod stem_package_evidence_tests;
+#[cfg(test)]
+mod stem_package_lineage_tests;
 #[cfg(test)]
 mod stem_package_tests;
