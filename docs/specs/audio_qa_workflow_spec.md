@@ -1184,6 +1184,36 @@ Today the repo already has:
   JSON payload, and checks receipt readiness stays blocked. It is a contract
   fixture, not a listening pack, package writer, or proof that
   `export.stem_package` is ready for musicians.
+- Future stem-package writer QA contract:
+  - reusable product-export evidence: local artifact hashing, local proof file
+    hashing, receipt-side `artifact_set[]` projection, source graph and
+    timing-grid receipt evidence, safe post-write WAV metric extraction,
+    recovery preflight for local artifact paths, and observer export lifecycle
+    projection from queue/history plus Session receipts
+  - new evidence required before readiness: one written WAV per claimed stem
+    role, per-stem format metrics, per-stem non-silence, per-stem hash
+    stability across repeated writer/render output, per-stem source/capture or
+    capture-lineage evidence when policy requires it, per-stem source-vs-
+    fallback comparison evidence when policy requires it, manifest JSON file,
+    proof JSON file, and a package/render profile identity distinct from the
+    current product-mix Feral-grid proof
+  - gate order: render/write stems outside realtime audio; decode/measure
+    written WAVs; hash stems; attach lineage and fallback evidence from
+    Session/Core; build manifest and proof payloads from receipt evidence; write
+    and hash manifest/proof JSON; run stem-package artifact-set, hash-stability,
+    non-silence, lineage, and fallback-comparison gates; then commit the receipt
+    only if the scope is no longer unsupported and all required gates pass
+  - realtime boundary: filesystem writes, hashing, decoding, metric extraction,
+    QA comparison, Ghost/model calls, and observer emission must remain outside
+    the realtime audio callback
+  - replay/restore boundary: replay may validate package metadata and artifact
+    availability, but must not regenerate stems or rewrite package files without
+    a fresh explicit export request
+  - manifest/proof identity precondition: the writer must resolve the current
+    manifest self-hash risk before shipping. If the manifest payload contains a
+    manifest JSON artifact hash, that hash must come from a non-circular
+    preimage or receipt-side identity rule that is specified and regression
+    tested before any package writer claims readiness.
 - Observer export snapshots project those receipt `qa_gates[]` values as-is,
   including non-product stem-package evidence. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and

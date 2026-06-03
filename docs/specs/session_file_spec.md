@@ -403,6 +403,36 @@ Rules:
   manifest JSON, derives and roundtrips the proof JSON payload, and asserts
   receipt readiness remains blocked, so it proves contract wiring without
   claiming full stem export readiness.
+- Future stem-package writer planning contract:
+  - reusable product-export pieces: explicit side-effect action commit after
+    success, local destination directory handling, artifact SHA-256 helpers,
+    copied proof/artifact identity in `artifact_set[]`, source graph and
+    timing-grid receipt attachment patterns, audio-metrics attachment after a
+    local WAV can be decoded, recovery preflight for local artifact-set paths,
+    and observer projection from Session receipts rather than app-local export
+    state
+  - new stem-package pieces: per-stem render recipe/boundary, one WAV artifact
+    per claimed stem role, per-stem source/capture/capture-lineage evidence,
+    per-stem source-vs-fallback comparison evidence, manifest JSON file
+    emission, proof JSON file emission, package id / render profile identity
+    beyond the current `feral-grid-demo` product proof, and receipt construction
+    that can validate all stem-package QA gates before commit
+  - writer gate order: validate params and claimed roles; render/write stems
+    outside realtime audio; decode/measure written WAVs; hash each stem; attach
+    lineage and fallback evidence from Session/Core truth; build the receipt
+    draft, manifest payload, and proof payload; write and hash manifest/proof
+    JSON; validate receipt QA gates; then commit the action, commit record, and
+    receipt together
+  - realtime boundary: the writer must not run blocking filesystem work,
+    decoding, hashing, QA analysis, Ghost/model calls, or observer emission on
+    the realtime audio callback
+  - replay/restore boundary: replay and recovery may validate receipt metadata
+    and local artifact availability, but must not regenerate stems, rewrite
+    packages, or mutate missing files without a fresh explicit export action
+  - manifest/proof precondition: before a writer can ship, the JSON identity
+    contract must avoid a manifest self-hash cycle. A writer must not embed a
+    manifest hash inside the same manifest bytes unless a separate non-circular
+    preimage/receipt identity rule is specified and tested.
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent
