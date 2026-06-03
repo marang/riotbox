@@ -888,4 +888,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add stem-package manifest proof hash helper
 - [RIOTBOX-1116.md](./RIOTBOX-1116.md)
   P016: Define stem-package proof JSON schema type
+- [RIOTBOX-1117.md](./RIOTBOX-1117.md)
+  P016: Build stem-package proof from manifest evidence
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
