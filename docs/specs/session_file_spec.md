@@ -608,6 +608,12 @@ Additional receipt fields required before wider export scopes:
   receipts. It reports the writer plan, supported/unsupported role claims, and
   blockers only; readiness remains a property of committed Session receipt
   evidence and required QA gates.
+- the stem-package local CI CLI execute proof requires an explicit existing
+  Session file, explicit destination, and explicit supported stem roles. On
+  success it must use the committed writer/action path, save the Session with
+  the committed action, commit record, and ready receipt, and may emit observer
+  evidence. On failure it must report blockers without committing a ready
+  receipt or regenerating over an existing package destination.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts

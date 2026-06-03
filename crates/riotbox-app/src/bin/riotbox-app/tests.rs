@@ -53,7 +53,8 @@ mod tests {
                 assert_eq!(analysis_seed, 19);
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
-            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected ingest mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. }
+            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -74,7 +75,8 @@ mod tests {
                 assert_eq!(source_graph_path, None);
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
-            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected ingest mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. }
+            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -97,7 +99,8 @@ mod tests {
                 assert_eq!(source_graph_path, Some(PathBuf::from("graph.json")));
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
-            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected load mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. }
+            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected load mode"),
         }
     }
 
@@ -115,7 +118,8 @@ mod tests {
                 assert_eq!(source_graph_path, None);
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
-            LaunchMode::StemPackageLocalCiDryRun { .. } => panic!("expected load mode"),
+            LaunchMode::StemPackageLocalCiDryRun { .. }
+            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected load mode"),
         }
     }
 

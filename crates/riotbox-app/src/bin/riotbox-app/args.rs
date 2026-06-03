@@ -10,12 +10,14 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut saw_seed_flag = false;
     let mut observer_path = None;
     let mut stem_package_local_ci_dry_run = false;
+    let mut stem_package_local_ci_execute = false;
     let mut stem_package_destination_path = None;
     let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "--stem-package-local-ci-dry-run" => stem_package_local_ci_dry_run = true,
+            "--stem-package-local-ci-execute" => stem_package_local_ci_execute = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
                     Some(next_path(&mut args, "--stem-package-destination")?);
@@ -64,6 +66,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         }
     }
 
+    if stem_package_local_ci_dry_run && stem_package_local_ci_execute {
+        return Err(
+            "stem package local CI dry-run and execute modes cannot be combined".into(),
+        );
+    }
+
     if stem_package_local_ci_dry_run {
         if source_path.is_some()
             || session_path.is_some()
@@ -92,9 +100,36 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             observer_path: None,
         });
     }
+    if stem_package_local_ci_execute {
+        if source_path.is_some() || saw_sidecar_flag || saw_seed_flag {
+            return Err(
+                "stem package local CI execute cannot be combined with source/sidecar/seed launch arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "stem package local CI execute requires --session <session.json>".to_string()
+        })?;
+        let destination_path = stem_package_destination_path.ok_or_else(|| {
+            "stem package local CI execute requires --stem-package-destination <dir>".to_string()
+        })?;
+        if claimed_stem_roles.is_empty() {
+            return Err("stem package local CI execute requires at least one --stem-role".into());
+        }
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::StemPackageLocalCiExecute {
+                session_path,
+                source_graph_path,
+                destination_path,
+                claimed_stem_roles,
+            },
+            observer_path,
+        });
+    }
     if stem_package_destination_path.is_some() || !claimed_stem_roles.is_empty() {
         return Err(
-            "--stem-package-destination, --stem-role, and --stem-roles require --stem-package-local-ci-dry-run"
+            "--stem-package-destination, --stem-role, and --stem-roles require --stem-package-local-ci-dry-run or --stem-package-local-ci-execute"
                 .into(),
         );
     }
@@ -148,7 +183,7 @@ fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String>
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n\nDefaults:\n  --session {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -158,7 +193,8 @@ impl LaunchMode {
         match self {
             Self::Load { .. } => ShellLaunchMode::Load,
             Self::Ingest { .. } => ShellLaunchMode::Ingest,
-            Self::StemPackageLocalCiDryRun { .. } => ShellLaunchMode::Load,
+            Self::StemPackageLocalCiDryRun { .. }
+            | Self::StemPackageLocalCiExecute { .. } => ShellLaunchMode::Load,
         }
     }
 }
@@ -288,6 +324,23 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             claimed_stem_roles,
         } => json!({
             "mode": "stem_package_local_ci_dry_run",
+            "destination_path": destination_path,
+            "claimed_stem_roles": claimed_stem_roles
+                .iter()
+                .copied()
+                .map(export_artifact_role_label)
+                .collect::<Vec<_>>(),
+            "observer_path": launch.observer_path,
+        }),
+        LaunchMode::StemPackageLocalCiExecute {
+            session_path,
+            source_graph_path,
+            destination_path,
+            claimed_stem_roles,
+        } => json!({
+            "mode": "stem_package_local_ci_execute",
+            "session_path": session_path,
+            "source_graph_path": source_graph_path,
             "destination_path": destination_path,
             "claimed_stem_roles": claimed_stem_roles
                 .iter()
