@@ -884,4 +884,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Tighten export QA evidence identity validation before stem scopes
 - [RIOTBOX-1115.md](./RIOTBOX-1115.md)
   Move Riotbox Codex skills into project-local .codex tree
+- [RIOTBOX-1106.md](./RIOTBOX-1106.md)
+  P016: Add stem-package manifest proof hash helper
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
