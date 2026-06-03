@@ -171,6 +171,11 @@ It must expose:
   `export.product_mix` through the existing action path and reports success or
   failure through receipt/action-derived feedback, without claiming stem, DAW,
   live-recording, or host-audio export
+- Jam Inspect may surface the latest committed stem-package receipt as proof
+  detail: readiness status, claimed stem artifact roles, artifact count,
+  required QA gate status, and Core-derived readiness blockers. Jam Perform must
+  still avoid presenting `export.stem_package` as a live play/export control
+  until a musician-facing export action is explicitly implemented.
 
 ### 5.2 Jam regions
 
