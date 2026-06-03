@@ -1,4 +1,6 @@
 pub mod action;
+pub mod daw_session_manifest;
+pub mod daw_session_proof;
 pub mod export_qa;
 pub mod export_readiness;
 pub mod ghost;

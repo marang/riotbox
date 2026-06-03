@@ -511,6 +511,14 @@ Contract for `export.stem_package`:
   Session, verifies the ready-for-writer plan shape, removes the source
   arrangement manifest file, and verifies the missing-file blocker while proving
   the destination directory was not created.
+- Current DAW payload contract:
+  `riotbox-core::daw_session_manifest::DawSessionManifest` and
+  `riotbox-core::daw_session_proof::DawSessionProof` define deterministic
+  in-memory JSON payloads for the planned DAW package manifest/proof. They
+  validate DAW receipt scope/boundary, placement refs, tempo-map evidence,
+  source JSON artifact identities, and planned manifest/tempo/proof identities.
+  This is still behind the writer plan skeleton: no files are written, Session
+  is not mutated, and `export.daw_session` remains non-runnable.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
