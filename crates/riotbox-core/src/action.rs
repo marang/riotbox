@@ -279,11 +279,25 @@ pub enum ActionParams {
         lineage_policy: StemPackageLineagePolicy,
         fallback_comparison_policy: StemPackageFallbackComparisonPolicy,
     },
+    DawSessionExport {
+        #[serde(default = "default_daw_session_export_scope")]
+        export_scope: ExportScope,
+        boundary: DawSessionExportBoundary,
+        include_manifest: bool,
+        destination_kind: ProductExportDestinationKind,
+        destination_path: Option<String>,
+        receipt_id: Option<String>,
+    },
 }
 
 #[must_use]
 pub const fn default_stem_package_export_scope() -> ExportScope {
     ExportScope::StemPackage
+}
+
+#[must_use]
+pub const fn default_daw_session_export_scope() -> ExportScope {
+    ExportScope::DawSession
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -297,6 +311,13 @@ pub enum StemPackageExportRole {
 pub enum StemPackageExportBoundary {
     ReservedContractOnly,
     LocalCiPackageV1,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum DawSessionExportBoundary {
+    ReservedContractOnly,
+    LocalProjectWriterV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -369,6 +390,7 @@ pub enum ActionCommand {
     SourceTimingRevertGrid,
     ExportProductMix,
     ExportStemPackage,
+    ExportDawSession,
     GhostSetMode,
     GhostAcceptSuggestion,
     GhostRejectSuggestion,
@@ -437,6 +459,7 @@ impl ActionCommand {
         Self::SourceTimingRevertGrid,
         Self::ExportProductMix,
         Self::ExportStemPackage,
+        Self::ExportDawSession,
         Self::GhostSetMode,
         Self::GhostAcceptSuggestion,
         Self::GhostRejectSuggestion,
@@ -506,6 +529,7 @@ impl ActionCommand {
             | Self::RestoreSource
             | Self::ExportProductMix
             | Self::ExportStemPackage
+            | Self::ExportDawSession
             | Self::GhostAcceptSuggestion
             | Self::GhostRejectSuggestion
             | Self::GhostExecuteTool => ActionReplayCoverage::Unsupported,
@@ -569,6 +593,7 @@ impl ActionCommand {
             Self::SourceTimingRevertGrid => "source_timing.revert_grid",
             Self::ExportProductMix => "export.product_mix",
             Self::ExportStemPackage => "export.stem_package",
+            Self::ExportDawSession => "export.daw_session",
             Self::GhostSetMode => "ghost.set_mode",
             Self::GhostAcceptSuggestion => "ghost.accept_suggestion",
             Self::GhostRejectSuggestion => "ghost.reject_suggestion",
@@ -662,7 +687,7 @@ mod tests {
 
     #[test]
     fn action_command_lexicon_labels_are_unique_and_complete() {
-        assert_eq!(ActionCommand::all().len(), 58);
+        assert_eq!(ActionCommand::all().len(), 59);
 
         let labels = ActionCommand::all()
             .iter()
@@ -682,7 +707,7 @@ mod tests {
         let unsupported = ActionCommand::all().len() - supported;
 
         assert_eq!(supported, 42);
-        assert_eq!(unsupported, 16);
+        assert_eq!(unsupported, 17);
     }
 
     #[test]
@@ -780,6 +805,68 @@ mod tests {
         assert_eq!(
             local_ci_boundary,
             StemPackageExportBoundary::LocalCiPackageV1
+        );
+    }
+
+    #[test]
+    fn daw_session_export_action_contract_roundtrips_as_reserved_scope() {
+        let action = Action {
+            id: ActionId(2),
+            actor: ActorType::User,
+            command: ActionCommand::ExportDawSession,
+            params: ActionParams::DawSessionExport {
+                export_scope: ExportScope::DawSession,
+                boundary: DawSessionExportBoundary::ReservedContractOnly,
+                include_manifest: true,
+                destination_kind: ProductExportDestinationKind::LocalArtifactDirectory,
+                destination_path: Some("exports/daw-session".into()),
+                receipt_id: Some("export-receipt-42".into()),
+            },
+            target: ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..ActionTarget::default()
+            },
+            requested_at: 120,
+            quantization: Quantization::Immediate,
+            status: ActionStatus::Requested,
+            committed_at: None,
+            result: None,
+            undo_policy: UndoPolicy::NotUndoable {
+                reason: "reserved DAW session export writes files outside musical undo".into(),
+            },
+            explanation: Some("reserved DAW session export contract; not runnable yet".into()),
+        };
+
+        let json = serde_json::to_value(&action).expect("serialize reserved DAW action");
+        assert_eq!(json["command"], "ExportDawSession");
+        assert_eq!(
+            json["params"]["DawSessionExport"]["export_scope"],
+            "daw_session"
+        );
+        assert_eq!(
+            json["params"]["DawSessionExport"]["boundary"],
+            "reserved_contract_only"
+        );
+        assert_eq!(
+            json["params"]["DawSessionExport"]["receipt_id"],
+            "export-receipt-42"
+        );
+
+        let roundtrip: Action =
+            serde_json::from_value(json).expect("deserialize reserved DAW action");
+        assert_eq!(roundtrip, action);
+        assert_eq!(
+            roundtrip.command.replay_coverage(),
+            ActionReplayCoverage::Unsupported
+        );
+        let writer_json = serde_json::to_value(DawSessionExportBoundary::LocalProjectWriterV1)
+            .expect("serialize local DAW writer boundary");
+        assert_eq!(writer_json, "local_project_writer_v1");
+        let writer_boundary: DawSessionExportBoundary =
+            serde_json::from_value(writer_json).expect("deserialize local DAW writer boundary");
+        assert_eq!(
+            writer_boundary,
+            DawSessionExportBoundary::LocalProjectWriterV1
         );
     }
 }

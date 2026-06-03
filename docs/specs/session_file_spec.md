@@ -839,10 +839,16 @@ Additional receipt fields required before wider export scopes:
   lifecycle events, or make `export.daw_session` runnable.
 - the first DAW session writer/action boundary is reserved as
   `daw_session.local_project_writer_v1` for a future runnable
-  `export.daw_session` command. It sits after the existing
-  `daw_session.json_package_writer_v1` JSON package proof and before
-  host-import or audible-output proof. Current code implements only a CI-safe
-  local proof skeleton: `riotbox-app --daw-session-writer-proof-execute
+  `export.daw_session` command. Current code also reserves a typed
+  `export.daw_session` action guard that records rejected queue-history
+  attempts with destination root, `reserved_contract_only` boundary, selected
+  DAW-session receipt id when available, and the DAW surface-gate blocker
+  summary, while writing no Session receipt, DAW files, observer lifecycle
+  records, host checks, or proof artifacts. The future writer boundary sits
+  after the existing `daw_session.json_package_writer_v1` JSON package proof
+  and before host-import or audible-output proof. Current writer proof code
+  implements only a CI-safe local proof skeleton:
+  `riotbox-app --daw-session-writer-proof-execute
   --session <session.json> --daw-session-destination <dir>` writes
   `daw_session_writer/local_project_skeleton.json` and
   `daw_session_writer/writer_proof.json` through staging without mutating the

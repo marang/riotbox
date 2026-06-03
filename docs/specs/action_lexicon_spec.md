@@ -632,8 +632,10 @@ Contract for `export.stem_package`:
   `daw_session.local_project_writer_v1`; the existing
   `daw_session.json_package_writer_v1` proof remains a prerequisite JSON
   package writer, not the DAW project/session writer itself. Current code adds
-  only a CI-safe local writer proof skeleton and a receipt evidence apply path:
-  no `ActionCommand`, host runner, audio capture, observer lifecycle, or
+  a typed reserved `export.daw_session` Core action and app queue-history guard
+  that rejects musician attempts while the DAW surface gate is blocked, plus a
+  CI-safe local writer proof skeleton and a receipt evidence apply path: no
+  DAW writer commit, host runner, audio capture, observer lifecycle, or
   musician-runnable `export.daw_session` exists.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
@@ -651,13 +653,17 @@ Contract for `export.stem_package`:
   passed gate removes only `daw_writer_missing`; `developer_proof_only`,
   `daw_host_import_proof_missing`, and `audible_output_proof_missing` keep the
   musician-facing DAW export surface disabled.
-- Future `export.daw_session` queue path:
+- Current reserved `export.daw_session` queue path:
+  the app queue helper records a typed rejected `export.daw_session` action in
+  queue history, carries the destination root, `reserved_contract_only`
+  boundary, selected DAW-session receipt id when one exists, and a
+  `NotUndoable` policy, then rejects with the DAW session surface-gate reason.
+  It leaves the pending queue empty and writes no files, receipts, observer
+  lifecycle records, host checks, or proof artifacts. Future runnable work must
+  replace this reserved boundary with `daw_session.local_project_writer_v1`,
   accept at most one pending DAW-session export for a Session/destination pair,
-  reject attempts while the DAW surface gate is blocked, and keep the realtime
-  audio thread out of destination validation, package inspection, DAW writing,
-  host checks, or proof generation. The queue record must carry the destination
-  root, export boundary id, selected DAW-session receipt id, and intended
-  artifact identities rather than inferring them from app-local state.
+  and keep the realtime audio thread out of destination validation, package
+  inspection, DAW writing, host checks, or proof generation.
 - Future `export.daw_session` commit / side-effect path:
   revalidate the latest `export_scope: daw_session` receipt, arrangement
   placement, tempo-map evidence, local artifact preflight, and
