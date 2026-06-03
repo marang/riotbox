@@ -1002,4 +1002,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Extract export action and receipt contract tests from oversized Core modules
 - [RIOTBOX-1173.md](./RIOTBOX-1173.md)
   P016: Add reserved live-recording export queue guard
+- [RIOTBOX-1174.md](./RIOTBOX-1174.md)
+  P016: Add live-recording host-audio evidence refs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
