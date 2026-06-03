@@ -1306,6 +1306,14 @@ Today the repo already has:
     path. It runs the real binary, validates the ready-for-writer dry-run plan,
     removes the arrangement manifest source file, validates the missing-file
     blocker, and proves the destination directory was not created.
+  - current DAW-session manifest/proof payload contracts live in
+    `riotbox-core::daw_session_manifest` and
+    `riotbox-core::daw_session_proof`. They provide deterministic normalized
+    JSON/hash contracts for the planned DAW manifest and proof from receipt
+    evidence, placement refs, tempo-map refs, source artifact identities, and
+    planned DAW JSON identities. They are schema and proof-input contracts only:
+    no DAW files are written, no Session is mutated, no audio output is
+    produced, and no musician-facing DAW export is enabled.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

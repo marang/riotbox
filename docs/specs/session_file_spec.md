@@ -703,6 +703,15 @@ Additional receipt fields required before wider export scopes:
   `ready_for_writer` plan shape, removes the arrangement manifest source file,
   and verifies the missing-file blocker while proving the destination directory
   was not created.
+- `riotbox-core::daw_session_manifest::DawSessionManifest` and
+  `riotbox-core::daw_session_proof::DawSessionProof` reserve the DAW-session
+  manifest/proof JSON payload contracts behind the writer plan skeleton. They
+  derive from a ready `export_scope: daw_session` receipt plus explicit planned
+  DAW JSON identities, carry arrangement placement refs, the DAW tempo-map ref,
+  source manifest/proof artifact identities, planned manifest/tempo/proof
+  identities, and deterministic normalized JSON/hash helpers. They do not write
+  files, mutate Session, add a CLI writer, or make `export.daw_session`
+  runnable.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts
