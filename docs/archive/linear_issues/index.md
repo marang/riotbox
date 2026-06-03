@@ -932,4 +932,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add stem-package operator report CLI smoke proof
 - [RIOTBOX-1130.md](./RIOTBOX-1130.md)
   P016: Gate musician-facing stem-package export surfacing
+- [RIOTBOX-1139.md](./RIOTBOX-1139.md)
+  P016: Add arrangement export receipt placement contract skeleton
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
