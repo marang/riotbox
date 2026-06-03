@@ -924,4 +924,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add stem-package restore and artifact-availability diagnostics
 - [RIOTBOX-1135.md](./RIOTBOX-1135.md)
   P016: Add guarded stem-package execute CLI proof path
+- [RIOTBOX-1136.md](./RIOTBOX-1136.md)
+  P016: Add stem-package operator proof summary command
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
