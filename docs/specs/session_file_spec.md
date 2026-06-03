@@ -790,6 +790,11 @@ Additional receipt fields required before wider export scopes:
   `export_manifest`, `daw_session_tempo_map`, `product_export_proof`, and the
   passed `daw_session_json_package_integrity` gate while the musician-facing
   surface remains disabled.
+- `daw_session_host_import_proof` is the reserved Session/Core QA gate for a
+  future DAW host import proof. A passed gate only removes the
+  `daw_host_import_proof_missing` surface blocker; it does not imply a DAW
+  writer exists, prove audible output, or make `export.daw_session` runnable.
+  Failed or missing gates keep the host-import blocker visible.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts
