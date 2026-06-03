@@ -730,6 +730,12 @@ Additional receipt fields required before wider export scopes:
   linkage. It does not create DAW audio files, DAW project/session formats,
   observer events, Session receipt mutations, or a runnable musician-facing
   `export.daw_session` action.
+- `riotbox-app::jam_app::daw_session_json_package_report` is the current
+  read-only validator for a local `daw_session/` JSON package. It reports
+  manifest, tempo-map, and proof JSON file identities, final SHA-256 values,
+  expected schema ids, and proof/manifest hash linkage blockers. It does not
+  create files, repair packages, mutate Session, emit observer events, validate
+  host import correctness, or make `export.daw_session` runnable.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

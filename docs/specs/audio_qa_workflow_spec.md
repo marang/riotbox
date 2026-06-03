@@ -1328,6 +1328,12 @@ Today the repo already has:
     proves local JSON file emission only, not DAW audio output, host import
     correctness, observer lifecycle, Session mutation, or a musician-facing
     `export.daw_session` workflow.
+  - current DAW JSON package report reads a local `daw_session/` package
+    without writing, validates expected schema ids, verifies proof/manifest hash
+    linkage, reports final JSON SHA-256 values, and surfaces typed blockers for
+    missing files, invalid JSON, schema mismatch, or hash mismatch. This proves
+    local JSON package integrity only, not DAW host import correctness or
+    audible output.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

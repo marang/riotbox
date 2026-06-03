@@ -574,3 +574,6 @@ daw-session-writer-plan-smoke:
 
 daw-session-json-writer-smoke:
     cargo test -p riotbox-app --test daw_session_writer_plan_smoke daw_session_json_writer -- --nocapture
+
+daw-session-json-package-report-smoke:
+    cargo test -p riotbox-app --test daw_session_writer_plan_smoke daw_session_json_package_report -- --nocapture

@@ -28,6 +28,7 @@ mod commit;
 mod controls;
 mod daw_export_operator_report;
 mod daw_session_json_writer;
+mod daw_session_package_report;
 mod daw_session_payload_preview;
 mod daw_session_writer_plan;
 mod ghost_candidates;
@@ -68,6 +69,9 @@ pub use daw_export_operator_report::{
     DawExportOperatorReadinessReport, daw_export_operator_readiness_report,
 };
 pub use daw_session_json_writer::{WrittenDawSessionJsonPackage, write_daw_session_json_package};
+pub use daw_session_package_report::{
+    DawSessionJsonPackageReport, daw_session_json_package_report,
+};
 pub use daw_session_writer_plan::{DawSessionWriterPlan, daw_session_writer_plan};
 pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_REASON};
 use helpers::{
