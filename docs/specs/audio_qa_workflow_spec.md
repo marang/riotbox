@@ -1090,6 +1090,12 @@ Today the repo already has:
   tempo-map and arrangement placement validation against the Source
   Graph/Session timing truth. None of those are covered by the current
   product-export reproducibility smoke.
+- live-recording observer receipt snapshots project
+  `live_recording_host_audio_readiness` from the Core/Session receipt report
+  alongside `live_recording_host_audio_refs[]`. This projection explains
+  blocked/ready evidence states for real committed receipt lifecycles only; it
+  does not make `export.live_recording` runnable or synthesize lifecycle from
+  observer-only state.
 - `export.stem_package` remains reserved until an implementation can provide a
   package receipt whose `artifact_set[]` contains every claimed stem role, the
   package manifest/proof entries, per-stem hashes, per-stem WAV format/audio

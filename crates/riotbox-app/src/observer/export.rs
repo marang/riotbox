@@ -5,7 +5,8 @@ use riotbox_core::{
     export_readiness::ExportScope,
     session::{
         ArrangementExportPlacementReadinessBlocker, DawTempoMapReadinessBlocker,
-        ExportReceiptState, StemPackageReceiptReadinessBlocker,
+        ExportReceiptState, LiveRecordingHostAudioReadinessBlocker,
+        StemPackageReceiptReadinessBlocker,
     },
 };
 use serde_json::{Value, json};
@@ -248,6 +249,11 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
             "live_recording_host_audio_refs".into(),
             json!(receipt.live_recording_host_audio_refs),
         );
+        object.insert(
+            "live_recording_host_audio_readiness".into(),
+            live_recording_host_audio_readiness_observer_snapshot(receipt)
+                .expect("live recording host-audio readiness"),
+        );
     }
 
     snapshot
@@ -343,6 +349,57 @@ fn stem_package_readiness_observer_snapshot(receipt: &ExportReceiptState) -> Opt
             .map(stem_package_readiness_blocker_label)
             .collect::<Vec<_>>(),
     }))
+}
+
+fn live_recording_host_audio_readiness_observer_snapshot(
+    receipt: &ExportReceiptState,
+) -> Option<Value> {
+    if receipt.export_scope != ExportScope::LiveRecording {
+        return None;
+    }
+
+    let report = receipt.live_recording_host_audio_readiness_report();
+    let blockers = report.blockers.clone();
+    Some(json!({
+        "status": report.status,
+        "ready": report.ready(),
+        "blockers": blockers,
+        "blocker_labels": blockers
+            .iter()
+            .map(live_recording_host_audio_readiness_blocker_label)
+            .collect::<Vec<_>>(),
+    }))
+}
+
+fn live_recording_host_audio_readiness_blocker_label(
+    blocker: &LiveRecordingHostAudioReadinessBlocker,
+) -> &'static str {
+    match blocker {
+        LiveRecordingHostAudioReadinessBlocker::NotLiveRecordingScope => {
+            "receipt is not a live recording export"
+        }
+        LiveRecordingHostAudioReadinessBlocker::UnsupportedScopeFlagPresent => {
+            "live recording export is still marked unsupported"
+        }
+        LiveRecordingHostAudioReadinessBlocker::MissingHostAudioEvidence => {
+            "live recording host-audio evidence is missing"
+        }
+        LiveRecordingHostAudioReadinessBlocker::BlankHost => {
+            "live recording host identity is blank"
+        }
+        LiveRecordingHostAudioReadinessBlocker::BlankDevice => {
+            "live recording device identity is blank"
+        }
+        LiveRecordingHostAudioReadinessBlocker::ZeroRecordingDuration => {
+            "live recording duration is zero"
+        }
+        LiveRecordingHostAudioReadinessBlocker::CallbackGapOverThreshold => {
+            "live recording callback gaps exceeded the accepted threshold"
+        }
+        LiveRecordingHostAudioReadinessBlocker::StreamErrorReported => {
+            "live recording stream errors were reported"
+        }
+    }
 }
 
 fn stem_package_readiness_blocker_label(
