@@ -498,6 +498,19 @@ Contract for `export.stem_package`:
   in a temp directory, verifies the ready-for-writer report shape, removes the
   manifest file, and verifies the missing-file blocker without writing DAW
   artifacts or observer events.
+- Current DAW writer plan skeleton:
+  `riotbox-app --daw-session-writer-plan --session <session.json>
+  --daw-session-destination <dir>` is a read-only dry-run surface. It reports
+  deterministic planned identities for arrangement manifest, tempo-map, and
+  DAW-session proof JSON under the requested destination, plus source artifact
+  refs, placement refs, tempo-map ref, readiness blockers, and the fixed
+  `daw_writer_missing` blocker. It does not create the destination directory,
+  write DAW files, mutate Session, or surface `export.daw_session` as runnable.
+- Current DAW writer plan smoke:
+  `just daw-session-writer-plan-smoke` runs the real binary against a temporary
+  Session, verifies the ready-for-writer plan shape, removes the source
+  arrangement manifest file, and verifies the missing-file blocker while proving
+  the destination directory was not created.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

@@ -689,6 +689,20 @@ Additional receipt fields required before wider export scopes:
   operator report path. It runs the real CLI in a temp directory, verifies a
   `ready_for_writer` DAW receipt report, removes the manifest file, and verifies
   the missing-file report without mutating the Session.
+- the DAW session writer plan skeleton is a read-only planning surface:
+  `riotbox-app --daw-session-writer-plan --session <session.json>
+  --daw-session-destination <dir>`. It selects the latest `daw_session`
+  receipt, reuses the DAW operator readiness report, and reports planned
+  destination identities for arrangement manifest, tempo map, and DAW-session
+  proof JSON under `daw_session/`. The plan also reports source artifact paths,
+  placement refs, tempo-map ref, readiness blockers, and the fixed
+  `daw_writer_missing` blocker. It must not create directories, write files,
+  mutate Session receipts, or make `export.daw_session` runnable.
+- `just daw-session-writer-plan-smoke` is the bounded repo proof for that plan
+  path. It runs the real CLI in a temp directory, verifies the
+  `ready_for_writer` plan shape, removes the arrangement manifest source file,
+  and verifies the missing-file blocker while proving the destination directory
+  was not created.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

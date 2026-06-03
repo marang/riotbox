@@ -1294,6 +1294,18 @@ Today the repo already has:
     proof for that path. It runs the real binary against a temporary Session,
     validates the ready-for-writer report, removes the manifest file, and
     validates the missing-file blocker.
+  - current DAW writer plan skeleton exposes deterministic planned identities
+    through `riotbox-app --daw-session-writer-plan --session <session.json>
+    --daw-session-destination <dir>`. It is a dry-run only: it reuses the
+    operator readiness report, reports planned arrangement manifest, tempo-map,
+    and DAW-session proof JSON paths under `daw_session/`, carries placement
+    refs and tempo-map refs forward, and keeps `daw_writer_missing` explicit.
+    It writes no files, creates no destination directory, emits no observer
+    events, and is not a musician-facing DAW export action.
+  - `just daw-session-writer-plan-smoke` is the CI-safe proof for that planning
+    path. It runs the real binary, validates the ready-for-writer dry-run plan,
+    removes the arrangement manifest source file, validates the missing-file
+    blocker, and proves the destination directory was not created.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

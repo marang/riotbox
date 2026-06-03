@@ -568,3 +568,6 @@ stem-package-local-ci-report-smoke:
 
 daw-export-readiness-report-smoke:
     cargo test -p riotbox-app --test daw_export_report_smoke -- --nocapture
+
+daw-session-writer-plan-smoke:
+    cargo test -p riotbox-app --test daw_session_writer_plan_smoke -- --nocapture
