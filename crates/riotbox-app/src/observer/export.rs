@@ -81,6 +81,7 @@ fn is_export_action(command: ActionCommand) -> bool {
         command,
         ActionCommand::ExportProductMix
             | ActionCommand::ExportStemPackage
+            | ActionCommand::ExportLiveRecording
             | ActionCommand::ExportDawSession
     )
 }

@@ -340,6 +340,26 @@ impl ExportArtifactSetEntry {
     }
 
     #[must_use]
+    pub fn live_recording_capture(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self {
+            role: ExportArtifactRole::LiveRecordingCapture,
+            location: ExportArtifactLocation::LocalPath { path: path.into() },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: sha256.into(),
+            normalized_manifest_hash: None,
+            source_graph_ref: None,
+            timing_grid_ref: None,
+            source_capture_refs: Vec::new(),
+            lineage_capture_refs: Vec::new(),
+            fallback_comparison: None,
+            audio_metrics: None,
+            sample_rate_hz: None,
+            channel_count: None,
+            duration_ms: None,
+        }
+    }
+
+    #[must_use]
     pub fn daw_session_tempo_map(path: impl Into<String>, sha256: impl Into<String>) -> Self {
         Self::local_json_artifact(ExportArtifactRole::DawSessionTempoMap, path, sha256)
     }
@@ -423,6 +443,7 @@ pub enum ExportArtifactRole {
     StemVocals,
     ProductExportProof,
     ExportManifest,
+    LiveRecordingCapture,
     DawSessionTempoMap,
     DawSessionWriterProof,
 }

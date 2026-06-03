@@ -1468,6 +1468,12 @@ Today the repo already has:
     timing-grid receipt evidence, safe post-write WAV metric extraction,
     recovery preflight for local artifact paths, and observer export lifecycle
     projection from queue/history plus Session receipts
+  - current live-recording export is a reserved contract only:
+    `export.live_recording`, `export_scope: live_recording`,
+    `live_recording.receipt_contract_v1`, `live_recording_capture`, and
+    `live-recording-receipt-contract` are stable typed identities, but no live
+    capture, WAV writer, observer completion, Session receipt mutation, or
+    musician-facing runnable command exists yet.
   - new evidence required before readiness: one written WAV per claimed stem
     role, per-stem format metrics, per-stem non-silence, per-stem hash
     stability across repeated writer/render output, per-stem source/capture or
