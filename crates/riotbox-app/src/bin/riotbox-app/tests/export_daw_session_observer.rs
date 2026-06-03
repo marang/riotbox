@@ -186,6 +186,68 @@ fn observer_snapshot_reports_committed_daw_session_host_import_lifecycle() {
     );
 }
 
+#[test]
+fn observer_snapshot_reports_committed_daw_session_audible_output_lifecycle() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let destination = temp.path().join("daw-session-export");
+    let host_proof_path = temp.path().join("host_import_proof.json");
+    let audible_proof_path = temp.path().join("audible_output_proof.json");
+    let mut state = daw_session_writer_export_observer_state(temp.path(), &destination, true);
+    state
+        .commit_daw_session_writer_export(Some(temp.path()), &destination, 980)
+        .expect("commit writer proof prerequisite");
+    write_host_import_observer_proof(&host_proof_path, true, &[]);
+    state
+        .commit_daw_session_host_import_proof_export(&host_proof_path, 990)
+        .expect("commit host-import proof prerequisite");
+    write_audible_output_observer_proof(&audible_proof_path, true, &[]);
+    let receipt = state
+        .commit_daw_session_audible_output_proof_export(&audible_proof_path, 1_000)
+        .expect("commit audible-output proof");
+    let action_id = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .find(|action| action.command == ActionCommand::ExportDawSession)
+        .expect("committed DAW session audible-output action")
+        .id;
+
+    let shell = JamShellState::new(state, ShellLaunchMode::Load);
+    let snapshot = observer_snapshot(&shell);
+    let lifecycle = snapshot["export"]["lifecycle"]
+        .as_array()
+        .expect("lifecycle array");
+
+    assert_eq!(lifecycle.len(), 9);
+    assert_eq!(lifecycle[6]["stage"], "requested");
+    assert_eq!(lifecycle[7]["stage"], "started");
+    assert_eq!(lifecycle[8]["stage"], "completed");
+    assert_eq!(lifecycle[8]["command"], "export.daw_session");
+    assert_eq!(lifecycle[8]["action_id"], action_id.0);
+    assert_eq!(
+        lifecycle[8]["receipt"]["receipt_id"],
+        receipt.receipt_id.to_string()
+    );
+    assert_eq!(
+        lifecycle[8]["receipt"]["proof_gates"]["writer_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        lifecycle[8]["receipt"]["proof_gates"]["host_import_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        lifecycle[8]["receipt"]["proof_gates"]["audible_output_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_surface_gate"]["blockers"],
+        serde_json::json!(["developer_proof_only"])
+    );
+}
+
 fn daw_session_writer_export_observer_state(
     base_dir: &Path,
     destination: &Path,
@@ -287,4 +349,19 @@ fn write_host_import_observer_proof(path: &Path, imported: bool, blockers: &[&st
         .to_string(),
     )
     .expect("write host-import proof");
+}
+
+fn write_audible_output_observer_proof(path: &Path, audible: bool, blockers: &[&str]) {
+    fs::write(
+        path,
+        serde_json::json!({
+            "schema_id": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID,
+            "schema_version": riotbox_app::jam_app::DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
+            "package_dir": "exports/daw-package/daw_session",
+            "audible": audible,
+            "blockers": blockers,
+        })
+        .to_string(),
+    )
+    .expect("write audible-output proof");
 }
