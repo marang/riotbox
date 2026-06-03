@@ -361,8 +361,10 @@ Rules:
   `export_scope: live_recording`, `export_role: live_recording_capture`,
   `pack_id: live-recording-receipt-contract`, and artifact role
   `live_recording_capture`. This is a typed Session/replay identity only; it
-  does not capture live audio, write WAV files, create observer lifecycle
-  records, mutate Session receipts, or make `export.live_recording` runnable.
+  does not capture live audio, write WAV files, mutate Session receipts, or
+  make `export.live_recording` runnable. The current app queue guard can record
+  a rejected `export.live_recording` action and failed observer lifecycle from
+  queue history only; it must not create a receipt.
 - current `export.product_mix` receipts populate artifact-set entries for the
   full-grid WAV and the copied product-export proof JSON while preserving the
   legacy `artifact_path`, `proof_path`, `export_hash`, and

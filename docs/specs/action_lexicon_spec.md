@@ -320,9 +320,10 @@ Reserved wider export commands:
 - `export.daw_session`
 
 `export.stem_package` and `export.live_recording` now exist as typed reserved
-Core action labels only; `export.daw_session` exists as the current typed
-developer-proof action boundary. Before any wider musician-runnable export can
-ship, the command must define:
+Core action labels with app queue guards that reject musician attempts;
+`export.daw_session` exists as the current typed developer-proof action
+boundary. Before any wider musician-runnable export can ship, the command must
+define:
 
 - target scope and source of truth (`Session`, arrangement scene, capture
   lineage, or host-audio run)
@@ -349,12 +350,15 @@ Current `export.live_recording` boundary:
 - expected artifact role: `live_recording_capture`
 - undo policy: `NotUndoable`, because live-recording export will write files
   outside musical undo once implemented
-- current side effects: none; no live input capture, WAV writer, filesystem
-  mutation, observer completion, Session receipt mutation, TUI affordance, Ghost
-  affordance, or replay write-back exists yet
+- current side effects: a musician attempt can create a rejected queue-history
+  action with a readable failure reason; no live input capture, WAV writer,
+  filesystem mutation, observer completion, Session receipt mutation, TUI
+  affordance, Ghost affordance, or replay write-back exists yet
 - observer/replay consequence: the command label is export-observer eligible
-  when a real action appears in action log, queue history, or pending queue, but
-  receipts alone must not invent lifecycle records
+  when a real action appears in action log, queue history, or pending queue.
+  The reserved app guard emits requested, started, and failed lifecycle records
+  from the rejected queue action only; receipts alone must not invent lifecycle
+  records
 - QA requirement before widening: proof must cover control path, recorded WAV
   identity, format metrics, non-silence, duration, source/session lineage,
   clock/source timing context when relevant, and explicit listening-review
