@@ -693,6 +693,14 @@ Additional receipt fields required before wider export scopes:
   receipt evidence is ready for the next implementation gate only; it still
   writes no DAW files and must not be presented as musician-facing export
   completion.
+- the DAW session musician surface gate is separate from `ready_for_writer`:
+  `daw_session_surface_gate` stays `disabled` until the receipt identity,
+  placement/tempo readiness, JSON package integrity gate, DAW writer, DAW host
+  import proof, and audible output proof are all satisfied. A ready JSON
+  package removes only `json_package_evidence_missing` or
+  `json_package_integrity_blocked`; it does not remove `developer_proof_only`,
+  `daw_writer_missing`, `daw_host_import_proof_missing`, or
+  `audible_output_proof_missing`.
 - `just daw-export-readiness-report-smoke` is the bounded repo proof for that
   operator report path. It runs the real CLI in a temp directory, verifies a
   `ready_for_writer` DAW receipt report, removes the manifest file, and verifies

@@ -1340,6 +1340,11 @@ Today the repo already has:
     the `daw_session_json_package_integrity` QA gate. This proves receipt
     handoff of JSON package evidence only; it still does not prove DAW host
     import correctness, observer lifecycle completion, or audible output.
+  - current DAW session surface gate keeps musician-facing DAW export disabled
+    even when receipt and JSON package evidence are ready. The remaining
+    blockers explicitly name developer-only status, missing DAW writer, missing
+    DAW host-import proof, and missing audible-output proof so JSON package
+    success is not mistaken for a playable DAW export.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

@@ -10,7 +10,7 @@ use riotbox_core::{
 };
 use serde_json::{Value, json};
 
-use crate::jam_app::StemPackageExportSurfaceGate;
+use crate::jam_app::{DawSessionExportSurfaceGate, StemPackageExportSurfaceGate};
 use crate::ui::JamShellState;
 
 pub(super) fn export_observer_snapshot(shell: &JamShellState) -> Value {
@@ -24,6 +24,9 @@ pub(super) fn export_observer_snapshot(shell: &JamShellState) -> Value {
         "present": !lifecycle.is_empty(),
         "receipt_count": shell.app.session.export_receipts.len(),
         "lifecycle": lifecycle,
+        "daw_session_surface_gate": daw_session_surface_gate_observer_snapshot(
+            &shell.app.daw_session_export_surface_gate()
+        ),
         "stem_package_surface_gate": stem_package_surface_gate_observer_snapshot(
             &shell.app.stem_package_export_surface_gate()
         ),
@@ -338,6 +341,23 @@ fn stem_package_readiness_blocker_label(
 }
 
 fn stem_package_surface_gate_observer_snapshot(gate: &StemPackageExportSurfaceGate) -> Value {
+    json!({
+        "status": gate.status.as_str(),
+        "runnable": gate.runnable(),
+        "blockers": gate
+            .blockers
+            .iter()
+            .map(|blocker| blocker.as_str())
+            .collect::<Vec<_>>(),
+        "blocker_labels": gate
+            .blockers
+            .iter()
+            .map(|blocker| blocker.musician_label())
+            .collect::<Vec<_>>(),
+    })
+}
+
+fn daw_session_surface_gate_observer_snapshot(gate: &DawSessionExportSurfaceGate) -> Value {
     json!({
         "status": gate.status.as_str(),
         "runnable": gate.runnable(),

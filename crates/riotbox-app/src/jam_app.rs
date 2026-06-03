@@ -79,7 +79,9 @@ use helpers::{
     is_mc202_phrase_action, max_action_id, next_action_id_from_session, update_logged_action_result,
 };
 pub use product_export::{
+    DawSessionExportSurfaceBlocker, DawSessionExportSurfaceGate, DawSessionExportSurfaceStatus,
     StemPackageExportSurfaceBlocker, StemPackageExportSurfaceGate, StemPackageExportSurfaceStatus,
+    daw_session_export_surface_gate_for_session,
 };
 use projection::normalize_w30_preview_mode;
 pub use recovery::{

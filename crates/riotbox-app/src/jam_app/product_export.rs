@@ -34,6 +34,12 @@ pub(in crate::jam_app) use super::product_export_artifact_preflight::{
     ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
 };
 
+mod daw_session_surface_gate;
+pub use daw_session_surface_gate::{
+    DawSessionExportSurfaceBlocker, DawSessionExportSurfaceGate, DawSessionExportSurfaceStatus,
+    daw_session_export_surface_gate_for_session,
+};
+
 pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str = "stem package export is disabled for musicians; local CI packages are developer proof only until DAW placement and listening review are ready";
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -271,6 +277,10 @@ impl JamAppState {
             status: StemPackageExportSurfaceStatus::Disabled,
             blockers,
         }
+    }
+
+    pub fn daw_session_export_surface_gate(&self) -> DawSessionExportSurfaceGate {
+        daw_session_export_surface_gate_for_session(&self.session)
     }
 
     pub fn commit_product_mix_export_from_proof(
