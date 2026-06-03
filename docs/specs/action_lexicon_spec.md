@@ -484,6 +484,20 @@ Contract for `export.stem_package`:
   flags. This is a receipt contract and report/recovery guard only; it does not
   add a runnable `export.daw_session` action, DAW file writer, second timing
   model, or second arrangement model.
+- Current DAW operator report:
+  `riotbox-app --daw-export-readiness-report --session <session.json>` is a
+  read-only summary over the latest `export_scope: daw_session` Session receipt.
+  It reports arrangement placement readiness, tempo-map readiness,
+  unsupported-command blockers, local artifact preflight, missing or unreadable
+  files, and fixed release blockers (`developer_proof_only`,
+  `daw_writer_missing`). `ready_for_writer` is an implementation gate, not a
+  musician-facing `export.daw_session` action or proof that DAW files were
+  written.
+- Current DAW report smoke:
+  `just daw-export-readiness-report-smoke` runs the real `riotbox-app` binary
+  in a temp directory, verifies the ready-for-writer report shape, removes the
+  manifest file, and verifies the missing-file blocker without writing DAW
+  artifacts or observer events.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

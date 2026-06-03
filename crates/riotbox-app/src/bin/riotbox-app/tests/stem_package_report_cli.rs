@@ -15,7 +15,8 @@ fn parse_args_builds_stem_package_local_ci_report_mode() {
         LaunchMode::Load { .. }
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
-        | LaunchMode::StemPackageLocalCiExecute { .. } => {
+        | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::DawExportReadinessReport { .. } => {
             panic!("expected stem package report mode")
         }
     }

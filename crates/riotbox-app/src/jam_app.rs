@@ -26,6 +26,7 @@ mod capture_helpers;
 mod capture_queue;
 mod commit;
 mod controls;
+mod daw_export_operator_report;
 mod ghost_candidates;
 mod ghost_queue;
 mod helpers;
@@ -59,6 +60,9 @@ mod w30_targets;
 use capture_helpers::{
     apply_capture_promotion_side_effects, capture_promotion_summary, capture_ref_from_action,
     capture_targets_specific_w30_pad, capture_targets_w30_pad,
+};
+pub use daw_export_operator_report::{
+    DawExportOperatorReadinessReport, daw_export_operator_readiness_report,
 };
 pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_REASON};
 use helpers::{
