@@ -2,9 +2,8 @@ use super::*;
 use crate::{
     export_qa::validate_stem_package_artifact_set_evidence,
     export_readiness::{
-        ExportReadinessContract, ExportReadinessStatus, ExportScope, PRODUCT_EXPORT_PACK_ID,
-        PRODUCT_EXPORT_PROOF_SCHEMA, ProductExportBoundary, ProductExportRole,
-        UnsupportedExportScope,
+        ExportReadinessContract, ExportReadinessStatus, ExportScope, ProductExportBoundary,
+        ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID, UnsupportedExportScope,
     },
     ids::ActionId,
     session::{
@@ -14,7 +13,7 @@ use crate::{
         StemPackageReceiptReadinessBlocker, StemPackageReceiptReadinessStatus,
         validate_stem_package_receipt_readiness,
     },
-    stem_package_proof::StemPackageProof,
+    stem_package_proof::{STEM_PACKAGE_PROOF_SCHEMA_ID, StemPackageProof},
 };
 
 #[test]
@@ -23,8 +22,13 @@ fn stem_package_manifest_from_receipt_preserves_receipt_evidence() {
 
     let manifest = StemPackageManifest::from_receipt(&receipt).expect("build manifest");
 
-    assert_eq!(manifest.package_id, PRODUCT_EXPORT_PACK_ID);
+    assert_eq!(manifest.package_id, STEM_PACKAGE_LOCAL_CI_PACK_ID);
     assert_eq!(manifest.export_scope, ExportScope::StemPackage);
+    assert_eq!(manifest.export_role, ProductExportRole::PackageManifest);
+    assert_eq!(
+        manifest.export_boundary,
+        ProductExportBoundary::StemPackageLocalCiPackageV1
+    );
     assert_eq!(manifest.receipt_id, receipt.receipt_id);
     assert_eq!(manifest.created_by_action, receipt.created_by_action);
     assert_eq!(
@@ -262,12 +266,12 @@ fn stem_package_receipt() -> ExportReceiptState {
     let contract = ExportReadinessContract {
         schema: "riotbox.export_readiness_contract.v1".into(),
         status: ExportReadinessStatus::Reproducible,
-        proof_schema: PRODUCT_EXPORT_PROOF_SCHEMA.into(),
+        proof_schema: STEM_PACKAGE_PROOF_SCHEMA_ID.into(),
         export_scope: ExportScope::StemPackage,
-        boundary: ProductExportBoundary::FeralGridGeneratedSupport,
-        pack_id: PRODUCT_EXPORT_PACK_ID.into(),
-        export_role: ProductExportRole::FullGridMix,
-        export_artifact: "exports/stem_package.zip".into(),
+        boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
+        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+        export_role: ProductExportRole::PackageManifest,
+        export_artifact: "exports/stem_package_manifest.json".into(),
         source_sha256: "source-sha".into(),
         export_sha256: "package-sha".into(),
         normalized_manifest_sha256: "normalized-manifest-sha".into(),
@@ -277,7 +281,7 @@ fn stem_package_receipt() -> ExportReceiptState {
         ActionId(7),
         900,
         &contract,
-        "exports/stem_package.zip",
+        "exports/stem_package_manifest.json",
         "exports/stem_package_proof.json",
         Some("exports/stem_package_manifest.json".into()),
     );

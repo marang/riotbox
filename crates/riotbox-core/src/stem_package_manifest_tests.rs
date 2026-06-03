@@ -1,6 +1,9 @@
 use serde_json::json;
 
 use super::*;
+use crate::export_readiness::{
+    ProductExportBoundary, ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID,
+};
 use crate::session::{
     ExportArtifactAudioMetrics, ExportArtifactLocation, ExportArtifactMediaType,
     ExportArtifactRole, ExportArtifactSetEntry,
@@ -14,7 +17,10 @@ fn stem_package_manifest_roundtrips_stable_schema_scope_roles_and_identity() {
 
     assert_eq!(json["schema_id"], STEM_PACKAGE_MANIFEST_SCHEMA_ID);
     assert_eq!(json["schema_version"], STEM_PACKAGE_MANIFEST_SCHEMA_VERSION);
+    assert_eq!(json["package_id"], STEM_PACKAGE_LOCAL_CI_PACK_ID);
     assert_eq!(json["export_scope"], "stem_package");
+    assert_eq!(json["export_role"], "package_manifest");
+    assert_eq!(json["export_boundary"], "stem_package_local_ci_package_v1");
     assert_eq!(
         json["claimed_stem_roles"],
         json!(["stem_drums", "stem_bass"])
@@ -92,7 +98,7 @@ fn stem_package_manifest_json_identity_sha_is_receipt_side_not_payload_identity(
     let proof_entry_b = ExportArtifactSetEntry::stem_package_proof("proof.json", "proof-b");
 
     let manifest_a = StemPackageManifest::new(manifest_input(
-        "pkg-1",
+        STEM_PACKAGE_LOCAL_CI_PACK_ID,
         vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
         vec![
             stem_artifact(ExportArtifactRole::StemDrums, "drums.wav", "drums"),
@@ -105,7 +111,7 @@ fn stem_package_manifest_json_identity_sha_is_receipt_side_not_payload_identity(
     ))
     .expect("fixture manifest");
     let manifest_b = StemPackageManifest::new(manifest_input(
-        "pkg-1",
+        STEM_PACKAGE_LOCAL_CI_PACK_ID,
         vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
         vec![
             stem_artifact(ExportArtifactRole::StemDrums, "drums.wav", "drums"),
@@ -398,7 +404,7 @@ fn stem_package_manifest_builds_artifact_and_identity_from_receipt_entries() {
 
 fn fixture_manifest() -> StemPackageManifest {
     StemPackageManifest::new(manifest_input(
-        "pkg-1",
+        STEM_PACKAGE_LOCAL_CI_PACK_ID,
         vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
         vec![
             stem_artifact(ExportArtifactRole::StemDrums, "drums.wav", "drums"),
@@ -419,6 +425,8 @@ fn manifest_input(
 ) -> StemPackageManifestInput {
     StemPackageManifestInput {
         package_id: package_id.into(),
+        export_role: ProductExportRole::PackageManifest,
+        export_boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
         receipt_id: ExportReceiptId::new("receipt-1"),
         created_by_action: ActionId(7),
         claimed_stem_roles,

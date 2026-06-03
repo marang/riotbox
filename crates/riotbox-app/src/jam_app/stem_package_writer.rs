@@ -17,8 +17,8 @@ use riotbox_core::{
     },
     export_readiness::{
         EXPORT_READINESS_CONTRACT_SCHEMA, ExportReadinessContract, ExportReadinessStatus,
-        ExportScope, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA, ProductExportBoundary,
-        ProductExportDestinationKind, ProductExportRole,
+        ExportScope, ProductExportBoundary, ProductExportDestinationKind, ProductExportRole,
+        STEM_PACKAGE_LOCAL_CI_PACK_ID,
     },
     ids::ActionId,
     session::{
@@ -28,7 +28,7 @@ use riotbox_core::{
         STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
     },
     stem_package_manifest::StemPackageManifest,
-    stem_package_proof::StemPackageProof,
+    stem_package_proof::{STEM_PACKAGE_PROOF_SCHEMA_ID, StemPackageProof},
     stem_package_writer::{
         STEM_PACKAGE_PACKAGE_DIR, StemPackageLocalWriterBoundary, StemPackageLocalWriterPlan,
         StemPackageLocalWriterRequest, plan_stem_package_local_ci_package,
@@ -254,26 +254,26 @@ fn build_receipt(
         proof_path.to_string_lossy().into_owned(),
         proof_sha.to_owned(),
     ));
-    let primary_stem_path = stem_artifacts
+    if !stem_artifacts
         .iter()
-        .find(|artifact| artifact.role.is_stem_role())
-        .map(|artifact| artifact.location_identity().to_owned())
-        .ok_or_else(|| JamAppError::InvalidSession("stem package has no stem artifact".into()))?;
+        .any(|artifact| artifact.role.is_stem_role())
+    {
+        return Err(JamAppError::InvalidSession(
+            "stem package has no stem artifact".into(),
+        ));
+    }
+    let manifest_artifact_path = manifest_path.to_string_lossy().into_owned();
     let contract = ExportReadinessContract {
         schema: EXPORT_READINESS_CONTRACT_SCHEMA.into(),
         status: ExportReadinessStatus::Reproducible,
-        proof_schema: PRODUCT_EXPORT_PROOF_SCHEMA.into(),
+        proof_schema: STEM_PACKAGE_PROOF_SCHEMA_ID.into(),
         export_scope: ExportScope::StemPackage,
-        boundary: ProductExportBoundary::FeralGridGeneratedSupport,
-        pack_id: PRODUCT_EXPORT_PACK_ID.into(),
-        export_role: ProductExportRole::FullGridMix,
-        export_artifact: primary_stem_path.clone(),
+        boundary: ProductExportBoundary::StemPackageLocalCiPackageV1,
+        pack_id: STEM_PACKAGE_LOCAL_CI_PACK_ID.into(),
+        export_role: ProductExportRole::PackageManifest,
+        export_artifact: manifest_artifact_path.clone(),
         source_sha256: "ci-safe-stem-package-fixture".into(),
-        export_sha256: stem_artifacts
-            .iter()
-            .find(|artifact| artifact.role.is_stem_role())
-            .map(|artifact| artifact.sha256.clone())
-            .unwrap_or_default(),
+        export_sha256: manifest_sha.to_owned(),
         normalized_manifest_sha256: manifest_sha.to_owned(),
         unsupported_scopes: Vec::new(),
     };
@@ -281,7 +281,7 @@ fn build_receipt(
         created_by_action,
         created_at,
         &contract,
-        primary_stem_path,
+        manifest_artifact_path,
         proof_path.to_string_lossy().into_owned(),
         Some(manifest_path.to_string_lossy().into_owned()),
     );
@@ -424,6 +424,13 @@ fn update_json_artifact_hashes(
         }
     }
     receipt.normalized_manifest_hash = manifest_sha.to_owned();
+    if receipt
+        .manifest_path
+        .as_ref()
+        .is_some_and(|path| path == &receipt.artifact_path)
+    {
+        receipt.export_hash = manifest_sha.to_owned();
+    }
 }
 
 fn refresh_final_hashes(receipt: &mut ExportReceiptState) -> Result<(), JamAppError> {

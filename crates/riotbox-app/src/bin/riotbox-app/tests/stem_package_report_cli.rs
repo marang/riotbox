@@ -96,6 +96,15 @@ fn stem_package_local_ci_report_summarizes_ready_package_without_rewriting() {
         "not_final_daw_export_workflow"
     );
     assert_eq!(summary["stem_roles"], json!(["stem_drums", "stem_bass"]));
+    assert_eq!(
+        summary["receipt"]["pack_id"],
+        riotbox_core::export_readiness::STEM_PACKAGE_LOCAL_CI_PACK_ID
+    );
+    assert_eq!(summary["receipt"]["export_role"], "package_manifest");
+    assert_eq!(
+        summary["receipt"]["export_boundary"],
+        "stem_package.local_ci_package_v1"
+    );
     assert_eq!(summary["readiness_blockers"], json!([]));
     assert_eq!(summary["missing_local_files"], json!([]));
     assert_eq!(summary["qa_gates"].as_array().expect("qa gate array").len(), 5);
