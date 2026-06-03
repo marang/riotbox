@@ -1,5 +1,5 @@
 use std::{
-    fs, io,
+    fs,
     io::Read,
     path::{Path, PathBuf},
 };
@@ -17,10 +17,7 @@ use riotbox_core::{
     },
     ids::ActionId,
     queue::QueueEnqueueResult,
-    session::{
-        ActionCommitRecord, ExportArtifactLocation, ExportArtifactRole, ExportArtifactSetEntry,
-        ExportReceiptState,
-    },
+    session::{ActionCommitRecord, ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState},
     transport::CommitBoundaryState,
 };
 use sha2::{Digest, Sha256};
@@ -33,58 +30,12 @@ use super::{
     },
 };
 
+pub(in crate::jam_app) use super::product_export_artifact_preflight::{
+    ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
+};
+
 pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str =
     "stem package export is reserved; queue, writer, observer, and QA gates are not runnable yet";
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(in crate::jam_app) enum ExportReceiptArtifactPreflightError {
-    MissingArtifactPath {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-    },
-    MissingProofPath {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-    },
-    MissingArtifactSetPath {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        role: ExportArtifactRole,
-    },
-    MissingSessionFileSet {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-    },
-    MissingExportArtifact {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        path: PathBuf,
-    },
-    MissingProofArtifact {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        path: PathBuf,
-    },
-    MissingArtifactSetArtifact {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        role: ExportArtifactRole,
-        path: PathBuf,
-    },
-    NotFile {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        path: PathBuf,
-    },
-    ArtifactSetNotFile {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        role: ExportArtifactRole,
-        path: PathBuf,
-    },
-    UnreadableArtifact {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        path: PathBuf,
-        reason: String,
-    },
-    UnreadableArtifactSetArtifact {
-        receipt_id: riotbox_core::ids::ExportReceiptId,
-        role: ExportArtifactRole,
-        path: PathBuf,
-        reason: String,
-    },
-}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StemPackageExportQueueResult {
@@ -364,168 +315,4 @@ fn copy_file_if_distinct(from: &Path, to: &Path) -> Result<(), JamAppError> {
         fs::copy(from, to)?;
     }
     Ok(())
-}
-
-pub(in crate::jam_app) fn preflight_export_receipt_artifacts(
-    receipt: &ExportReceiptState,
-    base_dir: Option<&Path>,
-) -> Result<(PathBuf, PathBuf), ExportReceiptArtifactPreflightError> {
-    let artifact_path = resolve_receipt_path(
-        receipt,
-        &receipt.artifact_path,
-        base_dir,
-        ReceiptPathKind::Artifact,
-    )?;
-    let proof_path = resolve_receipt_path(
-        receipt,
-        &receipt.proof_path,
-        base_dir,
-        ReceiptPathKind::Proof,
-    )?;
-
-    let artifact = require_receipt_file(receipt, artifact_path, ReceiptPathKind::Artifact)?;
-    let proof = require_receipt_file(receipt, proof_path, ReceiptPathKind::Proof)?;
-    preflight_artifact_set_entries(receipt, base_dir)?;
-
-    Ok((artifact, proof))
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq)]
-enum ReceiptPathKind {
-    Artifact,
-    Proof,
-    ArtifactSet(ExportArtifactRole),
-}
-
-fn preflight_artifact_set_entries(
-    receipt: &ExportReceiptState,
-    base_dir: Option<&Path>,
-) -> Result<(), ExportReceiptArtifactPreflightError> {
-    for artifact in receipt.artifact_set_or_legacy() {
-        match artifact.location {
-            ExportArtifactLocation::LocalPath { path } => {
-                let artifact_path = resolve_receipt_path(
-                    receipt,
-                    &path,
-                    base_dir,
-                    ReceiptPathKind::ArtifactSet(artifact.role),
-                )?;
-                require_receipt_file(
-                    receipt,
-                    artifact_path,
-                    ReceiptPathKind::ArtifactSet(artifact.role),
-                )?;
-            }
-            ExportArtifactLocation::Uri { uri } if uri.trim().is_empty() => {
-                return Err(
-                    ExportReceiptArtifactPreflightError::MissingArtifactSetPath {
-                        receipt_id: receipt.receipt_id.clone(),
-                        role: artifact.role,
-                    },
-                );
-            }
-            ExportArtifactLocation::Uri { .. } => {}
-        }
-    }
-
-    Ok(())
-}
-
-fn resolve_receipt_path(
-    receipt: &ExportReceiptState,
-    path: &str,
-    base_dir: Option<&Path>,
-    kind: ReceiptPathKind,
-) -> Result<PathBuf, ExportReceiptArtifactPreflightError> {
-    let path = path.trim();
-    if path.is_empty() {
-        return Err(match kind {
-            ReceiptPathKind::Artifact => ExportReceiptArtifactPreflightError::MissingArtifactPath {
-                receipt_id: receipt.receipt_id.clone(),
-            },
-            ReceiptPathKind::Proof => ExportReceiptArtifactPreflightError::MissingProofPath {
-                receipt_id: receipt.receipt_id.clone(),
-            },
-            ReceiptPathKind::ArtifactSet(role) => {
-                ExportReceiptArtifactPreflightError::MissingArtifactSetPath {
-                    receipt_id: receipt.receipt_id.clone(),
-                    role,
-                }
-            }
-        });
-    }
-
-    let path = Path::new(path);
-    if path.is_absolute() {
-        return Ok(path.to_path_buf());
-    }
-
-    let base_dir =
-        base_dir.ok_or_else(
-            || ExportReceiptArtifactPreflightError::MissingSessionFileSet {
-                receipt_id: receipt.receipt_id.clone(),
-            },
-        )?;
-    Ok(base_dir.join(path))
-}
-
-fn require_receipt_file(
-    receipt: &ExportReceiptState,
-    path: PathBuf,
-    kind: ReceiptPathKind,
-) -> Result<PathBuf, ExportReceiptArtifactPreflightError> {
-    match std::fs::metadata(&path) {
-        Ok(metadata) if metadata.is_file() => Ok(path),
-        Ok(_) => Err(match kind {
-            ReceiptPathKind::ArtifactSet(role) => {
-                ExportReceiptArtifactPreflightError::ArtifactSetNotFile {
-                    receipt_id: receipt.receipt_id.clone(),
-                    role,
-                    path,
-                }
-            }
-            ReceiptPathKind::Artifact | ReceiptPathKind::Proof => {
-                ExportReceiptArtifactPreflightError::NotFile {
-                    receipt_id: receipt.receipt_id.clone(),
-                    path,
-                }
-            }
-        }),
-        Err(error) if error.kind() == io::ErrorKind::NotFound => Err(match kind {
-            ReceiptPathKind::Artifact => {
-                ExportReceiptArtifactPreflightError::MissingExportArtifact {
-                    receipt_id: receipt.receipt_id.clone(),
-                    path,
-                }
-            }
-            ReceiptPathKind::Proof => ExportReceiptArtifactPreflightError::MissingProofArtifact {
-                receipt_id: receipt.receipt_id.clone(),
-                path,
-            },
-            ReceiptPathKind::ArtifactSet(role) => {
-                ExportReceiptArtifactPreflightError::MissingArtifactSetArtifact {
-                    receipt_id: receipt.receipt_id.clone(),
-                    role,
-                    path,
-                }
-            }
-        }),
-        Err(error) => Err(match kind {
-            ReceiptPathKind::ArtifactSet(role) => {
-                ExportReceiptArtifactPreflightError::UnreadableArtifactSetArtifact {
-                    receipt_id: receipt.receipt_id.clone(),
-                    role,
-                    path,
-                    reason: error.to_string(),
-                }
-            }
-            ReceiptPathKind::Artifact | ReceiptPathKind::Proof => {
-                ExportReceiptArtifactPreflightError::UnreadableArtifact {
-                    receipt_id: receipt.receipt_id.clone(),
-                    path,
-                    reason: error.to_string(),
-                }
-            }
-        }),
-    }
 }

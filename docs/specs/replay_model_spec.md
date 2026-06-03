@@ -380,6 +380,12 @@ Decision:
   legacy receipts may omit optional artifact lineage, but present
   `source_graph_ref` and `timing_grid_ref` identities must be non-blank so
   corrupted export evidence is rejected before it is trusted
+- stem-package receipt replay/recovery validation consumes the claimed stem
+  roles from the `stem_package_artifact_set_evidence` QA gate and validates
+  explicit `artifact_set[]` identities for every claimed stem WAV plus
+  manifest/proof JSON. Missing identity and missing local file are distinct
+  diagnostics; neither path may regenerate, rewrite, or infer package artifacts
+  during restore.
 
 ### 10.2 Ghost
 
