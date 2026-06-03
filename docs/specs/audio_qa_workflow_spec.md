@@ -1164,6 +1164,11 @@ Today the repo already has:
   that stable manifest values serialize identically while artifact identity
   changes alter the proof input. It does not write files or claim package
   export readiness.
+- `StemPackageManifest::normalized_json_sha256` is the current CI-safe proof
+  identity helper. It hashes `normalized_json_bytes` directly so future
+  manifest/proof artifacts can use the same deterministic identity without a
+  parallel serializer. It does not write package files or claim stem export
+  readiness.
 - The current stem-package manifest fixture is in-memory and CI-safe: it uses
   claimed drums and bass stems, manifest/proof identities, and deferred QA gate
   evidence, then roundtrips the manifest JSON and checks receipt readiness stays

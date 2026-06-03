@@ -54,6 +54,35 @@ fn stem_package_manifest_normalized_json_bytes_are_stable_roundtrippable_and_ide
 }
 
 #[test]
+fn stem_package_manifest_normalized_json_sha256_uses_stable_proof_bytes() {
+    let manifest = fixture_manifest();
+    let hash = manifest
+        .normalized_json_sha256()
+        .expect("hash normalized manifest");
+    let repeated_hash = manifest
+        .normalized_json_sha256()
+        .expect("hash normalized manifest again");
+    let expected_hash = sha256_hex(
+        &manifest
+            .normalized_json_bytes()
+            .expect("serialize normalized manifest"),
+    );
+
+    assert_eq!(hash, repeated_hash);
+    assert_eq!(hash, expected_hash);
+    assert_eq!(hash.len(), 64);
+    assert!(hash.chars().all(|ch| ch.is_ascii_hexdigit()));
+
+    let mut changed = manifest.clone();
+    changed.artifacts[0].sha256 = "changed-drums-sha".into();
+    let changed_hash = changed
+        .normalized_json_sha256()
+        .expect("hash changed normalized manifest");
+
+    assert_ne!(hash, changed_hash);
+}
+
+#[test]
 fn stem_package_manifest_rejects_blank_package_id() {
     let err = StemPackageManifest::new(manifest_input(
         " ",
@@ -387,4 +416,12 @@ fn json_identity(
         media_type: ExportArtifactMediaType::Json,
         sha256: sha256.into(),
     }
+}
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+
+    let mut digest = Sha256::new();
+    digest.update(bytes);
+    format!("{:x}", digest.finalize())
 }
