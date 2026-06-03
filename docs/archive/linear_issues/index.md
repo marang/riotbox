@@ -898,4 +898,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add stem-package queue guard before runnable export
 - [RIOTBOX-1121.md](./RIOTBOX-1121.md)
   P016: Add stem-package writer planning contract
+- [RIOTBOX-1122.md](./RIOTBOX-1122.md)
+  P016: Resolve stem-package manifest/proof non-circular identity
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
