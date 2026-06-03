@@ -2,8 +2,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::session::{ExportArtifactAudioMetrics, ExportArtifactRole, ExportArtifactSetEntry};
 
+mod stem_package_fallback_comparison;
 mod stem_package_lineage;
 mod stem_package_non_silence;
+pub use stem_package_fallback_comparison::{
+    StemPackageFallbackComparisonQaFailure, StemPackageFallbackComparisonQaFailureKind,
+    StemPackageFallbackComparisonQaReport, StemPackageFallbackComparisonQaStatus,
+    validate_stem_package_fallback_comparison_evidence,
+};
 pub use stem_package_lineage::{
     StemPackageLineageQaFailure, StemPackageLineageQaFailureKind, StemPackageLineageQaReport,
     StemPackageLineageQaStatus, validate_stem_package_lineage_evidence,
@@ -362,7 +368,7 @@ fn artifact_has_invalid_lineage_evidence(artifact: &ExportArtifactSetEntry) -> b
             .any(|capture_id| capture_id.as_str().trim().is_empty())
 }
 
-fn fallback_comparison_evidence_is_valid(
+pub(super) fn fallback_comparison_evidence_is_valid(
     comparison: &crate::session::ExportArtifactFallbackComparisonEvidence,
 ) -> bool {
     !comparison.reference_identity.trim().is_empty()
@@ -471,6 +477,8 @@ fn deferred_stem_hash_stability_checks() -> Vec<StemPackageHashStabilityDeferred
 
 #[cfg(test)]
 mod stem_package_evidence_tests;
+#[cfg(test)]
+mod stem_package_fallback_comparison_tests;
 #[cfg(test)]
 mod stem_package_lineage_tests;
 #[cfg(test)]
