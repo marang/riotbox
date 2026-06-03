@@ -1209,6 +1209,10 @@ Today the repo already has:
     role; the first implementation boundary should start with roles that
     already have receipt/fixture proof, and must reject unsupported role claims
     instead of producing placeholder or fallback-only stems.
+  - current code-level skeleton only plans that boundary. It validates local
+    destination and bounded drums/bass claims, then returns final artifact
+    identities without writing WAV/JSON files, hashing outputs, running audio
+    metrics, or producing listening-review evidence.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

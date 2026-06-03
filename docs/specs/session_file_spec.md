@@ -452,6 +452,13 @@ Rules:
     ready receipt must remove that flag only after every required stem-package
     QA gate records `passed`. A failed writer must not leave behind a receipt
     that `validate_stem_package_receipt_readiness` can report as ready.
+  - current skeleton boundary:
+    `riotbox-core::stem_package_writer::plan_stem_package_local_ci_package`
+    plans final local artifact identities for `stem_package.local_ci_package_v1`
+    without constructing `ExportReceiptState`, writing files, hashing artifacts,
+    or removing the stem-package unsupported-scope flag. It currently supports
+    only the bounded drums/bass role set and rejects unsupported claims before
+    side effects.
   - realtime boundary: the writer must not run blocking filesystem work,
     decoding, hashing, QA analysis, Ghost/model calls, or observer emission on
     the realtime audio callback
