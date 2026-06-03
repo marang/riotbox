@@ -922,4 +922,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Surface stem-package receipt readiness in Jam inspect
 - [RIOTBOX-1134.md](./RIOTBOX-1134.md)
   P016: Add stem-package restore and artifact-availability diagnostics
+- [RIOTBOX-1135.md](./RIOTBOX-1135.md)
+  P016: Add guarded stem-package execute CLI proof path
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
