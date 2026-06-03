@@ -296,6 +296,7 @@ pub enum StemPackageExportRole {
 #[serde(rename_all = "snake_case")]
 pub enum StemPackageExportBoundary {
     ReservedContractOnly,
+    LocalCiPackageV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -770,6 +771,15 @@ mod tests {
         assert_eq!(
             roundtrip.command.replay_coverage(),
             ActionReplayCoverage::Unsupported
+        );
+        let local_ci_json = serde_json::to_value(StemPackageExportBoundary::LocalCiPackageV1)
+            .expect("serialize local CI boundary");
+        assert_eq!(local_ci_json, "local_ci_package_v1");
+        let local_ci_boundary: StemPackageExportBoundary =
+            serde_json::from_value(local_ci_json).expect("deserialize local CI boundary");
+        assert_eq!(
+            local_ci_boundary,
+            StemPackageExportBoundary::LocalCiPackageV1
         );
     }
 }

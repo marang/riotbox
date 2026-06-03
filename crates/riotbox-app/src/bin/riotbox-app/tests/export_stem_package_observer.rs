@@ -113,6 +113,53 @@ fn observer_snapshot_reports_failed_reserved_stem_package_lifecycle_without_rece
     );
 }
 
+#[test]
+fn observer_snapshot_reports_committed_local_ci_stem_package_writer_lifecycle() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let destination = temp.path().join("stem-export");
+    let session = SessionFile::new(
+        "observer-stem-package-writer",
+        "0.1.0",
+        "2026-06-03T00:00:00Z",
+    );
+    let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
+
+    let receipt = state
+        .commit_stem_package_export_local_ci_package(
+            &destination,
+            1_131,
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        )
+        .expect("commit local CI stem package export");
+
+    let shell = JamShellState::new(state, ShellLaunchMode::Load);
+    let snapshot = observer_snapshot(&shell);
+    let lifecycle = snapshot["export"]["lifecycle"]
+        .as_array()
+        .expect("lifecycle array");
+    assert_eq!(lifecycle.len(), 3);
+    assert_eq!(lifecycle[0]["stage"], "requested");
+    assert_eq!(lifecycle[1]["stage"], "started");
+    assert_eq!(lifecycle[2]["stage"], "completed");
+    assert_eq!(lifecycle[2]["command"], "export.stem_package");
+    assert_eq!(lifecycle[2]["action_id"], receipt.created_by_action.0);
+    assert_eq!(
+        lifecycle[2]["receipt"]["receipt_id"],
+        receipt.receipt_id.to_string()
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["stem_package_readiness"]["status"],
+        "ready"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["artifact_set"]
+            .as_array()
+            .expect("artifact set")
+            .len(),
+        4
+    );
+}
+
 fn committed_stem_package_action(action_id: ActionId, timestamp: u64) -> Action {
     Action {
         id: action_id,

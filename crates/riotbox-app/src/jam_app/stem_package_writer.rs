@@ -1,5 +1,5 @@
-// The CI writer is intentionally not attached to UI/Ghost/CLI until the
-// reserved stem export command gets its commit/observer slice.
+// The CI writer is intentionally internal until UI/Ghost/CLI export controls
+// get their own musician-facing surface.
 #![allow(dead_code)]
 
 use std::{

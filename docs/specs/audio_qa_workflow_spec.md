@@ -1080,10 +1080,12 @@ Today the repo already has:
   metrics, and the policy-required source/capture lineage and fallback
   comparison evidence. A UI, Ghost, or CLI path must not show it as ready while
   those gates are absent.
-- `ExportScope::StemPackage` is a reserved typed receipt scope only. It lets
-  future receipts state `export_scope: stem_package` explicitly, but it does not
-  remove unsupported-scope flags or turn the current QA skeleton into full
-  stem-package export readiness.
+- `ExportScope::StemPackage` is no longer only a future receipt label: the
+  current app has an internal `stem_package.local_ci_package_v1` commit proof for
+  deterministic drums/bass CI stems. That proof may remove the stem-package
+  unsupported-scope flag only when the written artifact set, per-stem hashes,
+  non-silence metrics, lineage, and fallback-comparison gates pass. It still
+  does not make a full musician-facing DAW/stem export workflow ready.
 - `riotbox-core::session::validate_stem_package_receipt_readiness` is the
   current receipt-level guard: missing, failed, or deferred
   `stem_package_artifact_set_evidence` gates keep readiness blocked, and even a
@@ -1122,6 +1124,10 @@ Today the repo already has:
   `stem_package_per_stem_hash_stability` in receipt `qa_gates[]`. Successful
   identity evidence remains `deferred`, not `passed`, until a package writer or
   repeated render proof can compare stable hashes across actual outputs.
+- The current local CI package writer records the hash-stability gate as
+  `passed` only for its deterministic repeated fixture proof boundary. Wider
+  stem renderers must supply their own repeated-output hash evidence before they
+  can claim the same gate.
 - `riotbox-core::export_qa::validate_stem_package_non_silence_evidence`
   is the current CI-safe per-stem non-silence receipt gate. It records
   `stem_package_per_stem_non_silence` as `passed` only when every claimed stem
