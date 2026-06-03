@@ -45,6 +45,9 @@ mod source_map_navigation;
 mod source_monitor_queue;
 mod source_timing_queue;
 mod state;
+mod stem_package_writer;
+#[cfg(test)]
+mod stem_package_writer_tests;
 mod tr909_queue;
 mod transport;
 mod transport_helpers;

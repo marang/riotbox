@@ -459,6 +459,14 @@ Rules:
     or removing the stem-package unsupported-scope flag. It currently supports
     only the bounded drums/bass role set and rejects unsupported claims before
     side effects.
+  - current CI writer proof:
+    `riotbox-app::jam_app::stem_package_writer` exercises the first bounded
+    file-emission path for `stem_package.local_ci_package_v1`. The proof writes
+    deterministic drums/bass fixture WAVs in a staging directory, promotes only
+    the validated package layout, measures and hashes final artifacts, writes
+    manifest/proof JSON, and records a ready receipt only after the required
+    stem-package QA gates pass. This receipt shape is proof evidence, not a
+    general user-facing export command.
   - realtime boundary: the writer must not run blocking filesystem work,
     decoding, hashing, QA analysis, Ghost/model calls, or observer emission on
     the realtime audio callback

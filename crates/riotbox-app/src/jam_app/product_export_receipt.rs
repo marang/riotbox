@@ -30,7 +30,7 @@ pub(super) fn attach_product_export_artifact_audio_metrics(receipt: &mut ExportR
         let ExportArtifactLocation::LocalPath { path } = &artifact.location else {
             continue;
         };
-        let Some(evidence) = product_export_audio_evidence(path) else {
+        let Some(evidence) = local_wav_audio_evidence(path) else {
             continue;
         };
 
@@ -67,14 +67,14 @@ fn export_artifact_timing_grid_ref(session: &SessionFile) -> Option<ExportArtifa
 }
 
 #[derive(Clone, Debug, PartialEq, Eq)]
-struct ProductExportAudioEvidence {
-    audio_metrics: ExportArtifactAudioMetrics,
-    sample_rate_hz: u32,
-    channel_count: u16,
-    duration_ms: u64,
+pub(super) struct LocalWavAudioEvidence {
+    pub(super) audio_metrics: ExportArtifactAudioMetrics,
+    pub(super) sample_rate_hz: u32,
+    pub(super) channel_count: u16,
+    pub(super) duration_ms: u64,
 }
 
-fn product_export_audio_evidence(path: impl AsRef<Path>) -> Option<ProductExportAudioEvidence> {
+pub(super) fn local_wav_audio_evidence(path: impl AsRef<Path>) -> Option<LocalWavAudioEvidence> {
     let cache = SourceAudioCache::load_pcm_wav(path).ok()?;
     let samples = cache.interleaved_samples();
     let metrics = signal_metrics(samples);
@@ -85,7 +85,7 @@ fn product_export_audio_evidence(path: impl AsRef<Path>) -> Option<ProductExport
         .filter(|frame| frame.iter().all(|sample| sample.abs() <= 0.0001))
         .count() as u64;
 
-    Some(ProductExportAudioEvidence {
+    Some(LocalWavAudioEvidence {
         audio_metrics: ExportArtifactAudioMetrics {
             peak_milli_dbfs: amplitude_to_milli_dbfs(metrics.peak_abs),
             rms_milli_dbfs: amplitude_to_milli_dbfs(metrics.rms),
