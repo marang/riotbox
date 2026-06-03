@@ -126,6 +126,34 @@ fn daw_session_host_import_gate_records_ready_and_blocked_proof() {
     );
 }
 
+#[test]
+fn daw_session_audible_output_gate_records_ready_and_blocked_proof() {
+    let ready_gate = ExportReceiptQaGateResult::daw_session_audible_output_proof(true, &[]);
+    assert_eq!(ready_gate.gate_id, DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID);
+    assert_eq!(ready_gate.status, ExportReceiptQaGateStatus::Passed);
+    assert_eq!(ready_gate.artifact_roles, Vec::<ExportArtifactRole>::new());
+    assert!(
+        ready_gate
+            .summary
+            .as_deref()
+            .expect("summary")
+            .contains("accepted")
+    );
+
+    let blocked_gate = ExportReceiptQaGateResult::daw_session_audible_output_proof(
+        false,
+        &["host_audio_capture_missing".into()],
+    );
+    assert_eq!(blocked_gate.status, ExportReceiptQaGateStatus::Failed);
+    assert!(
+        blocked_gate
+            .summary
+            .as_deref()
+            .expect("summary")
+            .contains("host_audio_capture_missing")
+    );
+}
+
 fn stem_artifact(
     role: ExportArtifactRole,
     path: impl Into<String>,

@@ -804,6 +804,11 @@ Additional receipt fields required before wider export scopes:
   receipt's `daw_session_host_import_proof` QA gate and writes only the Session
   file. It does not launch a host, create DAW files, emit observer lifecycle
   events, prove audible output, or make `export.daw_session` runnable.
+- `daw_session_audible_output_proof` is the reserved Session/Core QA gate for
+  future DAW-session audible-output proof. A passed gate only removes the
+  `audible_output_proof_missing` surface blocker; it does not imply a DAW
+  writer exists, launch a host, capture audio, or make `export.daw_session`
+  runnable. Failed or missing gates keep the audible-output blocker visible.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts
