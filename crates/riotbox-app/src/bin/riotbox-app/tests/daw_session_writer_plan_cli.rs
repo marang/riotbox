@@ -180,6 +180,10 @@ fn daw_session_writer_plan_surfaces_missing_source_files_after_contracts_are_rea
     );
     assert_eq!(summary["payload_preview"]["manifest"], serde_json::Value::Null);
     assert_eq!(
+        summary["payload_preview"]["tempo_map"],
+        serde_json::Value::Null
+    );
+    assert_eq!(
         summary["operator_readiness"]["artifact_preflight"]["blockers"],
         json!(["missing_local_files"])
     );
@@ -230,6 +234,17 @@ fn daw_session_writer_plan_ready_for_writer_is_read_only_and_keeps_writer_blocke
         "riotbox.daw_session_proof"
     );
     assert_eq!(
+        summary["payload_preview"]["tempo_map"]["schema_id"],
+        "riotbox.daw_session_tempo_map"
+    );
+    assert!(
+        summary["payload_preview"]["tempo_map"]["normalized_json_sha256"]
+            .as_str()
+            .expect("tempo map hash")
+            .len()
+            >= 32
+    );
+    assert_eq!(
         summary["payload_preview"]["proof"]["manifest_sha256"],
         summary["payload_preview"]["manifest"]["normalized_json_sha256"]
     );
@@ -238,6 +253,12 @@ fn daw_session_writer_plan_ready_for_writer_is_read_only_and_keeps_writer_blocke
             .as_str()
             .expect("manifest planned path")
             .ends_with("daw-out/daw_session/arrangement_manifest.json")
+    );
+    assert!(
+        summary["payload_preview"]["tempo_map"]["planned_path"]
+            .as_str()
+            .expect("tempo map planned path")
+            .ends_with("daw-out/daw_session/tempo_map.json")
     );
     assert!(
         summary["planned_artifacts"][0]["path"]

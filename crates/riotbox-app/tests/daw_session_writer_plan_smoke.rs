@@ -52,6 +52,17 @@ fn daw_session_writer_plan_smoke_covers_ready_for_writer_and_missing_file() {
         ready_plan["payload_preview"]["manifest"]["normalized_json_sha256"]
     );
     assert_eq!(
+        ready_plan["payload_preview"]["tempo_map"]["schema_id"],
+        "riotbox.daw_session_tempo_map"
+    );
+    assert!(
+        ready_plan["payload_preview"]["tempo_map"]["normalized_json_sha256"]
+            .as_str()
+            .expect("tempo map hash")
+            .len()
+            >= 32
+    );
+    assert_eq!(
         ready_plan["planned_artifacts"]
             .as_array()
             .expect("planned artifacts")
@@ -76,6 +87,10 @@ fn daw_session_writer_plan_smoke_covers_ready_for_writer_and_missing_file() {
         missing_destination_plan["payload_preview"]["manifest"],
         Value::Null
     );
+    assert_eq!(
+        missing_destination_plan["payload_preview"]["tempo_map"],
+        Value::Null
+    );
 
     fs::remove_file(&manifest_path).expect("remove manifest");
     let missing_plan = run_plan(&session_path, &destination_path);
@@ -90,6 +105,7 @@ fn daw_session_writer_plan_smoke_covers_ready_for_writer_and_missing_file() {
         missing_plan["payload_preview"]["blockers"],
         Value::Array(vec!["missing_local_files".into()])
     );
+    assert_eq!(missing_plan["payload_preview"]["tempo_map"], Value::Null);
 }
 
 fn run_plan(session_path: &std::path::Path, destination_path: &std::path::Path) -> Value {
