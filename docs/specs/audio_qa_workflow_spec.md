@@ -1406,6 +1406,13 @@ Today the repo already has:
     commit record, attaches `daw_session_writer_proof` to the matching receipt,
     and still emits no host-import proof, audible-output proof, live capture, or
     final musician-facing export enablement.
+  - current observer export snapshots include `export.daw_session` lifecycle
+    records only when a real queued DAW-session action exists. Rejected reserved
+    attempts produce requested / started / failed records without a receipt;
+    committed local-writer proof actions produce requested / started /
+    completed records with the matching DAW-session receipt and proof-gate
+    summary. This is observer evidence, not host import, audible output proof,
+    live capture, or musician-facing DAW export readiness.
   - current DAW-session writer proof skeleton writes only bounded local proof
     artifacts through `riotbox-app --daw-session-writer-proof-execute
     --session <session.json> --daw-session-destination <dir>`. The proof
@@ -1425,8 +1432,9 @@ Today the repo already has:
   - current observer export snapshot also projects the latest DAW-session
     receipt's `proof_gates` so observer consumers see the same JSON package,
     writer-proof, host-import, and audible-output proof state as the operator
-    report. This is not an `export.daw_session` lifecycle claim; no lifecycle
-    records are emitted until a real queued action exists.
+    report. This read-only receipt summary is not an `export.daw_session`
+    lifecycle claim; lifecycle records are emitted only when a real queued
+    action exists.
   - DAW-session release blockers are cleared only by their own proof layer:
     JSON package evidence clears only JSON package blockers, writer proof
     clears only `daw_writer_missing`, host-import proof clears only
@@ -1485,10 +1493,10 @@ Today the repo already has:
   package/placement/tempo-map proof is visible before `export.daw_session`
   exists. This must remain read-only evidence projection and must not invent DAW
   export lifecycle records.
-  Current app observer lifecycle projection includes `export.stem_package`
-  actions from action log, queue history, and pending queue state; failed
-  reserved attempts have typed failure reasons and no receipt, and completed
-  stem-package receipts expose readiness only from the Session receipt.
+  Current app observer lifecycle projection includes `export.stem_package` and
+  `export.daw_session` actions from action log, queue history, and pending queue
+  state. Failed reserved attempts have typed failure reasons and no receipt;
+  completed receipts expose readiness only from the Session receipt.
   Observer snapshots also include the shared stem-package musician surface gate
   with `status`, `runnable`, typed blockers, and musician labels. That gate
   explains product surfacing and is not permission to infer or mutate package

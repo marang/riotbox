@@ -1,7 +1,7 @@
 use std::collections::BTreeSet;
 
 use riotbox_core::{
-    action::{Action, ActionCommand, ActionStatus},
+    action::{Action, ActionCommand, ActionParams, ActionStatus, DawSessionExportBoundary},
     export_readiness::ExportScope,
     session::{
         ArrangementExportPlacementReadinessBlocker, DawTempoMapReadinessBlocker,
@@ -77,17 +77,14 @@ fn push_export_action<'a>(
 fn is_export_action(command: ActionCommand) -> bool {
     matches!(
         command,
-        ActionCommand::ExportProductMix | ActionCommand::ExportStemPackage
+        ActionCommand::ExportProductMix
+            | ActionCommand::ExportStemPackage
+            | ActionCommand::ExportDawSession
     )
 }
 
 fn export_lifecycle_records(shell: &JamShellState, action: &Action) -> Vec<Value> {
-    let receipt = shell
-        .app
-        .session
-        .export_receipts
-        .iter()
-        .find(|receipt| receipt.created_by_action == action.id);
+    let receipt = export_receipt_for_action(shell, action);
     let mut records = vec![export_lifecycle_record(
         "requested",
         action.requested_at,
@@ -132,6 +129,40 @@ fn export_lifecycle_records(shell: &JamShellState, action: &Action) -> Vec<Value
     }
 
     records
+}
+
+fn export_receipt_for_action<'a>(
+    shell: &'a JamShellState,
+    action: &Action,
+) -> Option<&'a ExportReceiptState> {
+    let by_created_action = shell
+        .app
+        .session
+        .export_receipts
+        .iter()
+        .find(|receipt| receipt.created_by_action == action.id);
+    if by_created_action.is_some() {
+        return by_created_action;
+    }
+
+    let (
+        ActionStatus::Committed,
+        ActionParams::DawSessionExport {
+            boundary: DawSessionExportBoundary::LocalProjectWriterV1,
+            receipt_id: Some(receipt_id),
+            ..
+        },
+    ) = (&action.status, &action.params)
+    else {
+        return None;
+    };
+
+    shell
+        .app
+        .session
+        .export_receipts
+        .iter()
+        .find(|receipt| receipt.receipt_id.as_str() == receipt_id.as_str())
 }
 
 fn export_lifecycle_record(
