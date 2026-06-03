@@ -920,4 +920,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add CLI dry-run surface for local stem-package proof
 - [RIOTBOX-1133.md](./RIOTBOX-1133.md)
   P016: Surface stem-package receipt readiness in Jam inspect
+- [RIOTBOX-1134.md](./RIOTBOX-1134.md)
+  P016: Add stem-package restore and artifact-availability diagnostics
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
