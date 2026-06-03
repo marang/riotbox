@@ -34,6 +34,7 @@ pub(in crate::jam_app) use super::product_export_artifact_preflight::{
     ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
 };
 
+mod daw_session_export_commit;
 mod daw_session_export_queue;
 mod daw_session_surface_gate;
 pub use daw_session_surface_gate::{
@@ -159,6 +160,7 @@ pub enum StemPackageExportQueueResult {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum DawSessionExportQueueResult {
+    Enqueued { action_id: ActionId },
     Rejected { reason: String },
     AlreadyPending,
 }

@@ -627,16 +627,16 @@ Contract for `export.stem_package`:
   audio, emits no observer lifecycle events, and does not make
   `export.daw_session` runnable.
 - Current first DAW session writer/action boundary:
-  the future runnable `export.daw_session` command must still be introduced
-  only as a single queue/commit/Session/observer boundary. The boundary id is
+  `export.daw_session` is now introduced as a single queue/commit/Session
+  boundary for the first bounded local writer proof only. The boundary id is
   `daw_session.local_project_writer_v1`; the existing
   `daw_session.json_package_writer_v1` proof remains a prerequisite JSON
-  package writer, not the DAW project/session writer itself. Current code adds
-  a typed reserved `export.daw_session` Core action and app queue-history guard
-  that rejects musician attempts while the DAW surface gate is blocked, plus a
-  CI-safe local writer proof skeleton and a receipt evidence apply path: no
-  DAW writer commit, host runner, audio capture, observer lifecycle, or
-  musician-runnable `export.daw_session` exists.
+  package writer, not the DAW project/session writer itself. Current code keeps
+  a typed reserved `export.daw_session` queue-history guard for blocked
+  musician attempts and adds a local writer commit path that writes only the
+  CI-safe proof package and attaches `daw_session_writer_proof` receipt
+  evidence. No host runner, audio capture, observer lifecycle completion, or
+  musician-runnable DAW export exists yet.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a
@@ -659,20 +659,25 @@ Contract for `export.stem_package`:
   boundary, selected DAW-session receipt id when one exists, and a
   `NotUndoable` policy, then rejects with the DAW session surface-gate reason.
   It leaves the pending queue empty and writes no files, receipts, observer
-  lifecycle records, host checks, or proof artifacts. Future runnable work must
-  replace this reserved boundary with `daw_session.local_project_writer_v1`,
-  accept at most one pending DAW-session export for a Session/destination pair,
-  and keep the realtime audio thread out of destination validation, package
-  inspection, DAW writing, host checks, or proof generation.
-- Future `export.daw_session` commit / side-effect path:
+  lifecycle records, host checks, or proof artifacts.
+- Current local-writer `export.daw_session` queue / commit path:
+  app code may enqueue `export.daw_session` with
+  `daw_session.local_project_writer_v1` only when the latest DAW-session
+  receipt is ready for the writer plan and has passed
+  `daw_session_json_package_integrity` evidence. The commit path runs the
+  existing staged local writer proof outside realtime audio, writes only
+  `daw_session_writer/local_project_skeleton.json` and
+  `daw_session_writer/writer_proof.json`, attaches the
+  `daw_session_writer_proof` QA gate and proof artifact to the matching
+  receipt, commits the queued action, and keeps the DAW surface disabled.
+- Future wider `export.daw_session` commit / side-effect path:
   revalidate the latest `export_scope: daw_session` receipt, arrangement
   placement, tempo-map evidence, local artifact preflight, and
-  `daw_session_json_package_integrity` gate before touching the destination;
-  perform DAW project/session file emission through staging outside realtime
-  audio; hash the promoted files; attach the `daw_session_writer_proof` gate
-  plus artifact-set entries to the Session receipt; and remove only
-  `daw_writer_missing` when that proof passes. JSON package evidence removes
-  only JSON package blockers, host-import proof removes only
+  `daw_session_json_package_integrity` gate before touching any richer
+  destination; perform real DAW project/session file emission through staging
+  outside realtime audio; and keep proof layering explicit. JSON package
+  evidence removes only JSON package blockers, writer proof removes only
+  `daw_writer_missing`, host-import proof removes only
   `daw_host_import_proof_missing`, audible-output proof removes only
   `audible_output_proof_missing`, and `developer_proof_only` remains until a
   later musician-facing release gate explicitly removes it.
