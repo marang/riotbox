@@ -59,6 +59,7 @@ audio-qa-ci:
     just source-showcase-diversity-report-fixtures
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
+    just automated-musical-fitness-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -424,6 +425,13 @@ real-source-listening-showcase-validate manifest="data/showcase_sources/local_li
 
 representative-source-showcase-musical-quality showcase="artifacts/audio_qa/local-representative-source-showcase":
     python3 scripts/validate_representative_showcase_musical_quality.py --json-output "{{showcase}}/validation/musical-quality.json" --markdown-output "{{showcase}}/validation/musical-quality.md" "{{showcase}}"
+
+automated-musical-fitness showcase="artifacts/audio_qa/local-representative-source-showcase":
+    mkdir -p "{{showcase}}/validation"
+    python3 scripts/validate_automated_musical_fitness.py --json-output "{{showcase}}/validation/automated-musical-fitness.json" --markdown-output "{{showcase}}/validation/automated-musical-fitness.md" "{{showcase}}"
+
+automated-musical-fitness-fixtures:
+    scripts/validate_automated_musical_fitness_fixtures.sh
 
 representative-source-showcase-output-guard-fixtures:
     scripts/validate_representative_showcase_output_guard.sh
