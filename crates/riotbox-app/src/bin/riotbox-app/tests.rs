@@ -56,7 +56,8 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
-            | LaunchMode::DawExportReadinessReport { .. } => panic!("expected ingest mode"),
+            | LaunchMode::DawExportReadinessReport { .. }
+            | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -80,7 +81,8 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
-            | LaunchMode::DawExportReadinessReport { .. } => panic!("expected ingest mode"),
+            | LaunchMode::DawExportReadinessReport { .. }
+            | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -106,7 +108,8 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
-            | LaunchMode::DawExportReadinessReport { .. } => panic!("expected load mode"),
+            | LaunchMode::DawExportReadinessReport { .. }
+            | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
 
@@ -127,7 +130,8 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
-            | LaunchMode::DawExportReadinessReport { .. } => panic!("expected load mode"),
+            | LaunchMode::DawExportReadinessReport { .. }
+            | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
 
@@ -290,6 +294,12 @@ mod tests {
         use super::*;
 
         include!("tests/daw_export_report_cli.rs");
+    }
+
+    mod daw_session_writer_plan_cli {
+        use super::*;
+
+        include!("tests/daw_session_writer_plan_cli.rs");
     }
 
     mod source_timing_confirm_control {

@@ -3,6 +3,7 @@ include!("riotbox-app/launch.rs");
 include!("riotbox-app/stem_package_export_cli.rs");
 include!("riotbox-app/stem_package_report_cli.rs");
 include!("riotbox-app/daw_export_report_cli.rs");
+include!("riotbox-app/daw_session_writer_plan_cli.rs");
 include!("riotbox-app/event_loop.rs");
 include!("riotbox-app/event_loop_helpers.rs");
 include!("riotbox-app/capture_length_control.rs");

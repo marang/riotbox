@@ -54,6 +54,10 @@ enum LaunchMode {
     DawExportReadinessReport {
         session_path: PathBuf,
     },
+    DawSessionWriterPlan {
+        session_path: PathBuf,
+        destination_path: PathBuf,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -73,6 +77,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches!(launch.mode, LaunchMode::DawExportReadinessReport { .. }) {
         run_daw_export_readiness_report(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::DawSessionWriterPlan { .. }) {
+        run_daw_session_writer_plan(&launch)?;
         return Ok(());
     }
     let state = load_state(launch.mode.clone())?;
@@ -144,6 +152,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::DawExportReadinessReport { .. } => Err(JamAppError::InvalidSession(
             "DAW export readiness report uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::DawSessionWriterPlan { .. } => Err(JamAppError::InvalidSession(
+            "DAW session writer plan uses a non-interactive proof path".into(),
         )),
     }
 }
