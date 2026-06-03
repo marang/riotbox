@@ -385,6 +385,13 @@ Rules:
   SHA-256 identity of those normalized bytes. It is a proof identity helper for
   future manifest/proof artifact wiring, not a second serializer and not a
   package writer.
+- `riotbox-core::stem_package_proof::StemPackageProof` reserves the future
+  stem-package proof JSON contract with schema id `riotbox.stem_package_proof`
+  and schema version `1`. It stores package id, `export_scope: stem_package`,
+  receipt id, creating action id, manifest SHA-256, claimed stem roles, and
+  manifest/proof JSON identities. This is an in-memory proof payload contract
+  only; it does not write proof files, mutate Session, or make
+  `export.stem_package` runnable.
 - The current CI-safe stem-package manifest fixture builds an in-memory receipt
   with claimed drums and bass stems, manifest/proof JSON identities, and a
   deferred `stem_package_artifact_set_evidence` gate. It roundtrips the
