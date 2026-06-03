@@ -31,6 +31,7 @@ fn daw_export_readiness_report_summary(
         "musician_export_readiness": report.musician_export_readiness,
         "release_blockers": report.release_blockers,
         "proof_gates": report.proof_gates,
+        "proof_stack": report.proof_stack,
         "daw_session_surface_gate": {
             "status": surface_gate.status.as_str(),
             "runnable": surface_gate.runnable(),

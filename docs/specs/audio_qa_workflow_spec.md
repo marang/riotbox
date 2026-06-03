@@ -1290,8 +1290,10 @@ Today the repo already has:
     proof, and release blockers without writing DAW files, observer events, or
     musician-facing export state. `developer_proof_only` remains fixed; writer,
     host-import, and audible-output blockers clear only when their own proof
-    gates pass. A `ready_for_writer` report means the receipt is ready for the
-    next DAW-writer implementation gate only.
+    gates pass. The report's `proof_stack` summary makes stacks explicit when
+    they are complete but still developer-proof-only. A `ready_for_writer`
+    report means the receipt is ready for the next DAW-writer implementation
+    gate only.
   - `just daw-export-readiness-report-smoke` is the CI-safe operator-report
     proof for that path. It runs the real binary against a temporary Session,
     validates the ready-for-writer report, removes the manifest file, and
