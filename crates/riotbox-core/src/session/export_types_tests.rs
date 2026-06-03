@@ -6,7 +6,11 @@ use crate::{
         PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::{ActionId, SourceId},
-    session::{PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, SessionFile},
+    session::{
+        ExportArtifactFallbackComparisonKind, PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID,
+        SessionFile,
+    },
+    source_graph::SourceGraphVersion,
 };
 
 fn fixture_contract() -> ExportReadinessContract {

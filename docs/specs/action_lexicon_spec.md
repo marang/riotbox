@@ -361,8 +361,10 @@ Current `export.live_recording` boundary:
   records
 - QA requirement before widening: proof must cover control path, recorded WAV
   identity, format metrics, non-silence, duration, source/session lineage,
-  clock/source timing context when relevant, and explicit listening-review
-  status when the recorded audio is musician-facing
+  clock/source timing context when relevant, typed
+  `live_recording_host_audio_refs[]` evidence for host/device/callback-gap/
+  stream-error/duration context, and explicit listening-review status when the
+  recorded audio is musician-facing
 
 Contract for `export.stem_package`:
 
@@ -826,8 +828,9 @@ Contract for `export.stem_package`:
   but must not regenerate stems or rewrite export files without a fresh explicit
   export request.
 
-Host-audio soak is evidence for live recording readiness, not a product export
-command by itself until a separate contract says otherwise.
+Host-audio soak and `live_recording_host_audio_refs[]` are evidence for live
+recording readiness, not product export commands by themselves until a separate
+contract says otherwise.
 
 ---
 

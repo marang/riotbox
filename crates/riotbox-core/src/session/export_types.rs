@@ -7,6 +7,11 @@ use super::arrangement_export_placement::{
 use super::daw_tempo_map::{
     DawTempoMapReadinessReport, ExportDawTempoMapRef, validate_daw_tempo_map_readiness,
 };
+use super::export_artifact_evidence::{
+    ExportArtifactAudioMetrics, ExportArtifactFallbackComparisonEvidence,
+    ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
+};
+use super::live_recording_host_audio::ExportLiveRecordingHostAudioRef;
 use crate::{
     TimestampMs,
     export_readiness::{
@@ -14,13 +19,12 @@ use crate::{
         ProductExportRole, UnsupportedExportScope, default_export_scope,
         default_product_export_pack_id,
     },
-    ids::{ActionId, CaptureId, ExportReceiptId, SourceId},
+    ids::{ActionId, CaptureId, ExportReceiptId},
     session::export_qa_gates::{
         ExportReceiptQaGateResult, ExportReceiptQaGateStatus, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
         STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID, STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
         STEM_PACKAGE_LINEAGE_QA_GATE_ID, STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,
     },
-    source_graph::SourceGraphVersion,
 };
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -48,6 +52,8 @@ pub struct ExportReceiptState {
     pub arrangement_placement_refs: Vec<ExportArrangementPlacementRef>,
     #[serde(default)]
     pub daw_tempo_map_ref: Option<ExportDawTempoMapRef>,
+    #[serde(default)]
+    pub live_recording_host_audio_refs: Vec<ExportLiveRecordingHostAudioRef>,
     pub readiness_status: ExportReadinessStatus,
     pub unsupported_scopes: Vec<UnsupportedExportScope>,
 }
@@ -84,6 +90,7 @@ impl ExportReceiptState {
             qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
             arrangement_placement_refs: Vec::new(),
             daw_tempo_map_ref: None,
+            live_recording_host_audio_refs: Vec::new(),
             readiness_status: contract.status,
             unsupported_scopes: contract.unsupported_scopes.clone(),
         }
@@ -401,38 +408,6 @@ impl ExportArtifactSetEntry {
     }
 }
 
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExportArtifactSourceGraphRef {
-    pub source_id: SourceId,
-    pub graph_version: SourceGraphVersion,
-    pub graph_hash: String,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExportArtifactTimingGridRef {
-    pub source_id: SourceId,
-    #[serde(default)]
-    pub hypothesis_id: Option<String>,
-    pub confirmed_by_action: ActionId,
-    pub confirmed_at: TimestampMs,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExportArtifactFallbackComparisonEvidence {
-    pub comparison_kind: ExportArtifactFallbackComparisonKind,
-    pub reference_identity: String,
-    #[serde(default)]
-    pub rms_difference_micros: Option<u32>,
-    #[serde(default)]
-    pub normalized_correlation_micros: Option<i32>,
-}
-
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(rename_all = "snake_case")]
-pub enum ExportArtifactFallbackComparisonKind {
-    SourceVsFallback,
-}
-
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ExportArtifactRole {
@@ -470,22 +445,6 @@ pub enum ExportArtifactLocation {
 pub enum ExportArtifactMediaType {
     AudioWav,
     Json,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
-pub struct ExportArtifactAudioMetrics {
-    #[serde(default)]
-    pub peak_milli_dbfs: Option<i32>,
-    #[serde(default)]
-    pub rms_milli_dbfs: Option<i32>,
-    #[serde(default)]
-    pub peak_amplitude_micros: Option<u32>,
-    #[serde(default)]
-    pub rms_amplitude_micros: Option<u32>,
-    #[serde(default)]
-    pub silent_frame_count: Option<u64>,
-    #[serde(default)]
-    pub total_frame_count: Option<u64>,
 }
 
 #[cfg(test)]

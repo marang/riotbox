@@ -1081,11 +1081,12 @@ Today the repo already has:
   This is an observer projection, not a second export truth.
 - wider P016 export scopes require stronger gates before they are claimed:
   stem packages require per-stem non-silence, role labeling, hash stability, and
-  source/capture lineage checks against the per-artifact evidence fields; live recordings require real-session
-  host-audio evidence with callback-gap and stream-error summaries; DAW session
-  export requires tempo-map and arrangement placement validation against the
-  Source Graph/Session timing truth. None of those are covered by the current
-  product-export reproducibility smoke.
+  source/capture lineage checks against the per-artifact evidence fields; live
+  recordings require real-session `live_recording_host_audio_refs[]` evidence
+  with host/device, callback-gap, stream-error, and duration summaries; DAW
+  session export requires tempo-map and arrangement placement validation
+  against the Source Graph/Session timing truth. None of those are covered by
+  the current product-export reproducibility smoke.
 - `export.stem_package` remains reserved until an implementation can provide a
   package receipt whose `artifact_set[]` contains every claimed stem role, the
   package manifest/proof entries, per-stem hashes, per-stem WAV format/audio

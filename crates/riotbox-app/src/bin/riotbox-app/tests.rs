@@ -404,6 +404,12 @@ mod tests {
         include!("tests/export_daw_session_observer.rs");
     }
 
+    mod export_live_recording_observer {
+        use super::*;
+
+        include!("tests/export_live_recording_observer.rs");
+    }
+
     mod export_stem_package_observer {
         use super::*;
 

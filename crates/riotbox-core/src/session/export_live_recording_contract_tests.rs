@@ -6,6 +6,10 @@ use crate::{
         PRODUCT_EXPORT_PROOF_SCHEMA,
     },
     ids::ActionId,
+    session::{
+        ExportLiveRecordingCallbackGapSummary, ExportLiveRecordingHostAudioRef,
+        ExportLiveRecordingStreamErrorSummary,
+    },
 };
 
 fn live_recording_fixture_receipt() -> ExportReceiptState {
@@ -104,6 +108,79 @@ fn live_recording_receipt_contract_roundtrips_without_writer_side_effects() {
             .unsupported_scopes
             .contains(&UnsupportedExportScope::LiveRecording)
     );
+}
+
+#[test]
+fn live_recording_host_audio_refs_roundtrip_as_receipt_evidence_only() {
+    let mut receipt = live_recording_fixture_receipt();
+    receipt
+        .live_recording_host_audio_refs
+        .push(ExportLiveRecordingHostAudioRef {
+            host: "Alsa".into(),
+            device: "pipewire-default".into(),
+            recording_duration_ms: 16_000,
+            callback_gap_summary: ExportLiveRecordingCallbackGapSummary {
+                max_gap_ms: Some(3),
+                over_threshold_count: 0,
+            },
+            stream_error_summary: ExportLiveRecordingStreamErrorSummary {
+                error_count: 0,
+                last_error: None,
+            },
+        });
+
+    let json = serde_json::to_value(&receipt).expect("serialize live receipt");
+    assert_eq!(json["live_recording_host_audio_refs"][0]["host"], "Alsa");
+    assert_eq!(
+        json["live_recording_host_audio_refs"][0]["device"],
+        "pipewire-default"
+    );
+    assert_eq!(
+        json["live_recording_host_audio_refs"][0]["recording_duration_ms"],
+        16_000
+    );
+    assert_eq!(
+        json["live_recording_host_audio_refs"][0]["callback_gap_summary"]["max_gap_ms"],
+        3
+    );
+    assert_eq!(
+        json["live_recording_host_audio_refs"][0]["stream_error_summary"]["error_count"],
+        0
+    );
+
+    let roundtrip: ExportReceiptState = serde_json::from_value(json).expect("deserialize receipt");
+    assert_eq!(roundtrip.live_recording_host_audio_refs.len(), 1);
+    assert_eq!(
+        roundtrip.live_recording_host_audio_refs[0],
+        ExportLiveRecordingHostAudioRef {
+            host: "Alsa".into(),
+            device: "pipewire-default".into(),
+            recording_duration_ms: 16_000,
+            callback_gap_summary: ExportLiveRecordingCallbackGapSummary {
+                max_gap_ms: Some(3),
+                over_threshold_count: 0,
+            },
+            stream_error_summary: ExportLiveRecordingStreamErrorSummary {
+                error_count: 0,
+                last_error: None,
+            },
+        }
+    );
+    assert!(roundtrip.qa_gates.is_empty());
+}
+
+#[test]
+fn missing_live_recording_host_audio_refs_default_to_empty_for_older_receipts() {
+    let mut json = serde_json::to_value(live_recording_fixture_receipt())
+        .expect("serialize live recording receipt");
+    json.as_object_mut()
+        .expect("receipt json object")
+        .remove("live_recording_host_audio_refs");
+
+    let receipt: ExportReceiptState =
+        serde_json::from_value(json).expect("deserialize older receipt");
+
+    assert!(receipt.live_recording_host_audio_refs.is_empty());
 }
 
 #[test]
