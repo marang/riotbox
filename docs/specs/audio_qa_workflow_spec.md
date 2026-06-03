@@ -1391,14 +1391,21 @@ Today the repo already has:
     lifecycle event. `just daw-session-audible-output-proof-apply-smoke` proves
     the real-binary Session mutation while `export.daw_session` stays disabled.
   - first DAW session writer/action boundary is reserved as
-    `daw_session.local_project_writer_v1` for a future runnable
-    `export.daw_session` command. It must sit after the CI-safe
+    `daw_session.local_project_writer_v1` for the first bounded
+    `export.daw_session` local-writer commit path. It sits after the CI-safe
     `daw_session.json_package_writer_v1` JSON package proof and before
     host-import or audible-output proof. Current code also has a typed reserved
     `export.daw_session` queue-history guard that rejects attempts with the DAW
     surface-gate reason and records destination/receipt intent without writing
     files, receipts, observer lifecycle records, host checks, or proof
     artifacts.
+  - current local-writer `export.daw_session` commit path uses the same
+    `daw_session.local_project_writer_v1` boundary only after the DAW writer
+    plan is ready and `daw_session_json_package_integrity` has passed. It runs
+    the existing staged local writer proof, records a committed action and
+    commit record, attaches `daw_session_writer_proof` to the matching receipt,
+    and still emits no host-import proof, audible-output proof, live capture, or
+    final musician-facing export enablement.
   - current DAW-session writer proof skeleton writes only bounded local proof
     artifacts through `riotbox-app --daw-session-writer-proof-execute
     --session <session.json> --daw-session-destination <dir>`. The proof

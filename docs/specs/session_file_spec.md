@@ -838,16 +838,16 @@ Additional receipt fields required before wider export scopes:
   It does not launch a host, create DAW files, capture audio, emit observer
   lifecycle events, or make `export.daw_session` runnable.
 - the first DAW session writer/action boundary is reserved as
-  `daw_session.local_project_writer_v1` for a future runnable
+  `daw_session.local_project_writer_v1` for the first bounded local-writer
   `export.daw_session` command. Current code also reserves a typed
   `export.daw_session` action guard that records rejected queue-history
   attempts with destination root, `reserved_contract_only` boundary, selected
   DAW-session receipt id when available, and the DAW surface-gate blocker
   summary, while writing no Session receipt, DAW files, observer lifecycle
-  records, host checks, or proof artifacts. The future writer boundary sits
+  records, host checks, or proof artifacts. The local writer boundary sits
   after the existing `daw_session.json_package_writer_v1` JSON package proof
   and before host-import or audible-output proof. Current writer proof code
-  implements only a CI-safe local proof skeleton:
+  implements a CI-safe local proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute
   --session <session.json> --daw-session-destination <dir>` writes
   `daw_session_writer/local_project_skeleton.json` and
@@ -856,15 +856,15 @@ Additional receipt fields required before wider export scopes:
   --session <session.json> --daw-session-destination <dir>` reads that proof,
   attaches the `daw_session_writer_proof` QA gate and artifact entry to the
   latest DAW-session receipt, and writes only the Session file.
-- future DAW-session writer commits must keep the Session receipt as the only
-  product truth. The command must revalidate the DAW-session receipt identity,
-  placement refs, tempo-map refs, local artifact preflight, and
-  `daw_session_json_package_integrity` gate; write staged DAW artifacts outside
-  realtime audio; hash promoted files; record artifact-set entries; attach a
-  `daw_session_writer_proof` QA gate; and remove only
-  `daw_writer_missing` when that proof passes. Replay validates the recorded
-  receipt/artifact/proof identities only; it must not regenerate or rewrite DAW
-  files.
+- current DAW-session writer commits keep the Session receipt as the only
+  product truth. The command revalidates the DAW-session receipt identity,
+  placement refs, tempo-map refs, local artifact availability, and
+  `daw_session_json_package_integrity` gate; writes the staged local writer
+  proof outside realtime audio; hashes promoted files; records the proof
+  artifact-set entry; attaches a `daw_session_writer_proof` QA gate; and removes
+  only `daw_writer_missing` when that proof passes. Replay validates the
+  recorded receipt/artifact/proof identities only; it must not regenerate or
+  rewrite DAW files.
 - DAW-session blocker removal is intentionally one gate at a time:
   JSON package integrity removes only JSON package blockers, writer proof
   removes only `daw_writer_missing`, host-import proof removes only
