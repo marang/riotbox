@@ -978,4 +978,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Surface DAW session writer proof in readiness reports
 - [RIOTBOX-1161.md](./RIOTBOX-1161.md)
   P016: Project DAW session proof gates through observer snapshot
+- [RIOTBOX-1162.md](./RIOTBOX-1162.md)
+  P016: Require DAW writer proof before host-import proof can pass
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
