@@ -8,7 +8,8 @@ use crate::{
     ids::ActionId,
     session::{
         ExportLiveRecordingCallbackGapSummary, ExportLiveRecordingHostAudioRef,
-        ExportLiveRecordingStreamErrorSummary,
+        ExportLiveRecordingStreamErrorSummary, LiveRecordingHostAudioReadinessBlocker,
+        LiveRecordingHostAudioReadinessStatus, validate_live_recording_host_audio_readiness,
     },
 };
 
@@ -184,6 +185,95 @@ fn missing_live_recording_host_audio_refs_default_to_empty_for_older_receipts() 
 }
 
 #[test]
+fn live_recording_host_audio_readiness_blocks_missing_evidence() {
+    let receipt = live_recording_fixture_receipt();
+
+    let report = receipt.live_recording_host_audio_readiness_report();
+
+    assert_eq!(
+        report.status,
+        LiveRecordingHostAudioReadinessStatus::Blocked
+    );
+    assert_eq!(
+        report.blockers,
+        vec![
+            LiveRecordingHostAudioReadinessBlocker::UnsupportedScopeFlagPresent,
+            LiveRecordingHostAudioReadinessBlocker::MissingHostAudioEvidence,
+        ]
+    );
+}
+
+#[test]
+fn live_recording_host_audio_readiness_blocks_bad_evidence() {
+    let mut receipt = live_recording_fixture_receipt();
+    receipt.unsupported_scopes.clear();
+    receipt
+        .live_recording_host_audio_refs
+        .push(ExportLiveRecordingHostAudioRef {
+            host: " ".into(),
+            device: "".into(),
+            recording_duration_ms: 0,
+            callback_gap_summary: ExportLiveRecordingCallbackGapSummary {
+                max_gap_ms: Some(98),
+                over_threshold_count: 2,
+            },
+            stream_error_summary: ExportLiveRecordingStreamErrorSummary {
+                error_count: 1,
+                last_error: Some("xrun".into()),
+            },
+        });
+
+    let report = validate_live_recording_host_audio_readiness(&receipt);
+
+    assert_eq!(
+        report.status,
+        LiveRecordingHostAudioReadinessStatus::Blocked
+    );
+    assert_eq!(
+        report.blockers,
+        vec![
+            LiveRecordingHostAudioReadinessBlocker::BlankHost,
+            LiveRecordingHostAudioReadinessBlocker::BlankDevice,
+            LiveRecordingHostAudioReadinessBlocker::ZeroRecordingDuration,
+            LiveRecordingHostAudioReadinessBlocker::CallbackGapOverThreshold,
+            LiveRecordingHostAudioReadinessBlocker::StreamErrorReported,
+        ]
+    );
+}
+
+#[test]
+fn live_recording_host_audio_readiness_blocks_wrong_scope() {
+    let mut receipt = live_recording_fixture_receipt();
+    receipt.export_scope = ExportScope::ProductMix;
+    receipt.unsupported_scopes.clear();
+    receipt.live_recording_host_audio_refs = vec![ready_live_recording_host_audio_ref()];
+
+    let report = validate_live_recording_host_audio_readiness(&receipt);
+
+    assert_eq!(
+        report.status,
+        LiveRecordingHostAudioReadinessStatus::Blocked
+    );
+    assert_eq!(
+        report.blockers,
+        vec![LiveRecordingHostAudioReadinessBlocker::NotLiveRecordingScope]
+    );
+}
+
+#[test]
+fn live_recording_host_audio_readiness_passes_ready_receipt_evidence() {
+    let mut receipt = live_recording_fixture_receipt();
+    receipt.unsupported_scopes.clear();
+    receipt.live_recording_host_audio_refs = vec![ready_live_recording_host_audio_ref()];
+
+    let report = receipt.live_recording_host_audio_readiness_report();
+
+    assert!(report.ready());
+    assert_eq!(report.status, LiveRecordingHostAudioReadinessStatus::Ready);
+    assert!(report.blockers.is_empty());
+}
+
+#[test]
 fn live_recording_export_contract_names_are_stable_but_not_product_mix_defaults() {
     assert_eq!(ExportScope::LiveRecording.as_str(), "live_recording");
     assert_eq!(
@@ -204,4 +294,20 @@ fn live_recording_export_contract_names_are_stable_but_not_product_mix_defaults(
     );
     assert_eq!(PRODUCT_EXPORT_PACK_ID, "feral-grid-demo");
     assert_eq!(default_export_scope(), ExportScope::ProductMix);
+}
+
+fn ready_live_recording_host_audio_ref() -> ExportLiveRecordingHostAudioRef {
+    ExportLiveRecordingHostAudioRef {
+        host: "Alsa".into(),
+        device: "pipewire-default".into(),
+        recording_duration_ms: 16_000,
+        callback_gap_summary: ExportLiveRecordingCallbackGapSummary {
+            max_gap_ms: Some(3),
+            over_threshold_count: 0,
+        },
+        stream_error_summary: ExportLiveRecordingStreamErrorSummary {
+            error_count: 0,
+            last_error: None,
+        },
+    }
 }

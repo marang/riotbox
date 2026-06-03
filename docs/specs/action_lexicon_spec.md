@@ -363,8 +363,10 @@ Current `export.live_recording` boundary:
   identity, format metrics, non-silence, duration, source/session lineage,
   clock/source timing context when relevant, typed
   `live_recording_host_audio_refs[]` evidence for host/device/callback-gap/
-  stream-error/duration context, and explicit listening-review status when the
-  recorded audio is musician-facing
+  stream-error/duration context, a Core/Session host-audio readiness report
+  with no missing-evidence, unsupported-scope, blank host/device, zero-duration,
+  callback-gap, or stream-error blockers, and explicit listening-review status
+  when the recorded audio is musician-facing
 
 Contract for `export.stem_package`:
 

@@ -4,6 +4,7 @@ mod export_artifact_evidence;
 mod export_qa_gates;
 mod export_types;
 mod live_recording_host_audio;
+mod live_recording_readiness;
 
 pub use arrangement_export_placement::{
     ArrangementExportPlacementReadinessBlocker, ArrangementExportPlacementReadinessReport,
@@ -35,6 +36,10 @@ pub use export_types::{
 pub use live_recording_host_audio::{
     ExportLiveRecordingCallbackGapSummary, ExportLiveRecordingHostAudioRef,
     ExportLiveRecordingStreamErrorSummary,
+};
+pub use live_recording_readiness::{
+    LiveRecordingHostAudioReadinessBlocker, LiveRecordingHostAudioReadinessReport,
+    LiveRecordingHostAudioReadinessStatus, validate_live_recording_host_audio_readiness,
 };
 
 // Textual includes keep this large file split mechanical and behavior-preserving.
