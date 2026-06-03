@@ -6,8 +6,9 @@ use std::{
 use riotbox_core::{
     export_readiness::ExportScope,
     session::{
-        ArrangementExportPlacementReadinessBlocker, ExportArtifactLocation, ExportArtifactRole,
-        ExportArtifactSetEntry, ExportReceiptState, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
+        ArrangementExportPlacementReadinessBlocker, DawTempoMapReadinessBlocker,
+        ExportArtifactLocation, ExportArtifactRole, ExportArtifactSetEntry, ExportReceiptState,
+        STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
     },
 };
 
@@ -63,6 +64,10 @@ pub(in crate::jam_app) enum ExportReceiptArtifactPreflightError {
         receipt_id: riotbox_core::ids::ExportReceiptId,
         blockers: Vec<ArrangementExportPlacementReadinessBlocker>,
     },
+    DawTempoMapBlocked {
+        receipt_id: riotbox_core::ids::ExportReceiptId,
+        blockers: Vec<DawTempoMapReadinessBlocker>,
+    },
 }
 
 pub(in crate::jam_app) fn preflight_export_receipt_artifacts(
@@ -70,6 +75,7 @@ pub(in crate::jam_app) fn preflight_export_receipt_artifacts(
     base_dir: Option<&Path>,
 ) -> Result<(PathBuf, PathBuf), ExportReceiptArtifactPreflightError> {
     preflight_arrangement_export_placement_contract(receipt)?;
+    preflight_daw_tempo_map_contract(receipt)?;
     let artifact_path = resolve_receipt_path(
         receipt,
         &receipt.artifact_path,
@@ -127,6 +133,24 @@ fn preflight_arrangement_export_placement_contract(
             blockers: report.blockers,
         },
     )
+}
+
+fn preflight_daw_tempo_map_contract(
+    receipt: &ExportReceiptState,
+) -> Result<(), ExportReceiptArtifactPreflightError> {
+    if receipt.export_scope != ExportScope::DawSession {
+        return Ok(());
+    }
+
+    let report = receipt.daw_tempo_map_report();
+    if report.ready() {
+        return Ok(());
+    }
+
+    Err(ExportReceiptArtifactPreflightError::DawTempoMapBlocked {
+        receipt_id: receipt.receipt_id.clone(),
+        blockers: report.blockers,
+    })
 }
 
 fn preflight_stem_package_artifact_contract(

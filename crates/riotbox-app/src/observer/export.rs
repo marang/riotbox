@@ -4,8 +4,8 @@ use riotbox_core::{
     action::{Action, ActionCommand, ActionStatus},
     export_readiness::ExportScope,
     session::{
-        ArrangementExportPlacementReadinessBlocker, ExportReceiptState,
-        StemPackageReceiptReadinessBlocker,
+        ArrangementExportPlacementReadinessBlocker, DawTempoMapReadinessBlocker,
+        ExportReceiptState, StemPackageReceiptReadinessBlocker,
     },
 };
 use serde_json::{Value, json};
@@ -177,6 +177,11 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
             "arrangement_placement_refs".into(),
             json!(receipt.arrangement_placement_refs),
         );
+        object.insert(
+            "daw_tempo_map_readiness".into(),
+            daw_tempo_map_observer_snapshot(receipt).expect("daw session tempo-map readiness"),
+        );
+        object.insert("daw_tempo_map_ref".into(), json!(receipt.daw_tempo_map_ref));
     }
 
     snapshot
@@ -222,6 +227,37 @@ fn arrangement_placement_blocker_label(
         ArrangementExportPlacementReadinessBlocker::InvalidBeatRange => {
             "arrangement placement beat range is invalid"
         }
+    }
+}
+
+fn daw_tempo_map_observer_snapshot(receipt: &ExportReceiptState) -> Option<Value> {
+    if receipt.export_scope != ExportScope::DawSession {
+        return None;
+    }
+
+    let report = receipt.daw_tempo_map_report();
+    let blockers = report.blockers.clone();
+    Some(json!({
+        "status": report.status,
+        "ready": report.ready(),
+        "blockers": blockers,
+        "blocker_labels": blockers
+            .iter()
+            .map(daw_tempo_map_blocker_label)
+            .collect::<Vec<_>>(),
+    }))
+}
+
+fn daw_tempo_map_blocker_label(blocker: &DawTempoMapReadinessBlocker) -> &'static str {
+    match blocker {
+        DawTempoMapReadinessBlocker::NotDawSessionScope => "receipt is not a DAW session export",
+        DawTempoMapReadinessBlocker::UnsupportedDawExportFlagPresent => {
+            "DAW export is still marked unsupported"
+        }
+        DawTempoMapReadinessBlocker::MissingTempoMapRef => "DAW tempo-map evidence is missing",
+        DawTempoMapReadinessBlocker::BlankSourceRef => "DAW tempo-map source id is blank",
+        DawTempoMapReadinessBlocker::InvalidBeatRange => "DAW tempo-map beat range is invalid",
+        DawTempoMapReadinessBlocker::InvalidTempo => "DAW tempo-map tempo is invalid",
     }
 }
 

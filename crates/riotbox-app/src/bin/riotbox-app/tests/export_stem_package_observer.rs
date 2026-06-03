@@ -93,6 +93,12 @@ fn observer_snapshot_reports_completed_stem_package_lifecycle_from_session_recei
             .get("arrangement_placement_refs")
             .is_none()
     );
+    assert!(
+        lifecycle[2]["receipt"]
+            .get("daw_tempo_map_readiness")
+            .is_none()
+    );
+    assert!(lifecycle[2]["receipt"].get("daw_tempo_map_ref").is_none());
     assert_eq!(
         snapshot["export"]["stem_package_surface_gate"]["status"],
         "disabled"
@@ -317,6 +323,7 @@ fn ready_stem_package_receipt(action_id: ActionId, timestamp: u64) -> ExportRece
             ),
         ],
         arrangement_placement_refs: Vec::new(),
+        daw_tempo_map_ref: None,
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: Vec::new(),
     }

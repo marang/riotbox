@@ -5,6 +5,7 @@ use riotbox_core::{
     },
     ids::ExportReceiptId,
     session::{ExportArrangementPlacementRef, ExportArtifactSetEntry, ExportReceiptState},
+    session::ExportDawTempoMapRef,
 };
 
 #[test]
@@ -59,6 +60,16 @@ fn observer_snapshot_projects_blocked_arrangement_placement_from_receipt() {
         "arrangement scene placement evidence is missing"
     );
     assert_eq!(receipt["arrangement_placement_refs"], serde_json::json!([]));
+    assert_eq!(receipt["daw_tempo_map_readiness"]["status"], "blocked");
+    assert_eq!(
+        receipt["daw_tempo_map_readiness"]["blockers"],
+        serde_json::json!(["missing_tempo_map_ref"])
+    );
+    assert_eq!(
+        receipt["daw_tempo_map_readiness"]["blocker_labels"][0],
+        "DAW tempo-map evidence is missing"
+    );
+    assert_eq!(receipt["daw_tempo_map_ref"], serde_json::Value::Null);
 }
 
 #[test]
@@ -100,6 +111,15 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
             0,
             16,
         ));
+    receipt.daw_tempo_map_ref = Some(ExportDawTempoMapRef::confirmed_grid(
+        "src-1",
+        Some("primary-grid".into()),
+        ActionId(8),
+        880,
+        0,
+        16,
+        128_000_000,
+    ));
     state.session.export_receipts.push(receipt);
 
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
@@ -116,6 +136,9 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
     assert_eq!(receipt["arrangement_placement_refs"][0]["scene_id"], "scene-a");
     assert_eq!(receipt["arrangement_placement_refs"][0]["start_bar"], 1);
     assert_eq!(receipt["arrangement_placement_refs"][0]["end_beat"], 16);
+    assert_eq!(receipt["daw_tempo_map_readiness"]["status"], "ready");
+    assert_eq!(receipt["daw_tempo_map_ref"]["source_id"], "src-1");
+    assert_eq!(receipt["daw_tempo_map_ref"]["bpm_micros"], 128_000_000);
 }
 
 fn product_mix_receipt_for_arrangement_observer(
@@ -143,6 +166,7 @@ fn product_mix_receipt_for_arrangement_observer(
         )],
         qa_gates: Vec::new(),
         arrangement_placement_refs: Vec::new(),
+        daw_tempo_map_ref: None,
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: Vec::new(),
     }

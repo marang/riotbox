@@ -1276,6 +1276,11 @@ Today the repo already has:
     availability. It is a Session receipt contract and observer/recovery report
     surface only; it writes no DAW files and does not approve an audible DAW
     handoff.
+  - current DAW tempo-map contract skeleton adds `daw_tempo_map_ref` to
+    `daw_session` receipts so future DAW export QA can prove tempo-map evidence
+    separately from arrangement placement and local file availability. It stores
+    receipt evidence for the existing confirmed timing boundary; it writes no
+    DAW tempo map and does not approve an audible DAW handoff.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

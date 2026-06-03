@@ -4,6 +4,9 @@ use super::arrangement_export_placement::{
     ArrangementExportPlacementReadinessReport, ExportArrangementPlacementRef,
     validate_arrangement_export_placement_readiness,
 };
+use super::daw_tempo_map::{
+    DawTempoMapReadinessReport, ExportDawTempoMapRef, validate_daw_tempo_map_readiness,
+};
 use crate::{
     TimestampMs,
     export_readiness::{
@@ -43,6 +46,8 @@ pub struct ExportReceiptState {
     pub qa_gates: Vec<ExportReceiptQaGateResult>,
     #[serde(default)]
     pub arrangement_placement_refs: Vec<ExportArrangementPlacementRef>,
+    #[serde(default)]
+    pub daw_tempo_map_ref: Option<ExportDawTempoMapRef>,
     pub readiness_status: ExportReadinessStatus,
     pub unsupported_scopes: Vec<UnsupportedExportScope>,
 }
@@ -78,6 +83,7 @@ impl ExportReceiptState {
             )],
             qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
             arrangement_placement_refs: Vec::new(),
+            daw_tempo_map_ref: None,
             readiness_status: contract.status,
             unsupported_scopes: contract.unsupported_scopes.clone(),
         }
@@ -128,6 +134,11 @@ impl ExportReceiptState {
     #[must_use]
     pub fn arrangement_export_placement_report(&self) -> ArrangementExportPlacementReadinessReport {
         validate_arrangement_export_placement_readiness(self)
+    }
+
+    #[must_use]
+    pub fn daw_tempo_map_report(&self) -> DawTempoMapReadinessReport {
+        validate_daw_tempo_map_readiness(self)
     }
 }
 

@@ -44,6 +44,7 @@ fn jam_inspect_surfaces_latest_export_receipt_without_adding_perform_control() {
         )],
         qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
         arrangement_placement_refs: Vec::new(),
+        daw_tempo_map_ref: None,
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: vec![
             UnsupportedExportScope::StemPackage,
@@ -229,6 +230,7 @@ fn stem_package_receipt(
         ],
         qa_gates,
         arrangement_placement_refs: Vec::new(),
+        daw_tempo_map_ref: None,
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes,
     }

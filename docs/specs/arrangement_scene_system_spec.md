@@ -137,6 +137,12 @@ arrangement-daw-placement-contract`, `export_role: arrangement_manifest`, and
 may point at existing Session scene ids plus source/bar/beat ranges, but they do
 not create a second arrangement model, scheduler, or DAW writer.
 
+P016 DAW-session receipts may also carry `daw_tempo_map_ref` as export evidence
+for the existing source timing trust boundary. The ref stores the source id,
+optional timing hypothesis id, confirming action/time, exported beat range, and
+tempo in BPM micros. It is not a new timing model and must not override Source
+Timing confirmation, scene scheduling, or transport runtime state.
+
 ## 5. Proof Baselines
 
 Keep these green while P014 lands:
