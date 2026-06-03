@@ -493,9 +493,13 @@ Contract for `export.stem_package`:
   host-import proof, and audible-output proof, and release blockers.
   `developer_proof_only` remains fixed until a later musician-facing policy
   removes it; writer, host-import, and audible-output blockers clear only when
-  their own proof gates pass. `proof_gates.writer_proof` shows whether
-  `daw_session_writer_proof` is missing, passed, failed, or deferred and whether
-  the matching writer-proof artifact is present.
+  their own proof gates pass. `proof_stack` summarizes whether the required
+  JSON package, writer, host-import, and audible-output proof layers are
+  missing, partial, or complete but still developer-proof-only, so consumers do
+  not infer final export readiness from raw blocker arrays.
+  `proof_gates.writer_proof` shows whether `daw_session_writer_proof` is
+  missing, passed, failed, or deferred and whether the matching writer-proof
+  artifact is present.
   `ready_for_writer` is an implementation gate, not a musician-facing
   `export.daw_session` action or proof that DAW files were written.
 - Current DAW musician surface gate:

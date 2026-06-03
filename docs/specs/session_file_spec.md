@@ -699,7 +699,10 @@ Additional receipt fields required before wider export scopes:
   package integrity, writer proof, host-import proof, and audible-output proof,
   and release blockers. `developer_proof_only` stays until a later
   musician-facing release policy removes it; writer, host-import, and
-  audible-output blockers clear only when their own proof gates pass.
+  audible-output blockers clear only when their own proof gates pass. The
+  `proof_stack` summary classifies the required JSON package, writer,
+  host-import, and audible-output proof layers as missing, partial, or complete
+  but still developer-proof-only.
   The `proof_gates.writer_proof` summary exposes the `daw_session_writer_proof`
   gate and any `daw_session_writer_proof` artifact entry, but writer proof alone
   is not host-import proof or audible-output proof. `ready_for_writer` means the

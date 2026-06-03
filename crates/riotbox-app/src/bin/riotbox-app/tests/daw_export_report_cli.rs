@@ -103,6 +103,17 @@ fn daw_export_report_blocks_without_daw_session_receipt() {
             "audible_output_proof_missing"
         ])
     );
+    assert_eq!(summary["proof_stack"]["status"], "missing_receipt");
+    assert_eq!(summary["proof_stack"]["all_required_proofs_passed"], false);
+    assert_eq!(
+        summary["proof_stack"]["missing_layers"],
+        json!([
+            "json_package_integrity",
+            "writer_proof",
+            "host_import_proof",
+            "audible_output_proof"
+        ])
+    );
     assert_eq!(summary["daw_session_surface_gate"]["status"], "disabled");
     assert_eq!(summary["daw_session_surface_gate"]["runnable"], false);
     assert_eq!(
@@ -324,6 +335,95 @@ fn daw_export_report_surface_gate_accepts_package_evidence_but_stays_disabled() 
             "daw_host_import_proof_missing",
             "audible_output_proof_missing"
         ])
+    );
+    assert_eq!(summary["proof_stack"]["status"], "partial");
+    assert_eq!(summary["proof_stack"]["all_required_proofs_passed"], false);
+    assert_eq!(
+        summary["proof_stack"]["missing_layers"],
+        json!(["writer_proof", "host_import_proof", "audible_output_proof"])
+    );
+}
+
+#[test]
+fn daw_export_report_summarizes_complete_proof_stack_but_stays_disabled() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let tempo_map_path = temp.path().join("exports/tempo_map.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&tempo_map_path, "{}").expect("write tempo map");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let manifest_modified = fs::metadata(&manifest_path)
+        .expect("manifest metadata")
+        .modified()
+        .expect("manifest modified timestamp");
+    let mut session = SessionFile::new(
+        "daw-report-complete-proof-stack",
+        "riotbox-test",
+        "2026-06-03T23:15:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    receipt.artifact_set = vec![
+        ExportArtifactSetEntry::export_manifest(
+            "exports/arrangement_manifest.json",
+            "manifest-sha",
+        ),
+        ExportArtifactSetEntry::daw_session_tempo_map(
+            "exports/tempo_map.json",
+            "tempo-map-sha",
+        ),
+        ExportArtifactSetEntry::product_export_proof("exports/proof.json", "proof-sha"),
+        ExportArtifactSetEntry::daw_session_writer_proof(
+            "exports/daw-session/writer_proof.json",
+            "writer-proof-sha",
+        ),
+    ];
+    receipt.qa_gates = vec![
+        ExportReceiptQaGateResult::daw_session_json_package_integrity(
+            true,
+            &[],
+            vec![
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawSessionTempoMap,
+                ExportArtifactRole::ProductExportProof,
+            ],
+        ),
+        ExportReceiptQaGateResult::daw_session_writer_proof(
+            true,
+            &[],
+            vec![ExportArtifactRole::DawSessionWriterProof],
+        ),
+        ExportReceiptQaGateResult::daw_session_host_import_proof(true, &[]),
+        ExportReceiptQaGateResult::daw_session_audible_output_proof(true, &[]),
+    ];
+    session.export_receipts.push(receipt);
+    save_session_json(&session_path, &session).expect("save session");
+    let report_launch = daw_report_launch(session_path);
+
+    let summary = daw_export_readiness_report_summary(&report_launch).expect("report summary");
+
+    assert_eq!(
+        summary["proof_stack"]["status"],
+        "complete_developer_proof_only"
+    );
+    assert_eq!(summary["proof_stack"]["all_required_proofs_passed"], true);
+    assert_eq!(summary["proof_stack"]["missing_layers"], json!([]));
+    assert_eq!(summary["release_blockers"], json!(["developer_proof_only"]));
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        json!(["developer_proof_only"])
+    );
+    assert_eq!(summary["daw_session_surface_gate"]["runnable"], false);
+    assert_eq!(summary["writes_files"], false);
+    assert_eq!(
+        fs::metadata(&manifest_path)
+            .expect("manifest metadata after report")
+            .modified()
+            .expect("manifest modified timestamp after report"),
+        manifest_modified
     );
 }
 
