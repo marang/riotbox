@@ -4,7 +4,10 @@ use riotbox_core::{
         ProductExportBoundary, ProductExportRole,
     },
     ids::ExportReceiptId,
-    session::{ExportArrangementPlacementRef, ExportArtifactSetEntry, ExportReceiptState},
+    session::{
+        ExportArrangementPlacementRef, ExportArtifactRole, ExportArtifactSetEntry,
+        ExportReceiptQaGateResult, ExportReceiptState,
+    },
     session::ExportDawTempoMapRef,
 };
 
@@ -120,6 +123,29 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
         16,
         128_000_000,
     ));
+    receipt.artifact_set = vec![
+        ExportArtifactSetEntry::export_manifest(
+            "daw-out/daw_session/arrangement_manifest.json",
+            "manifest-sha",
+        ),
+        ExportArtifactSetEntry::daw_session_tempo_map(
+            "daw-out/daw_session/tempo_map.json",
+            "tempo-map-sha",
+        ),
+        ExportArtifactSetEntry::product_export_proof(
+            "daw-out/daw_session/daw_session_proof.json",
+            "proof-sha",
+        ),
+    ];
+    receipt.qa_gates = vec![ExportReceiptQaGateResult::daw_session_json_package_integrity(
+        true,
+        &[],
+        vec![
+            ExportArtifactRole::ExportManifest,
+            ExportArtifactRole::DawSessionTempoMap,
+            ExportArtifactRole::ProductExportProof,
+        ],
+    )];
     state.session.export_receipts.push(receipt);
 
     let shell = JamShellState::new(state, ShellLaunchMode::Load);
@@ -139,6 +165,15 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
     assert_eq!(receipt["daw_tempo_map_readiness"]["status"], "ready");
     assert_eq!(receipt["daw_tempo_map_ref"]["source_id"], "src-1");
     assert_eq!(receipt["daw_tempo_map_ref"]["bpm_micros"], 128_000_000);
+    assert_eq!(
+        receipt["artifact_set"][1]["role"],
+        "daw_session_tempo_map"
+    );
+    assert_eq!(
+        receipt["qa_gates"][0]["gate_id"],
+        "daw_session_json_package_integrity"
+    );
+    assert_eq!(receipt["qa_gates"][0]["status"], "passed");
 }
 
 fn product_mix_receipt_for_arrangement_observer(

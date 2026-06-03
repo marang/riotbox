@@ -290,6 +290,7 @@ fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String>
         "full_grid_mix" => Ok(ExportArtifactRole::FullGridMix),
         "product_export_proof" => Ok(ExportArtifactRole::ProductExportProof),
         "export_manifest" => Ok(ExportArtifactRole::ExportManifest),
+        "daw_session_tempo_map" => Ok(ExportArtifactRole::DawSessionTempoMap),
         other => Err(format!("unknown stem role: {other}")),
     }
 }

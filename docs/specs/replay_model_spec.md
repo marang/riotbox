@@ -396,6 +396,11 @@ Decision:
   and invalid beat ranges are distinct from missing placement evidence and
   missing local artifact files. Replay/recovery must not synthesize tempo-map
   evidence from observer state or current app runtime.
+- DAW JSON package receipt validation consumes `artifact_set[]` entries and the
+  `daw_session_json_package_integrity` QA gate from Session receipts only.
+  Manifest, tempo-map, proof JSON paths/hashes, and package integrity status are
+  receipt evidence, not inferred from observer snapshots, current destination
+  folders, or app-local report state during replay.
 
 ### 10.2 Ghost
 

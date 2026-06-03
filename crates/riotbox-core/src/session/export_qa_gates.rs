@@ -9,6 +9,7 @@ pub const STEM_PACKAGE_NON_SILENCE_QA_GATE_ID: &str = "stem_package_per_stem_non
 pub const STEM_PACKAGE_LINEAGE_QA_GATE_ID: &str = "stem_package_per_stem_lineage";
 pub const STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID: &str =
     "stem_package_per_stem_fallback_comparison";
+pub const DAW_SESSION_JSON_PACKAGE_QA_GATE_ID: &str = "daw_session_json_package_integrity";
 
 #[derive(Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub struct ExportReceiptQaGateResult {
@@ -135,6 +136,24 @@ impl ExportReceiptQaGateResult {
             summary: Some(stem_package_fallback_comparison_summary(report)),
         }
     }
+
+    #[must_use]
+    pub fn daw_session_json_package_integrity(
+        passed: bool,
+        blockers: &[String],
+        artifact_roles: Vec<ExportArtifactRole>,
+    ) -> Self {
+        Self {
+            gate_id: DAW_SESSION_JSON_PACKAGE_QA_GATE_ID.into(),
+            status: if passed {
+                ExportReceiptQaGateStatus::Passed
+            } else {
+                ExportReceiptQaGateStatus::Failed
+            },
+            artifact_roles,
+            summary: Some(daw_session_json_package_summary(passed, blockers)),
+        }
+    }
 }
 
 fn stem_package_artifact_set_summary(
@@ -217,6 +236,19 @@ fn stem_package_fallback_comparison_summary(
             report.failures.len()
         ),
     }
+}
+
+fn daw_session_json_package_summary(passed: bool, blockers: &[String]) -> String {
+    if passed {
+        return "DAW session JSON package integrity accepted for manifest, tempo map, and proof"
+            .into();
+    }
+
+    format!(
+        "DAW session JSON package integrity failed with {} blocker(s): {}",
+        blockers.len(),
+        blockers.join(", ")
+    )
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]

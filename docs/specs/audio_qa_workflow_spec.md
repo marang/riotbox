@@ -1334,6 +1334,12 @@ Today the repo already has:
     missing files, invalid JSON, schema mismatch, or hash mismatch. This proves
     local JSON package integrity only, not DAW host import correctness or
     audible output.
+  - current DAW JSON package receipt evidence records that local package result
+    in Session/Core receipt truth via `artifact_set[]` entries for
+    `export_manifest`, `daw_session_tempo_map`, and `product_export_proof`, plus
+    the `daw_session_json_package_integrity` QA gate. This proves receipt
+    handoff of JSON package evidence only; it still does not prove DAW host
+    import correctness, observer lifecycle completion, or audible output.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

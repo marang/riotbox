@@ -66,6 +66,38 @@ fn stem_package_artifact_set_gate_result_roundtrips() {
     assert_eq!(roundtrip.status, ExportReceiptQaGateStatus::Deferred);
 }
 
+#[test]
+fn daw_session_json_package_gate_records_ready_and_blocked_integrity() {
+    let package_roles = vec![
+        ExportArtifactRole::ExportManifest,
+        ExportArtifactRole::DawSessionTempoMap,
+        ExportArtifactRole::ProductExportProof,
+    ];
+
+    let ready_gate = ExportReceiptQaGateResult::daw_session_json_package_integrity(
+        true,
+        &[],
+        package_roles.clone(),
+    );
+    assert_eq!(ready_gate.gate_id, DAW_SESSION_JSON_PACKAGE_QA_GATE_ID);
+    assert_eq!(ready_gate.status, ExportReceiptQaGateStatus::Passed);
+    assert_eq!(ready_gate.artifact_roles, package_roles);
+
+    let blocked_gate = ExportReceiptQaGateResult::daw_session_json_package_integrity(
+        false,
+        &["proof_manifest_hash_mismatch".into()],
+        vec![ExportArtifactRole::ProductExportProof],
+    );
+    assert_eq!(blocked_gate.status, ExportReceiptQaGateStatus::Failed);
+    assert!(
+        blocked_gate
+            .summary
+            .as_deref()
+            .expect("summary")
+            .contains("proof_manifest_hash_mismatch")
+    );
+}
+
 fn stem_artifact(
     role: ExportArtifactRole,
     path: impl Into<String>,
