@@ -1,0 +1,54 @@
+{
+  "case_id": "invalid_fallback_collapse",
+  "window_id": "head",
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.020,
+        "peak_abs": 0.74,
+        "event_density_per_bar": 180.0,
+        "transient_score": 0.31
+      },
+      "low_band": {
+        "rms": 0.010
+      }
+    },
+    "bar_variation": {
+      "full_grid_mix": {
+        "bar_similarity": 0.970
+      }
+    },
+    "mix_balance": {
+      "support_generated_to_source_rms_ratio": 0.04,
+      "source_first_generated_to_source_rms_ratio": 0.02
+    },
+    "identity_collapse": {
+      "correlation": 1.0,
+      "normalized_rms_delta": 0.0,
+      "fallback_used": true
+    },
+    "all_lane_mix_movement": {
+      "tr909_contribution_ratio": 0.08,
+      "mc202_contribution_ratio": 0.03,
+      "w30_contribution_ratio": 0.48,
+      "generated_to_w30_contribution_ratio": 0.04
+    },
+    "w30_source_trigger_variation": {
+      "applied": true,
+      "distinct_bar_pattern_count": 3
+    },
+    "w30_source_slice_choice": {
+      "applied": true,
+      "unique_source_offset_count": 4
+    },
+    "w30_source_accent_dynamics": {
+      "applied": true,
+      "velocity_span": 0.18
+    }
+  },
+  "source_timing": {
+    "anchor_evidence": {
+      "primary_anchor_count": 2
+    }
+  }
+}

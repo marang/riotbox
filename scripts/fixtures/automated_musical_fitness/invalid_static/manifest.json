@@ -1,0 +1,54 @@
+{
+  "case_id": "invalid_static_loop",
+  "window_id": "head",
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.024,
+        "peak_abs": 0.70,
+        "event_density_per_bar": 12.0,
+        "transient_score": 0.10
+      },
+      "low_band": {
+        "rms": 0.004
+      }
+    },
+    "bar_variation": {
+      "full_grid_mix": {
+        "bar_similarity": 0.9995
+      }
+    },
+    "mix_balance": {
+      "support_generated_to_source_rms_ratio": 0.20,
+      "source_first_generated_to_source_rms_ratio": 0.05
+    },
+    "identity_collapse": {
+      "correlation": 0.9997,
+      "normalized_rms_delta": 0.003,
+      "fallback_used": false
+    },
+    "all_lane_mix_movement": {
+      "tr909_contribution_ratio": 0.01,
+      "mc202_contribution_ratio": 0.00,
+      "w30_contribution_ratio": 0.72,
+      "generated_to_w30_contribution_ratio": 0.02
+    },
+    "w30_source_trigger_variation": {
+      "applied": false,
+      "distinct_bar_pattern_count": 1
+    },
+    "w30_source_slice_choice": {
+      "applied": false,
+      "unique_source_offset_count": 1
+    },
+    "w30_source_accent_dynamics": {
+      "applied": false,
+      "velocity_span": 0.0
+    }
+  },
+  "source_timing": {
+    "anchor_evidence": {
+      "primary_anchor_count": 1
+    }
+  }
+}
