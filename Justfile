@@ -584,5 +584,8 @@ daw-session-json-package-evidence-apply-smoke:
 daw-session-host-import-proof-apply-smoke:
     cargo test -p riotbox-app --test daw_session_host_import_proof_apply_smoke -- --nocapture
 
+daw-session-audible-output-proof-apply-smoke:
+    cargo test -p riotbox-app --test daw_session_audible_output_proof_apply_smoke -- --nocapture
+
 daw-session-json-package-report-smoke:
     cargo test -p riotbox-app --test daw_session_writer_plan_smoke daw_session_json_package_report -- --nocapture

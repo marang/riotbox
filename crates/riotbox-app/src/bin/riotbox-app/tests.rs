@@ -60,6 +60,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -88,6 +89,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -118,6 +120,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -143,6 +146,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -336,6 +340,12 @@ mod tests {
         use super::*;
 
         include!("tests/daw_session_host_import_proof_cli.rs");
+    }
+
+    mod daw_session_audible_output_proof_cli {
+        use super::*;
+
+        include!("tests/daw_session_audible_output_proof_cli.rs");
     }
 
     mod source_timing_confirm_control {

@@ -598,6 +598,16 @@ Contract for `export.stem_package`:
   `daw_writer_missing` keep `export.daw_session` disabled. This reserves the
   Session/Core boundary only; it does not add host audio capture, a DAW writer,
   observer lifecycle completion, or a runnable `export.daw_session` command.
+- Current DAW audible-output proof apply path:
+  `riotbox-app --daw-session-audible-output-proof-apply --session
+  <session.json> --daw-session-audible-output-proof <proof.json>` reads a local
+  proof JSON with schema id `riotbox.daw_session_audible_output_proof`,
+  `schema_version: 1`, `package_dir`, `audible`, and `blockers[]`, then updates
+  only the latest DAW-session receipt's `daw_session_audible_output_proof` QA
+  gate. This is an explicit operator mutation of Session receipt evidence, not
+  an `ActionCommand`: it writes no DAW files, launches no host, captures no
+  audio, emits no observer lifecycle events, and does not make
+  `export.daw_session` runnable.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

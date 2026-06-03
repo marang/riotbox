@@ -32,6 +32,7 @@ fn parse_args_builds_daw_export_readiness_report_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW export readiness report mode")
         }

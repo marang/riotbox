@@ -809,6 +809,16 @@ Additional receipt fields required before wider export scopes:
   `audible_output_proof_missing` surface blocker; it does not imply a DAW
   writer exists, launch a host, capture audio, or make `export.daw_session`
   runnable. Failed or missing gates keep the audible-output blocker visible.
+- `riotbox-app --daw-session-audible-output-proof-apply --session
+  <session.json> --daw-session-audible-output-proof <proof.json>` is the
+  current explicit operator bridge from external DAW audible-output evidence
+  into the Session receipt. The proof JSON schema id is
+  `riotbox.daw_session_audible_output_proof` with `schema_version: 1`,
+  `package_dir`, `audible`, and `blockers[]`. Applying the proof updates only
+  the latest `export_scope: daw_session` receipt's
+  `daw_session_audible_output_proof` QA gate and writes only the Session file.
+  It does not launch a host, create DAW files, capture audio, emit observer
+  lifecycle events, or make `export.daw_session` runnable.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

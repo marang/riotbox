@@ -27,6 +27,7 @@ mod capture_queue;
 mod commit;
 mod controls;
 mod daw_export_operator_report;
+mod daw_session_audible_output_proof;
 mod daw_session_host_import_proof;
 mod daw_session_json_writer;
 mod daw_session_package_report;
@@ -68,6 +69,13 @@ use capture_helpers::{
 };
 pub use daw_export_operator_report::{
     DawExportOperatorReadinessReport, daw_export_operator_readiness_report,
+};
+pub use daw_session_audible_output_proof::{
+    DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_ID, DAW_SESSION_AUDIBLE_OUTPUT_PROOF_SCHEMA_VERSION,
+    DawSessionAudibleOutputProofReceiptEvidenceError, DawSessionAudibleOutputProofReport,
+    DawSessionAudibleOutputProofReportBlocker, DawSessionAudibleOutputProofReportStatus,
+    attach_daw_session_audible_output_proof_evidence_to_receipt,
+    daw_session_audible_output_proof_report,
 };
 pub use daw_session_host_import_proof::{
     DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID, DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
