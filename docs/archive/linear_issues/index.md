@@ -960,4 +960,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add guarded DAW JSON package execute CLI proof path
 - [RIOTBOX-1152.md](./RIOTBOX-1152.md)
   P016: Add DAW JSON package receipt evidence CLI apply path
+- [RIOTBOX-1153.md](./RIOTBOX-1153.md)
+  P016: Add DAW session receipt observer evidence summary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
