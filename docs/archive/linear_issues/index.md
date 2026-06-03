@@ -894,4 +894,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add CI-safe stem-package proof fixture
 - [RIOTBOX-1119.md](./RIOTBOX-1119.md)
   P016: Add reserved stem-package action contract types
+- [RIOTBOX-1120.md](./RIOTBOX-1120.md)
+  P016: Add stem-package queue guard before runnable export
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
