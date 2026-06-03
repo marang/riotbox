@@ -819,6 +819,28 @@ Additional receipt fields required before wider export scopes:
   `daw_session_audible_output_proof` QA gate and writes only the Session file.
   It does not launch a host, create DAW files, capture audio, emit observer
   lifecycle events, or make `export.daw_session` runnable.
+- the first DAW session writer/action boundary is reserved as
+  `daw_session.local_project_writer_v1` for a future runnable
+  `export.daw_session` command. It sits after the existing
+  `daw_session.json_package_writer_v1` JSON package proof and before
+  host-import or audible-output proof. The boundary is not implemented yet: no
+  new `ActionCommand`, CLI writer, observer lifecycle, host runner, audio
+  capture, or DAW project/session file emission exists in this slice.
+- future DAW-session writer commits must keep the Session receipt as the only
+  product truth. The command must revalidate the DAW-session receipt identity,
+  placement refs, tempo-map refs, local artifact preflight, and
+  `daw_session_json_package_integrity` gate; write staged DAW artifacts outside
+  realtime audio; hash promoted files; record artifact-set entries; attach a
+  future `daw_session_writer_proof` QA gate; and remove only
+  `daw_writer_missing` when that proof passes. Replay validates the recorded
+  receipt/artifact/proof identities only; it must not regenerate or rewrite DAW
+  files.
+- DAW-session blocker removal is intentionally one gate at a time:
+  JSON package integrity removes only JSON package blockers, future writer
+  proof removes only `daw_writer_missing`, host-import proof removes only
+  `daw_host_import_proof_missing`, audible-output proof removes only
+  `audible_output_proof_missing`, and `developer_proof_only` remains until a
+  later musician-facing release policy removes it.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts
