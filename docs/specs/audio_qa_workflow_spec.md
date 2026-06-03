@@ -1363,6 +1363,13 @@ Today the repo already has:
     `daw_host_import_proof_missing` visible; passed proof removes only that
     blocker and still does not prove audible output or make `export.daw_session`
     runnable.
+  - current DAW host-import proof apply path is explicit and evidence-only:
+    `riotbox-app --daw-session-host-import-proof-apply --session
+    <session.json> --daw-session-host-import-proof <proof.json>` reads a local
+    `riotbox.daw_session_host_import_proof` JSON report and mutates only the
+    latest DAW-session receipt's host-import QA gate. It is not a DAW host
+    runner, not a DAW writer, not an observer lifecycle event, and not audible
+    output proof.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

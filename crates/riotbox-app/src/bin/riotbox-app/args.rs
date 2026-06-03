@@ -15,9 +15,11 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_export_readiness_report = false;
     let mut daw_session_json_package_execute = false;
     let mut daw_session_json_package_evidence_apply = false;
+    let mut daw_session_host_import_proof_apply = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
     let mut daw_session_destination_path = None;
+    let mut daw_session_host_import_proof_path = None;
     let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
@@ -30,6 +32,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--daw-session-json-package-evidence-apply" => {
                 daw_session_json_package_evidence_apply = true;
             }
+            "--daw-session-host-import-proof-apply" => {
+                daw_session_host_import_proof_apply = true;
+            }
             "--daw-session-writer-plan" => daw_session_writer_plan = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
@@ -38,6 +43,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--daw-session-destination" => {
                 daw_session_destination_path =
                     Some(next_path(&mut args, "--daw-session-destination")?);
+            }
+            "--daw-session-host-import-proof" => {
+                daw_session_host_import_proof_path =
+                    Some(next_path(&mut args, "--daw-session-host-import-proof")?);
             }
             "--stem-role" => {
                 let value = args
@@ -102,6 +111,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let daw_session_mode_count = [
         daw_session_json_package_execute,
         daw_session_json_package_evidence_apply,
+        daw_session_host_import_proof_apply,
         daw_session_writer_plan,
     ]
     .into_iter()
@@ -109,7 +119,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     .count();
     if daw_session_mode_count > 1 {
         return Err(
-            "DAW session JSON package execute, evidence apply, and writer plan modes cannot be combined"
+            "DAW session JSON package execute, evidence apply, host import proof apply, and writer plan modes cannot be combined"
                 .into(),
         );
     }
@@ -128,6 +138,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_sidecar_flag
             || saw_seed_flag
             || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
         {
             return Err(
                 "stem package local CI dry-run cannot be combined with source/session/graph/sidecar/seed/observer/DAW destination launch arguments"
@@ -154,6 +165,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_sidecar_flag
             || saw_seed_flag
             || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
         {
             return Err(
                 "stem package local CI execute cannot be combined with source/sidecar/seed/DAW destination launch arguments"
@@ -188,6 +200,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || observer_path.is_some()
             || stem_package_destination_path.is_some()
             || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -212,6 +225,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || observer_path.is_some()
             || stem_package_destination_path.is_some()
             || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -235,6 +249,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_seed_flag
             || observer_path.is_some()
             || stem_package_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -264,6 +279,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_seed_flag
             || observer_path.is_some()
             || stem_package_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -287,6 +303,37 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             observer_path: None,
         });
     }
+    if daw_session_host_import_proof_apply {
+        if source_path.is_some()
+            || source_graph_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || observer_path.is_some()
+            || stem_package_destination_path.is_some()
+            || daw_session_destination_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "DAW session host import proof apply reads only an explicit session and proof file and cannot be combined with source/graph/observer/sidecar/seed/destination/stem arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "DAW session host import proof apply requires --session <session.json>".to_string()
+        })?;
+        let proof_path = daw_session_host_import_proof_path.ok_or_else(|| {
+            "DAW session host import proof apply requires --daw-session-host-import-proof <proof.json>"
+                .to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::DawSessionHostImportProofApply {
+                session_path,
+                proof_path,
+            },
+            observer_path: None,
+        });
+    }
     if daw_session_writer_plan {
         if source_path.is_some()
             || source_graph_path.is_some()
@@ -294,6 +341,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_seed_flag
             || observer_path.is_some()
             || stem_package_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -328,6 +376,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                 .into(),
         );
     }
+    if daw_session_host_import_proof_path.is_some() {
+        return Err(
+            "--daw-session-host-import-proof requires --daw-session-host-import-proof-apply"
+                .into(),
+        );
+    }
 
     let session_path = session_path.unwrap_or_else(|| PathBuf::from(DEFAULT_SESSION_PATH));
     let mode = match source_path {
@@ -355,49 +409,6 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         mode,
         observer_path,
     })
-}
-
-fn next_path(args: &mut impl Iterator<Item = String>, flag: &str) -> Result<PathBuf, String> {
-    args.next()
-        .map(PathBuf::from)
-        .ok_or_else(|| format!("missing value for {flag}"))
-}
-
-fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String> {
-    match value {
-        "stem_drums" | "drums" => Ok(ExportArtifactRole::StemDrums),
-        "stem_bass" | "bass" => Ok(ExportArtifactRole::StemBass),
-        "stem_music" | "music" => Ok(ExportArtifactRole::StemMusic),
-        "stem_vocals" | "vocals" => Ok(ExportArtifactRole::StemVocals),
-        "full_grid_mix" => Ok(ExportArtifactRole::FullGridMix),
-        "product_export_proof" => Ok(ExportArtifactRole::ProductExportProof),
-        "export_manifest" => Ok(ExportArtifactRole::ExportManifest),
-        "daw_session_tempo_map" => Ok(ExportArtifactRole::DawSessionTempoMap),
-        other => Err(format!("unknown stem role: {other}")),
-    }
-}
-
-fn help_text() -> String {
-    format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-execute --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-evidence-apply --session <session.json> --daw-session-destination <dir>\n\nDefaults:\n  --session {}\n  --sidecar {}",
-        DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
-    )
-}
-
-impl LaunchMode {
-    fn shell_launch_mode(&self) -> ShellLaunchMode {
-        match self {
-            Self::Load { .. } => ShellLaunchMode::Load,
-            Self::Ingest { .. } => ShellLaunchMode::Ingest,
-            Self::StemPackageLocalCiDryRun { .. }
-            | Self::StemPackageLocalCiExecute { .. }
-            | Self::StemPackageLocalCiReport { .. }
-            | Self::DawExportReadinessReport { .. }
-            | Self::DawSessionJsonPackageExecute { .. }
-            | Self::DawSessionJsonPackageEvidenceApply { .. }
-            | Self::DawSessionWriterPlan { .. } => ShellLaunchMode::Load,
-        }
-    }
 }
 
 struct UserSessionObserver {

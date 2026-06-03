@@ -580,6 +580,16 @@ Contract for `export.stem_package`:
   host-import proof as `daw_host_import_proof_missing`; a passed gate removes
   only that blocker while `developer_proof_only`, `daw_writer_missing`, and
   `audible_output_proof_missing` keep `export.daw_session` disabled.
+- Current DAW host-import proof apply path:
+  `riotbox-app --daw-session-host-import-proof-apply --session <session.json>
+  --daw-session-host-import-proof <proof.json>` reads a local proof JSON with
+  schema id `riotbox.daw_session_host_import_proof`, `schema_version: 1`,
+  `package_dir`, `imported`, and `blockers[]`, then updates only the latest
+  DAW-session receipt's `daw_session_host_import_proof` QA gate. This is an
+  explicit operator mutation of Session receipt evidence, not an
+  `ActionCommand`: it writes no DAW files, launches no host, emits no observer
+  lifecycle events, claims no audible output, and does not make
+  `export.daw_session` runnable.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
