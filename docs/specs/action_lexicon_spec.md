@@ -435,6 +435,15 @@ Contract for `export.stem_package`:
   destination and supported roles, reject unsupported roles or existing package
   destinations without committing a ready receipt, and remain an internal
   operator/developer proof path until musician-facing export UX lands.
+- Current CLI operator report:
+  `riotbox-app --stem-package-local-ci-report --session <session.json>` is a
+  read-only proof summary. It loads only the explicit Session JSON, selects the
+  latest `export_scope: stem_package` receipt, and reports claimed stem roles,
+  manifest/proof identities, receipt QA gates, Core-derived readiness blockers,
+  local artifact availability, missing local files, and the explicit distinction
+  between internal developer proof status and final musician DAW export
+  readiness. It must not write observer files, rewrite packages, regenerate
+  missing stems, or reinterpret product-mix receipts as stem packages.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry only role, location, and media type,

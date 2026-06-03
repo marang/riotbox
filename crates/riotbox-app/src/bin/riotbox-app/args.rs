@@ -11,6 +11,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut observer_path = None;
     let mut stem_package_local_ci_dry_run = false;
     let mut stem_package_local_ci_execute = false;
+    let mut stem_package_local_ci_report = false;
     let mut stem_package_destination_path = None;
     let mut claimed_stem_roles = Vec::new();
 
@@ -18,6 +19,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         match arg.as_str() {
             "--stem-package-local-ci-dry-run" => stem_package_local_ci_dry_run = true,
             "--stem-package-local-ci-execute" => stem_package_local_ci_execute = true,
+            "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
                     Some(next_path(&mut args, "--stem-package-destination")?);
@@ -66,9 +68,17 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         }
     }
 
-    if stem_package_local_ci_dry_run && stem_package_local_ci_execute {
+    let stem_package_mode_count = [
+        stem_package_local_ci_dry_run,
+        stem_package_local_ci_execute,
+        stem_package_local_ci_report,
+    ]
+    .into_iter()
+    .filter(|enabled| *enabled)
+    .count();
+    if stem_package_mode_count > 1 {
         return Err(
-            "stem package local CI dry-run and execute modes cannot be combined".into(),
+            "stem package local CI dry-run, execute, and report modes cannot be combined".into(),
         );
     }
 
@@ -127,6 +137,29 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             observer_path,
         });
     }
+    if stem_package_local_ci_report {
+        if source_path.is_some()
+            || source_graph_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || observer_path.is_some()
+            || stem_package_destination_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "stem package local CI report reads only an explicit session and cannot be combined with source/graph/observer/sidecar/seed/destination/role arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "stem package local CI report requires --session <session.json>".to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::StemPackageLocalCiReport { session_path },
+            observer_path: None,
+        });
+    }
     if stem_package_destination_path.is_some() || !claimed_stem_roles.is_empty() {
         return Err(
             "--stem-package-destination, --stem-role, and --stem-roles require --stem-package-local-ci-dry-run or --stem-package-local-ci-execute"
@@ -183,7 +216,7 @@ fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String>
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n\nDefaults:\n  --session {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -194,7 +227,8 @@ impl LaunchMode {
             Self::Load { .. } => ShellLaunchMode::Load,
             Self::Ingest { .. } => ShellLaunchMode::Ingest,
             Self::StemPackageLocalCiDryRun { .. }
-            | Self::StemPackageLocalCiExecute { .. } => ShellLaunchMode::Load,
+            | Self::StemPackageLocalCiExecute { .. }
+            | Self::StemPackageLocalCiReport { .. } => ShellLaunchMode::Load,
         }
     }
 }
@@ -347,6 +381,11 @@ fn launch_summary(launch: &AppLaunch) -> Value {
                 .copied()
                 .map(export_artifact_role_label)
                 .collect::<Vec<_>>(),
+            "observer_path": launch.observer_path,
+        }),
+        LaunchMode::StemPackageLocalCiReport { session_path } => json!({
+            "mode": "stem_package_local_ci_report",
+            "session_path": session_path,
             "observer_path": launch.observer_path,
         }),
     }

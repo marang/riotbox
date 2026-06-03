@@ -54,7 +54,8 @@ mod tests {
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
-            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected ingest mode"),
+            | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageLocalCiReport { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -76,7 +77,8 @@ mod tests {
             }
             LaunchMode::Load { .. } => panic!("expected ingest mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
-            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected ingest mode"),
+            | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageLocalCiReport { .. } => panic!("expected ingest mode"),
         }
     }
 
@@ -100,7 +102,8 @@ mod tests {
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
-            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected load mode"),
+            | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageLocalCiReport { .. } => panic!("expected load mode"),
         }
     }
 
@@ -119,7 +122,8 @@ mod tests {
             }
             LaunchMode::Ingest { .. } => panic!("expected load mode"),
             LaunchMode::StemPackageLocalCiDryRun { .. }
-            | LaunchMode::StemPackageLocalCiExecute { .. } => panic!("expected load mode"),
+            | LaunchMode::StemPackageLocalCiExecute { .. }
+            | LaunchMode::StemPackageLocalCiReport { .. } => panic!("expected load mode"),
         }
     }
 
@@ -270,6 +274,12 @@ mod tests {
         use super::*;
 
         include!("tests/stem_package_export_cli.rs");
+    }
+
+    mod stem_package_report_cli {
+        use super::*;
+
+        include!("tests/stem_package_report_cli.rs");
     }
 
     mod source_timing_confirm_control {

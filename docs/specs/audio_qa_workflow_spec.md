@@ -1234,6 +1234,15 @@ Today the repo already has:
     the internal local CI writer proof for drums/bass only; it is still not a
     structured listening-review pack, DAW export workflow, or general
     musician-facing `export.stem_package` control.
+  - current CLI operator report exposes the written proof summary through
+    `riotbox-app --stem-package-local-ci-report --session <session.json>`. It is
+    read-only: it reports the latest stem-package Session receipt, stem roles,
+    manifest/proof identities, QA gate status, Core readiness blockers, local
+    artifact availability, and missing package files without writing observer
+    events, regenerating artifacts, or treating product-mix receipts as stem
+    packages. This helps operators inspect the internal proof boundary; it is
+    still not a listening review, DAW export workflow, or musician-facing export
+    readiness claim.
   - current CI writer proof emits files for that boundary inside
     `riotbox-app::jam_app::stem_package_writer`: deterministic drums/bass WAVs
     are written through a staging directory and promoted into the final package
