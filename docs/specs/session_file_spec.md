@@ -614,6 +614,12 @@ Additional receipt fields required before wider export scopes:
   the committed action, commit record, and ready receipt, and may emit observer
   evidence. On failure it must report blockers without committing a ready
   receipt or regenerating over an existing package destination.
+- the stem-package local CI operator report requires an explicit existing
+  Session file and reads only Session receipt metadata plus local artifact
+  availability. It must report the latest stem-package receipt's stem roles,
+  manifest/proof identities, QA gates, Core readiness blockers, and missing
+  local package files without mutating the Session, writing observer events,
+  regenerating artifacts, or treating product-mix receipts as stem packages.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` so replay
   can validate which deterministic path produced the artifacts

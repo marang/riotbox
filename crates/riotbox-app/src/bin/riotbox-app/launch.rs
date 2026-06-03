@@ -48,6 +48,9 @@ enum LaunchMode {
         destination_path: PathBuf,
         claimed_stem_roles: Vec<ExportArtifactRole>,
     },
+    StemPackageLocalCiReport {
+        session_path: PathBuf,
+    },
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
@@ -59,6 +62,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches!(launch.mode, LaunchMode::StemPackageLocalCiExecute { .. }) {
         run_stem_package_local_ci_execute(&launch, &raw_args)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::StemPackageLocalCiReport { .. }) {
+        run_stem_package_local_ci_report(&launch)?;
         return Ok(());
     }
     let state = load_state(launch.mode.clone())?;
@@ -124,6 +131,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::StemPackageLocalCiExecute { .. } => Err(JamAppError::InvalidSession(
             "stem package local CI execute uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::StemPackageLocalCiReport { .. } => Err(JamAppError::InvalidSession(
+            "stem package local CI report uses a non-interactive proof path".into(),
         )),
     }
 }
