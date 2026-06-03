@@ -910,4 +910,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Specify first bounded stem-package writer boundary
 - [RIOTBOX-1127.md](./RIOTBOX-1127.md)
   P016: Add local stem-package writer skeleton boundary
+- [RIOTBOX-1128.md](./RIOTBOX-1128.md)
+  P016: Add CI-safe stem-package writer file-emission proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
