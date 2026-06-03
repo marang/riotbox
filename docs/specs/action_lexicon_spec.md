@@ -635,8 +635,10 @@ Contract for `export.stem_package`:
   a typed reserved `export.daw_session` queue-history guard for blocked
   musician attempts and adds a local writer commit path that writes only the
   CI-safe proof package and attaches `daw_session_writer_proof` receipt
-  evidence. No host runner, audio capture, observer lifecycle completion, or
-  musician-runnable DAW export exists yet.
+  evidence. Observer lifecycle projection now reports rejected reserved
+  attempts and committed local-writer proof actions from queue/history, Session
+  action log, and matching receipt evidence. No host runner, audio capture,
+  final DAW export completion, or musician-runnable DAW export exists yet.
 - Current DAW writer proof skeleton:
   `riotbox-app --daw-session-writer-proof-execute --session <session.json>
   --daw-session-destination <dir>` requires a ready DAW-session receipt plus a
@@ -658,8 +660,9 @@ Contract for `export.stem_package`:
   queue history, carries the destination root, `reserved_contract_only`
   boundary, selected DAW-session receipt id when one exists, and a
   `NotUndoable` policy, then rejects with the DAW session surface-gate reason.
-  It leaves the pending queue empty and writes no files, receipts, observer
-  lifecycle records, host checks, or proof artifacts.
+  It leaves the pending queue empty and writes no files, receipts, host checks,
+  or proof artifacts. Observer export snapshots may project this rejected action
+  as requested / started / failed lifecycle without a receipt.
 - Current local-writer `export.daw_session` queue / commit path:
   app code may enqueue `export.daw_session` with
   `daw_session.local_project_writer_v1` only when the latest DAW-session
@@ -687,14 +690,16 @@ Contract for `export.stem_package`:
   must not regenerate, rewrite, launch, or silently repair DAW files. No
   observer stream, `JamAppState` field, host-local cache, or filesystem scan may
   become the hidden truth for whether the export completed.
-- Future `export.daw_session` user / observer / QA surface:
-  observer lifecycle records must be derived from the action queue, commit
-  result, and Session receipt evidence. Musician-facing TUI/Ghost affordances
-  stay disabled until writer proof, host-import proof, audible-output proof, and
-  final release policy all pass. Writer proof alone is never host-import proof
-  or audible-output proof; a PR that implements the command must include
-  control-path assertions, written-artifact/hash proof, surface-gate assertions,
-  and an explicit note when structured listening review remains
+- Current `export.daw_session` user / observer / QA surface:
+  observer lifecycle records are derived from the action queue, commit result,
+  Session action log, and receipt evidence. Current records cover rejected
+  reserved attempts and completed `daw_session.local_project_writer_v1` proof
+  commits only. Musician-facing TUI/Ghost affordances stay disabled until
+  writer proof, host-import proof, audible-output proof, and final release
+  policy all pass. Writer proof alone is never host-import proof or
+  audible-output proof; a PR that widens the command must include control-path
+  assertions, written-artifact/hash proof, surface-gate assertions, and an
+  explicit note when structured listening review remains
   `human_verdict: unverified`.
 - Future `export.daw_session` undo policy:
   `NotUndoable`, because the command will write files outside musical undo.
