@@ -13,6 +13,7 @@ use riotbox_core::{
 
 use crate::jam_app::{
     JamAppState,
+    daw_session_audible_output_proof::daw_session_audible_output_proof_report,
     daw_session_host_import_proof::daw_session_host_import_proof_report,
     daw_session_package_report::daw_session_json_package_report,
     daw_session_writer_plan::{DawSessionWriterPlanBlocker, daw_session_writer_plan},
@@ -181,6 +182,61 @@ impl JamAppState {
             }
         }
     }
+
+    pub fn queue_daw_session_audible_output_proof_export(
+        &mut self,
+        requested_at: TimestampMs,
+        proof_path: Option<String>,
+    ) -> DawSessionExportQueueResult {
+        let receipt_id = latest_daw_session_receipt(&self.session)
+            .map(|receipt| receipt.receipt_id.as_str().to_owned());
+        let mut draft = ActionDraft::new(
+            ActorType::User,
+            ActionCommand::ExportDawSession,
+            Quantization::Immediate,
+            ActionTarget {
+                scope: Some(TargetScope::Session),
+                ..Default::default()
+            },
+        );
+        draft.params = ActionParams::DawSessionExport {
+            export_scope: ExportScope::DawSession,
+            boundary: DawSessionExportBoundary::AudibleOutputProofV1,
+            include_manifest: false,
+            destination_kind: ProductExportDestinationKind::LocalFilePath,
+            destination_path: proof_path.clone(),
+            receipt_id,
+        };
+        draft.undo_policy = UndoPolicy::NotUndoable {
+            reason:
+                "DAW session audible-output proof mutates export receipt evidence outside musical undo"
+                    .into(),
+        };
+        draft.explanation =
+            Some("commit DAW audible-output proof through export.daw_session".into());
+
+        match self
+            .queue
+            .enqueue_if_no_pending_command(draft, requested_at)
+        {
+            QueueEnqueueResult::AlreadyPending { .. } => {
+                DawSessionExportQueueResult::AlreadyPending
+            }
+            QueueEnqueueResult::Enqueued(action_id) => {
+                let blockers =
+                    daw_session_audible_output_queue_blockers(&self.session, proof_path.as_deref());
+                if blockers.is_empty() {
+                    self.refresh_view();
+                    return DawSessionExportQueueResult::Enqueued { action_id };
+                }
+
+                let reason = daw_session_audible_output_rejection_reason(&blockers);
+                self.queue.reject(action_id, reason.clone());
+                self.refresh_view();
+                DawSessionExportQueueResult::Rejected { reason }
+            }
+        }
+    }
 }
 
 fn latest_daw_session_receipt(
@@ -253,6 +309,33 @@ fn daw_session_host_import_queue_blockers(
 
 fn daw_session_host_import_rejection_reason(blockers: &[String]) -> String {
     let mut reason = String::from("DAW session host-import proof is not ready");
+    if !blockers.is_empty() {
+        let _ = write!(reason, ": {}", blockers.join(", "));
+    }
+    reason
+}
+
+fn daw_session_audible_output_queue_blockers(
+    session: &riotbox_core::session::SessionFile,
+    proof_path: Option<&str>,
+) -> Vec<String> {
+    let Some(proof_path) = proof_path.filter(|path| !path.trim().is_empty()) else {
+        return vec!["audible_output_proof_path_missing".into()];
+    };
+
+    let Some(receipt) = latest_daw_session_receipt(session) else {
+        return vec!["no_daw_session_receipt".into()];
+    };
+
+    let report = daw_session_audible_output_proof_report(Path::new(proof_path));
+    let mut blockers = report.gate_blockers_for_receipt(receipt);
+    blockers.sort();
+    blockers.dedup();
+    blockers
+}
+
+fn daw_session_audible_output_rejection_reason(blockers: &[String]) -> String {
+    let mut reason = String::from("DAW session audible-output proof is not ready");
     if !blockers.is_empty() {
         let _ = write!(reason, ": {}", blockers.join(", "));
     }

@@ -636,6 +636,16 @@ Contract for `export.stem_package`:
   an `ActionCommand`: it writes no DAW files, launches no host, captures no
   audio, emits no observer lifecycle events, and does not make
   `export.daw_session` runnable.
+- Current DAW audible-output proof action boundary:
+  `export.daw_session` also supports the bounded `audible_output_proof_v1`
+  boundary for committing an existing local
+  `riotbox.daw_session_audible_output_proof` JSON report through the normal
+  queue / commit / Session path. It requires the same receipt to already carry
+  passed `daw_session_writer_proof` and `daw_session_host_import_proof` gates,
+  attaches only the `daw_session_audible_output_proof` QA gate, records the
+  committed action and commit record, and emits observer lifecycle evidence from
+  Session truth. It launches no host, writes no DAW files, captures no live
+  audio, and leaves `developer_proof_only` visible.
 - Current first DAW session writer/action boundary:
   `export.daw_session` is now introduced as a single queue/commit/Session
   boundary for the first bounded local writer proof only. The boundary id is
@@ -690,6 +700,14 @@ Contract for `export.stem_package`:
   path attaches `daw_session_host_import_proof` to the matching receipt, records
   the action and commit record, writes no files, launches no host, and keeps
   audible-output proof and final DAW export enablement out of scope.
+- Current audible-output-proof `export.daw_session` queue / commit path:
+  app code may enqueue `export.daw_session` with `audible_output_proof_v1` only
+  when the latest DAW-session receipt has passed writer proof and host-import
+  proof and the supplied local proof JSON reports `audible: true` with no proof
+  blockers. The commit path attaches `daw_session_audible_output_proof` to the
+  matching queued receipt, records the action and commit record, writes no
+  files, launches no host, captures no live audio, and keeps final DAW export
+  enablement out of scope through `developer_proof_only`.
 - Future wider `export.daw_session` commit / side-effect path:
   revalidate the latest `export_scope: daw_session` receipt, arrangement
   placement, tempo-map evidence, local artifact preflight, and
@@ -711,8 +729,9 @@ Contract for `export.stem_package`:
   observer lifecycle records are derived from the action queue, commit result,
   Session action log, and receipt evidence. Current records cover rejected
   reserved attempts, completed `daw_session.local_project_writer_v1` proof
-  commits, and completed `host_import_proof_v1` proof commits only.
-  Musician-facing TUI/Ghost affordances stay disabled until
+  commits, completed `host_import_proof_v1` proof commits, and completed
+  `audible_output_proof_v1` proof commits only. Musician-facing TUI/Ghost
+  affordances stay disabled until
   writer proof, host-import proof, audible-output proof, and final release
   policy all pass. Writer proof alone is never host-import proof or
   audible-output proof; a PR that widens the command must include control-path

@@ -319,6 +319,7 @@ pub enum DawSessionExportBoundary {
     ReservedContractOnly,
     LocalProjectWriterV1,
     HostImportProofV1,
+    AudibleOutputProofV1,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize, Deserialize)]
@@ -878,6 +879,17 @@ mod tests {
         assert_eq!(
             host_import_boundary,
             DawSessionExportBoundary::HostImportProofV1
+        );
+        let audible_output_json =
+            serde_json::to_value(DawSessionExportBoundary::AudibleOutputProofV1)
+                .expect("serialize DAW audible output proof boundary");
+        assert_eq!(audible_output_json, "audible_output_proof_v1");
+        let audible_output_boundary: DawSessionExportBoundary =
+            serde_json::from_value(audible_output_json)
+                .expect("deserialize DAW audible output proof boundary");
+        assert_eq!(
+            audible_output_boundary,
+            DawSessionExportBoundary::AudibleOutputProofV1
         );
     }
 }

@@ -150,7 +150,8 @@ fn export_receipt_for_action<'a>(
         ActionParams::DawSessionExport {
             boundary:
                 DawSessionExportBoundary::LocalProjectWriterV1
-                | DawSessionExportBoundary::HostImportProofV1,
+                | DawSessionExportBoundary::HostImportProofV1
+                | DawSessionExportBoundary::AudibleOutputProofV1,
             receipt_id: Some(receipt_id),
             ..
         },
