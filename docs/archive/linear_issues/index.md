@@ -982,4 +982,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Require DAW writer proof before host-import proof can pass
 - [RIOTBOX-1163.md](./RIOTBOX-1163.md)
   P016: Require DAW writer and host-import proofs before audible-output proof can pass
+- [RIOTBOX-1164.md](./RIOTBOX-1164.md)
+  P016: Add reserved export.daw_session action boundary guard
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
