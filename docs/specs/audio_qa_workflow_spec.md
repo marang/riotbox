@@ -331,6 +331,75 @@ Early P011 guardrail defaults:
   and has faded edges inside edge-delta / edge-absolute budgets. This is a
   micro-loop/chop-window QA proof, not the final W-30 loop detector.
 
+### 3.2.3 Automated musical fitness gate
+
+Automated musical fitness sits inside the existing audio QA stack as a
+deterministic rejection layer. It is stronger than hard technical validity
+because it can reject outputs that are non-silent but musically broken. It is
+weaker than human listening review because it cannot certify taste, hook
+strength, emotional impact, or whether a musician would keep using the result.
+
+The report schema is `riotbox.automated_musical_fitness.v1`. Generated reports
+and any QA report that embeds the automated result must use the same language:
+
+- `technical_status`: whether the selected render or candidate passed basic
+  technical sanity, such as non-silence and clipping checks
+- `automated_musical_fitness_status`: whether the automated musical-fitness
+  gate rejected a known bad-output mode
+- `human_verdict`: the human listening state; this must remain `unverified`
+  until a person has listened and recorded a verdict
+- `selected_candidate`: the candidate or render path the automated report
+  selected for compact review
+- `failure_codes`: stable machine-readable failure codes
+- `score_breakdown`: compact per-section scores and failure codes, suitable for
+  CI logs and report summaries
+
+The automated gate can reliably catch known bad-output modes when the manifest
+or report carries the required evidence:
+
+- silence, near-silence, clipping risk, and missing full-mix metrics
+- fallback collapse or byte/metric identity collapse
+- source masking or fake source-derived contour evidence
+- static loops, missing W-30 trigger/slice/accent variation, and identical bars
+- lane imbalance where placeholder or weak lanes are hidden by a stronger lane
+- weak low-end, weak transient pressure, and decorative drum/bass support
+- weak source-grid alignment or large peak offsets
+- identical response signatures across different source cases
+
+The automated gate cannot certify:
+
+- that the hook is memorable
+- that the break, bass, stab, chop, or silence cut has taste
+- that a technically varied loop is not annoying
+- that the output has enough live-performance impact
+- that a source-reactive response is the best musical response
+- that a generated pack is approved for musician-facing demos
+
+Manual listening is still required when a change materially affects audible
+character, claims a candidate is musically convincing, ships a real-source
+review pack, changes drum/bass/chop policy, or promotes an output from
+automated evidence into a product example. A passing automated report means "no
+known bad-output mode was caught"; it does not mean "this sounds good".
+
+The current deterministic command is:
+
+```bash
+just automated-musical-fitness-fixtures
+```
+
+For local/manual showcase review, generate the automated report beside the
+showcase artifacts:
+
+```bash
+just automated-musical-fitness showcase=artifacts/audio_qa/local-representative-source-showcase
+```
+
+When `validation/automated-musical-fitness.json` exists, the representative
+showcase musical-quality report embeds the compact automated fields while still
+keeping its own candidate result separate. Absence of the automated report is
+backward-compatible; it means the automated layer did not run for that report,
+not that the output passed or failed.
+
 ### 3.3 Fixture-backed golden render review
 
 For stable fixture, seed, action list, and render config:
