@@ -489,10 +489,15 @@ Contract for `export.stem_package`:
   read-only summary over the latest `export_scope: daw_session` Session receipt.
   It reports arrangement placement readiness, tempo-map readiness,
   unsupported-command blockers, local artifact preflight, missing or unreadable
-  files, and fixed release blockers (`developer_proof_only`,
-  `daw_writer_missing`). `ready_for_writer` is an implementation gate, not a
-  musician-facing `export.daw_session` action or proof that DAW files were
-  written.
+  files, proof-gate status for JSON package integrity, writer proof,
+  host-import proof, and audible-output proof, and release blockers.
+  `developer_proof_only` remains fixed until a later musician-facing policy
+  removes it; writer, host-import, and audible-output blockers clear only when
+  their own proof gates pass. `proof_gates.writer_proof` shows whether
+  `daw_session_writer_proof` is missing, passed, failed, or deferred and whether
+  the matching writer-proof artifact is present.
+  `ready_for_writer` is an implementation gate, not a musician-facing
+  `export.daw_session` action or proof that DAW files were written.
 - Current DAW musician surface gate:
   `daw_session_surface_gate` is the disabled product gate for surfacing DAW
   export to musicians. It is derived from the DAW Session receipt, JSON package

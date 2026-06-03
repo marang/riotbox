@@ -695,8 +695,14 @@ Additional receipt fields required before wider export scopes:
   `riotbox-app --daw-export-readiness-report --session <session.json>`. It
   selects the latest `export_scope: daw_session` receipt and summarizes
   placement readiness, tempo-map readiness, unsupported-command blockers, local
-  artifact preflight, missing/unreadable files, and fixed release blockers
-  (`developer_proof_only`, `daw_writer_missing`). `ready_for_writer` means the
+  artifact preflight, missing/unreadable files, proof-gate status for JSON
+  package integrity, writer proof, host-import proof, and audible-output proof,
+  and release blockers. `developer_proof_only` stays until a later
+  musician-facing release policy removes it; writer, host-import, and
+  audible-output blockers clear only when their own proof gates pass.
+  The `proof_gates.writer_proof` summary exposes the `daw_session_writer_proof`
+  gate and any `daw_session_writer_proof` artifact entry, but writer proof alone
+  is not host-import proof or audible-output proof. `ready_for_writer` means the
   receipt evidence is ready for the next implementation gate only; it still
   writes no DAW files and must not be presented as musician-facing export
   completion.

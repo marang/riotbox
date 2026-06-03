@@ -10,6 +10,10 @@ use riotbox_core::{
 };
 use serde::Serialize;
 
+use super::daw_export_proof_gates::{
+    DawExportProofGatesSummary, default_daw_export_release_blockers, proof_gates_summary,
+    release_blockers_for_receipt,
+};
 use super::product_export::{
     ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
 };
@@ -22,6 +26,7 @@ pub struct DawExportOperatorReadinessReport {
     pub developer_proof_status: DawExportDeveloperProofStatus,
     pub musician_export_readiness: &'static str,
     pub release_blockers: Vec<DawExportReleaseBlocker>,
+    pub proof_gates: DawExportProofGatesSummary,
     pub readiness_blockers: Vec<DawExportReadinessBlocker>,
     pub daw_session_receipt_count: usize,
     pub receipt: Option<DawExportReceiptSummary>,
@@ -40,6 +45,7 @@ impl DawExportOperatorReadinessReport {
             developer_proof_status: DawExportDeveloperProofStatus::NoDawSessionReceipt,
             musician_export_readiness: "not_final_daw_export_workflow",
             release_blockers: default_daw_export_release_blockers(),
+            proof_gates: DawExportProofGatesSummary::missing(),
             readiness_blockers: vec![DawExportReadinessBlocker::NoDawSessionReceipt],
             daw_session_receipt_count,
             receipt: None,
@@ -72,6 +78,8 @@ pub enum DawExportDeveloperProofStatus {
 pub enum DawExportReleaseBlocker {
     DeveloperProofOnly,
     DawWriterMissing,
+    DawHostImportProofMissing,
+    AudibleOutputProofMissing,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Serialize)]
@@ -238,7 +246,8 @@ fn report_for_receipt(
             DawExportDeveloperProofStatus::ReceiptBlocked
         },
         musician_export_readiness: "not_final_daw_export_workflow",
-        release_blockers: default_daw_export_release_blockers(),
+        release_blockers: release_blockers_for_receipt(receipt),
+        proof_gates: proof_gates_summary(receipt),
         readiness_blockers,
         daw_session_receipt_count,
         receipt: Some(receipt_summary(receipt)),
@@ -314,13 +323,6 @@ fn receipt_summary(receipt: &ExportReceiptState) -> DawExportReceiptSummary {
         proof_path: receipt.proof_path.clone(),
         manifest_path: receipt.manifest_path.clone(),
     }
-}
-
-fn default_daw_export_release_blockers() -> Vec<DawExportReleaseBlocker> {
-    vec![
-        DawExportReleaseBlocker::DeveloperProofOnly,
-        DawExportReleaseBlocker::DawWriterMissing,
-    ]
 }
 
 fn push_unique<T: PartialEq>(values: &mut Vec<T>, value: T) {

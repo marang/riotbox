@@ -1285,11 +1285,13 @@ Today the repo already has:
     through `riotbox-app --daw-export-readiness-report --session
     <session.json>`. It is read-only: it reports the latest DAW-session receipt,
     placement readiness, tempo-map readiness, unsupported-command blockers,
-    local artifact preflight, missing/unreadable files, and fixed release
-    blockers (`developer_proof_only`, `daw_writer_missing`) without writing DAW
-    files, observer events, or musician-facing export state. A
-    `ready_for_writer` report means the receipt is ready for the next DAW-writer
-    implementation gate only.
+    local artifact preflight, missing/unreadable files, proof-gate status for
+    JSON package integrity, writer proof, host-import proof, and audible-output
+    proof, and release blockers without writing DAW files, observer events, or
+    musician-facing export state. `developer_proof_only` remains fixed; writer,
+    host-import, and audible-output blockers clear only when their own proof
+    gates pass. A `ready_for_writer` report means the receipt is ready for the
+    next DAW-writer implementation gate only.
   - `just daw-export-readiness-report-smoke` is the CI-safe operator-report
     proof for that path. It runs the real binary against a temporary Session,
     validates the ready-for-writer report, removes the manifest file, and
@@ -1400,7 +1402,10 @@ Today the repo already has:
     `riotbox-app --daw-session-writer-proof-apply --session <session.json>
     --daw-session-destination <dir>` attaches `daw_session_writer_proof` and a
     writer-proof artifact entry to the latest DAW-session receipt. That writer
-    proof is still not host-import proof and not audible-output proof.
+    proof is surfaced by the DAW operator report under
+    `proof_gates.writer_proof`, including gate status and matching artifact
+    availability. It is still not host-import proof and not audible-output
+    proof.
   - DAW-session release blockers are cleared only by their own proof layer:
     JSON package evidence clears only JSON package blockers, writer proof
     clears only `daw_writer_missing`, host-import proof clears only

@@ -96,7 +96,12 @@ fn daw_export_report_blocks_without_daw_session_receipt() {
     );
     assert_eq!(
         summary["release_blockers"],
-        json!(["developer_proof_only", "daw_writer_missing"])
+        json!([
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
     );
     assert_eq!(summary["daw_session_surface_gate"]["status"], "disabled");
     assert_eq!(summary["daw_session_surface_gate"]["runnable"], false);
@@ -234,7 +239,12 @@ fn daw_export_report_ready_for_writer_remains_read_only_and_not_musician_runnabl
     );
     assert_eq!(
         summary["release_blockers"],
-        json!(["developer_proof_only", "daw_writer_missing"])
+        json!([
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
     );
     assert_eq!(
         summary["daw_session_surface_gate"]["blockers"],

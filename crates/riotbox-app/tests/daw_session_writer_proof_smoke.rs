@@ -128,6 +128,48 @@ fn daw_session_writer_proof_smoke_writes_and_applies_only_writer_gate() {
         vec![ExportArtifactRole::DawSessionWriterProof]
     );
 
+    let report_summary = run_riotbox_app_json([
+        "--daw-export-readiness-report",
+        "--session",
+        session_path.to_str().expect("session path"),
+    ]);
+    assert_eq!(
+        report_summary["proof_gates"]["writer_proof"]["gate_id"],
+        DAW_SESSION_WRITER_QA_GATE_ID
+    );
+    assert_eq!(
+        report_summary["proof_gates"]["writer_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        report_summary["proof_gates"]["writer_proof"]["artifact_available"],
+        true
+    );
+    assert_eq!(
+        report_summary["proof_gates"]["writer_proof"]["artifact_roles"],
+        Value::Array(vec!["daw_session_writer_proof".into()])
+    );
+    assert_eq!(
+        report_summary["proof_gates"]["writer_proof"]["artifacts"][0]["role"],
+        "daw_session_writer_proof"
+    );
+    assert_eq!(
+        report_summary["daw_session_surface_gate"]["blockers"],
+        Value::Array(vec![
+            "developer_proof_only".into(),
+            "daw_host_import_proof_missing".into(),
+            "audible_output_proof_missing".into(),
+        ])
+    );
+    assert_eq!(
+        report_summary["release_blockers"],
+        Value::Array(vec![
+            "developer_proof_only".into(),
+            "daw_host_import_proof_missing".into(),
+            "audible_output_proof_missing".into(),
+        ])
+    );
+
     let existing = run_riotbox_app_json([
         "--daw-session-writer-proof-execute",
         "--session",
