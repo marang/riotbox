@@ -22,6 +22,10 @@ jq -e \
 python3 "$VALIDATOR" \
   "$ROOT/scripts/fixtures/representative_showcase_musical_quality/valid" >/dev/null
 
+python3 "$VALIDATOR" "$FIXTURES/valid_break_low_drive" >/dev/null
+python3 "$VALIDATOR" "$FIXTURES/valid_tonal_hook_chop" >/dev/null
+python3 "$VALIDATOR" "$FIXTURES/valid_sparse_bass_pulse" >/dev/null
+
 expect_failure() {
   local fixture="$1"
   local code="$2"
@@ -35,8 +39,12 @@ expect_failure() {
 }
 
 expect_failure invalid_static movement_bar_similarity_too_static
+expect_failure invalid_source_masked source_first_generated_support_masks_source
+expect_failure invalid_weak_low_transient low_end_too_weak
 expect_failure invalid_fallback_collapse fallback_collapse
 expect_failure invalid_source_fake source_relation_not_source_derived
+expect_failure invalid_grid_drift grid_drift_alignment_too_weak
+expect_failure invalid_identical_response_across_sources cross_source_identical_response
 
 if python3 "$VALIDATOR" \
   "$ROOT/scripts/fixtures/representative_showcase_musical_quality/invalid_static" \

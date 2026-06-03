@@ -1,13 +1,13 @@
 {
-  "case_id": "valid_source_reactive_pack",
-  "window_id": "head",
+  "case_id": "break_low_drive_128bpm",
+  "window_id": "identical-response-a",
   "metrics": {
     "full_grid_mix": {
       "signal": {
-        "rms": 0.028,
-        "peak_abs": 0.82,
-        "event_density_per_bar": 260.0,
-        "transient_score": 0.46
+        "rms": 0.029,
+        "peak_abs": 0.80,
+        "event_density_per_bar": 220.0,
+        "transient_score": 0.40
       },
       "low_band": {
         "rms": 0.014
@@ -15,26 +15,24 @@
     },
     "bar_variation": {
       "full_grid_mix": {
-        "bar_similarity": 0.961
+        "bar_similarity": 0.965
       }
     },
     "mix_balance": {
-      "support_generated_to_source_rms_ratio": 0.28,
-      "source_first_generated_to_source_rms_ratio": 0.08
+      "support_generated_to_source_rms_ratio": 0.26,
+      "source_first_generated_to_source_rms_ratio": 0.09
     },
     "identity_collapse": {
-      "correlation": 0.91,
-      "normalized_rms_delta": 0.041,
+      "correlation": 0.84,
+      "normalized_rms_delta": 0.036,
       "fallback_used": false,
-      "response_signature": "valid_source_reactive_pack_head_a"
+      "response_signature": "identical_response_signature"
     },
     "all_lane_mix_movement": {
-      "source_first_to_support_rms_delta": 0.041,
-      "source_first_to_support_correlation": 0.91,
-      "tr909_contribution_ratio": 0.12,
-      "mc202_contribution_ratio": 0.09,
-      "w30_contribution_ratio": 0.42,
-      "generated_to_w30_contribution_ratio": 0.30
+      "tr909_contribution_ratio": 0.10,
+      "mc202_contribution_ratio": 0.08,
+      "w30_contribution_ratio": 0.40,
+      "generated_to_w30_contribution_ratio": 0.27
     },
     "w30_source_trigger_variation": {
       "applied": true,
@@ -42,15 +40,15 @@
     },
     "w30_source_slice_choice": {
       "applied": true,
-      "unique_source_offset_count": 5
+      "unique_source_offset_count": 4
     },
     "w30_source_accent_dynamics": {
       "applied": true,
-      "velocity_span": 0.22
+      "velocity_span": 0.20
     },
     "tr909_kick_pressure": {
       "applied": true,
-      "low_band_rms_ratio": 1.14
+      "low_band_rms_ratio": 1.10
     },
     "mc202_bass_pressure": {
       "applied": true,
@@ -62,8 +60,8 @@
       "source_contour_delta_rms": 0.0007
     },
     "mc202_source_grid_alignment": {
-      "hit_ratio": 0.875,
-      "max_peak_offset_ms": 24.0
+      "hit_ratio": 0.80,
+      "max_peak_offset_ms": 35.0
     }
   },
   "source_timing": {

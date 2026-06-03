@@ -34,6 +34,8 @@ MIN_GENERATED_TO_W30_CONTRIBUTION_RATIO = 0.06
 MIN_TR909_LOW_BAND_RATIO = 1.04
 MIN_MC202_BASS_RMS = 0.0025
 MIN_TRANSIENT_SCORE = 0.20
+MIN_SOURCE_GRID_HIT_RATIO = 0.50
+MAX_SOURCE_GRID_PEAK_OFFSET_MS = 70.0
 
 
 @dataclass(frozen=True)
@@ -176,6 +178,7 @@ def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
     mc202_contour = object_or_empty(raw.get("mc202_source_contour"))
     identity = object_or_empty(raw.get("identity_collapse") or raw.get("fallback_collapse"))
     source_relation = object_or_empty(raw.get("source_relation"))
+    grid_alignment = object_or_empty(raw.get("mc202_source_grid_alignment"))
 
     role_metrics = role_metric_values(raw)
     full_rms = first_number(
@@ -232,6 +235,11 @@ def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
             movement.get("source_first_to_support_rms_delta"),
         ),
         "fallback_used": bool(identity.get("fallback_used", False)),
+        "response_signature": string_or_none(
+            identity.get("response_signature"),
+            identity.get("full_mix_sha256"),
+            manifest.get("response_signature"),
+        ),
         "source_anchor_count": source_anchor_count,
         "source_contour_delta_rms": source_contour_delta,
         "source_contour_applied": bool(
@@ -265,6 +273,8 @@ def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
         "tr909_low_band_ratio": first_number(tr909_pressure.get("low_band_rms_ratio")),
         "mc202_bass_pressure_applied": bool(mc202_pressure.get("applied", False)),
         "mc202_bass_rms": first_number(mc202_pressure.get("signal_rms")),
+        "source_grid_hit_ratio": first_number(grid_alignment.get("hit_ratio")),
+        "source_grid_peak_offset_ms": first_number(grid_alignment.get("max_peak_offset_ms")),
     }
 
 
@@ -276,6 +286,7 @@ def build_score_breakdown(metrics: dict[str, Any]) -> dict[str, Any]:
         "variation_movement": variation_movement(metrics),
         "lane_balance": lane_balance(metrics),
         "low_end_transients": low_end_transients(metrics),
+        "grid_alignment": grid_alignment(metrics),
     }
     return sections
 
@@ -326,6 +337,7 @@ def anti_collapse(metrics: dict[str, Any]) -> dict[str, Any]:
             "identity_correlation": identity_correlation,
             "normalized_rms_delta": rms_delta,
             "fallback_used": metrics["fallback_used"],
+            "response_signature": metrics["response_signature"],
         },
     )
 
@@ -446,14 +458,39 @@ def low_end_transients(metrics: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def grid_alignment(metrics: dict[str, Any]) -> dict[str, Any]:
+    failures = []
+    hit_ratio = metrics["source_grid_hit_ratio"]
+    peak_offset = metrics["source_grid_peak_offset_ms"]
+    if hit_ratio is not None and hit_ratio < MIN_SOURCE_GRID_HIT_RATIO:
+        failures.append("grid_drift_alignment_too_weak")
+    if peak_offset is not None and peak_offset > MAX_SOURCE_GRID_PEAK_OFFSET_MS:
+        failures.append("grid_drift_peak_offset_too_high")
+    score = 1.0 - min(len(failures) * 0.5, 1.0)
+    return section(
+        score,
+        failures,
+        {
+            "source_grid_hit_ratio": hit_ratio,
+            "source_grid_peak_offset_ms": peak_offset,
+        },
+    )
+
+
 def build_report(candidates: list[Candidate]) -> dict[str, Any]:
     passing = [candidate for candidate in candidates if candidate.result == "pass"]
+    corpus_section = cross_source_diversity(candidates)
+    corpus_failure_codes = tuple(corpus_section["failure_codes"])
     selected = max(passing, key=lambda candidate: candidate.score) if passing else max(
         candidates,
         key=lambda candidate: candidate.score,
     )
-    failure_codes = dedupe(selected.failure_codes)
-    result = "pass" if passing else "fail"
+    failure_codes = dedupe((*selected.failure_codes, *corpus_failure_codes))
+    result = "pass" if passing and not corpus_failure_codes else "fail"
+    score_breakdown = {
+        **selected.score_breakdown,
+        "cross_source_diversity": corpus_section,
+    }
     return {
         "schema": SCHEMA,
         "schema_version": 1,
@@ -464,7 +501,7 @@ def build_report(candidates: list[Candidate]) -> dict[str, Any]:
         "result": result,
         "selected_candidate": candidate_record(selected),
         "failure_codes": list(failure_codes),
-        "score_breakdown": selected.score_breakdown,
+        "score_breakdown": score_breakdown,
         "human_verdict": "unverified",
         "candidate_count": len(candidates),
         "passing_candidate_count": len(passing),
@@ -486,8 +523,32 @@ def build_report(candidates: list[Candidate]) -> dict[str, Any]:
             "min_lane_contribution_ratio": MIN_LANE_CONTRIBUTION_RATIO,
             "min_generated_to_w30_contribution_ratio": MIN_GENERATED_TO_W30_CONTRIBUTION_RATIO,
             "min_low_end_transient_score": MIN_TRANSIENT_SCORE,
+            "min_source_grid_hit_ratio": MIN_SOURCE_GRID_HIT_RATIO,
+            "max_source_grid_peak_offset_ms": MAX_SOURCE_GRID_PEAK_OFFSET_MS,
         },
     }
+
+
+def cross_source_diversity(candidates: list[Candidate]) -> dict[str, Any]:
+    failures = []
+    signatures: dict[str, set[str]] = {}
+    for candidate in candidates:
+        signature = candidate.metrics.get("response_signature")
+        if not isinstance(signature, str) or not signature:
+            continue
+        signatures.setdefault(signature, set()).add(candidate.case_id)
+    repeated = {
+        signature: sorted(case_ids)
+        for signature, case_ids in signatures.items()
+        if len(case_ids) > 1
+    }
+    if repeated:
+        failures.append("cross_source_identical_response")
+    return section(
+        0.0 if failures else 1.0,
+        failures,
+        {"repeated_response_signatures": repeated},
+    )
 
 
 def candidate_record(candidate: Candidate) -> dict[str, Any]:
@@ -615,6 +676,13 @@ def first_number(*values: Any) -> float | None:
             continue
         if isinstance(value, (int, float)):
             return float(value)
+    return None
+
+
+def string_or_none(*values: Any) -> str | None:
+    for value in values:
+        if isinstance(value, str) and value:
+            return value
     return None
 
 
