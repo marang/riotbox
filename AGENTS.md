@@ -100,6 +100,8 @@ If a surface is intentionally not applicable, say why in the PR or working notes
   - output assertions proving the seam is not silent, not fallback-collapsed, and inside expected metrics
   - local manual listening when the behavior materially changes and is audible today
   - explicit PR or working-context notes when a stronger audio QA layer is still aspirational
+- For PRs that affect audible behavior, state whether a structured listening-review
+  pack/verdict exists, or why the change remains `human_verdict: unverified`.
 - When fuller harnesses land, tighten this rule to the spec's stronger release gates.
 
 ## Musical Direction
