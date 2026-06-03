@@ -964,4 +964,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add DAW session receipt observer evidence summary
 - [RIOTBOX-1154.md](./RIOTBOX-1154.md)
   P016: Reserve DAW session host import proof QA gate
+- [RIOTBOX-1155.md](./RIOTBOX-1155.md)
+  P016: Add DAW host-import proof evidence apply CLI
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
