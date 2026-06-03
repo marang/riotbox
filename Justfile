@@ -565,3 +565,6 @@ product-export-reproducibility-smoke:
 
 stem-package-local-ci-report-smoke:
     cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture
+
+daw-export-readiness-report-smoke:
+    cargo test -p riotbox-app --test daw_export_report_smoke -- --nocapture

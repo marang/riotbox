@@ -676,6 +676,19 @@ Additional receipt fields required before wider export scopes:
   structurally invalid. Recovery/preflight must report placement blockers first,
   then tempo-map blockers, then local file availability so missing tempo-map
   evidence is not confused with missing placement or a missing artifact.
+- the DAW export operator readiness report is a read-only Session report:
+  `riotbox-app --daw-export-readiness-report --session <session.json>`. It
+  selects the latest `export_scope: daw_session` receipt and summarizes
+  placement readiness, tempo-map readiness, unsupported-command blockers, local
+  artifact preflight, missing/unreadable files, and fixed release blockers
+  (`developer_proof_only`, `daw_writer_missing`). `ready_for_writer` means the
+  receipt evidence is ready for the next implementation gate only; it still
+  writes no DAW files and must not be presented as musician-facing export
+  completion.
+- `just daw-export-readiness-report-smoke` is the bounded repo proof for that
+  operator report path. It runs the real CLI in a temp directory, verifies a
+  `ready_for_writer` DAW receipt report, removes the manifest file, and verifies
+  the missing-file report without mutating the Session.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

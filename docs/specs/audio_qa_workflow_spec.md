@@ -1281,6 +1281,19 @@ Today the repo already has:
     separately from arrangement placement and local file availability. It stores
     receipt evidence for the existing confirmed timing boundary; it writes no
     DAW tempo map and does not approve an audible DAW handoff.
+  - current DAW operator report exposes the combined receipt/preflight status
+    through `riotbox-app --daw-export-readiness-report --session
+    <session.json>`. It is read-only: it reports the latest DAW-session receipt,
+    placement readiness, tempo-map readiness, unsupported-command blockers,
+    local artifact preflight, missing/unreadable files, and fixed release
+    blockers (`developer_proof_only`, `daw_writer_missing`) without writing DAW
+    files, observer events, or musician-facing export state. A
+    `ready_for_writer` report means the receipt is ready for the next DAW-writer
+    implementation gate only.
+  - `just daw-export-readiness-report-smoke` is the CI-safe operator-report
+    proof for that path. It runs the real binary against a temporary Session,
+    validates the ready-for-writer report, removes the manifest file, and
+    validates the missing-file blocker.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,
