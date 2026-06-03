@@ -189,7 +189,6 @@ pub struct StemPackageManifestJsonIdentity {
     pub role: ExportArtifactRole,
     pub location: ExportArtifactLocation,
     pub media_type: ExportArtifactMediaType,
-    pub sha256: String,
 }
 
 impl StemPackageManifestJsonIdentity {
@@ -198,9 +197,6 @@ impl StemPackageManifestJsonIdentity {
     ) -> Result<Self, StemPackageManifestError> {
         if entry.location_identity().trim().is_empty() {
             return Err(StemPackageManifestError::BlankArtifactLocation { role: entry.role });
-        }
-        if entry.sha256.trim().is_empty() {
-            return Err(StemPackageManifestError::BlankArtifactSha256 { role: entry.role });
         }
         if entry.media_type != ExportArtifactMediaType::Json {
             return Err(StemPackageManifestError::NonJsonIdentity {
@@ -213,7 +209,6 @@ impl StemPackageManifestJsonIdentity {
             role: entry.role,
             location: entry.location.clone(),
             media_type: entry.media_type,
-            sha256: entry.sha256.clone(),
         })
     }
 
@@ -226,9 +221,6 @@ impl StemPackageManifestJsonIdentity {
         }
         if self.location_identity().trim().is_empty() {
             return Err(StemPackageManifestError::BlankArtifactLocation { role: self.role });
-        }
-        if self.sha256.trim().is_empty() {
-            return Err(StemPackageManifestError::BlankArtifactSha256 { role: self.role });
         }
         if self.media_type != ExportArtifactMediaType::Json {
             return Err(StemPackageManifestError::NonJsonIdentity {

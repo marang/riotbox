@@ -105,6 +105,43 @@ fn stem_package_manifest_fixture_roundtrips_json_and_keeps_readiness_blocked() {
 }
 
 #[test]
+fn stem_package_manifest_and_proof_hashes_ignore_receipt_side_json_file_hashes() {
+    let receipt = stem_package_receipt();
+    let mut changed_json_hashes = stem_package_receipt();
+    for entry in &mut changed_json_hashes.artifact_set {
+        match entry.role {
+            ExportArtifactRole::ExportManifest => {
+                entry.sha256 = "changed-manifest-file-sha".into();
+            }
+            ExportArtifactRole::ProductExportProof => {
+                entry.sha256 = "changed-proof-file-sha".into();
+            }
+            _ => {}
+        }
+    }
+
+    let manifest = StemPackageManifest::from_receipt(&receipt).expect("build manifest");
+    let changed_manifest =
+        StemPackageManifest::from_receipt(&changed_json_hashes).expect("build changed manifest");
+    let proof = StemPackageProof::from_manifest(&manifest).expect("build proof");
+    let changed_proof =
+        StemPackageProof::from_manifest(&changed_manifest).expect("build changed proof");
+
+    assert_eq!(manifest, changed_manifest);
+    assert_eq!(
+        manifest.normalized_json_sha256().expect("hash manifest"),
+        changed_manifest
+            .normalized_json_sha256()
+            .expect("hash changed manifest")
+    );
+    assert_eq!(proof.manifest_sha256, changed_proof.manifest_sha256);
+    assert_eq!(
+        serde_json::to_string_pretty(&proof).expect("serialize proof"),
+        serde_json::to_string_pretty(&changed_proof).expect("serialize changed proof")
+    );
+}
+
+#[test]
 fn stem_package_manifest_from_receipt_rejects_non_stem_package_scope() {
     let mut receipt = stem_package_receipt();
     receipt.export_scope = ExportScope::ProductMix;

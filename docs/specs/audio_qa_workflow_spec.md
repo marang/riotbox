@@ -1157,8 +1157,11 @@ Today the repo already has:
   `stem_package_artifact_set_evidence` gate for claimed roles, requires the
   corresponding stem WAV artifact identities plus manifest/proof JSON
   identities in `artifact_set[]`, and carries the receipt QA gate summaries
-  forward. This still proves identity wiring only; audio non-silence,
-  fallback-safety, and future file writing remain separate gates.
+  forward. Receipt-side manifest/proof JSON file hashes stay in
+  `artifact_set[]`; the manifest payload carries only JSON role, location, and
+  media type for those identities. This still proves identity wiring only;
+  audio non-silence, fallback-safety, and future file writing remain separate
+  gates.
 - `StemPackageManifest::normalized_json_bytes` is the current CI-safe proof
   input helper. It returns deterministic in-memory pretty JSON bytes and proves
   that stable manifest values serialize identically while artifact identity
@@ -1167,8 +1170,9 @@ Today the repo already has:
 - `StemPackageManifest::normalized_json_sha256` is the current CI-safe proof
   identity helper. It hashes `normalized_json_bytes` directly so future
   manifest/proof artifacts can use the same deterministic identity without a
-  parallel serializer. It does not write package files or claim stem export
-  readiness.
+  parallel serializer. Embedded manifest/proof JSON identities omit their own
+  eventual file hashes, so this manifest hash is non-circular. It does not write
+  package files or claim stem export readiness.
 - `riotbox-core::stem_package_proof::StemPackageProof` is the current CI-safe
   stem-package proof JSON schema contract. It records package, receipt/action,
   manifest SHA-256, claimed roles, and manifest/proof JSON identities, but it
@@ -1176,8 +1180,8 @@ Today the repo already has:
   stems, or make `export.stem_package` ready for musicians.
 - `StemPackageProof::from_manifest` builds that proof payload from
   `StemPackageManifest` and its `normalized_json_sha256` helper. It is proof
-  identity wiring only; it does not write a proof JSON file or claim package
-  export readiness.
+  identity wiring only; it does not embed the eventual proof-file SHA, write a
+  proof JSON file, or claim package export readiness.
 - The current stem-package manifest fixture is in-memory and CI-safe: it uses
   claimed drums and bass stems, manifest/proof identities, and deferred QA gate
   evidence, then roundtrips the manifest JSON, derives and roundtrips the proof
@@ -1209,11 +1213,11 @@ Today the repo already has:
   - replay/restore boundary: replay may validate package metadata and artifact
     availability, but must not regenerate stems or rewrite package files without
     a fresh explicit export request
-  - manifest/proof identity precondition: the writer must resolve the current
-    manifest self-hash risk before shipping. If the manifest payload contains a
-    manifest JSON artifact hash, that hash must come from a non-circular
-    preimage or receipt-side identity rule that is specified and regression
-    tested before any package writer claims readiness.
+  - manifest/proof identity rule: receipt `artifact_set[]` entries own written
+    manifest/proof JSON file hashes; manifest/proof payload identities own only
+    JSON role, location, and media type. The writer must keep this boundary so
+    proof `manifest_sha256` and the eventual proof-file SHA are computed from
+    final payload bytes without self-hash cycles.
 - Observer export snapshots project those receipt `qa_gates[]` values as-is,
   including non-product stem-package evidence. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and

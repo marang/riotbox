@@ -357,6 +357,12 @@ Rules:
   using the existing product-export proof role. These helpers only build
   receipt artifact identity; they do not write files or claim a runnable stem
   export.
+- Receipt-side manifest/proof JSON artifact entries keep the written file
+  SHA-256 values. The in-memory `StemPackageManifest` and `StemPackageProof`
+  payloads deliberately copy only the JSON role, location, and media type for
+  their embedded manifest/proof identities. They do not embed the manifest JSON
+  file hash or proof JSON file hash, because those hashes are produced from the
+  final written payload bytes.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` reserves the
   future stem-package manifest contract with schema id
   `riotbox.stem_package_manifest` and schema version `1`. It stores package id,
@@ -375,8 +381,9 @@ Rules:
   requires one stem WAV artifact per claimed role, requires exactly one
   `export_manifest` JSON identity and one proof JSON identity in
   `artifact_set[]`, and preserves receipt QA gate summaries. The helper does
-  not write a manifest file, rewrite receipt state, or infer package metadata
-  from app-local state.
+  not embed receipt-side JSON file hashes into the manifest payload, write a
+  manifest file, rewrite receipt state, or infer package metadata from app-local
+  state.
 - `StemPackageManifest::normalized_json_bytes` returns deterministic in-memory
   pretty JSON bytes for future proof hashing. It prepares a stable proof input
   and must not be treated as a package writer, filesystem side effect, or
@@ -384,7 +391,9 @@ Rules:
 - `StemPackageManifest::normalized_json_sha256` computes the deterministic
   SHA-256 identity of those normalized bytes. It is a proof identity helper for
   future manifest/proof artifact wiring, not a second serializer and not a
-  package writer.
+  package writer. Because embedded manifest/proof JSON identities omit their own
+  file hashes, this hash is non-circular and can be used by
+  `StemPackageProof.manifest_sha256`.
 - `riotbox-core::stem_package_proof::StemPackageProof` reserves the future
   stem-package proof JSON contract with schema id `riotbox.stem_package_proof`
   and schema version `1`. It stores package id, `export_scope: stem_package`,
@@ -396,7 +405,8 @@ Rules:
   typed manifest value to the typed proof value. It derives fields from
   `StemPackageManifest` and calls `normalized_json_sha256` for the manifest
   identity; it does not reserialize through a second proof path and does not
-  write files.
+  write files. The proof payload also omits its own eventual proof-file SHA;
+  that file hash belongs in the receipt `artifact_set[]` after writing.
 - The current CI-safe stem-package manifest fixture builds an in-memory receipt
   with claimed drums and bass stems, manifest/proof JSON identities, and a
   deferred `stem_package_artifact_set_evidence` gate. It roundtrips the
@@ -429,10 +439,11 @@ Rules:
   - replay/restore boundary: replay and recovery may validate receipt metadata
     and local artifact availability, but must not regenerate stems, rewrite
     packages, or mutate missing files without a fresh explicit export action
-  - manifest/proof precondition: before a writer can ship, the JSON identity
-    contract must avoid a manifest self-hash cycle. A writer must not embed a
-    manifest hash inside the same manifest bytes unless a separate non-circular
-    preimage/receipt identity rule is specified and tested.
+  - manifest/proof identity rule: receipt `artifact_set[]` entries own the
+    written manifest/proof JSON file hashes; manifest/proof payload identities
+    own only JSON role, location, and media type. The writer must preserve that
+    boundary so manifest/proof hashes are computed from final payload bytes
+    without a self-hash cycle.
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent
