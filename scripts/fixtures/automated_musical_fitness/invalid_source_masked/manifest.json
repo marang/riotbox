@@ -1,0 +1,72 @@
+{
+  "case_id": "invalid_source_masked_by_generated_support",
+  "window_id": "head",
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.031,
+        "peak_abs": 0.86,
+        "event_density_per_bar": 250.0,
+        "transient_score": 0.42
+      },
+      "low_band": {
+        "rms": 0.015
+      }
+    },
+    "bar_variation": {
+      "full_grid_mix": {
+        "bar_similarity": 0.966
+      }
+    },
+    "mix_balance": {
+      "support_generated_to_source_rms_ratio": 0.58,
+      "source_first_generated_to_source_rms_ratio": 0.82
+    },
+    "identity_collapse": {
+      "correlation": 0.86,
+      "normalized_rms_delta": 0.050,
+      "fallback_used": false,
+      "response_signature": "source_masked_response"
+    },
+    "all_lane_mix_movement": {
+      "tr909_contribution_ratio": 0.16,
+      "mc202_contribution_ratio": 0.14,
+      "w30_contribution_ratio": 0.18,
+      "generated_to_w30_contribution_ratio": 0.90
+    },
+    "w30_source_trigger_variation": {
+      "applied": true,
+      "distinct_bar_pattern_count": 3
+    },
+    "w30_source_slice_choice": {
+      "applied": true,
+      "unique_source_offset_count": 4
+    },
+    "w30_source_accent_dynamics": {
+      "applied": true,
+      "velocity_span": 0.20
+    },
+    "tr909_kick_pressure": {
+      "applied": true,
+      "low_band_rms_ratio": 1.12
+    },
+    "mc202_bass_pressure": {
+      "applied": true,
+      "signal_rms": 0.007
+    },
+    "mc202_source_contour": {
+      "applied": true,
+      "pattern_origin": "source_derived_contour",
+      "source_contour_delta_rms": 0.0006
+    },
+    "mc202_source_grid_alignment": {
+      "hit_ratio": 0.82,
+      "max_peak_offset_ms": 29.0
+    }
+  },
+  "source_timing": {
+    "anchor_evidence": {
+      "primary_anchor_count": 4
+    }
+  }
+}
