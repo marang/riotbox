@@ -22,6 +22,8 @@ fn stem_package_manifest_roundtrips_stable_schema_scope_roles_and_identity() {
     assert_eq!(json["artifacts"][0]["role"], "stem_drums");
     assert_eq!(json["manifest_identity"]["role"], "export_manifest");
     assert_eq!(json["proof_identity"]["role"], "product_export_proof");
+    assert!(json["manifest_identity"].get("sha256").is_none());
+    assert!(json["proof_identity"].get("sha256").is_none());
 
     let roundtrip: StemPackageManifest =
         serde_json::from_value(json).expect("deserialize manifest");
@@ -80,6 +82,64 @@ fn stem_package_manifest_normalized_json_sha256_uses_stable_proof_bytes() {
         .expect("hash changed normalized manifest");
 
     assert_ne!(hash, changed_hash);
+}
+
+#[test]
+fn stem_package_manifest_json_identity_sha_is_receipt_side_not_payload_identity() {
+    let manifest_entry_a = ExportArtifactSetEntry::export_manifest("manifest.json", "manifest-a");
+    let proof_entry_a = ExportArtifactSetEntry::stem_package_proof("proof.json", "proof-a");
+    let manifest_entry_b = ExportArtifactSetEntry::export_manifest("manifest.json", "manifest-b");
+    let proof_entry_b = ExportArtifactSetEntry::stem_package_proof("proof.json", "proof-b");
+
+    let manifest_a = StemPackageManifest::new(manifest_input(
+        "pkg-1",
+        vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        vec![
+            stem_artifact(ExportArtifactRole::StemDrums, "drums.wav", "drums"),
+            stem_artifact(ExportArtifactRole::StemBass, "bass.wav", "bass"),
+        ],
+        StemPackageManifestJsonIdentity::from_artifact_set_entry(&manifest_entry_a)
+            .expect("manifest identity"),
+        StemPackageManifestJsonIdentity::from_artifact_set_entry(&proof_entry_a)
+            .expect("proof identity"),
+    ))
+    .expect("fixture manifest");
+    let manifest_b = StemPackageManifest::new(manifest_input(
+        "pkg-1",
+        vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        vec![
+            stem_artifact(ExportArtifactRole::StemDrums, "drums.wav", "drums"),
+            stem_artifact(ExportArtifactRole::StemBass, "bass.wav", "bass"),
+        ],
+        StemPackageManifestJsonIdentity::from_artifact_set_entry(&manifest_entry_b)
+            .expect("manifest identity"),
+        StemPackageManifestJsonIdentity::from_artifact_set_entry(&proof_entry_b)
+            .expect("proof identity"),
+    ))
+    .expect("fixture manifest");
+
+    assert_eq!(manifest_a, manifest_b);
+    assert_eq!(
+        manifest_a
+            .normalized_json_sha256()
+            .expect("hash manifest a"),
+        manifest_b
+            .normalized_json_sha256()
+            .expect("hash manifest b")
+    );
+
+    let mut location_changed = manifest_b;
+    location_changed.proof_identity.location = ExportArtifactLocation::LocalPath {
+        path: "other-proof.json".into(),
+    };
+    assert_ne!(
+        manifest_a
+            .normalized_json_sha256()
+            .expect("hash manifest a"),
+        location_changed
+            .normalized_json_sha256()
+            .expect("hash location changed manifest")
+    );
 }
 
 #[test]
@@ -408,13 +468,12 @@ fn proof_identity(
 fn json_identity(
     role: ExportArtifactRole,
     path: impl Into<String>,
-    sha256: impl Into<String>,
+    _sha256: impl Into<String>,
 ) -> StemPackageManifestJsonIdentity {
     StemPackageManifestJsonIdentity {
         role,
         location: ExportArtifactLocation::LocalPath { path: path.into() },
         media_type: ExportArtifactMediaType::Json,
-        sha256: sha256.into(),
     }
 }
 

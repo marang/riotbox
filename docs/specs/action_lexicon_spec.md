@@ -364,10 +364,11 @@ Contract for reserved `export.stem_package`:
      receipt QA gates, then commit the action and receipt together
   8. emit observer lifecycle records only from queue/history and Session
      receipts
-- Writer precondition: the manifest/proof JSON identity contract must avoid a
-  self-hash cycle before a package writer can land. A writer must not claim
-  readiness if the manifest embeds a hash that can only be known after writing
-  the same manifest bytes.
+- Manifest/proof identity rule: JSON file hashes live in the receipt
+  `artifact_set[]` entries after those files are written. The typed
+  manifest/proof payload identities carry only role, location, and media type,
+  so `StemPackageProof.manifest_sha256` hashes the manifest payload without a
+  manifest self-hash or proof self-hash cycle.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

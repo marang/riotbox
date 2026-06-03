@@ -102,9 +102,6 @@ pub enum StemPackageProofError {
     BlankJsonIdentityLocation {
         role: ExportArtifactRole,
     },
-    BlankJsonIdentitySha256 {
-        role: ExportArtifactRole,
-    },
     NonJsonIdentity {
         role: ExportArtifactRole,
         media_type: ExportArtifactMediaType,
@@ -145,11 +142,6 @@ fn validate_json_identity(
             role: identity.role,
         });
     }
-    if identity.sha256.trim().is_empty() {
-        return Err(StemPackageProofError::BlankJsonIdentitySha256 {
-            role: identity.role,
-        });
-    }
     if identity.media_type != ExportArtifactMediaType::Json {
         return Err(StemPackageProofError::NonJsonIdentity {
             role: identity.role,
@@ -187,6 +179,8 @@ mod tests {
         );
         assert_eq!(json["manifest_identity"]["role"], "export_manifest");
         assert_eq!(json["proof_identity"]["role"], "product_export_proof");
+        assert!(json["manifest_identity"].get("sha256").is_none());
+        assert!(json["proof_identity"].get("sha256").is_none());
 
         let roundtrip: StemPackageProof = serde_json::from_value(json).expect("deserialize proof");
         assert_eq!(roundtrip, proof);
@@ -289,16 +283,6 @@ mod tests {
         );
 
         let mut input = proof_input("pkg", "manifest-sha");
-        input.proof_identity.sha256.clear();
-        let err = StemPackageProof::new(input).expect_err("blank proof hash should fail");
-        assert_eq!(
-            err,
-            StemPackageProofError::BlankJsonIdentitySha256 {
-                role: ExportArtifactRole::ProductExportProof
-            }
-        );
-
-        let mut input = proof_input("pkg", "manifest-sha");
         input.proof_identity.media_type = ExportArtifactMediaType::AudioWav;
         let err = StemPackageProof::new(input).expect_err("non-json proof should fail");
         assert_eq!(
@@ -387,13 +371,12 @@ mod tests {
     fn json_identity(
         role: ExportArtifactRole,
         path: impl Into<String>,
-        sha256: impl Into<String>,
+        _sha256: impl Into<String>,
     ) -> StemPackageManifestJsonIdentity {
         StemPackageManifestJsonIdentity {
             role,
             location: ExportArtifactLocation::LocalPath { path: path.into() },
             media_type: ExportArtifactMediaType::Json,
-            sha256: sha256.into(),
         }
     }
 }
