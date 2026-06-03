@@ -62,6 +62,10 @@ enum LaunchMode {
         session_path: PathBuf,
         destination_path: PathBuf,
     },
+    DawSessionHostImportProofApply {
+        session_path: PathBuf,
+        proof_path: PathBuf,
+    },
     DawSessionWriterPlan {
         session_path: PathBuf,
         destination_path: PathBuf,
@@ -96,6 +100,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
     ) {
         run_daw_session_json_package_evidence_apply(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::DawSessionHostImportProofApply { .. }) {
+        run_daw_session_host_import_proof_apply(&launch)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::DawSessionWriterPlan { .. }) {
@@ -180,6 +188,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
                 "DAW session JSON package evidence apply uses a non-interactive proof path".into(),
             ),
         ),
+        LaunchMode::DawSessionHostImportProofApply { .. } => Err(JamAppError::InvalidSession(
+            "DAW session host import proof apply uses a non-interactive proof path".into(),
+        )),
         LaunchMode::DawSessionWriterPlan { .. } => Err(JamAppError::InvalidSession(
             "DAW session writer plan uses a non-interactive proof path".into(),
         )),

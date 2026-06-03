@@ -25,6 +25,7 @@ fn parse_args_builds_daw_session_json_package_execute_mode() {
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
+        | LaunchMode::DawSessionHostImportProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session JSON package execute mode")
         }
@@ -58,8 +59,46 @@ fn parse_args_builds_daw_session_json_package_evidence_apply_mode() {
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
+        | LaunchMode::DawSessionHostImportProofApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session JSON package evidence apply mode")
+        }
+    }
+}
+
+#[test]
+fn parse_args_builds_daw_session_host_import_proof_apply_mode() {
+    let launch = parse_args([
+        "--daw-session-host-import-proof-apply".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--daw-session-host-import-proof".into(),
+        "exports/daw-package/host_import_proof.json".into(),
+    ])
+    .expect("parse DAW session host import proof apply mode");
+
+    assert_eq!(launch.observer_path, None);
+    match launch.mode {
+        LaunchMode::DawSessionHostImportProofApply {
+            session_path,
+            proof_path,
+        } => {
+            assert_eq!(session_path, PathBuf::from("session.json"));
+            assert_eq!(
+                proof_path,
+                PathBuf::from("exports/daw-package/host_import_proof.json")
+            );
+        }
+        LaunchMode::Load { .. }
+        | LaunchMode::Ingest { .. }
+        | LaunchMode::StemPackageLocalCiDryRun { .. }
+        | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::StemPackageLocalCiReport { .. }
+        | LaunchMode::DawExportReadinessReport { .. }
+        | LaunchMode::DawSessionJsonPackageExecute { .. }
+        | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
+        | LaunchMode::DawSessionWriterPlan { .. } => {
+            panic!("expected DAW session host import proof apply mode")
         }
     }
 }
@@ -146,4 +185,48 @@ fn parse_args_rejects_daw_session_json_package_evidence_apply_without_inputs_or_
     ])
     .expect_err("apply should not mix with execute");
     assert!(execute_mix.contains("cannot be combined"));
+}
+
+#[test]
+fn parse_args_rejects_daw_session_host_import_proof_apply_without_inputs_or_with_observer() {
+    let missing_session = parse_args([
+        "--daw-session-host-import-proof-apply".into(),
+        "--daw-session-host-import-proof".into(),
+        "host_import_proof.json".into(),
+    ])
+    .expect_err("session is required");
+    assert!(missing_session.contains("--session"));
+
+    let missing_proof = parse_args([
+        "--daw-session-host-import-proof-apply".into(),
+        "--session".into(),
+        "session.json".into(),
+    ])
+    .expect_err("proof path is required");
+    assert!(missing_proof.contains("--daw-session-host-import-proof"));
+
+    let observer_arg = parse_args([
+        "--daw-session-host-import-proof-apply".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--daw-session-host-import-proof".into(),
+        "host_import_proof.json".into(),
+        "--observer".into(),
+        "observer.ndjson".into(),
+    ])
+    .expect_err("apply should not write observer files");
+    assert!(observer_arg.contains("reads only an explicit session and proof file"));
+
+    let package_mix = parse_args([
+        "--daw-session-host-import-proof-apply".into(),
+        "--daw-session-json-package-evidence-apply".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--daw-session-host-import-proof".into(),
+        "host_import_proof.json".into(),
+        "--daw-session-destination".into(),
+        "exports/daw-package".into(),
+    ])
+    .expect_err("host import proof apply should not mix with package apply");
+    assert!(package_mix.contains("cannot be combined"));
 }

@@ -12,5 +12,6 @@ include!("riotbox-app/capture_length_control.rs");
 include!("riotbox-app/product_export_control.rs");
 include!("riotbox-app/source_map_navigation_control.rs");
 include!("riotbox-app/source_timing_confirm_control.rs");
+include!("riotbox-app/args_support.rs");
 include!("riotbox-app/args.rs");
 include!("riotbox-app/tests.rs");

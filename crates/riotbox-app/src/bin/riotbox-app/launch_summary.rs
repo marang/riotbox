@@ -82,6 +82,15 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "destination_path": destination_path,
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::DawSessionHostImportProofApply {
+            session_path,
+            proof_path,
+        } => json!({
+            "mode": "daw_session_host_import_proof_apply",
+            "session_path": session_path,
+            "proof_path": proof_path,
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::DawSessionWriterPlan {
             session_path,
             destination_path,

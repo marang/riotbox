@@ -1,7 +1,8 @@
 use riotbox_app::jam_app::{
     DAW_SESSION_JSON_PACKAGE_WRITER_BOUNDARY_ID, WrittenDawSessionJsonPackage,
-    attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
-    write_daw_session_json_package,
+    attach_daw_session_host_import_proof_evidence_to_receipt,
+    attach_daw_session_json_package_evidence_to_receipt, daw_session_host_import_proof_report,
+    daw_session_json_package_report, write_daw_session_json_package,
 };
 
 fn run_daw_session_json_package_execute(
@@ -17,6 +18,15 @@ fn run_daw_session_json_package_evidence_apply(
     launch: &AppLaunch,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let summary = daw_session_json_package_evidence_apply_summary(launch)?;
+    serde_json::to_writer_pretty(std::io::stdout(), &summary)?;
+    println!();
+    Ok(())
+}
+
+fn run_daw_session_host_import_proof_apply(
+    launch: &AppLaunch,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let summary = daw_session_host_import_proof_apply_summary(launch)?;
     serde_json::to_writer_pretty(std::io::stdout(), &summary)?;
     println!();
     Ok(())
@@ -153,6 +163,71 @@ fn daw_session_json_package_evidence_apply_summary(
     }))
 }
 
+fn daw_session_host_import_proof_apply_summary(
+    launch: &AppLaunch,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    let LaunchMode::DawSessionHostImportProofApply {
+        session_path,
+        proof_path,
+    } = &launch.mode
+    else {
+        return Err("not a DAW session host import proof apply launch".into());
+    };
+    let mut session = riotbox_core::persistence::load_session_json(session_path)?;
+    let proof_report = daw_session_host_import_proof_report(proof_path);
+
+    let Some(receipt_index) = session
+        .export_receipts
+        .iter()
+        .rposition(|receipt| {
+            receipt.export_scope == riotbox_core::export_readiness::ExportScope::DawSession
+        })
+    else {
+        let surface_gate =
+            riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+        return Ok(json!({
+            "mode": "daw_session_host_import_proof_apply",
+            "status": "blocked",
+            "ready": false,
+            "writes_files": false,
+            "mutates_session": false,
+            "observer_events": false,
+            "session_path": session_path,
+            "proof_path": proof_path,
+            "readiness_blockers": ["no_daw_session_receipt"],
+            "proof_report": proof_report,
+            "receipt": null,
+            "daw_session_surface_gate": daw_session_surface_gate_summary(&surface_gate),
+            "release_blockers": daw_session_release_blockers(),
+        }));
+    };
+
+    attach_daw_session_host_import_proof_evidence_to_receipt(
+        &mut session.export_receipts[receipt_index],
+        &proof_report,
+    )
+    .map_err(|error| format!("DAW session host import proof apply failed: {error:?}"))?;
+    riotbox_core::persistence::save_session_json(session_path, &session)?;
+
+    let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+    let receipt = &session.export_receipts[receipt_index];
+    Ok(json!({
+        "mode": "daw_session_host_import_proof_apply",
+        "status": if proof_report.ready { "ready" } else { "blocked" },
+        "ready": proof_report.ready,
+        "writes_files": false,
+        "mutates_session": true,
+        "observer_events": false,
+        "session_path": session_path,
+        "proof_path": proof_path,
+        "readiness_blockers": proof_report.gate_blockers(),
+        "proof_report": proof_report,
+        "receipt": daw_session_host_import_receipt_summary(receipt),
+        "daw_session_surface_gate": daw_session_surface_gate_summary(&surface_gate),
+        "release_blockers": daw_session_release_blockers(),
+    }))
+}
+
 fn written_daw_session_json_package_summary(written: &WrittenDawSessionJsonPackage) -> Value {
     json!({
         "package_dir": written.package_dir,
@@ -208,6 +283,23 @@ fn daw_session_json_package_receipt_summary(
             }))
             .collect::<Vec<_>>(),
         "daw_json_package_gate": package_gate,
+    })
+}
+
+fn daw_session_host_import_receipt_summary(
+    receipt: &riotbox_core::session::ExportReceiptState,
+) -> Value {
+    let host_import_gate = receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID);
+    json!({
+        "receipt_id": receipt.receipt_id.as_str(),
+        "export_scope": receipt.export_scope,
+        "pack_id": receipt.pack_id,
+        "export_role": receipt.export_role,
+        "export_boundary": receipt.export_boundary,
+        "daw_host_import_gate": host_import_gate,
     })
 }
 
