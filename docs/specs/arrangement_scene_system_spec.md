@@ -128,6 +128,15 @@ playback to the landed scene section only when Source Timing is analyzer-locked
 or user-confirmed. Fallback and manual-confirm-only timing must keep transport
 position playback until the user trust boundary is explicit.
 
+P016 may define receipt-only arrangement / DAW placement contracts for future
+export packages without changing the P014 runtime arrangement contract. The
+current bounded skeleton is `export_scope: daw_session`, `pack_id:
+arrangement-daw-placement-contract`, `export_role: arrangement_manifest`, and
+`export_boundary: arrangement.daw_placement_contract_v1` with
+`arrangement_placement_refs[]` stored on Session export receipts. Those refs
+may point at existing Session scene ids plus source/bar/beat ranges, but they do
+not create a second arrangement model, scheduler, or DAW writer.
+
 ## 5. Proof Baselines
 
 Keep these green while P014 lands:

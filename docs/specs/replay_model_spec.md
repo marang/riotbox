@@ -386,6 +386,11 @@ Decision:
   manifest/proof JSON. Missing identity and missing local file are distinct
   diagnostics; neither path may regenerate, rewrite, or infer package artifacts
   during restore.
+- arrangement / DAW placement receipt validation consumes
+  `arrangement_placement_refs[]` from Session receipts only. Missing placement
+  evidence, blank scene refs, invalid bar ranges, and invalid beat ranges are
+  distinct from missing local artifact files, and replay/recovery must not
+  synthesize arrangement placement from observer state or current app runtime.
 
 ### 10.2 Ghost
 

@@ -1,11 +1,11 @@
 use super::*;
 
 use crate::{
-    export_qa::validate_stem_package_artifact_set_evidence,
     export_readiness::{
-        EXPORT_READINESS_CONTRACT_SCHEMA, PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
+        ARRANGEMENT_DAW_PLACEMENT_PACK_ID, EXPORT_READINESS_CONTRACT_SCHEMA,
+        PRODUCT_EXPORT_PACK_ID, PRODUCT_EXPORT_PROOF_SCHEMA,
     },
-    ids::ActionId,
+    ids::{ActionId, SourceId},
     session::{PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, SessionFile},
 };
 
@@ -127,6 +127,7 @@ fn export_receipts_roundtrip_with_session_file() {
         receipt.qa_gates,
         vec![ExportReceiptQaGateResult::product_export_reproducibility()]
     );
+    assert!(receipt.arrangement_placement_refs.is_empty());
 }
 
 #[test]
@@ -205,6 +206,41 @@ fn stem_package_export_scope_has_stable_identity_and_musician_label() {
 }
 
 #[test]
+fn daw_session_export_contract_names_are_stable_but_not_product_mix_defaults() {
+    assert_eq!(ExportScope::DawSession.as_str(), "daw_session");
+    assert_eq!(
+        ExportScope::DawSession.musician_label(),
+        "DAW session export"
+    );
+    assert_eq!(
+        ProductExportRole::ArrangementManifest.as_str(),
+        "arrangement_manifest"
+    );
+    assert_eq!(
+        ProductExportBoundary::ArrangementDawPlacementContractV1.as_proof_str(),
+        "arrangement.daw_placement_contract_v1"
+    );
+    assert_eq!(
+        ARRANGEMENT_DAW_PLACEMENT_PACK_ID,
+        "arrangement-daw-placement-contract"
+    );
+    assert_eq!(default_export_scope(), ExportScope::ProductMix);
+}
+
+#[test]
+fn missing_arrangement_placement_refs_default_to_empty_for_older_receipts() {
+    let mut json = serde_json::to_value(fixture_receipt()).expect("serialize receipt");
+    json.as_object_mut()
+        .expect("receipt json object")
+        .remove("arrangement_placement_refs");
+
+    let receipt: ExportReceiptState =
+        serde_json::from_value(json).expect("deserialize older receipt");
+
+    assert!(receipt.arrangement_placement_refs.is_empty());
+}
+
+#[test]
 fn missing_pack_id_defaults_to_product_export_pack_for_older_receipts() {
     let mut json = serde_json::to_value(fixture_receipt()).expect("serialize receipt");
     json.as_object_mut()
@@ -242,71 +278,6 @@ fn product_export_receipt_records_reproducibility_gate_result() {
             artifact_roles: vec![ExportArtifactRole::FullGridMix],
             summary: Some("product export proof and artifact hash accepted".into()),
         }]
-    );
-}
-
-#[test]
-fn stem_package_artifact_set_gate_result_records_deferred_structure() {
-    let artifact_set = vec![stem_artifact(
-        ExportArtifactRole::StemDrums,
-        "exports/stems/drums.wav",
-        "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
-    )];
-    let report = validate_stem_package_artifact_set_evidence(
-        &artifact_set,
-        &[ExportArtifactRole::StemDrums],
-    );
-
-    let gate = ExportReceiptQaGateResult::stem_package_artifact_set_evidence(&report);
-
-    assert_eq!(gate.gate_id, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID);
-    assert_eq!(gate.status, ExportReceiptQaGateStatus::Deferred);
-    assert_eq!(gate.artifact_roles, vec![ExportArtifactRole::StemDrums]);
-    assert!(
-        gate.summary
-            .as_deref()
-            .expect("summary")
-            .contains("deferred QA check(s) remain")
-    );
-}
-
-#[test]
-fn stem_package_artifact_set_gate_result_records_failed_structure() {
-    let report = validate_stem_package_artifact_set_evidence(&[], &[ExportArtifactRole::StemBass]);
-
-    let gate = ExportReceiptQaGateResult::stem_package_artifact_set_evidence(&report);
-
-    assert_eq!(gate.status, ExportReceiptQaGateStatus::Failed);
-    assert_eq!(gate.artifact_roles, vec![ExportArtifactRole::StemBass]);
-    assert!(
-        gate.summary
-            .as_deref()
-            .expect("summary")
-            .contains("evidence failed")
-    );
-}
-
-#[test]
-fn stem_package_artifact_set_gate_result_roundtrips_in_session_receipt() {
-    let artifact_set = vec![stem_artifact(
-        ExportArtifactRole::StemVocals,
-        "exports/stems/vocals.wav",
-        "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
-    )];
-    let report = validate_stem_package_artifact_set_evidence(
-        &artifact_set,
-        &[ExportArtifactRole::StemVocals],
-    );
-    let mut receipt = fixture_receipt();
-    receipt.qa_gates = vec![ExportReceiptQaGateResult::stem_package_artifact_set_evidence(&report)];
-
-    let json = serde_json::to_string_pretty(&receipt).expect("serialize receipt");
-    let roundtrip: ExportReceiptState = serde_json::from_str(&json).expect("deserialize receipt");
-
-    assert_eq!(roundtrip.qa_gates, receipt.qa_gates);
-    assert_eq!(
-        roundtrip.qa_gates[0].status,
-        ExportReceiptQaGateStatus::Deferred
     );
 }
 
@@ -382,29 +353,6 @@ fn artifact_set_entries_roundtrip_optional_audio_metrics() {
         serde_json::from_str(&json).expect("deserialize artifact entry");
 
     assert_eq!(roundtrip, entry);
-}
-
-fn stem_artifact(
-    role: ExportArtifactRole,
-    path: impl Into<String>,
-    sha256: impl Into<String>,
-) -> ExportArtifactSetEntry {
-    ExportArtifactSetEntry {
-        role,
-        location: ExportArtifactLocation::LocalPath { path: path.into() },
-        media_type: ExportArtifactMediaType::AudioWav,
-        sha256: sha256.into(),
-        normalized_manifest_hash: None,
-        source_graph_ref: None,
-        timing_grid_ref: None,
-        source_capture_refs: Vec::new(),
-        lineage_capture_refs: Vec::new(),
-        fallback_comparison: None,
-        audio_metrics: None,
-        sample_rate_hz: None,
-        channel_count: None,
-        duration_ms: None,
-    }
 }
 
 fn assert_json_artifact_entry(

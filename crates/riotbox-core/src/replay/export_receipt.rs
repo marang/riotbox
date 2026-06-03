@@ -451,6 +451,7 @@ mod tests {
                 Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
             )],
             qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
+            arrangement_placement_refs: Vec::new(),
             readiness_status: ExportReadinessStatus::Reproducible,
             unsupported_scopes: vec![
                 UnsupportedExportScope::StemPackage,

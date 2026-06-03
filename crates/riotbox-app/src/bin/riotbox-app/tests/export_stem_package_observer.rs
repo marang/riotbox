@@ -83,6 +83,16 @@ fn observer_snapshot_reports_completed_stem_package_lifecycle_from_session_recei
             .len(),
         4
     );
+    assert!(
+        lifecycle[2]["receipt"]
+            .get("arrangement_placement_readiness")
+            .is_none()
+    );
+    assert!(
+        lifecycle[2]["receipt"]
+            .get("arrangement_placement_refs")
+            .is_none()
+    );
     assert_eq!(
         snapshot["export"]["stem_package_surface_gate"]["status"],
         "disabled"
@@ -306,6 +316,7 @@ fn ready_stem_package_receipt(action_id: ActionId, timestamp: u64) -> ExportRece
                 "written stem package stems carry fallback comparison",
             ),
         ],
+        arrangement_placement_refs: Vec::new(),
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: Vec::new(),
     }

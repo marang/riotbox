@@ -1,5 +1,9 @@
 use serde::{Deserialize, Serialize};
 
+use super::arrangement_export_placement::{
+    ArrangementExportPlacementReadinessReport, ExportArrangementPlacementRef,
+    validate_arrangement_export_placement_readiness,
+};
 use crate::{
     TimestampMs,
     export_readiness::{
@@ -37,6 +41,8 @@ pub struct ExportReceiptState {
     pub artifact_set: Vec<ExportArtifactSetEntry>,
     #[serde(default)]
     pub qa_gates: Vec<ExportReceiptQaGateResult>,
+    #[serde(default)]
+    pub arrangement_placement_refs: Vec<ExportArrangementPlacementRef>,
     pub readiness_status: ExportReadinessStatus,
     pub unsupported_scopes: Vec<UnsupportedExportScope>,
 }
@@ -71,6 +77,7 @@ impl ExportReceiptState {
                 Some(contract.normalized_manifest_sha256.clone()),
             )],
             qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
+            arrangement_placement_refs: Vec::new(),
             readiness_status: contract.status,
             unsupported_scopes: contract.unsupported_scopes.clone(),
         }
@@ -116,6 +123,11 @@ impl ExportReceiptState {
     #[must_use]
     pub fn stem_package_readiness_report(&self) -> StemPackageReceiptReadinessReport {
         validate_stem_package_receipt_readiness(self)
+    }
+
+    #[must_use]
+    pub fn arrangement_export_placement_report(&self) -> ArrangementExportPlacementReadinessReport {
+        validate_arrangement_export_placement_readiness(self)
     }
 }
 

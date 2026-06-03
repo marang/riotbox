@@ -468,6 +468,17 @@ Contract for `export.stem_package`:
   keeps `StemPackageProof.manifest_sha256` hashing the manifest payload without
   a manifest self-hash or proof self-hash cycle while still proving that the
   package is not a `feral-grid-demo/full_grid_mix` product-mix receipt.
+- Current arrangement / DAW placement contract skeleton:
+  Core reserves `export_scope: daw_session`, `pack_id:
+  arrangement-daw-placement-contract`, `export_role: arrangement_manifest`, and
+  `export_boundary: arrangement.daw_placement_contract_v1`. Session receipts may
+  carry `arrangement_placement_refs[]` with scene id, optional source id,
+  start/end bars, and start/end beats. `validate_arrangement_export_placement_readiness`
+  blocks missing placement refs, blank scene refs, invalid bar ranges,
+  non-advancing beat ranges, receipts outside `daw_session`, and receipts still
+  marked with `unsupported_scopes[]: daw_export`. This is a receipt contract and
+  report/recovery guard only; it does not add a runnable `export.daw_session`
+  action, DAW file writer, or second arrangement model.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
@@ -501,8 +512,11 @@ Contract for `export.stem_package`:
   must project only from the action log, queue/history, and Session export
   receipts. For `export_scope: stem_package` receipts, observer snapshots may
   include Core-derived `stem_package_readiness` status, blockers, and blocker
-  labels from `validate_stem_package_receipt_readiness`. Observer state must not
-  become a second package truth.
+  labels from `validate_stem_package_receipt_readiness`. For `export_scope:
+  daw_session` receipts, observer snapshots may include
+  `arrangement_placement_readiness` and `arrangement_placement_refs[]` from the
+  Session receipt. Observer state must not become a second package or
+  arrangement truth.
   Current app observer implementation includes both `export.product_mix` and
   `export.stem_package` actions in that projection; rejected reserved stem
   attempts produce failed lifecycle records without receipts, while committed

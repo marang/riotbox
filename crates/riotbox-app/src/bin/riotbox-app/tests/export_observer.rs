@@ -202,6 +202,16 @@ fn observer_snapshot_reports_completed_product_export_lifecycle() {
         lifecycle[2]["receipt"]["stem_package_readiness"],
         serde_json::Value::Null
     );
+    assert!(
+        lifecycle[2]["receipt"]
+            .get("arrangement_placement_readiness")
+            .is_none()
+    );
+    assert!(
+        lifecycle[2]["receipt"]
+            .get("arrangement_placement_refs")
+            .is_none()
+    );
     assert_eq!(
         lifecycle[2]["receipt"]["unsupported_scopes"]
             .as_array()

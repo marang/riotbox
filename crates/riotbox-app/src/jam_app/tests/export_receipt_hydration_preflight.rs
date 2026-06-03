@@ -429,6 +429,56 @@ fn export_receipt_hydration_preflight_reports_legacy_stem_package_shape_as_missi
     );
 }
 
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_arrangement_placement_before_files() {
+    let dir = tempdir().expect("create temp dir");
+    let receipt = arrangement_receipt(
+        "exports/missing_arrangement_manifest.json",
+        "exports/missing_arrangement_proof.json",
+    );
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing placement evidence should reject before file availability");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::ArrangementPlacementBlocked {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            blockers: vec![ArrangementExportPlacementReadinessBlocker::MissingPlacementRefs],
+        }
+    );
+}
+
+#[test]
+fn export_receipt_hydration_preflight_reports_missing_arrangement_file_after_placement_ready() {
+    let dir = tempdir().expect("create temp dir");
+    let mut receipt = arrangement_receipt(
+        "exports/missing_arrangement_manifest.json",
+        "exports/missing_arrangement_proof.json",
+    );
+    receipt
+        .arrangement_placement_refs
+        .push(ExportArrangementPlacementRef::scene_range(
+            "scene-a",
+            Some(SourceId::from("src-1")),
+            1,
+            4,
+            0,
+            16,
+        ));
+
+    let error = preflight_export_receipt_artifacts(&receipt, Some(dir.path()))
+        .expect_err("missing local arrangement file should reject after placement is ready");
+
+    assert_eq!(
+        error,
+        ExportReceiptArtifactPreflightError::MissingExportArtifact {
+            receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
+            path: dir.path().join("exports/missing_arrangement_manifest.json"),
+        }
+    );
+}
+
 fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
     ExportReceiptState {
         receipt_id: ExportReceiptId::from("export-receipt-a-0004"),
@@ -450,6 +500,7 @@ fn export_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
             Some("dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd".into()),
         )],
         qa_gates: vec![ExportReceiptQaGateResult::product_export_reproducibility()],
+        arrangement_placement_refs: Vec::new(),
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: vec![
             UnsupportedExportScope::StemPackage,
@@ -489,6 +540,18 @@ fn stem_package_receipt() -> ExportReceiptState {
     ];
     let claimed_roles = vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass];
     receipt.qa_gates = all_required_stem_package_gates(&claimed_roles);
+    receipt
+}
+
+fn arrangement_receipt(artifact_path: &str, proof_path: &str) -> ExportReceiptState {
+    let mut receipt = export_receipt(artifact_path, proof_path);
+    receipt.export_scope = ExportScope::DawSession;
+    receipt.pack_id =
+        riotbox_core::export_readiness::ARRANGEMENT_DAW_PLACEMENT_PACK_ID.into();
+    receipt.export_role = ProductExportRole::ArrangementManifest;
+    receipt.export_boundary = ProductExportBoundary::ArrangementDawPlacementContractV1;
+    receipt.unsupported_scopes.clear();
+    receipt.arrangement_placement_refs.clear();
     receipt
 }
 
