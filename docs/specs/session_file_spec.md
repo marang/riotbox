@@ -805,7 +805,10 @@ Additional receipt fields required before wider export scopes:
   future DAW host import proof. A passed gate only removes the
   `daw_host_import_proof_missing` surface blocker; it does not imply a DAW
   writer exists, prove audible output, or make `export.daw_session` runnable.
-  Failed or missing gates keep the host-import blocker visible.
+  Failed or missing gates keep the host-import blocker visible. Host-import
+  proof may pass only after the same receipt already carries a passed
+  `daw_session_writer_proof` gate; otherwise the host-import gate records
+  `daw_writer_proof_missing` and stays failed.
 - `riotbox-app --daw-session-host-import-proof-apply --session <session.json>
   --daw-session-host-import-proof <proof.json>` is the current explicit
   operator bridge from external DAW host-import evidence into the Session

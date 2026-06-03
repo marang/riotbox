@@ -591,6 +591,9 @@ Contract for `export.stem_package`:
   host-import proof as `daw_host_import_proof_missing`; a passed gate removes
   only that blocker while `developer_proof_only`, `daw_writer_missing`, and
   `audible_output_proof_missing` keep `export.daw_session` disabled.
+  Host-import proof may pass only after the same receipt already carries a
+  passed `daw_session_writer_proof` gate; otherwise the host-import gate records
+  `daw_writer_proof_missing` and remains failed.
 - Current DAW host-import proof apply path:
   `riotbox-app --daw-session-host-import-proof-apply --session <session.json>
   --daw-session-host-import-proof <proof.json>` reads a local proof JSON with
