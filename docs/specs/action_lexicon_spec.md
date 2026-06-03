@@ -446,6 +446,12 @@ Contract for `export.stem_package`:
   between internal developer proof status and final musician DAW export
   readiness. It must not write observer files, rewrite packages, regenerate
   missing stems, or reinterpret product-mix receipts as stem packages.
+- Current CLI report smoke:
+  `just stem-package-local-ci-report-smoke` runs the real `riotbox-app` binary
+  in a temp directory, creates a bounded local CI stem-package proof Session,
+  runs the read-only report, then removes one stem file and verifies the
+  missing-file report. This is a CI/operator proof of the report path, not a
+  musician-facing export workflow or listening approval.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry package id, export role, export
