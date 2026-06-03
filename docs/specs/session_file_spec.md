@@ -400,8 +400,9 @@ Rules:
 - The current CI-safe stem-package manifest fixture builds an in-memory receipt
   with claimed drums and bass stems, manifest/proof JSON identities, and a
   deferred `stem_package_artifact_set_evidence` gate. It roundtrips the
-  manifest JSON and asserts receipt readiness remains blocked, so it proves
-  contract wiring without claiming full stem export readiness.
+  manifest JSON, derives and roundtrips the proof JSON payload, and asserts
+  receipt readiness remains blocked, so it proves contract wiring without
+  claiming full stem export readiness.
 - current `export.product_mix` artifact-set entries also carry the same
   normalized manifest hash as per-artifact evidence, while older artifact-set
   entries default that field to absent

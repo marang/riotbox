@@ -14,6 +14,7 @@ use crate::{
         StemPackageReceiptReadinessBlocker, StemPackageReceiptReadinessStatus,
         validate_stem_package_receipt_readiness,
     },
+    stem_package_proof::StemPackageProof,
 };
 
 #[test]
@@ -66,12 +67,28 @@ fn stem_package_manifest_fixture_roundtrips_json_and_keeps_readiness_blocked() {
     receipt.qa_gates = vec![gate];
 
     let manifest = StemPackageManifest::from_receipt(&receipt).expect("build fixture manifest");
-    let json = serde_json::to_string_pretty(&manifest).expect("serialize fixture manifest");
-    let roundtrip: StemPackageManifest =
-        serde_json::from_str(&json).expect("deserialize fixture manifest");
-    assert_eq!(roundtrip, manifest);
-    assert_eq!(roundtrip.claimed_stem_roles, claimed_roles);
-    assert_eq!(roundtrip.artifacts.len(), 2);
+    let manifest_json =
+        serde_json::to_string_pretty(&manifest).expect("serialize fixture manifest");
+    let manifest_roundtrip: StemPackageManifest =
+        serde_json::from_str(&manifest_json).expect("deserialize fixture manifest");
+    assert_eq!(manifest_roundtrip, manifest);
+    assert_eq!(manifest_roundtrip.claimed_stem_roles, claimed_roles);
+    assert_eq!(manifest_roundtrip.artifacts.len(), 2);
+
+    let proof = StemPackageProof::from_manifest(&manifest).expect("build fixture proof");
+    let proof_json = serde_json::to_string_pretty(&proof).expect("serialize fixture proof");
+    let repeated_proof_json =
+        serde_json::to_string_pretty(&proof).expect("serialize fixture proof again");
+    let proof_roundtrip: StemPackageProof =
+        serde_json::from_str(&proof_json).expect("deserialize fixture proof");
+    assert_eq!(proof_json, repeated_proof_json);
+    assert_eq!(proof_roundtrip, proof);
+    assert_eq!(
+        proof_roundtrip.manifest_sha256,
+        manifest
+            .normalized_json_sha256()
+            .expect("hash fixture manifest")
+    );
 
     let readiness = validate_stem_package_receipt_readiness(&receipt);
     assert_eq!(readiness.status, StemPackageReceiptReadinessStatus::Blocked);
