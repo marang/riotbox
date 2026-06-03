@@ -938,4 +938,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add DAW tempo-map receipt readiness skeleton
 - [RIOTBOX-1141.md](./RIOTBOX-1141.md)
   P016: Add DAW export operator readiness report surface
+- [RIOTBOX-1142.md](./RIOTBOX-1142.md)
+  P016: Add DAW session writer plan skeleton
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
