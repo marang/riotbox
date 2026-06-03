@@ -324,6 +324,7 @@ fn ready_stem_package_receipt(action_id: ActionId, timestamp: u64) -> ExportRece
         ],
         arrangement_placement_refs: Vec::new(),
         daw_tempo_map_ref: None,
+        live_recording_host_audio_refs: Vec::new(),
         readiness_status: ExportReadinessStatus::Reproducible,
         unsupported_scopes: Vec::new(),
     }

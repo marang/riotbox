@@ -926,8 +926,11 @@ Additional receipt fields required before wider export scopes:
 - stronger QA gate ids and results that prove future claimed artifact roles are
   not silent, fallback-collapsed, misplaced, or hash-unstable beyond the current
   product-export reproducibility smoke gate
-- host-audio evidence refs for live recording only, including device/host,
-  callback-gap summary, stream errors, and recording duration
+- `live_recording_host_audio_refs[]` for live-recording receipt evidence only,
+  including `host`, `device`, `recording_duration_ms`,
+  `callback_gap_summary`, and `stream_error_summary`. These refs prove the
+  capture environment for future readiness gates; they are not a capture
+  command, writer, or hidden app-local state.
 
 These fields must remain in Session/Core models. They must not be hidden in
 JamAppState or observer-only state.

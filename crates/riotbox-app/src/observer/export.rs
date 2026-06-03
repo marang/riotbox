@@ -242,6 +242,14 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
         object.insert("proof_stack".into(), json!(proof_stack));
     }
 
+    if receipt.export_scope == ExportScope::LiveRecording {
+        let object = snapshot.as_object_mut().expect("receipt snapshot object");
+        object.insert(
+            "live_recording_host_audio_refs".into(),
+            json!(receipt.live_recording_host_audio_refs),
+        );
+    }
+
     snapshot
 }
 
