@@ -58,6 +58,7 @@ mod tests {
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
+            | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -84,6 +85,7 @@ mod tests {
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
+            | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -112,6 +114,7 @@ mod tests {
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
+            | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -135,6 +138,7 @@ mod tests {
             | LaunchMode::StemPackageLocalCiReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
+            | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -310,6 +314,12 @@ mod tests {
         use super::*;
 
         include!("tests/daw_session_json_package_cli.rs");
+    }
+
+    mod daw_session_json_package_evidence_cli {
+        use super::*;
+
+        include!("tests/daw_session_json_package_evidence_cli.rs");
     }
 
     mod source_timing_confirm_control {

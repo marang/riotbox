@@ -1348,6 +1348,11 @@ Today the repo already has:
     the `daw_session_json_package_integrity` QA gate. This proves receipt
     handoff of JSON package evidence only; it still does not prove DAW host
     import correctness, observer lifecycle completion, or audible output.
+    `riotbox-app --daw-session-json-package-evidence-apply --session
+    <session.json> --daw-session-destination <dir>` is the current real-binary
+    path for that handoff, and `just
+    daw-session-json-package-evidence-apply-smoke` proves the saved Session
+    receipt evidence after the package execute path.
   - current DAW session surface gate keeps musician-facing DAW export disabled
     even when receipt and JSON package evidence are ready. The remaining
     blockers explicitly name developer-only status, missing DAW writer, missing

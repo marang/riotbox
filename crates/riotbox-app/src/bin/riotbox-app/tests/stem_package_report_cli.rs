@@ -18,6 +18,7 @@ fn parse_args_builds_stem_package_local_ci_report_mode() {
         | LaunchMode::StemPackageLocalCiExecute { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
+        | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected stem package report mode")
         }
