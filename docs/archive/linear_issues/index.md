@@ -946,4 +946,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Surface DAW session payload preview in writer plan
 - [RIOTBOX-1145.md](./RIOTBOX-1145.md)
   P016: Add DAW session tempo-map payload contract
+- [RIOTBOX-1146.md](./RIOTBOX-1146.md)
+  P016: Surface DAW tempo-map payload preview in writer plan
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
