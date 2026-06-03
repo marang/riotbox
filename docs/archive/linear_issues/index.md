@@ -1000,4 +1000,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Define first live-recording export receipt boundary
 - [RIOTBOX-1172.md](./RIOTBOX-1172.md)
   P016: Extract export action and receipt contract tests from oversized Core modules
+- [RIOTBOX-1173.md](./RIOTBOX-1173.md)
+  P016: Add reserved live-recording export queue guard
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
