@@ -70,6 +70,14 @@ fn observer_snapshot_reports_committed_daw_session_writer_lifecycle() {
         "missing"
     );
     assert_eq!(
+        lifecycle[2]["receipt"]["proof_stack"]["status"],
+        "partial"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!(["host_import_proof", "audible_output_proof"])
+    );
+    assert_eq!(
         lifecycle[2]["receipt"]["artifact_set"][3]["role"],
         "daw_session_writer_proof"
     );
@@ -181,6 +189,14 @@ fn observer_snapshot_reports_committed_daw_session_host_import_lifecycle() {
         "missing"
     );
     assert_eq!(
+        lifecycle[5]["receipt"]["proof_stack"]["status"],
+        "partial"
+    );
+    assert_eq!(
+        lifecycle[5]["receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!(["audible_output_proof"])
+    );
+    assert_eq!(
         snapshot["export"]["daw_session_surface_gate"]["blockers"],
         serde_json::json!(["developer_proof_only", "audible_output_proof_missing"])
     );
@@ -241,6 +257,18 @@ fn observer_snapshot_reports_committed_daw_session_audible_output_lifecycle() {
     assert_eq!(
         lifecycle[8]["receipt"]["proof_gates"]["audible_output_proof"]["status"],
         "passed"
+    );
+    assert_eq!(
+        lifecycle[8]["receipt"]["proof_stack"]["status"],
+        "complete_developer_proof_only"
+    );
+    assert_eq!(
+        lifecycle[8]["receipt"]["proof_stack"]["all_required_proofs_passed"],
+        true
+    );
+    assert_eq!(
+        lifecycle[8]["receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!([])
     );
     assert_eq!(
         snapshot["export"]["daw_session_surface_gate"]["blockers"],

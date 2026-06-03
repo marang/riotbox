@@ -11,7 +11,9 @@ use riotbox_core::{
 use serde_json::{Value, json};
 
 use crate::jam_app::daw_export_proof_gates::proof_gates_summary;
-use crate::jam_app::{DawSessionExportSurfaceGate, StemPackageExportSurfaceGate};
+use crate::jam_app::{
+    DawSessionExportSurfaceGate, StemPackageExportSurfaceGate, daw_export_proof_stack_summary,
+};
 use crate::ui::JamShellState;
 
 pub(super) fn export_observer_snapshot(shell: &JamShellState) -> Value {
@@ -233,7 +235,10 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
             daw_tempo_map_observer_snapshot(receipt).expect("daw session tempo-map readiness"),
         );
         object.insert("daw_tempo_map_ref".into(), json!(receipt.daw_tempo_map_ref));
-        object.insert("proof_gates".into(), json!(proof_gates_summary(receipt)));
+        let proof_gates = proof_gates_summary(receipt);
+        let proof_stack = daw_export_proof_stack_summary(&proof_gates);
+        object.insert("proof_gates".into(), json!(proof_gates));
+        object.insert("proof_stack".into(), json!(proof_stack));
     }
 
     snapshot

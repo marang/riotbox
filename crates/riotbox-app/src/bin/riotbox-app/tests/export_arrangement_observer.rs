@@ -73,6 +73,16 @@ fn observer_snapshot_projects_blocked_arrangement_placement_from_receipt() {
         "DAW tempo-map evidence is missing"
     );
     assert_eq!(receipt["daw_tempo_map_ref"], serde_json::Value::Null);
+    assert_eq!(receipt["proof_stack"]["status"], "partial");
+    assert_eq!(
+        receipt["proof_stack"]["missing_layers"],
+        serde_json::json!([
+            "json_package_integrity",
+            "writer_proof",
+            "host_import_proof",
+            "audible_output_proof"
+        ])
+    );
 }
 
 #[test]
@@ -209,6 +219,14 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
             ["artifact_available"],
         false
     );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["status"],
+        "partial"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!(["writer_proof", "host_import_proof", "audible_output_proof"])
+    );
 }
 
 #[test]
@@ -292,6 +310,18 @@ fn observer_snapshot_projects_daw_session_receipt_summary_without_fake_lifecycle
     assert_eq!(
         snapshot["export"]["daw_session_receipt"]["artifact_set"][1]["role"],
         "daw_session_tempo_map"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["status"],
+        "partial"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["all_required_proofs_passed"],
+        false
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!(["writer_proof", "host_import_proof", "audible_output_proof"])
     );
     assert_eq!(
         snapshot["export"]["daw_session_surface_gate"]["status"],
@@ -386,6 +416,14 @@ fn observer_snapshot_projects_daw_writer_proof_without_fake_lifecycle() {
     assert_eq!(
         proof_gates["writer_proof"]["artifacts"][0]["location"],
         "daw-out/daw_session_writer/writer_proof.json"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["status"],
+        "partial"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!(["host_import_proof", "audible_output_proof"])
     );
     assert_eq!(
         snapshot["export"]["daw_session_surface_gate"]["blockers"],

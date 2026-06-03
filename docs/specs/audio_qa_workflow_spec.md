@@ -1450,11 +1450,11 @@ Today the repo already has:
     availability. It is still not host-import proof and not audible-output
     proof.
   - current observer export snapshot also projects the latest DAW-session
-    receipt's `proof_gates` so observer consumers see the same JSON package,
-    writer-proof, host-import, and audible-output proof state as the operator
-    report. This read-only receipt summary is not an `export.daw_session`
-    lifecycle claim; lifecycle records are emitted only when a real queued
-    action exists.
+    receipt's `proof_gates` and `proof_stack` so observer consumers see the same
+    JSON package, writer-proof, host-import, and audible-output proof state as
+    the operator report. This read-only receipt summary is not an
+    `export.daw_session` lifecycle claim; lifecycle records are emitted only
+    when a real queued action exists.
   - DAW-session release blockers are cleared only by their own proof layer:
     JSON package evidence clears only JSON package blockers, writer proof
     clears only `daw_writer_missing`, host-import proof clears only
@@ -1510,9 +1510,9 @@ Today the repo already has:
   not permission to surface `export.stem_package` as runnable.
   For `export_scope: daw_session` receipts, observer snapshots also project the
   latest DAW-session receipt as top-level `daw_session_receipt` evidence so
-  package/placement/tempo-map proof is visible before `export.daw_session`
-  exists. This must remain read-only evidence projection and must not invent DAW
-  export lifecycle records.
+  package/placement/tempo-map proof plus proof-stack state is visible before
+  `export.daw_session` exists. This must remain read-only evidence projection
+  and must not invent DAW export lifecycle records.
   Current app observer lifecycle projection includes `export.stem_package` and
   `export.daw_session` actions from action log, queue history, and pending queue
   state. Failed reserved attempts have typed failure reasons and no receipt;
