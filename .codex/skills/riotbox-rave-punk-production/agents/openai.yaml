@@ -1,0 +1,4 @@
+interface:
+  display_name: "Riotbox Rave-Punk Production"
+  short_description: "Shape Riotbox toward aggressive playable breakbeats"
+  default_prompt: "Use $riotbox-rave-punk-production to shape this Riotbox feature toward aggressive sample-based rave-punk production values."

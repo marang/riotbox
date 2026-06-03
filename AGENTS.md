@@ -6,6 +6,11 @@ Use this file as the local operating brief for coding agents working in Riotbox.
 
 Riotbox is transitioning from planning into implementation. Keep implementation aligned with `docs/`, `plan/`, Linear, and Git history. If implementation and planning diverge, update the relevant spec or decision log instead of silently inventing behavior.
 
+The project-owned Codex skills live under `.codex/skills/`; treat those files
+as canonical. Do not keep separate Riotbox skill copies under
+`$HOME/.codex/skills`. Use home-directory symlinks only as a temporary fallback
+for older Codex runtimes that cannot discover project-local skills.
+
 When the local `riotbox-development` skill is available, use it for Riotbox development work. That skill captures the expectation that agents act as senior software engineers, senior audio engineers, and musician-users of the instrument.
 
 When Riotbox work affects audible character, pattern quality, slices, loops, presets, demos, drum/bass behavior, or performance controls, also use the local `riotbox-rave-punk-production` skill when available. That skill captures the aggressive sample-based rave/punk production pressure Riotbox should be shaped by: hard hooks, physical drums, bass pressure, destructive variations, live triggerability, and clear failure modes for polite, generic, or placeholder output.

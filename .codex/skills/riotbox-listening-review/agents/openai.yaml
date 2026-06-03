@@ -1,0 +1,4 @@
+interface:
+  display_name: "Riotbox Listening Review"
+  short_description: "Run structured human listening review for Riotbox audible changes."
+  default_prompt: "Use this skill for Riotbox audible PRs that need structured listening-review packs, human_verdict handling, or musician-facing taste verdicts."
