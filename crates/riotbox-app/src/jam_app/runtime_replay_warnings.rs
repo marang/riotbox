@@ -233,7 +233,9 @@ const fn replay_command_family(command: ActionCommand) -> &'static str {
         ActionCommand::SnapshotSave | ActionCommand::SnapshotLoad => "Snapshot",
         ActionCommand::UndoLast | ActionCommand::RedoLast => "Undo",
         ActionCommand::RestoreSource => "Source",
-        ActionCommand::ExportProductMix | ActionCommand::ExportStemPackage => "Export",
+        ActionCommand::ExportProductMix
+        | ActionCommand::ExportStemPackage
+        | ActionCommand::ExportDawSession => "Export",
         ActionCommand::MutateLane
         | ActionCommand::MutateLoop
         | ActionCommand::MutatePattern

@@ -1394,7 +1394,11 @@ Today the repo already has:
     `daw_session.local_project_writer_v1` for a future runnable
     `export.daw_session` command. It must sit after the CI-safe
     `daw_session.json_package_writer_v1` JSON package proof and before
-    host-import or audible-output proof.
+    host-import or audible-output proof. Current code also has a typed reserved
+    `export.daw_session` queue-history guard that rejects attempts with the DAW
+    surface-gate reason and records destination/receipt intent without writing
+    files, receipts, observer lifecycle records, host checks, or proof
+    artifacts.
   - current DAW-session writer proof skeleton writes only bounded local proof
     artifacts through `riotbox-app --daw-session-writer-proof-execute
     --session <session.json> --daw-session-destination <dir>`. The proof
