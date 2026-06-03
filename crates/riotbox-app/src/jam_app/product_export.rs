@@ -345,7 +345,7 @@ fn resolve_proof_artifact_path(proof_path: &Path, artifact_path: &str) -> PathBu
     }
 }
 
-fn sha256_file(path: &Path) -> Result<String, JamAppError> {
+pub(super) fn sha256_file(path: &Path) -> Result<String, JamAppError> {
     let mut digest = Sha256::new();
     let mut file = fs::File::open(path)?;
     let mut buffer = [0_u8; 64 * 1024];

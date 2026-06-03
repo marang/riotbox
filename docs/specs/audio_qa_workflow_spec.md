@@ -1213,6 +1213,14 @@ Today the repo already has:
     destination and bounded drums/bass claims, then returns final artifact
     identities without writing WAV/JSON files, hashing outputs, running audio
     metrics, or producing listening-review evidence.
+  - current CI writer proof emits files for that boundary inside
+    `riotbox-app::jam_app::stem_package_writer`: deterministic drums/bass WAVs
+    are written through a staging directory and promoted into the final package
+    layout, decoded for format and non-silence metrics, hashed from the final
+    paths, represented in `artifact_set[]`, and paired with manifest/proof JSON
+    hashes. A repeated fixture run proves stable per-stem hashes for identical
+    inputs. No structured listening-review pack exists for this proof; it is
+    CI-safe written-artifact evidence with `human_verdict: unverified`.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

@@ -395,6 +395,16 @@ Contract for reserved `export.stem_package`:
   `stem_package.local_ci_package_v1`, rejects unsupported claims before side
   effects, and does not write files, hash artifacts, build receipts, or make
   `export.stem_package` runnable.
+- Current CI writer proof:
+  `riotbox-app::jam_app::stem_package_writer` is the first app-side
+  file-emission proof for `stem_package.local_ci_package_v1`. It writes
+  deterministic drums/bass fixture WAVs into a staging package directory,
+  decodes/measures/hashes the promoted final files, writes manifest/proof JSON,
+  records final `artifact_set[]` identities, and proves receipt readiness with
+  the required stem-package QA gates. This is still an internal proof boundary:
+  the UI, Ghost, observer command surface, and CLI must not present
+  `export.stem_package` as generally runnable until the explicit commit and
+  lifecycle slice lands.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry only role, location, and media type,
