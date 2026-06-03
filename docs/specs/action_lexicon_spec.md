@@ -388,6 +388,13 @@ Contract for reserved `export.stem_package`:
   commit record, observer completion, and `ExportReceiptState` together. A
   failed writer may record a rejected/failed action and observer failure, but
   must not commit a ready receipt or infer missing artifacts during replay.
+- Current code-level skeleton:
+  `riotbox-core::stem_package_writer::plan_stem_package_local_ci_package`
+  validates the local boundary request and plans final package artifact
+  identities only. It accepts the bounded drums/bass role set for
+  `stem_package.local_ci_package_v1`, rejects unsupported claims before side
+  effects, and does not write files, hash artifacts, build receipts, or make
+  `export.stem_package` runnable.
 - Manifest/proof identity rule: JSON file hashes live in the receipt
   `artifact_set[]` entries after those files are written. The typed
   manifest/proof payload identities carry only role, location, and media type,
