@@ -13,6 +13,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut stem_package_local_ci_execute = false;
     let mut stem_package_local_ci_report = false;
     let mut daw_export_readiness_report = false;
+    let mut daw_session_json_package_execute = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
     let mut daw_session_destination_path = None;
@@ -24,6 +25,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--stem-package-local-ci-execute" => stem_package_local_ci_execute = true,
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
+            "--daw-session-json-package-execute" => daw_session_json_package_execute = true,
             "--daw-session-writer-plan" => daw_session_writer_plan = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
@@ -93,9 +95,18 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     if daw_export_readiness_report && stem_package_mode_count > 0 {
         return Err("DAW export readiness report cannot be combined with stem package modes".into());
     }
-    if daw_session_writer_plan && (stem_package_mode_count > 0 || daw_export_readiness_report) {
+    let daw_session_mode_count = [daw_session_json_package_execute, daw_session_writer_plan]
+        .into_iter()
+        .filter(|enabled| *enabled)
+        .count();
+    if daw_session_mode_count > 1 {
         return Err(
-            "DAW session writer plan cannot be combined with stem package modes or DAW readiness report"
+            "DAW session JSON package execute and writer plan modes cannot be combined".into(),
+        );
+    }
+    if daw_session_mode_count > 0 && (stem_package_mode_count > 0 || daw_export_readiness_report) {
+        return Err(
+            "DAW session modes cannot be combined with stem package modes or DAW readiness report"
                 .into(),
         );
     }
@@ -208,6 +219,35 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             observer_path: None,
         });
     }
+    if daw_session_json_package_execute {
+        if source_path.is_some()
+            || source_graph_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || observer_path.is_some()
+            || stem_package_destination_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "DAW session JSON package execute reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "DAW session JSON package execute requires --session <session.json>".to_string()
+        })?;
+        let destination_path = daw_session_destination_path.ok_or_else(|| {
+            "DAW session JSON package execute requires --daw-session-destination <dir>".to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::DawSessionJsonPackageExecute {
+                session_path,
+                destination_path,
+            },
+            observer_path: None,
+        });
+    }
     if daw_session_writer_plan {
         if source_path.is_some()
             || source_graph_path.is_some()
@@ -244,7 +284,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         );
     }
     if daw_session_destination_path.is_some() {
-        return Err("--daw-session-destination requires --daw-session-writer-plan".into());
+        return Err(
+            "--daw-session-destination requires --daw-session-writer-plan or --daw-session-json-package-execute"
+                .into(),
+        );
     }
 
     let session_path = session_path.unwrap_or_else(|| PathBuf::from(DEFAULT_SESSION_PATH));
@@ -297,7 +340,7 @@ fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String>
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-execute --session <session.json> --daw-session-destination <dir>\n\nDefaults:\n  --session {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -311,6 +354,7 @@ impl LaunchMode {
             | Self::StemPackageLocalCiExecute { .. }
             | Self::StemPackageLocalCiReport { .. }
             | Self::DawExportReadinessReport { .. }
+            | Self::DawSessionJsonPackageExecute { .. }
             | Self::DawSessionWriterPlan { .. } => ShellLaunchMode::Load,
         }
     }
@@ -407,83 +451,5 @@ impl UserSessionObserver {
         serde_json::to_writer(&mut self.writer, &event).map_err(io::Error::other)?;
         writeln!(self.writer)?;
         self.writer.flush()
-    }
-}
-
-fn launch_summary(launch: &AppLaunch) -> Value {
-    match &launch.mode {
-        LaunchMode::Load {
-            session_path,
-            source_graph_path,
-        } => json!({
-            "mode": "load",
-            "session_path": session_path,
-            "source_graph_path": source_graph_path,
-            "observer_path": launch.observer_path,
-        }),
-        LaunchMode::Ingest {
-            source_path,
-            session_path,
-            source_graph_path,
-            sidecar_script_path,
-            analysis_seed,
-        } => json!({
-            "mode": "ingest",
-            "source_path": source_path,
-            "session_path": session_path,
-            "source_graph_path": source_graph_path,
-            "sidecar_script_path": sidecar_script_path,
-            "analysis_seed": analysis_seed,
-            "observer_path": launch.observer_path,
-        }),
-        LaunchMode::StemPackageLocalCiDryRun {
-            destination_path,
-            claimed_stem_roles,
-        } => json!({
-            "mode": "stem_package_local_ci_dry_run",
-            "destination_path": destination_path,
-            "claimed_stem_roles": claimed_stem_roles
-                .iter()
-                .copied()
-                .map(export_artifact_role_label)
-                .collect::<Vec<_>>(),
-            "observer_path": launch.observer_path,
-        }),
-        LaunchMode::StemPackageLocalCiExecute {
-            session_path,
-            source_graph_path,
-            destination_path,
-            claimed_stem_roles,
-        } => json!({
-            "mode": "stem_package_local_ci_execute",
-            "session_path": session_path,
-            "source_graph_path": source_graph_path,
-            "destination_path": destination_path,
-            "claimed_stem_roles": claimed_stem_roles
-                .iter()
-                .copied()
-                .map(export_artifact_role_label)
-                .collect::<Vec<_>>(),
-            "observer_path": launch.observer_path,
-        }),
-        LaunchMode::StemPackageLocalCiReport { session_path } => json!({
-            "mode": "stem_package_local_ci_report",
-            "session_path": session_path,
-            "observer_path": launch.observer_path,
-        }),
-        LaunchMode::DawExportReadinessReport { session_path } => json!({
-            "mode": "daw_export_readiness_report",
-            "session_path": session_path,
-            "observer_path": launch.observer_path,
-        }),
-        LaunchMode::DawSessionWriterPlan {
-            session_path,
-            destination_path,
-        } => json!({
-            "mode": "daw_session_writer_plan",
-            "session_path": session_path,
-            "destination_path": destination_path,
-            "observer_path": launch.observer_path,
-        }),
     }
 }

@@ -24,6 +24,8 @@ use super::{
     product_export::sha256_file,
 };
 
+pub const DAW_SESSION_JSON_PACKAGE_WRITER_BOUNDARY_ID: &str = "daw_session.json_package_writer_v1";
+
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct WrittenDawSessionJsonPackage {
     pub package_dir: PathBuf,

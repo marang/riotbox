@@ -68,7 +68,10 @@ use capture_helpers::{
 pub use daw_export_operator_report::{
     DawExportOperatorReadinessReport, daw_export_operator_readiness_report,
 };
-pub use daw_session_json_writer::{WrittenDawSessionJsonPackage, write_daw_session_json_package};
+pub use daw_session_json_writer::{
+    DAW_SESSION_JSON_PACKAGE_WRITER_BOUNDARY_ID, WrittenDawSessionJsonPackage,
+    write_daw_session_json_package,
+};
 pub use daw_session_package_report::{
     DawSessionJsonPackageReceiptEvidenceError, DawSessionJsonPackageReport,
     attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
