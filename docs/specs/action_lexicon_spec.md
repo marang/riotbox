@@ -574,6 +574,12 @@ Contract for `export.stem_package`:
   writes only the Session file. It does not write package files, emit observer
   lifecycle events, create DAW host/project files, validate DAW host import
   correctness, claim audible output, or surface `export.daw_session`.
+- Current DAW host-import proof gate:
+  `daw_session_host_import_proof` is a reserved receipt QA gate for future DAW
+  host import evidence. The DAW session surface gate treats missing or failed
+  host-import proof as `daw_host_import_proof_missing`; a passed gate removes
+  only that blocker while `developer_proof_only`, `daw_writer_missing`, and
+  `audible_output_proof_missing` keep `export.daw_session` disabled.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

@@ -1358,6 +1358,11 @@ Today the repo already has:
     blockers explicitly name developer-only status, missing DAW writer, missing
     DAW host-import proof, and missing audible-output proof so JSON package
     success is not mistaken for a playable DAW export.
+  - current DAW host-import proof evidence is a reserved receipt QA gate:
+    `daw_session_host_import_proof`. Missing or failed proof keeps
+    `daw_host_import_proof_missing` visible; passed proof removes only that
+    blocker and still does not prove audible output or make `export.daw_session`
+    runnable.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

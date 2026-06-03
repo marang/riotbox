@@ -2,7 +2,10 @@ use riotbox_core::{
     export_readiness::{
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID, ExportScope, ProductExportBoundary, ProductExportRole,
     },
-    session::{DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, ExportReceiptQaGateStatus, SessionFile},
+    session::{
+        DAW_SESSION_HOST_IMPORT_QA_GATE_ID, DAW_SESSION_JSON_PACKAGE_QA_GATE_ID,
+        ExportReceiptQaGateStatus, SessionFile,
+    },
 };
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -146,16 +149,26 @@ pub fn daw_session_export_surface_gate_for_session(
         Some(_) => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageIntegrityBlocked),
         None => blockers.push(DawSessionExportSurfaceBlocker::JsonPackageEvidenceMissing),
     }
-
     blockers.extend([
         DawSessionExportSurfaceBlocker::DeveloperProofOnly,
         DawSessionExportSurfaceBlocker::DawWriterMissing,
-        DawSessionExportSurfaceBlocker::DawHostImportProofMissing,
-        DawSessionExportSurfaceBlocker::AudibleOutputProofMissing,
     ]);
+    if !daw_session_host_import_proof_passed(receipt) {
+        blockers.push(DawSessionExportSurfaceBlocker::DawHostImportProofMissing);
+    }
+    blockers.push(DawSessionExportSurfaceBlocker::AudibleOutputProofMissing);
 
     DawSessionExportSurfaceGate {
         status: DawSessionExportSurfaceStatus::Disabled,
         blockers,
     }
+}
+
+fn daw_session_host_import_proof_passed(
+    receipt: &riotbox_core::session::ExportReceiptState,
+) -> bool {
+    receipt.qa_gates.iter().any(|gate| {
+        gate.gate_id == DAW_SESSION_HOST_IMPORT_QA_GATE_ID
+            && gate.status == ExportReceiptQaGateStatus::Passed
+    })
 }
