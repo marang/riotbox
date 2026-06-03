@@ -914,4 +914,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add CI-safe stem-package writer file-emission proof
 - [RIOTBOX-1129.md](./RIOTBOX-1129.md)
   P016: Add stem-package writer observer lifecycle proof
+- [RIOTBOX-1131.md](./RIOTBOX-1131.md)
+  P016: Commit local CI stem-package writer through export action
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
