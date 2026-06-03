@@ -619,6 +619,14 @@ Additional receipt fields required before wider export scopes:
   `bpm_micros`. Missing tempo-map refs, blank source ids, non-advancing beat
   ranges, and zero tempo are readiness blockers distinct from missing
   arrangement placement and missing local files.
+- DAW / arrangement receipts may carry written JSON package evidence in
+  `artifact_set[]` plus `qa_gates[]`: `export_manifest`,
+  `daw_session_tempo_map`, and `product_export_proof` entries own local JSON
+  paths and SHA-256 values, while the
+  `daw_session_json_package_integrity` QA gate records whether manifest,
+  tempo-map, proof, schema, and proof/manifest hash checks passed or failed.
+  This evidence belongs to Session/Core receipt truth and must not be recreated
+  from observer-only state.
 - bar/beat placement ranges and richer timing placement evidence beyond the
   current confirmed grid source/action reference
 - source capture refs and capture-lineage refs for source-backed stems or
@@ -736,6 +744,12 @@ Additional receipt fields required before wider export scopes:
   expected schema ids, and proof/manifest hash linkage blockers. It does not
   create files, repair packages, mutate Session, emit observer events, validate
   host import correctness, or make `export.daw_session` runnable.
+- `riotbox-app::jam_app::attach_daw_session_json_package_evidence_to_receipt`
+  is the current bridge from that local report into receipt evidence. It records
+  final JSON package artifacts as `artifact_set[]` entries and records
+  `daw_session_json_package_integrity` in `qa_gates[]`. It is a typed receipt
+  adapter only; callers still decide when a Session receipt may be mutated, and
+  this does not make `export.daw_session` runnable.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

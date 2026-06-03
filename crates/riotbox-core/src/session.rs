@@ -13,7 +13,7 @@ pub use daw_tempo_map::{
     ExportDawTempoMapRef, validate_daw_tempo_map_readiness,
 };
 pub use export_qa_gates::{
-    ExportReceiptQaGateResult, ExportReceiptQaGateStatus,
+    DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, ExportReceiptQaGateResult, ExportReceiptQaGateStatus,
     PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,
     STEM_PACKAGE_FALLBACK_COMPARISON_QA_GATE_ID, STEM_PACKAGE_HASH_STABILITY_QA_GATE_ID,
     STEM_PACKAGE_LINEAGE_QA_GATE_ID, STEM_PACKAGE_NON_SILENCE_QA_GATE_ID,

@@ -90,6 +90,21 @@ fn export_manifest_artifact_entry_uses_json_manifest_identity() {
 }
 
 #[test]
+fn daw_session_tempo_map_artifact_entry_uses_json_identity() {
+    let entry = ExportArtifactSetEntry::daw_session_tempo_map(
+        "exports/daw_session/tempo_map.json",
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    );
+
+    assert_json_artifact_entry(
+        &entry,
+        ExportArtifactRole::DawSessionTempoMap,
+        "exports/daw_session/tempo_map.json",
+        "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+    );
+}
+
+#[test]
 fn export_receipts_roundtrip_with_session_file() {
     let mut session = SessionFile::new("session-export", "0.1.0", "2026-05-31T00:00:00Z");
     session.export_receipts.push(fixture_receipt());

@@ -544,6 +544,13 @@ Contract for `export.stem_package`:
   verifies proof-to-manifest hash linkage, and reports typed blockers for
   missing files, invalid JSON, schema mismatches, or hash mismatch. It writes no
   files and still does not make `export.daw_session` runnable.
+- Current DAW JSON package receipt evidence:
+  `daw_session_json_package_integrity` is the receipt QA gate for a written
+  local DAW JSON package. Ready packages attach `export_manifest`,
+  `daw_session_tempo_map`, and `product_export_proof` entries to
+  `artifact_set[]`; blocked packages attach a failed gate with blocker summary
+  and only the readable JSON artifacts whose hashes exist. This is receipt
+  evidence only and does not make `export.daw_session` runnable.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
@@ -580,7 +587,9 @@ Contract for `export.stem_package`:
   labels from `validate_stem_package_receipt_readiness`. For `export_scope:
   daw_session` receipts, observer snapshots may include
   `arrangement_placement_readiness`, `arrangement_placement_refs[]`,
-  `daw_tempo_map_readiness`, and `daw_tempo_map_ref` from the Session receipt.
+  `daw_tempo_map_readiness`, `daw_tempo_map_ref`, `artifact_set[]`, and
+  `qa_gates[]` including `daw_session_json_package_integrity` from the Session
+  receipt.
   Observer state must not become a second package, timing, or arrangement
   truth.
   Current app observer implementation includes both `export.product_mix` and

@@ -186,7 +186,8 @@ fn stem_artifact_role_short_label(role: ExportArtifactRole) -> Option<&'static s
         ExportArtifactRole::StemVocals => Some("vocals"),
         ExportArtifactRole::FullGridMix
         | ExportArtifactRole::ProductExportProof
-        | ExportArtifactRole::ExportManifest => None,
+        | ExportArtifactRole::ExportManifest
+        | ExportArtifactRole::DawSessionTempoMap => None,
     }
 }
 

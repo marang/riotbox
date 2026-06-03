@@ -70,7 +70,8 @@ pub use daw_export_operator_report::{
 };
 pub use daw_session_json_writer::{WrittenDawSessionJsonPackage, write_daw_session_json_package};
 pub use daw_session_package_report::{
-    DawSessionJsonPackageReport, daw_session_json_package_report,
+    DawSessionJsonPackageReceiptEvidenceError, DawSessionJsonPackageReport,
+    attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
 };
 pub use daw_session_writer_plan::{DawSessionWriterPlan, daw_session_writer_plan};
 pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_REASON};

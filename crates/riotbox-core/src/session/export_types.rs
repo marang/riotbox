@@ -340,6 +340,11 @@ impl ExportArtifactSetEntry {
     }
 
     #[must_use]
+    pub fn daw_session_tempo_map(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self::local_json_artifact(ExportArtifactRole::DawSessionTempoMap, path, sha256)
+    }
+
+    #[must_use]
     pub fn location_identity(&self) -> &str {
         match &self.location {
             ExportArtifactLocation::LocalPath { path }
@@ -413,6 +418,7 @@ pub enum ExportArtifactRole {
     StemVocals,
     ProductExportProof,
     ExportManifest,
+    DawSessionTempoMap,
 }
 
 impl ExportArtifactRole {

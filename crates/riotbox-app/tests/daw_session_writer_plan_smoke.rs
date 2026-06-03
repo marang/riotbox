@@ -1,7 +1,8 @@
 use std::{fs, path::Path, process::Command};
 
 use riotbox_app::jam_app::{
-    daw_session_json_package_report, daw_session_writer_plan, write_daw_session_json_package,
+    attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
+    daw_session_writer_plan, write_daw_session_json_package,
 };
 use riotbox_core::{
     export_readiness::{
@@ -12,7 +13,8 @@ use riotbox_core::{
     ids::{ActionId, SourceId},
     persistence::save_session_json,
     session::{
-        ExportArrangementPlacementRef, ExportArtifactSetEntry, ExportDawTempoMapRef,
+        DAW_SESSION_JSON_PACKAGE_QA_GATE_ID, ExportArrangementPlacementRef, ExportArtifactRole,
+        ExportArtifactSetEntry, ExportDawTempoMapRef, ExportReceiptQaGateStatus,
         ExportReceiptState, SessionFile,
     },
 };
@@ -212,6 +214,45 @@ fn daw_session_json_package_report_smoke_validates_written_package() {
         "riotbox.daw_session_proof"
     );
 
+    let mut evidenced_receipt = session.export_receipts[0].clone();
+    attach_daw_session_json_package_evidence_to_receipt(
+        &mut evidenced_receipt,
+        &daw_session_json_package_report(&destination_path),
+    )
+    .expect("attach DAW package evidence");
+    assert_eq!(
+        evidenced_receipt
+            .artifact_set
+            .iter()
+            .map(|artifact| artifact.role)
+            .collect::<Vec<_>>(),
+        vec![
+            ExportArtifactRole::ExportManifest,
+            ExportArtifactRole::DawSessionTempoMap,
+            ExportArtifactRole::ProductExportProof,
+        ]
+    );
+    assert!(
+        evidenced_receipt
+            .artifact_set
+            .iter()
+            .all(|artifact| artifact.location_identity().contains("daw_session"))
+    );
+    let package_gate = evidenced_receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == DAW_SESSION_JSON_PACKAGE_QA_GATE_ID)
+        .expect("DAW package gate");
+    assert_eq!(package_gate.status, ExportReceiptQaGateStatus::Passed);
+    assert_eq!(
+        package_gate.artifact_roles,
+        vec![
+            ExportArtifactRole::ExportManifest,
+            ExportArtifactRole::DawSessionTempoMap,
+            ExportArtifactRole::ProductExportProof,
+        ]
+    );
+
     let proof_file = destination_path.join("daw_session/daw_session_proof.json");
     let mut proof_json: Value =
         serde_json::from_slice(&fs::read(&proof_file).expect("read proof")).expect("proof json");
@@ -227,6 +268,25 @@ fn daw_session_json_package_report_smoke_validates_written_package() {
     assert_eq!(
         mismatch_report["blockers"],
         Value::Array(vec!["proof_manifest_hash_mismatch".into()])
+    );
+    let mut blocked_receipt = session.export_receipts[0].clone();
+    attach_daw_session_json_package_evidence_to_receipt(
+        &mut blocked_receipt,
+        &daw_session_json_package_report(&destination_path),
+    )
+    .expect("attach blocked DAW package evidence");
+    let blocked_gate = blocked_receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == DAW_SESSION_JSON_PACKAGE_QA_GATE_ID)
+        .expect("blocked DAW package gate");
+    assert_eq!(blocked_gate.status, ExportReceiptQaGateStatus::Failed);
+    assert!(
+        blocked_gate
+            .summary
+            .as_deref()
+            .expect("summary")
+            .contains("proof_manifest_hash_mismatch")
     );
 
     let tempo_map_file = destination_path.join("daw_session/tempo_map.json");
