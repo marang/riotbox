@@ -1057,6 +1057,11 @@ Today the repo already has:
   stem-package artifact-set, hash-stability, non-silence, lineage, and
   fallback-comparison gate set; it must not reuse the product-mix
   `feral-grid-demo/full_grid_mix` identity.
+- `just stem-package-local-ci-report-smoke` is the CI-safe operator-report
+  smoke for that proof path. It creates a temp local CI package through the CLI,
+  validates the ready read-only report, removes one stem file, and validates the
+  blocked missing-file report. It proves report/readiness plumbing only, not
+  final DAW export UX or listening approval.
 - the first export action boundary is `export.product_mix`, which writes a
   `full_grid_mix` product artifact plus proof receipt only after the existing
   product-export reproducibility proof and artifact hash check succeed. It is not a

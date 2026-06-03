@@ -562,3 +562,6 @@ full-grid-export-reproducibility-smoke:
 
 product-export-reproducibility-smoke:
     scripts/validate_full_grid_export_reproducibility.sh
+
+stem-package-local-ci-report-smoke:
+    cargo test -p riotbox-app --test stem_package_report_smoke -- --nocapture

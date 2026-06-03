@@ -634,6 +634,11 @@ Additional receipt fields required before wider export scopes:
   manifest/proof identities, QA gates, Core readiness blockers, and missing
   local package files without mutating the Session, writing observer events,
   regenerating artifacts, or treating product-mix receipts as stem packages.
+- `just stem-package-local-ci-report-smoke` is the bounded repo proof for that
+  operator report path. It runs the real CLI in a temp directory, creates a
+  local CI package Session, verifies the ready report, removes a stem file, and
+  verifies the missing-file report while keeping musician DAW export readiness
+  explicitly unclaimed.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
