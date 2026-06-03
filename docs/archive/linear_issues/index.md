@@ -906,4 +906,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add stem-package receipt readiness observer summary
 - [RIOTBOX-1125.md](./RIOTBOX-1125.md)
   P016: Add CI-safe stem-package ready-receipt fixture
+- [RIOTBOX-1126.md](./RIOTBOX-1126.md)
+  P016: Specify first bounded stem-package writer boundary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
