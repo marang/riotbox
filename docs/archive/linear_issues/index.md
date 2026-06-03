@@ -934,4 +934,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Gate musician-facing stem-package export surfacing
 - [RIOTBOX-1139.md](./RIOTBOX-1139.md)
   P016: Add arrangement export receipt placement contract skeleton
+- [RIOTBOX-1140.md](./RIOTBOX-1140.md)
+  P016: Add DAW tempo-map receipt readiness skeleton
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
