@@ -40,10 +40,20 @@ fn daw_export_readiness_report_smoke_covers_ready_for_writer_and_missing_file() 
     assert_eq!(ready_report["writes_files"], false);
     assert_eq!(ready_report["developer_proof_status"], "ready_for_writer");
     assert_eq!(
+        ready_report["proof_gates"]["writer_proof"]["status"],
+        "missing"
+    );
+    assert_eq!(
+        ready_report["proof_gates"]["writer_proof"]["artifact_available"],
+        false
+    );
+    assert_eq!(
         ready_report["release_blockers"],
         Value::Array(vec![
             "developer_proof_only".into(),
-            "daw_writer_missing".into()
+            "daw_writer_missing".into(),
+            "daw_host_import_proof_missing".into(),
+            "audible_output_proof_missing".into(),
         ])
     );
     assert_eq!(ready_report["readiness_blockers"], Value::Array(Vec::new()));
