@@ -349,6 +349,25 @@ Contract for reserved `export.stem_package`:
 - Commit semantics: commit only after all claimed stem artifacts and the package
   manifest/proof have been written, hashed, validated by stem-package QA gates,
   and attached to an `ExportReceiptState`.
+- Future writer order:
+  1. validate `StemPackageExport` params, claimed roles, destination kind, and
+     render boundary before any file write
+  2. render/write every claimed stem WAV outside the realtime audio callback
+  3. decode or inspect the written WAVs for format evidence and audio metrics
+  4. hash every written stem artifact
+  5. attach source graph, source capture, capture-lineage, and fallback
+     comparison evidence from Session/Core truth, not filenames or observer
+     state
+  6. construct a stem-package receipt draft and typed manifest/proof payload
+     from that receipt evidence
+  7. write manifest/proof JSON, hash the written JSON artifacts, validate the
+     receipt QA gates, then commit the action and receipt together
+  8. emit observer lifecycle records only from queue/history and Session
+     receipts
+- Writer precondition: the manifest/proof JSON identity contract must avoid a
+  self-hash cycle before a package writer can land. A writer must not claim
+  readiness if the manifest embeds a hash that can only be known after writing
+  the same manifest bytes.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
