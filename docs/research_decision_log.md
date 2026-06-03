@@ -1928,3 +1928,17 @@ Why: the P016 export spine now has the right typed places for evidence, but a `S
 Evidence: `docs/reviews/p016_export_qa_evidence_broad_review_2026-05-31.md` records the finding after RIOTBOX-1076, RIOTBOX-1075, RIOTBOX-1077, RIOTBOX-1078, and RIOTBOX-1079.
 Consequences: the next P016 slice should strengthen structural validation only. It should not implement stem writing, DAW export, live recording export, real source-vs-fallback rendering, or threshold interpretation.
 Status: accepted
+
+---
+
+### RBX-063
+
+Date: 2026-06-03
+Topic: Automated musical fitness reports reject known bad output modes without claiming taste approval
+Phase: P000 / Audio QA Workflow
+Question: how should Riotbox add a code-driven anti-bad-output gate without pretending metrics can certify musical taste?
+Decision: add `riotbox.automated_musical_fitness.v1` as a deterministic manifest-metrics validator. The report separates `technical_status`, `automated_musical_fitness_status`, `result`, selected candidate, failure codes, compact score breakdown, and `human_verdict: unverified`.
+Why: existing representative showcase checks were too showcase-specific and could encourage agents to treat one known-good example shape as musical quality. A stable automated fitness contract can reject silence, fallback collapse, source-fake/masked output, static loops, lane imbalance, and weak low-end/transient evidence while leaving human taste approval explicit and unverified.
+Evidence: RIOTBOX-1107 adds `scripts/validate_automated_musical_fitness.py`, deterministic positive/negative fixtures, and `docs/benchmarks/automated_musical_fitness_v1_2026-06-03.md`.
+Consequences: future fixture and CI work should broaden source families and cross-source examples instead of tuning around one representative showcase. Passing automated fitness means "no known bad-output mode caught", not "this sounds good".
+Status: accepted

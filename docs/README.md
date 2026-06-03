@@ -191,6 +191,7 @@ docs/
 - `benchmarks/listening_manifest_v1_json_contract_2026-04-29.md`: audio QA manifest v1 field-level JSON contract captured
 - `benchmarks/observer_audio_correlation_template_2026-04-29.md`: observer/audio correlation template captured
 - `benchmarks/observer_audio_summary_json_contract_2026-04-29.md`: observer/audio summary JSON contract captured
+- `benchmarks/automated_musical_fitness_v1_2026-06-03.md`: automated musical fitness report contract captured
 - `benchmarks/p011_exit_evidence_manifest.json`: machine-checkable P011 exit evidence index captured
 - `reviews/external_review_refresh_2026-05-22.md`: external review freshness, audio-QA, and runtime module-cut refresh captured
 - `reviews/tui_include_shell_audit_2026-05-22.md`: TUI include-shell ownership audit and leaf-first conversion recommendation captured
