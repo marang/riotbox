@@ -26,6 +26,7 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
     let mut missing = 0usize;
     let mut unreadable = 0usize;
     let mut missing_identity = 0usize;
+    let mut missing_placement = 0usize;
 
     for capture in &session.captures {
         match capture_artifacts::preflight_capture_artifact_hydration(capture, base_dir) {
@@ -82,6 +83,9 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
                     ..
                 },
             ) => unreadable += 1,
+            Err(product_export::ExportReceiptArtifactPreflightError::ArrangementPlacementBlocked {
+                ..
+            }) => missing_placement += 1,
         }
     }
 
@@ -93,6 +97,9 @@ pub(super) fn recovery_artifact_availability_label(candidate: &SessionRecoveryCa
     let mut blockers = Vec::new();
     if missing_identity > 0 {
         blockers.push(format!("{missing_identity} missing identity"));
+    }
+    if missing_placement > 0 {
+        blockers.push(format!("{missing_placement} missing placement"));
     }
     if missing > 0 {
         blockers.push(format!("{missing} missing"));

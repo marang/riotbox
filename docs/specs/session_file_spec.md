@@ -603,6 +603,16 @@ Additional receipt fields required before wider export scopes:
 - stem-package manifests must mirror that receipt evidence through the typed
   schema contract rather than inferring stem identity from filenames, folder
   names, or observer-only state
+- first arrangement / DAW placement receipt identity:
+  `export_scope: daw_session`, `pack_id: arrangement-daw-placement-contract`,
+  `export_role: arrangement_manifest`, and `export_boundary:
+  arrangement.daw_placement_contract_v1`. This is a contract skeleton only; it
+  does not write DAW files or make DAW export runnable.
+- DAW / arrangement receipts carry `arrangement_placement_refs[]` in Session
+  receipt truth. Each placement ref stores `scene_id`, optional `source_id`,
+  `start_bar`, `end_bar`, `start_beat`, and `end_beat`. Missing refs, blank
+  scene ids, reversed/zero bar ranges, and non-advancing beat ranges are
+  readiness blockers distinct from missing local files.
 - bar/beat placement ranges and richer timing placement evidence beyond the
   current confirmed grid source/action reference
 - source capture refs and capture-lineage refs for source-backed stems or
@@ -646,6 +656,13 @@ Additional receipt fields required before wider export scopes:
   verifies the missing-file report while keeping musician DAW export readiness
   explicitly unclaimed.
 - arrangement scene refs and bar/beat ranges for arrangement or DAW packages
+- `validate_arrangement_export_placement_readiness` is the typed receipt guard
+  for the first DAW placement contract. It reports `blocked` when a receipt is
+  not `daw_session`, when `unsupported_scopes[]` still contains `daw_export`,
+  when placement refs are missing, or when placement ranges are structurally
+  invalid. Recovery/preflight must report these blockers before local file
+  availability so missing arrangement placement evidence is not confused with a
+  missing artifact.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

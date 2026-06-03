@@ -3,7 +3,10 @@ use std::collections::BTreeSet;
 use riotbox_core::{
     action::{Action, ActionCommand, ActionStatus},
     export_readiness::ExportScope,
-    session::{ExportReceiptState, StemPackageReceiptReadinessBlocker},
+    session::{
+        ArrangementExportPlacementReadinessBlocker, ExportReceiptState,
+        StemPackageReceiptReadinessBlocker,
+    },
 };
 use serde_json::{Value, json};
 
@@ -135,7 +138,7 @@ fn export_lifecycle_record(
 
 fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
     let artifact_set = receipt.artifact_set_or_legacy();
-    json!({
+    let mut snapshot = json!({
         "receipt_id": receipt.receipt_id.to_string(),
         "created_by_action": receipt.created_by_action.0,
         "export_scope": receipt.export_scope,
@@ -161,7 +164,65 @@ fn export_receipt_observer_snapshot(receipt: &ExportReceiptState) -> Value {
             .iter()
             .map(|scope| scope.musician_label())
             .collect::<Vec<_>>(),
-    })
+    });
+
+    if receipt.export_scope == ExportScope::DawSession {
+        let object = snapshot.as_object_mut().expect("receipt snapshot object");
+        object.insert(
+            "arrangement_placement_readiness".into(),
+            arrangement_placement_observer_snapshot(receipt)
+                .expect("daw session arrangement readiness"),
+        );
+        object.insert(
+            "arrangement_placement_refs".into(),
+            json!(receipt.arrangement_placement_refs),
+        );
+    }
+
+    snapshot
+}
+
+fn arrangement_placement_observer_snapshot(receipt: &ExportReceiptState) -> Option<Value> {
+    if receipt.export_scope != ExportScope::DawSession {
+        return None;
+    }
+
+    let report = receipt.arrangement_export_placement_report();
+    let blockers = report.blockers.clone();
+    Some(json!({
+        "status": report.status,
+        "ready": report.ready(),
+        "blockers": blockers,
+        "blocker_labels": blockers
+            .iter()
+            .map(arrangement_placement_blocker_label)
+            .collect::<Vec<_>>(),
+    }))
+}
+
+fn arrangement_placement_blocker_label(
+    blocker: &ArrangementExportPlacementReadinessBlocker,
+) -> &'static str {
+    match blocker {
+        ArrangementExportPlacementReadinessBlocker::NotDawSessionScope => {
+            "receipt is not a DAW session export"
+        }
+        ArrangementExportPlacementReadinessBlocker::UnsupportedDawExportFlagPresent => {
+            "DAW export is still marked unsupported"
+        }
+        ArrangementExportPlacementReadinessBlocker::MissingPlacementRefs => {
+            "arrangement scene placement evidence is missing"
+        }
+        ArrangementExportPlacementReadinessBlocker::BlankSceneRef => {
+            "arrangement placement scene id is blank"
+        }
+        ArrangementExportPlacementReadinessBlocker::InvalidBarRange => {
+            "arrangement placement bar range is invalid"
+        }
+        ArrangementExportPlacementReadinessBlocker::InvalidBeatRange => {
+            "arrangement placement beat range is invalid"
+        }
+    }
 }
 
 fn stem_package_readiness_observer_snapshot(receipt: &ExportReceiptState) -> Option<Value> {

@@ -1,6 +1,12 @@
+mod arrangement_export_placement;
 mod export_qa_gates;
 mod export_types;
 
+pub use arrangement_export_placement::{
+    ArrangementExportPlacementReadinessBlocker, ArrangementExportPlacementReadinessReport,
+    ArrangementExportPlacementReadinessStatus, ExportArrangementPlacementRef,
+    validate_arrangement_export_placement_readiness,
+};
 pub use export_qa_gates::{
     ExportReceiptQaGateResult, ExportReceiptQaGateStatus,
     PRODUCT_EXPORT_REPRODUCIBILITY_QA_GATE_ID, STEM_PACKAGE_ARTIFACT_SET_QA_GATE_ID,

@@ -226,3 +226,7 @@ pub enum ExportReceiptQaGateStatus {
     Failed,
     Deferred,
 }
+
+#[cfg(test)]
+#[path = "export_qa_gates_tests.rs"]
+mod export_qa_gates_tests;

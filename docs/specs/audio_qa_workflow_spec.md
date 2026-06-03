@@ -1270,6 +1270,12 @@ Today the repo already has:
     package is developer-proof-only, DAW placement is missing, or structured
     listening review is not verified. Reserved UI/Ghost-style attempts must
     reject with those blockers and must not write files or commit a receipt.
+  - current arrangement / DAW placement contract skeleton reserves
+    `daw_session` receipt identity and `arrangement_placement_refs[]` so future
+    DAW export QA can prove scene/bar/beat placement separately from local file
+    availability. It is a Session receipt contract and observer/recovery report
+    surface only; it writes no DAW files and does not approve an audible DAW
+    handoff.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

@@ -5,6 +5,7 @@ pub const PRODUCT_EXPORT_PROOF_SCHEMA: &str = "riotbox.product_export_reproducib
 pub const EXPORT_READINESS_CONTRACT_SCHEMA: &str = "riotbox.export_readiness_contract.v1";
 pub const PRODUCT_EXPORT_PACK_ID: &str = "feral-grid-demo";
 pub const STEM_PACKAGE_LOCAL_CI_PACK_ID: &str = "stem-package-local-ci";
+pub const ARRANGEMENT_DAW_PLACEMENT_PACK_ID: &str = "arrangement-daw-placement-contract";
 
 #[must_use]
 pub fn default_product_export_pack_id() -> String {
@@ -36,6 +37,7 @@ pub enum ExportReadinessStatus {
 pub enum ProductExportBoundary {
     FeralGridGeneratedSupport,
     StemPackageLocalCiPackageV1,
+    ArrangementDawPlacementContractV1,
 }
 
 impl ProductExportBoundary {
@@ -44,6 +46,7 @@ impl ProductExportBoundary {
         match self {
             Self::FeralGridGeneratedSupport => "feral-grid generated-support export",
             Self::StemPackageLocalCiPackageV1 => "stem_package.local_ci_package_v1",
+            Self::ArrangementDawPlacementContractV1 => "arrangement.daw_placement_contract_v1",
         }
     }
 
@@ -51,6 +54,7 @@ impl ProductExportBoundary {
         match value {
             "feral-grid generated-support export" => Ok(Self::FeralGridGeneratedSupport),
             "stem_package.local_ci_package_v1" => Ok(Self::StemPackageLocalCiPackageV1),
+            "arrangement.daw_placement_contract_v1" => Ok(Self::ArrangementDawPlacementContractV1),
             other => Err(ExportReadinessError::UnsupportedBoundary(other.to_owned())),
         }
     }
@@ -61,6 +65,7 @@ impl ProductExportBoundary {
 pub enum ProductExportRole {
     FullGridMix,
     PackageManifest,
+    ArrangementManifest,
 }
 
 impl ProductExportRole {
@@ -69,6 +74,7 @@ impl ProductExportRole {
         match self {
             Self::FullGridMix => "full_grid_mix",
             Self::PackageManifest => "package_manifest",
+            Self::ArrangementManifest => "arrangement_manifest",
         }
     }
 
@@ -76,6 +82,7 @@ impl ProductExportRole {
         match value {
             "full_grid_mix" => Ok(Self::FullGridMix),
             "package_manifest" => Ok(Self::PackageManifest),
+            "arrangement_manifest" => Ok(Self::ArrangementManifest),
             other => Err(ExportReadinessError::UnsupportedExportRole(
                 other.to_owned(),
             )),
@@ -88,6 +95,7 @@ impl ProductExportRole {
 pub enum ExportScope {
     ProductMix,
     StemPackage,
+    DawSession,
 }
 
 impl ExportScope {
@@ -96,6 +104,7 @@ impl ExportScope {
         match self {
             Self::ProductMix => "product_mix",
             Self::StemPackage => "stem_package",
+            Self::DawSession => "daw_session",
         }
     }
 
@@ -104,6 +113,7 @@ impl ExportScope {
         match self {
             Self::ProductMix => "product mix export",
             Self::StemPackage => "stem package export",
+            Self::DawSession => "DAW session export",
         }
     }
 }
@@ -304,17 +314,30 @@ mod tests {
         assert_eq!(default_export_scope(), ExportScope::ProductMix);
         assert_eq!(ExportScope::ProductMix.as_str(), "product_mix");
         assert_eq!(ExportScope::StemPackage.as_str(), "stem_package");
+        assert_eq!(ExportScope::DawSession.as_str(), "daw_session");
         assert_eq!(
             ExportScope::StemPackage.musician_label(),
             "stem package export"
+        );
+        assert_eq!(
+            ExportScope::DawSession.musician_label(),
+            "DAW session export"
         );
         assert_eq!(
             ProductExportBoundary::StemPackageLocalCiPackageV1.as_proof_str(),
             "stem_package.local_ci_package_v1"
         );
         assert_eq!(
+            ProductExportBoundary::ArrangementDawPlacementContractV1.as_proof_str(),
+            "arrangement.daw_placement_contract_v1"
+        );
+        assert_eq!(
             ProductExportRole::PackageManifest.as_str(),
             "package_manifest"
+        );
+        assert_eq!(
+            ProductExportRole::ArrangementManifest.as_str(),
+            "arrangement_manifest"
         );
     }
 
