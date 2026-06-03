@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
 
 use crate::{
     export_readiness::ExportScope,
@@ -97,6 +98,13 @@ impl StemPackageManifest {
 
     pub fn normalized_json_bytes(&self) -> Result<Vec<u8>, serde_json::Error> {
         serde_json::to_vec_pretty(self)
+    }
+
+    pub fn normalized_json_sha256(&self) -> Result<String, serde_json::Error> {
+        let bytes = self.normalized_json_bytes()?;
+        let mut digest = Sha256::new();
+        digest.update(&bytes);
+        Ok(format!("{:x}", digest.finalize()))
     }
 }
 

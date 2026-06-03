@@ -381,6 +381,10 @@ Rules:
   pretty JSON bytes for future proof hashing. It prepares a stable proof input
   and must not be treated as a package writer, filesystem side effect, or
   completed stem export.
+- `StemPackageManifest::normalized_json_sha256` computes the deterministic
+  SHA-256 identity of those normalized bytes. It is a proof identity helper for
+  future manifest/proof artifact wiring, not a second serializer and not a
+  package writer.
 - The current CI-safe stem-package manifest fixture builds an in-memory receipt
   with claimed drums and bass stems, manifest/proof JSON identities, and a
   deferred `stem_package_artifact_set_evidence` gate. It roundtrips the
