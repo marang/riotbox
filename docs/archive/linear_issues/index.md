@@ -952,4 +952,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add CI-safe DAW session JSON writer proof
 - [RIOTBOX-1148.md](./RIOTBOX-1148.md)
   P016: Add DAW session JSON package report
+- [RIOTBOX-1149.md](./RIOTBOX-1149.md)
+  P016: Attach DAW session JSON package evidence to receipt model
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
