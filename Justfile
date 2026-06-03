@@ -581,6 +581,9 @@ daw-session-json-package-execute-smoke:
 daw-session-json-package-evidence-apply-smoke:
     cargo test -p riotbox-app --test daw_session_json_package_evidence_apply_smoke -- --nocapture
 
+daw-session-writer-proof-smoke:
+    cargo test -p riotbox-app --test daw_session_writer_proof_smoke -- --nocapture
+
 daw-session-host-import-proof-apply-smoke:
     cargo test -p riotbox-app --test daw_session_host_import_proof_apply_smoke -- --nocapture
 

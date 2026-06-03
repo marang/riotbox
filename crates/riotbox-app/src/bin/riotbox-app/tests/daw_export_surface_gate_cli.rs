@@ -77,6 +77,65 @@ fn daw_export_report_surface_gate_tracks_host_import_proof_gate_without_enabling
 }
 
 #[test]
+fn daw_export_report_surface_gate_tracks_writer_proof_without_enabling_export() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let tempo_map_path = temp.path().join("exports/tempo_map.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&tempo_map_path, "{}").expect("write tempo map");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let mut session = SessionFile::new(
+        "daw-report-writer-gated",
+        "riotbox-test",
+        "2026-06-03T20:15:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    attach_ready_artifacts(&mut receipt);
+    receipt.qa_gates = vec![ready_json_package_gate()];
+    session.export_receipts.push(receipt.clone());
+    save_session_json(&session_path, &session).expect("save missing writer session");
+    let report_launch = daw_report_launch(session_path.clone());
+
+    let missing_summary =
+        daw_export_readiness_report_summary(&report_launch).expect("missing writer summary");
+
+    assert_eq!(
+        missing_summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
+
+    receipt.qa_gates.push(ExportReceiptQaGateResult::daw_session_writer_proof(
+        true,
+        &[],
+        vec![ExportArtifactRole::DawSessionWriterProof],
+    ));
+    session.export_receipts[0] = receipt;
+    save_session_json(&session_path, &session).expect("save writer-proof session");
+
+    let passed_summary =
+        daw_export_readiness_report_summary(&report_launch).expect("passed writer summary");
+
+    assert_eq!(
+        passed_summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "developer_proof_only",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
+    assert_eq!(passed_summary["daw_session_surface_gate"]["runnable"], false);
+}
+
+#[test]
 fn daw_export_report_surface_gate_tracks_audible_output_proof_gate_without_enabling_export() {
     let temp = tempfile::tempdir().expect("tempdir");
     let session_path = temp.path().join("session.json");

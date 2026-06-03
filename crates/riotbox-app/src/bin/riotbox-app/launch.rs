@@ -70,6 +70,14 @@ enum LaunchMode {
         session_path: PathBuf,
         proof_path: PathBuf,
     },
+    DawSessionWriterProofExecute {
+        session_path: PathBuf,
+        destination_path: PathBuf,
+    },
+    DawSessionWriterProofApply {
+        session_path: PathBuf,
+        destination_path: PathBuf,
+    },
     DawSessionWriterPlan {
         session_path: PathBuf,
         destination_path: PathBuf,
@@ -115,6 +123,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         LaunchMode::DawSessionAudibleOutputProofApply { .. }
     ) {
         run_daw_session_audible_output_proof_apply(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::DawSessionWriterProofExecute { .. }) {
+        run_daw_session_writer_proof_execute(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::DawSessionWriterProofApply { .. }) {
+        run_daw_session_writer_proof_apply(&launch)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::DawSessionWriterPlan { .. }) {
@@ -207,6 +223,12 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
                 "DAW session audible output proof apply uses a non-interactive proof path".into(),
             ),
         ),
+        LaunchMode::DawSessionWriterProofExecute { .. } => Err(JamAppError::InvalidSession(
+            "DAW session writer proof execute uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::DawSessionWriterProofApply { .. } => Err(JamAppError::InvalidSession(
+            "DAW session writer proof apply uses a non-interactive proof path".into(),
+        )),
         LaunchMode::DawSessionWriterPlan { .. } => Err(JamAppError::InvalidSession(
             "DAW session writer plan uses a non-interactive proof path".into(),
         )),

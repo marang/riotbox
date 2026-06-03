@@ -33,6 +33,8 @@ mod daw_session_json_writer;
 mod daw_session_package_report;
 mod daw_session_payload_preview;
 mod daw_session_writer_plan;
+mod daw_session_writer_proof;
+mod daw_session_writer_proof_types;
 mod ghost_candidates;
 mod ghost_queue;
 mod helpers;
@@ -92,6 +94,20 @@ pub use daw_session_package_report::{
     attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
 };
 pub use daw_session_writer_plan::{DawSessionWriterPlan, daw_session_writer_plan};
+pub use daw_session_writer_proof::{
+    attach_daw_session_writer_proof_evidence_to_receipt, daw_session_writer_proof_report,
+    write_daw_session_writer_proof_skeleton,
+};
+pub use daw_session_writer_proof_types::{
+    DAW_SESSION_LOCAL_PROJECT_SKELETON_SCHEMA_ID,
+    DAW_SESSION_LOCAL_PROJECT_SKELETON_SCHEMA_VERSION,
+    DAW_SESSION_LOCAL_PROJECT_WRITER_BOUNDARY_ID, DAW_SESSION_WRITER_PACKAGE_DIR,
+    DAW_SESSION_WRITER_PROJECT_SKELETON_FILE, DAW_SESSION_WRITER_PROOF_FILE,
+    DAW_SESSION_WRITER_PROOF_SCHEMA_ID, DAW_SESSION_WRITER_PROOF_SCHEMA_VERSION,
+    DawSessionWriterProofReceiptEvidenceError, DawSessionWriterProofReport,
+    DawSessionWriterProofReportBlocker, DawSessionWriterProofReportStatus,
+    WrittenDawSessionWriterProofSkeleton,
+};
 pub use ghost_queue::{GhostSuggestionQueueResult, NO_CURRENT_GHOST_SUGGESTION_REASON};
 use helpers::{
     is_mc202_phrase_action, max_action_id, next_action_id_from_session, update_logged_action_result,

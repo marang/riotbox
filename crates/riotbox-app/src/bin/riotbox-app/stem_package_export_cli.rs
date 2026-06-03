@@ -294,6 +294,7 @@ fn export_artifact_role_label(role: ExportArtifactRole) -> &'static str {
         ExportArtifactRole::ProductExportProof => "product_export_proof",
         ExportArtifactRole::ExportManifest => "export_manifest",
         ExportArtifactRole::DawSessionTempoMap => "daw_session_tempo_map",
+        ExportArtifactRole::DawSessionWriterProof => "daw_session_writer_proof",
     }
 }
 

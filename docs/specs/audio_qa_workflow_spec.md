@@ -1387,18 +1387,23 @@ Today the repo already has:
     `daw_session.local_project_writer_v1` for a future runnable
     `export.daw_session` command. It must sit after the CI-safe
     `daw_session.json_package_writer_v1` JSON package proof and before
-    host-import or audible-output proof. Defining this boundary does not itself
-    prove a DAW writer exists, does not remove `daw_writer_missing`, and does
-    not make the musician-facing export surface runnable.
-  - future DAW-session writer QA must prove the control path and the artifact
-    path together: queued export intent, selected DAW-session receipt id,
-    destination/staging identity, successful side-effect commit, Session receipt
-    mutation, observer lifecycle projection, promoted DAW project/session file
-    hashes, and a `daw_session_writer_proof` receipt gate. That writer proof is
-    still not host-import proof and not audible-output proof.
+    host-import or audible-output proof.
+  - current DAW-session writer proof skeleton writes only bounded local proof
+    artifacts through `riotbox-app --daw-session-writer-proof-execute
+    --session <session.json> --daw-session-destination <dir>`. The proof
+    requires a passed JSON package gate, uses staging, emits
+    `daw_session_writer/local_project_skeleton.json` and
+    `daw_session_writer/writer_proof.json`, mutates no Session, emits no
+    observer events, launches no host, and captures no audio. `just
+    daw-session-writer-proof-smoke` proves that real-binary path.
+  - current DAW-session writer proof apply path mutates only receipt evidence:
+    `riotbox-app --daw-session-writer-proof-apply --session <session.json>
+    --daw-session-destination <dir>` attaches `daw_session_writer_proof` and a
+    writer-proof artifact entry to the latest DAW-session receipt. That writer
+    proof is still not host-import proof and not audible-output proof.
   - DAW-session release blockers are cleared only by their own proof layer:
-    JSON package evidence clears only JSON package blockers, future writer
-    proof clears only `daw_writer_missing`, host-import proof clears only
+    JSON package evidence clears only JSON package blockers, writer proof
+    clears only `daw_writer_missing`, host-import proof clears only
     `daw_host_import_proof_missing`, audible-output proof clears only
     `audible_output_proof_missing`, and `developer_proof_only` stays visible
     until a later musician-facing release policy removes it. Any PR that

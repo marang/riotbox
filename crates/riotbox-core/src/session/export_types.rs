@@ -345,6 +345,11 @@ impl ExportArtifactSetEntry {
     }
 
     #[must_use]
+    pub fn daw_session_writer_proof(path: impl Into<String>, sha256: impl Into<String>) -> Self {
+        Self::local_json_artifact(ExportArtifactRole::DawSessionWriterProof, path, sha256)
+    }
+
+    #[must_use]
     pub fn location_identity(&self) -> &str {
         match &self.location {
             ExportArtifactLocation::LocalPath { path }
@@ -419,6 +424,7 @@ pub enum ExportArtifactRole {
     ProductExportProof,
     ExportManifest,
     DawSessionTempoMap,
+    DawSessionWriterProof,
 }
 
 impl ExportArtifactRole {

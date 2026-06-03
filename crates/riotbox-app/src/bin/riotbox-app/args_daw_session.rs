@@ -3,6 +3,8 @@ struct DawSessionModeArgs<'a> {
     json_package_evidence_apply: bool,
     host_import_proof_apply: bool,
     audible_output_proof_apply: bool,
+    writer_proof_execute: bool,
+    writer_proof_apply: bool,
     writer_plan: bool,
     source_path_present: bool,
     source_graph_path_present: bool,
@@ -91,6 +93,42 @@ fn parse_daw_session_mode_args(args: DawSessionModeArgs<'_>) -> Result<Option<Ap
         }));
     }
 
+    if args.writer_proof_execute {
+        reject_daw_session_destination_mode_conflicts(
+            &args,
+            "DAW session writer proof execute reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments",
+            ProofArgPolicy::NoProofArgs,
+        )?;
+        return Ok(Some(AppLaunch {
+            mode: LaunchMode::DawSessionWriterProofExecute {
+                session_path: required_daw_session(args.session_path, args.saw_session_flag, "DAW session writer proof execute requires --session <session.json>")?,
+                destination_path: required_daw_destination(
+                    args.destination_path,
+                    "DAW session writer proof execute requires --daw-session-destination <dir>",
+                )?,
+            },
+            observer_path: None,
+        }));
+    }
+
+    if args.writer_proof_apply {
+        reject_daw_session_destination_mode_conflicts(
+            &args,
+            "DAW session writer proof apply reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments",
+            ProofArgPolicy::NoProofArgs,
+        )?;
+        return Ok(Some(AppLaunch {
+            mode: LaunchMode::DawSessionWriterProofApply {
+                session_path: required_daw_session(args.session_path, args.saw_session_flag, "DAW session writer proof apply requires --session <session.json>")?,
+                destination_path: required_daw_destination(
+                    args.destination_path,
+                    "DAW session writer proof apply requires --daw-session-destination <dir>",
+                )?,
+            },
+            observer_path: None,
+        }));
+    }
+
     if args.writer_plan {
         reject_daw_session_destination_mode_conflicts(
             &args,
@@ -173,7 +211,7 @@ fn reject_daw_session_proof_mode_conflicts(
 fn reject_standalone_daw_session_args(args: &DawSessionModeArgs<'_>) -> Result<(), String> {
     if args.destination_path.is_some() {
         return Err(
-            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, or --daw-session-json-package-evidence-apply"
+            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, --daw-session-json-package-evidence-apply, --daw-session-writer-proof-execute, or --daw-session-writer-proof-apply"
                 .into(),
         );
     }

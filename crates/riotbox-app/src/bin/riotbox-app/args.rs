@@ -17,6 +17,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_session_json_package_evidence_apply = false;
     let mut daw_session_host_import_proof_apply = false;
     let mut daw_session_audible_output_proof_apply = false;
+    let mut daw_session_writer_proof_execute = false;
+    let mut daw_session_writer_proof_apply = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
     let mut daw_session_destination_path = None;
@@ -39,6 +41,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             }
             "--daw-session-audible-output-proof-apply" => {
                 daw_session_audible_output_proof_apply = true;
+            }
+            "--daw-session-writer-proof-execute" => {
+                daw_session_writer_proof_execute = true;
+            }
+            "--daw-session-writer-proof-apply" => {
+                daw_session_writer_proof_apply = true;
             }
             "--daw-session-writer-plan" => daw_session_writer_plan = true,
             "--stem-package-destination" => {
@@ -124,6 +132,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         daw_session_json_package_evidence_apply,
         daw_session_host_import_proof_apply,
         daw_session_audible_output_proof_apply,
+        daw_session_writer_proof_execute,
+        daw_session_writer_proof_apply,
         daw_session_writer_plan,
     ]
     .into_iter()
@@ -131,7 +141,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     .count();
     if daw_session_mode_count > 1 {
         return Err(
-            "DAW session JSON package execute, evidence apply, host import proof apply, audible output proof apply, and writer plan modes cannot be combined"
+            "DAW session JSON package execute, evidence apply, host import proof apply, audible output proof apply, writer proof execute/apply, and writer plan modes cannot be combined"
                 .into(),
         );
     }
@@ -263,6 +273,8 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         json_package_evidence_apply: daw_session_json_package_evidence_apply,
         host_import_proof_apply: daw_session_host_import_proof_apply,
         audible_output_proof_apply: daw_session_audible_output_proof_apply,
+        writer_proof_execute: daw_session_writer_proof_execute,
+        writer_proof_apply: daw_session_writer_proof_apply,
         writer_plan: daw_session_writer_plan,
         source_path_present: source_path.is_some(),
         source_graph_path_present: source_graph_path.is_some(),
