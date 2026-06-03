@@ -4,7 +4,7 @@ use crate::{
     export_readiness::ExportScope,
     ids::{ActionId, ExportReceiptId},
     session::{ExportArtifactMediaType, ExportArtifactRole},
-    stem_package_manifest::StemPackageManifestJsonIdentity,
+    stem_package_manifest::{StemPackageManifest, StemPackageManifestJsonIdentity},
 };
 
 pub const STEM_PACKAGE_PROOF_SCHEMA_ID: &str = "riotbox.stem_package_proof";
@@ -25,6 +25,21 @@ pub struct StemPackageProof {
 }
 
 impl StemPackageProof {
+    pub fn from_manifest(manifest: &StemPackageManifest) -> Result<Self, StemPackageProofError> {
+        let manifest_sha256 = manifest
+            .normalized_json_sha256()
+            .map_err(|_| StemPackageProofError::ManifestSerialization)?;
+        Self::new(StemPackageProofInput {
+            package_id: manifest.package_id.clone(),
+            receipt_id: manifest.receipt_id.clone(),
+            created_by_action: manifest.created_by_action,
+            manifest_sha256,
+            claimed_stem_roles: manifest.claimed_stem_roles.clone(),
+            manifest_identity: manifest.manifest_identity.clone(),
+            proof_identity: manifest.proof_identity.clone(),
+        })
+    }
+
     pub fn new(input: StemPackageProofInput) -> Result<Self, StemPackageProofError> {
         let package_id = input.package_id;
         if package_id.trim().is_empty() {
@@ -70,6 +85,7 @@ pub struct StemPackageProofInput {
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StemPackageProofError {
+    ManifestSerialization,
     BlankPackageId,
     BlankManifestSha256,
     EmptyClaimedStemRoles,
@@ -148,7 +164,12 @@ mod tests {
     use serde_json::json;
 
     use super::*;
-    use crate::session::ExportArtifactLocation;
+    use crate::{
+        session::{ExportArtifactLocation, ExportArtifactSetEntry},
+        stem_package_manifest::{
+            StemPackageManifest, StemPackageManifestArtifact, StemPackageManifestInput,
+        },
+    };
 
     #[test]
     fn stem_package_proof_roundtrips_stable_schema_scope_roles_and_identity() {
@@ -182,6 +203,36 @@ mod tests {
 
         assert_eq!(bytes, repeated_bytes);
         assert_ne!(bytes, changed_bytes);
+    }
+
+    #[test]
+    fn stem_package_proof_from_manifest_uses_normalized_manifest_hash() {
+        let manifest = fixture_manifest();
+        let proof = StemPackageProof::from_manifest(&manifest).expect("proof from manifest");
+        let expected_manifest_hash = manifest
+            .normalized_json_sha256()
+            .expect("hash normalized manifest");
+
+        assert_eq!(proof.package_id, manifest.package_id);
+        assert_eq!(proof.receipt_id, manifest.receipt_id);
+        assert_eq!(proof.created_by_action, manifest.created_by_action);
+        assert_eq!(proof.manifest_sha256, expected_manifest_hash);
+        assert_eq!(proof.claimed_stem_roles, manifest.claimed_stem_roles);
+        assert_eq!(proof.manifest_identity, manifest.manifest_identity);
+        assert_eq!(proof.proof_identity, manifest.proof_identity);
+    }
+
+    #[test]
+    fn stem_package_proof_from_manifest_changes_hash_when_manifest_artifact_identity_changes() {
+        let manifest = fixture_manifest();
+        let mut changed = manifest.clone();
+        changed.artifacts[0].sha256 = "changed-drums-sha".into();
+
+        let proof = StemPackageProof::from_manifest(&manifest).expect("proof from manifest");
+        let changed_proof =
+            StemPackageProof::from_manifest(&changed).expect("changed proof from manifest");
+
+        assert_ne!(proof.manifest_sha256, changed_proof.manifest_sha256);
     }
 
     #[test]
@@ -261,6 +312,47 @@ mod tests {
 
     fn fixture_proof(manifest_sha256: impl Into<String>) -> StemPackageProof {
         StemPackageProof::new(proof_input("pkg-1", manifest_sha256)).expect("fixture proof")
+    }
+
+    fn fixture_manifest() -> StemPackageManifest {
+        StemPackageManifest::new(StemPackageManifestInput {
+            package_id: "pkg-1".into(),
+            receipt_id: ExportReceiptId::new("receipt-1"),
+            created_by_action: ActionId(7),
+            claimed_stem_roles: vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+            artifacts: vec![
+                stem_artifact(ExportArtifactRole::StemDrums, "drums.wav", "drums-sha"),
+                stem_artifact(ExportArtifactRole::StemBass, "bass.wav", "bass-sha"),
+            ],
+            manifest_identity: manifest_identity("manifest.json", "manifest-id"),
+            proof_identity: proof_identity("proof.json", "proof-id"),
+            qa_gates: Vec::new(),
+        })
+        .expect("fixture manifest")
+    }
+
+    fn stem_artifact(
+        role: ExportArtifactRole,
+        path: impl Into<String>,
+        sha256: impl Into<String>,
+    ) -> StemPackageManifestArtifact {
+        StemPackageManifestArtifact::from_artifact_set_entry(&ExportArtifactSetEntry {
+            role,
+            location: ExportArtifactLocation::LocalPath { path: path.into() },
+            media_type: ExportArtifactMediaType::AudioWav,
+            sha256: sha256.into(),
+            normalized_manifest_hash: None,
+            source_graph_ref: None,
+            timing_grid_ref: None,
+            source_capture_refs: Vec::new(),
+            lineage_capture_refs: Vec::new(),
+            fallback_comparison: None,
+            audio_metrics: None,
+            sample_rate_hz: Some(48_000),
+            channel_count: Some(2),
+            duration_ms: Some(1000),
+        })
+        .expect("stem artifact")
     }
 
     fn proof_input(

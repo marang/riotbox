@@ -392,6 +392,11 @@ Rules:
   manifest/proof JSON identities. This is an in-memory proof payload contract
   only; it does not write proof files, mutate Session, or make
   `export.stem_package` runnable.
+- `StemPackageProof::from_manifest` is the current CI-safe bridge from the
+  typed manifest value to the typed proof value. It derives fields from
+  `StemPackageManifest` and calls `normalized_json_sha256` for the manifest
+  identity; it does not reserialize through a second proof path and does not
+  write files.
 - The current CI-safe stem-package manifest fixture builds an in-memory receipt
   with claimed drums and bass stems, manifest/proof JSON identities, and a
   deferred `stem_package_artifact_set_evidence` gate. It roundtrips the
