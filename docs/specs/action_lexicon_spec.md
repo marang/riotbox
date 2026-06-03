@@ -512,13 +512,15 @@ Contract for `export.stem_package`:
   arrangement manifest file, and verifies the missing-file blocker while proving
   the destination directory was not created.
 - Current DAW payload contract:
-  `riotbox-core::daw_session_manifest::DawSessionManifest` and
+  `riotbox-core::daw_session_manifest::DawSessionManifest`,
+  `riotbox-core::daw_session_tempo_map::DawSessionTempoMap`, and
   `riotbox-core::daw_session_proof::DawSessionProof` define deterministic
-  in-memory JSON payloads for the planned DAW package manifest/proof. They
-  validate DAW receipt scope/boundary, placement refs, tempo-map evidence,
-  source JSON artifact identities, and planned manifest/tempo/proof identities.
-  This is still behind the writer plan skeleton: no files are written, Session
-  is not mutated, and `export.daw_session` remains non-runnable.
+  in-memory JSON payloads for the planned DAW package manifest, tempo map, and
+  proof. They validate DAW receipt scope/boundary, placement refs, tempo-map
+  evidence, source JSON artifact identities, and planned manifest/tempo/proof
+  identities where applicable. This is still behind the writer plan skeleton:
+  no files are written, Session is not mutated, and `export.daw_session`
+  remains non-runnable.
 - Current DAW payload preview:
   the writer plan CLI report includes `payload_preview`. It builds the Core
   manifest/proof payloads only when the upstream dry-run plan is ready and then
