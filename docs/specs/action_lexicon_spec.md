@@ -529,6 +529,14 @@ Contract for `export.stem_package`:
   is blocked, the preview mirrors typed blockers such as missing receipt,
   missing destination, missing local files, placement, or tempo-map blockers and
   omits payload hashes.
+- Current DAW JSON writer proof:
+  `riotbox-app::jam_app::write_daw_session_json_package` is an internal
+  CI-safe writer proof for the planned DAW JSON payloads only. It uses a staging
+  directory under the requested destination, writes normalized manifest,
+  tempo-map, and proof JSON, promotes the package after validation, hashes final
+  files, and verifies proof-to-manifest hash linkage. It is not a CLI writer,
+  does not mutate Session, emits no observer events, writes no DAW audio or host
+  project/session files, and does not make `export.daw_session` runnable.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.

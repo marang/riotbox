@@ -1,6 +1,6 @@
 use std::{fs, path::Path, process::Command};
 
-use riotbox_app::jam_app::daw_session_writer_plan;
+use riotbox_app::jam_app::{daw_session_writer_plan, write_daw_session_json_package};
 use riotbox_core::{
     export_readiness::{
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID, EXPORT_READINESS_CONTRACT_SCHEMA,
@@ -106,6 +106,69 @@ fn daw_session_writer_plan_smoke_covers_ready_for_writer_and_missing_file() {
         Value::Array(vec!["missing_local_files".into()])
     );
     assert_eq!(missing_plan["payload_preview"]["tempo_map"], Value::Null);
+}
+
+#[test]
+fn daw_session_json_writer_smoke_writes_only_explicit_json_package() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let destination_path = temp.path().join("daw-out");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let mut session = SessionFile::new(
+        "daw-session-json-writer-smoke",
+        "riotbox-test",
+        "2026-06-03T17:05:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    session.export_receipts.push(receipt);
+    let before_session = serde_json::to_value(&session).expect("serialize session before writer");
+    save_session_json(&session_path, &session).expect("save smoke session");
+
+    let written = write_daw_session_json_package(&session, Some(temp.path()), &destination_path)
+        .expect("write DAW session JSON proof package");
+
+    assert!(written.package_dir.ends_with("daw-out/daw_session"));
+    assert!(written.manifest_path.exists());
+    assert!(written.tempo_map_path.exists());
+    assert!(written.proof_path.exists());
+    assert_eq!(written.manifest_sha256, written.proof_manifest_sha256);
+    assert!(!destination_path.join(".daw_session_staging_42").exists());
+    let manifest: Value =
+        serde_json::from_slice(&fs::read(&written.manifest_path).expect("read manifest"))
+            .expect("manifest json");
+    let tempo_map: Value =
+        serde_json::from_slice(&fs::read(&written.tempo_map_path).expect("read tempo map"))
+            .expect("tempo map json");
+    let proof: Value = serde_json::from_slice(&fs::read(&written.proof_path).expect("read proof"))
+        .expect("proof json");
+    assert_eq!(manifest["schema_id"], "riotbox.daw_session_manifest");
+    assert_eq!(tempo_map["schema_id"], "riotbox.daw_session_tempo_map");
+    assert_eq!(proof["schema_id"], "riotbox.daw_session_proof");
+    assert_eq!(proof["manifest_sha256"], written.manifest_sha256);
+    assert_eq!(
+        serde_json::to_value(&session).expect("serialize session after writer"),
+        before_session
+    );
+
+    let existing = write_daw_session_json_package(&session, Some(temp.path()), &destination_path)
+        .expect_err("existing final package should reject");
+    assert!(existing.to_string().contains("already exists"));
+
+    let blocked_destination = temp.path().join("blocked-daw-out");
+    fs::remove_file(&manifest_path).expect("remove source manifest");
+    let blocked = write_daw_session_json_package(&session, Some(temp.path()), &blocked_destination)
+        .expect_err("missing source file should block writer");
+    assert!(
+        blocked
+            .to_string()
+            .contains("DAW session JSON writer blocked")
+    );
+    assert!(!blocked_destination.exists());
 }
 
 fn run_plan(session_path: &std::path::Path, destination_path: &std::path::Path) -> Value {
