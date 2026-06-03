@@ -1004,4 +1004,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add reserved live-recording export queue guard
 - [RIOTBOX-1174.md](./RIOTBOX-1174.md)
   P016: Add live-recording host-audio evidence refs
+- [RIOTBOX-1175.md](./RIOTBOX-1175.md)
+  P016: Add live-recording host-audio receipt readiness gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
