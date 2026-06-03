@@ -28,8 +28,8 @@ If Riotbox work reveals a recurring product failure mode or better QA pattern, u
 - Keep Linear current: issue state, priority, labels, project, archive, deletion, and branch cleanup are part of the work.
 - Use one archive file per Linear ticket under `docs/archive/linear_issues/RIOTBOX-123.md`; month files are indexes only.
 - Search archives and generated artifacts only when needed. Default `rg` should respect `.rgignore`.
-- Do not read `docs/research_decision_log.md` wholesale during normal implementation work; use bounded MemPalace search, exact `rg`, or targeted line ranges.
-- Prefer `just decision-search "query"` for research-decision retrieval; it syncs the MemPalace corpus, avoids surprise auto-mining when the index is stale, and falls back to bounded `rg`.
+- Do not read `docs/research_decision_log.md` wholesale during normal implementation work; use `just decision-search "query"`, exact `rg`, or targeted line ranges.
+- `just decision-search "query"` is a bounded `rg` helper for the decision log. It has no semantic-memory dependency.
 - Keep command output token-bounded. Redirect long CI/QA logs to `/tmp/...log` and report only exit status plus relevant tail/error lines.
 - Use `scripts/run_compact.sh /tmp/name.log <command...>` for noisy validation commands unless full output is explicitly needed.
 - Never revert unrelated user changes.
@@ -123,7 +123,7 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Freeze new technical decisions in `docs/research_decision_log.md`.
 - Update the corresponding spec in `docs/specs/` when a contract changes.
 - Do not bury important architecture decisions only in code comments.
-- Keep important workflow rules in repo docs, not only in MemPalace or Linear.
+- Keep important workflow rules in repo docs, not only in Linear or chat memory.
 
 ## Context Hygiene
 
@@ -133,10 +133,9 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Search `docs/archive/linear_issues/` only when ticket history is needed.
 - Search ignored archive or audio paths explicitly with `rg --no-ignore "..." <path>`.
 - Do not paste large generated manifests, WAV metadata dumps, archive batches, or raw transcript sections unless directly needed.
-- Treat `docs/research_decision_log.md` as a large canonical log: append durable decisions when needed, but query it by exact search or bounded MemPalace retrieval instead of loading the full file.
+- Treat `docs/research_decision_log.md` as a large canonical log: append durable decisions when needed, but query it by `just decision-search`, exact search, or targeted line ranges instead of loading the full file.
 - Prefer specific files and line ranges over entire long documents.
-- MemPalace is optional dev memory, not product core or source of truth. Operational details live in `docs/dev_environment.md`.
-- If something matters, write it into repo docs, specs, Linear, or Git history; do not leave it only in MemPalace.
+- If something matters, write it into repo docs, specs, Linear, or Git history; do not leave it only in chat or local memory.
 
 ## Review And QA
 
@@ -181,7 +180,7 @@ Hard rules that must stay true:
   project updates aligned with the repo workflow.
 - Archive completed or canceled Linear context under
   `docs/archive/linear_issues/` before deleting Linear issues; deletion requires
-  token-backed Linear auth and must not rely on MemPalace.
+  token-backed Linear auth and must not rely on semantic memory.
 - Derive the next ticket from `docs/execution_roadmap.md`,
   `docs/phase_definition_of_done.md`, the active spec, and actual repo state;
   prefer the smallest coherent slice on the product spine.
@@ -207,8 +206,6 @@ Common development helpers:
 just source-timing-fixture-catalog
 just source-timing-wav-probe
 just source-timing-readiness-report
-just mem-status
-just mem-search "replay truth"
 just decision-search "source timing"
 ```
 
@@ -245,7 +242,7 @@ Current CI baseline:
 - Do not assume a failed audio probe inside the sandbox means the machine audio stack is broken.
 - Record whether Linux audio validation came from sandbox or real user session.
 - Treat sandbox-only audio failures as inconclusive.
-- Detailed sandbox, Arch, Podman, MemPalace, SSH, and host-service notes live in `docs/dev_environment.md`.
+- Detailed sandbox, Arch, SSH, and host-service notes live in `docs/dev_environment.md`.
 
 ## Stack And Layout
 

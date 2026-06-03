@@ -2,6 +2,7 @@ target/
 __pycache__/
 *.py[cod]
 artifacts/audio_qa/
+# Retired local semantic-memory artifacts; keep stale generated data untracked.
 .mempalace/cache/
 .mempalace/palace/
 .mempalace/palace-backup*/
@@ -9,7 +10,6 @@ artifacts/audio_qa/
 .mempalace/corpus/
 .mempalace/*.sha256
 .mempalace/*.lock
-!.mempalace/README.md
 data/**
 !data/**/
 !data/**/*.md
