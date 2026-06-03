@@ -37,9 +37,14 @@ pub(in crate::jam_app) use super::product_export_artifact_preflight::{
 mod daw_session_export_commit;
 mod daw_session_export_queue;
 mod daw_session_surface_gate;
+mod live_recording_export_queue;
 pub use daw_session_surface_gate::{
     DawSessionExportSurfaceBlocker, DawSessionExportSurfaceGate, DawSessionExportSurfaceStatus,
     daw_session_export_surface_gate_for_session,
+};
+#[allow(unused_imports)]
+pub use live_recording_export_queue::{
+    LIVE_RECORDING_EXPORT_RESERVED_REASON, LiveRecordingExportQueueResult,
 };
 
 pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str = "stem package export is disabled for musicians; local CI packages are developer proof only until DAW placement and listening review are ready";

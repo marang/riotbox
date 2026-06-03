@@ -138,6 +138,44 @@ fn observer_snapshot_reports_rejected_reserved_daw_session_lifecycle_without_rec
 }
 
 #[test]
+fn observer_snapshot_reports_rejected_reserved_live_recording_lifecycle_without_receipt() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let destination = temp.path().join("live-recording-export");
+    let session = SessionFile::new(
+        "observer-live-recording-failed",
+        "0.1.0",
+        "2026-06-03T00:00:00Z",
+    );
+    let mut state = JamAppState::from_parts(session, None, ActionQueue::new());
+
+    state.queue_live_recording_export_reserved(
+        990,
+        Some(destination.to_string_lossy().into_owned()),
+    );
+
+    let shell = JamShellState::new(state, ShellLaunchMode::Load);
+    let snapshot = observer_snapshot(&shell);
+    let lifecycle = snapshot["export"]["lifecycle"]
+        .as_array()
+        .expect("lifecycle array");
+
+    assert_eq!(snapshot["export"]["receipt_count"], 0);
+    assert_eq!(lifecycle.len(), 3);
+    assert_eq!(lifecycle[0]["stage"], "requested");
+    assert_eq!(lifecycle[1]["stage"], "started");
+    assert_eq!(lifecycle[2]["stage"], "failed");
+    assert_eq!(lifecycle[2]["command"], "export.live_recording");
+    assert_eq!(lifecycle[2]["receipt"], serde_json::Value::Null);
+    assert!(
+        lifecycle[2]["failure_reason"]
+            .as_str()
+            .expect("failure reason")
+            .contains("future capture writer")
+    );
+    assert!(!destination.exists());
+}
+
+#[test]
 fn observer_snapshot_reports_committed_daw_session_host_import_lifecycle() {
     let temp = tempfile::tempdir().expect("tempdir");
     let destination = temp.path().join("daw-session-export");

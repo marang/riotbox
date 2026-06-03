@@ -1473,7 +1473,10 @@ Today the repo already has:
     `live_recording.receipt_contract_v1`, `live_recording_capture`, and
     `live-recording-receipt-contract` are stable typed identities, but no live
     capture, WAV writer, observer completion, Session receipt mutation, or
-    musician-facing runnable command exists yet.
+    musician-facing runnable command exists yet. The app queue guard rejects
+    attempts with a typed `export.live_recording` action and failed observer
+    lifecycle so operators can see the boundary; because it writes no audio,
+    current QA is control-path and side-effect proof only.
   - new evidence required before readiness: one written WAV per claimed stem
     role, per-stem format metrics, per-stem non-silence, per-stem hash
     stability across repeated writer/render output, per-stem source/capture or
