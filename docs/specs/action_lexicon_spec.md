@@ -399,7 +399,10 @@ Contract for reserved `export.stem_package`:
     fallback-collapse, and lineage
 - Observer lifecycle: `requested`, `started`, `completed`, and `failed` records
   must project only from the action log, queue/history, and Session export
-  receipts. Observer state must not become a second package truth.
+  receipts. For `export_scope: stem_package` receipts, observer snapshots may
+  include Core-derived `stem_package_readiness` status, blockers, and blocker
+  labels from `validate_stem_package_receipt_readiness`. Observer state must not
+  become a second package truth.
 - Replay/restore: may validate receipt metadata and local artifact availability,
   but must not regenerate stems or rewrite export files without a fresh explicit
   export request.

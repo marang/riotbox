@@ -1226,7 +1226,10 @@ Today the repo already has:
     proof `manifest_sha256` and the eventual proof-file SHA are computed from
     final payload bytes without self-hash cycles.
 - Observer export snapshots project those receipt `qa_gates[]` values as-is,
-  including non-product stem-package evidence. The observer surface is evidence
+  including non-product stem-package evidence. For `export_scope: stem_package`
+  receipts, observer snapshots also project `stem_package_readiness` with the
+  Core-derived readiness status, typed blockers, and blocker labels from
+  `validate_stem_package_receipt_readiness`. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and
   not permission to surface `export.stem_package` as runnable.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
