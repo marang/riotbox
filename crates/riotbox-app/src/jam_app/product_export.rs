@@ -13,7 +13,7 @@ use riotbox_core::{
     },
     export_readiness::{
         ExportReadinessContract, ExportScope, ProductExportBoundary, ProductExportDestinationKind,
-        ProductExportReproducibilityProof, ProductExportRole,
+        ProductExportReproducibilityProof, ProductExportRole, STEM_PACKAGE_LOCAL_CI_PACK_ID,
     },
     ids::ActionId,
     queue::QueueEnqueueResult,
@@ -34,8 +34,115 @@ pub(in crate::jam_app) use super::product_export_artifact_preflight::{
     ExportReceiptArtifactPreflightError, preflight_export_receipt_artifacts,
 };
 
-pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str =
-    "stem package export is reserved; queue, writer, observer, and QA gates are not runnable yet";
+pub const STEM_PACKAGE_EXPORT_RESERVED_REASON: &str = "stem package export is disabled for musicians; local CI packages are developer proof only until DAW placement and listening review are ready";
+
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct StemPackageExportSurfaceGate {
+    pub status: StemPackageExportSurfaceStatus,
+    pub blockers: Vec<StemPackageExportSurfaceBlocker>,
+}
+
+impl StemPackageExportSurfaceGate {
+    #[must_use]
+    pub fn disabled() -> Self {
+        Self {
+            status: StemPackageExportSurfaceStatus::Disabled,
+            blockers: vec![
+                StemPackageExportSurfaceBlocker::CiWriterProofMissing,
+                StemPackageExportSurfaceBlocker::DeveloperProofOnly,
+                StemPackageExportSurfaceBlocker::DawPlacementWorkflowMissing,
+                StemPackageExportSurfaceBlocker::StructuredListeningReviewMissing,
+            ],
+        }
+    }
+
+    #[must_use]
+    pub fn runnable(&self) -> bool {
+        self.status == StemPackageExportSurfaceStatus::Runnable && self.blockers.is_empty()
+    }
+
+    #[must_use]
+    pub fn musician_summary(&self) -> String {
+        if self.runnable() {
+            return "stem package export is ready for musicians".into();
+        }
+
+        format!(
+            "{STEM_PACKAGE_EXPORT_RESERVED_REASON}; blockers: {}",
+            self.blockers
+                .iter()
+                .map(|blocker| blocker.musician_label())
+                .collect::<Vec<_>>()
+                .join(", ")
+        )
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum StemPackageExportSurfaceStatus {
+    Disabled,
+    Runnable,
+}
+
+impl StemPackageExportSurfaceStatus {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::Disabled => "disabled",
+            Self::Runnable => "runnable",
+        }
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+pub enum StemPackageExportSurfaceBlocker {
+    CiWriterProofMissing,
+    StemPackageReceiptReadinessBlocked,
+    StemPackageReceiptIdentityMissing,
+    DeveloperProofOnly,
+    DawPlacementWorkflowMissing,
+    StructuredListeningReviewMissing,
+}
+
+impl StemPackageExportSurfaceBlocker {
+    #[must_use]
+    pub const fn as_str(self) -> &'static str {
+        match self {
+            Self::CiWriterProofMissing => "ci_writer_proof_missing",
+            Self::StemPackageReceiptReadinessBlocked => "receipt_readiness_blocked",
+            Self::StemPackageReceiptIdentityMissing => "receipt_identity_missing",
+            Self::DeveloperProofOnly => "developer_proof_only",
+            Self::DawPlacementWorkflowMissing => "daw_placement_workflow_missing",
+            Self::StructuredListeningReviewMissing => "structured_listening_review_missing",
+        }
+    }
+
+    #[must_use]
+    pub const fn musician_label(self) -> &'static str {
+        match self {
+            Self::CiWriterProofMissing => "CI writer proof is missing",
+            Self::StemPackageReceiptReadinessBlocked => "stem receipt QA is still blocked",
+            Self::StemPackageReceiptIdentityMissing => {
+                "stem receipt identity is not the local CI package boundary"
+            }
+            Self::DeveloperProofOnly => "local CI package is developer proof only",
+            Self::DawPlacementWorkflowMissing => "DAW placement workflow is not ready",
+            Self::StructuredListeningReviewMissing => "structured listening review is not verified",
+        }
+    }
+
+    #[must_use]
+    pub const fn compact_label(self) -> &'static str {
+        match self {
+            Self::CiWriterProofMissing => "ci-proof",
+            Self::StemPackageReceiptReadinessBlocked => "qa",
+            Self::StemPackageReceiptIdentityMissing => "identity",
+            Self::DeveloperProofOnly => "dev-only",
+            Self::DawPlacementWorkflowMissing => "DAW",
+            Self::StructuredListeningReviewMissing => "listening",
+        }
+    }
+}
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum StemPackageExportQueueResult {
@@ -124,11 +231,45 @@ impl JamAppState {
                 StemPackageExportQueueResult::AlreadyPending
             }
             QueueEnqueueResult::Enqueued(action_id) => {
-                let reason = STEM_PACKAGE_EXPORT_RESERVED_REASON.to_owned();
+                let reason = self.stem_package_export_surface_gate().musician_summary();
                 self.queue.reject(action_id, reason.clone());
                 self.refresh_view();
                 StemPackageExportQueueResult::Rejected { reason }
             }
+        }
+    }
+
+    pub fn stem_package_export_surface_gate(&self) -> StemPackageExportSurfaceGate {
+        let Some(receipt) = self
+            .session
+            .export_receipts
+            .iter()
+            .rev()
+            .find(|receipt| receipt.export_scope == ExportScope::StemPackage)
+        else {
+            return StemPackageExportSurfaceGate::disabled();
+        };
+
+        let mut blockers = Vec::new();
+        if !receipt.stem_package_readiness_report().ready() {
+            blockers.push(StemPackageExportSurfaceBlocker::StemPackageReceiptReadinessBlocked);
+        }
+        if receipt.pack_id != STEM_PACKAGE_LOCAL_CI_PACK_ID
+            || receipt.export_role != ProductExportRole::PackageManifest
+            || receipt.export_boundary != ProductExportBoundary::StemPackageLocalCiPackageV1
+        {
+            blockers.push(StemPackageExportSurfaceBlocker::StemPackageReceiptIdentityMissing);
+        }
+
+        blockers.extend([
+            StemPackageExportSurfaceBlocker::DeveloperProofOnly,
+            StemPackageExportSurfaceBlocker::DawPlacementWorkflowMissing,
+            StemPackageExportSurfaceBlocker::StructuredListeningReviewMissing,
+        ]);
+
+        StemPackageExportSurfaceGate {
+            status: StemPackageExportSurfaceStatus::Disabled,
+            blockers,
         }
     }
 

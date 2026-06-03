@@ -418,6 +418,15 @@ Contract for `export.stem_package`:
   and Session `ExportReceiptState` together. This is still an internal proof
   boundary: UI, Ghost, and CLI must not present `export.stem_package` as a
   general musician-facing export control until explicit surface tickets land.
+- Current musician-facing surface gate:
+  `JamAppState::stem_package_export_surface_gate` is the shared app gate for
+  TUI/observer/reserved-action feedback. It remains `disabled` even after a
+  ready local CI receipt because that package is developer proof only and still
+  lacks the final DAW placement workflow plus verified structured listening
+  review. Without a ready local CI receipt it also reports the missing CI writer
+  proof; with a blocked or legacy-shaped receipt it reports receipt QA or
+  identity blockers. The gate is explanatory only and must not create a second
+  receipt/readiness truth.
 - Current CLI dry-run:
   `riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir>
   --stem-role stem_drums --stem-role stem_bass` reports the local CI package

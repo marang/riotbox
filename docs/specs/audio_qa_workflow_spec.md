@@ -1263,6 +1263,13 @@ Today the repo already has:
     hashes. A repeated fixture run proves stable per-stem hashes for identical
     inputs. No structured listening-review pack exists for this proof; it is
     CI-safe written-artifact evidence with `human_verdict: unverified`.
+  - current musician-facing surface gate is separate from receipt readiness:
+    a ready local CI stem-package receipt can satisfy the internal writer proof,
+    per-stem QA gates, observer projection, operator report, and package
+    identity, but the TUI/Ghost/user export surface remains disabled while the
+    package is developer-proof-only, DAW placement is missing, or structured
+    listening review is not verified. Reserved UI/Ghost-style attempts must
+    reject with those blockers and must not write files or commit a receipt.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,
@@ -1312,6 +1319,10 @@ Today the repo already has:
   actions from action log, queue history, and pending queue state; failed
   reserved attempts have typed failure reasons and no receipt, and completed
   stem-package receipts expose readiness only from the Session receipt.
+  Observer snapshots also include the shared stem-package musician surface gate
+  with `status`, `runnable`, typed blockers, and musician labels. That gate
+  explains product surfacing and is not permission to infer or mutate package
+  artifacts.
 - `just stage-style-snapshot-convergence-smoke` is a CI-safe app-level replay convergence check for the current supported stage-style seam. It proves a mid-run snapshot payload can hydrate and replay a Scene / MC-202 / TR-909 suffix to the same final mixed buffer as the originally committed path. It is not a broad crash-recovery drill, host-audio run, or proof that every possible stage gesture is replay-supported.
 - `just interrupted-session-recovery-probe` is a CI-safe file-backed drill for observer recovery evidence; it is still not automatic startup recovery and does not execute a restore
 - `just missing-target-recovery-probe` is the sibling file-backed drill for a missing normal load target with a parseable autosave clue; it keeps the same read-only manual recovery boundary

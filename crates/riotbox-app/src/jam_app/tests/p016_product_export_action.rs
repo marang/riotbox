@@ -2,6 +2,7 @@ use sha2::{Digest, Sha256};
 
 use super::product_export::{
     STEM_PACKAGE_EXPORT_RESERVED_REASON, StemPackageExportQueueResult,
+    StemPackageExportSurfaceBlocker, StemPackageExportSurfaceStatus,
 };
 
 #[test]
@@ -193,7 +194,10 @@ fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
         StemPackageExportQueueResult::Rejected { reason } => reason,
         other => panic!("expected reserved stem package export rejection, got {other:?}"),
     };
-    assert!(reason.contains("stem package export is reserved"));
+    assert!(reason.contains("stem package export is disabled for musicians"));
+    assert!(reason.starts_with(STEM_PACKAGE_EXPORT_RESERVED_REASON));
+    assert!(reason.contains("CI writer proof is missing"));
+    assert!(reason.contains("DAW placement workflow is not ready"));
     assert!(state.queue.pending_actions().is_empty());
     assert!(state.session.export_receipts.is_empty());
     assert!(
@@ -214,7 +218,7 @@ fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
     assert_eq!(rejected.status, ActionStatus::Rejected);
     assert_eq!(
         rejected.result.as_ref().map(|result| result.summary.as_str()),
-        Some(STEM_PACKAGE_EXPORT_RESERVED_REASON)
+        Some(reason.as_str())
     );
     assert!(matches!(rejected.undo_policy, UndoPolicy::NotUndoable { .. }));
     assert_eq!(rejected.target.scope, Some(TargetScope::Session));
@@ -242,6 +246,58 @@ fn reserved_stem_package_export_queue_attempt_is_rejected_without_receipt() {
         }
         other => panic!("expected stem package params, got {other:?}"),
     }
+}
+
+#[test]
+fn stem_package_musician_surface_gate_is_disabled_until_product_gates_are_ready() {
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    let gate = state.stem_package_export_surface_gate();
+
+    assert_eq!(gate.status, StemPackageExportSurfaceStatus::Disabled);
+    assert!(!gate.runnable());
+    assert_eq!(
+        gate.blockers,
+        vec![
+            StemPackageExportSurfaceBlocker::CiWriterProofMissing,
+            StemPackageExportSurfaceBlocker::DeveloperProofOnly,
+            StemPackageExportSurfaceBlocker::DawPlacementWorkflowMissing,
+            StemPackageExportSurfaceBlocker::StructuredListeningReviewMissing,
+        ]
+    );
+    assert!(gate.musician_summary().contains("disabled for musicians"));
+}
+
+#[test]
+fn local_ci_stem_package_proof_still_keeps_musician_surface_disabled() {
+    let temp = tempdir().expect("tempdir");
+    let destination = temp.path().join("stem-export");
+    let graph = sample_graph();
+    let session = sample_session(&graph);
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    state
+        .commit_stem_package_export_local_ci_package(
+            &destination,
+            1_131,
+            vec![ExportArtifactRole::StemDrums, ExportArtifactRole::StemBass],
+        )
+        .expect("commit local CI stem package export");
+
+    let gate = state.stem_package_export_surface_gate();
+
+    assert_eq!(gate.status, StemPackageExportSurfaceStatus::Disabled);
+    assert!(!gate.runnable());
+    assert_eq!(
+        gate.blockers,
+        vec![
+            StemPackageExportSurfaceBlocker::DeveloperProofOnly,
+            StemPackageExportSurfaceBlocker::DawPlacementWorkflowMissing,
+            StemPackageExportSurfaceBlocker::StructuredListeningReviewMissing,
+        ]
+    );
 }
 
 #[test]
