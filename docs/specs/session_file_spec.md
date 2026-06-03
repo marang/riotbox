@@ -823,6 +823,10 @@ Additional receipt fields required before wider export scopes:
   `audible_output_proof_missing` surface blocker; it does not imply a DAW
   writer exists, launch a host, capture audio, or make `export.daw_session`
   runnable. Failed or missing gates keep the audible-output blocker visible.
+  Audible-output proof may pass only after the same receipt already carries
+  passed `daw_session_writer_proof` and `daw_session_host_import_proof` gates;
+  otherwise the audible-output gate records the missing prerequisite blockers
+  and stays failed.
 - `riotbox-app --daw-session-audible-output-proof-apply --session
   <session.json> --daw-session-audible-output-proof <proof.json>` is the
   current explicit operator bridge from external DAW audible-output evidence

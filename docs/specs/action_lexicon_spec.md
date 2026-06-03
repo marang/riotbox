@@ -612,6 +612,10 @@ Contract for `export.stem_package`:
   `daw_writer_missing` keep `export.daw_session` disabled. This reserves the
   Session/Core boundary only; it does not add host audio capture, a DAW writer,
   observer lifecycle completion, or a runnable `export.daw_session` command.
+  Audible-output proof may pass only after the same receipt already carries
+  passed `daw_session_writer_proof` and `daw_session_host_import_proof` gates;
+  otherwise the audible-output gate records the missing prerequisite blockers
+  and remains failed.
 - Current DAW audible-output proof apply path:
   `riotbox-app --daw-session-audible-output-proof-apply --session
   <session.json> --daw-session-audible-output-proof <proof.json>` reads a local

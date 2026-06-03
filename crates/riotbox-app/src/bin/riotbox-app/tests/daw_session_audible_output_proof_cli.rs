@@ -7,8 +7,8 @@ use riotbox_core::{
     persistence::load_session_json,
     session::{
         DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID, ExportArrangementPlacementRef,
-        ExportArtifactSetEntry, ExportDawTempoMapRef, ExportReceiptQaGateStatus,
-        ExportReceiptState,
+        ExportArtifactRole, ExportArtifactSetEntry, ExportDawTempoMapRef,
+        ExportReceiptQaGateResult, ExportReceiptQaGateStatus, ExportReceiptState,
     },
 };
 
@@ -39,7 +39,14 @@ fn daw_session_audible_output_proof_apply_attaches_gate_without_enabling_export(
 
     assert_eq!(missing_summary["status"], "blocked");
     assert_eq!(missing_summary["mutates_session"], true);
-    assert_eq!(missing_summary["readiness_blockers"], json!(["missing_proof_file"]));
+    assert_eq!(
+        missing_summary["readiness_blockers"],
+        json!([
+            "daw_host_import_proof_missing",
+            "daw_writer_proof_missing",
+            "missing_proof_file"
+        ])
+    );
     assert_eq!(
         missing_summary["daw_session_surface_gate"]["blockers"],
         json!([
@@ -71,8 +78,10 @@ fn daw_session_audible_output_proof_apply_attaches_gate_without_enabling_export(
         failed_summary["readiness_blockers"],
         json!([
             "audible_output_not_proven",
+            "daw_host_import_proof_missing",
+            "daw_writer_proof_missing",
+            "host_audio_capture_missing",
             "proof_blockers_present",
-            "host_audio_capture_missing"
         ])
     );
     assert_eq!(
@@ -93,22 +102,28 @@ fn daw_session_audible_output_proof_apply_attaches_gate_without_enabling_export(
     )
     .expect("write passed proof");
     let passed_summary =
-        daw_session_audible_output_proof_apply_summary(&launch).expect("passed proof summary");
+        daw_session_audible_output_proof_apply_summary(&launch).expect("out-of-order proof summary");
 
     assert_eq!(passed_summary["mode"], "daw_session_audible_output_proof_apply");
-    assert_eq!(passed_summary["status"], "ready");
-    assert_eq!(passed_summary["ready"], true);
+    assert_eq!(passed_summary["status"], "blocked");
+    assert_eq!(passed_summary["ready"], false);
     assert_eq!(passed_summary["writes_files"], false);
     assert_eq!(passed_summary["mutates_session"], true);
     assert_eq!(passed_summary["observer_events"], false);
-    assert_eq!(passed_summary["readiness_blockers"], json!([]));
+    assert_eq!(
+        passed_summary["readiness_blockers"],
+        json!([
+            "daw_host_import_proof_missing",
+            "daw_writer_proof_missing"
+        ])
+    );
     assert_eq!(
         passed_summary["receipt"]["daw_audible_output_gate"]["gate_id"],
         DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID
     );
     assert_eq!(
         passed_summary["receipt"]["daw_audible_output_gate"]["status"],
-        "passed"
+        "failed"
     );
     assert_eq!(
         passed_summary["daw_session_surface_gate"]["blockers"],
@@ -116,12 +131,68 @@ fn daw_session_audible_output_proof_apply_attaches_gate_without_enabling_export(
             "json_package_evidence_missing",
             "developer_proof_only",
             "daw_writer_missing",
-            "daw_host_import_proof_missing"
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
         ])
     );
     assert_eq!(passed_summary["daw_session_surface_gate"]["runnable"], false);
 
-    let saved = load_session_json(&session_path).expect("reload applied session");
+    let mut saved = load_session_json(&session_path).expect("reload applied session");
+    let saved_receipt = saved.export_receipts.last_mut().expect("saved receipt");
+    saved_receipt
+        .artifact_set
+        .push(ExportArtifactSetEntry::daw_session_tempo_map(
+            "exports/tempo_map.json",
+            "tempo-map-sha",
+        ));
+    saved_receipt
+        .artifact_set
+        .push(ExportArtifactSetEntry::daw_session_writer_proof(
+            "exports/daw_session_writer/writer_proof.json",
+            "writer-proof-sha",
+        ));
+    saved_receipt
+        .qa_gates
+        .push(ExportReceiptQaGateResult::daw_session_json_package_integrity(
+            true,
+            &[],
+            vec![
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawSessionTempoMap,
+                ExportArtifactRole::ProductExportProof,
+            ],
+        ));
+    saved_receipt
+        .qa_gates
+        .push(ExportReceiptQaGateResult::daw_session_writer_proof(
+            true,
+            &[],
+            vec![ExportArtifactRole::DawSessionWriterProof],
+        ));
+    saved_receipt
+        .qa_gates
+        .push(ExportReceiptQaGateResult::daw_session_host_import_proof(
+            true,
+            &[],
+        ));
+    save_session_json(&session_path, &saved).expect("save ordered proof prerequisites");
+
+    let ordered_summary =
+        daw_session_audible_output_proof_apply_summary(&launch).expect("ordered proof summary");
+
+    assert_eq!(ordered_summary["status"], "ready");
+    assert_eq!(ordered_summary["ready"], true);
+    assert_eq!(ordered_summary["readiness_blockers"], json!([]));
+    assert_eq!(
+        ordered_summary["receipt"]["daw_audible_output_gate"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        ordered_summary["daw_session_surface_gate"]["blockers"],
+        json!(["developer_proof_only"])
+    );
+
+    let saved = load_session_json(&session_path).expect("reload ordered session");
     let saved_receipt = saved.export_receipts.last().expect("saved receipt");
     let gate = saved_receipt
         .qa_gates

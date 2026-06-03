@@ -1378,7 +1378,10 @@ Today the repo already has:
     `daw_session_audible_output_proof`. Missing or failed proof keeps
     `audible_output_proof_missing` visible; passed proof removes only that
     blocker and still does not launch a host, capture audio, write DAW files, or
-    make `export.daw_session` runnable.
+    make `export.daw_session` runnable. The gate may pass only after passed
+    `daw_session_writer_proof` and `daw_session_host_import_proof` gates exist
+    on the same receipt; out-of-order audible-output evidence records missing
+    prerequisite blockers and remains failed.
   - current DAW audible-output proof apply path is explicit and evidence-only:
     `riotbox-app --daw-session-audible-output-proof-apply --session
     <session.json> --daw-session-audible-output-proof <proof.json>` reads a

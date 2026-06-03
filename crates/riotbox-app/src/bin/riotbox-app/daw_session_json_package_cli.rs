@@ -285,16 +285,18 @@ fn daw_session_audible_output_proof_apply_summary(
 
     let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
     let receipt = &session.export_receipts[receipt_index];
+    let ready = proof_report.ready_for_receipt(receipt);
+    let readiness_blockers = proof_report.gate_blockers_for_receipt(receipt);
     Ok(json!({
         "mode": "daw_session_audible_output_proof_apply",
-        "status": if proof_report.ready { "ready" } else { "blocked" },
-        "ready": proof_report.ready,
+        "status": if ready { "ready" } else { "blocked" },
+        "ready": ready,
         "writes_files": false,
         "mutates_session": true,
         "observer_events": false,
         "session_path": session_path,
         "proof_path": proof_path,
-        "readiness_blockers": proof_report.gate_blockers(),
+        "readiness_blockers": readiness_blockers,
         "proof_report": proof_report,
         "receipt": daw_session_audible_output_receipt_summary(receipt),
         "daw_session_surface_gate": daw_session_surface_gate_summary(&surface_gate),
