@@ -1180,9 +1180,10 @@ Today the repo already has:
   export readiness.
 - The current stem-package manifest fixture is in-memory and CI-safe: it uses
   claimed drums and bass stems, manifest/proof identities, and deferred QA gate
-  evidence, then roundtrips the manifest JSON and checks receipt readiness stays
-  blocked. It is a contract fixture, not a listening pack, package writer, or
-  proof that `export.stem_package` is ready for musicians.
+  evidence, then roundtrips the manifest JSON, derives and roundtrips the proof
+  JSON payload, and checks receipt readiness stays blocked. It is a contract
+  fixture, not a listening pack, package writer, or proof that
+  `export.stem_package` is ready for musicians.
 - Observer export snapshots project those receipt `qa_gates[]` values as-is,
   including non-product stem-package evidence. The observer surface is evidence
   projection from Session/Core receipt truth, not a second readiness engine and
