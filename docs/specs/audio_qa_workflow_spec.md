@@ -1314,6 +1314,12 @@ Today the repo already has:
     planned DAW JSON identities. They are schema and proof-input contracts only:
     no DAW files are written, no Session is mutated, no audio output is
     produced, and no musician-facing DAW export is enabled.
+  - current DAW writer plan payload preview exposes those contracts through the
+    read-only CLI report. A ready preview reports planned manifest/proof paths
+    plus normalized manifest/proof hash linkage; a blocked preview carries typed
+    upstream blockers and emits no hashes. This proves payload shape only, not
+    DAW file export completion, DAW placement correctness in a host, or audible
+    output.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

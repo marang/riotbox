@@ -35,6 +35,7 @@ fn daw_session_writer_plan_summary(
         "tempo_map_ref": plan.tempo_map_ref,
         "source_artifacts": plan.source_artifacts,
         "planned_artifacts": plan.planned_artifacts,
+        "payload_preview": plan.payload_preview,
         "operator_readiness": plan.operator_readiness,
     }))
 }
