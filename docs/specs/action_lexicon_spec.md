@@ -608,10 +608,54 @@ Contract for `export.stem_package`:
   an `ActionCommand`: it writes no DAW files, launches no host, captures no
   audio, emits no observer lifecycle events, and does not make
   `export.daw_session` runnable.
-- Undo policy: `NotUndoable`, because the command writes files outside musical
-  undo. Recovery may report or validate artifacts, but must not delete or
-  rewrite them implicitly.
-- Required params:
+- Current first DAW session writer/action boundary:
+  the future runnable `export.daw_session` command must be introduced only as a
+  single queue/commit/Session/observer boundary. The boundary id is reserved as
+  `daw_session.local_project_writer_v1`; the existing
+  `daw_session.json_package_writer_v1` proof remains a prerequisite JSON
+  package writer, not the DAW project/session writer itself. This slice defines
+  the contract only: it adds no `ActionCommand`, no CLI execute path, no host
+  runner, no audio capture, and no Session mutation beyond the existing proof
+  apply commands.
+- Future `export.daw_session` queue path:
+  accept at most one pending DAW-session export for a Session/destination pair,
+  reject attempts while the DAW surface gate is blocked, and keep the realtime
+  audio thread out of destination validation, package inspection, DAW writing,
+  host checks, or proof generation. The queue record must carry the destination
+  root, export boundary id, selected DAW-session receipt id, and intended
+  artifact identities rather than inferring them from app-local state.
+- Future `export.daw_session` commit / side-effect path:
+  revalidate the latest `export_scope: daw_session` receipt, arrangement
+  placement, tempo-map evidence, local artifact preflight, and
+  `daw_session_json_package_integrity` gate before touching the destination;
+  perform DAW project/session file emission through staging outside realtime
+  audio; hash the promoted files; attach a future `daw_session_writer_proof`
+  gate plus artifact-set entries to the Session receipt; and remove only
+  `daw_writer_missing` when that proof passes. JSON package evidence removes
+  only JSON package blockers, host-import proof removes only
+  `daw_host_import_proof_missing`, audible-output proof removes only
+  `audible_output_proof_missing`, and `developer_proof_only` remains until a
+  later musician-facing release gate explicitly removes it.
+- Future `export.daw_session` Session / replay consequence:
+  the Session receipt and commit record are the product truth for written DAW
+  artifacts. Replay may validate recorded artifact identities and QA gates but
+  must not regenerate, rewrite, launch, or silently repair DAW files. No
+  observer stream, `JamAppState` field, host-local cache, or filesystem scan may
+  become the hidden truth for whether the export completed.
+- Future `export.daw_session` user / observer / QA surface:
+  observer lifecycle records must be derived from the action queue, commit
+  result, and Session receipt evidence. Musician-facing TUI/Ghost affordances
+  stay disabled until writer proof, host-import proof, audible-output proof, and
+  final release policy all pass. Writer proof alone is never host-import proof
+  or audible-output proof; a PR that implements the command must include
+  control-path assertions, written-artifact/hash proof, surface-gate assertions,
+  and an explicit note when structured listening review remains
+  `human_verdict: unverified`.
+- Future `export.daw_session` undo policy:
+  `NotUndoable`, because the command will write files outside musical undo.
+  Recovery may report or validate artifacts, but must not delete or rewrite
+  them implicitly.
+- Current `export.stem_package` required params:
   - `export_scope`: `stem_package`
   - `export_role`: currently `package_manifest`, distinct from per-stem
     artifact roles
@@ -627,7 +671,7 @@ Contract for `export.stem_package`:
     source capture, or capture-lineage evidence
   - `fallback_comparison_policy`: whether each claimed stem must carry typed
     source-vs-fallback comparison evidence
-- Required result fields:
+- Current `export.stem_package` required result fields:
   - export receipt id
   - package manifest/proof path and hash
   - artifact-set entries for every claimed stem role
