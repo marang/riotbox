@@ -174,6 +174,19 @@ fn observer_snapshot_projects_ready_arrangement_placement_refs_from_receipt() {
         "daw_session_json_package_integrity"
     );
     assert_eq!(receipt["qa_gates"][0]["status"], "passed");
+    assert_eq!(
+        snapshot["export"]["daw_session_surface_gate"]["status"],
+        "disabled"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_surface_gate"]["blockers"],
+        serde_json::json!([
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
 }
 
 fn product_mix_receipt_for_arrangement_observer(

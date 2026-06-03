@@ -1,4 +1,6 @@
-use riotbox_app::jam_app::daw_export_operator_readiness_report;
+use riotbox_app::jam_app::{
+    daw_export_operator_readiness_report, daw_session_export_surface_gate_for_session,
+};
 
 fn run_daw_export_readiness_report(
     launch: &AppLaunch,
@@ -17,6 +19,7 @@ fn daw_export_readiness_report_summary(
     };
     let session = riotbox_core::persistence::load_session_json(session_path)?;
     let report = daw_export_operator_readiness_report(&session, session_path.parent());
+    let surface_gate = daw_session_export_surface_gate_for_session(&session);
 
     Ok(json!({
         "mode": "daw_export_readiness_report",
@@ -27,6 +30,20 @@ fn daw_export_readiness_report_summary(
         "developer_proof_status": report.developer_proof_status,
         "musician_export_readiness": report.musician_export_readiness,
         "release_blockers": report.release_blockers,
+        "daw_session_surface_gate": {
+            "status": surface_gate.status.as_str(),
+            "runnable": surface_gate.runnable(),
+            "blockers": surface_gate
+                .blockers
+                .iter()
+                .map(|blocker| blocker.as_str())
+                .collect::<Vec<_>>(),
+            "blocker_labels": surface_gate
+                .blockers
+                .iter()
+                .map(|blocker| blocker.musician_label())
+                .collect::<Vec<_>>(),
+        },
         "readiness_blockers": report.readiness_blockers,
         "daw_session_receipt_count": report.daw_session_receipt_count,
         "receipt": report.receipt,

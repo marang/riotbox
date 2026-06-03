@@ -5,8 +5,8 @@ use riotbox_core::{
         ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
     },
     session::{
-        ExportArrangementPlacementRef, ExportArtifactSetEntry, ExportDawTempoMapRef,
-        ExportReceiptState,
+        ExportArrangementPlacementRef, ExportArtifactRole, ExportArtifactSetEntry,
+        ExportDawTempoMapRef, ExportReceiptQaGateResult, ExportReceiptState,
     },
 };
 
@@ -91,6 +91,18 @@ fn daw_export_report_blocks_without_daw_session_receipt() {
     assert_eq!(
         summary["release_blockers"],
         json!(["developer_proof_only", "daw_writer_missing"])
+    );
+    assert_eq!(summary["daw_session_surface_gate"]["status"], "disabled");
+    assert_eq!(summary["daw_session_surface_gate"]["runnable"], false);
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "no_daw_session_receipt",
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
     );
     assert_eq!(
         summary["readiness_blockers"],
@@ -183,9 +195,11 @@ fn daw_export_report_ready_for_writer_remains_read_only_and_not_musician_runnabl
     let temp = tempfile::tempdir().expect("tempdir");
     let session_path = temp.path().join("session.json");
     let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let tempo_map_path = temp.path().join("exports/tempo_map.json");
     let proof_path = temp.path().join("exports/proof.json");
     fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
     fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&tempo_map_path, "{}").expect("write tempo map");
     fs::write(&proof_path, "{}").expect("write proof");
     let manifest_modified = fs::metadata(&manifest_path)
         .expect("manifest metadata")
@@ -216,6 +230,16 @@ fn daw_export_report_ready_for_writer_remains_read_only_and_not_musician_runnabl
         summary["release_blockers"],
         json!(["developer_proof_only", "daw_writer_missing"])
     );
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "json_package_evidence_missing",
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
+    );
     assert_eq!(summary["readiness_blockers"], json!([]));
     assert_eq!(summary["arrangement_placement_readiness"]["status"], "ready");
     assert_eq!(summary["daw_tempo_map_readiness"]["status"], "ready");
@@ -226,6 +250,64 @@ fn daw_export_report_ready_for_writer_remains_read_only_and_not_musician_runnabl
             .modified()
             .expect("manifest modified timestamp after report"),
         manifest_modified
+    );
+}
+
+#[test]
+fn daw_export_report_surface_gate_accepts_package_evidence_but_stays_disabled() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let tempo_map_path = temp.path().join("exports/tempo_map.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&tempo_map_path, "{}").expect("write tempo map");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let mut session = SessionFile::new(
+        "daw-report-package-gated",
+        "riotbox-test",
+        "2026-06-03T18:20:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    receipt.artifact_set = vec![
+        ExportArtifactSetEntry::export_manifest(
+            "exports/arrangement_manifest.json",
+            "manifest-sha",
+        ),
+        ExportArtifactSetEntry::daw_session_tempo_map(
+            "exports/tempo_map.json",
+            "tempo-map-sha",
+        ),
+        ExportArtifactSetEntry::product_export_proof("exports/proof.json", "proof-sha"),
+    ];
+    receipt.qa_gates = vec![ExportReceiptQaGateResult::daw_session_json_package_integrity(
+        true,
+        &[],
+        vec![
+            ExportArtifactRole::ExportManifest,
+            ExportArtifactRole::DawSessionTempoMap,
+            ExportArtifactRole::ProductExportProof,
+        ],
+    )];
+    session.export_receipts.push(receipt);
+    save_session_json(&session_path, &session).expect("save session");
+    let report_launch = daw_report_launch(session_path);
+
+    let summary = daw_export_readiness_report_summary(&report_launch).expect("report summary");
+
+    assert_eq!(summary["status"], "ready_for_writer");
+    assert_eq!(summary["daw_session_surface_gate"]["status"], "disabled");
+    assert_eq!(summary["daw_session_surface_gate"]["runnable"], false);
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        json!([
+            "developer_proof_only",
+            "daw_writer_missing",
+            "daw_host_import_proof_missing",
+            "audible_output_proof_missing"
+        ])
     );
 }
 

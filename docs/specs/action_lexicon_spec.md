@@ -493,6 +493,14 @@ Contract for `export.stem_package`:
   `daw_writer_missing`). `ready_for_writer` is an implementation gate, not a
   musician-facing `export.daw_session` action or proof that DAW files were
   written.
+- Current DAW musician surface gate:
+  `daw_session_surface_gate` is the disabled product gate for surfacing DAW
+  export to musicians. It is derived from the DAW Session receipt, JSON package
+  integrity QA gate, and fixed release blockers. Missing receipt evidence,
+  blocked placement/tempo readiness, missing or failed JSON package integrity,
+  missing DAW writer, missing host-import proof, and missing audible-output
+  proof remain explicit blockers rather than being hidden behind
+  `ready_for_writer`.
 - Current DAW report smoke:
   `just daw-export-readiness-report-smoke` runs the real `riotbox-app` binary
   in a temp directory, verifies the ready-for-writer report shape, removes the
