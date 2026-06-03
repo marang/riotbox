@@ -928,4 +928,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add stem-package operator proof summary command
 - [RIOTBOX-1137.md](./RIOTBOX-1137.md)
   P016: Add stem-package-specific receipt boundary and profile identity
+- [RIOTBOX-1138.md](./RIOTBOX-1138.md)
+  P016: Add stem-package operator report CLI smoke proof
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
