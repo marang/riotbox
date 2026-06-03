@@ -970,4 +970,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add DAW session audible-output proof gate boundary
 - [RIOTBOX-1157.md](./RIOTBOX-1157.md)
   P016: Add DAW session audible-output proof apply CLI
+- [RIOTBOX-1158.md](./RIOTBOX-1158.md)
+  P016: Define first DAW session writer action boundary
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
