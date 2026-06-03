@@ -13,6 +13,8 @@ mod recovery_prompt;
 mod scene_timing_labels;
 mod source_timing_panel;
 mod source_trust_summary;
+#[path = "ui/diagnostics_mc202_w30_logs/stem_package_export.rs"]
+mod stem_package_export_inspect;
 #[path = "ui/capture_log_source_lists/w30_cue_labels.rs"]
 mod w30_cue_labels;
 #[path = "ui/diagnostics_mc202_w30_logs/w30_preview.rs"]
@@ -61,6 +63,7 @@ use source_trust_summary::{
     source_timing_help_line, source_timing_performance_rail_line, source_timing_readiness_line,
     source_timing_warning_line, source_warning_lines, trust_summary,
 };
+use stem_package_export_inspect::stem_package_export_receipt_lines;
 use w30_cue_labels::{last_committed_w30_action, short_w30_action_label, w30_pending_cue_label};
 use w30_preview_labels::{
     w30_preview_log_compact, w30_preview_mode_profile_compact, w30_preview_source_readiness,

@@ -1,7 +1,7 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionStatus},
     export_readiness::{
-        ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
+        ExportScope, ProductExportBoundary, ProductExportRole, UnsupportedExportScope,
         default_unsupported_export_scopes,
     },
     session::ExportReceiptState,
@@ -9,6 +9,7 @@ use riotbox_core::{
 
 fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
     let capture = &shell.app.jam_view.capture;
+    let export_lines = export_readiness_lines(shell);
     let mut lines = vec![
         Line::from(format!(
             "captures {} | pending {}",
@@ -34,7 +35,10 @@ fn material_inspect_lines(shell: &JamShellState) -> Vec<Line<'static>> {
                 .unwrap_or("no capture note yet")
         )),
     ];
-    lines.extend(export_readiness_lines(shell));
+    if export_lines.len() > 2 {
+        lines.truncate(3);
+    }
+    lines.extend(export_lines);
     lines
 }
 
@@ -105,6 +109,10 @@ fn export_readiness_lines(shell: &JamShellState) -> Vec<Line<'static>> {
 }
 
 fn export_receipt_lines(receipt: &ExportReceiptState) -> Vec<Line<'static>> {
+    if receipt.export_scope == ExportScope::StemPackage {
+        return stem_package_export_receipt_lines(receipt);
+    }
+
     let role = receipt.export_role.as_str();
     let boundary = export_boundary_short_label(receipt.export_boundary);
     let unsupported = receipt
