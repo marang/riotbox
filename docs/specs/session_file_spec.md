@@ -768,6 +768,21 @@ Additional receipt fields required before wider export scopes:
   `daw_session_json_package_integrity` in `qa_gates[]`. It is a typed receipt
   adapter only; callers still decide when a Session receipt may be mutated, and
   this does not make `export.daw_session` runnable.
+- `riotbox-app --daw-session-json-package-evidence-apply --session
+  <session.json> --daw-session-destination <dir>` is the current explicit
+  operator CLI for that mutation decision. It reads the existing local
+  `daw_session/` package report, attaches ready or blocked package evidence to
+  the latest `export_scope: daw_session` receipt, atomically writes only the
+  Session file, and reports the still-disabled DAW session surface gate. It
+  does not write package files, emit observer lifecycle events, create DAW
+  host/project files, validate host import correctness, or make
+  `export.daw_session` runnable.
+- `just daw-session-json-package-evidence-apply-smoke` is the bounded repo
+  proof for that apply path. It runs the real binary after the explicit JSON
+  package execute path and proves the saved Session receipt carries
+  `export_manifest`, `daw_session_tempo_map`, `product_export_proof`, and the
+  passed `daw_session_json_package_integrity` gate while the musician-facing
+  surface remains disabled.
 - new render profile or recipe ids beyond current `feral-grid-demo` and
   `stem-package-local-ci` so replay can validate which deterministic path
   produced the artifacts

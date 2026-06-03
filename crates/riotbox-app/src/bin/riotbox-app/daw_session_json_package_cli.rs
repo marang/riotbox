@@ -1,12 +1,22 @@
 use riotbox_app::jam_app::{
     DAW_SESSION_JSON_PACKAGE_WRITER_BOUNDARY_ID, WrittenDawSessionJsonPackage,
-    daw_session_json_package_report, write_daw_session_json_package,
+    attach_daw_session_json_package_evidence_to_receipt, daw_session_json_package_report,
+    write_daw_session_json_package,
 };
 
 fn run_daw_session_json_package_execute(
     launch: &AppLaunch,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let summary = daw_session_json_package_execute_summary(launch)?;
+    serde_json::to_writer_pretty(std::io::stdout(), &summary)?;
+    println!();
+    Ok(())
+}
+
+fn run_daw_session_json_package_evidence_apply(
+    launch: &AppLaunch,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let summary = daw_session_json_package_evidence_apply_summary(launch)?;
     serde_json::to_writer_pretty(std::io::stdout(), &summary)?;
     println!();
     Ok(())
@@ -74,6 +84,75 @@ fn daw_session_json_package_execute_summary(
     }
 }
 
+fn daw_session_json_package_evidence_apply_summary(
+    launch: &AppLaunch,
+) -> Result<Value, Box<dyn std::error::Error>> {
+    let LaunchMode::DawSessionJsonPackageEvidenceApply {
+        session_path,
+        destination_path,
+    } = &launch.mode
+    else {
+        return Err("not a DAW session JSON package evidence apply launch".into());
+    };
+    let mut session = riotbox_core::persistence::load_session_json(session_path)?;
+    let package_report = daw_session_json_package_report(destination_path);
+
+    let Some(receipt_index) = session
+        .export_receipts
+        .iter()
+        .rposition(|receipt| {
+            receipt.export_scope == riotbox_core::export_readiness::ExportScope::DawSession
+        })
+    else {
+        let surface_gate =
+            riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+        return Ok(json!({
+            "mode": "daw_session_json_package_evidence_apply",
+            "status": "blocked",
+            "ready": false,
+            "writes_files": false,
+            "mutates_session": false,
+            "observer_events": false,
+            "session_path": session_path,
+            "destination_path": destination_path,
+            "readiness_blockers": ["no_daw_session_receipt"],
+            "package_report": package_report,
+            "receipt": null,
+            "daw_session_surface_gate": daw_session_surface_gate_summary(&surface_gate),
+            "release_blockers": daw_session_release_blockers(),
+        }));
+    };
+
+    attach_daw_session_json_package_evidence_to_receipt(
+        &mut session.export_receipts[receipt_index],
+        &package_report,
+    )
+    .map_err(|error| format!("DAW session JSON package evidence apply failed: {error:?}"))?;
+    riotbox_core::persistence::save_session_json(session_path, &session)?;
+
+    let surface_gate = riotbox_app::jam_app::daw_session_export_surface_gate_for_session(&session);
+    let receipt = &session.export_receipts[receipt_index];
+    Ok(json!({
+        "mode": "daw_session_json_package_evidence_apply",
+        "status": if package_report.ready { "ready" } else { "blocked" },
+        "ready": package_report.ready,
+        "writes_files": false,
+        "mutates_session": true,
+        "observer_events": false,
+        "session_path": session_path,
+        "destination_path": destination_path,
+        "readiness_blockers": package_report
+            .blockers
+            .iter()
+            .map(|blocker| blocker.as_str())
+            .collect::<Vec<_>>(),
+        "package_report": package_report,
+        "receipt": daw_session_json_package_receipt_summary(receipt),
+        "daw_session_surface_gate": daw_session_surface_gate_summary(&surface_gate),
+        "release_blockers": daw_session_release_blockers(),
+    }))
+}
+
 fn written_daw_session_json_package_summary(written: &WrittenDawSessionJsonPackage) -> Value {
     json!({
         "package_dir": written.package_dir,
@@ -104,4 +183,39 @@ fn daw_session_surface_gate_summary(
             .map(|blocker| blocker.musician_label())
             .collect::<Vec<_>>(),
     })
+}
+
+fn daw_session_json_package_receipt_summary(
+    receipt: &riotbox_core::session::ExportReceiptState,
+) -> Value {
+    let package_gate = receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == riotbox_core::session::DAW_SESSION_JSON_PACKAGE_QA_GATE_ID);
+    json!({
+        "receipt_id": receipt.receipt_id.as_str(),
+        "export_scope": receipt.export_scope,
+        "pack_id": receipt.pack_id,
+        "export_role": receipt.export_role,
+        "export_boundary": receipt.export_boundary,
+        "artifact_set": receipt
+            .artifact_set
+            .iter()
+            .map(|artifact| json!({
+                "role": export_artifact_role_label(artifact.role),
+                "location": artifact.location_identity(),
+                "sha256": artifact.sha256,
+            }))
+            .collect::<Vec<_>>(),
+        "daw_json_package_gate": package_gate,
+    })
+}
+
+fn daw_session_release_blockers() -> [&'static str; 4] {
+    [
+        "developer_proof_only",
+        "daw_writer_missing",
+        "daw_host_import_proof_missing",
+        "audible_output_proof_missing",
+    ]
 }

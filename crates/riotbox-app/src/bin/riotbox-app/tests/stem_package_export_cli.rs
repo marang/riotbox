@@ -32,6 +32,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
+        | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected stem package dry-run mode")
         }
@@ -80,6 +81,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         | LaunchMode::StemPackageLocalCiReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
+        | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected stem package execute mode")
         }

@@ -14,6 +14,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut stem_package_local_ci_report = false;
     let mut daw_export_readiness_report = false;
     let mut daw_session_json_package_execute = false;
+    let mut daw_session_json_package_evidence_apply = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
     let mut daw_session_destination_path = None;
@@ -26,6 +27,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
             "--daw-session-json-package-execute" => daw_session_json_package_execute = true,
+            "--daw-session-json-package-evidence-apply" => {
+                daw_session_json_package_evidence_apply = true;
+            }
             "--daw-session-writer-plan" => daw_session_writer_plan = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
@@ -95,13 +99,18 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     if daw_export_readiness_report && stem_package_mode_count > 0 {
         return Err("DAW export readiness report cannot be combined with stem package modes".into());
     }
-    let daw_session_mode_count = [daw_session_json_package_execute, daw_session_writer_plan]
-        .into_iter()
-        .filter(|enabled| *enabled)
-        .count();
+    let daw_session_mode_count = [
+        daw_session_json_package_execute,
+        daw_session_json_package_evidence_apply,
+        daw_session_writer_plan,
+    ]
+    .into_iter()
+    .filter(|enabled| *enabled)
+    .count();
     if daw_session_mode_count > 1 {
         return Err(
-            "DAW session JSON package execute and writer plan modes cannot be combined".into(),
+            "DAW session JSON package execute, evidence apply, and writer plan modes cannot be combined"
+                .into(),
         );
     }
     if daw_session_mode_count > 0 && (stem_package_mode_count > 0 || daw_export_readiness_report) {
@@ -248,6 +257,36 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             observer_path: None,
         });
     }
+    if daw_session_json_package_evidence_apply {
+        if source_path.is_some()
+            || source_graph_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || observer_path.is_some()
+            || stem_package_destination_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "DAW session JSON package evidence apply reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "DAW session JSON package evidence apply requires --session <session.json>".to_string()
+        })?;
+        let destination_path = daw_session_destination_path.ok_or_else(|| {
+            "DAW session JSON package evidence apply requires --daw-session-destination <dir>"
+                .to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::DawSessionJsonPackageEvidenceApply {
+                session_path,
+                destination_path,
+            },
+            observer_path: None,
+        });
+    }
     if daw_session_writer_plan {
         if source_path.is_some()
             || source_graph_path.is_some()
@@ -285,7 +324,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     }
     if daw_session_destination_path.is_some() {
         return Err(
-            "--daw-session-destination requires --daw-session-writer-plan or --daw-session-json-package-execute"
+            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, or --daw-session-json-package-evidence-apply"
                 .into(),
         );
     }
@@ -340,7 +379,7 @@ fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String>
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-execute --session <session.json> --daw-session-destination <dir>\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-execute --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-evidence-apply --session <session.json> --daw-session-destination <dir>\n\nDefaults:\n  --session {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -355,6 +394,7 @@ impl LaunchMode {
             | Self::StemPackageLocalCiReport { .. }
             | Self::DawExportReadinessReport { .. }
             | Self::DawSessionJsonPackageExecute { .. }
+            | Self::DawSessionJsonPackageEvidenceApply { .. }
             | Self::DawSessionWriterPlan { .. } => ShellLaunchMode::Load,
         }
     }

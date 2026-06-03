@@ -566,6 +566,14 @@ Contract for `export.stem_package`:
   `artifact_set[]`; blocked packages attach a failed gate with blocker summary
   and only the readable JSON artifacts whose hashes exist. This is receipt
   evidence only and does not make `export.daw_session` runnable.
+- Current DAW JSON package evidence apply CLI:
+  `riotbox-app --daw-session-json-package-evidence-apply --session
+  <session.json> --daw-session-destination <dir>` is the guarded operator path
+  that performs that Session receipt mutation. It reads the existing local
+  package report, updates the latest `export_scope: daw_session` receipt, and
+  writes only the Session file. It does not write package files, emit observer
+  lifecycle events, create DAW host/project files, validate DAW host import
+  correctness, claim audible output, or surface `export.daw_session`.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
