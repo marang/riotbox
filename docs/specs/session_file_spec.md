@@ -819,6 +819,13 @@ Additional receipt fields required before wider export scopes:
   receipt's `daw_session_host_import_proof` QA gate and writes only the Session
   file. It does not launch a host, create DAW files, emit observer lifecycle
   events, prove audible output, or make `export.daw_session` runnable.
+- the current `export.daw_session` host-import-proof action boundary is
+  `host_import_proof_v1`. It commits an existing local
+  `riotbox.daw_session_host_import_proof` JSON report through queue/history,
+  Session action log, commit record, and matching receipt evidence. It requires
+  a passed `daw_session_writer_proof` gate on the same receipt, attaches only
+  `daw_session_host_import_proof`, writes no files, launches no host, proves no
+  audible output, and keeps the musician-facing DAW export surface disabled.
 - `daw_session_audible_output_proof` is the reserved Session/Core QA gate for
   future DAW-session audible-output proof. A passed gate only removes the
   `audible_output_proof_missing` surface blocker; it does not imply a DAW
@@ -867,13 +874,18 @@ Additional receipt fields required before wider export scopes:
   only `daw_writer_missing` when that proof passes. Replay validates the
   recorded receipt/artifact/proof identities only; it must not regenerate or
   rewrite DAW files.
+- current DAW-session host-import proof commits keep the Session receipt as the
+  only product truth. The command revalidates the local proof report and writer
+  proof prerequisite, records only the receipt QA gate mutation plus action /
+  commit evidence, and must not launch a host, write DAW files, or infer
+  audible-output readiness.
 - observer lifecycle projection for `export.daw_session` is allowed only when a
   real DAW-session action exists in queue history, pending queue, or Session
-  action log. A committed local-writer proof action may produce completed
-  lifecycle records with the matching receipt and proof-gate summary. A rejected
-  reserved attempt may produce failed lifecycle records without a receipt. A
-  DAW-session receipt by itself remains read-only summary evidence and must not
-  create fake lifecycle records.
+  action log. A committed local-writer proof action or host-import-proof action
+  may produce completed lifecycle records with the matching receipt and
+  proof-gate summary. A rejected reserved attempt may produce failed lifecycle
+  records without a receipt. A DAW-session receipt by itself remains read-only
+  summary evidence and must not create fake lifecycle records.
 - DAW-session blocker removal is intentionally one gate at a time:
   JSON package integrity removes only JSON package blockers, writer proof
   removes only `daw_writer_missing`, host-import proof removes only

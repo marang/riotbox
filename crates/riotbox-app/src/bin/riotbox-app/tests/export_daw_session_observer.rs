@@ -129,6 +129,63 @@ fn observer_snapshot_reports_rejected_reserved_daw_session_lifecycle_without_rec
     );
 }
 
+#[test]
+fn observer_snapshot_reports_committed_daw_session_host_import_lifecycle() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let destination = temp.path().join("daw-session-export");
+    let proof_path = temp.path().join("host_import_proof.json");
+    let mut state = daw_session_writer_export_observer_state(temp.path(), &destination, true);
+    state
+        .commit_daw_session_writer_export(Some(temp.path()), &destination, 980)
+        .expect("commit writer proof prerequisite");
+    write_host_import_observer_proof(&proof_path, true, &[]);
+    let receipt = state
+        .commit_daw_session_host_import_proof_export(&proof_path, 1_000)
+        .expect("commit host-import proof");
+    let action_id = state
+        .session
+        .action_log
+        .actions
+        .iter()
+        .rev()
+        .find(|action| action.command == ActionCommand::ExportDawSession)
+        .expect("committed DAW session host-import action")
+        .id;
+
+    let shell = JamShellState::new(state, ShellLaunchMode::Load);
+    let snapshot = observer_snapshot(&shell);
+    let lifecycle = snapshot["export"]["lifecycle"]
+        .as_array()
+        .expect("lifecycle array");
+
+    assert_eq!(lifecycle.len(), 6);
+    assert_eq!(lifecycle[3]["stage"], "requested");
+    assert_eq!(lifecycle[4]["stage"], "started");
+    assert_eq!(lifecycle[5]["stage"], "completed");
+    assert_eq!(lifecycle[5]["command"], "export.daw_session");
+    assert_eq!(lifecycle[5]["action_id"], action_id.0);
+    assert_eq!(
+        lifecycle[5]["receipt"]["receipt_id"],
+        receipt.receipt_id.to_string()
+    );
+    assert_eq!(
+        lifecycle[5]["receipt"]["proof_gates"]["writer_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        lifecycle[5]["receipt"]["proof_gates"]["host_import_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        lifecycle[5]["receipt"]["proof_gates"]["audible_output_proof"]["status"],
+        "missing"
+    );
+    assert_eq!(
+        snapshot["export"]["daw_session_surface_gate"]["blockers"],
+        serde_json::json!(["developer_proof_only", "audible_output_proof_missing"])
+    );
+}
+
 fn daw_session_writer_export_observer_state(
     base_dir: &Path,
     destination: &Path,
@@ -215,4 +272,19 @@ fn daw_session_writer_export_observer_receipt(
         ExportArtifactSetEntry::product_export_proof(proof_path, "proof-sha"),
     ];
     receipt
+}
+
+fn write_host_import_observer_proof(path: &Path, imported: bool, blockers: &[&str]) {
+    fs::write(
+        path,
+        serde_json::json!({
+            "schema_id": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_ID,
+            "schema_version": riotbox_app::jam_app::DAW_SESSION_HOST_IMPORT_PROOF_SCHEMA_VERSION,
+            "package_dir": "exports/daw-package/daw_session",
+            "imported": imported,
+            "blockers": blockers,
+        })
+        .to_string(),
+    )
+    .expect("write host-import proof");
 }
