@@ -16,10 +16,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_session_json_package_execute = false;
     let mut daw_session_json_package_evidence_apply = false;
     let mut daw_session_host_import_proof_apply = false;
+    let mut daw_session_audible_output_proof_apply = false;
     let mut daw_session_writer_plan = false;
     let mut stem_package_destination_path = None;
     let mut daw_session_destination_path = None;
     let mut daw_session_host_import_proof_path = None;
+    let mut daw_session_audible_output_proof_path = None;
     let mut claimed_stem_roles = Vec::new();
 
     while let Some(arg) = args.next() {
@@ -35,6 +37,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--daw-session-host-import-proof-apply" => {
                 daw_session_host_import_proof_apply = true;
             }
+            "--daw-session-audible-output-proof-apply" => {
+                daw_session_audible_output_proof_apply = true;
+            }
             "--daw-session-writer-plan" => daw_session_writer_plan = true,
             "--stem-package-destination" => {
                 stem_package_destination_path =
@@ -47,6 +52,12 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--daw-session-host-import-proof" => {
                 daw_session_host_import_proof_path =
                     Some(next_path(&mut args, "--daw-session-host-import-proof")?);
+            }
+            "--daw-session-audible-output-proof" => {
+                daw_session_audible_output_proof_path = Some(next_path(
+                    &mut args,
+                    "--daw-session-audible-output-proof",
+                )?);
             }
             "--stem-role" => {
                 let value = args
@@ -112,6 +123,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         daw_session_json_package_execute,
         daw_session_json_package_evidence_apply,
         daw_session_host_import_proof_apply,
+        daw_session_audible_output_proof_apply,
         daw_session_writer_plan,
     ]
     .into_iter()
@@ -119,7 +131,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     .count();
     if daw_session_mode_count > 1 {
         return Err(
-            "DAW session JSON package execute, evidence apply, host import proof apply, and writer plan modes cannot be combined"
+            "DAW session JSON package execute, evidence apply, host import proof apply, audible output proof apply, and writer plan modes cannot be combined"
                 .into(),
         );
     }
@@ -139,6 +151,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_seed_flag
             || daw_session_destination_path.is_some()
             || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
         {
             return Err(
                 "stem package local CI dry-run cannot be combined with source/session/graph/sidecar/seed/observer/DAW destination launch arguments"
@@ -166,6 +179,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || saw_seed_flag
             || daw_session_destination_path.is_some()
             || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
         {
             return Err(
                 "stem package local CI execute cannot be combined with source/sidecar/seed/DAW destination launch arguments"
@@ -201,6 +215,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || stem_package_destination_path.is_some()
             || daw_session_destination_path.is_some()
             || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -226,6 +241,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             || stem_package_destination_path.is_some()
             || daw_session_destination_path.is_some()
             || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
             || !claimed_stem_roles.is_empty()
         {
             return Err(
@@ -242,143 +258,30 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             observer_path: None,
         });
     }
-    if daw_session_json_package_execute {
-        if source_path.is_some()
-            || source_graph_path.is_some()
-            || saw_sidecar_flag
-            || saw_seed_flag
-            || observer_path.is_some()
-            || stem_package_destination_path.is_some()
-            || daw_session_host_import_proof_path.is_some()
-            || !claimed_stem_roles.is_empty()
-        {
-            return Err(
-                "DAW session JSON package execute reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments"
-                    .into(),
-            );
-        }
-        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
-            "DAW session JSON package execute requires --session <session.json>".to_string()
-        })?;
-        let destination_path = daw_session_destination_path.ok_or_else(|| {
-            "DAW session JSON package execute requires --daw-session-destination <dir>".to_string()
-        })?;
-
-        return Ok(AppLaunch {
-            mode: LaunchMode::DawSessionJsonPackageExecute {
-                session_path,
-                destination_path,
-            },
-            observer_path: None,
-        });
-    }
-    if daw_session_json_package_evidence_apply {
-        if source_path.is_some()
-            || source_graph_path.is_some()
-            || saw_sidecar_flag
-            || saw_seed_flag
-            || observer_path.is_some()
-            || stem_package_destination_path.is_some()
-            || daw_session_host_import_proof_path.is_some()
-            || !claimed_stem_roles.is_empty()
-        {
-            return Err(
-                "DAW session JSON package evidence apply reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments"
-                    .into(),
-            );
-        }
-        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
-            "DAW session JSON package evidence apply requires --session <session.json>".to_string()
-        })?;
-        let destination_path = daw_session_destination_path.ok_or_else(|| {
-            "DAW session JSON package evidence apply requires --daw-session-destination <dir>"
-                .to_string()
-        })?;
-
-        return Ok(AppLaunch {
-            mode: LaunchMode::DawSessionJsonPackageEvidenceApply {
-                session_path,
-                destination_path,
-            },
-            observer_path: None,
-        });
-    }
-    if daw_session_host_import_proof_apply {
-        if source_path.is_some()
-            || source_graph_path.is_some()
-            || saw_sidecar_flag
-            || saw_seed_flag
-            || observer_path.is_some()
-            || stem_package_destination_path.is_some()
-            || daw_session_destination_path.is_some()
-            || !claimed_stem_roles.is_empty()
-        {
-            return Err(
-                "DAW session host import proof apply reads only an explicit session and proof file and cannot be combined with source/graph/observer/sidecar/seed/destination/stem arguments"
-                    .into(),
-            );
-        }
-        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
-            "DAW session host import proof apply requires --session <session.json>".to_string()
-        })?;
-        let proof_path = daw_session_host_import_proof_path.ok_or_else(|| {
-            "DAW session host import proof apply requires --daw-session-host-import-proof <proof.json>"
-                .to_string()
-        })?;
-
-        return Ok(AppLaunch {
-            mode: LaunchMode::DawSessionHostImportProofApply {
-                session_path,
-                proof_path,
-            },
-            observer_path: None,
-        });
-    }
-    if daw_session_writer_plan {
-        if source_path.is_some()
-            || source_graph_path.is_some()
-            || saw_sidecar_flag
-            || saw_seed_flag
-            || observer_path.is_some()
-            || stem_package_destination_path.is_some()
-            || daw_session_host_import_proof_path.is_some()
-            || !claimed_stem_roles.is_empty()
-        {
-            return Err(
-                "DAW session writer plan reads only an explicit session and destination and cannot be combined with source/graph/observer/sidecar/seed/stem arguments"
-                    .into(),
-            );
-        }
-        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
-            "DAW session writer plan requires --session <session.json>".to_string()
-        })?;
-        let destination_path = daw_session_destination_path.ok_or_else(|| {
-            "DAW session writer plan requires --daw-session-destination <dir>".to_string()
-        })?;
-
-        return Ok(AppLaunch {
-            mode: LaunchMode::DawSessionWriterPlan {
-                session_path,
-                destination_path,
-            },
-            observer_path: None,
-        });
+    if let Some(launch) = parse_daw_session_mode_args(DawSessionModeArgs {
+        json_package_execute: daw_session_json_package_execute,
+        json_package_evidence_apply: daw_session_json_package_evidence_apply,
+        host_import_proof_apply: daw_session_host_import_proof_apply,
+        audible_output_proof_apply: daw_session_audible_output_proof_apply,
+        writer_plan: daw_session_writer_plan,
+        source_path_present: source_path.is_some(),
+        source_graph_path_present: source_graph_path.is_some(),
+        saw_session_flag,
+        saw_sidecar_flag,
+        saw_seed_flag,
+        observer_path_present: observer_path.is_some(),
+        stem_package_destination_path_present: stem_package_destination_path.is_some(),
+        claimed_stem_roles_empty: claimed_stem_roles.is_empty(),
+        session_path: session_path.as_ref(),
+        destination_path: daw_session_destination_path.as_ref(),
+        host_import_proof_path: daw_session_host_import_proof_path.as_ref(),
+        audible_output_proof_path: daw_session_audible_output_proof_path.as_ref(),
+    })? {
+        return Ok(launch);
     }
     if stem_package_destination_path.is_some() || !claimed_stem_roles.is_empty() {
         return Err(
             "--stem-package-destination, --stem-role, and --stem-roles require --stem-package-local-ci-dry-run or --stem-package-local-ci-execute"
-                .into(),
-        );
-    }
-    if daw_session_destination_path.is_some() {
-        return Err(
-            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, or --daw-session-json-package-evidence-apply"
-                .into(),
-        );
-    }
-    if daw_session_host_import_proof_path.is_some() {
-        return Err(
-            "--daw-session-host-import-proof requires --daw-session-host-import-proof-apply"
                 .into(),
         );
     }

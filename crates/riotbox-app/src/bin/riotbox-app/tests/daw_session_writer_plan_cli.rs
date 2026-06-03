@@ -38,7 +38,8 @@ fn parse_args_builds_daw_session_writer_plan_mode() {
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
-        | LaunchMode::DawSessionHostImportProofApply { .. } => {
+        | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionAudibleOutputProofApply { .. } => {
             panic!("expected DAW session writer plan mode")
         }
     }

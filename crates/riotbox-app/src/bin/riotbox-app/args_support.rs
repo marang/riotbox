@@ -20,7 +20,7 @@ fn parse_export_artifact_role(value: &str) -> Result<ExportArtifactRole, String>
 
 fn help_text() -> String {
     format!(
-        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-execute --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-evidence-apply --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-host-import-proof-apply --session <session.json> --daw-session-host-import-proof <proof.json>\n\nDefaults:\n  --session {}\n  --sidecar {}",
+        "Usage:\n  riotbox-app --source <audio.wav> [--session <session.json>] [--graph <source-graph.json>] [--sidecar <script.py>] [--seed <n>] [--observer <events.ndjson>]\n  riotbox-app --session <session.json> [--graph <source-graph.json>] [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-dry-run --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass\n  riotbox-app --stem-package-local-ci-execute --session <session.json> [--graph <source-graph.json>] --stem-package-destination <dir> --stem-role stem_drums --stem-role stem_bass [--observer <events.ndjson>]\n  riotbox-app --stem-package-local-ci-report --session <session.json>\n  riotbox-app --daw-export-readiness-report --session <session.json>\n  riotbox-app --daw-session-writer-plan --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-execute --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-json-package-evidence-apply --session <session.json> --daw-session-destination <dir>\n  riotbox-app --daw-session-host-import-proof-apply --session <session.json> --daw-session-host-import-proof <proof.json>\n  riotbox-app --daw-session-audible-output-proof-apply --session <session.json> --daw-session-audible-output-proof <proof.json>\n\nDefaults:\n  --session {}\n  --sidecar {}",
         DEFAULT_SESSION_PATH, DEFAULT_SIDECAR_PATH
     )
 }
@@ -37,6 +37,7 @@ impl LaunchMode {
             | Self::DawSessionJsonPackageExecute { .. }
             | Self::DawSessionJsonPackageEvidenceApply { .. }
             | Self::DawSessionHostImportProofApply { .. }
+            | Self::DawSessionAudibleOutputProofApply { .. }
             | Self::DawSessionWriterPlan { .. } => ShellLaunchMode::Load,
         }
     }

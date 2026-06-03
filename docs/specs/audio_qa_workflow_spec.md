@@ -1375,6 +1375,14 @@ Today the repo already has:
     `audible_output_proof_missing` visible; passed proof removes only that
     blocker and still does not launch a host, capture audio, write DAW files, or
     make `export.daw_session` runnable.
+  - current DAW audible-output proof apply path is explicit and evidence-only:
+    `riotbox-app --daw-session-audible-output-proof-apply --session
+    <session.json> --daw-session-audible-output-proof <proof.json>` reads a
+    local `riotbox.daw_session_audible_output_proof` JSON report and mutates
+    only the latest DAW-session receipt's audible-output QA gate. It is not a
+    DAW writer, not a host runner, not live audio capture, and not an observer
+    lifecycle event. `just daw-session-audible-output-proof-apply-smoke` proves
+    the real-binary Session mutation while `export.daw_session` stays disabled.
   - reusable product-export evidence: local artifact hashing, local proof file
     hashing, receipt-side `artifact_set[]` projection, source graph and
     timing-grid receipt evidence, safe post-write WAV metric extraction,

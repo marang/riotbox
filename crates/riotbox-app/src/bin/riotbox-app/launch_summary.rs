@@ -91,6 +91,15 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "proof_path": proof_path,
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::DawSessionAudibleOutputProofApply {
+            session_path,
+            proof_path,
+        } => json!({
+            "mode": "daw_session_audible_output_proof_apply",
+            "session_path": session_path,
+            "proof_path": proof_path,
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::DawSessionWriterPlan {
             session_path,
             destination_path,
