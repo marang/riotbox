@@ -1143,6 +1143,13 @@ Today the repo already has:
   and at least one comparison metric field. Missing, duplicate, non-stem,
   comparison-free, blank, or metricless evidence records `failed`. It is
   structural comparison evidence only; real render thresholds remain separate.
+- `riotbox-core::session::validate_stem_package_receipt_readiness` requires the
+  receipt to be `export_scope: stem_package`, to have no remaining
+  `stem_package` unsupported-scope flag, and to carry `passed` status for all
+  required stem-package QA gates: artifact-set evidence, per-stem hash
+  stability, per-stem non-silence, per-stem lineage, and per-stem fallback
+  comparison. Missing, `deferred`, or `failed` gates keep readiness blocked with
+  typed blockers.
 - `riotbox-core::stem_package_manifest::StemPackageManifest` is the current
   CI-safe schema contract for future stem-package manifests. It serializes
   stable schema id/version, `export_scope: stem_package`, receipt/action

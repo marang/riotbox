@@ -510,8 +510,14 @@ Rules:
 - `validate_stem_package_receipt_readiness` is the typed receipt-level guard
   for future stem-package readiness. It reports `blocked` while the receipt is
   not `export_scope: stem_package`, while `unsupported_scopes[]` still includes
-  `stem_package`, while the stem-package artifact-set QA gate is missing, or
-  while that gate is `failed` or `deferred`.
+  `stem_package`, or while any required stem-package QA gate is missing,
+  `failed`, or `deferred`. The required gate ids are
+  `stem_package_artifact_set_evidence`,
+  `stem_package_per_stem_hash_stability`,
+  `stem_package_per_stem_non_silence`, `stem_package_per_stem_lineage`, and
+  `stem_package_per_stem_fallback_comparison`. A receipt can report `ready`
+  only when all of those gates are present with `passed` status and the
+  unsupported scope flag has been removed.
 - stem package export, live recording export, DAW export, and host-audio soak
   require later receipt fields and QA gates before they are claimed
 
