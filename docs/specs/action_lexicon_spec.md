@@ -537,6 +537,13 @@ Contract for `export.stem_package`:
   files, and verifies proof-to-manifest hash linkage. It is not a CLI writer,
   does not mutate Session, emits no observer events, writes no DAW audio or host
   project/session files, and does not make `export.daw_session` runnable.
+- Current DAW JSON package report:
+  `riotbox-app::jam_app::daw_session_json_package_report` is a read-only local
+  validator for a written `daw_session/` JSON package. It reports manifest,
+  tempo-map, and proof JSON file identities, validates expected schema ids,
+  verifies proof-to-manifest hash linkage, and reports typed blockers for
+  missing files, invalid JSON, schema mismatches, or hash mismatch. It writes no
+  files and still does not make `export.daw_session` runnable.
 - Undo policy: `NotUndoable`, because the command writes files outside musical
   undo. Recovery may report or validate artifacts, but must not delete or
   rewrite them implicitly.
