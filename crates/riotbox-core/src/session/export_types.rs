@@ -12,6 +12,9 @@ use super::export_artifact_evidence::{
     ExportArtifactSourceGraphRef, ExportArtifactTimingGridRef,
 };
 use super::live_recording_host_audio::ExportLiveRecordingHostAudioRef;
+use super::live_recording_readiness::{
+    LiveRecordingHostAudioReadinessReport, validate_live_recording_host_audio_readiness,
+};
 use crate::{
     TimestampMs,
     export_readiness::{
@@ -146,6 +149,13 @@ impl ExportReceiptState {
     #[must_use]
     pub fn daw_tempo_map_report(&self) -> DawTempoMapReadinessReport {
         validate_daw_tempo_map_readiness(self)
+    }
+
+    #[must_use]
+    pub fn live_recording_host_audio_readiness_report(
+        &self,
+    ) -> LiveRecordingHostAudioReadinessReport {
+        validate_live_recording_host_audio_readiness(self)
     }
 }
 

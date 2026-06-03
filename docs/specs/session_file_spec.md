@@ -931,6 +931,14 @@ Additional receipt fields required before wider export scopes:
   `callback_gap_summary`, and `stream_error_summary`. These refs prove the
   capture environment for future readiness gates; they are not a capture
   command, writer, or hidden app-local state.
+- live-recording host-audio readiness is a Core/Session receipt report. It is
+  `ready` only for `export_scope: live_recording` receipts with no
+  `live_recording` unsupported-scope flag and at least one host-audio ref whose
+  host/device are nonblank, duration is positive, callback gaps are within the
+  accepted threshold, and stream errors are absent. Blockers remain typed so
+  future observer/report surfaces can explain missing evidence, bad host/device
+  identity, zero duration, callback-gap overruns, or stream errors without
+  enabling a capture writer.
 
 These fields must remain in Session/Core models. They must not be hidden in
 JamAppState or observer-only state.

@@ -1083,10 +1083,13 @@ Today the repo already has:
   stem packages require per-stem non-silence, role labeling, hash stability, and
   source/capture lineage checks against the per-artifact evidence fields; live
   recordings require real-session `live_recording_host_audio_refs[]` evidence
-  with host/device, callback-gap, stream-error, and duration summaries; DAW
-  session export requires tempo-map and arrangement placement validation
-  against the Source Graph/Session timing truth. None of those are covered by
-  the current product-export reproducibility smoke.
+  with host/device, callback-gap, stream-error, and duration summaries plus a
+  Core/Session readiness report that blocks missing evidence, blank host/device
+  identity, zero duration, callback-gap threshold breaches, stream errors, and
+  still-unsupported live-recording scope flags; DAW session export requires
+  tempo-map and arrangement placement validation against the Source
+  Graph/Session timing truth. None of those are covered by the current
+  product-export reproducibility smoke.
 - `export.stem_package` remains reserved until an implementation can provide a
   package receipt whose `artifact_set[]` contains every claimed stem role, the
   package manifest/proof entries, per-stem hashes, per-stem WAV format/audio
