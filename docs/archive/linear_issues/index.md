@@ -1008,4 +1008,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add live-recording host-audio receipt readiness gate
 - [RIOTBOX-1176.md](./RIOTBOX-1176.md)
   P016: Project live-recording readiness through observer receipt snapshots
+- [RIOTBOX-1177.md](./RIOTBOX-1177.md)
+  P016: Add live-recording readiness operator report skeleton
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
