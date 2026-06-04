@@ -1956,3 +1956,17 @@ Why: P016 now has receipt, manifest, proof, readiness, observer, and QA gate con
 Evidence: RIOTBOX-1126 updates the Action Lexicon, Session, and Audio QA specs with source-of-stems, destination layout, reusable/new writer pieces, commit/receipt order, and minimal output proof.
 Consequences: future implementation tickets may build only this local boundary first. UI, Ghost, or CLI surfacing still requires CI-safe writer proof with per-stem non-silence, repeated hash stability, lineage, fallback comparison, manifest/proof files, and explicit listening-review status when audible behavior changes.
 Status: accepted
+
+---
+
+### RBX-065
+
+Date: 2026-06-04
+Topic: Audio Judge / Musical Fitness becomes a planned calibrated quality track
+Phase: P021 / Audio Judge / Musical Fitness
+Question: should Riotbox treat agent-side musical-pass judgment as part of the current sound-quality work or as its own roadmap track?
+Decision: create `P021 | Audio Judge / Musical Fitness` as a planned follow-on project while keeping the current dense-break 8-bar source-backed performance Golden Path as the immediate sound-quality implementation target.
+Why: Riotbox needs stronger audible output before TUI/export polish has product value, but an agent cannot honestly claim `musical_pass` from logs or simple metrics alone. A calibrated judge needs review packs, deterministic audio evidence, human pass/weak/fail labels, and a music-understanding spike such as CLAP/MERT-style embeddings combined with Riotbox-owned metrics.
+Evidence: Linear P021 was created with initial issues RIOTBOX-1185 through RIOTBOX-1188 covering the agent musical review pack, human label corpus, CLAP/MERT-style judge spike, and musical-pass gate policy.
+Consequences: future agents may use P021 to block weak output and eventually assign calibrated agent musical-pass verdicts, but P021 must not become a hidden taste oracle, second arranger, runtime dependency, or replacement for human listening before labeled Riotbox examples validate it.
+Status: accepted
