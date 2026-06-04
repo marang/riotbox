@@ -1042,4 +1042,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prove pro-pressure render across multiple source examples
 - [RIOTBOX-1194.md](./RIOTBOX-1194.md)
   Add sparse-bass pressure professional output fixture
+- [RIOTBOX-1195.md](./RIOTBOX-1195.md)
+  Add tonal-hook professional output fixture
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
