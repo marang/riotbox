@@ -1495,6 +1495,10 @@ Today the repo already has:
     attempts with a typed `export.live_recording` action and failed observer
     lifecycle so operators can see the boundary; because it writes no audio,
     current QA is control-path and side-effect proof only.
+    `just live-recording-reserved-action-lifecycle-smoke` proves that rejected
+    lifecycle path stays distinct from read-only live-recording receipt
+    projection: it creates no receipt, writes no destination, and reports the
+    explicit future-capture-writer reason.
   - new evidence required before readiness: one written WAV per claimed stem
     role, per-stem format metrics, per-stem non-silence, per-stem hash
     stability across repeated writer/render output, per-stem source/capture or
