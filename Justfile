@@ -62,6 +62,7 @@ audio-qa-ci:
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
     just human-listening-label-corpus-fixtures
+    just listening-review-label-import-fixtures
     just audio-judge-spike-fixtures
     just audio-judge-spike-generated-smoke
     just musical-pass-gate-policy-fixtures
@@ -241,6 +242,10 @@ human-listening-label-corpus-fixtures:
     tmp="$(mktemp)" && python3 scripts/validate_human_listening_label_corpus.py --json-output "$tmp" scripts/fixtures/human_listening_label_corpus/valid_dense_break.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .result == "pass" and .label_count == 5 and .verdict_counts.pass == 2 and .verdict_counts.weak == 2 and .verdict_counts.fail == 1 and (.source_families == ["dense_break", "sparse_bass_pressure", "tonal_hook"])' "$tmp" && rm "$tmp"
     if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_bad_hash.json; then echo "expected invalid bad-hash label corpus fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_weak_missing_reason.json; then echo "expected invalid weak-missing-reason label corpus fixture to fail" >&2; exit 1; fi
+
+listening-review-label-import-fixtures:
+    tmp="$(mktemp -d)" && python3 scripts/import_listening_review_label.py --json-output "$tmp/imported-label-corpus.json" scripts/fixtures/listening_review_label_import/valid_review.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .labels[0].human_verdict == "weak" and .labels[0].reviewer == "fixture-listener" and .labels[0].created_at == "2026-06-04" and .labels[0].artifact_identity.performance_report_sha256 == "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" and .labels[0].reason_tags.hook_clarity == "weak"' "$tmp/imported-label-corpus.json" && python3 scripts/validate_human_listening_label_corpus.py "$tmp/imported-label-corpus.json" && rm -rf "$tmp"
+    tmp="$(mktemp -d)" && if python3 scripts/import_listening_review_label.py --json-output "$tmp/invalid.json" scripts/fixtures/listening_review_label_import/invalid_missing_metadata.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected missing metadata listening-review import to fail" >&2; exit 1; fi && grep -q "missing audio_judge_label" "$tmp/invalid.out" && rm -rf "$tmp"
 
 audio-judge-spike agent_review="scripts/fixtures/audio_judge_spike/local-agent-musical-review-pack-smoke/agent-review.json" label_corpus="scripts/fixtures/human_listening_label_corpus/valid_dense_break.json" output="artifacts/audio_qa/local-audio-judge-spike":
     mkdir -p "{{output}}"

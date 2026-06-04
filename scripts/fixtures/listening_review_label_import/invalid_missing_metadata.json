@@ -1,0 +1,23 @@
+{
+  "schema": "riotbox.listening_review.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1191-FIXTURE",
+  "technical_status": "pass",
+  "automated_musical_fitness_status": "pass",
+  "human_verdict": "keep",
+  "strongest_element": "chop",
+  "source_recognition": "source_transformed_but_present",
+  "hook_after_two_bars": "clear",
+  "failure_reason": "",
+  "preferred_direction": "",
+  "avoid": [],
+  "concrete_follow_up": "none",
+  "reviewer": "fixture-listener",
+  "expected_audible_behavior": "review with missing audio_judge_label must fail",
+  "artifacts": {
+    "candidate_audio": [],
+    "source_audio": null,
+    "metrics_json": "metrics.json",
+    "prompt_markdown": "prompt.md"
+  }
+}
