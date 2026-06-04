@@ -1040,4 +1040,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make dense-break performance output hit like a professional pressure render
 - [RIOTBOX-1193.md](./RIOTBOX-1193.md)
   Prove pro-pressure render across multiple source examples
+- [RIOTBOX-1194.md](./RIOTBOX-1194.md)
+  Add sparse-bass pressure professional output fixture
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
