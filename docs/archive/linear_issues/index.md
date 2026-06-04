@@ -1030,4 +1030,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Prototype CLAP/MERT-style Riotbox audio judge spike
 - [RIOTBOX-1188.md](./RIOTBOX-1188.md)
   Define musical-pass gate policy for agent and human verdicts
+- [RIOTBOX-1189.md](./RIOTBOX-1189.md)
+  Add weak/fail audio judge calibration packs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
