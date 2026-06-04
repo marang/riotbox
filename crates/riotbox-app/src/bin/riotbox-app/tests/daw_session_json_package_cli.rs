@@ -27,6 +27,7 @@ fn parse_args_builds_daw_session_json_package_execute_mode() {
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
@@ -66,6 +67,7 @@ fn parse_args_builds_daw_session_json_package_evidence_apply_mode() {
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
@@ -109,12 +111,42 @@ fn parse_args_builds_daw_session_host_import_proof_apply_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected DAW session host import proof apply mode")
         }
+    }
+}
+
+#[test]
+fn parse_args_builds_daw_session_host_import_proof_export_execute_mode_with_observer() {
+    let launch = parse_args([
+        "--daw-session-host-import-proof-export-execute".into(),
+        "--session".into(),
+        "session.json".into(),
+        "--daw-session-host-import-proof".into(),
+        "exports/daw-package/host_import_proof.json".into(),
+        "--observer".into(),
+        "observer.ndjson".into(),
+    ])
+    .expect("parse DAW session host import proof export execute mode");
+
+    assert_eq!(launch.observer_path, Some(PathBuf::from("observer.ndjson")));
+    match launch.mode {
+        LaunchMode::DawSessionHostImportProofExportExecute {
+            session_path,
+            proof_path,
+        } => {
+            assert_eq!(session_path, PathBuf::from("session.json"));
+            assert_eq!(
+                proof_path,
+                PathBuf::from("exports/daw-package/host_import_proof.json")
+            );
+        }
+        _ => panic!("expected DAW session host import proof export execute mode"),
     }
 }
 
@@ -151,6 +183,7 @@ fn parse_args_builds_daw_session_audible_output_proof_apply_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
         | LaunchMode::DawSessionWriterExportExecute { .. }

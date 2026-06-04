@@ -17,6 +17,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut daw_session_json_package_execute = false;
     let mut daw_session_json_package_evidence_apply = false;
     let mut daw_session_host_import_proof_apply = false;
+    let mut daw_session_host_import_proof_export_execute = false;
     let mut daw_session_audible_output_proof_apply = false;
     let mut daw_session_writer_proof_execute = false;
     let mut daw_session_writer_proof_apply = false;
@@ -41,6 +42,9 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             }
             "--daw-session-host-import-proof-apply" => {
                 daw_session_host_import_proof_apply = true;
+            }
+            "--daw-session-host-import-proof-export-execute" => {
+                daw_session_host_import_proof_export_execute = true;
             }
             "--daw-session-audible-output-proof-apply" => {
                 daw_session_audible_output_proof_apply = true;
@@ -150,6 +154,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         daw_session_json_package_execute,
         daw_session_json_package_evidence_apply,
         daw_session_host_import_proof_apply,
+        daw_session_host_import_proof_export_execute,
         daw_session_audible_output_proof_apply,
         daw_session_writer_proof_execute,
         daw_session_writer_proof_apply,
@@ -161,7 +166,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     .count();
     if daw_session_mode_count > 1 {
         return Err(
-            "DAW session JSON package execute, evidence apply, host import proof apply, audible output proof apply, writer proof execute/apply, writer export execute, and writer plan modes cannot be combined"
+            "DAW session JSON package execute, evidence apply, host import proof apply/export execute, audible output proof apply, writer proof execute/apply, writer export execute, and writer plan modes cannot be combined"
                 .into(),
         );
     }
@@ -319,6 +324,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
         json_package_execute: daw_session_json_package_execute,
         json_package_evidence_apply: daw_session_json_package_evidence_apply,
         host_import_proof_apply: daw_session_host_import_proof_apply,
+        host_import_proof_export_execute: daw_session_host_import_proof_export_execute,
         audible_output_proof_apply: daw_session_audible_output_proof_apply,
         writer_proof_execute: daw_session_writer_proof_execute,
         writer_proof_apply: daw_session_writer_proof_apply,

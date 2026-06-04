@@ -2,6 +2,7 @@ struct DawSessionModeArgs<'a> {
     json_package_execute: bool,
     json_package_evidence_apply: bool,
     host_import_proof_apply: bool,
+    host_import_proof_export_execute: bool,
     audible_output_proof_apply: bool,
     writer_proof_execute: bool,
     writer_proof_apply: bool,
@@ -74,6 +75,24 @@ fn parse_daw_session_mode_args(args: DawSessionModeArgs<'_>) -> Result<Option<Ap
                 )?,
             },
             observer_path: None,
+        }));
+    }
+
+    if args.host_import_proof_export_execute {
+        reject_daw_session_proof_action_mode_conflicts(
+            &args,
+            "DAW session host import proof export execute reads only an explicit session and proof file and cannot be combined with source/graph/sidecar/seed/destination/stem arguments",
+            ProofKind::HostImport,
+        )?;
+        return Ok(Some(AppLaunch {
+            mode: LaunchMode::DawSessionHostImportProofExportExecute {
+                session_path: required_daw_session(args.session_path, args.saw_session_flag, "DAW session host import proof export execute requires --session <session.json>")?,
+                proof_path: required_proof_path(
+                    args.host_import_proof_path,
+                    "DAW session host import proof export execute requires --daw-session-host-import-proof <proof.json>",
+                )?,
+            },
+            observer_path: args.observer_path.cloned(),
         }));
     }
 
@@ -227,6 +246,30 @@ fn reject_daw_session_proof_mode_conflicts(
     Ok(())
 }
 
+fn reject_daw_session_proof_action_mode_conflicts(
+    args: &DawSessionModeArgs<'_>,
+    message: &str,
+    proof_kind: ProofKind,
+) -> Result<(), String> {
+    let other_proof_present = match proof_kind {
+        ProofKind::HostImport => args.audible_output_proof_path.is_some(),
+        ProofKind::AudibleOutput => args.host_import_proof_path.is_some(),
+    };
+    if args.source_path_present
+        || args.source_graph_path_present
+        || args.saw_sidecar_flag
+        || args.saw_seed_flag
+        || args.stem_package_destination_path_present
+        || args.destination_path.is_some()
+        || other_proof_present
+        || !args.claimed_stem_roles_empty
+    {
+        return Err(message.into());
+    }
+
+    Ok(())
+}
+
 fn reject_daw_session_action_mode_conflicts(
     args: &DawSessionModeArgs<'_>,
     message: &str,
@@ -255,7 +298,7 @@ fn reject_standalone_daw_session_args(args: &DawSessionModeArgs<'_>) -> Result<(
     }
     if args.host_import_proof_path.is_some() {
         return Err(
-            "--daw-session-host-import-proof requires --daw-session-host-import-proof-apply"
+            "--daw-session-host-import-proof requires --daw-session-host-import-proof-apply or --daw-session-host-import-proof-export-execute"
                 .into(),
         );
     }

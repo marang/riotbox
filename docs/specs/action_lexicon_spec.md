@@ -749,6 +749,11 @@ Contract for `export.stem_package`:
   path attaches `daw_session_host_import_proof` to the matching receipt, records
   the action and commit record, writes no files, launches no host, and keeps
   audible-output proof and final DAW export enablement out of scope.
+  `riotbox-app --daw-session-host-import-proof-export-execute --session
+  <session.json> --daw-session-host-import-proof <proof.json> [--observer
+  <events.ndjson>]` is the operator-facing smoke path for that action boundary.
+  It saves the Session mutation and optional observer lifecycle, but it does
+  not launch a DAW host or write DAW files.
 - Current audible-output-proof `export.daw_session` queue / commit path:
   app code may enqueue `export.daw_session` with `audible_output_proof_v1` only
   when the latest DAW-session receipt has passed writer proof and host-import

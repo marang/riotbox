@@ -35,6 +35,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
@@ -90,6 +91,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }

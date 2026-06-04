@@ -21,6 +21,7 @@ fn parse_args_builds_stem_package_local_ci_report_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }

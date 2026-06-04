@@ -596,6 +596,9 @@ daw-session-writer-export-execute-smoke:
 daw-session-host-import-proof-apply-smoke:
     cargo test -p riotbox-app --test daw_session_host_import_proof_apply_smoke -- --nocapture
 
+daw-session-host-import-proof-export-execute-smoke:
+    cargo test -p riotbox-app --test daw_session_host_import_proof_apply_smoke daw_session_host_import_proof_export_execute -- --nocapture
+
 daw-session-audible-output-proof-apply-smoke:
     cargo test -p riotbox-app --test daw_session_audible_output_proof_apply_smoke -- --nocapture
 
