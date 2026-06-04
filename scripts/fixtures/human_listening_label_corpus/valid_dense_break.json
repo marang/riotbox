@@ -1,0 +1,73 @@
+{
+  "schema": "riotbox.human_listening_label_corpus.v1",
+  "schema_version": 1,
+  "description": "Fixture corpus for dense-break audio-judge calibration labels. Hashes are fixture identities, not committed source audio.",
+  "labels": [
+    {
+      "label_id": "dense-break-beat03-agent-pack-example-pass",
+      "created_at": "2026-06-04",
+      "reviewer": "fixture",
+      "human_verdict": "pass",
+      "source_family": "dense_break",
+      "source_id": "beat03_full",
+      "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
+      "review_pack_id": "local-agent-musical-review-pack-smoke",
+      "artifact_identity": {
+        "performance_report_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "agent_review_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+        "audio_sha256": {
+          "source_window": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+          "full_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "clear",
+        "hardest_hit": "break_transient",
+        "bass_pressure": "present",
+        "destructive_contrast": "strong",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "high"
+      },
+      "summary": "Fixture pass label: hook, pressure, destructive contrast, and restore are all present enough for calibration shape.",
+      "failure_reason": "",
+      "preferred_direction": "",
+      "avoid": [
+        "polite loop",
+        "source-copy collapse"
+      ]
+    },
+    {
+      "label_id": "dense-break-beat03-agent-pack-example-weak",
+      "created_at": "2026-06-04",
+      "reviewer": "fixture",
+      "human_verdict": "weak",
+      "source_family": "dense_break",
+      "source_id": "beat03_full",
+      "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
+      "review_pack_id": "local-agent-musical-review-pack-smoke-alt",
+      "artifact_identity": {
+        "performance_report_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
+        "agent_review_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
+        "audio_sha256": {
+          "source_window": "1111111111111111111111111111111111111111111111111111111111111111",
+          "full_performance": "2222222222222222222222222222222222222222222222222222222222222222"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "weak",
+        "hardest_hit": "chop",
+        "bass_pressure": "weak",
+        "destructive_contrast": "present",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "medium"
+      },
+      "summary": "Fixture weak label: the pack is technically shaped but the hook and bass pressure are not strong enough.",
+      "failure_reason": "Hook and bass pressure are weaker than the destructive gesture.",
+      "preferred_direction": "Make the W-30 chop more memorable and push bass pressure before restore.",
+      "avoid": [
+        "weak hook",
+        "buried bass"
+      ]
+    }
+  ]
+}

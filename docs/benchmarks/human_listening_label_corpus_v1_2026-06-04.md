@@ -1,0 +1,31 @@
+# Human Listening Label Corpus v1
+
+`riotbox.human_listening_label_corpus.v1` is the first versioned label contract
+for calibrating Riotbox audio-judge work against human taste.
+
+It is separate from `riotbox.listening_review.v1`:
+
+- `listening_review.v1` records one structured review pack/verdict.
+- `human_listening_label_corpus.v1` collects stable labels for calibration and
+  later judge evaluation.
+
+Each label records:
+
+- `human_verdict`: `pass`, `weak`, `fail`, or `inconclusive`
+- source family and source id
+- review pack schema/id
+- artifact identities by SHA-256, so labels attach to generated review packs
+  without committing local source audio
+- reason tags for hook clarity, hardest hit, bass pressure, destructive
+  contrast, source character, and replay value after eight bars
+- summary, avoid-list, and for weak/fail labels a failure reason and preferred
+  direction
+
+The first fixture corpus covers dense-break labels for the agent musical review
+pack shape. It is schema evidence, not a real taste corpus yet.
+
+Run:
+
+```bash
+just human-listening-label-corpus-fixtures
+```
