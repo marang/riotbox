@@ -54,9 +54,16 @@ just dense-break-performance-pack
 just dense-break-performance-pack-smoke
 just agent-musical-review-pack-smoke
 just pro-pressure-source-matrix-smoke
+just professional-source-wav-pack-smoke
 ```
 
 The source-matrix smoke renders the same pro-pressure contract across multiple
 local examples (`Beat03`, `Beat08`, `Beat20`, and `DH_BeatC`) and writes
 `source-matrix-report.json` with per-source proof. This prevents Beat03 from
 being the only passing example while other local break sources quietly regress.
+
+`professional-source-wav-pack-smoke` renders family-aware audible WAV packs for
+tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
+material is allowed to keep the hook stronger than the pressure section, while
+sparse material must prove pressure stronger than the hook. Both cases still
+write `human_verdict: unverified`.
