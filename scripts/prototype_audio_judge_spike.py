@@ -24,16 +24,16 @@ MERT_PACKAGES = ("torch", "transformers")
 
 def main() -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--agent-review", type=Path, required=True)
+    parser.add_argument("--agent-review", type=Path, action="append", required=True)
     parser.add_argument("--label-corpus", type=Path, required=True)
     parser.add_argument("--json-output", type=Path)
     parser.add_argument("--markdown-output", type=Path)
     args = parser.parse_args()
 
     try:
-        agent_review = read_json_object(args.agent_review)
+        agent_reviews = [(read_json_object(path), path) for path in args.agent_review]
         label_corpus = read_json_object(args.label_corpus)
-        report = build_report(agent_review, args.agent_review, label_corpus, args.label_corpus)
+        report = build_report(agent_reviews, label_corpus, args.label_corpus)
         if args.json_output:
             args.json_output.parent.mkdir(parents=True, exist_ok=True)
             args.json_output.write_text(json.dumps(report, indent=2) + "\n")
@@ -53,16 +53,24 @@ def main() -> int:
 
 
 def build_report(
-    agent_review: dict[str, Any],
-    agent_review_path: Path,
+    agent_reviews: list[tuple[dict[str, Any], Path]],
     label_corpus: dict[str, Any],
     label_corpus_path: Path,
 ) -> dict[str, Any]:
-    validate_agent_review(agent_review, agent_review_path)
+    require(agent_reviews, "at least one --agent-review is required")
     labels = validate_label_corpus(label_corpus, label_corpus_path)
-    review_pack_id = infer_review_pack_id(agent_review, agent_review_path)
-    metrics_baseline = build_metrics_baseline(agent_review)
-    calibration = build_calibration(labels, review_pack_id, metrics_baseline)
+    candidate_evaluations = [
+        build_candidate_evaluation(agent_review, agent_review_path)
+        for agent_review, agent_review_path in agent_reviews
+    ]
+    review_pack_ids = [candidate["review_pack_id"] for candidate in candidate_evaluations]
+    require(
+        len(review_pack_ids) == len(set(review_pack_ids)),
+        "agent review inputs must have unique review_pack_id values",
+    )
+    first = candidate_evaluations[0]
+    metrics_baseline = first["metrics_baseline"]
+    calibration = build_calibration(labels, candidate_evaluations)
     providers = [
         optional_provider(
             "clap_optional",
@@ -86,13 +94,16 @@ def build_report(
         "judge_readiness": recommendation["status"],
         "human_verdict": "unverified",
         "inputs": {
-            "agent_review": str(agent_review_path),
+            "agent_review": first["agent_review"],
+            "agent_reviews": [candidate["agent_review"] for candidate in candidate_evaluations],
             "label_corpus": str(label_corpus_path),
-            "review_pack_id": review_pack_id,
-            "agent_review_schema": agent_review["schema"],
+            "review_pack_id": first["review_pack_id"],
+            "review_pack_ids": review_pack_ids,
+            "agent_review_schema": AGENT_REVIEW_SCHEMA,
             "label_corpus_schema": label_corpus["schema"],
         },
         "metrics_baseline": metrics_baseline,
+        "candidate_evaluations": candidate_evaluations,
         "providers": providers,
         "calibration": calibration,
         "recommendation": recommendation,
@@ -101,6 +112,22 @@ def build_report(
             "It must not promote CLAP, MERT, or deterministic metrics to a product musical "
             "pass source without broader Riotbox labels and human listening evidence."
         ),
+    }
+
+
+def build_candidate_evaluation(
+    agent_review: dict[str, Any],
+    agent_review_path: Path,
+) -> dict[str, Any]:
+    validate_agent_review(agent_review, agent_review_path)
+    review_pack_id = infer_review_pack_id(agent_review, agent_review_path)
+    metrics_baseline = build_metrics_baseline(agent_review)
+    return {
+        "agent_review": str(agent_review_path),
+        "review_pack_id": review_pack_id,
+        "agent_verdict": agent_review["agent_verdict"],
+        "result": agent_review["result"],
+        "metrics_baseline": metrics_baseline,
     }
 
 
@@ -210,16 +237,19 @@ def build_metrics_baseline(agent_review: dict[str, Any]) -> dict[str, Any]:
 
 def build_calibration(
     labels: list[dict[str, Any]],
-    review_pack_id: str,
-    metrics_baseline: dict[str, Any],
+    candidate_evaluations: list[dict[str, Any]],
 ) -> dict[str, Any]:
     verdict_counts = count_by(labels, "human_verdict")
-    matched = [label for label in labels if label["review_pack_id"] == review_pack_id]
+    predictions_by_pack_id = {
+        candidate["review_pack_id"]: candidate["metrics_baseline"]["predicted_label"]
+        for candidate in candidate_evaluations
+    }
+    matched = [label for label in labels if label["review_pack_id"] in predictions_by_pack_id]
     examples = []
     confusion = empty_confusion_matrix()
     for label in matched:
         expected = label["human_verdict"]
-        predicted = metrics_baseline["predicted_label"]
+        predicted = predictions_by_pack_id[label["review_pack_id"]]
         confusion.setdefault(expected, {})
         confusion[expected][predicted] = confusion[expected].get(predicted, 0) + 1
         examples.append(
@@ -246,7 +276,7 @@ def build_calibration(
             ),
         }
         for label in labels
-        if label["review_pack_id"] != review_pack_id
+        if label["review_pack_id"] not in predictions_by_pack_id
     ]
     covered_verdicts = {label["human_verdict"] for label in matched}
     missing_ready_verdicts = sorted(REQUIRED_READY_VERDICTS - covered_verdicts)

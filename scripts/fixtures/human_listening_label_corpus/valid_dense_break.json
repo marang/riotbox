@@ -44,7 +44,7 @@
       "source_family": "dense_break",
       "source_id": "beat03_full",
       "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
-      "review_pack_id": "local-agent-musical-review-pack-smoke-alt",
+      "review_pack_id": "local-agent-musical-review-pack-smoke-weak",
       "artifact_identity": {
         "performance_report_sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee",
         "agent_review_sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
@@ -67,6 +67,40 @@
       "avoid": [
         "weak hook",
         "buried bass"
+      ]
+    },
+    {
+      "label_id": "dense-break-beat03-agent-pack-example-fail",
+      "created_at": "2026-06-04",
+      "reviewer": "fixture",
+      "human_verdict": "fail",
+      "source_family": "dense_break",
+      "source_id": "beat03_full",
+      "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
+      "review_pack_id": "local-agent-musical-review-pack-smoke-fail",
+      "artifact_identity": {
+        "performance_report_sha256": "3333333333333333333333333333333333333333333333333333333333333333",
+        "agent_review_sha256": "4444444444444444444444444444444444444444444444444444444444444444",
+        "audio_sha256": {
+          "source_window": "5555555555555555555555555555555555555555555555555555555555555555",
+          "full_performance": "6666666666666666666666666666666666666666666666666666666666666666"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "missing",
+        "hardest_hit": "none",
+        "bass_pressure": "missing",
+        "destructive_contrast": "missing",
+        "source_character": "source_lost",
+        "replay_value_after_eight_bars": "none"
+      },
+      "summary": "Fixture fail label: the pack is collapsed, low-impact, and lacks hook, pressure, source character, and replay value.",
+      "failure_reason": "No strong hook, no bass pressure, no destructive contrast, and no useful source identity.",
+      "preferred_direction": "Rebuild from a stronger source chop with audible pressure and a clear stop/restore gesture.",
+      "avoid": [
+        "fallback collapse",
+        "silent or polite loop",
+        "source character lost"
       ]
     }
   ]
