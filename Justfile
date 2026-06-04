@@ -65,6 +65,7 @@ audio-qa-ci:
     just professional-source-wav-pack-smoke
     just professional-output-listening-pack-smoke
     just destructive-variation-professional-smoke
+    just professional-output-suite-smoke
     just sparse-bass-pressure-professional-fixtures
     just tonal-hook-professional-fixtures
     just human-listening-label-corpus-fixtures
@@ -263,6 +264,11 @@ destructive-variation-professional-smoke output="artifacts/audio_qa/local-destru
     python3 scripts/validate_destructive_variation_professional.py --json-output "{{output}}/destructive-variation.json" --markdown-output "{{output}}/destructive-variation.md" "{{output}}/dense-break/performance-report.json"
     jq -e '.schema == "riotbox.destructive_variation_professional.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .metrics.dropout_to_stutter_rms_ratio <= .thresholds.max_dropout_to_stutter_rms_ratio and .metrics.stutter_to_hook_transient_ratio >= .thresholds.min_stutter_to_hook_transient_ratio and .metrics.restore_hit_rms >= .thresholds.min_restore_rms' "{{output}}/destructive-variation.json"
     tmp="$(mktemp -d)" && if python3 scripts/validate_destructive_variation_professional.py scripts/fixtures/destructive_variation_professional/invalid_flat_stutter/performance-report.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected flat destructive variation fixture to fail" >&2; exit 1; fi && grep -q "dropout_not_contrasting_with_stutter" "$tmp/invalid.out" && grep -q "stutter_lacks_transient_impact" "$tmp/invalid.out" && rm -rf "$tmp"
+
+professional-output-suite-smoke output="artifacts/audio_qa/local-professional-output-suite":
+    python3 scripts/generate_professional_output_suite.py --output "{{output}}" --date "local-professional-output-suite"
+    jq -e '.schema == "riotbox.professional_output_suite.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .child_report_count == 5 and .passed_child_report_count == 5 and .failed_child_report_count == 0 and (.children | length) == 5 and all(.children[]; .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and (.report_sha256 | length == 64)) and .listening_identity.result == "pass" and .listening_identity.case_count == 3 and (.listening_identity.source_families == ["dense_break", "sparse_bass_pressure", "tonal_hook"])' "{{output}}/professional-output-suite.json"
+    test -s "{{output}}/README.md"; test -s "{{output}}/professional-output-listening-pack/reviews/dense_beat03_130/review.json"; test -s "{{output}}/destructive-variation/destructive-variation.json"
 
 sparse-bass-pressure-professional-fixtures:
     tmp="$(mktemp -d)" && python3 scripts/validate_sparse_bass_pressure_professional.py --json-output "$tmp/sparse-bass.json" --markdown-output "$tmp/sparse-bass.md" scripts/fixtures/automated_musical_fitness/valid_sparse_bass_pulse/manifest.json && jq -e '.schema == "riotbox.sparse_bass_pressure_professional.v1" and .result == "pass" and .source_family == "sparse_bass_pressure" and .human_verdict == "unverified" and .metrics.low_band_rms >= .thresholds.min_low_band_rms and .metrics.mc202_bass_signal_rms >= .thresholds.min_mc202_bass_rms and .metrics.tr909_low_band_rms_ratio >= .thresholds.min_tr909_low_band_ratio' "$tmp/sparse-bass.json" && grep -q "Sparse-Bass Pressure" "$tmp/sparse-bass.md" && rm -rf "$tmp"

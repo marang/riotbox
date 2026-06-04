@@ -96,6 +96,8 @@ Current benchmark artifacts:
   First bounded audio-buffer baseline for the Scene-target TR-909 support accent.
 - [lane_recipe_listening_pack_2026-04-26.md](./lane_recipe_listening_pack_2026-04-26.md)
   Initial local lane-level listening-pack harness for documented Jam recipes outside the W-30 preview path.
+- [professional_output_suite_v1_2026-06-04.md](./professional_output_suite_v1_2026-06-04.md)
+  Aggregate professional-output suite report that hashes and summarizes dense-break, source-matrix, source-WAV, listening-pack, and destructive-variation gates without claiming a human musical pass.
 - [jam_footer_color_hierarchy_baseline_2026-04-25.md](./jam_footer_color_hierarchy_baseline_2026-04-25.md)
   First bounded readability baseline for the semantic Jam footer color and emphasis hierarchy.
 - [capture_do_next_readability_baseline_2026-04-25.md](./capture_do_next_readability_baseline_2026-04-25.md)

@@ -23,6 +23,7 @@ def main() -> int:
     parser.add_argument("--professional-wav-pack", type=Path, default=DEFAULT_PROFESSIONAL_WAV_PACK)
     parser.add_argument("--date", default="local-professional-output-listening-pack")
     parser.add_argument("--ticket", default="RIOTBOX-1197")
+    parser.add_argument("--reuse-professional-wav-pack", action="store_true")
     parser.add_argument("--keep-output", action="store_true")
     args = parser.parse_args()
 
@@ -35,7 +36,10 @@ def main() -> int:
         shutil.rmtree(output)
     output.mkdir(parents=True, exist_ok=True)
 
-    render_professional_wav_pack(repo, professional_wav_pack, args.date)
+    if args.reuse_professional_wav_pack:
+        require_professional_wav_pack(professional_wav_pack)
+    else:
+        render_professional_wav_pack(repo, professional_wav_pack, args.date)
     professional_report = read_json(professional_wav_pack / "professional-source-wav-pack.json")
     dense_case = render_dense_case(repo, output, args.date)
     cases = [dense_case] + [
@@ -92,6 +96,17 @@ def render_professional_wav_pack(repo: Path, output: Path, date: str) -> None:
         f"{date}-source-wav",
     ]
     run_or_exit(repo, command, output / "professional-source-wav-render.log")
+
+
+def require_professional_wav_pack(output: Path) -> None:
+    report_path = output / "professional-source-wav-pack.json"
+    if not report_path.is_file():
+        raise SystemExit(f"missing professional WAV pack report: {report_path}")
+    report = read_json(report_path)
+    if report.get("schema") != "riotbox.professional_source_wav_pack.v1":
+        raise SystemExit(f"invalid professional WAV pack schema: {report_path}")
+    if report.get("result") != "pass":
+        raise SystemExit(f"professional WAV pack must pass before reuse: {report_path}")
 
 
 def render_dense_case(repo: Path, output: Path, date: str) -> dict:
