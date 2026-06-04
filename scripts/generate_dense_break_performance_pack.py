@@ -34,6 +34,11 @@ MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 0.85
 MAX_ADJACENT_BAR_CORRELATION = 0.985
 MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.975
 MIN_MC202_TO_W30_RMS_RATIO = 0.12
+MIN_FULL_TO_SOURCE_RMS_RATIO = 0.78
+MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO = 0.48
+MIN_PRESSURE_TO_HOOK_RMS_RATIO = 1.30
+MIN_RESTORE_TO_PRESSURE_RMS_RATIO = 1.12
+TARGET_PERFORMANCE_PEAK = 0.92
 
 np = None
 
@@ -258,6 +263,9 @@ def render_performance(
     bars: int,
 ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     performance = np.zeros_like(source)
+    hook_riff = render_w30_hook_riff_layer(w30, source, bar_frames, bars)
+    break_snap = render_break_snap_layer(source, tr909, w30, bar_frames, bars)
+    bass_pressure = render_bass_pressure_layer(source, bar_frames, bars)
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -266,16 +274,47 @@ def render_performance(
             return
         performance[start:end] = mix[start:end]
 
-    hook_mix = saturate(source * 0.36 + w30 * 1.42 + tr909 * 0.34 + mc202 * 0.28, 1.18)
-    chop_mix = saturate(source * 0.14 + w30 * 1.82 + tr909 * 0.58 + mc202 * 0.44, 1.28)
-    bass_pressure = render_bass_pressure_layer(source, bar_frames, bars)
-    pressure_mix = saturate(
-        source * 0.08 + w30 * 0.88 + tr909 * 2.35 + mc202 * 5.80 + bass_pressure * 1.15,
-        1.46,
+    hook_mix = glue_bus(
+        source * 0.50
+        + w30 * 1.38
+        + hook_riff * 1.62
+        + tr909 * 0.62
+        + break_snap * 1.50
+        + mc202 * 0.34,
+        drive=1.04,
+        slam=0.05,
     )
-    restore_mix = saturate(
-        source * 0.38 + w30 * 1.58 + tr909 * 1.24 + mc202 * 1.74 + bass_pressure * 0.62,
-        1.38,
+    chop_mix = glue_bus(
+        source * 0.16
+        + w30 * 1.54
+        + hook_riff * 1.78
+        + tr909 * 0.78
+        + break_snap * 1.36
+        + mc202 * 0.58,
+        drive=1.24,
+        slam=0.18,
+    )
+    pressure_mix = saturate(
+        source * 0.06
+        + w30 * 0.84
+        + hook_riff * 0.70
+        + tr909 * 2.78
+        + break_snap * 1.55
+        + mc202 * 6.65
+        + bass_pressure * 1.76,
+        1.58,
+    )
+    pressure_mix = glue_bus(pressure_mix, drive=1.34, slam=0.30)
+    restore_mix = glue_bus(
+        source * 0.28
+        + w30 * 1.76
+        + hook_riff * 1.46
+        + tr909 * 2.78
+        + break_snap * 3.64
+        + mc202 * 3.65
+        + bass_pressure * 1.68,
+        drive=1.72,
+        slam=0.40,
     )
 
     for bar in (0, 1):
@@ -290,6 +329,8 @@ def render_performance(
         tr909,
         w30,
         mc202,
+        hook_riff,
+        break_snap,
         bar_frames,
         source_bar=6,
     )
@@ -310,7 +351,7 @@ def render_performance(
         ),
     )
 
-    performance = saturate(performance, 1.08)
+    performance = normalize_peak(glue_bus(performance, drive=1.22, slam=0.22), TARGET_PERFORMANCE_PEAK)
     sections = {
         "chop_hook": performance[0 : min(2 * bar_frames, performance.shape[0])],
         "pressure_lift": performance[4 * bar_frames : min(6 * bar_frames, performance.shape[0])],
@@ -325,6 +366,8 @@ def render_dropout_stutter_bar(
     tr909: np.ndarray,
     w30: np.ndarray,
     mc202: np.ndarray,
+    hook_riff: np.ndarray,
+    break_snap: np.ndarray,
     bar_frames: int,
     source_bar: int,
 ) -> np.ndarray:
@@ -359,10 +402,100 @@ def render_dropout_stutter_bar(
         decay = 1.0 - min(index, 7) * 0.07
         accent = tr909[min(source_start + target, tr909.shape[0] - 1)]
         end = target + grain.shape[0]
-        bar[target:end] += grain * (1.82 * decay)
-        bar[target : min(target + 96, bar.shape[0])] += accent * (0.30 * decay)
+        riff = hook_riff[min(source_start + target, hook_riff.shape[0] - 1)]
+        snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
+        bar[target:end] += grain * (3.15 * decay)
+        bar[target : min(target + 96, bar.shape[0])] += accent * (0.58 * decay)
+        bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.02 * decay)
 
-    return saturate(bar, 1.42)
+    return normalize_peak(saturate(bar, 1.78), 0.90)
+
+
+def render_w30_hook_riff_layer(
+    w30: np.ndarray,
+    source: np.ndarray,
+    bar_frames: int,
+    bars: int,
+) -> np.ndarray:
+    layer = np.zeros_like(w30)
+    grain_len = min(frames_for_seconds(0.090), max(1, bar_frames // 8))
+    first_bar = w30[: min(bar_frames, w30.shape[0])]
+    grain_start = strongest_window_start(first_bar, grain_len)
+    grain_end = min(grain_start + grain_len, w30.shape[0], source.shape[0])
+    if grain_end <= grain_start:
+        return layer
+
+    grain = w30[grain_start:grain_end].copy()
+    grain += transient_emphasis(source[grain_start:grain_end]) * 0.42
+    grain *= decay_envelope(grain.shape[0], attack=0.010, decay=0.135)[:, None]
+
+    beat_frames = max(1, bar_frames // BEATS_PER_BAR)
+    patterns = {
+        0: [(0.00, 0.95, False), (1.50, 0.70, False), (2.50, 0.88, False), (3.25, 0.62, True)],
+        1: [(0.00, 1.06, False), (0.75, 0.52, True), (2.00, 0.92, False), (3.50, 0.78, False)],
+        2: [(0.00, 1.12, False), (0.50, 0.54, True), (1.50, 0.72, False), (2.25, 1.00, False), (3.25, 0.70, True)],
+        3: [(0.00, 1.18, False), (0.75, 0.60, True), (1.75, 0.74, False), (2.50, 0.96, False), (3.50, 0.88, True)],
+        4: [(0.00, 0.76, False), (2.00, 0.68, False), (3.50, 0.54, True)],
+        5: [(0.00, 0.82, False), (1.50, 0.58, True), (2.50, 0.72, False), (3.50, 0.56, True)],
+        7: [(0.00, 1.05, False), (1.00, 0.64, False), (2.00, 0.88, False), (3.25, 0.72, True)],
+    }
+    for bar in range(min(bars, DEFAULT_BARS)):
+        for beat, gain, reverse in patterns.get(bar, []):
+            target = bar * bar_frames + int(round(beat * beat_frames))
+            if target >= layer.shape[0]:
+                continue
+            stab = grain[::-1] if reverse else grain
+            end = min(target + stab.shape[0], layer.shape[0])
+            if end > target:
+                layer[target:end] += stab[: end - target] * gain
+    return saturate(layer, 1.35)
+
+
+def render_break_snap_layer(
+    source: np.ndarray,
+    tr909: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    bars: int,
+) -> np.ndarray:
+    layer = np.zeros_like(source)
+    hit_frames = min(frames_for_seconds(0.052), max(1, bar_frames // 10))
+    beat_frames = max(1, bar_frames // BEATS_PER_BAR)
+    source_hit_start = strongest_window_start(source[: min(bar_frames, source.shape[0])], hit_frames)
+    source_hit = source[source_hit_start : min(source_hit_start + hit_frames, source.shape[0])]
+    if source_hit.shape[0] == 0:
+        return layer
+    source_snap = transient_emphasis(source_hit) * 2.85 + source_hit * 0.28
+    source_snap *= impact_envelope(source_snap.shape[0], decay=0.034)[:, None]
+    source_snap = normalize_peak(source_snap, 0.86)
+
+    bar_gains = {
+        0: [1.08, 0.76, 0.92, 0.82],
+        1: [1.22, 0.82, 0.96, 0.90],
+        2: [1.20, 0.82, 1.06, 0.88],
+        3: [1.26, 0.84, 1.10, 0.96],
+        4: [1.24, 0.92, 1.12, 0.98],
+        5: [1.28, 0.96, 1.16, 1.04],
+        7: [1.40, 0.86, 1.06, 0.92],
+    }
+    for bar in range(min(bars, DEFAULT_BARS)):
+        gains = bar_gains.get(bar)
+        if gains is None:
+            continue
+        for beat, gain in enumerate(gains):
+            target = bar * bar_frames + beat * beat_frames
+            if target >= layer.shape[0]:
+                continue
+            end = min(target + source_snap.shape[0], layer.shape[0])
+            if end <= target:
+                continue
+            tr_slice = tr909[target:end]
+            w30_slice = w30[target:end]
+            snap = source_snap[: end - target] * gain
+            snap += transient_emphasis(tr_slice) * (0.62 * gain)
+            snap += transient_emphasis(w30_slice) * (0.34 * gain)
+            layer[target:end] += snap
+    return normalize_peak(saturate(layer, 1.80), 0.82)
 
 
 def render_bass_pressure_layer(source: np.ndarray, bar_frames: int, bars: int) -> np.ndarray:
@@ -375,8 +508,9 @@ def render_bass_pressure_layer(source: np.ndarray, bar_frames: int, bars: int) -
         bar_end = min(bar_start + bar_frames, total_frames)
         frames = bar_end - bar_start
         t = np.arange(frames, dtype=np.float32) / SAMPLE_RATE
-        base_frequency = 51.5 if bar != 5 else 64.0
+        base_frequency = 45.0 if bar == 4 else (51.5 if bar == 7 else 58.0)
         sine = np.sin(2.0 * np.pi * base_frequency * t).astype(np.float32)
+        harmonic = np.sin(2.0 * np.pi * base_frequency * 2.0 * t).astype(np.float32)
         envelope = np.zeros(frames, dtype=np.float32)
         beat_frames = max(1, bar_frames // BEATS_PER_BAR)
         for beat in range(BEATS_PER_BAR):
@@ -388,8 +522,8 @@ def render_bass_pressure_layer(source: np.ndarray, bar_frames: int, bars: int) -
             punch = np.exp(-beat_t * (5.4 if beat in (0, 2) else 7.2))
             envelope[start:end] += punch * (1.0 if beat in (0, 2) else 0.62)
         source_drive = low_band_rms(source[bar_start:bar_end]) / 0.10
-        gain = float(np.clip(source_drive, 0.42, 1.20)) * (0.245 if bar != 7 else 0.185)
-        mono = sine * np.clip(envelope, 0.0, 1.0) * gain
+        gain = float(np.clip(source_drive, 0.44, 1.24)) * (0.305 if bar != 7 else 0.245)
+        mono = (sine + harmonic * 0.18) * np.clip(envelope, 0.0, 1.0) * gain
         layer[bar_start:bar_end, 0] = mono
         layer[bar_start:bar_end, 1] = mono * 0.98
     return layer
@@ -413,13 +547,13 @@ def restore_with_hit(
     source_hit = source[:hit_frames]
     snap = transient_emphasis(source_hit)
     restored[start : start + hit_frames] += (
-        source_hit * 1.20
-        + snap * 2.85
-        + w30[start : start + hit_frames] * 2.10
-        + mc202[start : start + hit_frames] * 3.20
-        + tr909[start : start + hit_frames] * 2.20
+        source_hit * 1.35
+        + snap * 4.80
+        + w30[start : start + hit_frames] * 2.62
+        + mc202[start : start + hit_frames] * 4.05
+        + tr909[start : start + hit_frames] * 3.45
     ) * envelope
-    return saturate(restored, 1.28)
+    return normalize_peak(glue_bus(restored, drive=1.95, slam=0.44), 0.98)
 
 
 def build_report(
@@ -498,6 +632,11 @@ def build_report(
             "max_adjacent_bar_correlation": MAX_ADJACENT_BAR_CORRELATION,
             "max_source_to_performance_correlation": MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
             "min_mc202_to_w30_rms_ratio": MIN_MC202_TO_W30_RMS_RATIO,
+            "min_full_to_source_rms_ratio": MIN_FULL_TO_SOURCE_RMS_RATIO,
+            "min_hook_to_source_transient_ratio": MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO,
+            "min_pressure_to_hook_rms_ratio": MIN_PRESSURE_TO_HOOK_RMS_RATIO,
+            "min_restore_to_pressure_rms_ratio": MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
+            "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
         "visuals": visual_files,
@@ -521,6 +660,9 @@ def performance_proof(
     mc202_rms = rms(mc202)
     tr909_rms = rms(tr909)
     full_rms = rms(performance)
+    hook_rms = rms(sections["chop_hook"])
+    pressure_rms = rms(sections["pressure_lift"])
+    restore_rms = rms(sections["restore_hit"])
     pressure_low = low_band_rms(sections["pressure_lift"])
     hook_low = low_band_rms(sections["chop_hook"])
     restore_transient = max(
@@ -544,6 +686,10 @@ def performance_proof(
         "max_adjacent_bar_correlation": bar_similarity,
         "source_to_performance_correlation": source_similarity,
         "mc202_to_w30_rms_ratio": mc202_rms / max(w30_rms, 1e-9),
+        "full_to_source_rms_ratio": full_rms / max(source_rms, 1e-9),
+        "hook_to_source_transient_ratio": hook_transient / max(transient_score(source), 1e-9),
+        "pressure_to_hook_rms_ratio": pressure_rms / max(hook_rms, 1e-9),
+        "restore_to_pressure_rms_ratio": restore_rms / max(pressure_rms, 1e-9),
     }
 
 
@@ -570,6 +716,14 @@ def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list
         failures.append("performance_too_close_to_source_window")
     if proof["mc202_to_w30_rms_ratio"] < MIN_MC202_TO_W30_RMS_RATIO:
         failures.append("bass_pressure_too_buried_relative_to_w30")
+    if proof["full_to_source_rms_ratio"] < MIN_FULL_TO_SOURCE_RMS_RATIO:
+        failures.append("full_performance_not_assertive_enough_vs_source")
+    if proof["hook_to_source_transient_ratio"] < MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO:
+        failures.append("hook_lacks_source_break_snap")
+    if proof["pressure_to_hook_rms_ratio"] < MIN_PRESSURE_TO_HOOK_RMS_RATIO:
+        failures.append("pressure_section_not_louder_than_hook_enough")
+    if proof["restore_to_pressure_rms_ratio"] < MIN_RESTORE_TO_PRESSURE_RMS_RATIO:
+        failures.append("restore_hit_not_bigger_than_pressure_section")
     return failures
 
 
@@ -737,11 +891,11 @@ def agent_review_record(report: dict) -> dict:
     passed = report["result"] == "pass"
     proof = report["proof"]
     if passed:
-        strongest = "w30_chop_hook_with_pressure_restore"
+        strongest = "source_break_hook_pressure_stutter_restore"
         summary = (
-            "Promising: the dense break is transformed into a sectional "
-            "performance with measurable chop presence, pressure lift, "
-            "dropout/stutter contrast, and restore transient."
+            "Promising: the dense break is transformed into a louder sectional "
+            "performance with measurable break-hook transient, pressure lift, "
+            "dropout/stutter impact, and a bigger restore hit."
         )
     elif len(report["failure_codes"]) <= 2:
         strongest = "partial_audio_evidence"
@@ -776,6 +930,10 @@ def agent_review_record(report: dict) -> dict:
             "restore_to_hook_transient_ratio": proof["restore_to_hook_transient_ratio"],
             "max_adjacent_bar_correlation": proof["max_adjacent_bar_correlation"],
             "source_to_performance_correlation": proof["source_to_performance_correlation"],
+            "full_to_source_rms_ratio": proof["full_to_source_rms_ratio"],
+            "hook_to_source_transient_ratio": proof["hook_to_source_transient_ratio"],
+            "pressure_to_hook_rms_ratio": proof["pressure_to_hook_rms_ratio"],
+            "restore_to_pressure_rms_ratio": proof["restore_to_pressure_rms_ratio"],
         },
         "boundary": (
             "Agent review may block fail/weak outputs and mark this pack promising. "
@@ -917,6 +1075,23 @@ def saturate(samples: np.ndarray, drive: float) -> np.ndarray:
     return np.tanh(samples * drive).astype(np.float32)
 
 
+def glue_bus(samples: np.ndarray, drive: float, slam: float) -> np.ndarray:
+    dry = np.clip(samples, -0.98, 0.98).astype(np.float32)
+    crushed = saturate(dry, drive)
+    mixed = dry * (1.0 - slam) + crushed * slam
+    return saturate(mixed, 1.04)
+
+
+def normalize_peak(samples: np.ndarray, target_peak: float) -> np.ndarray:
+    if samples.size == 0:
+        return samples.astype(np.float32)
+    peak = float(np.max(np.abs(samples)))
+    if peak <= 1e-9:
+        return samples.astype(np.float32)
+    gain = min(target_peak / peak, 2.4)
+    return np.clip(samples * gain, -target_peak, target_peak).astype(np.float32)
+
+
 def apply_gain(samples: np.ndarray, gain: float) -> np.ndarray:
     return np.clip(samples * gain, -0.98, 0.98).astype(np.float32)
 
@@ -926,6 +1101,31 @@ def transient_emphasis(samples: np.ndarray) -> np.ndarray:
         return np.zeros_like(samples)
     previous = np.vstack([samples[0:1], samples[:-1]])
     return np.clip((samples - previous) * 2.0, -0.98, 0.98).astype(np.float32)
+
+
+def strongest_window_start(samples: np.ndarray, window_frames: int) -> int:
+    if samples.shape[0] <= window_frames:
+        return 0
+    mono = np.abs(samples.mean(axis=1))
+    window = np.ones(max(1, window_frames), dtype=np.float32)
+    energy = np.convolve(mono, window, mode="valid")
+    return int(np.argmax(energy))
+
+
+def decay_envelope(size: int, attack: float, decay: float) -> np.ndarray:
+    if size <= 0:
+        return np.zeros((0,), dtype=np.float32)
+    t = np.arange(size, dtype=np.float32) / SAMPLE_RATE
+    attack_env = np.clip(t / max(attack, 1.0 / SAMPLE_RATE), 0.0, 1.0)
+    decay_env = np.exp(-t / max(decay, 1.0 / SAMPLE_RATE))
+    return (attack_env * decay_env).astype(np.float32)
+
+
+def impact_envelope(size: int, decay: float) -> np.ndarray:
+    if size <= 0:
+        return np.zeros((0,), dtype=np.float32)
+    t = np.arange(size, dtype=np.float32) / SAMPLE_RATE
+    return np.exp(-t / max(decay, 1.0 / SAMPLE_RATE)).astype(np.float32)
 
 
 def rms(samples: np.ndarray) -> float:

@@ -18,6 +18,12 @@ writes:
 - spectrogram PNGs for the same roles
 - links back to `performance-report.json`
 
+The review proof includes both anti-collapse guards and pro-pressure guards:
+source-backed W-30 presence, pressure lift, dropout/stutter contrast, restore
+transient, full-performance level against the source, hook transient, pressure
+against hook, and restore against pressure. These fields are still deterministic
+evidence, not a substitute for a human musical verdict.
+
 Verdict discipline:
 
 - `agent_fail`: multiple weak-output guards failed.

@@ -36,6 +36,13 @@ known bad-output modes for this Golden Path: weak W-30 hook presence, missing
 bass-pressure lift, weak dropout/stutter contrast, weak restore transient,
 near-static bars, source-copy collapse, or buried bass pressure.
 
+The current pro-pressure render also gates against the older too-polite pass
+shape. The full performance must be assertive relative to the source window, the
+opening hook must carry real break transient, the pressure section must be
+louder than the hook, and the restore hit must be bigger than the pressure
+section. This keeps the Golden Path aimed at a room-moving source-backed
+instrument instead of a technically valid but underpowered fixture.
+
 `agent_promising` is not a final musical pass. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
