@@ -909,6 +909,12 @@ Additional receipt fields required before wider export scopes:
   proof prerequisite, records only the receipt QA gate mutation plus action /
   commit evidence, and must not launch a host, write DAW files, or infer
   audible-output readiness.
+  `riotbox-app --daw-session-host-import-proof-export-execute --session
+  <session.json> --daw-session-host-import-proof <proof.json> [--observer
+  <events.ndjson>]` is the current real-binary proof for that queue/commit
+  boundary. It persists the matching action log, commit record, receipt gate,
+  and optional observer lifecycle while keeping `developer_proof_only` and
+  `audible_output_proof_missing` visible.
 - current DAW-session audible-output proof commits keep the Session receipt as
   the only product truth. The command revalidates the local proof report plus
   writer and host-import proof prerequisites, records only the receipt QA gate

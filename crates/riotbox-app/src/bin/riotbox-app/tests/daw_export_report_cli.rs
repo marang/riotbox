@@ -33,6 +33,7 @@ fn parse_args_builds_daw_export_readiness_report_mode() {
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
         | LaunchMode::DawSessionHostImportProofApply { .. }
+        | LaunchMode::DawSessionHostImportProofExportExecute { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }

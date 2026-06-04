@@ -61,6 +61,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionHostImportProofExportExecute { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
@@ -94,6 +95,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionHostImportProofExportExecute { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
@@ -129,6 +131,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionHostImportProofExportExecute { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
@@ -159,6 +162,7 @@ mod tests {
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
             | LaunchMode::DawSessionHostImportProofApply { .. }
+            | LaunchMode::DawSessionHostImportProofExportExecute { .. }
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }

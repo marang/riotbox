@@ -1457,6 +1457,9 @@ Today the repo already has:
     `host_import_proof_v1`; committed audible-output-proof actions do the same
     for `audible_output_proof_v1`. This is observer evidence, not live capture,
     host launch proof, or musician-facing DAW export readiness.
+    `just daw-session-host-import-proof-export-execute-smoke` proves the
+    host-import action path through the real binary without launching a host or
+    writing DAW files.
   - current DAW-session writer proof skeleton writes only bounded local proof
     artifacts through `riotbox-app --daw-session-writer-proof-execute
     --session <session.json> --daw-session-destination <dir>`. The proof
