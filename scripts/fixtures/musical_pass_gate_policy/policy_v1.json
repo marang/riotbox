@@ -1,0 +1,77 @@
+{
+  "schema": "riotbox.musical_pass_gate_policy.v1",
+  "schema_version": 1,
+  "states": {
+    "technical_fail": {
+      "meaning": "The render, command, fixture, or output path failed basic technical validity.",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["failing command or test", "failure codes or error output"],
+      "allowed_pr_language": ["technical_fail", "blocked by technical QA"],
+      "blocked_claims": ["sounds good", "agent_promising", "musical_pass"],
+      "next_action": "Fix the technical path before judging musical quality."
+    },
+    "technical_pass": {
+      "meaning": "The render is non-silent, inside technical bounds, and structurally valid.",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["unit/integration tests", "technical audio metrics"],
+      "allowed_pr_language": ["technical_pass", "render is valid"],
+      "blocked_claims": ["sounds good", "musical_pass"],
+      "next_action": "Run musical-fitness, agent-review, or listening gates before quality claims."
+    },
+    "agent_fail": {
+      "meaning": "Automation caught a known bad-output mode such as silence, collapse, weak pressure, or static behavior.",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["automated musical fitness report or agent review", "stable failure codes"],
+      "allowed_pr_language": ["agent_fail", "known weak-output mode caught"],
+      "blocked_claims": ["agent_promising", "human_musical_pass", "musical_pass"],
+      "next_action": "Block merge or create a concrete audio-fix follow-up."
+    },
+    "agent_weak": {
+      "meaning": "The output rendered, but one or more musical guardrails are weak or incomplete.",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["agent review or audio judge report", "weak dimensions or failure examples"],
+      "allowed_pr_language": ["agent_weak", "technically valid but musically weak"],
+      "blocked_claims": ["musical_pass", "demo-ready", "human_musical_pass"],
+      "next_action": "Ship only as diagnostic evidence or improve the audible behavior."
+    },
+    "agent_promising": {
+      "meaning": "Automation did not catch known bad-output modes and the pack has useful musical evidence.",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["agent-review.json or automated musical fitness report", "human_verdict: unverified"],
+      "allowed_pr_language": ["agent_promising", "known weak modes not caught"],
+      "blocked_claims": ["musical_pass", "human approved", "calibrated_agent_musical_pass"],
+      "next_action": "Use as merge evidence for bounded QA, then seek human labels before product claims."
+    },
+    "human_musical_pass": {
+      "meaning": "A structured human listening review approved the audible result for the stated use.",
+      "may_claim_musical_pass": true,
+      "required_artifacts": ["riotbox.listening_review.v1 verdict keep", "reviewer identity", "candidate artifact paths"],
+      "allowed_pr_language": ["human_musical_pass", "human listening approved"],
+      "blocked_claims": ["calibrated agent decided this alone"],
+      "next_action": "Record the review and attach or cite it in the PR or archive."
+    },
+    "human_musical_fail": {
+      "meaning": "A structured human listening review rejected the output or found it technically OK but musically weak.",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["riotbox.listening_review.v1 verdict reject or technically_ok_but_musically_weak", "failure reason", "preferred direction"],
+      "allowed_pr_language": ["human_musical_fail", "technically_ok_but_musically_weak"],
+      "blocked_claims": ["musical_pass", "product-ready"],
+      "next_action": "Convert the taste failure into a source, chop, drum, bass, contrast, fixture, or UI follow-up."
+    },
+    "calibrated_agent_musical_pass": {
+      "meaning": "A versioned offline audio judge has enough labeled Riotbox evidence to promote an agent pass for a bounded source family.",
+      "may_claim_musical_pass": true,
+      "required_artifacts": ["riotbox.audio_judge_spike.v1 recommendation useful", "matched pass/weak/fail labels", "held-out failure examples", "human_verdict: unverified"],
+      "allowed_pr_language": ["calibrated_agent_musical_pass for bounded source family", "human_verdict remains unverified"],
+      "blocked_claims": ["human_verdict: unverified", "global taste oracle", "runtime model dependency"],
+      "next_action": "Use only inside the documented source-family boundary and keep human review separate.",
+      "judge_validation": {
+        "minimum_label_count": 12,
+        "required_verdicts": ["pass", "weak", "fail"],
+        "minimum_source_families": 2,
+        "requires_confusion_examples": true,
+        "provider_boundary": "offline_qa_only"
+      }
+    }
+  }
+}
