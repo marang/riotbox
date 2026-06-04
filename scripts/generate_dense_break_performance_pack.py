@@ -105,7 +105,16 @@ def main() -> int:
     )
     source_audio = source_audio[:frame_count]
     tr909 = tr909[:frame_count]
-    w30 = apply_gain(w30[:frame_count], 1.22)
+    w30 = apply_gain(
+        w30[:frame_count],
+        source_relative_gain(
+            source_audio,
+            w30[:frame_count],
+            target_ratio=MIN_W30_TO_SOURCE_RMS_RATIO * 1.10,
+            minimum_gain=1.22,
+            maximum_gain=2.35,
+        ),
+    )
     mc202 = apply_gain(mc202[:frame_count], 1.35)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
@@ -304,7 +313,7 @@ def render_performance(
         + bass_pressure * 1.76,
         1.58,
     )
-    pressure_mix = glue_bus(pressure_mix, drive=1.34, slam=0.30)
+    pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.89)
     restore_mix = glue_bus(
         source * 0.28
         + w30 * 1.76
@@ -396,6 +405,9 @@ def render_dropout_stutter_bar(
         return bar
     grain = w30[grain_source_start:grain_source_end].copy()
     grain *= hann_envelope(grain.shape[0])[:, None]
+    source_snap_grain = transient_emphasis(source[grain_source_start:grain_source_end].copy())
+    source_snap_grain *= impact_envelope(source_snap_grain.shape[0], decay=0.040)[:, None]
+    source_snap_grain = normalize_peak(source_snap_grain, 0.78)
 
     step = max(1, bar_frames // 16)
     for index, target in enumerate(range(dropout_end, bar_frames - grain.shape[0], step)):
@@ -405,6 +417,7 @@ def render_dropout_stutter_bar(
         riff = hook_riff[min(source_start + target, hook_riff.shape[0] - 1)]
         snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
         bar[target:end] += grain * (3.15 * decay)
+        bar[target:end] += source_snap_grain[: end - target] * (2.05 * decay)
         bar[target : min(target + 96, bar.shape[0])] += accent * (0.58 * decay)
         bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.02 * decay)
 
@@ -1094,6 +1107,21 @@ def normalize_peak(samples: np.ndarray, target_peak: float) -> np.ndarray:
 
 def apply_gain(samples: np.ndarray, gain: float) -> np.ndarray:
     return np.clip(samples * gain, -0.98, 0.98).astype(np.float32)
+
+
+def source_relative_gain(
+    source: np.ndarray,
+    stem: np.ndarray,
+    target_ratio: float,
+    minimum_gain: float,
+    maximum_gain: float,
+) -> float:
+    stem_rms = rms(stem)
+    if stem_rms <= 1e-9:
+        return minimum_gain
+    target = rms(source) * target_ratio
+    gain = target / stem_rms
+    return float(np.clip(gain, minimum_gain, maximum_gain))
 
 
 def transient_emphasis(samples: np.ndarray) -> np.ndarray:
