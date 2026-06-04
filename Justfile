@@ -61,6 +61,7 @@ audio-qa-ci:
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
+    just pro-pressure-source-matrix-smoke
     just human-listening-label-corpus-fixtures
     just listening-review-label-import-fixtures
     just audio-judge-spike-fixtures
@@ -237,6 +238,10 @@ agent-musical-review-pack-smoke output="artifacts/audio_qa/local-agent-musical-r
     just dense-break-performance-pack-smoke "{{output}}"
     jq -e '.schema == "riotbox.agent_musical_review_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .source_recognition == "source_transformed_but_present" and (.visual_files.full_performance.waveform | endswith(".png")) and (.visual_files.full_performance.spectrogram | endswith(".png"))' "{{output}}/agent-review.json"
     for role in source_window chop_hook pressure_lift dropout_stutter restore_hit full_performance; do test -s "{{output}}/visuals/$role.waveform.png"; test -s "{{output}}/visuals/$role.spectrogram.png"; done
+
+pro-pressure-source-matrix-smoke output="artifacts/audio_qa/local-pro-pressure-source-matrix":
+    python3 scripts/validate_pro_pressure_source_matrix.py --output "{{output}}" --date "local-pro-pressure-source-matrix"
+    jq -e '.schema == "riotbox.pro_pressure_source_matrix.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .case_count >= 4 and .passed_case_count == .case_count and (.cases | length) == .case_count and all(.cases[]; .result == "pass" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_to_hook_rms_ratio >= 1.30 and .proof.restore_to_pressure_rms_ratio >= 1.12 and .metrics.full_performance_peak_abs <= 0.985)' "{{output}}/source-matrix-report.json"
 
 human-listening-label-corpus-fixtures:
     tmp="$(mktemp)" && python3 scripts/validate_human_listening_label_corpus.py --json-output "$tmp" scripts/fixtures/human_listening_label_corpus/valid_dense_break.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .result == "pass" and .label_count == 5 and .verdict_counts.pass == 2 and .verdict_counts.weak == 2 and .verdict_counts.fail == 1 and (.source_families == ["dense_break", "sparse_bass_pressure", "tonal_hook"])' "$tmp" && rm "$tmp"
