@@ -7,9 +7,11 @@ import argparse
 import json
 import math
 import shutil
+import struct
 import subprocess
 import sys
 import wave
+import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -23,6 +25,7 @@ DEFAULT_BPM = 130.0
 DEFAULT_BARS = 8
 BEATS_PER_BAR = 4
 SCHEMA = "riotbox.dense_break_performance_pack.v1"
+AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
 MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
@@ -110,17 +113,38 @@ def main() -> int:
         args.bars,
     )
 
-    write_wav(output / "00_source_window.wav", source_audio)
-    write_wav(output / "01_chop_hook.wav", sections["chop_hook"])
-    write_wav(output / "02_pressure_lift.wav", sections["pressure_lift"])
-    write_wav(output / "03_dropout_stutter.wav", sections["dropout_stutter"])
-    write_wav(output / "04_restore_hit.wav", sections["restore_hit"])
-    write_wav(output / "05_full_performance.wav", performance)
+    audio_files = {
+        "source_window": "00_source_window.wav",
+        "chop_hook": "01_chop_hook.wav",
+        "pressure_lift": "02_pressure_lift.wav",
+        "dropout_stutter": "03_dropout_stutter.wav",
+        "restore_hit": "04_restore_hit.wav",
+        "full_performance": "05_full_performance.wav",
+    }
+    write_wav(output / audio_files["source_window"], source_audio)
+    write_wav(output / audio_files["chop_hook"], sections["chop_hook"])
+    write_wav(output / audio_files["pressure_lift"], sections["pressure_lift"])
+    write_wav(output / audio_files["dropout_stutter"], sections["dropout_stutter"])
+    write_wav(output / audio_files["restore_hit"], sections["restore_hit"])
+    write_wav(output / audio_files["full_performance"], performance)
+    visual_files = write_visual_evidence(
+        output,
+        {
+            "source_window": source_audio,
+            "chop_hook": sections["chop_hook"],
+            "pressure_lift": sections["pressure_lift"],
+            "dropout_stutter": sections["dropout_stutter"],
+            "restore_hit": sections["restore_hit"],
+            "full_performance": performance,
+        },
+    )
 
     report = build_report(
         source,
         output,
         args,
+        audio_files,
+        visual_files,
         source_audio,
         tr909,
         w30,
@@ -402,6 +426,8 @@ def build_report(
     source: Path,
     output: Path,
     args: argparse.Namespace,
+    audio_files: dict[str, str],
+    visual_files: dict[str, dict[str, str]],
     source_audio: np.ndarray,
     tr909: np.ndarray,
     w30: np.ndarray,
@@ -473,14 +499,8 @@ def build_report(
             "max_source_to_performance_correlation": MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
             "min_mc202_to_w30_rms_ratio": MIN_MC202_TO_W30_RMS_RATIO,
         },
-        "files": {
-            "source_window": "00_source_window.wav",
-            "chop_hook": "01_chop_hook.wav",
-            "pressure_lift": "02_pressure_lift.wav",
-            "dropout_stutter": "03_dropout_stutter.wav",
-            "restore_hit": "04_restore_hit.wav",
-            "full_performance": "05_full_performance.wav",
-        },
+        "files": audio_files,
+        "visuals": visual_files,
         "metrics": metrics,
         "proof": proof,
         "failure_codes": failure_codes,
@@ -553,8 +573,118 @@ def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list
     return failures
 
 
+def write_visual_evidence(
+    output: Path,
+    named_samples: dict[str, np.ndarray],
+) -> dict[str, dict[str, str]]:
+    visual_dir = output / "visuals"
+    visual_dir.mkdir(parents=True, exist_ok=True)
+    result = {}
+    for role, samples in named_samples.items():
+        waveform = visual_dir / f"{role}.waveform.png"
+        spectrogram = visual_dir / f"{role}.spectrogram.png"
+        write_waveform_png(waveform, samples)
+        write_spectrogram_png(spectrogram, samples)
+        result[role] = {
+            "waveform": str(waveform.relative_to(output)),
+            "spectrogram": str(spectrogram.relative_to(output)),
+        }
+    return result
+
+
+def write_waveform_png(path: Path, samples: np.ndarray, width: int = 960, height: int = 220) -> None:
+    image = np.zeros((height, width, 3), dtype=np.uint8)
+    image[:, :, :] = np.array([15, 17, 23], dtype=np.uint8)
+    mid = height // 2
+    image[mid : mid + 1, :, :] = np.array([72, 76, 90], dtype=np.uint8)
+    mono = samples.mean(axis=1) if samples.size else np.zeros((0,), dtype=np.float32)
+    if mono.size:
+        chunks = np.array_split(mono, width)
+        for x, chunk in enumerate(chunks):
+            if chunk.size == 0:
+                continue
+            low = float(np.min(chunk))
+            high = float(np.max(chunk))
+            y1 = int(round((1.0 - (high + 1.0) * 0.5) * (height - 1)))
+            y2 = int(round((1.0 - (low + 1.0) * 0.5) * (height - 1)))
+            y1 = max(0, min(height - 1, y1))
+            y2 = max(0, min(height - 1, y2))
+            if y2 < y1:
+                y1, y2 = y2, y1
+            image[y1 : y2 + 1, x, :] = np.array([106, 220, 181], dtype=np.uint8)
+    write_rgb_png(path, image)
+
+
+def write_spectrogram_png(
+    path: Path,
+    samples: np.ndarray,
+    width: int = 960,
+    height: int = 280,
+) -> None:
+    mono = samples.mean(axis=1) if samples.size else np.zeros((0,), dtype=np.float32)
+    if mono.size < 1024:
+        write_rgb_png(path, np.zeros((height, width, 3), dtype=np.uint8))
+        return
+
+    n_fft = 1024
+    hop = max(1, (mono.size - n_fft) // width)
+    columns = []
+    window = np.hanning(n_fft).astype(np.float32)
+    for start in range(0, mono.size - n_fft + 1, hop):
+        frame = mono[start : start + n_fft] * window
+        spectrum = np.abs(np.fft.rfft(frame))
+        columns.append(np.log1p(spectrum))
+        if len(columns) >= width:
+            break
+    if not columns:
+        write_rgb_png(path, np.zeros((height, width, 3), dtype=np.uint8))
+        return
+
+    spec = np.stack(columns, axis=1)
+    spec = spec[: spec.shape[0] // 2, :]
+    spec -= float(np.min(spec))
+    max_value = float(np.max(spec))
+    if max_value > 1e-9:
+        spec /= max_value
+    y_indices = np.linspace(spec.shape[0] - 1, 0, height).astype(np.int32)
+    x_indices = np.linspace(0, spec.shape[1] - 1, width).astype(np.int32)
+    values = spec[y_indices[:, None], x_indices[None, :]]
+    image = heatmap(values)
+    write_rgb_png(path, image)
+
+
+def heatmap(values: np.ndarray) -> np.ndarray:
+    clipped = np.clip(values, 0.0, 1.0)
+    red = np.clip((clipped - 0.35) / 0.65, 0.0, 1.0)
+    green = np.clip(1.0 - np.abs(clipped - 0.55) / 0.55, 0.0, 1.0)
+    blue = np.clip(1.0 - clipped * 1.45, 0.0, 1.0)
+    image = np.stack([red, green, blue], axis=2)
+    return (image * 255.0).astype(np.uint8)
+
+
+def write_rgb_png(path: Path, image: np.ndarray) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    height, width, channels = image.shape
+    if channels != 3:
+        raise ValueError("PNG image must be RGB")
+    raw = b"".join(b"\x00" + image[row].tobytes() for row in range(height))
+    payload = (
+        png_chunk(b"IHDR", struct.pack(">IIBBBBB", width, height, 8, 2, 0, 0, 0))
+        + png_chunk(b"IDAT", zlib.compress(raw, level=9))
+        + png_chunk(b"IEND", b"")
+    )
+    path.write_bytes(b"\x89PNG\r\n\x1a\n" + payload)
+
+
+def png_chunk(kind: bytes, data: bytes) -> bytes:
+    checksum = zlib.crc32(kind + data) & 0xFFFFFFFF
+    return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", checksum)
+
+
 def write_reports(output: Path, report: dict) -> None:
     (output / "performance-report.json").write_text(json.dumps(report, indent=2) + "\n")
+    agent_review = agent_review_record(report)
+    (output / "agent-review.json").write_text(json.dumps(agent_review, indent=2) + "\n")
     lines = [
         "# Dense-Break Riotbox Performance Pack",
         "",
@@ -574,6 +704,11 @@ def write_reports(output: Path, report: dict) -> None:
     ]
     for role, path in report["files"].items():
         lines.append(f"- `{path}`: `{role}`")
+    lines.extend(["", "## Visual Evidence", ""])
+    for role, paths in report["visuals"].items():
+        lines.append(
+            f"- `{role}`: waveform `{paths['waveform']}`, spectrogram `{paths['spectrogram']}`"
+        )
     lines.extend(["", "## Structure", ""])
     for item in report["structure"]:
         lines.append(f"- Bars `{item['bars']}`: {item['intent']}")
@@ -595,6 +730,94 @@ def write_reports(output: Path, report: dict) -> None:
         ]
     )
     (output / "README.md").write_text("\n".join(lines) + "\n")
+    write_agent_review_markdown(output / "agent-review.md", agent_review)
+
+
+def agent_review_record(report: dict) -> dict:
+    passed = report["result"] == "pass"
+    proof = report["proof"]
+    if passed:
+        strongest = "w30_chop_hook_with_pressure_restore"
+        summary = (
+            "Promising: the dense break is transformed into a sectional "
+            "performance with measurable chop presence, pressure lift, "
+            "dropout/stutter contrast, and restore transient."
+        )
+    elif len(report["failure_codes"]) <= 2:
+        strongest = "partial_audio_evidence"
+        summary = "Weak: the pack renders, but one or two musical guardrails still fail."
+    else:
+        strongest = "none"
+        summary = "Fail: the pack trips multiple weak-output guardrails."
+    return {
+        "schema": AGENT_REVIEW_SCHEMA,
+        "schema_version": 1,
+        "source_report_schema": report["schema"],
+        "result": report["result"],
+        "agent_verdict": report["agent_verdict"],
+        "human_verdict": report["human_verdict"],
+        "strongest_element": strongest,
+        "source_recognition": source_recognition_label(proof["source_to_performance_correlation"]),
+        "hook_after_two_bars": "present" if proof["w30_to_source_rms_ratio"] >= 0.18 else "weak",
+        "summary": summary,
+        "failure_codes": report["failure_codes"],
+        "audio_files": report["files"],
+        "visual_files": report["visuals"],
+        "review_focus": [
+            "Does the W-30 chop read as a hook after two bars?",
+            "Does the pressure lift hit harder than the opening hook?",
+            "Does the dropout/stutter feel like a playable destructive gesture?",
+            "Does the restore hit land as a break transient plus bass-pressure moment?",
+        ],
+        "proof": {
+            "w30_to_source_rms_ratio": proof["w30_to_source_rms_ratio"],
+            "pressure_low_band_lift_ratio": proof["pressure_low_band_lift_ratio"],
+            "dropout_to_stutter_rms_ratio": proof["dropout_to_stutter_rms_ratio"],
+            "restore_to_hook_transient_ratio": proof["restore_to_hook_transient_ratio"],
+            "max_adjacent_bar_correlation": proof["max_adjacent_bar_correlation"],
+            "source_to_performance_correlation": proof["source_to_performance_correlation"],
+        },
+        "boundary": (
+            "Agent review may block fail/weak outputs and mark this pack promising. "
+            "It must not claim final human musical pass while human_verdict is unverified."
+        ),
+    }
+
+
+def source_recognition_label(correlation: float) -> str:
+    if correlation >= 0.90:
+        return "source_too_close_to_original"
+    if correlation >= 0.20:
+        return "source_transformed_but_present"
+    return "source_character_at_risk"
+
+
+def write_agent_review_markdown(path: Path, review: dict) -> None:
+    lines = [
+        "# Agent Musical Review",
+        "",
+        f"- Result: `{review['result']}`",
+        f"- Agent verdict: `{review['agent_verdict']}`",
+        f"- Human verdict: `{review['human_verdict']}`",
+        f"- Strongest element: `{review['strongest_element']}`",
+        f"- Source recognition: `{review['source_recognition']}`",
+        f"- Hook after two bars: `{review['hook_after_two_bars']}`",
+        "",
+        "## Summary",
+        "",
+        review["summary"],
+        "",
+        "## Review Focus",
+        "",
+    ]
+    lines.extend(f"- {item}" for item in review["review_focus"])
+    lines.extend(["", "## Visual Files", ""])
+    for role, paths in review["visual_files"].items():
+        lines.append(
+            f"- `{role}`: waveform `{paths['waveform']}`, spectrogram `{paths['spectrogram']}`"
+        )
+    lines.extend(["", "## Boundary", "", review["boundary"]])
+    path.write_text("\n".join(lines) + "\n")
 
 
 def read_wav(path: Path) -> np.ndarray:

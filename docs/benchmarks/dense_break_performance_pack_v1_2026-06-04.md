@@ -25,6 +25,10 @@ Generated artifacts:
 - `04_restore_hit.wav`
 - `05_full_performance.wav`
 - `performance-report.json`
+- `agent-review.json`
+- `agent-review.md`
+- `visuals/*.waveform.png`
+- `visuals/*.spectrogram.png`
 - `README.md`
 
 The report emits `agent_verdict: agent_promising` only when the pack avoids the
@@ -41,4 +45,5 @@ Run:
 ```bash
 just dense-break-performance-pack
 just dense-break-performance-pack-smoke
+just agent-musical-review-pack-smoke
 ```
