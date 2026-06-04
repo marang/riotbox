@@ -1032,4 +1032,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Define musical-pass gate policy for agent and human verdicts
 - [RIOTBOX-1189.md](./RIOTBOX-1189.md)
   Add weak/fail audio judge calibration packs
+- [RIOTBOX-1190.md](./RIOTBOX-1190.md)
+  Add cross-source audio judge label coverage
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
