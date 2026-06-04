@@ -1020,4 +1020,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add DAW local-writer export action CLI smoke
 - [RIOTBOX-1182.md](./RIOTBOX-1182.md)
   P016: Add DAW host-import proof export-action CLI smoke
+- [RIOTBOX-1184.md](./RIOTBOX-1184.md)
+  Build dense-break 8-bar sound-quality Golden Path pack
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
