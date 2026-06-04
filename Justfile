@@ -62,6 +62,7 @@ audio-qa-ci:
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
     just pro-pressure-source-matrix-smoke
+    just sparse-bass-pressure-professional-fixtures
     just human-listening-label-corpus-fixtures
     just listening-review-label-import-fixtures
     just audio-judge-spike-fixtures
@@ -242,6 +243,10 @@ agent-musical-review-pack-smoke output="artifacts/audio_qa/local-agent-musical-r
 pro-pressure-source-matrix-smoke output="artifacts/audio_qa/local-pro-pressure-source-matrix":
     python3 scripts/validate_pro_pressure_source_matrix.py --output "{{output}}" --date "local-pro-pressure-source-matrix"
     jq -e '.schema == "riotbox.pro_pressure_source_matrix.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .case_count >= 4 and .passed_case_count == .case_count and (.cases | length) == .case_count and all(.cases[]; .result == "pass" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_to_hook_rms_ratio >= 1.30 and .proof.restore_to_pressure_rms_ratio >= 1.12 and .metrics.full_performance_peak_abs <= 0.985)' "{{output}}/source-matrix-report.json"
+
+sparse-bass-pressure-professional-fixtures:
+    tmp="$(mktemp -d)" && python3 scripts/validate_sparse_bass_pressure_professional.py --json-output "$tmp/sparse-bass.json" --markdown-output "$tmp/sparse-bass.md" scripts/fixtures/automated_musical_fitness/valid_sparse_bass_pulse/manifest.json && jq -e '.schema == "riotbox.sparse_bass_pressure_professional.v1" and .result == "pass" and .source_family == "sparse_bass_pressure" and .human_verdict == "unverified" and .metrics.low_band_rms >= .thresholds.min_low_band_rms and .metrics.mc202_bass_signal_rms >= .thresholds.min_mc202_bass_rms and .metrics.tr909_low_band_rms_ratio >= .thresholds.min_tr909_low_band_ratio' "$tmp/sparse-bass.json" && grep -q "Sparse-Bass Pressure" "$tmp/sparse-bass.md" && rm -rf "$tmp"
+    tmp="$(mktemp -d)" && if python3 scripts/validate_sparse_bass_pressure_professional.py scripts/fixtures/sparse_bass_pressure_professional/invalid_weak_pressure/manifest.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected weak sparse-bass pressure fixture to fail" >&2; exit 1; fi && grep -q "low_band_pressure_too_weak" "$tmp/invalid.out" && grep -q "mc202_bass_pressure_too_weak" "$tmp/invalid.out" && rm -rf "$tmp"
 
 human-listening-label-corpus-fixtures:
     tmp="$(mktemp)" && python3 scripts/validate_human_listening_label_corpus.py --json-output "$tmp" scripts/fixtures/human_listening_label_corpus/valid_dense_break.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .result == "pass" and .label_count == 5 and .verdict_counts.pass == 2 and .verdict_counts.weak == 2 and .verdict_counts.fail == 1 and (.source_families == ["dense_break", "sparse_bass_pressure", "tonal_hook"])' "$tmp" && rm "$tmp"

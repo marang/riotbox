@@ -36,6 +36,14 @@ Current positive fixture families:
 - `valid_tonal_hook_chop`: hook-led chopped source behavior.
 - `valid_sparse_bass_pulse`: sparse source with bass-pressure response.
 
+`valid_sparse_bass_pulse` also feeds
+`riotbox.sparse_bass_pressure_professional.v1`, a stricter professional-output
+fixture for sparse material. That gate requires audible full-mix level,
+low-band authority, transient pressure, TR-909 kick-pressure lift, MC-202 bass
+pressure, source-derived contour movement, source-grid alignment, and generated
+pressure strong enough against W-30 support. Passing it still means
+`human_verdict: unverified`, not human musical approval.
+
 Current negative fixture families:
 
 - `invalid_static`: rejects static loop movement.
@@ -46,6 +54,9 @@ Current negative fixture families:
   signatures for distinct source cases.
 - `invalid_fallback_collapse`: rejects fallback-collapsed output.
 - `invalid_grid_drift`: rejects weak source-grid alignment.
+- `sparse_bass_pressure_professional/invalid_weak_pressure`: rejects sparse
+  bass material whose low band, MC-202 pressure, source contour, grid hit ratio,
+  and generated support are too weak for the professional-output fixture.
 
 These fixtures are automated-fitness evidence only. They are deliberately named
 as validation fixtures, not as listening approval examples.
