@@ -1050,4 +1050,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Generate structured listening packs for professional-output suite
 - [RIOTBOX-1198.md](./RIOTBOX-1198.md)
   Add destructive variation professional output gate
+- [RIOTBOX-1199.md](./RIOTBOX-1199.md)
+  Add professional output suite manifest gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
