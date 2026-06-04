@@ -62,6 +62,7 @@ audio-qa-ci:
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
     just pro-pressure-source-matrix-smoke
+    just professional-source-wav-pack-smoke
     just sparse-bass-pressure-professional-fixtures
     just tonal-hook-professional-fixtures
     just human-listening-label-corpus-fixtures
@@ -244,6 +245,11 @@ agent-musical-review-pack-smoke output="artifacts/audio_qa/local-agent-musical-r
 pro-pressure-source-matrix-smoke output="artifacts/audio_qa/local-pro-pressure-source-matrix":
     python3 scripts/validate_pro_pressure_source_matrix.py --output "{{output}}" --date "local-pro-pressure-source-matrix"
     jq -e '.schema == "riotbox.pro_pressure_source_matrix.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .case_count >= 4 and .passed_case_count == .case_count and (.cases | length) == .case_count and all(.cases[]; .result == "pass" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_to_hook_rms_ratio >= 1.30 and .proof.restore_to_pressure_rms_ratio >= 1.12 and .metrics.full_performance_peak_abs <= 0.985)' "{{output}}/source-matrix-report.json"
+
+professional-source-wav-pack-smoke output="artifacts/audio_qa/local-professional-source-wav-pack":
+    python3 scripts/generate_professional_source_wav_pack.py --output "{{output}}" --date "local-professional-source-wav-pack"
+    jq -e '.schema == "riotbox.professional_source_wav_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .case_count == 2 and .passed_case_count == 2 and ([.cases[].source_family] | sort == ["sparse_bass_pressure", "tonal_hook"]) and all(.cases[]; .result == "pass" and .human_verdict == "unverified" and .metrics.full_performance_peak_abs <= 0.985 and (.audio_files.full_performance | endswith(".wav")))' "{{output}}/professional-source-wav-pack.json"
+    for case in tonal_rusharp_120 sparse_kicksnr_120; do test -s "{{output}}/$case/05_full_performance.wav"; test -s "{{output}}/$case/performance-report.json"; done
 
 sparse-bass-pressure-professional-fixtures:
     tmp="$(mktemp -d)" && python3 scripts/validate_sparse_bass_pressure_professional.py --json-output "$tmp/sparse-bass.json" --markdown-output "$tmp/sparse-bass.md" scripts/fixtures/automated_musical_fitness/valid_sparse_bass_pulse/manifest.json && jq -e '.schema == "riotbox.sparse_bass_pressure_professional.v1" and .result == "pass" and .source_family == "sparse_bass_pressure" and .human_verdict == "unverified" and .metrics.low_band_rms >= .thresholds.min_low_band_rms and .metrics.mc202_bass_signal_rms >= .thresholds.min_mc202_bass_rms and .metrics.tr909_low_band_rms_ratio >= .thresholds.min_tr909_low_band_ratio' "$tmp/sparse-bass.json" && grep -q "Sparse-Bass Pressure" "$tmp/sparse-bass.md" && rm -rf "$tmp"
