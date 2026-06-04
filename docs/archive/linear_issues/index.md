@@ -1036,4 +1036,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add cross-source audio judge label coverage
 - [RIOTBOX-1191.md](./RIOTBOX-1191.md)
   Add real listening label import path for audio judge
+- [RIOTBOX-1192.md](./RIOTBOX-1192.md)
+  Make dense-break performance output hit like a professional pressure render
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
