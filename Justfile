@@ -63,6 +63,7 @@ audio-qa-ci:
     just agent-musical-review-pack-smoke
     just pro-pressure-source-matrix-smoke
     just professional-source-wav-pack-smoke
+    just professional-output-listening-pack-smoke
     just sparse-bass-pressure-professional-fixtures
     just tonal-hook-professional-fixtures
     just human-listening-label-corpus-fixtures
@@ -250,6 +251,11 @@ professional-source-wav-pack-smoke output="artifacts/audio_qa/local-professional
     python3 scripts/generate_professional_source_wav_pack.py --output "{{output}}" --date "local-professional-source-wav-pack"
     jq -e '.schema == "riotbox.professional_source_wav_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .case_count == 2 and .passed_case_count == 2 and ([.cases[].source_family] | sort == ["sparse_bass_pressure", "tonal_hook"]) and all(.cases[]; .result == "pass" and .human_verdict == "unverified" and .metrics.full_performance_peak_abs <= 0.985 and (.audio_files.full_performance | endswith(".wav")))' "{{output}}/professional-source-wav-pack.json"
     for case in tonal_rusharp_120 sparse_kicksnr_120; do test -s "{{output}}/$case/05_full_performance.wav"; test -s "{{output}}/$case/performance-report.json"; done
+
+professional-output-listening-pack-smoke output="artifacts/audio_qa/local-professional-output-listening-pack":
+    python3 scripts/generate_professional_output_listening_pack.py --output "{{output}}" --date "local-professional-output-listening-pack"
+    jq -e '.schema == "riotbox.professional_output_listening_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .case_count == 3 and ([.cases[].source_family] | sort == ["dense_break", "sparse_bass_pressure", "tonal_hook"]) and all(.cases[]; .human_verdict == "unverified" and (.candidate | endswith(".wav")) and (.candidate_sha256 | length == 64) and (.review_sha256 | length == 64))' "{{output}}/professional-output-listening-pack.json"
+    for case in dense_beat03_130 tonal_rusharp_120 sparse_kicksnr_120; do test -s "{{output}}/reviews/$case/review.json"; test -s "{{output}}/reviews/$case/prompt.md"; done
 
 sparse-bass-pressure-professional-fixtures:
     tmp="$(mktemp -d)" && python3 scripts/validate_sparse_bass_pressure_professional.py --json-output "$tmp/sparse-bass.json" --markdown-output "$tmp/sparse-bass.md" scripts/fixtures/automated_musical_fitness/valid_sparse_bass_pulse/manifest.json && jq -e '.schema == "riotbox.sparse_bass_pressure_professional.v1" and .result == "pass" and .source_family == "sparse_bass_pressure" and .human_verdict == "unverified" and .metrics.low_band_rms >= .thresholds.min_low_band_rms and .metrics.mc202_bass_signal_rms >= .thresholds.min_mc202_bass_rms and .metrics.tr909_low_band_rms_ratio >= .thresholds.min_tr909_low_band_ratio' "$tmp/sparse-bass.json" && grep -q "Sparse-Bass Pressure" "$tmp/sparse-bass.md" && rm -rf "$tmp"

@@ -55,6 +55,7 @@ just dense-break-performance-pack-smoke
 just agent-musical-review-pack-smoke
 just pro-pressure-source-matrix-smoke
 just professional-source-wav-pack-smoke
+just professional-output-listening-pack-smoke
 ```
 
 The source-matrix smoke renders the same pro-pressure contract across multiple
@@ -67,3 +68,9 @@ tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
 material is allowed to keep the hook stronger than the pressure section, while
 sparse material must prove pressure stronger than the hook. Both cases still
 write `human_verdict: unverified`.
+
+`professional-output-listening-pack-smoke` prepares structured human-review
+packs for dense, tonal, and sparse professional-output WAVs. It records candidate
+WAV hashes, source-report hashes, review prompts, and explicit
+`human_verdict: unverified` placeholders so taste review can happen without
+claiming a musical pass from metrics alone.
