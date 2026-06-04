@@ -1038,4 +1038,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add real listening label import path for audio judge
 - [RIOTBOX-1192.md](./RIOTBOX-1192.md)
   Make dense-break performance output hit like a professional pressure render
+- [RIOTBOX-1193.md](./RIOTBOX-1193.md)
+  Prove pro-pressure render across multiple source examples
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
