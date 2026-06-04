@@ -1,0 +1,7 @@
+{
+  "schema": "riotbox.agent_musical_review_pack.v1",
+  "schema_version": 1,
+  "result": "pass",
+  "agent_verdict": "agent_promising",
+  "human_verdict": "unverified"
+}

@@ -1970,3 +1970,17 @@ Why: Riotbox needs stronger audible output before TUI/export polish has product 
 Evidence: Linear P021 was created with initial issues RIOTBOX-1185 through RIOTBOX-1188 covering the agent musical review pack, human label corpus, CLAP/MERT-style judge spike, and musical-pass gate policy.
 Consequences: future agents may use P021 to block weak output and eventually assign calibrated agent musical-pass verdicts, but P021 must not become a hidden taste oracle, second arranger, runtime dependency, or replacement for human listening before labeled Riotbox examples validate it.
 Status: accepted
+
+---
+
+### RBX-066
+
+Date: 2026-06-04
+Topic: Audio judge spike starts as offline calibration evidence, not a taste oracle
+Phase: P021 / Audio Judge / Musical Fitness
+Question: how should Riotbox prototype CLAP/MERT-style musical judging without letting model output become product truth?
+Decision: add `riotbox.audio_judge_spike.v1` as an offline QA spike that compares a deterministic Riotbox metrics baseline against human listening label coverage while reporting optional CLAP/MERT-style provider availability. The recommendation must stay `not_ready` until enough generated review packs are matched to pass/weak/fail labels and any embedding provider proves value beyond metrics.
+Why: Riotbox needs a path for agents to reason about audible quality, but musical pass cannot be inferred from logs, deterministic metrics, or uncalibrated embeddings. Keeping the spike optional and report-driven prevents hidden runtime dependencies, hidden taste memory, and premature product claims.
+Evidence: RIOTBOX-1187 adds `scripts/prototype_audio_judge_spike.py`, committed fixture coverage, generated dense-break smoke wiring, and the `audio_judge_spike_v1_2026-06-04` benchmark note.
+Consequences: future P021 work should add real labeled packs, weak/fail examples, and provider comparison before changing musical-pass policy. CLAP/MERT-style providers remain offline QA experiments unless calibration evidence shows they separate weak hooks and strong hooks better than Riotbox metrics alone.
+Status: accepted

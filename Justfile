@@ -62,6 +62,8 @@ audio-qa-ci:
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
     just human-listening-label-corpus-fixtures
+    just audio-judge-spike-fixtures
+    just audio-judge-spike-generated-smoke
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -238,6 +240,20 @@ human-listening-label-corpus-fixtures:
     tmp="$(mktemp)" && python3 scripts/validate_human_listening_label_corpus.py --json-output "$tmp" scripts/fixtures/human_listening_label_corpus/valid_dense_break.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .result == "pass" and .label_count == 2 and .verdict_counts.pass == 1 and .verdict_counts.weak == 1 and (.source_families == ["dense_break"])' "$tmp" && rm "$tmp"
     if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_bad_hash.json; then echo "expected invalid bad-hash label corpus fixture to fail" >&2; exit 1; fi
     if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_weak_missing_reason.json; then echo "expected invalid weak-missing-reason label corpus fixture to fail" >&2; exit 1; fi
+
+audio-judge-spike agent_review="scripts/fixtures/audio_judge_spike/local-agent-musical-review-pack-smoke/agent-review.json" label_corpus="scripts/fixtures/human_listening_label_corpus/valid_dense_break.json" output="artifacts/audio_qa/local-audio-judge-spike":
+    mkdir -p "{{output}}"
+    python3 scripts/prototype_audio_judge_spike.py --agent-review "{{agent_review}}" --label-corpus "{{label_corpus}}" --json-output "{{output}}/audio-judge-spike.json" --markdown-output "{{output}}/audio-judge-spike.md"
+
+audio-judge-spike-fixtures:
+    tmp="$(mktemp -d)" && python3 scripts/prototype_audio_judge_spike.py --agent-review scripts/fixtures/audio_judge_spike/local-agent-musical-review-pack-smoke/agent-review.json --label-corpus scripts/fixtures/human_listening_label_corpus/valid_dense_break.json --json-output "$tmp/audio-judge-spike.json" --markdown-output "$tmp/audio-judge-spike.md" && jq -e '.schema == "riotbox.audio_judge_spike.v1" and .result == "pass" and .judge_readiness == "not_ready" and .human_verdict == "unverified" and .metrics_baseline.predicted_label == "pass" and .calibration.label_count == 2 and .calibration.matched_label_count == 1 and (.calibration.failure_examples | length) == 1 and (.providers | length) == 2' "$tmp/audio-judge-spike.json" && grep -q "Judge readiness" "$tmp/audio-judge-spike.md" && rm -rf "$tmp"
+    tmp="$(mktemp -d)" && if python3 scripts/prototype_audio_judge_spike.py --agent-review scripts/fixtures/audio_judge_spike/invalid_bad_agent_review.json --label-corpus scripts/fixtures/human_listening_label_corpus/valid_dense_break.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected bad agent-review fixture to fail" >&2; exit 1; fi && grep -q "missing source_recognition" "$tmp/invalid.out" && rm -rf "$tmp"
+
+audio-judge-spike-generated-smoke output="artifacts/audio_qa/local-agent-musical-review-pack-smoke" report="artifacts/audio_qa/local-audio-judge-spike-generated-smoke":
+    test -s "{{output}}/agent-review.json"
+    mkdir -p "{{report}}"
+    python3 scripts/prototype_audio_judge_spike.py --agent-review "{{output}}/agent-review.json" --label-corpus scripts/fixtures/human_listening_label_corpus/valid_dense_break.json --json-output "{{report}}/audio-judge-spike.json" --markdown-output "{{report}}/audio-judge-spike.md"
+    jq -e '.schema == "riotbox.audio_judge_spike.v1" and .result == "pass" and .judge_readiness == "not_ready" and .metrics_baseline.provider == "riotbox_metrics_baseline" and .calibration.matched_label_count >= 1' "{{report}}/audio-judge-spike.json"
 
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"
