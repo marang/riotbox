@@ -60,7 +60,7 @@ audio-qa-ci:
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
-    just dense-break-performance-pack-smoke
+    just agent-musical-review-pack-smoke
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -224,6 +224,14 @@ dense-break-performance-pack source="data/test_audio/examples/Beat03_130BPM(Full
 dense-break-performance-pack-smoke output="artifacts/audio_qa/local-dense-break-performance-pack-smoke":
     python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-performance-pack-smoke"
     jq -e '.schema == "riotbox.dense_break_performance_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_low_band_lift_ratio >= 1.12 and .proof.dropout_to_stutter_rms_ratio <= 0.18 and .proof.restore_to_hook_transient_ratio >= 0.85' "{{output}}/performance-report.json"
+
+agent-musical-review-pack source="data/test_audio/examples/Beat03_130BPM(Full).wav" output="artifacts/audio_qa/local-agent-musical-review-pack" date="local-agent-musical-review-pack":
+    just dense-break-performance-pack "{{source}}" "{{output}}" "{{date}}"
+
+agent-musical-review-pack-smoke output="artifacts/audio_qa/local-agent-musical-review-pack-smoke":
+    just dense-break-performance-pack-smoke "{{output}}"
+    jq -e '.schema == "riotbox.agent_musical_review_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .source_recognition == "source_transformed_but_present" and (.visual_files.full_performance.waveform | endswith(".png")) and (.visual_files.full_performance.spectrogram | endswith(".png"))' "{{output}}/agent-review.json"
+    for role in source_window chop_hook pressure_lift dropout_stutter restore_hit full_performance; do test -s "{{output}}/visuals/$role.waveform.png"; test -s "{{output}}/visuals/$role.spectrogram.png"; done
 
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"
