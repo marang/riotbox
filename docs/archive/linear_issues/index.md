@@ -1044,4 +1044,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add sparse-bass pressure professional output fixture
 - [RIOTBOX-1195.md](./RIOTBOX-1195.md)
   Add tonal-hook professional output fixture
+- [RIOTBOX-1196.md](./RIOTBOX-1196.md)
+  Render tonal and sparse professional WAV packs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
