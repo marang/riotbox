@@ -939,6 +939,11 @@ Additional receipt fields required before wider export scopes:
   future observer/report surfaces can explain missing evidence, bad host/device
   identity, zero duration, callback-gap overruns, or stream errors without
   enabling a capture writer.
+- the live-recording readiness operator report is a read-only Session report:
+  `riotbox-app --live-recording-readiness-report --session <session.json>`
+  inspects the latest live-recording receipt and projects the same host-audio
+  readiness blockers without mutating the Session, writing observer events,
+  launching a host, or capturing audio.
 
 These fields must remain in Session/Core models. They must not be hidden in
 JamAppState or observer-only state.

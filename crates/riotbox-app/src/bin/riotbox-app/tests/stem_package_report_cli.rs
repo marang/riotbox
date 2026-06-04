@@ -16,6 +16,7 @@ fn parse_args_builds_stem_package_local_ci_report_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
+        | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }

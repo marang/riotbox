@@ -2,6 +2,7 @@
 include!("riotbox-app/launch.rs");
 include!("riotbox-app/stem_package_export_cli.rs");
 include!("riotbox-app/stem_package_report_cli.rs");
+include!("riotbox-app/live_recording_report_cli.rs");
 include!("riotbox-app/daw_export_report_cli.rs");
 include!("riotbox-app/daw_session_json_package_cli.rs");
 include!("riotbox-app/daw_session_writer_proof_cli.rs");
