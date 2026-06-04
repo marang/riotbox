@@ -56,6 +56,7 @@ just agent-musical-review-pack-smoke
 just pro-pressure-source-matrix-smoke
 just professional-source-wav-pack-smoke
 just professional-output-listening-pack-smoke
+just destructive-variation-professional-smoke
 ```
 
 The source-matrix smoke renders the same pro-pressure contract across multiple
@@ -74,3 +75,8 @@ packs for dense, tonal, and sparse professional-output WAVs. It records candidat
 WAV hashes, source-report hashes, review prompts, and explicit
 `human_verdict: unverified` placeholders so taste review can happen without
 claiming a musical pass from metrics alone.
+
+`destructive-variation-professional-smoke` validates the dense-break dropout /
+stutter / restore behavior as a first-class professional-output contract. It
+rejects flat cuts, weak stutters, static bars, source-copy collapse, and restores
+that do not recover with enough level after the destructive gesture.
