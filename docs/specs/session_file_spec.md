@@ -948,6 +948,10 @@ Additional receipt fields required before wider export scopes:
   that read-only report. It runs the real CLI in a temp directory and verifies
   ready and blocked receipt evidence without writing files or mutating the
   Session.
+- `just live-recording-reserved-action-lifecycle-smoke` is the bounded repo
+  proof for the current rejected action/observer path. It proves a reserved
+  `export.live_recording` attempt emits failed lifecycle evidence from queue
+  history without creating a receipt or destination files.
 
 These fields must remain in Session/Core models. They must not be hidden in
 JamAppState or observer-only state.

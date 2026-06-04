@@ -359,6 +359,10 @@ Current `export.live_recording` boundary:
   The reserved app guard emits requested, started, and failed lifecycle records
   from the rejected queue action only; receipts alone must not invent lifecycle
   records
+- current CI-safe lifecycle proof:
+  `just live-recording-reserved-action-lifecycle-smoke` validates the rejected
+  lifecycle path without creating a receipt, writing a destination, or
+  confusing receipt projection with successful capture
 - QA requirement before widening: proof must cover control path, recorded WAV
   identity, format metrics, non-silence, duration, source/session lineage,
   clock/source timing context when relevant, typed

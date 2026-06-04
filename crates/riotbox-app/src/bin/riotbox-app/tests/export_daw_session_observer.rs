@@ -159,19 +159,23 @@ fn observer_snapshot_reports_rejected_reserved_live_recording_lifecycle_without_
         .as_array()
         .expect("lifecycle array");
 
+    let failure_reason = lifecycle[2]["failure_reason"]
+        .as_str()
+        .expect("failure reason");
+    let result_summary = lifecycle[2]["result"].as_str().expect("result summary");
+
+    assert_eq!(snapshot["export"]["present"], true);
     assert_eq!(snapshot["export"]["receipt_count"], 0);
+    assert_eq!(snapshot["export"]["daw_session_receipt"], serde_json::Value::Null);
     assert_eq!(lifecycle.len(), 3);
     assert_eq!(lifecycle[0]["stage"], "requested");
     assert_eq!(lifecycle[1]["stage"], "started");
     assert_eq!(lifecycle[2]["stage"], "failed");
     assert_eq!(lifecycle[2]["command"], "export.live_recording");
+    assert_eq!(lifecycle[2]["status"], "Rejected");
     assert_eq!(lifecycle[2]["receipt"], serde_json::Value::Null);
-    assert!(
-        lifecycle[2]["failure_reason"]
-            .as_str()
-            .expect("failure reason")
-            .contains("future capture writer")
-    );
+    assert_eq!(failure_reason, result_summary);
+    assert!(failure_reason.contains("future capture writer"));
     assert!(!destination.exists());
 }
 

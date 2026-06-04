@@ -569,6 +569,9 @@ stem-package-local-ci-report-smoke:
 live-recording-readiness-report-smoke:
     cargo test -p riotbox-app --test live_recording_report_smoke -- --nocapture
 
+live-recording-reserved-action-lifecycle-smoke:
+    cargo test -p riotbox-app --bin riotbox-app observer_snapshot_reports_rejected_reserved_live_recording_lifecycle_without_receipt -- --nocapture
+
 daw-export-readiness-report-smoke:
     cargo test -p riotbox-app --test daw_export_report_smoke -- --nocapture
 
