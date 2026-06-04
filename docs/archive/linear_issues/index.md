@@ -1034,4 +1034,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add weak/fail audio judge calibration packs
 - [RIOTBOX-1190.md](./RIOTBOX-1190.md)
   Add cross-source audio judge label coverage
+- [RIOTBOX-1191.md](./RIOTBOX-1191.md)
+  Add real listening label import path for audio judge
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
