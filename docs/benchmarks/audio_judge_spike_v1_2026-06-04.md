@@ -20,8 +20,9 @@ Current status: `not_ready`.
 Why:
 
 - the committed corpus has only fixture labels
-- the fixture spike now matches pass, weak, and fail dense-break review packs,
-  but those are still synthetic calibration examples
+- the fixture spike now matches pass, weak, and fail review packs across
+  `dense_break`, `tonal_hook`, and `sparse_bass_pressure`, but those are still
+  synthetic calibration examples
 - the generated dense-break smoke currently matches one pass label
 - optional embedding providers are not required in CI and are not calibrated
 

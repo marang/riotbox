@@ -1,0 +1,39 @@
+{
+  "schema": "riotbox.agent_musical_review_pack.v1",
+  "schema_version": 1,
+  "source_report_schema": "riotbox.dense_break_performance_pack.v1",
+  "result": "pass",
+  "agent_verdict": "agent_weak",
+  "human_verdict": "unverified",
+  "strongest_element": "partial_audio_evidence",
+  "source_recognition": "source_transformed_but_present",
+  "hook_after_two_bars": "weak",
+  "summary": "Fixture sparse-bass-pressure weak pack: bass exists, but hook and destructive contrast do not create enough replay value.",
+  "failure_codes": [
+    "w30_hook_not_present_enough",
+    "dropout_not_contrasting_with_stutter"
+  ],
+  "audio_files": {
+    "source_window": "00_source_window.wav",
+    "full_performance": "05_full_performance.wav"
+  },
+  "visual_files": {
+    "full_performance": {
+      "waveform": "visuals/full_performance.waveform.png",
+      "spectrogram": "visuals/full_performance.spectrogram.png"
+    }
+  },
+  "review_focus": [
+    "Is the bass pressure enough without a strong hook?",
+    "Does the destructive gesture change the room?"
+  ],
+  "proof": {
+    "w30_to_source_rms_ratio": 0.101,
+    "pressure_low_band_lift_ratio": 1.16,
+    "dropout_to_stutter_rms_ratio": 0.34,
+    "restore_to_hook_transient_ratio": 0.71,
+    "max_adjacent_bar_correlation": 0.972,
+    "source_to_performance_correlation": 0.43
+  },
+  "boundary": "Fixture sparse-bass-pressure weak review must not claim musical pass."
+}

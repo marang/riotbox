@@ -13,7 +13,14 @@ from typing import Any
 
 SCHEMA = "riotbox.human_listening_label_corpus.v1"
 VERDICTS = {"pass", "weak", "fail", "inconclusive"}
-SOURCE_FAMILIES = {"dense_break", "tonal_hook", "tonal_pad", "kick_snare_loop", "other"}
+SOURCE_FAMILIES = {
+    "dense_break",
+    "tonal_hook",
+    "tonal_pad",
+    "kick_snare_loop",
+    "sparse_bass_pressure",
+    "other",
+}
 HOOK_CLARITY = {"clear", "weak", "missing", "annoying", "inconclusive"}
 HARDEST_HIT = {"kick", "snare", "break_transient", "bass", "chop", "silence", "none"}
 BASS_PRESSURE = {"strong", "present", "weak", "missing", "overpowering"}

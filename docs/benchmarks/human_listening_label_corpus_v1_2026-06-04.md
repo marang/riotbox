@@ -21,9 +21,10 @@ Each label records:
 - summary, avoid-list, and for weak/fail labels a failure reason and preferred
   direction
 
-The first fixture corpus covers dense-break pass, weak, and fail labels for the
-agent musical review pack shape. It is schema and calibration-shape evidence,
-not a real taste corpus yet.
+The first fixture corpus covers dense-break pass, weak, and fail labels plus
+tonal-hook and sparse-bass-pressure calibration examples for the agent musical
+review pack shape. It is schema and calibration-shape evidence, not a real taste
+corpus yet.
 
 Run:
 
