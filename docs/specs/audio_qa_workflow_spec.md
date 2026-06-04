@@ -1444,6 +1444,10 @@ Today the repo already has:
     commit record, attaches `daw_session_writer_proof` to the matching receipt,
     and still emits no host-import proof, audible-output proof, live capture, or
     final musician-facing export enablement.
+    `just daw-session-writer-export-execute-smoke` runs the real binary through
+    this queue/commit path, saves the Session mutation, and verifies the
+    optional observer lifecycle while still writing only local writer proof
+    JSON files.
   - current observer export snapshots include `export.daw_session` lifecycle
     records only when a real queued DAW-session action exists. Rejected reserved
     attempts produce requested / started / failed records without a receipt;

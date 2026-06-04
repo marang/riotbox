@@ -38,6 +38,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
+        | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected stem package dry-run mode")
         }
@@ -92,6 +93,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
+        | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected stem package execute mode")
         }

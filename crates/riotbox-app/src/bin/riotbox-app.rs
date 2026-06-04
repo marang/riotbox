@@ -6,6 +6,7 @@ include!("riotbox-app/live_recording_report_cli.rs");
 include!("riotbox-app/daw_export_report_cli.rs");
 include!("riotbox-app/daw_session_json_package_cli.rs");
 include!("riotbox-app/daw_session_writer_proof_cli.rs");
+include!("riotbox-app/daw_session_export_cli.rs");
 include!("riotbox-app/daw_session_writer_plan_cli.rs");
 include!("riotbox-app/launch_summary.rs");
 include!("riotbox-app/event_loop.rs");

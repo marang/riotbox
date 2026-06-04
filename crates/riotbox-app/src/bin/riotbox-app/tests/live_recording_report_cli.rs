@@ -36,6 +36,7 @@ fn parse_args_builds_live_recording_readiness_report_mode() {
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
         | LaunchMode::DawSessionWriterProofApply { .. }
+        | LaunchMode::DawSessionWriterExportExecute { .. }
         | LaunchMode::DawSessionWriterPlan { .. } => {
             panic!("expected live recording readiness report mode")
         }

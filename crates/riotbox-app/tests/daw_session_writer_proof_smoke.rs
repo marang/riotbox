@@ -5,6 +5,7 @@ use riotbox_app::jam_app::{
     write_daw_session_json_package, write_daw_session_writer_proof_skeleton,
 };
 use riotbox_core::{
+    action::{ActionCommand, ActionParams, ActionStatus, DawSessionExportBoundary},
     export_readiness::{
         ARRANGEMENT_DAW_PLACEMENT_PACK_ID, EXPORT_READINESS_CONTRACT_SCHEMA,
         ExportReadinessContract, ExportReadinessStatus, ExportScope, PRODUCT_EXPORT_PROOF_SCHEMA,
@@ -179,6 +180,150 @@ fn daw_session_writer_proof_smoke_writes_and_applies_only_writer_gate() {
     ]);
     assert_eq!(existing["status"], "blocked");
     assert_eq!(existing["writes_files"], false);
+}
+
+#[test]
+fn daw_session_writer_export_execute_smoke_commits_action_and_observer_lifecycle() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let destination_path = temp.path().join("daw-out");
+    let observer_path = temp.path().join("observer.ndjson");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    fs::create_dir_all(manifest_path.parent().expect("manifest parent")).expect("create exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&proof_path, "{}").expect("write proof");
+    let mut session = SessionFile::new(
+        "daw-session-writer-export-smoke",
+        "riotbox-test",
+        "2026-06-04T01:05:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    session.export_receipts.push(receipt);
+    write_daw_session_json_package(&session, Some(temp.path()), &destination_path)
+        .expect("write DAW session JSON package");
+    attach_daw_session_json_package_evidence_to_receipt(
+        &mut session.export_receipts[0],
+        &daw_session_json_package_report(&destination_path),
+    )
+    .expect("attach DAW JSON package evidence");
+    save_session_json(&session_path, &session).expect("save smoke session");
+
+    let summary = run_riotbox_app_json([
+        "--daw-session-writer-export-execute",
+        "--session",
+        session_path.to_str().expect("session path"),
+        "--daw-session-destination",
+        destination_path.to_str().expect("destination path"),
+        "--observer",
+        observer_path.to_str().expect("observer path"),
+    ]);
+
+    assert_eq!(summary["mode"], "daw_session_writer_export_execute");
+    assert_eq!(summary["status"], "ready");
+    assert_eq!(summary["writes_files"], true);
+    assert_eq!(summary["mutates_session"], true);
+    assert_eq!(summary["observer_events"], true);
+    assert_eq!(summary["boundary"], "daw_session.local_project_writer_v1");
+    assert_eq!(
+        summary["daw_session_surface_gate"]["blockers"],
+        Value::Array(vec![
+            "developer_proof_only".into(),
+            "daw_host_import_proof_missing".into(),
+            "audible_output_proof_missing".into(),
+        ])
+    );
+    assert_eq!(
+        summary["commit_records"].as_array().expect("records").len(),
+        1
+    );
+    assert!(
+        destination_path
+            .join("daw_session_writer/local_project_skeleton.json")
+            .exists()
+    );
+    assert!(
+        destination_path
+            .join("daw_session_writer/writer_proof.json")
+            .exists()
+    );
+
+    let saved_session =
+        riotbox_core::persistence::load_session_json(&session_path).expect("load saved session");
+    let saved_receipt = &saved_session.export_receipts[0];
+    assert!(
+        saved_receipt
+            .artifact_set
+            .iter()
+            .any(|artifact| artifact.role == ExportArtifactRole::DawSessionWriterProof)
+    );
+    let writer_gate = saved_receipt
+        .qa_gates
+        .iter()
+        .find(|gate| gate.gate_id == DAW_SESSION_WRITER_QA_GATE_ID)
+        .expect("writer gate");
+    assert_eq!(writer_gate.status, ExportReceiptQaGateStatus::Passed);
+    assert!(saved_receipt.qa_gates.iter().all(|gate| gate.gate_id
+        != riotbox_core::session::DAW_SESSION_HOST_IMPORT_QA_GATE_ID
+        && gate.gate_id != riotbox_core::session::DAW_SESSION_AUDIBLE_OUTPUT_QA_GATE_ID));
+
+    let action = saved_session
+        .action_log
+        .actions
+        .iter()
+        .find(|action| action.command == ActionCommand::ExportDawSession)
+        .expect("committed DAW session action");
+    assert_eq!(action.status, ActionStatus::Committed);
+    match &action.params {
+        ActionParams::DawSessionExport {
+            boundary,
+            destination_path: action_destination,
+            receipt_id,
+            ..
+        } => {
+            assert_eq!(*boundary, DawSessionExportBoundary::LocalProjectWriterV1);
+            assert_eq!(
+                action_destination.as_deref(),
+                Some(destination_path.to_string_lossy().as_ref())
+            );
+            assert_eq!(
+                receipt_id.as_deref(),
+                Some(saved_receipt.receipt_id.as_str())
+            );
+        }
+        other => panic!("expected DAW session export params, got {other:?}"),
+    }
+    assert_eq!(saved_session.action_log.commit_records.len(), 1);
+    assert_eq!(
+        saved_session.action_log.commit_records[0].action_id,
+        action.id
+    );
+
+    let observer_line = fs::read_to_string(&observer_path)
+        .expect("read observer")
+        .lines()
+        .next()
+        .expect("observer line")
+        .to_owned();
+    let observer: Value = serde_json::from_str(&observer_line).expect("observer json");
+    assert_eq!(observer["event"], "daw_session_writer_export_execute");
+    let lifecycle = observer["snapshot"]["export"]["lifecycle"]
+        .as_array()
+        .expect("observer lifecycle");
+    assert_eq!(lifecycle.len(), 3);
+    assert_eq!(lifecycle[0]["stage"], "requested");
+    assert_eq!(lifecycle[1]["stage"], "started");
+    assert_eq!(lifecycle[2]["stage"], "completed");
+    assert_eq!(lifecycle[2]["command"], "export.daw_session");
+    assert_eq!(
+        lifecycle[2]["receipt"]["proof_gates"]["writer_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        lifecycle[2]["receipt"]["proof_stack"]["missing_layers"],
+        serde_json::json!(["host_import_proof", "audible_output_proof"])
+    );
 }
 
 #[test]

@@ -64,6 +64,7 @@ mod tests {
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
+            | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -96,6 +97,7 @@ mod tests {
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
+            | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected ingest mode"),
         }
     }
@@ -130,6 +132,7 @@ mod tests {
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
+            | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }
@@ -159,6 +162,7 @@ mod tests {
             | LaunchMode::DawSessionAudibleOutputProofApply { .. }
             | LaunchMode::DawSessionWriterProofExecute { .. }
             | LaunchMode::DawSessionWriterProofApply { .. }
+            | LaunchMode::DawSessionWriterExportExecute { .. }
             | LaunchMode::DawSessionWriterPlan { .. } => panic!("expected load mode"),
         }
     }

@@ -898,6 +898,12 @@ Additional receipt fields required before wider export scopes:
   only `daw_writer_missing` when that proof passes. Replay validates the
   recorded receipt/artifact/proof identities only; it must not regenerate or
   rewrite DAW files.
+  `riotbox-app --daw-session-writer-export-execute --session <session.json>
+  --daw-session-destination <dir> [--observer <events.ndjson>]` is the current
+  real-binary proof for that queue/commit boundary. It persists the Session
+  action log, commit record, matching receipt mutation, and optional observer
+  lifecycle snapshot while keeping `developer_proof_only`,
+  `daw_host_import_proof_missing`, and `audible_output_proof_missing` visible.
 - current DAW-session host-import proof commits keep the Session receipt as the
   only product truth. The command revalidates the local proof report and writer
   proof prerequisite, records only the receipt QA gate mutation plus action /

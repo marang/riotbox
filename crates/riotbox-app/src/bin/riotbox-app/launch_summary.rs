@@ -123,6 +123,15 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "destination_path": destination_path,
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::DawSessionWriterExportExecute {
+            session_path,
+            destination_path,
+        } => json!({
+            "mode": "daw_session_writer_export_execute",
+            "session_path": session_path,
+            "destination_path": destination_path,
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::DawSessionWriterPlan {
             session_path,
             destination_path,
