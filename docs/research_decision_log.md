@@ -1984,3 +1984,17 @@ Why: Riotbox needs a path for agents to reason about audible quality, but musica
 Evidence: RIOTBOX-1187 adds `scripts/prototype_audio_judge_spike.py`, committed fixture coverage, generated dense-break smoke wiring, and the `audio_judge_spike_v1_2026-06-04` benchmark note.
 Consequences: future P021 work should add real labeled packs, weak/fail examples, and provider comparison before changing musical-pass policy. CLAP/MERT-style providers remain offline QA experiments unless calibration evidence shows they separate weak hooks and strong hooks better than Riotbox metrics alone.
 Status: accepted
+
+---
+
+### RBX-067
+
+Date: 2026-06-04
+Topic: Musical-pass language is gated by explicit agent and human verdict states
+Phase: P021 / Audio Judge / Musical Fitness
+Question: when may Riotbox automation, humans, or a future calibrated judge claim that audio has musically passed?
+Decision: add `riotbox.musical_pass_gate_policy.v1` with eight explicit states: `technical_fail`, `technical_pass`, `agent_fail`, `agent_weak`, `agent_promising`, `human_musical_pass`, `human_musical_fail`, and `calibrated_agent_musical_pass`. Only the human pass and future calibrated-agent pass states may claim musical pass.
+Why: P021 needs agents to block weak output autonomously without turning logs, simple metrics, or uncalibrated embeddings into taste approval. The policy makes `agent_promising` useful but limited, keeps `human_verdict: unverified` honest, and defines the evidence floor for any future calibrated agent pass.
+Evidence: RIOTBOX-1188 adds `scripts/validate_musical_pass_gate_policy.py`, committed policy fixtures, `just musical-pass-gate-policy-fixtures`, and audio-QA/benchmark documentation.
+Consequences: future PRs must use these verdict terms precisely. A calibrated agent musical pass needs offline judge validation, matched pass/weak/fail labels, and source-family boundaries before it can be claimed.
+Status: accepted

@@ -1,0 +1,75 @@
+{
+  "schema": "riotbox.musical_pass_gate_policy.v1",
+  "schema_version": 1,
+  "states": {
+    "technical_fail": {
+      "meaning": "x",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "technical_pass": {
+      "meaning": "x",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "agent_fail": {
+      "meaning": "x",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "agent_weak": {
+      "meaning": "x",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "agent_promising": {
+      "meaning": "x",
+      "may_claim_musical_pass": true,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "human_musical_pass": {
+      "meaning": "x",
+      "may_claim_musical_pass": true,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "human_musical_fail": {
+      "meaning": "x",
+      "may_claim_musical_pass": false,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["x"],
+      "next_action": "x"
+    },
+    "calibrated_agent_musical_pass": {
+      "meaning": "x",
+      "may_claim_musical_pass": true,
+      "required_artifacts": ["x"],
+      "allowed_pr_language": ["x"],
+      "blocked_claims": ["human_verdict: unverified"],
+      "next_action": "x",
+      "judge_validation": {
+        "minimum_label_count": 12,
+        "required_verdicts": ["pass", "weak", "fail"],
+        "provider_boundary": "offline_qa_only"
+      }
+    }
+  }
+}

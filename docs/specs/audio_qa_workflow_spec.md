@@ -428,6 +428,48 @@ just audio-judge-spike-fixtures
 just audio-judge-spike-generated-smoke
 ```
 
+### 3.2.5 Musical pass gate policy
+
+P021 defines `riotbox.musical_pass_gate_policy.v1` as the verdict-language
+contract for technical, automated, human, and future calibrated-agent musical
+quality claims.
+
+Allowed states:
+
+- `technical_fail`: technical path failed; no sound-quality claim allowed.
+- `technical_pass`: technical validity only; no musical quality claim allowed.
+- `agent_fail`: automation caught known bad output; block or fix.
+- `agent_weak`: output renders but musical guardrails are weak; diagnostic only.
+- `agent_promising`: known weak modes were not caught; useful merge evidence but
+  still `human_verdict: unverified`.
+- `human_musical_pass`: structured listening review approved the audible result.
+- `human_musical_fail`: structured listening rejected the result or marked it
+  technically OK but musically weak.
+- `calibrated_agent_musical_pass`: future offline judge approval for a bounded
+  source family after label coverage and validation.
+
+Only `human_musical_pass` and `calibrated_agent_musical_pass` may claim musical
+pass. `calibrated_agent_musical_pass` is not human approval: it must keep
+`human_verdict: unverified`, remain offline-QA-only, require matched
+pass/weak/fail labels, and include confusion or failure examples.
+
+PR language rules:
+
+- Metrics or logs may say `technical_pass`; they must not say "sounds good".
+- Automated reports may say `agent_fail`, `agent_weak`, or `agent_promising`;
+  they must not say `musical_pass`.
+- A human listening pack may say `human_musical_pass` or `human_musical_fail`
+  only after a recorded structured verdict.
+- A future judge may say `calibrated_agent_musical_pass` only inside the
+  documented source-family boundary and only after the policy fixture validates
+  the label and provider requirements.
+
+Run:
+
+```bash
+just musical-pass-gate-policy-fixtures
+```
+
 ### 3.3 Fixture-backed golden render review
 
 For stable fixture, seed, action list, and render config:

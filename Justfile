@@ -64,6 +64,7 @@ audio-qa-ci:
     just human-listening-label-corpus-fixtures
     just audio-judge-spike-fixtures
     just audio-judge-spike-generated-smoke
+    just musical-pass-gate-policy-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -254,6 +255,10 @@ audio-judge-spike-generated-smoke output="artifacts/audio_qa/local-agent-musical
     mkdir -p "{{report}}"
     python3 scripts/prototype_audio_judge_spike.py --agent-review "{{output}}/agent-review.json" --label-corpus scripts/fixtures/human_listening_label_corpus/valid_dense_break.json --json-output "{{report}}/audio-judge-spike.json" --markdown-output "{{report}}/audio-judge-spike.md"
     jq -e '.schema == "riotbox.audio_judge_spike.v1" and .result == "pass" and .judge_readiness == "not_ready" and .metrics_baseline.provider == "riotbox_metrics_baseline" and .calibration.matched_label_count >= 1' "{{report}}/audio-judge-spike.json"
+
+musical-pass-gate-policy-fixtures:
+    tmp="$(mktemp)" && python3 scripts/validate_musical_pass_gate_policy.py --json-output "$tmp" scripts/fixtures/musical_pass_gate_policy/policy_v1.json && jq -e '.schema == "riotbox.musical_pass_gate_policy.v1" and .result == "pass" and .state_count == 8 and (.musical_pass_states == ["calibrated_agent_musical_pass", "human_musical_pass"]) and .minimum_calibrated_label_count >= 12' "$tmp" && rm "$tmp"
+    tmp="$(mktemp -d)" && if python3 scripts/validate_musical_pass_gate_policy.py scripts/fixtures/musical_pass_gate_policy/invalid_agent_promising_claims_pass.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected agent-promising pass policy fixture to fail" >&2; exit 1; fi && grep -q "agent_promising must not claim musical pass" "$tmp/invalid.out" && rm -rf "$tmp"
 
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"
