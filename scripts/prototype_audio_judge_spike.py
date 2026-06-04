@@ -16,6 +16,7 @@ AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
 LABEL_CORPUS_SCHEMA = "riotbox.human_listening_label_corpus.v1"
 
 MIN_LABELS_FOR_READY_SPIKE = 12
+MIN_SOURCE_FAMILIES_FOR_READY_SPIKE = 2
 HUMAN_VERDICTS = {"pass", "weak", "fail", "inconclusive"}
 REQUIRED_READY_VERDICTS = {"pass", "weak", "fail"}
 CLAP_PACKAGES = ("torch", "laion_clap")
@@ -286,6 +287,7 @@ def build_calibration(
         "matched_label_count": len(matched),
         "matched_verdicts": sorted(covered_verdicts),
         "missing_ready_verdicts": missing_ready_verdicts,
+        "source_family_coverage": source_family_coverage(labels, matched),
         "confusion_matrix": confusion,
         "examples": examples,
         "failure_examples": coverage_gaps,
@@ -308,6 +310,14 @@ def build_recommendation(
         reasons.append(
             "Matched labels do not cover required verdicts: "
             + ", ".join(calibration["missing_ready_verdicts"])
+        )
+    matched_source_family_count = calibration["source_family_coverage"][
+        "matched_source_family_count"
+    ]
+    if matched_source_family_count < MIN_SOURCE_FAMILIES_FOR_READY_SPIKE:
+        reasons.append(
+            f"Only {matched_source_family_count} matched source families exist; at least "
+            f"{MIN_SOURCE_FAMILIES_FOR_READY_SPIKE} are needed before cross-source calibration."
         )
     if unavailable:
         reasons.append(
@@ -414,7 +424,24 @@ def count_by(items: list[dict[str, Any]], field: str) -> dict[str, int]:
     return dict(sorted(counts.items()))
 
 
+def source_family_coverage(
+    labels: list[dict[str, Any]],
+    matched: list[dict[str, Any]],
+) -> dict[str, Any]:
+    label_families = sorted({label["source_family"] for label in labels})
+    matched_families = sorted({label["source_family"] for label in matched})
+    return {
+        "label_source_families": label_families,
+        "matched_source_families": matched_families,
+        "label_source_family_count": len(label_families),
+        "matched_source_family_count": len(matched_families),
+        "unmatched_source_families": sorted(set(label_families) - set(matched_families)),
+        "minimum_source_families_for_ready": MIN_SOURCE_FAMILIES_FOR_READY_SPIKE,
+    }
+
+
 def render_markdown(report: dict[str, Any]) -> str:
+    coverage = report["calibration"]["source_family_coverage"]
     lines = [
         "# Audio Judge Spike",
         "",
@@ -423,6 +450,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Human verdict: `{report['human_verdict']}`",
         f"- Metrics baseline prediction: `{report['metrics_baseline']['predicted_label']}`",
         f"- Metrics baseline score: `{report['metrics_baseline']['score']}`",
+        "- Matched source families: "
+        f"`{', '.join(coverage['matched_source_families']) or 'none'}`",
         "",
         "## Recommendation",
         "",

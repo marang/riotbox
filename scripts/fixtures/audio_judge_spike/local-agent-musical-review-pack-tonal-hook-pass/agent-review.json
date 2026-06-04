@@ -1,0 +1,36 @@
+{
+  "schema": "riotbox.agent_musical_review_pack.v1",
+  "schema_version": 1,
+  "source_report_schema": "riotbox.dense_break_performance_pack.v1",
+  "result": "pass",
+  "agent_verdict": "agent_promising",
+  "human_verdict": "unverified",
+  "strongest_element": "w30_chop_hook_with_pressure_restore",
+  "source_recognition": "source_transformed_but_present",
+  "hook_after_two_bars": "present",
+  "summary": "Fixture tonal-hook pass pack: the source-derived riff stays recognizable while the W-30 chop becomes the playable hook.",
+  "failure_codes": [],
+  "audio_files": {
+    "source_window": "00_source_window.wav",
+    "full_performance": "05_full_performance.wav"
+  },
+  "visual_files": {
+    "full_performance": {
+      "waveform": "visuals/full_performance.waveform.png",
+      "spectrogram": "visuals/full_performance.spectrogram.png"
+    }
+  },
+  "review_focus": [
+    "Does the tonal source become a playable chop hook?",
+    "Does the pressure return support the riff instead of masking it?"
+  ],
+  "proof": {
+    "w30_to_source_rms_ratio": 0.244,
+    "pressure_low_band_lift_ratio": 1.18,
+    "dropout_to_stutter_rms_ratio": 0.09,
+    "restore_to_hook_transient_ratio": 0.91,
+    "max_adjacent_bar_correlation": 0.934,
+    "source_to_performance_correlation": 0.39
+  },
+  "boundary": "Fixture tonal-hook pass remains synthetic calibration evidence, not human musical approval."
+}

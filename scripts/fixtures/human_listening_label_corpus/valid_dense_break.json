@@ -102,6 +102,72 @@
         "silent or polite loop",
         "source character lost"
       ]
+    },
+    {
+      "label_id": "tonal-hook-agent-pack-example-pass",
+      "created_at": "2026-06-04",
+      "reviewer": "fixture",
+      "human_verdict": "pass",
+      "source_family": "tonal_hook",
+      "source_id": "rush_arp_fixture",
+      "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
+      "review_pack_id": "local-agent-musical-review-pack-tonal-hook-pass",
+      "artifact_identity": {
+        "performance_report_sha256": "7777777777777777777777777777777777777777777777777777777777777777",
+        "agent_review_sha256": "8888888888888888888888888888888888888888888888888888888888888888",
+        "audio_sha256": {
+          "source_window": "9999999999999999999999999999999999999999999999999999999999999999",
+          "full_performance": "abababababababababababababababababababababababababababababababab"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "clear",
+        "hardest_hit": "chop",
+        "bass_pressure": "present",
+        "destructive_contrast": "present",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "high"
+      },
+      "summary": "Fixture pass label: tonal hook character stays readable while the chop becomes a playable riff.",
+      "failure_reason": "",
+      "preferred_direction": "",
+      "avoid": [
+        "generic synth loop",
+        "source-copy collapse"
+      ]
+    },
+    {
+      "label_id": "sparse-bass-pressure-agent-pack-example-weak",
+      "created_at": "2026-06-04",
+      "reviewer": "fixture",
+      "human_verdict": "weak",
+      "source_family": "sparse_bass_pressure",
+      "source_id": "sparse_pressure_fixture",
+      "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
+      "review_pack_id": "local-agent-musical-review-pack-sparse-bass-pressure-weak",
+      "artifact_identity": {
+        "performance_report_sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd",
+        "agent_review_sha256": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef",
+        "audio_sha256": {
+          "source_window": "1212121212121212121212121212121212121212121212121212121212121212",
+          "full_performance": "3434343434343434343434343434343434343434343434343434343434343434"
+        }
+      },
+      "reason_tags": {
+        "hook_clarity": "weak",
+        "hardest_hit": "bass",
+        "bass_pressure": "present",
+        "destructive_contrast": "weak",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "medium"
+      },
+      "summary": "Fixture weak label: bass pressure exists, but the hook and destructive contrast are not strong enough.",
+      "failure_reason": "The bass body is present but the phrase lacks a memorable hook and stop/restore contrast.",
+      "preferred_direction": "Add a sharper chop or silence cut before the pressure return.",
+      "avoid": [
+        "bass-only movement",
+        "no destructive contrast"
+      ]
     }
   ]
 }
