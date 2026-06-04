@@ -56,6 +56,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
+            | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -87,6 +88,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
+            | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -120,6 +122,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
+            | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -148,6 +151,7 @@ mod tests {
             LaunchMode::StemPackageLocalCiDryRun { .. }
             | LaunchMode::StemPackageLocalCiExecute { .. }
             | LaunchMode::StemPackageLocalCiReport { .. }
+            | LaunchMode::LiveRecordingReadinessReport { .. }
             | LaunchMode::DawExportReadinessReport { .. }
             | LaunchMode::DawSessionJsonPackageExecute { .. }
             | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -312,6 +316,12 @@ mod tests {
         use super::*;
 
         include!("tests/stem_package_report_cli.rs");
+    }
+
+    mod live_recording_report_cli {
+        use super::*;
+
+        include!("tests/live_recording_report_cli.rs");
     }
 
     mod daw_export_report_cli {

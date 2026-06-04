@@ -30,6 +30,7 @@ fn parse_args_builds_stem_package_local_ci_dry_run_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiExecute { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
+        | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }
@@ -83,6 +84,7 @@ fn parse_args_builds_stem_package_local_ci_execute_mode() {
         | LaunchMode::Ingest { .. }
         | LaunchMode::StemPackageLocalCiDryRun { .. }
         | LaunchMode::StemPackageLocalCiReport { .. }
+        | LaunchMode::LiveRecordingReadinessReport { .. }
         | LaunchMode::DawExportReadinessReport { .. }
         | LaunchMode::DawSessionJsonPackageExecute { .. }
         | LaunchMode::DawSessionJsonPackageEvidenceApply { .. }

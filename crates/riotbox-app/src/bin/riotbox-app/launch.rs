@@ -51,6 +51,9 @@ enum LaunchMode {
     StemPackageLocalCiReport {
         session_path: PathBuf,
     },
+    LiveRecordingReadinessReport {
+        session_path: PathBuf,
+    },
     DawExportReadinessReport {
         session_path: PathBuf,
     },
@@ -97,6 +100,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if matches!(launch.mode, LaunchMode::StemPackageLocalCiReport { .. }) {
         run_stem_package_local_ci_report(&launch)?;
+        return Ok(());
+    }
+    if matches!(launch.mode, LaunchMode::LiveRecordingReadinessReport { .. }) {
+        run_live_recording_readiness_report(&launch)?;
         return Ok(());
     }
     if matches!(launch.mode, LaunchMode::DawExportReadinessReport { .. }) {
@@ -203,6 +210,9 @@ fn load_state(mode: LaunchMode) -> Result<JamAppState, JamAppError> {
         )),
         LaunchMode::StemPackageLocalCiReport { .. } => Err(JamAppError::InvalidSession(
             "stem package local CI report uses a non-interactive proof path".into(),
+        )),
+        LaunchMode::LiveRecordingReadinessReport { .. } => Err(JamAppError::InvalidSession(
+            "live recording readiness report uses a non-interactive proof path".into(),
         )),
         LaunchMode::DawExportReadinessReport { .. } => Err(JamAppError::InvalidSession(
             "DAW export readiness report uses a non-interactive proof path".into(),

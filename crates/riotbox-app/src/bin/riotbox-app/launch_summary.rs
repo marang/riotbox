@@ -59,6 +59,11 @@ fn launch_summary(launch: &AppLaunch) -> Value {
             "session_path": session_path,
             "observer_path": launch.observer_path,
         }),
+        LaunchMode::LiveRecordingReadinessReport { session_path } => json!({
+            "mode": "live_recording_readiness_report",
+            "session_path": session_path,
+            "observer_path": launch.observer_path,
+        }),
         LaunchMode::DawExportReadinessReport { session_path } => json!({
             "mode": "daw_export_readiness_report",
             "session_path": session_path,

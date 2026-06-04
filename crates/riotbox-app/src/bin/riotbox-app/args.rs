@@ -12,6 +12,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
     let mut stem_package_local_ci_dry_run = false;
     let mut stem_package_local_ci_execute = false;
     let mut stem_package_local_ci_report = false;
+    let mut live_recording_readiness_report = false;
     let mut daw_export_readiness_report = false;
     let mut daw_session_json_package_execute = false;
     let mut daw_session_json_package_evidence_apply = false;
@@ -31,6 +32,7 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "--stem-package-local-ci-dry-run" => stem_package_local_ci_dry_run = true,
             "--stem-package-local-ci-execute" => stem_package_local_ci_execute = true,
             "--stem-package-local-ci-report" => stem_package_local_ci_report = true,
+            "--live-recording-readiness-report" => live_recording_readiness_report = true,
             "--daw-export-readiness-report" => daw_export_readiness_report = true,
             "--daw-session-json-package-execute" => daw_session_json_package_execute = true,
             "--daw-session-json-package-evidence-apply" => {
@@ -124,8 +126,21 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
             "stem package local CI dry-run, execute, and report modes cannot be combined".into(),
         );
     }
-    if daw_export_readiness_report && stem_package_mode_count > 0 {
-        return Err("DAW export readiness report cannot be combined with stem package modes".into());
+    let read_only_report_mode_count =
+        [live_recording_readiness_report, daw_export_readiness_report]
+            .into_iter()
+            .filter(|enabled| *enabled)
+            .count();
+    if read_only_report_mode_count > 1 {
+        return Err(
+            "live recording readiness report and DAW export readiness report cannot be combined"
+                .into(),
+        );
+    }
+    if read_only_report_mode_count > 0 && stem_package_mode_count > 0 {
+        return Err(
+            "read-only readiness report modes cannot be combined with stem package modes".into(),
+        );
     }
     let daw_session_mode_count = [
         daw_session_json_package_execute,
@@ -145,9 +160,10 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
                 .into(),
         );
     }
-    if daw_session_mode_count > 0 && (stem_package_mode_count > 0 || daw_export_readiness_report) {
+    if daw_session_mode_count > 0 && (stem_package_mode_count > 0 || read_only_report_mode_count > 0)
+    {
         return Err(
-            "DAW session modes cannot be combined with stem package modes or DAW readiness report"
+            "DAW session modes cannot be combined with stem package modes or read-only readiness reports"
                 .into(),
         );
     }
@@ -239,6 +255,32 @@ fn parse_args(args: impl IntoIterator<Item = String>) -> Result<AppLaunch, Strin
 
         return Ok(AppLaunch {
             mode: LaunchMode::StemPackageLocalCiReport { session_path },
+            observer_path: None,
+        });
+    }
+    if live_recording_readiness_report {
+        if source_path.is_some()
+            || source_graph_path.is_some()
+            || saw_sidecar_flag
+            || saw_seed_flag
+            || observer_path.is_some()
+            || stem_package_destination_path.is_some()
+            || daw_session_destination_path.is_some()
+            || daw_session_host_import_proof_path.is_some()
+            || daw_session_audible_output_proof_path.is_some()
+            || !claimed_stem_roles.is_empty()
+        {
+            return Err(
+                "live recording readiness report reads only an explicit session and cannot be combined with source/graph/observer/sidecar/seed/destination/role arguments"
+                    .into(),
+            );
+        }
+        let session_path = session_path.filter(|_| saw_session_flag).ok_or_else(|| {
+            "live recording readiness report requires --session <session.json>".to_string()
+        })?;
+
+        return Ok(AppLaunch {
+            mode: LaunchMode::LiveRecordingReadinessReport { session_path },
             observer_path: None,
         });
     }

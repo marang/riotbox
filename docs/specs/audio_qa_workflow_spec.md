@@ -1096,6 +1096,14 @@ Today the repo already has:
   blocked/ready evidence states for real committed receipt lifecycles only; it
   does not make `export.live_recording` runnable or synthesize lifecycle from
   observer-only state.
+- `riotbox-app --live-recording-readiness-report --session <session.json>` is a
+  read-only operator report over Session receipts. It writes no files, emits no
+  observer events, launches no host, captures no audio, and does not make
+  `export.live_recording` runnable; it only reports whether the latest
+  `export_scope: live_recording` receipt has sufficient host-audio evidence for
+  the current Core/Session readiness contract.
+- `live_recording_readiness_report_smoke` exercises that report through the
+  built `riotbox-app` binary for ready and blocked receipt evidence.
 - `export.stem_package` remains reserved until an implementation can provide a
   package receipt whose `artifact_set[]` contains every claimed stem role, the
   package manifest/proof entries, per-stem hashes, per-stem WAV format/audio
