@@ -20,8 +20,9 @@ Current status: `not_ready`.
 Why:
 
 - the committed corpus has only fixture labels
-- the generated dense-break pack currently matches only one pass label
-- weak/fail labels are not yet attached to generated review packs with metrics
+- the fixture spike now matches pass, weak, and fail dense-break review packs,
+  but those are still synthetic calibration examples
+- the generated dense-break smoke currently matches one pass label
 - optional embedding providers are not required in CI and are not calibrated
 
 This is useful software work because it gives Codex and CI a concrete report

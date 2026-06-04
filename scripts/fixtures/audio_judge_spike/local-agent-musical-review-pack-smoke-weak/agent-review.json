@@ -1,0 +1,39 @@
+{
+  "schema": "riotbox.agent_musical_review_pack.v1",
+  "schema_version": 1,
+  "source_report_schema": "riotbox.dense_break_performance_pack.v1",
+  "result": "pass",
+  "agent_verdict": "agent_weak",
+  "human_verdict": "unverified",
+  "strongest_element": "partial_audio_evidence",
+  "source_recognition": "source_transformed_but_present",
+  "hook_after_two_bars": "weak",
+  "summary": "Fixture weak dense-break pack: the render exists, but hook and pressure evidence are below the promising boundary.",
+  "failure_codes": [
+    "w30_hook_not_present_enough",
+    "pressure_section_lacks_bass_lift"
+  ],
+  "audio_files": {
+    "source_window": "00_source_window.wav",
+    "full_performance": "05_full_performance.wav"
+  },
+  "visual_files": {
+    "full_performance": {
+      "waveform": "visuals/full_performance.waveform.png",
+      "spectrogram": "visuals/full_performance.spectrogram.png"
+    }
+  },
+  "review_focus": [
+    "Does the W-30 chop read as a hook after two bars?",
+    "Does the pressure lift hit harder than the opening hook?"
+  ],
+  "proof": {
+    "w30_to_source_rms_ratio": 0.118,
+    "pressure_low_band_lift_ratio": 0.91,
+    "dropout_to_stutter_rms_ratio": 0.13,
+    "restore_to_hook_transient_ratio": 0.74,
+    "max_adjacent_bar_correlation": 0.966,
+    "source_to_performance_correlation": 0.51
+  },
+  "boundary": "Fixture weak review must not claim human musical pass."
+}
