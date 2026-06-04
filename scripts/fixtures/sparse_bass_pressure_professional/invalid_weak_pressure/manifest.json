@@ -1,0 +1,49 @@
+{
+  "case_id": "sparse_bass_pulse_weak_pressure",
+  "window_id": "restore",
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.012,
+        "peak_abs": 0.41,
+        "event_density_per_bar": 48.0,
+        "transient_score": 0.12
+      },
+      "low_band": {
+        "rms": 0.004
+      }
+    },
+    "bar_variation": {
+      "full_grid_mix": {
+        "bar_similarity": 0.997
+      }
+    },
+    "mix_balance": {
+      "support_generated_to_source_rms_ratio": 0.06,
+      "source_first_generated_to_source_rms_ratio": 0.19
+    },
+    "all_lane_mix_movement": {
+      "tr909_contribution_ratio": 0.02,
+      "mc202_contribution_ratio": 0.03,
+      "w30_contribution_ratio": 0.32,
+      "generated_to_w30_contribution_ratio": 0.11
+    },
+    "tr909_kick_pressure": {
+      "applied": true,
+      "low_band_rms_ratio": 1.01
+    },
+    "mc202_bass_pressure": {
+      "applied": true,
+      "signal_rms": 0.001
+    },
+    "mc202_source_contour": {
+      "applied": true,
+      "pattern_origin": "source_derived_contour",
+      "source_contour_delta_rms": 0.0001
+    },
+    "mc202_source_grid_alignment": {
+      "hit_ratio": 0.42,
+      "max_peak_offset_ms": 96.0
+    }
+  }
+}
