@@ -1048,4 +1048,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Render tonal and sparse professional WAV packs
 - [RIOTBOX-1197.md](./RIOTBOX-1197.md)
   Generate structured listening packs for professional-output suite
+- [RIOTBOX-1198.md](./RIOTBOX-1198.md)
+  Add destructive variation professional output gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
