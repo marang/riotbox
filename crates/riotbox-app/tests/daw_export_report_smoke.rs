@@ -9,11 +9,11 @@ use riotbox_core::{
     ids::{ActionId, SourceId},
     persistence::save_session_json,
     session::{
-        ExportArrangementPlacementRef, ExportArtifactSetEntry, ExportDawTempoMapRef,
-        ExportReceiptState, SessionFile,
+        ExportArrangementPlacementRef, ExportArtifactRole, ExportArtifactSetEntry,
+        ExportDawTempoMapRef, ExportReceiptQaGateResult, ExportReceiptState, SessionFile,
     },
 };
-use serde_json::Value;
+use serde_json::{Value, json};
 
 #[test]
 fn daw_export_readiness_report_smoke_covers_ready_for_writer_and_missing_file() {
@@ -69,6 +69,72 @@ fn daw_export_readiness_report_smoke_covers_ready_for_writer_and_missing_file() 
     assert_eq!(
         missing_report["artifact_preflight"]["blockers"],
         Value::Array(vec!["missing_local_files".into()])
+    );
+}
+
+#[test]
+fn daw_export_readiness_report_smoke_covers_complete_developer_proof_stack() {
+    let temp = tempfile::tempdir().expect("tempdir");
+    let session_path = temp.path().join("session.json");
+    let manifest_path = temp.path().join("exports/arrangement_manifest.json");
+    let tempo_map_path = temp.path().join("exports/tempo_map.json");
+    let proof_path = temp.path().join("exports/proof.json");
+    let writer_proof_path = temp.path().join("exports/daw-session/writer_proof.json");
+    fs::create_dir_all(writer_proof_path.parent().expect("writer proof parent"))
+        .expect("create nested exports");
+    fs::write(&manifest_path, "{}").expect("write manifest");
+    fs::write(&tempo_map_path, "{}").expect("write tempo map");
+    fs::write(&proof_path, "{}").expect("write proof");
+    fs::write(&writer_proof_path, "{}").expect("write writer proof");
+
+    let mut session = SessionFile::new(
+        "daw-export-report-complete-proof-stack-smoke",
+        "riotbox-test",
+        "2026-06-04T11:20:00Z",
+    );
+    let mut receipt = daw_receipt("exports/arrangement_manifest.json", "exports/proof.json");
+    attach_ready_daw_refs(&mut receipt);
+    attach_complete_developer_proof_stack(&mut receipt);
+    session.export_receipts.push(receipt);
+    save_session_json(&session_path, &session).expect("save smoke session");
+
+    let report = run_report(&session_path);
+    assert_eq!(report["status"], "ready_for_writer");
+    assert_eq!(report["ready_for_next_gate"], true);
+    assert_eq!(report["writes_files"], false);
+    assert_eq!(
+        report["proof_stack"]["status"],
+        "complete_developer_proof_only"
+    );
+    assert_eq!(report["proof_stack"]["all_required_proofs_passed"], true);
+    assert_eq!(report["proof_stack"]["missing_layers"], json!([]));
+    assert_eq!(
+        report["proof_gates"]["json_package_integrity"]["status"],
+        "passed"
+    );
+    assert_eq!(report["proof_gates"]["writer_proof"]["status"], "passed");
+    assert_eq!(
+        report["proof_gates"]["writer_proof"]["artifact_available"],
+        true
+    );
+    assert_eq!(
+        report["proof_gates"]["host_import_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(
+        report["proof_gates"]["audible_output_proof"]["status"],
+        "passed"
+    );
+    assert_eq!(report["release_blockers"], json!(["developer_proof_only"]));
+    assert_eq!(report["daw_session_surface_gate"]["status"], "disabled");
+    assert_eq!(report["daw_session_surface_gate"]["runnable"], false);
+    assert_eq!(
+        report["daw_session_surface_gate"]["blockers"],
+        json!(["developer_proof_only"])
+    );
+    assert_eq!(
+        report["musician_export_readiness"],
+        "not_final_daw_export_workflow"
     );
 }
 
@@ -145,4 +211,37 @@ fn attach_ready_daw_refs(receipt: &mut ExportReceiptState) {
         16,
         128_000_000,
     ));
+}
+
+fn attach_complete_developer_proof_stack(receipt: &mut ExportReceiptState) {
+    receipt.artifact_set = vec![
+        ExportArtifactSetEntry::export_manifest(
+            "exports/arrangement_manifest.json",
+            "manifest-sha",
+        ),
+        ExportArtifactSetEntry::daw_session_tempo_map("exports/tempo_map.json", "tempo-map-sha"),
+        ExportArtifactSetEntry::product_export_proof("exports/proof.json", "proof-sha"),
+        ExportArtifactSetEntry::daw_session_writer_proof(
+            "exports/daw-session/writer_proof.json",
+            "writer-proof-sha",
+        ),
+    ];
+    receipt.qa_gates = vec![
+        ExportReceiptQaGateResult::daw_session_json_package_integrity(
+            true,
+            &[],
+            vec![
+                ExportArtifactRole::ExportManifest,
+                ExportArtifactRole::DawSessionTempoMap,
+                ExportArtifactRole::ProductExportProof,
+            ],
+        ),
+        ExportReceiptQaGateResult::daw_session_writer_proof(
+            true,
+            &[],
+            vec![ExportArtifactRole::DawSessionWriterProof],
+        ),
+        ExportReceiptQaGateResult::daw_session_host_import_proof(true, &[]),
+        ExportReceiptQaGateResult::daw_session_audible_output_proof(true, &[]),
+    ];
 }

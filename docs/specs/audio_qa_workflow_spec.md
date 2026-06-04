@@ -1314,8 +1314,10 @@ Today the repo already has:
     gate only.
   - `just daw-export-readiness-report-smoke` is the CI-safe operator-report
     proof for that path. It runs the real binary against a temporary Session,
-    validates the ready-for-writer report, removes the manifest file, and
-    validates the missing-file blocker.
+    validates the ready-for-writer report, validates a complete
+    developer-proof-only proof stack that still leaves musician-facing DAW
+    export disabled, removes the manifest file, and validates the missing-file
+    blocker.
   - current DAW writer plan skeleton exposes deterministic planned identities
     through `riotbox-app --daw-session-writer-plan --session <session.json>
     --daw-session-destination <dir>`. It is a dry-run only: it reuses the

@@ -736,8 +736,10 @@ Additional receipt fields required before wider export scopes:
   action log.
 - `just daw-export-readiness-report-smoke` is the bounded repo proof for that
   operator report path. It runs the real CLI in a temp directory, verifies a
-  `ready_for_writer` DAW receipt report, removes the manifest file, and verifies
-  the missing-file report without mutating the Session.
+  `ready_for_writer` DAW receipt report, verifies a complete
+  `complete_developer_proof_only` proof stack remains disabled for
+  musician-facing export, removes the manifest file, and verifies the
+  missing-file report without mutating the Session.
 - the DAW session writer plan skeleton is a read-only planning surface:
   `riotbox-app --daw-session-writer-plan --session <session.json>
   --daw-session-destination <dir>`. It selects the latest `daw_session`
