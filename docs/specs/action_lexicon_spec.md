@@ -736,6 +736,12 @@ Contract for `export.stem_package`:
   `daw_session_writer/writer_proof.json`, attaches the
   `daw_session_writer_proof` QA gate and proof artifact to the matching
   receipt, commits the queued action, and keeps the DAW surface disabled.
+  `riotbox-app --daw-session-writer-export-execute --session <session.json>
+  --daw-session-destination <dir> [--observer <events.ndjson>]` is the
+  operator-facing smoke path for that action boundary. It saves the mutated
+  Session after the commit and may emit a non-interactive observer snapshot,
+  but it still writes only the local writer proof package and is not a
+  musician-runnable DAW export.
 - Current host-import-proof `export.daw_session` queue / commit path:
   app code may enqueue `export.daw_session` with `host_import_proof_v1` only
   when the latest DAW-session receipt has passed writer proof and the supplied

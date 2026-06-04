@@ -42,7 +42,8 @@ fn parse_args_builds_daw_session_writer_plan_mode() {
         | LaunchMode::DawSessionHostImportProofApply { .. }
         | LaunchMode::DawSessionAudibleOutputProofApply { .. }
         | LaunchMode::DawSessionWriterProofExecute { .. }
-        | LaunchMode::DawSessionWriterProofApply { .. } => {
+        | LaunchMode::DawSessionWriterProofApply { .. }
+        | LaunchMode::DawSessionWriterExportExecute { .. } => {
             panic!("expected DAW session writer plan mode")
         }
     }

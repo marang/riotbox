@@ -5,6 +5,7 @@ struct DawSessionModeArgs<'a> {
     audible_output_proof_apply: bool,
     writer_proof_execute: bool,
     writer_proof_apply: bool,
+    writer_export_execute: bool,
     writer_plan: bool,
     source_path_present: bool,
     source_graph_path_present: bool,
@@ -12,6 +13,7 @@ struct DawSessionModeArgs<'a> {
     saw_sidecar_flag: bool,
     saw_seed_flag: bool,
     observer_path_present: bool,
+    observer_path: Option<&'a PathBuf>,
     stem_package_destination_path_present: bool,
     claimed_stem_roles_empty: bool,
     session_path: Option<&'a PathBuf>,
@@ -129,6 +131,23 @@ fn parse_daw_session_mode_args(args: DawSessionModeArgs<'_>) -> Result<Option<Ap
         }));
     }
 
+    if args.writer_export_execute {
+        reject_daw_session_action_mode_conflicts(
+            &args,
+            "DAW session writer export execute reads only an explicit session and destination and cannot be combined with source/graph/sidecar/seed/stem/proof arguments",
+        )?;
+        return Ok(Some(AppLaunch {
+            mode: LaunchMode::DawSessionWriterExportExecute {
+                session_path: required_daw_session(args.session_path, args.saw_session_flag, "DAW session writer export execute requires --session <session.json>")?,
+                destination_path: required_daw_destination(
+                    args.destination_path,
+                    "DAW session writer export execute requires --daw-session-destination <dir>",
+                )?,
+            },
+            observer_path: args.observer_path.cloned(),
+        }));
+    }
+
     if args.writer_plan {
         reject_daw_session_destination_mode_conflicts(
             &args,
@@ -208,10 +227,29 @@ fn reject_daw_session_proof_mode_conflicts(
     Ok(())
 }
 
+fn reject_daw_session_action_mode_conflicts(
+    args: &DawSessionModeArgs<'_>,
+    message: &str,
+) -> Result<(), String> {
+    if args.source_path_present
+        || args.source_graph_path_present
+        || args.saw_sidecar_flag
+        || args.saw_seed_flag
+        || args.stem_package_destination_path_present
+        || args.host_import_proof_path.is_some()
+        || args.audible_output_proof_path.is_some()
+        || !args.claimed_stem_roles_empty
+    {
+        return Err(message.into());
+    }
+
+    Ok(())
+}
+
 fn reject_standalone_daw_session_args(args: &DawSessionModeArgs<'_>) -> Result<(), String> {
     if args.destination_path.is_some() {
         return Err(
-            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, --daw-session-json-package-evidence-apply, --daw-session-writer-proof-execute, or --daw-session-writer-proof-apply"
+            "--daw-session-destination requires --daw-session-writer-plan, --daw-session-json-package-execute, --daw-session-json-package-evidence-apply, --daw-session-writer-proof-execute, --daw-session-writer-proof-apply, or --daw-session-writer-export-execute"
                 .into(),
         );
     }
