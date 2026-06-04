@@ -294,10 +294,16 @@ Linear project / phase map:
 8. `P018 | Ghost + Feral Autonomy Expansion`
 9. `P019 | Beta / Release Hardening`
 10. `P020 | Riotbox 1.0 Release Cut`
+11. `P021 | Audio Judge / Musical Fitness` - planned calibrated audio-quality
+   judging track
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
 and P015 as regression baselines and keep P017-P020 coarse while P016 turns the
-bounded product spine toward pro workflow and export behavior.
+bounded product spine toward pro workflow and export behavior. P021 is a
+follow-on audio QA / product-quality track: it may help agents reject weak
+sound and eventually make calibrated musical-pass decisions, but it must not
+replace human listening or become a hidden taste oracle without labeled
+Riotbox examples.
 
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
@@ -603,6 +609,13 @@ P011 replay/recovery/export hardening baseline plus the P012, P013, P014, and
 P015 product-spine proof surfaces, then add bounded pro workflow / export
 behavior without weakening replay, timing, musical-depth, scene, or Jam
 taste/proof regression gates.
+
+As of 2026-06-04, product-quality work should prioritize the dense-break
+8-bar source-backed performance Golden Path before further TUI/export polish:
+the thing Riotbox delivers must sound stronger before downstream workflow
+surfaces become valuable. The planned P021 Audio Judge / Musical Fitness track
+is the future calibration layer for agent-assisted musical judgment; it should
+grow from real review packs and human labels, not from generic metrics alone.
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:

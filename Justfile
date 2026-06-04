@@ -60,6 +60,7 @@ audio-qa-ci:
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
+    just dense-break-performance-pack-smoke
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -216,6 +217,13 @@ feral-grid-pack source date="local" bpm="auto" bars="8" source_window="1.0" star
     else \
         cargo run -p riotbox-audio --bin feral_grid_pack -- --source "{{source}}" --date "{{date}}" --bpm "{{bpm}}" --bars "{{bars}}" --source-window-seconds "{{source_window}}" --source-start-seconds "{{start}}"; \
     fi
+
+dense-break-performance-pack source="data/test_audio/examples/Beat03_130BPM(Full).wav" output="artifacts/audio_qa/local-dense-break-performance-pack" date="local-dense-break-performance-pack":
+    python3 scripts/generate_dense_break_performance_pack.py --source "{{source}}" --output "{{output}}" --date "{{date}}"
+
+dense-break-performance-pack-smoke output="artifacts/audio_qa/local-dense-break-performance-pack-smoke":
+    python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-performance-pack-smoke"
+    jq -e '.schema == "riotbox.dense_break_performance_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_low_band_lift_ratio >= 1.12 and .proof.dropout_to_stutter_rms_ratio <= 0.18 and .proof.restore_to_hook_transient_ratio >= 0.85' "{{output}}/performance-report.json"
 
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"

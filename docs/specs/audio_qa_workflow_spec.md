@@ -540,6 +540,7 @@ Riotbox should support named listening packs such as:
 - `capture-smoke`
 - `w30-preview-smoke`
 - `feral-review`
+- `dense-break-performance-pack`
 
 Each listening pack should render a small fixed set of review cases to one output directory.
 
