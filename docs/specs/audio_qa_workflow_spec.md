@@ -458,6 +458,12 @@ exists, whether a human verdict was recorded, or why the change remains
 musical fitness; it does not replace deterministic metrics, and it must not be
 stored only in agent memory.
 
+Human labels intended for future audio-judge calibration must use
+`riotbox.human_listening_label_corpus.v1`. The corpus stores labels by
+review-pack identity and SHA-256 artifact hashes so local source audio does not
+need to be committed. It distinguishes `pass`, `weak`, `fail`, and
+`inconclusive` human labels from technical or agent-promising status.
+
 ---
 
 ## 4. Two Execution Modes

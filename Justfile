@@ -61,6 +61,7 @@ audio-qa-ci:
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
     just agent-musical-review-pack-smoke
+    just human-listening-label-corpus-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -232,6 +233,11 @@ agent-musical-review-pack-smoke output="artifacts/audio_qa/local-agent-musical-r
     just dense-break-performance-pack-smoke "{{output}}"
     jq -e '.schema == "riotbox.agent_musical_review_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .source_recognition == "source_transformed_but_present" and (.visual_files.full_performance.waveform | endswith(".png")) and (.visual_files.full_performance.spectrogram | endswith(".png"))' "{{output}}/agent-review.json"
     for role in source_window chop_hook pressure_lift dropout_stutter restore_hit full_performance; do test -s "{{output}}/visuals/$role.waveform.png"; test -s "{{output}}/visuals/$role.spectrogram.png"; done
+
+human-listening-label-corpus-fixtures:
+    tmp="$(mktemp)" && python3 scripts/validate_human_listening_label_corpus.py --json-output "$tmp" scripts/fixtures/human_listening_label_corpus/valid_dense_break.json && jq -e '.schema == "riotbox.human_listening_label_corpus.v1" and .result == "pass" and .label_count == 2 and .verdict_counts.pass == 1 and .verdict_counts.weak == 1 and (.source_families == ["dense_break"])' "$tmp" && rm "$tmp"
+    if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_bad_hash.json; then echo "expected invalid bad-hash label corpus fixture to fail" >&2; exit 1; fi
+    if python3 scripts/validate_human_listening_label_corpus.py scripts/fixtures/human_listening_label_corpus/invalid_weak_missing_reason.json; then echo "expected invalid weak-missing-reason label corpus fixture to fail" >&2; exit 1; fi
 
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"
