@@ -1026,4 +1026,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Build agent musical review pack for dense-break performance
 - [RIOTBOX-1186.md](./RIOTBOX-1186.md)
   Create human listening label corpus for Riotbox audio judge
+- [RIOTBOX-1187.md](./RIOTBOX-1187.md)
+  Prototype CLAP/MERT-style Riotbox audio judge spike
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
