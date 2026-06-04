@@ -556,9 +556,10 @@ Contract for `export.stem_package`:
   commits.
 - Current DAW report smoke:
   `just daw-export-readiness-report-smoke` runs the real `riotbox-app` binary
-  in a temp directory, verifies the ready-for-writer report shape, removes the
-  manifest file, and verifies the missing-file blocker without writing DAW
-  artifacts or observer events.
+  in a temp directory, verifies the ready-for-writer report shape, verifies a
+  complete developer-proof-only stack stays disabled for musician-facing DAW
+  export, removes the manifest file, and verifies the missing-file blocker
+  without writing DAW artifacts or observer events.
 - Current DAW writer plan skeleton:
   `riotbox-app --daw-session-writer-plan --session <session.json>
   --daw-session-destination <dir>` is a read-only dry-run surface. It reports
