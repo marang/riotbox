@@ -228,7 +228,7 @@ dense-break-performance-pack source="data/test_audio/examples/Beat03_130BPM(Full
 
 dense-break-performance-pack-smoke output="artifacts/audio_qa/local-dense-break-performance-pack-smoke":
     python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-performance-pack-smoke"
-    jq -e '.schema == "riotbox.dense_break_performance_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_low_band_lift_ratio >= 1.12 and .proof.dropout_to_stutter_rms_ratio <= 0.18 and .proof.restore_to_hook_transient_ratio >= 0.85' "{{output}}/performance-report.json"
+    jq -e '.schema == "riotbox.dense_break_performance_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .proof.w30_to_source_rms_ratio >= 0.18 and .proof.pressure_low_band_lift_ratio >= 1.12 and .proof.dropout_to_stutter_rms_ratio <= 0.18 and .proof.restore_to_hook_transient_ratio >= 0.85 and .proof.full_to_source_rms_ratio >= 0.78 and .proof.hook_to_source_transient_ratio >= 0.48 and .proof.pressure_to_hook_rms_ratio >= 1.30 and .proof.restore_to_pressure_rms_ratio >= 1.12' "{{output}}/performance-report.json"
 
 agent-musical-review-pack source="data/test_audio/examples/Beat03_130BPM(Full).wav" output="artifacts/audio_qa/local-agent-musical-review-pack" date="local-agent-musical-review-pack":
     just dense-break-performance-pack "{{source}}" "{{output}}" "{{date}}"

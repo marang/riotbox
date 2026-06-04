@@ -1998,3 +1998,17 @@ Why: P021 needs agents to block weak output autonomously without turning logs, s
 Evidence: RIOTBOX-1188 adds `scripts/validate_musical_pass_gate_policy.py`, committed policy fixtures, `just musical-pass-gate-policy-fixtures`, and audio-QA/benchmark documentation.
 Consequences: future PRs must use these verdict terms precisely. A calibrated agent musical pass needs offline judge validation, matched pass/weak/fail labels, and source-family boundaries before it can be claimed.
 Status: accepted
+
+---
+
+### RBX-068
+
+Date: 2026-06-04
+Topic: Dense-break Golden Path prioritizes pro-pressure sound output before export/TUI polish
+Phase: P022 / Professional Sound Output
+Question: how should Riotbox prevent the dense-break Golden Path from passing while still sounding underpowered or merely fixture-valid?
+Decision: make the dense-break performance render itself more aggressive and add pro-pressure guards on top of the existing anti-collapse checks. The render now uses a source-present break hook, explicit W-30 hook-riff layer, harder break snaps, stronger MC-202/sub pressure, destructive dropout/stutter impact, a controlled slam bus, and peak-normalized restore. The pack must prove full-performance assertiveness against the source, hook transient, pressure-over-hook lift, and restore-over-pressure impact while keeping `human_verdict: unverified`.
+Why: Riotbox needs the thing it exports or surfaces in the UI to sound useful first. Export polish or TUI affordances are not valuable if the rendered musical result is still polite, weak, or only technically valid.
+Evidence: RIOTBOX-1192 updates `scripts/generate_dense_break_performance_pack.py`, the dense-break smoke gate, and the dense-break/agent-review benchmark docs. The local comparison from the old baseline to the new render raises full-performance RMS from about -20.6 dBFS to about -14.9 dBFS, chop-hook transient from about 0.104 to about 0.148, dropout/stutter transient from about 0.045 to about 0.112, and restore RMS from about -17.3 dBFS to about -11.2 dBFS without claiming human musical pass.
+Consequences: future sound-quality work should improve audible render behavior first and then tighten objective proof. `agent_promising` remains a bounded anti-weak-output verdict, not a musical-pass claim.
+Status: accepted
