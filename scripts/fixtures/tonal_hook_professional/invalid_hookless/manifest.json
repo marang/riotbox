@@ -1,0 +1,64 @@
+{
+  "case_id": "tonal_hook_chop_hookless",
+  "window_id": "rise",
+  "metrics": {
+    "full_grid_mix": {
+      "signal": {
+        "rms": 0.018,
+        "peak_abs": 0.44,
+        "event_density_per_bar": 96.0,
+        "transient_score": 0.16
+      },
+      "low_band": {
+        "rms": 0.006
+      }
+    },
+    "bar_variation": {
+      "full_grid_mix": {
+        "bar_similarity": 0.996
+      }
+    },
+    "mix_balance": {
+      "support_generated_to_source_rms_ratio": 0.09,
+      "source_first_generated_to_source_rms_ratio": 0.24
+    },
+    "identity_collapse": {
+      "correlation": 0.98,
+      "normalized_rms_delta": 0.008,
+      "fallback_used": false,
+      "response_signature": ""
+    },
+    "all_lane_mix_movement": {
+      "tr909_contribution_ratio": 0.03,
+      "mc202_contribution_ratio": 0.04,
+      "w30_contribution_ratio": 0.19,
+      "generated_to_w30_contribution_ratio": 0.12
+    },
+    "w30_source_trigger_variation": {
+      "applied": true,
+      "distinct_bar_pattern_count": 1
+    },
+    "w30_source_slice_choice": {
+      "applied": true,
+      "unique_source_offset_count": 2
+    },
+    "w30_source_accent_dynamics": {
+      "applied": true,
+      "velocity_span": 0.06
+    },
+    "mc202_source_contour": {
+      "applied": true,
+      "pattern_origin": "source_derived_contour",
+      "source_contour_delta_rms": 0.0001
+    },
+    "mc202_source_grid_alignment": {
+      "hit_ratio": 0.40,
+      "max_peak_offset_ms": 90.0
+    }
+  },
+  "source_timing": {
+    "anchor_evidence": {
+      "primary_anchor_count": 1
+    }
+  }
+}
