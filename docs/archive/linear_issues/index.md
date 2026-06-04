@@ -1046,4 +1046,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add tonal-hook professional output fixture
 - [RIOTBOX-1196.md](./RIOTBOX-1196.md)
   Render tonal and sparse professional WAV packs
+- [RIOTBOX-1197.md](./RIOTBOX-1197.md)
+  Generate structured listening packs for professional-output suite
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
