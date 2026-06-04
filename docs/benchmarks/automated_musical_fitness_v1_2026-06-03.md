@@ -44,6 +44,13 @@ pressure, source-derived contour movement, source-grid alignment, and generated
 pressure strong enough against W-30 support. Passing it still means
 `human_verdict: unverified`, not human musical approval.
 
+`valid_tonal_hook_chop` also feeds `riotbox.tonal_hook_professional.v1`, a
+stricter professional-output fixture for riff-led material. That gate requires
+the W-30/source chop to dominate as the hook, enough trigger/slice/accent
+variation to avoid a static loop, transformed source presence instead of source
+copy or fallback collapse, and TR-909/MC-202 support that backs the riff without
+replacing it. Passing it still means `human_verdict: unverified`.
+
 Current negative fixture families:
 
 - `invalid_static`: rejects static loop movement.
@@ -57,6 +64,9 @@ Current negative fixture families:
 - `sparse_bass_pressure_professional/invalid_weak_pressure`: rejects sparse
   bass material whose low band, MC-202 pressure, source contour, grid hit ratio,
   and generated support are too weak for the professional-output fixture.
+- `tonal_hook_professional/invalid_hookless`: rejects tonal material whose W-30
+  hook is buried, too static, too source-copy-like, or missing source-derived
+  motion.
 
 These fixtures are automated-fitness evidence only. They are deliberately named
 as validation fixtures, not as listening approval examples.
