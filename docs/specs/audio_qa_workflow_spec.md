@@ -400,6 +400,34 @@ keeping its own candidate result separate. Absence of the automated report is
 backward-compatible; it means the automated layer did not run for that report,
 not that the output passed or failed.
 
+### 3.2.4 Audio judge spike
+
+P021 adds `riotbox.audio_judge_spike.v1` as an offline QA spike for deciding
+whether a future audio judge is worth building from Riotbox-owned metrics plus
+optional CLAP/MERT-style music embeddings.
+
+The spike is not a runtime dependency and not a taste oracle. It must keep:
+
+- `human_verdict: unverified` unless structured human listening has been
+  recorded
+- deterministic Riotbox metrics as the baseline provider
+- optional model providers isolated to offline QA
+- confusion or coverage examples, not only average scores
+- a recommendation of `useful`, `too_weak`, `too_expensive`, or `not_ready`
+
+The current implementation reports `not_ready` when the label corpus is too
+small, weak/fail labels are not matched to generated review packs, or optional
+providers are unavailable. This is expected for the first spike; the value is
+making calibration gaps explicit instead of letting agents claim musical pass
+from metrics alone.
+
+Run:
+
+```bash
+just audio-judge-spike-fixtures
+just audio-judge-spike-generated-smoke
+```
+
 ### 3.3 Fixture-backed golden render review
 
 For stable fixture, seed, action list, and render config:

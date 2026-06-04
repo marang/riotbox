@@ -1,0 +1,36 @@
+{
+  "schema": "riotbox.agent_musical_review_pack.v1",
+  "schema_version": 1,
+  "source_report_schema": "riotbox.dense_break_performance_pack.v1",
+  "result": "pass",
+  "agent_verdict": "agent_promising",
+  "human_verdict": "unverified",
+  "strongest_element": "w30_chop_hook_with_pressure_restore",
+  "source_recognition": "source_transformed_but_present",
+  "hook_after_two_bars": "present",
+  "summary": "Fixture promising dense-break pack for audio-judge spike calibration shape.",
+  "failure_codes": [],
+  "audio_files": {
+    "source_window": "00_source_window.wav",
+    "full_performance": "05_full_performance.wav"
+  },
+  "visual_files": {
+    "full_performance": {
+      "waveform": "visuals/full_performance.waveform.png",
+      "spectrogram": "visuals/full_performance.spectrogram.png"
+    }
+  },
+  "review_focus": [
+    "Does the W-30 chop read as a hook after two bars?",
+    "Does the pressure lift hit harder than the opening hook?"
+  ],
+  "proof": {
+    "w30_to_source_rms_ratio": 0.211457,
+    "pressure_low_band_lift_ratio": 1.291259,
+    "dropout_to_stutter_rms_ratio": 0.02009,
+    "restore_to_hook_transient_ratio": 0.933302,
+    "max_adjacent_bar_correlation": 0.904434,
+    "source_to_performance_correlation": 0.447707
+  },
+  "boundary": "Fixture agent review may mark this pack promising but must not claim human musical pass."
+}
