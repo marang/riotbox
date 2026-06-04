@@ -944,6 +944,10 @@ Additional receipt fields required before wider export scopes:
   inspects the latest live-recording receipt and projects the same host-audio
   readiness blockers without mutating the Session, writing observer events,
   launching a host, or capturing audio.
+- `just live-recording-readiness-report-smoke` is the bounded repo proof for
+  that read-only report. It runs the real CLI in a temp directory and verifies
+  ready and blocked receipt evidence without writing files or mutating the
+  Session.
 
 These fields must remain in Session/Core models. They must not be hidden in
 JamAppState or observer-only state.

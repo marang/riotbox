@@ -1102,8 +1102,8 @@ Today the repo already has:
   `export.live_recording` runnable; it only reports whether the latest
   `export_scope: live_recording` receipt has sufficient host-audio evidence for
   the current Core/Session readiness contract.
-- `live_recording_readiness_report_smoke` exercises that report through the
-  built `riotbox-app` binary for ready and blocked receipt evidence.
+- `just live-recording-readiness-report-smoke` exercises that report through
+  the built `riotbox-app` binary for ready and blocked receipt evidence.
 - `export.stem_package` remains reserved until an implementation can provide a
   package receipt whose `artifact_set[]` contains every claimed stem role, the
   package manifest/proof entries, per-stem hashes, per-stem WAV format/audio
