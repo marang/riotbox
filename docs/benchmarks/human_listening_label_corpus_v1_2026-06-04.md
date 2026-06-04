@@ -26,8 +26,17 @@ tonal-hook and sparse-bass-pressure calibration examples for the agent musical
 review pack shape. It is schema and calibration-shape evidence, not a real taste
 corpus yet.
 
+Structured listening reviews can be imported into the same corpus shape with
+`scripts/import_listening_review_label.py` when the review carries explicit
+`audio_judge_label` metadata: source family/id, review pack identity, artifact
+hashes, created date, and reason tags. The importer maps
+`keep -> pass`, `technically_ok_but_musically_weak -> weak`, `reject -> fail`,
+and `inconclusive -> inconclusive`; it rejects `unverified` reviews and missing
+metadata.
+
 Run:
 
 ```bash
 just human-listening-label-corpus-fixtures
+just listening-review-label-import-fixtures
 ```

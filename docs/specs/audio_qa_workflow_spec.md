@@ -534,6 +534,21 @@ review-pack identity and SHA-256 artifact hashes so local source audio does not
 need to be committed. It distinguishes `pass`, `weak`, `fail`, and
 `inconclusive` human labels from technical or agent-promising status.
 
+Structured `riotbox.listening_review.v1` reviews can be imported into the label
+corpus only when they carry explicit `audio_judge_label` metadata with source
+family/id, review pack identity, artifact identity hashes, created date, and
+reason tags. The importer maps structured listening verdicts to label verdicts:
+`keep` to `pass`, `technically_ok_but_musically_weak` to `weak`, `reject` to
+`fail`, and `inconclusive` to `inconclusive`. It must reject `unverified`
+reviews and reviews missing the audio-judge metadata so human labels cannot be
+created from chat memory or vague listening notes.
+
+Run:
+
+```bash
+just listening-review-label-import-fixtures
+```
+
 ---
 
 ## 4. Two Execution Modes

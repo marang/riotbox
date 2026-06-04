@@ -1,0 +1,53 @@
+{
+  "schema": "riotbox.listening_review.v1",
+  "schema_version": 1,
+  "ticket": "RIOTBOX-1191-FIXTURE",
+  "pr": null,
+  "command": "just agent-musical-review-pack-smoke",
+  "source_file": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+  "seed_or_config": "fixture",
+  "technical_status": "pass",
+  "automated_musical_fitness_status": "pass",
+  "human_verdict": "technically_ok_but_musically_weak",
+  "strongest_element": "chop",
+  "source_recognition": "source_transformed_but_present",
+  "hook_after_two_bars": "weak",
+  "failure_reason": "The chop is audible but not memorable enough and the restore hit lacks pressure.",
+  "preferred_direction": "Push the W-30 chop forward and add a harder pressure return.",
+  "avoid": [
+    "weak hook",
+    "soft restore"
+  ],
+  "concrete_follow_up": "Tighten dense-break weak fixture thresholds.",
+  "reviewer": "fixture-listener",
+  "expected_audible_behavior": "Dense break should produce a hard source chop, bass pressure, dropout, and restore.",
+  "artifacts": {
+    "candidate_audio": ["artifacts/audio_qa/local-agent-musical-review-pack-smoke/05_full_performance.wav"],
+    "source_audio": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+    "metrics_json": "metrics.json",
+    "prompt_markdown": "prompt.md"
+  },
+  "audio_judge_label": {
+    "created_at": "2026-06-04",
+    "source_family": "dense_break",
+    "source_id": "beat03_full",
+    "review_pack_schema": "riotbox.agent_musical_review_pack.v1",
+    "review_pack_id": "local-agent-musical-review-pack-smoke-human-import-fixture",
+    "artifact_identity": {
+      "performance_report_sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "agent_review_sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "audio_sha256": {
+        "source_window": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+        "full_performance": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      }
+    },
+    "reason_tags": {
+      "hook_clarity": "weak",
+      "hardest_hit": "chop",
+      "bass_pressure": "weak",
+      "destructive_contrast": "present",
+      "source_character": "source_transformed_but_present",
+      "replay_value_after_eight_bars": "medium"
+    }
+  }
+}
