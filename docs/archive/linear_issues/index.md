@@ -1016,4 +1016,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add live-recording reserved action lifecycle smoke
 - [RIOTBOX-1180.md](./RIOTBOX-1180.md)
   P016: Add DAW proof-stack regression fixture for complete developer-only gate
+- [RIOTBOX-1181.md](./RIOTBOX-1181.md)
+  P016: Add DAW local-writer export action CLI smoke
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
