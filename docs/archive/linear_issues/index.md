@@ -1012,4 +1012,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P016: Add live-recording readiness operator report skeleton
 - [RIOTBOX-1178.md](./RIOTBOX-1178.md)
   P016: Add live-recording readiness report just helper
+- [RIOTBOX-1179.md](./RIOTBOX-1179.md)
+  P016: Add live-recording reserved action lifecycle smoke
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
