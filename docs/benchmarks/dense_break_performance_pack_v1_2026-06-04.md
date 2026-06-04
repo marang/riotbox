@@ -57,6 +57,7 @@ just pro-pressure-source-matrix-smoke
 just professional-source-wav-pack-smoke
 just professional-output-listening-pack-smoke
 just destructive-variation-professional-smoke
+just professional-output-suite-smoke
 ```
 
 The source-matrix smoke renders the same pro-pressure contract across multiple
@@ -80,3 +81,10 @@ claiming a musical pass from metrics alone.
 stutter / restore behavior as a first-class professional-output contract. It
 rejects flat cuts, weak stutters, static bars, source-copy collapse, and restores
 that do not recover with enough level after the destructive gesture.
+
+`professional-output-suite-smoke` renders the current professional-output child
+reports together and writes `riotbox.professional_output_suite.v1`. The suite is
+the central deterministic status surface for dense-break, pro-pressure source
+matrix, tonal/sparse WAV packs, structured listening packs, and destructive
+variation proof. It checks child report hashes and listening-pack file identity,
+but still keeps `human_verdict: unverified`.
