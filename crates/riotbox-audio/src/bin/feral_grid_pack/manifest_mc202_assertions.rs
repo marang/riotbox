@@ -6,10 +6,28 @@ mod manifest_mc202_assertions {
         let mc202_bass_pressure = &manifest["metrics"]["mc202_bass_pressure"];
         assert_eq!(mc202_bass_pressure["pattern_origin"], "primitive_renderer");
         assert_eq!(mc202_bass_pressure["applied"], true);
+        assert_eq!(
+            mc202_bass_pressure["pressure_role"],
+            "bass_pressure_with_source_contour"
+        );
         assert_eq!(mc202_bass_pressure["phrase_variation_applied"], true);
         assert_eq!(
             mc202_bass_pressure["reason"],
             "mc202_source_grid_proof_renderer"
+        );
+        assert!(
+            mc202_bass_pressure["pressure_reinforcement_gain"]
+                .as_f64()
+                .expect("mc202 pressure reinforcement gain")
+                > 0.0
+        );
+        assert!(
+            mc202_bass_pressure["low_to_mid_energy_ratio"]
+                .as_f64()
+                .expect("mc202 low/mid energy ratio")
+                >= mc202_bass_pressure["min_low_to_mid_energy_ratio"]
+                    .as_f64()
+                    .expect("mc202 min low/mid energy ratio")
         );
 
         let mc202_source_contour = &manifest["metrics"]["mc202_source_contour"];

@@ -186,6 +186,23 @@ mod tests {
             mc202_pressure.low_band_rms >= MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS,
             "{mc202_pressure:?}"
         );
+        assert_eq!(
+            mc202_pressure.pressure_role,
+            "bass_pressure_with_source_contour"
+        );
+        assert!(
+            mc202_pressure.pressure_reinforcement_gain > 0.0,
+            "{mc202_pressure:?}"
+        );
+        assert!(
+            mc202_pressure.low_to_mid_energy_ratio
+                >= MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO,
+            "{mc202_pressure:?}"
+        );
+        assert!(
+            mc202_pressure.low_to_high_energy_ratio > mc202_pressure.low_to_mid_energy_ratio,
+            "{mc202_pressure:?}"
+        );
         assert!(mc202_pressure.phrase_variation_applied, "{mc202_pressure:?}");
         assert!(mc202_pressure.distinct_bar_profile_count >= 2);
         assert!(mc202_source_contour.applied, "{mc202_source_contour:?}");

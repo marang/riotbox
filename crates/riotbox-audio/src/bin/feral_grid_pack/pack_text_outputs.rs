@@ -25,7 +25,7 @@ fn write_report(
              - TR-909 source low/high energy: `{:.6}` / `{:.6}`\n\
              - TR-909 kick pressure: `{}` origin `primitive_renderer` anchors `{}` gain `{:.6}` low-band ratio `{:.6}` delta `{:.6}` peak `{:.6}`\n\
              - TR-909 source-accent dynamics: `{}` origin `source_derived` distinct accents `{}` span `{:.6}` source-energy span `{:.6}`\n\
-             - MC-202 bass pressure: `{}` origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
+             - MC-202 bass pressure: `{}` role `{}` origin `primitive_renderer` mode `{}` shape `{}` budget `{}` variation `{}` distinct bar profiles `{}` bar similarity `{:.6}` RMS `{:.6}` low-band `{:.6}` low/mid `{:.6}` low/high `{:.6}` reinforcement `{:.6}` touch `{:.3}` level `{:.3}` peak `{:.6}`\n\
              - MC-202 source contour: `{}` origin `source_derived_contour` contour `{}` budget `{}` delta RMS `{:.6}` touch boost `{:.3}` level boost `{:.3}` low/mid/high `{:.6}` / `{:.6}` / `{:.6}` density `{:.6}`\n\
              - W-30 source-chop reason: `{}`\n\
              - W-30 source-chop preview RMS: `{:.6}` from source RMS `{:.6}` with gain `{:.6}`\n\
@@ -79,6 +79,7 @@ fn write_report(
             report.tr909_source_accent_dynamics.accent_span,
             report.tr909_source_accent_dynamics.source_energy_span,
             report.mc202_bass_pressure.reason,
+            report.mc202_bass_pressure.pressure_role,
             report.mc202_bass_pressure.mode.label(),
             report.mc202_bass_pressure.phrase_shape.label(),
             report.mc202_bass_pressure.note_budget.label(),
@@ -87,6 +88,9 @@ fn write_report(
             report.mc202_bass_pressure.bar_similarity,
             report.mc202_bass_pressure.signal_rms,
             report.mc202_bass_pressure.low_band_rms,
+            report.mc202_bass_pressure.low_to_mid_energy_ratio,
+            report.mc202_bass_pressure.low_to_high_energy_ratio,
+            report.mc202_bass_pressure.pressure_reinforcement_gain,
             report.mc202_bass_pressure.touch,
             report.mc202_bass_pressure.music_bus_level,
             report.mc202_bass_pressure.peak_abs,
@@ -223,7 +227,7 @@ fn write_readme(
              ## Files\n\n\
              - `stems/01_tr909_beat_fill.wav`: source-aware TR-909 support rendered on the same grid.\n\
              - `stems/02_w30_feral_source_chop.wav`: W-30 source-backed Feral chop with articulate source-window selection and bounded loudness normalization.\n\
-             - `stems/03_mc202_bass_pressure.wav`: primitive MC-202 source-grid proof bass pressure; audible and grid-bound, but not yet a source-derived phrase planner.\n\
+             - `stems/03_mc202_bass_pressure.wav`: primitive MC-202 source-grid proof bass pressure with source-contoured low-end reinforcement; audible and grid-bound, but not yet a source-derived phrase planner.\n\
              - `04_riotbox_source_first_mix.wav`: listen here first; source-backed W-30 leads and generated support stays secondary.\n\
              - `05_riotbox_generated_support_mix.wav`: generated-support mix; TR-909 and MC-202 add bounded low-end movement under the source-backed W-30 lane.\n\
              - `grid-report.md`: timing, source-timing readiness, and output metrics.\n\
