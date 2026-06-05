@@ -63,12 +63,16 @@ source as dense-break, tonal-hook, sparse-bass-pressure, or thin/uncertain from
 the source low-band, high-band, and transient profile, then chooses lift shape,
 source/hook bleed, TR-909 / MC-202 / bass drive, bar-4 / bar-5 intensity, and
 bass frequencies. The same source profile also chooses stutter density, grain
-offset, and restore snap gain. The 8-bar arrangement and section roles are still
-scripted, including the arranged `pressure_lift`, `dropout_stutter`, and
-`restore_hit` slots. Treat it as smoke, regression, and diagnostic evidence: it
-proves the harness can render source-backed stems, apply visible source-aware
-pressure-lift/stutter/restore decisions, and reject known weak-output shapes. It
-does not yet prove fully source-aware production quality. The report must keep
+offset, and restore snap gain. A sibling `arrangement_policy` chooses the 8-bar
+role order from the same source family: dense breaks keep the classic
+hook/hook/chop/chop/pressure/pressure/dropout/restore arc, while sparse
+bass-pressure sources can move pressure earlier before returning to hook/chop
+contrast. The allowed role grammar is still scripted and bounded to
+`hook`, `chop`, `pressure`, `dropout`, and `restore`, so this remains smoke,
+regression, and diagnostic evidence. It proves the harness can render
+source-backed stems, apply visible source-aware pressure-lift/stutter/restore
+and arrangement decisions, and reject known weak-output shapes. It does not yet
+prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
@@ -90,16 +94,20 @@ just professional-output-suite-smoke
 
 The source-matrix smoke renders the same pro-pressure contract across multiple
 local examples (`Beat03`, `Beat08`, `Beat20`, and `DH_BeatC`) and writes
-`source-matrix-report.json` with per-source proof. This prevents Beat03 from
-being the only passing example while other local break sources quietly regress.
+`source-matrix-report.json` with per-source proof plus an `arrangement_summary`.
+The matrix now requires at least two distinct role-order signatures across
+source families and routes weak arrangement results to concrete fix categories.
+This prevents Beat03 from being the only passing example while other local
+break sources quietly regress or collapse back to one fixed arrangement.
 
 `professional-source-wav-pack-smoke` renders family-aware audible WAV packs for
 tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
 material must carry a `tonal_hook` pressure-lift policy and is allowed to keep
 the hook more readable, while sparse material must carry a
-`sparse_bass_pressure` pressure-lift policy and prove pressure stronger than the
-hook. Both cases still write `human_verdict: unverified`. Because these cases
-currently reuse the dense-break performance generator, they are cross-source
+`sparse_bass_pressure` pressure-lift policy, use a sparse-specific arrangement
+signature, and prove pressure stronger than the hook. Both cases still write
+`human_verdict: unverified`. Because these cases currently reuse the bounded
+performance generator and scripted role grammar, they are cross-source
 diagnostics rather than source-family quality proof.
 
 `non-dense-professional-proof-pack-smoke` adds a bounded bridge between the

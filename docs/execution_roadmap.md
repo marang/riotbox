@@ -634,8 +634,10 @@ following:
   must be allowed to choose different lift shapes, bass movement, drum pressure,
   source treatment, and destructive contrast
   - current P022 diagnostic coverage exposes a `pressure_lift_policy` for dense
-    break, tonal-hook, and sparse-bass-pressure sources while keeping the
-    arranged 8-bar slot scripted and `human_verdict: unverified`
+    break, tonal-hook, and sparse-bass-pressure sources plus a bounded
+    `arrangement_policy` that can produce different 8-bar role-order signatures
+    across source families; the role grammar remains scripted and
+    `human_verdict: unverified`
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present, but

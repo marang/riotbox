@@ -64,8 +64,11 @@ The suite also enforces the shared evidence-boundary contract. Current scripted
 diagnostics must report `quality_proof: false`; the suite must fail if any
 scripted child report claims product-quality proof. Source-backed diagnostics
 may report `source_backed: true` and `source_timing_backed: true`, but only as
-diagnostic evidence while the arrangement / mix decision is still scripted.
-Synthetic negative fixtures report `source_backed: false`.
+diagnostic evidence while the arrangement role grammar and mix recipe remain
+scripted. The pro-pressure source matrix now bubbles up arrangement-policy
+coverage through suite key metrics and requires at least two distinct role-order
+signatures across source families. Synthetic negative fixtures report
+`source_backed: false`.
 
 Run:
 
@@ -85,6 +88,8 @@ Boundary:
 - It can prove smoke, regression, and diagnostic behavior for the current
   scripted render path, but hardcoded or scripted audio generation is not
   technical or musical quality proof for the product.
+- It proves bounded source-aware arrangement-policy diversity across the current
+  matrix, while keeping the scripted role grammar visible.
 - It enforces machine-readable evidence fields: `evidence_role`,
   `source_backed`, `source_timing_backed`, `scripted_generation`,
   `quality_proof`, and `human_verdict`.

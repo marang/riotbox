@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from audio_qa_evidence_boundary import apply_evidence_boundary
+from route_weak_output_fixes import route_signals
 
 
 SCHEMA = "riotbox.pro_pressure_source_matrix.v1"
@@ -42,15 +43,19 @@ def main() -> int:
         cases.append(render_case(repo, output, args.date, case_id, source, bpm))
 
     failed = [case for case in cases if case["result"] != "pass"]
+    arrangements = arrangement_summary(cases)
     report = {
         "schema": SCHEMA,
         "schema_version": 1,
-        "result": "pass" if not failed else "fail",
-        "agent_verdict": "agent_promising" if not failed else "agent_weak",
+        "result": "pass" if not failed and not arrangements["failure_codes"] else "fail",
+        "agent_verdict": (
+            "agent_promising" if not failed and not arrangements["failure_codes"] else "agent_weak"
+        ),
         "human_verdict": "unverified",
         "case_count": len(cases),
         "passed_case_count": len(cases) - len(failed),
         "failed_case_count": len(failed),
+        "arrangement_summary": arrangements,
         "cases": cases,
     }
     apply_evidence_boundary(
@@ -60,16 +65,16 @@ def main() -> int:
         source_timing_backed=True,
         scripted_generation=True,
         notes=(
-            "Source-matrix renders the current scripted pro-pressure diagnostic "
-            "pack across multiple sources; it is cross-source diagnostic "
-            "evidence, not source-family quality proof."
+            "Source-matrix renders the current source-aware pro-pressure and "
+            "arrangement diagnostic pack across multiple sources; it proves "
+            "bounded arrangement-policy diversity, not source-family quality proof."
         ),
     )
     write_reports(output, report)
-    if failed:
+    if failed or arrangements["failure_codes"]:
         print(
             "pro-pressure source matrix failed: "
-            + ", ".join(case["case_id"] for case in failed),
+            + ", ".join([case["case_id"] for case in failed] + arrangements["failure_codes"]),
             file=sys.stderr,
         )
         return 1
@@ -138,6 +143,7 @@ def render_case(
         proof = case_report["proof"]
         metrics = case_report["metrics"]
         pressure_lift_policy = case_report["source_policy"]["pressure_lift_policy"]
+        arrangement_policy = case_report["source_policy"]["arrangement_policy"]
         case_summary = {
             "case_id": case_id,
             "source": source,
@@ -161,6 +167,16 @@ def render_case(
                 "pressure_lift_bar5_to_bar4_rms_ratio": proof[
                     "pressure_lift_bar5_to_bar4_rms_ratio"
                 ],
+                "arrangement_policy_decision_count": proof[
+                    "arrangement_policy_decision_count"
+                ],
+                "arrangement_pressure_role_count": proof[
+                    "arrangement_pressure_role_count"
+                ],
+                "arrangement_destructive_role_count": proof[
+                    "arrangement_destructive_role_count"
+                ],
+                "arrangement_failure_count": proof["arrangement_failure_count"],
             },
             "metrics": {
                 "chop_hook_dbfs": metrics["chop_hook"]["dbfs"],
@@ -171,6 +187,8 @@ def render_case(
                 "full_performance_peak_abs": metrics["full_performance"]["peak_abs"],
             },
             "pressure_lift_policy": pressure_lift_policy,
+            "arrangement_policy": arrangement_policy,
+            "arrangement_failure_codes": arrangement_failure_codes(arrangement_policy),
         }
         return apply_evidence_boundary(
             case_summary,
@@ -200,6 +218,70 @@ def render_case(
     )
 
 
+def arrangement_summary(cases: list[dict]) -> dict:
+    signatures = sorted(
+        {
+            str(object_or_empty(case.get("arrangement_policy")).get("role_order_signature", "unknown"))
+            for case in cases
+            if case.get("result") == "pass"
+        }
+    )
+    families = sorted(
+        {
+            str(object_or_empty(case.get("arrangement_policy")).get("source_family", "unknown"))
+            for case in cases
+            if case.get("result") == "pass"
+        }
+    )
+    failures = []
+    if len(signatures) < 2:
+        failures.append("arrangement_role_order_collapsed_across_source_families")
+    for case in cases:
+        for code in case.get("arrangement_failure_codes", []):
+            failures.append(f"{case['case_id']}:{code}")
+    return {
+        "unique_role_order_signature_count": len(signatures),
+        "role_order_signatures": signatures,
+        "source_families": families,
+        "failure_codes": failures,
+        "failure_routes": arrangement_failure_routes(failures),
+    }
+
+
+def arrangement_failure_codes(policy: dict) -> list[str]:
+    roles = list(object_or_empty(policy).get("role_order") or [])
+    failures = []
+    if len(roles) != 8:
+        failures.append("arrangement_role_order_not_8_bars")
+    for role in ("hook", "chop", "pressure", "dropout", "restore"):
+        if role not in roles:
+            failures.append(f"arrangement_missing_{role}_role")
+    if roles.count("pressure") < 2:
+        failures.append("arrangement_pressure_lift_too_short")
+    if roles[-2:] != ["dropout", "restore"]:
+        failures.append("arrangement_destructive_restore_tail_missing")
+    return failures
+
+
+def object_or_empty(value: object) -> dict:
+    return value if isinstance(value, dict) else {}
+
+
+def arrangement_failure_routes(failures: list[str]) -> list[dict[str, object]]:
+    routes = []
+    for code in failures:
+        route = route_signals([code], {}, [])
+        routes.append(
+            {
+                "failure_code": code,
+                "proposed_next_fix_category": route["proposed_next_fix_category"],
+                "proposed_fix_categories": route["proposed_fix_categories"],
+                "main_weakness": route["main_weakness"],
+            }
+        )
+    return routes
+
+
 def write_reports(output: Path, report: dict) -> None:
     (output / "source-matrix-report.json").write_text(json.dumps(report, indent=2) + "\n")
     lines = [
@@ -209,6 +291,7 @@ def write_reports(output: Path, report: dict) -> None:
         f"- Agent verdict: `{report['agent_verdict']}`",
         f"- Human verdict: `{report['human_verdict']}`",
         f"- Cases: `{report['passed_case_count']}/{report['case_count']}` passing",
+        f"- Arrangement signatures: `{report['arrangement_summary']['unique_role_order_signature_count']}`",
         "",
         "## Cases",
         "",
@@ -220,6 +303,22 @@ def write_reports(output: Path, report: dict) -> None:
         )
         if case["failure_codes"]:
             lines.append(f"  failure_codes: `{', '.join(case['failure_codes'])}`")
+        if case.get("arrangement_policy"):
+            lines.append(
+                "  arrangement: "
+                f"`{case['arrangement_policy']['role_order_signature']}` "
+                f"shape `{case['arrangement_policy']['arrangement_shape']}`"
+            )
+    lines.extend(["", "## Arrangement Summary", ""])
+    for signature in report["arrangement_summary"]["role_order_signatures"]:
+        lines.append(f"- `{signature}`")
+    if report["arrangement_summary"]["failure_codes"]:
+        lines.append("")
+        lines.append("Arrangement failure routes:")
+        for route in report["arrangement_summary"]["failure_routes"]:
+            lines.append(
+                f"- `{route['failure_code']}` -> `{route['proposed_next_fix_category']}`"
+            )
     lines.extend(
         [
             "",
