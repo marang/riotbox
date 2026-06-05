@@ -1,6 +1,7 @@
 #[derive(Clone, Copy, Debug, PartialEq)]
 struct Mc202BassPressureProof {
     applied: bool,
+    pressure_role: &'static str,
     mode: Mc202RenderMode,
     phrase_shape: Mc202PhraseShape,
     note_budget: Mc202NoteBudget,
@@ -10,8 +11,11 @@ struct Mc202BassPressureProof {
     identical_bar_run_length: usize,
     touch: f32,
     music_bus_level: f32,
+    pressure_reinforcement_gain: f32,
     signal_rms: f32,
     low_band_rms: f32,
+    low_to_mid_energy_ratio: f32,
+    low_to_high_energy_ratio: f32,
     active_sample_ratio: f32,
     peak_abs: f32,
     reason: &'static str,
@@ -50,6 +54,7 @@ struct Mc202SourceContourProof {
 struct ManifestMc202BassPressureProof {
     pattern_origin: &'static str,
     applied: bool,
+    pressure_role: &'static str,
     mode: &'static str,
     phrase_shape: &'static str,
     note_budget: &'static str,
@@ -60,8 +65,12 @@ struct ManifestMc202BassPressureProof {
     max_bar_similarity: f32,
     touch: f32,
     music_bus_level: f32,
+    pressure_reinforcement_gain: f32,
     signal_rms: f32,
     low_band_rms: f32,
+    low_to_mid_energy_ratio: f32,
+    low_to_high_energy_ratio: f32,
+    min_low_to_mid_energy_ratio: f32,
     active_sample_ratio: f32,
     peak_abs: f32,
     reason: &'static str,
@@ -87,6 +96,7 @@ struct ManifestMc202SourceContourProof {
 const MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY: f32 = 0.985;
 const MC202_BASS_PRESSURE_MIN_SIGNAL_RMS: f32 = 0.003;
 const MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS: f32 = 0.001;
+const MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO: f32 = 1.20;
 const MC202_SOURCE_CONTOUR_MIN_DELTA_RMS: f32 = 0.00025;
 
 fn manifest_mc202_bass_pressure_proof(
@@ -95,6 +105,7 @@ fn manifest_mc202_bass_pressure_proof(
     ManifestMc202BassPressureProof {
         pattern_origin: "primitive_renderer",
         applied: proof.applied,
+        pressure_role: proof.pressure_role,
         mode: proof.mode.label(),
         phrase_shape: proof.phrase_shape.label(),
         note_budget: proof.note_budget.label(),
@@ -105,8 +116,12 @@ fn manifest_mc202_bass_pressure_proof(
         max_bar_similarity: MC202_BASS_PRESSURE_MAX_BAR_SIMILARITY,
         touch: proof.touch,
         music_bus_level: proof.music_bus_level,
+        pressure_reinforcement_gain: proof.pressure_reinforcement_gain,
         signal_rms: proof.signal_rms,
         low_band_rms: proof.low_band_rms,
+        low_to_mid_energy_ratio: proof.low_to_mid_energy_ratio,
+        low_to_high_energy_ratio: proof.low_to_high_energy_ratio,
+        min_low_to_mid_energy_ratio: MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO,
         active_sample_ratio: proof.active_sample_ratio,
         peak_abs: proof.peak_abs,
         reason: proof.reason,
@@ -163,13 +178,33 @@ fn render_mc202_bass_pressure_with_source_contour(
             &control_state,
         );
     }
+    let pressure_reinforcement_gain = mc202_pressure_reinforcement_gain(
+        source_contour,
+        tr909_profile.support_profile,
+    );
+    add_mc202_pressure_reinforcement(
+        &mut samples,
+        grid,
+        source_contour,
+        pressure_reinforcement_gain,
+    );
 
     let metrics = render_metrics(&samples, grid);
     let low_band_metrics = metrics.low_band;
+    let low_to_mid_energy_ratio = band_ratio(
+        metrics.spectral_energy.low_band_energy_ratio,
+        metrics.spectral_energy.mid_band_energy_ratio,
+    );
+    let low_to_high_energy_ratio = band_ratio(
+        metrics.spectral_energy.low_band_energy_ratio,
+        metrics.spectral_energy.high_band_energy_ratio,
+    );
     let phrase_variation_applied = grid.bars > 1;
     let distinct_bar_profile_count = if phrase_variation_applied { 2 } else { 1 };
     let applied = metrics.signal.rms >= MC202_BASS_PRESSURE_MIN_SIGNAL_RMS
         && metrics.low_band.rms >= MC202_BASS_PRESSURE_MIN_LOW_BAND_RMS
+        && low_to_mid_energy_ratio >= MC202_BASS_PRESSURE_MIN_LOW_TO_MID_ENERGY_RATIO
+        && pressure_reinforcement_gain > 0.0
         && metrics.signal.peak_abs > 0.0;
     let active_sample_ratio = if samples.is_empty() {
         0.0
@@ -184,6 +219,11 @@ fn render_mc202_bass_pressure_with_source_contour(
         samples,
         Mc202BassPressureProof {
             applied,
+            pressure_role: if applied {
+                "bass_pressure_with_source_contour"
+            } else {
+                "bass_phrase_without_pressure"
+            },
             mode: primary_state.mode,
             phrase_shape: primary_state.phrase_shape,
             note_budget: primary_state.note_budget,
@@ -193,8 +233,11 @@ fn render_mc202_bass_pressure_with_source_contour(
             identical_bar_run_length: metrics.bar_variation.identical_bar_run_length,
             touch: primary_state.touch,
             music_bus_level: primary_state.music_bus_level,
+            pressure_reinforcement_gain,
             signal_rms: metrics.signal.rms,
             low_band_rms: low_band_metrics.rms,
+            low_to_mid_energy_ratio,
+            low_to_high_energy_ratio,
             active_sample_ratio,
             peak_abs: metrics.signal.peak_abs,
             reason: if applied {
@@ -222,6 +265,100 @@ fn render_mc202_bass_pressure_with_source_contour(
             },
         },
     )
+}
+
+fn band_ratio(numerator: f32, denominator: f32) -> f32 {
+    numerator / denominator.max(0.000_001)
+}
+
+fn mc202_pressure_reinforcement_gain(
+    source_contour: Mc202SourceContourProfile,
+    support_profile: Tr909SourceSupportProfile,
+) -> f32 {
+    let low_dominance = (source_contour.low_band_energy_ratio
+        - source_contour.mid_band_energy_ratio.max(source_contour.high_band_energy_ratio))
+    .max(0.0);
+    let profile_gain = match support_profile {
+        Tr909SourceSupportProfile::DropDrive => 0.024,
+        Tr909SourceSupportProfile::BreakLift => 0.014,
+        Tr909SourceSupportProfile::SteadyPulse => 0.018,
+    };
+    let contour_gain = match source_contour.contour_hint {
+        Mc202ContourHint::Drop => 0.018,
+        Mc202ContourHint::Lift => 0.010,
+        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 0.012,
+    };
+
+    (profile_gain + contour_gain + low_dominance * 0.020).clamp(0.010, 0.060)
+}
+
+fn add_mc202_pressure_reinforcement(
+    samples: &mut [f32],
+    grid: &Grid,
+    source_contour: Mc202SourceContourProfile,
+    gain: f32,
+) {
+    if gain <= 0.0 {
+        return;
+    }
+
+    let channel_count = usize::from(CHANNEL_COUNT);
+    let sample_rate = SAMPLE_RATE as f32;
+    let beat_frames = sample_rate * 60.0 / grid.bpm.max(1.0);
+    let base_frequency_hz = match source_contour.contour_hint {
+        Mc202ContourHint::Drop => 43.65,
+        Mc202ContourHint::Lift => 55.00,
+        Mc202ContourHint::Hold | Mc202ContourHint::Neutral => 49.00,
+    };
+    let low_source_weight = source_contour.low_band_energy_ratio.clamp(0.0, 1.0);
+
+    for bar in 0..grid.bars {
+        let bar_start_frame = grid.bar_start_frame(bar);
+        let bar_end_frame = grid.bar_end_frame(bar);
+        let bar_frames = bar_end_frame.saturating_sub(bar_start_frame);
+        if bar_frames == 0 {
+            continue;
+        }
+
+        for frame in 0..bar_frames {
+            let beat_in_bar = frame as f32 / beat_frames;
+            let pressure_envelope = pressure_pulse_envelope(beat_in_bar, low_source_weight);
+            if pressure_envelope <= 0.0 {
+                continue;
+            }
+
+            let phase =
+                (frame as f32 / sample_rate * base_frequency_hz * std::f32::consts::TAU).sin();
+            let bar_push = if bar.is_multiple_of(2) { 1.0 } else { 0.82 };
+            let sample = (phase * pressure_envelope * gain * bar_push).tanh();
+            let frame_start = (bar_start_frame + frame) * channel_count;
+            for channel in 0..channel_count {
+                samples[frame_start + channel] =
+                    (samples[frame_start + channel] + sample).clamp(-0.98, 0.98);
+            }
+        }
+    }
+}
+
+fn pressure_pulse_envelope(beat_in_bar: f32, low_source_weight: f32) -> f32 {
+    const PULSES: [f32; 4] = [0.0, 1.5, 2.0, 3.5];
+    PULSES
+        .iter()
+        .enumerate()
+        .filter_map(|(index, pulse_beat)| {
+            let distance = (beat_in_bar - pulse_beat).abs();
+            let width = if index.is_multiple_of(2) { 0.44 } else { 0.26 };
+            if distance > width {
+                return None;
+            }
+            let strength = if index.is_multiple_of(2) {
+                1.0
+            } else {
+                0.38 + low_source_weight * 0.22
+            };
+            Some((1.0 - distance / width).powf(2.4) * strength)
+        })
+        .fold(0.0, f32::max)
 }
 
 impl Mc202SourceContourProfile {

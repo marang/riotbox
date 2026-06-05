@@ -315,7 +315,7 @@ def render_performance(
         + bass_pressure * 1.76,
         1.58,
     )
-    pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.89)
+    pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
     restore_mix = glue_bus(
         source * 0.28
         + w30 * 1.76

@@ -312,6 +312,16 @@ fn validate_report(report: &PackReport) -> Result<(), Box<dyn std::error::Error>
         .into());
     }
 
+    if !report.mc202_bass_pressure.applied {
+        return Err(format!(
+            "MC-202 bass pressure was too weak: low-band RMS {:.6}, low/mid energy ratio {:.6}, reinforcement gain {:.6}",
+            report.mc202_bass_pressure.low_band_rms,
+            report.mc202_bass_pressure.low_to_mid_energy_ratio,
+            report.mc202_bass_pressure.pressure_reinforcement_gain
+        )
+        .into());
+    }
+
     if report.w30_source_grid_alignment.hit_ratio < SOURCE_GRID_OUTPUT_MIN_HIT_RATIO {
         return Err(format!(
             "W-30 source-grid alignment hit ratio {:.6} is below {:.6}",
