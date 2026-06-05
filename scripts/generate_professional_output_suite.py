@@ -12,6 +12,12 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from audio_qa_evidence_boundary import (
+    apply_evidence_boundary,
+    evidence_boundary_failure_codes,
+    extract_evidence_boundary,
+)
+
 
 SCHEMA = "riotbox.professional_output_suite.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-suite")
@@ -21,6 +27,7 @@ CHILDREN = {
     "professional_source_wav_pack": "riotbox.professional_source_wav_pack.v1",
     "professional_output_listening_pack": "riotbox.professional_output_listening_pack.v1",
     "destructive_variation": "riotbox.destructive_variation_professional.v1",
+    "rendered_weak_professional_outputs": "riotbox.rendered_weak_professional_outputs.v1",
 }
 
 
@@ -79,6 +86,7 @@ def render_children(repo: Path, output: Path, date: str) -> None:
     source_wav = output / "professional-source-wav-pack"
     listening = output / "professional-output-listening-pack"
     destructive = output / "destructive-variation"
+    rendered_weak = output / "rendered-weak-professional-outputs"
 
     run_or_exit(
         repo,
@@ -146,6 +154,16 @@ def render_children(repo: Path, output: Path, date: str) -> None:
         ],
         destructive / "suite-render.log",
     )
+    run_or_exit(
+        repo,
+        [
+            sys.executable,
+            "scripts/generate_rendered_weak_professional_outputs.py",
+            "--output",
+            str(rendered_weak),
+        ],
+        rendered_weak / "suite-render.log",
+    )
 
 
 def run_or_exit(repo: Path, command: list[str], log_path: Path) -> None:
@@ -182,13 +200,19 @@ def build_report(output: Path) -> dict[str, Any]:
             "destructive_variation",
             output / "destructive-variation" / "destructive-variation.json",
         ),
+        (
+            "rendered_weak_professional_outputs",
+            output
+            / "rendered-weak-professional-outputs"
+            / "rendered-weak-professional-outputs.json",
+        ),
     ]
     children = [summarize_child(child_id, path) for child_id, path in child_specs]
     identity = validate_listening_identity(
         output / "professional-output-listening-pack" / "professional-output-listening-pack.json"
     )
     failures = suite_failure_codes(children, identity)
-    return {
+    report = {
         "schema": SCHEMA,
         "schema_version": 1,
         "result": "pass" if not failures else "fail",
@@ -201,11 +225,22 @@ def build_report(output: Path) -> dict[str, Any]:
         "listening_identity": identity,
         "failure_codes": failures,
     }
+    return apply_evidence_boundary(
+        report,
+        evidence_role="suite_diagnostic",
+        source_backed=False,
+        source_timing_backed=False,
+        scripted_generation=True,
+        notes=(
+            "Suite aggregates professional-output diagnostics and enforces "
+            "evidence-boundary claims. It is not product-quality proof."
+        ),
+    )
 
 
 def summarize_child(child_id: str, path: Path) -> dict[str, Any]:
     if not path.is_file():
-        return {
+        missing = {
             "id": child_id,
             "schema": None,
             "result": "fail",
@@ -216,13 +251,22 @@ def summarize_child(child_id: str, path: Path) -> dict[str, Any]:
             "failure_codes": ["child_report_missing"],
             "key_metrics": {},
         }
+        return apply_evidence_boundary(
+            missing,
+            evidence_role="diagnostic",
+            source_backed=False,
+            source_timing_backed=False,
+            scripted_generation=True,
+        )
     data = read_json(path)
     expected_schema = CHILDREN[child_id]
-    failures = list(object_or_empty(data.get("failure_codes")).values())
+    failures = [str(code) for code in object_or_empty(data.get("failure_codes")).keys()]
     if isinstance(data.get("failure_codes"), list):
         failures = [str(code) for code in data["failure_codes"]]
     if data.get("schema") != expected_schema:
         failures.append("child_report_schema_mismatch")
+    failures.extend(evidence_boundary_failure_codes(data))
+    boundary = extract_evidence_boundary(data)
     return {
         "id": child_id,
         "schema": data.get("schema"),
@@ -233,6 +277,12 @@ def summarize_child(child_id: str, path: Path) -> dict[str, Any]:
         "report_sha256": sha256_file(path),
         "failure_codes": failures,
         "key_metrics": key_metrics(child_id, data),
+        "evidence_boundary": boundary,
+        "evidence_role": boundary.get("evidence_role"),
+        "source_backed": boundary.get("source_backed"),
+        "source_timing_backed": boundary.get("source_timing_backed"),
+        "scripted_generation": boundary.get("scripted_generation"),
+        "quality_proof": boundary.get("quality_proof"),
     }
 
 
@@ -283,6 +333,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
             "restore_to_pressure_rms_ratio": number(
                 metrics.get("restore_to_pressure_rms_ratio")
+            ),
+        }
+    if child_id == "rendered_weak_professional_outputs":
+        return {
+            "case_count": int(number(data.get("case_count"))),
+            "expected_fail_count": sum(
+                1
+                for case in list_or_empty(data.get("cases"))
+                if case.get("validator_result") == "expected_fail"
             ),
         }
     return {}
@@ -358,6 +417,12 @@ def suite_failure_codes(children: list[dict[str, Any]], identity: dict[str, Any]
             failures.append(f"{child_id}:agent_not_promising")
         if child["human_verdict"] != "unverified":
             failures.append(f"{child_id}:unexpected_human_verdict")
+        if child.get("quality_proof") is not False:
+            failures.append(f"{child_id}:quality_proof_not_false")
+        if child.get("scripted_generation") is not True:
+            failures.append(f"{child_id}:scripted_generation_not_true")
+        if not child.get("evidence_role"):
+            failures.append(f"{child_id}:evidence_role_missing")
         for code in child["failure_codes"]:
             failures.append(f"{child_id}:{code}")
     if identity["result"] != "pass":
@@ -409,6 +474,9 @@ def write_reports(output: Path, report: dict[str, Any]) -> None:
         f"- Result: `{report['result']}`",
         f"- Agent verdict: `{report['agent_verdict']}`",
         f"- Human verdict: `{report['human_verdict']}`",
+        f"- Evidence role: `{report['evidence_role']}`",
+        f"- Quality proof: `{str(report['quality_proof']).lower()}`",
+        f"- Scripted generation: `{str(report['scripted_generation']).lower()}`",
         f"- Child reports: `{report['passed_child_report_count']}/{report['child_report_count']}` passing",
         "",
         "## Child Reports",
@@ -417,7 +485,9 @@ def write_reports(output: Path, report: dict[str, Any]) -> None:
     for child in report["children"]:
         lines.append(
             f"- `{child['id']}`: `{child['result']}` "
-            f"schema `{child['schema']}` report `{child['report']}`"
+            f"schema `{child['schema']}` evidence `{child['evidence_role']}` "
+            f"quality_proof `{str(child['quality_proof']).lower()}` "
+            f"report `{child['report']}`"
         )
         if child["failure_codes"]:
             lines.append(f"  failure_codes: `{', '.join(child['failure_codes'])}`")
@@ -428,7 +498,8 @@ def write_reports(output: Path, report: dict[str, Any]) -> None:
             "",
             "This suite proves the current deterministic professional-output "
             "reports are present, fresh, hash-bound, and passing together. It "
-            "does not claim a human musical pass.",
+            "also proves scripted diagnostics do not claim quality proof. It "
+            "does not claim product quality or a human musical pass.",
         ]
     )
     (output / "README.md").write_text("\n".join(lines) + "\n")

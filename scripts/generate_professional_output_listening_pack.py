@@ -12,6 +12,8 @@ import sys
 from datetime import date
 from pathlib import Path
 
+from audio_qa_evidence_boundary import apply_evidence_boundary
+
 
 SCHEMA = "riotbox.professional_output_listening_pack.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-listening-pack")
@@ -63,6 +65,17 @@ def main() -> int:
         "case_count": len(review_cases),
         "cases": review_cases,
     }
+    apply_evidence_boundary(
+        report,
+        evidence_role="listening_review_scaffold",
+        source_backed=True,
+        source_timing_backed=True,
+        scripted_generation=True,
+        notes=(
+            "Listening pack scaffolds human review for scripted diagnostic "
+            "candidate renders. It does not convert candidates into quality proof."
+        ),
+    )
     write_reports(output, report)
     print(f"professional output listening pack written to {output}")
     return 0
@@ -128,7 +141,8 @@ def render_dense_case(repo: Path, output: Path, date: str) -> dict:
     ]
     run_or_exit(repo, command, case_dir / "listening-render.log")
     report = read_json(case_dir / "performance-report.json")
-    return {
+    return apply_evidence_boundary(
+        {
         "case_id": "dense_beat03_130",
         "source_family": "dense_break",
         "source": "data/test_audio/examples/Beat03_130BPM(Full).wav",
@@ -137,12 +151,18 @@ def render_dense_case(repo: Path, output: Path, date: str) -> dict:
         "source_report": str(case_dir / "performance-report.json"),
         "source_report_sha256": sha256_file(case_dir / "performance-report.json"),
         "expected": "Dense break should hit with clear chop hook, pressure lift, destructive stutter, and bigger restore.",
-    }
+        },
+        evidence_role="listening_review_scaffold",
+        source_backed=bool(report.get("source_backed")),
+        source_timing_backed=bool(report.get("source_timing_backed")),
+        scripted_generation=bool(report.get("scripted_generation")),
+    )
 
 
 def case_from_professional_report(base: Path, case: dict) -> dict:
     case_dir = base / case["case_id"]
-    return {
+    return apply_evidence_boundary(
+        {
         "case_id": case["case_id"],
         "source_family": case["source_family"],
         "source": case["source"],
@@ -151,7 +171,12 @@ def case_from_professional_report(base: Path, case: dict) -> dict:
         "source_report": str(case_dir / "performance-report.json"),
         "source_report_sha256": sha256_file(case_dir / "performance-report.json"),
         "expected": expected_for_family(case["source_family"]),
-    }
+        },
+        evidence_role="listening_review_scaffold",
+        source_backed=bool(case.get("source_backed", True)),
+        source_timing_backed=bool(case.get("source_timing_backed", True)),
+        scripted_generation=bool(case.get("scripted_generation", True)),
+    )
 
 
 def expected_for_family(source_family: str) -> str:
@@ -194,7 +219,7 @@ def create_review_pack(
     review = read_json(review_path)
     review["audio_judge_label"] = build_audio_judge_label(output, case, label_created_at)
     review_path.write_text(json.dumps(review, indent=2) + "\n")
-    return {
+    case_summary = {
         **case,
         "review": str(review_path),
         "review_sha256": sha256_file(review_path),
@@ -202,6 +227,13 @@ def create_review_pack(
         "human_verdict": review["human_verdict"],
         "review_artifacts": review["artifacts"],
     }
+    return apply_evidence_boundary(
+        case_summary,
+        evidence_role="listening_review_scaffold",
+        source_backed=bool(case.get("source_backed")),
+        source_timing_backed=bool(case.get("source_timing_backed")),
+        scripted_generation=bool(case.get("scripted_generation")),
+    )
 
 
 def build_audio_judge_label(output: Path, case: dict, label_created_at: str) -> dict:

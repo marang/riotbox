@@ -31,6 +31,19 @@ Generated artifacts:
 - `visuals/*.spectrogram.png`
 - `README.md`
 
+The JSON reports expose the shared evidence boundary:
+
+```json
+{
+  "evidence_role": "diagnostic",
+  "source_backed": true,
+  "source_timing_backed": true,
+  "scripted_generation": true,
+  "quality_proof": false,
+  "human_verdict": "unverified"
+}
+```
+
 The report emits `agent_verdict: agent_promising` only when the pack avoids the
 known bad-output modes for this Golden Path: weak W-30 hook presence, missing
 bass-pressure lift, weak dropout/stutter contrast, weak restore transient,
@@ -43,7 +56,12 @@ louder than the hook, and the restore hit must be bigger than the pressure
 section. This keeps the Golden Path aimed at a room-moving source-backed
 instrument instead of a technically valid but underpowered fixture.
 
-`agent_promising` is not a final musical pass. The report must keep
+`agent_promising` is not a final musical pass, and this pack is not technical or
+musical quality proof for the product. The current pack still contains scripted
+arrangement behavior, including fixed section roles such as `pressure_lift`.
+Treat it as smoke, regression, and diagnostic evidence: it proves the harness
+can render source-backed stems and reject known weak-output shapes, not that the
+generator has made a source-aware production decision. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
@@ -57,6 +75,7 @@ just pro-pressure-source-matrix-smoke
 just professional-source-wav-pack-smoke
 just professional-output-listening-pack-smoke
 just destructive-variation-professional-smoke
+just rendered-weak-professional-output-fixtures
 just professional-output-suite-smoke
 ```
 
@@ -69,7 +88,9 @@ being the only passing example while other local break sources quietly regress.
 tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
 material is allowed to keep the hook stronger than the pressure section, while
 sparse material must prove pressure stronger than the hook. Both cases still
-write `human_verdict: unverified`.
+write `human_verdict: unverified`. Because these cases currently reuse the
+dense-break performance generator, they are cross-source diagnostics rather than
+source-family quality proof.
 
 `professional-output-listening-pack-smoke` prepares structured human-review
 packs for dense, tonal, and sparse professional-output WAVs. It records candidate
@@ -88,3 +109,9 @@ the central deterministic status surface for dense-break, pro-pressure source
 matrix, tonal/sparse WAV packs, structured listening packs, and destructive
 variation proof. It checks child report hashes and listening-pack file identity,
 but still keeps `human_verdict: unverified`.
+
+`rendered-weak-professional-output-fixtures` adds a rendered negative example:
+real WAV files for a dense/destructive flat-stutter case whose metrics prove the
+stutter is too flat and the restore is too weak. The destructive variation gate
+must reject that case, so a hand-written JSON-only negative is no longer the
+only weak-output proof.
