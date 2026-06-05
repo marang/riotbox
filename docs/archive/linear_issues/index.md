@@ -1066,4 +1066,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add weak-output failure-to-fix routing
 - [RIOTBOX-1202.md](./RIOTBOX-1202.md)
   Define 10/10 sound-product readiness rubric
+- [RIOTBOX-1204.md](./RIOTBOX-1204.md)
+  Create release-grade musician demo bank
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
