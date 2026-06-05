@@ -51,6 +51,13 @@ variation to avoid a static loop, transformed source presence instead of source
 copy or fallback collapse, and TR-909/MC-202 support that backs the riff without
 replacing it. Passing it still means `human_verdict: unverified`.
 
+As of RIOTBOX-1211, `non-dense-professional-proof-pack-smoke` binds the tonal
+and sparse professional fixture reports to rendered Professional Source WAV
+artifacts and review prompts. This makes tonal-hook and sparse-bass-pressure
+coverage visible in the Professional Output Suite without claiming product
+quality: these reports remain diagnostic, scripted-generation evidence with
+`quality_proof: false`.
+
 Current negative fixture families:
 
 - `invalid_static`: rejects static loop movement.
