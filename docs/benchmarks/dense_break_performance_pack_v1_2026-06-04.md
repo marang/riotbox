@@ -57,11 +57,15 @@ section. This keeps the Golden Path aimed at a room-moving source-backed
 instrument instead of a technically valid but underpowered fixture.
 
 `agent_promising` is not a final musical pass, and this pack is not technical or
-musical quality proof for the product. The current pack still contains scripted
-arrangement behavior, including fixed section roles such as `pressure_lift`.
-Treat it as smoke, regression, and diagnostic evidence: it proves the harness
-can render source-backed stems and reject known weak-output shapes, not that the
-generator has made a source-aware production decision. The report must keep
+musical quality proof for the product. The current pack now records a bounded
+`source_policy` decision object: source low-band, high-band, and transient
+profile choose pressure shape, bass frequencies, stutter density, grain offset,
+and restore snap gain. The 8-bar arrangement and section roles are still
+scripted, including the fixed `pressure_lift`, `dropout_stutter`, and
+`restore_hit` slots. Treat it as smoke, regression, and diagnostic evidence: it
+proves the harness can render source-backed stems, apply visible source-aware
+pressure/stutter/restore decisions, and reject known weak-output shapes. It does
+not yet prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
