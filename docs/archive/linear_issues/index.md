@@ -1088,4 +1088,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add pad/noise source-family policy instead of dense-break promotion
 - [RIOTBOX-1220.md](./RIOTBOX-1220.md)
   Add bad-timing cautious arrangement policy and user cue proof
+- [RIOTBOX-1221.md](./RIOTBOX-1221.md)
+  Add source-derived bass-pressure movement proof for sparse sources
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
