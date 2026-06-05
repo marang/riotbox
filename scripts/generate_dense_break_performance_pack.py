@@ -12,7 +12,7 @@ import subprocess
 import sys
 import wave
 import zlib
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from audio_qa_evidence_boundary import apply_evidence_boundary
@@ -53,6 +53,25 @@ class AudioMetrics:
     low_band_rms: float
     high_band_ratio: float
     transient_score: float
+
+
+@dataclass(frozen=True)
+class DenseBreakSourcePolicy:
+    source_aware: bool
+    pressure_shape: str
+    stutter_density: str
+    restore_hit_shape: str
+    bass_bar4_frequency_hz: float
+    bass_bar5_frequency_hz: float
+    bass_restore_frequency_hz: float
+    pressure_gain: float
+    bass_gain: float
+    stutter_step_divisor: int
+    stutter_grain_beat_offset: float
+    restore_snap_gain: float
+    source_low_band_rms: float
+    source_high_band_ratio: float
+    source_transient_score: float
 
 
 def main() -> int:
@@ -120,11 +139,13 @@ def main() -> int:
     mc202 = apply_gain(mc202[:frame_count], 1.35)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
+    source_policy = dense_break_source_policy(source_audio, bar_frames)
     performance, sections = render_performance(
         source_audio,
         tr909,
         w30,
         mc202,
+        source_policy,
         bar_frames,
         args.bars,
     )
@@ -165,6 +186,7 @@ def main() -> int:
         tr909,
         w30,
         mc202,
+        source_policy,
         performance,
         sections,
         bar_frames,
@@ -265,18 +287,86 @@ def render_feral_grid_pack(
         raise SystemExit(f"feral_grid_pack failed; see {output / 'render.log'}")
 
 
+def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreakSourcePolicy:
+    first_two_bars = source[: min(2 * bar_frames, source.shape[0])]
+    profile = audio_metrics(first_two_bars)
+    low_drive = float(np.clip(profile.low_band_rms / 0.040, 0.0, 2.0))
+    transient_drive = float(np.clip(profile.transient_score / 0.028, 0.0, 2.0))
+    bright_drive = float(np.clip(profile.high_band_ratio / 0.080, 0.0, 2.0))
+
+    if transient_drive >= 1.08:
+        pressure_shape = "transient-forward break pressure"
+        stutter_density = "tight sixteenth stutter"
+        restore_hit_shape = "hard transient restore"
+        stutter_step_divisor = 16
+        stutter_grain_beat_offset = 0.50
+        restore_snap_gain = 1.10
+    elif low_drive >= 1.08:
+        pressure_shape = "low-band shove"
+        stutter_density = "wide eighth stutter"
+        restore_hit_shape = "bass-weighted restore"
+        stutter_step_divisor = 12
+        stutter_grain_beat_offset = 1.00
+        restore_snap_gain = 0.98
+    else:
+        pressure_shape = "thin-source support lift"
+        stutter_density = "busy recovery stutter"
+        restore_hit_shape = "snap-assisted restore"
+        stutter_step_divisor = 18
+        stutter_grain_beat_offset = 0.25
+        restore_snap_gain = 1.18
+
+    if bright_drive >= 1.10:
+        bass_bar4 = 42.0
+        bass_bar5 = 49.0
+        bass_restore = 51.5
+        pressure_gain = 1.08
+        bass_gain = 1.08
+    elif low_drive >= 1.10:
+        bass_bar4 = 38.0
+        bass_bar5 = 45.0
+        bass_restore = 48.0
+        pressure_gain = 0.94
+        bass_gain = 0.94
+    else:
+        bass_bar4 = 45.0
+        bass_bar5 = 58.0
+        bass_restore = 51.5
+        pressure_gain = 1.02
+        bass_gain = 1.00
+
+    return DenseBreakSourcePolicy(
+        source_aware=True,
+        pressure_shape=pressure_shape,
+        stutter_density=stutter_density,
+        restore_hit_shape=restore_hit_shape,
+        bass_bar4_frequency_hz=bass_bar4,
+        bass_bar5_frequency_hz=bass_bar5,
+        bass_restore_frequency_hz=bass_restore,
+        pressure_gain=pressure_gain,
+        bass_gain=bass_gain,
+        stutter_step_divisor=stutter_step_divisor,
+        stutter_grain_beat_offset=stutter_grain_beat_offset,
+        restore_snap_gain=restore_snap_gain,
+        source_low_band_rms=profile.low_band_rms,
+        source_high_band_ratio=profile.high_band_ratio,
+        source_transient_score=profile.transient_score,
+    )
+
+
 def render_performance(
     source: np.ndarray,
     tr909: np.ndarray,
     w30: np.ndarray,
     mc202: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
     bar_frames: int,
     bars: int,
 ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     performance = np.zeros_like(source)
     hook_riff = render_w30_hook_riff_layer(w30, source, bar_frames, bars)
     break_snap = render_break_snap_layer(source, tr909, w30, bar_frames, bars)
-    bass_pressure = render_bass_pressure_layer(source, bar_frames, bars)
+    bass_pressure = render_bass_pressure_layer(source, source_policy, bar_frames, bars)
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -309,10 +399,10 @@ def render_performance(
         source * 0.06
         + w30 * 0.84
         + hook_riff * 0.70
-        + tr909 * 2.78
+        + tr909 * (2.52 + source_policy.pressure_gain * 0.26)
         + break_snap * 1.55
-        + mc202 * 6.65
-        + bass_pressure * 1.76,
+        + mc202 * (5.75 + source_policy.pressure_gain * 0.90)
+        + bass_pressure * (1.42 + source_policy.bass_gain * 0.34),
         1.58,
     )
     pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
@@ -342,6 +432,7 @@ def render_performance(
         mc202,
         hook_riff,
         break_snap,
+        source_policy,
         bar_frames,
         source_bar=6,
     )
@@ -357,6 +448,7 @@ def render_performance(
             w30,
             mc202,
             tr909,
+            source_policy,
             7 * bar_frames,
             bar_frames,
         ),
@@ -379,6 +471,7 @@ def render_dropout_stutter_bar(
     mc202: np.ndarray,
     hook_riff: np.ndarray,
     break_snap: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
     bar_frames: int,
     source_bar: int,
 ) -> np.ndarray:
@@ -401,7 +494,8 @@ def render_dropout_stutter_bar(
     bar[:dropout_end] *= 0.015
 
     grain_len = max(128, bar_frames // 32)
-    grain_source_start = source_start + bar_frames // 8
+    beat_frames = max(1, bar_frames // BEATS_PER_BAR)
+    grain_source_start = source_start + int(round(source_policy.stutter_grain_beat_offset * beat_frames))
     grain_source_end = min(grain_source_start + grain_len, w30.shape[0])
     if grain_source_end <= grain_source_start:
         return bar
@@ -411,15 +505,15 @@ def render_dropout_stutter_bar(
     source_snap_grain *= impact_envelope(source_snap_grain.shape[0], decay=0.040)[:, None]
     source_snap_grain = normalize_peak(source_snap_grain, 0.78)
 
-    step = max(1, bar_frames // 16)
+    step = max(1, bar_frames // source_policy.stutter_step_divisor)
     for index, target in enumerate(range(dropout_end, bar_frames - grain.shape[0], step)):
         decay = 1.0 - min(index, 7) * 0.07
         accent = tr909[min(source_start + target, tr909.shape[0] - 1)]
         end = target + grain.shape[0]
         riff = hook_riff[min(source_start + target, hook_riff.shape[0] - 1)]
         snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
-        bar[target:end] += grain * (3.15 * decay)
-        bar[target:end] += source_snap_grain[: end - target] * (2.05 * decay)
+        bar[target:end] += grain * (3.15 * decay * source_policy.pressure_gain)
+        bar[target:end] += source_snap_grain[: end - target] * (2.05 * decay * source_policy.restore_snap_gain)
         bar[target : min(target + 96, bar.shape[0])] += accent * (0.58 * decay)
         bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.02 * decay)
 
@@ -513,9 +607,19 @@ def render_break_snap_layer(
     return normalize_peak(saturate(layer, 1.80), 0.82)
 
 
-def render_bass_pressure_layer(source: np.ndarray, bar_frames: int, bars: int) -> np.ndarray:
+def render_bass_pressure_layer(
+    source: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
+    bar_frames: int,
+    bars: int,
+) -> np.ndarray:
     layer = np.zeros_like(source)
     total_frames = source.shape[0]
+    frequencies = {
+        4: source_policy.bass_bar4_frequency_hz,
+        5: source_policy.bass_bar5_frequency_hz,
+        7: source_policy.bass_restore_frequency_hz,
+    }
     for bar in (4, 5, 7):
         bar_start = bar * bar_frames
         if bar_start >= total_frames:
@@ -523,7 +627,7 @@ def render_bass_pressure_layer(source: np.ndarray, bar_frames: int, bars: int) -
         bar_end = min(bar_start + bar_frames, total_frames)
         frames = bar_end - bar_start
         t = np.arange(frames, dtype=np.float32) / SAMPLE_RATE
-        base_frequency = 45.0 if bar == 4 else (51.5 if bar == 7 else 58.0)
+        base_frequency = frequencies[bar]
         sine = np.sin(2.0 * np.pi * base_frequency * t).astype(np.float32)
         harmonic = np.sin(2.0 * np.pi * base_frequency * 2.0 * t).astype(np.float32)
         envelope = np.zeros(frames, dtype=np.float32)
@@ -537,7 +641,11 @@ def render_bass_pressure_layer(source: np.ndarray, bar_frames: int, bars: int) -
             punch = np.exp(-beat_t * (5.4 if beat in (0, 2) else 7.2))
             envelope[start:end] += punch * (1.0 if beat in (0, 2) else 0.62)
         source_drive = low_band_rms(source[bar_start:bar_end]) / 0.10
-        gain = float(np.clip(source_drive, 0.44, 1.24)) * (0.305 if bar != 7 else 0.245)
+        gain = (
+            float(np.clip(source_drive, 0.44, 1.24))
+            * source_policy.bass_gain
+            * (0.305 if bar != 7 else 0.245)
+        )
         mono = (sine + harmonic * 0.18) * np.clip(envelope, 0.0, 1.0) * gain
         layer[bar_start:bar_end, 0] = mono
         layer[bar_start:bar_end, 1] = mono * 0.98
@@ -550,6 +658,7 @@ def restore_with_hit(
     w30: np.ndarray,
     mc202: np.ndarray,
     tr909: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
     start: int,
     bar_frames: int,
 ) -> np.ndarray:
@@ -563,7 +672,7 @@ def restore_with_hit(
     snap = transient_emphasis(source_hit)
     restored[start : start + hit_frames] += (
         source_hit * 1.35
-        + snap * 4.80
+        + snap * (4.80 * source_policy.restore_snap_gain)
         + w30[start : start + hit_frames] * 2.62
         + mc202[start : start + hit_frames] * 4.05
         + tr909[start : start + hit_frames] * 3.45
@@ -581,6 +690,7 @@ def build_report(
     tr909: np.ndarray,
     w30: np.ndarray,
     mc202: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
     performance: np.ndarray,
     sections: dict[str, np.ndarray],
     bar_frames: int,
@@ -596,7 +706,16 @@ def build_report(
         "dropout_stutter": metrics_to_json(audio_metrics(sections["dropout_stutter"])),
         "restore_hit": metrics_to_json(audio_metrics(sections["restore_hit"])),
     }
-    proof = performance_proof(source_audio, tr909, w30, mc202, performance, sections, bar_frames)
+    proof = performance_proof(
+        source_audio,
+        tr909,
+        w30,
+        mc202,
+        source_policy,
+        performance,
+        sections,
+        bar_frames,
+    )
     failure_codes = failure_codes_for(metrics, proof)
     verdict = "agent_promising" if not failure_codes else "agent_fail"
     if failure_codes and len(failure_codes) <= 2:
@@ -638,6 +757,15 @@ def build_report(
                 "intent": "snare/break transient and bass pressure land together",
             },
         ],
+        "source_policy": {
+            "source_aware": source_policy.source_aware,
+            "decisions": asdict(source_policy),
+            "scripted_boundaries": [
+                "8-bar section order remains fixed",
+                "section roles remain fixed: hook, chop, pressure, dropout, restore",
+                "human_verdict remains unverified until structured listening review",
+            ],
+        },
         "thresholds": {
             "min_w30_to_source_rms_ratio": MIN_W30_TO_SOURCE_RMS_RATIO,
             "min_pressure_low_band_lift_ratio": MIN_PRESSURE_LOW_BAND_LIFT_RATIO,
@@ -666,9 +794,10 @@ def build_report(
         source_timing_backed=True,
         scripted_generation=True,
         notes=(
-            "Dense-break render uses source-backed stems and source timing, but "
-            "the current section arrangement and mix recipe are scripted; this "
-            "is smoke/regression/diagnostic evidence, not product-quality proof."
+            "Dense-break render uses source-backed stems, source timing, and a "
+            "bounded source-aware pressure/stutter/restore policy, but the "
+            "8-bar section arrangement remains scripted; this is smoke/"
+            "regression/diagnostic evidence, not product-quality proof."
         ),
     )
 
@@ -678,6 +807,7 @@ def performance_proof(
     tr909: np.ndarray,
     w30: np.ndarray,
     mc202: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
     performance: np.ndarray,
     sections: dict[str, np.ndarray],
     bar_frames: int,
@@ -717,6 +847,10 @@ def performance_proof(
         "hook_to_source_transient_ratio": hook_transient / max(transient_score(source), 1e-9),
         "pressure_to_hook_rms_ratio": pressure_rms / max(hook_rms, 1e-9),
         "restore_to_pressure_rms_ratio": restore_rms / max(pressure_rms, 1e-9),
+        "source_policy_decision_count": 8.0 if source_policy.source_aware else 0.0,
+        "source_policy_pressure_gain": source_policy.pressure_gain,
+        "source_policy_bass_gain": source_policy.bass_gain,
+        "source_policy_stutter_step_divisor": float(source_policy.stutter_step_divisor),
     }
 
 
