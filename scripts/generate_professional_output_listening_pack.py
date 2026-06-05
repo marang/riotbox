@@ -9,6 +9,7 @@ import json
 import shutil
 import subprocess
 import sys
+from datetime import date
 from pathlib import Path
 
 
@@ -22,6 +23,7 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--professional-wav-pack", type=Path, default=DEFAULT_PROFESSIONAL_WAV_PACK)
     parser.add_argument("--date", default="local-professional-output-listening-pack")
+    parser.add_argument("--label-created-at")
     parser.add_argument("--ticket", default="RIOTBOX-1197")
     parser.add_argument("--reuse-professional-wav-pack", action="store_true")
     parser.add_argument("--keep-output", action="store_true")
@@ -47,8 +49,9 @@ def main() -> int:
         for case in professional_report["cases"]
     ]
 
+    label_created_at = args.label_created_at or date.today().isoformat()
     review_cases = [
-        create_review_pack(repo, output, args.ticket, case)
+        create_review_pack(repo, output, args.ticket, case, label_created_at)
         for case in cases
     ]
     report = {
@@ -159,7 +162,13 @@ def expected_for_family(source_family: str) -> str:
     return "Review whether the generated audio has source character, hook, and stage-meaningful impact."
 
 
-def create_review_pack(repo: Path, output: Path, ticket: str, case: dict) -> dict:
+def create_review_pack(
+    repo: Path,
+    output: Path,
+    ticket: str,
+    case: dict,
+    label_created_at: str,
+) -> dict:
     review_dir = output / "reviews" / case["case_id"]
     command = [
         sys.executable,
@@ -183,6 +192,8 @@ def create_review_pack(repo: Path, output: Path, ticket: str, case: dict) -> dic
     run_or_exit(repo, command, review_dir / "listening-pack.log")
     review_path = review_dir / "review.json"
     review = read_json(review_path)
+    review["audio_judge_label"] = build_audio_judge_label(output, case, label_created_at)
+    review_path.write_text(json.dumps(review, indent=2) + "\n")
     return {
         **case,
         "review": str(review_path),
@@ -191,6 +202,87 @@ def create_review_pack(repo: Path, output: Path, ticket: str, case: dict) -> dic
         "human_verdict": review["human_verdict"],
         "review_artifacts": review["artifacts"],
     }
+
+
+def build_audio_judge_label(output: Path, case: dict, label_created_at: str) -> dict:
+    source_report = Path(case["source_report"])
+    source_report_data = read_json(source_report)
+    files = source_report_data["files"]
+    source_window = source_report.parent / files["source_window"]
+    full_performance = Path(case["candidate"])
+    agent_review = source_report.with_name("agent-review.json")
+    require_file(source_report)
+    require_file(agent_review)
+    require_file(source_window)
+    require_file(full_performance)
+    tags = reason_tags_for_family(case["source_family"])
+    return {
+        "created_at": label_created_at,
+        "source_family": case["source_family"],
+        "source_id": case["case_id"],
+        "review_pack_schema": SCHEMA,
+        "review_pack_id": f"{output.name}:{case['case_id']}",
+        "artifact_identity": {
+            "performance_report_sha256": sha256_file(source_report),
+            "agent_review_sha256": sha256_file(agent_review),
+            "audio_sha256": {
+                "source_window": sha256_file(source_window),
+                "full_performance": sha256_file(full_performance),
+            },
+        },
+        "artifact_paths": {
+            "performance_report": str(source_report),
+            "agent_review": str(agent_review),
+            "audio": {
+                "source_window": str(source_window),
+                "full_performance": str(full_performance),
+            },
+        },
+        "reason_tags": tags,
+        "summary": default_label_summary(case["source_family"]),
+    }
+
+
+def reason_tags_for_family(source_family: str) -> dict:
+    if source_family == "sparse_bass_pressure":
+        return {
+            "hook_clarity": "weak",
+            "hardest_hit": "bass",
+            "bass_pressure": "strong",
+            "destructive_contrast": "present",
+            "source_character": "source_transformed_but_present",
+            "replay_value_after_eight_bars": "medium",
+        }
+    if source_family == "tonal_hook":
+        return {
+            "hook_clarity": "clear",
+            "hardest_hit": "chop",
+            "bass_pressure": "present",
+            "destructive_contrast": "present",
+            "source_character": "source_transformed_but_present",
+            "replay_value_after_eight_bars": "high",
+        }
+    return {
+        "hook_clarity": "clear",
+        "hardest_hit": "break_transient",
+        "bass_pressure": "present",
+        "destructive_contrast": "strong",
+        "source_character": "source_transformed_but_present",
+        "replay_value_after_eight_bars": "high",
+    }
+
+
+def default_label_summary(source_family: str) -> str:
+    if source_family == "sparse_bass_pressure":
+        return "Professional sparse-bass output review with bass pressure as the main judgment target."
+    if source_family == "tonal_hook":
+        return "Professional tonal-hook output review with W-30 chop identity as the main judgment target."
+    return "Professional dense-break output review with hook, pressure, destructive contrast, and restore impact as the judgment targets."
+
+
+def require_file(path: Path) -> None:
+    if not path.is_file():
+        raise SystemExit(f"missing required review artifact: {path}")
 
 
 def run_or_exit(repo: Path, command: list[str], log_path: Path) -> None:

@@ -24,10 +24,17 @@ The suite also verifies the structured listening pack identity:
 - source-report hashes match the source reports beside the rendered WAVs
 - dense, tonal, and sparse source families are all present
 
+Professional listening reviews also carry `audio_judge_label` metadata for later
+human verdict import. The metadata records source family/id, review-pack schema,
+performance-report hash, agent-review hash, source/full-performance audio
+hashes, artifact paths, and reason-tag defaults. Import still requires a recorded
+human verdict; unverified packs must not become taste labels.
+
 Run:
 
 ```bash
 just professional-output-suite-smoke
+just professional-output-listening-verdict-import-fixtures
 ```
 
 Boundary:

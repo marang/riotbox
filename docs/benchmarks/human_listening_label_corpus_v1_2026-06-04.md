@@ -34,9 +34,16 @@ hashes, created date, and reason tags. The importer maps
 and `inconclusive -> inconclusive`; it rejects `unverified` reviews and missing
 metadata.
 
+Professional-output listening packs now generate that metadata beside each
+review. When `--require-artifact-hashes` is passed, the importer also resolves
+the metadata `artifact_paths` and rejects stale or missing performance-report,
+agent-review, source-window, or full-performance hashes before producing a label
+corpus entry.
+
 Run:
 
 ```bash
 just human-listening-label-corpus-fixtures
 just listening-review-label-import-fixtures
+just professional-output-listening-verdict-import-fixtures
 ```
