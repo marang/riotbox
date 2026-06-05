@@ -1076,4 +1076,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Replace pressure_lift fixed recipe with source-aware lift policy
 - [RIOTBOX-1214.md](./RIOTBOX-1214.md)
   Promote source-backed human passes into demo-bank entries
+- [RIOTBOX-1215.md](./RIOTBOX-1215.md)
+  Add pad/noise and bad-timing professional-output diagnostics
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
