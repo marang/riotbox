@@ -1068,4 +1068,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Define 10/10 sound-product readiness rubric
 - [RIOTBOX-1204.md](./RIOTBOX-1204.md)
   Create release-grade musician demo bank
+- [RIOTBOX-1210.md](./RIOTBOX-1210.md)
+  Capture 20/10 sound-product future ideas
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
