@@ -2054,3 +2054,17 @@ Why: a wrong downbeat is musically worse than an honest caution path. Riotbox sh
 Evidence: RIOTBOX-1220 updates the dense-break performance generator to accept source-timing confidence, routes the bad-timing edge case into `bad_timing`, adds edge-source diagnostics and negative fixtures for missing cautious policy / bad bar-lock allowance, and surfaces the family in the professional-output suite key metrics.
 Consequences: future bad-timing work should improve source-aware confirmation, user cueing, and safe destructive/cut behavior behind this policy. Passing the edge diagnostic remains smoke/regression evidence only; it must keep `quality_proof: false` and `human_verdict: unverified`.
 Status: accepted
+
+---
+
+### RBX-072
+
+Date: 2026-06-05
+Topic: Sparse bass-pressure movement must be source-derived before it can count as stronger P022 evidence
+Phase: P022 / Professional Sound Output
+Question: may sparse-bass pressure keep using only fixed frequency contours while claiming source-aware production movement?
+Decision: no. Sparse-bass-pressure diagnostics now derive bass-pressure movement from the source low-band envelope and timing centroid, then report whether the movement is source-derived, how far it moved away from the old fixed contour, and how much frequency span the pressure gesture covers. Sparse reports must fail when the movement collapses back to the fixed contour or lacks variation.
+Why: the prior sparse path could sound more like a hardcoded melodic contour than bass pressure that reacts to the source groove. Riotbox needs bass pressure that shoves with the input material, not just a label on a fixed MC-202 gesture.
+Evidence: RIOTBOX-1221 adds source-derived sparse bass movement to the dense-break performance generator, surfaces the proof in the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds a negative fixture that mutates the sparse report back to fixed movement.
+Consequences: this is a stronger diagnostic step toward source-aware production behavior, but it remains scripted render evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should replace more hook/chop and pad/noise behavior with source-derived decisions and collect listening verdicts before claiming product quality.
+Status: accepted

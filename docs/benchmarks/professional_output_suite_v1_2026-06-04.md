@@ -79,6 +79,14 @@ the matrix and professional-source WAV pack so the suite can prove that
 source-layer-off renders remain audible, transformed, and not source-masked.
 Synthetic negative fixtures report `source_backed: false`.
 
+The suite now also bubbles up sparse-bass movement proof from the pro-pressure
+source matrix and professional-source WAV pack. Sparse-bass cases must expose
+source-derived bass movement, non-zero distance from the old fixed contour, and
+enough frequency span to show pressure motion instead of a collapsed static
+recipe. This keeps the aggregate status honest about the current step from
+scripted pressure recipes toward source-aware production behavior, while still
+keeping `quality_proof: false`.
+
 Run:
 
 ```bash

@@ -87,6 +87,16 @@ not yet prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
+For sparse-bass-pressure sources, the bass-pressure render now derives its
+pressure/restore frequencies from the source low-band envelope and timing
+centroid instead of using only the fixed policy contour. The report exposes
+`bass_movement_source_derived`,
+`sparse_bass_movement_static_distance_hz`, and
+`sparse_bass_movement_frequency_span_hz`; sparse reports must fail if movement
+collapses back to the old fixed contour or does not vary enough. This is still a
+bounded diagnostic proof, not a claim that the bass-pressure line is musically
+approved.
+
 `dense-break-performance-pack-smoke` validates the generated report and mutates
 it as negative rebuild-only fixtures. The smoke must fail if rebuild-only RMS is
 zeroed, if rebuild-only/source correlation is pushed into source-masked

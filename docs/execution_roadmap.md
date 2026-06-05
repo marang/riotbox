@@ -643,6 +643,10 @@ following:
     source correlation, and distinct source-on/source-off output; this proves
     the current diagnostic render is not passing only because raw source bleed
     masks weak Riotbox generation, but it still keeps `quality_proof: false`
+  - sparse-bass-pressure diagnostics now derive bass-pressure movement from the
+    source low-band envelope and timing centroid, expose fixed-contour distance
+    and frequency-span proof, and reject collapsed fixed movement while still
+    treating the scripted render as diagnostic evidence
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now

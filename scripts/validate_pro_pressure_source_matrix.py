@@ -167,6 +167,13 @@ def render_case(
                 "pressure_lift_bar5_to_bar4_rms_ratio": proof[
                     "pressure_lift_bar5_to_bar4_rms_ratio"
                 ],
+                "bass_movement_source_derived": proof["bass_movement_source_derived"],
+                "sparse_bass_movement_static_distance_hz": proof[
+                    "sparse_bass_movement_static_distance_hz"
+                ],
+                "sparse_bass_movement_frequency_span_hz": proof[
+                    "sparse_bass_movement_frequency_span_hz"
+                ],
                 "arrangement_policy_decision_count": proof[
                     "arrangement_policy_decision_count"
                 ],
