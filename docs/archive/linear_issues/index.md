@@ -1072,4 +1072,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Capture 20/10 sound-product future ideas
 - [RIOTBOX-1212.md](./RIOTBOX-1212.md)
   Make dense-break 8-bar Golden Path source-aware
+- [RIOTBOX-1213.md](./RIOTBOX-1213.md)
+  Replace pressure_lift fixed recipe with source-aware lift policy
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
