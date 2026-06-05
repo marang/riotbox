@@ -15,7 +15,7 @@ import zlib
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from audio_qa_evidence_boundary import apply_evidence_boundary
+from audio_qa_evidence_boundary import apply_evidence_boundary, evidence_boundary_failure_codes
 
 
 SAMPLE_RATE = 44_100
@@ -118,9 +118,16 @@ def main() -> int:
     parser.add_argument("--bars", type=int, default=DEFAULT_BARS)
     parser.add_argument("--source-start-seconds", type=float, default=0.0)
     parser.add_argument("--keep-output", action="store_true")
+    parser.add_argument("--validate-report", type=Path)
     args = parser.parse_args()
 
     repo = repo_root()
+    if args.validate_report:
+        report_path = resolve_repo_path(repo, args.validate_report)
+        validate_report_file(report_path)
+        print(f"valid dense-break performance report: {report_path}")
+        return 0
+
     source = resolve_repo_path(repo, args.source)
     output = resolve_repo_path(repo, args.output)
     validate_args(source, output, args.bpm, args.bars)
@@ -1244,6 +1251,43 @@ def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list
     if proof["arrangement_failure_count"] > 0.0:
         failures.append("arrangement_policy_contract_failed")
     return failures
+
+
+def validate_report_file(path: Path) -> None:
+    try:
+        report = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"invalid dense-break performance report: {error}") from error
+    if not isinstance(report, dict):
+        raise SystemExit("invalid dense-break performance report: root must be an object")
+    if report.get("schema") != SCHEMA:
+        raise SystemExit(f"invalid dense-break performance report: schema must be {SCHEMA}")
+    metrics = report.get("metrics")
+    proof = report.get("proof")
+    files = report.get("files")
+    if not isinstance(metrics, dict):
+        raise SystemExit("invalid dense-break performance report: metrics must be an object")
+    if not isinstance(proof, dict):
+        raise SystemExit("invalid dense-break performance report: proof must be an object")
+    if not isinstance(files, dict) or not str(files.get("rebuild_only_performance", "")).endswith(
+        ".wav"
+    ):
+        raise SystemExit(
+            "invalid dense-break performance report: rebuild_only_performance file missing"
+        )
+    boundary_failures = evidence_boundary_failure_codes(report)
+    computed_failures = failure_codes_for(metrics, proof)
+    if boundary_failures or computed_failures:
+        failures = boundary_failures + computed_failures
+        raise SystemExit("invalid dense-break performance report: " + ", ".join(failures))
+    if report.get("result") != "pass":
+        raise SystemExit("invalid dense-break performance report: result_not_pass")
+    if report.get("failure_codes") != []:
+        raise SystemExit("invalid dense-break performance report: stale_failure_codes")
+    if report.get("human_verdict") != "unverified":
+        raise SystemExit("invalid dense-break performance report: unexpected_human_verdict")
+    if report.get("quality_proof") is not False:
+        raise SystemExit("invalid dense-break performance report: quality_proof_not_false")
 
 
 def write_visual_evidence(
