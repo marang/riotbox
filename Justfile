@@ -80,6 +80,7 @@ audio-qa-ci:
     just musical-pass-gate-policy-fixtures
     just sound-product-readiness-rubric-fixtures
     just release-grade-demo-bank-fixtures
+    just demo-bank-promotion-fixtures
     just sound-product-2010-future-ideas-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
@@ -349,6 +350,9 @@ release-grade-demo-bank-fixtures:
     tmp="$(mktemp -d)" && if python3 scripts/validate_release_grade_demo_bank.py scripts/fixtures/release_grade_demo_bank/invalid_weak_missing_fix_category.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected weak missing fix category fixture to fail" >&2; exit 1; fi && grep -q "weak/fail entries need fix_categories" "$tmp/invalid.out" && rm -rf "$tmp"
     tmp="$(mktemp -d)" && jq '.entries[-1].demo_readiness = "demo_ready"' scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json >"$tmp/unverified-demo-ready.json" && if python3 scripts/validate_release_grade_demo_bank.py "$tmp/unverified-demo-ready.json" >"$tmp/unverified-demo-ready.out" 2>&1; then cat "$tmp/unverified-demo-ready.out" >&2; rm -rf "$tmp"; echo "expected unverified demo-ready fixture to fail" >&2; exit 1; fi && grep -q "unverified entries must stay unverified" "$tmp/unverified-demo-ready.out" && rm -rf "$tmp"
     tmp="$(mktemp -d)" && jq '.entries[-1].quality_claim = true' scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json >"$tmp/unverified-quality-claim.json" && if python3 scripts/validate_release_grade_demo_bank.py "$tmp/unverified-quality-claim.json" >"$tmp/unverified-quality-claim.out" 2>&1; then cat "$tmp/unverified-quality-claim.out" >&2; rm -rf "$tmp"; echo "expected unverified quality-claim fixture to fail" >&2; exit 1; fi && grep -q "unverified entries must not claim quality" "$tmp/unverified-quality-claim.out" && rm -rf "$tmp"
+
+demo-bank-promotion-fixtures:
+    scripts/validate_demo_bank_promotion_fixtures.sh
 
 sound-product-2010-future-ideas-fixtures:
     tmp="$(mktemp)" && python3 scripts/validate_sound_product_2010_future_ideas.py --json-output "$tmp" scripts/fixtures/sound_product_2010_future_ideas/ideas_v1.json && jq -e '.schema == "riotbox.sound_product_2010_future_ideas.v1" and .result == "pass" and .idea_count == 7 and .release_blocking_count == 0 and (.product_spine | index("source_graph")) and (.product_spine | index("session_model")) and (.product_spine | index("audio_qa")) and (.required_ideas | index("producer_loop_take_selection")) and (.required_ideas | index("ecosystem_surfaces_preserve_gates"))' "$tmp" && rm "$tmp"
