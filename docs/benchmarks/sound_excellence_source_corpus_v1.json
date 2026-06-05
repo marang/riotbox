@@ -208,20 +208,20 @@
       ]
     },
     {
-      "case_id": "bad_timing_fadapad_120",
+      "case_id": "bad_timing_beat20_128",
       "source_family": "bad_timing",
-      "source_path": "data/test_audio/examples/DH_Fadapad_120_A.wav",
-      "bpm_hint": 120.0,
+      "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
+      "bpm_hint": 128.0,
       "timing_expectation": {
-        "confidence": "low",
-        "grid_use": "degraded_do_not_trust",
-        "expected_bpm": 120.0,
-        "known_risk": "same local source as pad/noise case, used here specifically for timing-risk policy"
+        "confidence": "medium",
+        "grid_use": "manual_confirm",
+        "expected_bpm": 128.0,
+        "known_risk": "beat/BPM evidence is useful, but competing downbeat phases require manual confirmation"
       },
       "expected_musical_payoff": [
-        "degraded timing should still allow safe texture gestures",
+        "ambiguous downbeat evidence should keep bar-locked moves cautious",
         "bass and destructive moves should wait for confirmed timing",
-        "review should expose why the grid is not trusted"
+        "review should expose why the downbeat is not trusted"
       ],
       "likely_failure_modes": [
         "false source-grid proof",

@@ -85,6 +85,14 @@ CODE_RULES: tuple[tuple[str, str, int, str], ...] = (
     ("threshold", "fixture_threshold", 3, "Fixture threshold needs review."),
     ("grid_drift", "ui_cue", 4, "Timing drift needs a user-visible cue or cautious routing."),
     ("peak_offset", "ui_cue", 3, "Grid peak offset is too loose for a confident musical move."),
+    ("low_timing_confidence", "ui_cue", 5, "Source timing confidence is too low for confident moves."),
+    ("timing_unavailable", "ui_cue", 5, "Source timing is unavailable and needs a visible cautious path."),
+    ("unavailable", "ui_cue", 4, "Source/timing evidence is unavailable."),
+    ("manual_confirm_only", "ui_cue", 4, "Timing must be manually confirmed before confident moves."),
+    ("candidate_ambiguous", "ui_cue", 5, "Timing candidate is ambiguous."),
+    ("ambiguous_downbeat", "ui_cue", 5, "Downbeat ambiguity needs confirmation or cautious routing."),
+    ("bar_locked_policy_on_bad_timing", "ui_cue", 5, "Bad timing source reached a bar-locked policy path."),
+    ("pad_noise", "source_selection", 5, "Pad/noise material needs its own source policy, not dense-break promotion."),
 )
 
 TAG_RULES: tuple[tuple[str, str, str, int, str], ...] = (

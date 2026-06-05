@@ -80,6 +80,7 @@ just dense-break-performance-pack-smoke
 just agent-musical-review-pack-smoke
 just pro-pressure-source-matrix-smoke
 just professional-source-wav-pack-smoke
+just edge-source-professional-diagnostics-smoke
 just non-dense-professional-proof-pack-smoke
 just professional-output-listening-pack-smoke
 just destructive-variation-professional-smoke
@@ -111,6 +112,18 @@ current rendered WAV path is scripted, so the pack must keep
 `quality_proof: false` until source-family production decisions are owned by the
 engine rather than by a rehearsed render recipe.
 
+`edge-source-professional-diagnostics-smoke` renders bounded pad/noise and
+bad-timing diagnostic cases from the local source corpus. The pad/noise case
+uses `DH_Fadapad_120_A.wav` and must stay `degraded` / `unavailable` in
+source-timing while routing the current dense-break policy mismatch to concrete
+fix categories. The bad-timing case uses `Beat20_128BPM(Full).wav` and must
+stay `candidate_ambiguous` / `manual_confirm_only` so bar-locked decisions route
+to a timing/UI fix instead of pretending the grid is proven. The smoke mutates
+the generated report to prove silence, identical output, fallback collapse, and
+missing source-family metadata are rejected. This is diagnostic evidence only:
+passing means Riotbox detected and routed the weak/risky output, not that the
+output is demo-ready.
+
 `professional-output-listening-pack-smoke` prepares structured human-review
 packs for dense, tonal, and sparse professional-output WAVs. It records candidate
 WAV hashes, source-report hashes, review prompts, and explicit
@@ -126,10 +139,11 @@ that do not recover with enough level after the destructive gesture.
 reports together and writes `riotbox.professional_output_suite.v1`. The suite is
 the central deterministic status surface for dense-break, pro-pressure source
 matrix, tonal/sparse WAV packs, structured listening packs, and destructive
-variation proof. It also includes the non-dense proof pack so tonal-hook and
-sparse-bass-pressure source-family validators are visible in the aggregate
-status surface. It checks child report hashes and listening-pack file identity,
-but still keeps `human_verdict: unverified`.
+variation proof. It also includes the non-dense proof pack and edge-source
+diagnostics so tonal-hook, sparse-bass-pressure, pad/noise, and bad-timing
+source-family risks are visible in the aggregate status surface. It checks child
+report hashes and listening-pack file identity, but still keeps
+`human_verdict: unverified`.
 
 `rendered-weak-professional-output-fixtures` adds a rendered negative example:
 real WAV files for a dense/destructive flat-stutter case whose metrics prove the
