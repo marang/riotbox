@@ -71,8 +71,13 @@ contrast. The allowed role grammar is still scripted and bounded to
 `hook`, `chop`, `pressure`, `dropout`, and `restore`, so this remains smoke,
 regression, and diagnostic evidence. It proves the harness can render
 source-backed stems, apply visible source-aware pressure-lift/stutter/restore
-and arrangement decisions, and reject known weak-output shapes. It does not yet
-prove fully source-aware production quality. The report must keep
+and arrangement decisions, and reject known weak-output shapes. The pack also
+writes `06_rebuild_only_performance.wav`, a source-layer-off diagnostic render:
+raw source bleed is removed while source-derived chops, transient snaps, bass
+pressure, drums, and restore behavior remain active. The report gates that
+rebuild-only output for non-silence, useful RMS against the full/source mix,
+low source correlation, and a distinct source-on/source-off waveform. It does
+not yet prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
@@ -96,19 +101,23 @@ The source-matrix smoke renders the same pro-pressure contract across multiple
 local examples (`Beat03`, `Beat08`, `Beat20`, and `DH_BeatC`) and writes
 `source-matrix-report.json` with per-source proof plus an `arrangement_summary`.
 The matrix now requires at least two distinct role-order signatures across
-source families and routes weak arrangement results to concrete fix categories.
-This prevents Beat03 from being the only passing example while other local
-break sources quietly regress or collapse back to one fixed arrangement.
+source families, routes weak arrangement results to concrete fix categories, and
+checks rebuild-only metrics for every rendered case. This prevents Beat03 from
+being the only passing example while other local break sources quietly regress,
+collapse back to one fixed arrangement, or pass only because the raw source
+layer masks weak generated/rebuilt material.
 
 `professional-source-wav-pack-smoke` renders family-aware audible WAV packs for
 tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
 material must carry a `tonal_hook` pressure-lift policy and is allowed to keep
 the hook more readable, while sparse material must carry a
 `sparse_bass_pressure` pressure-lift policy, use a sparse-specific arrangement
-signature, and prove pressure stronger than the hook. Both cases still write
-`human_verdict: unverified`. Because these cases currently reuse the bounded
-performance generator and scripted role grammar, they are cross-source
-diagnostics rather than source-family quality proof.
+signature, prove pressure stronger than the hook, and include
+`06_rebuild_only_performance.wav` so the pack can compare source-layer-on vs
+source-layer-off output. Both cases still write `human_verdict: unverified`.
+Because these cases currently reuse the bounded performance generator and
+scripted role grammar, they are cross-source diagnostics rather than
+source-family quality proof.
 
 `non-dense-professional-proof-pack-smoke` adds a bounded bridge between the
 rendered tonal/sparse Professional Source WAVs and the stricter

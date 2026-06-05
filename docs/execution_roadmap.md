@@ -638,6 +638,11 @@ following:
     `arrangement_policy` that can produce different 8-bar role-order signatures
     across source families; the role grammar remains scripted and
     `human_verdict: unverified`
+  - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
+    professional-output WAVs and gates them for non-silence, useful RMS,
+    source correlation, and distinct source-on/source-off output; this proves
+    the current diagnostic render is not passing only because raw source bleed
+    masks weak Riotbox generation, but it still keeps `quality_proof: false`
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present, but

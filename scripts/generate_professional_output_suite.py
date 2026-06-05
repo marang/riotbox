@@ -338,6 +338,12 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "full_to_source_rms_ratio": number(proof.get("full_to_source_rms_ratio")),
             "pressure_to_hook_rms_ratio": number(proof.get("pressure_to_hook_rms_ratio")),
             "restore_to_pressure_rms_ratio": number(proof.get("restore_to_pressure_rms_ratio")),
+            "rebuild_only_to_full_rms_ratio": number(
+                proof.get("rebuild_only_to_full_rms_ratio")
+            ),
+            "rebuild_only_to_source_correlation": number(
+                proof.get("rebuild_only_to_source_correlation")
+            ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":
@@ -353,6 +359,28 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 str(signature)
                 for signature in list_or_empty(arrangement.get("role_order_signatures"))
             ),
+            "min_rebuild_only_to_full_rms_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "rebuild_only_to_full_rms_ratio"
+                        )
+                    )
+                    for case in list_or_empty(data.get("cases"))
+                ),
+                default=0.0,
+            ),
+            "max_rebuild_only_to_source_correlation": max(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "rebuild_only_to_source_correlation"
+                        )
+                    )
+                    for case in list_or_empty(data.get("cases"))
+                ),
+                default=0.0,
+            ),
         }
     if child_id == "professional_source_wav_pack":
         cases = list_or_empty(data.get("cases"))
@@ -364,6 +392,17 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "case_count": int(number(data.get("case_count"))),
             "passed_case_count": int(number(data.get("passed_case_count"))),
             "max_full_performance_peak_abs": max(peaks) if peaks else 0.0,
+            "min_rebuild_only_to_full_rms_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "rebuild_only_to_full_rms_ratio"
+                        )
+                    )
+                    for case in cases
+                ),
+                default=0.0,
+            ),
         }
     if child_id == "professional_output_listening_pack":
         return {
