@@ -98,6 +98,8 @@ Current benchmark artifacts:
   Initial local lane-level listening-pack harness for documented Jam recipes outside the W-30 preview path.
 - [professional_output_suite_v1_2026-06-04.md](./professional_output_suite_v1_2026-06-04.md)
   Aggregate professional-output suite report that hashes and summarizes dense-break, source-matrix, source-WAV, listening-pack, and destructive-variation gates without claiming a human musical pass.
+- [sound_excellence_source_corpus_v1_2026-06-05.md](./sound_excellence_source_corpus_v1_2026-06-05.md)
+  P023 real-source coverage contract for dense breaks, sparse drums, tonal riffs, pad/noise, weak sources, and bad-timing policy material.
 - [jam_footer_color_hierarchy_baseline_2026-04-25.md](./jam_footer_color_hierarchy_baseline_2026-04-25.md)
   First bounded readability baseline for the semantic Jam footer color and emphasis hierarchy.
 - [capture_do_next_readability_baseline_2026-04-25.md](./capture_do_next_readability_baseline_2026-04-25.md)
