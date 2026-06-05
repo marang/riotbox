@@ -381,6 +381,13 @@ review pack, changes drum/bass/chop policy, or promotes an output from
 automated evidence into a product example. A passing automated report means "no
 known bad-output mode was caught"; it does not mean "this sounds good".
 
+Professional-output listening packs may carry `audio_judge_label` metadata so a
+later recorded human verdict can be imported into the human listening label
+corpus without re-identifying artifacts by hand. The metadata is not a verdict.
+Import must reject `human_verdict: unverified`; when artifact hash checking is
+requested, import must also reject stale or missing performance-report,
+agent-review, source-window, and full-performance artifacts.
+
 The current deterministic command is:
 
 ```bash

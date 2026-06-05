@@ -29,11 +29,12 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("review", type=Path)
     parser.add_argument("--json-output", type=Path, required=True)
+    parser.add_argument("--require-artifact-hashes", action="store_true")
     args = parser.parse_args()
 
     try:
         review = read_json_object(args.review)
-        corpus = build_label_corpus(review, args.review)
+        corpus = build_label_corpus(review, args.review, args.require_artifact_hashes)
         validate_manifest(corpus, args.review)
         args.json_output.parent.mkdir(parents=True, exist_ok=True)
         args.json_output.write_text(json.dumps(corpus, indent=2) + "\n")
@@ -45,7 +46,11 @@ def main() -> int:
     return 0
 
 
-def build_label_corpus(review: dict[str, Any], path: Path) -> dict[str, Any]:
+def build_label_corpus(
+    review: dict[str, Any],
+    path: Path,
+    require_artifact_hashes: bool = False,
+) -> dict[str, Any]:
     require(review.get("schema") == LISTENING_REVIEW_SCHEMA, f"{path}: unexpected schema")
     require(review.get("schema_version") == 1, f"{path}: schema_version must be 1")
     human_verdict = string_field(review, "human_verdict", path)
@@ -54,6 +59,8 @@ def build_label_corpus(review: dict[str, Any], path: Path) -> dict[str, Any]:
     reviewer = string_field(review, "reviewer", path)
     metadata = review.get(LABEL_METADATA_FIELD)
     require(isinstance(metadata, dict), f"{path}: missing {LABEL_METADATA_FIELD}")
+    if require_artifact_hashes:
+        validate_artifact_hashes(metadata, path)
 
     label = {
         "label_id": string_or_default(
@@ -94,6 +101,49 @@ def build_label_corpus(review: dict[str, Any], path: Path) -> dict[str, Any]:
     }
 
 
+def validate_artifact_hashes(metadata: dict[str, Any], review_path: Path) -> None:
+    identity = object_field(metadata, "artifact_identity", review_path)
+    paths = object_field(metadata, "artifact_paths", review_path)
+    assert_hash_matches(
+        resolve_review_path(review_path, string_field(paths, "performance_report", review_path)),
+        identity.get("performance_report_sha256"),
+        review_path,
+        "performance_report_sha256",
+    )
+    assert_hash_matches(
+        resolve_review_path(review_path, string_field(paths, "agent_review", review_path)),
+        identity.get("agent_review_sha256"),
+        review_path,
+        "agent_review_sha256",
+    )
+    audio_identity = object_field(identity, "audio_sha256", review_path)
+    audio_paths = object_field(paths, "audio", review_path)
+    for role, expected_hash in audio_identity.items():
+        require(isinstance(role, str) and role, f"{review_path}: invalid audio role")
+        path_value = audio_paths.get(role)
+        require(isinstance(path_value, str) and path_value, f"{review_path}: missing artifact path for {role}")
+        assert_hash_matches(
+            resolve_review_path(review_path, path_value),
+            expected_hash,
+            review_path,
+            f"audio_sha256.{role}",
+        )
+
+
+def assert_hash_matches(path: Path, expected: Any, review_path: Path, field: str) -> None:
+    require(path.is_file(), f"{review_path}: missing artifact for {field}: {path}")
+    actual = sha256_file(path)
+    require(
+        actual == expected,
+        f"{review_path}: stale artifact hash for {field}: expected {expected}, got {actual}",
+    )
+
+
+def resolve_review_path(review_path: Path, value: str) -> Path:
+    path = Path(value).expanduser()
+    return path if path.is_absolute() else review_path.parent / path
+
+
 def stable_label_id(review: dict[str, Any], metadata: dict[str, Any], path: Path) -> str:
     material = "|".join(
         [
@@ -118,6 +168,14 @@ def read_json_object(path: Path) -> dict[str, Any]:
     value = json.loads(path.read_text())
     require(isinstance(value, dict), f"{path}: JSON root must be object")
     return value
+
+
+def sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def string_field(data: dict[str, Any], field: str, path: Path) -> str:
