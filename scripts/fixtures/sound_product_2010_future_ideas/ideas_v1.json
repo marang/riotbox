@@ -1,0 +1,140 @@
+{
+  "schema": "riotbox.sound_product_2010_future_ideas.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1210",
+  "release_gate_boundary": "non_blocking_for_1_0",
+  "hidden_taste_oracle_allowed": false,
+  "promotion_requires_linear_issue": true,
+  "description": "Ambitious post-10/10 sound-product ideas. These are visible product bets, not 1.0 release gates.",
+  "ideas": [
+    {
+      "idea_id": "producer_loop_take_selection",
+      "title": "Agent-assisted producer loop take selection",
+      "release_blocking": false,
+      "musical_payoff": "Riotbox can render several takes, reject weak ones, and suggest the next concrete sound-design move a producer would actually try.",
+      "product_spine_improved": ["audio_qa", "demo_bank", "source_graph", "action_lexicon"],
+      "replay_realtime_risk": [
+        "take ranking must run offline or outside the realtime callback",
+        "selected take decisions need replayable source, policy, seed, and action lineage"
+      ],
+      "evidence_needed": [
+        "calibrated human label comparison across accepted and rejected takes",
+        "candidate-vs-baseline metrics that explain why the selected take wins",
+        "review pack showing the suggested next production move"
+      ],
+      "promotion_condition": "Promote only after the 10/10 demo bank contains enough human-pass and human-weak labels to calibrate take selection.",
+      "release_1_0_boundary": "Non-blocking for 1.0; cannot replace human listening or demo-ready gates."
+    },
+    {
+      "idea_id": "source_to_performance_memory",
+      "title": "Source-to-performance memory",
+      "release_blocking": false,
+      "musical_payoff": "Riotbox remembers which source traits, chop policies, drum treatments, bass gestures, and destructive transitions produced strong results.",
+      "product_spine_improved": ["source_graph", "session_model", "audio_qa", "demo_bank"],
+      "replay_realtime_risk": [
+        "memory lookup must not bypass Source Graph identity or Session replay",
+        "learned preferences must remain inspectable and removable"
+      ],
+      "evidence_needed": [
+        "source-trait index with artifact and verdict lineage",
+        "before/after renders showing better policy choices on similar sources",
+        "negative examples proving weak memories do not get promoted"
+      ],
+      "promotion_condition": "Promote only when source traits and human verdicts have a stable schema and enough labeled examples.",
+      "release_1_0_boundary": "Non-blocking for 1.0; useful after the release gate can already choose strong source-aware policies."
+    },
+    {
+      "idea_id": "live_resampling_self_abuse",
+      "title": "Live resampling and self-abuse",
+      "release_blocking": false,
+      "musical_payoff": "The player can capture Riotbox output, degrade it, retrigger it, and promote it into a new playable source during a set.",
+      "product_spine_improved": ["source_graph", "session_model", "audio_engine", "queue_commit"],
+      "replay_realtime_risk": [
+        "capture must not block realtime audio",
+        "new playable sources need deterministic lineage and restore behavior",
+        "destructive processing must stay bounded against clipping and runaway feedback"
+      ],
+      "evidence_needed": [
+        "capture-lineage session fixture",
+        "offline render proving deterministic replay of captured output",
+        "audio QA for clipping, silence, feedback, and fallback collapse"
+      ],
+      "promotion_condition": "Promote only when source capture is modeled as first-class Source Graph and Session state.",
+      "release_1_0_boundary": "Non-blocking for 1.0; must not create a second persistence or replay truth."
+    },
+    {
+      "idea_id": "stage_impact_macros",
+      "title": "Stage-impact macro controls",
+      "release_blocking": false,
+      "musical_payoff": "Panic stop, pressure rise, dirty restore, break shred, bass punch, and source-mangle become reliable room-changing controls.",
+      "product_spine_improved": ["action_lexicon", "queue_commit", "session_model", "audio_engine"],
+      "replay_realtime_risk": [
+        "macros must compile to normal ActionCommand paths",
+        "timing, undo, and restore semantics must stay deterministic",
+        "macro work must not hide blocking analysis in the audio callback"
+      ],
+      "evidence_needed": [
+        "macro-to-action mapping fixtures",
+        "observer/audio correlation for each stage gesture",
+        "listening review proving each macro changes the room"
+      ],
+      "promotion_condition": "Promote after current destructive gestures and pressure policies are source-aware and human-reviewed.",
+      "release_1_0_boundary": "Non-blocking for 1.0; macros must reuse the product spine, not become a second action system."
+    },
+    {
+      "idea_id": "taste_aware_demo_generation",
+      "title": "Taste-aware demo generation",
+      "release_blocking": false,
+      "musical_payoff": "Riotbox searches for the best few takes, rejects boring or weak ones, and emits a listening pack with practical reasons.",
+      "product_spine_improved": ["demo_bank", "audio_qa", "source_graph"],
+      "replay_realtime_risk": [
+        "automated taste ranking must publish confidence and blind spots",
+        "demo candidates must remain human_verdict: unverified until reviewed"
+      ],
+      "evidence_needed": [
+        "human-label calibration report",
+        "boring-output rejection fixtures",
+        "demo-bank import path that blocks unverified demo-ready claims"
+      ],
+      "promotion_condition": "Promote only when the audio judge has enough Riotbox-owned labels to rank candidates without pretending to be a hidden oracle.",
+      "release_1_0_boundary": "Non-blocking for 1.0; can prepare review packs but cannot grant demo-ready status."
+    },
+    {
+      "idea_id": "set_level_performance_memory",
+      "title": "Set-level performance memory",
+      "release_blocking": false,
+      "musical_payoff": "Riotbox preserves a set identity across sources while still rebuilding each source into a new aggressive result.",
+      "product_spine_improved": ["session_model", "source_graph", "action_lexicon", "audio_qa"],
+      "replay_realtime_risk": [
+        "set memory must not overwrite per-source lineage",
+        "cross-song identity must remain replayable across restore and export"
+      ],
+      "evidence_needed": [
+        "multi-source session replay fixture",
+        "set-level listening pack with source-family coverage",
+        "metrics showing identity without identical-output collapse"
+      ],
+      "promotion_condition": "Promote after per-source demo readiness is strong enough to define what set identity should preserve.",
+      "release_1_0_boundary": "Non-blocking for 1.0; cannot excuse weak per-source sound."
+    },
+    {
+      "idea_id": "ecosystem_surfaces_preserve_gates",
+      "title": "Ecosystem surfaces that preserve sound and QA gates",
+      "release_blocking": false,
+      "musical_payoff": "DAW export, stems, controllers, and sync expose Riotbox without weakening the instrument's sound or proof discipline.",
+      "product_spine_improved": ["external_surfaces", "session_model", "audio_qa", "queue_commit"],
+      "replay_realtime_risk": [
+        "export and sync must preserve action, source, and render identity",
+        "controller shortcuts must not bypass queue / commit semantics",
+        "external surfaces need the same audio QA and demo evidence boundaries"
+      ],
+      "evidence_needed": [
+        "stem/export identity fixtures",
+        "controller action mapping tests",
+        "external-surface PR template requiring sound and QA gate references"
+      ],
+      "promotion_condition": "Promote only after the 10/10 sound and technical QA gates are stable enough to export without hiding weak output.",
+      "release_1_0_boundary": "Non-blocking for 1.0 unless a specific surface is explicitly promoted into release scope."
+    }
+  ]
+}
