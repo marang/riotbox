@@ -1070,4 +1070,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Create release-grade musician demo bank
 - [RIOTBOX-1210.md](./RIOTBOX-1210.md)
   Capture 20/10 sound-product future ideas
+- [RIOTBOX-1212.md](./RIOTBOX-1212.md)
+  Make dense-break 8-bar Golden Path source-aware
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
