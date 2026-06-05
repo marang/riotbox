@@ -81,6 +81,13 @@ not yet prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
+`dense-break-performance-pack-smoke` validates the generated report and mutates
+it as negative rebuild-only fixtures. The smoke must fail if rebuild-only RMS is
+zeroed, if rebuild-only/source correlation is pushed into source-masked
+territory, or if source-on and rebuild-only correlation collapses to identical.
+These negative checks protect the diagnostic gate from quietly accepting
+silence, raw-source masking, or a no-op source-layer toggle.
+
 Run:
 
 ```bash
