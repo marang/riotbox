@@ -56,8 +56,10 @@ pad/noise-like source and one bad-timing source through the current scripted
 professional-output path, stores source-timing reports, rendered WAVs, hashes,
 metrics, pressure-lift policy metadata, and production fix routing. Its role is
 to prevent a technically green render from becoming a quality claim when source
-timing is degraded or ambiguous. It must reject silence, fallback/identical
-output collapse, and missing source-family metadata, while keeping
+timing is degraded or ambiguous. Pad/noise must take the explicit `pad_noise`
+pressure policy path instead of being promoted to dense-break proof. The edge
+gate must reject silence, fallback/identical output collapse, missing
+source-family metadata, and missing pad/noise policy routing, while keeping
 `human_verdict: unverified` and `quality_proof: false`.
 
 The suite also enforces the shared evidence-boundary contract. Current scripted

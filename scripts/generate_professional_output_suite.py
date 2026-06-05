@@ -451,6 +451,21 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 str(case.get("source_family", "unknown"))
                 for case in list_or_empty(data.get("cases"))
             ),
+            "pressure_policy_families": sorted(
+                str(
+                    object_or_empty(case.get("pressure_lift_policy")).get(
+                        "source_family", "unknown"
+                    )
+                )
+                for case in list_or_empty(data.get("cases"))
+            ),
+            "weak_output_signals": sorted(
+                {
+                    str(signal)
+                    for case in list_or_empty(data.get("cases"))
+                    for signal in list_or_empty(case.get("weak_output_signals"))
+                }
+            ),
             "proposed_fix_categories": sorted(
                 {
                     str(category)

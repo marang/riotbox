@@ -329,9 +329,15 @@ def weak_output_signals(
         signals.append(grid_use)
     signals.extend(warnings)
     policy_family = str(pressure_lift_policy.get("source_family") or "")
-    if source_family == "pad_noise" and policy_family == "dense_break":
-        signals.append("pad_noise_misclassified_as_dense_break")
-        signals.append("source_not_transformed_for_pad_noise")
+    if source_family == "pad_noise":
+        if policy_family == "pad_noise":
+            signals.append("pad_noise_policy_path")
+            signals.append("pad_noise_texture_gate")
+        else:
+            signals.append("pad_noise_policy_not_applied")
+            if policy_family == "dense_break":
+                signals.append("pad_noise_misclassified_as_dense_break")
+            signals.append("source_not_transformed_for_pad_noise")
     if source_family == "bad_timing":
         signals.append("bar_locked_policy_on_bad_timing")
         if source_timing.get("downbeat_status") == "ambiguous":
@@ -373,6 +379,8 @@ def diagnostic_failure_codes(
         failures.append("source_timing_grid_use_unexpected")
     if not pressure_lift_policy.get("source_family"):
         failures.append("pressure_lift_source_family_missing")
+    if spec.get("source_family") == "pad_noise" and pressure_lift_policy.get("source_family") != "pad_noise":
+        failures.append("pad_noise_policy_not_applied")
     full = object_or_empty(metrics.get("full_performance"))
     if number(full.get("rms")) <= 0.01:
         failures.append("rendered_audio_silent")
@@ -427,6 +435,12 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
             failures.append(f"{case_id}:source_timing_missing")
         if not object_or_empty(case.get("pressure_lift_policy")).get("source_family"):
             failures.append(f"{case_id}:pressure_lift_source_family_missing")
+        if (
+            case.get("source_family") == "pad_noise"
+            and object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+            != "pad_noise"
+        ):
+            failures.append(f"{case_id}:pad_noise_policy_not_applied")
         metrics = object_or_empty(case.get("metrics"))
         proof = object_or_empty(case.get("proof"))
         if number(metrics.get("full_performance_rms")) <= 0.01:

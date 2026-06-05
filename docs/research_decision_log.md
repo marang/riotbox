@@ -2026,3 +2026,17 @@ Why: the current dense-break and professional-output packs use real Riotbox stem
 Evidence: P023 roadmap text now states that `pressure_lift` and rise/restore gestures must become source-aware production decisions, and that hardcoded/scripted audio may be used only as smoke/regression/diagnostic evidence. RIOTBOX-1202, RIOTBOX-1206, and RIOTBOX-1207 were updated with the same distinction.
 Consequences: next implementation work should add machine-readable evidence-boundary fields to professional-output reports and CI should fail if scripted diagnostics claim `quality_proof: true` or are counted as product quality. RIOTBOX-1201 remains valid as negative rendered diagnostic fixtures, not quality proof. Product demos and quality proof require source-aware policy, non-hardcoded fixture evidence, and appropriate human or calibrated verdict states.
 Status: accepted
+
+---
+
+### RBX-070
+
+Date: 2026-06-05
+Topic: Pad/noise edge sources use an explicit cautious pressure policy
+Phase: P022 / Professional Sound Output
+Question: should thin low-band, high-noise pad material be allowed to pass through the dense-break pressure policy when transient-like motion is present?
+Decision: no. Pad/noise-like sources that have very low low-band energy but strong high-band/noise energy and enough transient-like motion take a bounded `pad_noise` pressure-policy path. That path treats the source as a gated texture candidate, not as dense-break proof, and stays diagnostic with `quality_proof: false` and `human_verdict: unverified`.
+Why: the edge-source diagnostic showed `DH_Fadapad_120_A.wav` could be classified as `dense_break` because noisy high-band motion tripped the dense-break transient rule. That made the warning useful, but the policy itself still pretended pad/noise was break material. Riotbox should either transform pad/noise as texture or cue/reject it, not promote it to a breakbeat contract.
+Evidence: RIOTBOX-1219 adds the `pad_noise` pressure policy, updates edge-source diagnostics and the professional-output suite to require the new policy path, and keeps the case weak-routed with concrete source-selection/UI/chop/destructive follow-ups.
+Consequences: future pad/noise work should improve the gated texture/stab behavior or user cue from this explicit family. It must not reintroduce dense-break promotion as a passing edge-source path unless a later spec defines a stronger source-family classifier and corresponding proof.
+Status: accepted
