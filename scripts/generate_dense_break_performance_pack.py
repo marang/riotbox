@@ -46,6 +46,9 @@ MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO = 1.08
 MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION = 0.920
 MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
 TARGET_PERFORMANCE_PEAK = 0.92
+MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
+MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
+MIN_PAD_NOISE_TRANSIENT_SCORE = 0.050
 
 np = None
 
@@ -375,6 +378,13 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         stutter_step_divisor = 12
         stutter_grain_beat_offset = 0.75
         restore_snap_gain = 1.04
+    elif pressure_lift_policy.source_family == "pad_noise":
+        pressure_shape = "gated pad/noise texture lift"
+        stutter_density = "slow noise-gate stutter"
+        restore_hit_shape = "texture stab restore"
+        stutter_step_divisor = 12
+        stutter_grain_beat_offset = 0.25
+        restore_snap_gain = 1.30
     else:
         pressure_shape = "thin-source support lift"
         stutter_density = "busy recovery stutter"
@@ -395,6 +405,10 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         bass_restore = 48.0
         pressure_gain = 0.96
         bass_gain = 0.98
+    elif pressure_lift_policy.source_family == "pad_noise":
+        bass_restore = 55.0
+        pressure_gain = 1.06
+        bass_gain = 0.92
     else:
         bass_restore = 51.5
         pressure_gain = 1.02
@@ -434,6 +448,10 @@ def arrangement_policy_for(source_family: str) -> ArrangementPolicy:
         roles = ("hook", "pressure", "chop", "hook", "chop", "pressure", "dropout", "restore")
         shape = "early bass shove"
         intent = "introduce bass pressure early, re-state the hook, then lift again before the cut"
+    elif source_family == "pad_noise":
+        roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
+        shape = "texture gate caution"
+        intent = "treat noisy pad material as a texture gate, not a proven breakbeat"
     else:
         roles = ("hook", "chop", "hook", "pressure", "chop", "pressure", "dropout", "restore")
         shape = "cautious recovery lift"
@@ -453,6 +471,27 @@ def pressure_lift_policy_for(
     high_band_ratio: float,
     transient_score: float,
 ) -> PressureLiftPolicy:
+    if (
+        low_band_rms < MAX_PAD_NOISE_LOW_BAND_RMS
+        and high_band_ratio >= MIN_PAD_NOISE_HIGH_BAND_RATIO
+        and transient_score >= MIN_PAD_NOISE_TRANSIENT_SCORE
+    ):
+        return PressureLiftPolicy(
+            source_aware=True,
+            source_family="pad_noise",
+            lift_shape="gated texture lift",
+            lift_intent="gate noisy pad material as texture instead of promoting it to breakbeat proof",
+            source_bleed_gain=0.030,
+            hook_bleed_gain=0.56,
+            tr909_drive=0.98,
+            break_snap_drive=0.92,
+            mc202_drive=0.76,
+            bass_drive=0.82,
+            bar4_intensity=0.90,
+            bar5_intensity=1.04,
+            bar4_bass_frequency_hz=48.0,
+            bar5_bass_frequency_hz=55.0,
+        )
     if high_band_ratio >= 0.050 and transient_score >= 0.080:
         return PressureLiftPolicy(
             source_aware=True,

@@ -645,8 +645,9 @@ following:
     masks weak Riotbox generation, but it still keeps `quality_proof: false`
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
-    source-family metadata, and concrete fix routing are present, but
-    `quality_proof: false` remains mandatory
+    source-family metadata, and concrete fix routing are present; pad/noise now
+    takes an explicit `pad_noise` pressure-policy path instead of dense-break
+    promotion, but `quality_proof: false` remains mandatory
 - generated demo packs include curated source, rendered WAV, metrics, review
   prompt, human verdict, and a short reason why the example is demo-worthy or
   not demo-worthy yet

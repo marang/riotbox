@@ -71,8 +71,11 @@ contrast. The allowed role grammar is still scripted and bounded to
 `hook`, `chop`, `pressure`, `dropout`, and `restore`, so this remains smoke,
 regression, and diagnostic evidence. It proves the harness can render
 source-backed stems, apply visible source-aware pressure-lift/stutter/restore
-and arrangement decisions, and reject known weak-output shapes. The pack also
-writes `06_rebuild_only_performance.wav`, a source-layer-off diagnostic render:
+and arrangement decisions, and reject known weak-output shapes. The pressure
+policy also has a bounded `pad_noise` family for thin low-band, high-noise
+material: that path gates pad/noise as texture and must not promote it to
+dense-break proof. The pack also writes `06_rebuild_only_performance.wav`, a
+source-layer-off diagnostic render:
 raw source bleed is removed while source-derived chops, transient snaps, bass
 pressure, drums, and restore behavior remain active. The report gates that
 rebuild-only output for non-silence, useful RMS against the full/source mix,
@@ -139,11 +142,12 @@ engine rather than by a rehearsed render recipe.
 `edge-source-professional-diagnostics-smoke` renders bounded pad/noise and
 bad-timing diagnostic cases from the local source corpus. The pad/noise case
 uses `DH_Fadapad_120_A.wav` and must stay `degraded` / `unavailable` in
-source-timing while routing the current dense-break policy mismatch to concrete
-fix categories. The bad-timing case uses `Beat20_128BPM(Full).wav` and must
-stay `candidate_ambiguous` / `manual_confirm_only` so bar-locked decisions route
-to a timing/UI fix instead of pretending the grid is proven. The smoke mutates
-the generated report to prove silence, identical output, fallback collapse, and
+source-timing while taking the explicit `pad_noise` pressure policy path. That
+path treats the source as a gated texture candidate rather than pretending it is
+a breakbeat. The bad-timing case uses `Beat20_128BPM(Full).wav` and must stay
+`candidate_ambiguous` / `manual_confirm_only` so bar-locked decisions route to a
+timing/UI fix instead of pretending the grid is proven. The smoke mutates the
+generated report to prove silence, identical output, fallback collapse, and
 missing source-family metadata are rejected. This is diagnostic evidence only:
 passing means Riotbox detected and routed the weak/risky output, not that the
 output is demo-ready.
