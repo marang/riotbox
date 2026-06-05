@@ -1074,4 +1074,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Make dense-break 8-bar Golden Path source-aware
 - [RIOTBOX-1213.md](./RIOTBOX-1213.md)
   Replace pressure_lift fixed recipe with source-aware lift policy
+- [RIOTBOX-1214.md](./RIOTBOX-1214.md)
+  Promote source-backed human passes into demo-bank entries
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
