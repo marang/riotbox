@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from audio_qa_evidence_boundary import apply_evidence_boundary
+
 
 SCHEMA = "riotbox.pro_pressure_source_matrix.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-pro-pressure-source-matrix")
@@ -51,6 +53,18 @@ def main() -> int:
         "failed_case_count": len(failed),
         "cases": cases,
     }
+    apply_evidence_boundary(
+        report,
+        evidence_role="diagnostic",
+        source_backed=True,
+        source_timing_backed=True,
+        scripted_generation=True,
+        notes=(
+            "Source-matrix renders the current scripted pro-pressure diagnostic "
+            "pack across multiple sources; it is cross-source diagnostic "
+            "evidence, not source-family quality proof."
+        ),
+    )
     write_reports(output, report)
     if failed:
         print(
@@ -123,7 +137,7 @@ def render_case(
         case_report = json.loads(report_path.read_text())
         proof = case_report["proof"]
         metrics = case_report["metrics"]
-        return {
+        case_summary = {
             "case_id": case_id,
             "source": source,
             "bpm": bpm,
@@ -150,8 +164,15 @@ def render_case(
                 "full_performance_peak_abs": metrics["full_performance"]["peak_abs"],
             },
         }
+        return apply_evidence_boundary(
+            case_summary,
+            evidence_role="diagnostic",
+            source_backed=True,
+            source_timing_backed=True,
+            scripted_generation=True,
+        )
 
-    return {
+    failure_summary = {
         "case_id": case_id,
         "source": source,
         "bpm": bpm,
@@ -162,6 +183,13 @@ def render_case(
         "output": str(case_dir),
         "returncode": result.returncode,
     }
+    return apply_evidence_boundary(
+        failure_summary,
+        evidence_role="diagnostic",
+        source_backed=True,
+        source_timing_backed=True,
+        scripted_generation=True,
+    )
 
 
 def write_reports(output: Path, report: dict) -> None:

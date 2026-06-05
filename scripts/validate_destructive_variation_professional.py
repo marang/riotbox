@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from audio_qa_evidence_boundary import apply_evidence_boundary
+
 
 SCHEMA = "riotbox.destructive_variation_professional.v1"
 SOURCE_SCHEMA = "riotbox.dense_break_performance_pack.v1"
@@ -82,7 +84,7 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         "max_full_peak_abs": MAX_FULL_PEAK_ABS,
     }
     failures = failure_codes(source, extracted)
-    return {
+    report = {
         "schema": SCHEMA,
         "schema_version": 1,
         "result": "pass" if not failures else "fail",
@@ -95,6 +97,17 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         "metrics": extracted,
         "failure_codes": failures,
     }
+    return apply_evidence_boundary(
+        report,
+        evidence_role="diagnostic",
+        source_backed=bool(source.get("source_backed", True)),
+        source_timing_backed=bool(source.get("source_timing_backed", True)),
+        scripted_generation=bool(source.get("scripted_generation", True)),
+        notes=(
+            "Destructive-variation report validates a diagnostic render shape. "
+            "It is not product-quality proof while the source report is scripted."
+        ),
+    )
 
 
 def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str]:
@@ -154,6 +167,9 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Result: `{report['result']}`",
         f"- Agent verdict: `{report['agent_verdict']}`",
         f"- Human verdict: `{report['human_verdict']}`",
+        f"- Evidence role: `{report['evidence_role']}`",
+        f"- Quality proof: `{str(report['quality_proof']).lower()}`",
+        f"- Scripted generation: `{str(report['scripted_generation']).lower()}`",
         "",
         "## Failure Codes",
         "",
@@ -165,7 +181,7 @@ def render_markdown(report: dict[str, Any]) -> str:
     lines.extend(["", "## Boundary", ""])
     lines.append(
         "This report proves deterministic destructive variation shape. "
-        "It does not claim human musical pass."
+        "It is diagnostic evidence, not product-quality proof or human musical pass."
     )
     return "\n".join(lines) + "\n"
 

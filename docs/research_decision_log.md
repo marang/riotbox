@@ -2012,3 +2012,17 @@ Why: Riotbox needs the thing it exports or surfaces in the UI to sound useful fi
 Evidence: RIOTBOX-1192 updates `scripts/generate_dense_break_performance_pack.py`, the dense-break smoke gate, and the dense-break/agent-review benchmark docs. The local comparison from the old baseline to the new render raises full-performance RMS from about -20.6 dBFS to about -14.9 dBFS, chop-hook transient from about 0.104 to about 0.148, dropout/stutter transient from about 0.045 to about 0.112, and restore RMS from about -17.3 dBFS to about -11.2 dBFS without claiming human musical pass.
 Consequences: future sound-quality work should improve audible render behavior first and then tighten objective proof. `agent_promising` remains a bounded anti-weak-output verdict, not a musical-pass claim.
 Status: accepted
+
+---
+
+### RBX-069
+
+Date: 2026-06-05
+Topic: Scripted audio render packs are diagnostics, not product-quality proof
+Phase: P021 / P022 / P023 Audio QA and Sound Excellence
+Question: may hardcoded or scripted generated audio count as technical or musical quality proof for Riotbox?
+Decision: no. Hardcoded or scripted audio generation may stay in professional-output workflows only as smoke, regression, or diagnostic evidence. It can prove that a harness runs, artifacts are fresh/hash-bound, known weak-output shapes are rejected, and listening-review plumbing works. It must not prove technical production quality, musical pass, source-aware production behavior, bass pressure quality, or product demo readiness. Reports that use scripted generation should expose machine-readable evidence boundaries such as `evidence_role`, `quality_proof: false`, `scripted_generation: true`, and `human_verdict: unverified`.
+Why: the current dense-break and professional-output packs use real Riotbox stems but still include scripted arrangement behavior such as fixed section roles, fixed mix weights, and a `pressure_lift` that is not yet a source-aware production decision. Treating those outputs as quality proof would let Riotbox pass by rehearsing a known recipe instead of proving musician-useful source transformation. The MC-202 `bass_pressure` stem also shows why naming matters: it can read more like a melodic contour phrase than true low-band pressure.
+Evidence: P023 roadmap text now states that `pressure_lift` and rise/restore gestures must become source-aware production decisions, and that hardcoded/scripted audio may be used only as smoke/regression/diagnostic evidence. RIOTBOX-1202, RIOTBOX-1206, and RIOTBOX-1207 were updated with the same distinction.
+Consequences: next implementation work should add machine-readable evidence-boundary fields to professional-output reports and CI should fail if scripted diagnostics claim `quality_proof: true` or are counted as product quality. RIOTBOX-1201 remains valid as negative rendered diagnostic fixtures, not quality proof. Product demos and quality proof require source-aware policy, non-hardcoded fixture evidence, and appropriate human or calibrated verdict states.
+Status: accepted

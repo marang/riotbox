@@ -296,14 +296,32 @@ Linear project / phase map:
 10. `P020 | Riotbox 1.0 Release Cut`
 11. `P021 | Audio Judge / Musical Fitness` - planned calibrated audio-quality
    judging track
+12. `P022 | Professional Sound Output` - active professional-output proof
+    track for source-backed rendered examples, listening verdicts, and weak
+    output regression fixtures
+13. `P023 | Sound Excellence / Production Quality` - planned 10/10
+    sound-product track for release-grade musical output, demo quality, and the
+    failure-to-fix loop beyond technical audio correctness
 
 This is a project / phase overview, not a ticket list. Keep P012, P013, P014,
 and P015 as regression baselines and keep P017-P020 coarse while P016 turns the
-bounded product spine toward pro workflow and export behavior. P021 is a
-follow-on audio QA / product-quality track: it may help agents reject weak
-sound and eventually make calibrated musical-pass decisions, but it must not
-replace human listening or become a hidden taste oracle without labeled
-Riotbox examples.
+bounded product spine toward pro workflow and export behavior. P021, P022, and
+P023 are the explicit quality ladder:
+
+- P021 makes the technical audio-QA and musical-fitness judge calibrated enough
+  to reject silence, clipping, fallback collapse, repeated placeholders, weak
+  contrast, and other measurable regressions.
+- P022 proves professional source-backed output through rendered examples,
+  review packs, human verdict import, and negative fixtures that catch weak
+  sound before it becomes a demo or PR claim.
+- P023 raises the instrument itself to release-grade sound-product quality:
+  compelling source transformation, memorable hooks, physical drums, bass
+  pressure, destructive contrast, musician-useful demos, and concrete
+  failure-to-fix loops.
+
+P021 must not replace human listening or become a hidden taste oracle without
+labeled Riotbox examples. P022 and P023 must not bypass Source Graph, Session,
+Action Lexicon, queue / commit, replay, or existing audio-QA contracts.
 
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
@@ -589,6 +607,100 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 - long-run and crash tests are acceptable
 - benchmark regressions are visible and actionable
 
+### 10/10 Sound Product Gate
+
+Riotbox is not a 10/10 sound product merely because it renders valid audio.
+The release-grade sound path is clear only when P022 and P023 prove all of the
+following:
+
+- real-source output regularly earns structured human `pass` verdicts across
+  dense breaks, sparse drums, tonal riffs, pad / noise material, weak sources,
+  and bad-timing sources
+- a strong output has an identifiable hook within two bars: stab, riff, break,
+  bass gesture, vocal hit, silence cut, or destructive transition
+- the hardest musical element is obvious by ear and backed by metrics:
+  snare / break transient, kick body, bass pressure, stab, or silence impact
+- source character survives as transformed material instead of collapsing into
+  fallback tones, polite pattern generation, or placeholder loops
+- destructive gestures such as choke, stop, reverse, retrigger, pitch dive,
+  filter slam, bitcrush, dropout, and restore produce immediate room-changing
+  contrast
+- `pressure_lift` and related rise / restore gestures are source-aware
+  production decisions, not fixed bar-position recipes: dense breaks, sparse
+  drums, tonal riffs, pad / noise material, weak sources, and bad-timing sources
+  must be allowed to choose different lift shapes, bass movement, drum pressure,
+  source treatment, and destructive contrast
+- generated demo packs include curated source, rendered WAV, metrics, review
+  prompt, human verdict, and a short reason why the example is demo-worthy or
+  not demo-worthy yet
+- hardcoded or scripted audio generation may be used only as smoke, regression,
+  or diagnostic evidence; it must not be presented as technical or musical
+  quality proof until the relevant behavior is source-aware, policy-owned, and
+  covered by non-hardcoded fixture evidence
+- weak outputs create concrete follow-up work: source selection, chop policy,
+  drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
+  fixture threshold, or UI cue
+- no PR, roadmap claim, or release note presents an audible feature as
+  musician-ready when its human verdict is missing, weak, or explicitly
+  unverified
+
+### 10/10 Technical Audio-QA Gate
+
+Riotbox is not a 10/10 technical audio-QA system merely because unit tests and
+basic renders pass. The technical QA path is clear only when P021 and the
+release-hardening phases prove all of the following:
+
+- offline renders and live-path seams are checked for silence, near-silence,
+  clipping, DC offset, channel imbalance, fallback collapse, identical-output
+  collapse, timing drift, and unintended loudness swings
+- golden, negative, and weak-output fixtures cover the major source families
+  and failure classes used by the sound-product gate
+- technical audio-QA distinguishes render-path smoke evidence from quality
+  proof: hardcoded or scripted generation can prove that a harness runs and
+  catches known regressions, but cannot prove production quality by itself
+- audio judge thresholds are calibrated against Riotbox-owned human labels and
+  report their confidence and known blind spots
+- each audible ActionCommand remains covered through queue, commit /
+  side-effect, Session / replay, observer, and output-QA surfaces
+- deterministic replay and export reproduce the same intended musical result,
+  not only the same action log
+- real-session evidence records host, backend, device, latency, xrun, and soak
+  provenance separately from sandbox-only execution
+- CI blocks regressions that would produce silent, fallback-only, clipped,
+  identical, rhythmically collapsed, or clearly weaker rendered output
+- quality reports are useful to engineers and musicians: they explain what got
+  worse, which artifact to hear, and which concrete follow-up category should
+  fix it
+
+### 20/10 Future-Idea Track
+
+10/10 is the release gate. 20/10 is a deliberately separate idea track for
+making Riotbox exceptional after the product can already be trusted. Capture
+20/10 ideas without letting them obscure the 1.0 path. Candidate directions:
+
+- an agent-assisted musical producer loop that compares multiple generated
+  takes, listens through calibrated metrics plus human labels, and proposes the
+  next concrete sound-design move instead of only reporting scores
+- an owned source-to-performance index that remembers which source traits,
+  chop policies, drum treatments, bass gestures, and destructive transitions
+  produced strong human verdicts
+- live resampling and self-abuse workflows where the player can capture
+  Riotbox's own output, degrade it, retrigger it, and promote it into a new
+  playable source without breaking replay
+- musician-facing macro controls that reliably create stage-impact gestures:
+  panic stop, pressure rise, dirty restore, break shred, bass punch, and
+  source-mangle, all with predictable timing and undo
+- taste-aware demo generation that searches for the best few takes, rejects
+  boring ones automatically, and emits a listening pack with clear reasons
+- cross-song or set-level performance memory where Riotbox preserves identity
+  across a live set while still rebuilding each source into a new result
+- optional ecosystem surfaces such as DAW export, stems, controllers, or
+  external sync only after they preserve the 10/10 sound and QA gates
+
+20/10 ideas should become Linear ideas or roadmap notes only when they identify
+the musical payoff, the product spine they improve, the replay / realtime risk,
+and the evidence required to prove they are more than impressive demos.
+
 ---
 
 ## 14. What Must Not Go on the Critical Path Yet
@@ -610,12 +722,15 @@ P015 product-spine proof surfaces, then add bounded pro workflow / export
 behavior without weakening replay, timing, musical-depth, scene, or Jam
 taste/proof regression gates.
 
-As of 2026-06-04, product-quality work should prioritize the dense-break
-8-bar source-backed performance Golden Path before further TUI/export polish:
-the thing Riotbox delivers must sound stronger before downstream workflow
-surfaces become valuable. The planned P021 Audio Judge / Musical Fitness track
-is the future calibration layer for agent-assisted musical judgment; it should
-grow from real review packs and human labels, not from generic metrics alone.
+As of 2026-06-05, product-quality work should prioritize the dense-break
+8-bar source-backed performance Golden Path and the P021/P022/P023 quality
+ladder before further TUI/export polish: the thing Riotbox delivers must sound
+stronger before downstream workflow surfaces become valuable. P021 is the
+future calibration layer for agent-assisted musical judgment; P022 captures
+professional-output evidence and weak-output regressions; P023 owns the path to
+10/10 sound-product quality and the 20/10 idea backlog. These tracks should
+grow from real review packs, human labels, and reproducible audio artifacts,
+not from generic metrics alone.
 
 The old initial Core Skeleton sequence is complete enough that new work should
 not restart from spec scaffolding. Use these live references instead:

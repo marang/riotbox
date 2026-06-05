@@ -15,6 +15,8 @@ import zlib
 from dataclasses import dataclass
 from pathlib import Path
 
+from audio_qa_evidence_boundary import apply_evidence_boundary
+
 
 SAMPLE_RATE = 44_100
 CHANNELS = 2
@@ -599,7 +601,7 @@ def build_report(
     verdict = "agent_promising" if not failure_codes else "agent_fail"
     if failure_codes and len(failure_codes) <= 2:
         verdict = "agent_weak"
-    return {
+    report = {
         "schema": SCHEMA,
         "schema_version": 1,
         "result": "pass" if not failure_codes else "fail",
@@ -657,6 +659,18 @@ def build_report(
         "proof": proof,
         "failure_codes": failure_codes,
     }
+    return apply_evidence_boundary(
+        report,
+        evidence_role="diagnostic",
+        source_backed=True,
+        source_timing_backed=True,
+        scripted_generation=True,
+        notes=(
+            "Dense-break render uses source-backed stems and source timing, but "
+            "the current section arrangement and mix recipe are scripted; this "
+            "is smoke/regression/diagnostic evidence, not product-quality proof."
+        ),
+    )
 
 
 def performance_proof(
@@ -916,7 +930,7 @@ def agent_review_record(report: dict) -> dict:
     else:
         strongest = "none"
         summary = "Fail: the pack trips multiple weak-output guardrails."
-    return {
+    review = {
         "schema": AGENT_REVIEW_SCHEMA,
         "schema_version": 1,
         "source_report_schema": report["schema"],
@@ -953,6 +967,17 @@ def agent_review_record(report: dict) -> dict:
             "It must not claim final human musical pass while human_verdict is unverified."
         ),
     }
+    return apply_evidence_boundary(
+        review,
+        evidence_role="diagnostic",
+        source_backed=bool(report.get("source_backed")),
+        source_timing_backed=bool(report.get("source_timing_backed")),
+        scripted_generation=bool(report.get("scripted_generation")),
+        notes=(
+            "Agent review summarizes diagnostic render evidence. It is not a "
+            "human musical pass or product-quality proof."
+        ),
+    )
 
 
 def source_recognition_label(correlation: float) -> str:
