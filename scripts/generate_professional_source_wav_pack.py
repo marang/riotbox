@@ -170,6 +170,7 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "dropout_stutter": files["dropout_stutter"],
             "restore_hit": files["restore_hit"],
             "full_performance": files["full_performance"],
+            "rebuild_only_performance": files["rebuild_only_performance"],
         },
         "proof": {
             "w30_to_source_rms_ratio": proof["w30_to_source_rms_ratio"],
@@ -190,6 +191,12 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "arrangement_pressure_role_count": proof["arrangement_pressure_role_count"],
             "arrangement_destructive_role_count": proof["arrangement_destructive_role_count"],
             "arrangement_failure_count": proof["arrangement_failure_count"],
+            "rebuild_only_to_full_rms_ratio": proof["rebuild_only_to_full_rms_ratio"],
+            "rebuild_only_to_source_rms_ratio": proof["rebuild_only_to_source_rms_ratio"],
+            "rebuild_only_to_source_correlation": proof["rebuild_only_to_source_correlation"],
+            "source_on_to_rebuild_only_correlation": proof[
+                "source_on_to_rebuild_only_correlation"
+            ],
         },
         "metrics": {
             "full_performance_rms": metrics["full_performance"]["rms"],
@@ -198,6 +205,9 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "chop_hook_dbfs": metrics["chop_hook"]["dbfs"],
             "pressure_lift_dbfs": metrics["pressure_lift"]["dbfs"],
             "restore_hit_dbfs": metrics["restore_hit"]["dbfs"],
+            "rebuild_only_performance_rms": metrics["rebuild_only_performance"]["rms"],
+            "rebuild_only_performance_dbfs": metrics["rebuild_only_performance"]["dbfs"],
+            "rebuild_only_performance_peak_abs": metrics["rebuild_only_performance"]["peak_abs"],
         },
         "pressure_lift_policy": pressure_lift_policy,
         "arrangement_policy": arrangement_policy,

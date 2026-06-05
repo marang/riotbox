@@ -67,8 +67,10 @@ may report `source_backed: true` and `source_timing_backed: true`, but only as
 diagnostic evidence while the arrangement role grammar and mix recipe remain
 scripted. The pro-pressure source matrix now bubbles up arrangement-policy
 coverage through suite key metrics and requires at least two distinct role-order
-signatures across source families. Synthetic negative fixtures report
-`source_backed: false`.
+signatures across source families. It also bubbles up rebuild-only metrics from
+the matrix and professional-source WAV pack so the suite can prove that
+source-layer-off renders remain audible, transformed, and not source-masked.
+Synthetic negative fixtures report `source_backed: false`.
 
 Run:
 
@@ -90,6 +92,8 @@ Boundary:
   technical or musical quality proof for the product.
 - It proves bounded source-aware arrangement-policy diversity across the current
   matrix, while keeping the scripted role grammar visible.
+- It proves bounded source-layer-off rebuild diagnostics for the current
+  professional-output packs without claiming the rebuild path is release-grade.
 - It enforces machine-readable evidence fields: `evidence_role`,
   `source_backed`, `source_timing_backed`, `scripted_generation`,
   `quality_proof`, and `human_verdict`.

@@ -40,6 +40,11 @@ MIN_FULL_TO_SOURCE_RMS_RATIO = 0.78
 MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO = 0.48
 MIN_PRESSURE_TO_HOOK_RMS_RATIO = 1.30
 MIN_RESTORE_TO_PRESSURE_RMS_RATIO = 1.12
+MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO = 0.42
+MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO = 0.30
+MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO = 1.08
+MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION = 0.920
+MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
 TARGET_PERFORMANCE_PEAK = 0.92
 
 np = None
@@ -179,6 +184,16 @@ def main() -> int:
         bar_frames,
         args.bars,
     )
+    rebuild_only_performance, rebuild_only_sections = render_performance(
+        source_audio,
+        tr909,
+        w30,
+        mc202,
+        source_policy,
+        bar_frames,
+        args.bars,
+        source_layer_gain=0.0,
+    )
 
     audio_files = {
         "source_window": "00_source_window.wav",
@@ -187,6 +202,7 @@ def main() -> int:
         "dropout_stutter": "03_dropout_stutter.wav",
         "restore_hit": "04_restore_hit.wav",
         "full_performance": "05_full_performance.wav",
+        "rebuild_only_performance": "06_rebuild_only_performance.wav",
     }
     write_wav(output / audio_files["source_window"], source_audio)
     write_wav(output / audio_files["chop_hook"], sections["chop_hook"])
@@ -194,6 +210,7 @@ def main() -> int:
     write_wav(output / audio_files["dropout_stutter"], sections["dropout_stutter"])
     write_wav(output / audio_files["restore_hit"], sections["restore_hit"])
     write_wav(output / audio_files["full_performance"], performance)
+    write_wav(output / audio_files["rebuild_only_performance"], rebuild_only_performance)
     visual_files = write_visual_evidence(
         output,
         {
@@ -203,6 +220,7 @@ def main() -> int:
             "dropout_stutter": sections["dropout_stutter"],
             "restore_hit": sections["restore_hit"],
             "full_performance": performance,
+            "rebuild_only_performance": rebuild_only_performance,
         },
     )
 
@@ -219,6 +237,8 @@ def main() -> int:
         source_policy,
         performance,
         sections,
+        rebuild_only_performance,
+        rebuild_only_sections,
         bar_frames,
     )
     write_reports(output, report)
@@ -505,6 +525,7 @@ def render_performance(
     source_policy: DenseBreakSourcePolicy,
     bar_frames: int,
     bars: int,
+    source_layer_gain: float = 1.0,
 ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     performance = np.zeros_like(source)
     hook_riff = render_w30_hook_riff_layer(w30, source, bar_frames, bars)
@@ -521,7 +542,7 @@ def render_performance(
         performance[start:end] = mix[start:end]
 
     hook_mix = glue_bus(
-        source * 0.50
+        source * (0.50 * source_layer_gain)
         + w30 * 1.38
         + hook_riff * 1.62
         + tr909 * 0.62
@@ -531,7 +552,7 @@ def render_performance(
         slam=0.05,
     )
     chop_mix = glue_bus(
-        source * 0.16
+        source * (0.16 * source_layer_gain)
         + w30 * 1.54
         + hook_riff * 1.78
         + tr909 * 0.78
@@ -541,7 +562,7 @@ def render_performance(
         slam=0.18,
     )
     pressure_mix = saturate(
-        source * lift_policy.source_bleed_gain
+        source * (lift_policy.source_bleed_gain * source_layer_gain)
         + w30 * 0.84
         + hook_riff * lift_policy.hook_bleed_gain
         + tr909 * (2.28 + lift_policy.tr909_drive * 0.52)
@@ -552,7 +573,7 @@ def render_performance(
     )
     pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
     restore_mix = glue_bus(
-        source * 0.28
+        source * (0.28 * source_layer_gain)
         + w30 * 1.76
         + hook_riff * 1.46
         + tr909 * 2.78
@@ -586,6 +607,7 @@ def render_performance(
                 source_policy,
                 bar_frames,
                 source_bar=bar,
+                source_layer_gain=source_layer_gain,
             )
             start = bar * bar_frames
             end = min(start + dropout_stutter_bar.shape[0], performance.shape[0])
@@ -602,6 +624,7 @@ def render_performance(
                     source_policy,
                     bar * bar_frames,
                     bar_frames,
+                    source_layer_gain=source_layer_gain,
                 ),
             )
         else:
@@ -753,6 +776,7 @@ def render_dropout_stutter_bar(
     source_policy: DenseBreakSourcePolicy,
     bar_frames: int,
     source_bar: int,
+    source_layer_gain: float,
 ) -> np.ndarray:
     bar = np.zeros((bar_frames, CHANNELS), dtype=np.float32)
     source_start = source_bar * bar_frames
@@ -761,7 +785,7 @@ def render_dropout_stutter_bar(
         return bar
 
     base = saturate(
-        source[source_start:source_end] * 0.10
+        source[source_start:source_end] * (0.10 * source_layer_gain)
         + w30[source_start:source_end] * 1.35
         + tr909[source_start:source_end] * 0.46
         + mc202[source_start:source_end] * 0.70,
@@ -936,6 +960,7 @@ def restore_with_hit(
     source_policy: DenseBreakSourcePolicy,
     start: int,
     bar_frames: int,
+    source_layer_gain: float,
 ) -> np.ndarray:
     end = min(start + bar_frames, restore_mix.shape[0])
     restored = restore_mix.copy()
@@ -946,7 +971,7 @@ def restore_with_hit(
     source_hit = source[:hit_frames]
     snap = transient_emphasis(source_hit)
     restored[start : start + hit_frames] += (
-        source_hit * 1.35
+        source_hit * (1.35 * source_layer_gain)
         + snap * (4.80 * source_policy.restore_snap_gain)
         + w30[start : start + hit_frames] * 2.62
         + mc202[start : start + hit_frames] * 4.05
@@ -968,6 +993,8 @@ def build_report(
     source_policy: DenseBreakSourcePolicy,
     performance: np.ndarray,
     sections: dict[str, np.ndarray],
+    rebuild_only_performance: np.ndarray,
+    rebuild_only_sections: dict[str, np.ndarray],
     bar_frames: int,
 ) -> dict:
     metrics = {
@@ -980,6 +1007,17 @@ def build_report(
         "pressure_lift": metrics_to_json(audio_metrics(sections["pressure_lift"])),
         "dropout_stutter": metrics_to_json(audio_metrics(sections["dropout_stutter"])),
         "restore_hit": metrics_to_json(audio_metrics(sections["restore_hit"])),
+        "rebuild_only_performance": metrics_to_json(audio_metrics(rebuild_only_performance)),
+        "rebuild_only_chop_hook": metrics_to_json(audio_metrics(rebuild_only_sections["chop_hook"])),
+        "rebuild_only_pressure_lift": metrics_to_json(
+            audio_metrics(rebuild_only_sections["pressure_lift"])
+        ),
+        "rebuild_only_dropout_stutter": metrics_to_json(
+            audio_metrics(rebuild_only_sections["dropout_stutter"])
+        ),
+        "rebuild_only_restore_hit": metrics_to_json(
+            audio_metrics(rebuild_only_sections["restore_hit"])
+        ),
     }
     proof = performance_proof(
         source_audio,
@@ -989,6 +1027,8 @@ def build_report(
         source_policy,
         performance,
         sections,
+        rebuild_only_performance,
+        rebuild_only_sections,
         bar_frames,
     )
     failure_codes = failure_codes_for(metrics, proof)
@@ -1034,6 +1074,13 @@ def build_report(
             "min_hook_to_source_transient_ratio": MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO,
             "min_pressure_to_hook_rms_ratio": MIN_PRESSURE_TO_HOOK_RMS_RATIO,
             "min_restore_to_pressure_rms_ratio": MIN_RESTORE_TO_PRESSURE_RMS_RATIO,
+            "min_rebuild_only_to_full_rms_ratio": MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO,
+            "min_rebuild_only_to_source_rms_ratio": MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO,
+            "min_rebuild_only_restore_to_pressure_rms_ratio": (
+                MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO
+            ),
+            "max_rebuild_only_to_source_correlation": MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION,
+            "max_source_on_to_rebuild_only_correlation": MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -1051,7 +1098,7 @@ def build_report(
         notes=(
             "Dense-break render uses source-backed stems, source timing, and a "
             "bounded source-aware pressure_lift/stutter/restore and arrangement "
-            "policy, but the 8-bar role grammar remains scripted; this is smoke/"
+            "policy plus a source-layer-off rebuild diagnostic, but the 8-bar role grammar remains scripted; this is smoke/"
             "regression/diagnostic evidence, not product-quality proof."
         ),
     )
@@ -1065,6 +1112,8 @@ def performance_proof(
     source_policy: DenseBreakSourcePolicy,
     performance: np.ndarray,
     sections: dict[str, np.ndarray],
+    rebuild_only_performance: np.ndarray,
+    rebuild_only_sections: dict[str, np.ndarray],
     bar_frames: int,
 ) -> dict:
     source_rms = rms(source)
@@ -1072,8 +1121,12 @@ def performance_proof(
     mc202_rms = rms(mc202)
     tr909_rms = rms(tr909)
     full_rms = rms(performance)
+    rebuild_only_rms = rms(rebuild_only_performance)
     hook_rms = rms(sections["chop_hook"])
     pressure_rms = rms(sections["pressure_lift"])
+    rebuild_only_hook_rms = rms(rebuild_only_sections["chop_hook"])
+    rebuild_only_pressure_rms = rms(rebuild_only_sections["pressure_lift"])
+    rebuild_only_restore_rms = rms(rebuild_only_sections["restore_hit"])
     pressure_bar4, pressure_bar5 = pressure_role_first_two(sections, bar_frames)
     restore_rms = rms(sections["restore_hit"])
     pressure_low = low_band_rms(sections["pressure_lift"])
@@ -1088,6 +1141,8 @@ def performance_proof(
     dropout_second = dropout[dropout.shape[0] // 2 :]
     bar_similarity = max_adjacent_bar_correlation(performance, bar_frames)
     source_similarity = waveform_correlation(source, performance)
+    rebuild_only_source_similarity = waveform_correlation(source, rebuild_only_performance)
+    source_on_rebuild_only_similarity = waveform_correlation(performance, rebuild_only_performance)
     return {
         "w30_to_source_rms_ratio": w30_rms / max(source_rms, 1e-9),
         "w30_to_full_performance_rms_ratio": w30_rms / max(full_rms, 1e-9),
@@ -1103,6 +1158,14 @@ def performance_proof(
         "hook_to_source_transient_ratio": hook_transient / max(transient_score(source), 1e-9),
         "pressure_to_hook_rms_ratio": pressure_rms / max(hook_rms, 1e-9),
         "restore_to_pressure_rms_ratio": restore_rms / max(pressure_rms, 1e-9),
+        "rebuild_only_to_full_rms_ratio": rebuild_only_rms / max(full_rms, 1e-9),
+        "rebuild_only_to_source_rms_ratio": rebuild_only_rms / max(source_rms, 1e-9),
+        "rebuild_only_to_source_correlation": rebuild_only_source_similarity,
+        "source_on_to_rebuild_only_correlation": source_on_rebuild_only_similarity,
+        "rebuild_only_pressure_to_hook_rms_ratio": rebuild_only_pressure_rms
+        / max(rebuild_only_hook_rms, 1e-9),
+        "rebuild_only_restore_to_pressure_rms_ratio": rebuild_only_restore_rms
+        / max(rebuild_only_pressure_rms, 1e-9),
         "source_policy_decision_count": 8.0 if source_policy.source_aware else 0.0,
         "pressure_lift_policy_decision_count": (
             12.0 if source_policy.pressure_lift_policy.source_aware else 0.0
@@ -1155,6 +1218,21 @@ def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list
         failures.append("pressure_section_not_louder_than_hook_enough")
     if proof["restore_to_pressure_rms_ratio"] < MIN_RESTORE_TO_PRESSURE_RMS_RATIO:
         failures.append("restore_hit_not_bigger_than_pressure_section")
+    if proof["rebuild_only_to_full_rms_ratio"] < MIN_REBUILD_ONLY_TO_FULL_RMS_RATIO:
+        failures.append("rebuild_only_too_weak_relative_to_full_mix")
+    if proof["rebuild_only_to_source_rms_ratio"] < MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO:
+        failures.append("rebuild_only_too_quiet_vs_source")
+    if proof["rebuild_only_to_source_correlation"] > MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION:
+        failures.append("rebuild_only_too_source_masked")
+    if proof["source_on_to_rebuild_only_correlation"] > MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION:
+        failures.append("source_layer_toggle_did_not_change_output")
+    if proof["rebuild_only_pressure_to_hook_rms_ratio"] < MIN_PRESSURE_TO_HOOK_RMS_RATIO:
+        failures.append("rebuild_only_pressure_not_louder_than_hook_enough")
+    if (
+        proof["rebuild_only_restore_to_pressure_rms_ratio"]
+        < MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO
+    ):
+        failures.append("rebuild_only_restore_not_bigger_than_pressure")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
     if proof["arrangement_role_count"] != float(DEFAULT_BARS):
