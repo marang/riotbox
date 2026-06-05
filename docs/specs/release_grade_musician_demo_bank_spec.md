@@ -19,6 +19,7 @@ by:
 
 ```bash
 just release-grade-demo-bank-fixtures
+just demo-bank-promotion-fixtures
 ```
 
 ---
@@ -71,7 +72,33 @@ release-ready language.
 
 ---
 
-## 5. Non-Goals
+## 5. Listening Review Promotion
+
+Structured `riotbox.listening_review.v1` reviews can be promoted into the demo
+bank with `scripts/promote_listening_review_to_demo_bank.py` only when the review
+carries `audio_judge_label` metadata from the professional listening pack.
+
+Promotion requires:
+
+- artifact identity for the performance report, agent review, source window,
+  full-performance WAV, and review prompt
+- source family and source path
+- rendered WAV path and SHA-256
+- metrics/report path and SHA-256
+- review prompt path and SHA-256
+- human verdict mapped from the structured review
+- a musician-facing demo-worthiness note
+- the seven demo-bank musical summary fields
+
+`keep` maps to `pass` and becomes `demo_ready`. Weak and failed reviews may be
+preserved only as `not_demo_ready` entries with concrete fix categories.
+`unverified` and `inconclusive` reviews must not be promoted into demo-ready
+entries. When `--require-artifact-hashes` is used, stale or missing artifact
+hashes block promotion.
+
+---
+
+## 6. Non-Goals
 
 This spec does not create a taste oracle, a runtime demo generator, or a public
 marketing page. It is a repo-owned evidence index for curated musician examples
