@@ -610,6 +610,9 @@ Riotbox approaches a stage-ready 1.0 release only when all of the following are 
 ### 10/10 Sound Product Gate
 
 Riotbox is not a 10/10 sound product merely because it renders valid audio.
+The versioned readiness contract lives in
+`docs/specs/sound_product_readiness_rubric_spec.md` and the machine-checkable
+fixture `scripts/fixtures/sound_product_readiness_rubric/rubric_v1.json`.
 The release-grade sound path is clear only when P022 and P023 prove all of the
 following:
 

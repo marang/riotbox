@@ -1,0 +1,125 @@
+# Sound Product Readiness Rubric Spec
+
+Version: 0.1
+Status: Draft
+Audience: audio, QA, product, agents
+
+---
+
+## 1. Purpose
+
+This spec defines Riotbox's 10/10 sound-product readiness rubric. It separates
+valid audio from musician-ready output and prevents CI, agents, PRs, demos, or
+roadmap notes from treating diagnostic renders as taste approval.
+
+The machine-checkable contract lives in
+`scripts/fixtures/sound_product_readiness_rubric/rubric_v1.json` and is
+validated by:
+
+```bash
+just sound-product-readiness-rubric-fixtures
+```
+
+---
+
+## 2. Readiness States
+
+The rubric uses seven explicit states:
+
+- `technical_pass`: output path is valid, but no quality claim is allowed.
+- `diagnostic_evidence`: smoke, regression, scripted, or negative fixture
+  evidence explains a seam or known failure class.
+- `agent_promising`: automation did not catch known weak-output modes inside
+  its documented boundary.
+- `human_weak`: a structured human verdict found the output technically shaped
+  but musically weak.
+- `human_pass`: a structured human verdict approved the audible result for the
+  stated use.
+- `demo_ready`: a curated example has source, rendered WAV, metrics, review
+  prompt, human pass, and demo-worthy reason.
+- `release_ready`: the cross-source-family 10/10 gate is met for the covered
+  release scope.
+
+Only `human_pass`, `demo_ready`, and `release_ready` may claim product quality.
+`agent_promising`, `technical_pass`, and `diagnostic_evidence` must not be
+phrased as musical pass, demo-ready, release-ready, or musician-approved.
+
+---
+
+## 3. Evidence Boundary
+
+Hardcoded or scripted audio generation can support:
+
+- smoke evidence
+- regression evidence
+- negative fixtures
+- diagnostic reports
+
+It cannot count as technical or musical product-quality proof. Product-quality
+proof requires source-aware behavior, policy ownership, non-hardcoded fixture
+evidence where applicable, and the correct human or release readiness state.
+
+Missing human verdicts must be reported as `human_verdict: unverified`.
+Weak human verdicts block demo-ready claims and must route to a concrete fix
+category.
+
+---
+
+## 4. Musical Dimensions
+
+Every 10/10 sound-product claim must account for these dimensions:
+
+- `hook_within_two_bars`: the output has a memorable stab, riff, break, bass
+  gesture, vocal hit, silence cut, or destructive transition within two bars.
+- `hardest_audible_element`: the strongest impact is obvious by ear: snare /
+  break transient, kick body, bass pressure, stab, or silence impact.
+- `source_character`: the source survives as transformed material without
+  source-copy, fallback collapse, or generated support masking.
+- `destructive_contrast`: choke, stop, reverse, retrigger, pitch dive, filter
+  slam, bitcrush, dropout, or restore changes the room immediately.
+- `bass_drum_pressure`: kick/snare/break body and MC-202 or other low-end
+  movement apply pressure without cluttering the hook.
+- `live_triggerability`: mute, choke, retrigger, pressure, dropout, restore, or
+  source-mangle gestures have immediate audible purpose.
+- `eight_bar_replay_value`: the loop has enough hook, pressure, contrast,
+  variation, or scene movement to invite another trigger after eight bars.
+
+---
+
+## 5. Fix Routing
+
+Weak or failed outputs must route to one or more concrete production categories:
+
+- `source_selection`
+- `chop_policy`
+- `drum_pressure`
+- `bass_movement`
+- `mix_bus`
+- `destructive_gesture`
+- `fixture_threshold`
+- `ui_cue`
+
+RIOTBOX-1205 provides the first diagnostic router for those categories. This
+rubric defines when such routing is required and which claims remain blocked.
+
+---
+
+## 6. Phase Links
+
+P021 owns audio-judge and human-label calibration. It may establish useful
+automation, but it must not create a hidden taste oracle.
+
+P022 owns the real-source, source-aware, non-hardcoded evidence path. It must
+replace scripted-only pressure or gesture proofs before those behaviors can
+support product-quality claims.
+
+P023 owns the release-grade sound-product bar, the demo bank, weak-output
+routing, and the separate 20/10 future-idea track.
+
+---
+
+## 7. Non-Goals
+
+The rubric is not a runtime model, a hidden taste oracle, or a replacement for
+human listening. It is a claim-control and actionability contract so Riotbox can
+improve weak sound without overstating evidence.
