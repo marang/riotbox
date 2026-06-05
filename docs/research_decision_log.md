@@ -2040,3 +2040,17 @@ Why: the edge-source diagnostic showed `DH_Fadapad_120_A.wav` could be classifie
 Evidence: RIOTBOX-1219 adds the `pad_noise` pressure policy, updates edge-source diagnostics and the professional-output suite to require the new policy path, and keeps the case weak-routed with concrete source-selection/UI/chop/destructive follow-ups.
 Consequences: future pad/noise work should improve the gated texture/stab behavior or user cue from this explicit family. It must not reintroduce dense-break promotion as a passing edge-source path unless a later spec defines a stronger source-family classifier and corresponding proof.
 Status: accepted
+
+---
+
+### RBX-071
+
+Date: 2026-06-05
+Topic: Ambiguous downbeat sources use a cautious confirmation path, not confident bar-locked arrangement
+Phase: P022 / Professional Sound Output
+Question: should bad-timing edge sources be allowed to pass through the normal dense-break/destructive arrangement policy while source timing is ambiguous?
+Decision: no. Sources whose timing report is `candidate_ambiguous` or `manual_confirm_only` take an explicit `bad_timing` pressure-policy path and a `manual_confirm_cautious_arrangement` timing policy. That policy keeps the render audible, emits a confirmation cue, requires user confirmation, and rejects confident bar-locked policy until timing is confirmed.
+Why: a wrong downbeat is musically worse than an honest caution path. Riotbox should not arrange a source as if the grid were proven when the timing layer says the performer must confirm it first.
+Evidence: RIOTBOX-1220 updates the dense-break performance generator to accept source-timing confidence, routes the bad-timing edge case into `bad_timing`, adds edge-source diagnostics and negative fixtures for missing cautious policy / bad bar-lock allowance, and surfaces the family in the professional-output suite key metrics.
+Consequences: future bad-timing work should improve source-aware confirmation, user cueing, and safe destructive/cut behavior behind this policy. Passing the edge diagnostic remains smoke/regression evidence only; it must keep `quality_proof: false` and `human_verdict: unverified`.
+Status: accepted

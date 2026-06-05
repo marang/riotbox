@@ -19,6 +19,7 @@ from route_weak_output_fixes import route_signals
 SCHEMA = "riotbox.edge_source_professional_diagnostics.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-edge-source-professional-diagnostics")
 DEFAULT_CORPUS = Path("docs/benchmarks/sound_excellence_source_corpus_v1.json")
+MIN_BAD_TIMING_CONFIRMATION_CUE_TRANSIENT_SCORE = 0.030
 CASES = [
     {
         "case_id": "pad_noise_fadapad_120",
@@ -191,6 +192,7 @@ def render_case(
         ],
         case_dir / "source-timing-validation.log",
     )
+    source_timing = read_json(source_timing_path)
     render_dir = case_dir / "render"
     run_or_exit(
         repo,
@@ -205,10 +207,13 @@ def render_case(
             str(render_dir),
             "--date",
             f"{date}-{spec['case_id']}",
+            "--timing-confidence-result",
+            str(source_timing.get("confidence_result") or ""),
+            "--timing-grid-use",
+            str(source_timing.get("grid_use") or ""),
         ],
         case_dir / "render.log",
     )
-    source_timing = read_json(source_timing_path)
     performance_report_path = render_dir / "performance-report.json"
     performance_report = read_json(performance_report_path)
     files = object_or_empty(performance_report.get("files"))
@@ -225,6 +230,7 @@ def render_case(
         proof,
     )
     route = route_signals(weak_signals, reason_tags_for_case(str(spec["source_family"])), [])
+    timing_policy = timing_policy_for_case(str(spec["source_family"]), source_timing, pressure_lift_policy)
     case = {
         "case_id": spec["case_id"],
         "source_family": spec["source_family"],
@@ -258,6 +264,7 @@ def render_case(
         "performance_report": str(performance_report_path),
         "performance_report_sha256": sha256_file(performance_report_path),
         "pressure_lift_policy": pressure_lift_policy,
+        "timing_policy": timing_policy,
         "proof": {
             "w30_to_source_rms_ratio": number(proof.get("w30_to_source_rms_ratio")),
             "full_to_source_rms_ratio": number(proof.get("full_to_source_rms_ratio")),
@@ -266,6 +273,9 @@ def render_case(
             ),
             "pressure_lift_policy_decision_count": number(
                 proof.get("pressure_lift_policy_decision_count")
+            ),
+            "manual_confirm_cue_transient_score": number(
+                proof.get("manual_confirm_cue_transient_score")
             ),
         },
         "metrics": {
@@ -291,6 +301,7 @@ def render_case(
             spec,
             source_timing,
             pressure_lift_policy,
+            timing_policy,
             proof,
             metrics,
             rendered_audio,
@@ -339,7 +350,11 @@ def weak_output_signals(
                 signals.append("pad_noise_misclassified_as_dense_break")
             signals.append("source_not_transformed_for_pad_noise")
     if source_family == "bad_timing":
-        signals.append("bar_locked_policy_on_bad_timing")
+        if policy_family == "bad_timing":
+            signals.append("bad_timing_cautious_arrangement_path")
+            signals.append("confirm_timing_before_bar_locked_moves")
+        else:
+            signals.append("bar_locked_policy_on_bad_timing")
         if source_timing.get("downbeat_status") == "ambiguous":
             signals.append("ambiguous_downbeat")
     if number(proof.get("source_to_performance_correlation")) >= 0.975:
@@ -361,10 +376,40 @@ def reason_tags_for_case(source_family: str) -> dict[str, str]:
     }
 
 
+def timing_policy_for_case(
+    source_family: str,
+    source_timing: dict[str, Any],
+    pressure_lift_policy: dict[str, Any],
+) -> dict[str, Any]:
+    if source_family == "bad_timing":
+        cautious = (
+            source_timing.get("confidence_result") == "candidate_ambiguous"
+            or source_timing.get("grid_use") == "manual_confirm_only"
+        )
+        policy_family = str(pressure_lift_policy.get("source_family") or "")
+        return {
+            "policy": "manual_confirm_cautious_arrangement" if cautious else "normal",
+            "bar_locked_policy_allowed": not cautious,
+            "pressure_policy_family": policy_family,
+            "user_cue": source_timing.get("cue"),
+            "actionability": source_timing.get("actionability"),
+            "requires_user_confirmation": cautious,
+        }
+    return {
+        "policy": "source_family_default",
+        "bar_locked_policy_allowed": True,
+        "pressure_policy_family": pressure_lift_policy.get("source_family"),
+        "user_cue": source_timing.get("cue"),
+        "actionability": source_timing.get("actionability"),
+        "requires_user_confirmation": False,
+    }
+
+
 def diagnostic_failure_codes(
     spec: dict[str, Any],
     source_timing: dict[str, Any],
     pressure_lift_policy: dict[str, Any],
+    timing_policy: dict[str, Any],
     proof: dict[str, Any],
     metrics: dict[str, Any],
     rendered_audio: Path,
@@ -381,6 +426,18 @@ def diagnostic_failure_codes(
         failures.append("pressure_lift_source_family_missing")
     if spec.get("source_family") == "pad_noise" and pressure_lift_policy.get("source_family") != "pad_noise":
         failures.append("pad_noise_policy_not_applied")
+    if spec.get("source_family") == "bad_timing":
+        if pressure_lift_policy.get("source_family") != "bad_timing":
+            failures.append("bad_timing_cautious_policy_not_applied")
+        if timing_policy.get("bar_locked_policy_allowed") is not False:
+            failures.append("bad_timing_bar_locked_policy_allowed")
+        if timing_policy.get("requires_user_confirmation") is not True:
+            failures.append("bad_timing_confirmation_cue_missing")
+        if (
+            number(proof.get("manual_confirm_cue_transient_score"))
+            < MIN_BAD_TIMING_CONFIRMATION_CUE_TRANSIENT_SCORE
+        ):
+            failures.append("bad_timing_confirmation_cue_too_weak")
     full = object_or_empty(metrics.get("full_performance"))
     if number(full.get("rms")) <= 0.01:
         failures.append("rendered_audio_silent")
@@ -429,6 +486,8 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
         failures.append("case_coverage_too_small")
     for case in cases:
         case_id = str(case.get("case_id", "unknown"))
+        metrics = object_or_empty(case.get("metrics"))
+        proof = object_or_empty(case.get("proof"))
         if not case.get("source_family"):
             failures.append(f"{case_id}:missing_source_family_metadata")
         if not object_or_empty(case.get("source_timing")).get("confidence_result"):
@@ -441,8 +500,22 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
             != "pad_noise"
         ):
             failures.append(f"{case_id}:pad_noise_policy_not_applied")
-        metrics = object_or_empty(case.get("metrics"))
-        proof = object_or_empty(case.get("proof"))
+        timing_policy = object_or_empty(case.get("timing_policy"))
+        if case.get("source_family") == "bad_timing":
+            if (
+                object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                != "bad_timing"
+            ):
+                failures.append(f"{case_id}:bad_timing_cautious_policy_not_applied")
+            if timing_policy.get("bar_locked_policy_allowed") is not False:
+                failures.append(f"{case_id}:bad_timing_bar_locked_policy_allowed")
+            if timing_policy.get("requires_user_confirmation") is not True:
+                failures.append(f"{case_id}:bad_timing_confirmation_cue_missing")
+            if (
+                number(proof.get("manual_confirm_cue_transient_score"))
+                < MIN_BAD_TIMING_CONFIRMATION_CUE_TRANSIENT_SCORE
+            ):
+                failures.append(f"{case_id}:bad_timing_confirmation_cue_too_weak")
         if number(metrics.get("full_performance_rms")) <= 0.01:
             failures.append(f"{case_id}:rendered_audio_silent")
         if case.get("rendered_audio_sha256") == case.get("source_window_sha256"):
