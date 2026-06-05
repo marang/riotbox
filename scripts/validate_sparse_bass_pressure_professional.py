@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from audio_qa_evidence_boundary import apply_evidence_boundary
+
 
 SCHEMA = "riotbox.sparse_bass_pressure_professional.v1"
 MIN_FULL_RMS = 0.020
@@ -80,7 +82,7 @@ def build_report(manifest_path: Path) -> dict[str, Any]:
         "min_generated_to_w30_contribution_ratio": MIN_GENERATED_TO_W30_CONTRIBUTION_RATIO,
     }
     failures = failure_codes(metrics)
-    return {
+    report = {
         "schema": SCHEMA,
         "schema_version": 1,
         "result": "pass" if not failures else "fail",
@@ -94,6 +96,17 @@ def build_report(manifest_path: Path) -> dict[str, Any]:
         "metrics": metrics,
         "failure_codes": failures,
     }
+    return apply_evidence_boundary(
+        report,
+        evidence_role="diagnostic",
+        source_backed=True,
+        source_timing_backed=True,
+        scripted_generation=True,
+        notes=(
+            "Sparse-bass pressure professional fixture validates source-family "
+            "diagnostic metrics. It is not product-quality proof."
+        ),
+    )
 
 
 def extract_metrics(manifest: dict[str, Any]) -> dict[str, Any]:
@@ -206,6 +219,8 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Result: `{report['result']}`",
         f"- Agent verdict: `{report['agent_verdict']}`",
         f"- Human verdict: `{report['human_verdict']}`",
+        f"- Evidence role: `{report['evidence_role']}`",
+        f"- Quality proof: `{str(report['quality_proof']).lower()}`",
         f"- Source family: `{report['source_family']}`",
         f"- Case: `{report['case_id']}` / `{report['window_id']}`",
         "",

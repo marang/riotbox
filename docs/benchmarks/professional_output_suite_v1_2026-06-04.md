@@ -12,6 +12,8 @@ Child reports:
 - dense-break performance pack
 - pro-pressure source matrix
 - professional source WAV pack for tonal and sparse local sources
+- non-dense professional proof pack for tonal-hook and sparse-bass-pressure
+  source-family diagnostics
 - professional output listening pack
 - destructive variation professional report
 - rendered weak professional-output diagnostics
@@ -38,6 +40,15 @@ variation professional gate rejects it for concrete musical reasons: flat
 dropout/stutter contrast and a restore that does not come back bigger than the
 pressure section.
 
+The suite's non-dense side includes
+`non-dense-professional-proof-pack-smoke`. That target joins rendered tonal and
+sparse professional WAV artifacts with source-family fixture manifests,
+validator reports, and listening prompts. It guards against hookless tonal
+output, weak sparse bass pressure, fallback collapse, source-copy collapse,
+static bars, masked source response, and loose source-grid alignment. It extends
+professional-output diagnostics beyond dense breaks, but it is still not
+product-quality proof while the render path remains scripted.
+
 The suite also enforces the shared evidence-boundary contract. Current scripted
 diagnostics must report `quality_proof: false`; the suite must fail if any
 scripted child report claims product-quality proof. Source-backed diagnostics
@@ -51,6 +62,7 @@ Run:
 just professional-output-suite-smoke
 just professional-output-listening-verdict-import-fixtures
 just rendered-weak-professional-output-fixtures
+just non-dense-professional-proof-pack-smoke
 ```
 
 Boundary:

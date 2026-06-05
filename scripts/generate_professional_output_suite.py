@@ -25,6 +25,7 @@ CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
     "pro_pressure_source_matrix": "riotbox.pro_pressure_source_matrix.v1",
     "professional_source_wav_pack": "riotbox.professional_source_wav_pack.v1",
+    "non_dense_professional_proof_pack": "riotbox.non_dense_professional_proof_pack.v1",
     "professional_output_listening_pack": "riotbox.professional_output_listening_pack.v1",
     "destructive_variation": "riotbox.destructive_variation_professional.v1",
     "rendered_weak_professional_outputs": "riotbox.rendered_weak_professional_outputs.v1",
@@ -84,6 +85,7 @@ def render_children(repo: Path, output: Path, date: str) -> None:
     dense = output / "dense-break"
     pro_matrix = output / "pro-pressure-source-matrix"
     source_wav = output / "professional-source-wav-pack"
+    non_dense = output / "non-dense-professional-proof-pack"
     listening = output / "professional-output-listening-pack"
     destructive = output / "destructive-variation"
     rendered_weak = output / "rendered-weak-professional-outputs"
@@ -145,6 +147,21 @@ def render_children(repo: Path, output: Path, date: str) -> None:
         repo,
         [
             sys.executable,
+            "scripts/generate_non_dense_professional_proof_pack.py",
+            "--output",
+            str(non_dense),
+            "--professional-source-wav-pack",
+            str(source_wav),
+            "--reuse-professional-source-wav-pack",
+            "--date",
+            f"{date}-non-dense",
+        ],
+        non_dense / "suite-render.log",
+    )
+    run_or_exit(
+        repo,
+        [
+            sys.executable,
             "scripts/validate_destructive_variation_professional.py",
             "--json-output",
             str(destructive / "destructive-variation.json"),
@@ -191,6 +208,12 @@ def build_report(output: Path) -> dict[str, Any]:
         (
             "professional_source_wav_pack",
             output / "professional-source-wav-pack" / "professional-source-wav-pack.json",
+        ),
+        (
+            "non_dense_professional_proof_pack",
+            output
+            / "non-dense-professional-proof-pack"
+            / "non-dense-professional-proof-pack.json",
         ),
         (
             "professional_output_listening_pack",
@@ -317,6 +340,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
     if child_id == "professional_output_listening_pack":
         return {
             "case_count": int(number(data.get("case_count"))),
+            "source_families": sorted(
+                str(case.get("source_family", "unknown"))
+                for case in list_or_empty(data.get("cases"))
+            ),
+        }
+    if child_id == "non_dense_professional_proof_pack":
+        return {
+            "case_count": int(number(data.get("case_count"))),
+            "passed_case_count": int(number(data.get("passed_case_count"))),
             "source_families": sorted(
                 str(case.get("source_family", "unknown"))
                 for case in list_or_empty(data.get("cases"))

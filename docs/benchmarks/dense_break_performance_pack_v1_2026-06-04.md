@@ -73,6 +73,7 @@ just dense-break-performance-pack-smoke
 just agent-musical-review-pack-smoke
 just pro-pressure-source-matrix-smoke
 just professional-source-wav-pack-smoke
+just non-dense-professional-proof-pack-smoke
 just professional-output-listening-pack-smoke
 just destructive-variation-professional-smoke
 just rendered-weak-professional-output-fixtures
@@ -92,6 +93,16 @@ write `human_verdict: unverified`. Because these cases currently reuse the
 dense-break performance generator, they are cross-source diagnostics rather than
 source-family quality proof.
 
+`non-dense-professional-proof-pack-smoke` adds a bounded bridge between the
+rendered tonal/sparse Professional Source WAVs and the stricter
+`tonal_hook_professional` / `sparse_bass_pressure_professional` validator
+families. It writes WAV hashes, source-family validator hashes, and review
+prompts for tonal-hook and sparse-bass-pressure cases, plus the source-family
+fixture manifest hashes that fed the validators. It is still diagnostic: the
+current rendered WAV path is scripted, so the pack must keep
+`quality_proof: false` until source-family production decisions are owned by the
+engine rather than by a rehearsed render recipe.
+
 `professional-output-listening-pack-smoke` prepares structured human-review
 packs for dense, tonal, and sparse professional-output WAVs. It records candidate
 WAV hashes, source-report hashes, review prompts, and explicit
@@ -107,7 +118,9 @@ that do not recover with enough level after the destructive gesture.
 reports together and writes `riotbox.professional_output_suite.v1`. The suite is
 the central deterministic status surface for dense-break, pro-pressure source
 matrix, tonal/sparse WAV packs, structured listening packs, and destructive
-variation proof. It checks child report hashes and listening-pack file identity,
+variation proof. It also includes the non-dense proof pack so tonal-hook and
+sparse-bass-pressure source-family validators are visible in the aggregate
+status surface. It checks child report hashes and listening-pack file identity,
 but still keeps `human_verdict: unverified`.
 
 `rendered-weak-professional-output-fixtures` adds a rendered negative example:
