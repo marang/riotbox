@@ -1062,4 +1062,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Polish production engine for pressure, mix bus, and destructive gestures
 - [RIOTBOX-1203.md](./RIOTBOX-1203.md)
   Build broad real-source sound excellence corpus
+- [RIOTBOX-1205.md](./RIOTBOX-1205.md)
+  Add weak-output failure-to-fix routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
