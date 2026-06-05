@@ -1058,4 +1058,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add rendered weak-output examples for professional source families
 - [RIOTBOX-1211.md](./RIOTBOX-1211.md)
   Expand professional output proof beyond dense breaks
+- [RIOTBOX-1206.md](./RIOTBOX-1206.md)
+  Polish production engine for pressure, mix bus, and destructive gestures
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
