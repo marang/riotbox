@@ -20,7 +20,7 @@ It currently covers:
 - tonal riffs: `DH_RushArp_120_A.wav`
 - pad / noise material: `DH_Fadapad_120_A.wav`
 - weak source material: `Beat20_128BPM(Full).wav`
-- bad-timing policy material: `DH_Fadapad_120_A.wav`
+- bad-timing policy material: `Beat20_128BPM(Full).wav`
 
 Each entry records the expected musical payoff, likely failure modes, timing
 expectation, local-use / license boundary, and the QA or future pack it should

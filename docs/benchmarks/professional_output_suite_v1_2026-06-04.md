@@ -17,6 +17,7 @@ Child reports:
 - professional output listening pack
 - destructive variation professional report
 - rendered weak professional-output diagnostics
+- edge-source professional diagnostics for pad/noise and bad-timing material
 
 The suite also verifies the structured listening pack identity:
 
@@ -49,6 +50,16 @@ static bars, masked source response, and loose source-grid alignment. It extends
 professional-output diagnostics beyond dense breaks, but it is still not
 product-quality proof while the render path remains scripted.
 
+The suite's edge-source side includes
+`edge-source-professional-diagnostics-smoke`. That target renders one
+pad/noise-like source and one bad-timing source through the current scripted
+professional-output path, stores source-timing reports, rendered WAVs, hashes,
+metrics, pressure-lift policy metadata, and production fix routing. Its role is
+to prevent a technically green render from becoming a quality claim when source
+timing is degraded or ambiguous. It must reject silence, fallback/identical
+output collapse, and missing source-family metadata, while keeping
+`human_verdict: unverified` and `quality_proof: false`.
+
 The suite also enforces the shared evidence-boundary contract. Current scripted
 diagnostics must report `quality_proof: false`; the suite must fail if any
 scripted child report claims product-quality proof. Source-backed diagnostics
@@ -63,6 +74,7 @@ just professional-output-suite-smoke
 just professional-output-listening-verdict-import-fixtures
 just rendered-weak-professional-output-fixtures
 just non-dense-professional-proof-pack-smoke
+just edge-source-professional-diagnostics-smoke
 ```
 
 Boundary:

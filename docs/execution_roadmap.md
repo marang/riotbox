@@ -636,6 +636,10 @@ following:
   - current P022 diagnostic coverage exposes a `pressure_lift_policy` for dense
     break, tonal-hook, and sparse-bass-pressure sources while keeping the
     arranged 8-bar slot scripted and `human_verdict: unverified`
+  - edge-source diagnostic coverage now includes pad/noise and bad-timing
+    sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
+    source-family metadata, and concrete fix routing are present, but
+    `quality_proof: false` remains mandatory
 - generated demo packs include curated source, rendered WAV, metrics, review
   prompt, human verdict, and a short reason why the example is demo-worthy or
   not demo-worthy yet

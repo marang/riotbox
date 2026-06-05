@@ -29,6 +29,7 @@ CHILDREN = {
     "professional_output_listening_pack": "riotbox.professional_output_listening_pack.v1",
     "destructive_variation": "riotbox.destructive_variation_professional.v1",
     "rendered_weak_professional_outputs": "riotbox.rendered_weak_professional_outputs.v1",
+    "edge_source_professional_diagnostics": "riotbox.edge_source_professional_diagnostics.v1",
 }
 
 
@@ -89,6 +90,7 @@ def render_children(repo: Path, output: Path, date: str) -> None:
     listening = output / "professional-output-listening-pack"
     destructive = output / "destructive-variation"
     rendered_weak = output / "rendered-weak-professional-outputs"
+    edge_source = output / "edge-source-professional-diagnostics"
 
     run_or_exit(
         repo,
@@ -181,6 +183,18 @@ def render_children(repo: Path, output: Path, date: str) -> None:
         ],
         rendered_weak / "suite-render.log",
     )
+    run_or_exit(
+        repo,
+        [
+            sys.executable,
+            "scripts/generate_edge_source_professional_diagnostics.py",
+            "--output",
+            str(edge_source),
+            "--date",
+            f"{date}-edge-source",
+        ],
+        edge_source / "suite-render.log",
+    )
 
 
 def run_or_exit(repo: Path, command: list[str], log_path: Path) -> None:
@@ -228,6 +242,12 @@ def build_report(output: Path) -> dict[str, Any]:
             output
             / "rendered-weak-professional-outputs"
             / "rendered-weak-professional-outputs.json",
+        ),
+        (
+            "edge_source_professional_diagnostics",
+            output
+            / "edge-source-professional-diagnostics"
+            / "edge-source-professional-diagnostics.json",
         ),
     ]
     children = [summarize_child(child_id, path) for child_id, path in child_specs]
@@ -374,6 +394,22 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 1
                 for case in list_or_empty(data.get("cases"))
                 if case.get("validator_result") == "expected_fail"
+            ),
+        }
+    if child_id == "edge_source_professional_diagnostics":
+        return {
+            "case_count": int(number(data.get("case_count"))),
+            "weak_routed_case_count": int(number(data.get("weak_routed_case_count"))),
+            "source_families": sorted(
+                str(case.get("source_family", "unknown"))
+                for case in list_or_empty(data.get("cases"))
+            ),
+            "proposed_fix_categories": sorted(
+                {
+                    str(category)
+                    for case in list_or_empty(data.get("cases"))
+                    for category in list_or_empty(case.get("proposed_fix_categories"))
+                }
             ),
         }
     return {}
