@@ -1084,4 +1084,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add rebuild-only proof for professional-output packs
 - [RIOTBOX-1218.md](./RIOTBOX-1218.md)
   Add negative fixtures for rebuild-only professional-output proof
+- [RIOTBOX-1219.md](./RIOTBOX-1219.md)
+  Add pad/noise source-family policy instead of dense-break promotion
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
