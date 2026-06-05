@@ -636,6 +636,9 @@ following:
 - generated demo packs include curated source, rendered WAV, metrics, review
   prompt, human verdict, and a short reason why the example is demo-worthy or
   not demo-worthy yet
+- the release-grade demo-bank contract is versioned in
+  `docs/specs/release_grade_musician_demo_bank_spec.md` and validated by
+  `scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json`
 - hardcoded or scripted audio generation may be used only as smoke, regression,
   or diagnostic evidence; it must not be presented as technical or musical
   quality proof until the relevant behavior is source-aware, policy-owned, and
