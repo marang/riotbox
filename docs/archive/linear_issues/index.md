@@ -1060,4 +1060,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expand professional output proof beyond dense breaks
 - [RIOTBOX-1206.md](./RIOTBOX-1206.md)
   Polish production engine for pressure, mix bus, and destructive gestures
+- [RIOTBOX-1203.md](./RIOTBOX-1203.md)
+  Build broad real-source sound excellence corpus
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
