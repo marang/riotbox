@@ -78,6 +78,7 @@ audio-qa-ci:
     just audio-judge-spike-fixtures
     just audio-judge-spike-generated-smoke
     just musical-pass-gate-policy-fixtures
+    just sound-product-readiness-rubric-fixtures
     just listening-manifest-validate-generated-packs
     just syncopated-source-showcase-smoke
     just w30-smoke-generated-source-diff
@@ -335,6 +336,11 @@ audio-judge-spike-generated-smoke output="artifacts/audio_qa/local-agent-musical
 musical-pass-gate-policy-fixtures:
     tmp="$(mktemp)" && python3 scripts/validate_musical_pass_gate_policy.py --json-output "$tmp" scripts/fixtures/musical_pass_gate_policy/policy_v1.json && jq -e '.schema == "riotbox.musical_pass_gate_policy.v1" and .result == "pass" and .state_count == 8 and (.musical_pass_states == ["calibrated_agent_musical_pass", "human_musical_pass"]) and .minimum_calibrated_label_count >= 12' "$tmp" && rm "$tmp"
     tmp="$(mktemp -d)" && if python3 scripts/validate_musical_pass_gate_policy.py scripts/fixtures/musical_pass_gate_policy/invalid_agent_promising_claims_pass.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected agent-promising pass policy fixture to fail" >&2; exit 1; fi && grep -q "agent_promising must not claim musical pass" "$tmp/invalid.out" && rm -rf "$tmp"
+
+sound-product-readiness-rubric-fixtures:
+    tmp="$(mktemp)" && python3 scripts/validate_sound_product_readiness_rubric.py --json-output "$tmp" scripts/fixtures/sound_product_readiness_rubric/rubric_v1.json && jq -e '.schema == "riotbox.sound_product_readiness_rubric.v1" and .result == "pass" and .state_count == 7 and (.quality_states == ["demo_ready", "human_pass", "release_ready"]) and .musical_dimension_count == 7 and (.fix_categories == ["bass_movement", "chop_policy", "destructive_gesture", "drum_pressure", "fixture_threshold", "mix_bus", "source_selection", "ui_cue"]) and (.phase_links == ["P021", "P022", "P023"])' "$tmp" && rm "$tmp"
+    tmp="$(mktemp -d)" && if python3 scripts/validate_sound_product_readiness_rubric.py scripts/fixtures/sound_product_readiness_rubric/invalid_scripted_claims_quality.json >"$tmp/invalid.out" 2>&1; then cat "$tmp/invalid.out" >&2; rm -rf "$tmp"; echo "expected scripted quality-proof fixture to fail" >&2; exit 1; fi && grep -q "hardcoded_or_scripted must not claim quality proof" "$tmp/invalid.out" && rm -rf "$tmp"
+    tmp="$(mktemp -d)" && jq '.evidence_classes.synthetic_oracle = {"meaning":"oracle","may_claim_quality_proof":true,"allowed_use":["pass"],"blocked_claims":["none"]}' scripts/fixtures/sound_product_readiness_rubric/rubric_v1.json >"$tmp/unknown.json" && if python3 scripts/validate_sound_product_readiness_rubric.py "$tmp/unknown.json" >"$tmp/unknown.out" 2>&1; then cat "$tmp/unknown.out" >&2; rm -rf "$tmp"; echo "expected unknown evidence class fixture to fail" >&2; exit 1; fi && grep -q "unknown evidence classes" "$tmp/unknown.out" && rm -rf "$tmp"
 
 beat03-auto-feral-grid-proof date="local-beat03-feral-grid-auto-proof":
     scripts/validate_beat03_auto_feral_grid_pack.sh "{{date}}"

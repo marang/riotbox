@@ -1,0 +1,188 @@
+{
+  "schema": "riotbox.sound_product_readiness_rubric.v1",
+  "schema_version": 1,
+  "hidden_taste_oracle_allowed": false,
+  "states": {
+    "technical_pass": {
+      "meaning": "The render is technically valid: non-silent when expected, bounded, reproducible, and not obviously collapsed.",
+      "may_claim_product_quality": false,
+      "required_evidence": ["unit/integration tests", "technical audio metrics", "output-path artifact or report"],
+      "allowed_language": ["technical pass", "render path valid"],
+      "blocked_claims": ["sounds good", "demo-ready", "release-ready", "musician-approved"],
+      "next_action": "Run diagnostic, automated promising, or human listening gates before quality claims."
+    },
+    "diagnostic_evidence": {
+      "meaning": "Smoke, regression, scripted, or negative fixture evidence proves a harness or known failure class, not product quality.",
+      "may_claim_product_quality": false,
+      "required_evidence": ["fixture or generated diagnostic artifact", "explicit evidence boundary", "human_verdict: unverified"],
+      "allowed_language": ["diagnostic", "regression guard", "known weak-output mode caught"],
+      "blocked_claims": ["quality proof", "human pass", "demo-ready"],
+      "next_action": "Use the evidence to improve source-aware policy, routing, thresholds, or implementation."
+    },
+    "agent_promising": {
+      "meaning": "Automation did not catch known weak-output modes and found useful bounded musical evidence.",
+      "may_claim_product_quality": false,
+      "required_evidence": ["agent review or automated musical fitness report", "known blind spots", "human_verdict: unverified"],
+      "allowed_language": ["agent promising", "known weak modes not caught"],
+      "blocked_claims": ["musical pass", "demo-ready", "release-ready", "human-approved"],
+      "next_action": "Seek structured human listening labels before musician-facing claims."
+    },
+    "human_weak": {
+      "meaning": "A structured human listener found the output technically shaped but not strong enough for demo or release use.",
+      "may_claim_product_quality": false,
+      "required_evidence": ["human listening review", "failure reason", "preferred direction", "weak-output fix category"],
+      "allowed_language": ["human weak", "technically shaped but musically weak"],
+      "blocked_claims": ["demo-ready", "release-ready", "10/10 sound"],
+      "next_action": "Route to source selection, chop, drum, bass, mix, destructive gesture, fixture, or UI follow-up."
+    },
+    "human_pass": {
+      "meaning": "A structured human listener approved the audible result for the stated source family and use.",
+      "may_claim_product_quality": true,
+      "required_evidence": ["human listening review", "artifact identity", "source family", "review prompt"],
+      "allowed_language": ["human pass", "human listening approved for this use"],
+      "blocked_claims": ["global release-ready", "all source families solved"],
+      "next_action": "Use as labeled evidence and consider demo curation only if identity, replay, and source-family coverage are sufficient."
+    },
+    "demo_ready": {
+      "meaning": "A curated example is strong enough to show to a musician for its stated source family and workflow.",
+      "may_claim_product_quality": true,
+      "required_evidence": ["curated source", "rendered WAV", "metrics", "review prompt", "human pass", "demo-worthy reason"],
+      "allowed_language": ["demo-ready for stated source/workflow", "curated musician demo"],
+      "blocked_claims": ["release-ready across Riotbox", "universal 10/10"],
+      "next_action": "Add to the release-grade musician demo bank with source, verdict, and reason."
+    },
+    "release_ready": {
+      "meaning": "The release-grade sound bar is met across required source families, failure classes, demos, and QA gates.",
+      "may_claim_product_quality": true,
+      "required_evidence": ["P021/P022/P023 gates", "real-source human pass coverage", "technical QA coverage", "demo bank", "weak-output routing"],
+      "allowed_language": ["10/10 sound-product release-ready", "release-grade sound quality for covered scope"],
+      "blocked_claims": ["20/10 future ideas are required for 1.0", "hidden taste oracle"],
+      "next_action": "Protect the release gate with CI, listening labels, and demo curation before expanding 20/10 ideas."
+    }
+  },
+  "musical_dimensions": {
+    "hook_within_two_bars": {
+      "question": "What is the hook after two bars?",
+      "ten_out_of_ten": "A stab, riff, break, bass gesture, vocal hit, silence cut, or destructive transition is memorable without explanation.",
+      "failure_modes": ["hookless loop", "weak W-30 chop", "source-copy phrase", "generic pattern"],
+      "evidence": ["review prompt answer", "W-30/source contribution metrics", "human label"]
+    },
+    "hardest_audible_element": {
+      "question": "What hits hardest by ear?",
+      "ten_out_of_ten": "The hardest element is obvious: snare/break transient, kick body, bass pressure, stab, or silence impact.",
+      "failure_modes": ["no focal impact", "over-compressed wash", "weak restore", "decorative drums"],
+      "evidence": ["section metrics", "transient/low-band proof", "human strongest-element label"]
+    },
+    "source_character": {
+      "question": "Does source character survive as transformed material?",
+      "ten_out_of_ten": "The result is clearly source-informed but not source-copy, fallback-only, or masked by generated support.",
+      "failure_modes": ["source lost", "source-copy collapse", "fallback collapse", "generated support masks source"],
+      "evidence": ["source relation metrics", "source-family report", "listening review source-recognition field"]
+    },
+    "destructive_contrast": {
+      "question": "Does the destructive gesture change the room?",
+      "ten_out_of_ten": "Choke, stop, reverse, retrigger, pitch dive, filter slam, bitcrush, dropout, or restore creates immediate contrast.",
+      "failure_modes": ["flat stutter", "dropout too loud", "restore too small", "bars too static"],
+      "evidence": ["destructive variation report", "dropout/stutter/restore metrics", "human contrast label"]
+    },
+    "bass_drum_pressure": {
+      "question": "Do bass and drums apply physical pressure without clutter?",
+      "ten_out_of_ten": "Kick/snare/break body and MC-202 or low-end movement hit with authority while leaving the hook readable.",
+      "failure_modes": ["weak bass pressure", "TR-909 decorative", "MC-202 midrange phrase only", "low end masks hook"],
+      "evidence": ["low-band metrics", "TR-909/MC-202 proof", "human hardest-hit label"]
+    },
+    "live_triggerability": {
+      "question": "Can a player trigger a meaningful change live?",
+      "ten_out_of_ten": "Mute, choke, retrigger, pressure, dropout, restore, or source-mangle gestures have immediate audible purpose.",
+      "failure_modes": ["state change without room change", "gesture only visible in logs", "latency or replay ambiguity"],
+      "evidence": ["observer/audio correlation", "action queue/commit proof", "listening pack prompt"]
+    },
+    "eight_bar_replay_value": {
+      "question": "Is there a reason to keep listening after eight bars?",
+      "ten_out_of_ten": "The loop has enough hook, pressure, contrast, variation, or scene movement to invite another trigger.",
+      "failure_modes": ["polite loop", "static repetition", "no central identity", "annoying randomness"],
+      "evidence": ["human replay-value label", "bar variation metrics", "demo-worthy reason"]
+    }
+  },
+  "evidence_classes": {
+    "hardcoded_or_scripted": {
+      "meaning": "Fixed or scripted generation used to exercise a harness or known path.",
+      "may_claim_quality_proof": false,
+      "allowed_use": ["smoke", "regression", "diagnostic", "negative fixture"],
+      "blocked_claims": ["technical product-quality proof", "musical product-quality proof", "demo-ready"]
+    },
+    "smoke": {
+      "meaning": "A quick proof that a command, render seam, or report still executes.",
+      "may_claim_quality_proof": false,
+      "allowed_use": ["CI health", "wiring proof"],
+      "blocked_claims": ["sound-product pass", "human approval"]
+    },
+    "regression": {
+      "meaning": "A stable fixture that catches a known bad-output regression.",
+      "may_claim_quality_proof": false,
+      "allowed_use": ["prevent known regression", "protect failure class"],
+      "blocked_claims": ["new output is good", "release-ready"]
+    },
+    "diagnostic": {
+      "meaning": "A report that explains what happened and what to fix next.",
+      "may_claim_quality_proof": false,
+      "allowed_use": ["route fixes", "compare artifacts", "document blind spots"],
+      "blocked_claims": ["musical pass", "demo-ready"]
+    },
+    "automated_promising": {
+      "meaning": "Automation found no known weak-output mode inside its documented boundary.",
+      "may_claim_quality_proof": false,
+      "allowed_use": ["merge evidence", "candidate ranking", "human review prep"],
+      "blocked_claims": ["human pass", "10/10 sound"]
+    },
+    "human_listening": {
+      "meaning": "A structured human review judged the audible artifact for a stated use.",
+      "may_claim_quality_proof": true,
+      "allowed_use": ["human weak/pass/fail labels", "demo curation", "release evidence"],
+      "blocked_claims": ["unbounded source families", "hidden oracle"]
+    },
+    "demo_curation": {
+      "meaning": "A selected example has source, render, metrics, prompt, human verdict, and demo-worthy reason.",
+      "may_claim_quality_proof": true,
+      "allowed_use": ["musician demo bank", "source-family showcase"],
+      "blocked_claims": ["global release-ready without coverage"]
+    },
+    "release_gate": {
+      "meaning": "The complete cross-source-family quality bar is satisfied for the covered release scope.",
+      "may_claim_quality_proof": true,
+      "allowed_use": ["10/10 release claim", "release notes"],
+      "blocked_claims": ["20/10 ideas required for 1.0", "unverified human verdicts"]
+    }
+  },
+  "reporting_contract": {
+    "missing_human_verdict_label": "human_verdict: unverified",
+    "weak_human_verdict_blocks_demo_ready": true,
+    "required_weak_output_fix_categories": [
+      "source_selection",
+      "chop_policy",
+      "drum_pressure",
+      "bass_movement",
+      "mix_bus",
+      "destructive_gesture",
+      "fixture_threshold",
+      "ui_cue"
+    ]
+  },
+  "phase_links": {
+    "P021": {
+      "role": "Audio judge and label calibration foundation.",
+      "required_outputs": ["human label corpus", "judge readiness report", "musical-pass boundary"],
+      "blocked_shortcuts": ["uncalibrated embedding taste oracle", "runtime model dependency for pass claims"]
+    },
+    "P022": {
+      "role": "Real-source sound-quality harness and non-hardcoded evidence path.",
+      "required_outputs": ["real-source coverage", "source-aware policy proof", "weak-output regression coverage"],
+      "blocked_shortcuts": ["hardcoded pressure_lift proof", "scripted fixture as product-quality proof"]
+    },
+    "P023": {
+      "role": "Release-grade sound-product quality, demos, and future idea separation.",
+      "required_outputs": ["10/10 rubric", "demo bank", "weak-output routing", "20/10 idea track"],
+      "blocked_shortcuts": ["demo without human verdict", "agent promising as release-ready"]
+    }
+  }
+}

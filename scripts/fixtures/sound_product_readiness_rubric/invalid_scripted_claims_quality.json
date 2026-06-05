@@ -1,0 +1,92 @@
+{
+  "schema": "riotbox.sound_product_readiness_rubric.v1",
+  "schema_version": 1,
+  "hidden_taste_oracle_allowed": false,
+  "states": {
+    "technical_pass": {
+      "meaning": "valid render",
+      "may_claim_product_quality": false,
+      "required_evidence": ["metrics"],
+      "allowed_language": ["technical pass"],
+      "blocked_claims": ["musical pass"],
+      "next_action": "review"
+    },
+    "diagnostic_evidence": {
+      "meaning": "diagnostic",
+      "may_claim_product_quality": false,
+      "required_evidence": ["fixture"],
+      "allowed_language": ["diagnostic"],
+      "blocked_claims": ["quality proof"],
+      "next_action": "route"
+    },
+    "agent_promising": {
+      "meaning": "automation passed",
+      "may_claim_product_quality": false,
+      "required_evidence": ["agent report"],
+      "allowed_language": ["agent promising"],
+      "blocked_claims": ["human pass"],
+      "next_action": "listen"
+    },
+    "human_weak": {
+      "meaning": "weak human verdict",
+      "may_claim_product_quality": false,
+      "required_evidence": ["review"],
+      "allowed_language": ["human weak"],
+      "blocked_claims": ["demo-ready"],
+      "next_action": "fix"
+    },
+    "human_pass": {
+      "meaning": "human pass",
+      "may_claim_product_quality": true,
+      "required_evidence": ["review"],
+      "allowed_language": ["human pass"],
+      "blocked_claims": ["global release"],
+      "next_action": "curate"
+    },
+    "demo_ready": {
+      "meaning": "demo ready",
+      "may_claim_product_quality": true,
+      "required_evidence": ["demo"],
+      "allowed_language": ["demo-ready"],
+      "blocked_claims": ["release-ready"],
+      "next_action": "bank"
+    },
+    "release_ready": {
+      "meaning": "release ready",
+      "may_claim_product_quality": true,
+      "required_evidence": ["gates"],
+      "allowed_language": ["release-ready"],
+      "blocked_claims": ["hidden oracle"],
+      "next_action": "release"
+    }
+  },
+  "musical_dimensions": {
+    "hook_within_two_bars": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]},
+    "hardest_audible_element": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]},
+    "source_character": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]},
+    "destructive_contrast": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]},
+    "bass_drum_pressure": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]},
+    "live_triggerability": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]},
+    "eight_bar_replay_value": {"question": "q", "ten_out_of_ten": "a", "failure_modes": ["f"], "evidence": ["e"]}
+  },
+  "evidence_classes": {
+    "hardcoded_or_scripted": {"meaning": "scripted", "may_claim_quality_proof": true, "allowed_use": ["smoke"], "blocked_claims": ["quality proof"]},
+    "smoke": {"meaning": "smoke", "may_claim_quality_proof": false, "allowed_use": ["health"], "blocked_claims": ["quality"]},
+    "regression": {"meaning": "regression", "may_claim_quality_proof": false, "allowed_use": ["guard"], "blocked_claims": ["quality"]},
+    "diagnostic": {"meaning": "diagnostic", "may_claim_quality_proof": false, "allowed_use": ["route"], "blocked_claims": ["quality"]},
+    "automated_promising": {"meaning": "automated", "may_claim_quality_proof": false, "allowed_use": ["candidate"], "blocked_claims": ["human pass"]},
+    "human_listening": {"meaning": "human", "may_claim_quality_proof": true, "allowed_use": ["label"], "blocked_claims": ["global"]},
+    "demo_curation": {"meaning": "demo", "may_claim_quality_proof": true, "allowed_use": ["bank"], "blocked_claims": ["global"]},
+    "release_gate": {"meaning": "release", "may_claim_quality_proof": true, "allowed_use": ["release"], "blocked_claims": ["hidden oracle"]}
+  },
+  "reporting_contract": {
+    "missing_human_verdict_label": "human_verdict: unverified",
+    "weak_human_verdict_blocks_demo_ready": true,
+    "required_weak_output_fix_categories": ["source_selection", "chop_policy", "drum_pressure", "bass_movement", "mix_bus", "destructive_gesture", "fixture_threshold", "ui_cue"]
+  },
+  "phase_links": {
+    "P021": {"role": "judge", "required_outputs": ["labels"], "blocked_shortcuts": ["oracle"]},
+    "P022": {"role": "harness", "required_outputs": ["real source"], "blocked_shortcuts": ["scripted proof"]},
+    "P023": {"role": "quality", "required_outputs": ["rubric"], "blocked_shortcuts": ["demo without verdict"]}
+  }
+}
