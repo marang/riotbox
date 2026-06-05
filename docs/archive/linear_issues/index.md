@@ -1064,4 +1064,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Build broad real-source sound excellence corpus
 - [RIOTBOX-1205.md](./RIOTBOX-1205.md)
   Add weak-output failure-to-fix routing
+- [RIOTBOX-1202.md](./RIOTBOX-1202.md)
+  Define 10/10 sound-product readiness rubric
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
