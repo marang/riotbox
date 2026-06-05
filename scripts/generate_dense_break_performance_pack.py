@@ -32,6 +32,7 @@ MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
 MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 0.58
+MIN_BAD_TIMING_CUE_TRANSIENT_SCORE = 0.030
 MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO = 0.85
 MAX_ADJACENT_BAR_CORRELATION = 0.985
 MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.975
@@ -122,6 +123,8 @@ def main() -> int:
     parser.add_argument("--source-start-seconds", type=float, default=0.0)
     parser.add_argument("--keep-output", action="store_true")
     parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--timing-confidence-result")
+    parser.add_argument("--timing-grid-use")
     args = parser.parse_args()
 
     repo = repo_root()
@@ -184,7 +187,12 @@ def main() -> int:
     mc202 = apply_gain(mc202[:frame_count], 1.35)
 
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
-    source_policy = dense_break_source_policy(source_audio, bar_frames)
+    source_policy = dense_break_source_policy(
+        source_audio,
+        bar_frames,
+        timing_confidence_result=args.timing_confidence_result,
+        timing_grid_use=args.timing_grid_use,
+    )
     performance, sections = render_performance(
         source_audio,
         tr909,
@@ -347,13 +355,21 @@ def render_feral_grid_pack(
         raise SystemExit(f"feral_grid_pack failed; see {output / 'render.log'}")
 
 
-def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreakSourcePolicy:
+def dense_break_source_policy(
+    source: np.ndarray,
+    bar_frames: int,
+    *,
+    timing_confidence_result: str | None = None,
+    timing_grid_use: str | None = None,
+) -> DenseBreakSourcePolicy:
     first_two_bars = source[: min(2 * bar_frames, source.shape[0])]
     profile = audio_metrics(first_two_bars)
     pressure_lift_policy = pressure_lift_policy_for(
         low_band_rms=profile.low_band_rms,
         high_band_ratio=profile.high_band_ratio,
         transient_score=profile.transient_score,
+        timing_confidence_result=timing_confidence_result,
+        timing_grid_use=timing_grid_use,
     )
     arrangement_policy = arrangement_policy_for(pressure_lift_policy.source_family)
 
@@ -385,6 +401,13 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         stutter_step_divisor = 12
         stutter_grain_beat_offset = 0.25
         restore_snap_gain = 1.30
+    elif pressure_lift_policy.source_family == "bad_timing":
+        pressure_shape = "manual-confirm cautious lift"
+        stutter_density = "cautious downbeat-check stutter"
+        restore_hit_shape = "confirmation-cue restore"
+        stutter_step_divisor = 16
+        stutter_grain_beat_offset = 0.25
+        restore_snap_gain = 1.80
     else:
         pressure_shape = "thin-source support lift"
         stutter_density = "busy recovery stutter"
@@ -409,6 +432,10 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         bass_restore = 55.0
         pressure_gain = 1.06
         bass_gain = 0.92
+    elif pressure_lift_policy.source_family == "bad_timing":
+        bass_restore = 50.0
+        pressure_gain = 1.10
+        bass_gain = 0.96
     else:
         bass_restore = 51.5
         pressure_gain = 1.02
@@ -452,6 +479,10 @@ def arrangement_policy_for(source_family: str) -> ArrangementPolicy:
         roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
         shape = "texture gate caution"
         intent = "treat noisy pad material as a texture gate, not a proven breakbeat"
+    elif source_family == "bad_timing":
+        roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
+        shape = "manual-confirm cautious cut"
+        intent = "avoid confident bar-locked rearrangement until ambiguous downbeat timing is confirmed"
     else:
         roles = ("hook", "chop", "hook", "pressure", "chop", "pressure", "dropout", "restore")
         shape = "cautious recovery lift"
@@ -470,7 +501,27 @@ def pressure_lift_policy_for(
     low_band_rms: float,
     high_band_ratio: float,
     transient_score: float,
+    *,
+    timing_confidence_result: str | None = None,
+    timing_grid_use: str | None = None,
 ) -> PressureLiftPolicy:
+    if timing_confidence_result == "candidate_ambiguous" or timing_grid_use == "manual_confirm_only":
+        return PressureLiftPolicy(
+            source_aware=True,
+            source_family="bad_timing",
+            lift_shape="manual-confirm cautious lift",
+            lift_intent="keep the render audible but cue timing confirmation before confident bar-locked moves",
+            source_bleed_gain=0.050,
+            hook_bleed_gain=0.66,
+            tr909_drive=1.02,
+            break_snap_drive=0.98,
+            mc202_drive=0.92,
+            bass_drive=0.94,
+            bar4_intensity=0.92,
+            bar5_intensity=1.03,
+            bar4_bass_frequency_hz=40.0,
+            bar5_bass_frequency_hz=47.0,
+        )
     if (
         low_band_rms < MAX_PAD_NOISE_LOW_BAND_RMS
         and high_band_ratio >= MIN_PAD_NOISE_HIGH_BAND_RATIO
@@ -853,6 +904,14 @@ def render_dropout_stutter_bar(
     source_snap_grain = transient_emphasis(source[grain_source_start:grain_source_end].copy())
     source_snap_grain *= impact_envelope(source_snap_grain.shape[0], decay=0.040)[:, None]
     source_snap_grain = normalize_peak(source_snap_grain, 0.78)
+    cue_snap_grain = None
+    if source_policy.pressure_lift_policy.source_family == "bad_timing":
+        cue_snap_grain = np.zeros_like(grain)
+        click_len = min(cue_snap_grain.shape[0], 192)
+        cue = np.linspace(1.0, -0.65, click_len, dtype=np.float32)
+        cue *= impact_envelope(click_len, decay=0.018)
+        cue_snap_grain[:click_len, 0] = cue
+        cue_snap_grain[:click_len, 1] = cue * 0.35
 
     step = max(1, bar_frames // source_policy.stutter_step_divisor)
     for index, target in enumerate(range(dropout_end, bar_frames - grain.shape[0], step)):
@@ -863,6 +922,8 @@ def render_dropout_stutter_bar(
         snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
         bar[target:end] += grain * (3.15 * decay * source_policy.pressure_gain)
         bar[target:end] += source_snap_grain[: end - target] * (2.05 * decay * source_policy.restore_snap_gain)
+        if cue_snap_grain is not None:
+            bar[target:end] += cue_snap_grain[: end - target] * (5.50 * decay)
         bar[target : min(target + 96, bar.shape[0])] += accent * (0.58 * decay)
         bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.02 * decay)
 
@@ -1077,7 +1138,9 @@ def build_report(
         rebuild_only_sections,
         bar_frames,
     )
-    failure_codes = failure_codes_for(metrics, proof)
+    failure_codes = failure_codes_for(
+        metrics, proof, source_policy.pressure_lift_policy.source_family
+    )
     verdict = "agent_promising" if not failure_codes else "agent_fail"
     if failure_codes and len(failure_codes) <= 2:
         verdict = "agent_weak"
@@ -1112,6 +1175,7 @@ def build_report(
             "min_pressure_low_band_lift_ratio": MIN_PRESSURE_LOW_BAND_LIFT_RATIO,
             "max_dropout_to_stutter_rms_ratio": MAX_DROPOUT_TO_STUTTER_RMS_RATIO,
             "min_stutter_to_hook_transient_ratio": MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO,
+            "min_bad_timing_cue_transient_score": MIN_BAD_TIMING_CUE_TRANSIENT_SCORE,
             "min_restore_to_hook_transient_ratio": MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO,
             "max_adjacent_bar_correlation": MAX_ADJACENT_BAR_CORRELATION,
             "max_source_to_performance_correlation": MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
@@ -1196,6 +1260,7 @@ def performance_proof(
         "pressure_low_band_lift_ratio": pressure_low / max(hook_low, 1e-9),
         "dropout_to_stutter_rms_ratio": rms(dropout_first) / max(rms(dropout_second), 1e-9),
         "stutter_to_hook_transient_ratio": transient_score(dropout_second) / max(hook_transient, 1e-9),
+        "manual_confirm_cue_transient_score": transient_score(dropout_second),
         "restore_to_hook_transient_ratio": restore_transient / max(hook_transient, 1e-9),
         "max_adjacent_bar_correlation": bar_similarity,
         "source_to_performance_correlation": source_similarity,
@@ -1233,7 +1298,11 @@ def performance_proof(
     }
 
 
-def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list[str]:
+def failure_codes_for(
+    metrics: dict[str, dict],
+    proof: dict[str, float],
+    source_family: str | None = None,
+) -> list[str]:
     failures = []
     for name, item in metrics.items():
         if item["rms"] < 0.001:
@@ -1246,7 +1315,10 @@ def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list
         failures.append("pressure_section_lacks_bass_lift")
     if proof["dropout_to_stutter_rms_ratio"] > MAX_DROPOUT_TO_STUTTER_RMS_RATIO:
         failures.append("dropout_not_contrasting_with_stutter")
-    if proof["stutter_to_hook_transient_ratio"] < MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO:
+    if source_family == "bad_timing":
+        if proof["manual_confirm_cue_transient_score"] < MIN_BAD_TIMING_CUE_TRANSIENT_SCORE:
+            failures.append("bad_timing_confirmation_cue_too_weak")
+    elif proof["stutter_to_hook_transient_ratio"] < MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO:
         failures.append("stutter_lacks_transient_impact")
     if proof["restore_to_hook_transient_ratio"] < MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO:
         failures.append("restore_hit_lacks_break_transient_impact")
@@ -1304,6 +1376,7 @@ def validate_report_file(path: Path) -> None:
     metrics = report.get("metrics")
     proof = report.get("proof")
     files = report.get("files")
+    source_policy = report.get("source_policy")
     if not isinstance(metrics, dict):
         raise SystemExit("invalid dense-break performance report: metrics must be an object")
     if not isinstance(proof, dict):
@@ -1315,7 +1388,12 @@ def validate_report_file(path: Path) -> None:
             "invalid dense-break performance report: rebuild_only_performance file missing"
         )
     boundary_failures = evidence_boundary_failure_codes(report)
-    computed_failures = failure_codes_for(metrics, proof)
+    source_family = None
+    if isinstance(source_policy, dict):
+        pressure_lift_policy = source_policy.get("pressure_lift_policy")
+        if isinstance(pressure_lift_policy, dict):
+            source_family = str(pressure_lift_policy.get("source_family") or "")
+    computed_failures = failure_codes_for(metrics, proof, source_family)
     if boundary_failures or computed_failures:
         failures = boundary_failures + computed_failures
         raise SystemExit("invalid dense-break performance report: " + ", ".join(failures))

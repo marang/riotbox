@@ -59,15 +59,18 @@ instrument instead of a technically valid but underpowered fixture.
 `agent_promising` is not a final musical pass, and this pack is not technical or
 musical quality proof for the product. The current pack now records a bounded
 `source_policy` decision object. A nested `pressure_lift_policy` classifies the
-source as dense-break, tonal-hook, sparse-bass-pressure, or thin/uncertain from
-the source low-band, high-band, and transient profile, then chooses lift shape,
-source/hook bleed, TR-909 / MC-202 / bass drive, bar-4 / bar-5 intensity, and
-bass frequencies. The same source profile also chooses stutter density, grain
-offset, and restore snap gain. A sibling `arrangement_policy` chooses the 8-bar
-role order from the same source family: dense breaks keep the classic
-hook/hook/chop/chop/pressure/pressure/dropout/restore arc, while sparse
-bass-pressure sources can move pressure earlier before returning to hook/chop
-contrast. The allowed role grammar is still scripted and bounded to
+source as dense-break, tonal-hook, sparse-bass-pressure, pad/noise, bad-timing,
+or thin/uncertain from the source profile and source-timing confidence, then
+chooses lift shape, source/hook bleed, TR-909 / MC-202 / bass drive, bar-4 /
+bar-5 intensity, and bass frequencies. The same policy also chooses stutter
+density, grain offset, restore snap gain, and bad-timing confirmation cue
+strength. A sibling `arrangement_policy` chooses the 8-bar role order from the
+same source family: dense breaks keep the classic
+hook/hook/chop/chop/pressure/pressure/dropout/restore arc, sparse bass-pressure
+sources can move pressure earlier before returning to hook/chop contrast, and
+bad-timing sources take a manual-confirm cautious cut that avoids confident
+bar-locked claims until timing is confirmed. The allowed role grammar is still
+scripted and bounded to
 `hook`, `chop`, `pressure`, `dropout`, and `restore`, so this remains smoke,
 regression, and diagnostic evidence. It proves the harness can render
 source-backed stems, apply visible source-aware pressure-lift/stutter/restore
@@ -146,11 +149,14 @@ source-timing while taking the explicit `pad_noise` pressure policy path. That
 path treats the source as a gated texture candidate rather than pretending it is
 a breakbeat. The bad-timing case uses `Beat20_128BPM(Full).wav` and must stay
 `candidate_ambiguous` / `manual_confirm_only` so bar-locked decisions route to a
-timing/UI fix instead of pretending the grid is proven. The smoke mutates the
-generated report to prove silence, identical output, fallback collapse, and
-missing source-family metadata are rejected. This is diagnostic evidence only:
-passing means Riotbox detected and routed the weak/risky output, not that the
-output is demo-ready.
+timing/UI fix instead of pretending the grid is proven. That case must take the
+explicit `bad_timing` pressure policy, expose a
+`manual_confirm_cautious_arrangement` timing policy, reject bar-locked policy,
+and render an audible confirmation cue. The smoke mutates the generated report
+to prove silence, identical output, fallback collapse, missing source-family
+metadata, missing bad-timing policy, and bad-timing bar-lock regression are
+rejected. This is diagnostic evidence only: passing means Riotbox detected and
+routed the weak/risky output, not that the output is demo-ready.
 
 `professional-output-listening-pack-smoke` prepares structured human-review
 packs for dense, tonal, and sparse professional-output WAVs. It records candidate

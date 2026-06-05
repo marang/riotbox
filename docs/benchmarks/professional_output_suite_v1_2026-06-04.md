@@ -57,10 +57,15 @@ professional-output path, stores source-timing reports, rendered WAVs, hashes,
 metrics, pressure-lift policy metadata, and production fix routing. Its role is
 to prevent a technically green render from becoming a quality claim when source
 timing is degraded or ambiguous. Pad/noise must take the explicit `pad_noise`
-pressure policy path instead of being promoted to dense-break proof. The edge
-gate must reject silence, fallback/identical output collapse, missing
-source-family metadata, and missing pad/noise policy routing, while keeping
-`human_verdict: unverified` and `quality_proof: false`.
+pressure policy path instead of being promoted to dense-break proof. Bad-timing
+must take the explicit `bad_timing` pressure policy path, expose
+`manual_confirm_cautious_arrangement`, require user confirmation, and reject
+confident bar-locked policy while source timing remains
+`candidate_ambiguous` / `manual_confirm_only`. The edge gate must reject
+silence, fallback/identical output collapse, missing source-family metadata,
+missing pad/noise policy routing, missing bad-timing cautious policy, and
+bad-timing bar-lock regression, while keeping `human_verdict: unverified` and
+`quality_proof: false`.
 
 The suite also enforces the shared evidence-boundary contract. Current scripted
 diagnostics must report `quality_proof: false`; the suite must fail if any
