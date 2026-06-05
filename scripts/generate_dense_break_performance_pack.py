@@ -46,6 +46,8 @@ MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO = 0.30
 MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO = 1.08
 MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION = 0.920
 MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 0.25
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -669,6 +671,11 @@ def render_performance(
         1.58,
     )
     pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
+    restore_bass_gain = (
+        1.88
+        if lift_policy.source_family == "sparse_bass_pressure"
+        else 1.68
+    )
     restore_mix = glue_bus(
         source * (0.28 * source_layer_gain)
         + w30 * 1.76
@@ -676,7 +683,7 @@ def render_performance(
         + tr909 * 2.78
         + break_snap * 3.64
         + mc202 * 3.65
-        + bass_pressure * 1.68,
+        + bass_pressure * restore_bass_gain,
         drive=1.72,
         slam=0.40,
     )
@@ -839,6 +846,70 @@ def arrangement_role_frequency_policy(
         elif role == "restore":
             frequencies[bar] = source_policy.bass_restore_frequency_hz
     return frequencies
+
+
+def bass_movement_frequency_policy(
+    source: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
+    bar_frames: int,
+) -> dict[int, float]:
+    static = arrangement_role_frequency_policy(source_policy)
+    if source_policy.pressure_lift_policy.source_family != "sparse_bass_pressure":
+        return static
+
+    reference = source[: min(max(1, 2 * bar_frames), source.shape[0])]
+    reference_low = max(low_band_rms(reference), 1e-6)
+    derived = {}
+    for bar, base_frequency in static.items():
+        start = bar * bar_frames
+        end = min(start + bar_frames, source.shape[0])
+        if start >= end:
+            derived[bar] = base_frequency
+            continue
+        chunk = source[start:end]
+        local_low = low_band_rms(chunk)
+        mono = chunk.mean(axis=1)
+        low = np.abs(one_pole_lowpass(mono.astype(np.float32), 140.0))
+        weight = float(np.sum(low))
+        centroid = 0.50
+        if weight > 1e-9:
+            positions = np.arange(low.shape[0], dtype=np.float32) / max(1, low.shape[0] - 1)
+            centroid = float(np.sum(positions * low) / weight)
+        energy_offset = float(np.clip((local_low / reference_low - 1.0) * 4.0, -5.0, 5.0))
+        timing_offset = float(np.clip((centroid - 0.50) * 9.0, -4.5, 4.5))
+        transient_offset = float(np.clip(transient_score(chunk) * 14.0, 0.0, 3.0))
+        if source_policy.arrangement_policy.role_order[bar] == "restore":
+            timing_offset *= 0.55
+            transient_offset *= 0.60
+        derived[bar] = float(
+            np.clip(base_frequency + energy_offset + timing_offset + transient_offset, 32.0, 62.0)
+        )
+    return derived
+
+
+def bass_movement_policy_proof(
+    source: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
+    bar_frames: int,
+) -> dict[str, float]:
+    static = arrangement_role_frequency_policy(source_policy)
+    derived = bass_movement_frequency_policy(source, source_policy, bar_frames)
+    if not derived:
+        return {
+            "bass_movement_source_derived": 0.0,
+            "sparse_bass_movement_static_distance_hz": 0.0,
+            "sparse_bass_movement_frequency_span_hz": 0.0,
+        }
+    distances = [abs(derived[bar] - static.get(bar, derived[bar])) for bar in derived]
+    frequencies = list(derived.values())
+    is_sparse = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
+    return {
+        "bass_movement_source_derived": 1.0 if is_sparse else 0.0,
+        "sparse_bass_movement_static_distance_hz": float(np.mean(distances)) if is_sparse else 0.0,
+        "sparse_bass_movement_frequency_span_hz": (
+            float(max(frequencies) - min(frequencies)) if is_sparse else 0.0
+        ),
+    }
 
 
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
@@ -1025,7 +1096,7 @@ def render_bass_pressure_layer(
 ) -> np.ndarray:
     layer = np.zeros_like(source)
     total_frames = source.shape[0]
-    frequencies = arrangement_role_frequency_policy(source_policy)
+    frequencies = bass_movement_frequency_policy(source, source_policy, bar_frames)
     for bar, base_frequency in frequencies.items():
         bar_start = bar * bar_frames
         if bar_start >= total_frames:
@@ -1191,6 +1262,10 @@ def build_report(
             ),
             "max_rebuild_only_to_source_correlation": MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION,
             "max_source_on_to_rebuild_only_correlation": MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION,
+            "min_sparse_bass_movement_static_distance_hz": (
+                MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
+            ),
+            "min_sparse_bass_movement_span_hz": MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -1253,7 +1328,7 @@ def performance_proof(
     source_similarity = waveform_correlation(source, performance)
     rebuild_only_source_similarity = waveform_correlation(source, rebuild_only_performance)
     source_on_rebuild_only_similarity = waveform_correlation(performance, rebuild_only_performance)
-    return {
+    proof = {
         "w30_to_source_rms_ratio": w30_rms / max(source_rms, 1e-9),
         "w30_to_full_performance_rms_ratio": w30_rms / max(full_rms, 1e-9),
         "generated_to_w30_rms_ratio": (tr909_rms + mc202_rms) / max(w30_rms, 1e-9),
@@ -1296,6 +1371,8 @@ def performance_proof(
         "source_policy_bass_gain": source_policy.bass_gain,
         "source_policy_stutter_step_divisor": float(source_policy.stutter_step_divisor),
     }
+    proof.update(bass_movement_policy_proof(source, source_policy, bar_frames))
+    return proof
 
 
 def failure_codes_for(
@@ -1361,6 +1438,19 @@ def failure_codes_for(
         failures.append("arrangement_destructive_restore_tail_missing")
     if proof["arrangement_failure_count"] > 0.0:
         failures.append("arrangement_policy_contract_failed")
+    if source_family == "sparse_bass_pressure":
+        if proof.get("bass_movement_source_derived", 0.0) < 1.0:
+            failures.append("sparse_bass_movement_not_source_derived")
+        if (
+            proof.get("sparse_bass_movement_static_distance_hz", 0.0)
+            < MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
+        ):
+            failures.append("sparse_bass_movement_collapsed_to_fixed_contour")
+        if (
+            proof.get("sparse_bass_movement_frequency_span_hz", 0.0)
+            < MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ
+        ):
+            failures.append("sparse_bass_movement_not_varied_enough")
     return failures
 
 
