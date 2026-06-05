@@ -100,6 +100,10 @@ Current benchmark artifacts:
   Machine-checkable 10/10 sound-product readiness rubric for technical pass,
   diagnostic evidence, automated promising, human weak/pass, demo-ready, and
   release-ready states.
+- `scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json`
+  Machine-checkable release-grade musician demo-bank contract that separates
+  pass, weak, failed, and `human_verdict: unverified` examples while requiring
+  dense-break and non-dense source-family coverage.
 - [professional_output_suite_v1_2026-06-04.md](./professional_output_suite_v1_2026-06-04.md)
   Aggregate professional-output suite report that hashes and summarizes dense-break, source-matrix, source-WAV, listening-pack, and destructive-variation gates without claiming a human musical pass.
 - [sound_excellence_source_corpus_v1_2026-06-05.md](./sound_excellence_source_corpus_v1_2026-06-05.md)

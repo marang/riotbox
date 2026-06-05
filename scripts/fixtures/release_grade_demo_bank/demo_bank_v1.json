@@ -1,0 +1,190 @@
+{
+  "schema": "riotbox.release_grade_demo_bank.v1",
+  "schema_version": 1,
+  "readiness_rubric_schema": "riotbox.sound_product_readiness_rubric.v1",
+  "hidden_taste_oracle_allowed": false,
+  "description": "Fixture demo-bank contract. Hashes are fixture identities, not committed audio.",
+  "entries": [
+    {
+      "entry_id": "dense-break-beat03-human-pass",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03/05_full_performance.wav",
+        "sha256": "dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03/performance-report.json",
+        "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03/prompt.md",
+        "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+      },
+      "human_verdict": "pass",
+      "demo_readiness": "demo_ready",
+      "demo_worthiness_note": "Break transient is the hardest element, the hook arrives immediately, and the restore gives the player a clear stage moment.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "Clear W-30 break hook appears inside the first bar.",
+        "hardest_audible_element": "Snare and break transient lead the impact.",
+        "source_character": "Source remains transformed but recognizable.",
+        "destructive_contrast": "Dropout and restore create obvious contrast.",
+        "bass_drum_pressure": "Drum body and bass lift support the hook without masking it.",
+        "live_triggerability": "Dropout, stutter, and restore would read as playable live gestures.",
+        "eight_bar_replay_value": "The hook, pressure, and restore give a reason to replay after eight bars."
+      }
+    },
+    {
+      "entry_id": "dense-break-beat03-human-weak",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-weak/05_full_performance.wav",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-weak/performance-report.json",
+        "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-weak/prompt.md",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "human_verdict": "weak",
+      "demo_readiness": "not_demo_ready",
+      "demo_worthiness_note": "Technically shaped but the hook and bass pressure are not strong enough for a musician-facing demo.",
+      "fix_categories": ["chop_policy", "bass_movement"],
+      "musical_summary": {
+        "hook_within_two_bars": "Hook exists but is not memorable enough.",
+        "hardest_audible_element": "Chop is audible but does not dominate.",
+        "source_character": "Source is present enough to fix rather than discard.",
+        "destructive_contrast": "Contrast is present but not the weakness.",
+        "bass_drum_pressure": "Bass pressure is weak and needs more physical low-end movement.",
+        "live_triggerability": "Gestures change state, but not the room enough yet.",
+        "eight_bar_replay_value": "Medium replay value; not demo-ready."
+      }
+    },
+    {
+      "entry_id": "dense-break-beat03-human-fail",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-fail/05_full_performance.wav",
+        "sha256": "6666666666666666666666666666666666666666666666666666666666666666"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-fail/performance-report.json",
+        "sha256": "3333333333333333333333333333333333333333333333333333333333333333"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-beat03-fail/prompt.md",
+        "sha256": "4444444444444444444444444444444444444444444444444444444444444444"
+      },
+      "human_verdict": "fail",
+      "demo_readiness": "not_demo_ready",
+      "demo_worthiness_note": "Collapsed output with no clear hook, no pressure, and no useful source identity; preserved only as a failure example.",
+      "fix_categories": ["source_selection", "chop_policy", "drum_pressure", "bass_movement"],
+      "musical_summary": {
+        "hook_within_two_bars": "No usable hook appears.",
+        "hardest_audible_element": "No element hits hardest.",
+        "source_character": "Source character is lost.",
+        "destructive_contrast": "No meaningful destructive contrast.",
+        "bass_drum_pressure": "Bass and drum pressure are missing.",
+        "live_triggerability": "No live gesture would be worth triggering.",
+        "eight_bar_replay_value": "No reason to keep listening after eight bars."
+      }
+    },
+    {
+      "entry_id": "tonal-hook-rusharp-human-pass",
+      "source_family": "tonal_hook",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/release-demo-bank/tonal-rusharp/05_full_performance.wav",
+        "sha256": "abababababababababababababababababababababababababababababababab"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/release-demo-bank/tonal-rusharp/performance-report.json",
+        "sha256": "7777777777777777777777777777777777777777777777777777777777777777"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/tonal-rusharp/prompt.md",
+        "sha256": "8888888888888888888888888888888888888888888888888888888888888888"
+      },
+      "human_verdict": "pass",
+      "demo_readiness": "demo_ready",
+      "demo_worthiness_note": "Tonal source becomes a playable riff rather than a source-copy loop, with enough pressure support to show non-dense range.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "The tonal riff reads as the hook immediately.",
+        "hardest_audible_element": "The chop/riff is the focal impact.",
+        "source_character": "Source character stays transformed but present.",
+        "destructive_contrast": "Contrast is present enough for a tonal demo.",
+        "bass_drum_pressure": "Bass support is present without burying the riff.",
+        "live_triggerability": "Retriggering the riff would be musically meaningful.",
+        "eight_bar_replay_value": "The riff identity gives replay value after eight bars."
+      }
+    },
+    {
+      "entry_id": "sparse-bass-pressure-human-weak",
+      "source_family": "sparse_bass_pressure",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/release-demo-bank/sparse-bass-pressure/05_full_performance.wav",
+        "sha256": "3434343434343434343434343434343434343434343434343434343434343434"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/release-demo-bank/sparse-bass-pressure/performance-report.json",
+        "sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/sparse-bass-pressure/prompt.md",
+        "sha256": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+      },
+      "human_verdict": "weak",
+      "demo_readiness": "not_demo_ready",
+      "demo_worthiness_note": "Useful non-dense pressure example, but hook and destructive contrast still need work before demo promotion.",
+      "fix_categories": ["destructive_gesture", "chop_policy"],
+      "musical_summary": {
+        "hook_within_two_bars": "Hook is weak.",
+        "hardest_audible_element": "Bass body is the strongest element.",
+        "source_character": "Sparse source remains present.",
+        "destructive_contrast": "Stop/restore contrast is not sharp enough.",
+        "bass_drum_pressure": "Pressure is present but not enough by itself.",
+        "live_triggerability": "Pressure gesture is useful, but needs a sharper live change.",
+        "eight_bar_replay_value": "Medium replay value; not enough for demo-ready."
+      }
+    },
+    {
+      "entry_id": "tonal-hook-rusharp-unverified-candidate",
+      "source_family": "tonal_hook",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/local-professional-output-listening-pack/tonal_rusharp_120/05_full_performance.wav",
+        "sha256": "9999999999999999999999999999999999999999999999999999999999999999"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/local-professional-output-listening-pack/tonal_rusharp_120/performance-report.json",
+        "sha256": "1212121212121212121212121212121212121212121212121212121212121212"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/local-professional-output-listening-pack/reviews/tonal_rusharp_120/prompt.md",
+        "sha256": "5656565656565656565656565656565656565656565656565656565656565656"
+      },
+      "human_verdict": "unverified",
+      "demo_readiness": "unverified",
+      "quality_claim": false,
+      "demo_worthiness_note": "Candidate is indexed for review, but it must remain unverified until a structured human verdict exists.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "Candidate claims a possible hook, unverified by human listening.",
+        "hardest_audible_element": "Hardest element is unverified.",
+        "source_character": "Source character is unverified by human listening.",
+        "destructive_contrast": "Destructive contrast is unverified.",
+        "bass_drum_pressure": "Pressure judgment is unverified.",
+        "live_triggerability": "Live usefulness is unverified.",
+        "eight_bar_replay_value": "Replay value is unverified."
+      }
+    }
+  ]
+}

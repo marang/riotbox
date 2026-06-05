@@ -1,0 +1,38 @@
+{
+  "schema": "riotbox.release_grade_demo_bank.v1",
+  "schema_version": 1,
+  "readiness_rubric_schema": "riotbox.sound_product_readiness_rubric.v1",
+  "hidden_taste_oracle_allowed": false,
+  "entries": [
+    {
+      "entry_id": "dense-break-weak-without-fix",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-weak/05_full_performance.wav",
+        "sha256": "2222222222222222222222222222222222222222222222222222222222222222"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-weak/performance-report.json",
+        "sha256": "eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/dense-break-weak/prompt.md",
+        "sha256": "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+      },
+      "human_verdict": "weak",
+      "demo_readiness": "not_demo_ready",
+      "demo_worthiness_note": "Weak example without a fix category should fail.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "weak",
+        "hardest_audible_element": "weak",
+        "source_character": "present",
+        "destructive_contrast": "present",
+        "bass_drum_pressure": "weak",
+        "live_triggerability": "weak",
+        "eight_bar_replay_value": "medium"
+      }
+    }
+  ]
+}
