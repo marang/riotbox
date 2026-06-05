@@ -104,6 +104,10 @@ Current benchmark artifacts:
   Machine-checkable release-grade musician demo-bank contract that separates
   pass, weak, failed, and `human_verdict: unverified` examples while requiring
   dense-break and non-dense source-family coverage.
+- `scripts/fixtures/sound_product_2010_future_ideas/ideas_v1.json`
+  Machine-checkable 20/10 sound-product idea backlog that records musical
+  payoff, product-spine impact, replay/realtime risk, and promotion evidence
+  while keeping every idea non-blocking for the 1.0 release gate.
 - [professional_output_suite_v1_2026-06-04.md](./professional_output_suite_v1_2026-06-04.md)
   Aggregate professional-output suite report that hashes and summarizes dense-break, source-matrix, source-WAV, listening-pack, and destructive-variation gates without claiming a human musical pass.
 - [sound_excellence_source_corpus_v1_2026-06-05.md](./sound_excellence_source_corpus_v1_2026-06-05.md)

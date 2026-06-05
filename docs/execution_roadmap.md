@@ -707,6 +707,13 @@ making Riotbox exceptional after the product can already be trusted. Capture
 the musical payoff, the product spine they improve, the replay / realtime risk,
 and the evidence required to prove they are more than impressive demos.
 
+The versioned 20/10 contract lives in
+`docs/specs/sound_product_2010_future_ideas_spec.md` and the machine-checkable
+idea list lives in
+`scripts/fixtures/sound_product_2010_future_ideas/ideas_v1.json`. That list is
+validated in CI and explicitly keeps every idea non-blocking for the 1.0 sound
+release gate unless a future issue promotes it into normal roadmap scope.
+
 ---
 
 ## 14. What Must Not Go on the Critical Path Yet

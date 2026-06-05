@@ -1,0 +1,21 @@
+{
+  "schema": "riotbox.sound_product_2010_future_ideas.v1",
+  "schema_version": 1,
+  "owner_ticket": "RIOTBOX-1210",
+  "release_gate_boundary": "non_blocking_for_1_0",
+  "hidden_taste_oracle_allowed": false,
+  "promotion_requires_linear_issue": true,
+  "ideas": [
+    {
+      "idea_id": "producer_loop_take_selection",
+      "title": "Invalid release-blocking producer loop",
+      "release_blocking": true,
+      "musical_payoff": "invalid",
+      "product_spine_improved": ["audio_qa"],
+      "replay_realtime_risk": ["invalid"],
+      "evidence_needed": ["invalid"],
+      "promotion_condition": "invalid",
+      "release_1_0_boundary": "invalid"
+    }
+  ]
+}

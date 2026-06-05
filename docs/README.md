@@ -39,13 +39,14 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 16. [Audio QA Workflow Spec](./specs/audio_qa_workflow_spec.md)
 17. [Sound Product Readiness Rubric Spec](./specs/sound_product_readiness_rubric_spec.md)
 18. [Release-Grade Musician Demo Bank Spec](./specs/release_grade_musician_demo_bank_spec.md)
-19. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
-20. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
-21. [Recovery Notes](./recovery_notes.md)
-22. [Phase Definition of Done](./phase_definition_of_done.md)
-23. [Research / Decision Log](./research_decision_log.md)
-24. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
-25. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+19. [20/10 Sound-Product Future Ideas Spec](./specs/sound_product_2010_future_ideas_spec.md)
+20. [Source Timing Intelligence Spec](./specs/source_timing_intelligence_spec.md)
+21. [Arrangement / Scene System Spec](./specs/arrangement_scene_system_spec.md)
+22. [Recovery Notes](./recovery_notes.md)
+23. [Phase Definition of Done](./phase_definition_of_done.md)
+24. [Research / Decision Log](./research_decision_log.md)
+25. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
+26. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
 
 ## Why This Order
 
@@ -164,6 +165,7 @@ docs/
 - `specs/audio_qa_workflow_spec.md`: audio QA workflow plan captured
 - `specs/sound_product_readiness_rubric_spec.md`: 10/10 sound-product readiness rubric captured
 - `specs/release_grade_musician_demo_bank_spec.md`: musician demo-bank contract captured
+- `specs/sound_product_2010_future_ideas_spec.md`: post-10/10 sound-product future ideas captured
 - `specs/arrangement_scene_system_spec.md`: P014 Arrangement / Scene System contract captured
 - `phase_definition_of_done.md`: phase DoD with current phase status captured
 - `research_decision_log.md`: architecture decisions captured
