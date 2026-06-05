@@ -198,6 +198,7 @@ docs/
 - `benchmarks/audio_judge_spike_v1_2026-06-04.md`: CLAP/MERT-style audio judge spike boundary captured
 - `benchmarks/musical_pass_gate_policy_v1_2026-06-04.md`: agent/human musical-pass verdict policy captured
 - `benchmarks/sound_excellence_source_corpus_v1_2026-06-05.md`: P023 real-source coverage contract captured
+- `benchmarks/weak_output_fix_routing_v1_2026-06-05.md`: P023 weak-output failure-to-production-fix routing contract captured
 - `benchmarks/p011_exit_evidence_manifest.json`: machine-checkable P011 exit evidence index captured
 - `reviews/external_review_refresh_2026-05-22.md`: external review freshness, audio-QA, and runtime module-cut refresh captured
 - `reviews/tui_include_shell_audit_2026-05-22.md`: TUI include-shell ownership audit and leaf-first conversion recommendation captured

@@ -1,0 +1,558 @@
+#!/usr/bin/env python3
+"""Route weak Riotbox audio reports to concrete production fix categories."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+from audio_qa_evidence_boundary import apply_evidence_boundary
+import validate_automated_musical_fitness
+import validate_destructive_variation_professional
+import validate_sparse_bass_pressure_professional
+import validate_tonal_hook_professional
+
+
+SCHEMA = "riotbox.weak_output_fix_routing.v1"
+DEFAULT_MANIFEST = Path("scripts/fixtures/weak_output_fix_routing/manifest.json")
+DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-weak-output-fix-routing")
+CATEGORIES = {
+    "source_selection",
+    "chop_policy",
+    "drum_pressure",
+    "bass_movement",
+    "mix_bus",
+    "destructive_gesture",
+    "fixture_threshold",
+    "ui_cue",
+}
+CATEGORY_ORDER = [
+    "chop_policy",
+    "bass_movement",
+    "destructive_gesture",
+    "mix_bus",
+    "source_selection",
+    "drum_pressure",
+    "ui_cue",
+    "fixture_threshold",
+]
+
+CODE_RULES: tuple[tuple[str, str, int, str], ...] = (
+    ("w30_hook", "chop_policy", 5, "W-30 hook is weak or not dominant."),
+    ("hook_transient", "chop_policy", 5, "Hook transient does not cut through."),
+    ("hookless", "chop_policy", 5, "The source family needs a stronger riff/chop policy."),
+    ("w30_trigger", "chop_policy", 4, "W-30 trigger variation is too static."),
+    ("w30_slice", "chop_policy", 4, "W-30 slice choices are not varied enough."),
+    ("w30_unique", "chop_policy", 4, "W-30 source offsets are too narrow."),
+    ("w30_velocity", "chop_policy", 3, "W-30 accent dynamics are too flat."),
+    ("source_copy", "chop_policy", 5, "The source is copied instead of transformed into a hook."),
+    ("identity_", "chop_policy", 4, "The response is too close to source or fallback identity."),
+    ("response_signature_missing", "chop_policy", 3, "The generated response lacks a unique signature."),
+    ("pressure_section_lacks_bass_lift", "bass_movement", 5, "Pressure section lacks low-end lift."),
+    ("low_end", "bass_movement", 5, "Low-end pressure is weak."),
+    ("low_band_pressure", "bass_movement", 5, "Bass pressure is weak in the low band."),
+    ("low_band_support", "bass_movement", 4, "Low-band support is weak."),
+    ("mc202_bass", "bass_movement", 5, "MC-202 bass pressure is too weak."),
+    ("mc202_pressure", "bass_movement", 4, "MC-202 pressure behavior is missing or weak."),
+    ("bass_pressure", "bass_movement", 5, "Bass pressure is not carrying the section."),
+    ("tr909", "drum_pressure", 4, "TR-909 drum pressure is missing or decorative."),
+    ("kick_pressure", "drum_pressure", 4, "Kick pressure is not strong enough."),
+    ("dropout", "destructive_gesture", 5, "Dropout/stutter contrast is too weak."),
+    ("stutter", "destructive_gesture", 5, "Stutter gesture does not hit hard enough."),
+    ("restore", "destructive_gesture", 4, "Restore gesture is not bigger than the cut."),
+    ("bars_too_static", "destructive_gesture", 4, "Bars collapse into a static loop."),
+    ("movement_bar_similarity", "destructive_gesture", 4, "Bar movement is too static."),
+    ("destructive_contrast", "destructive_gesture", 5, "Destructive contrast is weak or missing."),
+    ("generated_support_balance", "mix_bus", 5, "Generated support/source balance is out of range."),
+    ("generated_support_too", "mix_bus", 4, "Generated support is not balanced usefully."),
+    ("support_masks", "mix_bus", 5, "Generated support masks the source or hook."),
+    ("source_first_generated", "mix_bus", 5, "Source-first balance masks the useful response."),
+    ("full_mix_too_quiet", "mix_bus", 4, "Full mix is too quiet."),
+    ("technical_near_silence", "mix_bus", 5, "Technical output is near silence."),
+    ("full_mix_near_clipping", "mix_bus", 4, "Full mix is near clipping."),
+    ("technical_clipping", "mix_bus", 4, "Technical output is clipping-prone."),
+    ("source_relation_missing", "source_selection", 4, "Source relation lacks anchor evidence."),
+    ("source_anchor", "source_selection", 4, "Source anchor evidence is too weak."),
+    ("source_not_transformed", "source_selection", 4, "Source transformation sits outside the useful range."),
+    ("source_lost", "source_selection", 5, "Source character is lost."),
+    ("source_masked", "mix_bus", 5, "Source character is masked by generated support."),
+    ("fallback_collapse", "source_selection", 5, "Output collapsed to fallback identity."),
+    ("source_report_schema", "fixture_threshold", 4, "Fixture/report schema mismatch needs QA threshold work."),
+    ("source_report_not_passed", "fixture_threshold", 3, "Input report already failed its own gate."),
+    ("threshold", "fixture_threshold", 3, "Fixture threshold needs review."),
+    ("grid_drift", "ui_cue", 4, "Timing drift needs a user-visible cue or cautious routing."),
+    ("peak_offset", "ui_cue", 3, "Grid peak offset is too loose for a confident musical move."),
+)
+
+TAG_RULES: tuple[tuple[str, str, str, int, str], ...] = (
+    ("hook_clarity", "weak", "chop_policy", 5, "Human label says hook clarity is weak."),
+    ("hook_clarity", "missing", "chop_policy", 5, "Human label says hook is missing."),
+    ("bass_pressure", "weak", "bass_movement", 5, "Human label says bass pressure is weak."),
+    ("bass_pressure", "missing", "bass_movement", 5, "Human label says bass pressure is missing."),
+    (
+        "destructive_contrast",
+        "weak",
+        "destructive_gesture",
+        5,
+        "Human label says destructive contrast is weak.",
+    ),
+    (
+        "destructive_contrast",
+        "missing",
+        "destructive_gesture",
+        5,
+        "Human label says destructive contrast is missing.",
+    ),
+    ("source_character", "source_lost", "source_selection", 5, "Human label says source is lost."),
+    (
+        "source_character",
+        "source_copy",
+        "chop_policy",
+        5,
+        "Human label says source-copy collapse is present.",
+    ),
+    (
+        "replay_value_after_eight_bars",
+        "none",
+        "destructive_gesture",
+        4,
+        "Human label says replay value is absent.",
+    ),
+    (
+        "replay_value_after_eight_bars",
+        "low",
+        "destructive_gesture",
+        4,
+        "Human label says replay value is low.",
+    ),
+)
+
+AVOID_RULES: tuple[tuple[str, str, int, str], ...] = (
+    ("weak hook", "chop_policy", 4, "Avoid-list calls out weak hook."),
+    ("source-copy", "chop_policy", 4, "Avoid-list calls out source-copy collapse."),
+    ("buried bass", "bass_movement", 4, "Avoid-list calls out buried bass."),
+    ("fallback", "source_selection", 4, "Avoid-list calls out fallback collapse."),
+    ("source character lost", "source_selection", 4, "Avoid-list calls out lost source character."),
+    ("no destructive", "destructive_gesture", 4, "Avoid-list calls out missing destructive contrast."),
+    ("polite", "destructive_gesture", 3, "Avoid-list calls out polite output."),
+)
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
+    parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--date", default="local-weak-output-fix-routing")
+    args = parser.parse_args()
+
+    try:
+        manifest = read_json_object(args.manifest)
+        report = build_report(manifest, args.manifest, args.date)
+        args.output.mkdir(parents=True, exist_ok=True)
+        write_reports(args.output, report)
+    except (OSError, TypeError, ValueError) as error:
+        print(f"invalid weak-output fix routing: {error}", file=sys.stderr)
+        return 1
+
+    if report["result"] != "pass":
+        print(
+            "weak-output fix routing failed: " + ", ".join(report["failure_codes"]),
+            file=sys.stderr,
+        )
+        return 1
+    print(f"weak-output fix routing written to {args.output}")
+    return 0
+
+
+def build_report(manifest: dict[str, Any], manifest_path: Path, date: str) -> dict[str, Any]:
+    require(manifest.get("schema") == SCHEMA, f"{manifest_path}: schema must be {SCHEMA}")
+    require(manifest.get("schema_version") == 1, f"{manifest_path}: schema_version must be 1")
+    entries = manifest.get("entries")
+    require(isinstance(entries, list) and entries, f"{manifest_path}: entries must be non-empty")
+
+    cases = []
+    failures = []
+    for index, entry in enumerate(entries):
+        require(isinstance(entry, dict), f"{manifest_path}: entry {index} must be object")
+        case = build_case(entry, manifest_path.parent)
+        cases.append(case)
+        expected = entry.get("expected_next_fix_category")
+        if isinstance(expected, str) and expected != case["proposed_next_fix_category"]:
+            failures.append(
+                f"{case['case_id']}_expected_{expected}_got_{case['proposed_next_fix_category']}"
+            )
+    if not any(case["source_verdict"] in {"agent_weak", "agent_fail", "weak", "fail"} for case in cases):
+        failures.append("no_weak_or_fail_case_routed")
+    for case in cases:
+        if not case["proposed_fix_categories"]:
+            failures.append(f"{case['case_id']}_missing_fix_category")
+        if case["automated_musical_approval"] is not False:
+            failures.append(f"{case['case_id']}_claims_automated_musical_approval")
+        if case["quality_proof"] is not False:
+            failures.append(f"{case['case_id']}_claims_quality_proof")
+
+    report = {
+        "schema": SCHEMA,
+        "schema_version": 1,
+        "created_at": date,
+        "result": "pass" if not failures else "fail",
+        "agent_verdict": "agent_promising" if not failures else "agent_fail",
+        "human_verdict": "unverified",
+        "automated_musical_approval": False,
+        "manifest": str(manifest_path),
+        "case_count": len(cases),
+        "routed_case_count": sum(1 for case in cases if case["proposed_fix_categories"]),
+        "fix_categories": sorted({category for case in cases for category in case["proposed_fix_categories"]}),
+        "cases": cases,
+        "failure_codes": failures,
+        "boundary": (
+            "Weak-output routing turns known weak/fail signals into production "
+            "work categories. It may reject or route weak output, but it must "
+            "not claim automated musical approval or human musical pass."
+        ),
+    }
+    return apply_evidence_boundary(
+        report,
+        evidence_role="diagnostic",
+        source_backed=all(case["source_backed"] for case in cases),
+        source_timing_backed=all(case["source_timing_backed"] for case in cases),
+        scripted_generation=True,
+        notes=(
+            "This report is a routing and actionability diagnostic. It does "
+            "not prove product sound quality."
+        ),
+    )
+
+
+def build_case(entry: dict[str, Any], fixture_dir: Path) -> dict[str, Any]:
+    case_id = required_string(entry, "case_id")
+    kind = required_string(entry, "kind")
+    source = load_source(entry, fixture_dir)
+    signals = source["failure_codes"] + reason_tag_signals(source["reason_tags"]) + source["avoid"]
+    route = route_signals(signals, source["reason_tags"], source["avoid"])
+    return {
+        "case_id": case_id,
+        "input_kind": kind,
+        "source_report": source["source_report"],
+        "source_schema": source["source_schema"],
+        "source_family": source["source_family"],
+        "source_result": source["source_result"],
+        "source_verdict": source["source_verdict"],
+        "human_verdict": source["human_verdict"],
+        "artifact_to_hear": source["artifact_to_hear"],
+        "strongest_audible_element": source["strongest_audible_element"],
+        "main_weakness": route["main_weakness"],
+        "proposed_next_fix_category": route["proposed_next_fix_category"],
+        "proposed_fix_categories": route["proposed_fix_categories"],
+        "routing_reasons": route["routing_reasons"],
+        "failure_codes": source["failure_codes"],
+        "reason_tags": source["reason_tags"],
+        "avoid": source["avoid"],
+        "source_backed": source["source_backed"],
+        "source_timing_backed": source["source_timing_backed"],
+        "scripted_generation": source["scripted_generation"],
+        "quality_proof": False,
+        "automated_musical_approval": False,
+    }
+
+
+def load_source(entry: dict[str, Any], fixture_dir: Path) -> dict[str, Any]:
+    kind = required_string(entry, "kind")
+    path = resolve_path(fixture_dir, Path(required_string(entry, "path")))
+    if kind == "agent_review":
+        return source_from_agent_review(path)
+    if kind == "human_label_corpus":
+        label_id = required_string(entry, "label_id")
+        return source_from_human_label(path, label_id)
+    if kind == "destructive_report":
+        return source_from_report(
+            validate_destructive_variation_professional.build_report(path),
+            path,
+            source_family="dense_break",
+            artifact_to_hear=str(path),
+        )
+    if kind == "tonal_manifest":
+        report = validate_tonal_hook_professional.build_report(path)
+        return source_from_report(report, path, artifact_to_hear=str(path))
+    if kind == "sparse_bass_manifest":
+        report = validate_sparse_bass_pressure_professional.build_report(path)
+        return source_from_report(report, path, artifact_to_hear=str(path))
+    if kind == "automated_musical_fitness_manifest":
+        candidates = validate_automated_musical_fitness.collect_candidates([path])
+        report = validate_automated_musical_fitness.build_report(candidates)
+        selected = report["selected_candidate"]
+        return source_from_report(
+            report,
+            path,
+            source_family=entry.get("source_family", selected["case_id"]),
+            artifact_to_hear=selected["manifest"],
+        )
+    raise ValueError(f"unsupported input kind: {kind}")
+
+
+def source_from_agent_review(path: Path) -> dict[str, Any]:
+    report = read_json_object(path)
+    audio_files = object_or_empty(report.get("audio_files"))
+    artifact = audio_files.get("full_performance") or audio_files.get("source_window") or str(path)
+    if isinstance(artifact, str) and not Path(artifact).is_absolute():
+        artifact = str(path.parent / artifact)
+    return {
+        "source_report": str(path),
+        "source_schema": string_or(report.get("schema"), "unknown"),
+        "source_family": infer_source_family(report, path),
+        "source_result": string_or(report.get("result"), "unknown"),
+        "source_verdict": string_or(report.get("agent_verdict"), "unknown"),
+        "human_verdict": string_or(report.get("human_verdict"), "unverified"),
+        "artifact_to_hear": artifact,
+        "strongest_audible_element": string_or(report.get("strongest_element"), "unknown"),
+        "failure_codes": string_list(report.get("failure_codes")),
+        "reason_tags": object_or_empty(report.get("reason_tags")),
+        "avoid": string_list(report.get("avoid")),
+        "source_backed": bool(report.get("source_backed", True)),
+        "source_timing_backed": bool(report.get("source_timing_backed", True)),
+        "scripted_generation": bool(report.get("scripted_generation", True)),
+    }
+
+
+def source_from_human_label(path: Path, label_id: str) -> dict[str, Any]:
+    corpus = read_json_object(path)
+    labels = corpus.get("labels")
+    require(isinstance(labels, list), f"{path}: labels must be array")
+    label = next(
+        (item for item in labels if isinstance(item, dict) and item.get("label_id") == label_id),
+        None,
+    )
+    require(label is not None, f"{path}: missing label_id {label_id}")
+    artifact_paths = object_or_empty(label.get("artifact_paths"))
+    artifact_audio = object_or_empty(artifact_paths.get("audio"))
+    artifact_identity = object_or_empty(label.get("artifact_identity"))
+    identity_audio = object_or_empty(artifact_identity.get("audio_sha256"))
+    artifact = (
+        artifact_audio.get("full_performance")
+        or artifact_paths.get("agent_review")
+        or identity_audio.get("full_performance")
+        or label.get("review_pack_id")
+        or str(path)
+    )
+    return {
+        "source_report": str(path),
+        "source_schema": string_or(corpus.get("schema"), "unknown"),
+        "source_family": string_or(label.get("source_family"), "unknown"),
+        "source_result": string_or(label.get("human_verdict"), "unknown"),
+        "source_verdict": string_or(label.get("human_verdict"), "unknown"),
+        "human_verdict": string_or(label.get("human_verdict"), "unverified"),
+        "artifact_to_hear": str(artifact),
+        "strongest_audible_element": string_or(
+            object_or_empty(label.get("reason_tags")).get("hardest_hit"),
+            "unknown",
+        ),
+        "failure_codes": [],
+        "reason_tags": object_or_empty(label.get("reason_tags")),
+        "avoid": string_list(label.get("avoid")),
+        "source_backed": True,
+        "source_timing_backed": True,
+        "scripted_generation": True,
+    }
+
+
+def source_from_report(
+    report: dict[str, Any],
+    path: Path,
+    *,
+    source_family: str | None = None,
+    artifact_to_hear: str,
+) -> dict[str, Any]:
+    selected = object_or_empty(report.get("selected_candidate"))
+    return {
+        "source_report": str(path),
+        "source_schema": string_or(report.get("schema"), "unknown"),
+        "source_family": source_family or string_or(report.get("source_family"), selected.get("case_id", "unknown")),
+        "source_result": string_or(report.get("result"), "unknown"),
+        "source_verdict": string_or(report.get("agent_verdict"), report.get("result", "unknown")),
+        "human_verdict": string_or(report.get("human_verdict"), "unverified"),
+        "artifact_to_hear": artifact_to_hear,
+        "strongest_audible_element": strongest_from_failures(string_list(report.get("failure_codes"))),
+        "failure_codes": string_list(report.get("failure_codes")),
+        "reason_tags": object_or_empty(report.get("reason_tags")),
+        "avoid": string_list(report.get("avoid")),
+        "source_backed": bool(report.get("source_backed", True)),
+        "source_timing_backed": bool(report.get("source_timing_backed", True)),
+        "scripted_generation": bool(report.get("scripted_generation", True)),
+    }
+
+
+def route_signals(
+    signals: list[str],
+    reason_tags: dict[str, Any],
+    avoid: list[str],
+) -> dict[str, Any]:
+    scores = {category: 0 for category in CATEGORIES}
+    reasons: dict[str, list[str]] = {category: [] for category in CATEGORIES}
+    for signal in signals:
+        normalized = normalize(signal)
+        for token, category, weight, reason in CODE_RULES:
+            if token in normalized:
+                scores[category] += weight
+                reasons[category].append(f"{signal}: {reason}")
+    for key, value in reason_tags.items():
+        key_text = normalize(str(key))
+        value_text = normalize(str(value))
+        for tag_key, tag_value, category, weight, reason in TAG_RULES:
+            if key_text == tag_key and value_text == tag_value:
+                scores[category] += weight
+                reasons[category].append(f"{key}={value}: {reason}")
+    for item in avoid:
+        item_text = normalize(item)
+        for token, category, weight, reason in AVOID_RULES:
+            if normalize(token) in item_text:
+                scores[category] += weight
+                reasons[category].append(f"avoid={item}: {reason}")
+
+    ranked = sorted(
+        (category for category, score in scores.items() if score > 0),
+        key=lambda category: (-scores[category], CATEGORY_ORDER.index(category)),
+    )
+    if not ranked:
+        ranked = ["fixture_threshold"]
+        reasons["fixture_threshold"].append("No known weak-output signal matched; add a routing rule.")
+    primary = ranked[0]
+    return {
+        "proposed_next_fix_category": primary,
+        "proposed_fix_categories": ranked,
+        "main_weakness": weakness_label(primary),
+        "routing_reasons": {category: reasons[category] for category in ranked},
+    }
+
+
+def reason_tag_signals(reason_tags: dict[str, Any]) -> list[str]:
+    return [f"{key}_{value}" for key, value in reason_tags.items()]
+
+
+def strongest_from_failures(failure_codes: list[str]) -> str:
+    joined = " ".join(failure_codes)
+    if "bass" in joined or "low_end" in joined or "low_band" in joined:
+        return "bass_pressure"
+    if "hook" in joined or "w30" in joined:
+        return "chop"
+    if "dropout" in joined or "stutter" in joined or "restore" in joined:
+        return "destructive_gesture"
+    if "source" in joined:
+        return "source_character"
+    return "partial_audio_evidence"
+
+
+def weakness_label(category: str) -> str:
+    labels = {
+        "source_selection": "source choice or source recognition is not strong enough",
+        "chop_policy": "hook/chop is not memorable or transformed enough",
+        "drum_pressure": "drum pressure does not hit hard enough",
+        "bass_movement": "bass pressure and low-end movement are too weak",
+        "mix_bus": "mix balance hides impact or source character",
+        "destructive_gesture": "dropout/stutter/restore contrast does not change the room",
+        "fixture_threshold": "QA threshold or fixture classification needs tightening",
+        "ui_cue": "timing/source confidence needs a clearer user cue",
+    }
+    return labels[category]
+
+
+def infer_source_family(report: dict[str, Any], path: Path) -> str:
+    explicit = report.get("source_family")
+    if isinstance(explicit, str) and explicit:
+        return explicit
+    text = str(path)
+    if "sparse-bass" in text or "sparse_bass" in text:
+        return "sparse_bass_pressure"
+    if "tonal" in text:
+        return "tonal_hook"
+    return "dense_break"
+
+
+def write_reports(output: Path, report: dict[str, Any]) -> None:
+    (output / "weak-output-fix-routing.json").write_text(json.dumps(report, indent=2) + "\n")
+    (output / "weak-output-fix-routing.md").write_text(render_markdown(report))
+
+
+def render_markdown(report: dict[str, Any]) -> str:
+    lines = [
+        "# Weak-Output Fix Routing",
+        "",
+        f"- Result: `{report['result']}`",
+        f"- Agent verdict: `{report['agent_verdict']}`",
+        f"- Human verdict: `{report['human_verdict']}`",
+        f"- Evidence role: `{report['evidence_role']}`",
+        f"- Quality proof: `{str(report['quality_proof']).lower()}`",
+        f"- Automated musical approval: `{str(report['automated_musical_approval']).lower()}`",
+        f"- Routed cases: `{report['routed_case_count']}/{report['case_count']}`",
+        "",
+        "## Cases",
+        "",
+    ]
+    for case in report["cases"]:
+        lines.extend(
+            [
+                f"### `{case['case_id']}`",
+                "",
+                f"- Artifact to hear: `{case['artifact_to_hear']}`",
+                f"- Strongest audible element: `{case['strongest_audible_element']}`",
+                f"- Main weakness: {case['main_weakness']}",
+                f"- Proposed next fix category: `{case['proposed_next_fix_category']}`",
+                f"- All fix categories: `{', '.join(case['proposed_fix_categories'])}`",
+                "",
+            ]
+        )
+    lines.extend(["## Boundary", "", report["boundary"], ""])
+    return "\n".join(lines)
+
+
+def resolve_path(fixture_dir: Path, path: Path) -> Path:
+    if path.is_absolute():
+        return path
+    if path.exists():
+        return path
+    return fixture_dir / path
+
+
+def read_json_object(path: Path) -> dict[str, Any]:
+    value = json.loads(path.read_text())
+    require(isinstance(value, dict), f"{path}: JSON root must be object")
+    return value
+
+
+def object_or_empty(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
+
+
+def string_list(value: Any) -> list[str]:
+    if not isinstance(value, list):
+        return []
+    return [str(item) for item in value if isinstance(item, str) and item]
+
+
+def string_or(value: Any, default: Any) -> str:
+    if isinstance(value, str) and value:
+        return value
+    if isinstance(default, str) and default:
+        return default
+    return str(default)
+
+
+def required_string(data: dict[str, Any], field: str) -> str:
+    value = data.get(field)
+    require(isinstance(value, str) and value, f"missing {field}")
+    return value
+
+
+def normalize(value: str) -> str:
+    return value.strip().lower().replace("-", "_").replace(" ", "_")
+
+
+def require(condition: bool, message: str) -> None:
+    if not condition:
+        raise ValueError(message)
+
+
+if __name__ == "__main__":
+    sys.exit(main())

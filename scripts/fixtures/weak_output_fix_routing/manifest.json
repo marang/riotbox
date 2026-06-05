@@ -1,0 +1,45 @@
+{
+  "schema": "riotbox.weak_output_fix_routing.v1",
+  "schema_version": 1,
+  "description": "Fixtures proving weak/fail audio reports route to concrete production fix categories without claiming musical pass.",
+  "entries": [
+    {
+      "case_id": "agent_dense_weak_hook_and_pressure",
+      "kind": "agent_review",
+      "path": "../audio_judge_spike/local-agent-musical-review-pack-smoke-weak/agent-review.json",
+      "expected_next_fix_category": "chop_policy"
+    },
+    {
+      "case_id": "human_dense_fail_source_and_gesture",
+      "kind": "human_label_corpus",
+      "path": "../human_listening_label_corpus/valid_dense_break.json",
+      "label_id": "dense-break-beat03-agent-pack-example-fail",
+      "expected_next_fix_category": "source_selection"
+    },
+    {
+      "case_id": "rendered_dense_flat_stutter",
+      "kind": "destructive_report",
+      "path": "../destructive_variation_professional/invalid_flat_stutter/performance-report.json",
+      "expected_next_fix_category": "destructive_gesture"
+    },
+    {
+      "case_id": "tonal_hookless_chop",
+      "kind": "tonal_manifest",
+      "path": "../tonal_hook_professional/invalid_hookless/manifest.json",
+      "expected_next_fix_category": "chop_policy"
+    },
+    {
+      "case_id": "sparse_bass_pressure_weak",
+      "kind": "sparse_bass_manifest",
+      "path": "../sparse_bass_pressure_professional/invalid_weak_pressure/manifest.json",
+      "expected_next_fix_category": "bass_movement"
+    },
+    {
+      "case_id": "automated_source_masked",
+      "kind": "automated_musical_fitness_manifest",
+      "path": "../automated_musical_fitness/invalid_source_masked/manifest.json",
+      "source_family": "dense_break",
+      "expected_next_fix_category": "mix_bus"
+    }
+  ]
+}

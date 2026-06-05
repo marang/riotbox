@@ -69,6 +69,7 @@ audio-qa-ci:
     just professional-output-listening-verdict-import-fixtures
     just destructive-variation-professional-smoke
     just rendered-weak-professional-output-fixtures
+    just weak-output-fix-routing-fixtures
     just professional-output-suite-smoke
     just sparse-bass-pressure-professional-fixtures
     just tonal-hook-professional-fixtures
@@ -289,6 +290,11 @@ rendered-weak-professional-output-fixtures output="artifacts/audio_qa/local-rend
     python3 scripts/generate_rendered_weak_professional_outputs.py --output "{{output}}"
     jq -e '.schema == "riotbox.rendered_weak_professional_outputs.v1" and .result == "pass" and .human_verdict == "unverified" and .evidence_role == "negative_diagnostic" and .source_backed == false and .source_timing_backed == false and .scripted_generation == true and .quality_proof == false and .case_count == 1 and .cases[0].evidence_role == "negative_diagnostic" and .cases[0].quality_proof == false and .cases[0].validator_result == "expected_fail" and (.cases[0].failure_codes | index("dropout_not_contrasting_with_stutter")) and (.cases[0].failure_codes | index("restore_not_bigger_than_pressure"))' "{{output}}/rendered-weak-professional-outputs.json"
     test -s "{{output}}/dense_flat_stutter/05_full_performance.wav"; test -s "{{output}}/dense_flat_stutter/destructive-validation.json"
+
+weak-output-fix-routing-fixtures output="artifacts/audio_qa/local-weak-output-fix-routing":
+    python3 scripts/route_weak_output_fixes.py --output "{{output}}" --date "local-weak-output-fix-routing"
+    jq -e '.schema == "riotbox.weak_output_fix_routing.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .evidence_role == "diagnostic" and .quality_proof == false and .automated_musical_approval == false and .case_count == 6 and .routed_case_count == 6 and (["source_selection", "chop_policy", "bass_movement", "mix_bus", "destructive_gesture"] - .fix_categories | length == 0) and all(.cases[]; .artifact_to_hear and .strongest_audible_element and .main_weakness and .proposed_next_fix_category and (.proposed_fix_categories | length >= 1) and .quality_proof == false and .automated_musical_approval == false) and any(.cases[]; .case_id == "rendered_dense_flat_stutter" and .proposed_next_fix_category == "destructive_gesture" and (.failure_codes | index("dropout_not_contrasting_with_stutter"))) and any(.cases[]; .case_id == "tonal_hookless_chop" and .proposed_next_fix_category == "chop_policy" and (.failure_codes | index("w30_hook_not_dominant"))) and any(.cases[]; .case_id == "sparse_bass_pressure_weak" and .proposed_next_fix_category == "bass_movement" and (.failure_codes | index("mc202_bass_pressure_too_weak"))) and any(.cases[]; .case_id == "automated_source_masked" and .proposed_next_fix_category == "mix_bus" and (.failure_codes | index("source_first_generated_support_masks_source"))) and any(.cases[]; .case_id == "human_dense_fail_source_and_gesture" and .proposed_next_fix_category == "source_selection")' "{{output}}/weak-output-fix-routing.json"
+    test -s "{{output}}/weak-output-fix-routing.md"
 
 professional-output-suite-smoke output="artifacts/audio_qa/local-professional-output-suite":
     python3 scripts/generate_professional_output_suite.py --output "{{output}}" --date "local-professional-output-suite"
