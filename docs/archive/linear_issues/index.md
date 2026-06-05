@@ -1056,4 +1056,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Import human verdicts into professional output listening packs
 - [RIOTBOX-1201.md](./RIOTBOX-1201.md)
   Add rendered weak-output examples for professional source families
+- [RIOTBOX-1211.md](./RIOTBOX-1211.md)
+  Expand professional output proof beyond dense breaks
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
