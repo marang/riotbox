@@ -137,6 +137,7 @@ def render_case(
         case_report = json.loads(report_path.read_text())
         proof = case_report["proof"]
         metrics = case_report["metrics"]
+        pressure_lift_policy = case_report["source_policy"]["pressure_lift_policy"]
         case_summary = {
             "case_id": case_id,
             "source": source,
@@ -154,6 +155,12 @@ def render_case(
                 "stutter_to_hook_transient_ratio": proof["stutter_to_hook_transient_ratio"],
                 "restore_to_pressure_rms_ratio": proof["restore_to_pressure_rms_ratio"],
                 "source_to_performance_correlation": proof["source_to_performance_correlation"],
+                "pressure_lift_policy_decision_count": proof[
+                    "pressure_lift_policy_decision_count"
+                ],
+                "pressure_lift_bar5_to_bar4_rms_ratio": proof[
+                    "pressure_lift_bar5_to_bar4_rms_ratio"
+                ],
             },
             "metrics": {
                 "chop_hook_dbfs": metrics["chop_hook"]["dbfs"],
@@ -163,6 +170,7 @@ def render_case(
                 "full_performance_dbfs": metrics["full_performance"]["dbfs"],
                 "full_performance_peak_abs": metrics["full_performance"]["peak_abs"],
             },
+            "pressure_lift_policy": pressure_lift_policy,
         }
         return apply_evidence_boundary(
             case_summary,

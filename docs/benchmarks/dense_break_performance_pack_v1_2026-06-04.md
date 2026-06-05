@@ -58,14 +58,17 @@ instrument instead of a technically valid but underpowered fixture.
 
 `agent_promising` is not a final musical pass, and this pack is not technical or
 musical quality proof for the product. The current pack now records a bounded
-`source_policy` decision object: source low-band, high-band, and transient
-profile choose pressure shape, bass frequencies, stutter density, grain offset,
-and restore snap gain. The 8-bar arrangement and section roles are still
-scripted, including the fixed `pressure_lift`, `dropout_stutter`, and
+`source_policy` decision object. A nested `pressure_lift_policy` classifies the
+source as dense-break, tonal-hook, sparse-bass-pressure, or thin/uncertain from
+the source low-band, high-band, and transient profile, then chooses lift shape,
+source/hook bleed, TR-909 / MC-202 / bass drive, bar-4 / bar-5 intensity, and
+bass frequencies. The same source profile also chooses stutter density, grain
+offset, and restore snap gain. The 8-bar arrangement and section roles are still
+scripted, including the arranged `pressure_lift`, `dropout_stutter`, and
 `restore_hit` slots. Treat it as smoke, regression, and diagnostic evidence: it
 proves the harness can render source-backed stems, apply visible source-aware
-pressure/stutter/restore decisions, and reject known weak-output shapes. It does
-not yet prove fully source-aware production quality. The report must keep
+pressure-lift/stutter/restore decisions, and reject known weak-output shapes. It
+does not yet prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
@@ -91,11 +94,12 @@ being the only passing example while other local break sources quietly regress.
 
 `professional-source-wav-pack-smoke` renders family-aware audible WAV packs for
 tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
-material is allowed to keep the hook stronger than the pressure section, while
-sparse material must prove pressure stronger than the hook. Both cases still
-write `human_verdict: unverified`. Because these cases currently reuse the
-dense-break performance generator, they are cross-source diagnostics rather than
-source-family quality proof.
+material must carry a `tonal_hook` pressure-lift policy and is allowed to keep
+the hook more readable, while sparse material must carry a
+`sparse_bass_pressure` pressure-lift policy and prove pressure stronger than the
+hook. Both cases still write `human_verdict: unverified`. Because these cases
+currently reuse the dense-break performance generator, they are cross-source
+diagnostics rather than source-family quality proof.
 
 `non-dense-professional-proof-pack-smoke` adds a bounded bridge between the
 rendered tonal/sparse Professional Source WAVs and the stricter

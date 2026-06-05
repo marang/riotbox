@@ -152,6 +152,7 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
     proof = source_report["proof"]
     metrics = source_report["metrics"]
     files = source_report["files"]
+    pressure_lift_policy = source_report["source_policy"]["pressure_lift_policy"]
     family_failures = family_failure_codes(case["source_family"], proof, metrics)
     case_summary = {
         **case,
@@ -178,6 +179,12 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "stutter_to_hook_transient_ratio": proof["stutter_to_hook_transient_ratio"],
             "restore_to_pressure_rms_ratio": proof["restore_to_pressure_rms_ratio"],
             "source_to_performance_correlation": proof["source_to_performance_correlation"],
+            "pressure_lift_policy_decision_count": proof[
+                "pressure_lift_policy_decision_count"
+            ],
+            "pressure_lift_bar5_to_bar4_rms_ratio": proof[
+                "pressure_lift_bar5_to_bar4_rms_ratio"
+            ],
         },
         "metrics": {
             "full_performance_rms": metrics["full_performance"]["rms"],
@@ -187,6 +194,7 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "pressure_lift_dbfs": metrics["pressure_lift"]["dbfs"],
             "restore_hit_dbfs": metrics["restore_hit"]["dbfs"],
         },
+        "pressure_lift_policy": pressure_lift_policy,
         "failure_codes": family_failures,
     }
     return apply_evidence_boundary(

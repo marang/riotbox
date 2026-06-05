@@ -633,6 +633,9 @@ following:
   drums, tonal riffs, pad / noise material, weak sources, and bad-timing sources
   must be allowed to choose different lift shapes, bass movement, drum pressure,
   source treatment, and destructive contrast
+  - current P022 diagnostic coverage exposes a `pressure_lift_policy` for dense
+    break, tonal-hook, and sparse-bass-pressure sources while keeping the
+    arranged 8-bar slot scripted and `human_verdict: unverified`
 - generated demo packs include curated source, rendered WAV, metrics, review
   prompt, human verdict, and a short reason why the example is demo-worthy or
   not demo-worthy yet
