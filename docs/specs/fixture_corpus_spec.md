@@ -259,3 +259,31 @@ After this draft:
 2. select or create initial fixture candidates
 3. assign benchmark suites
 4. define expected ranges for each initial fixture
+
+## 12. P023 Sound Excellence Real-Source Corpus
+
+P023 adds a CI-safe real-source corpus contract at:
+
+- `docs/benchmarks/sound_excellence_source_corpus_v1.json`
+
+The corpus references local ignored WAV paths under `data/test_audio/examples`
+and covers dense breaks, sparse drums, tonal riffs, pad / noise material, weak
+sources, and bad-timing policy material. Each entry records timing expectation,
+expected musical payoff, likely failure modes, local-use / license boundary, and
+target review questions. The manifest is not a quality proof and keeps
+`human_verdict: unverified`; it is the source-family coverage map that later
+rendered packs and listening reviews must satisfy.
+
+The CI-safe validation gate is:
+
+```bash
+just sound-excellence-source-corpus-fixtures
+```
+
+Local agents with the ignored WAV files available may add file-presence checking:
+
+```bash
+python3 scripts/validate_sound_excellence_source_corpus.py \
+  --require-existing-source-files \
+  docs/benchmarks/sound_excellence_source_corpus_v1.json
+```

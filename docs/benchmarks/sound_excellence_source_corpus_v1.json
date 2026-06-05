@@ -1,0 +1,243 @@
+{
+  "schema": "riotbox.sound_excellence_source_corpus.v1",
+  "schema_version": 1,
+  "evidence_role": "source_corpus_contract",
+  "quality_proof": false,
+  "human_verdict": "unverified",
+  "source_presence": "local_ignored_audio",
+  "required_source_families": [
+    "bad_timing",
+    "dense_break",
+    "pad_noise",
+    "sparse_drums",
+    "tonal_riff",
+    "weak_source"
+  ],
+  "license_note": "Local MusicRadar SampleRadar examples are ignored by Git and must not be redistributed from the repo.",
+  "entries": [
+    {
+      "case_id": "dense_beat03_130",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat03_130BPM(Full).wav",
+      "bpm_hint": 130.0,
+      "timing_expectation": {
+        "confidence": "high",
+        "grid_use": "auto_candidate",
+        "expected_bpm": 130.0,
+        "known_risk": "dense ghost notes can make generated support too drum-dominant"
+      },
+      "expected_musical_payoff": [
+        "break transient hook in the first two bars",
+        "snare plus bass pressure can carry the hardest hit",
+        "dropout and restore gestures should feel stage-useful"
+      ],
+      "likely_failure_modes": [
+        "source copy instead of transformed chop",
+        "pressure section masks the restore hit",
+        "MC-202 behaves like midrange phrase instead of bass pressure"
+      ],
+      "target_review_questions": [
+        "Is the break still recognizable after transformation?",
+        "What hits hardest: snare, bass pressure, or silence cut?",
+        "Does the restore hit land bigger than the pressure lift?"
+      ],
+      "feeds": [
+        "dense_break_performance_pack",
+        "professional_output_suite",
+        "professional_output_listening_pack"
+      ]
+    },
+    {
+      "case_id": "dense_beat08_128",
+      "source_family": "dense_break",
+      "source_path": "data/test_audio/examples/Beat08_128BPM(Full).wav",
+      "bpm_hint": 128.0,
+      "timing_expectation": {
+        "confidence": "high",
+        "grid_use": "auto_candidate",
+        "expected_bpm": 128.0,
+        "known_risk": "similar techno-loop family can hide overfit generated support"
+      },
+      "expected_musical_payoff": [
+        "alternate dense-break regression source",
+        "source-showcase diversity comparison against Beat03",
+        "grid-locked support should differ from the Beat03 response"
+      ],
+      "likely_failure_modes": [
+        "identical generated support across dense sources",
+        "full mix spectral distance too small",
+        "W-30 chop loses source identity"
+      ],
+      "target_review_questions": [
+        "Does the output differ meaningfully from Beat03?",
+        "Does the source-backed chop still lead the mix?",
+        "Does generated support stay secondary to the source?"
+      ],
+      "feeds": [
+        "source_showcase_diversity",
+        "representative_source_showcase",
+        "professional_output_suite"
+      ]
+    },
+    {
+      "case_id": "sparse_kicksnr_120",
+      "source_family": "sparse_drums",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "bpm_hint": 120.0,
+      "timing_expectation": {
+        "confidence": "medium",
+        "grid_use": "manual_confirm",
+        "expected_bpm": 120.0,
+        "known_risk": "simple kick/snare material can pass timing while sounding under-produced"
+      },
+      "expected_musical_payoff": [
+        "bass pressure and kick body should be obvious",
+        "sparse source should leave room for destructive contrast",
+        "support should add weight without busy filler"
+      ],
+      "likely_failure_modes": [
+        "weak bass pressure",
+        "generic drum loop with no hook",
+        "restore hit too polite after dropout"
+      ],
+      "target_review_questions": [
+        "Does the low end feel physical or only measured?",
+        "Is there a memorable gesture within two bars?",
+        "Does sparse material avoid being filled with generic clutter?"
+      ],
+      "feeds": [
+        "professional_source_wav_pack",
+        "non_dense_professional_proof_pack",
+        "pro_pressure_source_matrix"
+      ]
+    },
+    {
+      "case_id": "tonal_rusharp_120",
+      "source_family": "tonal_riff",
+      "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
+      "bpm_hint": 120.0,
+      "timing_expectation": {
+        "confidence": "medium",
+        "grid_use": "manual_confirm",
+        "expected_bpm": 120.0,
+        "known_risk": "tonal motion can trick the system into hookless support"
+      },
+      "expected_musical_payoff": [
+        "clear riff or stab survives as transformed source character",
+        "W-30 chop should feel like a hook, not a loop copy",
+        "TR-909 and MC-202 should support rather than bury the riff"
+      ],
+      "likely_failure_modes": [
+        "hookless tonal wash",
+        "source copied without rhythmic recontextualization",
+        "bass pressure masks the tonal hook"
+      ],
+      "target_review_questions": [
+        "Can the hook be named after two bars?",
+        "Does the tonal source feel transformed rather than copied?",
+        "Is generated support helping the riff or competing with it?"
+      ],
+      "feeds": [
+        "professional_source_wav_pack",
+        "tonal_hook_professional",
+        "professional_output_listening_pack"
+      ]
+    },
+    {
+      "case_id": "pad_noise_fadapad_120",
+      "source_family": "pad_noise",
+      "source_path": "data/test_audio/examples/DH_Fadapad_120_A.wav",
+      "bpm_hint": 120.0,
+      "timing_expectation": {
+        "confidence": "low",
+        "grid_use": "degraded_do_not_trust",
+        "expected_bpm": 120.0,
+        "known_risk": "soft attacks and pad motion weaken downbeat evidence"
+      },
+      "expected_musical_payoff": [
+        "noise or pad texture becomes a stab, gate, or atmosphere hit",
+        "destructive gesture should create contrast when transients are weak",
+        "timing uncertainty should be visible before risky movement"
+      ],
+      "likely_failure_modes": [
+        "ambient wallpaper",
+        "false beat-grid confidence",
+        "no room-changing gesture because transients are soft"
+      ],
+      "target_review_questions": [
+        "Does the pad become a playable stab or texture hit?",
+        "Does degraded timing avoid overconfident bass/destructive moves?",
+        "Is the result aggressive enough for Riotbox or too polite?"
+      ],
+      "feeds": [
+        "future_pad_noise_professional",
+        "source_timing_degraded_policy",
+        "weak_output_routing"
+      ]
+    },
+    {
+      "case_id": "weak_source_beat20_128",
+      "source_family": "weak_source",
+      "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
+      "bpm_hint": 128.0,
+      "timing_expectation": {
+        "confidence": "medium",
+        "grid_use": "manual_confirm",
+        "expected_bpm": 128.0,
+        "known_risk": "ordinary loop material may produce technically valid but hookless output"
+      },
+      "expected_musical_payoff": [
+        "weak material should either become useful or route to a concrete fix",
+        "output should not be promoted as demo-worthy without a hook",
+        "fallback-like results should be caught early"
+      ],
+      "likely_failure_modes": [
+        "polite loop with no central hook",
+        "identical support compared with stronger sources",
+        "agent_promising verdict without musician payoff"
+      ],
+      "target_review_questions": [
+        "Is there a reason to replay this after eight bars?",
+        "Which concrete production fix would improve it?",
+        "Should this source be rejected, degraded, or transformed differently?"
+      ],
+      "feeds": [
+        "weak_output_routing",
+        "sound_product_readiness_rubric",
+        "future_demo_bank_rejection"
+      ]
+    },
+    {
+      "case_id": "bad_timing_fadapad_120",
+      "source_family": "bad_timing",
+      "source_path": "data/test_audio/examples/DH_Fadapad_120_A.wav",
+      "bpm_hint": 120.0,
+      "timing_expectation": {
+        "confidence": "low",
+        "grid_use": "degraded_do_not_trust",
+        "expected_bpm": 120.0,
+        "known_risk": "same local source as pad/noise case, used here specifically for timing-risk policy"
+      },
+      "expected_musical_payoff": [
+        "degraded timing should still allow safe texture gestures",
+        "bass and destructive moves should wait for confirmed timing",
+        "review should expose why the grid is not trusted"
+      ],
+      "likely_failure_modes": [
+        "false source-grid proof",
+        "bass pressure lands off-grid",
+        "destructive cut hides timing uncertainty instead of reporting it"
+      ],
+      "target_review_questions": [
+        "Did Riotbox communicate timing risk before committing?",
+        "Are risky timing-sensitive gestures disabled or softened?",
+        "Does the output avoid pretending bar-accurate restore is proven?"
+      ],
+      "feeds": [
+        "source_timing_degraded_policy",
+        "bad_timing_negative_fixture",
+        "future_replay_export_timing_gate"
+      ]
+    }
+  ]
+}

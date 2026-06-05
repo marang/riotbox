@@ -31,3 +31,15 @@ Selected examples:
   - more melodic/arp-driven loop
 
 These files are intended for local testing, not as repo-canonical assets.
+
+P023 sound-excellence corpus mapping:
+
+- `Beat03_130BPM(Full).wav`: dense-break Golden Path source.
+- `Beat08_128BPM(Full).wav`: alternate dense-break diversity source.
+- `DH_BeatC_KickSnr_120-01.wav`: sparse-drums / bass-pressure source.
+- `DH_RushArp_120_A.wav`: tonal-riff / hook source.
+- `DH_Fadapad_120_A.wav`: pad-noise source and degraded timing-policy source.
+- `Beat20_128BPM(Full).wav`: weak-source / ordinary-loop regression source.
+
+The machine-readable contract is
+`docs/benchmarks/sound_excellence_source_corpus_v1.json`.

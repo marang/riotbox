@@ -57,6 +57,7 @@ audio-qa-ci:
     just listening-manifest-validator-fixtures
     just source-showcase-diversity-validator-fixtures
     just source-showcase-diversity-report-fixtures
+    just sound-excellence-source-corpus-fixtures
     just representative-source-showcase-output-guard-fixtures
     just representative-source-showcase-musical-quality-fixtures
     just automated-musical-fitness-fixtures
@@ -266,6 +267,11 @@ professional-output-listening-pack-smoke output="artifacts/audio_qa/local-profes
     python3 scripts/generate_professional_output_listening_pack.py --output "{{output}}" --date "local-professional-output-listening-pack"
     jq -e '.schema == "riotbox.professional_output_listening_pack.v1" and .result == "pass" and .agent_verdict == "agent_promising" and .human_verdict == "unverified" and .evidence_role == "listening_review_scaffold" and .source_backed == true and .source_timing_backed == true and .scripted_generation == true and .quality_proof == false and .case_count == 3 and ([.cases[].source_family] | sort == ["dense_break", "sparse_bass_pressure", "tonal_hook"]) and all(.cases[]; .human_verdict == "unverified" and .evidence_role == "listening_review_scaffold" and .quality_proof == false and (.candidate | endswith(".wav")) and (.candidate_sha256 | length == 64) and (.review_sha256 | length == 64))' "{{output}}/professional-output-listening-pack.json"
     for case in dense_beat03_130 tonal_rusharp_120 sparse_kicksnr_120; do test -s "{{output}}/reviews/$case/review.json"; test -s "{{output}}/reviews/$case/prompt.md"; done
+
+sound-excellence-source-corpus-fixtures manifest="docs/benchmarks/sound_excellence_source_corpus_v1.json":
+    python3 scripts/validate_sound_excellence_source_corpus.py "{{manifest}}"
+    tmp="$(mktemp)" && jq 'del(.entries[0].target_review_questions)' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected missing review questions fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
+    tmp="$(mktemp)" && jq '.entries[0].source_family = "unknown_family"' "{{manifest}}" > "$tmp" && if python3 scripts/validate_sound_excellence_source_corpus.py "$tmp"; then echo "expected unsupported source family fixture to fail" >&2; rm "$tmp"; exit 1; fi; rm "$tmp"
 
 professional-output-listening-verdict-import-fixtures pack="artifacts/audio_qa/local-professional-output-listening-pack":
     test -s "{{pack}}/reviews/dense_beat03_130/review.json"
