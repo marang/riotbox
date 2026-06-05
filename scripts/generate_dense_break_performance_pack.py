@@ -74,12 +74,23 @@ class PressureLiftPolicy:
 
 
 @dataclass(frozen=True)
+class ArrangementPolicy:
+    source_aware: bool
+    source_family: str
+    role_order: tuple[str, ...]
+    role_order_signature: str
+    arrangement_shape: str
+    arrangement_intent: str
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
     stutter_density: str
     restore_hit_shape: str
     pressure_lift_policy: PressureLiftPolicy
+    arrangement_policy: ArrangementPolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -314,6 +325,7 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         high_band_ratio=profile.high_band_ratio,
         transient_score=profile.transient_score,
     )
+    arrangement_policy = arrangement_policy_for(pressure_lift_policy.source_family)
 
     if pressure_lift_policy.source_family == "dense_break":
         pressure_shape = "transient-forward break pressure"
@@ -367,6 +379,7 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         stutter_density=stutter_density,
         restore_hit_shape=restore_hit_shape,
         pressure_lift_policy=pressure_lift_policy,
+        arrangement_policy=arrangement_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -378,6 +391,33 @@ def dense_break_source_policy(source: np.ndarray, bar_frames: int) -> DenseBreak
         source_low_band_rms=profile.low_band_rms,
         source_high_band_ratio=profile.high_band_ratio,
         source_transient_score=profile.transient_score,
+    )
+
+
+def arrangement_policy_for(source_family: str) -> ArrangementPolicy:
+    if source_family == "dense_break":
+        roles = ("hook", "hook", "chop", "chop", "pressure", "pressure", "dropout", "restore")
+        shape = "classic break slam"
+        intent = "establish hook, build chop pressure, cut hard, then restore with impact"
+    elif source_family == "tonal_hook":
+        roles = ("hook", "chop", "hook", "chop", "pressure", "pressure", "dropout", "restore")
+        shape = "hook-return lift"
+        intent = "bring the tonal hook back before pressure so the riff stays readable"
+    elif source_family == "sparse_bass_pressure":
+        roles = ("hook", "pressure", "chop", "hook", "chop", "pressure", "dropout", "restore")
+        shape = "early bass shove"
+        intent = "introduce bass pressure early, re-state the hook, then lift again before the cut"
+    else:
+        roles = ("hook", "chop", "hook", "pressure", "chop", "pressure", "dropout", "restore")
+        shape = "cautious recovery lift"
+        intent = "avoid pretending weak material is a dense break while still proving contrast"
+    return ArrangementPolicy(
+        source_aware=True,
+        source_family=source_family,
+        role_order=roles,
+        role_order_signature=">".join(roles),
+        arrangement_shape=shape,
+        arrangement_intent=intent,
     )
 
 
@@ -471,6 +511,7 @@ def render_performance(
     break_snap = render_break_snap_layer(source, tr909, w30, bar_frames, bars)
     bass_pressure = render_bass_pressure_layer(source, source_policy, bar_frames, bars)
     lift_policy = source_policy.pressure_lift_policy
+    role_order = source_policy.arrangement_policy.role_order
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -522,50 +563,184 @@ def render_performance(
         slam=0.40,
     )
 
-    for bar in (0, 1):
-        put_bar(bar, hook_mix)
-    for bar in (2, 3):
-        put_bar(bar, chop_mix)
-    put_bar(4, apply_gain(pressure_mix, lift_policy.bar4_intensity))
-    put_bar(5, apply_gain(pressure_mix, lift_policy.bar5_intensity))
-
-    dropout_stutter_bar = render_dropout_stutter_bar(
-        source,
-        tr909,
-        w30,
-        mc202,
-        hook_riff,
-        break_snap,
-        source_policy,
-        bar_frames,
-        source_bar=6,
-    )
-    start = 6 * bar_frames
-    end = min(start + dropout_stutter_bar.shape[0], performance.shape[0])
-    performance[start:end] = dropout_stutter_bar[: end - start]
-
-    put_bar(
-        7,
-        restore_with_hit(
-            restore_mix,
-            source,
-            w30,
-            mc202,
-            tr909,
-            source_policy,
-            7 * bar_frames,
-            bar_frames,
-        ),
-    )
+    pressure_index = 0
+    for bar, role in enumerate(role_order[:bars]):
+        if role == "hook":
+            put_bar(bar, hook_mix)
+        elif role == "chop":
+            put_bar(bar, chop_mix)
+        elif role == "pressure":
+            intensity = (
+                lift_policy.bar4_intensity if pressure_index == 0 else lift_policy.bar5_intensity
+            )
+            put_bar(bar, apply_gain(pressure_mix, intensity))
+            pressure_index += 1
+        elif role == "dropout":
+            dropout_stutter_bar = render_dropout_stutter_bar(
+                source,
+                tr909,
+                w30,
+                mc202,
+                hook_riff,
+                break_snap,
+                source_policy,
+                bar_frames,
+                source_bar=bar,
+            )
+            start = bar * bar_frames
+            end = min(start + dropout_stutter_bar.shape[0], performance.shape[0])
+            performance[start:end] = dropout_stutter_bar[: end - start]
+        elif role == "restore":
+            put_bar(
+                bar,
+                restore_with_hit(
+                    restore_mix,
+                    source,
+                    w30,
+                    mc202,
+                    tr909,
+                    source_policy,
+                    bar * bar_frames,
+                    bar_frames,
+                ),
+            )
+        else:
+            raise ValueError(f"unsupported arrangement role: {role}")
 
     performance = normalize_peak(glue_bus(performance, drive=1.22, slam=0.22), TARGET_PERFORMANCE_PEAK)
     sections = {
-        "chop_hook": performance[0 : min(2 * bar_frames, performance.shape[0])],
-        "pressure_lift": performance[4 * bar_frames : min(6 * bar_frames, performance.shape[0])],
-        "dropout_stutter": performance[6 * bar_frames : min(7 * bar_frames, performance.shape[0])],
-        "restore_hit": performance[7 * bar_frames : min(8 * bar_frames, performance.shape[0])],
+        "chop_hook": concatenate_role_bars(
+            performance, bar_frames, role_order, {"hook", "chop"}, max_bars=2
+        ),
+        "pressure_lift": concatenate_role_bars(performance, bar_frames, role_order, {"pressure"}),
+        "dropout_stutter": concatenate_role_bars(performance, bar_frames, role_order, {"dropout"}),
+        "restore_hit": concatenate_role_bars(performance, bar_frames, role_order, {"restore"}),
     }
     return performance, sections
+
+
+def concatenate_role_bars(
+    performance: np.ndarray,
+    bar_frames: int,
+    role_order: tuple[str, ...],
+    roles: set[str],
+    max_bars: int | None = None,
+) -> np.ndarray:
+    chunks = []
+    for bar, role in enumerate(role_order):
+        if role not in roles:
+            continue
+        if max_bars is not None and len(chunks) >= max_bars:
+            break
+        start = bar * bar_frames
+        end = min(start + bar_frames, performance.shape[0])
+        if start < end:
+            chunks.append(performance[start:end])
+    if not chunks:
+        return np.zeros((0, CHANNELS), dtype=np.float32)
+    return np.concatenate(chunks, axis=0)
+
+
+def arrangement_structure(policy: ArrangementPolicy) -> list[dict[str, str]]:
+    role_intents = {
+        "hook": "source character plus W-30 chop motif",
+        "chop": "W-30 source chop becomes the main hook movement",
+        "pressure": "TR-909 and MC-202 add body and bass pressure",
+        "dropout": "hard silence cut followed by repeated source chop",
+        "restore": "snare/break transient and bass pressure land together",
+    }
+    groups = []
+    start = 0
+    roles = policy.role_order
+    while start < len(roles):
+        end = start + 1
+        while end < len(roles) and roles[end] == roles[start]:
+            end += 1
+        bars = f"{start + 1}" if end == start + 1 else f"{start + 1}-{end}"
+        role = roles[start]
+        groups.append(
+            {
+                "bars": bars,
+                "role": role.replace("_", " "),
+                "intent": role_intents[role],
+            }
+        )
+        start = end
+    return groups
+
+
+def arrangement_failure_codes(policy: ArrangementPolicy) -> list[str]:
+    failures = []
+    role_counts = {role: policy.role_order.count(role) for role in set(policy.role_order)}
+    if len(policy.role_order) != DEFAULT_BARS:
+        failures.append("arrangement_role_order_not_8_bars")
+    for role in ("hook", "chop", "pressure", "dropout", "restore"):
+        if role_counts.get(role, 0) == 0:
+            failures.append(f"arrangement_missing_{role}_role")
+    if role_counts.get("pressure", 0) < 2:
+        failures.append("arrangement_pressure_lift_too_short")
+    if policy.role_order[-2:] != ("dropout", "restore"):
+        failures.append("arrangement_destructive_restore_tail_missing")
+    return failures
+
+
+def arrangement_failure_routes(failures: list[str]) -> list[dict[str, object]]:
+    if not failures:
+        return []
+    from route_weak_output_fixes import route_signals
+
+    routes = []
+    for code in failures:
+        route = route_signals([code], {}, [])
+        routes.append(
+            {
+                "failure_code": code,
+                "proposed_next_fix_category": route["proposed_next_fix_category"],
+                "proposed_fix_categories": route["proposed_fix_categories"],
+                "main_weakness": route["main_weakness"],
+            }
+        )
+    return routes
+
+
+def arrangement_role_frequency_policy(
+    source_policy: DenseBreakSourcePolicy,
+) -> dict[int, float]:
+    frequencies = {}
+    pressure_index = 0
+    for bar, role in enumerate(source_policy.arrangement_policy.role_order):
+        if role == "pressure":
+            frequencies[bar] = (
+                source_policy.bass_bar4_frequency_hz
+                if pressure_index == 0
+                else source_policy.bass_bar5_frequency_hz
+            )
+            pressure_index += 1
+        elif role == "restore":
+            frequencies[bar] = source_policy.bass_restore_frequency_hz
+    return frequencies
+
+
+def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
+    return source_policy.arrangement_policy.role_order.count("pressure")
+
+
+def destructive_role_count(source_policy: DenseBreakSourcePolicy) -> int:
+    roles = source_policy.arrangement_policy.role_order
+    return roles.count("dropout") + roles.count("restore")
+
+
+def role_order_hash(policy: ArrangementPolicy) -> float:
+    return float(zlib.crc32(policy.role_order_signature.encode("utf-8")) & 0xFFFFFFFF)
+
+
+def pressure_role_first_two(
+    sections: dict[str, np.ndarray], bar_frames: int
+) -> tuple[np.ndarray, np.ndarray]:
+    pressure = sections["pressure_lift"]
+    first = pressure[: min(bar_frames, pressure.shape[0])]
+    second = pressure[min(bar_frames, pressure.shape[0]) : min(2 * bar_frames, pressure.shape[0])]
+    return first, second
 
 
 def render_dropout_stutter_bar(
@@ -719,19 +894,14 @@ def render_bass_pressure_layer(
 ) -> np.ndarray:
     layer = np.zeros_like(source)
     total_frames = source.shape[0]
-    frequencies = {
-        4: source_policy.bass_bar4_frequency_hz,
-        5: source_policy.bass_bar5_frequency_hz,
-        7: source_policy.bass_restore_frequency_hz,
-    }
-    for bar in (4, 5, 7):
+    frequencies = arrangement_role_frequency_policy(source_policy)
+    for bar, base_frequency in frequencies.items():
         bar_start = bar * bar_frames
         if bar_start >= total_frames:
             continue
         bar_end = min(bar_start + bar_frames, total_frames)
         frames = bar_end - bar_start
         t = np.arange(frames, dtype=np.float32) / SAMPLE_RATE
-        base_frequency = frequencies[bar]
         sine = np.sin(2.0 * np.pi * base_frequency * t).astype(np.float32)
         harmonic = np.sin(2.0 * np.pi * base_frequency * 2.0 * t).astype(np.float32)
         envelope = np.zeros(frames, dtype=np.float32)
@@ -745,10 +915,11 @@ def render_bass_pressure_layer(
             punch = np.exp(-beat_t * (5.4 if beat in (0, 2) else 7.2))
             envelope[start:end] += punch * (1.0 if beat in (0, 2) else 0.62)
         source_drive = low_band_rms(source[bar_start:bar_end]) / 0.10
+        role = source_policy.arrangement_policy.role_order[bar]
         gain = (
             float(np.clip(source_drive, 0.44, 1.24))
             * source_policy.bass_gain
-            * (0.305 if bar != 7 else 0.245)
+            * (0.245 if role == "restore" else 0.305)
         )
         mono = (sine + harmonic * 0.18) * np.clip(envelope, 0.0, 1.0) * gain
         layer[bar_start:bar_end, 0] = mono
@@ -834,41 +1005,19 @@ def build_report(
         "output": str(output),
         "bpm": args.bpm,
         "bars": args.bars,
-        "structure": [
-            {
-                "bars": "1-2",
-                "role": "break hook",
-                "intent": "source character plus W-30 chop motif",
-            },
-            {
-                "bars": "3-4",
-                "role": "chop riff",
-                "intent": "W-30 source chop becomes the main hook",
-            },
-            {
-                "bars": "5-6",
-                "role": "pressure lift",
-                "intent": "TR-909 and MC-202 add body and bass pressure",
-            },
-            {
-                "bars": "7",
-                "role": "dropout stutter",
-                "intent": "hard silence cut followed by repeated source chop",
-            },
-            {
-                "bars": "8",
-                "role": "restore hit",
-                "intent": "snare/break transient and bass pressure land together",
-            },
-        ],
+        "structure": arrangement_structure(source_policy.arrangement_policy),
         "source_policy": {
             "source_aware": source_policy.source_aware,
             "decisions": asdict(source_policy),
             "pressure_lift_policy": asdict(source_policy.pressure_lift_policy),
+            "arrangement_policy": asdict(source_policy.arrangement_policy),
+            "arrangement_failure_routes": arrangement_failure_routes(
+                arrangement_failure_codes(source_policy.arrangement_policy)
+            ),
             "scripted_boundaries": [
-                "8-bar section order remains fixed",
-                "pressure_lift still occupies the arranged bars 5-6 slot",
-                "section roles remain fixed: hook, chop, pressure, dropout, restore",
+                "8-bar role grammar remains scripted even though role order is source-aware",
+                "arrangement policy is diagnostic and does not claim human musical approval",
+                "roles remain bounded to hook, chop, pressure, dropout, restore",
                 "human_verdict remains unverified until structured listening review",
             ],
         },
@@ -901,8 +1050,8 @@ def build_report(
         scripted_generation=True,
         notes=(
             "Dense-break render uses source-backed stems, source timing, and a "
-            "bounded source-aware pressure_lift/stutter/restore policy, but "
-            "the 8-bar section arrangement remains scripted; this is smoke/"
+            "bounded source-aware pressure_lift/stutter/restore and arrangement "
+            "policy, but the 8-bar role grammar remains scripted; this is smoke/"
             "regression/diagnostic evidence, not product-quality proof."
         ),
     )
@@ -925,10 +1074,7 @@ def performance_proof(
     full_rms = rms(performance)
     hook_rms = rms(sections["chop_hook"])
     pressure_rms = rms(sections["pressure_lift"])
-    pressure_bar4 = sections["pressure_lift"][: min(bar_frames, sections["pressure_lift"].shape[0])]
-    pressure_bar5 = sections["pressure_lift"][
-        min(bar_frames, sections["pressure_lift"].shape[0]) :
-    ]
+    pressure_bar4, pressure_bar5 = pressure_role_first_two(sections, bar_frames)
     restore_rms = rms(sections["restore_hit"])
     pressure_low = low_band_rms(sections["pressure_lift"])
     hook_low = low_band_rms(sections["chop_hook"])
@@ -960,6 +1106,16 @@ def performance_proof(
         "source_policy_decision_count": 8.0 if source_policy.source_aware else 0.0,
         "pressure_lift_policy_decision_count": (
             12.0 if source_policy.pressure_lift_policy.source_aware else 0.0
+        ),
+        "arrangement_policy_decision_count": (
+            8.0 if source_policy.arrangement_policy.source_aware else 0.0
+        ),
+        "arrangement_role_order_hash": role_order_hash(source_policy.arrangement_policy),
+        "arrangement_role_count": float(len(source_policy.arrangement_policy.role_order)),
+        "arrangement_pressure_role_count": float(pressure_role_count(source_policy)),
+        "arrangement_destructive_role_count": float(destructive_role_count(source_policy)),
+        "arrangement_failure_count": float(
+            len(arrangement_failure_codes(source_policy.arrangement_policy))
         ),
         "pressure_lift_bar5_to_bar4_rms_ratio": rms(pressure_bar5) / max(rms(pressure_bar4), 1e-9),
         "source_policy_pressure_gain": source_policy.pressure_gain,
@@ -999,6 +1155,16 @@ def failure_codes_for(metrics: dict[str, dict], proof: dict[str, float]) -> list
         failures.append("pressure_section_not_louder_than_hook_enough")
     if proof["restore_to_pressure_rms_ratio"] < MIN_RESTORE_TO_PRESSURE_RMS_RATIO:
         failures.append("restore_hit_not_bigger_than_pressure_section")
+    if proof["arrangement_policy_decision_count"] < 8.0:
+        failures.append("arrangement_policy_not_source_aware_enough")
+    if proof["arrangement_role_count"] != float(DEFAULT_BARS):
+        failures.append("arrangement_role_order_not_8_bars")
+    if proof["arrangement_pressure_role_count"] < 2.0:
+        failures.append("arrangement_pressure_lift_too_short")
+    if proof["arrangement_destructive_role_count"] < 2.0:
+        failures.append("arrangement_destructive_restore_tail_missing")
+    if proof["arrangement_failure_count"] > 0.0:
+        failures.append("arrangement_policy_contract_failed")
     return failures
 
 

@@ -341,10 +341,18 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":
+        arrangement = object_or_empty(data.get("arrangement_summary"))
         return {
             "case_count": int(number(data.get("case_count"))),
             "passed_case_count": int(number(data.get("passed_case_count"))),
             "failed_case_count": int(number(data.get("failed_case_count"))),
+            "arrangement_unique_role_order_signature_count": int(
+                number(arrangement.get("unique_role_order_signature_count"))
+            ),
+            "arrangement_role_order_signatures": sorted(
+                str(signature)
+                for signature in list_or_empty(arrangement.get("role_order_signatures"))
+            ),
         }
     if child_id == "professional_source_wav_pack":
         cases = list_or_empty(data.get("cases"))
