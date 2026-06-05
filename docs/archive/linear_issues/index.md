@@ -1078,4 +1078,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Promote source-backed human passes into demo-bank entries
 - [RIOTBOX-1215.md](./RIOTBOX-1215.md)
   Add pad/noise and bad-timing professional-output diagnostics
+- [RIOTBOX-1216.md](./RIOTBOX-1216.md)
+  Turn dense-break 8-bar order into source-aware arrangement policy
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
