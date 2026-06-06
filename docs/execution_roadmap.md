@@ -635,8 +635,11 @@ following:
   source treatment, and destructive contrast
   - current P022 diagnostic coverage exposes a `pressure_lift_policy` for dense
     break, tonal-hook, and sparse-bass-pressure sources plus a bounded
-    `arrangement_policy` that can produce different 8-bar role-order signatures
-    across source families; the role grammar remains scripted and
+    `arrangement_policy` that derives first-six-bar hook/chop/pressure role
+    placement from source/W-30 section candidates, compares against the old
+    source-family scripted role order, and can produce different 8-bar
+    role-order signatures across source families; role vocabulary,
+    dropout/restore tail, and mix recipe remain bounded/scripted and
     `human_verdict: unverified`
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,

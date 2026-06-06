@@ -362,6 +362,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "destructive_offset_distance_frames": number(
                 proof.get("destructive_offset_distance_frames")
             ),
+            "arrangement_role_order_source_derived": number(
+                proof.get("arrangement_role_order_source_derived")
+            ),
+            "arrangement_role_candidate_count": number(
+                proof.get("arrangement_role_candidate_count")
+            ),
+            "arrangement_scripted_role_distance": number(
+                proof.get("arrangement_scripted_role_distance")
+            ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":
@@ -449,6 +458,32 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     for case in cases
                     if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
                     == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_arrangement_role_candidate_count": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "arrangement_role_candidate_count"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_arrangement_scripted_role_distance": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "arrangement_scripted_role_distance"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    in ("dense_break", "tonal_hook", "sparse_bass_pressure")
                 ),
                 default=0.0,
             ),
@@ -545,6 +580,30 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     )
                     for case in cases
                     if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_arrangement_role_candidate_count": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "arrangement_role_candidate_count"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") in ("tonal_hook", "sparse_bass_pressure")
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_arrangement_scripted_role_distance": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "arrangement_scripted_role_distance"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") in ("tonal_hook", "sparse_bass_pressure")
                 ),
                 default=0.0,
             ),

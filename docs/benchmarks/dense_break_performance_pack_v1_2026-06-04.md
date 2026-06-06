@@ -97,6 +97,14 @@ does not scan enough candidates, collapses back to the old static first-bar
 choice, or selects hook/chop offsets without enough contrast. This is still a
 diagnostic selection proof, not a human musical pass.
 
+For dense-break, tonal-hook, and sparse-bass-pressure sources, the first six
+arrangement bars now expose source-derived role-order proof. The
+`arrangement_policy` compares the selected hook/chop/pressure order against the
+old source-family scripted order, reports candidate count and scripted-role
+distance, and must fail when eligible sources fall back to the fixed family
+recipe. The role vocabulary plus dropout/restore tail remain bounded, so this
+is stronger arrangement evidence, not product-quality proof.
+
 For dense-break and tonal-hook sources, the destructive dropout/stutter/restore
 path now also exposes a bounded `destructive_gesture_policy`. The policy scans
 source/W-30 candidates for separate stutter and restore cues instead of using
@@ -142,12 +150,13 @@ just professional-output-suite-smoke
 The source-matrix smoke renders the same pro-pressure contract across multiple
 local examples (`Beat03`, `Beat08`, `Beat20`, and `DH_BeatC`) and writes
 `source-matrix-report.json` with per-source proof plus an `arrangement_summary`.
-The matrix now requires at least two distinct role-order signatures across
-source families, routes weak arrangement results to concrete fix categories, and
-checks rebuild-only metrics for every rendered case. This prevents Beat03 from
-being the only passing example while other local break sources quietly regress,
-collapse back to one fixed arrangement, or pass only because the raw source
-layer masks weak generated/rebuilt material.
+The matrix now requires source-derived role-order proof for eligible cases, at
+least two distinct role-order signatures across source families, routes weak
+arrangement results to concrete fix categories, and checks rebuild-only metrics
+for every rendered case. This prevents Beat03 from being the only passing
+example while other local break sources quietly regress, collapse back to one
+fixed arrangement, or pass only because the raw source layer masks weak
+generated/rebuilt material.
 
 `professional-source-wav-pack-smoke` renders family-aware audible WAV packs for
 tonal and sparse local sources (`DH_RushArp` and `DH_BeatC_KickSnr`). Tonal
@@ -158,8 +167,8 @@ signature, prove pressure stronger than the hook, and include
 `06_rebuild_only_performance.wav` so the pack can compare source-layer-on vs
 source-layer-off output. Both cases still write `human_verdict: unverified`.
 Because these cases currently reuse the bounded performance generator and
-scripted role grammar, they are cross-source diagnostics rather than
-source-family quality proof.
+bounded role vocabulary / destructive tail, they are cross-source diagnostics
+rather than source-family quality proof.
 
 `non-dense-professional-proof-pack-smoke` adds a bounded bridge between the
 rendered tonal/sparse Professional Source WAVs and the stricter

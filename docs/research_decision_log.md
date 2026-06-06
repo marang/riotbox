@@ -2096,3 +2096,17 @@ Why: the dropout/stutter/restore gesture is one of the places where Riotbox shou
 Evidence: RIOTBOX-1225 adds source-derived destructive gesture selection to the dense-break performance generator, surfaces the proof through the destructive-variation validator, pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds negative mutations that reject non-source-derived or static dense/tonal destructive reports.
 Consequences: this remains scripted render evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should keep replacing remaining scripted production choices with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
 Status: accepted
+
+---
+
+### RBX-075
+
+Date: 2026-06-06
+Topic: Eligible P022 arrangement role order must be source-derived before it counts as stronger arrangement evidence
+Phase: P022 / Professional Sound Output
+Question: may dense-break, tonal-hook, and sparse-bass-pressure diagnostics keep using fixed source-family hook/chop/pressure role recipes while other production choices become source-derived?
+Decision: no. Eligible diagnostics now derive the first six arrangement roles from bounded source/W-30 bar candidates, preserve the bounded dropout/restore tail, and report candidate count plus distance from the old source-family scripted role order.
+Why: source-derived hook/chop, destructive gesture, and bass movement proof can still sound rehearsed if the eight-bar performance always follows the same role recipe. Riotbox needs the arrangement to react to where the source has hook, chop, and pressure evidence before it can claim stronger source-aware production behavior.
+Evidence: RIOTBOX-1226 adds source-derived arrangement-role selection to the dense-break performance generator, surfaces the proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds negative mutation coverage that rejects non-source-derived dense arrangement reports.
+Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified` because the role vocabulary, destructive/restore tail, and mix recipe remain bounded. Future work should keep replacing remaining scripted mix and production choices with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
+Status: accepted
