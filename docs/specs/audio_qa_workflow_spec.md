@@ -532,6 +532,13 @@ The same reasons must appear in `review.json` and the human review prompt so a
 reviewer hears the candidate with the intended musical target and the current
 quality boundary in view.
 
+Large professional-output JSON contracts belong in named repo-local validators,
+not in oversized inline `jq` blocks inside `Justfile`. `just` recipes may keep
+small smoke assertions and compact negative mutations, but cross-report musical
+thresholds, evidence-boundary checks, artifact existence checks, and failure-code
+names should live in validator scripts so future sound-quality gates stay
+reviewable without weakening proof.
+
 Run:
 
 ```bash

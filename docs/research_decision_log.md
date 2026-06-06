@@ -2222,3 +2222,17 @@ Why: raw metrics do not tell a musician what to listen for. A candidate can be u
 Evidence: RIOTBOX-1233 adds reason generation to the professional output listening pack, suite identity checks for reason presence, and Just gates that reject missing review/prompt reason fields.
 Consequences: these reasons guide review and demo-bank promotion work only. They preserve `human_verdict: unverified` and `quality_proof: false`; they do not turn scripted diagnostic renders into demo-ready product audio.
 Status: accepted
+
+---
+
+### RBX-084
+
+Date: 2026-06-06
+Topic: Oversized professional-output suite contracts belong in validators, not inline Justfile blocks
+Phase: P022 / Professional Sound Output
+Question: should P022 keep expanding large inline `jq` expressions inside `Justfile` as the professional-output suite adds more proof surfaces?
+Decision: no. Cross-report professional-output suite checks now live in `scripts/validate_professional_output_suite_contract.py`, while `just professional-output-suite-smoke` stays responsible for running the generator, invoking the validator, and keeping compact negative mutations.
+Why: the suite contract is too important to hide in unreadable shell. Moving it to a named validator makes failure codes, thresholds, artifact checks, and evidence-boundary rules reviewable without weakening the audio-QA gate.
+Evidence: RIOTBOX-1224 replaces the long inline professional-output suite `jq` block with the validator and keeps negative mutations for non-source-derived hook/chop evidence and scripted demo-readiness promotion.
+Consequences: public `just` recipe names stay stable. The validator is the durable place for future professional-output suite thresholds; `Justfile` should remain a command catalog, not the primary contract implementation.
+Status: accepted

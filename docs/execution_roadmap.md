@@ -706,6 +706,8 @@ following:
 - professional listening-review packs must say why each candidate is worth
   review and why it is not demo-ready yet while `human_verdict` remains
   `unverified`
+- large professional-output JSON contracts move into named repo-local validators
+  instead of growing opaque inline `jq` blocks in `Justfile`
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified
