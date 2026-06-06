@@ -26,6 +26,9 @@ MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO = 0.72
 MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
+MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
+MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {
     "kick",
     "snare",
@@ -322,6 +325,15 @@ def render_case(
             "strongest_audible_element_candidate_count": number(
                 proof.get("strongest_audible_element_candidate_count")
             ),
+            "rebuild_only_source_spectral_similarity": number(
+                proof.get("rebuild_only_source_spectral_similarity")
+            ),
+            "rebuild_only_source_transient_retention": number(
+                proof.get("rebuild_only_source_transient_retention")
+            ),
+            "rebuild_only_source_character_survival_score": number(
+                proof.get("rebuild_only_source_character_survival_score")
+            ),
         },
         "metrics": {
             "full_performance_rms": number(
@@ -523,6 +535,21 @@ def diagnostic_failure_codes(
         failures.append("strongest_audible_element_too_weak")
     if number(proof.get("strongest_audible_element_margin")) < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN:
         failures.append("strongest_audible_element_ambiguous")
+    if (
+        number(proof.get("rebuild_only_source_spectral_similarity"))
+        < MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY
+    ):
+        failures.append("rebuild_only_source_spectral_character_lost")
+    if (
+        number(proof.get("rebuild_only_source_transient_retention"))
+        < MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION
+    ):
+        failures.append("rebuild_only_source_transient_character_lost")
+    if (
+        number(proof.get("rebuild_only_source_character_survival_score"))
+        < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
+    ):
+        failures.append("rebuild_only_source_character_not_surviving")
     return failures
 
 
@@ -639,6 +666,21 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
             < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN
         ):
             failures.append(f"{case_id}:strongest_audible_element_ambiguous")
+        if (
+            number(proof.get("rebuild_only_source_spectral_similarity"))
+            < MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY
+        ):
+            failures.append(f"{case_id}:rebuild_only_source_spectral_character_lost")
+        if (
+            number(proof.get("rebuild_only_source_transient_retention"))
+            < MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION
+        ):
+            failures.append(f"{case_id}:rebuild_only_source_transient_character_lost")
+        if (
+            number(proof.get("rebuild_only_source_character_survival_score"))
+            < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
+        ):
+            failures.append(f"{case_id}:rebuild_only_source_character_not_surviving")
         if not case.get("proposed_fix_categories"):
             failures.append(f"{case_id}:missing_fix_routing")
         if case.get("human_verdict") != "unverified":
