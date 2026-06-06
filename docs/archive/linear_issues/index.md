@@ -1094,4 +1094,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source-derived hook/chop selection proof across dense and tonal sources
 - [RIOTBOX-1225.md](./RIOTBOX-1225.md)
   Derive destructive stutter/restore choices from source candidates
+- [RIOTBOX-1226.md](./RIOTBOX-1226.md)
+  Derive arrangement role order from source section candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
