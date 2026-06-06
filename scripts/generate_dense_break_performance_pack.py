@@ -265,6 +265,8 @@ def main() -> int:
     parser.add_argument("--source-start-seconds", type=float, default=0.0)
     parser.add_argument("--keep-output", action="store_true")
     parser.add_argument("--validate-report", type=Path)
+    parser.add_argument("--validate-weak-source-character-report", type=Path)
+    parser.add_argument("--weak-source-character-fixture", action="store_true")
     parser.add_argument("--timing-confidence-result")
     parser.add_argument("--timing-grid-use")
     args = parser.parse_args()
@@ -274,6 +276,11 @@ def main() -> int:
         report_path = resolve_repo_path(repo, args.validate_report)
         validate_report_file(report_path)
         print(f"valid dense-break performance report: {report_path}")
+        return 0
+    if args.validate_weak_source_character_report:
+        report_path = resolve_repo_path(repo, args.validate_weak_source_character_report)
+        validate_weak_source_character_report_file(report_path)
+        print(f"valid weak source-character dense-break fixture: {report_path}")
         return 0
 
     source = resolve_repo_path(repo, args.source)
@@ -355,6 +362,14 @@ def main() -> int:
         args.bars,
         source_layer_gain=0.0,
     )
+    if args.weak_source_character_fixture:
+        rebuild_only_performance = render_weak_source_character_fixture(
+            source_audio, args.bpm, args.bars
+        )
+        rebuild_only_sections = weak_sections_for(
+            rebuild_only_performance,
+            bar_frames,
+        )
 
     audio_files = {
         "source_window": "00_source_window.wav",
@@ -2222,6 +2237,68 @@ def rebuild_only_source_character_proof(
     }
 
 
+def render_weak_source_character_fixture(
+    source: np.ndarray,
+    bpm: float,
+    bars: int,
+) -> np.ndarray:
+    frame_count = source.shape[0]
+    if frame_count <= 0:
+        return source.copy()
+    t = np.arange(frame_count, dtype=np.float32) / SAMPLE_RATE
+    tone = np.sin(2.0 * np.pi * 47.0 * t).astype(np.float32)
+    overtone = np.sin(2.0 * np.pi * 94.0 * t).astype(np.float32)
+    beat_frames = max(1, frames_for_beats(bpm, 1))
+    envelope = np.zeros(frame_count, dtype=np.float32)
+    for beat in range(max(1, bars * BEATS_PER_BAR)):
+        start = beat * beat_frames
+        end = min(start + beat_frames, frame_count)
+        if start >= end:
+            continue
+        beat_t = np.arange(end - start, dtype=np.float32) / max(1, end - start)
+        envelope[start:end] = np.maximum(
+            envelope[start:end],
+            np.exp(-beat_t * 2.4) * (0.68 if beat % 4 == 0 else 0.42),
+        )
+    mono = (tone + overtone * 0.12) * np.clip(envelope, 0.0, 1.0)
+    target_rms = max(rms(source) * 0.44, 0.050)
+    current_rms = float(np.sqrt(np.mean(mono * mono))) if mono.size else 0.0
+    if current_rms > 1e-9:
+        mono *= target_rms / current_rms
+    stereo = np.stack([mono, mono * 0.97], axis=1).astype(np.float32)
+    return normalize_peak(stereo, 0.58)
+
+
+def weak_sections_for(
+    rebuild_only_performance: np.ndarray,
+    bar_frames: int,
+) -> dict[str, np.ndarray]:
+    return {
+        "chop_hook": slice_or_silence(rebuild_only_performance, 0, 2 * bar_frames),
+        "pressure_lift": slice_or_silence(
+            rebuild_only_performance, 2 * bar_frames, 4 * bar_frames
+        ),
+        "dropout_stutter": slice_or_silence(
+            rebuild_only_performance, 4 * bar_frames, 6 * bar_frames
+        ),
+        "restore_hit": slice_or_silence(
+            rebuild_only_performance, 6 * bar_frames, rebuild_only_performance.shape[0]
+        ),
+    }
+
+
+def slice_or_silence(samples: np.ndarray, start: int, end: int) -> np.ndarray:
+    width = max(0, end - start)
+    if width == 0:
+        return np.zeros((0, CHANNELS), dtype=np.float32)
+    chunk = samples[start:min(end, samples.shape[0])]
+    if chunk.shape[0] >= width:
+        return chunk
+    padded = np.zeros((width, CHANNELS), dtype=np.float32)
+    padded[: chunk.shape[0]] = chunk
+    return padded
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -3086,6 +3163,69 @@ def validate_report_file(path: Path) -> None:
         raise SystemExit("invalid dense-break performance report: unexpected_human_verdict")
     if report.get("quality_proof") is not False:
         raise SystemExit("invalid dense-break performance report: quality_proof_not_false")
+
+
+def validate_weak_source_character_report_file(path: Path) -> None:
+    try:
+        report = json.loads(path.read_text())
+    except (OSError, json.JSONDecodeError) as error:
+        raise SystemExit(f"invalid weak source-character report: {error}") from error
+    if not isinstance(report, dict):
+        raise SystemExit("invalid weak source-character report: root must be an object")
+    if report.get("schema") != SCHEMA:
+        raise SystemExit(f"invalid weak source-character report: schema must be {SCHEMA}")
+    if report.get("result") != "fail":
+        raise SystemExit("invalid weak source-character report: result_must_fail")
+    if report.get("human_verdict") != "unverified":
+        raise SystemExit("invalid weak source-character report: unexpected_human_verdict")
+    if report.get("quality_proof") is not False:
+        raise SystemExit("invalid weak source-character report: quality_proof_not_false")
+    failure_codes = report.get("failure_codes")
+    if not isinstance(failure_codes, list):
+        raise SystemExit("invalid weak source-character report: failure_codes must be a list")
+    if "rebuild_only_source_character_not_surviving" not in failure_codes:
+        raise SystemExit(
+            "invalid weak source-character report: "
+            "rebuild_only_source_character_not_surviving missing"
+        )
+
+    files = report.get("files")
+    if not isinstance(files, dict):
+        raise SystemExit("invalid weak source-character report: files must be an object")
+    source_path = path.parent / str(files.get("source_window", ""))
+    rebuild_path = path.parent / str(files.get("rebuild_only_performance", ""))
+    if not source_path.is_file() or not rebuild_path.is_file():
+        raise SystemExit("invalid weak source-character report: required wav artifact missing")
+
+    source = read_wav(source_path)
+    rebuild_only = read_wav(rebuild_path)
+    proof = rebuild_only_source_character_proof(source, rebuild_only)
+    if (
+        proof["rebuild_only_source_character_survival_score"]
+        >= MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
+    ):
+        raise SystemExit(
+            "invalid weak source-character report: "
+            "artifact source-character survival unexpectedly passed"
+        )
+    if (
+        proof["rebuild_only_source_transient_retention"]
+        >= MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION
+    ):
+        raise SystemExit(
+            "invalid weak source-character report: "
+            "artifact transient retention unexpectedly passed"
+        )
+    reported_proof = report.get("proof")
+    if not isinstance(reported_proof, dict):
+        raise SystemExit("invalid weak source-character report: proof must be an object")
+    for key in (
+        "rebuild_only_source_spectral_similarity",
+        "rebuild_only_source_transient_retention",
+        "rebuild_only_source_character_survival_score",
+    ):
+        if abs(float(reported_proof.get(key, 999.0)) - proof[key]) > 0.0005:
+            raise SystemExit(f"invalid weak source-character report: stale {key}")
 
 
 def write_visual_evidence(
