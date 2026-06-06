@@ -71,13 +71,22 @@ The suite also enforces the shared evidence-boundary contract. Current scripted
 diagnostics must report `quality_proof: false`; the suite must fail if any
 scripted child report claims product-quality proof. Source-backed diagnostics
 may report `source_backed: true` and `source_timing_backed: true`, but only as
-diagnostic evidence while the arrangement role grammar and mix recipe remain
-scripted. The pro-pressure source matrix now bubbles up arrangement-policy
-coverage through suite key metrics and requires at least two distinct role-order
-signatures across source families. It also bubbles up rebuild-only metrics from
-the matrix and professional-source WAV pack so the suite can prove that
-source-layer-off renders remain audible, transformed, and not source-masked.
-Synthetic negative fixtures report `source_backed: false`.
+diagnostic evidence while the role vocabulary, destructive/restore tail, and
+mix recipe remain bounded/scripted. The pro-pressure source matrix now bubbles
+up arrangement-policy coverage through suite key metrics, requires
+source-derived first-six-bar role-order proof for eligible sources, and requires
+at least two distinct role-order signatures across source families. It also
+bubbles up rebuild-only metrics from the matrix and professional-source WAV pack
+so the suite can prove that source-layer-off renders remain audible,
+transformed, and not source-masked. Synthetic negative fixtures report
+`source_backed: false`.
+
+The suite bubbles up source-derived arrangement role-order proof from the
+dense-break pack, pro-pressure source matrix, and professional-source WAV pack.
+Eligible dense-break, tonal-hook, and sparse-bass-pressure cases must expose
+candidate count and distance from the old source-family scripted role order.
+This keeps the arrangement proof from passing only because different sources
+reuse one rehearsed hook/chop/pressure recipe.
 
 The suite now bubbles up source-derived hook/chop selection proof from the
 dense-break pack, pro-pressure source matrix, and professional-source WAV pack.

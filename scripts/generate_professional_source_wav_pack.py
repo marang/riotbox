@@ -219,6 +219,13 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
                 "sparse_bass_movement_frequency_span_hz"
             ],
             "arrangement_policy_decision_count": proof["arrangement_policy_decision_count"],
+            "arrangement_role_order_source_derived": proof[
+                "arrangement_role_order_source_derived"
+            ],
+            "arrangement_role_candidate_count": proof["arrangement_role_candidate_count"],
+            "arrangement_scripted_role_distance": proof[
+                "arrangement_scripted_role_distance"
+            ],
             "arrangement_pressure_role_count": proof["arrangement_pressure_role_count"],
             "arrangement_destructive_role_count": proof["arrangement_destructive_role_count"],
             "arrangement_failure_count": proof["arrangement_failure_count"],

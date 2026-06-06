@@ -201,6 +201,15 @@ def render_case(
                 "arrangement_policy_decision_count": proof[
                     "arrangement_policy_decision_count"
                 ],
+                "arrangement_role_order_source_derived": proof[
+                    "arrangement_role_order_source_derived"
+                ],
+                "arrangement_role_candidate_count": proof[
+                    "arrangement_role_candidate_count"
+                ],
+                "arrangement_scripted_role_distance": proof[
+                    "arrangement_scripted_role_distance"
+                ],
                 "arrangement_pressure_role_count": proof[
                     "arrangement_pressure_role_count"
                 ],

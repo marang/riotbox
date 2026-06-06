@@ -54,6 +54,8 @@ MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_ARRANGEMENT_ROLE_CANDIDATES = 6
+MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE = 1.0
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -93,9 +95,16 @@ class PressureLiftPolicy:
 @dataclass(frozen=True)
 class ArrangementPolicy:
     source_aware: bool
+    role_order_source_derived: bool
     source_family: str
+    selection_strategy: str
     role_order: tuple[str, ...]
     role_order_signature: str
+    scripted_role_order: tuple[str, ...]
+    scripted_role_order_signature: str
+    scripted_role_distance: int
+    candidate_count: int
+    section_score_span: float
     arrangement_shape: str
     arrangement_intent: str
 
@@ -604,7 +613,12 @@ def dense_break_source_policy(
         timing_confidence_result=timing_confidence_result,
         timing_grid_use=timing_grid_use,
     )
-    arrangement_policy = arrangement_policy_for(pressure_lift_policy.source_family)
+    arrangement_policy = arrangement_policy_for(
+        source,
+        w30,
+        bar_frames,
+        pressure_lift_policy.source_family,
+    )
     hook_chop_policy = hook_chop_policy_for(
         source,
         w30,
@@ -711,7 +725,7 @@ def dense_break_source_policy(
     )
 
 
-def arrangement_policy_for(source_family: str) -> ArrangementPolicy:
+def scripted_arrangement_roles(source_family: str) -> tuple[tuple[str, ...], str, str]:
     if source_family == "dense_break":
         roles = ("hook", "hook", "chop", "chop", "pressure", "pressure", "dropout", "restore")
         shape = "classic break slam"
@@ -736,11 +750,138 @@ def arrangement_policy_for(source_family: str) -> ArrangementPolicy:
         roles = ("hook", "chop", "hook", "pressure", "chop", "pressure", "dropout", "restore")
         shape = "cautious recovery lift"
         intent = "avoid pretending weak material is a dense break while still proving contrast"
+    return roles, shape, intent
+
+
+def arrangement_policy_for(
+    source: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    source_family: str,
+) -> ArrangementPolicy:
+    scripted_roles, scripted_shape, scripted_intent = scripted_arrangement_roles(source_family)
+    eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    candidate_count = min(6, max(0, source.shape[0] // max(1, bar_frames)))
+    if not eligible or candidate_count < MIN_ARRANGEMENT_ROLE_CANDIDATES:
+        return ArrangementPolicy(
+            source_aware=True,
+            role_order_source_derived=False,
+            source_family=source_family,
+            selection_strategy="fallback-scripted-source-family-role-order",
+            role_order=scripted_roles,
+            role_order_signature=">".join(scripted_roles),
+            scripted_role_order=scripted_roles,
+            scripted_role_order_signature=">".join(scripted_roles),
+            scripted_role_distance=0,
+            candidate_count=max(candidate_count, 1),
+            section_score_span=0.0,
+            arrangement_shape=scripted_shape,
+            arrangement_intent=scripted_intent,
+        )
+
+    candidates = []
+    for bar in range(candidate_count):
+        start = bar * bar_frames
+        end = min(start + bar_frames, source.shape[0], w30.shape[0])
+        chunk = source[start:end]
+        w30_chunk = w30[start:end]
+        if chunk.shape[0] == 0:
+            continue
+        source_rms = rms(chunk)
+        w30_rms = rms(w30_chunk)
+        transient = transient_score(chunk)
+        low = low_band_rms(chunk)
+        high = high_band_ratio(chunk)
+        early_bias = max(0.0, (5.0 - float(bar))) * 0.004
+        late_bias = float(bar) * 0.008
+        middle_bias = (1.0 - abs(float(bar) - 2.5) / 2.5) * 0.006
+        if source_family == "tonal_hook":
+            hook_score = source_rms * 1.22 + low * 0.90 + w30_rms * 0.82 + early_bias
+            chop_score = transient * 12.0 + w30_rms * 1.18 + high * 0.018 + middle_bias
+            pressure_score = low * 1.18 + source_rms * 0.82 + late_bias
+            strategy = "tonal-section-hook-pressure-arrangement"
+        elif source_family == "sparse_bass_pressure":
+            hook_score = transient * 7.0 + w30_rms * 0.95 + source_rms * 0.62 + early_bias
+            chop_score = transient * 10.0 + w30_rms * 1.05 + high * 0.014 + middle_bias
+            pressure_score = low * 1.55 + source_rms * 0.76 + late_bias
+            strategy = "sparse-lowband-pressure-arrangement"
+        else:
+            hook_score = transient * 15.0 + high * 0.022 + w30_rms * 1.02 + early_bias
+            chop_score = transient * 13.0 + w30_rms * 1.28 + source_rms * 0.46 + middle_bias
+            pressure_score = low * 1.08 + source_rms * 0.72 + transient * 2.0 + late_bias
+            strategy = "dense-transient-pressure-arrangement"
+        candidates.append(
+            {
+                "bar": bar,
+                "hook": float(hook_score),
+                "chop": float(chop_score),
+                "pressure": float(pressure_score),
+            }
+        )
+
+    if len(candidates) < MIN_ARRANGEMENT_ROLE_CANDIDATES:
+        return ArrangementPolicy(
+            source_aware=True,
+            role_order_source_derived=False,
+            source_family=source_family,
+            selection_strategy="fallback-scripted-source-family-role-order",
+            role_order=scripted_roles,
+            role_order_signature=">".join(scripted_roles),
+            scripted_role_order=scripted_roles,
+            scripted_role_order_signature=">".join(scripted_roles),
+            scripted_role_distance=0,
+            candidate_count=len(candidates),
+            section_score_span=0.0,
+            arrangement_shape=scripted_shape,
+            arrangement_intent=scripted_intent,
+        )
+
+    pressure_bars = {
+        int(item["bar"])
+        for item in sorted(candidates[1:], key=lambda item: item["pressure"], reverse=True)[:2]
+    }
+    remaining = [item for item in candidates if int(item["bar"]) not in pressure_bars]
+    hook_bars = {
+        int(item["bar"])
+        for item in sorted(remaining, key=lambda item: item["hook"], reverse=True)[:2]
+    }
+    roles = []
+    for item in candidates:
+        bar = int(item["bar"])
+        if bar in pressure_bars:
+            roles.append("pressure")
+        elif bar in hook_bars:
+            roles.append("hook")
+        else:
+            roles.append("chop")
+    roles = tuple(roles[:6]) + ("dropout", "restore")
+    score_values = [
+        score
+        for item in candidates
+        for score in (float(item["hook"]), float(item["chop"]), float(item["pressure"]))
+    ]
+    scripted_distance = sum(1 for left, right in zip(roles, scripted_roles) if left != right)
+    if source_family == "tonal_hook":
+        shape = "source-section hook return"
+        intent = "place hook, chop, and pressure where tonal section evidence supports contrast"
+    elif source_family == "sparse_bass_pressure":
+        shape = "source-section bass shove"
+        intent = "place pressure where low-band source sections can carry the rebuild"
+    else:
+        shape = "source-section break slam"
+        intent = "place hook, chop, and pressure from transient and W-30 section evidence before the cut"
     return ArrangementPolicy(
         source_aware=True,
+        role_order_source_derived=True,
         source_family=source_family,
+        selection_strategy=strategy,
         role_order=roles,
         role_order_signature=">".join(roles),
+        scripted_role_order=scripted_roles,
+        scripted_role_order_signature=">".join(scripted_roles),
+        scripted_role_distance=scripted_distance,
+        candidate_count=len(candidates),
+        section_score_span=float(max(score_values) - min(score_values)) if score_values else 0.0,
         arrangement_shape=shape,
         arrangement_intent=intent,
     )
@@ -856,7 +997,7 @@ def pressure_lift_policy_for(
             mc202_drive=1.18,
             bass_drive=1.12,
             bar4_intensity=0.92,
-            bar5_intensity=1.01,
+            bar5_intensity=1.08,
             bar4_bass_frequency_hz=36.0,
             bar5_bass_frequency_hz=43.0,
         )
@@ -919,9 +1060,9 @@ def render_performance(
     )
     pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
     restore_bass_gain = (
-        2.08
+        2.38
         if lift_policy.source_family == "sparse_bass_pressure"
-        else 1.68
+        else 1.86
     )
     restore_mix = glue_bus(
         source * (0.28 * source_layer_gain)
@@ -1046,6 +1187,13 @@ def arrangement_structure(policy: ArrangementPolicy) -> list[dict[str, str]]:
 def arrangement_failure_codes(policy: ArrangementPolicy) -> list[str]:
     failures = []
     role_counts = {role: policy.role_order.count(role) for role in set(policy.role_order)}
+    eligible = policy.source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    if eligible and not policy.role_order_source_derived:
+        failures.append("arrangement_role_order_not_source_derived")
+    if eligible and policy.candidate_count < MIN_ARRANGEMENT_ROLE_CANDIDATES:
+        failures.append("arrangement_role_order_not_enough_candidates")
+    if eligible and policy.scripted_role_distance < MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE:
+        failures.append("arrangement_role_order_collapsed_to_scripted")
     if len(policy.role_order) != DEFAULT_BARS:
         failures.append("arrangement_role_order_not_8_bars")
     for role in ("hook", "chop", "pressure", "dropout", "restore"):
@@ -1543,7 +1691,7 @@ def build_report(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
             "scripted_boundaries": [
-                "8-bar role grammar remains scripted even though role order is source-aware",
+                "role vocabulary and destructive/restore tail remain bounded even when first-six role placement is source-derived",
                 "arrangement policy is diagnostic and does not claim human musical approval",
                 "roles remain bounded to hook, chop, pressure, dropout, restore",
                 "human_verdict remains unverified until structured listening review",
@@ -1580,6 +1728,8 @@ def build_report(
             "min_destructive_gesture_candidates": MIN_DESTRUCTIVE_GESTURE_CANDIDATES,
             "min_destructive_static_distance_frames": MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
             "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
+            "min_arrangement_role_candidates": MIN_ARRANGEMENT_ROLE_CANDIDATES,
+            "min_arrangement_scripted_role_distance": MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -1597,7 +1747,8 @@ def build_report(
         notes=(
             "Dense-break render uses source-backed stems, source timing, and a "
             "bounded source-aware pressure_lift/stutter/restore and arrangement "
-            "policy plus a source-layer-off rebuild diagnostic, but the 8-bar role grammar remains scripted; this is smoke/"
+            "policy plus a source-layer-off rebuild diagnostic, but the renderer vocabulary "
+            "and destructive/restore tail remain bounded; this is smoke/"
             "regression/diagnostic evidence, not product-quality proof."
         ),
     )
@@ -1673,6 +1824,16 @@ def performance_proof(
         "arrangement_policy_decision_count": (
             8.0 if source_policy.arrangement_policy.source_aware else 0.0
         ),
+        "arrangement_role_order_source_derived": (
+            1.0 if source_policy.arrangement_policy.role_order_source_derived else 0.0
+        ),
+        "arrangement_role_candidate_count": float(source_policy.arrangement_policy.candidate_count),
+        "arrangement_scripted_role_distance": float(
+            source_policy.arrangement_policy.scripted_role_distance
+        ),
+        "arrangement_section_score_span": float(
+            source_policy.arrangement_policy.section_score_span
+        ),
         "arrangement_role_order_hash": role_order_hash(source_policy.arrangement_policy),
         "arrangement_role_count": float(len(source_policy.arrangement_policy.role_order)),
         "arrangement_pressure_role_count": float(pressure_role_count(source_policy)),
@@ -1746,6 +1907,16 @@ def failure_codes_for(
         failures.append("rebuild_only_restore_not_bigger_than_pressure")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
+    if source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure"):
+        if proof.get("arrangement_role_order_source_derived", 0.0) < 1.0:
+            failures.append("arrangement_role_order_not_source_derived")
+        if proof.get("arrangement_role_candidate_count", 0.0) < MIN_ARRANGEMENT_ROLE_CANDIDATES:
+            failures.append("arrangement_role_order_not_enough_candidates")
+        if (
+            proof.get("arrangement_scripted_role_distance", 0.0)
+            < MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE
+        ):
+            failures.append("arrangement_role_order_collapsed_to_scripted")
     if proof["arrangement_role_count"] != float(DEFAULT_BARS):
         failures.append("arrangement_role_order_not_8_bars")
     if proof["arrangement_pressure_role_count"] < 2.0:
