@@ -87,6 +87,16 @@ not yet prove fully source-aware production quality. The report must keep
 `human_verdict: unverified` until a structured listening review or the future
 P021 calibrated audio judge supplies stronger verdict evidence.
 
+For dense-break and tonal-hook sources, the W-30 hook/chop path now uses a
+bounded `hook_chop_policy` instead of only taking the strongest grain from the
+first bar. The policy scans multiple source/W-30 candidates, records separate
+hook and chop offsets, and reports `hook_chop_selection_source_derived`,
+`hook_chop_static_distance_frames`, and `hook_chop_offset_distance_frames`.
+Dense/tonal reports must fail if hook/chop selection is not source-derived,
+does not scan enough candidates, collapses back to the old static first-bar
+choice, or selects hook/chop offsets without enough contrast. This is still a
+diagnostic selection proof, not a human musical pass.
+
 For sparse-bass-pressure sources, the bass-pressure render now derives its
 pressure/restore frequencies from the source low-band envelope and timing
 centroid instead of using only the fixed policy contour. The report exposes

@@ -48,6 +48,9 @@ MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION = 0.920
 MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 0.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
+MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
+MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
+MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -95,6 +98,22 @@ class ArrangementPolicy:
 
 
 @dataclass(frozen=True)
+class HookChopPolicy:
+    source_aware: bool
+    source_family: str
+    selection_strategy: str
+    hook_start_frames: int
+    chop_start_frames: int
+    static_first_bar_start_frames: int
+    hook_start_seconds: float
+    chop_start_seconds: float
+    hook_static_distance_frames: int
+    chop_static_distance_frames: int
+    hook_chop_distance_frames: int
+    candidate_count: int
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
@@ -102,6 +121,7 @@ class DenseBreakSourcePolicy:
     restore_hit_shape: str
     pressure_lift_policy: PressureLiftPolicy
     arrangement_policy: ArrangementPolicy
+    hook_chop_policy: HookChopPolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -191,6 +211,7 @@ def main() -> int:
     bar_frames = frames_for_beats(args.bpm, BEATS_PER_BAR)
     source_policy = dense_break_source_policy(
         source_audio,
+        w30,
         bar_frames,
         timing_confidence_result=args.timing_confidence_result,
         timing_grid_use=args.timing_grid_use,
@@ -357,8 +378,97 @@ def render_feral_grid_pack(
         raise SystemExit(f"feral_grid_pack failed; see {output / 'render.log'}")
 
 
+def hook_chop_policy_for(
+    source: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    source_family: str,
+) -> HookChopPolicy:
+    grain_len = min(frames_for_seconds(0.090), max(1, bar_frames // 8))
+    first_bar = w30[: min(bar_frames, w30.shape[0])]
+    static_start = strongest_window_start(first_bar, grain_len)
+    scan_end = min(max(2 * bar_frames, grain_len), 4 * bar_frames, source.shape[0], w30.shape[0])
+    if scan_end <= grain_len:
+        return HookChopPolicy(
+            source_aware=False,
+            source_family=source_family,
+            selection_strategy="fallback-static-first-bar",
+            hook_start_frames=static_start,
+            chop_start_frames=static_start,
+            static_first_bar_start_frames=static_start,
+            hook_start_seconds=static_start / SAMPLE_RATE,
+            chop_start_seconds=static_start / SAMPLE_RATE,
+            hook_static_distance_frames=0,
+            chop_static_distance_frames=0,
+            hook_chop_distance_frames=0,
+            candidate_count=1,
+        )
+
+    stride = max(1, grain_len // 2)
+    candidates = []
+    for start in range(0, scan_end - grain_len + 1, stride):
+        end = start + grain_len
+        source_chunk = source[start:end]
+        w30_chunk = w30[start:end]
+        source_rms = rms(source_chunk)
+        w30_rms = rms(w30_chunk)
+        transient = transient_score(source_chunk)
+        low = low_band_rms(source_chunk)
+        high = high_band_ratio(source_chunk)
+        if source_family == "tonal_hook":
+            hook_score = source_rms * 1.25 + w30_rms * 1.05 + low * 0.90 + high * 0.020
+            chop_score = transient * 16.0 + w30_rms * 1.20 + source_rms * 0.55
+            strategy = "tonal-sustain-hook-transient-chop"
+        else:
+            hook_score = transient * 20.0 + w30_rms * 1.15 + high * 0.025
+            chop_score = transient * 17.0 + w30_rms * 1.35 + source_rms * 0.45
+            strategy = "transient-break-hook-energy-chop"
+        candidates.append(
+            {
+                "start": start,
+                "hook_score": float(hook_score),
+                "chop_score": float(chop_score),
+            }
+        )
+
+    min_separation = max(grain_len * 2, int(MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES))
+
+    def select(score_key: str, avoid_start: int | None = None) -> int:
+        ranked = sorted(candidates, key=lambda item: item[score_key], reverse=True)
+        if not ranked:
+            return static_start
+        best_score = max(ranked[0][score_key], 1e-9)
+        for item in ranked:
+            start = int(item["start"])
+            if avoid_start is not None and abs(start - avoid_start) < min_separation:
+                continue
+            if abs(start - static_start) < MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES:
+                if item[score_key] < best_score * 0.65:
+                    continue
+            return start
+        return int(ranked[0]["start"])
+
+    hook_start = select("hook_score")
+    chop_start = select("chop_score", avoid_start=hook_start)
+    return HookChopPolicy(
+        source_aware=True,
+        source_family=source_family,
+        selection_strategy=strategy,
+        hook_start_frames=hook_start,
+        chop_start_frames=chop_start,
+        static_first_bar_start_frames=static_start,
+        hook_start_seconds=hook_start / SAMPLE_RATE,
+        chop_start_seconds=chop_start / SAMPLE_RATE,
+        hook_static_distance_frames=abs(hook_start - static_start),
+        chop_static_distance_frames=abs(chop_start - static_start),
+        hook_chop_distance_frames=abs(chop_start - hook_start),
+        candidate_count=len(candidates),
+    )
+
+
 def dense_break_source_policy(
     source: np.ndarray,
+    w30: np.ndarray,
     bar_frames: int,
     *,
     timing_confidence_result: str | None = None,
@@ -374,6 +484,12 @@ def dense_break_source_policy(
         timing_grid_use=timing_grid_use,
     )
     arrangement_policy = arrangement_policy_for(pressure_lift_policy.source_family)
+    hook_chop_policy = hook_chop_policy_for(
+        source,
+        w30,
+        bar_frames,
+        pressure_lift_policy.source_family,
+    )
 
     if pressure_lift_policy.source_family == "dense_break":
         pressure_shape = "transient-forward break pressure"
@@ -450,6 +566,7 @@ def dense_break_source_policy(
         restore_hit_shape=restore_hit_shape,
         pressure_lift_policy=pressure_lift_policy,
         arrangement_policy=arrangement_policy,
+        hook_chop_policy=hook_chop_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -586,13 +703,13 @@ def pressure_lift_policy_for(
             lift_shape="hook-support lift",
             lift_intent="keep the tonal hook readable while pressure rises underneath",
             source_bleed_gain=0.100,
-            hook_bleed_gain=1.02,
+            hook_bleed_gain=0.96,
             tr909_drive=0.92,
             break_snap_drive=1.08,
-            mc202_drive=0.86,
-            bass_drive=0.88,
-            bar4_intensity=0.88,
-            bar5_intensity=1.00,
+            mc202_drive=0.92,
+            bass_drive=0.94,
+            bar4_intensity=0.92,
+            bar5_intensity=1.05,
             bar4_bass_frequency_hz=42.0,
             bar5_bass_frequency_hz=49.0,
         )
@@ -608,8 +725,8 @@ def pressure_lift_policy_for(
             break_snap_drive=0.96,
             mc202_drive=1.18,
             bass_drive=1.12,
-            bar4_intensity=0.97,
-            bar5_intensity=1.06,
+            bar4_intensity=0.92,
+            bar5_intensity=1.01,
             bar4_bass_frequency_hz=36.0,
             bar5_bass_frequency_hz=43.0,
         )
@@ -627,7 +744,7 @@ def render_performance(
     source_layer_gain: float = 1.0,
 ) -> tuple[np.ndarray, dict[str, np.ndarray]]:
     performance = np.zeros_like(source)
-    hook_riff = render_w30_hook_riff_layer(w30, source, bar_frames, bars)
+    hook_riff = render_w30_hook_riff_layer(w30, source, source_policy, bar_frames, bars)
     break_snap = render_break_snap_layer(source, tr909, w30, bar_frames, bars)
     bass_pressure = render_bass_pressure_layer(source, source_policy, bar_frames, bars)
     lift_policy = source_policy.pressure_lift_policy
@@ -672,7 +789,7 @@ def render_performance(
     )
     pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
     restore_bass_gain = (
-        1.88
+        2.08
         if lift_policy.source_family == "sparse_bass_pressure"
         else 1.68
     )
@@ -912,6 +1029,23 @@ def bass_movement_policy_proof(
     }
 
 
+def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
+    policy = source_policy.hook_chop_policy
+    return {
+        "hook_chop_selection_source_derived": 1.0 if policy.source_aware else 0.0,
+        "hook_chop_selection_candidate_count": float(policy.candidate_count),
+        "hook_chop_hook_start_frames": float(policy.hook_start_frames),
+        "hook_chop_chop_start_frames": float(policy.chop_start_frames),
+        "hook_chop_static_first_bar_start_frames": float(policy.static_first_bar_start_frames),
+        "hook_chop_hook_static_distance_frames": float(policy.hook_static_distance_frames),
+        "hook_chop_chop_static_distance_frames": float(policy.chop_static_distance_frames),
+        "hook_chop_static_distance_frames": float(
+            max(policy.hook_static_distance_frames, policy.chop_static_distance_frames)
+        ),
+        "hook_chop_offset_distance_frames": float(policy.hook_chop_distance_frames),
+    }
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -966,7 +1100,14 @@ def render_dropout_stutter_bar(
 
     grain_len = max(128, bar_frames // 32)
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
-    grain_source_start = source_start + int(round(source_policy.stutter_grain_beat_offset * beat_frames))
+    if source_policy.pressure_lift_policy.source_family in (
+        "dense_break",
+        "tonal_hook",
+        "sparse_bass_pressure",
+    ):
+        grain_source_start = source_policy.hook_chop_policy.chop_start_frames
+    else:
+        grain_source_start = source_start + int(round(source_policy.stutter_grain_beat_offset * beat_frames))
     grain_source_end = min(grain_source_start + grain_len, w30.shape[0])
     if grain_source_end <= grain_source_start:
         return bar
@@ -1004,20 +1145,25 @@ def render_dropout_stutter_bar(
 def render_w30_hook_riff_layer(
     w30: np.ndarray,
     source: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
     bar_frames: int,
     bars: int,
 ) -> np.ndarray:
     layer = np.zeros_like(w30)
     grain_len = min(frames_for_seconds(0.090), max(1, bar_frames // 8))
-    first_bar = w30[: min(bar_frames, w30.shape[0])]
-    grain_start = strongest_window_start(first_bar, grain_len)
-    grain_end = min(grain_start + grain_len, w30.shape[0], source.shape[0])
-    if grain_end <= grain_start:
+    hook_start = min(source_policy.hook_chop_policy.hook_start_frames, w30.shape[0] - 1)
+    chop_start = min(source_policy.hook_chop_policy.chop_start_frames, w30.shape[0] - 1)
+    hook_end = min(hook_start + grain_len, w30.shape[0], source.shape[0])
+    chop_end = min(chop_start + grain_len, w30.shape[0], source.shape[0])
+    if hook_end <= hook_start or chop_end <= chop_start:
         return layer
 
-    grain = w30[grain_start:grain_end].copy()
-    grain += transient_emphasis(source[grain_start:grain_end]) * 0.42
-    grain *= decay_envelope(grain.shape[0], attack=0.010, decay=0.135)[:, None]
+    hook_grain = w30[hook_start:hook_end].copy()
+    hook_grain += transient_emphasis(source[hook_start:hook_end]) * 0.42
+    hook_grain *= decay_envelope(hook_grain.shape[0], attack=0.010, decay=0.135)[:, None]
+    chop_grain = w30[chop_start:chop_end].copy()
+    chop_grain += transient_emphasis(source[chop_start:chop_end]) * 0.54
+    chop_grain *= decay_envelope(chop_grain.shape[0], attack=0.006, decay=0.105)[:, None]
 
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
     patterns = {
@@ -1034,7 +1180,8 @@ def render_w30_hook_riff_layer(
             target = bar * bar_frames + int(round(beat * beat_frames))
             if target >= layer.shape[0]:
                 continue
-            stab = grain[::-1] if reverse else grain
+            source_grain = chop_grain if reverse or bar in (2, 3, 5) else hook_grain
+            stab = source_grain[::-1] if reverse else source_grain
             end = min(target + stab.shape[0], layer.shape[0])
             if end > target:
                 layer[target:end] += stab[: end - target] * gain
@@ -1231,6 +1378,7 @@ def build_report(
             "decisions": asdict(source_policy),
             "pressure_lift_policy": asdict(source_policy.pressure_lift_policy),
             "arrangement_policy": asdict(source_policy.arrangement_policy),
+            "hook_chop_policy": asdict(source_policy.hook_chop_policy),
             "arrangement_failure_routes": arrangement_failure_routes(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
@@ -1266,6 +1414,9 @@ def build_report(
                 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
             ),
             "min_sparse_bass_movement_span_hz": MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+            "min_hook_chop_selection_candidates": MIN_HOOK_CHOP_SELECTION_CANDIDATES,
+            "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
+            "min_hook_chop_offset_distance_frames": MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -1372,6 +1523,7 @@ def performance_proof(
         "source_policy_stutter_step_divisor": float(source_policy.stutter_step_divisor),
     }
     proof.update(bass_movement_policy_proof(source, source_policy, bar_frames))
+    proof.update(hook_chop_policy_proof(source_policy))
     return proof
 
 
@@ -1438,6 +1590,15 @@ def failure_codes_for(
         failures.append("arrangement_destructive_restore_tail_missing")
     if proof["arrangement_failure_count"] > 0.0:
         failures.append("arrangement_policy_contract_failed")
+    if source_family in ("dense_break", "tonal_hook"):
+        if proof.get("hook_chop_selection_source_derived", 0.0) < 1.0:
+            failures.append("hook_chop_selection_not_source_derived")
+        if proof.get("hook_chop_selection_candidate_count", 0.0) < MIN_HOOK_CHOP_SELECTION_CANDIDATES:
+            failures.append("hook_chop_selection_not_enough_candidates")
+        if proof.get("hook_chop_static_distance_frames", 0.0) < MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES:
+            failures.append("hook_chop_selection_collapsed_to_static_first_bar")
+        if proof.get("hook_chop_offset_distance_frames", 0.0) < MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES:
+            failures.append("hook_chop_selection_not_enough_offset_contrast")
     if source_family == "sparse_bass_pressure":
         if proof.get("bass_movement_source_derived", 0.0) < 1.0:
             failures.append("sparse_bass_movement_not_source_derived")

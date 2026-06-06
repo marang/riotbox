@@ -643,6 +643,11 @@ following:
     source correlation, and distinct source-on/source-off output; this proves
     the current diagnostic render is not passing only because raw source bleed
     masks weak Riotbox generation, but it still keeps `quality_proof: false`
+  - dense-break and tonal-hook diagnostics now derive W-30 hook/chop grain
+    selection from scanned source/W-30 candidates, expose distance from the old
+    static first-bar choice and hook/chop offset contrast, and reject collapsed
+    static hook selection while still treating the scripted render as diagnostic
+    evidence
   - sparse-bass-pressure diagnostics now derive bass-pressure movement from the
     source low-band envelope and timing centroid, expose fixed-contour distance
     and frequency-span proof, and reject collapsed fixed movement while still

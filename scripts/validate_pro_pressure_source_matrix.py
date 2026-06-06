@@ -167,6 +167,18 @@ def render_case(
                 "pressure_lift_bar5_to_bar4_rms_ratio": proof[
                     "pressure_lift_bar5_to_bar4_rms_ratio"
                 ],
+                "hook_chop_selection_source_derived": proof[
+                    "hook_chop_selection_source_derived"
+                ],
+                "hook_chop_selection_candidate_count": proof[
+                    "hook_chop_selection_candidate_count"
+                ],
+                "hook_chop_static_distance_frames": proof[
+                    "hook_chop_static_distance_frames"
+                ],
+                "hook_chop_offset_distance_frames": proof[
+                    "hook_chop_offset_distance_frames"
+                ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
                 "sparse_bass_movement_static_distance_hz": proof[
                     "sparse_bass_movement_static_distance_hz"
@@ -210,6 +222,7 @@ def render_case(
                 ]["peak_abs"],
             },
             "pressure_lift_policy": pressure_lift_policy,
+            "hook_chop_policy": case_report["source_policy"]["hook_chop_policy"],
             "arrangement_policy": arrangement_policy,
             "arrangement_failure_codes": arrangement_failure_codes(arrangement_policy),
         }
