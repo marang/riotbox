@@ -24,6 +24,8 @@ MAX_SOURCE_TO_PERFORMANCE_CORRELATION = 0.80
 MIN_DROPOUT_STUTTER_RMS = 0.09
 MIN_RESTORE_RMS = 0.18
 MAX_FULL_PEAK_ABS = 0.985
+MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
+MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
 
 
 def main() -> int:
@@ -67,6 +69,15 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         "restore_to_pressure_rms_ratio": number(proof.get("restore_to_pressure_rms_ratio")),
         "max_adjacent_bar_correlation": number(proof.get("max_adjacent_bar_correlation")),
         "source_to_performance_correlation": number(proof.get("source_to_performance_correlation")),
+        "destructive_gesture_source_derived": number(
+            proof.get("destructive_gesture_source_derived")
+        ),
+        "destructive_static_distance_frames": number(
+            proof.get("destructive_static_distance_frames")
+        ),
+        "destructive_offset_distance_frames": number(
+            proof.get("destructive_offset_distance_frames")
+        ),
         "dropout_stutter_rms": metric_number(metrics, "dropout_stutter", "rms"),
         "restore_hit_rms": metric_number(metrics, "restore_hit", "rms"),
         "full_performance_peak_abs": metric_number(metrics, "full_performance", "peak_abs"),
@@ -82,6 +93,8 @@ def build_report(performance_report: Path) -> dict[str, Any]:
         "min_dropout_stutter_rms": MIN_DROPOUT_STUTTER_RMS,
         "min_restore_rms": MIN_RESTORE_RMS,
         "max_full_peak_abs": MAX_FULL_PEAK_ABS,
+        "min_destructive_static_distance_frames": MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
+        "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
     }
     failures = failure_codes(source, extracted)
     report = {
@@ -136,6 +149,18 @@ def failure_codes(source: dict[str, Any], metrics: dict[str, float]) -> list[str
             MIN_SOURCE_TO_PERFORMANCE_CORRELATION
             <= metrics["source_to_performance_correlation"]
             <= MAX_SOURCE_TO_PERFORMANCE_CORRELATION,
+        ),
+        (
+            "destructive_gesture_not_source_derived",
+            metrics["destructive_gesture_source_derived"] >= 1.0,
+        ),
+        (
+            "destructive_gesture_collapsed_to_fixed_choice",
+            metrics["destructive_static_distance_frames"] >= MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
+        ),
+        (
+            "destructive_gesture_not_enough_offset_contrast",
+            metrics["destructive_offset_distance_frames"] >= MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
         ),
         ("dropout_stutter_too_quiet", metrics["dropout_stutter_rms"] >= MIN_DROPOUT_STUTTER_RMS),
         ("restore_too_quiet_after_cut", metrics["restore_hit_rms"] >= MIN_RESTORE_RMS),

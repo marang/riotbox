@@ -179,6 +179,18 @@ def render_case(
                 "hook_chop_offset_distance_frames": proof[
                     "hook_chop_offset_distance_frames"
                 ],
+                "destructive_gesture_source_derived": proof[
+                    "destructive_gesture_source_derived"
+                ],
+                "destructive_gesture_candidate_count": proof[
+                    "destructive_gesture_candidate_count"
+                ],
+                "destructive_static_distance_frames": proof[
+                    "destructive_static_distance_frames"
+                ],
+                "destructive_offset_distance_frames": proof[
+                    "destructive_offset_distance_frames"
+                ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
                 "sparse_bass_movement_static_distance_hz": proof[
                     "sparse_bass_movement_static_distance_hz"
@@ -223,6 +235,9 @@ def render_case(
             },
             "pressure_lift_policy": pressure_lift_policy,
             "hook_chop_policy": case_report["source_policy"]["hook_chop_policy"],
+            "destructive_gesture_policy": case_report["source_policy"][
+                "destructive_gesture_policy"
+            ],
             "arrangement_policy": arrangement_policy,
             "arrangement_failure_codes": arrangement_failure_codes(arrangement_policy),
         }

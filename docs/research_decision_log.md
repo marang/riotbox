@@ -2082,3 +2082,17 @@ Why: the previous W-30 hook/riff layer could make different sources feel more or
 Evidence: RIOTBOX-1222 adds source-derived hook/chop selection to the dense-break performance generator, surfaces the proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds negative fixtures that reject non-source-derived or static tonal hook/chop reports.
 Consequences: this remains scripted render evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should continue replacing scripted arrangement behavior with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
 Status: accepted
+
+---
+
+### RBX-074
+
+Date: 2026-06-06
+Topic: Dense and tonal destructive gesture cues must be source-derived before they count as stronger P022 evidence
+Phase: P022 / Professional Sound Output
+Question: may dense-break and tonal-hook diagnostics keep using fixed destructive stutter/restore cue choices while claiming stronger source-aware destructive behavior?
+Decision: no. Dense-break and tonal-hook diagnostics now use a bounded `destructive_gesture_policy` that scans source/W-30 candidates, selects separate stutter and restore cue offsets, and reports whether selection is source-derived, how far it moved away from the old fixed choices, and how much offset contrast exists between stutter and restore.
+Why: the dropout/stutter/restore gesture is one of the places where Riotbox should feel physically playable. If it keeps using fixed cue choices, the render can sound like the same trick around different source material instead of abusing the actual source.
+Evidence: RIOTBOX-1225 adds source-derived destructive gesture selection to the dense-break performance generator, surfaces the proof through the destructive-variation validator, pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds negative mutations that reject non-source-derived or static dense/tonal destructive reports.
+Consequences: this remains scripted render evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should keep replacing remaining scripted production choices with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
+Status: accepted

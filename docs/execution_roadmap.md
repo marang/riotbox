@@ -648,6 +648,11 @@ following:
     static first-bar choice and hook/chop offset contrast, and reject collapsed
     static hook selection while still treating the scripted render as diagnostic
     evidence
+  - dense-break and tonal-hook diagnostics now also derive destructive
+    dropout/stutter/restore cue selection from scanned source/W-30 candidates,
+    expose distance from old fixed destructive choices and stutter/restore offset
+    contrast, and reject collapsed fixed destructive gestures while still
+    treating the scripted render as diagnostic evidence
   - sparse-bass-pressure diagnostics now derive bass-pressure movement from the
     source low-band envelope and timing centroid, expose fixed-contour distance
     and frequency-span proof, and reject collapsed fixed movement while still

@@ -353,6 +353,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "hook_chop_offset_distance_frames": number(
                 proof.get("hook_chop_offset_distance_frames")
             ),
+            "destructive_gesture_source_derived": number(
+                proof.get("destructive_gesture_source_derived")
+            ),
+            "destructive_static_distance_frames": number(
+                proof.get("destructive_static_distance_frames")
+            ),
+            "destructive_offset_distance_frames": number(
+                proof.get("destructive_offset_distance_frames")
+            ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":
@@ -409,6 +418,32 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "hook_chop_offset_distance_frames"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_destructive_static_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "destructive_static_distance_frames"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_destructive_offset_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "destructive_offset_distance_frames"
                         )
                     )
                     for case in cases
@@ -482,6 +517,30 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "hook_chop_offset_distance_frames"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_destructive_static_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "destructive_static_distance_frames"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_destructive_offset_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "destructive_offset_distance_frames"
                         )
                     )
                     for case in cases

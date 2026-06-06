@@ -86,6 +86,14 @@ non-zero distance from the old first-bar static choice, and enough offset
 distance between hook and chop choices to show the W-30 material is being
 selected from the source instead of replaying one fixed grain.
 
+The suite also bubbles up source-derived destructive gesture proof from the
+dense-break pack, pro-pressure source matrix, and professional-source WAV pack.
+Dense-break and tonal-hook cases must expose source-derived destructive
+stutter/restore selection, distance from the old fixed destructive choices, and
+enough offset contrast between stutter and restore cues. This prevents a
+diagnostic render from passing only because the drop/restores are a static trick
+wrapped around otherwise source-aware hook/chop material.
+
 The suite now also bubbles up sparse-bass movement proof from the pro-pressure
 source matrix and professional-source WAV pack. Sparse-bass cases must expose
 source-derived bass movement, non-zero distance from the old fixed contour, and
