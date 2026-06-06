@@ -1104,4 +1104,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Derive dropout/restore tail shape from source candidates
 - [RIOTBOX-1229.md](./RIOTBOX-1229.md)
   Expose strongest-audible-element proof across professional outputs
+- [RIOTBOX-1230.md](./RIOTBOX-1230.md)
+  Tighten source-character survival proof for rebuilt outputs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
