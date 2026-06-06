@@ -1102,4 +1102,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Improve pad/noise gated texture path beyond weak routing
 - [RIOTBOX-1228.md](./RIOTBOX-1228.md)
   Derive dropout/restore tail shape from source candidates
+- [RIOTBOX-1229.md](./RIOTBOX-1229.md)
+  Expose strongest-audible-element proof across professional outputs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
