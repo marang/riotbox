@@ -380,6 +380,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "mix_treatment_output_contrast_ratio": number(
                 proof.get("mix_treatment_output_contrast_ratio")
             ),
+            "tail_shape_source_derived": number(
+                proof.get("tail_shape_source_derived")
+            ),
+            "tail_shape_fixed_distance": number(
+                proof.get("tail_shape_fixed_distance")
+            ),
+            "tail_shape_output_contrast_ratio": number(
+                proof.get("tail_shape_output_contrast_ratio")
+            ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":
@@ -514,6 +523,32 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "mix_treatment_output_contrast_ratio"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_tail_shape_fixed_distance": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "tail_shape_fixed_distance"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_tail_shape_output_contrast_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "tail_shape_output_contrast_ratio"
                         )
                     )
                     for case in cases
@@ -659,6 +694,30 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "mix_treatment_output_contrast_ratio"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") in ("tonal_hook", "sparse_bass_pressure")
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_tail_shape_fixed_distance": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "tail_shape_fixed_distance"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") in ("tonal_hook", "sparse_bass_pressure")
+                ),
+                default=0.0,
+            ),
+            "min_source_derived_tail_shape_output_contrast_ratio": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "tail_shape_output_contrast_ratio"
                         )
                     )
                     for case in cases

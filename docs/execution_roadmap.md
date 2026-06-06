@@ -641,7 +641,10 @@ following:
     role-order signatures across source families; it also exposes a bounded
     `mix_treatment_policy` that derives bus drive/slam/gain treatment from
     source/W-30 energy candidates and rejects collapse back to the old fixed mix
-    recipe; role vocabulary and dropout/restore tail remain bounded/scripted and
+    recipe; eligible sources now also expose a bounded `tail_shape_policy` that
+    derives dropout silence, stutter density/gain, and restore weight/drive from
+    source/W-30 candidates and rejects collapse back to the old fixed tail
+    recipe; role vocabulary remains bounded and
     `human_verdict: unverified`
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,

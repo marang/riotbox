@@ -203,6 +203,12 @@ def render_case(
                 "mix_treatment_output_contrast_ratio": proof[
                     "mix_treatment_output_contrast_ratio"
                 ],
+                "tail_shape_source_derived": proof["tail_shape_source_derived"],
+                "tail_shape_candidate_count": proof["tail_shape_candidate_count"],
+                "tail_shape_fixed_distance": proof["tail_shape_fixed_distance"],
+                "tail_shape_output_contrast_ratio": proof[
+                    "tail_shape_output_contrast_ratio"
+                ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
                 "sparse_bass_movement_static_distance_hz": proof[
                     "sparse_bass_movement_static_distance_hz"

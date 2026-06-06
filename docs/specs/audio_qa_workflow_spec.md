@@ -71,6 +71,9 @@ These checks validate behavior against product intent rather than "beauty":
 - source-derived rebuilds remain musically usable when the original source layer is muted
 - source-layer modes are explicit and optional, not an implicit requirement for Riotbox to sound complete
 - anchor-preservation modes keep promised kick / snare anchors readable, while destructive or replacement modes are allowed to rebuild the beat
+- source-derived dropout, stutter, and restore tails expose candidate counts,
+  distance from fixed recipes, and output contrast instead of passing as one
+  hardcoded destructive ending
 
 Every musical pattern used by a listening pack, benchmark, demo, or generated
 artifact must carry an explicit origin. The allowed origin labels are:

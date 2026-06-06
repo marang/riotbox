@@ -2138,3 +2138,17 @@ Why: avoiding dense-break misclassification is necessary but musically incomplet
 Evidence: RIOTBOX-1223 adds source-derived pad/noise texture selection to the dense-break performance generator, surfaces the proof through edge-source diagnostics and the professional-output suite, and adds positive and negative gates that reject non-source-derived or collapsed pad/noise texture reports.
 Consequences: pad/noise remains weak-routed diagnostic evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should improve source selection, UI cues, and listening-review labels before treating pad/noise output as demo-ready musical material.
 Status: accepted
+
+---
+
+### RBX-078
+
+Date: 2026-06-06
+Topic: Eligible dropout/restore tails must prove source-derived shape instead of one fixed recipe
+Phase: P022 / Professional Sound Output
+Question: can dense-break, tonal-hook, and sparse-bass-pressure diagnostics keep one fixed dropout/stutter/restore tail while the rest of the render becomes source-derived?
+Decision: no. Eligible diagnostics now use a bounded `tail_shape_policy` that scans source/W-30 bar candidates and derives dropout silence fraction/gain, stutter density/gain, and restore source/snap/drum/bass/drive treatment from source energy, low-band, high-band, transient, and W-30 response.
+Why: a fixed final cut makes otherwise source-aware renders feel rehearsed. The last silence cut, stutter, and restore need to react to the actual material so the performer hears a source-specific choke and return rather than the same trick on every source.
+Evidence: RIOTBOX-1228 adds source-derived tail-shape selection to the dense-break performance generator, applies it to the rendered dropout/stutter and restore path, surfaces proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds positive and negative gates that reject non-source-derived or fixed-collapsed tail shape.
+Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified` because the role vocabulary is still bounded and no structured human listening verdict has approved the output as product-quality proof.
+Status: accepted
