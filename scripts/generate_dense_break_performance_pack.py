@@ -56,6 +56,9 @@ MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_ARRANGEMENT_ROLE_CANDIDATES = 6
 MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE = 1.0
+MIN_MIX_TREATMENT_CANDIDATES = 6
+MIN_MIX_TREATMENT_FIXED_DISTANCE = 0.08
+MIN_MIX_TREATMENT_OUTPUT_CONTRAST = 2.10
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -143,6 +146,35 @@ class DestructiveGesturePolicy:
 
 
 @dataclass(frozen=True)
+class MixTreatmentPolicy:
+    source_aware: bool
+    source_family: str
+    selection_strategy: str
+    hook_drive: float
+    hook_slam: float
+    hook_w30_gain: float
+    hook_break_snap_gain: float
+    chop_drive: float
+    chop_slam: float
+    chop_w30_gain: float
+    chop_break_snap_gain: float
+    pressure_drive: float
+    pressure_slam: float
+    pressure_peak: float
+    pressure_w30_gain: float
+    pressure_break_snap_gain: float
+    restore_drive: float
+    restore_slam: float
+    restore_bass_gain: float
+    restore_break_snap_gain: float
+    final_drive: float
+    final_slam: float
+    fixed_treatment_distance: float
+    source_energy_span: float
+    candidate_count: int
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
@@ -152,6 +184,7 @@ class DenseBreakSourcePolicy:
     arrangement_policy: ArrangementPolicy
     hook_chop_policy: HookChopPolicy
     destructive_gesture_policy: DestructiveGesturePolicy
+    mix_treatment_policy: MixTreatmentPolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -596,6 +629,255 @@ def destructive_gesture_policy_for(
     )
 
 
+def fixed_restore_bass_gain(source_family: str) -> float:
+    return 2.38 if source_family == "sparse_bass_pressure" else 1.86
+
+
+def fixed_mix_treatment_policy(
+    source_family: str,
+    candidate_count: int = 1,
+) -> MixTreatmentPolicy:
+    return MixTreatmentPolicy(
+        source_aware=False,
+        source_family=source_family,
+        selection_strategy="fallback-fixed-mix-treatment",
+        hook_drive=1.04,
+        hook_slam=0.05,
+        hook_w30_gain=1.38,
+        hook_break_snap_gain=1.50,
+        chop_drive=1.24,
+        chop_slam=0.18,
+        chop_w30_gain=1.54,
+        chop_break_snap_gain=1.36,
+        pressure_drive=1.34,
+        pressure_slam=0.30,
+        pressure_peak=0.79,
+        pressure_w30_gain=0.84,
+        pressure_break_snap_gain=1.36,
+        restore_drive=1.72,
+        restore_slam=0.40,
+        restore_bass_gain=fixed_restore_bass_gain(source_family),
+        restore_break_snap_gain=3.64,
+        final_drive=1.22,
+        final_slam=0.22,
+        fixed_treatment_distance=0.0,
+        source_energy_span=0.0,
+        candidate_count=candidate_count,
+    )
+
+
+def mix_treatment_policy_for(
+    source: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    source_family: str,
+) -> MixTreatmentPolicy:
+    eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    candidate_count = min(6, max(0, source.shape[0] // max(1, bar_frames)))
+    fixed = fixed_mix_treatment_policy(source_family, max(candidate_count, 1))
+    if not eligible or candidate_count < MIN_MIX_TREATMENT_CANDIDATES:
+        return fixed
+
+    candidates = []
+    for bar in range(candidate_count):
+        start = bar * bar_frames
+        end = min(start + bar_frames, source.shape[0], w30.shape[0])
+        chunk = source[start:end]
+        w30_chunk = w30[start:end]
+        if chunk.shape[0] == 0:
+            continue
+        candidates.append(
+            {
+                "source_rms": rms(chunk),
+                "w30_rms": rms(w30_chunk),
+                "low": low_band_rms(chunk),
+                "high": high_band_ratio(chunk),
+                "transient": transient_score(chunk),
+            }
+        )
+    if len(candidates) < MIN_MIX_TREATMENT_CANDIDATES:
+        return fixed_mix_treatment_policy(source_family, len(candidates))
+
+    source_rms_values = [item["source_rms"] for item in candidates]
+    low_values = [item["low"] for item in candidates]
+    high_values = [item["high"] for item in candidates]
+    transient_values = [item["transient"] for item in candidates]
+    w30_values = [item["w30_rms"] for item in candidates]
+    source_mean = max(float(np.mean(source_rms_values)), 1e-9)
+    low_norm = float(np.clip(np.mean(low_values) / source_mean, 0.0, 1.25))
+    high_norm = float(np.clip(np.mean(high_values) / 0.35, 0.0, 1.25))
+    transient_norm = float(
+        np.clip(np.mean(transient_values) / max(source_mean * 7.0, 1e-9), 0.0, 1.25)
+    )
+    w30_norm = float(np.clip(np.mean(w30_values) / source_mean, 0.0, 1.25))
+    energy_span = float(max(source_rms_values) - min(source_rms_values))
+    energy_span_norm = float(np.clip(energy_span / source_mean, 0.0, 1.25))
+
+    if source_family == "tonal_hook":
+        strategy = "tonal-hook-readable-mix-treatment"
+        hook_bias = 0.08
+        chop_bias = 0.02
+        pressure_bias = -0.02
+        restore_bias = 0.03
+    elif source_family == "sparse_bass_pressure":
+        strategy = "sparse-bass-pressure-mix-treatment"
+        hook_bias = -0.02
+        chop_bias = 0.02
+        pressure_bias = 0.10
+        restore_bias = 0.10
+    else:
+        strategy = "dense-break-snap-mix-treatment"
+        hook_bias = 0.03
+        chop_bias = 0.08
+        pressure_bias = 0.05
+        restore_bias = 0.07
+
+    policy_values = {
+        "hook_drive": float(
+            np.clip(
+                fixed.hook_drive + hook_bias + transient_norm * 0.035 - low_norm * 0.012,
+                1.00,
+                1.16,
+            )
+        ),
+        "hook_slam": float(
+            np.clip(
+                fixed.hook_slam + high_norm * 0.020 + transient_norm * 0.010,
+                0.04,
+                0.10,
+            )
+        ),
+        "hook_w30_gain": float(
+            np.clip(fixed.hook_w30_gain + w30_norm * 0.090 + hook_bias, 1.28, 1.58)
+        ),
+        "hook_break_snap_gain": float(
+            np.clip(
+                fixed.hook_break_snap_gain + transient_norm * 0.140 + hook_bias,
+                1.42,
+                1.78,
+            )
+        ),
+        "chop_drive": float(
+            np.clip(
+                fixed.chop_drive + chop_bias + high_norm * 0.050 + transient_norm * 0.030,
+                1.18,
+                1.40,
+            )
+        ),
+        "chop_slam": float(
+            np.clip(
+                fixed.chop_slam + high_norm * 0.035 + energy_span_norm * 0.015,
+                0.16,
+                0.27,
+            )
+        ),
+        "chop_w30_gain": float(
+            np.clip(fixed.chop_w30_gain + w30_norm * 0.110 + chop_bias, 1.46, 1.78)
+        ),
+        "chop_break_snap_gain": float(
+            np.clip(
+                fixed.chop_break_snap_gain + transient_norm * 0.120 + chop_bias,
+                1.30,
+                1.58,
+            )
+        ),
+        "pressure_drive": float(
+            np.clip(
+                fixed.pressure_drive
+                + pressure_bias
+                + low_norm * 0.045
+                + transient_norm * 0.015,
+                1.28,
+                1.50,
+            )
+        ),
+        "pressure_slam": float(
+            np.clip(
+                fixed.pressure_slam + pressure_bias * 0.25 + low_norm * 0.030,
+                0.26,
+                0.40,
+            )
+        ),
+        "pressure_peak": float(
+            np.clip(
+                fixed.pressure_peak + pressure_bias * 0.10 + low_norm * 0.018,
+                0.77,
+                0.83,
+            )
+        ),
+        "pressure_w30_gain": float(
+            np.clip(
+                fixed.pressure_w30_gain + w30_norm * 0.050 - low_norm * 0.015,
+                0.78,
+                0.94,
+            )
+        ),
+        "pressure_break_snap_gain": float(
+            np.clip(
+                fixed.pressure_break_snap_gain + transient_norm * 0.130 + pressure_bias,
+                1.26,
+                1.62,
+            )
+        ),
+        "restore_drive": float(
+            np.clip(
+                fixed.restore_drive + restore_bias + transient_norm * 0.050 + low_norm * 0.025,
+                1.66,
+                1.90,
+            )
+        ),
+        "restore_slam": float(
+            np.clip(
+                fixed.restore_slam
+                + restore_bias * 0.20
+                + transient_norm * 0.020
+                + low_norm * 0.020,
+                0.38,
+                0.50,
+            )
+        ),
+        "restore_bass_gain": float(
+            np.clip(
+                fixed.restore_bass_gain + restore_bias + low_norm * 0.180,
+                1.82,
+                2.72,
+            )
+        ),
+        "restore_break_snap_gain": float(
+            np.clip(
+                fixed.restore_break_snap_gain + transient_norm * 0.220 + restore_bias,
+                3.52,
+                4.02,
+            )
+        ),
+        "final_drive": float(
+            np.clip(
+                fixed.final_drive + energy_span_norm * 0.025 + transient_norm * 0.010,
+                1.20,
+                1.28,
+            )
+        ),
+        "final_slam": float(
+            np.clip(fixed.final_slam + energy_span_norm * 0.020, 0.21, 0.28)
+        ),
+    }
+    distance = float(
+        sum(
+            abs(policy_values[name] - getattr(fixed, name))
+            for name in policy_values
+        )
+    )
+    return MixTreatmentPolicy(
+        source_aware=True,
+        source_family=source_family,
+        selection_strategy=strategy,
+        fixed_treatment_distance=distance,
+        source_energy_span=energy_span,
+        candidate_count=len(candidates),
+        **policy_values,
+    )
+
+
 def dense_break_source_policy(
     source: np.ndarray,
     w30: np.ndarray,
@@ -676,6 +958,12 @@ def dense_break_source_policy(
         pressure_lift_policy.source_family,
         stutter_grain_beat_offset,
     )
+    mix_treatment_policy = mix_treatment_policy_for(
+        source,
+        w30,
+        bar_frames,
+        pressure_lift_policy.source_family,
+    )
 
     if pressure_lift_policy.source_family == "tonal_hook":
         bass_restore = 51.5
@@ -711,6 +999,7 @@ def dense_break_source_policy(
         arrangement_policy=arrangement_policy,
         hook_chop_policy=hook_chop_policy,
         destructive_gesture_policy=destructive_gesture_policy,
+        mix_treatment_policy=mix_treatment_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -1019,6 +1308,7 @@ def render_performance(
     break_snap = render_break_snap_layer(source, tr909, w30, bar_frames, bars)
     bass_pressure = render_bass_pressure_layer(source, source_policy, bar_frames, bars)
     lift_policy = source_policy.pressure_lift_policy
+    mix_policy = source_policy.mix_treatment_policy
     role_order = source_policy.arrangement_policy.role_order
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
@@ -1030,50 +1320,52 @@ def render_performance(
 
     hook_mix = glue_bus(
         source * (0.50 * source_layer_gain)
-        + w30 * 1.38
+        + w30 * mix_policy.hook_w30_gain
         + hook_riff * 1.62
         + tr909 * 0.62
-        + break_snap * 1.50
+        + break_snap * mix_policy.hook_break_snap_gain
         + mc202 * 0.34,
-        drive=1.04,
-        slam=0.05,
+        drive=mix_policy.hook_drive,
+        slam=mix_policy.hook_slam,
     )
     chop_mix = glue_bus(
         source * (0.16 * source_layer_gain)
-        + w30 * 1.54
+        + w30 * mix_policy.chop_w30_gain
         + hook_riff * 1.78
         + tr909 * 0.78
-        + break_snap * 1.36
+        + break_snap * mix_policy.chop_break_snap_gain
         + mc202 * 0.58,
-        drive=1.24,
-        slam=0.18,
+        drive=mix_policy.chop_drive,
+        slam=mix_policy.chop_slam,
     )
     pressure_mix = saturate(
         source * (lift_policy.source_bleed_gain * source_layer_gain)
-        + w30 * 0.84
+        + w30 * mix_policy.pressure_w30_gain
         + hook_riff * lift_policy.hook_bleed_gain
         + tr909 * (2.28 + lift_policy.tr909_drive * 0.52)
-        + break_snap * (1.36 * lift_policy.break_snap_drive)
+        + break_snap * (mix_policy.pressure_break_snap_gain * lift_policy.break_snap_drive)
         + mc202 * (5.00 + lift_policy.mc202_drive * 1.42)
         + bass_pressure * (1.14 + lift_policy.bass_drive * 0.62),
         1.58,
     )
-    pressure_mix = normalize_peak(glue_bus(pressure_mix, drive=1.34, slam=0.30), 0.79)
-    restore_bass_gain = (
-        2.38
-        if lift_policy.source_family == "sparse_bass_pressure"
-        else 1.86
+    pressure_mix = normalize_peak(
+        glue_bus(
+            pressure_mix,
+            drive=mix_policy.pressure_drive,
+            slam=mix_policy.pressure_slam,
+        ),
+        mix_policy.pressure_peak,
     )
     restore_mix = glue_bus(
         source * (0.28 * source_layer_gain)
         + w30 * 1.76
         + hook_riff * 1.46
         + tr909 * 2.78
-        + break_snap * 3.64
+        + break_snap * mix_policy.restore_break_snap_gain
         + mc202 * 3.65
-        + bass_pressure * restore_bass_gain,
-        drive=1.72,
-        slam=0.40,
+        + bass_pressure * mix_policy.restore_bass_gain,
+        drive=mix_policy.restore_drive,
+        slam=mix_policy.restore_slam,
     )
 
     pressure_index = 0
@@ -1122,7 +1414,10 @@ def render_performance(
         else:
             raise ValueError(f"unsupported arrangement role: {role}")
 
-    performance = normalize_peak(glue_bus(performance, drive=1.22, slam=0.22), TARGET_PERFORMANCE_PEAK)
+    performance = normalize_peak(
+        glue_bus(performance, drive=mix_policy.final_drive, slam=mix_policy.final_slam),
+        TARGET_PERFORMANCE_PEAK,
+    )
     sections = {
         "chop_hook": concatenate_role_bars(
             performance, bar_frames, role_order, {"hook", "chop"}, max_bars=2
@@ -1343,6 +1638,22 @@ def destructive_gesture_policy_proof(source_policy: DenseBreakSourcePolicy) -> d
             min(policy.stutter_static_distance_frames, policy.restore_static_distance_frames)
         ),
         "destructive_offset_distance_frames": float(policy.stutter_restore_distance_frames),
+    }
+
+
+def mix_treatment_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
+    policy = source_policy.mix_treatment_policy
+    return {
+        "mix_treatment_source_derived": 1.0 if policy.source_aware else 0.0,
+        "mix_treatment_candidate_count": float(policy.candidate_count),
+        "mix_treatment_fixed_distance": float(policy.fixed_treatment_distance),
+        "mix_treatment_source_energy_span": float(policy.source_energy_span),
+        "mix_treatment_hook_drive": float(policy.hook_drive),
+        "mix_treatment_chop_drive": float(policy.chop_drive),
+        "mix_treatment_pressure_drive": float(policy.pressure_drive),
+        "mix_treatment_restore_drive": float(policy.restore_drive),
+        "mix_treatment_pressure_peak": float(policy.pressure_peak),
+        "mix_treatment_restore_bass_gain": float(policy.restore_bass_gain),
     }
 
 
@@ -1687,11 +1998,12 @@ def build_report(
             "arrangement_policy": asdict(source_policy.arrangement_policy),
             "hook_chop_policy": asdict(source_policy.hook_chop_policy),
             "destructive_gesture_policy": asdict(source_policy.destructive_gesture_policy),
+            "mix_treatment_policy": asdict(source_policy.mix_treatment_policy),
             "arrangement_failure_routes": arrangement_failure_routes(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
             "scripted_boundaries": [
-                "role vocabulary and destructive/restore tail remain bounded even when first-six role placement is source-derived",
+                "role vocabulary and destructive/restore tail remain bounded even when first-six role placement and mix treatment are source-derived",
                 "arrangement policy is diagnostic and does not claim human musical approval",
                 "roles remain bounded to hook, chop, pressure, dropout, restore",
                 "human_verdict remains unverified until structured listening review",
@@ -1730,6 +2042,9 @@ def build_report(
             "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
             "min_arrangement_role_candidates": MIN_ARRANGEMENT_ROLE_CANDIDATES,
             "min_arrangement_scripted_role_distance": MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE,
+            "min_mix_treatment_candidates": MIN_MIX_TREATMENT_CANDIDATES,
+            "min_mix_treatment_fixed_distance": MIN_MIX_TREATMENT_FIXED_DISTANCE,
+            "min_mix_treatment_output_contrast": MIN_MIX_TREATMENT_OUTPUT_CONTRAST,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -1746,7 +2061,7 @@ def build_report(
         scripted_generation=True,
         notes=(
             "Dense-break render uses source-backed stems, source timing, and a "
-            "bounded source-aware pressure_lift/stutter/restore and arrangement "
+            "bounded source-aware pressure_lift/stutter/restore, arrangement, and mix "
             "policy plus a source-layer-off rebuild diagnostic, but the renderer vocabulary "
             "and destructive/restore tail remain bounded; this is smoke/"
             "regression/diagnostic evidence, not product-quality proof."
@@ -1842,6 +2157,9 @@ def performance_proof(
             len(arrangement_failure_codes(source_policy.arrangement_policy))
         ),
         "pressure_lift_bar5_to_bar4_rms_ratio": rms(pressure_bar5) / max(rms(pressure_bar4), 1e-9),
+        "mix_treatment_output_contrast_ratio": (
+            (pressure_rms + restore_rms) / max(hook_rms, 1e-9)
+        ),
         "source_policy_pressure_gain": source_policy.pressure_gain,
         "source_policy_bass_gain": source_policy.bass_gain,
         "source_policy_stutter_step_divisor": float(source_policy.stutter_step_divisor),
@@ -1849,6 +2167,7 @@ def performance_proof(
     proof.update(bass_movement_policy_proof(source, source_policy, bar_frames))
     proof.update(hook_chop_policy_proof(source_policy))
     proof.update(destructive_gesture_policy_proof(source_policy))
+    proof.update(mix_treatment_policy_proof(source_policy))
     return proof
 
 
@@ -1917,6 +2236,14 @@ def failure_codes_for(
             < MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE
         ):
             failures.append("arrangement_role_order_collapsed_to_scripted")
+        if proof.get("mix_treatment_source_derived", 0.0) < 1.0:
+            failures.append("mix_treatment_not_source_derived")
+        if proof.get("mix_treatment_candidate_count", 0.0) < MIN_MIX_TREATMENT_CANDIDATES:
+            failures.append("mix_treatment_not_enough_candidates")
+        if proof.get("mix_treatment_fixed_distance", 0.0) < MIN_MIX_TREATMENT_FIXED_DISTANCE:
+            failures.append("mix_treatment_collapsed_to_fixed_recipe")
+        if proof.get("mix_treatment_output_contrast_ratio", 0.0) < MIN_MIX_TREATMENT_OUTPUT_CONTRAST:
+            failures.append("mix_treatment_output_contrast_too_weak")
     if proof["arrangement_role_count"] != float(DEFAULT_BARS):
         failures.append("arrangement_role_order_not_8_bars")
     if proof["arrangement_pressure_role_count"] < 2.0:

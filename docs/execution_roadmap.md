@@ -638,8 +638,10 @@ following:
     `arrangement_policy` that derives first-six-bar hook/chop/pressure role
     placement from source/W-30 section candidates, compares against the old
     source-family scripted role order, and can produce different 8-bar
-    role-order signatures across source families; role vocabulary,
-    dropout/restore tail, and mix recipe remain bounded/scripted and
+    role-order signatures across source families; it also exposes a bounded
+    `mix_treatment_policy` that derives bus drive/slam/gain treatment from
+    source/W-30 energy candidates and rejects collapse back to the old fixed mix
+    recipe; role vocabulary and dropout/restore tail remain bounded/scripted and
     `human_verdict: unverified`
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,

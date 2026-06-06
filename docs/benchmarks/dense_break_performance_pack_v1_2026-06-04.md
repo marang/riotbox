@@ -64,20 +64,18 @@ or thin/uncertain from the source profile and source-timing confidence, then
 chooses lift shape, source/hook bleed, TR-909 / MC-202 / bass drive, bar-4 /
 bar-5 intensity, and bass frequencies. The same policy also chooses stutter
 density, grain offset, restore snap gain, and bad-timing confirmation cue
-strength. A sibling `arrangement_policy` chooses the 8-bar role order from the
-same source family: dense breaks keep the classic
-hook/hook/chop/chop/pressure/pressure/dropout/restore arc, sparse bass-pressure
-sources can move pressure earlier before returning to hook/chop contrast, and
-bad-timing sources take a manual-confirm cautious cut that avoids confident
-bar-locked claims until timing is confirmed. The allowed role grammar is still
-scripted and bounded to
-`hook`, `chop`, `pressure`, `dropout`, and `restore`, so this remains smoke,
-regression, and diagnostic evidence. It proves the harness can render
-source-backed stems, apply visible source-aware pressure-lift/stutter/restore
-and arrangement decisions, and reject known weak-output shapes. The pressure
-policy also has a bounded `pad_noise` family for thin low-band, high-noise
-material: that path gates pad/noise as texture and must not promote it to
-dense-break proof. The pack also writes `06_rebuild_only_performance.wav`, a
+strength. A sibling `arrangement_policy` chooses the first six hook/chop/pressure
+roles from source/W-30 bar candidates while preserving the bounded destructive
+dropout/restore tail. Bad-timing sources take a manual-confirm cautious cut that
+avoids confident bar-locked claims until timing is confirmed. The allowed role
+grammar is still scripted and bounded to `hook`, `chop`, `pressure`, `dropout`,
+and `restore`, so this remains smoke, regression, and diagnostic evidence. It
+proves the harness can render source-backed stems, apply visible source-aware
+pressure-lift/stutter/restore, arrangement, and mix-treatment decisions, and
+reject known weak-output shapes. The pressure policy also has a bounded
+`pad_noise` family for thin low-band, high-noise material: that path gates
+pad/noise as texture and must not promote it to dense-break proof. The pack also
+writes `06_rebuild_only_performance.wav`, a
 source-layer-off diagnostic render:
 raw source bleed is removed while source-derived chops, transient snaps, bass
 pressure, drums, and restore behavior remain active. The report gates that
@@ -104,6 +102,18 @@ old source-family scripted order, reports candidate count and scripted-role
 distance, and must fail when eligible sources fall back to the fixed family
 recipe. The role vocabulary plus dropout/restore tail remain bounded, so this
 is stronger arrangement evidence, not product-quality proof.
+
+For dense-break, tonal-hook, and sparse-bass-pressure sources, the mix bus now
+exposes bounded source-derived treatment through `mix_treatment_policy`. The
+policy scans source/W-30 bar candidates, derives hook/chop/pressure/restore bus
+drive, slam, W-30 gain, break-snap gain, pressure peak, and restore bass gain
+from source energy, low-band, high-band, transient, and W-30 response, then
+reports candidate count, distance from the old fixed mix recipe, source-energy
+span, and output contrast. Eligible reports must fail if mix treatment is not
+source-derived, does not scan enough candidates, collapses back to the old fixed
+recipe, or loses pressure/restore contrast. This makes the rendered output react
+more to the source material, but it is still bounded diagnostic mix evidence,
+not product-quality proof.
 
 For dense-break and tonal-hook sources, the destructive dropout/stutter/restore
 path now also exposes a bounded `destructive_gesture_policy`. The policy scans

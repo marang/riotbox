@@ -191,6 +191,18 @@ def render_case(
                 "destructive_offset_distance_frames": proof[
                     "destructive_offset_distance_frames"
                 ],
+                "mix_treatment_source_derived": proof[
+                    "mix_treatment_source_derived"
+                ],
+                "mix_treatment_candidate_count": proof[
+                    "mix_treatment_candidate_count"
+                ],
+                "mix_treatment_fixed_distance": proof[
+                    "mix_treatment_fixed_distance"
+                ],
+                "mix_treatment_output_contrast_ratio": proof[
+                    "mix_treatment_output_contrast_ratio"
+                ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
                 "sparse_bass_movement_static_distance_hz": proof[
                     "sparse_bass_movement_static_distance_hz"
