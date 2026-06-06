@@ -1112,4 +1112,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Route professional-output failures to concrete sound fix categories
 - [RIOTBOX-1233.md](./RIOTBOX-1233.md)
   Add demo-worthy reasons to professional output review packs
+- [RIOTBOX-1224.md](./RIOTBOX-1224.md)
+  Extract oversized Justfile audio-QA JSON contracts into validators
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
