@@ -2152,3 +2152,17 @@ Why: a fixed final cut makes otherwise source-aware renders feel rehearsed. The 
 Evidence: RIOTBOX-1228 adds source-derived tail-shape selection to the dense-break performance generator, applies it to the rendered dropout/stutter and restore path, surfaces proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds positive and negative gates that reject non-source-derived or fixed-collapsed tail shape.
 Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified` because the role vocabulary is still bounded and no structured human listening verdict has approved the output as product-quality proof.
 Status: accepted
+
+---
+
+### RBX-079
+
+Date: 2026-06-06
+Topic: Professional-output diagnostics must expose what hits hardest
+Phase: P022 / Professional Sound Output
+Question: is pass/RMS/non-collapse evidence enough for P022 professional outputs when the musician still needs to know what carries the room?
+Decision: no. P022 professional-output diagnostics now expose a bounded `strongest_audible_element` proof with allowed labels for kick, snare/break, bass pressure, stab/texture, silence, and restore impact, plus score, margin, candidate count, and ambiguity gates.
+Why: a render can be technically non-silent, source-backed, and non-collapsed while still being unclear about whether the break, bass, stab, cut, or restore is the musical center. Riotbox needs machine-readable impact identity so QA and PR review can discuss the same audible target instead of only aggregate loudness.
+Evidence: RIOTBOX-1229 adds strongest-element proof to dense-break performance reports, surfaces it through the pro-pressure source matrix, professional-source WAV pack, edge-source diagnostics, and professional-output suite, and adds positive/negative smoke gates that reject missing or ambiguous strongest-element evidence.
+Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified`. Strongest-element labels can guide review and follow-up work, but they do not prove musical quality until structured human listening or a calibrated agent gate approves the artifact.
+Status: accepted

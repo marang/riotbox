@@ -209,6 +209,16 @@ def render_case(
                 "tail_shape_output_contrast_ratio": proof[
                     "tail_shape_output_contrast_ratio"
                 ],
+                "strongest_audible_element": proof["strongest_audible_element"],
+                "strongest_audible_element_score": proof[
+                    "strongest_audible_element_score"
+                ],
+                "strongest_audible_element_margin": proof[
+                    "strongest_audible_element_margin"
+                ],
+                "strongest_audible_element_candidate_count": proof[
+                    "strongest_audible_element_candidate_count"
+                ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
                 "sparse_bass_movement_static_distance_hz": proof[
                     "sparse_bass_movement_static_distance_hz"

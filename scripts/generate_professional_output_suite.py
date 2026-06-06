@@ -329,6 +329,44 @@ def summarize_child(child_id: str, path: Path) -> dict[str, Any]:
     }
 
 
+def strongest_audible_element_key_metrics(
+    cases: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "strongest_audible_elements": sorted(
+            {
+                str(proof.get("strongest_audible_element"))
+                for case in cases
+                if (proof := object_or_empty(case.get("proof"))).get(
+                    "strongest_audible_element"
+                )
+            }
+        ),
+        "min_strongest_audible_element_score": min(
+            (
+                number(
+                    object_or_empty(case.get("proof")).get(
+                        "strongest_audible_element_score"
+                    )
+                )
+                for case in cases
+            ),
+            default=0.0,
+        ),
+        "min_strongest_audible_element_margin": min(
+            (
+                number(
+                    object_or_empty(case.get("proof")).get(
+                        "strongest_audible_element_margin"
+                    )
+                )
+                for case in cases
+            ),
+            default=0.0,
+        ),
+    }
+
+
 def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
     if child_id == "dense_break":
         proof = object_or_empty(data.get("proof"))
@@ -388,6 +426,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
             "tail_shape_output_contrast_ratio": number(
                 proof.get("tail_shape_output_contrast_ratio")
+            ),
+            "strongest_audible_element": str(
+                proof.get("strongest_audible_element") or ""
+            ),
+            "strongest_audible_element_score": number(
+                proof.get("strongest_audible_element_score")
+            ),
+            "strongest_audible_element_margin": number(
+                proof.get("strongest_audible_element_margin")
             ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
@@ -557,6 +604,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            **strongest_audible_element_key_metrics(cases),
             "min_sparse_bass_movement_static_distance_hz": min(
                 (
                     number(
@@ -725,6 +773,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            **strongest_audible_element_key_metrics(cases),
             "sparse_bass_movement_static_distance_hz": max(
                 (
                     number(
@@ -824,6 +873,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     for category in list_or_empty(case.get("proposed_fix_categories"))
                 }
             ),
+            **strongest_audible_element_key_metrics(list_or_empty(data.get("cases"))),
             "pad_noise_texture_source_derived_count": sum(
                 1
                 for case in pad_cases

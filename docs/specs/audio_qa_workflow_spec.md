@@ -474,6 +474,15 @@ PR language rules:
   documented source-family boundary and only after the policy fixture validates
   the label and provider requirements.
 
+P022 professional-output diagnostics may also expose
+`strongest_audible_element` as bounded machine evidence. Allowed automated
+labels are `kick`, `snare`, `bass`, `stab`, `silence`, and `restore`, with
+score, margin, candidate-count, and ambiguity fields. This answers "what is
+currently hitting hardest?" for software and musician-facing review packs; it
+does not approve the output as musical quality and must remain paired with
+`quality_proof: false` and `human_verdict: unverified` until a structured human
+or calibrated-agent gate approves it.
+
 Run:
 
 ```bash
@@ -524,7 +533,7 @@ Required verdict fields include:
 - `human_verdict`: `keep`, `reject`, `technically_ok_but_musically_weak`, or
   `inconclusive`
 - strongest element: `kick`, `snare`, `bass`, `stab`, `chop`, `vocal`,
-  `silence`, or `none`
+  `silence`, `restore`, or `none`
 - source-recognition verdict
 - hook verdict after two bars
 - failure reason

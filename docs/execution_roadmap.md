@@ -646,6 +646,12 @@ following:
     source/W-30 candidates and rejects collapse back to the old fixed tail
     recipe; role vocabulary remains bounded and
     `human_verdict: unverified`
+  - current P022 diagnostic coverage also exposes a bounded
+    `strongest_audible_element` proof across dense, matrix, professional
+    source-WAV, and edge diagnostic reports. The proof labels whether kick,
+    snare/break, bass pressure, stab/texture, silence, or restore impact is
+    currently carrying the output, with score and margin gates that reject
+    missing or ambiguous evidence while keeping the artifact diagnostic-only.
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,
     source correlation, and distinct source-on/source-off output; this proves

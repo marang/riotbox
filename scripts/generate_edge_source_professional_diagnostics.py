@@ -24,6 +24,16 @@ MIN_PAD_NOISE_TEXTURE_CANDIDATES = 3
 MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO = 0.72
+MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
+MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
+ALLOWED_STRONGEST_AUDIBLE_ELEMENTS = {
+    "kick",
+    "snare",
+    "bass",
+    "stab",
+    "silence",
+    "restore",
+}
 CASES = [
     {
         "case_id": "pad_noise_fadapad_120",
@@ -302,6 +312,16 @@ def render_case(
             "pad_noise_texture_high_band_ratio": number(
                 proof.get("pad_noise_texture_high_band_ratio")
             ),
+            "strongest_audible_element": proof.get("strongest_audible_element"),
+            "strongest_audible_element_score": number(
+                proof.get("strongest_audible_element_score")
+            ),
+            "strongest_audible_element_margin": number(
+                proof.get("strongest_audible_element_margin")
+            ),
+            "strongest_audible_element_candidate_count": number(
+                proof.get("strongest_audible_element_candidate_count")
+            ),
         },
         "metrics": {
             "full_performance_rms": number(
@@ -495,6 +515,14 @@ def diagnostic_failure_codes(
         failures.append("identical_output")
     if number(proof.get("source_to_performance_correlation")) >= 0.975:
         failures.append("fallback_or_identical_output_collapse")
+    if proof.get("strongest_audible_element") not in ALLOWED_STRONGEST_AUDIBLE_ELEMENTS:
+        failures.append("strongest_audible_element_missing")
+    if number(proof.get("strongest_audible_element_candidate_count")) < 5.0:
+        failures.append("strongest_audible_element_not_enough_candidates")
+    if number(proof.get("strongest_audible_element_score")) < MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE:
+        failures.append("strongest_audible_element_too_weak")
+    if number(proof.get("strongest_audible_element_margin")) < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN:
+        failures.append("strongest_audible_element_ambiguous")
     return failures
 
 
@@ -597,6 +625,20 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
             failures.append(f"{case_id}:identical_output")
         if number(proof.get("source_to_performance_correlation")) >= 0.975:
             failures.append(f"{case_id}:fallback_or_identical_output_collapse")
+        if proof.get("strongest_audible_element") not in ALLOWED_STRONGEST_AUDIBLE_ELEMENTS:
+            failures.append(f"{case_id}:strongest_audible_element_missing")
+        if number(proof.get("strongest_audible_element_candidate_count")) < 5.0:
+            failures.append(f"{case_id}:strongest_audible_element_not_enough_candidates")
+        if (
+            number(proof.get("strongest_audible_element_score"))
+            < MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE
+        ):
+            failures.append(f"{case_id}:strongest_audible_element_too_weak")
+        if (
+            number(proof.get("strongest_audible_element_margin"))
+            < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN
+        ):
+            failures.append(f"{case_id}:strongest_audible_element_ambiguous")
         if not case.get("proposed_fix_categories"):
             failures.append(f"{case_id}:missing_fix_routing")
         if case.get("human_verdict") != "unverified":
