@@ -1098,4 +1098,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Derive arrangement role order from source section candidates
 - [RIOTBOX-1227.md](./RIOTBOX-1227.md)
   Derive mix-bus treatment from source energy candidates
+- [RIOTBOX-1223.md](./RIOTBOX-1223.md)
+  Improve pad/noise gated texture path beyond weak routing
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
