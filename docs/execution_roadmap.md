@@ -654,9 +654,12 @@ following:
     missing or ambiguous evidence while keeping the artifact diagnostic-only.
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,
-    source correlation, and distinct source-on/source-off output; this proves
-    the current diagnostic render is not passing only because raw source bleed
-    masks weak Riotbox generation, but it still keeps `quality_proof: false`
+    source correlation, distinct source-on/source-off output, and a bounded
+    source-character survival score based on rebuild-only spectral,
+    transient, and RMS retention; this proves the current diagnostic render is
+    not passing only because raw source bleed masks weak Riotbox generation and
+    also catches generic fallback collapse, but it still keeps
+    `quality_proof: false`
   - dense-break and tonal-hook diagnostics now derive W-30 hook/chop grain
     selection from scanned source/W-30 candidates, expose distance from the old
     static first-bar choice and hook/chop offset contrast, and reject collapsed

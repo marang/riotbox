@@ -47,6 +47,9 @@ MIN_REBUILD_ONLY_TO_SOURCE_RMS_RATIO = 0.30
 MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO = 1.08
 MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION = 0.920
 MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
+MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
+MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
+MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 0.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
@@ -2165,6 +2168,60 @@ def strongest_audible_element_proof(
     }
 
 
+def band_energy_ratios(samples: np.ndarray) -> tuple[float, float, float]:
+    mono = samples.mean(axis=1).astype(np.float32)
+    if mono.shape[0] < 16:
+        return (0.0, 0.0, 0.0)
+    spectrum = np.abs(np.fft.rfft(mono * np.hanning(mono.shape[0]))) + 1e-12
+    freqs = np.fft.rfftfreq(mono.shape[0], 1.0 / SAMPLE_RATE)
+    total = float(np.sum(spectrum))
+    return tuple(
+        float(np.sum(spectrum[(freqs >= low) & (freqs < high)]) / total)
+        for low, high in ((20.0, 180.0), (180.0, 1800.0), (1800.0, 12000.0))
+    )
+
+
+def cosine_similarity(left: tuple[float, ...], right: tuple[float, ...]) -> float:
+    dot = sum(a * b for a, b in zip(left, right))
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    return float(dot / max(left_norm * right_norm, 1e-9))
+
+
+def rebuild_only_source_character_proof(
+    source: np.ndarray,
+    rebuild_only_performance: np.ndarray,
+) -> dict[str, float]:
+    source_bands = band_energy_ratios(source)
+    rebuild_bands = band_energy_ratios(rebuild_only_performance)
+    spectral_similarity = cosine_similarity(source_bands, rebuild_bands)
+    transient_retention = min(
+        transient_score(rebuild_only_performance) / max(transient_score(source), 1e-9),
+        1.6,
+    ) / 1.6
+    rms_retention = min(
+        rms(rebuild_only_performance) / max(rms(source), 1e-9),
+        1.4,
+    ) / 1.4
+    survival_score = (
+        spectral_similarity * 0.58
+        + transient_retention * 0.24
+        + rms_retention * 0.18
+    )
+    return {
+        "rebuild_only_source_spectral_similarity": float(spectral_similarity),
+        "rebuild_only_source_transient_retention": float(transient_retention),
+        "rebuild_only_source_rms_retention": float(rms_retention),
+        "rebuild_only_source_character_survival_score": float(survival_score),
+        "rebuild_only_source_low_band_ratio": float(rebuild_bands[0]),
+        "rebuild_only_source_mid_band_ratio": float(rebuild_bands[1]),
+        "rebuild_only_source_high_band_ratio": float(rebuild_bands[2]),
+        "source_low_band_ratio": float(source_bands[0]),
+        "source_mid_band_ratio": float(source_bands[1]),
+        "source_high_band_ratio": float(source_bands[2]),
+    }
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -2618,6 +2675,15 @@ def build_report(
             ),
             "max_rebuild_only_to_source_correlation": MAX_REBUILD_ONLY_TO_SOURCE_CORRELATION,
             "max_source_on_to_rebuild_only_correlation": MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION,
+            "min_rebuild_only_source_spectral_similarity": (
+                MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY
+            ),
+            "min_rebuild_only_source_transient_retention": (
+                MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION
+            ),
+            "min_rebuild_only_source_character_survival_score": (
+                MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
+            ),
             "min_sparse_bass_movement_static_distance_hz": (
                 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
             ),
@@ -2786,6 +2852,7 @@ def performance_proof(
     proof.update(pad_noise_texture_policy_proof(source_policy))
     proof.update(tail_shape_policy_proof(source_policy))
     proof.update(strongest_audible_element_proof(source, tr909, source_policy, sections))
+    proof.update(rebuild_only_source_character_proof(source, rebuild_only_performance))
     return proof
 
 
@@ -2860,6 +2927,21 @@ def failure_codes_for(
         failures.append("rebuild_only_too_source_masked")
     if proof["source_on_to_rebuild_only_correlation"] > MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION:
         failures.append("source_layer_toggle_did_not_change_output")
+    if (
+        proof.get("rebuild_only_source_spectral_similarity", 0.0)
+        < MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY
+    ):
+        failures.append("rebuild_only_source_spectral_character_lost")
+    if (
+        proof.get("rebuild_only_source_transient_retention", 0.0)
+        < MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION
+    ):
+        failures.append("rebuild_only_source_transient_character_lost")
+    if (
+        proof.get("rebuild_only_source_character_survival_score", 0.0)
+        < MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE
+    ):
+        failures.append("rebuild_only_source_character_not_surviving")
     if proof["rebuild_only_pressure_to_hook_rms_ratio"] < MIN_PRESSURE_TO_HOOK_RMS_RATIO:
         failures.append("rebuild_only_pressure_not_louder_than_hook_enough")
     if (

@@ -483,6 +483,16 @@ does not approve the output as musical quality and must remain paired with
 `quality_proof: false` and `human_verdict: unverified` until a structured human
 or calibrated-agent gate approves it.
 
+P022 rebuild-only/source-layer-off diagnostics may expose transformed-source
+survival evidence. The current bounded fields are
+`rebuild_only_source_spectral_similarity`,
+`rebuild_only_source_transient_retention`,
+`rebuild_only_source_rms_retention`, and
+`rebuild_only_source_character_survival_score`. These fields prove only that
+some source-like spectral/transient character survives after raw source masking
+is removed and raw-copy correlation is still rejected; they do not prove that
+the result is musically good.
+
 Run:
 
 ```bash

@@ -367,6 +367,46 @@ def strongest_audible_element_key_metrics(
     }
 
 
+def rebuild_only_source_character_key_metrics(
+    cases: list[dict[str, Any]],
+) -> dict[str, Any]:
+    return {
+        "min_rebuild_only_source_spectral_similarity": min(
+            (
+                number(
+                    object_or_empty(case.get("proof")).get(
+                        "rebuild_only_source_spectral_similarity"
+                    )
+                )
+                for case in cases
+            ),
+            default=0.0,
+        ),
+        "min_rebuild_only_source_transient_retention": min(
+            (
+                number(
+                    object_or_empty(case.get("proof")).get(
+                        "rebuild_only_source_transient_retention"
+                    )
+                )
+                for case in cases
+            ),
+            default=0.0,
+        ),
+        "min_rebuild_only_source_character_survival_score": min(
+            (
+                number(
+                    object_or_empty(case.get("proof")).get(
+                        "rebuild_only_source_character_survival_score"
+                    )
+                )
+                for case in cases
+            ),
+            default=0.0,
+        ),
+    }
+
+
 def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
     if child_id == "dense_break":
         proof = object_or_empty(data.get("proof"))
@@ -381,6 +421,15 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
             "rebuild_only_to_source_correlation": number(
                 proof.get("rebuild_only_to_source_correlation")
+            ),
+            "rebuild_only_source_spectral_similarity": number(
+                proof.get("rebuild_only_source_spectral_similarity")
+            ),
+            "rebuild_only_source_transient_retention": number(
+                proof.get("rebuild_only_source_transient_retention")
+            ),
+            "rebuild_only_source_character_survival_score": number(
+                proof.get("rebuild_only_source_character_survival_score")
             ),
             "hook_chop_selection_source_derived": number(
                 proof.get("hook_chop_selection_source_derived")
@@ -474,6 +523,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            **rebuild_only_source_character_key_metrics(cases),
             "min_dense_hook_chop_static_distance_frames": min(
                 (
                     number(
@@ -653,6 +703,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            **rebuild_only_source_character_key_metrics(cases),
             "tonal_hook_chop_static_distance_frames": min(
                 (
                     number(
@@ -874,6 +925,7 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 }
             ),
             **strongest_audible_element_key_metrics(list_or_empty(data.get("cases"))),
+            **rebuild_only_source_character_key_metrics(list_or_empty(data.get("cases"))),
             "pad_noise_texture_source_derived_count": sum(
                 1
                 for case in pad_cases

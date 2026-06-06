@@ -257,6 +257,15 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "source_on_to_rebuild_only_correlation": proof[
                 "source_on_to_rebuild_only_correlation"
             ],
+            "rebuild_only_source_spectral_similarity": proof[
+                "rebuild_only_source_spectral_similarity"
+            ],
+            "rebuild_only_source_transient_retention": proof[
+                "rebuild_only_source_transient_retention"
+            ],
+            "rebuild_only_source_character_survival_score": proof[
+                "rebuild_only_source_character_survival_score"
+            ],
         },
         "metrics": {
             "full_performance_rms": metrics["full_performance"]["rms"],

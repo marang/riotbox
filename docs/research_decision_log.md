@@ -2166,3 +2166,17 @@ Why: a render can be technically non-silent, source-backed, and non-collapsed wh
 Evidence: RIOTBOX-1229 adds strongest-element proof to dense-break performance reports, surfaces it through the pro-pressure source matrix, professional-source WAV pack, edge-source diagnostics, and professional-output suite, and adds positive/negative smoke gates that reject missing or ambiguous strongest-element evidence.
 Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified`. Strongest-element labels can guide review and follow-up work, but they do not prove musical quality until structured human listening or a calibrated agent gate approves the artifact.
 Status: accepted
+
+---
+
+### RBX-080
+
+Date: 2026-06-06
+Topic: Rebuild-only P022 output must prove transformed source character, not only non-silence
+Phase: P022 / Professional Sound Output
+Question: are rebuild-only RMS, low source correlation, and source-on/source-off contrast enough to prove that source character survives without raw-source masking?
+Decision: no. P022 rebuild-only diagnostics now expose a bounded source-character survival proof: source/rebuild-only spectral similarity, transient retention, RMS retention, and a combined survival score.
+Why: a source-layer-off render can be non-silent and not waveform-correlated with the raw source while still sounding like generic fallback material. Riotbox needs proof that the rebuilt output keeps enough transformed source signature to be worth listening to, while separately rejecting raw-source copy/masking.
+Evidence: RIOTBOX-1230 adds rebuild-only source-character proof to dense performance reports, surfaces it through the pro-pressure source matrix, professional-source WAV pack, edge-source diagnostics, and professional-output suite, and adds positive and negative smoke gates for missing/lost source-character evidence.
+Consequences: this is stronger diagnostic evidence only. It keeps `quality_proof: false` and `human_verdict: unverified`; human or calibrated listening approval is still required before treating the artifact as product-quality sound.
+Status: accepted
