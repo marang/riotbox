@@ -1090,4 +1090,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add bad-timing cautious arrangement policy and user cue proof
 - [RIOTBOX-1221.md](./RIOTBOX-1221.md)
   Add source-derived bass-pressure movement proof for sparse sources
+- [RIOTBOX-1222.md](./RIOTBOX-1222.md)
+  Add source-derived hook/chop selection proof across dense and tonal sources
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
