@@ -217,10 +217,17 @@ def create_review_pack(
     run_or_exit(repo, command, review_dir / "listening-pack.log")
     review_path = review_dir / "review.json"
     review = read_json(review_path)
+    source_report_data = read_json(Path(case["source_report"]))
+    demo_readiness = demo_readiness_reasons(case, source_report_data)
+    review["demo_readiness"] = demo_readiness["demo_readiness"]
+    review["demo_worthy_reason"] = demo_readiness["demo_worthy_reason"]
+    review["not_demo_worthy_reason"] = demo_readiness["not_demo_worthy_reason"]
     review["audio_judge_label"] = build_audio_judge_label(output, case, label_created_at)
     review_path.write_text(json.dumps(review, indent=2) + "\n")
+    append_demo_readiness_to_prompt(review_dir / "prompt.md", demo_readiness)
     case_summary = {
         **case,
+        **demo_readiness,
         "review": str(review_path),
         "review_sha256": sha256_file(review_path),
         "candidate_sha256": sha256_file(Path(case["candidate"])),
@@ -234,6 +241,48 @@ def create_review_pack(
         source_timing_backed=bool(case.get("source_timing_backed")),
         scripted_generation=bool(case.get("scripted_generation")),
     )
+
+
+def demo_readiness_reasons(case: dict, source_report: dict) -> dict[str, str]:
+    proof = source_report.get("proof") if isinstance(source_report.get("proof"), dict) else {}
+    strongest = str(proof.get("strongest_audible_element") or "unknown")
+    survival = number(proof.get("rebuild_only_source_character_survival_score"))
+    pressure = number(proof.get("pressure_to_hook_rms_ratio"))
+    restore = number(proof.get("restore_to_pressure_rms_ratio"))
+    family = str(case["source_family"])
+    if family == "sparse_bass_pressure":
+        worthy = (
+            f"Worth review: `{strongest}` leads while source survival is "
+            f"{survival:.2f} and bass pressure is the judgment target."
+        )
+    elif family == "tonal_hook":
+        worthy = (
+            f"Worth review: `{strongest}` leads while source survival is "
+            f"{survival:.2f} and the W-30 chop should read as the hook."
+        )
+    else:
+        worthy = (
+            f"Worth review: `{strongest}` leads with pressure {pressure:.2f} "
+            f"and restore {restore:.2f} against the hook."
+        )
+    not_ready = (
+        f"Not demo-ready yet: `{family}` still has `human_verdict: unverified` "
+        "and scripted diagnostics cannot claim product quality."
+    )
+    return {
+        "demo_readiness": "unverified",
+        "demo_worthy_reason": worthy,
+        "not_demo_worthy_reason": not_ready,
+    }
+
+
+def append_demo_readiness_to_prompt(path: Path, reasons: dict[str, str]) -> None:
+    if not path.is_file():
+        return
+    with path.open("a") as handle:
+        handle.write("\n## Demo Readiness\n\n")
+        handle.write(f"- {reasons['demo_worthy_reason']}\n")
+        handle.write(f"- {reasons['not_demo_worthy_reason']}\n")
 
 
 def build_audio_judge_label(output: Path, case: dict, label_created_at: str) -> dict:
@@ -344,6 +393,12 @@ def sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def number(value: object) -> float:
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
+
+
 def write_reports(output: Path, report: dict) -> None:
     (output / "professional-output-listening-pack.json").write_text(
         json.dumps(report, indent=2) + "\n"
@@ -364,6 +419,8 @@ def write_reports(output: Path, report: dict) -> None:
             f"- `{case['case_id']}` `{case['source_family']}`: "
             f"candidate `{case['candidate']}` review `{case['review']}`"
         )
+        lines.append(f"  - Demo reason: {case['demo_worthy_reason']}")
+        lines.append(f"  - Not demo-ready: {case['not_demo_worthy_reason']}")
     lines.extend(["", "## Boundary", ""])
     lines.append("This pack prepares human review. It does not record a human musical pass.")
     (output / "README.md").write_text("\n".join(lines) + "\n")

@@ -516,6 +516,22 @@ stable category is added. Rebuild-only source-character failures route first to
 `source_selection` because the musician-facing fix is to pick or expose source
 material whose identity survives the rebuild-only path.
 
+Professional output listening packs must include compact demo-readiness reasons
+for every review case:
+
+- `demo_readiness`: currently `unverified` unless a structured human verdict
+  has promoted the artifact
+- `demo_worthy_reason`: why the artifact is worth human review, based on
+  existing proof such as strongest audible element, source-character survival,
+  pressure, restore, or bass/chop target
+- `not_demo_worthy_reason`: why the artifact is not demo-ready yet, usually
+  because `human_verdict` is still `unverified` and scripted diagnostics cannot
+  claim product quality
+
+The same reasons must appear in `review.json` and the human review prompt so a
+reviewer hears the candidate with the intended musical target and the current
+quality boundary in view.
+
 Run:
 
 ```bash
