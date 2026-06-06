@@ -73,9 +73,11 @@ and `restore`, so this remains smoke, regression, and diagnostic evidence. It
 proves the harness can render source-backed stems, apply visible source-aware
 pressure-lift/stutter/restore, arrangement, and mix-treatment decisions, and
 reject known weak-output shapes. The pressure policy also has a bounded
-`pad_noise` family for thin low-band, high-noise material: that path gates
-pad/noise as texture and must not promote it to dense-break proof. The pack also
-writes `06_rebuild_only_performance.wav`, a
+`pad_noise` family for thin low-band, high-noise material: that path now exposes
+a bounded source-derived `pad_noise_texture_policy` that chooses separate
+gate/stab offsets, gate duty, texture gain, and stab gain from source/W-30
+candidates, while still refusing to promote pad/noise to dense-break proof. The
+pack also writes `06_rebuild_only_performance.wav`, a
 source-layer-off diagnostic render:
 raw source bleed is removed while source-derived chops, transient snaps, bass
 pressure, drums, and restore behavior remain active. The report gates that
@@ -194,8 +196,11 @@ engine rather than by a rehearsed render recipe.
 bad-timing diagnostic cases from the local source corpus. The pad/noise case
 uses `DH_Fadapad_120_A.wav` and must stay `degraded` / `unavailable` in
 source-timing while taking the explicit `pad_noise` pressure policy path. That
-path treats the source as a gated texture candidate rather than pretending it is
-a breakbeat. The bad-timing case uses `Beat20_128BPM(Full).wav` and must stay
+path now also proves a source-derived gated texture/stab policy: it reports
+candidate count, gate/stab distance from fixed choices, gate/stab offset
+distance, and texture transient ratio. The case remains weak-routed diagnostic
+evidence, not a claim that pad/noise is demo-ready break material. The
+bad-timing case uses `Beat20_128BPM(Full).wav` and must stay
 `candidate_ambiguous` / `manual_confirm_only` so bar-locked decisions route to a
 timing/UI fix instead of pretending the grid is proven. That case must take the
 explicit `bad_timing` pressure policy, expose a

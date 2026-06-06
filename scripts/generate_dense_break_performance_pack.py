@@ -59,6 +59,10 @@ MIN_ARRANGEMENT_SCRIPTED_ROLE_DISTANCE = 1.0
 MIN_MIX_TREATMENT_CANDIDATES = 6
 MIN_MIX_TREATMENT_FIXED_DISTANCE = 0.08
 MIN_MIX_TREATMENT_OUTPUT_CONTRAST = 2.10
+MIN_PAD_NOISE_TEXTURE_CANDIDATES = 3
+MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES = 256.0
+MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO = 0.72
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -175,6 +179,26 @@ class MixTreatmentPolicy:
 
 
 @dataclass(frozen=True)
+class PadNoiseTexturePolicy:
+    source_aware: bool
+    source_family: str
+    selection_strategy: str
+    gate_start_frames: int
+    stab_start_frames: int
+    fixed_gate_start_frames: int
+    fixed_stab_start_frames: int
+    gate_start_seconds: float
+    stab_start_seconds: float
+    gate_static_distance_frames: int
+    stab_static_distance_frames: int
+    gate_stab_distance_frames: int
+    gate_duty: float
+    texture_gain: float
+    stab_gain: float
+    candidate_count: int
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
@@ -185,6 +209,7 @@ class DenseBreakSourcePolicy:
     hook_chop_policy: HookChopPolicy
     destructive_gesture_policy: DestructiveGesturePolicy
     mix_treatment_policy: MixTreatmentPolicy
+    pad_noise_texture_policy: PadNoiseTexturePolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -878,6 +903,105 @@ def mix_treatment_policy_for(
     )
 
 
+def fixed_pad_noise_texture_policy(source_family: str, candidate_count: int = 0) -> PadNoiseTexturePolicy:
+    return PadNoiseTexturePolicy(
+        source_aware=False,
+        source_family=source_family,
+        selection_strategy="fallback-no-pad-noise-texture",
+        gate_start_frames=0,
+        stab_start_frames=0,
+        fixed_gate_start_frames=0,
+        fixed_stab_start_frames=0,
+        gate_start_seconds=0.0,
+        stab_start_seconds=0.0,
+        gate_static_distance_frames=0,
+        stab_static_distance_frames=0,
+        gate_stab_distance_frames=0,
+        gate_duty=0.0,
+        texture_gain=0.0,
+        stab_gain=0.0,
+        candidate_count=candidate_count,
+    )
+
+
+def pad_noise_texture_policy_for(
+    source: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    source_family: str,
+) -> PadNoiseTexturePolicy:
+    if source_family != "pad_noise":
+        return fixed_pad_noise_texture_policy(source_family)
+    window = min(frames_for_seconds(0.120), max(1, bar_frames // 6))
+    step = max(1, bar_frames // 8)
+    scan_end = min(source.shape[0], w30.shape[0], 6 * bar_frames)
+    fixed_gate_start = 0
+    fixed_stab_start = min(max(0, bar_frames // 2), max(0, scan_end - window))
+    candidates = []
+    for start in range(0, max(0, scan_end - window), step):
+        end = min(start + window, source.shape[0], w30.shape[0])
+        if end <= start:
+            continue
+        source_chunk = source[start:end]
+        w30_chunk = w30[start:end]
+        source_rms = rms(source_chunk)
+        high = high_band_ratio(source_chunk)
+        transient = transient_score(source_chunk)
+        w30_rms = rms(w30_chunk)
+        candidates.append(
+            {
+                "start": start,
+                "gate_score": high * 1.40 + source_rms * 0.55 + w30_rms * 0.22,
+                "stab_score": transient * 1.25 + high * 0.35 + w30_rms * 0.45,
+                "high": high,
+                "transient": transient,
+                "source_rms": source_rms,
+            }
+        )
+    if len(candidates) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
+        return fixed_pad_noise_texture_policy(source_family, len(candidates))
+
+    gate = max(candidates, key=lambda item: (item["gate_score"], item["start"]))
+    sorted_stabs = sorted(
+        candidates,
+        key=lambda item: (item["stab_score"], abs(int(item["start"]) - int(gate["start"]))),
+        reverse=True,
+    )
+    stab = sorted_stabs[0]
+    for candidate in sorted_stabs:
+        if abs(int(candidate["start"]) - int(gate["start"])) >= MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES:
+            stab = candidate
+            break
+
+    high_values = [float(item["high"]) for item in candidates]
+    transient_values = [float(item["transient"]) for item in candidates]
+    high_mean = float(np.mean(high_values)) if high_values else 0.0
+    transient_mean = float(np.mean(transient_values)) if transient_values else 0.0
+    gate_duty = float(np.clip(0.30 + high_mean * 0.80, 0.34, 0.62))
+    texture_gain = float(np.clip(0.70 + high_mean * 1.80, 0.82, 1.32))
+    stab_gain = float(np.clip(1.05 + transient_mean * 3.20, 1.12, 1.82))
+    gate_start = int(gate["start"])
+    stab_start = int(stab["start"])
+    return PadNoiseTexturePolicy(
+        source_aware=True,
+        source_family=source_family,
+        selection_strategy="source-derived-gated-texture-stab",
+        gate_start_frames=gate_start,
+        stab_start_frames=stab_start,
+        fixed_gate_start_frames=fixed_gate_start,
+        fixed_stab_start_frames=fixed_stab_start,
+        gate_start_seconds=gate_start / SAMPLE_RATE,
+        stab_start_seconds=stab_start / SAMPLE_RATE,
+        gate_static_distance_frames=abs(gate_start - fixed_gate_start),
+        stab_static_distance_frames=abs(stab_start - fixed_stab_start),
+        gate_stab_distance_frames=abs(gate_start - stab_start),
+        gate_duty=gate_duty,
+        texture_gain=texture_gain,
+        stab_gain=stab_gain,
+        candidate_count=len(candidates),
+    )
+
+
 def dense_break_source_policy(
     source: np.ndarray,
     w30: np.ndarray,
@@ -964,6 +1088,12 @@ def dense_break_source_policy(
         bar_frames,
         pressure_lift_policy.source_family,
     )
+    pad_noise_texture_policy = pad_noise_texture_policy_for(
+        source,
+        w30,
+        bar_frames,
+        pressure_lift_policy.source_family,
+    )
 
     if pressure_lift_policy.source_family == "tonal_hook":
         bass_restore = 51.5
@@ -1000,6 +1130,7 @@ def dense_break_source_policy(
         hook_chop_policy=hook_chop_policy,
         destructive_gesture_policy=destructive_gesture_policy,
         mix_treatment_policy=mix_treatment_policy,
+        pad_noise_texture_policy=pad_noise_texture_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -1307,6 +1438,7 @@ def render_performance(
     hook_riff = render_w30_hook_riff_layer(w30, source, source_policy, bar_frames, bars)
     break_snap = render_break_snap_layer(source, tr909, w30, bar_frames, bars)
     bass_pressure = render_bass_pressure_layer(source, source_policy, bar_frames, bars)
+    pad_noise_texture = render_pad_noise_texture_layer(source, w30, source_policy, bar_frames, bars)
     lift_policy = source_policy.pressure_lift_policy
     mix_policy = source_policy.mix_treatment_policy
     role_order = source_policy.arrangement_policy.role_order
@@ -1324,6 +1456,7 @@ def render_performance(
         + hook_riff * 1.62
         + tr909 * 0.62
         + break_snap * mix_policy.hook_break_snap_gain
+        + pad_noise_texture * 0.68
         + mc202 * 0.34,
         drive=mix_policy.hook_drive,
         slam=mix_policy.hook_slam,
@@ -1334,6 +1467,7 @@ def render_performance(
         + hook_riff * 1.78
         + tr909 * 0.78
         + break_snap * mix_policy.chop_break_snap_gain
+        + pad_noise_texture * 1.05
         + mc202 * 0.58,
         drive=mix_policy.chop_drive,
         slam=mix_policy.chop_slam,
@@ -1345,6 +1479,7 @@ def render_performance(
         + tr909 * (2.28 + lift_policy.tr909_drive * 0.52)
         + break_snap * (mix_policy.pressure_break_snap_gain * lift_policy.break_snap_drive)
         + mc202 * (5.00 + lift_policy.mc202_drive * 1.42)
+        + pad_noise_texture * 1.28
         + bass_pressure * (1.14 + lift_policy.bass_drive * 0.62),
         1.58,
     )
@@ -1363,6 +1498,7 @@ def render_performance(
         + tr909 * 2.78
         + break_snap * mix_policy.restore_break_snap_gain
         + mc202 * 3.65
+        + pad_noise_texture * 1.42
         + bass_pressure * mix_policy.restore_bass_gain,
         drive=mix_policy.restore_drive,
         slam=mix_policy.restore_slam,
@@ -1657,6 +1793,26 @@ def mix_treatment_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[st
     }
 
 
+def pad_noise_texture_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
+    policy = source_policy.pad_noise_texture_policy
+    return {
+        "pad_noise_texture_source_derived": 1.0 if policy.source_aware else 0.0,
+        "pad_noise_texture_candidate_count": float(policy.candidate_count),
+        "pad_noise_texture_gate_static_distance_frames": float(
+            policy.gate_static_distance_frames
+        ),
+        "pad_noise_texture_stab_static_distance_frames": float(
+            policy.stab_static_distance_frames
+        ),
+        "pad_noise_texture_gate_stab_distance_frames": float(
+            policy.gate_stab_distance_frames
+        ),
+        "pad_noise_texture_gate_duty": float(policy.gate_duty),
+        "pad_noise_texture_gain": float(policy.texture_gain),
+        "pad_noise_texture_stab_gain": float(policy.stab_gain),
+    }
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -1747,6 +1903,76 @@ def render_dropout_stutter_bar(
         bar[target : min(target + 160, bar.shape[0])] += (riff + snap) * (1.02 * decay)
 
     return normalize_peak(saturate(bar, 1.78), 0.90)
+
+
+def render_pad_noise_texture_layer(
+    source: np.ndarray,
+    w30: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
+    bar_frames: int,
+    bars: int,
+) -> np.ndarray:
+    policy = source_policy.pad_noise_texture_policy
+    layer = np.zeros_like(source)
+    if not policy.source_aware or policy.source_family != "pad_noise":
+        return layer
+
+    grain_len = min(frames_for_seconds(0.160), max(1, bar_frames // 5))
+    gate_start = min(policy.gate_start_frames, max(0, source.shape[0] - 1))
+    stab_start = min(policy.stab_start_frames, max(0, source.shape[0] - 1))
+    gate_end = min(gate_start + grain_len, source.shape[0], w30.shape[0])
+    stab_end = min(stab_start + grain_len, source.shape[0], w30.shape[0])
+    if gate_end <= gate_start or stab_end <= stab_start:
+        return layer
+
+    gate_grain = source[gate_start:gate_end].copy() * 0.72 + w30[gate_start:gate_end] * 0.36
+    gate_grain += transient_emphasis(source[gate_start:gate_end]) * 0.24
+    gate_grain *= hann_envelope(gate_grain.shape[0])[:, None]
+    gate_grain = normalize_peak(saturate(gate_grain, 1.35), 0.72)
+
+    stab_grain = transient_emphasis(source[stab_start:stab_end]) * 1.18 + w30[stab_start:stab_end] * 0.50
+    stab_grain *= impact_envelope(stab_grain.shape[0], decay=0.060)[:, None]
+    stab_grain = normalize_peak(saturate(stab_grain, 1.55), 0.82)
+
+    eighth = max(1, bar_frames // 8)
+    pulse_len = max(96, min(gate_grain.shape[0], int(round(eighth * policy.gate_duty))))
+    gate_pulse = gate_grain[:pulse_len].copy()
+    gate_pulse *= decay_envelope(gate_pulse.shape[0], attack=0.008, decay=0.090)[:, None]
+
+    role_order = source_policy.arrangement_policy.role_order
+    role_gain = {
+        "hook": 0.62,
+        "chop": 0.96,
+        "pressure": 1.18,
+        "dropout": 0.72,
+        "restore": 1.36,
+    }
+    role_offsets = {
+        "hook": (0, 3, 6),
+        "chop": (0, 2, 5, 7),
+        "pressure": (0, 1, 3, 5, 7),
+        "dropout": (4, 6),
+        "restore": (0, 2, 6),
+    }
+    for bar in range(min(bars, len(role_order))):
+        role = role_order[bar]
+        base = bar * bar_frames
+        gain = role_gain.get(role, 0.80) * policy.texture_gain
+        for offset in role_offsets.get(role, (0, 4)):
+            target = base + offset * eighth
+            if target >= layer.shape[0]:
+                continue
+            end = min(target + gate_pulse.shape[0], layer.shape[0])
+            if end > target:
+                layer[target:end] += gate_pulse[: end - target] * gain
+        if role in {"chop", "pressure", "restore"}:
+            target = base + (eighth if role == "restore" else 0)
+            end = min(target + stab_grain.shape[0], layer.shape[0])
+            if end > target:
+                layer[target:end] += stab_grain[: end - target] * (
+                    policy.stab_gain * (1.25 if role == "restore" else 0.86)
+                )
+    return saturate(layer, 1.18)
 
 
 def render_w30_hook_riff_layer(
@@ -1999,6 +2225,7 @@ def build_report(
             "hook_chop_policy": asdict(source_policy.hook_chop_policy),
             "destructive_gesture_policy": asdict(source_policy.destructive_gesture_policy),
             "mix_treatment_policy": asdict(source_policy.mix_treatment_policy),
+            "pad_noise_texture_policy": asdict(source_policy.pad_noise_texture_policy),
             "arrangement_failure_routes": arrangement_failure_routes(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
@@ -2045,6 +2272,14 @@ def build_report(
             "min_mix_treatment_candidates": MIN_MIX_TREATMENT_CANDIDATES,
             "min_mix_treatment_fixed_distance": MIN_MIX_TREATMENT_FIXED_DISTANCE,
             "min_mix_treatment_output_contrast": MIN_MIX_TREATMENT_OUTPUT_CONTRAST,
+            "min_pad_noise_texture_candidates": MIN_PAD_NOISE_TEXTURE_CANDIDATES,
+            "min_pad_noise_texture_static_distance_frames": (
+                MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+            ),
+            "min_pad_noise_texture_offset_distance_frames": (
+                MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES
+            ),
+            "min_pad_noise_texture_transient_ratio": MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -2101,6 +2336,7 @@ def performance_proof(
         transient_score(sections["restore_hit"][: frames_for_seconds(0.500)]),
     )
     hook_transient = transient_score(sections["chop_hook"])
+    source_hook_window = source[: min(source.shape[0], sections["chop_hook"].shape[0])]
     dropout = sections["dropout_stutter"]
     dropout_first = dropout[: dropout.shape[0] // 2]
     dropout_second = dropout[dropout.shape[0] // 2 :]
@@ -2160,6 +2396,9 @@ def performance_proof(
         "mix_treatment_output_contrast_ratio": (
             (pressure_rms + restore_rms) / max(hook_rms, 1e-9)
         ),
+        "pad_noise_texture_transient_ratio": hook_transient
+        / max(transient_score(source_hook_window), 1e-9),
+        "pad_noise_texture_high_band_ratio": high_band_ratio(sections["chop_hook"]),
         "source_policy_pressure_gain": source_policy.pressure_gain,
         "source_policy_bass_gain": source_policy.bass_gain,
         "source_policy_stutter_step_divisor": float(source_policy.stutter_step_divisor),
@@ -2168,6 +2407,7 @@ def performance_proof(
     proof.update(hook_chop_policy_proof(source_policy))
     proof.update(destructive_gesture_policy_proof(source_policy))
     proof.update(mix_treatment_policy_proof(source_policy))
+    proof.update(pad_noise_texture_policy_proof(source_policy))
     return proof
 
 
@@ -2191,6 +2431,31 @@ def failure_codes_for(
     if source_family == "bad_timing":
         if proof["manual_confirm_cue_transient_score"] < MIN_BAD_TIMING_CUE_TRANSIENT_SCORE:
             failures.append("bad_timing_confirmation_cue_too_weak")
+    elif source_family == "pad_noise":
+        if proof.get("pad_noise_texture_source_derived", 0.0) < 1.0:
+            failures.append("pad_noise_texture_not_source_derived")
+        if proof.get("pad_noise_texture_candidate_count", 0.0) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
+            failures.append("pad_noise_texture_not_enough_candidates")
+        if (
+            proof.get("pad_noise_texture_gate_static_distance_frames", 0.0)
+            < MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+        ):
+            failures.append("pad_noise_texture_gate_collapsed_to_fixed_choice")
+        if (
+            proof.get("pad_noise_texture_stab_static_distance_frames", 0.0)
+            < MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+        ):
+            failures.append("pad_noise_texture_stab_collapsed_to_fixed_choice")
+        if (
+            proof.get("pad_noise_texture_gate_stab_distance_frames", 0.0)
+            < MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES
+        ):
+            failures.append("pad_noise_texture_gate_stab_offsets_too_close")
+        if (
+            proof.get("pad_noise_texture_transient_ratio", 0.0)
+            < MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO
+        ):
+            failures.append("pad_noise_texture_lacks_transient_shape")
     elif proof["stutter_to_hook_transient_ratio"] < MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO:
         failures.append("stutter_lacks_transient_impact")
     if proof["restore_to_hook_transient_ratio"] < MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO:
