@@ -703,6 +703,9 @@ following:
 - weak-output reports must include a concrete proposed fix category and short
   musician-facing reason; unknown weak/fail codes must fail routing instead of
   silently landing in a generic bucket
+- professional listening-review packs must say why each candidate is worth
+  review and why it is not demo-ready yet while `human_verdict` remains
+  `unverified`
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified

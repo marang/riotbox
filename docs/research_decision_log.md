@@ -2208,3 +2208,17 @@ Why: engineers and musicians need to know what to improve next: source selection
 Evidence: RIOTBOX-1232 maps rebuild-only source-character loss to `source_selection`, adds `matched_known_routing_signal` and `musician_fix_reason`, routes a live generated weak source-character WAV report, and adds an invalid unknown-code fixture that must fail.
 Consequences: routing is still diagnostic and does not claim musical approval. It preserves `quality_proof: false` and `human_verdict: unverified`; it only turns known weak evidence into the next concrete production fix.
 Status: accepted
+
+---
+
+### RBX-083
+
+Date: 2026-06-06
+Topic: Professional listening packs need demo-readiness reasons before human review
+Phase: P022 / Professional Sound Output
+Question: should generated professional listening packs only expose metrics and review artifacts, or also explain why a candidate is worth hearing and why it is not demo-ready yet?
+Decision: include both reasons. Each professional-output review case now carries `demo_readiness`, `demo_worthy_reason`, and `not_demo_worthy_reason` in the pack report and `review.json`, and appends the same information to the prompt.
+Why: raw metrics do not tell a musician what to listen for. A candidate can be useful for review because the strongest element, source-character survival, pressure, restore, bass, or chop target is promising, while still not being demo-ready because no structured human verdict exists.
+Evidence: RIOTBOX-1233 adds reason generation to the professional output listening pack, suite identity checks for reason presence, and Just gates that reject missing review/prompt reason fields.
+Consequences: these reasons guide review and demo-bank promotion work only. They preserve `human_verdict: unverified` and `quality_proof: false`; they do not turn scripted diagnostic renders into demo-ready product audio.
+Status: accepted

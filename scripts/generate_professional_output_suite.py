@@ -851,11 +851,24 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
         }
     if child_id == "professional_output_listening_pack":
+        cases = list_or_empty(data.get("cases"))
         return {
             "case_count": int(number(data.get("case_count"))),
             "source_families": sorted(
                 str(case.get("source_family", "unknown"))
-                for case in list_or_empty(data.get("cases"))
+                for case in cases
+            ),
+            "demo_reason_count": sum(
+                1
+                for case in cases
+                if str(case.get("demo_worthy_reason", "")).startswith("Worth review:")
+            ),
+            "not_demo_ready_reason_count": sum(
+                1
+                for case in cases
+                if str(case.get("not_demo_worthy_reason", "")).startswith(
+                    "Not demo-ready yet:"
+                )
             ),
         }
     if child_id == "non_dense_professional_proof_pack":
@@ -1014,6 +1027,14 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
             case_failures.append("source_report_hash_mismatch")
         if case.get("human_verdict") != "unverified":
             case_failures.append("unexpected_human_verdict")
+        if case.get("demo_readiness") != "unverified":
+            case_failures.append("unexpected_demo_readiness")
+        if not str(case.get("demo_worthy_reason", "")).startswith("Worth review:"):
+            case_failures.append("demo_worthy_reason_missing")
+        if not str(case.get("not_demo_worthy_reason", "")).startswith(
+            "Not demo-ready yet:"
+        ):
+            case_failures.append("not_demo_worthy_reason_missing")
         failures.extend(f"{case_id}:{code}" for code in case_failures)
         cases.append(
             {
@@ -1022,6 +1043,9 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
                 "candidate": str(candidate),
                 "review": str(review),
                 "source_report": str(source_report),
+                "demo_readiness": case.get("demo_readiness"),
+                "demo_worthy_reason": case.get("demo_worthy_reason"),
+                "not_demo_worthy_reason": case.get("not_demo_worthy_reason"),
                 "failure_codes": case_failures,
             }
         )
