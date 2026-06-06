@@ -217,6 +217,12 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "mix_treatment_output_contrast_ratio": proof[
                 "mix_treatment_output_contrast_ratio"
             ],
+            "tail_shape_source_derived": proof["tail_shape_source_derived"],
+            "tail_shape_candidate_count": proof["tail_shape_candidate_count"],
+            "tail_shape_fixed_distance": proof["tail_shape_fixed_distance"],
+            "tail_shape_output_contrast_ratio": proof[
+                "tail_shape_output_contrast_ratio"
+            ],
             "bass_movement_source_derived": proof["bass_movement_source_derived"],
             "sparse_bass_movement_static_distance_hz": proof[
                 "sparse_bass_movement_static_distance_hz"
@@ -259,6 +265,7 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "destructive_gesture_policy"
         ],
         "mix_treatment_policy": source_report["source_policy"]["mix_treatment_policy"],
+        "tail_shape_policy": source_report["source_policy"]["tail_shape_policy"],
         "arrangement_policy": arrangement_policy,
         "failure_codes": family_failures,
     }

@@ -63,6 +63,9 @@ MIN_PAD_NOISE_TEXTURE_CANDIDATES = 3
 MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO = 0.72
+MIN_TAIL_SHAPE_CANDIDATES = 6
+MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
+MIN_TAIL_SHAPE_OUTPUT_CONTRAST = 3.00
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -199,6 +202,28 @@ class PadNoiseTexturePolicy:
 
 
 @dataclass(frozen=True)
+class TailShapePolicy:
+    source_aware: bool
+    source_family: str
+    selection_strategy: str
+    dropout_silence_fraction: float
+    dropout_silence_gain: float
+    stutter_step_divisor: int
+    stutter_grain_gain: float
+    stutter_snap_gain: float
+    restore_source_gain: float
+    restore_snap_gain: float
+    restore_w30_gain: float
+    restore_mc202_gain: float
+    restore_tr909_gain: float
+    restore_drive: float
+    restore_slam: float
+    fixed_tail_distance: float
+    source_energy_span: float
+    candidate_count: int
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
@@ -210,6 +235,7 @@ class DenseBreakSourcePolicy:
     destructive_gesture_policy: DestructiveGesturePolicy
     mix_treatment_policy: MixTreatmentPolicy
     pad_noise_texture_policy: PadNoiseTexturePolicy
+    tail_shape_policy: TailShapePolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -1002,6 +1028,203 @@ def pad_noise_texture_policy_for(
     )
 
 
+def fixed_tail_shape_policy(
+    source_family: str,
+    stutter_step_divisor: int,
+    restore_snap_gain: float,
+    candidate_count: int = 1,
+) -> TailShapePolicy:
+    return TailShapePolicy(
+        source_aware=False,
+        source_family=source_family,
+        selection_strategy="fallback-fixed-dropout-restore-tail",
+        dropout_silence_fraction=0.50,
+        dropout_silence_gain=0.015,
+        stutter_step_divisor=stutter_step_divisor,
+        stutter_grain_gain=3.15,
+        stutter_snap_gain=2.05 * restore_snap_gain,
+        restore_source_gain=1.35,
+        restore_snap_gain=4.80 * restore_snap_gain,
+        restore_w30_gain=2.62,
+        restore_mc202_gain=4.05,
+        restore_tr909_gain=3.45,
+        restore_drive=1.95,
+        restore_slam=0.44,
+        fixed_tail_distance=0.0,
+        source_energy_span=0.0,
+        candidate_count=candidate_count,
+    )
+
+
+def tail_shape_policy_for(
+    source: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    source_family: str,
+    stutter_step_divisor: int,
+    restore_snap_gain: float,
+) -> TailShapePolicy:
+    eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    candidate_count = min(6, max(0, source.shape[0] // max(1, bar_frames)))
+    fixed = fixed_tail_shape_policy(
+        source_family,
+        stutter_step_divisor,
+        restore_snap_gain,
+        max(candidate_count, 1),
+    )
+    if not eligible or candidate_count < MIN_TAIL_SHAPE_CANDIDATES:
+        return fixed
+
+    candidates = []
+    for bar in range(candidate_count):
+        start = bar * bar_frames
+        end = min(start + bar_frames, source.shape[0], w30.shape[0])
+        if end <= start:
+            continue
+        chunk = source[start:end]
+        w30_chunk = w30[start:end]
+        candidates.append(
+            {
+                "source_rms": rms(chunk),
+                "w30_rms": rms(w30_chunk),
+                "low": low_band_rms(chunk),
+                "high": high_band_ratio(chunk),
+                "transient": transient_score(chunk),
+            }
+        )
+    if len(candidates) < MIN_TAIL_SHAPE_CANDIDATES:
+        return fixed_tail_shape_policy(
+            source_family,
+            stutter_step_divisor,
+            restore_snap_gain,
+            len(candidates),
+        )
+
+    source_rms_values = [item["source_rms"] for item in candidates]
+    low_values = [item["low"] for item in candidates]
+    high_values = [item["high"] for item in candidates]
+    transient_values = [item["transient"] for item in candidates]
+    w30_values = [item["w30_rms"] for item in candidates]
+    source_mean = max(float(np.mean(source_rms_values)), 1e-9)
+    low_norm = float(np.clip(np.mean(low_values) / source_mean, 0.0, 1.35))
+    high_norm = float(np.clip(np.mean(high_values) / 0.35, 0.0, 1.35))
+    transient_norm = float(
+        np.clip(np.mean(transient_values) / max(source_mean * 7.0, 1e-9), 0.0, 1.35)
+    )
+    w30_norm = float(np.clip(np.mean(w30_values) / source_mean, 0.0, 1.35))
+    energy_span = float(max(source_rms_values) - min(source_rms_values))
+    energy_span_norm = float(np.clip(energy_span / source_mean, 0.0, 1.35))
+
+    if source_family == "sparse_bass_pressure":
+        strategy = "source-derived-bass-weighted-tail"
+        silence_bias = 0.020
+        density_bias = -1
+        restore_bias = 0.18
+    elif source_family == "tonal_hook":
+        strategy = "source-derived-hook-readable-tail"
+        silence_bias = -0.012
+        density_bias = 0
+        restore_bias = -0.08
+    else:
+        strategy = "source-derived-break-snap-tail"
+        silence_bias = 0.006
+        density_bias = 2
+        restore_bias = 0.06
+
+    dropout_silence_fraction = float(
+        np.clip(
+            fixed.dropout_silence_fraction
+            + silence_bias
+            + energy_span_norm * 0.035
+            - high_norm * 0.018,
+            0.42,
+            0.59,
+        )
+    )
+    dropout_silence_gain = float(
+        np.clip(
+            fixed.dropout_silence_gain
+            + low_norm * 0.003
+            - transient_norm * 0.004
+            + (0.004 if source_family == "sparse_bass_pressure" else 0.0),
+            0.006,
+            0.024,
+        )
+    )
+    derived_step = int(
+        round(
+            fixed.stutter_step_divisor
+            + density_bias
+            + transient_norm * 2.8
+            - low_norm * 1.3
+            + energy_span_norm * 1.2
+        )
+    )
+    stutter_step_divisor = int(np.clip(derived_step, 10, 20))
+    policy_values = {
+        "dropout_silence_fraction": dropout_silence_fraction,
+        "dropout_silence_gain": dropout_silence_gain,
+        "stutter_step_divisor": stutter_step_divisor,
+        "stutter_grain_gain": float(
+            np.clip(fixed.stutter_grain_gain + transient_norm * 0.42 + high_norm * 0.18, 2.86, 4.12)
+        ),
+        "stutter_snap_gain": float(
+            np.clip(
+                fixed.stutter_snap_gain
+                + transient_norm * 0.34
+                + high_norm * 0.15
+                + restore_bias * 0.35,
+                1.82,
+                3.30,
+            )
+        ),
+        "restore_source_gain": float(
+            np.clip(fixed.restore_source_gain + low_norm * 0.12 + restore_bias, 1.05, 1.68)
+        ),
+        "restore_snap_gain": float(
+            np.clip(fixed.restore_snap_gain + transient_norm * 0.76 + restore_bias, 4.20, 7.20)
+        ),
+        "restore_w30_gain": float(
+            np.clip(fixed.restore_w30_gain + w30_norm * 0.36 + restore_bias, 2.12, 3.26)
+        ),
+        "restore_mc202_gain": float(
+            np.clip(fixed.restore_mc202_gain + low_norm * 0.30 + restore_bias, 3.42, 4.86)
+        ),
+        "restore_tr909_gain": float(
+            np.clip(fixed.restore_tr909_gain + transient_norm * 0.34 + high_norm * 0.12, 2.92, 4.16)
+        ),
+        "restore_drive": float(
+            np.clip(fixed.restore_drive + transient_norm * 0.08 + low_norm * 0.05, 1.88, 2.12)
+        ),
+        "restore_slam": float(
+            np.clip(fixed.restore_slam + transient_norm * 0.035 + energy_span_norm * 0.020, 0.40, 0.52)
+        ),
+    }
+    distance = float(
+        abs(policy_values["dropout_silence_fraction"] - fixed.dropout_silence_fraction) / 0.10
+        + abs(policy_values["dropout_silence_gain"] - fixed.dropout_silence_gain) / 0.010
+        + abs(policy_values["stutter_step_divisor"] - fixed.stutter_step_divisor) / 4.0
+        + abs(policy_values["stutter_grain_gain"] - fixed.stutter_grain_gain) / 0.80
+        + abs(policy_values["stutter_snap_gain"] - fixed.stutter_snap_gain) / 0.80
+        + abs(policy_values["restore_source_gain"] - fixed.restore_source_gain) / 0.50
+        + abs(policy_values["restore_snap_gain"] - fixed.restore_snap_gain) / 1.80
+        + abs(policy_values["restore_w30_gain"] - fixed.restore_w30_gain) / 0.80
+        + abs(policy_values["restore_mc202_gain"] - fixed.restore_mc202_gain) / 1.00
+        + abs(policy_values["restore_tr909_gain"] - fixed.restore_tr909_gain) / 0.80
+        + abs(policy_values["restore_drive"] - fixed.restore_drive) / 0.30
+        + abs(policy_values["restore_slam"] - fixed.restore_slam) / 0.12
+    )
+    return TailShapePolicy(
+        source_aware=True,
+        source_family=source_family,
+        selection_strategy=strategy,
+        fixed_tail_distance=distance,
+        source_energy_span=energy_span,
+        candidate_count=len(candidates),
+        **policy_values,
+    )
+
+
 def dense_break_source_policy(
     source: np.ndarray,
     w30: np.ndarray,
@@ -1094,6 +1317,14 @@ def dense_break_source_policy(
         bar_frames,
         pressure_lift_policy.source_family,
     )
+    tail_shape_policy = tail_shape_policy_for(
+        source,
+        w30,
+        bar_frames,
+        pressure_lift_policy.source_family,
+        stutter_step_divisor,
+        restore_snap_gain,
+    )
 
     if pressure_lift_policy.source_family == "tonal_hook":
         bass_restore = 51.5
@@ -1131,6 +1362,7 @@ def dense_break_source_policy(
         destructive_gesture_policy=destructive_gesture_policy,
         mix_treatment_policy=mix_treatment_policy,
         pad_noise_texture_policy=pad_noise_texture_policy,
+        tail_shape_policy=tail_shape_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -1813,6 +2045,25 @@ def pad_noise_texture_policy_proof(source_policy: DenseBreakSourcePolicy) -> dic
     }
 
 
+def tail_shape_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
+    policy = source_policy.tail_shape_policy
+    return {
+        "tail_shape_source_derived": 1.0 if policy.source_aware else 0.0,
+        "tail_shape_candidate_count": float(policy.candidate_count),
+        "tail_shape_fixed_distance": float(policy.fixed_tail_distance),
+        "tail_shape_source_energy_span": float(policy.source_energy_span),
+        "tail_shape_dropout_silence_fraction": float(policy.dropout_silence_fraction),
+        "tail_shape_dropout_silence_gain": float(policy.dropout_silence_gain),
+        "tail_shape_stutter_step_divisor": float(policy.stutter_step_divisor),
+        "tail_shape_stutter_grain_gain": float(policy.stutter_grain_gain),
+        "tail_shape_stutter_snap_gain": float(policy.stutter_snap_gain),
+        "tail_shape_restore_source_gain": float(policy.restore_source_gain),
+        "tail_shape_restore_snap_gain": float(policy.restore_snap_gain),
+        "tail_shape_restore_drive": float(policy.restore_drive),
+        "tail_shape_restore_slam": float(policy.restore_slam),
+    }
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -1852,6 +2103,7 @@ def render_dropout_stutter_bar(
     source_end = min(source_start + bar_frames, source.shape[0])
     if source_start >= source_end:
         return bar
+    tail_policy = source_policy.tail_shape_policy
 
     base = saturate(
         source[source_start:source_end] * (0.10 * source_layer_gain)
@@ -1862,8 +2114,9 @@ def render_dropout_stutter_bar(
     )
     bar[: base.shape[0]] = base
 
-    dropout_end = bar_frames // 2
-    bar[:dropout_end] *= 0.015
+    dropout_end = int(round(bar_frames * tail_policy.dropout_silence_fraction))
+    dropout_end = max(1, min(bar_frames - 1, dropout_end))
+    bar[:dropout_end] *= tail_policy.dropout_silence_gain
 
     grain_len = max(128, bar_frames // 32)
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
@@ -1888,15 +2141,17 @@ def render_dropout_stutter_bar(
         cue_snap_grain[:click_len, 0] = cue
         cue_snap_grain[:click_len, 1] = cue * 0.35
 
-    step = max(1, bar_frames // source_policy.stutter_step_divisor)
+    step = max(1, bar_frames // max(1, tail_policy.stutter_step_divisor))
     for index, target in enumerate(range(dropout_end, bar_frames - grain.shape[0], step)):
         decay = 1.0 - min(index, 7) * 0.07
         accent = tr909[min(source_start + target, tr909.shape[0] - 1)]
         end = target + grain.shape[0]
         riff = hook_riff[min(source_start + target, hook_riff.shape[0] - 1)]
         snap = break_snap[min(source_start + target, break_snap.shape[0] - 1)]
-        bar[target:end] += grain * (3.15 * decay * source_policy.pressure_gain)
-        bar[target:end] += source_snap_grain[: end - target] * (2.05 * decay * source_policy.restore_snap_gain)
+        bar[target:end] += grain * (tail_policy.stutter_grain_gain * decay * source_policy.pressure_gain)
+        bar[target:end] += source_snap_grain[: end - target] * (
+            tail_policy.stutter_snap_gain * decay
+        )
         if cue_snap_grain is not None:
             bar[target:end] += cue_snap_grain[: end - target] * (5.50 * decay)
         bar[target : min(target + 96, bar.shape[0])] += accent * (0.58 * decay)
@@ -2124,6 +2379,7 @@ def restore_with_hit(
     restored = restore_mix.copy()
     if start >= end:
         return restored
+    tail_policy = source_policy.tail_shape_policy
     hit_frames = min(frames_for_seconds(0.115), end - start)
     source_hit_start = 0
     if source_policy.destructive_gesture_policy.source_aware:
@@ -2140,13 +2396,16 @@ def restore_with_hit(
     w30_hit = w30[source_hit_start:source_hit_end]
     snap = transient_emphasis(source_hit)
     restored[start : start + hit_frames] += (
-        source_hit * (1.35 * source_layer_gain)
-        + snap * (4.80 * source_policy.restore_snap_gain)
-        + w30_hit * 2.62
-        + mc202[start : start + hit_frames] * 4.05
-        + tr909[start : start + hit_frames] * 3.45
+        source_hit * (tail_policy.restore_source_gain * source_layer_gain)
+        + snap * tail_policy.restore_snap_gain
+        + w30_hit * tail_policy.restore_w30_gain
+        + mc202[start : start + hit_frames] * tail_policy.restore_mc202_gain
+        + tr909[start : start + hit_frames] * tail_policy.restore_tr909_gain
     ) * envelope
-    return normalize_peak(glue_bus(restored, drive=1.95, slam=0.44), 0.98)
+    return normalize_peak(
+        glue_bus(restored, drive=tail_policy.restore_drive, slam=tail_policy.restore_slam),
+        0.98,
+    )
 
 
 def build_report(
@@ -2226,11 +2485,12 @@ def build_report(
             "destructive_gesture_policy": asdict(source_policy.destructive_gesture_policy),
             "mix_treatment_policy": asdict(source_policy.mix_treatment_policy),
             "pad_noise_texture_policy": asdict(source_policy.pad_noise_texture_policy),
+            "tail_shape_policy": asdict(source_policy.tail_shape_policy),
             "arrangement_failure_routes": arrangement_failure_routes(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
             "scripted_boundaries": [
-                "role vocabulary and destructive/restore tail remain bounded even when first-six role placement and mix treatment are source-derived",
+                "role vocabulary remains bounded even when first-six role placement, mix treatment, and eligible dropout/restore tail shape are source-derived",
                 "arrangement policy is diagnostic and does not claim human musical approval",
                 "roles remain bounded to hook, chop, pressure, dropout, restore",
                 "human_verdict remains unverified until structured listening review",
@@ -2280,6 +2540,9 @@ def build_report(
                 MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES
             ),
             "min_pad_noise_texture_transient_ratio": MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO,
+            "min_tail_shape_candidates": MIN_TAIL_SHAPE_CANDIDATES,
+            "min_tail_shape_fixed_distance": MIN_TAIL_SHAPE_FIXED_DISTANCE,
+            "min_tail_shape_output_contrast": MIN_TAIL_SHAPE_OUTPUT_CONTRAST,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -2297,8 +2560,9 @@ def build_report(
         notes=(
             "Dense-break render uses source-backed stems, source timing, and a "
             "bounded source-aware pressure_lift/stutter/restore, arrangement, and mix "
-            "policy plus a source-layer-off rebuild diagnostic, but the renderer vocabulary "
-            "and destructive/restore tail remain bounded; this is smoke/"
+            "policy plus eligible source-derived dropout/restore tail shaping and a "
+            "source-layer-off rebuild diagnostic, but the renderer vocabulary remains "
+            "bounded; this is smoke/"
             "regression/diagnostic evidence, not product-quality proof."
         ),
     )
@@ -2340,6 +2604,12 @@ def performance_proof(
     dropout = sections["dropout_stutter"]
     dropout_first = dropout[: dropout.shape[0] // 2]
     dropout_second = dropout[dropout.shape[0] // 2 :]
+    tail_silence = dropout[
+        : int(round(dropout.shape[0] * source_policy.tail_shape_policy.dropout_silence_fraction))
+    ]
+    tail_stutter = dropout[
+        int(round(dropout.shape[0] * source_policy.tail_shape_policy.dropout_silence_fraction)) :
+    ]
     bar_similarity = max_adjacent_bar_correlation(performance, bar_frames)
     source_similarity = waveform_correlation(source, performance)
     rebuild_only_source_similarity = waveform_correlation(source, rebuild_only_performance)
@@ -2396,6 +2666,9 @@ def performance_proof(
         "mix_treatment_output_contrast_ratio": (
             (pressure_rms + restore_rms) / max(hook_rms, 1e-9)
         ),
+        "tail_shape_output_contrast_ratio": (
+            (rms(tail_stutter) + restore_rms) / max(rms(tail_silence), 1e-9)
+        ),
         "pad_noise_texture_transient_ratio": hook_transient
         / max(transient_score(source_hook_window), 1e-9),
         "pad_noise_texture_high_band_ratio": high_band_ratio(sections["chop_hook"]),
@@ -2408,6 +2681,7 @@ def performance_proof(
     proof.update(destructive_gesture_policy_proof(source_policy))
     proof.update(mix_treatment_policy_proof(source_policy))
     proof.update(pad_noise_texture_policy_proof(source_policy))
+    proof.update(tail_shape_policy_proof(source_policy))
     return proof
 
 
@@ -2509,6 +2783,14 @@ def failure_codes_for(
             failures.append("mix_treatment_collapsed_to_fixed_recipe")
         if proof.get("mix_treatment_output_contrast_ratio", 0.0) < MIN_MIX_TREATMENT_OUTPUT_CONTRAST:
             failures.append("mix_treatment_output_contrast_too_weak")
+        if proof.get("tail_shape_source_derived", 0.0) < 1.0:
+            failures.append("tail_shape_not_source_derived")
+        if proof.get("tail_shape_candidate_count", 0.0) < MIN_TAIL_SHAPE_CANDIDATES:
+            failures.append("tail_shape_not_enough_candidates")
+        if proof.get("tail_shape_fixed_distance", 0.0) < MIN_TAIL_SHAPE_FIXED_DISTANCE:
+            failures.append("tail_shape_collapsed_to_fixed_recipe")
+        if proof.get("tail_shape_output_contrast_ratio", 0.0) < MIN_TAIL_SHAPE_OUTPUT_CONTRAST:
+            failures.append("tail_shape_output_contrast_too_weak")
     if proof["arrangement_role_count"] != float(DEFAULT_BARS):
         failures.append("arrangement_role_order_not_8_bars")
     if proof["arrangement_pressure_role_count"] < 2.0:
