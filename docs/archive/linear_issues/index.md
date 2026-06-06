@@ -1106,4 +1106,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Expose strongest-audible-element proof across professional outputs
 - [RIOTBOX-1230.md](./RIOTBOX-1230.md)
   Tighten source-character survival proof for rebuilt outputs
+- [RIOTBOX-1231.md](./RIOTBOX-1231.md)
+  Add real weak-WAV source-character survival fixture
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
