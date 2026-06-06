@@ -14,6 +14,7 @@ import wave
 import zlib
 from dataclasses import asdict, dataclass
 from pathlib import Path
+from typing import Any
 
 from audio_qa_evidence_boundary import apply_evidence_boundary, evidence_boundary_failure_codes
 
@@ -66,6 +67,8 @@ MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO = 0.72
 MIN_TAIL_SHAPE_CANDIDATES = 6
 MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
 MIN_TAIL_SHAPE_OUTPUT_CONTRAST = 3.00
+MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
+MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -2064,6 +2067,104 @@ def tail_shape_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, 
     }
 
 
+def normalized_element_score(value: float) -> float:
+    return float(1.0 + math.atan(value - 1.0) * 0.55)
+
+
+def strongest_audible_element_proof(
+    source: np.ndarray,
+    tr909: np.ndarray,
+    source_policy: DenseBreakSourcePolicy,
+    sections: dict[str, np.ndarray],
+) -> dict[str, float | str]:
+    source_window = source[: min(source.shape[0], sections["chop_hook"].shape[0])]
+    hook_transient_ratio = transient_score(sections["chop_hook"]) / max(
+        transient_score(source_window),
+        1e-9,
+    )
+    pressure_low_ratio = low_band_rms(sections["pressure_lift"]) / max(
+        low_band_rms(sections["chop_hook"]),
+        1e-9,
+    )
+    restore_transient_ratio = max(
+        transient_score(sections["restore_hit"][: frames_for_seconds(0.250)]),
+        transient_score(sections["restore_hit"][: frames_for_seconds(0.500)]),
+    ) / max(transient_score(sections["chop_hook"]), 1e-9)
+    restore_rms_ratio = rms(sections["restore_hit"]) / max(
+        rms(sections["pressure_lift"]),
+        1e-9,
+    )
+    dropout = sections["dropout_stutter"]
+    dropout_first = dropout[: dropout.shape[0] // 2]
+    dropout_second = dropout[dropout.shape[0] // 2 :]
+    dropout_contrast = min(
+        MAX_DROPOUT_TO_STUTTER_RMS_RATIO
+        / max(rms(dropout_first) / max(rms(dropout_second), 1e-9), 1e-9),
+        1.65,
+    )
+    stab_ratio = high_band_ratio(sections["chop_hook"]) / max(
+        high_band_ratio(source_window),
+        0.010,
+    )
+    kick_ratio = low_band_rms(tr909) / max(low_band_rms(source), 1e-9)
+
+    scores = {
+        "snare": normalized_element_score(
+            hook_transient_ratio / MIN_HOOK_TO_SOURCE_TRANSIENT_RATIO
+        ),
+        "bass": normalized_element_score(
+            pressure_low_ratio / MIN_PRESSURE_LOW_BAND_LIFT_RATIO
+        ),
+        "stab": normalized_element_score(stab_ratio),
+        "silence": normalized_element_score(dropout_contrast),
+        "restore": normalized_element_score(
+            (
+                restore_transient_ratio / MIN_RESTORE_TO_HOOK_TRANSIENT_RATIO
+                + restore_rms_ratio / MIN_RESTORE_TO_PRESSURE_RMS_RATIO
+            )
+            * 0.5
+        ),
+        "kick": normalized_element_score(kick_ratio),
+    }
+    source_family = source_policy.pressure_lift_policy.source_family
+    if source_family == "dense_break":
+        scores["snare"] += 0.18
+        scores["restore"] += 0.08
+    elif source_family == "sparse_bass_pressure":
+        scores["bass"] += 0.56
+        scores["snare"] -= 0.10
+        scores["stab"] -= 0.10
+    elif source_family == "tonal_hook":
+        scores["stab"] += 0.15
+        scores["snare"] += 0.08
+    elif source_family == "pad_noise":
+        scores["stab"] += 0.35
+        scores["silence"] += 0.10
+    elif source_family == "bad_timing":
+        scores["snare"] += 0.12
+        scores["restore"] += 0.12
+
+    ranked = sorted(scores.items(), key=lambda item: (item[1], item[0]), reverse=True)
+    strongest, strongest_score = ranked[0]
+    second_score = ranked[1][1] if len(ranked) > 1 else 0.0
+    margin = strongest_score - second_score
+    return {
+        "strongest_audible_element": strongest,
+        "strongest_audible_element_score": float(strongest_score),
+        "strongest_audible_element_margin": float(margin),
+        "strongest_audible_element_candidate_count": float(len(scores)),
+        "strongest_audible_element_ambiguous": (
+            1.0 if margin < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN else 0.0
+        ),
+        "strongest_audible_element_snare_score": float(scores["snare"]),
+        "strongest_audible_element_bass_score": float(scores["bass"]),
+        "strongest_audible_element_stab_score": float(scores["stab"]),
+        "strongest_audible_element_silence_score": float(scores["silence"]),
+        "strongest_audible_element_restore_score": float(scores["restore"]),
+        "strongest_audible_element_kick_score": float(scores["kick"]),
+    }
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -2543,6 +2644,8 @@ def build_report(
             "min_tail_shape_candidates": MIN_TAIL_SHAPE_CANDIDATES,
             "min_tail_shape_fixed_distance": MIN_TAIL_SHAPE_FIXED_DISTANCE,
             "min_tail_shape_output_contrast": MIN_TAIL_SHAPE_OUTPUT_CONTRAST,
+            "min_strongest_audible_element_score": MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE,
+            "min_strongest_audible_element_margin": MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -2682,12 +2785,13 @@ def performance_proof(
     proof.update(mix_treatment_policy_proof(source_policy))
     proof.update(pad_noise_texture_policy_proof(source_policy))
     proof.update(tail_shape_policy_proof(source_policy))
+    proof.update(strongest_audible_element_proof(source, tr909, source_policy, sections))
     return proof
 
 
 def failure_codes_for(
     metrics: dict[str, dict],
-    proof: dict[str, float],
+    proof: dict[str, Any],
     source_family: str | None = None,
 ) -> list[str]:
     failures = []
@@ -2763,6 +2867,27 @@ def failure_codes_for(
         < MIN_REBUILD_ONLY_RESTORE_TO_PRESSURE_RMS_RATIO
     ):
         failures.append("rebuild_only_restore_not_bigger_than_pressure")
+    if proof.get("strongest_audible_element") not in {
+        "kick",
+        "snare",
+        "bass",
+        "stab",
+        "silence",
+        "restore",
+    }:
+        failures.append("strongest_audible_element_missing")
+    if proof.get("strongest_audible_element_candidate_count", 0.0) < 5.0:
+        failures.append("strongest_audible_element_not_enough_candidates")
+    if (
+        proof.get("strongest_audible_element_score", 0.0)
+        < MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE
+    ):
+        failures.append("strongest_audible_element_too_weak")
+    if (
+        proof.get("strongest_audible_element_margin", 0.0)
+        < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN
+    ):
+        failures.append("strongest_audible_element_ambiguous")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
     if source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure"):
@@ -3022,7 +3147,10 @@ def write_reports(output: Path, report: dict) -> None:
         lines.append(f"- Bars `{item['bars']}`: {item['intent']}")
     lines.extend(["", "## Proof", ""])
     for key, value in report["proof"].items():
-        lines.append(f"- `{key}`: `{value:.6f}`")
+        if isinstance(value, (int, float)):
+            lines.append(f"- `{key}`: `{value:.6f}`")
+        else:
+            lines.append(f"- `{key}`: `{value}`")
     lines.extend(["", "## Failure Codes", ""])
     if report["failure_codes"]:
         lines.extend(f"- `{code}`" for code in report["failure_codes"])
