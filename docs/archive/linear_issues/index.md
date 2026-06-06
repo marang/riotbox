@@ -1108,4 +1108,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Tighten source-character survival proof for rebuilt outputs
 - [RIOTBOX-1231.md](./RIOTBOX-1231.md)
   Add real weak-WAV source-character survival fixture
+- [RIOTBOX-1232.md](./RIOTBOX-1232.md)
+  Route professional-output failures to concrete sound fix categories
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
