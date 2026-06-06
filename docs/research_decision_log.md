@@ -2110,3 +2110,17 @@ Why: source-derived hook/chop, destructive gesture, and bass movement proof can 
 Evidence: RIOTBOX-1226 adds source-derived arrangement-role selection to the dense-break performance generator, surfaces the proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds negative mutation coverage that rejects non-source-derived dense arrangement reports.
 Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified` because the role vocabulary, destructive/restore tail, and mix recipe remain bounded. Future work should keep replacing remaining scripted mix and production choices with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
 Status: accepted
+
+---
+
+### RBX-076
+
+Date: 2026-06-06
+Topic: Eligible P022 mix-bus treatment must be source-derived before it counts as stronger render evidence
+Phase: P022 / Professional Sound Output
+Question: may dense-break, tonal-hook, and sparse-bass-pressure diagnostics keep using one fixed mix-bus recipe while other production choices become source-derived?
+Decision: no. Eligible diagnostics now use a bounded `mix_treatment_policy` that scans source/W-30 bar candidates, derives hook/chop/pressure/restore bus drive, slam, gain, pressure peak, and restore bass treatment from source energy, low-band, high-band, transient, and W-30 response, and reports candidate count, distance from the old fixed mix recipe, source-energy span, and output contrast.
+Why: source-derived hook/chop, destructive gestures, bass movement, and arrangement order can still sound rehearsed if the final bus treatment always pushes every source through one fixed recipe. Riotbox needs mix pressure, snap, and restore weight to react to the source before the rendered diagnostic can be treated as stronger source-aware production evidence.
+Evidence: RIOTBOX-1227 adds source-derived mix-treatment selection to the dense-break performance generator, applies it to the rendered hook/chop/pressure/restore/final buses, surfaces proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds positive and negative gates that reject non-source-derived or fixed-collapsed mix treatment.
+Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified` because the role vocabulary and destructive/restore tail remain bounded. Future work should keep replacing remaining scripted production choices with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
+Status: accepted

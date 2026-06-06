@@ -71,15 +71,16 @@ The suite also enforces the shared evidence-boundary contract. Current scripted
 diagnostics must report `quality_proof: false`; the suite must fail if any
 scripted child report claims product-quality proof. Source-backed diagnostics
 may report `source_backed: true` and `source_timing_backed: true`, but only as
-diagnostic evidence while the role vocabulary, destructive/restore tail, and
-mix recipe remain bounded/scripted. The pro-pressure source matrix now bubbles
-up arrangement-policy coverage through suite key metrics, requires
-source-derived first-six-bar role-order proof for eligible sources, and requires
-at least two distinct role-order signatures across source families. It also
-bubbles up rebuild-only metrics from the matrix and professional-source WAV pack
-so the suite can prove that source-layer-off renders remain audible,
-transformed, and not source-masked. Synthetic negative fixtures report
-`source_backed: false`.
+diagnostic evidence while the role vocabulary and destructive/restore tail
+remain bounded/scripted. Mix treatment is now source-derived for eligible dense,
+tonal, and sparse cases, but still bounded and diagnostic. The pro-pressure
+source matrix now bubbles up arrangement-policy coverage through suite key
+metrics, requires source-derived first-six-bar role-order proof for eligible
+sources, and requires at least two distinct role-order signatures across source
+families. It also bubbles up rebuild-only metrics from the matrix and
+professional-source WAV pack so the suite can prove that source-layer-off
+renders remain audible, transformed, and not source-masked. Synthetic negative
+fixtures report `source_backed: false`.
 
 The suite bubbles up source-derived arrangement role-order proof from the
 dense-break pack, pro-pressure source matrix, and professional-source WAV pack.
@@ -111,6 +112,15 @@ recipe. This keeps the aggregate status honest about the current step from
 scripted pressure recipes toward source-aware production behavior, while still
 keeping `quality_proof: false`.
 
+The suite now also bubbles up source-derived mix-treatment proof from the
+dense-break pack, pro-pressure source matrix, and professional-source WAV pack.
+Eligible dense-break, tonal-hook, and sparse-bass-pressure cases must expose
+source-derived mix treatment, non-zero distance from the old fixed mix recipe,
+and enough pressure/restore output contrast to show the bus treatment is shaping
+the rendered result. This prevents a diagnostic render from passing only because
+hook/chop/arrangement choices changed while the final mix bus remains one fixed
+recipe.
+
 Run:
 
 ```bash
@@ -131,6 +141,9 @@ Boundary:
   technical or musical quality proof for the product.
 - It proves bounded source-aware arrangement-policy diversity across the current
   matrix, while keeping the scripted role grammar visible.
+- It proves bounded source-derived mix-treatment movement across eligible
+  dense, tonal, and sparse cases without claiming the bus policy is release
+  quality.
 - It proves bounded source-layer-off rebuild diagnostics for the current
   professional-output packs without claiming the rebuild path is release-grade.
 - It enforces machine-readable evidence fields: `evidence_role`,
