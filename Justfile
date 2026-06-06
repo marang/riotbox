@@ -265,6 +265,12 @@ dense-break-performance-pack-smoke output="artifacts/audio_qa/local-dense-break-
     tmp="$(mktemp)" && jq '.proof.rebuild_only_to_source_correlation = 0.999' "{{output}}/performance-report.json" > "$tmp" && if python3 scripts/generate_dense_break_performance_pack.py --validate-report "$tmp" >"$tmp.out" 2>&1; then cat "$tmp.out" >&2; rm "$tmp" "$tmp.out"; echo "expected source-masked rebuild-only dense-break report to fail" >&2; exit 1; fi && grep -q "rebuild_only_too_source_masked" "$tmp.out" && rm "$tmp" "$tmp.out"
     tmp="$(mktemp)" && jq '.proof.source_on_to_rebuild_only_correlation = 1.0' "{{output}}/performance-report.json" > "$tmp" && if python3 scripts/generate_dense_break_performance_pack.py --validate-report "$tmp" >"$tmp.out" 2>&1; then cat "$tmp.out" >&2; rm "$tmp" "$tmp.out"; echo "expected source-layer toggle collapse dense-break report to fail" >&2; exit 1; fi && grep -q "source_layer_toggle_did_not_change_output" "$tmp.out" && rm "$tmp" "$tmp.out"
 
+dense-break-weak-source-character-fixture-smoke output="artifacts/audio_qa/local-dense-break-weak-source-character-fixture":
+    tmp="$(mktemp)" && if python3 scripts/generate_dense_break_performance_pack.py --output "{{output}}" --date "local-dense-break-weak-source-character-fixture" --weak-source-character-fixture >"$tmp" 2>&1; then cat "$tmp" >&2; rm "$tmp"; echo "expected weak source-character dense-break fixture to fail" >&2; exit 1; fi && grep -q "rebuild_only_source_character_not_surviving" "$tmp" && rm "$tmp"
+    python3 scripts/generate_dense_break_performance_pack.py --validate-weak-source-character-report "{{output}}/performance-report.json"
+    jq -e '.schema == "riotbox.dense_break_performance_pack.v1" and .result == "fail" and .agent_verdict == "agent_fail" and .human_verdict == "unverified" and .evidence_role == "diagnostic" and .quality_proof == false and (.failure_codes | index("rebuild_only_source_character_not_surviving")) and .proof.rebuild_only_source_character_survival_score < 0.70 and .proof.rebuild_only_source_transient_retention < 0.45 and (.files.rebuild_only_performance | endswith(".wav"))' "{{output}}/performance-report.json"
+    test -s "{{output}}/00_source_window.wav"; test -s "{{output}}/06_rebuild_only_performance.wav"; test -s "{{output}}/performance-report.json"
+
 agent-musical-review-pack source="data/test_audio/examples/Beat03_130BPM(Full).wav" output="artifacts/audio_qa/local-agent-musical-review-pack" date="local-agent-musical-review-pack":
     just dense-break-performance-pack "{{source}}" "{{output}}" "{{date}}"
 

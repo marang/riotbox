@@ -693,6 +693,10 @@ following:
   or diagnostic evidence; it must not be presented as technical or musical
   quality proof until the relevant behavior is source-aware, policy-owned, and
   covered by non-hardcoded fixture evidence
+- source-character survival proof must include real negative audio evidence,
+  not only report mutation checks; the dense-break weak source-character smoke
+  renders a weak rebuild-only WAV and requires
+  `rebuild_only_source_character_not_surviving`
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue

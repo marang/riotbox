@@ -2180,3 +2180,17 @@ Why: a source-layer-off render can be non-silent and not waveform-correlated wit
 Evidence: RIOTBOX-1230 adds rebuild-only source-character proof to dense performance reports, surfaces it through the pro-pressure source matrix, professional-source WAV pack, edge-source diagnostics, and professional-output suite, and adds positive and negative smoke gates for missing/lost source-character evidence.
 Consequences: this is stronger diagnostic evidence only. It keeps `quality_proof: false` and `human_verdict: unverified`; human or calibrated listening approval is still required before treating the artifact as product-quality sound.
 Status: accepted
+
+---
+
+### RBX-081
+
+Date: 2026-06-06
+Topic: Source-character survival gates need real weak-WAV evidence, not only report mutations
+Phase: P022 / Professional Sound Output
+Question: is a JSON/report mutation enough to prove that rebuild-only source-character survival gates catch generic fallback-like audio?
+Decision: no. P022 now keeps a dense-break weak source-character fixture that renders a real `06_rebuild_only_performance.wav`, intentionally strips useful source character from the rebuild-only path, and validates that the report fails with `rebuild_only_source_character_not_surviving`.
+Why: a report mutation proves the validator sees a bad field, but it does not prove the audio artifact path can produce and reject the actual weak case musicians care about: active output that no longer sounds like the loaded source being transformed.
+Evidence: RIOTBOX-1231 adds `--weak-source-character-fixture`, `--validate-weak-source-character-report`, and `just dense-break-weak-source-character-fixture-smoke`. The validator reloads the rendered source/rebuild-only WAVs and recomputes source-character survival before accepting the expected failure.
+Consequences: this is negative diagnostic evidence only. It keeps `quality_proof: false` and `human_verdict: unverified`; it proves the gate rejects one weak rendered artifact, not that passing outputs are musically release-grade.
+Status: accepted

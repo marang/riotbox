@@ -493,6 +493,19 @@ some source-like spectral/transient character survives after raw source masking
 is removed and raw-copy correlation is still rejected; they do not prove that
 the result is musically good.
 
+The dense-break professional diagnostic also keeps a real weak-WAV regression
+for this boundary:
+
+```bash
+just dense-break-weak-source-character-fixture-smoke
+```
+
+That smoke renders an intentionally weak `06_rebuild_only_performance.wav` and
+requires the report validator to reject it with
+`rebuild_only_source_character_not_surviving`. It is negative diagnostic
+evidence only; it must keep `quality_proof: false` and
+`human_verdict: unverified`.
+
 Run:
 
 ```bash
