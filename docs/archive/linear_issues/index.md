@@ -1100,4 +1100,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Derive mix-bus treatment from source energy candidates
 - [RIOTBOX-1223.md](./RIOTBOX-1223.md)
   Improve pad/noise gated texture path beyond weak routing
+- [RIOTBOX-1228.md](./RIOTBOX-1228.md)
+  Derive dropout/restore tail shape from source candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
