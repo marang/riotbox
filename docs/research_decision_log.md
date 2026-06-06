@@ -2068,3 +2068,17 @@ Why: the prior sparse path could sound more like a hardcoded melodic contour tha
 Evidence: RIOTBOX-1221 adds source-derived sparse bass movement to the dense-break performance generator, surfaces the proof in the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds a negative fixture that mutates the sparse report back to fixed movement.
 Consequences: this is a stronger diagnostic step toward source-aware production behavior, but it remains scripted render evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should replace more hook/chop and pad/noise behavior with source-derived decisions and collect listening verdicts before claiming product quality.
 Status: accepted
+
+---
+
+### RBX-073
+
+Date: 2026-06-06
+Topic: Dense and tonal hook/chop selection must be source-derived before it can count as stronger P022 evidence
+Phase: P022 / Professional Sound Output
+Question: may dense-break and tonal-hook diagnostics keep using only a fixed first-bar W-30 grain while claiming source-aware hook/chop behavior?
+Decision: no. Dense-break and tonal-hook diagnostics now use a bounded `hook_chop_policy` that scans multiple source/W-30 candidates, selects separate hook and chop offsets, and reports whether selection is source-derived, how far it moved away from the old first-bar static choice, and how much offset contrast exists between hook and chop.
+Why: the previous W-30 hook/riff layer could make different sources feel more organic, but it still began from a fixed first-bar grain selection. Riotbox needs hook/chop choices that follow the source material before those diagnostics can be treated as stronger P022 evidence.
+Evidence: RIOTBOX-1222 adds source-derived hook/chop selection to the dense-break performance generator, surfaces the proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds negative fixtures that reject non-source-derived or static tonal hook/chop reports.
+Consequences: this remains scripted render evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should continue replacing scripted arrangement behavior with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
+Status: accepted

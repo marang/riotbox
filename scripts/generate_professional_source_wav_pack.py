@@ -187,6 +187,18 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "pressure_lift_bar5_to_bar4_rms_ratio": proof[
                 "pressure_lift_bar5_to_bar4_rms_ratio"
             ],
+            "hook_chop_selection_source_derived": proof[
+                "hook_chop_selection_source_derived"
+            ],
+            "hook_chop_selection_candidate_count": proof[
+                "hook_chop_selection_candidate_count"
+            ],
+            "hook_chop_static_distance_frames": proof[
+                "hook_chop_static_distance_frames"
+            ],
+            "hook_chop_offset_distance_frames": proof[
+                "hook_chop_offset_distance_frames"
+            ],
             "bass_movement_source_derived": proof["bass_movement_source_derived"],
             "sparse_bass_movement_static_distance_hz": proof[
                 "sparse_bass_movement_static_distance_hz"
@@ -217,6 +229,7 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "rebuild_only_performance_peak_abs": metrics["rebuild_only_performance"]["peak_abs"],
         },
         "pressure_lift_policy": pressure_lift_policy,
+        "hook_chop_policy": source_report["source_policy"]["hook_chop_policy"],
         "arrangement_policy": arrangement_policy,
         "failure_codes": family_failures,
     }
