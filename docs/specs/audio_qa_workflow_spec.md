@@ -506,6 +506,16 @@ requires the report validator to reject it with
 evidence only; it must keep `quality_proof: false` and
 `human_verdict: unverified`.
 
+Weak professional-output routing must turn known failure codes into concrete
+sound-fix categories instead of leaving engineers with raw metric names. Current
+categories are `source_selection`, `chop_policy`, `drum_pressure`,
+`bass_movement`, `mix_bus`, `destructive_gesture`, `fixture_threshold`, and
+`ui_cue`. Each routed case must include a short `musician_fix_reason`, and
+unknown weak/fail codes must fail routing with an unknown-route error until a
+stable category is added. Rebuild-only source-character failures route first to
+`source_selection` because the musician-facing fix is to pick or expose source
+material whose identity survives the rebuild-only path.
+
 Run:
 
 ```bash
