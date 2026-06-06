@@ -1096,4 +1096,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Derive destructive stutter/restore choices from source candidates
 - [RIOTBOX-1226.md](./RIOTBOX-1226.md)
   Derive arrangement role order from source section candidates
+- [RIOTBOX-1227.md](./RIOTBOX-1227.md)
+  Derive mix-bus treatment from source energy candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
