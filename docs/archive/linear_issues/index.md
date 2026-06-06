@@ -1092,4 +1092,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add source-derived bass-pressure movement proof for sparse sources
 - [RIOTBOX-1222.md](./RIOTBOX-1222.md)
   Add source-derived hook/chop selection proof across dense and tonal sources
+- [RIOTBOX-1225.md](./RIOTBOX-1225.md)
+  Derive destructive stutter/restore choices from source candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
