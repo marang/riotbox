@@ -2194,3 +2194,17 @@ Why: a report mutation proves the validator sees a bad field, but it does not pr
 Evidence: RIOTBOX-1231 adds `--weak-source-character-fixture`, `--validate-weak-source-character-report`, and `just dense-break-weak-source-character-fixture-smoke`. The validator reloads the rendered source/rebuild-only WAVs and recomputes source-character survival before accepting the expected failure.
 Consequences: this is negative diagnostic evidence only. It keeps `quality_proof: false` and `human_verdict: unverified`; it proves the gate rejects one weak rendered artifact, not that passing outputs are musically release-grade.
 Status: accepted
+
+---
+
+### RBX-082
+
+Date: 2026-06-06
+Topic: Weak professional-output failures must route to concrete sound-fix categories
+Phase: P022 / Professional Sound Output
+Question: can weak/fail professional-output reports pass routing if they only expose raw failure codes or an unknown generic bucket?
+Decision: no. Weak-output routing now requires a known routing signal, a concrete proposed fix category, and a short musician-facing `musician_fix_reason` for every routed weak/fail case. Unknown weak/fail failure codes fail the routing report until they are mapped.
+Why: engineers and musicians need to know what to improve next: source selection, chop policy, drum pressure, bass movement, mix-bus treatment, destructive gesture, fixture threshold, or UI cue. A pass/fail metric without an actionable production category slows down the sound-quality loop.
+Evidence: RIOTBOX-1232 maps rebuild-only source-character loss to `source_selection`, adds `matched_known_routing_signal` and `musician_fix_reason`, routes a live generated weak source-character WAV report, and adds an invalid unknown-code fixture that must fail.
+Consequences: routing is still diagnostic and does not claim musical approval. It preserves `quality_proof: false` and `human_verdict: unverified`; it only turns known weak evidence into the next concrete production fix.
+Status: accepted

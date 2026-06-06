@@ -61,6 +61,24 @@ CODE_RULES: tuple[tuple[str, str, int, str], ...] = (
     ("rebuild_only_too_weak", "mix_bus", 5, "Rebuild-only output is too weak without raw source layer."),
     ("rebuild_only_too_quiet", "mix_bus", 5, "Rebuild-only output is too quiet against the source."),
     ("rebuild_only_too_source_masked", "source_selection", 5, "Rebuild-only output still follows the source too closely."),
+    (
+        "rebuild_only_source_character_not_surviving",
+        "source_selection",
+        7,
+        "Rebuild-only output lost the transformed source identity.",
+    ),
+    (
+        "rebuild_only_source_transient_character_lost",
+        "source_selection",
+        6,
+        "Rebuild-only output lost the source transient signature.",
+    ),
+    (
+        "rebuild_only_source_spectral_character_lost",
+        "source_selection",
+        6,
+        "Rebuild-only output lost the source spectral shape.",
+    ),
     ("source_layer_toggle", "fixture_threshold", 4, "Source-layer-off toggle did not produce a distinct diagnostic render."),
     ("rebuild_only_pressure", "bass_movement", 4, "Rebuild-only pressure does not carry enough low-end movement."),
     ("rebuild_only_restore", "destructive_gesture", 4, "Rebuild-only restore impact is too weak after pressure."),
@@ -216,6 +234,11 @@ def build_report(manifest: dict[str, Any], manifest_path: Path, date: str) -> di
             failures.append(f"{case['case_id']}_claims_automated_musical_approval")
         if case["quality_proof"] is not False:
             failures.append(f"{case['case_id']}_claims_quality_proof")
+        if not case["matched_known_routing_signal"]:
+            failures.append(f"{case['case_id']}_unknown_failure_route")
+        reason = case.get("musician_fix_reason")
+        if not isinstance(reason, str) or not reason.strip():
+            failures.append(f"{case['case_id']}_missing_musician_fix_reason")
 
     report = {
         "schema": SCHEMA,
@@ -270,7 +293,9 @@ def build_case(entry: dict[str, Any], fixture_dir: Path) -> dict[str, Any]:
         "main_weakness": route["main_weakness"],
         "proposed_next_fix_category": route["proposed_next_fix_category"],
         "proposed_fix_categories": route["proposed_fix_categories"],
+        "musician_fix_reason": route["musician_fix_reason"],
         "routing_reasons": route["routing_reasons"],
+        "matched_known_routing_signal": route["matched_known_routing_signal"],
         "failure_codes": source["failure_codes"],
         "reason_tags": source["reason_tags"],
         "avoid": source["avoid"],
@@ -313,6 +338,8 @@ def load_source(entry: dict[str, Any], fixture_dir: Path) -> dict[str, Any]:
             source_family=entry.get("source_family", selected["case_id"]),
             artifact_to_hear=selected["manifest"],
         )
+    if kind == "dense_performance_report":
+        return source_from_dense_performance_report(path)
     raise ValueError(f"unsupported input kind: {kind}")
 
 
@@ -407,6 +434,36 @@ def source_from_report(
     }
 
 
+def source_from_dense_performance_report(path: Path) -> dict[str, Any]:
+    report = read_json_object(path)
+    files = object_or_empty(report.get("files"))
+    artifact = files.get("rebuild_only_performance") or files.get("full_performance") or str(path)
+    if isinstance(artifact, str) and not Path(artifact).is_absolute():
+        artifact = str(path.parent / artifact)
+    source_policy = object_or_empty(report.get("source_policy"))
+    pressure_policy = object_or_empty(source_policy.get("pressure_lift_policy"))
+    proof = object_or_empty(report.get("proof"))
+    return {
+        "source_report": str(path),
+        "source_schema": string_or(report.get("schema"), "unknown"),
+        "source_family": string_or(pressure_policy.get("source_family"), infer_source_family(report, path)),
+        "source_result": string_or(report.get("result"), "unknown"),
+        "source_verdict": string_or(report.get("agent_verdict"), report.get("result", "unknown")),
+        "human_verdict": string_or(report.get("human_verdict"), "unverified"),
+        "artifact_to_hear": artifact,
+        "strongest_audible_element": string_or(
+            proof.get("strongest_audible_element"),
+            strongest_from_failures(string_list(report.get("failure_codes"))),
+        ),
+        "failure_codes": string_list(report.get("failure_codes")),
+        "reason_tags": object_or_empty(report.get("reason_tags")),
+        "avoid": string_list(report.get("avoid")),
+        "source_backed": bool(report.get("source_backed", True)),
+        "source_timing_backed": bool(report.get("source_timing_backed", True)),
+        "scripted_generation": bool(report.get("scripted_generation", True)),
+    }
+
+
 def route_signals(
     signals: list[str],
     reason_tags: dict[str, Any],
@@ -438,6 +495,7 @@ def route_signals(
         (category for category, score in scores.items() if score > 0),
         key=lambda category: (-scores[category], CATEGORY_ORDER.index(category)),
     )
+    matched_known_signal = bool(ranked)
     if not ranked:
         ranked = ["fixture_threshold"]
         reasons["fixture_threshold"].append("No known weak-output signal matched; add a routing rule.")
@@ -446,7 +504,9 @@ def route_signals(
         "proposed_next_fix_category": primary,
         "proposed_fix_categories": ranked,
         "main_weakness": weakness_label(primary),
+        "musician_fix_reason": musician_fix_reason(primary),
         "routing_reasons": {category: reasons[category] for category in ranked},
+        "matched_known_routing_signal": matched_known_signal,
     }
 
 
@@ -477,6 +537,20 @@ def weakness_label(category: str) -> str:
         "destructive_gesture": "dropout/stutter/restore contrast does not change the room",
         "fixture_threshold": "QA threshold or fixture classification needs tightening",
         "ui_cue": "timing/source confidence needs a clearer user cue",
+    }
+    return labels[category]
+
+
+def musician_fix_reason(category: str) -> str:
+    labels = {
+        "source_selection": "Pick or expose a source window whose identity survives the rebuild-only path.",
+        "chop_policy": "Change the chop policy so the hook becomes memorable instead of generic support.",
+        "drum_pressure": "Push the drum treatment until the kick/snare pressure carries the gesture.",
+        "bass_movement": "Rework bass movement so low-end pressure hits instead of sitting behind the source.",
+        "mix_bus": "Rebalance or drive the mix so impact and source character are not hidden.",
+        "destructive_gesture": "Strengthen the cut, stutter, or restore so the live gesture changes the room.",
+        "fixture_threshold": "Tighten the fixture or threshold before trusting this weak-output class.",
+        "ui_cue": "Show the timing/source risk so the player does not trigger a confident move blindly.",
     }
     return labels[category]
 
@@ -522,6 +596,7 @@ def render_markdown(report: dict[str, Any]) -> str:
                 f"- Strongest audible element: `{case['strongest_audible_element']}`",
                 f"- Main weakness: {case['main_weakness']}",
                 f"- Proposed next fix category: `{case['proposed_next_fix_category']}`",
+                f"- Musician fix reason: {case['musician_fix_reason']}",
                 f"- All fix categories: `{', '.join(case['proposed_fix_categories'])}`",
                 "",
             ]

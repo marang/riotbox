@@ -700,6 +700,9 @@ following:
 - weak outputs create concrete follow-up work: source selection, chop policy,
   drum pressure, bass movement, mix-bus treatment, destructive gesture policy,
   fixture threshold, or UI cue
+- weak-output reports must include a concrete proposed fix category and short
+  musician-facing reason; unknown weak/fail codes must fail routing instead of
+  silently landing in a generic bucket
 - no PR, roadmap claim, or release note presents an audible feature as
   musician-ready when its human verdict is missing, weak, or explicitly
   unverified

@@ -1,0 +1,24 @@
+{
+  "schema": "riotbox.agent_musical_review_pack.v1",
+  "schema_version": 1,
+  "result": "fail",
+  "agent_verdict": "agent_fail",
+  "human_verdict": "unverified",
+  "evidence_role": "diagnostic",
+  "source_backed": true,
+  "source_timing_backed": true,
+  "scripted_generation": true,
+  "quality_proof": false,
+  "strongest_element": "partial_audio_evidence",
+  "source_recognition": "source_character_at_risk",
+  "hook_after_two_bars": "weak",
+  "summary": "Fixture with an unknown professional-output failure code.",
+  "failure_codes": ["mystery_professional_output_failure"],
+  "audio_files": {
+    "full_performance": "missing-by-design.wav"
+  },
+  "visual_files": {},
+  "review_focus": [],
+  "proof": {},
+  "boundary": "Invalid routing fixture only."
+}

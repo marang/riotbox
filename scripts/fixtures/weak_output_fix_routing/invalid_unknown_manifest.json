@@ -1,0 +1,12 @@
+{
+  "schema": "riotbox.weak_output_fix_routing.v1",
+  "schema_version": 1,
+  "description": "Invalid fixture proving unknown weak-output failure codes cannot silently route as passing.",
+  "entries": [
+    {
+      "case_id": "unknown_professional_failure",
+      "kind": "agent_review",
+      "path": "invalid_unknown_agent_review.json"
+    }
+  ]
+}
