@@ -51,6 +51,9 @@ MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
+MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
+MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -114,6 +117,23 @@ class HookChopPolicy:
 
 
 @dataclass(frozen=True)
+class DestructiveGesturePolicy:
+    source_aware: bool
+    source_family: str
+    selection_strategy: str
+    stutter_start_frames: int
+    restore_start_frames: int
+    fixed_stutter_start_frames: int
+    fixed_restore_start_frames: int
+    stutter_start_seconds: float
+    restore_start_seconds: float
+    stutter_static_distance_frames: int
+    restore_static_distance_frames: int
+    stutter_restore_distance_frames: int
+    candidate_count: int
+
+
+@dataclass(frozen=True)
 class DenseBreakSourcePolicy:
     source_aware: bool
     pressure_shape: str
@@ -122,6 +142,7 @@ class DenseBreakSourcePolicy:
     pressure_lift_policy: PressureLiftPolicy
     arrangement_policy: ArrangementPolicy
     hook_chop_policy: HookChopPolicy
+    destructive_gesture_policy: DestructiveGesturePolicy
     bass_bar4_frequency_hz: float
     bass_bar5_frequency_hz: float
     bass_restore_frequency_hz: float
@@ -466,6 +487,106 @@ def hook_chop_policy_for(
     )
 
 
+def destructive_gesture_policy_for(
+    source: np.ndarray,
+    w30: np.ndarray,
+    bar_frames: int,
+    source_family: str,
+    stutter_grain_beat_offset: float,
+) -> DestructiveGesturePolicy:
+    beat_frames = max(1, bar_frames // BEATS_PER_BAR)
+    fixed_stutter_start = int(round(stutter_grain_beat_offset * beat_frames))
+    fixed_restore_start = 0
+    grain_len = max(128, bar_frames // 32)
+    restore_len = min(frames_for_seconds(0.115), max(1, bar_frames // 4))
+    scan_len = max(grain_len, restore_len)
+    source_eligible = source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure")
+    scan_end = min(max(2 * bar_frames, scan_len), 4 * bar_frames, source.shape[0], w30.shape[0])
+    if not source_eligible or scan_end <= scan_len:
+        return DestructiveGesturePolicy(
+            source_aware=False,
+            source_family=source_family,
+            selection_strategy="fallback-fixed-destructive-gesture",
+            stutter_start_frames=fixed_stutter_start,
+            restore_start_frames=fixed_restore_start,
+            fixed_stutter_start_frames=fixed_stutter_start,
+            fixed_restore_start_frames=fixed_restore_start,
+            stutter_start_seconds=fixed_stutter_start / SAMPLE_RATE,
+            restore_start_seconds=fixed_restore_start / SAMPLE_RATE,
+            stutter_static_distance_frames=0,
+            restore_static_distance_frames=0,
+            stutter_restore_distance_frames=0,
+            candidate_count=1,
+        )
+
+    stride = max(1, min(grain_len, restore_len) // 2)
+    candidates = []
+    for start in range(0, scan_end - scan_len + 1, stride):
+        stutter_chunk = source[start : start + grain_len]
+        restore_chunk = source[start : start + restore_len]
+        w30_chunk = w30[start : start + grain_len]
+        stutter_transient = transient_score(stutter_chunk)
+        restore_transient = transient_score(restore_chunk)
+        source_rms = rms(restore_chunk)
+        w30_rms = rms(w30_chunk)
+        low = low_band_rms(restore_chunk)
+        high = high_band_ratio(stutter_chunk)
+        if source_family == "tonal_hook":
+            stutter_score = stutter_transient * 13.0 + w30_rms * 1.20 + high * 0.018
+            restore_score = restore_transient * 12.0 + source_rms * 1.05 + low * 0.95
+            strategy = "tonal-transient-stutter-sustain-restore"
+        elif source_family == "sparse_bass_pressure":
+            stutter_score = stutter_transient * 15.0 + w30_rms * 1.05 + low * 0.65
+            restore_score = restore_transient * 14.0 + low * 1.35 + source_rms * 0.85
+            strategy = "sparse-pressure-stutter-lowband-restore"
+        else:
+            stutter_score = stutter_transient * 20.0 + w30_rms * 1.25 + high * 0.030
+            restore_score = restore_transient * 21.0 + low * 1.05 + source_rms * 0.75
+            strategy = "dense-transient-stutter-pressure-restore"
+        candidates.append(
+            {
+                "start": start,
+                "stutter_score": float(stutter_score),
+                "restore_score": float(restore_score),
+            }
+        )
+
+    min_separation = max(grain_len * 2, int(MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES))
+
+    def select(score_key: str, fixed_start: int, avoid_start: int | None = None) -> int:
+        ranked = sorted(candidates, key=lambda item: item[score_key], reverse=True)
+        if not ranked:
+            return fixed_start
+        best_score = max(ranked[0][score_key], 1e-9)
+        for item in ranked:
+            start = int(item["start"])
+            if avoid_start is not None and abs(start - avoid_start) < min_separation:
+                continue
+            if abs(start - fixed_start) < MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES:
+                if item[score_key] < best_score * 0.65:
+                    continue
+            return start
+        return int(ranked[0]["start"])
+
+    stutter_start = select("stutter_score", fixed_stutter_start)
+    restore_start = select("restore_score", fixed_restore_start, avoid_start=stutter_start)
+    return DestructiveGesturePolicy(
+        source_aware=True,
+        source_family=source_family,
+        selection_strategy=strategy,
+        stutter_start_frames=stutter_start,
+        restore_start_frames=restore_start,
+        fixed_stutter_start_frames=fixed_stutter_start,
+        fixed_restore_start_frames=fixed_restore_start,
+        stutter_start_seconds=stutter_start / SAMPLE_RATE,
+        restore_start_seconds=restore_start / SAMPLE_RATE,
+        stutter_static_distance_frames=abs(stutter_start - fixed_stutter_start),
+        restore_static_distance_frames=abs(restore_start - fixed_restore_start),
+        stutter_restore_distance_frames=abs(restore_start - stutter_start),
+        candidate_count=len(candidates),
+    )
+
+
 def dense_break_source_policy(
     source: np.ndarray,
     w30: np.ndarray,
@@ -534,6 +655,14 @@ def dense_break_source_policy(
         stutter_grain_beat_offset = 0.25
         restore_snap_gain = 1.18
 
+    destructive_gesture_policy = destructive_gesture_policy_for(
+        source,
+        w30,
+        bar_frames,
+        pressure_lift_policy.source_family,
+        stutter_grain_beat_offset,
+    )
+
     if pressure_lift_policy.source_family == "tonal_hook":
         bass_restore = 51.5
         pressure_gain = 1.08
@@ -567,6 +696,7 @@ def dense_break_source_policy(
         pressure_lift_policy=pressure_lift_policy,
         arrangement_policy=arrangement_policy,
         hook_chop_policy=hook_chop_policy,
+        destructive_gesture_policy=destructive_gesture_policy,
         bass_bar4_frequency_hz=pressure_lift_policy.bar4_bass_frequency_hz,
         bass_bar5_frequency_hz=pressure_lift_policy.bar5_bass_frequency_hz,
         bass_restore_frequency_hz=bass_restore,
@@ -1046,6 +1176,28 @@ def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, f
     }
 
 
+def destructive_gesture_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, float]:
+    policy = source_policy.destructive_gesture_policy
+    return {
+        "destructive_gesture_source_derived": 1.0 if policy.source_aware else 0.0,
+        "destructive_gesture_candidate_count": float(policy.candidate_count),
+        "destructive_stutter_start_frames": float(policy.stutter_start_frames),
+        "destructive_restore_start_frames": float(policy.restore_start_frames),
+        "destructive_fixed_stutter_start_frames": float(policy.fixed_stutter_start_frames),
+        "destructive_fixed_restore_start_frames": float(policy.fixed_restore_start_frames),
+        "destructive_stutter_static_distance_frames": float(
+            policy.stutter_static_distance_frames
+        ),
+        "destructive_restore_static_distance_frames": float(
+            policy.restore_static_distance_frames
+        ),
+        "destructive_static_distance_frames": float(
+            min(policy.stutter_static_distance_frames, policy.restore_static_distance_frames)
+        ),
+        "destructive_offset_distance_frames": float(policy.stutter_restore_distance_frames),
+    }
+
+
 def pressure_role_count(source_policy: DenseBreakSourcePolicy) -> int:
     return source_policy.arrangement_policy.role_order.count("pressure")
 
@@ -1100,12 +1252,8 @@ def render_dropout_stutter_bar(
 
     grain_len = max(128, bar_frames // 32)
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
-    if source_policy.pressure_lift_policy.source_family in (
-        "dense_break",
-        "tonal_hook",
-        "sparse_bass_pressure",
-    ):
-        grain_source_start = source_policy.hook_chop_policy.chop_start_frames
+    if source_policy.destructive_gesture_policy.source_aware:
+        grain_source_start = source_policy.destructive_gesture_policy.stutter_start_frames
     else:
         grain_source_start = source_start + int(round(source_policy.stutter_grain_beat_offset * beat_frames))
     grain_source_end = min(grain_source_start + grain_len, w30.shape[0])
@@ -1292,13 +1440,24 @@ def restore_with_hit(
     if start >= end:
         return restored
     hit_frames = min(frames_for_seconds(0.115), end - start)
+    source_hit_start = 0
+    if source_policy.destructive_gesture_policy.source_aware:
+        source_hit_start = min(
+            source_policy.destructive_gesture_policy.restore_start_frames,
+            source.shape[0] - 1,
+        )
+    source_hit_end = min(source_hit_start + hit_frames, source.shape[0], w30.shape[0])
+    if source_hit_end <= source_hit_start:
+        return restored
+    hit_frames = min(hit_frames, source_hit_end - source_hit_start)
     envelope = np.linspace(1.0, 0.0, hit_frames, dtype=np.float32)[:, None]
-    source_hit = source[:hit_frames]
+    source_hit = source[source_hit_start:source_hit_end]
+    w30_hit = w30[source_hit_start:source_hit_end]
     snap = transient_emphasis(source_hit)
     restored[start : start + hit_frames] += (
         source_hit * (1.35 * source_layer_gain)
         + snap * (4.80 * source_policy.restore_snap_gain)
-        + w30[start : start + hit_frames] * 2.62
+        + w30_hit * 2.62
         + mc202[start : start + hit_frames] * 4.05
         + tr909[start : start + hit_frames] * 3.45
     ) * envelope
@@ -1379,6 +1538,7 @@ def build_report(
             "pressure_lift_policy": asdict(source_policy.pressure_lift_policy),
             "arrangement_policy": asdict(source_policy.arrangement_policy),
             "hook_chop_policy": asdict(source_policy.hook_chop_policy),
+            "destructive_gesture_policy": asdict(source_policy.destructive_gesture_policy),
             "arrangement_failure_routes": arrangement_failure_routes(
                 arrangement_failure_codes(source_policy.arrangement_policy)
             ),
@@ -1417,6 +1577,9 @@ def build_report(
             "min_hook_chop_selection_candidates": MIN_HOOK_CHOP_SELECTION_CANDIDATES,
             "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
             "min_hook_chop_offset_distance_frames": MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES,
+            "min_destructive_gesture_candidates": MIN_DESTRUCTIVE_GESTURE_CANDIDATES,
+            "min_destructive_static_distance_frames": MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
+            "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -1524,6 +1687,7 @@ def performance_proof(
     }
     proof.update(bass_movement_policy_proof(source, source_policy, bar_frames))
     proof.update(hook_chop_policy_proof(source_policy))
+    proof.update(destructive_gesture_policy_proof(source_policy))
     return proof
 
 
@@ -1599,6 +1763,20 @@ def failure_codes_for(
             failures.append("hook_chop_selection_collapsed_to_static_first_bar")
         if proof.get("hook_chop_offset_distance_frames", 0.0) < MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES:
             failures.append("hook_chop_selection_not_enough_offset_contrast")
+        if proof.get("destructive_gesture_source_derived", 0.0) < 1.0:
+            failures.append("destructive_gesture_not_source_derived")
+        if proof.get("destructive_gesture_candidate_count", 0.0) < MIN_DESTRUCTIVE_GESTURE_CANDIDATES:
+            failures.append("destructive_gesture_not_enough_candidates")
+        if (
+            proof.get("destructive_static_distance_frames", 0.0)
+            < MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES
+        ):
+            failures.append("destructive_gesture_collapsed_to_fixed_choice")
+        if (
+            proof.get("destructive_offset_distance_frames", 0.0)
+            < MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES
+        ):
+            failures.append("destructive_gesture_not_enough_offset_contrast")
     if source_family == "sparse_bass_pressure":
         if proof.get("bass_movement_source_derived", 0.0) < 1.0:
             failures.append("sparse_bass_movement_not_source_derived")

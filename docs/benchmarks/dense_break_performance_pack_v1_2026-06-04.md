@@ -97,6 +97,15 @@ does not scan enough candidates, collapses back to the old static first-bar
 choice, or selects hook/chop offsets without enough contrast. This is still a
 diagnostic selection proof, not a human musical pass.
 
+For dense-break and tonal-hook sources, the destructive dropout/stutter/restore
+path now also exposes a bounded `destructive_gesture_policy`. The policy scans
+source/W-30 candidates for separate stutter and restore cues instead of using
+only the old fixed stutter beat offset and `source[:hit]` restore transient.
+Dense/tonal reports must fail if destructive gesture selection is not
+source-derived, does not scan enough candidates, collapses back to the old fixed
+choice, or selects stutter/restore offsets without enough contrast. This proves
+stronger source-derived destructive material, not a human musical pass.
+
 For sparse-bass-pressure sources, the bass-pressure render now derives its
 pressure/restore frequencies from the source low-band envelope and timing
 centroid instead of using only the fixed policy contour. The report exposes
