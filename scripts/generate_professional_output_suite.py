@@ -731,6 +731,11 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             ),
         }
     if child_id == "edge_source_professional_diagnostics":
+        pad_cases = [
+            case
+            for case in list_or_empty(data.get("cases"))
+            if case.get("source_family") == "pad_noise"
+        ]
         return {
             "case_count": int(number(data.get("case_count"))),
             "weak_routed_case_count": int(number(data.get("weak_routed_case_count"))),
@@ -759,6 +764,59 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     for case in list_or_empty(data.get("cases"))
                     for category in list_or_empty(case.get("proposed_fix_categories"))
                 }
+            ),
+            "pad_noise_texture_source_derived_count": sum(
+                1
+                for case in pad_cases
+                if number(object_or_empty(case.get("proof")).get("pad_noise_texture_source_derived"))
+                >= 1.0
+            ),
+            "min_pad_noise_texture_candidate_count": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("pad_noise_texture_candidate_count"))
+                    for case in pad_cases
+                ),
+                default=0.0,
+            ),
+            "min_pad_noise_texture_gate_static_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "pad_noise_texture_gate_static_distance_frames"
+                        )
+                    )
+                    for case in pad_cases
+                ),
+                default=0.0,
+            ),
+            "min_pad_noise_texture_stab_static_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "pad_noise_texture_stab_static_distance_frames"
+                        )
+                    )
+                    for case in pad_cases
+                ),
+                default=0.0,
+            ),
+            "min_pad_noise_texture_gate_stab_distance_frames": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "pad_noise_texture_gate_stab_distance_frames"
+                        )
+                    )
+                    for case in pad_cases
+                ),
+                default=0.0,
+            ),
+            "min_pad_noise_texture_transient_ratio": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("pad_noise_texture_transient_ratio"))
+                    for case in pad_cases
+                ),
+                default=0.0,
             ),
         }
     return {}

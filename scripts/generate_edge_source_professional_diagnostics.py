@@ -20,6 +20,10 @@ SCHEMA = "riotbox.edge_source_professional_diagnostics.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-edge-source-professional-diagnostics")
 DEFAULT_CORPUS = Path("docs/benchmarks/sound_excellence_source_corpus_v1.json")
 MIN_BAD_TIMING_CONFIRMATION_CUE_TRANSIENT_SCORE = 0.030
+MIN_PAD_NOISE_TEXTURE_CANDIDATES = 3
+MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES = 256.0
+MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO = 0.72
 CASES = [
     {
         "case_id": "pad_noise_fadapad_120",
@@ -277,6 +281,27 @@ def render_case(
             "manual_confirm_cue_transient_score": number(
                 proof.get("manual_confirm_cue_transient_score")
             ),
+            "pad_noise_texture_source_derived": number(
+                proof.get("pad_noise_texture_source_derived")
+            ),
+            "pad_noise_texture_candidate_count": number(
+                proof.get("pad_noise_texture_candidate_count")
+            ),
+            "pad_noise_texture_gate_static_distance_frames": number(
+                proof.get("pad_noise_texture_gate_static_distance_frames")
+            ),
+            "pad_noise_texture_stab_static_distance_frames": number(
+                proof.get("pad_noise_texture_stab_static_distance_frames")
+            ),
+            "pad_noise_texture_gate_stab_distance_frames": number(
+                proof.get("pad_noise_texture_gate_stab_distance_frames")
+            ),
+            "pad_noise_texture_transient_ratio": number(
+                proof.get("pad_noise_texture_transient_ratio")
+            ),
+            "pad_noise_texture_high_band_ratio": number(
+                proof.get("pad_noise_texture_high_band_ratio")
+            ),
         },
         "metrics": {
             "full_performance_rms": number(
@@ -426,6 +451,31 @@ def diagnostic_failure_codes(
         failures.append("pressure_lift_source_family_missing")
     if spec.get("source_family") == "pad_noise" and pressure_lift_policy.get("source_family") != "pad_noise":
         failures.append("pad_noise_policy_not_applied")
+    if spec.get("source_family") == "pad_noise":
+        if number(proof.get("pad_noise_texture_source_derived")) < 1.0:
+            failures.append("pad_noise_texture_not_source_derived")
+        if number(proof.get("pad_noise_texture_candidate_count")) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
+            failures.append("pad_noise_texture_not_enough_candidates")
+        if (
+            number(proof.get("pad_noise_texture_gate_static_distance_frames"))
+            < MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+        ):
+            failures.append("pad_noise_texture_gate_collapsed_to_fixed_choice")
+        if (
+            number(proof.get("pad_noise_texture_stab_static_distance_frames"))
+            < MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+        ):
+            failures.append("pad_noise_texture_stab_collapsed_to_fixed_choice")
+        if (
+            number(proof.get("pad_noise_texture_gate_stab_distance_frames"))
+            < MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES
+        ):
+            failures.append("pad_noise_texture_gate_stab_offsets_too_close")
+        if (
+            number(proof.get("pad_noise_texture_transient_ratio"))
+            < MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO
+        ):
+            failures.append("pad_noise_texture_lacks_transient_shape")
     if spec.get("source_family") == "bad_timing":
         if pressure_lift_policy.get("source_family") != "bad_timing":
             failures.append("bad_timing_cautious_policy_not_applied")
@@ -500,6 +550,31 @@ def report_failure_codes(report: dict[str, Any]) -> list[str]:
             != "pad_noise"
         ):
             failures.append(f"{case_id}:pad_noise_policy_not_applied")
+        if case.get("source_family") == "pad_noise":
+            if number(proof.get("pad_noise_texture_source_derived")) < 1.0:
+                failures.append(f"{case_id}:pad_noise_texture_not_source_derived")
+            if number(proof.get("pad_noise_texture_candidate_count")) < MIN_PAD_NOISE_TEXTURE_CANDIDATES:
+                failures.append(f"{case_id}:pad_noise_texture_not_enough_candidates")
+            if (
+                number(proof.get("pad_noise_texture_gate_static_distance_frames"))
+                < MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+            ):
+                failures.append(f"{case_id}:pad_noise_texture_gate_collapsed_to_fixed_choice")
+            if (
+                number(proof.get("pad_noise_texture_stab_static_distance_frames"))
+                < MIN_PAD_NOISE_TEXTURE_STATIC_DISTANCE_FRAMES
+            ):
+                failures.append(f"{case_id}:pad_noise_texture_stab_collapsed_to_fixed_choice")
+            if (
+                number(proof.get("pad_noise_texture_gate_stab_distance_frames"))
+                < MIN_PAD_NOISE_TEXTURE_OFFSET_DISTANCE_FRAMES
+            ):
+                failures.append(f"{case_id}:pad_noise_texture_gate_stab_offsets_too_close")
+            if (
+                number(proof.get("pad_noise_texture_transient_ratio"))
+                < MIN_PAD_NOISE_TEXTURE_TRANSIENT_RATIO
+            ):
+                failures.append(f"{case_id}:pad_noise_texture_lacks_transient_shape")
         timing_policy = object_or_empty(case.get("timing_policy"))
         if case.get("source_family") == "bad_timing":
             if (

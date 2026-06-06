@@ -665,11 +665,12 @@ following:
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now
-    takes an explicit `pad_noise` pressure-policy path instead of dense-break
-    promotion, and bad-timing now takes an explicit `bad_timing` cautious
-    arrangement / user-confirmation path that rejects confident bar-locked
-    policy while timing is `candidate_ambiguous` / `manual_confirm_only`; in
-    both cases `quality_proof: false` remains mandatory
+    takes an explicit `pad_noise` pressure-policy path plus a source-derived
+    gated texture/stab policy instead of dense-break promotion, and bad-timing
+    now takes an explicit `bad_timing` cautious arrangement / user-confirmation
+    path that rejects confident bar-locked policy while timing is
+    `candidate_ambiguous` / `manual_confirm_only`; in both cases
+    `quality_proof: false` remains mandatory
 - generated demo packs include curated source, rendered WAV, metrics, review
   prompt, human verdict, and a short reason why the example is demo-worthy or
   not demo-worthy yet

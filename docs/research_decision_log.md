@@ -2124,3 +2124,17 @@ Why: source-derived hook/chop, destructive gestures, bass movement, and arrangem
 Evidence: RIOTBOX-1227 adds source-derived mix-treatment selection to the dense-break performance generator, applies it to the rendered hook/chop/pressure/restore/final buses, surfaces proof through the pro-pressure source matrix, professional-source WAV pack, and professional-output suite, and adds positive and negative gates that reject non-source-derived or fixed-collapsed mix treatment.
 Consequences: this remains diagnostic scripted evidence with `quality_proof: false` and `human_verdict: unverified` because the role vocabulary and destructive/restore tail remain bounded. Future work should keep replacing remaining scripted production choices with source-derived decisions and collect listening verdicts before claiming release-grade musical quality.
 Status: accepted
+
+---
+
+### RBX-077
+
+Date: 2026-06-06
+Topic: Pad/noise edge sources need source-derived texture proof, not only weak routing
+Phase: P022 / Professional Sound Output
+Question: is it enough for pad/noise material to avoid dense-break promotion and route to a fix category?
+Decision: no. The pad/noise edge diagnostic now uses a bounded `pad_noise_texture_policy` that scans source/W-30 candidates, chooses separate gate and stab offsets, derives gate duty plus texture/stab gain, applies that texture layer to the rendered performance, and reports candidate count, fixed-choice distance, gate/stab offset distance, and transient shape.
+Why: avoiding dense-break misclassification is necessary but musically incomplete. Noisy pad material should become a useful gated texture, stab, or cut candidate when appropriate, while still staying honest that it is not proven breakbeat output and not product-quality proof.
+Evidence: RIOTBOX-1223 adds source-derived pad/noise texture selection to the dense-break performance generator, surfaces the proof through edge-source diagnostics and the professional-output suite, and adds positive and negative gates that reject non-source-derived or collapsed pad/noise texture reports.
+Consequences: pad/noise remains weak-routed diagnostic evidence with `quality_proof: false` and `human_verdict: unverified`. Future work should improve source selection, UI cues, and listening-review labels before treating pad/noise output as demo-ready musical material.
+Status: accepted
