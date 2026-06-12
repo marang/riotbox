@@ -1118,4 +1118,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add release-grade sound quality readiness report
 - [RIOTBOX-1235.md](./RIOTBOX-1235.md)
   P023: Promote weak-output routing into production fix queue candidates
+- [RIOTBOX-1236.md](./RIOTBOX-1236.md)
+  P023: Add source-family release-demo coverage gate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
