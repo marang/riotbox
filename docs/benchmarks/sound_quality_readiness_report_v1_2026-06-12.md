@@ -28,7 +28,8 @@ The report exposes:
 - `source_family_coverage`: required P023 source families and missing
   demo-ready coverage.
 - `weak_output_routing`: concrete production fix categories and artifact paths
-  when the routing report is available.
+  when the routing report is available, including P023 production-fix
+  candidates when the routing report exposes them.
 - `blockers`: machine-readable reasons that prevent release-ready claims.
 - `next_actions`: engineer- and musician-facing work categories for the next
   sound-improvement slices.

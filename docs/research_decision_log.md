@@ -56,6 +56,8 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
+---
+
 ### RBX-061
 
 Date: 2026-05-31
@@ -2247,4 +2249,18 @@ Decision: add a P023 sound-quality readiness report that aggregates the existing
 Why: contributors and musicians need one place to see what is blocking release-grade sound, which artifacts are worth hearing, and whether the next fix should target source selection, chop policy, drums, bass movement, mix bus, destructive gestures, fixture thresholds, or UI cues. A new score would hide those decisions and risk becoming a fake taste oracle.
 Evidence: RIOTBOX-1234 adds `scripts/generate_sound_quality_readiness_report.py`, `just sound-quality-readiness-report-smoke`, JSON/Markdown output, negative validation for blocked quality claims and premature release-ready reports, and docs under `docs/benchmarks/sound_quality_readiness_report_v1_2026-06-12.md`.
 Consequences: the report may block quality claims and steer implementation, but it does not approve audio. Scripted or unverified diagnostics remain non-quality proof until source-family coverage, structured human verdicts, and release-grade demo evidence exist.
+Status: accepted
+
+---
+
+### RBX-086
+
+Date: 2026-06-12
+Topic: Weak-output routing should emit P023 production-fix candidates
+Phase: P023 / Sound Excellence / Production Quality
+Question: should weak-output routing stop at per-case categories, or should it produce bounded implementation candidates for the next P023 slices?
+Decision: weak-output routing now emits `production_fix_candidates` grouped by fix category. Each candidate carries case ids, primary case ids, source families, artifact refs, routing reasons, software next step, and musician payoff.
+Why: per-case categories are useful but still leave engineers to manually translate reports into implementation work. P023 needs a tighter loop from weak sound to the next production fix without pretending the router approves audio.
+Evidence: RIOTBOX-1235 adds candidate construction to `scripts/route_weak_output_fixes.py`, extends the weak-output and sound-quality readiness smokes, and surfaces the candidates through the P023 readiness report.
+Consequences: candidates remain diagnostic work-selection inputs only. They keep `quality_proof: false` and `automated_musical_approval: false`; unknown weak/fail reasons still fail routing instead of falling into a generic bucket.
 Status: accepted

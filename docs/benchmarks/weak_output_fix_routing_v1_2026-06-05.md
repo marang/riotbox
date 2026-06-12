@@ -18,12 +18,19 @@ fitness manifests. It does not create a new musical judge. It reuses current
 failure codes and reason tags, then reports the artifact to hear, strongest
 audible element, main weakness, and proposed next fix category.
 
+P023 also projects the routed cases into `production_fix_candidates`. Each
+candidate groups one fix category, case ids, source families, artifact refs,
+software next step, and musician payoff. These candidates are work selection
+inputs for later implementation slices, not proof that the sound is good.
+
 This is a production-actionability diagnostic only:
 
 - `human_verdict` remains `unverified`
 - `quality_proof` remains `false`
 - `automated_musical_approval` remains `false`
 - scripted or negative fixtures cannot be used as product-quality proof
+- `production_fix_candidates[]` also keep `quality_proof: false` and
+  `automated_musical_approval: false`
 
 Run:
 
