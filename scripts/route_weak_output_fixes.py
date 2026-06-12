@@ -239,6 +239,19 @@ def build_report(manifest: dict[str, Any], manifest_path: Path, date: str) -> di
         reason = case.get("musician_fix_reason")
         if not isinstance(reason, str) or not reason.strip():
             failures.append(f"{case['case_id']}_missing_musician_fix_reason")
+    candidates = build_production_fix_candidates(cases)
+    if not candidates:
+        failures.append("production_fix_candidates_missing")
+    for candidate in candidates:
+        candidate_id = candidate["candidate_id"]
+        if candidate["quality_proof"] is not False:
+            failures.append(f"{candidate_id}_claims_quality_proof")
+        if candidate["automated_musical_approval"] is not False:
+            failures.append(f"{candidate_id}_claims_automated_musical_approval")
+        if not candidate["artifact_refs"]:
+            failures.append(f"{candidate_id}_missing_artifact_refs")
+        if not candidate["musician_payoff"]:
+            failures.append(f"{candidate_id}_missing_musician_payoff")
 
     report = {
         "schema": SCHEMA,
@@ -252,6 +265,8 @@ def build_report(manifest: dict[str, Any], manifest_path: Path, date: str) -> di
         "case_count": len(cases),
         "routed_case_count": sum(1 for case in cases if case["proposed_fix_categories"]),
         "fix_categories": sorted({category for case in cases for category in case["proposed_fix_categories"]}),
+        "production_fix_candidate_count": len(candidates),
+        "production_fix_candidates": candidates,
         "cases": cases,
         "failure_codes": failures,
         "boundary": (
@@ -270,6 +285,61 @@ def build_report(manifest: dict[str, Any], manifest_path: Path, date: str) -> di
             "This report is a routing and actionability diagnostic. It does "
             "not prove product sound quality."
         ),
+    )
+
+
+def build_production_fix_candidates(cases: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    candidates = []
+    for category in CATEGORY_ORDER:
+        category_cases = [
+            case for case in cases if category in case["proposed_fix_categories"]
+        ]
+        if not category_cases:
+            continue
+        primary_cases = [
+            case for case in category_cases if case["proposed_next_fix_category"] == category
+        ]
+        score = len(primary_cases) * 2 + len(category_cases)
+        artifact_refs = sorted(
+            {
+                str(case["artifact_to_hear"])
+                for case in category_cases
+                if isinstance(case.get("artifact_to_hear"), str) and case["artifact_to_hear"]
+            }
+        )
+        source_families = sorted(
+            {
+                str(case["source_family"])
+                for case in category_cases
+                if isinstance(case.get("source_family"), str) and case["source_family"]
+            }
+        )
+        candidates.append(
+            {
+                "candidate_id": f"p023_fix_{category}",
+                "category": category,
+                "score": score,
+                "primary_case_count": len(primary_cases),
+                "case_count": len(category_cases),
+                "case_ids": [str(case["case_id"]) for case in category_cases],
+                "primary_case_ids": [str(case["case_id"]) for case in primary_cases],
+                "source_families": source_families,
+                "artifact_refs": artifact_refs,
+                "software_next_step": production_software_next_step(category),
+                "musician_payoff": production_musician_payoff(category),
+                "routing_reasons": {
+                    str(case["case_id"]): case["routing_reasons"].get(category, [])
+                    for case in category_cases
+                    if case["routing_reasons"].get(category)
+                },
+                "evidence_role": "production_fix_candidate",
+                "quality_proof": False,
+                "automated_musical_approval": False,
+            }
+        )
+    return sorted(
+        candidates,
+        key=lambda candidate: (-candidate["score"], CATEGORY_ORDER.index(candidate["category"])),
     )
 
 
@@ -555,6 +625,34 @@ def musician_fix_reason(category: str) -> str:
     return labels[category]
 
 
+def production_software_next_step(category: str) -> str:
+    labels = {
+        "source_selection": "Review source-window and source-character policy before promoting more output.",
+        "chop_policy": "Tune W-30 hook/chop selection and transformation thresholds for the routed cases.",
+        "drum_pressure": "Adjust TR-909 pressure treatment and verify it survives the rendered output path.",
+        "bass_movement": "Refine low-band movement policy and MC-202 pressure checks for the routed cases.",
+        "mix_bus": "Change mix-bus balance/drive so generated support does not mask the source or impact.",
+        "destructive_gesture": "Strengthen dropout, stutter, restore, or cut policy and rerun destructive fixtures.",
+        "fixture_threshold": "Add or tighten the fixture threshold before treating this failure class as routed.",
+        "ui_cue": "Expose timing/source confidence risk before confident bar-locked or live-trigger moves.",
+    }
+    return labels[category]
+
+
+def production_musician_payoff(category: str) -> str:
+    labels = {
+        "source_selection": "The musician hears transformed source character instead of fallback or generic rebuild.",
+        "chop_policy": "The first two bars gain a hook or riff worth triggering again.",
+        "drum_pressure": "Kick, snare, or break pressure becomes physical instead of decorative.",
+        "bass_movement": "Low-end pressure starts carrying the room instead of reading as a midrange phrase.",
+        "mix_bus": "The strongest element becomes clear without burying the source.",
+        "destructive_gesture": "Cuts, stutters, and restores become stage-meaningful gestures.",
+        "fixture_threshold": "Weak audio stops slipping through as acceptable diagnostic evidence.",
+        "ui_cue": "The player can see when timing or source risk makes a move unsafe.",
+    }
+    return labels[category]
+
+
 def infer_source_family(report: dict[str, Any], path: Path) -> str:
     explicit = report.get("source_family")
     if isinstance(explicit, str) and explicit:
@@ -583,10 +681,31 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Quality proof: `{str(report['quality_proof']).lower()}`",
         f"- Automated musical approval: `{str(report['automated_musical_approval']).lower()}`",
         f"- Routed cases: `{report['routed_case_count']}/{report['case_count']}`",
+        f"- Production fix candidates: `{report['production_fix_candidate_count']}`",
         "",
-        "## Cases",
+        "## Production Fix Candidates",
         "",
     ]
+    for candidate in report["production_fix_candidates"]:
+        lines.extend(
+            [
+                f"### `{candidate['candidate_id']}`",
+                "",
+                f"- Category: `{candidate['category']}`",
+                f"- Score: `{candidate['score']}`",
+                f"- Cases: `{', '.join(candidate['case_ids'])}`",
+                f"- Source families: `{', '.join(candidate['source_families'])}`",
+                f"- Software next step: {candidate['software_next_step']}",
+                f"- Musician payoff: {candidate['musician_payoff']}",
+                "",
+            ]
+        )
+    lines.extend(
+        [
+            "## Cases",
+            "",
+        ]
+    )
     for case in report["cases"]:
         lines.extend(
             [

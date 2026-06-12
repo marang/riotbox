@@ -222,10 +222,13 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
             "result": "missing",
             "case_count": 0,
             "fix_categories": [],
+            "production_fix_candidate_count": 0,
+            "production_fix_candidates": [],
             "cases": [],
         }
     require(report.get("schema") == WEAK_ROUTING_SCHEMA, f"{path}: schema must be {WEAK_ROUTING_SCHEMA}")
     cases = list(report.get("cases", []))
+    candidates = weak_routing_candidates(report, path)
     return {
         "path": str(path),
         "available": True,
@@ -235,6 +238,8 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
         "quality_proof": report.get("quality_proof"),
         "automated_musical_approval": report.get("automated_musical_approval"),
         "fix_categories": list(report.get("fix_categories", [])),
+        "production_fix_candidate_count": len(candidates),
+        "production_fix_candidates": candidates,
         "cases": [
             {
                 "case_id": str(case.get("case_id")),
@@ -245,6 +250,26 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
             for case in cases
         ],
     }
+
+
+def weak_routing_candidates(report: dict[str, Any], path: Path) -> list[dict[str, str]]:
+    raw_count = report.get("production_fix_candidate_count", 0)
+    raw_candidates = report.get("production_fix_candidates", [])
+    require(isinstance(raw_count, int), f"{path}: production_fix_candidate_count must be integer")
+    require(isinstance(raw_candidates, list), f"{path}: production_fix_candidates must be array")
+    require(raw_count == len(raw_candidates), f"{path}: production_fix_candidate_count mismatch")
+    candidates = []
+    for index, candidate in enumerate(raw_candidates):
+        require(isinstance(candidate, dict), f"{path}: production_fix_candidates[{index}] must be object")
+        candidates.append(
+            {
+                "candidate_id": required_string(candidate, "candidate_id", path, index),
+                "category": required_string(candidate, "category", path, index),
+                "software_next_step": required_string(candidate, "software_next_step", path, index),
+                "musician_payoff": required_string(candidate, "musician_payoff", path, index),
+            }
+        )
+    return candidates
 
 
 def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dict[str, Any]:
@@ -471,6 +496,15 @@ def string_list_field(data: dict[str, Any], field: str, path: Path) -> list[str]
     value = list_field(data, field, path)
     require(all(isinstance(item, str) and item for item in value), f"{path}: {field} values must be strings")
     return [str(item) for item in value]
+
+
+def required_string(data: dict[str, Any], field: str, path: Path, index: int) -> str:
+    value = data.get(field)
+    require(
+        isinstance(value, str) and bool(value),
+        f"{path}: production_fix_candidates[{index}].{field} must be non-empty string",
+    )
+    return value
 
 
 def nested_value(report: dict[str, Any], object_name: str, field: str) -> Any:

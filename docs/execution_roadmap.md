@@ -703,6 +703,9 @@ following:
 - weak-output reports must include a concrete proposed fix category and short
   musician-facing reason; unknown weak/fail codes must fail routing instead of
   silently landing in a generic bucket
+- weak-output routing should also group routed failures into bounded P023
+  production-fix candidates with artifact refs, software next step, and
+  musician payoff, while keeping every candidate diagnostic-only
 - professional listening-review packs must say why each candidate is worth
   review and why it is not demo-ready yet while `human_verdict` remains
   `unverified`
