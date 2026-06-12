@@ -1116,4 +1116,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Extract oversized Justfile audio-QA JSON contracts into validators
 - [RIOTBOX-1234.md](./RIOTBOX-1234.md)
   P023: Add release-grade sound quality readiness report
+- [RIOTBOX-1235.md](./RIOTBOX-1235.md)
+  P023: Promote weak-output routing into production fix queue candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
