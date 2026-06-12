@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-061
 
 Date: 2026-05-31
@@ -2263,4 +2261,18 @@ Decision: weak-output routing now emits `production_fix_candidates` grouped by f
 Why: per-case categories are useful but still leave engineers to manually translate reports into implementation work. P023 needs a tighter loop from weak sound to the next production fix without pretending the router approves audio.
 Evidence: RIOTBOX-1235 adds candidate construction to `scripts/route_weak_output_fixes.py`, extends the weak-output and sound-quality readiness smokes, and surfaces the candidates through the P023 readiness report.
 Consequences: candidates remain diagnostic work-selection inputs only. They keep `quality_proof: false` and `automated_musical_approval: false`; unknown weak/fail reasons still fail routing instead of falling into a generic bucket.
+Status: accepted
+
+---
+
+### RBX-087
+
+Date: 2026-06-12
+Topic: P023 release-demo coverage needs a source-family gate
+Phase: P023 / Sound Excellence / Production Quality
+Question: is dense-break plus one non-dense demo-bank coverage enough for P023 release-ready claims?
+Decision: no. P023 now has a source-family release-demo coverage gate that compares the real-source corpus with the release-grade demo bank and reports candidate, human-verdict, and demo-ready human-pass coverage per required source family.
+Why: a strong dense-break or tonal example can hide missing sparse, pad/noise, weak-source, or bad-timing evidence. Release-grade sound needs breadth across source families, and missing coverage should be visible without requiring ignored local WAV files in CI.
+Evidence: RIOTBOX-1236 adds `scripts/validate_source_family_release_demo_coverage.py`, `just source-family-release-demo-coverage-fixtures`, JSON/Markdown output, negative blocked-quality validation, and tighter source-family blockers in the P023 sound-quality readiness report.
+Consequences: candidate-only and weak/fail human-verdict families remain useful production evidence, but they block release-ready claims until a demo-ready human-pass entry exists. The gate is coverage evidence only, not a taste oracle or quality proof.
 Status: accepted

@@ -137,13 +137,23 @@ def source_family_coverage(source_corpus: dict[str, Any], demo_bank: dict[str, A
     required = string_list_field(source_corpus, "required_source_families", path)
     corpus_entries = list_field(source_corpus, "entries", path)
     demo_entries = list_field(demo_bank, "entries", Path("demo_bank"))
-    demo_families = {str(entry.get("source_family")) for entry in demo_entries if entry.get("demo_readiness") == "demo_ready"}
+    demo_families = {
+        str(entry.get("source_family"))
+        for entry in demo_entries
+        if entry.get("human_verdict") == "pass" and entry.get("demo_readiness") == "demo_ready"
+    }
+    human_families = {
+        str(entry.get("source_family"))
+        for entry in demo_entries
+        if entry.get("human_verdict") in {"pass", "weak", "fail"}
+    }
     all_demo_families = {str(entry.get("source_family")) for entry in demo_entries}
 
     families = []
     for family in required:
         mapped = CORPUS_TO_DEMO_FAMILIES.get(family, {family})
         has_any_candidate = bool(mapped & all_demo_families)
+        has_human_verdict = bool(mapped & human_families)
         has_demo_ready = bool(mapped & demo_families)
         corpus_case_ids = [
             str(entry.get("case_id"))
@@ -156,21 +166,50 @@ def source_family_coverage(source_corpus: dict[str, Any], demo_bank: dict[str, A
                 "demo_bank_family_aliases": sorted(mapped),
                 "corpus_case_ids": corpus_case_ids,
                 "has_demo_candidate": has_any_candidate,
+                "has_human_verdict": has_human_verdict,
                 "has_demo_ready_human_pass": has_demo_ready,
-                "status": "covered" if has_demo_ready else ("candidate_only" if has_any_candidate else "missing"),
+                "status": source_family_coverage_status(
+                    has_any_candidate,
+                    has_human_verdict,
+                    has_demo_ready,
+                ),
             }
         )
 
+    missing_candidates = [item["source_family"] for item in families if not item["has_demo_candidate"]]
+    missing_human_verdict = [item["source_family"] for item in families if not item["has_human_verdict"]]
     missing_demo_ready = [item["source_family"] for item in families if not item["has_demo_ready_human_pass"]]
     return {
         "path": str(path),
         "required_source_families": required,
+        "covered_demo_candidate_families": [
+            item["source_family"] for item in families if item["has_demo_candidate"]
+        ],
+        "covered_human_verdict_families": [
+            item["source_family"] for item in families if item["has_human_verdict"]
+        ],
         "covered_demo_ready_families": [
             item["source_family"] for item in families if item["has_demo_ready_human_pass"]
         ],
+        "missing_demo_candidate_families": missing_candidates,
+        "missing_human_verdict_families": missing_human_verdict,
         "missing_demo_ready_families": missing_demo_ready,
         "families": families,
     }
+
+
+def source_family_coverage_status(
+    has_candidate: bool,
+    has_human_verdict: bool,
+    has_demo_ready: bool,
+) -> str:
+    if has_demo_ready:
+        return "demo_ready_covered"
+    if has_human_verdict:
+        return "human_verdict_non_demo"
+    if has_candidate:
+        return "candidate_only"
+    return "missing_candidate"
 
 
 def demo_bank_summary(demo_bank: dict[str, Any], path: Path) -> dict[str, Any]:
@@ -304,6 +343,26 @@ def readiness_blockers(
     suite: dict[str, Any],
 ) -> list[dict[str, Any]]:
     blockers: list[dict[str, Any]] = []
+    missing_candidates = coverage["missing_demo_candidate_families"]
+    if missing_candidates:
+        blockers.append(
+            {
+                "code": "source_family_demo_candidate_missing",
+                "severity": "release_blocking",
+                "families": missing_candidates,
+                "reason": "Every P023 source family needs at least one demo-bank candidate before release-ready claims.",
+            }
+        )
+    missing_human_verdict = coverage["missing_human_verdict_families"]
+    if missing_human_verdict:
+        blockers.append(
+            {
+                "code": "source_family_human_verdict_missing",
+                "severity": "release_blocking",
+                "families": missing_human_verdict,
+                "reason": "Every P023 source family needs pass, weak, or fail human verdict evidence before release-ready claims.",
+            }
+        )
     missing_families = coverage["missing_demo_ready_families"]
     if missing_families:
         blockers.append(
@@ -409,6 +468,8 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     release_readiness = report.get("release_readiness")
     check(release_readiness in {"blocked", "release_ready"}, "release_readiness_invalid", failures)
     blockers = list(report.get("blockers", []))
+    missing_candidates = nested_list(report, "source_family_coverage", "missing_demo_candidate_families")
+    missing_human_verdict = nested_list(report, "source_family_coverage", "missing_human_verdict_families")
     missing_families = nested_list(report, "source_family_coverage", "missing_demo_ready_families")
     unverified = nested_list(report, "demo_bank", "unverified_candidate_ids")
     weak_entries = nested_list(report, "demo_bank", "weak_or_fail_entries")
@@ -418,6 +479,8 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
 
     if release_readiness == "release_ready":
+        check(not missing_candidates, "release_ready_without_demo_candidates", failures)
+        check(not missing_human_verdict, "release_ready_without_human_verdicts", failures)
         check(not missing_families, "release_ready_without_required_coverage", failures)
         check(not unverified, "release_ready_with_unverified_candidates", failures)
         check(not weak_entries, "release_ready_with_weak_entries", failures)
