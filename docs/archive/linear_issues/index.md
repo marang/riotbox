@@ -1114,4 +1114,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   Add demo-worthy reasons to professional output review packs
 - [RIOTBOX-1224.md](./RIOTBOX-1224.md)
   Extract oversized Justfile audio-QA JSON contracts into validators
+- [RIOTBOX-1234.md](./RIOTBOX-1234.md)
+  P023: Add release-grade sound quality readiness report
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
