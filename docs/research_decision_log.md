@@ -56,8 +56,6 @@ Why: this keeps strategy, archive history, and implementation contracts separate
 Consequences: future spec work should land in `docs/`, not in new planning sprawl under `plan/`.  
 Status: accepted
 
----
-
 ### RBX-061
 
 Date: 2026-05-31
@@ -2235,4 +2233,18 @@ Decision: no. Cross-report professional-output suite checks now live in `scripts
 Why: the suite contract is too important to hide in unreadable shell. Moving it to a named validator makes failure codes, thresholds, artifact checks, and evidence-boundary rules reviewable without weakening the audio-QA gate.
 Evidence: RIOTBOX-1224 replaces the long inline professional-output suite `jq` block with the validator and keeps negative mutations for non-source-derived hook/chop evidence and scripted demo-readiness promotion.
 Consequences: public `just` recipe names stay stable. The validator is the durable place for future professional-output suite thresholds; `Justfile` should remain a command catalog, not the primary contract implementation.
+Status: accepted
+
+---
+
+### RBX-085
+
+Date: 2026-06-12
+Topic: P023 needs an aggregate sound-quality readiness report, not another taste oracle
+Phase: P023 / Sound Excellence / Production Quality
+Question: how should Riotbox show current 10/10 sound-product progress without pretending scripted diagnostics or unverified agent reports prove musical quality?
+Decision: add a P023 sound-quality readiness report that aggregates the existing rubric, source corpus, release-grade demo bank, weak-output routing, and professional-output suite context into release blockers and next production fix categories.
+Why: contributors and musicians need one place to see what is blocking release-grade sound, which artifacts are worth hearing, and whether the next fix should target source selection, chop policy, drums, bass movement, mix bus, destructive gestures, fixture thresholds, or UI cues. A new score would hide those decisions and risk becoming a fake taste oracle.
+Evidence: RIOTBOX-1234 adds `scripts/generate_sound_quality_readiness_report.py`, `just sound-quality-readiness-report-smoke`, JSON/Markdown output, negative validation for blocked quality claims and premature release-ready reports, and docs under `docs/benchmarks/sound_quality_readiness_report_v1_2026-06-12.md`.
+Consequences: the report may block quality claims and steer implementation, but it does not approve audio. Scripted or unverified diagnostics remain non-quality proof until source-family coverage, structured human verdicts, and release-grade demo evidence exist.
 Status: accepted

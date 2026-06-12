@@ -114,6 +114,10 @@ Current benchmark artifacts:
   P023 real-source coverage contract for dense breaks, sparse drums, tonal riffs, pad/noise, weak sources, and bad-timing policy material.
 - [weak_output_fix_routing_v1_2026-06-05.md](./weak_output_fix_routing_v1_2026-06-05.md)
   P023 weak-output actionability diagnostic that maps failure codes and listening-review tags to concrete production fix categories without claiming musical pass.
+- [sound_quality_readiness_report_v1_2026-06-12.md](./sound_quality_readiness_report_v1_2026-06-12.md)
+  P023 aggregate readiness report that shows release blockers, missing
+  source-family demo coverage, artifact paths to hear, and concrete production
+  fix categories without acting as a hidden taste oracle.
 - [jam_footer_color_hierarchy_baseline_2026-04-25.md](./jam_footer_color_hierarchy_baseline_2026-04-25.md)
   First bounded readability baseline for the semantic Jam footer color and emphasis hierarchy.
 - [capture_do_next_readability_baseline_2026-04-25.md](./capture_do_next_readability_baseline_2026-04-25.md)

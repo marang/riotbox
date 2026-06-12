@@ -72,6 +72,7 @@ audio-qa-ci:
     just rendered-weak-professional-output-fixtures
     just weak-output-fix-routing-fixtures
     just professional-output-suite-smoke
+    just sound-quality-readiness-report-smoke
     just sparse-bass-pressure-professional-fixtures
     just tonal-hook-professional-fixtures
     just human-listening-label-corpus-fixtures
@@ -373,6 +374,15 @@ professional-output-suite-smoke output="artifacts/audio_qa/local-professional-ou
     python3 scripts/validate_professional_output_suite_contract.py "{{output}}/professional-output-suite.json" --output "{{output}}"
     tmp="$(mktemp)" && jq '(.children[] | select(.id == "dense_break").key_metrics.hook_chop_selection_source_derived) = 0.0' "{{output}}/professional-output-suite.json" > "$tmp" && if python3 scripts/validate_professional_output_suite_contract.py "$tmp" --output "{{output}}" >"$tmp.out" 2>&1; then cat "$tmp.out" >&2; rm "$tmp" "$tmp.out"; echo "expected non-source-derived hook/chop suite contract to fail" >&2; exit 1; fi && grep -q "dense_hook_chop_selection_not_source_derived" "$tmp.out" && rm "$tmp" "$tmp.out"
     tmp="$(mktemp)" && jq '.listening_identity.cases[0].demo_readiness = "demo_ready"' "{{output}}/professional-output-suite.json" > "$tmp" && if python3 scripts/validate_professional_output_suite_contract.py "$tmp" --output "{{output}}" >"$tmp.out" 2>&1; then cat "$tmp.out" >&2; rm "$tmp" "$tmp.out"; echo "expected demo-ready scripted suite contract to fail" >&2; exit 1; fi && grep -q "demo_readiness_not_unverified" "$tmp.out" && rm "$tmp" "$tmp.out"
+
+sound-quality-readiness-report-smoke output="artifacts/audio_qa/local-sound-quality-readiness-report":
+    python3 scripts/route_weak_output_fixes.py --output "{{output}}/weak-output" --date "local-sound-quality-readiness-report"
+    python3 scripts/generate_sound_quality_readiness_report.py --weak-routing "{{output}}/weak-output/weak-output-fix-routing.json" --output "{{output}}" --date "local-sound-quality-readiness-report"
+    python3 scripts/generate_sound_quality_readiness_report.py --validate-report "{{output}}/sound-quality-readiness-report.json"
+    jq -e '.schema == "riotbox.sound_quality_readiness_report.v1" and .result == "pass" and .phase == "P023" and .release_readiness == "blocked" and .quality_claim_allowed == false and .weak_output_routing.available == true and (.weak_output_routing.fix_categories | index("chop_policy")) and (.weak_output_routing.fix_categories | index("bass_movement")) and (.source_family_coverage.missing_demo_ready_families | index("pad_noise")) and (.source_family_coverage.missing_demo_ready_families | index("bad_timing")) and (.demo_bank.unverified_candidate_ids | index("tonal-hook-rusharp-unverified-candidate")) and (.next_fix_categories | index("destructive_gesture")) and (.blockers[] | select(.code == "source_family_demo_ready_coverage_missing"))' "{{output}}/sound-quality-readiness-report.json"
+    test -s "{{output}}/sound-quality-readiness-report.md"
+    tmp="$(mktemp)" && jq '.quality_claim_allowed = true' "{{output}}/sound-quality-readiness-report.json" > "$tmp" && if python3 scripts/generate_sound_quality_readiness_report.py --validate-report "$tmp" >"$tmp.out" 2>&1; then cat "$tmp.out" >&2; rm "$tmp" "$tmp.out"; echo "expected blocked quality-claim readiness report to fail" >&2; exit 1; fi && grep -q "blocked_report_claims_quality" "$tmp.out" && rm "$tmp" "$tmp.out"
+    tmp="$(mktemp)" && jq '.release_readiness = "release_ready"' "{{output}}/sound-quality-readiness-report.json" > "$tmp" && if python3 scripts/generate_sound_quality_readiness_report.py --validate-report "$tmp" >"$tmp.out" 2>&1; then cat "$tmp.out" >&2; rm "$tmp" "$tmp.out"; echo "expected premature release-ready report to fail" >&2; exit 1; fi && grep -q "release_ready_without_required_coverage" "$tmp.out" && rm "$tmp" "$tmp.out"
 
 sparse-bass-pressure-professional-fixtures:
     tmp="$(mktemp -d)" && python3 scripts/validate_sparse_bass_pressure_professional.py --json-output "$tmp/sparse-bass.json" --markdown-output "$tmp/sparse-bass.md" scripts/fixtures/automated_musical_fitness/valid_sparse_bass_pulse/manifest.json && jq -e '.schema == "riotbox.sparse_bass_pressure_professional.v1" and .result == "pass" and .source_family == "sparse_bass_pressure" and .human_verdict == "unverified" and .evidence_role == "diagnostic" and .source_backed == true and .source_timing_backed == true and .scripted_generation == true and .quality_proof == false and .metrics.low_band_rms >= .thresholds.min_low_band_rms and .metrics.mc202_bass_signal_rms >= .thresholds.min_mc202_bass_rms and .metrics.tr909_low_band_rms_ratio >= .thresholds.min_tr909_low_band_ratio' "$tmp/sparse-bass.json" && grep -q "Sparse-Bass Pressure" "$tmp/sparse-bass.md" && rm -rf "$tmp"
