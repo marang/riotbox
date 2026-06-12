@@ -706,6 +706,10 @@ following:
 - professional listening-review packs must say why each candidate is worth
   review and why it is not demo-ready yet while `human_verdict` remains
   `unverified`
+- P023 sound-quality readiness reports must aggregate rubric, source corpus,
+  demo-bank, weak-output routing, and professional-output context into
+  release blockers and next production fixes without acting as a hidden taste
+  oracle or promoting scripted diagnostics to quality proof
 - large professional-output JSON contracts move into named repo-local validators
   instead of growing opaque inline `jq` blocks in `Justfile`
 - no PR, roadmap claim, or release note presents an audible feature as
