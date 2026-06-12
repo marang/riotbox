@@ -104,6 +104,10 @@ Current benchmark artifacts:
   Machine-checkable release-grade musician demo-bank contract that separates
   pass, weak, failed, and `human_verdict: unverified` examples while requiring
   dense-break and non-dense source-family coverage.
+- [source_family_release_demo_coverage_v1_2026-06-12.md](./source_family_release_demo_coverage_v1_2026-06-12.md)
+  CI-safe P023 gate that compares the real-source corpus with the release-demo
+  bank and blocks release-ready claims while any source family lacks a demo
+  candidate, human verdict, or demo-ready human-pass example.
 - `scripts/fixtures/sound_product_2010_future_ideas/ideas_v1.json`
   Machine-checkable 20/10 sound-product idea backlog that records musical
   payoff, product-spine impact, replay/realtime risk, and promotion evidence

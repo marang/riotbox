@@ -19,6 +19,7 @@ by:
 
 ```bash
 just release-grade-demo-bank-fixtures
+just source-family-release-demo-coverage-fixtures
 just demo-bank-promotion-fixtures
 ```
 
@@ -39,7 +40,11 @@ Each demo-bank entry records:
 - fix categories for weak or failed examples
 
 The bank must include at least one dense-break entry and at least one
-non-dense-break entry before it is considered structurally complete.
+non-dense-break entry before it is considered structurally complete. P023
+release-demo coverage is stricter: every required source family from
+`docs/benchmarks/sound_excellence_source_corpus_v1.json` must map to a
+demo-bank candidate, a structured human verdict, and a demo-ready human-pass
+entry before release-ready claims are allowed.
 
 ---
 
@@ -69,6 +74,10 @@ PRs may reference demo-bank evidence when they name:
 If an audible PR references only generated, scripted, or unverified candidate
 artifacts, the PR must say `human_verdict: unverified` and avoid demo-ready or
 release-ready language.
+
+The source-family release-demo coverage gate is the machine-readable place to
+see which source families are missing candidates, human verdicts, or demo-ready
+human-pass evidence. It runs without requiring ignored local WAV files.
 
 ---
 

@@ -25,8 +25,8 @@ The report exposes:
 - `release_readiness`: currently `blocked` until all P023 source families have
   demo-ready human-pass coverage and no weak/unverified candidates are promoted.
 - `quality_claim_allowed`: `false` while blockers remain.
-- `source_family_coverage`: required P023 source families and missing
-  demo-ready coverage.
+- `source_family_coverage`: required P023 source families, demo-bank aliases,
+  missing candidates, missing human verdicts, and missing demo-ready coverage.
 - `weak_output_routing`: concrete production fix categories and artifact paths
   when the routing report is available, including P023 production-fix
   candidates when the routing report exposes them.

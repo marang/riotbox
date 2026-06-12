@@ -689,6 +689,10 @@ following:
 - the release-grade demo-bank contract is versioned in
   `docs/specs/release_grade_musician_demo_bank_spec.md` and validated by
   `scripts/fixtures/release_grade_demo_bank/demo_bank_v1.json`
+- source-family release-demo coverage must compare the P023 real-source corpus
+  with the demo bank and block release-ready claims while any source family
+  lacks a demo candidate, human verdict, or demo-ready human-pass entry; the
+  gate must remain CI-safe without ignored local WAV files
 - hardcoded or scripted audio generation may be used only as smoke, regression,
   or diagnostic evidence; it must not be presented as technical or musical
   quality proof until the relevant behavior is source-aware, policy-owned, and
