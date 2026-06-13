@@ -24,6 +24,7 @@ DEFAULT_DEMO_BANK = Path("scripts/fixtures/release_grade_demo_bank/demo_bank_v1.
 DEFAULT_WEAK_ROUTING = Path("artifacts/audio_qa/local-weak-output-fix-routing/weak-output-fix-routing.json")
 DEFAULT_PROFESSIONAL_SUITE = Path("artifacts/audio_qa/local-professional-output-suite/professional-output-suite.json")
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
+MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 
 CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
@@ -372,6 +373,9 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
         "failed_child_report_count": report.get("failed_child_report_count"),
         "strongest_audible_elements": strongest_elements,
         "source_character_selection": {
+            "dense_w30_to_source_rms_ratio": number(
+                dense.get("w30_to_source_rms_ratio")
+            ),
             "dense_hook_chop_score_floor": number(
                 dense.get("hook_chop_source_character_score_floor")
             ),
@@ -383,6 +387,12 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             ),
             "matrix_dense_hook_chop_score_span": number(
                 matrix.get("min_dense_hook_chop_source_character_score_span")
+            ),
+            "matrix_dense_w30_to_source_rms_ratio": number(
+                matrix.get("min_dense_w30_to_source_rms_ratio")
+            ),
+            "tonal_w30_to_source_rms_ratio": number(
+                source_wav.get("tonal_w30_to_source_rms_ratio")
             ),
             "tonal_hook_chop_score_floor": number(
                 source_wav.get("tonal_hook_chop_source_character_score_floor")
@@ -611,6 +621,24 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(
             number(source_character.get("dense_hook_chop_score_span")) >= 0.10,
             "professional_suite_dense_source_character_too_narrow",
+            failures,
+        )
+        check(
+            number(source_character.get("dense_w30_to_source_rms_ratio"))
+            >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
+            "professional_suite_dense_hook_chop_w30_too_weak",
+            failures,
+        )
+        check(
+            number(source_character.get("matrix_dense_w30_to_source_rms_ratio"))
+            >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
+            "professional_suite_matrix_dense_hook_chop_w30_too_weak",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_w30_to_source_rms_ratio"))
+            >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
+            "professional_suite_tonal_hook_chop_w30_too_weak",
             failures,
         )
         check(
