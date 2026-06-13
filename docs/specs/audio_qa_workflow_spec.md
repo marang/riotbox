@@ -338,6 +338,11 @@ Early P011 guardrail defaults:
   hook-forward proof. Sparse-bass-pressure diagnostics keep the lower general
   W-30 floor so bass remains the strongest element instead of being obscured by
   a hook-forward policy meant for dense/tonal material.
+- Sparse-bass-pressure diagnostics must prove more than source-derived
+  movement: movement must be at least `1.25 Hz` away from the fixed contour,
+  span at least `8.0 Hz`, keep pressure low-band lift at or above `1.60`, and
+  leave bass as the strongest audible element with at least `0.08` dominance
+  margin. These remain scripted diagnostic gates, not musical-pass claims.
 - Feral grid W-30 source-chop output must expose source-derived accent dynamics
   under `metrics.w30_source_accent_dynamics`. The proof checks that selected
   source offsets produce multiple trigger velocities and enough velocity span

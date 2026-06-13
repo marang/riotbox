@@ -25,6 +25,10 @@ DEFAULT_WEAK_ROUTING = Path("artifacts/audio_qa/local-weak-output-fix-routing/we
 DEFAULT_PROFESSIONAL_SUITE = Path("artifacts/audio_qa/local-professional-output-suite/professional-output-suite.json")
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-sound-quality-readiness-report")
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 
 CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
@@ -421,6 +425,32 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
                 matrix.get("strongest_audible_elements") or []
             ),
         },
+        "bass_pressure": {
+            "matrix_sparse_bass_movement_static_distance_hz": number(
+                matrix.get("min_sparse_bass_movement_static_distance_hz")
+            ),
+            "matrix_sparse_bass_movement_frequency_span_hz": number(
+                matrix.get("min_sparse_bass_movement_frequency_span_hz")
+            ),
+            "matrix_sparse_pressure_low_band_lift_ratio": number(
+                matrix.get("min_sparse_pressure_low_band_lift_ratio")
+            ),
+            "matrix_sparse_bass_dominance_margin": number(
+                matrix.get("min_sparse_bass_dominance_margin")
+            ),
+            "source_wav_sparse_bass_movement_static_distance_hz": number(
+                source_wav.get("sparse_bass_movement_static_distance_hz")
+            ),
+            "source_wav_sparse_bass_movement_frequency_span_hz": number(
+                source_wav.get("sparse_bass_movement_frequency_span_hz")
+            ),
+            "source_wav_sparse_pressure_low_band_lift_ratio": number(
+                source_wav.get("sparse_pressure_low_band_lift_ratio")
+            ),
+            "source_wav_sparse_bass_dominance_margin": number(
+                source_wav.get("sparse_bass_dominance_margin")
+            ),
+        },
         "mix_balance": {
             "result": str(feral_mix_balance.get("result") or ""),
             "min_support_generated_to_source_rms_ratio": number(
@@ -671,6 +701,57 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(
             number(drum_pressure.get("dense_break_snare_pressure_margin")) >= 0.22,
             "professional_suite_dense_snare_pressure_ambiguous",
+            failures,
+        )
+        bass_pressure = object_or_empty(
+            nested_value(report, "professional_output_suite", "bass_pressure")
+        )
+        check(
+            number(bass_pressure.get("matrix_sparse_bass_movement_static_distance_hz"))
+            >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ,
+            "professional_suite_matrix_sparse_bass_movement_static_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("matrix_sparse_bass_movement_frequency_span_hz"))
+            >= MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+            "professional_suite_matrix_sparse_bass_movement_span_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("matrix_sparse_pressure_low_band_lift_ratio"))
+            >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
+            "professional_suite_matrix_sparse_pressure_low_band_too_weak",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("matrix_sparse_bass_dominance_margin"))
+            >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+            "professional_suite_matrix_sparse_bass_dominance_margin_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("source_wav_sparse_bass_movement_static_distance_hz"))
+            >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ,
+            "professional_suite_source_wav_sparse_bass_movement_static_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("source_wav_sparse_bass_movement_frequency_span_hz"))
+            >= MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+            "professional_suite_source_wav_sparse_bass_movement_span_too_low",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("source_wav_sparse_pressure_low_band_lift_ratio"))
+            >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
+            "professional_suite_source_wav_sparse_pressure_low_band_too_weak",
+            failures,
+        )
+        check(
+            number(bass_pressure.get("source_wav_sparse_bass_dominance_margin"))
+            >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+            "professional_suite_source_wav_sparse_bass_dominance_margin_too_low",
             failures,
         )
         mix_balance = suite_mix_balance if isinstance(suite_mix_balance, dict) else {}

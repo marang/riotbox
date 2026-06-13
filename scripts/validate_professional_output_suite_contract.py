@@ -29,6 +29,10 @@ EXPECTED_LISTENING_FAMILIES = [
 EXPECTED_EDGE_FAMILIES = ["bad_timing", "pad_noise"]
 AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
 MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 
 
 def main() -> int:
@@ -278,10 +282,54 @@ def validate_destructive_metrics(
 def validate_sparse_bass_metrics(
     matrix: dict[str, Any], source_wav: dict[str, Any], failures: list[str]
 ) -> None:
-    require(number(matrix.get("min_sparse_bass_movement_static_distance_hz")) >= 0.50, "matrix_sparse_bass_movement_collapsed_to_static", failures)
-    require(number(matrix.get("min_sparse_bass_movement_frequency_span_hz")) >= 2.0, "matrix_sparse_bass_movement_span_too_low", failures)
-    require(number(source_wav.get("sparse_bass_movement_static_distance_hz")) >= 0.50, "source_wav_sparse_bass_movement_collapsed_to_static", failures)
-    require(number(source_wav.get("sparse_bass_movement_frequency_span_hz")) >= 2.0, "source_wav_sparse_bass_movement_span_too_low", failures)
+    require(
+        number(matrix.get("min_sparse_bass_movement_static_distance_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ,
+        "matrix_sparse_bass_movement_collapsed_to_static",
+        failures,
+    )
+    require(
+        number(matrix.get("min_sparse_bass_movement_frequency_span_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+        "matrix_sparse_bass_movement_span_too_low",
+        failures,
+    )
+    require(
+        number(matrix.get("min_sparse_pressure_low_band_lift_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
+        "matrix_sparse_pressure_low_band_too_weak",
+        failures,
+    )
+    require(
+        number(matrix.get("min_sparse_bass_dominance_margin"))
+        >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+        "matrix_sparse_bass_dominance_margin_too_low",
+        failures,
+    )
+    require(
+        number(source_wav.get("sparse_bass_movement_static_distance_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ,
+        "source_wav_sparse_bass_movement_collapsed_to_static",
+        failures,
+    )
+    require(
+        number(source_wav.get("sparse_bass_movement_frequency_span_hz"))
+        >= MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+        "source_wav_sparse_bass_movement_span_too_low",
+        failures,
+    )
+    require(
+        number(source_wav.get("sparse_pressure_low_band_lift_ratio"))
+        >= MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO,
+        "source_wav_sparse_pressure_low_band_too_weak",
+        failures,
+    )
+    require(
+        number(source_wav.get("sparse_bass_dominance_margin"))
+        >= MIN_SPARSE_BASS_DOMINANCE_MARGIN,
+        "source_wav_sparse_bass_dominance_margin_too_low",
+        failures,
+    )
 
 
 def validate_arrangement_metrics(
