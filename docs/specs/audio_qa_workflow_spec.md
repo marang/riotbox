@@ -515,7 +515,10 @@ P023 dense-break diagnostics additionally gate physical drum pressure for the
 source family that claims snare/break impact. A `dense_break` report must keep
 `strongest_audible_element == "snare"` and expose bounded
 `dense_break_snare_pressure_margin` and
-`dense_break_physical_drum_pressure_score` fields. These fields prove that the
+`dense_break_physical_drum_pressure_score` fields. Dense reports must also
+expose `dense_break_pressure_transient_to_hook_ratio` so the pressure-lift
+section proves it kept enough break/snare transient relative to the hook/chop
+section instead of becoming only low-band support. These fields prove that the
 current scripted render has a dominant snare/break transient with low-band
 support; they still do not turn the artifact into a musical quality proof.
 

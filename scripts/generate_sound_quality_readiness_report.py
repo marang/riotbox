@@ -424,6 +424,9 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
             "dense_break_snare_pressure_margin": number(
                 dense.get("dense_break_snare_pressure_margin")
             ),
+            "dense_break_pressure_transient_to_hook_ratio": number(
+                dense.get("dense_break_pressure_transient_to_hook_ratio")
+            ),
             "matrix_strongest_audible_elements": list(
                 matrix.get("strongest_audible_elements") or []
             ),
@@ -706,6 +709,12 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             "professional_suite_dense_snare_pressure_ambiguous",
             failures,
         )
+        check(
+            number(drum_pressure.get("dense_break_pressure_transient_to_hook_ratio"))
+            >= 0.70,
+            "professional_suite_dense_pressure_transient_too_soft",
+            failures,
+        )
         bass_pressure = object_or_empty(
             nested_value(report, "professional_output_suite", "bass_pressure")
         )
@@ -874,7 +883,9 @@ def markdown_report(report: dict[str, Any]) -> str:
             (
                 "- Drum pressure: "
                 f"dense strongest `{drum_pressure.get('dense_strongest_audible_element')}`, "
-                f"score `{drum_pressure.get('dense_break_physical_drum_pressure_score')}`"
+                f"score `{drum_pressure.get('dense_break_physical_drum_pressure_score')}`, "
+                "pressure transient/hook "
+                f"`{drum_pressure.get('dense_break_pressure_transient_to_hook_ratio')}`"
             ),
             (
                 "- Mix balance: "
