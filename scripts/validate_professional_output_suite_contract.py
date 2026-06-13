@@ -33,6 +33,9 @@ MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
+MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
+MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
+MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.22
 
 
 def main() -> int:
@@ -94,13 +97,14 @@ def validate_report(report: dict[str, Any], output: Path) -> list[str]:
     dense = child_metrics(children, "dense_break")
     matrix = child_metrics(children, "pro_pressure_source_matrix")
     source_wav = child_metrics(children, "professional_source_wav_pack")
+    destructive = child_metrics(children, "destructive_variation")
     listening = child_metrics(children, "professional_output_listening_pack")
     edge = child_metrics(children, "edge_source_professional_diagnostics")
 
     validate_listening_metrics(listening, report, failures)
     validate_edge_metrics(edge, failures)
     validate_hook_chop_metrics(dense, matrix, source_wav, failures)
-    validate_destructive_metrics(dense, matrix, source_wav, failures)
+    validate_destructive_metrics(dense, matrix, source_wav, destructive, failures)
     validate_sparse_bass_metrics(matrix, source_wav, failures)
     validate_arrangement_metrics(dense, matrix, source_wav, failures)
     validate_mix_metrics(dense, matrix, source_wav, failures)
@@ -268,8 +272,27 @@ def validate_destructive_metrics(
     dense: dict[str, Any],
     matrix: dict[str, Any],
     source_wav: dict[str, Any],
+    destructive: dict[str, Any],
     failures: list[str],
 ) -> None:
+    require(
+        number(destructive.get("dropout_to_stutter_rms_ratio"))
+        <= MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO,
+        "destructive_dropout_not_contrasting_with_stutter",
+        failures,
+    )
+    require(
+        number(destructive.get("stutter_to_hook_transient_ratio"))
+        >= MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO,
+        "destructive_stutter_lacks_transient_impact",
+        failures,
+    )
+    require(
+        number(destructive.get("restore_to_pressure_rms_ratio"))
+        >= MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO,
+        "destructive_restore_not_bigger_than_pressure",
+        failures,
+    )
     require(number(dense.get("destructive_gesture_source_derived")) == 1.0, "dense_destructive_not_source_derived", failures)
     require(number(dense.get("destructive_static_distance_frames")) >= 256.0, "dense_destructive_collapsed_to_static", failures)
     require(number(dense.get("destructive_offset_distance_frames")) >= 512.0, "dense_destructive_offset_distance_too_low", failures)
