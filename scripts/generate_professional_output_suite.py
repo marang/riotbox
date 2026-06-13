@@ -22,8 +22,8 @@ from audio_qa_evidence_boundary import (
 SCHEMA = "riotbox.professional_output_suite.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-suite")
 MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
-MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.38
-MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.65
+MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
     "pro_pressure_source_matrix": "riotbox.pro_pressure_source_matrix.v1",

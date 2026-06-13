@@ -285,8 +285,11 @@ Early P011 guardrail defaults:
   spectral-energy evidence is available or the spectral-energy distance is also
   below `0.02`
 - full-mix waveform correlation at or above `0.995` is treated as too similar
-- identical generated support with generated/source-backed RMS ratio at or above
-  `0.75` is treated as dominant
+- source-first feral mixes with generated/source-backed RMS ratio above `0.16`
+  are treated as masking the source-backed W-30 lane
+- generated-support feral mixes must keep generated/source-backed RMS ratio
+  between `0.16` and `0.46`, so support stays audible without becoming a
+  source-masking render
 - Feral grid packs expose explicit lane stems plus two listening mixes so source
   extraction is not judged from a drum-dominant render:
   `04_riotbox_source_first_mix.wav` leads with the source-backed W-30 chop, while

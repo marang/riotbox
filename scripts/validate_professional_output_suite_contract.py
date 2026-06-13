@@ -36,6 +36,9 @@ MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 MAX_DESTRUCTIVE_DROPOUT_TO_STUTTER_RMS_RATIO = 0.10
 MIN_DESTRUCTIVE_STUTTER_TO_HOOK_TRANSIENT_RATIO = 1.20
 MIN_DESTRUCTIVE_RESTORE_TO_PRESSURE_RMS_RATIO = 1.22
+MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 
 
 def main() -> int:
@@ -473,7 +476,6 @@ def validate_artifacts(output: Path, failures: list[str]) -> None:
 
 def validate_feral_mix_balance_metrics(report: dict[str, Any], failures: list[str]) -> None:
     balance = object_or_empty(report.get("feral_mix_balance"))
-    thresholds = object_or_empty(balance.get("thresholds"))
     cases = list_or_empty(balance.get("cases"))
     require(balance.get("result") == "pass", "feral_mix_balance_not_pass", failures)
     require(number(balance.get("case_count")) >= 8, "feral_mix_balance_case_count_too_low", failures)
@@ -484,19 +486,19 @@ def validate_feral_mix_balance_metrics(report: dict[str, Any], failures: list[st
     )
     require(
         number(balance.get("max_source_first_generated_to_source_rms_ratio"))
-        <= number(thresholds.get("max_source_first_generated_to_source_rms_ratio")),
+        <= MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
         "feral_source_first_generated_support_masks_source",
         failures,
     )
     require(
         number(balance.get("min_support_generated_to_source_rms_ratio"))
-        >= number(thresholds.get("min_support_generated_to_source_rms_ratio")),
+        >= MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         "feral_generated_support_too_buried",
         failures,
     )
     require(
         number(balance.get("max_support_generated_to_source_rms_ratio"))
-        <= number(thresholds.get("max_support_generated_to_source_rms_ratio")),
+        <= MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
         "feral_generated_support_masks_source",
         failures,
     )
