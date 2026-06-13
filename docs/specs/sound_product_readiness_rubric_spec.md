@@ -31,6 +31,11 @@ release-ready claims, list missing source-family demo coverage, and route weak
 outputs to fix categories, but it must not approve audio or convert scripted /
 unverified diagnostics into product-quality proof.
 
+For P023 it must also preserve the professional-output diagnostic boundary:
+source-character selection, strongest-element, dense drum-pressure, and
+mix-balance signals may inform blockers and next actions, but they remain
+diagnostic until structured human or calibrated-agent verdict coverage exists.
+
 ---
 
 ## 2. Readiness States

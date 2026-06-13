@@ -30,6 +30,10 @@ The report exposes:
 - `weak_output_routing`: concrete production fix categories and artifact paths
   when the routing report is available, including P023 production-fix
   candidates when the routing report exposes them.
+- `professional_output_suite`: current diagnostic context from the professional
+  suite, including strongest audible elements, source-character hook/chop
+  selection floor/span, dense drum-pressure proof, mix-balance summary, and the
+  diagnostic-only quality boundary.
 - `blockers`: machine-readable reasons that prevent release-ready claims.
 - `next_actions`: engineer- and musician-facing work categories for the next
   sound-improvement slices.

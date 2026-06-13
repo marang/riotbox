@@ -325,6 +325,29 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
         report.get("schema") == PROFESSIONAL_SUITE_SCHEMA,
         f"{path}: schema must be {PROFESSIONAL_SUITE_SCHEMA}",
     )
+    children = list(report.get("children", []))
+    metrics = {
+        str(child.get("id")): object_or_empty(child.get("key_metrics"))
+        for child in children
+        if isinstance(child, dict)
+    }
+    dense = metrics.get("dense_break", {})
+    matrix = metrics.get("pro_pressure_source_matrix", {})
+    source_wav = metrics.get("professional_source_wav_pack", {})
+    edge = metrics.get("edge_source_professional_diagnostics", {})
+    feral_mix_balance = object_or_empty(report.get("feral_mix_balance"))
+    strongest_elements = sorted(
+        {
+            str(value)
+            for value in (
+                [dense.get("strongest_audible_element")]
+                + list(matrix.get("strongest_audible_elements") or [])
+                + list(source_wav.get("strongest_audible_elements") or [])
+                + list(edge.get("strongest_audible_elements") or [])
+            )
+            if isinstance(value, str) and value
+        }
+    )
     return {
         "path": str(path),
         "available": True,
@@ -333,6 +356,61 @@ def professional_suite_summary(report: dict[str, Any] | None, path: Path) -> dic
         "scripted_generation": report.get("scripted_generation"),
         "quality_proof": report.get("quality_proof"),
         "child_report_count": report.get("child_report_count"),
+        "passed_child_report_count": report.get("passed_child_report_count"),
+        "failed_child_report_count": report.get("failed_child_report_count"),
+        "strongest_audible_elements": strongest_elements,
+        "source_character_selection": {
+            "dense_hook_chop_score_floor": number(
+                dense.get("hook_chop_source_character_score_floor")
+            ),
+            "dense_hook_chop_score_span": number(
+                dense.get("hook_chop_source_character_score_span")
+            ),
+            "matrix_dense_hook_chop_score_floor": number(
+                matrix.get("min_dense_hook_chop_source_character_score_floor")
+            ),
+            "matrix_dense_hook_chop_score_span": number(
+                matrix.get("min_dense_hook_chop_source_character_score_span")
+            ),
+            "tonal_hook_chop_score_floor": number(
+                source_wav.get("tonal_hook_chop_source_character_score_floor")
+            ),
+            "tonal_hook_chop_score_span": number(
+                source_wav.get("tonal_hook_chop_source_character_score_span")
+            ),
+            "min_rebuild_only_source_character_survival_score": min(
+                number(dense.get("rebuild_only_source_character_survival_score")),
+                number(matrix.get("min_rebuild_only_source_character_survival_score")),
+                number(source_wav.get("min_rebuild_only_source_character_survival_score")),
+                number(edge.get("min_rebuild_only_source_character_survival_score")),
+            ),
+        },
+        "drum_pressure": {
+            "dense_strongest_audible_element": str(
+                dense.get("strongest_audible_element") or ""
+            ),
+            "dense_break_physical_drum_pressure_score": number(
+                dense.get("dense_break_physical_drum_pressure_score")
+            ),
+            "dense_break_snare_pressure_margin": number(
+                dense.get("dense_break_snare_pressure_margin")
+            ),
+            "matrix_strongest_audible_elements": list(
+                matrix.get("strongest_audible_elements") or []
+            ),
+        },
+        "mix_balance": {
+            "result": str(feral_mix_balance.get("result") or ""),
+            "min_support_generated_to_source_rms_ratio": number(
+                feral_mix_balance.get("min_support_generated_to_source_rms_ratio")
+            ),
+            "max_source_first_generated_to_source_rms_ratio": number(
+                feral_mix_balance.get("max_source_first_generated_to_source_rms_ratio")
+            ),
+            "max_support_generated_to_source_rms_ratio": number(
+                feral_mix_balance.get("max_support_generated_to_source_rms_ratio")
+            ),
+        },
     }
 
 
@@ -477,6 +555,99 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
+    suite_source_character = nested_value(
+        report,
+        "professional_output_suite",
+        "source_character_selection",
+    )
+    suite_drum_pressure = nested_value(report, "professional_output_suite", "drum_pressure")
+    suite_mix_balance = nested_value(report, "professional_output_suite", "mix_balance")
+    suite_strongest = nested_list(
+        report,
+        "professional_output_suite",
+        "strongest_audible_elements",
+    )
+
+    if suite_available is True:
+        check(
+            isinstance(suite_source_character, dict),
+            "professional_suite_source_character_selection_missing",
+            failures,
+        )
+        check(
+            isinstance(suite_drum_pressure, dict),
+            "professional_suite_drum_pressure_missing",
+            failures,
+        )
+        check(
+            isinstance(suite_mix_balance, dict),
+            "professional_suite_mix_balance_missing",
+            failures,
+        )
+        check(
+            {"bass", "snare", "stab"}.issubset(set(str(item) for item in suite_strongest)),
+            "professional_suite_strongest_elements_incomplete",
+            failures,
+        )
+        source_character = suite_source_character if isinstance(suite_source_character, dict) else {}
+        check(
+            number(source_character.get("dense_hook_chop_score_floor")) >= 0.55,
+            "professional_suite_dense_source_character_too_weak",
+            failures,
+        )
+        check(
+            number(source_character.get("dense_hook_chop_score_span")) >= 0.10,
+            "professional_suite_dense_source_character_too_narrow",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_hook_chop_score_floor")) >= 0.55,
+            "professional_suite_tonal_source_character_too_weak",
+            failures,
+        )
+        check(
+            number(source_character.get("tonal_hook_chop_score_span")) >= 0.10,
+            "professional_suite_tonal_source_character_too_narrow",
+            failures,
+        )
+        check(
+            number(source_character.get("min_rebuild_only_source_character_survival_score"))
+            >= 0.70,
+            "professional_suite_source_character_survival_too_low",
+            failures,
+        )
+        drum_pressure = suite_drum_pressure if isinstance(suite_drum_pressure, dict) else {}
+        check(
+            drum_pressure.get("dense_strongest_audible_element") == "snare",
+            "professional_suite_dense_snare_not_strongest",
+            failures,
+        )
+        check(
+            number(drum_pressure.get("dense_break_physical_drum_pressure_score")) >= 1.58,
+            "professional_suite_dense_drum_pressure_too_weak",
+            failures,
+        )
+        check(
+            number(drum_pressure.get("dense_break_snare_pressure_margin")) >= 0.22,
+            "professional_suite_dense_snare_pressure_ambiguous",
+            failures,
+        )
+        mix_balance = suite_mix_balance if isinstance(suite_mix_balance, dict) else {}
+        check(
+            mix_balance.get("result") == "pass",
+            "professional_suite_mix_balance_not_pass",
+            failures,
+        )
+        check(
+            number(mix_balance.get("min_support_generated_to_source_rms_ratio")) >= 0.16,
+            "professional_suite_mix_support_too_weak",
+            failures,
+        )
+        check(
+            number(mix_balance.get("max_source_first_generated_to_source_rms_ratio")) <= 0.38,
+            "professional_suite_source_first_too_generated",
+            failures,
+        )
 
     if release_readiness == "release_ready":
         check(not missing_candidates, "release_ready_without_demo_candidates", failures)
@@ -527,6 +698,33 @@ def markdown_report(report: dict[str, Any]) -> str:
         lines.append(f"- `{action['category']}` / {action['target']}: {action['action']}")
     if not report["next_actions"]:
         lines.append("- none")
+    suite = object_or_empty(report.get("professional_output_suite"))
+    source_character = object_or_empty(suite.get("source_character_selection"))
+    drum_pressure = object_or_empty(suite.get("drum_pressure"))
+    mix_balance = object_or_empty(suite.get("mix_balance"))
+    lines.extend(
+        [
+            "",
+            "## Professional Output Context",
+            "",
+            f"- Strongest elements: `{', '.join(suite.get('strongest_audible_elements', []))}`",
+            (
+                "- Source-character floors: "
+                f"dense `{source_character.get('dense_hook_chop_score_floor')}`, "
+                f"tonal `{source_character.get('tonal_hook_chop_score_floor')}`"
+            ),
+            (
+                "- Drum pressure: "
+                f"dense strongest `{drum_pressure.get('dense_strongest_audible_element')}`, "
+                f"score `{drum_pressure.get('dense_break_physical_drum_pressure_score')}`"
+            ),
+            (
+                "- Mix balance: "
+                f"`{mix_balance.get('result')}`, support min "
+                f"`{mix_balance.get('min_support_generated_to_source_rms_ratio')}`"
+            ),
+        ]
+    )
     lines.extend(["", "## Evidence Boundary", "", report["evidence_boundary"], ""])
     return "\n".join(lines)
 
@@ -547,6 +745,10 @@ def object_field(data: dict[str, Any], field: str, path: Path) -> dict[str, Any]
     value = data.get(field)
     require(isinstance(value, dict) and value, f"{path}: {field} must be non-empty object")
     return value
+
+
+def object_or_empty(value: Any) -> dict[str, Any]:
+    return value if isinstance(value, dict) else {}
 
 
 def list_field(data: dict[str, Any], field: str, path: Path) -> list[Any]:
@@ -580,6 +782,14 @@ def nested_value(report: dict[str, Any], object_name: str, field: str) -> Any:
 def nested_list(report: dict[str, Any], object_name: str, field: str) -> list[Any]:
     value = nested_value(report, object_name, field)
     return value if isinstance(value, list) else []
+
+
+def number(value: Any) -> float:
+    if isinstance(value, bool):
+        return 0.0
+    if isinstance(value, (int, float)):
+        return float(value)
+    return 0.0
 
 
 def check(condition: bool, code: str, failures: list[str]) -> None:
