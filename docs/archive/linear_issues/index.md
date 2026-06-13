@@ -1126,4 +1126,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Promote sparse-bass-pressure demo coverage from weak to pass candidate
 - [RIOTBOX-1239.md](./RIOTBOX-1239.md)
   P023: Add bad-timing cautious release-demo candidate scaffold
+- [RIOTBOX-1240.md](./RIOTBOX-1240.md)
+  P023: Add weak-source release-demo rejection candidate scaffold
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
