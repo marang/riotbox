@@ -1120,4 +1120,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Promote weak-output routing into production fix queue candidates
 - [RIOTBOX-1236.md](./RIOTBOX-1236.md)
   P023: Add source-family release-demo coverage gate
+- [RIOTBOX-1237.md](./RIOTBOX-1237.md)
+  P023: Add pad/noise release-demo candidate scaffold
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
