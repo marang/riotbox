@@ -1130,4 +1130,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add weak-source release-demo rejection candidate scaffold
 - [RIOTBOX-1241.md](./RIOTBOX-1241.md)
   P023: Generate release-demo human review queue
+- [RIOTBOX-1242.md](./RIOTBOX-1242.md)
+  P023: Strengthen sparse bass movement from source contour
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
