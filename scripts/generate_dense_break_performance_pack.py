@@ -81,6 +81,7 @@ MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE = 1.93
 MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN = 0.22
 MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE = 1.58
+MIN_DENSE_BREAK_PRESSURE_TRANSIENT_TO_HOOK_RATIO = 0.70
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -1845,6 +1846,15 @@ def render_performance(
     hook_forward_gain = (
         1.0 if source_policy.hook_chop_policy.source_family == "sparse_bass_pressure" else 1.12
     )
+    dense_drum_snap = source_policy.pressure_lift_policy.source_family == "dense_break"
+    hook_tr909_gain = 0.76 if dense_drum_snap else 0.62
+    chop_tr909_gain = 0.98 if dense_drum_snap else 0.78
+    pressure_tr909_base = 2.62 if dense_drum_snap else 2.28
+    hook_break_snap_gain = mix_policy.hook_break_snap_gain * (1.08 if dense_drum_snap else 1.0)
+    chop_break_snap_gain = mix_policy.chop_break_snap_gain * (1.12 if dense_drum_snap else 1.0)
+    pressure_break_snap_gain = mix_policy.pressure_break_snap_gain * (
+        1.42 if dense_drum_snap else 1.0
+    )
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -1857,8 +1867,8 @@ def render_performance(
         source * (0.50 * source_layer_gain)
         + w30 * mix_policy.hook_w30_gain
         + hook_riff * (1.62 * hook_forward_gain)
-        + tr909 * 0.62
-        + break_snap * mix_policy.hook_break_snap_gain
+        + tr909 * hook_tr909_gain
+        + break_snap * hook_break_snap_gain
         + pad_noise_texture * 0.68
         + mc202 * 0.34,
         drive=mix_policy.hook_drive,
@@ -1868,8 +1878,8 @@ def render_performance(
         source * (0.16 * source_layer_gain)
         + w30 * mix_policy.chop_w30_gain
         + hook_riff * (1.78 * hook_forward_gain * 1.03)
-        + tr909 * 0.78
-        + break_snap * mix_policy.chop_break_snap_gain
+        + tr909 * chop_tr909_gain
+        + break_snap * chop_break_snap_gain
         + pad_noise_texture * 1.05
         + mc202 * 0.58,
         drive=mix_policy.chop_drive,
@@ -1879,8 +1889,8 @@ def render_performance(
         source * (lift_policy.source_bleed_gain * source_layer_gain)
         + w30 * mix_policy.pressure_w30_gain
         + hook_riff * lift_policy.hook_bleed_gain
-        + tr909 * (2.28 + lift_policy.tr909_drive * 0.52)
-        + break_snap * (mix_policy.pressure_break_snap_gain * lift_policy.break_snap_drive)
+        + tr909 * (pressure_tr909_base + lift_policy.tr909_drive * 0.52)
+        + break_snap * (pressure_break_snap_gain * lift_policy.break_snap_drive)
         + mc202 * (5.00 + lift_policy.mc202_drive * 1.42)
         + pad_noise_texture * 1.28
         + bass_pressure * (1.14 + lift_policy.bass_drive * 0.62),
@@ -1917,7 +1927,17 @@ def render_performance(
             intensity = (
                 lift_policy.bar4_intensity if pressure_index == 0 else lift_policy.bar5_intensity
             )
-            put_bar(bar, apply_gain(pressure_mix, intensity))
+            pressure_bar_mix = apply_gain(pressure_mix, intensity)
+            if dense_drum_snap:
+                start = bar * bar_frames
+                end = min(start + frames_for_seconds(0.090), start + bar_frames, performance.shape[0])
+                if start < end:
+                    snap = tr909[start:end] * 0.92 + break_snap[start:end] * 1.34
+                    pressure_bar_mix[start:end] = saturate(
+                        pressure_bar_mix[start:end] + snap,
+                        1.46,
+                    )
+            put_bar(bar, pressure_bar_mix)
             pressure_index += 1
         elif role == "dropout":
             dropout_stutter_bar = render_dropout_stutter_bar(
@@ -1948,7 +1968,7 @@ def render_performance(
                 source_layer_gain=source_layer_gain,
             )
             if source_policy.pressure_lift_policy.source_family == "dense_break":
-                restore_bar = apply_gain(restore_bar, 1.10)
+                restore_bar = apply_gain(restore_bar, 1.14)
             put_bar(bar, restore_bar)
         else:
             raise ValueError(f"unsupported arrangement role: {role}")
@@ -2278,6 +2298,10 @@ def strongest_audible_element_proof(
         low_band_rms(sections["chop_hook"]),
         1e-9,
     )
+    pressure_transient_ratio = transient_score(sections["pressure_lift"]) / max(
+        transient_score(sections["chop_hook"]),
+        1e-9,
+    )
     restore_transient_ratio = max(
         transient_score(sections["restore_hit"][: frames_for_seconds(0.250)]),
         transient_score(sections["restore_hit"][: frames_for_seconds(0.500)]),
@@ -2372,6 +2396,9 @@ def strongest_audible_element_proof(
         "strongest_audible_element_kick_score": float(scores["kick"]),
         "dense_break_physical_drum_pressure_score": float(drum_pressure_score),
         "dense_break_snare_pressure_margin": float(snare_pressure_margin),
+        "dense_break_pressure_transient_to_hook_ratio": (
+            float(pressure_transient_ratio) if source_family == "dense_break" else 0.0
+        ),
     }
 
 
@@ -3024,6 +3051,9 @@ def build_report(
             "min_dense_break_physical_drum_pressure_score": (
                 MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE
             ),
+            "min_dense_break_pressure_transient_to_hook_ratio": (
+                MIN_DENSE_BREAK_PRESSURE_TRANSIENT_TO_HOOK_RATIO
+            ),
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -3300,6 +3330,11 @@ def failure_codes_for(
             < MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE
         ):
             failures.append("dense_break_physical_drum_pressure_too_weak")
+        if (
+            proof.get("dense_break_pressure_transient_to_hook_ratio", 0.0)
+            < MIN_DENSE_BREAK_PRESSURE_TRANSIENT_TO_HOOK_RATIO
+        ):
+            failures.append("dense_break_pressure_transient_too_soft")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
     if source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure"):

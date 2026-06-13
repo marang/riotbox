@@ -506,6 +506,9 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "dense_break_snare_pressure_margin": number(
                 proof.get("dense_break_snare_pressure_margin")
             ),
+            "dense_break_pressure_transient_to_hook_ratio": number(
+                proof.get("dense_break_pressure_transient_to_hook_ratio")
+            ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":

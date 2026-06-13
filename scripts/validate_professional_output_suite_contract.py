@@ -418,6 +418,7 @@ def validate_strongest_element_metrics(
     require(str(dense.get("strongest_audible_element")) == "snare", "dense_snare_not_strongest_element", failures)
     require(number(dense.get("dense_break_physical_drum_pressure_score")) >= 1.58, "dense_drum_pressure_too_weak", failures)
     require(number(dense.get("dense_break_snare_pressure_margin")) >= 0.22, "dense_snare_pressure_margin_too_low", failures)
+    require(number(dense.get("dense_break_pressure_transient_to_hook_ratio")) >= 0.70, "dense_pressure_transient_too_soft", failures)
     require("snare" in list_or_empty(matrix.get("strongest_audible_elements")), "matrix_snare_strongest_element_missing", failures)
     require("bass" in list_or_empty(matrix.get("strongest_audible_elements")), "matrix_bass_strongest_element_missing", failures)
     require(number(matrix.get("min_strongest_audible_element_score")) >= 1.00, "matrix_strongest_audible_element_score_too_low", failures)
