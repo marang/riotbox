@@ -1156,4 +1156,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen destructive gesture contrast from weak-output candidates
 - [RIOTBOX-1255.md](./RIOTBOX-1255.md)
   P023: Strengthen mix-bus clarity from weak-output candidates
+- [RIOTBOX-1256.md](./RIOTBOX-1256.md)
+  P023: Strengthen source-window selection from human weak-output candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
