@@ -73,6 +73,9 @@ MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
 MIN_TAIL_SHAPE_OUTPUT_CONTRAST = 3.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
+MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE = 1.93
+MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN = 0.22
+MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE = 1.58
 TARGET_PERFORMANCE_PEAK = 0.92
 MAX_PAD_NOISE_LOW_BAND_RMS = 0.030
 MIN_PAD_NOISE_HIGH_BAND_RATIO = 0.180
@@ -852,10 +855,10 @@ def mix_treatment_policy_for(
         restore_bias = 0.10
     else:
         strategy = "dense-break-snap-mix-treatment"
-        hook_bias = 0.03
-        chop_bias = 0.08
-        pressure_bias = 0.05
-        restore_bias = 0.07
+        hook_bias = 0.05
+        chop_bias = 0.11
+        pressure_bias = 0.08
+        restore_bias = 0.10
 
     policy_values = {
         "hook_drive": float(
@@ -1665,12 +1668,12 @@ def pressure_lift_policy_for(
             source_family="dense_break",
             lift_shape="transient-pressure slam",
             lift_intent="snare and break transient hit with low-band shove",
-            source_bleed_gain=0.055,
-            hook_bleed_gain=0.74,
-            tr909_drive=1.08,
-            break_snap_drive=1.14,
-            mc202_drive=1.04,
-            bass_drive=1.02,
+            source_bleed_gain=0.050,
+            hook_bleed_gain=0.70,
+            tr909_drive=1.12,
+            break_snap_drive=1.22,
+            mc202_drive=1.02,
+            bass_drive=1.00,
             bar4_intensity=0.94,
             bar5_intensity=1.08,
             bar4_bass_frequency_hz=38.0,
@@ -2234,6 +2237,22 @@ def strongest_audible_element_proof(
     strongest, strongest_score = ranked[0]
     second_score = ranked[1][1] if len(ranked) > 1 else 0.0
     margin = strongest_score - second_score
+    if source_family == "dense_break":
+        drum_pressure_score = (
+            scores["snare"] * 0.55
+            + scores["bass"] * 0.30
+            + scores["kick"] * 0.15
+        )
+        snare_pressure_margin = scores["snare"] - max(
+            scores["bass"],
+            scores["stab"],
+            scores["silence"],
+            scores["restore"],
+            scores["kick"],
+        )
+    else:
+        drum_pressure_score = 0.0
+        snare_pressure_margin = 0.0
     return {
         "strongest_audible_element": strongest,
         "strongest_audible_element_score": float(strongest_score),
@@ -2248,6 +2267,8 @@ def strongest_audible_element_proof(
         "strongest_audible_element_silence_score": float(scores["silence"]),
         "strongest_audible_element_restore_score": float(scores["restore"]),
         "strongest_audible_element_kick_score": float(scores["kick"]),
+        "dense_break_physical_drum_pressure_score": float(drum_pressure_score),
+        "dense_break_snare_pressure_margin": float(snare_pressure_margin),
     }
 
 
@@ -2875,6 +2896,11 @@ def build_report(
             "min_tail_shape_output_contrast": MIN_TAIL_SHAPE_OUTPUT_CONTRAST,
             "min_strongest_audible_element_score": MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE,
             "min_strongest_audible_element_margin": MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN,
+            "min_dense_break_snare_pressure_score": MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE,
+            "min_dense_break_snare_pressure_margin": MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN,
+            "min_dense_break_physical_drum_pressure_score": (
+                MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE
+            ),
             "target_performance_peak": TARGET_PERFORMANCE_PEAK,
         },
         "files": audio_files,
@@ -3133,6 +3159,24 @@ def failure_codes_for(
         < MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN
     ):
         failures.append("strongest_audible_element_ambiguous")
+    if source_family == "dense_break":
+        if proof.get("strongest_audible_element") != "snare":
+            failures.append("dense_break_snare_not_strongest")
+        if (
+            proof.get("strongest_audible_element_snare_score", 0.0)
+            < MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE
+        ):
+            failures.append("dense_break_snare_pressure_too_weak")
+        if (
+            proof.get("dense_break_snare_pressure_margin", 0.0)
+            < MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN
+        ):
+            failures.append("dense_break_snare_pressure_too_ambiguous")
+        if (
+            proof.get("dense_break_physical_drum_pressure_score", 0.0)
+            < MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE
+        ):
+            failures.append("dense_break_physical_drum_pressure_too_weak")
     if proof["arrangement_policy_decision_count"] < 8.0:
         failures.append("arrangement_policy_not_source_aware_enough")
     if source_family in ("dense_break", "tonal_hook", "sparse_bass_pressure"):
