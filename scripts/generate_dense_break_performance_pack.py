@@ -1190,7 +1190,7 @@ def tail_shape_policy_for(
         strategy = "source-derived-break-snap-tail"
         silence_bias = 0.006
         density_bias = 2
-        restore_bias = 0.06
+        restore_bias = 0.16
 
     dropout_silence_fraction = float(
         np.clip(
@@ -1826,20 +1826,20 @@ def render_performance(
             end = min(start + dropout_stutter_bar.shape[0], performance.shape[0])
             performance[start:end] = dropout_stutter_bar[: end - start]
         elif role == "restore":
-            put_bar(
-                bar,
-                restore_with_hit(
-                    restore_mix,
-                    source,
-                    w30,
-                    mc202,
-                    tr909,
-                    source_policy,
-                    bar * bar_frames,
-                    bar_frames,
-                    source_layer_gain=source_layer_gain,
-                ),
+            restore_bar = restore_with_hit(
+                restore_mix,
+                source,
+                w30,
+                mc202,
+                tr909,
+                source_policy,
+                bar * bar_frames,
+                bar_frames,
+                source_layer_gain=source_layer_gain,
             )
+            if source_policy.pressure_lift_policy.source_family == "dense_break":
+                restore_bar = apply_gain(restore_bar, 1.10)
+            put_bar(bar, restore_bar)
         else:
             raise ValueError(f"unsupported arrangement role: {role}")
 
