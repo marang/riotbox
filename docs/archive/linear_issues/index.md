@@ -1160,4 +1160,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen source-window selection from human weak-output candidates
 - [RIOTBOX-1257.md](./RIOTBOX-1257.md)
   P023: Strengthen physical drum pressure after weak-output fixes
+- [RIOTBOX-1251.md](./RIOTBOX-1251.md)
+  P023: Strengthen release demo human-review queue context
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
