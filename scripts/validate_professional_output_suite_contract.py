@@ -225,10 +225,13 @@ def validate_hook_chop_metrics(
     require(number(dense.get("hook_chop_selection_source_derived")) == 1.0, "dense_hook_chop_selection_not_source_derived", failures)
     require(number(dense.get("hook_chop_static_distance_frames")) >= 256.0, "dense_hook_chop_collapsed_to_static", failures)
     require(number(dense.get("hook_chop_offset_distance_frames")) >= 512.0, "dense_hook_chop_offset_distance_too_low", failures)
+    require(number(dense.get("hook_chop_riff_unique_source_offset_count")) >= 3.0, "dense_hook_chop_riff_offsets_too_narrow", failures)
     require(number(matrix.get("min_dense_hook_chop_static_distance_frames")) >= 256.0, "matrix_dense_hook_chop_collapsed_to_static", failures)
     require(number(matrix.get("min_dense_hook_chop_offset_distance_frames")) >= 512.0, "matrix_dense_hook_chop_offset_distance_too_low", failures)
+    require(number(matrix.get("min_dense_hook_chop_riff_unique_source_offset_count")) >= 3.0, "matrix_dense_hook_chop_riff_offsets_too_narrow", failures)
     require(number(source_wav.get("tonal_hook_chop_static_distance_frames")) >= 256.0, "source_wav_tonal_hook_chop_collapsed_to_static", failures)
     require(number(source_wav.get("tonal_hook_chop_offset_distance_frames")) >= 512.0, "source_wav_tonal_hook_chop_offset_distance_too_low", failures)
+    require(number(source_wav.get("tonal_hook_chop_riff_unique_source_offset_count")) >= 3.0, "source_wav_tonal_hook_chop_riff_offsets_too_narrow", failures)
 
 
 def validate_destructive_metrics(
