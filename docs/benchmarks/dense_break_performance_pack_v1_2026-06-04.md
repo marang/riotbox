@@ -94,8 +94,11 @@ hook and chop offsets, and reports `hook_chop_selection_source_derived`,
 `hook_chop_static_distance_frames`, and `hook_chop_offset_distance_frames`.
 Dense/tonal reports must fail if hook/chop selection is not source-derived,
 does not scan enough candidates, collapses back to the old static first-bar
-choice, or selects hook/chop offsets without enough contrast. This is still a
-diagnostic selection proof, not a human musical pass.
+choice, or selects hook/chop offsets without enough contrast. The renderer also
+uses multiple source-derived riff offsets from the same policy and reports
+`hook_chop_riff_unique_source_offset_count`; dense/tonal reports must fail if
+the riff collapses back to a narrow one- or two-offset source-copy pattern.
+This is still a diagnostic selection proof, not a human musical pass.
 
 For dense-break, tonal-hook, and sparse-bass-pressure sources, the first six
 arrangement bars now expose source-derived role-order proof. The

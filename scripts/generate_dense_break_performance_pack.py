@@ -55,6 +55,7 @@ MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
+MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 3
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
@@ -139,6 +140,8 @@ class HookChopPolicy:
     chop_static_distance_frames: int
     hook_chop_distance_frames: int
     candidate_count: int
+    riff_start_frames: tuple[int, ...]
+    riff_unique_source_offset_count: int
 
 
 @dataclass(frozen=True)
@@ -537,6 +540,8 @@ def hook_chop_policy_for(
             chop_static_distance_frames=0,
             hook_chop_distance_frames=0,
             candidate_count=1,
+            riff_start_frames=(static_start,),
+            riff_unique_source_offset_count=1,
         )
 
     stride = max(1, grain_len // 2)
@@ -585,6 +590,12 @@ def hook_chop_policy_for(
 
     hook_start = select("hook_score")
     chop_start = select("chop_score", avoid_start=hook_start)
+    riff_starts = source_derived_riff_starts(
+        candidates,
+        hook_start,
+        chop_start,
+        min_separation=max(grain_len, int(MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES)),
+    )
     return HookChopPolicy(
         source_aware=True,
         source_family=source_family,
@@ -598,7 +609,36 @@ def hook_chop_policy_for(
         chop_static_distance_frames=abs(chop_start - static_start),
         hook_chop_distance_frames=abs(chop_start - hook_start),
         candidate_count=len(candidates),
+        riff_start_frames=riff_starts,
+        riff_unique_source_offset_count=len(set(riff_starts)),
     )
+
+
+def source_derived_riff_starts(
+    candidates: list[dict[str, float]],
+    hook_start: int,
+    chop_start: int,
+    min_separation: int,
+) -> tuple[int, ...]:
+    starts: list[int] = []
+    for start in (hook_start, chop_start):
+        if start not in starts:
+            starts.append(start)
+    ranked = sorted(
+        candidates,
+        key=lambda item: max(float(item["hook_score"]), float(item["chop_score"])),
+        reverse=True,
+    )
+    for item in ranked:
+        start = int(item["start"])
+        if start in starts:
+            continue
+        if any(abs(start - existing) < min_separation for existing in starts):
+            continue
+        starts.append(start)
+        if len(starts) >= 4:
+            break
+    return tuple(starts)
 
 
 def destructive_gesture_policy_for(
@@ -790,7 +830,7 @@ def mix_treatment_policy_for(
         hook_bias = 0.04
         chop_bias = 0.02
         pressure_bias = 0.12
-        restore_bias = 0.24
+        restore_bias = 0.26
     elif source_family == "sparse_bass_pressure":
         strategy = "sparse-bass-pressure-mix-treatment"
         hook_bias = -0.02
@@ -1145,7 +1185,7 @@ def tail_shape_policy_for(
         strategy = "source-derived-hook-readable-tail"
         silence_bias = 0.038
         density_bias = 0
-        restore_bias = 0.16
+        restore_bias = 0.18
     else:
         strategy = "source-derived-break-snap-tail"
         silence_bias = 0.006
@@ -2017,6 +2057,9 @@ def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, f
             max(policy.hook_static_distance_frames, policy.chop_static_distance_frames)
         ),
         "hook_chop_offset_distance_frames": float(policy.hook_chop_distance_frames),
+        "hook_chop_riff_unique_source_offset_count": float(
+            policy.riff_unique_source_offset_count
+        ),
     }
 
 
@@ -2493,12 +2536,28 @@ def render_w30_hook_riff_layer(
     if hook_end <= hook_start or chop_end <= chop_start:
         return layer
 
-    hook_grain = w30[hook_start:hook_end].copy()
-    hook_grain += transient_emphasis(source[hook_start:hook_end]) * 0.42
-    hook_grain *= decay_envelope(hook_grain.shape[0], attack=0.010, decay=0.135)[:, None]
-    chop_grain = w30[chop_start:chop_end].copy()
-    chop_grain += transient_emphasis(source[chop_start:chop_end]) * 0.54
-    chop_grain *= decay_envelope(chop_grain.shape[0], attack=0.006, decay=0.105)[:, None]
+    grains = []
+    for index, grain_start in enumerate(source_policy.hook_chop_policy.riff_start_frames):
+        grain_start = min(grain_start, w30.shape[0] - 1, source.shape[0] - 1)
+        grain_end = min(grain_start + grain_len, w30.shape[0], source.shape[0])
+        if grain_end <= grain_start:
+            continue
+        grain = w30[grain_start:grain_end].copy()
+        grain += transient_emphasis(source[grain_start:grain_end]) * (0.40 + index * 0.06)
+        grain *= decay_envelope(
+            grain.shape[0],
+            attack=0.010 if index == 0 else 0.006,
+            decay=max(0.085, 0.135 - index * 0.012),
+        )[:, None]
+        grains.append(grain)
+    if len(grains) < 2:
+        hook_grain = w30[hook_start:hook_end].copy()
+        hook_grain += transient_emphasis(source[hook_start:hook_end]) * 0.42
+        hook_grain *= decay_envelope(hook_grain.shape[0], attack=0.010, decay=0.135)[:, None]
+        chop_grain = w30[chop_start:chop_end].copy()
+        chop_grain += transient_emphasis(source[chop_start:chop_end]) * 0.54
+        chop_grain *= decay_envelope(chop_grain.shape[0], attack=0.006, decay=0.105)[:, None]
+        grains = [hook_grain, chop_grain]
 
     beat_frames = max(1, bar_frames // BEATS_PER_BAR)
     patterns = {
@@ -2511,11 +2570,12 @@ def render_w30_hook_riff_layer(
         7: [(0.00, 1.05, False), (1.00, 0.64, False), (2.00, 0.88, False), (3.25, 0.72, True)],
     }
     for bar in range(min(bars, DEFAULT_BARS)):
-        for beat, gain, reverse in patterns.get(bar, []):
+        for hit_index, (beat, gain, reverse) in enumerate(patterns.get(bar, [])):
             target = bar * bar_frames + int(round(beat * beat_frames))
             if target >= layer.shape[0]:
                 continue
-            source_grain = chop_grain if reverse or bar in (2, 3, 5) else hook_grain
+            grain_index = (bar + hit_index + (1 if reverse else 0)) % len(grains)
+            source_grain = grains[grain_index]
             stab = source_grain[::-1] if reverse else source_grain
             end = min(target + stab.shape[0], layer.shape[0])
             if end > target:
@@ -2780,6 +2840,7 @@ def build_report(
             "min_hook_chop_selection_candidates": MIN_HOOK_CHOP_SELECTION_CANDIDATES,
             "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
             "min_hook_chop_offset_distance_frames": MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES,
+            "min_hook_chop_riff_source_offsets": MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS,
             "min_destructive_gesture_candidates": MIN_DESTRUCTIVE_GESTURE_CANDIDATES,
             "min_destructive_static_distance_frames": MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
             "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
@@ -3104,6 +3165,11 @@ def failure_codes_for(
             failures.append("hook_chop_selection_collapsed_to_static_first_bar")
         if proof.get("hook_chop_offset_distance_frames", 0.0) < MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES:
             failures.append("hook_chop_selection_not_enough_offset_contrast")
+        if (
+            proof.get("hook_chop_riff_unique_source_offset_count", 0.0)
+            < MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS
+        ):
+            failures.append("hook_chop_riff_source_offsets_too_narrow")
         if proof.get("destructive_gesture_source_derived", 0.0) < 1.0:
             failures.append("destructive_gesture_not_source_derived")
         if proof.get("destructive_gesture_candidate_count", 0.0) < MIN_DESTRUCTIVE_GESTURE_CANDIDATES:

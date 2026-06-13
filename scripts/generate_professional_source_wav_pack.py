@@ -206,6 +206,9 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
             "hook_chop_offset_distance_frames": proof[
                 "hook_chop_offset_distance_frames"
             ],
+            "hook_chop_riff_unique_source_offset_count": proof[
+                "hook_chop_riff_unique_source_offset_count"
+            ],
             "destructive_gesture_source_derived": proof[
                 "destructive_gesture_source_derived"
             ],
