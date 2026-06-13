@@ -10,22 +10,22 @@ struct MixPolicy {
 }
 
 const SOURCE_FIRST_MIX_POLICY: MixPolicy = MixPolicy {
-    tr909_gain: 0.12,
-    tr909_low_gain: 0.05,
-    mc202_gain: 0.04,
-    mc202_low_gain: 0.02,
-    w30_gain: 1.18,
+    tr909_gain: 0.10,
+    tr909_low_gain: 0.04,
+    mc202_gain: 0.035,
+    mc202_low_gain: 0.015,
+    w30_gain: 1.24,
     drive: 1.18,
     output_gain: 0.88,
 };
 
 const GENERATED_SUPPORT_MIX_POLICY: MixPolicy = MixPolicy {
-    tr909_gain: 0.58,
-    tr909_low_gain: 0.26,
-    mc202_gain: 0.30,
-    mc202_low_gain: 0.10,
-    w30_gain: 1.36,
-    drive: 2.20,
+    tr909_gain: 0.76,
+    tr909_low_gain: 0.28,
+    mc202_gain: 0.40,
+    mc202_low_gain: 0.12,
+    w30_gain: 1.46,
+    drive: 2.18,
     output_gain: 0.94,
 };
 
