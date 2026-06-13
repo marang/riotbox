@@ -156,6 +156,37 @@
       }
     },
     {
+      "entry_id": "pad-noise-fadapad-unverified-candidate",
+      "source_family": "tonal_pad",
+      "source_path": "data/test_audio/examples/DH_Fadapad_120_A.wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/pad_noise_fadapad_120/render/05_full_performance.wav",
+        "sha256": "4545454545454545454545454545454545454545454545454545454545454545"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/edge-source-professional-diagnostics.json",
+        "sha256": "7878787878787878787878787878787878787878787878787878787878787878"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/pad-noise-fadapad/prompt.md",
+        "sha256": "9090909090909090909090909090909090909090909090909090909090909090"
+      },
+      "human_verdict": "unverified",
+      "demo_readiness": "unverified",
+      "quality_claim": false,
+      "demo_worthiness_note": "Pad/noise edge-source candidate is indexed for review because it uses the pad_noise policy path, but it remains unverified until a human decides whether the texture/gate gesture is playable.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "Unverified: candidate may become a gated texture/stab rather than a tonal hook.",
+        "hardest_audible_element": "Unverified: texture gate or silence contrast may be the strongest element.",
+        "source_character": "Unverified: pad/noise source character should survive as transformed texture.",
+        "destructive_contrast": "Unverified: soft attacks need stronger cut or gate contrast before demo promotion.",
+        "bass_drum_pressure": "Unverified: pressure is secondary for this source family.",
+        "live_triggerability": "Unverified: candidate should be judged as a live texture or stab trigger.",
+        "eight_bar_replay_value": "Unverified: no replay-value claim until structured listening review."
+      }
+    },
+    {
       "entry_id": "tonal-hook-rusharp-unverified-candidate",
       "source_family": "tonal_hook",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
