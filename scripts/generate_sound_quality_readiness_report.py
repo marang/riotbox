@@ -29,6 +29,9 @@ MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
 MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
 MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
+MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.46
 
 CORPUS_TO_DEMO_FAMILIES = {
     "dense_break": {"dense_break"},
@@ -761,13 +764,21 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(mix_balance.get("min_support_generated_to_source_rms_ratio")) >= 0.16,
+            number(mix_balance.get("min_support_generated_to_source_rms_ratio"))
+            >= MIN_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
             "professional_suite_mix_support_too_weak",
             failures,
         )
         check(
-            number(mix_balance.get("max_source_first_generated_to_source_rms_ratio")) <= 0.38,
+            number(mix_balance.get("max_source_first_generated_to_source_rms_ratio"))
+            <= MAX_MIX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
             "professional_suite_source_first_too_generated",
+            failures,
+        )
+        check(
+            number(mix_balance.get("max_support_generated_to_source_rms_ratio"))
+            <= MAX_MIX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+            "professional_suite_mix_support_masks_source",
             failures,
         )
 
