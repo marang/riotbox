@@ -22,6 +22,9 @@ P023 also projects the routed cases into `production_fix_candidates`. Each
 candidate groups one fix category, case ids, source families, artifact refs,
 software next step, and musician payoff. These candidates are work selection
 inputs for later implementation slices, not proof that the sound is good.
+The report also emits `production_fix_summary`, a compact grouped view of the
+candidate categories, recurring fix categories, case-reference counts, primary
+case-reference counts, and top candidate category.
 
 This is a production-actionability diagnostic only:
 
@@ -31,6 +34,12 @@ This is a production-actionability diagnostic only:
 - scripted or negative fixtures cannot be used as product-quality proof
 - `production_fix_candidates[]` also keep `quality_proof: false` and
   `automated_musical_approval: false`
+- `production_fix_summary` also keeps `quality_proof: false` and
+  `automated_musical_approval: false`
+- `--validate-report` rejects stale grouped data, mismatched candidate counts,
+  unknown candidate case ids, stale scores, stale artifact refs, stale source
+  families, and candidates that claim quality proof or automated musical
+  approval
 
 Run:
 
@@ -40,4 +49,6 @@ just weak-output-fix-routing-fixtures
 
 The committed fixture manifest proves weak hook/pressure, source-loss,
 flat-stutter, hookless tonal material, weak sparse-bass pressure, and
-source-masked generated support route to concrete production work.
+source-masked generated support route to concrete production work. Negative
+fixtures cover unknown routes, stale candidate counts, unknown candidate case
+ids, and stale grouped summaries.

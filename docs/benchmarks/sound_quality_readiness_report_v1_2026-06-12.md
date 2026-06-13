@@ -29,7 +29,8 @@ The report exposes:
   missing candidates, missing human verdicts, and missing demo-ready coverage.
 - `weak_output_routing`: concrete production fix categories and artifact paths
   when the routing report is available, including P023 production-fix
-  candidates when the routing report exposes them.
+  candidates and their grouped `production_fix_summary` when the routing report
+  exposes them.
 - `professional_output_suite`: current diagnostic context from the professional
   suite, including strongest audible elements, source-character hook/chop
   selection floor/span, dense drum-pressure proof, mix-balance summary, and the
