@@ -262,12 +262,23 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
             "case_count": 0,
             "fix_categories": [],
             "production_fix_candidate_count": 0,
+            "production_fix_summary": {},
             "production_fix_candidates": [],
             "cases": [],
         }
     require(report.get("schema") == WEAK_ROUTING_SCHEMA, f"{path}: schema must be {WEAK_ROUTING_SCHEMA}")
     cases = list(report.get("cases", []))
     candidates = weak_routing_candidates(report, path)
+    summary = object_or_empty(report.get("production_fix_summary"))
+    require(summary, f"{path}: production_fix_summary must be object")
+    require(
+        summary.get("candidate_count") == len(candidates),
+        f"{path}: production_fix_summary candidate_count mismatch",
+    )
+    require(
+        summary.get("categories") == [candidate["category"] for candidate in candidates],
+        f"{path}: production_fix_summary categories mismatch",
+    )
     return {
         "path": str(path),
         "available": True,
@@ -278,6 +289,7 @@ def weak_routing_summary(report: dict[str, Any] | None, path: Path) -> dict[str,
         "automated_musical_approval": report.get("automated_musical_approval"),
         "fix_categories": list(report.get("fix_categories", [])),
         "production_fix_candidate_count": len(candidates),
+        "production_fix_summary": summary,
         "production_fix_candidates": candidates,
         "cases": [
             {
@@ -552,6 +564,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     unverified = nested_list(report, "demo_bank", "unverified_candidate_ids")
     weak_entries = nested_list(report, "demo_bank", "weak_or_fail_entries")
     weak_available = nested_value(report, "weak_output_routing", "available")
+    weak_fix_summary = nested_value(report, "weak_output_routing", "production_fix_summary")
     suite_available = nested_value(report, "professional_output_suite", "available")
     suite_scripted = nested_value(report, "professional_output_suite", "scripted_generation")
     suite_quality = nested_value(report, "professional_output_suite", "quality_proof")
@@ -646,6 +659,31 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         check(
             number(mix_balance.get("max_source_first_generated_to_source_rms_ratio")) <= 0.38,
             "professional_suite_source_first_too_generated",
+            failures,
+        )
+
+    if weak_available is True:
+        check(
+            isinstance(weak_fix_summary, dict),
+            "weak_output_routing_fix_summary_missing",
+            failures,
+        )
+        weak_summary = weak_fix_summary if isinstance(weak_fix_summary, dict) else {}
+        candidate_count = nested_value(report, "weak_output_routing", "production_fix_candidate_count")
+        check(
+            weak_summary.get("candidate_count") == candidate_count,
+            "weak_output_routing_fix_summary_count_stale",
+            failures,
+        )
+        check(
+            isinstance(weak_summary.get("categories"), list) and bool(weak_summary.get("categories")),
+            "weak_output_routing_fix_summary_categories_missing",
+            failures,
+        )
+        check(
+            isinstance(weak_summary.get("recurring_fix_categories"), list)
+            and bool(weak_summary.get("recurring_fix_categories")),
+            "weak_output_routing_fix_summary_recurring_missing",
             failures,
         )
 

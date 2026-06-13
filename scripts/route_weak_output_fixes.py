@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 from typing import Any
 
@@ -187,14 +188,28 @@ def main() -> int:
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--date", default="local-weak-output-fix-routing")
+    parser.add_argument("--validate-report", type=Path)
     args = parser.parse_args()
 
     try:
+        if args.validate_report:
+            report = read_json_object(args.validate_report)
+            failures = validate_routing_report(report)
+            if failures:
+                raise ValueError(", ".join(failures))
+            print(f"valid weak-output fix routing report: {args.validate_report}")
+            return 0
+
         manifest = read_json_object(args.manifest)
         report = build_report(manifest, args.manifest, args.date)
+        validation_failures = validate_routing_report(report)
+        if validation_failures:
+            report["result"] = "fail"
+            report["agent_verdict"] = "agent_fail"
+            report["failure_codes"] = report["failure_codes"] + validation_failures
         args.output.mkdir(parents=True, exist_ok=True)
         write_reports(args.output, report)
-    except (OSError, TypeError, ValueError) as error:
+    except (OSError, TypeError, ValueError, json.JSONDecodeError) as error:
         print(f"invalid weak-output fix routing: {error}", file=sys.stderr)
         return 1
 
@@ -266,6 +281,7 @@ def build_report(manifest: dict[str, Any], manifest_path: Path, date: str) -> di
         "routed_case_count": sum(1 for case in cases if case["proposed_fix_categories"]),
         "fix_categories": sorted({category for case in cases for category in case["proposed_fix_categories"]}),
         "production_fix_candidate_count": len(candidates),
+        "production_fix_summary": build_production_fix_summary(cases, candidates),
         "production_fix_candidates": candidates,
         "cases": cases,
         "failure_codes": failures,
@@ -341,6 +357,233 @@ def build_production_fix_candidates(cases: list[dict[str, Any]]) -> list[dict[st
         candidates,
         key=lambda candidate: (-candidate["score"], CATEGORY_ORDER.index(candidate["category"])),
     )
+
+
+def build_production_fix_summary(
+    cases: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],
+) -> dict[str, Any]:
+    category_case_counts: Counter[str] = Counter()
+    primary_case_counts: Counter[str] = Counter()
+    for case in cases:
+        for category in case["proposed_fix_categories"]:
+            category_case_counts[category] += 1
+        primary_case_counts[str(case["proposed_next_fix_category"])] += 1
+
+    candidate_categories = [str(candidate["category"]) for candidate in candidates]
+    recurring = sorted(
+        (category for category, count in category_case_counts.items() if count >= 2),
+        key=lambda category: CATEGORY_ORDER.index(category),
+    )
+    top_candidate = candidates[0] if candidates else None
+    return {
+        "candidate_count": len(candidates),
+        "categories": candidate_categories,
+        "recurring_fix_categories": recurring,
+        "case_ref_count": sum(len(candidate["case_ids"]) for candidate in candidates),
+        "primary_case_ref_count": sum(len(candidate["primary_case_ids"]) for candidate in candidates),
+        "case_counts_by_category": {
+            category: category_case_counts[category]
+            for category in candidate_categories
+        },
+        "primary_case_counts_by_category": {
+            category: primary_case_counts[category]
+            for category in candidate_categories
+        },
+        "top_candidate_category": str(top_candidate["category"]) if top_candidate else "none",
+        "quality_proof": False,
+        "automated_musical_approval": False,
+    }
+
+
+def validate_routing_report(report: dict[str, Any]) -> list[str]:
+    failures: list[str] = []
+    check(report.get("schema") == SCHEMA, "schema_mismatch", failures)
+    check(report.get("schema_version") == 1, "schema_version_mismatch", failures)
+    check(report.get("result") == "pass", "result_not_pass", failures)
+    check(report.get("human_verdict") == "unverified", "human_verdict_not_unverified", failures)
+    check(report.get("quality_proof") is False, "report_claims_quality_proof", failures)
+    check(
+        report.get("automated_musical_approval") is False,
+        "report_claims_automated_musical_approval",
+        failures,
+    )
+
+    cases = list_field(report, "cases", failures)
+    candidates = list_field(report, "production_fix_candidates", failures)
+    summary = object_field(report, "production_fix_summary", failures)
+    case_ids = set()
+    case_by_id: dict[str, dict[str, Any]] = {}
+    categories_from_cases: set[str] = set()
+    category_counts: Counter[str] = Counter()
+    primary_counts: Counter[str] = Counter()
+
+    for index, case in enumerate(cases):
+        if not isinstance(case, dict):
+            failures.append(f"cases_{index}_not_object")
+            continue
+        case_id = string_field(case, "case_id", f"cases_{index}", failures)
+        if case_id in case_ids:
+            failures.append(f"{case_id}_duplicate_case_id")
+        case_ids.add(case_id)
+        case_by_id[case_id] = case
+        categories = string_list_field(case, "proposed_fix_categories", f"{case_id}_proposed_fix_categories", failures)
+        if not categories:
+            failures.append(f"{case_id}_missing_fix_category")
+        for category in categories:
+            if category not in CATEGORIES:
+                failures.append(f"{case_id}_unknown_fix_category_{category}")
+                continue
+            categories_from_cases.add(category)
+            category_counts[category] += 1
+        primary = string_field(case, "proposed_next_fix_category", f"{case_id}_proposed_next_fix_category", failures)
+        if primary:
+            if primary not in CATEGORIES:
+                failures.append(f"{case_id}_unknown_primary_fix_category_{primary}")
+            else:
+                primary_counts[primary] += 1
+            if primary and primary not in categories:
+                failures.append(f"{case_id}_primary_category_not_in_proposed_categories")
+        if case.get("quality_proof") is not False:
+            failures.append(f"{case_id}_claims_quality_proof")
+        if case.get("automated_musical_approval") is not False:
+            failures.append(f"{case_id}_claims_automated_musical_approval")
+
+    raw_case_count = report.get("case_count")
+    raw_routed_count = report.get("routed_case_count")
+    check(is_non_bool_int(raw_case_count), "case_count_not_integer", failures)
+    check(is_non_bool_int(raw_routed_count), "routed_case_count_not_integer", failures)
+    if is_non_bool_int(raw_case_count) and raw_case_count != len(cases):
+        failures.append("case_count_mismatch")
+    expected_routed_count = sum(
+        1
+        for case in cases
+        if isinstance(case, dict) and string_list(case.get("proposed_fix_categories"))
+    )
+    if is_non_bool_int(raw_routed_count) and raw_routed_count != expected_routed_count:
+        failures.append("routed_case_count_mismatch")
+
+    fix_categories = string_list_field(report, "fix_categories", "fix_categories", failures)
+    if fix_categories and set(fix_categories) != categories_from_cases:
+        failures.append("fix_categories_mismatch")
+
+    raw_candidate_count = report.get("production_fix_candidate_count")
+    check(
+        is_non_bool_int(raw_candidate_count),
+        "production_fix_candidate_count_not_integer",
+        failures,
+    )
+    if is_non_bool_int(raw_candidate_count) and raw_candidate_count != len(candidates):
+        failures.append("production_fix_candidate_count_mismatch")
+
+    candidate_categories: list[str] = []
+    candidate_case_ref_count = 0
+    candidate_primary_ref_count = 0
+    candidate_case_counts: dict[str, int] = {}
+    candidate_primary_counts: dict[str, int] = {}
+    for index, candidate in enumerate(candidates):
+        if not isinstance(candidate, dict):
+            failures.append(f"production_fix_candidates_{index}_not_object")
+            continue
+        candidate_id = string_field(candidate, "candidate_id", f"production_fix_candidates_{index}", failures)
+        category = string_field(candidate, "category", candidate_id or f"production_fix_candidates_{index}", failures)
+        if category not in CATEGORIES:
+            failures.append(f"{candidate_id}_unknown_category")
+            continue
+        if category in candidate_case_counts:
+            failures.append(f"{candidate_id}_duplicate_category")
+        candidate_categories.append(category)
+        case_refs = string_list_field(candidate, "case_ids", f"{candidate_id}_case_ids", failures)
+        primary_refs = string_list_field(candidate, "primary_case_ids", f"{candidate_id}_primary_case_ids", failures)
+        artifact_refs = string_list_field(candidate, "artifact_refs", f"{candidate_id}_artifact_refs", failures)
+        source_families = string_list_field(candidate, "source_families", f"{candidate_id}_source_families", failures)
+        candidate_case_ref_count += len(case_refs)
+        candidate_primary_ref_count += len(primary_refs)
+        candidate_case_counts[category] = len(case_refs)
+        candidate_primary_counts[category] = len(primary_refs)
+        if not case_refs:
+            failures.append(f"{candidate_id}_missing_case_ids")
+        if not artifact_refs:
+            failures.append(f"{candidate_id}_missing_artifact_refs")
+        score = candidate.get("score")
+        if not is_non_bool_int(score) or score < 1:
+            failures.append(f"{candidate_id}_score_invalid")
+        expected_artifacts = []
+        expected_families = []
+        for case_id in case_refs:
+            case = case_by_id.get(case_id)
+            if case is None:
+                failures.append(f"{candidate_id}_unknown_case_{case_id}")
+                continue
+            if category not in string_list(case.get("proposed_fix_categories")):
+                failures.append(f"{candidate_id}_case_{case_id}_missing_category")
+            artifact = case.get("artifact_to_hear")
+            if isinstance(artifact, str) and artifact:
+                expected_artifacts.append(artifact)
+            source_family = case.get("source_family")
+            if isinstance(source_family, str) and source_family:
+                expected_families.append(source_family)
+        for case_id in primary_refs:
+            case = case_by_id.get(case_id)
+            if case is None:
+                failures.append(f"{candidate_id}_unknown_primary_case_{case_id}")
+                continue
+            if case.get("proposed_next_fix_category") != category:
+                failures.append(f"{candidate_id}_primary_case_{case_id}_category_mismatch")
+        if set(primary_refs) - set(case_refs):
+            failures.append(f"{candidate_id}_primary_case_not_in_case_ids")
+        if score != len(primary_refs) * 2 + len(case_refs):
+            failures.append(f"{candidate_id}_score_stale")
+        if artifact_refs != sorted(set(expected_artifacts)):
+            failures.append(f"{candidate_id}_artifact_refs_stale")
+        if source_families != sorted(set(expected_families)):
+            failures.append(f"{candidate_id}_source_families_stale")
+        if candidate.get("evidence_role") != "production_fix_candidate":
+            failures.append(f"{candidate_id}_evidence_role_invalid")
+        if candidate.get("quality_proof") is not False:
+            failures.append(f"{candidate_id}_claims_quality_proof")
+        if candidate.get("automated_musical_approval") is not False:
+            failures.append(f"{candidate_id}_claims_automated_musical_approval")
+        if not isinstance(candidate.get("software_next_step"), str) or not candidate["software_next_step"]:
+            failures.append(f"{candidate_id}_missing_software_next_step")
+        if not isinstance(candidate.get("musician_payoff"), str) or not candidate["musician_payoff"]:
+            failures.append(f"{candidate_id}_missing_musician_payoff")
+
+    if summary:
+        expected_recurring = sorted(
+            (category for category, count in category_counts.items() if count >= 2),
+            key=lambda category: CATEGORY_ORDER.index(category),
+        )
+        summary_categories = string_list_field(summary, "categories", "production_fix_summary_categories", failures)
+        summary_recurring = string_list_field(
+            summary,
+            "recurring_fix_categories",
+            "production_fix_summary_recurring_fix_categories",
+            failures,
+        )
+        if summary.get("candidate_count") != len(candidates):
+            failures.append("production_fix_summary_candidate_count_stale")
+        if summary_categories != candidate_categories:
+            failures.append("production_fix_summary_categories_stale")
+        if summary_recurring != expected_recurring:
+            failures.append("production_fix_summary_recurring_categories_stale")
+        if summary.get("case_ref_count") != candidate_case_ref_count:
+            failures.append("production_fix_summary_case_ref_count_stale")
+        if summary.get("primary_case_ref_count") != candidate_primary_ref_count:
+            failures.append("production_fix_summary_primary_ref_count_stale")
+        if summary.get("case_counts_by_category") != candidate_case_counts:
+            failures.append("production_fix_summary_case_counts_stale")
+        if summary.get("primary_case_counts_by_category") != candidate_primary_counts:
+            failures.append("production_fix_summary_primary_counts_stale")
+        expected_top = candidate_categories[0] if candidate_categories else "none"
+        if summary.get("top_candidate_category") != expected_top:
+            failures.append("production_fix_summary_top_candidate_stale")
+        if summary.get("quality_proof") is not False:
+            failures.append("production_fix_summary_claims_quality_proof")
+        if summary.get("automated_musical_approval") is not False:
+            failures.append("production_fix_summary_claims_automated_musical_approval")
+
+    return failures
 
 
 def build_case(entry: dict[str, Any], fixture_dir: Path) -> dict[str, Any]:
@@ -682,6 +925,7 @@ def render_markdown(report: dict[str, Any]) -> str:
         f"- Automated musical approval: `{str(report['automated_musical_approval']).lower()}`",
         f"- Routed cases: `{report['routed_case_count']}/{report['case_count']}`",
         f"- Production fix candidates: `{report['production_fix_candidate_count']}`",
+        f"- Recurring fix categories: `{', '.join(report['production_fix_summary']['recurring_fix_categories'])}`",
         "",
         "## Production Fix Candidates",
         "",
@@ -748,6 +992,55 @@ def string_list(value: Any) -> list[str]:
     return [str(item) for item in value if isinstance(item, str) and item]
 
 
+def list_field(data: dict[str, Any], field: str, failures: list[str]) -> list[Any]:
+    value = data.get(field)
+    if not isinstance(value, list):
+        failures.append(f"{field}_not_array")
+        return []
+    return value
+
+
+def object_field(data: dict[str, Any], field: str, failures: list[str]) -> dict[str, Any]:
+    value = data.get(field)
+    if not isinstance(value, dict):
+        failures.append(f"{field}_not_object")
+        return {}
+    return value
+
+
+def string_field(
+    data: dict[str, Any],
+    field: str,
+    context: str,
+    failures: list[str],
+) -> str:
+    value = data.get(field)
+    if not isinstance(value, str) or not value:
+        failures.append(f"{context}_{field}_missing")
+        return ""
+    return value
+
+
+def string_list_field(
+    data: dict[str, Any],
+    field: str,
+    context: str,
+    failures: list[str],
+) -> list[str]:
+    value = data.get(field)
+    if not isinstance(value, list):
+        failures.append(f"{context}_{field}_not_array")
+        return []
+    items = [item for item in value if isinstance(item, str) and item]
+    if len(items) != len(value):
+        failures.append(f"{context}_{field}_contains_non_string")
+    return items
+
+
+def is_non_bool_int(value: Any) -> bool:
+    return isinstance(value, int) and not isinstance(value, bool)
+
+
 def string_or(value: Any, default: Any) -> str:
     if isinstance(value, str) and value:
         return value
@@ -769,6 +1062,11 @@ def normalize(value: str) -> str:
 def require(condition: bool, message: str) -> None:
     if not condition:
         raise ValueError(message)
+
+
+def check(condition: bool, code: str, failures: list[str]) -> None:
+    if not condition:
+        failures.append(code)
 
 
 if __name__ == "__main__":
