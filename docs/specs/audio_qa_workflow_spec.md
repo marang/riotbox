@@ -493,6 +493,14 @@ does not approve the output as musical quality and must remain paired with
 `quality_proof: false` and `human_verdict: unverified` until a structured human
 or calibrated-agent gate approves it.
 
+P023 dense-break diagnostics additionally gate physical drum pressure for the
+source family that claims snare/break impact. A `dense_break` report must keep
+`strongest_audible_element == "snare"` and expose bounded
+`dense_break_snare_pressure_margin` and
+`dense_break_physical_drum_pressure_score` fields. These fields prove that the
+current scripted render has a dominant snare/break transient with low-band
+support; they still do not turn the artifact into a musical quality proof.
+
 P022 rebuild-only/source-layer-off diagnostics may expose transformed-source
 survival evidence. The current bounded fields are
 `rebuild_only_source_spectral_similarity`,

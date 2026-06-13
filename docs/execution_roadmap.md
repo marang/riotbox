@@ -652,6 +652,10 @@ following:
     snare/break, bass pressure, stab/texture, silence, or restore impact is
     currently carrying the output, with score and margin gates that reject
     missing or ambiguous evidence while keeping the artifact diagnostic-only.
+  - current P023 dense-break diagnostics gate physical drum pressure by
+    requiring snare/break to be the strongest audible element and by reporting
+    bounded snare-margin and combined drum-pressure scores; this protects
+    harder break impact without claiming a musical pass.
   - current P022 diagnostic coverage also writes rebuild-only/source-layer-off
     professional-output WAVs and gates them for non-silence, useful RMS,
     source correlation, distinct source-on/source-off output, and a bounded
