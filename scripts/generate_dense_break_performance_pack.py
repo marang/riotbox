@@ -1293,11 +1293,11 @@ def tail_shape_policy_for(
     dropout_silence_gain = float(
         np.clip(
             fixed.dropout_silence_gain
-            + low_norm * 0.003
-            - transient_norm * 0.004
+            + low_norm * 0.002
+            - transient_norm * 0.006
             + (0.004 if source_family == "sparse_bass_pressure" else 0.0),
-            0.006,
-            0.024,
+            0.004,
+            0.020,
         )
     )
     derived_step = int(
@@ -1315,23 +1315,31 @@ def tail_shape_policy_for(
         "dropout_silence_gain": dropout_silence_gain,
         "stutter_step_divisor": stutter_step_divisor,
         "stutter_grain_gain": float(
-            np.clip(fixed.stutter_grain_gain + transient_norm * 0.42 + high_norm * 0.18, 2.86, 4.12)
+            np.clip(
+                fixed.stutter_grain_gain + transient_norm * 0.52 + high_norm * 0.24,
+                2.90,
+                4.30,
+            )
         ),
         "stutter_snap_gain": float(
             np.clip(
                 fixed.stutter_snap_gain
-                + transient_norm * 0.34
-                + high_norm * 0.15
-                + restore_bias * 0.35,
+                + transient_norm * 0.46
+                + high_norm * 0.20
+                + restore_bias * 0.42,
                 1.82,
-                3.30,
+                3.55,
             )
         ),
         "restore_source_gain": float(
             np.clip(fixed.restore_source_gain + low_norm * 0.12 + restore_bias, 1.05, 1.68)
         ),
         "restore_snap_gain": float(
-            np.clip(fixed.restore_snap_gain + transient_norm * 0.76 + restore_bias, 4.20, 7.20)
+            np.clip(
+                fixed.restore_snap_gain + transient_norm * 0.88 + restore_bias * 1.10,
+                4.30,
+                7.60,
+            )
         ),
         "restore_w30_gain": float(
             np.clip(fixed.restore_w30_gain + w30_norm * 0.36 + restore_bias, 2.12, 3.26)
