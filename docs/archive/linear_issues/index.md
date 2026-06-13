@@ -1158,4 +1158,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen mix-bus clarity from weak-output candidates
 - [RIOTBOX-1256.md](./RIOTBOX-1256.md)
   P023: Strengthen source-window selection from human weak-output candidates
+- [RIOTBOX-1257.md](./RIOTBOX-1257.md)
+  P023: Strengthen physical drum pressure after weak-output fixes
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
