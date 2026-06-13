@@ -154,7 +154,14 @@ def render_case(repo: Path, output: Path, date: str, case: dict) -> dict:
     files = source_report["files"]
     pressure_lift_policy = source_report["source_policy"]["pressure_lift_policy"]
     arrangement_policy = source_report["source_policy"]["arrangement_policy"]
-    family_failures = family_failure_codes(case["source_family"], proof, metrics)
+    source_report_failures = []
+    if source_report["result"] != "pass":
+        source_report_failures = [
+            f"source_report_{code}" for code in source_report["failure_codes"]
+        ]
+    family_failures = source_report_failures + family_failure_codes(
+        case["source_family"], proof, metrics
+    )
     case_summary = {
         **case,
         "result": "pass" if not family_failures else "fail",

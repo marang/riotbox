@@ -249,9 +249,9 @@ def validate_destructive_metrics(
 def validate_sparse_bass_metrics(
     matrix: dict[str, Any], source_wav: dict[str, Any], failures: list[str]
 ) -> None:
-    require(number(matrix.get("min_sparse_bass_movement_static_distance_hz")) >= 0.25, "matrix_sparse_bass_movement_collapsed_to_static", failures)
+    require(number(matrix.get("min_sparse_bass_movement_static_distance_hz")) >= 0.50, "matrix_sparse_bass_movement_collapsed_to_static", failures)
     require(number(matrix.get("min_sparse_bass_movement_frequency_span_hz")) >= 2.0, "matrix_sparse_bass_movement_span_too_low", failures)
-    require(number(source_wav.get("sparse_bass_movement_static_distance_hz")) >= 0.25, "source_wav_sparse_bass_movement_collapsed_to_static", failures)
+    require(number(source_wav.get("sparse_bass_movement_static_distance_hz")) >= 0.50, "source_wav_sparse_bass_movement_collapsed_to_static", failures)
     require(number(source_wav.get("sparse_bass_movement_frequency_span_hz")) >= 2.0, "source_wav_sparse_bass_movement_span_too_low", failures)
 
 
