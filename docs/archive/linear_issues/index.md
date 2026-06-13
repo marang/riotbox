@@ -1124,4 +1124,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add pad/noise release-demo candidate scaffold
 - [RIOTBOX-1238.md](./RIOTBOX-1238.md)
   P023: Promote sparse-bass-pressure demo coverage from weak to pass candidate
+- [RIOTBOX-1239.md](./RIOTBOX-1239.md)
+  P023: Add bad-timing cautious release-demo candidate scaffold
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
