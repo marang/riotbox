@@ -499,6 +499,12 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "strongest_audible_element_margin": number(
                 proof.get("strongest_audible_element_margin")
             ),
+            "dense_break_physical_drum_pressure_score": number(
+                proof.get("dense_break_physical_drum_pressure_score")
+            ),
+            "dense_break_snare_pressure_margin": number(
+                proof.get("dense_break_snare_pressure_margin")
+            ),
             "full_performance_peak_abs": number(full.get("peak_abs")),
         }
     if child_id == "pro_pressure_source_matrix":

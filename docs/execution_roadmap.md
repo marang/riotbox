@@ -672,7 +672,6 @@ following:
     source-character floor and variation so weak or too-narrow source-window
     choices route back to source selection instead of being hidden by later mix
     or routing reports
-    evidence
   - dense-break and tonal-hook diagnostics now also derive destructive
     dropout/stutter/restore cue selection from scanned source/W-30 candidates,
     expose distance from old fixed destructive choices and stutter/restore offset
