@@ -1136,4 +1136,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen W-30 hook/chop policy for dense and tonal sources
 - [RIOTBOX-1244.md](./RIOTBOX-1244.md)
   P023: Strengthen destructive gesture contrast across weak routed cases
+- [RIOTBOX-1245.md](./RIOTBOX-1245.md)
+  P023: Strengthen mix-bus clarity for source-backed professional output
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
