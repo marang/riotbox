@@ -103,6 +103,7 @@ def validate_report(report: dict[str, Any], output: Path) -> list[str]:
     validate_strongest_element_metrics(dense, matrix, source_wav, edge, failures)
     validate_source_character_metrics(dense, matrix, source_wav, edge, failures)
     validate_rebuild_balance_metrics(matrix, source_wav, failures)
+    validate_feral_mix_balance_metrics(report, failures)
     validate_artifacts(output, failures)
     return failures
 
@@ -369,6 +370,37 @@ def validate_artifacts(output: Path, failures: list[str]) -> None:
     ):
         path = output / relative
         require(path.is_file() and path.stat().st_size > 0, f"missing_artifact:{relative}", failures)
+
+
+def validate_feral_mix_balance_metrics(report: dict[str, Any], failures: list[str]) -> None:
+    balance = object_or_empty(report.get("feral_mix_balance"))
+    thresholds = object_or_empty(balance.get("thresholds"))
+    cases = list_or_empty(balance.get("cases"))
+    require(balance.get("result") == "pass", "feral_mix_balance_not_pass", failures)
+    require(number(balance.get("case_count")) >= 8, "feral_mix_balance_case_count_too_low", failures)
+    require(
+        all(object_or_empty(case).get("has_required_mix_balance_fields") is True for case in cases),
+        "feral_mix_balance_fields_missing",
+        failures,
+    )
+    require(
+        number(balance.get("max_source_first_generated_to_source_rms_ratio"))
+        <= number(thresholds.get("max_source_first_generated_to_source_rms_ratio")),
+        "feral_source_first_generated_support_masks_source",
+        failures,
+    )
+    require(
+        number(balance.get("min_support_generated_to_source_rms_ratio"))
+        >= number(thresholds.get("min_support_generated_to_source_rms_ratio")),
+        "feral_generated_support_too_buried",
+        failures,
+    )
+    require(
+        number(balance.get("max_support_generated_to_source_rms_ratio"))
+        <= number(thresholds.get("max_support_generated_to_source_rms_ratio")),
+        "feral_generated_support_masks_source",
+        failures,
+    )
 
 
 def child_metrics(children: list[Any], child_id: str) -> dict[str, Any]:

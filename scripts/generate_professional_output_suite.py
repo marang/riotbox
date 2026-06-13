@@ -21,6 +21,9 @@ from audio_qa_evidence_boundary import (
 
 SCHEMA = "riotbox.professional_output_suite.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-output-suite")
+MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.16
+MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO = 0.38
+MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO = 0.65
 CHILDREN = {
     "dense_break": "riotbox.dense_break_performance_pack.v1",
     "pro_pressure_source_matrix": "riotbox.pro_pressure_source_matrix.v1",
@@ -254,7 +257,8 @@ def build_report(output: Path) -> dict[str, Any]:
     identity = validate_listening_identity(
         output / "professional-output-listening-pack" / "professional-output-listening-pack.json"
     )
-    failures = suite_failure_codes(children, identity)
+    feral_mix_balance = feral_mix_balance_summary(output)
+    failures = suite_failure_codes(children, identity, feral_mix_balance)
     report = {
         "schema": SCHEMA,
         "schema_version": 1,
@@ -266,6 +270,7 @@ def build_report(output: Path) -> dict[str, Any]:
         "failed_child_report_count": sum(1 for child in children if child["result"] != "pass"),
         "children": children,
         "listening_identity": identity,
+        "feral_mix_balance": feral_mix_balance,
         "failure_codes": failures,
     }
     return apply_evidence_boundary(
@@ -1092,7 +1097,79 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
     }
 
 
-def suite_failure_codes(children: list[dict[str, Any]], identity: dict[str, Any]) -> list[str]:
+def feral_mix_balance_summary(output: Path) -> dict[str, Any]:
+    cases = []
+    for manifest_path in sorted(output.rglob("manifest.json")):
+        data = read_json(manifest_path)
+        mix_balance = object_or_empty(object_or_empty(data.get("metrics")).get("mix_balance"))
+        if not mix_balance:
+            continue
+        source_first_value = mix_balance.get("source_first_generated_to_source_rms_ratio")
+        support_value = mix_balance.get("support_generated_to_source_rms_ratio")
+        source_first = number(source_first_value)
+        support = number(support_value)
+        cases.append(
+            {
+                "manifest": str(manifest_path.relative_to(output)),
+                "source_first_generated_to_source_rms_ratio": source_first,
+                "support_generated_to_source_rms_ratio": support,
+                "has_required_mix_balance_fields": is_number(source_first_value)
+                and is_number(support_value),
+            }
+        )
+    failures = []
+    if not cases:
+        failures.append("feral_mix_balance_missing")
+    if any(not case["has_required_mix_balance_fields"] for case in cases):
+        failures.append("feral_mix_balance_fields_missing")
+    if any(
+        case["source_first_generated_to_source_rms_ratio"]
+        > MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO
+        for case in cases
+    ):
+        failures.append("feral_source_first_generated_support_masks_source")
+    if any(
+        case["support_generated_to_source_rms_ratio"]
+        < MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO
+        for case in cases
+    ):
+        failures.append("feral_generated_support_too_buried")
+    if any(
+        case["support_generated_to_source_rms_ratio"]
+        > MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO
+        for case in cases
+    ):
+        failures.append("feral_generated_support_masks_source")
+    return {
+        "result": "pass" if not failures else "fail",
+        "case_count": len(cases),
+        "min_support_generated_to_source_rms_ratio": min(
+            (case["support_generated_to_source_rms_ratio"] for case in cases),
+            default=0.0,
+        ),
+        "max_support_generated_to_source_rms_ratio": max(
+            (case["support_generated_to_source_rms_ratio"] for case in cases),
+            default=0.0,
+        ),
+        "max_source_first_generated_to_source_rms_ratio": max(
+            (case["source_first_generated_to_source_rms_ratio"] for case in cases),
+            default=0.0,
+        ),
+        "thresholds": {
+            "min_support_generated_to_source_rms_ratio": MIN_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+            "max_source_first_generated_to_source_rms_ratio": MAX_FERAL_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO,
+            "max_support_generated_to_source_rms_ratio": MAX_FERAL_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO,
+        },
+        "failure_codes": failures,
+        "cases": cases,
+    }
+
+
+def suite_failure_codes(
+    children: list[dict[str, Any]],
+    identity: dict[str, Any],
+    feral_mix_balance: dict[str, Any],
+) -> list[str]:
     failures = []
     for child in children:
         child_id = child["id"]
@@ -1115,6 +1192,10 @@ def suite_failure_codes(children: list[dict[str, Any]], identity: dict[str, Any]
             failures.append(f"{child_id}:{code}")
     if identity["result"] != "pass":
         failures.extend(f"listening_identity:{code}" for code in identity["failure_codes"])
+    if feral_mix_balance["result"] != "pass":
+        failures.extend(
+            f"feral_mix_balance:{code}" for code in feral_mix_balance["failure_codes"]
+        )
     return failures
 
 
@@ -1144,6 +1225,10 @@ def number(value: Any) -> float:
     if isinstance(value, (int, float)):
         return float(value)
     return 0.0
+
+
+def is_number(value: Any) -> bool:
+    return not isinstance(value, bool) and isinstance(value, (int, float))
 
 
 def sha256_file(path: Path) -> str:

@@ -92,8 +92,8 @@ mod tests {
     fn mix_balance_gate_rejects_old_drum_dominant_policy() {
         let grid = Grid::new(128.0, 4, 2).expect("grid");
         let sample_count = grid.total_frames * usize::from(CHANNEL_COUNT);
-        let tr909 = vec![0.20; sample_count];
-        let mc202 = vec![0.08; sample_count];
+        let tr909 = vec![0.06; sample_count];
+        let mc202 = vec![0.05; sample_count];
         let w30 = vec![0.20; sample_count];
         let old_drum_dominant_policy = MixPolicy {
             tr909_gain: 10.0,
@@ -113,6 +113,8 @@ mod tests {
 
         assert!(old_ratio >= MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
         assert!(source_first_ratio < MAX_SOURCE_FIRST_GENERATED_TO_SOURCE_RMS_RATIO);
+        assert!(source_first_ratio <= 0.12);
+        assert!(support_ratio >= 0.16);
         assert!(support_ratio < MAX_SUPPORT_GENERATED_TO_SOURCE_RMS_RATIO);
     }
 
