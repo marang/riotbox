@@ -50,7 +50,7 @@ MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
 MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
-MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 0.25
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 0.50
 MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
@@ -787,10 +787,10 @@ def mix_treatment_policy_for(
 
     if source_family == "tonal_hook":
         strategy = "tonal-hook-readable-mix-treatment"
-        hook_bias = 0.08
+        hook_bias = 0.04
         chop_bias = 0.02
-        pressure_bias = -0.02
-        restore_bias = 0.03
+        pressure_bias = 0.12
+        restore_bias = 0.24
     elif source_family == "sparse_bass_pressure":
         strategy = "sparse-bass-pressure-mix-treatment"
         hook_bias = -0.02
@@ -1143,9 +1143,9 @@ def tail_shape_policy_for(
         restore_bias = 0.18
     elif source_family == "tonal_hook":
         strategy = "source-derived-hook-readable-tail"
-        silence_bias = -0.012
+        silence_bias = 0.038
         density_bias = 0
-        restore_bias = -0.08
+        restore_bias = 0.16
     else:
         strategy = "source-derived-break-snap-tail"
         silence_bias = 0.006
@@ -1349,8 +1349,8 @@ def dense_break_source_policy(
 
     if pressure_lift_policy.source_family == "tonal_hook":
         bass_restore = 51.5
-        pressure_gain = 1.08
-        bass_gain = 1.08
+        pressure_gain = 1.18
+        bass_gain = 1.16
     elif pressure_lift_policy.source_family == "sparse_bass_pressure":
         bass_restore = 48.0
         pressure_gain = 1.04
@@ -1646,14 +1646,14 @@ def pressure_lift_policy_for(
             source_family="tonal_hook",
             lift_shape="hook-support lift",
             lift_intent="keep the tonal hook readable while pressure rises underneath",
-            source_bleed_gain=0.100,
-            hook_bleed_gain=0.96,
-            tr909_drive=0.92,
-            break_snap_drive=1.08,
-            mc202_drive=0.92,
-            bass_drive=0.94,
-            bar4_intensity=0.92,
-            bar5_intensity=1.05,
+            source_bleed_gain=0.080,
+            hook_bleed_gain=0.82,
+            tr909_drive=1.06,
+            break_snap_drive=1.20,
+            mc202_drive=1.12,
+            bass_drive=1.10,
+            bar4_intensity=1.08,
+            bar5_intensity=1.20,
             bar4_bass_frequency_hz=42.0,
             bar5_bass_frequency_hz=49.0,
         )
@@ -1941,11 +1941,10 @@ def bass_movement_frequency_policy(
     derived = {}
     for bar, base_frequency in static.items():
         start = bar * bar_frames
-        end = min(start + bar_frames, source.shape[0])
-        if start >= end:
+        chunk = source_chunk_for_bar(source, start, bar_frames)
+        if chunk.shape[0] == 0:
             derived[bar] = base_frequency
             continue
-        chunk = source[start:end]
         local_low = low_band_rms(chunk)
         mono = chunk.mean(axis=1)
         low = np.abs(one_pole_lowpass(mono.astype(np.float32), 140.0))
@@ -1954,16 +1953,29 @@ def bass_movement_frequency_policy(
         if weight > 1e-9:
             positions = np.arange(low.shape[0], dtype=np.float32) / max(1, low.shape[0] - 1)
             centroid = float(np.sum(positions * low) / weight)
-        energy_offset = float(np.clip((local_low / reference_low - 1.0) * 4.0, -5.0, 5.0))
-        timing_offset = float(np.clip((centroid - 0.50) * 9.0, -4.5, 4.5))
-        transient_offset = float(np.clip(transient_score(chunk) * 14.0, 0.0, 3.0))
+        energy_offset = float(np.clip((local_low / reference_low - 1.0) * 7.0, -6.0, 6.0))
+        timing_offset = float(np.clip((centroid - 0.50) * 13.0, -5.5, 5.5))
+        timing_direction = -1.0 if centroid < 0.50 else 1.0
+        transient_offset = float(
+            np.clip(transient_score(chunk) * 18.0, 0.0, 3.8) * timing_direction
+        )
         if source_policy.arrangement_policy.role_order[bar] == "restore":
-            timing_offset *= 0.55
-            transient_offset *= 0.60
+            timing_offset *= 0.72
+            transient_offset *= 0.76
         derived[bar] = float(
             np.clip(base_frequency + energy_offset + timing_offset + transient_offset, 32.0, 62.0)
         )
     return derived
+
+
+def source_chunk_for_bar(source: np.ndarray, start: int, frame_count: int) -> np.ndarray:
+    if source.shape[0] == 0 or frame_count <= 0:
+        return source[:0]
+    end = start + frame_count
+    if end <= source.shape[0]:
+        return source[start:end]
+    indices = (np.arange(frame_count, dtype=np.int64) + start) % source.shape[0]
+    return source[indices]
 
 
 def bass_movement_policy_proof(
@@ -2586,7 +2598,7 @@ def render_bass_pressure_layer(
             beat_t = np.arange(end - start, dtype=np.float32) / max(1, end - start)
             punch = np.exp(-beat_t * (5.4 if beat in (0, 2) else 7.2))
             envelope[start:end] += punch * (1.0 if beat in (0, 2) else 0.62)
-        source_drive = low_band_rms(source[bar_start:bar_end]) / 0.10
+        source_drive = low_band_rms(source_chunk_for_bar(source, bar_start, frames)) / 0.10
         role = source_policy.arrangement_policy.role_order[bar]
         gain = (
             float(np.clip(source_drive, 0.44, 1.24))
