@@ -249,6 +249,37 @@
       }
     },
     {
+      "entry_id": "weak-source-beat20-rejection-unverified-candidate",
+      "source_family": "other",
+      "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/local-weak-output-fix-routing/generated-weak-source-character/05_full_performance.wav",
+        "sha256": "dededededededededededededededededededededededededededededededede"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/local-weak-output-fix-routing/generated-weak-source-character/performance-report.json",
+        "sha256": "efefefefefefefefefefefefefefefefefefefefefefefefefefefefefefefef"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/weak-source-beat20-rejection/prompt.md",
+        "sha256": "f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0f0"
+      },
+      "human_verdict": "unverified",
+      "demo_readiness": "unverified",
+      "quality_claim": false,
+      "demo_worthiness_note": "Weak-source Beat20 rejection candidate is indexed so weak material stays visible and routes to source-selection or transformation fixes, but it remains unverified and not demo-ready.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "Unverified: weak material may not produce a usable hook without stronger transformation.",
+        "hardest_audible_element": "Unverified: no element should be assumed to hit hard enough for a demo.",
+        "source_character": "Unverified: this candidate is anchored to a source-character failure path.",
+        "destructive_contrast": "Unverified: destructive contrast may not rescue a weak source.",
+        "bass_drum_pressure": "Unverified: pressure must not hide missing source payoff.",
+        "live_triggerability": "Unverified: review should decide whether this should be transformed further or rejected.",
+        "eight_bar_replay_value": "Unverified: no replay-value claim until structured listening review finds a reason to keep it."
+      }
+    },
+    {
       "entry_id": "tonal-hook-rusharp-unverified-candidate",
       "source_family": "tonal_hook",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",
