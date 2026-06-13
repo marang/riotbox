@@ -15,6 +15,7 @@ from audio_qa_evidence_boundary import apply_evidence_boundary
 
 SCHEMA = "riotbox.professional_source_wav_pack.v1"
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-professional-source-wav-pack")
+MIN_TONAL_W30_TO_SOURCE_RMS_RATIO = 0.20
 DEFAULT_CASES = [
     {
         "case_id": "tonal_rusharp_120",
@@ -326,6 +327,8 @@ def family_failure_codes(source_family: str, proof: dict, metrics: dict) -> list
         failures.append("restore_not_bigger_than_pressure")
 
     if source_family == "tonal_hook":
+        if proof["w30_to_source_rms_ratio"] < MIN_TONAL_W30_TO_SOURCE_RMS_RATIO:
+            failures.append("tonal_w30_source_chop_too_weak")
         if proof["hook_to_source_transient_ratio"] < 1.0:
             failures.append("tonal_hook_lacks_source_transient")
         if proof["pressure_to_hook_rms_ratio"] < 1.05:
