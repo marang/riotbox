@@ -647,7 +647,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
         )
         source_character = suite_source_character if isinstance(suite_source_character, dict) else {}
         check(
-            number(source_character.get("dense_hook_chop_score_floor")) >= 0.55,
+            number(source_character.get("dense_hook_chop_score_floor")) >= 0.60,
             "professional_suite_dense_source_character_too_weak",
             failures,
         )
@@ -675,7 +675,7 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
         check(
-            number(source_character.get("tonal_hook_chop_score_floor")) >= 0.55,
+            number(source_character.get("tonal_hook_chop_score_floor")) >= 0.60,
             "professional_suite_tonal_source_character_too_weak",
             failures,
         )
