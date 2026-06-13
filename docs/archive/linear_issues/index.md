@@ -1148,4 +1148,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen sound-quality readiness report aggregation
 - [RIOTBOX-1250.md](./RIOTBOX-1250.md)
   P023: Group weak-output routes into production-fix candidates
+- [RIOTBOX-1252.md](./RIOTBOX-1252.md)
+  P023: Strengthen hook/chop impact from weak-output candidates
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
