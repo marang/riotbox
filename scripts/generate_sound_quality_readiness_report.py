@@ -31,7 +31,7 @@ CORPUS_TO_DEMO_FAMILIES = {
     "tonal_riff": {"tonal_hook"},
     "pad_noise": {"tonal_pad"},
     "weak_source": {"other"},
-    "bad_timing": {"other"},
+    "bad_timing": {"bad_timing"},
 }
 
 def main() -> int:

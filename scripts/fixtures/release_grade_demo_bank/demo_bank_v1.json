@@ -218,6 +218,37 @@
       }
     },
     {
+      "entry_id": "bad-timing-beat20-unverified-candidate",
+      "source_family": "bad_timing",
+      "source_path": "data/test_audio/examples/Beat20_128BPM(Full).wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/bad_timing_beat20_128/render/05_full_performance.wav",
+        "sha256": "abababababababababababababababababababababababababababababababab"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/local-edge-source-professional-diagnostics/edge-source-professional-diagnostics.json",
+        "sha256": "bcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbcbc"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/release-demo-bank/bad-timing-beat20/prompt.md",
+        "sha256": "cdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcdcd"
+      },
+      "human_verdict": "unverified",
+      "demo_readiness": "unverified",
+      "quality_claim": false,
+      "demo_worthiness_note": "Bad-timing Beat20 candidate is indexed for review because it exercises candidate_ambiguous/manual_confirm_only timing, but it remains unverified and must not imply bar-locked confidence.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "Unverified: timing ambiguity may prevent a confident first-two-bar hook.",
+        "hardest_audible_element": "Unverified: confirmation cue or cautious pressure should be the clearest event.",
+        "source_character": "Unverified: Beat20 source character should remain audible without pretending timing is locked.",
+        "destructive_contrast": "Unverified: destructive moves must stay cautious until downbeat risk is resolved.",
+        "bass_drum_pressure": "Unverified: bass and drum pressure should avoid false bar-locked placement.",
+        "live_triggerability": "Unverified: candidate should help a player understand when manual timing confirmation is needed.",
+        "eight_bar_replay_value": "Unverified: no replay-value claim until structured listening review confirms the timing-risk gesture works."
+      }
+    },
+    {
       "entry_id": "tonal-hook-rusharp-unverified-candidate",
       "source_family": "tonal_hook",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",

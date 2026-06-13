@@ -43,3 +43,7 @@ Additional unverified candidates can be added beside an existing weak/fail
 human verdict to give reviewers better material. That must not promote the
 family: for example, sparse-drums coverage stays `human_verdict_non_demo` until
 a structured human pass marks a sparse-bass-pressure entry `demo_ready`.
+
+`bad_timing` uses its own demo-bank family even when it shares a WAV with
+`weak_source`. A cautious timing candidate may satisfy bad-timing candidate
+coverage, but it must not accidentally cover weak-source rejection work.

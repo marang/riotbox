@@ -16,6 +16,7 @@ RUBRIC_SCHEMA = "riotbox.sound_product_readiness_rubric.v1"
 HUMAN_VERDICTS = {"pass", "weak", "fail", "unverified"}
 DEMO_READINESS = {"demo_ready", "not_demo_ready", "unverified"}
 SOURCE_FAMILIES = {
+    "bad_timing",
     "dense_break",
     "tonal_hook",
     "tonal_pad",
