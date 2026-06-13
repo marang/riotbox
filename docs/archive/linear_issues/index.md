@@ -1122,4 +1122,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Add source-family release-demo coverage gate
 - [RIOTBOX-1237.md](./RIOTBOX-1237.md)
   P023: Add pad/noise release-demo candidate scaffold
+- [RIOTBOX-1238.md](./RIOTBOX-1238.md)
+  P023: Promote sparse-bass-pressure demo coverage from weak to pass candidate
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
