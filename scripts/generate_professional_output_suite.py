@@ -750,6 +750,28 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                 ),
                 default=0.0,
             ),
+            "min_sparse_pressure_low_band_lift_ratio": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("pressure_low_band_lift_ratio"))
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
+            "min_sparse_bass_dominance_margin": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "strongest_audible_element_margin"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
         }
     if child_id == "professional_source_wav_pack":
         cases = list_or_empty(data.get("cases"))
@@ -955,6 +977,26 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "sparse_bass_movement_frequency_span_hz"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
+            "sparse_pressure_low_band_lift_ratio": min(
+                (
+                    number(object_or_empty(case.get("proof")).get("pressure_low_band_lift_ratio"))
+                    for case in cases
+                    if case.get("source_family") == "sparse_bass_pressure"
+                ),
+                default=0.0,
+            ),
+            "sparse_bass_dominance_margin": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "strongest_audible_element_margin"
                         )
                     )
                     for case in cases

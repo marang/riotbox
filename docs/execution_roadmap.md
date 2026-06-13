@@ -679,8 +679,9 @@ following:
     treating the scripted render as diagnostic evidence
   - sparse-bass-pressure diagnostics now derive bass-pressure movement from the
     source low-band envelope and timing centroid, expose fixed-contour distance
-    and frequency-span proof, and reject collapsed fixed movement while still
-    treating the scripted render as diagnostic evidence
+    and frequency-span proof, require bass-led low-band pressure and a clear
+    strongest-element dominance margin, and reject collapsed fixed movement
+    while still treating the scripted render as diagnostic evidence
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now

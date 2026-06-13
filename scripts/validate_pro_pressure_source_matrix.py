@@ -232,6 +232,7 @@ def render_case(
                     "strongest_audible_element_candidate_count"
                 ],
                 "bass_movement_source_derived": proof["bass_movement_source_derived"],
+                "pressure_low_band_lift_ratio": proof["pressure_low_band_lift_ratio"],
                 "sparse_bass_movement_static_distance_hz": proof[
                     "sparse_bass_movement_static_distance_hz"
                 ],

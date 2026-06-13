@@ -51,8 +51,9 @@ MAX_SOURCE_ON_TO_REBUILD_ONLY_CORRELATION = 0.995
 MIN_REBUILD_ONLY_SOURCE_SPECTRAL_SIMILARITY = 0.60
 MIN_REBUILD_ONLY_SOURCE_TRANSIENT_RETENTION = 0.45
 MIN_REBUILD_ONLY_SOURCE_CHARACTER_SURVIVAL_SCORE = 0.70
-MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 0.50
-MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 2.00
+MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ = 1.25
+MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ = 8.00
+MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO = 1.60
 MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
@@ -76,6 +77,7 @@ MIN_TAIL_SHAPE_FIXED_DISTANCE = 0.20
 MIN_TAIL_SHAPE_OUTPUT_CONTRAST = 3.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_SCORE = 1.00
 MIN_STRONGEST_AUDIBLE_ELEMENT_MARGIN = 0.05
+MIN_SPARSE_BASS_DOMINANCE_MARGIN = 0.08
 MIN_DENSE_BREAK_SNARE_PRESSURE_SCORE = 1.93
 MIN_DENSE_BREAK_SNARE_PRESSURE_MARGIN = 0.22
 MIN_DENSE_BREAK_PHYSICAL_DRUM_PRESSURE_SCORE = 1.58
@@ -1478,9 +1480,9 @@ def dense_break_source_policy(
         pressure_gain = 1.18
         bass_gain = 1.16
     elif pressure_lift_policy.source_family == "sparse_bass_pressure":
-        bass_restore = 48.0
-        pressure_gain = 1.04
-        bass_gain = 1.08
+        bass_restore = 46.0
+        pressure_gain = 1.10
+        bass_gain = 1.18
     elif pressure_lift_policy.source_family == "dense_break":
         bass_restore = 48.0
         pressure_gain = 0.96
@@ -2302,7 +2304,7 @@ def strongest_audible_element_proof(
         scores["snare"] += 0.18
         scores["restore"] += 0.08
     elif source_family == "sparse_bass_pressure":
-        scores["bass"] += 0.56
+        scores["bass"] += 0.60
         scores["snare"] -= 0.10
         scores["stab"] -= 0.10
     elif source_family == "tonal_hook":
@@ -2780,10 +2782,13 @@ def render_bass_pressure_layer(
             envelope[start:end] += punch * (1.0 if beat in (0, 2) else 0.62)
         source_drive = low_band_rms(source_chunk_for_bar(source, bar_start, frames)) / 0.10
         role = source_policy.arrangement_policy.role_order[bar]
+        is_sparse = source_policy.pressure_lift_policy.source_family == "sparse_bass_pressure"
+        pressure_factor = 0.355 if is_sparse else 0.305
+        restore_factor = 0.285 if is_sparse else 0.245
         gain = (
             float(np.clip(source_drive, 0.44, 1.24))
             * source_policy.bass_gain
-            * (0.245 if role == "restore" else 0.305)
+            * (restore_factor if role == "restore" else pressure_factor)
         )
         mono = (sine + harmonic * 0.18) * np.clip(envelope, 0.0, 1.0) * gain
         layer[bar_start:bar_end, 0] = mono
@@ -2960,6 +2965,10 @@ def build_report(
                 MIN_SPARSE_BASS_MOVEMENT_STATIC_DISTANCE_HZ
             ),
             "min_sparse_bass_movement_span_hz": MIN_SPARSE_BASS_MOVEMENT_SPAN_HZ,
+            "min_sparse_pressure_low_band_lift_ratio": (
+                MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO
+            ),
+            "min_sparse_bass_dominance_margin": MIN_SPARSE_BASS_DOMINANCE_MARGIN,
             "min_hook_chop_selection_candidates": MIN_HOOK_CHOP_SELECTION_CANDIDATES,
             "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
             "min_hook_chop_offset_distance_frames": MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES,
@@ -3347,6 +3356,15 @@ def failure_codes_for(
         ):
             failures.append("destructive_gesture_not_enough_offset_contrast")
     if source_family == "sparse_bass_pressure":
+        if proof["pressure_low_band_lift_ratio"] < MIN_SPARSE_PRESSURE_LOW_BAND_LIFT_RATIO:
+            failures.append("sparse_pressure_lift_lacks_low_band_support")
+        if proof.get("strongest_audible_element") != "bass":
+            failures.append("sparse_bass_not_strongest")
+        if (
+            proof.get("strongest_audible_element_margin", 0.0)
+            < MIN_SPARSE_BASS_DOMINANCE_MARGIN
+        ):
+            failures.append("sparse_bass_dominance_margin_too_low")
         if proof.get("bass_movement_source_derived", 0.0) < 1.0:
             failures.append("sparse_bass_movement_not_source_derived")
         if (
