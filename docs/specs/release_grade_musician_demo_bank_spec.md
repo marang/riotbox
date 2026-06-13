@@ -20,6 +20,7 @@ by:
 ```bash
 just release-grade-demo-bank-fixtures
 just source-family-release-demo-coverage-fixtures
+just release-demo-human-review-queue-fixtures
 just demo-bank-promotion-fixtures
 ```
 
@@ -78,6 +79,13 @@ release-ready language.
 The source-family release-demo coverage gate is the machine-readable place to
 see which source families are missing candidates, human verdicts, or demo-ready
 human-pass evidence. It runs without requiring ignored local WAV files.
+
+The release-demo human review queue is the machine-readable handoff from
+candidate coverage to human listening work. It lists every unverified candidate
+with its source family, source path, rendered WAV ref, metrics ref, review
+prompt ref, and the next review action. The queue exists to focus human
+listening; it must not promote `human_verdict: unverified` material into
+demo-ready or product-quality claims.
 
 ---
 

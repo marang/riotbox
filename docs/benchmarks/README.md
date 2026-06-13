@@ -108,6 +108,10 @@ Current benchmark artifacts:
   CI-safe P023 gate that compares the real-source corpus with the release-demo
   bank and blocks release-ready claims while any source family lacks a demo
   candidate, human verdict, or demo-ready human-pass example.
+- [release_demo_human_review_queue_v1_2026-06-13.md](./release_demo_human_review_queue_v1_2026-06-13.md)
+  CI-safe P023 handoff from unverified release-demo candidates to structured
+  human listening, with WAV, metrics, prompt refs, source-family gaps, and no
+  product-quality claim.
 - `scripts/fixtures/sound_product_2010_future_ideas/ideas_v1.json`
   Machine-checkable 20/10 sound-product idea backlog that records musical
   payoff, product-spine impact, replay/realtime risk, and promotion evidence
