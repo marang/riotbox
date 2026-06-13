@@ -58,7 +58,7 @@ MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 3
-MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.55
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.60
 MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
@@ -595,21 +595,32 @@ def hook_chop_policy_for(
         high = high_band_ratio(source_chunk)
         character = source_character_score(source_chunk, source_rms_reference)
         if source_family == "tonal_hook":
-            hook_score = source_rms * 1.25 + w30_rms * 1.05 + low * 0.90 + high * 0.020
-            chop_score = transient * 16.0 + w30_rms * 1.20 + source_rms * 0.55
+            hook_score = (
+                source_rms * 1.25
+                + w30_rms * 1.05
+                + low * 0.90
+                + high * 0.020
+                + character * 0.55
+            )
+            chop_score = (
+                transient * 16.0
+                + w30_rms * 1.20
+                + source_rms * 0.55
+                + character * 0.45
+            )
             strategy = "tonal-sustain-hook-transient-chop"
         else:
             hook_score = (
                 transient * 20.0
                 + w30_rms * 1.15
                 + high * 0.025
-                + character * 0.38
+                + character * 0.85
             )
             chop_score = (
                 transient * 17.0
                 + w30_rms * 1.35
                 + source_rms * 0.45
-                + character * 0.32
+                + character * 0.72
             )
             strategy = "transient-break-hook-energy-chop"
         candidates.append(
@@ -707,7 +718,7 @@ def source_derived_riff_starts(
         candidates,
         key=lambda item: (
             max(float(item["hook_score"]), float(item["chop_score"]))
-            + float(item.get("source_character_score", 0.0)) * 0.24
+            + float(item.get("source_character_score", 0.0)) * 0.90
         ),
         reverse=True,
     )

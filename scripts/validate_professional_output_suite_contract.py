@@ -245,7 +245,7 @@ def validate_hook_chop_metrics(
     require(number(dense.get("hook_chop_static_distance_frames")) >= 256.0, "dense_hook_chop_collapsed_to_static", failures)
     require(number(dense.get("hook_chop_offset_distance_frames")) >= 512.0, "dense_hook_chop_offset_distance_too_low", failures)
     require(number(dense.get("hook_chop_riff_unique_source_offset_count")) >= 3.0, "dense_hook_chop_riff_offsets_too_narrow", failures)
-    require(number(dense.get("hook_chop_source_character_score_floor")) >= 0.55, "dense_hook_chop_source_character_too_weak", failures)
+    require(number(dense.get("hook_chop_source_character_score_floor")) >= 0.60, "dense_hook_chop_source_character_too_weak", failures)
     require(number(dense.get("hook_chop_source_character_score_span")) >= 0.10, "dense_hook_chop_source_character_too_narrow", failures)
     require(
         number(matrix.get("min_dense_w30_to_source_rms_ratio"))
@@ -256,7 +256,7 @@ def validate_hook_chop_metrics(
     require(number(matrix.get("min_dense_hook_chop_static_distance_frames")) >= 256.0, "matrix_dense_hook_chop_collapsed_to_static", failures)
     require(number(matrix.get("min_dense_hook_chop_offset_distance_frames")) >= 512.0, "matrix_dense_hook_chop_offset_distance_too_low", failures)
     require(number(matrix.get("min_dense_hook_chop_riff_unique_source_offset_count")) >= 3.0, "matrix_dense_hook_chop_riff_offsets_too_narrow", failures)
-    require(number(matrix.get("min_dense_hook_chop_source_character_score_floor")) >= 0.55, "matrix_dense_hook_chop_source_character_too_weak", failures)
+    require(number(matrix.get("min_dense_hook_chop_source_character_score_floor")) >= 0.60, "matrix_dense_hook_chop_source_character_too_weak", failures)
     require(number(matrix.get("min_dense_hook_chop_source_character_score_span")) >= 0.10, "matrix_dense_hook_chop_source_character_too_narrow", failures)
     require(
         number(source_wav.get("tonal_w30_to_source_rms_ratio"))
@@ -267,7 +267,7 @@ def validate_hook_chop_metrics(
     require(number(source_wav.get("tonal_hook_chop_static_distance_frames")) >= 256.0, "source_wav_tonal_hook_chop_collapsed_to_static", failures)
     require(number(source_wav.get("tonal_hook_chop_offset_distance_frames")) >= 512.0, "source_wav_tonal_hook_chop_offset_distance_too_low", failures)
     require(number(source_wav.get("tonal_hook_chop_riff_unique_source_offset_count")) >= 3.0, "source_wav_tonal_hook_chop_riff_offsets_too_narrow", failures)
-    require(number(source_wav.get("tonal_hook_chop_source_character_score_floor")) >= 0.55, "source_wav_tonal_hook_chop_source_character_too_weak", failures)
+    require(number(source_wav.get("tonal_hook_chop_source_character_score_floor")) >= 0.60, "source_wav_tonal_hook_chop_source_character_too_weak", failures)
     require(number(source_wav.get("tonal_hook_chop_source_character_score_span")) >= 0.10, "source_wav_tonal_hook_chop_source_character_too_narrow", failures)
 
 
