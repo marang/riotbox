@@ -1132,4 +1132,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Generate release-demo human review queue
 - [RIOTBOX-1242.md](./RIOTBOX-1242.md)
   P023: Strengthen sparse bass movement from source contour
+- [RIOTBOX-1243.md](./RIOTBOX-1243.md)
+  P023: Strengthen W-30 hook/chop policy for dense and tonal sources
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
