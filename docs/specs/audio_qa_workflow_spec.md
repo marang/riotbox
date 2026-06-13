@@ -579,6 +579,36 @@ The same reasons must appear in `review.json` and the human review prompt so a
 reviewer hears the candidate with the intended musical target and the current
 quality boundary in view.
 
+Release-demo human-review queues use
+`riotbox.release_demo_human_review_queue.v1`. They are review worklists, not
+quality proof. Every queued candidate must remain
+`human_verdict: unverified`, `demo_readiness: unverified`, and
+`quality_claim: false` until a structured listener verdict is recorded. Each
+queue entry must carry enough musician-facing context for an outside reviewer to
+listen with intent:
+
+- source family and demo-bank source-family alias
+- strongest audible element
+- source-character summary
+- hook-within-two-bars summary
+- destructive contrast, bass/drum pressure, live-triggerability, and eight-bar
+  replay-value summaries
+- `demo_worthy_reason`
+- `not_demo_ready_reason` that explicitly names the unverified human verdict and
+  blocked quality claim
+- review blockers such as unverified verdict/readiness, blocked quality claim,
+  and missing family coverage
+- required listening questions covering strongest element, source survival,
+  first-two-bar hook, live gesture contrast, demo-worthiness, and concrete
+  follow-up
+- required verdict path for `pass`, `weak`, and `fail`, with the current state
+  fixed at `human_verdict:unverified/demo_readiness:unverified`
+
+Queue validation must reject missing source-character or strongest-element
+context, incomplete listening questions, stale verdict state, or any quality
+claim. This keeps the queue useful for human review without promoting
+unlistened artifacts into release-ready evidence.
+
 Large professional-output JSON contracts belong in named repo-local validators,
 not in oversized inline `jq` blocks inside `Justfile`. `just` recipes may keep
 small smoke assertions and compact negative mutations, but cross-report musical

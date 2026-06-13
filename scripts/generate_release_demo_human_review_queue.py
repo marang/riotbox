@@ -16,6 +16,23 @@ SCHEMA = "riotbox.release_demo_human_review_queue.v1"
 DEFAULT_SOURCE_CORPUS = coverage.DEFAULT_SOURCE_CORPUS
 DEFAULT_DEMO_BANK = coverage.DEFAULT_DEMO_BANK
 DEFAULT_OUTPUT = Path("artifacts/audio_qa/local-release-demo-human-review-queue")
+REQUIRED_REVIEW_QUESTIONS = [
+    "What is the strongest audible element: kick, snare, bass, stab, chop, vocal, silence, restore, or none?",
+    "Does the source character survive as transformed material, or did the candidate collapse into fallback/generic output?",
+    "Does a memorable hook appear within the first two bars?",
+    "Does the destructive contrast, dropout, stutter, or restore feel like a playable live gesture?",
+    "Is the candidate demo-worthy for a musician, weak-but-fixable, or a rejection example?",
+    "What concrete follow-up should happen next if the verdict is not pass?",
+]
+REQUIRED_QUEUE_CONTEXT_FIELDS = [
+    "hook_within_two_bars",
+    "strongest_audible_element",
+    "source_character",
+    "destructive_contrast",
+    "bass_drum_pressure",
+    "live_triggerability",
+    "eight_bar_replay_value",
+]
 
 
 def main() -> int:
@@ -177,6 +194,8 @@ def review_queue_entry(
             "Optional review candidate; keep it unverified unless a structured "
             "listener verdict is recorded."
         )
+    summary = musical_summary(entry)
+    blockers = review_blockers(entry, missing_human, missing_demo_ready)
 
     return {
         "entry_id": required_string(entry, "entry_id"),
@@ -190,7 +209,25 @@ def review_queue_entry(
         "human_verdict": str(entry.get("human_verdict")),
         "demo_readiness": str(entry.get("demo_readiness")),
         "quality_claim": entry.get("quality_claim"),
-        "demo_worthiness_note": str(entry.get("demo_worthiness_note", "")),
+        "demo_worthiness_note": required_string(entry, "demo_worthiness_note"),
+        "demo_worthy_reason": required_string(entry, "demo_worthiness_note"),
+        "not_demo_ready_reason": not_demo_ready_reason(corpus_family, blockers),
+        "hook_within_two_bars": summary["hook_within_two_bars"],
+        "strongest_audible_element": summary["hardest_audible_element"],
+        "source_character": summary["source_character"],
+        "destructive_contrast": summary["destructive_contrast"],
+        "bass_drum_pressure": summary["bass_drum_pressure"],
+        "live_triggerability": summary["live_triggerability"],
+        "eight_bar_replay_value": summary["eight_bar_replay_value"],
+        "review_blockers": blockers,
+        "required_listening_questions": REQUIRED_REVIEW_QUESTIONS,
+        "required_verdict_path": {
+            "current_state": "human_verdict:unverified/demo_readiness:unverified",
+            "pass": "Only after listening: set human_verdict=pass, demo_readiness=demo_ready, and document why it is musician-facing.",
+            "weak": "Set human_verdict=weak, demo_readiness=not_demo_ready, and route concrete fix_categories.",
+            "fail": "Set human_verdict=fail, demo_readiness=not_demo_ready, and preserve it only as failure evidence.",
+            "release_ready_blocker": "Unverified candidates must not claim quality or support release-ready coverage.",
+        },
         "next_review_action": action,
     }
 
@@ -302,6 +339,18 @@ def validate_queue_entry(entry: Any, index: int, failures: list[str]) -> None:
         "human_verdict",
         "demo_readiness",
         "quality_claim",
+        "demo_worthy_reason",
+        "not_demo_ready_reason",
+        "hook_within_two_bars",
+        "strongest_audible_element",
+        "source_character",
+        "destructive_contrast",
+        "bass_drum_pressure",
+        "live_triggerability",
+        "eight_bar_replay_value",
+        "review_blockers",
+        "required_listening_questions",
+        "required_verdict_path",
         "next_review_action",
     ]:
         if field not in entry:
@@ -314,6 +363,57 @@ def validate_queue_entry(entry: Any, index: int, failures: list[str]) -> None:
     check(entry.get("human_verdict") == "unverified", f"review_queue_{index}_not_unverified", failures)
     check(entry.get("demo_readiness") == "unverified", f"review_queue_{index}_not_unverified_demo", failures)
     check(entry.get("quality_claim") is False, f"review_queue_{index}_claims_quality", failures)
+    for field in REQUIRED_QUEUE_CONTEXT_FIELDS:
+        check(
+            isinstance(entry.get(field), str) and bool(entry[field].strip()),
+            f"review_queue_{index}_{field}_missing",
+            failures,
+        )
+    check(
+        isinstance(entry.get("demo_worthy_reason"), str)
+        and bool(entry["demo_worthy_reason"].strip()),
+        f"review_queue_{index}_demo_worthy_reason_missing",
+        failures,
+    )
+    check(
+        isinstance(entry.get("not_demo_ready_reason"), str)
+        and "human_verdict" in entry["not_demo_ready_reason"]
+        and "unverified" in entry["not_demo_ready_reason"],
+        f"review_queue_{index}_not_demo_ready_reason_missing",
+        failures,
+    )
+    blockers = entry.get("review_blockers")
+    check(
+        isinstance(blockers, list)
+        and "human_verdict_unverified" in blockers
+        and "demo_readiness_unverified" in blockers
+        and "quality_claim_blocked" in blockers,
+        f"review_queue_{index}_review_blockers_missing",
+        failures,
+    )
+    questions = entry.get("required_listening_questions")
+    check(
+        isinstance(questions, list)
+        and questions == REQUIRED_REVIEW_QUESTIONS,
+        f"review_queue_{index}_required_listening_questions_invalid",
+        failures,
+    )
+    verdict_path = entry.get("required_verdict_path")
+    check(isinstance(verdict_path, dict), f"review_queue_{index}_required_verdict_path_missing", failures)
+    if isinstance(verdict_path, dict):
+        check(
+            verdict_path.get("current_state")
+            == "human_verdict:unverified/demo_readiness:unverified",
+            f"review_queue_{index}_stale_verdict_state",
+            failures,
+        )
+        for verdict in ["pass", "weak", "fail", "release_ready_blocker"]:
+            check(
+                isinstance(verdict_path.get(verdict), str)
+                and bool(verdict_path[verdict].strip()),
+                f"review_queue_{index}_required_verdict_path_{verdict}_missing",
+                failures,
+            )
     for field in ["rendered_wav", "metrics", "review_prompt"]:
         artifact = entry.get(field)
         check(
@@ -351,10 +451,17 @@ def markdown_report(report: dict[str, Any]) -> str:
                 f"- Priority: `{entry['review_priority']}`",
                 f"- Source family: `{entry['source_family']}`",
                 f"- Source: `{entry['source_path']}`",
+                f"- Strongest audible element: {entry['strongest_audible_element']}",
+                f"- Source character: {entry['source_character']}",
+                f"- Demo-worthy reason: {entry['demo_worthy_reason']}",
+                f"- Not demo-ready: {entry['not_demo_ready_reason']}",
                 f"- WAV: `{entry['rendered_wav']['path']}`",
                 f"- Metrics: `{entry['metrics']['path']}`",
                 f"- Prompt: `{entry['review_prompt']['path']}`",
+                f"- Blockers: `{', '.join(entry['review_blockers'])}`",
                 f"- Action: {entry['next_review_action']}",
+                "- Required listening questions:",
+                *[f"  - {question}" for question in entry["required_listening_questions"]],
                 "",
             ]
         )
@@ -376,6 +483,45 @@ def artifact_ref(entry: dict[str, Any], field: str) -> dict[str, str]:
         "path": required_string(value, "path"),
         "sha256": required_string(value, "sha256"),
     }
+
+
+def review_blockers(
+    entry: dict[str, Any],
+    missing_human: bool,
+    missing_demo_ready: bool,
+) -> list[str]:
+    blockers = [
+        "human_verdict_unverified",
+        "demo_readiness_unverified",
+        "quality_claim_blocked",
+    ]
+    if missing_human:
+        blockers.append("source_family_human_verdict_missing")
+    if missing_demo_ready:
+        blockers.append("source_family_demo_ready_human_pass_missing")
+    if entry.get("quality_claim") is not False:
+        blockers.append("unexpected_quality_claim_state")
+    return blockers
+
+
+def not_demo_ready_reason(source_family: str, blockers: list[str]) -> str:
+    blocker_text = ", ".join(blockers)
+    return (
+        f"{source_family} remains not demo-ready because human_verdict is "
+        f"unverified, demo_readiness is unverified, and release-ready quality "
+        f"claims are blocked until structured listening records pass, weak, "
+        f"or fail. Active blockers: {blocker_text}."
+    )
+
+
+def musical_summary(entry: dict[str, Any]) -> dict[str, str]:
+    value = entry.get("musical_summary")
+    require(isinstance(value, dict), f"{entry.get('entry_id')}: musical_summary must be object")
+    summary: dict[str, str] = {}
+    for field in REQUIRED_QUEUE_CONTEXT_FIELDS:
+        source_field = "hardest_audible_element" if field == "strongest_audible_element" else field
+        summary[source_field] = required_string(value, source_field)
+    return summary
 
 
 def read_json_object(path: Path) -> dict[str, Any]:
