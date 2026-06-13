@@ -187,6 +187,37 @@
       }
     },
     {
+      "entry_id": "sparse-bass-pressure-updated-unverified-candidate",
+      "source_family": "sparse_bass_pressure",
+      "source_path": "data/test_audio/examples/DH_BeatC_KickSnr_120-01.wav",
+      "rendered_wav": {
+        "path": "artifacts/audio_qa/local-professional-source-wav-pack/sparse_kicksnr_120/05_full_performance.wav",
+        "sha256": "5656565656565656565656565656565656565656565656565656565656565656"
+      },
+      "metrics": {
+        "path": "artifacts/audio_qa/local-professional-source-wav-pack/sparse_kicksnr_120/performance-report.json",
+        "sha256": "6767676767676767676767676767676767676767676767676767676767676767"
+      },
+      "review_prompt": {
+        "path": "artifacts/audio_qa/local-non-dense-professional-proof-pack/sparse_kicksnr_120/review-prompt.md",
+        "sha256": "8989898989898989898989898989898989898989898989898989898989898989"
+      },
+      "human_verdict": "unverified",
+      "demo_readiness": "unverified",
+      "quality_claim": false,
+      "demo_worthiness_note": "Updated sparse-bass-pressure candidate is indexed for review from the professional source WAV pack, but it remains unverified until a listener confirms pressure and gesture quality.",
+      "fix_categories": [],
+      "musical_summary": {
+        "hook_within_two_bars": "Unverified: sparse source still needs a memorable first-two-bar gesture.",
+        "hardest_audible_element": "Unverified: bass body or kick pressure should be the hardest element.",
+        "source_character": "Unverified: sparse kick/snare identity should remain present.",
+        "destructive_contrast": "Unverified: stop/restore contrast still needs listening review.",
+        "bass_drum_pressure": "Unverified: candidate targets stronger physical low-end pressure.",
+        "live_triggerability": "Unverified: pressure gesture should be judged as a playable live move.",
+        "eight_bar_replay_value": "Unverified: no replay-value claim until structured listening review."
+      }
+    },
+    {
       "entry_id": "tonal-hook-rusharp-unverified-candidate",
       "source_family": "tonal_hook",
       "source_path": "data/test_audio/examples/DH_RushArp_120_A.wav",

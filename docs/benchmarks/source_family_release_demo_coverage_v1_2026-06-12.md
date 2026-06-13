@@ -38,3 +38,8 @@ The report exposes:
 Candidate-only and weak/fail human-verdict families are useful implementation
 evidence, but they still block release-ready claims. The gate is a coverage
 contract, not a musical judge and not a quality proof.
+
+Additional unverified candidates can be added beside an existing weak/fail
+human verdict to give reviewers better material. That must not promote the
+family: for example, sparse-drums coverage stays `human_verdict_non_demo` until
+a structured human pass marks a sparse-bass-pressure entry `demo_ready`.
