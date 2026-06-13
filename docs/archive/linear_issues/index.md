@@ -1142,4 +1142,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen W-30 hook/chop policy for weak hook outputs
 - [RIOTBOX-1247.md](./RIOTBOX-1247.md)
   P023: Strengthen drum pressure for physical break impact
+- [RIOTBOX-1248.md](./RIOTBOX-1248.md)
+  P023: Strengthen source-selection fixes for weak source-character survival
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
