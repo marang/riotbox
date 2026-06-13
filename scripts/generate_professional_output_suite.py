@@ -448,6 +448,12 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
             "hook_chop_riff_unique_source_offset_count": number(
                 proof.get("hook_chop_riff_unique_source_offset_count")
             ),
+            "hook_chop_source_character_score_floor": number(
+                proof.get("hook_chop_source_character_score_floor")
+            ),
+            "hook_chop_source_character_score_span": number(
+                proof.get("hook_chop_source_character_score_span")
+            ),
             "destructive_gesture_source_derived": number(
                 proof.get("destructive_gesture_source_derived")
             ),
@@ -563,6 +569,32 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "hook_chop_riff_unique_source_offset_count"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_source_character_score_floor": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_source_character_score_floor"
+                        )
+                    )
+                    for case in cases
+                    if object_or_empty(case.get("pressure_lift_policy")).get("source_family")
+                    == "dense_break"
+                ),
+                default=0.0,
+            ),
+            "min_dense_hook_chop_source_character_score_span": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_source_character_score_span"
                         )
                     )
                     for case in cases
@@ -754,6 +786,30 @@ def key_metrics(child_id: str, data: dict[str, Any]) -> dict[str, Any]:
                     number(
                         object_or_empty(case.get("proof")).get(
                             "hook_chop_riff_unique_source_offset_count"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_source_character_score_floor": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_source_character_score_floor"
+                        )
+                    )
+                    for case in cases
+                    if case.get("source_family") == "tonal_hook"
+                ),
+                default=0.0,
+            ),
+            "tonal_hook_chop_source_character_score_span": min(
+                (
+                    number(
+                        object_or_empty(case.get("proof")).get(
+                            "hook_chop_source_character_score_span"
                         )
                     )
                     for case in cases

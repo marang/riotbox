@@ -668,6 +668,10 @@ following:
     selection from scanned source/W-30 candidates, expose distance from the old
     static first-bar choice and hook/chop offset contrast, and reject collapsed
     static hook selection while still treating the scripted render as diagnostic
+    only; current P023 coverage also scores selected hook/chop/riff windows for
+    source-character floor and variation so weak or too-narrow source-window
+    choices route back to source selection instead of being hidden by later mix
+    or routing reports
     evidence
   - dense-break and tonal-hook diagnostics now also derive destructive
     dropout/stutter/restore cue selection from scanned source/W-30 candidates,

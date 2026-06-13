@@ -511,6 +511,14 @@ some source-like spectral/transient character survives after raw source masking
 is removed and raw-copy correlation is still rejected; they do not prove that
 the result is musically good.
 
+P023 Hook/Chop source selection may also expose
+`hook_chop_source_character_score_floor`,
+`hook_chop_source_character_score_mean`, and
+`hook_chop_source_character_score_span`. These fields prove that source-backed
+hook/chop/riff windows were selected from windows with enough source identity
+and enough variation across selected offsets. They are a bounded selection
+contract, not a musical pass.
+
 The dense-break professional diagnostic also keeps a real weak-WAV regression
 for this boundary:
 
