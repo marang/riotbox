@@ -326,14 +326,27 @@ def main() -> int:
     )
     source_audio = source_audio[:frame_count]
     tr909 = tr909[:frame_count]
+    first_two_bars = source_audio[
+        : min(2 * frames_for_beats(args.bpm, BEATS_PER_BAR), frame_count)
+    ]
+    source_family_probe = pressure_lift_policy_for(
+        low_band_rms=low_band_rms(first_two_bars),
+        high_band_ratio=high_band_ratio(first_two_bars),
+        transient_score=transient_score(first_two_bars),
+        timing_confidence_result=args.timing_confidence_result,
+        timing_grid_use=args.timing_grid_use,
+    ).source_family
+    w30_target_multiplier = 1.25 if source_family_probe == "tonal_hook" else 1.10
+    w30_minimum_gain = 1.28 if source_family_probe == "tonal_hook" else 1.22
+    w30_maximum_gain = 2.65 if source_family_probe == "tonal_hook" else 2.35
     w30 = apply_gain(
         w30[:frame_count],
         source_relative_gain(
             source_audio,
             w30[:frame_count],
-            target_ratio=MIN_W30_TO_SOURCE_RMS_RATIO * 1.10,
-            minimum_gain=1.22,
-            maximum_gain=2.35,
+            target_ratio=MIN_W30_TO_SOURCE_RMS_RATIO * w30_target_multiplier,
+            minimum_gain=w30_minimum_gain,
+            maximum_gain=w30_maximum_gain,
         ),
     )
     mc202 = apply_gain(mc202[:frame_count], 1.35)

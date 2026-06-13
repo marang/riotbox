@@ -329,6 +329,11 @@ Early P011 guardrail defaults:
   RMS, normalized preview RMS/peak, selected source frame, gain, and reason label
   so reviewers can tell whether the W-30 stem used an articulate source segment
   and did not collapse back to a generic preview/control tone.
+- Professional source-WAV tonal-hook diagnostics must keep the W-30 source-chop
+  strong enough to carry the hook: the tonal case fails when
+  `proof.w30_to_source_rms_ratio` falls below `0.20`. This protects hook
+  audibility only; it remains diagnostic evidence with
+  `human_verdict: unverified`.
 - Feral grid W-30 source-chop output must expose source-derived accent dynamics
   under `metrics.w30_source_accent_dynamics`. The proof checks that selected
   source offsets produce multiple trigger velocities and enough velocity span
