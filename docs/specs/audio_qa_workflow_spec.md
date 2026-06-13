@@ -331,9 +331,13 @@ Early P011 guardrail defaults:
   and did not collapse back to a generic preview/control tone.
 - Professional source-WAV tonal-hook diagnostics must keep the W-30 source-chop
   strong enough to carry the hook: the tonal case fails when
-  `proof.w30_to_source_rms_ratio` falls below `0.20`. This protects hook
+  `proof.w30_to_source_rms_ratio` falls below `0.22`. This protects hook
   audibility only; it remains diagnostic evidence with
   `human_verdict: unverified`.
+- Dense-break Hook/Chop diagnostics use the same `0.22` W-30/source floor for
+  hook-forward proof. Sparse-bass-pressure diagnostics keep the lower general
+  W-30 floor so bass remains the strongest element instead of being obscured by
+  a hook-forward policy meant for dense/tonal material.
 - Feral grid W-30 source-chop output must expose source-derived accent dynamics
   under `metrics.w30_source_accent_dynamics`. The proof checks that selected
   source offsets produce multiple trigger velocities and enough velocity span

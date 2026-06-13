@@ -30,6 +30,7 @@ BEATS_PER_BAR = 4
 SCHEMA = "riotbox.dense_break_performance_pack.v1"
 AGENT_REVIEW_SCHEMA = "riotbox.agent_musical_review_pack.v1"
 MIN_W30_TO_SOURCE_RMS_RATIO = 0.18
+MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 MIN_PRESSURE_LOW_BAND_LIFT_RATIO = 1.12
 MAX_DROPOUT_TO_STUTTER_RMS_RATIO = 0.18
 MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO = 0.58
@@ -344,15 +345,25 @@ def main() -> int:
         timing_confidence_result=args.timing_confidence_result,
         timing_grid_use=args.timing_grid_use,
     ).source_family
-    w30_target_multiplier = 1.25 if source_family_probe == "tonal_hook" else 1.10
-    w30_minimum_gain = 1.28 if source_family_probe == "tonal_hook" else 1.22
-    w30_maximum_gain = 2.65 if source_family_probe == "tonal_hook" else 2.35
+    w30_floor = min_w30_to_source_rms_ratio_for(source_family_probe)
+    if source_family_probe == "tonal_hook":
+        w30_target_multiplier = 1.34
+        w30_minimum_gain = 1.42
+        w30_maximum_gain = 3.00
+    elif source_family_probe == "dense_break":
+        w30_target_multiplier = 1.20
+        w30_minimum_gain = 1.34
+        w30_maximum_gain = 2.70
+    else:
+        w30_target_multiplier = 1.10
+        w30_minimum_gain = 1.22
+        w30_maximum_gain = 2.35
     w30 = apply_gain(
         w30[:frame_count],
         source_relative_gain(
             source_audio,
             w30[:frame_count],
-            target_ratio=MIN_W30_TO_SOURCE_RMS_RATIO * w30_target_multiplier,
+            target_ratio=w30_floor * w30_target_multiplier,
             minimum_gain=w30_minimum_gain,
             maximum_gain=w30_maximum_gain,
         ),
@@ -812,6 +823,12 @@ def destructive_gesture_policy_for(
 
 def fixed_restore_bass_gain(source_family: str) -> float:
     return 2.38 if source_family == "sparse_bass_pressure" else 1.86
+
+
+def min_w30_to_source_rms_ratio_for(source_family: str | None) -> float:
+    if source_family in {"dense_break", "tonal_hook"}:
+        return MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO
+    return MIN_W30_TO_SOURCE_RMS_RATIO
 
 
 def fixed_mix_treatment_policy(
@@ -1804,6 +1821,9 @@ def render_performance(
     lift_policy = source_policy.pressure_lift_policy
     mix_policy = source_policy.mix_treatment_policy
     role_order = source_policy.arrangement_policy.role_order
+    hook_forward_gain = (
+        1.0 if source_policy.hook_chop_policy.source_family == "sparse_bass_pressure" else 1.12
+    )
 
     def put_bar(bar: int, mix: np.ndarray) -> None:
         start = bar * bar_frames
@@ -1815,7 +1835,7 @@ def render_performance(
     hook_mix = glue_bus(
         source * (0.50 * source_layer_gain)
         + w30 * mix_policy.hook_w30_gain
-        + hook_riff * 1.62
+        + hook_riff * (1.62 * hook_forward_gain)
         + tr909 * 0.62
         + break_snap * mix_policy.hook_break_snap_gain
         + pad_noise_texture * 0.68
@@ -1826,7 +1846,7 @@ def render_performance(
     chop_mix = glue_bus(
         source * (0.16 * source_layer_gain)
         + w30 * mix_policy.chop_w30_gain
-        + hook_riff * 1.78
+        + hook_riff * (1.78 * hook_forward_gain * 1.03)
         + tr909 * 0.78
         + break_snap * mix_policy.chop_break_snap_gain
         + pad_noise_texture * 1.05
@@ -1856,7 +1876,7 @@ def render_performance(
     restore_mix = glue_bus(
         source * (0.28 * source_layer_gain)
         + w30 * 1.76
-        + hook_riff * 1.46
+        + hook_riff * (1.46 * hook_forward_gain * 0.97)
         + tr909 * 2.78
         + break_snap * mix_policy.restore_break_snap_gain
         + mc202 * 3.65
@@ -2631,6 +2651,8 @@ def render_w30_hook_riff_layer(
     chop_end = min(chop_start + grain_len, w30.shape[0], source.shape[0])
     if hook_end <= hook_start or chop_end <= chop_start:
         return layer
+    source_family = source_policy.hook_chop_policy.source_family
+    hook_impact = 1.0 if source_family == "sparse_bass_pressure" else 1.18
 
     grains = []
     for index, grain_start in enumerate(source_policy.hook_chop_policy.riff_start_frames):
@@ -2639,7 +2661,9 @@ def render_w30_hook_riff_layer(
         if grain_end <= grain_start:
             continue
         grain = w30[grain_start:grain_end].copy()
-        grain += transient_emphasis(source[grain_start:grain_end]) * (0.40 + index * 0.06)
+        grain += transient_emphasis(source[grain_start:grain_end]) * (
+            (0.40 + index * 0.06) * hook_impact
+        )
         grain *= decay_envelope(
             grain.shape[0],
             attack=0.010 if index == 0 else 0.006,
@@ -2648,10 +2672,10 @@ def render_w30_hook_riff_layer(
         grains.append(grain)
     if len(grains) < 2:
         hook_grain = w30[hook_start:hook_end].copy()
-        hook_grain += transient_emphasis(source[hook_start:hook_end]) * 0.42
+        hook_grain += transient_emphasis(source[hook_start:hook_end]) * (0.42 * hook_impact)
         hook_grain *= decay_envelope(hook_grain.shape[0], attack=0.010, decay=0.135)[:, None]
         chop_grain = w30[chop_start:chop_end].copy()
-        chop_grain += transient_emphasis(source[chop_start:chop_end]) * 0.54
+        chop_grain += transient_emphasis(source[chop_start:chop_end]) * (0.54 * hook_impact)
         chop_grain *= decay_envelope(chop_grain.shape[0], attack=0.006, decay=0.105)[:, None]
         grains = [hook_grain, chop_grain]
 
@@ -2676,7 +2700,7 @@ def render_w30_hook_riff_layer(
             end = min(target + stab.shape[0], layer.shape[0])
             if end > target:
                 layer[target:end] += stab[: end - target] * gain
-    return saturate(layer, 1.35)
+    return saturate(layer, 1.35 * hook_impact)
 
 
 def render_break_snap_layer(
@@ -2901,6 +2925,9 @@ def build_report(
         },
         "thresholds": {
             "min_w30_to_source_rms_ratio": MIN_W30_TO_SOURCE_RMS_RATIO,
+            "min_hook_forward_w30_to_source_rms_ratio": (
+                MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO
+            ),
             "min_pressure_low_band_lift_ratio": MIN_PRESSURE_LOW_BAND_LIFT_RATIO,
             "max_dropout_to_stutter_rms_ratio": MAX_DROPOUT_TO_STUTTER_RMS_RATIO,
             "min_stutter_to_hook_transient_ratio": MIN_STUTTER_TO_HOOK_TRANSIENT_RATIO,
@@ -3124,7 +3151,7 @@ def failure_codes_for(
             failures.append(f"{name}_too_quiet_or_silent")
         if item["peak_abs"] > 0.985:
             failures.append(f"{name}_near_clipping")
-    if proof["w30_to_source_rms_ratio"] < MIN_W30_TO_SOURCE_RMS_RATIO:
+    if proof["w30_to_source_rms_ratio"] < min_w30_to_source_rms_ratio_for(source_family):
         failures.append("w30_hook_not_present_enough")
     if proof["pressure_low_band_lift_ratio"] < MIN_PRESSURE_LOW_BAND_LIFT_RATIO:
         failures.append("pressure_section_lacks_bass_lift")

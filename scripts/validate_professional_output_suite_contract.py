@@ -28,6 +28,7 @@ EXPECTED_LISTENING_FAMILIES = [
 ]
 EXPECTED_EDGE_FAMILIES = ["bad_timing", "pad_noise"]
 AUDIBLE_ELEMENTS = {"kick", "snare", "bass", "stab", "silence", "restore"}
+MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO = 0.22
 
 
 def main() -> int:
@@ -223,17 +224,35 @@ def validate_hook_chop_metrics(
     source_wav: dict[str, Any],
     failures: list[str],
 ) -> None:
+    require(
+        number(dense.get("w30_to_source_rms_ratio"))
+        >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
+        "dense_hook_chop_w30_too_weak",
+        failures,
+    )
     require(number(dense.get("hook_chop_selection_source_derived")) == 1.0, "dense_hook_chop_selection_not_source_derived", failures)
     require(number(dense.get("hook_chop_static_distance_frames")) >= 256.0, "dense_hook_chop_collapsed_to_static", failures)
     require(number(dense.get("hook_chop_offset_distance_frames")) >= 512.0, "dense_hook_chop_offset_distance_too_low", failures)
     require(number(dense.get("hook_chop_riff_unique_source_offset_count")) >= 3.0, "dense_hook_chop_riff_offsets_too_narrow", failures)
     require(number(dense.get("hook_chop_source_character_score_floor")) >= 0.55, "dense_hook_chop_source_character_too_weak", failures)
     require(number(dense.get("hook_chop_source_character_score_span")) >= 0.10, "dense_hook_chop_source_character_too_narrow", failures)
+    require(
+        number(matrix.get("min_dense_w30_to_source_rms_ratio"))
+        >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
+        "matrix_dense_hook_chop_w30_too_weak",
+        failures,
+    )
     require(number(matrix.get("min_dense_hook_chop_static_distance_frames")) >= 256.0, "matrix_dense_hook_chop_collapsed_to_static", failures)
     require(number(matrix.get("min_dense_hook_chop_offset_distance_frames")) >= 512.0, "matrix_dense_hook_chop_offset_distance_too_low", failures)
     require(number(matrix.get("min_dense_hook_chop_riff_unique_source_offset_count")) >= 3.0, "matrix_dense_hook_chop_riff_offsets_too_narrow", failures)
     require(number(matrix.get("min_dense_hook_chop_source_character_score_floor")) >= 0.55, "matrix_dense_hook_chop_source_character_too_weak", failures)
     require(number(matrix.get("min_dense_hook_chop_source_character_score_span")) >= 0.10, "matrix_dense_hook_chop_source_character_too_narrow", failures)
+    require(
+        number(source_wav.get("tonal_w30_to_source_rms_ratio"))
+        >= MIN_HOOK_FORWARD_W30_TO_SOURCE_RMS_RATIO,
+        "source_wav_tonal_hook_chop_w30_too_weak",
+        failures,
+    )
     require(number(source_wav.get("tonal_hook_chop_static_distance_frames")) >= 256.0, "source_wav_tonal_hook_chop_collapsed_to_static", failures)
     require(number(source_wav.get("tonal_hook_chop_offset_distance_frames")) >= 512.0, "source_wav_tonal_hook_chop_offset_distance_too_low", failures)
     require(number(source_wav.get("tonal_hook_chop_riff_unique_source_offset_count")) >= 3.0, "source_wav_tonal_hook_chop_riff_offsets_too_narrow", failures)

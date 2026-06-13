@@ -32,9 +32,9 @@ The report exposes:
   candidates and their grouped `production_fix_summary` when the routing report
   exposes them.
 - `professional_output_suite`: current diagnostic context from the professional
-  suite, including strongest audible elements, source-character hook/chop
-  selection floor/span, dense drum-pressure proof, mix-balance summary, and the
-  diagnostic-only quality boundary.
+  suite, including strongest audible elements, W-30/source hook presence,
+  source-character hook/chop selection floor/span, dense drum-pressure proof,
+  mix-balance summary, and the diagnostic-only quality boundary.
 - `blockers`: machine-readable reasons that prevent release-ready claims.
 - `next_actions`: engineer- and musician-facing work categories for the next
   sound-improvement slices.
