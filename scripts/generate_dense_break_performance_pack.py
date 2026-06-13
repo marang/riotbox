@@ -56,6 +56,8 @@ MIN_HOOK_CHOP_SELECTION_CANDIDATES = 3
 MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES = 256.0
 MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES = 512.0
 MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS = 3
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR = 0.55
+MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN = 0.10
 MIN_DESTRUCTIVE_GESTURE_CANDIDATES = 3
 MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES = 256.0
 MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES = 512.0
@@ -145,6 +147,9 @@ class HookChopPolicy:
     candidate_count: int
     riff_start_frames: tuple[int, ...]
     riff_unique_source_offset_count: int
+    source_character_score_floor: float
+    source_character_score_mean: float
+    source_character_score_span: float
 
 
 @dataclass(frozen=True)
@@ -558,9 +563,13 @@ def hook_chop_policy_for(
             candidate_count=1,
             riff_start_frames=(static_start,),
             riff_unique_source_offset_count=1,
+            source_character_score_floor=0.0,
+            source_character_score_mean=0.0,
+            source_character_score_span=0.0,
         )
 
     stride = max(1, grain_len // 2)
+    source_rms_reference = max(rms(source[:scan_end]), 1e-9)
     candidates = []
     for start in range(0, scan_end - grain_len + 1, stride):
         end = start + grain_len
@@ -571,19 +580,31 @@ def hook_chop_policy_for(
         transient = transient_score(source_chunk)
         low = low_band_rms(source_chunk)
         high = high_band_ratio(source_chunk)
+        character = source_character_score(source_chunk, source_rms_reference)
         if source_family == "tonal_hook":
             hook_score = source_rms * 1.25 + w30_rms * 1.05 + low * 0.90 + high * 0.020
             chop_score = transient * 16.0 + w30_rms * 1.20 + source_rms * 0.55
             strategy = "tonal-sustain-hook-transient-chop"
         else:
-            hook_score = transient * 20.0 + w30_rms * 1.15 + high * 0.025
-            chop_score = transient * 17.0 + w30_rms * 1.35 + source_rms * 0.45
+            hook_score = (
+                transient * 20.0
+                + w30_rms * 1.15
+                + high * 0.025
+                + character * 0.38
+            )
+            chop_score = (
+                transient * 17.0
+                + w30_rms * 1.35
+                + source_rms * 0.45
+                + character * 0.32
+            )
             strategy = "transient-break-hook-energy-chop"
         candidates.append(
             {
                 "start": start,
                 "hook_score": float(hook_score),
                 "chop_score": float(chop_score),
+                "source_character_score": float(character),
             }
         )
 
@@ -612,6 +633,7 @@ def hook_chop_policy_for(
         chop_start,
         min_separation=max(grain_len, int(MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES)),
     )
+    selected_character_scores = source_character_scores_for_starts(candidates, riff_starts)
     return HookChopPolicy(
         source_aware=True,
         source_family=source_family,
@@ -627,7 +649,35 @@ def hook_chop_policy_for(
         candidate_count=len(candidates),
         riff_start_frames=riff_starts,
         riff_unique_source_offset_count=len(set(riff_starts)),
+        source_character_score_floor=min(selected_character_scores),
+        source_character_score_mean=float(np.mean(selected_character_scores)),
+        source_character_score_span=max(selected_character_scores) - min(selected_character_scores),
     )
+
+
+def source_character_score(source_chunk: np.ndarray, source_rms_reference: float) -> float:
+    source_rms = rms(source_chunk)
+    transient = transient_score(source_chunk)
+    bands = band_energy_ratios(source_chunk)
+    spectral_spread = 1.0 - max(bands)
+    score = (
+        min(source_rms / max(source_rms_reference, 1e-9), 1.8) * 0.42
+        + min(transient / max(source_rms_reference * 4.0, 1e-9), 1.8) * 0.34
+        + spectral_spread * 0.24
+    )
+    return float(np.clip(score, 0.0, 2.0))
+
+
+def source_character_scores_for_starts(
+    candidates: list[dict[str, float]],
+    starts: tuple[int, ...],
+) -> list[float]:
+    by_start = {
+        int(item["start"]): float(item.get("source_character_score", 0.0))
+        for item in candidates
+    }
+    scores = [by_start.get(int(start), 0.0) for start in starts]
+    return scores if scores else [0.0]
 
 
 def source_derived_riff_starts(
@@ -642,7 +692,10 @@ def source_derived_riff_starts(
             starts.append(start)
     ranked = sorted(
         candidates,
-        key=lambda item: max(float(item["hook_score"]), float(item["chop_score"])),
+        key=lambda item: (
+            max(float(item["hook_score"]), float(item["chop_score"]))
+            + float(item.get("source_character_score", 0.0)) * 0.24
+        ),
         reverse=True,
     )
     for item in ranked:
@@ -2076,6 +2129,15 @@ def hook_chop_policy_proof(source_policy: DenseBreakSourcePolicy) -> dict[str, f
         "hook_chop_riff_unique_source_offset_count": float(
             policy.riff_unique_source_offset_count
         ),
+        "hook_chop_source_character_score_floor": float(
+            policy.source_character_score_floor
+        ),
+        "hook_chop_source_character_score_mean": float(
+            policy.source_character_score_mean
+        ),
+        "hook_chop_source_character_score_span": float(
+            policy.source_character_score_span
+        ),
     }
 
 
@@ -2875,6 +2937,12 @@ def build_report(
             "min_hook_chop_static_distance_frames": MIN_HOOK_CHOP_STATIC_DISTANCE_FRAMES,
             "min_hook_chop_offset_distance_frames": MIN_HOOK_CHOP_OFFSET_DISTANCE_FRAMES,
             "min_hook_chop_riff_source_offsets": MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS,
+            "min_hook_chop_source_character_score_floor": (
+                MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
+            ),
+            "min_hook_chop_source_character_score_span": (
+                MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
+            ),
             "min_destructive_gesture_candidates": MIN_DESTRUCTIVE_GESTURE_CANDIDATES,
             "min_destructive_static_distance_frames": MIN_DESTRUCTIVE_STATIC_DISTANCE_FRAMES,
             "min_destructive_offset_distance_frames": MIN_DESTRUCTIVE_OFFSET_DISTANCE_FRAMES,
@@ -3227,6 +3295,16 @@ def failure_codes_for(
             < MIN_HOOK_CHOP_RIFF_SOURCE_OFFSETS
         ):
             failures.append("hook_chop_riff_source_offsets_too_narrow")
+        if (
+            proof.get("hook_chop_source_character_score_floor", 0.0)
+            < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_FLOOR
+        ):
+            failures.append("hook_chop_source_character_too_weak")
+        if (
+            proof.get("hook_chop_source_character_score_span", 0.0)
+            < MIN_HOOK_CHOP_SOURCE_CHARACTER_SCORE_SPAN
+        ):
+            failures.append("hook_chop_source_character_too_narrow")
         if proof.get("destructive_gesture_source_derived", 0.0) < 1.0:
             failures.append("destructive_gesture_not_source_derived")
         if proof.get("destructive_gesture_candidate_count", 0.0) < MIN_DESTRUCTIVE_GESTURE_CANDIDATES:
