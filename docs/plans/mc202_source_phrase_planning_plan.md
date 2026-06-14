@@ -1,7 +1,7 @@
 # MC-202 Source Phrase Planning Plan
 
 Status: accepted implementation plan; upgraded by RIOTBOX-1262
-Linear: RIOTBOX-1035, RIOTBOX-1262
+Linear: RIOTBOX-1035, RIOTBOX-1262, RIOTBOX-1263
 Phase: P013+ / P023 sound-quality follow-up
 
 ## Goal
@@ -163,7 +163,8 @@ These ideas cannot weaken the Level 2-4 release gates.
 
 The roadmap should keep these as separate, bounded slices:
 
-- Source Graph low-band / transient feature contract for MC-202 planning.
+- RIOTBOX-1263: Source Graph low-band / transient / hook-restraint feature
+  contract for MC-202 planning.
 - MC-202 candidate-family generator that derives placement from those features.
 - Candidate scoring and rejection reasons with `stay_out` as a first-class
   musical choice.

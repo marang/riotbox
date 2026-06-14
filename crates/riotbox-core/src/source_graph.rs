@@ -8,5 +8,7 @@ include!("source_graph/timing_evaluation.rs");
 include!("source_graph/timing_probe_diagnostics.rs");
 include!("source_graph/timing_probe_candidates.rs");
 include!("source_graph/model_and_helpers.rs");
+include!("source_graph/mc202_phrase_features.rs");
 include!("source_graph/tests.rs");
+include!("source_graph/mc202_phrase_feature_tests.rs");
 include!("source_graph/timing_tests.rs");
