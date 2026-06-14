@@ -1174,4 +1174,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P013+: Promote MC-202 source-derived phrase planning beyond contour support
 - [RIOTBOX-1262.md](./RIOTBOX-1262.md)
   Upgrade MC-202 source phrase plan to real audio intelligence target
+- [RIOTBOX-1263.md](./RIOTBOX-1263.md)
+  MC-202 Level 2 source feature vector for phrase planning
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
