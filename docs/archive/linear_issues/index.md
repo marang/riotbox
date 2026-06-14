@@ -1168,4 +1168,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Split sound-quality readiness report validator helpers
 - [RIOTBOX-1260.md](./RIOTBOX-1260.md)
   P023: Move professional-output suite smoke assertions into validator
+- [RIOTBOX-1261.md](./RIOTBOX-1261.md)
+  P023: Move sound-quality readiness smoke assertions into validator
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
