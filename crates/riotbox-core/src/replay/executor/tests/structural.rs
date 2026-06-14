@@ -2,7 +2,10 @@ use super::*;
 use crate::{
     action::{ActionReplayCoverage, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     replay::{build_committed_replay_plan, build_replay_target_plan},
-    session::SessionFile,
+    session::{
+        Mc202RoleState, Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
+        Mc202SourcePhraseSlotState, SessionFile,
+    },
 };
 
 #[test]
@@ -72,6 +75,7 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
     ]);
     let plan = build_committed_replay_plan(&action_log).expect("valid replay plan");
     let mut session = SessionFile::new("session-1", "riotbox-test", "2026-04-29T20:00:00Z");
+    session.runtime_state.lane_state.mc202.source_phrase_plan = Some(source_phrase_plan("src-1"));
 
     let report = apply_replay_plan_to_session(&mut session, &plan).expect("supported replay plan");
 
@@ -100,6 +104,14 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
         SourceMonitorMode::Blend
     );
     assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+    assert!(
+        session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .is_none()
+    );
     assert_eq!(
         session.runtime_state.capture.length_intent,
         CaptureLengthIntent::OneBar
@@ -110,6 +122,40 @@ fn plan_executor_applies_supported_structural_actions_in_commit_order() {
     );
     assert_eq!(session.runtime_state.capture.length_set_at, Some(390));
     assert_eq!(session.ghost_state.mode, GhostMode::Assist);
+}
+
+fn source_phrase_plan(source_id: &str) -> Mc202SourcePhrasePlanState {
+    Mc202SourcePhrasePlanState {
+        source_id: SourceId::from(source_id),
+        phrase_slot: Mc202SourcePhraseSlotState {
+            phrase_index: 1,
+            start_bar: 0,
+            end_bar: 7,
+        },
+        role: Mc202RoleState::Answer,
+        rhythm_cells: [
+            None,
+            Some(0),
+            None,
+            Some(5),
+            None,
+            Some(7),
+            None,
+            None,
+            None,
+            Some(3),
+            None,
+            Some(7),
+            None,
+            None,
+            None,
+            None,
+        ],
+        note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
+        touch: 0.82,
+        confidence: 0.86,
+        fallback_reason: None,
+    }
 }
 
 #[test]

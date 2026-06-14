@@ -45,6 +45,16 @@ pub(in crate::jam_app) fn apply_source_timing_side_effects(
                 })
             {
                 session.runtime_state.source_timing.confirmed_grid = None;
+                if session
+                    .runtime_state
+                    .lane_state
+                    .mc202
+                    .source_phrase_plan
+                    .as_ref()
+                    .is_some_and(|plan| plan.source_id == *source_id)
+                {
+                    session.runtime_state.lane_state.mc202.source_phrase_plan = None;
+                }
                 true
             } else {
                 false
@@ -63,7 +73,10 @@ mod tests {
             Quantization, UndoPolicy,
         },
         ids::{ActionId, SourceId},
-        session::SessionFile,
+        session::{
+            Mc202RoleState, Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
+            Mc202SourcePhraseSlotState, SessionFile,
+        },
     };
 
     use super::apply_source_timing_side_effects;
@@ -112,15 +125,47 @@ mod tests {
     }
 
     #[test]
+    fn source_timing_side_effect_revert_clears_matching_mc202_source_phrase_plan() {
+        let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:22:30Z");
+        let confirm = confirm_grid_action("src-1", Some("primary-grid"), 100);
+        assert!(apply_source_timing_side_effects(&mut session, &confirm));
+        session.runtime_state.lane_state.mc202.source_phrase_plan =
+            Some(source_phrase_plan("src-1"));
+
+        let revert = revert_grid_action("src-1", Some("primary-grid"), 120);
+
+        assert!(apply_source_timing_side_effects(&mut session, &revert));
+        assert!(session.runtime_state.source_timing.confirmed_grid.is_none());
+        assert!(
+            session
+                .runtime_state
+                .lane_state
+                .mc202
+                .source_phrase_plan
+                .is_none()
+        );
+    }
+
+    #[test]
     fn source_timing_side_effect_preserves_unmatched_confirmation_on_revert() {
         let mut session = SessionFile::new("session-1", "riotbox-test", "2026-05-23T12:23:00Z");
         let confirm = confirm_grid_action("src-1", Some("primary-grid"), 100);
         assert!(apply_source_timing_side_effects(&mut session, &confirm));
+        session.runtime_state.lane_state.mc202.source_phrase_plan =
+            Some(source_phrase_plan("src-1"));
 
         let revert = revert_grid_action("src-1", Some("alternate-grid"), 120);
 
         assert!(!apply_source_timing_side_effects(&mut session, &revert));
         assert!(session.runtime_state.source_timing.confirmed_grid.is_some());
+        assert!(
+            session
+                .runtime_state
+                .lane_state
+                .mc202
+                .source_phrase_plan
+                .is_some()
+        );
     }
 
     fn confirm_grid_action(
@@ -156,5 +201,39 @@ mod tests {
         action.id = ActionId(2);
         action.command = ActionCommand::SourceTimingRevertGrid;
         action
+    }
+
+    fn source_phrase_plan(source_id: &str) -> Mc202SourcePhrasePlanState {
+        Mc202SourcePhrasePlanState {
+            source_id: SourceId::from(source_id),
+            phrase_slot: Mc202SourcePhraseSlotState {
+                phrase_index: 1,
+                start_bar: 0,
+                end_bar: 7,
+            },
+            role: Mc202RoleState::Answer,
+            rhythm_cells: [
+                None,
+                Some(0),
+                None,
+                Some(5),
+                None,
+                Some(7),
+                None,
+                None,
+                None,
+                Some(3),
+                None,
+                Some(7),
+                None,
+                None,
+                None,
+                None,
+            ],
+            note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
+            touch: 0.82,
+            confidence: 0.86,
+            fallback_reason: None,
+        }
     }
 }

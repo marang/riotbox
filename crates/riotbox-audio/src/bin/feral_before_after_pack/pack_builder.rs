@@ -386,6 +386,7 @@ fn mc202_instigator_state() -> Mc202RenderState {
         note_budget: Mc202NoteBudget::Push,
         contour_hint: Mc202ContourHint::Lift,
         hook_response: Mc202HookResponse::Direct,
+        source_phrase_plan: None,
         touch: 0.9,
         music_bus_level: 0.74,
         is_transport_running: true,
@@ -434,4 +435,3 @@ fn metrics_path_for(path: &Path) -> PathBuf {
     });
     metrics_path
 }
-

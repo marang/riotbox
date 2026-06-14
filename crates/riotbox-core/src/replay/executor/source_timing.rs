@@ -43,6 +43,16 @@ pub(super) fn apply_source_timing_replay_action(
                 }) =>
         {
             session.runtime_state.source_timing.confirmed_grid = None;
+            if session
+                .runtime_state
+                .lane_state
+                .mc202
+                .source_phrase_plan
+                .as_ref()
+                .is_some_and(|plan| plan.source_id == *source_id)
+            {
+                session.runtime_state.lane_state.mc202.source_phrase_plan = None;
+            }
         }
         ActionCommand::SourceTimingRevertGrid => {}
         _ => {}

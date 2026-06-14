@@ -85,6 +85,7 @@ fn shared_mc202_render_state_tracks_updates() {
         note_budget: Mc202NoteBudget::Push,
         contour_hint: Mc202ContourHint::Lift,
         hook_response: Mc202HookResponse::Direct,
+        source_phrase_plan: None,
         touch: 0.90,
         music_bus_level: 0.64,
         is_transport_running: true,
@@ -106,6 +107,30 @@ fn shared_mc202_render_state_tracks_updates() {
     assert!(snapshot.is_transport_running);
     assert_eq!(snapshot.tempo_bpm, 130.0);
     assert_eq!(snapshot.position_beats, 41.5);
+}
+
+#[test]
+fn shared_mc202_render_state_clears_source_phrase_plan() {
+    let shared = SharedMc202RenderState::new(&Mc202RenderState::default());
+    let mut render = Mc202RenderState {
+        mode: Mc202RenderMode::Answer,
+        routing: Mc202RenderRouting::MusicBusBass,
+        source_phrase_plan: Some(Mc202SourcePhraseRenderPlan {
+            active_mask: 0b0000_0000_0000_1010,
+            semitones: [0, 7, 0, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        }),
+        ..Mc202RenderState::default()
+    };
+    shared.update(&render);
+
+    let with_plan = shared.snapshot();
+    assert_eq!(with_plan.source_phrase_plan, render.source_phrase_plan);
+
+    render.source_phrase_plan = None;
+    shared.update(&render);
+
+    let cleared = shared.snapshot();
+    assert!(cleared.source_phrase_plan.is_none());
 }
 
 #[test]
@@ -424,4 +449,3 @@ fn w30_promoted_audition_uses_source_window_samples_when_available() {
     assert!(negative.iter().any(|sample| *sample < -0.001));
     assert_ne!(positive, negative);
 }
-

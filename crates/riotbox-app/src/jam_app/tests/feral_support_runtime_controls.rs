@@ -403,7 +403,7 @@ fn adjusting_mc202_touch_updates_session_and_runtime_view() {
     assert!((state.runtime.mc202_render.touch - 0.64).abs() < f32::EPSILON);
     assert_eq!(
         state.runtime_view.mc202_render_mix_summary,
-        "music bus 0.64 | touch 0.64 | budget balanced | contour drop | hook direct"
+        "music bus 0.64 | touch 0.64 | budget balanced | contour drop | hook direct | source plan primitive"
     );
 
     let lowered = state.adjust_mc202_touch(-1.5);
@@ -412,6 +412,6 @@ fn adjusting_mc202_touch_updates_session_and_runtime_view() {
     assert_eq!(state.runtime.mc202_render.touch, 0.0);
     assert_eq!(
         state.runtime_view.mc202_render_mix_summary,
-        "music bus 0.64 | touch 0.00 | budget balanced | contour drop | hook direct"
+        "music bus 0.64 | touch 0.00 | budget balanced | contour drop | hook direct | source plan primitive"
     );
 }

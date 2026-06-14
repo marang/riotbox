@@ -124,6 +124,19 @@ impl Mc202HookResponse {
 }
 
 #[derive(Copy, Clone, Debug, PartialEq)]
+pub struct Mc202SourcePhraseRenderPlan {
+    pub active_mask: u16,
+    pub semitones: [i8; 16],
+}
+
+impl Mc202SourcePhraseRenderPlan {
+    #[must_use]
+    pub const fn is_empty(self) -> bool {
+        self.active_mask == 0
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Mc202RenderState {
     pub mode: Mc202RenderMode,
     pub routing: Mc202RenderRouting,
@@ -131,6 +144,7 @@ pub struct Mc202RenderState {
     pub note_budget: Mc202NoteBudget,
     pub contour_hint: Mc202ContourHint,
     pub hook_response: Mc202HookResponse,
+    pub source_phrase_plan: Option<Mc202SourcePhraseRenderPlan>,
     pub touch: f32,
     pub music_bus_level: f32,
     pub tempo_bpm: f32,
@@ -147,6 +161,7 @@ impl Default for Mc202RenderState {
             note_budget: Mc202NoteBudget::Balanced,
             contour_hint: Mc202ContourHint::Neutral,
             hook_response: Mc202HookResponse::Direct,
+            source_phrase_plan: None,
             touch: 0.4,
             music_bus_level: 0.72,
             tempo_bpm: 128.0,
@@ -162,9 +177,10 @@ pub fn render_mc202_buffer(
     channel_count: usize,
     render: &Mc202RenderState,
 ) {
+    let source_phrase_plan = render.source_phrase_plan.filter(|plan| !plan.is_empty());
     if channel_count == 0
         || matches!(render.mode, Mc202RenderMode::Idle)
-        || matches!(render.mode, Mc202RenderMode::Answer)
+        || (matches!(render.mode, Mc202RenderMode::Answer) && source_phrase_plan.is_none())
         || matches!(render.routing, Mc202RenderRouting::Silent)
         || !render.is_transport_running
         || render.music_bus_level <= 0.0
@@ -181,10 +197,15 @@ pub fn render_mc202_buffer(
         let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
         let sixteenth = (beat * 4.0).floor() as usize;
         let step_phase = (beat * 4.0).fract() as f32;
-        let Some(semitone) = step_semitone(render.phrase_shape, sixteenth) else {
+        let Some(semitone) = source_phrase_plan
+            .and_then(|plan| source_plan_step_semitone(plan, sixteenth))
+            .or_else(|| step_semitone(render.phrase_shape, sixteenth))
+        else {
             continue;
         };
-        if !within_note_budget(render.phrase_shape, render.note_budget, sixteenth) {
+        if source_phrase_plan.is_none()
+            && !within_note_budget(render.phrase_shape, render.note_budget, sixteenth)
+        {
             continue;
         }
         if !within_hook_response(render.hook_response, sixteenth) {
@@ -204,6 +225,7 @@ pub fn render_mc202_buffer(
         let gate_len = match render.phrase_shape {
             Mc202PhraseShape::PressureCell => 0.50,
             Mc202PhraseShape::InstigatorSpike => 0.30,
+            _ if source_phrase_plan.is_some() => 0.56,
             _ => 0.62,
         };
         if step_phase > gate_len {
@@ -234,6 +256,15 @@ pub fn render_mc202_buffer(
 fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
     let pattern = pattern_for_shape(shape);
     pattern[sixteenth % pattern.len()]
+}
+
+fn source_plan_step_semitone(plan: Mc202SourcePhraseRenderPlan, sixteenth: usize) -> Option<i8> {
+    let step = sixteenth % 16;
+    if plan.active_mask & (1_u16 << step) == 0 {
+        return None;
+    }
+
+    Some(plan.semitones[step])
 }
 
 fn pattern_for_shape(shape: Mc202PhraseShape) -> &'static [Option<i8>; 16] {

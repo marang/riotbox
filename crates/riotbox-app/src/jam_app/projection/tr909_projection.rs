@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use riotbox_audio::{
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-        Mc202RenderRouting, Mc202RenderState,
+        Mc202RenderRouting, Mc202RenderState, Mc202SourcePhraseRenderPlan,
     },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
@@ -216,11 +216,19 @@ pub(super) fn build_mc202_render_state(
 
     Mc202RenderState {
         mode,
-        routing: mc202_routing_for_role(role),
+        routing: mc202_routing_for_role_and_source_plan(role, mc202.source_phrase_plan.as_ref()),
         phrase_shape,
-        note_budget: mc202_note_budget_for_shape_and_hook_response(phrase_shape, hook_response),
+        note_budget: mc202
+            .source_phrase_plan
+            .as_ref()
+            .filter(|plan| plan.is_source_derived())
+            .map_or_else(
+                || mc202_note_budget_for_shape_and_hook_response(phrase_shape, hook_response),
+                |plan| mc202_note_budget_from_source_plan(plan.note_budget),
+            ),
         contour_hint,
         hook_response,
+        source_phrase_plan: mc202_source_phrase_render_plan(mc202.source_phrase_plan.as_ref()),
         touch,
         music_bus_level: session
             .runtime_state
@@ -250,6 +258,51 @@ fn mc202_routing_for_role(role: Mc202RoleState) -> Mc202RenderRouting {
     match role {
         Mc202RoleState::Answer => Mc202RenderRouting::Silent,
         _ => Mc202RenderRouting::MusicBusBass,
+    }
+}
+
+fn mc202_routing_for_role_and_source_plan(
+    role: Mc202RoleState,
+    source_plan: Option<&riotbox_core::session::Mc202SourcePhrasePlanState>,
+) -> Mc202RenderRouting {
+    if source_plan.is_some_and(riotbox_core::session::Mc202SourcePhrasePlanState::is_source_derived)
+    {
+        return Mc202RenderRouting::MusicBusBass;
+    }
+
+    mc202_routing_for_role(role)
+}
+
+fn mc202_source_phrase_render_plan(
+    source_plan: Option<&riotbox_core::session::Mc202SourcePhrasePlanState>,
+) -> Option<Mc202SourcePhraseRenderPlan> {
+    let source_plan = source_plan.filter(|plan| plan.is_source_derived())?;
+    let mut active_mask = 0_u16;
+    let mut semitones = [0_i8; 16];
+    for (index, cell) in source_plan.rhythm_cells.iter().enumerate() {
+        let Some(semitone) = cell else {
+            continue;
+        };
+        active_mask |= 1_u16 << index;
+        semitones[index] = *semitone;
+    }
+
+    (active_mask != 0).then_some(Mc202SourcePhraseRenderPlan {
+        active_mask,
+        semitones,
+    })
+}
+
+fn mc202_note_budget_from_source_plan(
+    budget: riotbox_core::session::Mc202SourcePhraseNoteBudgetState,
+) -> Mc202NoteBudget {
+    match budget {
+        riotbox_core::session::Mc202SourcePhraseNoteBudgetState::Sparse => Mc202NoteBudget::Sparse,
+        riotbox_core::session::Mc202SourcePhraseNoteBudgetState::Balanced => {
+            Mc202NoteBudget::Balanced
+        }
+        riotbox_core::session::Mc202SourcePhraseNoteBudgetState::Push => Mc202NoteBudget::Push,
+        riotbox_core::session::Mc202SourcePhraseNoteBudgetState::Wide => Mc202NoteBudget::Wide,
     }
 }
 

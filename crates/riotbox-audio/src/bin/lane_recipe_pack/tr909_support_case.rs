@@ -48,6 +48,7 @@ fn mc202_state_with_policy(
         note_budget: mc202_note_budget_for_shape_and_hook_response(shape, hook_response),
         contour_hint,
         hook_response,
+        source_phrase_plan: None,
         touch,
         music_bus_level: 0.74,
         is_transport_running: true,

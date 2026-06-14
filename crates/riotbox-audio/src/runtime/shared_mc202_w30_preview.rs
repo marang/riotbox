@@ -93,6 +93,7 @@ pub(super) struct RealtimeMc202RenderState {
     pub(super) note_budget: Mc202NoteBudget,
     pub(super) contour_hint: Mc202ContourHint,
     pub(super) hook_response: Mc202HookResponse,
+    pub(super) source_phrase_plan: Option<Mc202SourcePhraseRenderPlan>,
     pub(super) touch: f32,
     pub(super) music_bus_level: f32,
     pub(super) tempo_bpm: f32,
@@ -109,6 +110,7 @@ impl From<RealtimeMc202RenderState> for Mc202RenderState {
             note_budget: render.note_budget,
             contour_hint: render.contour_hint,
             hook_response: render.hook_response,
+            source_phrase_plan: render.source_phrase_plan,
             touch: render.touch,
             music_bus_level: render.music_bus_level,
             tempo_bpm: render.tempo_bpm,
@@ -125,6 +127,8 @@ pub(super) struct SharedMc202RenderState {
     note_budget: AtomicU32,
     contour_hint: AtomicU32,
     hook_response: AtomicU32,
+    source_phrase_active_mask: AtomicU32,
+    source_phrase_semitones: [AtomicU32; 16],
     touch_bits: AtomicU32,
     music_bus_level_bits: AtomicU32,
     tempo_bpm_bits: AtomicU32,
@@ -141,6 +145,8 @@ impl SharedMc202RenderState {
             note_budget: AtomicU32::new(mc202_note_budget_to_u32(Mc202NoteBudget::Balanced)),
             contour_hint: AtomicU32::new(mc202_contour_hint_to_u32(Mc202ContourHint::Neutral)),
             hook_response: AtomicU32::new(mc202_hook_response_to_u32(Mc202HookResponse::Direct)),
+            source_phrase_active_mask: AtomicU32::new(0),
+            source_phrase_semitones: std::array::from_fn(|_| AtomicU32::new(0)),
             touch_bits: AtomicU32::new(0),
             music_bus_level_bits: AtomicU32::new(0),
             tempo_bpm_bits: AtomicU32::new(0),
@@ -174,6 +180,18 @@ impl SharedMc202RenderState {
             mc202_hook_response_to_u32(render_state.hook_response),
             Ordering::Relaxed,
         );
+        self.source_phrase_active_mask.store(
+            render_state
+                .source_phrase_plan
+                .map_or(0, |plan| u32::from(plan.active_mask)),
+            Ordering::Relaxed,
+        );
+        if let Some(plan) = render_state.source_phrase_plan {
+            for (index, semitone) in plan.semitones.iter().enumerate() {
+                self.source_phrase_semitones[index]
+                    .store(i8_to_atomic_u32(*semitone), Ordering::Relaxed);
+            }
+        }
         self.touch_bits
             .store(render_state.touch.to_bits(), Ordering::Relaxed);
         self.music_bus_level_bits
@@ -194,6 +212,7 @@ impl SharedMc202RenderState {
             note_budget: mc202_note_budget_from_u32(self.note_budget.load(Ordering::Relaxed)),
             contour_hint: mc202_contour_hint_from_u32(self.contour_hint.load(Ordering::Relaxed)),
             hook_response: mc202_hook_response_from_u32(self.hook_response.load(Ordering::Relaxed)),
+            source_phrase_plan: self.source_phrase_plan_snapshot(),
             touch: f32::from_bits(self.touch_bits.load(Ordering::Relaxed)),
             music_bus_level: f32::from_bits(self.music_bus_level_bits.load(Ordering::Relaxed)),
             tempo_bpm: f32::from_bits(self.tempo_bpm_bits.load(Ordering::Relaxed)),
@@ -201,6 +220,29 @@ impl SharedMc202RenderState {
             is_transport_running: self.is_transport_running.load(Ordering::Relaxed),
         }
     }
+
+    fn source_phrase_plan_snapshot(&self) -> Option<Mc202SourcePhraseRenderPlan> {
+        let active_mask = self.source_phrase_active_mask.load(Ordering::Relaxed) as u16;
+        if active_mask == 0 {
+            return None;
+        }
+
+        let semitones = std::array::from_fn(|index| {
+            atomic_u32_to_i8(self.source_phrase_semitones[index].load(Ordering::Relaxed))
+        });
+        Some(Mc202SourcePhraseRenderPlan {
+            active_mask,
+            semitones,
+        })
+    }
+}
+
+fn i8_to_atomic_u32(value: i8) -> u32 {
+    u32::from_ne_bytes(i32::from(value).to_ne_bytes())
+}
+
+fn atomic_u32_to_i8(value: u32) -> i8 {
+    i32::from_ne_bytes(value.to_ne_bytes()).clamp(i32::from(i8::MIN), i32::from(i8::MAX)) as i8
 }
 
 fn mc202_mode_to_u32(mode: Mc202RenderMode) -> u32 {

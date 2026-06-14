@@ -1,13 +1,19 @@
 use riotbox_core::{
     action::{Action, ActionCommand, ActionParams, ActionResult},
     session::{Mc202PhraseIntentState, Mc202RoleState, SessionFile},
+    source_graph::SourceGraph,
     transport::CommitBoundaryState,
 };
+
+mod source_phrase;
+
+use source_phrase::derive_mc202_source_phrase_plan;
 
 pub(in crate::jam_app) fn apply_mc202_side_effects(
     session: &mut SessionFile,
     action: &Action,
     boundary: Option<&CommitBoundaryState>,
+    source_graph: Option<&SourceGraph>,
 ) {
     match action.command {
         ActionCommand::Mc202SetRole => {
@@ -44,6 +50,8 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
                 _ => mc202_set_role_default_touch(role),
             };
             session.runtime_state.macro_state.mc202_touch = touch;
+            session.runtime_state.lane_state.mc202.source_phrase_plan =
+                derive_mc202_source_phrase_plan(session, source_graph, boundary, role, touch);
 
             set_logged_mc202_result(
                 session,
@@ -53,16 +61,40 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             );
         }
         ActionCommand::Mc202GenerateFollower => {
-            apply_generated_role(session, action, boundary, Mc202RoleState::Follower);
+            apply_generated_role(
+                session,
+                action,
+                boundary,
+                source_graph,
+                Mc202RoleState::Follower,
+            );
         }
         ActionCommand::Mc202GenerateAnswer => {
-            apply_generated_role(session, action, boundary, Mc202RoleState::Answer);
+            apply_generated_role(
+                session,
+                action,
+                boundary,
+                source_graph,
+                Mc202RoleState::Answer,
+            );
         }
         ActionCommand::Mc202GeneratePressure => {
-            apply_generated_role(session, action, boundary, Mc202RoleState::Pressure);
+            apply_generated_role(
+                session,
+                action,
+                boundary,
+                source_graph,
+                Mc202RoleState::Pressure,
+            );
         }
         ActionCommand::Mc202GenerateInstigator => {
-            apply_generated_role(session, action, boundary, Mc202RoleState::Instigator);
+            apply_generated_role(
+                session,
+                action,
+                boundary,
+                source_graph,
+                Mc202RoleState::Instigator,
+            );
         }
         ActionCommand::Mc202MutatePhrase => {
             let current_role = session
@@ -94,6 +126,14 @@ pub(in crate::jam_app) fn apply_mc202_side_effects(
             session.runtime_state.lane_state.mc202.phrase_variant = intent.phrase_variant();
             session.runtime_state.macro_state.mc202_touch =
                 session.runtime_state.macro_state.mc202_touch.max(touch);
+            session.runtime_state.lane_state.mc202.source_phrase_plan =
+                derive_mc202_source_phrase_plan(
+                    session,
+                    source_graph,
+                    boundary,
+                    current_role,
+                    session.runtime_state.macro_state.mc202_touch,
+                );
 
             set_logged_mc202_result(
                 session,
@@ -110,6 +150,7 @@ fn apply_generated_role(
     session: &mut SessionFile,
     action: &Action,
     boundary: Option<&CommitBoundaryState>,
+    source_graph: Option<&SourceGraph>,
     role: Mc202RoleState,
 ) {
     let role_label = role.label();
@@ -124,6 +165,13 @@ fn apply_generated_role(
     session.runtime_state.lane_state.mc202.phrase_variant = None;
     session.runtime_state.macro_state.mc202_touch =
         session.runtime_state.macro_state.mc202_touch.max(touch);
+    session.runtime_state.lane_state.mc202.source_phrase_plan = derive_mc202_source_phrase_plan(
+        session,
+        source_graph,
+        boundary,
+        role,
+        session.runtime_state.macro_state.mc202_touch,
+    );
 
     set_logged_mc202_result(
         session,

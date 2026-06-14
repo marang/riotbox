@@ -241,6 +241,10 @@ Done when:
 - MC-202 support exposes audible pressure, phrase/bar variation, source-grid
   alignment, and bounded source-section contour proof while staying labeled as
   primitive support until phrase planning exists
+- MC-202 source-derived phrase planning remains a P013+/P023 follow-up tracked
+  by RIOTBOX-1035 and `docs/plans/mc202_source_phrase_planning_plan.md`; it is
+  not retroactively required for the closed P013 baseline, but future claims
+  that MC-202 bass / answer behavior is source-derived must satisfy that plan
 - generated-support mix exposes all-lane mix movement proof so source-first and
   generated-support listening mixes are distinct and all three lanes contribute
 - relevant P013 specs, validator fixtures, review notes, and roadmap state are
