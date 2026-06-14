@@ -1164,4 +1164,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Strengthen release demo human-review queue context
 - [RIOTBOX-1258.md](./RIOTBOX-1258.md)
   P023: Add human-review queue context to sound-quality readiness report
+- [RIOTBOX-1259.md](./RIOTBOX-1259.md)
+  P023: Split sound-quality readiness report validator helpers
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
