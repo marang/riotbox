@@ -148,6 +148,8 @@ pub struct Mc202UndoSnapshotState {
     pub phrase_ref: Option<String>,
     #[serde(default)]
     pub phrase_variant: Option<Mc202PhraseVariantState>,
+    #[serde(default)]
+    pub source_phrase_plan: Option<Mc202SourcePhrasePlanState>,
     pub touch: f32,
 }
 
@@ -159,6 +161,12 @@ impl Mc202UndoSnapshotState {
             role: session.runtime_state.lane_state.mc202.role,
             phrase_ref: session.runtime_state.lane_state.mc202.phrase_ref.clone(),
             phrase_variant: session.runtime_state.lane_state.mc202.phrase_variant,
+            source_phrase_plan: session
+                .runtime_state
+                .lane_state
+                .mc202
+                .source_phrase_plan
+                .clone(),
             touch: session.runtime_state.macro_state.mc202_touch,
         }
     }
@@ -167,6 +175,8 @@ impl Mc202UndoSnapshotState {
         session.runtime_state.lane_state.mc202.role = self.role;
         session.runtime_state.lane_state.mc202.phrase_ref = self.phrase_ref.clone();
         session.runtime_state.lane_state.mc202.phrase_variant = self.phrase_variant;
+        session.runtime_state.lane_state.mc202.source_phrase_plan =
+            self.source_phrase_plan.clone();
         session.runtime_state.macro_state.mc202_touch = self.touch;
     }
 }

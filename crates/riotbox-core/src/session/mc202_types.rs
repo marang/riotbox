@@ -4,12 +4,62 @@ pub struct Mc202LaneState {
     pub phrase_ref: Option<String>,
     #[serde(default)]
     pub phrase_variant: Option<Mc202PhraseVariantState>,
+    #[serde(default)]
+    pub source_phrase_plan: Option<Mc202SourcePhrasePlanState>,
 }
 
 impl Mc202LaneState {
     #[must_use]
     pub fn role_label(&self) -> Option<&'static str> {
         self.role.map(Mc202RoleState::label)
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Mc202SourcePhrasePlanState {
+    pub source_id: SourceId,
+    pub phrase_slot: Mc202SourcePhraseSlotState,
+    pub role: Mc202RoleState,
+    pub rhythm_cells: [Option<i8>; 16],
+    pub note_budget: Mc202SourcePhraseNoteBudgetState,
+    pub touch: f32,
+    pub confidence: f32,
+    #[serde(default)]
+    pub fallback_reason: Option<String>,
+}
+
+impl Mc202SourcePhrasePlanState {
+    #[must_use]
+    pub fn is_source_derived(&self) -> bool {
+        self.fallback_reason.is_none()
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct Mc202SourcePhraseSlotState {
+    pub phrase_index: u32,
+    pub start_bar: u32,
+    pub end_bar: u32,
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Mc202SourcePhraseNoteBudgetState {
+    Sparse,
+    Balanced,
+    Push,
+    Wide,
+}
+
+impl Mc202SourcePhraseNoteBudgetState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::Sparse => "sparse",
+            Self::Balanced => "balanced",
+            Self::Push => "push",
+            Self::Wide => "wide",
+        }
     }
 }
 

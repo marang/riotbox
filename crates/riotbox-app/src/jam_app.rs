@@ -139,8 +139,6 @@ use transport_helpers::{normalize_scene_candidates, transport_clock_from_state};
 
 #[cfg(test)]
 use riotbox_core::TimestampMs;
-#[cfg(test)]
-use riotbox_core::transport::CommitBoundaryState;
 
 impl JamAppState {
     pub(super) const W30_DAMAGE_PROFILE_LABEL: &str = "shred";

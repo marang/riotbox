@@ -162,6 +162,177 @@ fn mc202_render_projection_consumes_typed_role_and_phrase_intent_contract() {
 }
 
 #[test]
+fn committed_mc202_answer_with_confirmed_source_timing_stores_and_renders_source_phrase_plan() {
+    let mut graph = sample_graph();
+    graph.timing.phrase_grid = vec![riotbox_core::source_graph::PhraseSpan {
+        phrase_index: 2,
+        start_bar: 8,
+        end_bar: 15,
+        confidence: 0.91,
+    }];
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: SourceId::from("src-1"),
+        hypothesis_id: None,
+        confirmed_by_action: ActionId(77),
+        confirmed_at: 1_771_156_800_000,
+    });
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_mc202_generate_answer(300),
+        QueueControlResult::Enqueued
+    );
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    let plan = state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("source-derived MC-202 phrase plan");
+    assert!(plan.is_source_derived());
+    assert_eq!(plan.role, Mc202RoleState::Answer);
+    assert_eq!(plan.phrase_slot.phrase_index, 2);
+    assert!(plan.rhythm_cells.iter().any(Option::is_some));
+    assert_eq!(
+        state.runtime.mc202_render.routing,
+        Mc202RenderRouting::MusicBusBass
+    );
+    assert!(state.runtime.mc202_render.source_phrase_plan.is_some());
+    assert!(
+        state
+            .runtime_view
+            .mc202_render_mix_summary
+            .contains("source plan source_derived")
+    );
+
+    let rendered = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+    let metrics = signal_metrics(&rendered);
+    assert!(
+        metrics.rms > 0.001,
+        "source-derived MC-202 answer rendered silent"
+    );
+}
+
+#[test]
+fn committed_mc202_answer_derives_distinct_source_phrase_plans_for_distinct_sources() {
+    let mut graph_a = source_phrase_test_graph("src-a", "hash-a", 126.0, 7, 2);
+    graph_a.candidates[0].tags = vec!["loop".into(), "straight_break".into()];
+    let mut graph_b = source_phrase_test_graph("src-b", "hash-b", 143.0, 41, 5);
+    graph_b.analysis_summary.hook_candidate_count = 1;
+    graph_b.candidates[0].candidate_type = CandidateType::HookCandidate;
+    graph_b.candidates[0].tags = vec!["hook".into(), "snare_pressure".into()];
+    graph_b.sections[0].label_hint = SectionLabelHint::Build;
+    graph_b.sections[0].energy_class = EnergyClass::Peak;
+    graph_b.sections[0].tags = vec!["build".into(), "riser".into()];
+
+    let mut state_a = confirmed_source_phrase_state(graph_a);
+    let mut state_b = confirmed_source_phrase_state(graph_b);
+
+    let render_a = commit_source_derived_answer(&mut state_a);
+    let render_b = commit_source_derived_answer(&mut state_b);
+    let plan_a = state_a
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("source A phrase plan")
+        .clone();
+    let plan_b = state_b
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("source B phrase plan")
+        .clone();
+
+    assert!(plan_a.is_source_derived());
+    assert!(plan_b.is_source_derived());
+    assert_ne!(plan_a.source_id, plan_b.source_id);
+    assert_ne!(
+        plan_a.rhythm_cells, plan_b.rhythm_cells,
+        "distinct source evidence collapsed to the same MC-202 source phrase plan"
+    );
+
+    let delta = signal_delta_metrics(&render_a, &render_b);
+    assert!(
+        delta.rms > 0.001,
+        "distinct source phrase plans rendered too similarly: {delta:?}"
+    );
+}
+
+#[test]
+fn committed_mc202_answer_requires_matching_source_phrase_slot_for_source_plan() {
+    let mut graph = sample_graph();
+    graph.timing.phrase_grid = vec![riotbox_core::source_graph::PhraseSpan {
+        phrase_index: 1,
+        start_bar: 0,
+        end_bar: 3,
+        confidence: 0.91,
+    }];
+    let mut session = sample_session(&graph);
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id: graph.source.source_id.clone(),
+        hypothesis_id: None,
+        confirmed_by_action: ActionId(77),
+        confirmed_at: 1_771_156_800_000,
+    });
+    let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
+
+    assert_eq!(
+        state.queue_mc202_generate_answer(300),
+        QueueControlResult::Enqueued
+    );
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    assert!(
+        state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .is_none()
+    );
+    assert_eq!(state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert!(state.runtime.mc202_render.source_phrase_plan.is_none());
+
+    let rendered = render_mc202_recipe_silent_buffer(&state.runtime.mc202_render);
+    let metrics = signal_metrics(&rendered);
+    assert_eq!(
+        metrics.active_samples, 0,
+        "answer outside the trusted phrase slot leaked primitive or stale source output"
+    );
+}
+
+#[test]
 fn mc202_session_restore_rejects_unknown_role_label_before_render_projection() {
     let graph = sample_graph();
     let mut session = sample_session(&graph);
@@ -180,6 +351,69 @@ fn mc202_session_restore_rejects_unknown_role_label_before_render_projection() {
         error.to_string().contains("unknown variant `future_role`"),
         "{error}"
     );
+}
+
+fn source_phrase_test_graph(
+    source_id: &str,
+    hash: &str,
+    bpm: f32,
+    analysis_seed: u64,
+    phrase_index: u32,
+) -> SourceGraph {
+    let mut graph = sample_graph();
+    graph.source.source_id = SourceId::from(source_id);
+    graph.source.content_hash = hash.into();
+    graph.source.path = format!("{source_id}.wav");
+    graph.provenance.source_hash = hash.into();
+    graph.provenance.analysis_seed = analysis_seed;
+    graph.timing.bpm_estimate = Some(bpm);
+    graph.timing.phrase_grid = vec![riotbox_core::source_graph::PhraseSpan {
+        phrase_index,
+        start_bar: 8,
+        end_bar: 15,
+        confidence: 0.91,
+    }];
+    graph
+}
+
+fn confirmed_source_phrase_state(graph: SourceGraph) -> JamAppState {
+    let source_id = graph.source.source_id.clone();
+    let mut session = sample_session(&graph);
+    session.source_refs[0].source_id = source_id.clone();
+    session.source_refs[0].path_hint = graph.source.path.clone();
+    session.source_refs[0].content_hash = graph.source.content_hash.clone();
+    session.source_graph_refs[0].source_id = source_id.clone();
+    session.source_graph_refs[0].embedded_graph = Some(graph.clone());
+    session.source_graph_refs[0].graph_hash =
+        crate::jam_app::persistence::source_graph_hash(&graph).expect("hash source phrase graph");
+    session.source_graph_refs[0].provenance = graph.provenance.clone();
+    session.runtime_state.source_timing.confirmed_grid = Some(SourceTimingGridConfirmationState {
+        source_id,
+        hypothesis_id: None,
+        confirmed_by_action: ActionId(77),
+        confirmed_at: 1_771_156_800_000,
+    });
+    JamAppState::from_parts(session, Some(graph), ActionQueue::new())
+}
+
+fn commit_source_derived_answer(state: &mut JamAppState) -> Vec<f32> {
+    assert_eq!(
+        state.queue_mc202_generate_answer(300),
+        QueueControlResult::Enqueued
+    );
+    let committed = state.commit_ready_actions(
+        CommitBoundaryState {
+            kind: CommitBoundary::Phrase,
+            beat_index: 32,
+            bar_index: 8,
+            phrase_index: 2,
+            scene_id: Some(SceneId::from("scene-1")),
+        },
+        400,
+    );
+
+    assert_eq!(committed.len(), 1);
+    render_mc202_recipe_buffer(&state.runtime.mc202_render)
 }
 
 #[test]

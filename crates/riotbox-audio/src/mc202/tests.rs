@@ -53,6 +53,38 @@ mod tests {
     }
 
     #[test]
+    fn source_phrase_plan_renders_answer_without_primitive_answer_leak() {
+        let mut primitive_answer = vec![0.0; 44_100 * 2];
+        let mut source_answer = vec![0.0; 44_100 * 2];
+
+        let primitive = Mc202RenderState {
+            mode: Mc202RenderMode::Answer,
+            routing: Mc202RenderRouting::MusicBusBass,
+            phrase_shape: Mc202PhraseShape::RootPulse,
+            touch: 0.78,
+            is_transport_running: true,
+            ..Mc202RenderState::default()
+        };
+        let source_derived = Mc202RenderState {
+            source_phrase_plan: Some(Mc202SourcePhraseRenderPlan {
+                active_mask: 0b0010_0010_1000_0100,
+                semitones: [0, 0, 0, 0, 0, 5, 0, 7, 0, 0, 3, 0, 0, 7, 0, 0],
+            }),
+            ..primitive
+        };
+
+        render_mc202_buffer(&mut primitive_answer, 44_100, 2, &primitive);
+        render_mc202_buffer(&mut source_answer, 44_100, 2, &source_derived);
+
+        let primitive_metrics = metrics(&primitive_answer);
+        let source_metrics = metrics(&source_answer);
+
+        assert_eq!(primitive_metrics.0, 0);
+        assert!(source_metrics.0 > 5_000);
+        assert!(source_metrics.2 > 0.001);
+    }
+
+    #[test]
     fn touch_changes_render_energy_on_same_phrase() {
         let mut low_touch = vec![0.0; 44_100 * 2];
         let mut high_touch = vec![0.0; 44_100 * 2];

@@ -450,7 +450,7 @@ fn runtime_view_surfaces_mc202_render_diagnostics() {
     assert_eq!(state.runtime_view.mc202_render_phrase_shape, "root_pulse");
     assert_eq!(
         state.runtime_view.mc202_render_mix_summary,
-        "music bus 0.00 | touch 0.82 | budget balanced | contour drop | hook direct"
+        "music bus 0.00 | touch 0.82 | budget balanced | contour drop | hook direct | source plan timing_untrusted"
     );
     assert!(
         state

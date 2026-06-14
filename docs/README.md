@@ -47,6 +47,7 @@ This directory holds implementation-facing specifications, plans, reviews, bench
 24. [Research / Decision Log](./research_decision_log.md)
 25. [Source Timing Intelligence Plan](./plans/source_timing_intelligence_plan.md)
 26. [Source Transport Map Capture Plan](./plans/source_transport_map_capture_plan.md)
+27. [MC-202 Source Phrase Planning Plan](./plans/mc202_source_phrase_planning_plan.md)
 
 ## Why This Order
 
@@ -172,6 +173,8 @@ docs/
 - `plans/source_timing_intelligence_plan.md`: all-lane Rust-first timing intelligence plan captured
 - `plans/source_transport_map_capture_plan.md`: Ingenious First source transport,
   adaptive Source Map, monitor, and capture workflow plan captured
+- `plans/mc202_source_phrase_planning_plan.md`: RIOTBOX-1035 MC-202
+  source-derived bass / answer phrase planning plan captured
 - `archive/linear_issues/README.md`: archive policy started
 - `archive/linear_issues/TEMPLATE.md`: archive template started
 - `archive/linear_issues/index.md`: archive index started

@@ -492,6 +492,8 @@ MC-202:
   hypothesis
 - use anchors as musical prompts, not as a requirement to quote source audio
 - prove phrase timing and source-grid drift in generated output
+- persist trusted source-derived MC-202 phrase plans in Session state and clear
+  them when the matching confirmed grid is reverted
 
 W-30:
 
@@ -828,6 +830,11 @@ bounded BPM policy:
   labeled as primitive support until a source-derived phrase planner exists, and
   it must not be presented as extracted or source-derived MC-202 musical
   intelligence.
+- The first source-derived phrase planner is tracked by RIOTBOX-1035 and
+  `docs/plans/mc202_source_phrase_planning_plan.md`. A committed
+  `lane_state.mc202.source_phrase_plan` is the minimum Session/Core marker that
+  the MC-202 lane has moved beyond primitive support for that source and phrase
+  slot.
 - P013 may add bounded source-section MC-202 contour evidence under
   `metrics.mc202_source_contour`, where source energy/density shapes contour,
   touch, or support level and is compared against a primitive support control.

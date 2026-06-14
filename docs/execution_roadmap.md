@@ -331,6 +331,11 @@ Reason:
 - P013 now has a bounded representative showcase baseline for TR-909 source
   accent dynamics, W-30 source accent/slice/chop proof, MC-202 pressure/grid/
   source-contour proof, and all-lane generated-support mix movement.
+- RIOTBOX-1035 reopens the documented MC-202 follow-up as a bounded source
+  phrase planning track, anchored in
+  `docs/plans/mc202_source_phrase_planning_plan.md`; it must promote primitive
+  MC-202 pressure/answer support into source-derived phrase plans without
+  weakening the P012 timing spine or P013 regression baseline.
 - P014 now has a bounded Arrangement / Scene baseline for manual scene launch /
   restore movement through Session, replay, observer, and non-collapsed output
   proof.
@@ -682,6 +687,11 @@ following:
     and frequency-span proof, require bass-led low-band pressure and a clear
     strongest-element dominance margin, and reject collapsed fixed movement
     while still treating the scripted render as diagnostic evidence
+  - the MC-202 source phrase planning track must turn that diagnostic bass
+    movement into replayable Session/Core phrase plans before MC-202
+    bass/answer behavior can count as source-derived product behavior; the
+    implementation plan lives in
+    `docs/plans/mc202_source_phrase_planning_plan.md`
   - edge-source diagnostic coverage now includes pad/noise and bad-timing
     sources as weak/risky routed cases: source-timing, rendered WAV, metrics,
     source-family metadata, and concrete fix routing are present; pad/noise now

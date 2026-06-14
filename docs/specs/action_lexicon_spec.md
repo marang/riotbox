@@ -242,6 +242,22 @@ when supported hook or capture material suggests room should be left for a
 break-rebuild move. This changes render policy only; it does not add a new
 MC-202 action or phrase-generation path.
 
+Committed MC-202 role and phrase actions may also materialize
+`lane_state.mc202.source_phrase_plan` when the current Source Graph has a
+trusted confirmed grid and a bounded phrase slot at the commit boundary. The
+existing actions remain the queue / commit surface; `mc202.generate_answer`,
+`mc202.generate_pressure`, `mc202.generate_follower`,
+`mc202.generate_instigator`, `mc202.mutate_phrase`, and `mc202.set_role`
+write the source phrase plan as session state when source-derived material is
+available. If timing is untrusted or no phrase slot exists, the field remains
+`None` and render projection must treat the lane as primitive fallback, not as
+source-derived MC-202 phrase intelligence.
+
+`source_timing.revert_grid` has an MC-202 consequence: reverting the confirmed
+grid for a source also clears any MC-202 source phrase plan tied to that source.
+Replay must apply the same consequence so restored sessions cannot keep playing
+a stale source-derived bass / answer phrase after timing trust was revoked.
+
 MC-202 role and phrase-intent labels currently remain stable serialized labels
 for existing actions, sessions, TUI, observer output, and QA artifacts. New
 behavior must not add a second MC-202 action path to escape those labels.

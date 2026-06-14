@@ -232,13 +232,27 @@ Examples:
 
 Per lane, store only the state required to reproduce behavior:
 
-- MC-202 role, phrase references, and committed phrase variant
+- MC-202 role, phrase references, committed phrase variant, and source phrase
+  plan when a trusted Source Graph phrase slot was used
 - W-30 preview intent plus bank/pad focus and current capture reference
 - TR-909 takeover, pattern, and reinforcement state
 
 MC-202 role and phrase-variant fields use stable compatibility labels in
 Session v1 persisted JSON. Current examples include `leader`, `follower`,
 `answer`, `pressure`, `instigator`, and `mutated_drive`.
+
+`lane_state.mc202.source_phrase_plan` is optional Session truth for MC-202
+bass / answer / support behavior that was derived from a trusted Source Graph
+phrase slot. It records the source id, source phrase slot, role, bounded
+sixteen-step rhythm/interval cells, note budget, touch, confidence, and any
+explicit fallback reason. Missing or `None` means the lane is still using the
+primitive MC-202 role/shape projection and must not be described as
+source-derived phrase intelligence.
+
+When `source_timing.revert_grid` clears a matching confirmed grid, any
+MC-202 `source_phrase_plan` tied to that source id must also be cleared in
+live side effects and replay. A stale source-derived plan must not keep
+rendering after its timing trust has been revoked.
 
 These labels are behavior-relevant persisted contract values, not ad-hoc
 implementation strings. Session v1 intentionally keeps the compatibility-label
@@ -288,7 +302,8 @@ Undo state stores bounded restore snapshots for committed moves whose audible st
 Current MVP use:
 
 - MC-202 commit-time lane snapshots keyed by action id
-- previous role, phrase reference, phrase variant, and touch
+- previous role, phrase reference, phrase variant, source phrase plan, and
+  touch
 
 Rules:
 

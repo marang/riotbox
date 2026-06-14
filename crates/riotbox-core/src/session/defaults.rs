@@ -245,6 +245,7 @@ mod tests {
                 role: Some(Mc202RoleState::Follower),
                 phrase_ref: Some("follower-scene-1".into()),
                 phrase_variant: Some(Mc202PhraseVariantState::MutatedDrive),
+                source_phrase_plan: None,
                 touch: 0.78,
             });
         session.runtime_state.lane_state.w30.active_bank = Some(BankId::from("bank-a"));

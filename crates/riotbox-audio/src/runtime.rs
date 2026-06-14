@@ -9,7 +9,7 @@ use std::{
 use crate::{
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-        Mc202RenderRouting, Mc202RenderState, render_mc202_buffer,
+        Mc202RenderRouting, Mc202RenderState, Mc202SourcePhraseRenderPlan, render_mc202_buffer,
     },
     source_audio::SourceAudioCache,
     tr909::{

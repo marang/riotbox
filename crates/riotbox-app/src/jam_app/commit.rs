@@ -214,7 +214,12 @@ impl JamAppState {
         boundary: &CommitBoundaryState,
     ) {
         apply_w30_side_effects(&mut self.session, action, Some(boundary));
-        apply_mc202_side_effects(&mut self.session, action, Some(boundary));
+        apply_mc202_side_effects(
+            &mut self.session,
+            action,
+            Some(boundary),
+            self.source_graph.as_ref(),
+        );
         apply_tr909_side_effects(&mut self.session, action, Some(boundary));
         apply_transport_side_effects(&mut self.session, action);
         apply_capture_side_effects(&mut self.session, action);

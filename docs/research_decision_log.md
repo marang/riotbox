@@ -2276,3 +2276,17 @@ Why: a strong dense-break or tonal example can hide missing sparse, pad/noise, w
 Evidence: RIOTBOX-1236 adds `scripts/validate_source_family_release_demo_coverage.py`, `just source-family-release-demo-coverage-fixtures`, JSON/Markdown output, negative blocked-quality validation, and tighter source-family blockers in the P023 sound-quality readiness report.
 Consequences: candidate-only and weak/fail human-verdict families remain useful production evidence, but they block release-ready claims until a demo-ready human-pass entry exists. The gate is coverage evidence only, not a taste oracle or quality proof.
 Status: accepted
+
+---
+
+### RBX-088
+
+Date: 2026-06-14
+Topic: MC-202 source phrase planning must be an explicit Session/Core plan, not a hidden renderer trick
+Phase: P013+ / P023 Sound Excellence
+Question: how should Riotbox promote primitive MC-202 pressure / answer support into source-derived bass and answer phrases?
+Decision: accept `docs/plans/mc202_source_phrase_planning_plan.md` as the RIOTBOX-1035 implementation plan. The plan adds a typed `Mc202SourcePhrasePlan`, derives bounded phrase candidates from trusted Source Graph timing and source evidence, commits the selected plan through the existing MC-202 queue / Session / replay seam, and renders it on the existing MC-202 audio path while keeping primitive shapes as fallback and A/B controls.
+Why: the current MC-202 lane has pressure, contour, hook-response, and source-grid proof, but it can still sound like a static question/answer pattern. Source-derived MC-202 behavior must be replayable product state with output-path proof, not a callback-local heuristic or scripted diagnostic render.
+Evidence: RIOTBOX-1035 now carries the implementation plan, and the plan is anchored from the docs README, execution roadmap, phase definition of done, and this decision log.
+Consequences: future MC-202 bass / answer quality claims must distinguish source-derived plans from primitive fallback. Scripted or diagnostic artifacts remain `quality_proof: false` and `human_verdict: unverified` until structured listening review or calibrated quality gates approve them.
+Status: accepted

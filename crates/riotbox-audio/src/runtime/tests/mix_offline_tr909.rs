@@ -30,6 +30,7 @@ fn render_mix_buffer_includes_live_mc202_bass_seam() {
             note_budget: Mc202NoteBudget::Balanced,
             contour_hint: Mc202ContourHint::Neutral,
             hook_response: Mc202HookResponse::Direct,
+            source_phrase_plan: None,
             touch: 0.78,
             music_bus_level: 0.64,
             is_transport_running: true,

@@ -70,7 +70,7 @@ use riotbox_core::{
         SourceGraphVersion, TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind,
         TimingQuality,
     },
-    transport::TransportClockState,
+    transport::{CommitBoundaryState, TransportClockState},
     view::jam::{
         CaptureTargetKindView, SceneJumpAvailabilityView, SceneTransitionDirectionView,
         SceneTransitionKindView, SceneTransitionLaneIntentView, SceneTransitionPolicyView,

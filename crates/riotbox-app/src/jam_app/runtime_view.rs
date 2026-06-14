@@ -133,12 +133,13 @@ impl JamRuntimeView {
             mc202_render_routing: runtime.mc202_render.routing.label().into(),
             mc202_render_phrase_shape: runtime.mc202_render.phrase_shape.label().into(),
             mc202_render_mix_summary: format!(
-                "music bus {:.2} | touch {:.2} | budget {} | contour {} | hook {}",
+                "music bus {:.2} | touch {:.2} | budget {} | contour {} | hook {} | source plan {}",
                 runtime.mc202_render.music_bus_level,
                 runtime.mc202_render.touch,
                 runtime.mc202_render.note_budget.label(),
                 runtime.mc202_render.contour_hint.label(),
-                runtime.mc202_render.hook_response.label()
+                runtime.mc202_render.hook_response.label(),
+                mc202_source_phrase_status(runtime, session, source_graph)
             ),
             mc202_render_transport_summary: mc202_render_transport_summary(&runtime.mc202_render),
             w30_preview_mode: runtime.w30_preview.mode.label().into(),
@@ -169,5 +170,52 @@ impl JamRuntimeView {
             replay_restore_unsupported: replay_readiness.unsupported,
             runtime_warnings,
         }
+    }
+}
+
+fn mc202_source_phrase_status(
+    runtime: &AppRuntimeState,
+    session: &SessionFile,
+    source_graph: Option<&SourceGraph>,
+) -> &'static str {
+    if runtime.mc202_render.source_phrase_plan.is_some() {
+        return "source_derived";
+    }
+
+    if session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .is_some_and(|plan| !plan.is_source_derived())
+    {
+        return "fallback_rejected";
+    }
+
+    let Some(role) = session.runtime_state.lane_state.mc202.role else {
+        return "primitive";
+    };
+    if !matches!(
+        role,
+        riotbox_core::session::Mc202RoleState::Answer
+            | riotbox_core::session::Mc202RoleState::Pressure
+    ) {
+        return "primitive";
+    }
+
+    let Some(graph) = source_graph else {
+        return "primitive";
+    };
+    let timing_trusted = session
+        .runtime_state
+        .source_timing
+        .confirmed_grid
+        .as_ref()
+        .is_some_and(|confirmed| confirmed.source_id == graph.source.source_id);
+    if timing_trusted {
+        "primitive"
+    } else {
+        "timing_untrusted"
     }
 }
