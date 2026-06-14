@@ -76,6 +76,7 @@ SourceGraph {
   source
   timing
   source_map
+  phrase_audio_features
   sections
   assets
   candidates
@@ -199,6 +200,47 @@ Rules:
 - the decoded-WAV baseline sidecar provider should emit a bounded bucket set
   with deterministic time spans, RMS-derived `energy_class`, local
   peak/positive-flux-derived `peak_class`, and provider provenance refs
+
+## 7.5 Phrase Audio Features
+
+Phrase audio features are compact, measured, per-phrase summaries for
+musical-decision consumers such as MC-202 source-composed bass / answer
+planning. They are Source Graph evidence, not committed actions and not render
+state.
+
+```text
+PhraseAudioFeatures {
+  phrase_index
+  start_seconds
+  end_seconds
+  start_bar
+  end_bar
+  low_band_rms
+  low_mid_ratio
+  low_band_movement
+  transient_density
+  offbeat_onset_density
+  spectral_roughness
+  spectral_brightness
+  hook_restraint_hint
+  confidence
+  provenance_refs
+}
+```
+
+Rules:
+
+- features must come from decoded source audio or be absent; templates,
+  fingerprints, section labels, and scripted fixtures may not populate this
+  field as measured evidence
+- confidence must degrade for silence, short windows, weak timing, or missing
+  phrase evidence
+- downstream consumers may use these features to choose roles, density,
+  contour, accents, stay-out, and rejection reasons, but must still commit
+  musical decisions through the Session / Action / replay contracts
+- weak or untrusted phrase features must not be presented as product-quality
+  source-derived proof; consumers should expose them as unavailable or
+  untrusted provenance when they are inspected
 
 ---
 

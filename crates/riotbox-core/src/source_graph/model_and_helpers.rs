@@ -56,6 +56,8 @@ pub struct SourceGraph {
     pub timing: TimingModel,
     #[serde(default)]
     pub source_map: SourceMapEvidence,
+    #[serde(default)]
+    pub phrase_audio_features: Vec<PhraseAudioFeatures>,
     pub sections: Vec<Section>,
     pub assets: Vec<Asset>,
     pub candidates: Vec<Candidate>,
@@ -72,6 +74,7 @@ impl SourceGraph {
             source,
             timing: TimingModel::default(),
             source_map: SourceMapEvidence::default(),
+            phrase_audio_features: Vec::new(),
             sections: Vec::new(),
             assets: Vec::new(),
             candidates: Vec::new(),
@@ -130,6 +133,35 @@ impl SourceGraph {
             || self.hook_candidate_count() > 0;
 
         supports_break_rebuild && has_hook_or_capture_evidence
+    }
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
+pub struct PhraseAudioFeatures {
+    pub phrase_index: u32,
+    pub start_seconds: f32,
+    pub end_seconds: f32,
+    pub start_bar: u32,
+    pub end_bar: u32,
+    pub low_band_rms: f32,
+    pub low_mid_ratio: f32,
+    pub low_band_movement: f32,
+    pub transient_density: f32,
+    pub offbeat_onset_density: f32,
+    pub spectral_roughness: f32,
+    pub spectral_brightness: f32,
+    pub hook_restraint_hint: f32,
+    pub confidence: Confidence,
+    pub provenance_refs: Vec<String>,
+}
+
+impl PhraseAudioFeatures {
+    #[must_use]
+    pub fn has_measured_evidence(&self) -> bool {
+        self.confidence >= 0.35
+            && (self.low_band_rms > 0.001
+                || self.transient_density > 0.05
+                || self.spectral_roughness > 0.05)
     }
 }
 

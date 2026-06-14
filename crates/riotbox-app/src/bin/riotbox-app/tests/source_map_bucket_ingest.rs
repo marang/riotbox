@@ -20,6 +20,11 @@ fn ingest_observer_source_map_uses_decoded_bucket_evidence() {
 
     assert_eq!(graph.source_map.buckets.len(), 32);
     assert!(
+        !graph.phrase_audio_features.is_empty(),
+        "sidecar ingest should attach measured MC-202 phrase audio features"
+    );
+    assert!(graph.phrase_audio_features[0].has_measured_evidence());
+    assert!(
         graph
             .source_map
             .buckets

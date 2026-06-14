@@ -1,7 +1,7 @@
 # MC-202 Source Phrase Planning Plan
 
-Status: accepted implementation plan; upgraded by RIOTBOX-1262
-Linear: RIOTBOX-1035, RIOTBOX-1262, RIOTBOX-1263
+Status: accepted implementation plan; upgraded by RIOTBOX-1262 and RIOTBOX-1264
+Linear: RIOTBOX-1035, RIOTBOX-1262, RIOTBOX-1263, RIOTBOX-1264
 Phase: P013+ / P023 sound-quality follow-up
 
 ## Goal
@@ -16,6 +16,19 @@ The lane should derive bass / answer phrases from Source Graph timing,
 sections, low-band pressure, transient placement, onset density, spectral
 roughness / brightness, hook-restraint context, phrase memory, and arrangement
 intent while remaining replayable and bounded.
+
+RIOTBOX-1264 owns the producer-grade track for this feature. Implementation may
+land through multiple PRs, but the feature is not product-complete until Level 4
+is met: measured source evidence drives candidate generation and musical
+selection, rendered output is audibly source-specific across the real-source
+corpus, template-collapse gates pass, and structured listening review can
+approve at least one dense-break and one non-dense-break MC-202 example or keep
+the track open with concrete fix tickets.
+
+For this track, "foundation landed" is not a valid product-complete state. A
+foundation PR may merge when it preserves the product spine and unblocks the
+next step, but the parent feature stays open until the musician-facing output
+reaches the stated quality gate.
 
 The current RIOTBOX-1035 implementation is only the architecture scaffold:
 `lane_state.mc202.source_phrase_plan` exists, projects through replay/render,
@@ -161,12 +174,25 @@ These ideas cannot weaken the Level 2-4 release gates.
 
 ## Immediate Follow-Up Tickets
 
-The roadmap should keep these as separate, bounded slices:
+The roadmap should keep these as separate implementation steps under the open
+RIOTBOX-1264 quality track. They may be separate branches and PRs, but they are
+not separate product-completion claims:
 
 - RIOTBOX-1263: Source Graph low-band / transient / hook-restraint feature
   contract for MC-202 planning.
-- MC-202 candidate-family generator that derives placement from those features.
-- Candidate scoring and rejection reasons with `stay_out` as a first-class
-  musical choice.
-- Cross-source diversity and template-collapse QA gates.
-- Structured listening review pack for MC-202 source phrase candidates.
+- RIOTBOX-1265: measured source phrase evidence from real audio, including
+  low-band, transient, offbeat, roughness / brightness, and hook-restraint
+  features with provenance and confidence.
+- RIOTBOX-1266: source-backed candidate families that derive role, placement,
+  density, contour, accents, and stay-out from measured evidence instead of a
+  fixed phrase template.
+- RIOTBOX-1267: musical scoring, rejection reasons, and phrase memory so the
+  winner is selected for impact, source-grid lock, hook restraint, variation,
+  and live usefulness.
+- RIOTBOX-1268: source-composed render pressure and destructive contrast on
+  the existing MC-202 audio seam, with primitive shapes kept as fallback /
+  A-B controls only.
+- RIOTBOX-1269: cross-source diversity and template-collapse QA gates that
+  reject identical source-derived claims and feature-independent winners.
+- RIOTBOX-1270: structured listening review and demo-bank promotion gate. This
+  is the closeout gate for demo-ready MC-202 claims, not an optional polish pass.

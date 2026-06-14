@@ -52,6 +52,48 @@ mod mc202_phrase_feature_tests {
     }
 
     #[test]
+    fn mc202_source_phrase_features_prefer_measured_audio_evidence() {
+        let mut graph = mc202_feature_graph();
+        graph.phrase_audio_features = vec![PhraseAudioFeatures {
+            phrase_index: 2,
+            start_seconds: 0.0,
+            end_seconds: 16.0,
+            start_bar: 8,
+            end_bar: 15,
+            low_band_rms: 0.34,
+            low_mid_ratio: 0.76,
+            low_band_movement: 0.88,
+            transient_density: 0.22,
+            offbeat_onset_density: 0.71,
+            spectral_roughness: 0.41,
+            spectral_brightness: 0.24,
+            hook_restraint_hint: 0.19,
+            confidence: 0.90,
+            provenance_refs: vec!["mc202.phrase-audio-features.v0".into()],
+        }];
+
+        let features = mc202_source_phrase_feature_vector(&graph, &graph.timing.phrase_grid[0]);
+
+        assert!(features.low_band_pressure > 0.85, "{features:?}");
+        assert!(
+            (features.transient_density - 0.22).abs() < 0.001,
+            "{features:?}"
+        );
+        assert!(
+            (features.offbeat_density - 0.71).abs() < 0.001,
+            "{features:?}"
+        );
+        assert!(
+            features
+                .provenance_refs
+                .iter()
+                .any(|reference| reference
+                    == "phrase_audio:mc202.phrase-audio-features.v0")
+        );
+        assert!(features.has_musical_evidence());
+    }
+
+    #[test]
     fn mc202_source_phrase_features_reject_empty_static_evidence() {
         let mut graph = minimal_source_graph();
         graph.timing.phrase_grid = vec![PhraseSpan {

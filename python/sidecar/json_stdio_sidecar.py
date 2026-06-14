@@ -13,6 +13,9 @@ SIDECAR_VERSION = "0.1.0"
 SUPPORTED_WAVE_SAMPLE_WIDTHS = {1, 2, 3, 4}
 TIMING_BPM_CANDIDATES = [80, 90, 100, 110, 120, 126, 128, 130, 135, 140, 145, 150, 160]
 SOURCE_MAP_BUCKET_COUNT = 32
+PHRASE_FEATURE_WINDOW_FRAMES = 512
+PHRASE_FEATURE_HOP_FRAMES = 256
+LOWPASS_CUTOFF_HZ = 180.0
 
 
 def write_message(message: dict) -> None:
@@ -53,6 +56,7 @@ def build_stub_graph(source: dict, analysis_seed: int) -> dict:
                 }
             ],
         },
+        "phrase_audio_features": [],
         "sections": [
             {
                 "section_id": "section-1",
@@ -218,6 +222,180 @@ def build_source_map_buckets(
     return buckets
 
 
+def clamp01(value: float) -> float:
+    return max(0.0, min(1.0, value))
+
+
+def lowpass(samples: list[float], sample_rate: int, cutoff_hz: float) -> list[float]:
+    if not samples or sample_rate <= 0:
+        return []
+
+    dt = 1.0 / float(sample_rate)
+    rc = 1.0 / (2.0 * math.pi * max(1.0, cutoff_hz))
+    alpha = dt / (rc + dt)
+    current = samples[0]
+    filtered = []
+    for sample in samples:
+        current += alpha * (sample - current)
+        filtered.append(current)
+    return filtered
+
+
+def window_rms(samples: list[float], window_frames: int, hop_frames: int) -> list[float]:
+    if not samples:
+        return []
+
+    result = []
+    start = 0
+    window_frames = max(1, window_frames)
+    hop_frames = max(1, hop_frames)
+    while start < len(samples):
+        end = min(len(samples), start + window_frames)
+        result.append(rms(samples[start:end]))
+        start += hop_frames
+    return result
+
+
+def envelope_movement(samples: list[float]) -> float:
+    windows = window_rms(samples, PHRASE_FEATURE_WINDOW_FRAMES, PHRASE_FEATURE_HOP_FRAMES)
+    peak = max(windows, default=0.0)
+    if len(windows) < 2 or peak <= 0.0:
+        return 0.0
+
+    mean_delta = sum(abs(windows[index] - windows[index - 1]) for index in range(1, len(windows))) / (
+        len(windows) - 1
+    )
+    return clamp01((mean_delta / peak) * 3.0)
+
+
+def roughness_proxy(samples: list[float], full_rms: float) -> float:
+    if len(samples) < 2 or full_rms <= 0.0:
+        return 0.0
+
+    mean_abs_delta = sum(abs(samples[index] - samples[index - 1]) for index in range(1, len(samples))) / (
+        len(samples) - 1
+    )
+    return clamp01((mean_abs_delta / full_rms) * 0.45)
+
+
+def is_offbeat_onset(time_seconds: float, bpm: float) -> bool:
+    if bpm <= 0.0:
+        return False
+
+    beat_position = time_seconds / (60.0 / bpm)
+    fraction = beat_position - math.floor(beat_position)
+    return 0.18 <= fraction <= 0.82 and not (0.43 <= fraction <= 0.57)
+
+
+def onset_density_report(
+    samples: list[float],
+    sample_rate: int,
+    phrase_start_seconds: float,
+    bpm: float,
+    beat_count: int,
+) -> tuple[float, float]:
+    windows = window_rms(samples, PHRASE_FEATURE_WINDOW_FRAMES, PHRASE_FEATURE_HOP_FRAMES)
+    if len(windows) < 2 or sample_rate <= 0:
+        return 0.0, 0.0
+
+    flux = [max(0.0, windows[index] - windows[index - 1]) for index in range(1, len(windows))]
+    peak_flux = max(flux, default=0.0)
+    threshold = max(peak_flux * 0.35, 0.005)
+    onset_count = 0
+    offbeat_count = 0
+    for index, value in enumerate(flux):
+        if value < threshold or value <= 0.0:
+            continue
+        onset_count += 1
+        time_seconds = phrase_start_seconds + (index * PHRASE_FEATURE_HOP_FRAMES / float(sample_rate))
+        if is_offbeat_onset(time_seconds, bpm):
+            offbeat_count += 1
+
+    transient_density = clamp01(onset_count / float(max(1, beat_count)))
+    offbeat_density = 0.0 if onset_count == 0 else clamp01(offbeat_count / float(onset_count))
+    return transient_density, offbeat_density
+
+
+def build_phrase_audio_features(
+    sample_values: list[float],
+    sample_rate: int,
+    bpm: float,
+    bpm_confidence: float,
+    phrase_grid: list[dict],
+    bar_duration: float,
+    source_path: str,
+) -> list[dict]:
+    if not sample_values or sample_rate <= 0 or bpm <= 0.0:
+        return []
+
+    features = []
+    for phrase in phrase_grid:
+        start_bar = int(phrase["start_bar"])
+        end_bar = int(phrase["end_bar"])
+        phrase_index = int(phrase["phrase_index"])
+        start_seconds = max(0.0, (start_bar - 1) * bar_duration)
+        end_seconds = max(start_seconds, end_bar * bar_duration)
+        start_frame = min(len(sample_values), int(round(start_seconds * sample_rate)))
+        end_frame = min(len(sample_values), int(round(end_seconds * sample_rate)))
+        phrase_samples = sample_values[start_frame:end_frame]
+        if not phrase_samples:
+            continue
+
+        low = lowpass(phrase_samples, sample_rate, LOWPASS_CUTOFF_HZ)
+        mid = [sample - low_value for sample, low_value in zip(phrase_samples, low)]
+        low_band_rms = rms(low)
+        mid_rms = rms(mid)
+        full_rms = rms(phrase_samples)
+        low_mid_ratio = 0.0 if low_band_rms + mid_rms <= 0.0 else low_band_rms / (low_band_rms + mid_rms)
+        low_band_movement = envelope_movement(low)
+        beat_count = max(1, (end_bar - start_bar + 1) * 4)
+        transient_density, offbeat_density = onset_density_report(
+            phrase_samples, sample_rate, start_seconds, bpm, beat_count
+        )
+        spectral_roughness = roughness_proxy(phrase_samples, full_rms)
+        spectral_brightness = 0.0 if full_rms <= 0.0 else clamp01(mid_rms / full_rms)
+        hook_restraint_hint = clamp01(
+            spectral_brightness * 0.35
+            + (1.0 - transient_density) * 0.25
+            + (1.0 - low_band_movement) * 0.20
+            + (1.0 - low_mid_ratio) * 0.20
+        )
+        duration_seconds = (end_frame - start_frame) / float(sample_rate)
+        signal_presence = clamp01(full_rms * 6.0)
+        duration_coverage = clamp01(duration_seconds / 2.0)
+        confidence = clamp01(
+            float(phrase["confidence"]) * 0.35
+            + bpm_confidence * 0.25
+            + signal_presence * 0.25
+            + duration_coverage * 0.15
+        )
+        features.append(
+            {
+                "phrase_index": phrase_index,
+                "start_seconds": round(start_seconds, 6),
+                "end_seconds": round(end_seconds, 6),
+                "start_bar": start_bar,
+                "end_bar": end_bar,
+                "low_band_rms": round(low_band_rms, 6),
+                "low_mid_ratio": round(low_mid_ratio, 6),
+                "low_band_movement": round(low_band_movement, 6),
+                "transient_density": round(transient_density, 6),
+                "offbeat_onset_density": round(offbeat_density, 6),
+                "spectral_roughness": round(spectral_roughness, 6),
+                "spectral_brightness": round(spectral_brightness, 6),
+                "hook_restraint_hint": round(hook_restraint_hint, 6),
+                "confidence": round(confidence, 6),
+                "provenance_refs": [
+                    "mc202.phrase-audio-features.v0",
+                    f"source:{source_path}",
+                    f"phrase:{phrase_index}",
+                ],
+            }
+        )
+
+    return features
+
+
 def estimate_timing_from_duration(duration_seconds: float) -> tuple[float, float, int]:
     best_choice = None
 
@@ -359,6 +537,15 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
                 "confidence": round(max(0.45, bpm_confidence - 0.08), 3),
             }
         )
+    phrase_audio_features = build_phrase_audio_features(
+        sample_values,
+        sample_rate,
+        bpm_estimate,
+        bpm_confidence,
+        phrase_grid,
+        bar_duration,
+        canonical_path,
+    )
 
     overall_confidence = round(
         min(
@@ -385,6 +572,7 @@ def build_graph_from_decoded_wave(source_path: str, analysis_seed: int) -> dict:
             "phrase_grid": phrase_grid,
         },
         "source_map": {"buckets": source_map_buckets},
+        "phrase_audio_features": phrase_audio_features,
         "sections": [
             {
                 "section_id": "section-a",

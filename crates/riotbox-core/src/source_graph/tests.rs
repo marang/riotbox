@@ -154,6 +154,23 @@ mod tests {
             confidence: 0.9,
             tags: vec!["main".into()],
         });
+        graph.phrase_audio_features.push(PhraseAudioFeatures {
+            phrase_index: 0,
+            start_seconds: 0.0,
+            end_seconds: 16.0,
+            start_bar: 1,
+            end_bar: 8,
+            low_band_rms: 0.28,
+            low_mid_ratio: 0.64,
+            low_band_movement: 0.72,
+            transient_density: 0.81,
+            offbeat_onset_density: 0.38,
+            spectral_roughness: 0.44,
+            spectral_brightness: 0.36,
+            hook_restraint_hint: 0.22,
+            confidence: 0.88,
+            provenance_refs: vec!["audio:phrase-measurement.v0".into()],
+        });
         graph.assets.push(Asset {
             asset_id: AssetId::from("asset-a"),
             asset_type: AssetType::LoopWindow,
@@ -213,6 +230,7 @@ mod tests {
             serde_json::from_value(json).expect("deserialize legacy source graph");
 
         assert!(decoded.source_map.buckets.is_empty());
+        assert!(decoded.phrase_audio_features.is_empty());
         assert_eq!(decoded.source.source_id, graph.source.source_id);
 
         let mut json_with_empty_map = serde_json::to_value(&graph).expect("serialize graph");
