@@ -1172,4 +1172,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   P023: Move sound-quality readiness smoke assertions into validator
 - [RIOTBOX-1035.md](./RIOTBOX-1035.md)
   P013+: Promote MC-202 source-derived phrase planning beyond contour support
+- [RIOTBOX-1262.md](./RIOTBOX-1262.md)
+  Upgrade MC-202 source phrase plan to real audio intelligence target
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
