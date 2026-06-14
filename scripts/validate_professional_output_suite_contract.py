@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import sys
 from pathlib import Path
@@ -45,12 +46,19 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("report", type=Path)
     parser.add_argument("--output", type=Path)
+    parser.add_argument(
+        "--mutation-fixtures",
+        action="store_true",
+        help="also run built-in negative mutation fixtures against the contract",
+    )
     args = parser.parse_args()
 
     try:
         report = read_json_object(args.report)
         output = args.output or args.report.parent
         failures = validate_report(report, output)
+        if args.mutation_fixtures:
+            failures.extend(validate_mutation_fixtures(report, output))
     except (OSError, TypeError, ValueError) as error:
         print(f"invalid professional output suite contract: {error}", file=sys.stderr)
         return 1
@@ -117,6 +125,90 @@ def validate_report(report: dict[str, Any], output: Path) -> list[str]:
     validate_rebuild_balance_metrics(matrix, source_wav, failures)
     validate_feral_mix_balance_metrics(report, failures)
     validate_artifacts(output, failures)
+    return failures
+
+
+def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str]:
+    fixtures = [
+        (
+            "non_source_derived_hook_chop",
+            lambda data: set_child_metric(
+                data,
+                "dense_break",
+                "hook_chop_selection_source_derived",
+                0.0,
+            ),
+            "dense_hook_chop_selection_not_source_derived",
+        ),
+        (
+            "weak_hook_chop_w30",
+            lambda data: set_child_metric(
+                data,
+                "dense_break",
+                "w30_to_source_rms_ratio",
+                0.0,
+            ),
+            "dense_hook_chop_w30_too_weak",
+        ),
+        (
+            "weak_sparse_bass_dominance",
+            lambda data: set_child_metric(
+                data,
+                "professional_source_wav_pack",
+                "sparse_bass_dominance_margin",
+                0.0,
+            ),
+            "source_wav_sparse_bass_dominance_margin_too_low",
+        ),
+        (
+            "weak_destructive_stutter",
+            lambda data: set_child_metric(
+                data,
+                "destructive_variation",
+                "stutter_to_hook_transient_ratio",
+                0.0,
+            ),
+            "destructive_stutter_lacks_transient_impact",
+        ),
+        (
+            "generated_support_masks_source",
+            lambda data: set_nested_value(
+                data,
+                ["feral_mix_balance", "max_support_generated_to_source_rms_ratio"],
+                0.99,
+            ),
+            "feral_generated_support_masks_source",
+        ),
+        (
+            "soft_dense_drum_transient",
+            lambda data: set_child_metric(
+                data,
+                "dense_break",
+                "dense_break_pressure_transient_to_hook_ratio",
+                0.0,
+            ),
+            "dense_pressure_transient_too_soft",
+        ),
+        (
+            "scripted_demo_ready",
+            lambda data: set_first_listening_case_field(
+                data,
+                "demo_readiness",
+                "demo_ready",
+            ),
+            "demo_readiness_not_unverified",
+        ),
+    ]
+
+    failures: list[str] = []
+    for name, mutate, expected_code in fixtures:
+        mutated = copy.deepcopy(report)
+        if not mutate(mutated):
+            failures.append(f"{name}_mutation_unavailable")
+            continue
+        mutation_failures = validate_report(mutated, output)
+        if not any(expected_code in failure for failure in mutation_failures):
+            failures.append(f"{name}_mutation_missing_{expected_code}")
     return failures
 
 
@@ -510,6 +602,46 @@ def child_metrics(children: list[Any], child_id: str) -> dict[str, Any]:
         if isinstance(child, dict) and child.get("id") == child_id:
             return object_or_empty(child.get("key_metrics"))
     return {}
+
+
+def set_child_metric(
+    report: dict[str, Any],
+    child_id: str,
+    metric: str,
+    value: Any,
+) -> bool:
+    for child in list_or_empty(report.get("children")):
+        if not isinstance(child, dict) or child.get("id") != child_id:
+            continue
+        metrics = child.get("key_metrics")
+        if not isinstance(metrics, dict):
+            return False
+        metrics[metric] = value
+        return True
+    return False
+
+
+def set_nested_value(report: dict[str, Any], path: list[str], value: Any) -> bool:
+    current: Any = report
+    for key in path[:-1]:
+        if not isinstance(current, dict):
+            return False
+        current = current.get(key)
+    if not isinstance(current, dict):
+        return False
+    current[path[-1]] = value
+    return True
+
+
+def set_first_listening_case_field(report: dict[str, Any], field: str, value: Any) -> bool:
+    identity = report.get("listening_identity")
+    if not isinstance(identity, dict):
+        return False
+    cases = identity.get("cases")
+    if not isinstance(cases, list) or not cases or not isinstance(cases[0], dict):
+        return False
+    cases[0][field] = value
+    return True
 
 
 def read_json_object(path: Path) -> dict[str, Any]:
