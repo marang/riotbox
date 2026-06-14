@@ -25,13 +25,56 @@ pub struct Mc202SourcePhrasePlanState {
     pub touch: f32,
     pub confidence: f32,
     #[serde(default)]
+    pub candidate_family: Option<Mc202SourcePhraseCandidateFamilyState>,
+    #[serde(default)]
+    pub candidate_count: u8,
+    #[serde(default)]
+    pub rejected_candidate_count: u8,
+    #[serde(default)]
+    pub candidate_provenance_refs: Vec<String>,
+    #[serde(default)]
     pub fallback_reason: Option<String>,
 }
 
 impl Mc202SourcePhrasePlanState {
     #[must_use]
     pub fn is_source_derived(&self) -> bool {
-        self.fallback_reason.is_none()
+        let family_is_source_derived = self
+            .candidate_family
+            .is_none_or(Mc202SourcePhraseCandidateFamilyState::is_source_derived);
+        self.fallback_reason.is_none() && family_is_source_derived
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Mc202SourcePhraseCandidateFamilyState {
+    SubPressureShove,
+    SparseOffbeatAnswer,
+    CallBackStab,
+    HookRestraintGhostAnswer,
+    FillPickupInstigator,
+    StayOut,
+    FallbackControl,
+}
+
+impl Mc202SourcePhraseCandidateFamilyState {
+    #[must_use]
+    pub const fn label(self) -> &'static str {
+        match self {
+            Self::SubPressureShove => "sub_pressure_shove",
+            Self::SparseOffbeatAnswer => "sparse_offbeat_answer",
+            Self::CallBackStab => "call_back_stab",
+            Self::HookRestraintGhostAnswer => "hook_restraint_ghost_answer",
+            Self::FillPickupInstigator => "fill_pickup_instigator",
+            Self::StayOut => "stay_out",
+            Self::FallbackControl => "fallback_control",
+        }
+    }
+
+    #[must_use]
+    pub const fn is_source_derived(self) -> bool {
+        !matches!(self, Self::StayOut | Self::FallbackControl)
     }
 }
 

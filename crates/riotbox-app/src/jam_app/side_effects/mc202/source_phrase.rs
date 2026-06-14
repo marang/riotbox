@@ -11,6 +11,10 @@ use riotbox_core::{
     transport::{CommitBoundaryState, TransportClockState},
 };
 
+mod candidate_families;
+
+use candidate_families::choose_source_phrase_candidate;
+
 pub(super) fn derive_mc202_source_phrase_plan(
     session: &SessionFile,
     source_graph: Option<&SourceGraph>,
@@ -36,12 +40,16 @@ pub(super) fn derive_mc202_source_phrase_plan(
 
     let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
     let features = mc202_source_phrase_feature_vector(graph, phrase_slot);
-    let fallback_reason = source_phrase_fallback_reason(&features);
-    let rhythm_cells = if fallback_reason.is_none() {
-        source_phrase_cells(graph, role, section, phrase_slot, &features)
-    } else {
-        [None; 16]
-    };
+    let source_fallback_reason = source_phrase_fallback_reason(&features);
+    let candidate_selection =
+        choose_source_phrase_candidate(graph, role, section, phrase_slot, &features);
+    let fallback_reason = source_fallback_reason.or(candidate_selection.fallback_reason.clone());
+    let rhythm_cells =
+        if fallback_reason.is_none() && candidate_selection.candidate_family.is_source_derived() {
+            candidate_selection.rhythm_cells
+        } else {
+            [None; 16]
+        };
     let confidence = source_phrase_confidence(graph, section, phrase_slot, &features);
 
     Some(Mc202SourcePhrasePlanState {
@@ -53,9 +61,13 @@ pub(super) fn derive_mc202_source_phrase_plan(
         },
         role,
         rhythm_cells,
-        note_budget: source_phrase_note_budget(role, section, &features),
+        note_budget: candidate_selection.note_budget,
         touch: touch.clamp(0.0, 1.0),
         confidence,
+        candidate_family: Some(candidate_selection.candidate_family),
+        candidate_count: candidate_selection.candidate_count,
+        rejected_candidate_count: candidate_selection.rejected_candidate_count,
+        candidate_provenance_refs: candidate_selection.provenance_refs,
         fallback_reason,
     })
 }
@@ -83,110 +95,20 @@ fn transport_clock_from_boundary(boundary: &CommitBoundaryState) -> TransportClo
     }
 }
 
-fn source_phrase_cells(
-    graph: &SourceGraph,
-    role: Mc202RoleState,
-    section: Option<&Section>,
-    phrase_slot: &PhraseSpan,
-    features: &Mc202SourcePhraseFeatureVector,
-) -> [Option<i8>; 16] {
-    let contour = source_phrase_contour_offset(section, features);
-    let fingerprint = source_phrase_fingerprint(graph, section, phrase_slot);
-    let mut cells = [None; 16];
-
-    match role {
-        Mc202RoleState::Pressure => source_pressure_cells(&mut cells, features, fingerprint),
-        Mc202RoleState::Answer => source_answer_cells(&mut cells, features, fingerprint),
-        Mc202RoleState::Instigator => source_instigator_cells(&mut cells, features, fingerprint),
-        Mc202RoleState::Leader | Mc202RoleState::Follower => {
-            source_follower_cells(&mut cells, features, fingerprint);
-        }
-    }
-
-    for cell in cells.iter_mut().flatten() {
-        *cell = (*cell + contour).clamp(-24, 24);
-    }
-    add_source_phrase_accent(role, &mut cells, features, fingerprint);
-    cells
-}
-
-fn source_pressure_cells(
-    cells: &mut [Option<i8>; 16],
-    features: &Mc202SourcePhraseFeatureVector,
-    fingerprint: Mc202SourcePhraseFingerprint,
-) {
-    let first = feature_step(features.low_band_pressure, fingerprint.step_rotation, 0);
-    let second = feature_step(features.transient_density, fingerprint.accent_step, 8);
-    cells[first] = Some(-12);
-    cells[second] = Some(if features.low_band_pressure > 0.68 {
-        -10
-    } else {
-        -7
-    });
-    if features.offbeat_density > 0.45 {
-        cells[feature_step(features.offbeat_density, fingerprint.accent_step, 5)] = Some(-5);
-    }
-}
-
-fn source_answer_cells(
-    cells: &mut [Option<i8>; 16],
-    features: &Mc202SourcePhraseFeatureVector,
-    fingerprint: Mc202SourcePhraseFingerprint,
-) {
-    let sparse = features.hook_restraint > 0.62;
-    let first = feature_step(
-        features.offbeat_density.max(0.25),
-        fingerprint.accent_step,
-        3,
-    );
-    cells[first] = Some(if sparse { 7 } else { 5 });
-    if !sparse || features.transient_density > 0.58 {
-        cells[feature_step(features.transient_density, fingerprint.step_rotation, 10)] = Some(3);
-    }
-    if features.low_band_pressure > 0.64 && features.hook_restraint < 0.70 {
-        cells[feature_step(features.low_band_pressure, fingerprint.accent_step, 13)] = Some(0);
-    }
-}
-
-fn source_instigator_cells(
-    cells: &mut [Option<i8>; 16],
-    features: &Mc202SourcePhraseFeatureVector,
-    fingerprint: Mc202SourcePhraseFingerprint,
-) {
-    let pickup = feature_step(features.transient_density, fingerprint.accent_step, 14);
-    cells[pickup] = Some(19);
-    cells[feature_step(features.offbeat_density, fingerprint.step_rotation, 6)] = Some(24);
-    if features.low_band_pressure > 0.55 {
-        cells[feature_step(features.low_band_pressure, fingerprint.accent_step, 0)] = Some(12);
-    }
-}
-
-fn source_follower_cells(
-    cells: &mut [Option<i8>; 16],
-    features: &Mc202SourcePhraseFeatureVector,
-    fingerprint: Mc202SourcePhraseFingerprint,
-) {
-    cells[feature_step(features.low_band_pressure, fingerprint.step_rotation, 0)] = Some(0);
-    cells[feature_step(features.transient_density, fingerprint.accent_step, 5)] = Some(5);
-    if features.offbeat_density > 0.35 {
-        cells[feature_step(features.offbeat_density, fingerprint.accent_step, 11)] = Some(7);
-    }
-}
-
-fn feature_step(feature: f32, tie_break: u8, offset: usize) -> usize {
+pub(super) fn feature_step(feature: f32, tie_break: u8, offset: usize) -> usize {
     let bucket = (feature.clamp(0.0, 1.0) * 7.0).round() as usize;
     (offset + bucket + usize::from(tie_break % 4)) % 16
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
-struct Mc202SourcePhraseFingerprint {
+pub(super) struct Mc202SourcePhraseFingerprint {
     step_rotation: u8,
     accent_step: u8,
     interval_shift: i8,
     strong_source: bool,
 }
 
-fn source_phrase_fingerprint(
+pub(super) fn source_phrase_fingerprint(
     graph: &SourceGraph,
     section: Option<&Section>,
     phrase_slot: &PhraseSpan,
@@ -302,7 +224,7 @@ fn hash_u64(hash: &mut u64, value: u64) {
     *hash = hash.wrapping_mul(0x100000001b3);
 }
 
-fn add_source_phrase_accent(
+pub(super) fn add_source_phrase_accent(
     role: Mc202RoleState,
     cells: &mut [Option<i8>; 16],
     features: &Mc202SourcePhraseFeatureVector,
@@ -391,7 +313,7 @@ fn source_phrase_anchor_type_code(anchor_type: SourceTimingAnchorType) -> u64 {
     }
 }
 
-fn source_phrase_contour_offset(
+pub(super) fn source_phrase_contour_offset(
     section: Option<&Section>,
     features: &Mc202SourcePhraseFeatureVector,
 ) -> i8 {
@@ -417,7 +339,7 @@ fn source_phrase_contour_offset(
     (section_offset + pressure_offset).clamp(-12, 12)
 }
 
-fn source_phrase_note_budget(
+pub(super) fn source_phrase_note_budget(
     role: Mc202RoleState,
     section: Option<&Section>,
     features: &Mc202SourcePhraseFeatureVector,

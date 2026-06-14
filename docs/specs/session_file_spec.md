@@ -245,9 +245,18 @@ Session v1 persisted JSON. Current examples include `leader`, `follower`,
 bass / answer / support behavior that was derived from a trusted Source Graph
 phrase slot. It records the source id, source phrase slot, role, bounded
 sixteen-step rhythm/interval cells, note budget, touch, confidence, and any
-explicit fallback reason. Missing or `None` means the lane is still using the
-primitive MC-202 role/shape projection and must not be described as
-source-derived phrase intelligence.
+explicit fallback reason. It also records the selected source-phrase candidate
+family, generated candidate count, rejected candidate count, and provenance refs
+for the source features / candidate rejections that led to the committed plan.
+Missing or `None` means the lane is still using the primitive MC-202 role/shape
+projection and must not be described as source-derived phrase intelligence.
+
+The stable candidate-family labels are `sub_pressure_shove`,
+`sparse_offbeat_answer`, `call_back_stab`,
+`hook_restraint_ghost_answer`, `fill_pickup_instigator`, `stay_out`, and
+`fallback_control`. `stay_out` and `fallback_control` are observable decision /
+QA states, but they must not project as audible source-derived MC-202 render
+plans.
 
 When `source_timing.revert_grid` clears a matching confirmed grid, any
 MC-202 `source_phrase_plan` tied to that source id must also be cleared in
