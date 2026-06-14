@@ -182,6 +182,12 @@ Source-showcase listening packs must prove source reflection across multiple
 input files. Passing non-silence, reproducibility, and same-source stability is
 not enough if different sources produce effectively the same Riotbox result.
 
+This rule applies across the whole product. A hardcoded phrase, fixed template,
+scripted arrangement, fingerprint-only variation, or source-aware mutation may
+be useful diagnostic evidence, but it is not source-derived quality proof by
+itself. Any lane that claims source-derived intelligence must show that source
+features changed the musical decision and rendered output.
+
 For any pack presented as a source showcase:
 
 - validate reproducibility within the same source separately from diversity
@@ -192,6 +198,9 @@ For any pack presented as a source showcase:
   selected window
 - reject source-independent generated stems, such as fixed TR-909 or MC-202
   support, when they are loud enough to dominate the source-backed material
+- reject source-derived claims where removing the source feature vector leaves
+  the same musical role, step placement, contour, destructive gesture, or
+  arrangement decision
 - record whether generated support is intentionally common across sources or
   whether it is supposed to react to source timing, density, energy, anchors, or
   section role
