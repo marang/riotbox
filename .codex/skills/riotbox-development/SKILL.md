@@ -22,6 +22,35 @@ For every feature, prove both:
 
 Do not claim an audio feature works from UI/log/state assertions alone.
 
+## Product Intelligence Rule
+
+Riotbox must not confuse scaffolding with intelligence.
+
+Hardcoded phrases, fixed templates, scripted demo paths, fingerprint-only
+variation, and source-aware mutations are useful only as controls, regression
+scaffolds, or architecture proofs. They are not product-quality source-derived
+behavior until source evidence changes the musical decision and the audible
+output.
+
+For any feature that claims source-derived or intelligent behavior, prove all
+five surfaces:
+
+- source evidence: the decision consumed real source features such as timing,
+  transients, low-band pressure, density, section role, hook/restraint context,
+  slice identity, or captured audio material
+- musical decision: the system chose a role, placement, contour, density,
+  silence/stay-out decision, destructive gesture, or arrangement move from that
+  evidence
+- product spine: the decision is represented in Source Graph, Session, Action
+  Lexicon, queue / commit, replay, or another documented contract as appropriate
+- audible consequence: rendered audio changes in a way a musician can hear
+- quality proof: same-source reproducibility and cross-source diversity are
+  tested, and scripted/hardcoded artifacts stay labeled `quality_proof: false`
+  until structured listening review accepts them
+
+If a slice only adds the spine or a deterministic scaffold, say that plainly in
+the PR and docs. Do not describe it as complete musical intelligence.
+
 ## Production Add-ons
 
 When Riotbox work affects audible character, pattern quality, slices, loops, presets, demos, drum/bass behavior, performance controls, or musician-facing taste, also apply the companion `riotbox-rave-punk-production` skill if available.

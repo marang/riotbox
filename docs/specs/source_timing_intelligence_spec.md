@@ -834,7 +834,11 @@ bounded BPM policy:
   `docs/plans/mc202_source_phrase_planning_plan.md`. A committed
   `lane_state.mc202.source_phrase_plan` is the minimum Session/Core marker that
   the MC-202 lane has moved beyond primitive support for that source and phrase
-  slot.
+  slot, but the marker alone is not a quality claim. The plan's intelligence
+  ladder distinguishes source-aware scaffold behavior from feature-derived
+  phrase planning; product-quality claims require source features to change
+  musical placement, density, contour, role, or stay-out decisions and to pass
+  cross-source diversity gates.
 - P013 may add bounded source-section MC-202 contour evidence under
   `metrics.mc202_source_contour`, where source energy/density shapes contour,
   touch, or support level and is compared against a primitive support control.

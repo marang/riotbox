@@ -53,6 +53,12 @@ When generating or reviewing patterns, slices, demos, or presets:
 - prefer few strong lanes over many weak lanes
 - make mutes and triggers musically dramatic, not merely state toggles
 - treat repeated "ding ding ding" output as a failed placeholder unless explicitly requested as a metronome or diagnostic
+- reject "source-derived" claims when the audible result is only a hardcoded
+  phrase, scripted arrangement, template mutation, or hash/fingerprint variant
+  that did not listen to source features
+- treat stay-out, dropout, restraint, and silence as valid musical choices only
+  when they are chosen from source context and improve impact, not when they
+  hide weak generation
 
 ## Engineering Implications
 

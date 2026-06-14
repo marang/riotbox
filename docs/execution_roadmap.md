@@ -323,6 +323,28 @@ P021 must not replace human listening or become a hidden taste oracle without
 labeled Riotbox examples. P022 and P023 must not bypass Source Graph, Session,
 Action Lexicon, queue / commit, replay, or existing audio-QA contracts.
 
+### Product Intelligence Contract
+
+This applies to every lane and product surface, not only MC-202.
+
+Riotbox must distinguish scaffolding from intelligence. Hardcoded phrases,
+fixed templates, scripted arrangements, fingerprint-only variation, and
+source-aware mutations are allowed as diagnostics, controls, or architecture
+proofs, but they do not count as product-quality source-derived behavior.
+
+A feature may claim source-derived or intelligent behavior only when it proves:
+
+- source evidence: real source timing, transients, low-band pressure, density,
+  section role, hook/restraint context, slice identity, or captured audio
+  material shaped the decision
+- musical decision: Riotbox chose role, placement, density, contour, silence,
+  destructive gesture, or arrangement move from that evidence
+- product spine: the decision is represented through Source Graph, Session,
+  Action Lexicon, queue / commit, replay, or the relevant documented contract
+- audible consequence: the rendered output changes in a musician-audible way
+- quality proof: same-source reproducibility and cross-source diversity are
+  tested, with hardcoded/scripted artifacts labeled as non-quality proof
+
 Reason:
 - Replay/recovery/export reliability now has a bounded P011 regression gate.
 - Source Timing Intelligence now has a bounded P012 regression gate for

@@ -2290,3 +2290,17 @@ Why: the current MC-202 lane has pressure, contour, hook-response, and source-gr
 Evidence: RIOTBOX-1035 now carries the implementation plan, and the plan is anchored from the docs README, execution roadmap, phase definition of done, and this decision log.
 Consequences: future MC-202 bass / answer quality claims must distinguish source-derived plans from primitive fallback. Scripted or diagnostic artifacts remain `quality_proof: false` and `human_verdict: unverified` until structured listening review or calibrated quality gates approve them.
 Status: accepted
+
+---
+
+### RBX-089
+
+Date: 2026-06-14
+Topic: Source-derived intelligence requires source evidence, not template mutation
+Phase: Global / P023 Sound Excellence
+Question: may Riotbox treat hardcoded phrases, scripted demos, fixed templates, fingerprint-only variation, or source-aware template mutation as product-quality intelligence?
+Decision: no. Across the whole product, source-derived or intelligent behavior requires source evidence to change a musical decision and audible output. The required surfaces are source evidence, musical decision, product-spine representation, audible consequence, and quality proof with same-source reproducibility plus cross-source diversity.
+Why: MC-202 source phrase planning exposed a general risk: a slice can correctly add replayable state and source-dependent variation while still falling short of the product target. That infrastructure is valuable, but it must be labeled as scaffold/control until the system actually listens to source features and composes or chooses from them.
+Evidence: RIOTBOX-1262 upgrades the MC-202 source phrase plan, adds the global Product Intelligence Rule to `AGENTS.md` and the `riotbox-development` / `riotbox-rave-punk-production` skills, and tightens the roadmap and audio-QA specs.
+Consequences: future PRs, specs, manifests, demos, and review notes must label hardcoded/scripted/template-mutated artifacts as scaffold, control, diagnostic, or `quality_proof: false`. Product-quality claims require feature-derived decisions and output-path proof; otherwise the work remains partial even if the architecture path is correct.
+Status: accepted

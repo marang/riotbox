@@ -23,6 +23,10 @@ If Riotbox work reveals a recurring product failure mode or better QA pattern, u
 - Do not create shadow systems: no second action system, persistence model, replay truth, arrangement model, Ghost-only architecture, or Feral-only architecture.
 - Keep realtime audio isolated from blocking I/O, analysis work, Ghost reasoning, heavy UI work, and model calls.
 - Represent replay-, restore-, capture-lineage-, source-timing-, or product-contract state in core/session models, not hidden app-local state.
+- Do not present source-aware templates, hardcoded phrases, scripted demos, fixed
+  diagnostics, or fingerprint-only variation as product intelligence. They are
+  scaffolds or controls until source evidence actually changes musical choice
+  and output.
 - Do not close an audio-producing slice with only UI/log proof. If sound should change, prove the output path.
 - For every new `ActionCommand`, account for queue, commit/side-effect, Session/replay, user/observer, and QA surfaces.
 - Treat `JamAppState` as an app facade, not a second product truth.
@@ -115,6 +119,13 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Prefer short, forceful loops with a memorable hook, stab, riff, break, bass gesture, vocal hit, or silence cut.
 - Make live gestures audibly dramatic: trigger, mute, choke, retrigger, reverse, pitch dive, filter slam, bitcrush, fill, and dropout should change the room immediately.
 - Treat repeated placeholder tones, fallback-only output, polite loops, and technically correct but hookless demos as product failures unless they are explicitly diagnostic.
+- For every lane or product surface that claims to be source-derived, require
+  evidence that Riotbox listened to source features, made a musical decision,
+  stored that decision in the product spine, rendered audible output, and proved
+  same-source stability plus cross-source diversity.
+- Hardcoded, scripted, or template-mutated output may be useful as a regression
+  scaffold, but it is not quality proof and must be labeled accordingly in
+  manifests, PRs, specs, and demos.
 - Tie taste critique to one concrete implementation or QA follow-up: sample transform, drum policy, trigger behavior, preset change, fixture, threshold, or UI cue.
 
 ## Rust Guidance
