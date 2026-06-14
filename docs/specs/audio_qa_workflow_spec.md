@@ -609,6 +609,18 @@ context, incomplete listening questions, stale verdict state, or any quality
 claim. This keeps the queue useful for human review without promoting
 unlistened artifacts into release-ready evidence.
 
+P023 sound-quality readiness reports must aggregate the current
+release-demo human-review queue when it exists. The readiness report should
+surface queue availability, priority counts, source families, review blockers,
+and per-candidate review context: strongest audible element, source character,
+demo-worthy reason, not-demo-ready reason, required verdict state, and required
+listening questions. Queue entries remain claim blockers while they are
+`human_verdict: unverified`; a readiness report must reject stale queue verdict
+state, missing review blockers, or any queued candidate with
+`quality_claim: true`. This makes the readiness report useful as a release
+blocker and reviewer worklist without turning unreviewed artifacts into quality
+proof.
+
 Large professional-output JSON contracts belong in named repo-local validators,
 not in oversized inline `jq` blocks inside `Justfile`. `just` recipes may keep
 small smoke assertions and compact negative mutations, but cross-report musical
