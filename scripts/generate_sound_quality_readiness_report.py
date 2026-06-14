@@ -875,6 +875,8 @@ def validate_report(report: dict[str, Any]) -> list[str]:
             failures,
         )
 
+    validate_current_p023_contract(report, blockers, failures)
+
     if release_readiness == "release_ready":
         check(not missing_candidates, "release_ready_without_demo_candidates", failures)
         check(not missing_human_verdict, "release_ready_without_human_verdicts", failures)
@@ -897,6 +899,120 @@ def validate_report(report: dict[str, Any]) -> list[str]:
     check(isinstance(fix_categories, list) and bool(fix_categories), "next_fix_categories_missing", failures)
     check(isinstance(report.get("musician_summary"), str) and report["musician_summary"], "musician_summary_missing", failures)
     return failures
+
+
+def validate_current_p023_contract(
+    report: dict[str, Any],
+    blockers: list[Any],
+    failures: list[str],
+) -> None:
+    weak = object_or_empty(report.get("weak_output_routing"))
+    weak_summary = object_or_empty(weak.get("production_fix_summary"))
+    weak_candidates = list_or_empty(weak.get("production_fix_candidates"))
+    coverage = object_or_empty(report.get("source_family_coverage"))
+    demo = object_or_empty(report.get("demo_bank"))
+    blocker_codes = {str(blocker.get("code")) for blocker in blockers if isinstance(blocker, dict)}
+
+    check(
+        weak.get("available") is True,
+        "p023_contract_weak_output_routing_unavailable",
+        failures,
+    )
+    check(
+        number(weak.get("production_fix_candidate_count")) >= 5,
+        "p023_contract_weak_fix_candidate_count_too_low",
+        failures,
+    )
+    check(
+        list_contains(weak_summary.get("recurring_fix_categories"), "chop_policy")
+        and list_contains(weak_summary.get("recurring_fix_categories"), "destructive_gesture"),
+        "p023_contract_weak_fix_recurring_categories_incomplete",
+        failures,
+    )
+    check(
+        any(
+            isinstance(candidate, dict)
+            and candidate.get("category") == "chop_policy"
+            and isinstance(candidate.get("software_next_step"), str)
+            and bool(candidate["software_next_step"].strip())
+            and isinstance(candidate.get("musician_payoff"), str)
+            and bool(candidate["musician_payoff"].strip())
+            for candidate in weak_candidates
+        ),
+        "p023_contract_chop_policy_fix_candidate_missing",
+        failures,
+    )
+    check(
+        list_contains(weak.get("fix_categories"), "chop_policy")
+        and list_contains(weak.get("fix_categories"), "bass_movement"),
+        "p023_contract_weak_fix_categories_incomplete",
+        failures,
+    )
+    check(
+        nested_list(report, "source_family_coverage", "missing_demo_candidate_families") == [],
+        "p023_contract_demo_candidates_missing",
+        failures,
+    )
+    check(
+        list_contains_all(
+            coverage.get("missing_human_verdict_families"),
+            ["pad_noise", "weak_source", "bad_timing"],
+        ),
+        "p023_contract_missing_human_verdict_families_incomplete",
+        failures,
+    )
+    check(
+        list_contains_all(
+            coverage.get("missing_demo_ready_families"),
+            ["sparse_drums", "pad_noise", "weak_source", "bad_timing"],
+        ),
+        "p023_contract_missing_demo_ready_families_incomplete",
+        failures,
+    )
+    check(
+        source_family_status(coverage, "sparse_drums") == "human_verdict_non_demo",
+        "p023_contract_sparse_drums_status_changed",
+        failures,
+    )
+    for family in ["pad_noise", "weak_source", "bad_timing"]:
+        check(
+            source_family_status(coverage, family) == "candidate_only",
+            f"p023_contract_{family}_status_changed",
+            failures,
+        )
+    check(
+        list_contains_all(
+            demo.get("unverified_candidate_ids"),
+            [
+                "tonal-hook-rusharp-unverified-candidate",
+                "pad-noise-fadapad-unverified-candidate",
+                "sparse-bass-pressure-updated-unverified-candidate",
+                "bad-timing-beat20-unverified-candidate",
+                "weak-source-beat20-rejection-unverified-candidate",
+            ],
+        ),
+        "p023_contract_unverified_demo_candidate_ids_incomplete",
+        failures,
+    )
+    check(
+        list_contains(report.get("next_fix_categories"), "destructive_gesture"),
+        "p023_contract_destructive_gesture_next_fix_missing",
+        failures,
+    )
+    check(
+        "source_family_demo_candidate_missing" not in blocker_codes,
+        "p023_contract_unexpected_demo_candidate_missing_blocker",
+        failures,
+    )
+    check(
+        {
+            "source_family_human_verdict_missing",
+            "source_family_demo_ready_coverage_missing",
+            "human_review_queue_unverified_candidates_present",
+        }.issubset(blocker_codes),
+        "p023_contract_required_blockers_missing",
+        failures,
+    )
 
 
 def write_report(output: Path, report: dict[str, Any]) -> None:
@@ -1014,10 +1130,30 @@ def list_field(data: dict[str, Any], field: str, path: Path) -> list[Any]:
     return value
 
 
+def list_or_empty(value: Any) -> list[Any]:
+    return value if isinstance(value, list) else []
+
+
 def string_list_field(data: dict[str, Any], field: str, path: Path) -> list[str]:
     value = list_field(data, field, path)
     require(all(isinstance(item, str) and item for item in value), f"{path}: {field} values must be strings")
     return [str(item) for item in value]
+
+
+def list_contains(value: Any, expected: str) -> bool:
+    return expected in {str(item) for item in list_or_empty(value)}
+
+
+def list_contains_all(value: Any, expected: list[str]) -> bool:
+    values = {str(item) for item in list_or_empty(value)}
+    return set(expected).issubset(values)
+
+
+def source_family_status(coverage: dict[str, Any], family: str) -> str:
+    for item in list_or_empty(coverage.get("families")):
+        if isinstance(item, dict) and item.get("source_family") == family:
+            return str(item.get("status", ""))
+    return ""
 
 
 def required_string(data: dict[str, Any], field: str, path: Path, index: int) -> str:
