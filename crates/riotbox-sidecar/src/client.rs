@@ -381,6 +381,13 @@ mod tests {
         assert_eq!(graph.provenance.provider_set, vec!["decoded.wav_baseline"]);
         assert!(graph.loop_candidate_count() >= 1);
         assert!(graph.timing.bpm_estimate.is_some());
+        assert!(!graph.phrase_audio_features.is_empty());
+        assert!(
+            graph.phrase_audio_features[0]
+                .provenance_refs
+                .contains(&"mc202.phrase-audio-features.v0".into())
+        );
+        assert!(graph.phrase_audio_features[0].has_measured_evidence());
         assert_eq!(graph.source_map.buckets.len(), 32);
         assert_eq!(graph.source_map.buckets[0].start_seconds, 0.0);
         assert!(graph.source_map.buckets[0].end_seconds > 0.0);

@@ -64,8 +64,9 @@ pub fn mc202_source_phrase_feature_vector(
                 .is_some_and(|bar| bar >= phrase.start_bar && bar <= phrase.end_bar)
         })
         .collect::<Vec<_>>();
+    let measured_audio = phrase_audio_features_for_phrase(graph, phrase);
 
-    let low_band_pressure = clamp01(
+    let mut low_band_pressure = clamp01(
         section.map_or(0.0, |section| match section.energy_class {
             EnergyClass::Low => 0.18,
             EnergyClass::Medium => 0.42,
@@ -82,7 +83,7 @@ pub fn mc202_source_phrase_feature_vector(
                 &["bass", "low", "pressure"],
             ) * 0.15,
     );
-    let transient_density = clamp01(
+    let mut transient_density = clamp01(
         weighted_anchor_presence(
             &phrase_anchors,
             &[
@@ -96,7 +97,7 @@ pub fn mc202_source_phrase_feature_vector(
             + candidate_type_presence(&phrase_candidates, CandidateType::GhostHit) * 0.12
             + candidate_type_presence(&phrase_candidates, CandidateType::FillFragment) * 0.16,
     );
-    let offbeat_density = clamp01(
+    let mut offbeat_density = clamp01(
         offbeat_anchor_presence(&phrase_anchors, graph.timing.meter_hint) * 0.75
             + candidate_type_presence(&phrase_candidates, CandidateType::AnswerCandidate) * 0.18
             + tag_presence_in_phrase(
@@ -106,7 +107,7 @@ pub fn mc202_source_phrase_feature_vector(
                 &["offbeat", "syncopated"],
             ) * 0.18,
     );
-    let hook_restraint = clamp01(
+    let mut hook_restraint = clamp01(
         section.map_or(0.0, |section| match section.label_hint {
             SectionLabelHint::Chorus => 0.75,
             SectionLabelHint::Drop => 0.45,
@@ -124,22 +125,66 @@ pub fn mc202_source_phrase_feature_vector(
                 &["hook", "vocal", "lead"],
             ) * 0.16,
     );
-    let source_strength = clamp01(
+    let mut source_strength = clamp01(
         low_band_pressure * 0.38
             + transient_density * 0.30
             + offbeat_density * 0.12
             + graph.analysis_summary.overall_confidence.clamp(0.0, 1.0) * 0.10
             + phrase.confidence.clamp(0.0, 1.0) * 0.10,
     );
-    let confidence = clamp01(
+    let mut confidence = clamp01(
         phrase.confidence * 0.35
             + graph.timing.bpm_confidence * 0.25
             + section.map_or(0.35, |section| section.confidence) * 0.20
             + source_strength * 0.20,
     );
+    if let Some(audio) = measured_audio.filter(|audio| audio.has_measured_evidence()) {
+        low_band_pressure = clamp01(
+            audio.low_band_rms * 2.2
+                + audio.low_mid_ratio * 0.22
+                + audio.low_band_movement * 0.34,
+        );
+        transient_density = clamp01(audio.transient_density);
+        offbeat_density = clamp01(audio.offbeat_onset_density);
+        hook_restraint = clamp01(
+            audio.hook_restraint_hint * 0.70
+                + audio.spectral_brightness * 0.12
+                + audio.spectral_roughness * 0.08
+                + hook_restraint * 0.10,
+        );
+        source_strength = clamp01(
+            low_band_pressure * 0.42
+                + transient_density * 0.24
+                + offbeat_density * 0.12
+                + audio.low_band_movement * 0.10
+                + audio.confidence * 0.12,
+        );
+        confidence = clamp01(
+            audio.confidence * 0.38
+                + phrase.confidence * 0.24
+                + graph.timing.bpm_confidence * 0.18
+                + source_strength * 0.20,
+        );
+    }
     let stay_out = confidence < 0.35
         || source_strength < 0.25
         || (hook_restraint >= 0.82 && low_band_pressure < 0.45 && transient_density < 0.45);
+
+    let mut provenance_refs =
+        mc202_feature_provenance_refs(section, &phrase_assets, &phrase_candidates, &phrase_anchors);
+    if let Some(audio) = measured_audio {
+        let prefix = if audio.has_measured_evidence() {
+            "phrase_audio"
+        } else {
+            "phrase_audio_untrusted"
+        };
+        provenance_refs.extend(
+            audio
+                .provenance_refs
+                .iter()
+                .map(|reference| format!("{prefix}:{reference}")),
+        );
+    }
 
     Mc202SourcePhraseFeatureVector {
         phrase_index: phrase.phrase_index,
@@ -150,13 +195,28 @@ pub fn mc202_source_phrase_feature_vector(
         source_strength,
         stay_out,
         confidence,
-        provenance_refs: mc202_feature_provenance_refs(
-            section,
-            &phrase_assets,
-            &phrase_candidates,
-            &phrase_anchors,
-        ),
+        provenance_refs,
     }
+}
+
+fn phrase_audio_features_for_phrase<'a>(
+    graph: &'a SourceGraph,
+    phrase: &PhraseSpan,
+) -> Option<&'a PhraseAudioFeatures> {
+    graph
+        .phrase_audio_features
+        .iter()
+        .find(|features| features.phrase_index == phrase.phrase_index)
+        .or_else(|| {
+            graph.phrase_audio_features.iter().find(|features| {
+                phrase_bar_ranges_overlap(
+                    phrase.start_bar,
+                    phrase.end_bar,
+                    features.start_bar,
+                    features.end_bar,
+                )
+            })
+        })
 }
 
 fn phrase_bar_ranges_overlap(left_start: u32, left_end: u32, right_start: u32, right_end: u32) -> bool {

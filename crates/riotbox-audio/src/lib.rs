@@ -1,5 +1,6 @@
 pub mod listening_manifest;
 pub mod mc202;
+pub mod mc202_source_phrase_analysis;
 pub mod probe;
 pub mod runtime;
 pub mod source_audio;

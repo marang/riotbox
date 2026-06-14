@@ -2304,3 +2304,17 @@ Why: MC-202 source phrase planning exposed a general risk: a slice can correctly
 Evidence: RIOTBOX-1262 upgrades the MC-202 source phrase plan, adds the global Product Intelligence Rule to `AGENTS.md` and the `riotbox-development` / `riotbox-rave-punk-production` skills, and tightens the roadmap and audio-QA specs.
 Consequences: future PRs, specs, manifests, demos, and review notes must label hardcoded/scripted/template-mutated artifacts as scaffold, control, diagnostic, or `quality_proof: false`. Product-quality claims require feature-derived decisions and output-path proof; otherwise the work remains partial even if the architecture path is correct.
 Status: accepted
+
+---
+
+### RBX-090
+
+Date: 2026-06-15
+Topic: Sound features stay open until musician-facing target quality is met
+Phase: P023 Sound Excellence / Production Quality
+Question: may Riotbox close a sound-producing feature as complete when only a prerequisite, architecture foundation, or diagnostic scaffold has landed?
+Decision: no. For sound-producing product features, a foundation PR may merge as an implementation step, but the feature track remains open until the audible musician-facing target quality is met. For MC-202 source-composed bass / answer phrases, RIOTBOX-1264 is the open producer-grade parent track and RIOTBOX-1265 through RIOTBOX-1270 are implementation steps toward measured source evidence, candidate generation, scoring, rendering, automated QA, and structured listening review.
+Why: closing small technical slices as "done, but not final quality" created a misleading product picture. Riotbox needs high implementation quality and high sound quality; the workflow must not optimize for ticket throughput at the expense of the instrument.
+Evidence: RIOTBOX-1264 now owns the Level 4 MC-202 producer-grade target in `docs/plans/mc202_source_phrase_planning_plan.md`, with child tickets RIOTBOX-1265 through RIOTBOX-1270 covering the complete path from measured source evidence to listening-reviewed demo readiness.
+Consequences: future sound-feature PRs must distinguish merged implementation steps from complete product features. A ticket may be closed only for its scoped step, but parent sound-quality tracks stay open until source evidence, musical decision, product-spine representation, audible consequence, automated diversity / collapse gates, and structured listening review support the product claim.
+Status: accepted
