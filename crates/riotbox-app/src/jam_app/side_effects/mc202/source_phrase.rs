@@ -4,8 +4,9 @@ use riotbox_core::{
         Mc202SourcePhraseSlotState, SessionFile,
     },
     source_graph::{
-        AssetType, CandidateType, EnergyClass, PhraseSpan, Section, SectionLabelHint, SourceGraph,
-        SourceTimingAnchorType, section_for_transport_bar,
+        AssetType, CandidateType, EnergyClass, Mc202SourcePhraseFeatureVector, PhraseSpan, Section,
+        SectionLabelHint, SourceGraph, SourceTimingAnchorType, mc202_source_phrase_feature_vector,
+        section_for_transport_bar,
     },
     transport::{CommitBoundaryState, TransportClockState},
 };
@@ -34,8 +35,14 @@ pub(super) fn derive_mc202_source_phrase_plan(
     let phrase_slot = source_phrase_slot_for_boundary(graph, boundary)?;
 
     let section = section_for_transport_bar(graph, &transport_clock_from_boundary(boundary));
-    let rhythm_cells = source_phrase_cells(graph, role, section, phrase_slot);
-    let confidence = source_phrase_confidence(graph, section, phrase_slot);
+    let features = mc202_source_phrase_feature_vector(graph, phrase_slot);
+    let fallback_reason = source_phrase_fallback_reason(&features);
+    let rhythm_cells = if fallback_reason.is_none() {
+        source_phrase_cells(graph, role, section, phrase_slot, &features)
+    } else {
+        [None; 16]
+    };
+    let confidence = source_phrase_confidence(graph, section, phrase_slot, &features);
 
     Some(Mc202SourcePhrasePlanState {
         source_id: graph.source.source_id.clone(),
@@ -46,10 +53,10 @@ pub(super) fn derive_mc202_source_phrase_plan(
         },
         role,
         rhythm_cells,
-        note_budget: source_phrase_note_budget(role, section),
+        note_budget: source_phrase_note_budget(role, section, &features),
         touch: touch.clamp(0.0, 1.0),
         confidence,
-        fallback_reason: None,
+        fallback_reason,
     })
 }
 
@@ -81,91 +88,94 @@ fn source_phrase_cells(
     role: Mc202RoleState,
     section: Option<&Section>,
     phrase_slot: &PhraseSpan,
+    features: &Mc202SourcePhraseFeatureVector,
 ) -> [Option<i8>; 16] {
-    let contour = source_phrase_contour_offset(section);
-    let phrase_turn = (phrase_slot.phrase_index % 3) as i8;
+    let contour = source_phrase_contour_offset(section, features);
     let fingerprint = source_phrase_fingerprint(graph, section, phrase_slot);
-    let mut cells = match role {
-        Mc202RoleState::Answer => [
-            None,
-            None,
-            Some(0),
-            None,
-            None,
-            Some(5),
-            None,
-            Some(7),
-            None,
-            None,
-            Some(3),
-            None,
-            None,
-            Some(7),
-            None,
-            None,
-        ],
-        Mc202RoleState::Pressure => [
-            None,
-            Some(-12),
-            None,
-            Some(-12),
-            None,
-            Some(-5),
-            None,
-            None,
-            Some(-10),
-            None,
-            Some(-5),
-            None,
-            None,
-            Some(-7),
-            None,
-            None,
-        ],
-        Mc202RoleState::Instigator => [
-            Some(12),
-            None,
-            Some(15),
-            None,
-            None,
-            Some(19),
-            None,
-            None,
-            Some(24),
-            None,
-            Some(19),
-            None,
-            Some(15),
-            None,
-            None,
-            None,
-        ],
-        Mc202RoleState::Leader | Mc202RoleState::Follower => [
-            Some(0),
-            None,
-            Some(0),
-            Some(3),
-            None,
-            Some(5),
-            None,
-            Some(7),
-            Some(0),
-            None,
-            Some(3),
-            None,
-            Some(7),
-            None,
-            Some(10),
-            None,
-        ],
-    };
+    let mut cells = [None; 16];
+
+    match role {
+        Mc202RoleState::Pressure => source_pressure_cells(&mut cells, features, fingerprint),
+        Mc202RoleState::Answer => source_answer_cells(&mut cells, features, fingerprint),
+        Mc202RoleState::Instigator => source_instigator_cells(&mut cells, features, fingerprint),
+        Mc202RoleState::Leader | Mc202RoleState::Follower => {
+            source_follower_cells(&mut cells, features, fingerprint);
+        }
+    }
 
     for cell in cells.iter_mut().flatten() {
-        *cell = (*cell + contour + phrase_turn + fingerprint.interval_shift).clamp(-24, 24);
+        *cell = (*cell + contour).clamp(-24, 24);
     }
-    cells.rotate_right(fingerprint.step_rotation as usize);
-    add_source_phrase_accent(role, &mut cells, fingerprint);
+    add_source_phrase_accent(role, &mut cells, features, fingerprint);
     cells
+}
+
+fn source_pressure_cells(
+    cells: &mut [Option<i8>; 16],
+    features: &Mc202SourcePhraseFeatureVector,
+    fingerprint: Mc202SourcePhraseFingerprint,
+) {
+    let first = feature_step(features.low_band_pressure, fingerprint.step_rotation, 0);
+    let second = feature_step(features.transient_density, fingerprint.accent_step, 8);
+    cells[first] = Some(-12);
+    cells[second] = Some(if features.low_band_pressure > 0.68 {
+        -10
+    } else {
+        -7
+    });
+    if features.offbeat_density > 0.45 {
+        cells[feature_step(features.offbeat_density, fingerprint.accent_step, 5)] = Some(-5);
+    }
+}
+
+fn source_answer_cells(
+    cells: &mut [Option<i8>; 16],
+    features: &Mc202SourcePhraseFeatureVector,
+    fingerprint: Mc202SourcePhraseFingerprint,
+) {
+    let sparse = features.hook_restraint > 0.62;
+    let first = feature_step(
+        features.offbeat_density.max(0.25),
+        fingerprint.accent_step,
+        3,
+    );
+    cells[first] = Some(if sparse { 7 } else { 5 });
+    if !sparse || features.transient_density > 0.58 {
+        cells[feature_step(features.transient_density, fingerprint.step_rotation, 10)] = Some(3);
+    }
+    if features.low_band_pressure > 0.64 && features.hook_restraint < 0.70 {
+        cells[feature_step(features.low_band_pressure, fingerprint.accent_step, 13)] = Some(0);
+    }
+}
+
+fn source_instigator_cells(
+    cells: &mut [Option<i8>; 16],
+    features: &Mc202SourcePhraseFeatureVector,
+    fingerprint: Mc202SourcePhraseFingerprint,
+) {
+    let pickup = feature_step(features.transient_density, fingerprint.accent_step, 14);
+    cells[pickup] = Some(19);
+    cells[feature_step(features.offbeat_density, fingerprint.step_rotation, 6)] = Some(24);
+    if features.low_band_pressure > 0.55 {
+        cells[feature_step(features.low_band_pressure, fingerprint.accent_step, 0)] = Some(12);
+    }
+}
+
+fn source_follower_cells(
+    cells: &mut [Option<i8>; 16],
+    features: &Mc202SourcePhraseFeatureVector,
+    fingerprint: Mc202SourcePhraseFingerprint,
+) {
+    cells[feature_step(features.low_band_pressure, fingerprint.step_rotation, 0)] = Some(0);
+    cells[feature_step(features.transient_density, fingerprint.accent_step, 5)] = Some(5);
+    if features.offbeat_density > 0.35 {
+        cells[feature_step(features.offbeat_density, fingerprint.accent_step, 11)] = Some(7);
+    }
+}
+
+fn feature_step(feature: f32, tie_break: u8, offset: usize) -> usize {
+    let bucket = (feature.clamp(0.0, 1.0) * 7.0).round() as usize;
+    (offset + bucket + usize::from(tie_break % 4)) % 16
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -295,13 +305,18 @@ fn hash_u64(hash: &mut u64, value: u64) {
 fn add_source_phrase_accent(
     role: Mc202RoleState,
     cells: &mut [Option<i8>; 16],
+    features: &Mc202SourcePhraseFeatureVector,
     fingerprint: Mc202SourcePhraseFingerprint,
 ) {
-    if !fingerprint.strong_source {
+    if !fingerprint.strong_source || features.source_strength < 0.55 {
         return;
     }
 
-    let index = fingerprint.accent_step as usize;
+    let index = feature_step(
+        features.source_strength.max(features.transient_density),
+        fingerprint.accent_step,
+        1,
+    );
     if cells[index].is_some() {
         return;
     }
@@ -376,8 +391,11 @@ fn source_phrase_anchor_type_code(anchor_type: SourceTimingAnchorType) -> u64 {
     }
 }
 
-fn source_phrase_contour_offset(section: Option<&Section>) -> i8 {
-    match section.map(|section| (section.label_hint, section.energy_class)) {
+fn source_phrase_contour_offset(
+    section: Option<&Section>,
+    features: &Mc202SourcePhraseFeatureVector,
+) -> i8 {
+    let section_offset = match section.map(|section| (section.label_hint, section.energy_class)) {
         Some((SectionLabelHint::Build, _)) => 2,
         Some((
             SectionLabelHint::Drop | SectionLabelHint::Chorus,
@@ -388,13 +406,26 @@ fn source_phrase_contour_offset(section: Option<&Section>) -> i8 {
         }
         Some((_, EnergyClass::Low)) => -5,
         _ => 0,
-    }
+    };
+    let pressure_offset = if features.low_band_pressure > 0.72 {
+        -5
+    } else if features.offbeat_density > 0.55 {
+        2
+    } else {
+        0
+    };
+    (section_offset + pressure_offset).clamp(-12, 12)
 }
 
 fn source_phrase_note_budget(
     role: Mc202RoleState,
     section: Option<&Section>,
+    features: &Mc202SourcePhraseFeatureVector,
 ) -> Mc202SourcePhraseNoteBudgetState {
+    if features.hook_restraint > 0.72 || features.source_strength < 0.40 {
+        return Mc202SourcePhraseNoteBudgetState::Sparse;
+    }
+
     match role {
         Mc202RoleState::Pressure | Mc202RoleState::Answer => {
             Mc202SourcePhraseNoteBudgetState::Sparse
@@ -417,8 +448,20 @@ fn source_phrase_confidence(
     graph: &SourceGraph,
     section: Option<&Section>,
     phrase_slot: &PhraseSpan,
+    features: &Mc202SourcePhraseFeatureVector,
 ) -> f32 {
     let timing = graph.timing.bpm_confidence.max(phrase_slot.confidence);
     let section_confidence = section.map_or(0.5, |section| section.confidence);
-    ((timing + section_confidence + phrase_slot.confidence) / 3.0).clamp(0.0, 1.0)
+    ((timing + section_confidence + phrase_slot.confidence + features.confidence) / 4.0)
+        .clamp(0.0, 1.0)
+}
+
+fn source_phrase_fallback_reason(features: &Mc202SourcePhraseFeatureVector) -> Option<String> {
+    if features.stay_out {
+        return Some("stay_out_source_context".into());
+    }
+    if !features.has_musical_evidence() {
+        return Some("weak_source_phrase_features".into());
+    }
+    None
 }
