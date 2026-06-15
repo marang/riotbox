@@ -132,6 +132,12 @@ render seams.
      family / scorecard so pressure phrases render with more body while answer,
      callback, hook-restraint, and pickup phrases render with sharper transient
      behavior.
+   - RIOTBOX-1276 deepens the existing MC-202 render seam with production
+     sound-design shaping from the projected source phrase plan. Bass pressure,
+     answer stabs, callback / pickup bite, gate snap, destructive pitch dives,
+     drive, envelope length, transient click, and low-body emphasis are rendered
+     from the typed render-plan articulation values; the audio callback still
+     makes no phrase-composition decisions.
 
 6. Prove the output path.
    - Add primitive-vs-source-derived A/B render evidence.

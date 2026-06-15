@@ -198,18 +198,6 @@ pub fn render_mc202_buffer(
     let sample_rate = sample_rate.max(1) as f64;
     let tempo_bpm = render.tempo_bpm.max(1.0) as f64;
     let touch = render.touch.clamp(0.0, 1.0);
-    let source_pressure = source_phrase_plan.map_or(0.0, |plan| plan.pressure.clamp(0.0, 1.0));
-    let source_contrast = source_phrase_plan.map_or(0.0, |plan| plan.contrast.clamp(0.0, 1.0));
-    let source_bass_weight =
-        source_phrase_plan.map_or(0.0, |plan| plan.bass_weight.clamp(0.0, 1.0));
-    let source_stab_bite = source_phrase_plan.map_or(0.0, |plan| plan.stab_bite.clamp(0.0, 1.0));
-    let source_gate_snap = source_phrase_plan.map_or(0.0, |plan| plan.gate_snap.clamp(0.0, 1.0));
-    let source_gain = 1.0
-        + source_pressure * 0.55
-        + source_contrast * 0.20
-        + source_bass_weight * 0.18
-        + source_stab_bite * 0.10;
-    let gain = render.music_bus_level.clamp(0.0, 1.0) * (0.08 + touch * 0.08) * source_gain;
 
     for frame in 0..buffer.len() / channel_count {
         let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
@@ -236,40 +224,23 @@ pub fn render_mc202_buffer(
             + contour_offset(render.contour_hint, sixteenth)
             + hook_response_offset(render.hook_response, sixteenth);
 
-        let octave_drop = match render.mode {
-            Mc202RenderMode::Follower | Mc202RenderMode::Pressure => -12.0,
-            Mc202RenderMode::Instigator => -2.0,
-            _ => -5.0,
-        } - source_bass_weight as f64 * 5.0
-            + source_stab_bite as f64 * 2.0;
-        let destructive_pitch_dive = if destructive_step {
-            -10.0 * f64::from(step_phase)
-        } else {
-            0.0
-        };
+        let sound_design = mc202_source_phrase_sound_design(render, source_phrase_plan, destructive_step);
+        let destructive_pitch_dive = sound_design.destructive_dive * f64::from(step_phase);
         let frequency = 110.0_f64
-            * 2.0_f64.powf((semitone as f64 + octave_drop + destructive_pitch_dive) / 12.0);
-
-        let gate_len = match render.phrase_shape {
-            Mc202PhraseShape::PressureCell => 0.50,
-            Mc202PhraseShape::InstigatorSpike => 0.30,
-            _ if source_phrase_plan.is_some() => {
-                (0.42 + source_contrast * 0.20 + source_bass_weight * 0.08)
-                    * (1.0 - source_gate_snap * 0.38)
-            }
-            _ => 0.62,
-        }
-        .clamp(0.18, 0.68);
-        if step_phase > gate_len {
+            * 2.0_f64.powf(
+                (semitone as f64 + sound_design.octave_drop + destructive_pitch_dive) / 12.0,
+            );
+        if step_phase > sound_design.gate_len {
             continue;
         }
 
-        let env = (1.0 - step_phase / gate_len).powf(1.8);
         let source_accent = source_phrase_plan.is_some_and(|plan| {
             plan.accent_mask & (1_u16 << (sixteenth % 16)) != 0
         });
         let accent = if source_accent {
-            1.18 + touch * 0.45 + source_pressure * 0.45
+            1.18
+                + touch * 0.45
+                + source_phrase_plan.map_or(0.0, |plan| plan.pressure.clamp(0.0, 1.0)) * 0.45
         } else if sixteenth.is_multiple_of(8) {
             1.0 + touch * 0.55
         } else if sixteenth % 4 == 2 {
@@ -279,25 +250,7 @@ pub fn render_mc202_buffer(
         };
         let note_seconds = f64::from(step_phase) * 60.0 / tempo_bpm / 4.0;
         let phase = (note_seconds * frequency).fract();
-        let saw = (phase as f32 * 2.0) - 1.0;
-        let pulse_width = (0.42 + source_stab_bite * 0.10 - source_bass_weight * 0.08)
-            .clamp(0.30, 0.55);
-        let pulse = if phase < pulse_width as f64 { 1.0 } else { -1.0 };
-        let sub = (phase as f32 * std::f32::consts::TAU).sin();
-        let bite = (saw * (0.58 + touch * 0.25 + source_stab_bite * 0.18))
-            + (pulse * (0.24 + touch * 0.18 + source_stab_bite * 0.22))
-            + (sub * source_bass_weight * 0.30);
-        let drive = 1.0
-            + source_pressure * 1.15
-            + source_contrast * 0.55
-            + source_bass_weight * 0.65
-            + source_stab_bite * 0.40;
-        let cut = if destructive_step && step_phase > 0.70 {
-            (1.0 - (step_phase - 0.70) / 0.30).clamp(0.0, 1.0)
-        } else {
-            1.0
-        };
-        let sample = (bite * drive * env * accent * gain * cut).tanh();
+        let sample = mc202_source_phrase_sample(phase, step_phase, accent, sound_design);
 
         for channel in 0..channel_count {
             buffer[frame * channel_count + channel] += sample;
