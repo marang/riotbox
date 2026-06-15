@@ -118,6 +118,13 @@ render seams.
    - Add template-collapse tests: if removing low-band / transient / hook
      features leaves the same phrase, the candidate must fail source-derived
      quality proof.
+   - RIOTBOX-1269 adds the first automated diversity/collapse gates on the
+     existing Source Graph -> Session -> projection -> render path: same-source
+     source-backed answers must remain deterministic, a small measured feature
+     corpus must produce distinct selected families, phrase plans, render masks,
+     and rendered buffers, and a neutralized low/transient/hook source must
+     downgrade to non-source-derived silence instead of reusing the measured
+     phrase template.
    - Keep scripted or diagnostic artifacts marked `quality_proof: false` and
      `human_verdict: unverified` until structured listening review approves
      them.
