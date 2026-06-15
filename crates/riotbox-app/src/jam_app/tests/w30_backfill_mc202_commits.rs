@@ -322,7 +322,7 @@ fn committed_mc202_follower_generation_updates_phrase_ref_and_touch() {
     );
     assert_eq!(
         state.runtime.mc202_render.routing,
-        Mc202RenderRouting::MusicBusBass
+        Mc202RenderRouting::Silent
     );
     assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("follower"));
     assert!(!state.jam_view.lanes.mc202_pending_follower_generation);
@@ -458,7 +458,7 @@ fn committed_mc202_pressure_generation_updates_phrase_ref_touch_and_render_shape
     );
     assert_eq!(
         state.runtime.mc202_render.routing,
-        Mc202RenderRouting::MusicBusBass
+        Mc202RenderRouting::Silent
     );
     assert_eq!(state.jam_view.lanes.mc202_role.as_deref(), Some("pressure"));
     assert!(!state.jam_view.lanes.mc202_pending_pressure_generation);

@@ -1200,9 +1200,15 @@ def validate_listening_identity(listening_report: Path) -> dict[str, Any]:
         ):
             case_failures.append("not_demo_worthy_reason_missing")
         mc202_gate = object_or_empty(case.get("mc202_source_composed_review_gate"))
-        if mc202_gate.get("source_composed_evidence") is not True:
+        source_composed = mc202_gate.get("source_composed_evidence") is True
+        template_only = mc202_gate.get("primitive_or_template_only") is True
+        template_blocked = (
+            mc202_gate.get("promotion_blocked_until_human_pass") is True
+            and mc202_gate.get("template_only_blocks_promotion") is True
+        )
+        if not source_composed and not (template_only and template_blocked):
             case_failures.append("mc202_source_composed_evidence_missing")
-        if mc202_gate.get("primitive_or_template_only") is not False:
+        if template_only and not template_blocked:
             case_failures.append("mc202_template_only_not_blocked")
         if mc202_gate.get("promotion_blocked_until_human_pass") is not True:
             case_failures.append("mc202_promotion_boundary_missing")

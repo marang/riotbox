@@ -142,7 +142,7 @@ pub(super) fn render_w30_preview_buffer(
             state.lfo_phase = (state.lfo_phase + 1.8 / sample_rate.max(1) as f32).fract();
             0.45 + 0.55 * ((std::f32::consts::TAU * state.lfo_phase).sin() * 0.5 + 0.5)
         };
-        let waveform = w30_preview_waveform_for_frame(render, state, sample_rate);
+        let waveform = w30_preview_waveform_for_frame(render, state);
         let sample =
             waveform * state.envelope * tremolo * w30_render_gain(render, transport_running);
         if transport_running {
@@ -161,7 +161,6 @@ pub(super) fn render_w30_preview_buffer(
 fn w30_preview_waveform_for_frame(
     render: &RealtimeW30PreviewRenderState,
     state: &mut W30PreviewCallbackState,
-    sample_rate: u32,
 ) -> f32 {
     if w30_pad_playback_active(render) {
         let sample = w30_pad_playback_sample(&render.pad_playback, state);
@@ -175,11 +174,7 @@ fn w30_preview_waveform_for_frame(
         return (sample * (1.0 + grit * 0.35)).clamp(-1.0, 1.0);
     }
 
-    let frequency = w30_preview_frequency(render, state.last_step);
-    let waveform = w30_preview_waveform(state.oscillator_phase, render.grit_level);
-    state.oscillator_phase =
-        (state.oscillator_phase + frequency / sample_rate.max(1) as f32).fract();
-    waveform
+    0.0
 }
 
 fn w30_source_window_active(render: &RealtimeW30PreviewRenderState) -> bool {

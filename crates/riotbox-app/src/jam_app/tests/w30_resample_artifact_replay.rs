@@ -140,7 +140,7 @@ fn w30_snapshot_payload_restore_hydrates_promote_resample_artifact_preview_outpu
         replayed_pad_playback.sample_count,
     );
     assert_w30_replay_buffers_differ(
-        "promote.resample artifact playback -> fallback oscillator",
+        "promote.resample artifact playback -> missing-material silence",
         &replayed_buffer,
         &fallback_buffer,
         0.0005,

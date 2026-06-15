@@ -181,7 +181,7 @@ fn w30_snapshot_payload_restore_hydrates_loop_freeze_artifact_preview_output() {
         replayed_pad_playback.sample_count,
     );
     assert_w30_replay_buffers_differ(
-        "loop-freeze artifact playback -> fallback oscillator",
+        "loop-freeze artifact playback -> missing-material silence",
         &replayed_buffer,
         &fallback_buffer,
         0.0005,

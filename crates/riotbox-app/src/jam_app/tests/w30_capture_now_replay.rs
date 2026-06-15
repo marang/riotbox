@@ -133,7 +133,7 @@ fn snapshot_payload_restore_hydrates_capture_now_artifact_preview_output() {
         replayed_pad_playback.sample_count,
     );
     assert_w30_replay_buffers_differ(
-        "capture.now artifact playback -> fallback oscillator",
+        "capture.now artifact playback -> missing-material silence",
         &replayed_buffer,
         &fallback_buffer,
         0.0005,

@@ -47,7 +47,7 @@ fn committed_mc202_instigator_generation_updates_phrase_ref_touch_and_render_sha
     );
     assert_eq!(
         state.runtime.mc202_render.routing,
-        Mc202RenderRouting::MusicBusBass
+        Mc202RenderRouting::Silent
     );
     assert_eq!(
         state.jam_view.lanes.mc202_role.as_deref(),
@@ -156,9 +156,10 @@ fn mc202_render_projection_consumes_typed_role_and_phrase_intent_contract() {
         state.runtime.mc202_render.note_budget,
         riotbox_audio::mc202::Mc202NoteBudget::Wide
     );
-    let rendered = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+    let rendered = render_mc202_recipe_silent_buffer(&state.runtime.mc202_render);
     let metrics = signal_metrics(&rendered);
-    assert!(metrics.rms > 0.001, "typed MC-202 projection rendered silent");
+    assert_eq!(metrics.active_samples, 0);
+    assert_eq!(metrics.rms, 0.0);
 }
 
 #[test]
@@ -436,7 +437,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     );
     commit_mc202_recipe_step(&mut state, 2, 600);
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
-    let answer = render_mc202_recipe_silent_buffer(&state.runtime.mc202_render);
+    let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert_eq!(
         state.queue_mc202_generate_pressure(700),
@@ -471,7 +472,7 @@ fn mc202_recipe_replay_proves_control_and_audio_path() {
     let lower_touch = render_mc202_recipe_buffer(&state.runtime.mc202_render);
 
     assert!(state.session.action_log.actions.len() >= 5);
-    assert_recipe_buffers_differ("follower -> answer intent silence", &follower, &answer, 0.005);
+    assert_recipe_buffers_differ("follower -> source-derived answer", &follower, &answer, 0.005);
     assert_recipe_buffers_differ("answer -> pressure", &answer, &pressure, 0.004);
     assert_recipe_buffers_differ("pressure -> instigator", &pressure, &instigator, 0.004);
     assert_recipe_buffers_differ("instigator -> mutation", &instigator, &mutated, 0.004);
@@ -497,7 +498,7 @@ fn mc202_replay_executor_matches_committed_app_state_and_audio_path() {
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
-    let committed_answer = render_mc202_recipe_silent_buffer(&committed_state.runtime.mc202_render);
+    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
         committed_state.queue_mc202_generate_pressure(700),
@@ -528,29 +529,33 @@ fn mc202_replay_executor_matches_committed_app_state_and_audio_path() {
     let report = riotbox_core::replay::apply_replay_plan_to_session(&mut replayed_session, &plan)
         .expect("MC-202 replay executor applies committed phrase family");
     let replayed_state = JamAppState::from_parts(replayed_session, Some(graph), ActionQueue::new());
-    let replayed_mutation = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
+    let replayed_mutation = assert_mc202_replay_degrades_without_source_plan(
+        "action-log MC-202 replay",
+        &replayed_state,
+        &committed_state,
+    );
 
     assert_eq!(report.applied_action_ids.len(), 5);
-    assert_eq!(
-        replayed_state.session.runtime_state.lane_state.mc202,
-        committed_state.session.runtime_state.lane_state.mc202
-    );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_eq!(replayed_state.runtime.mc202_render, committed_state.runtime.mc202_render);
-    assert_recipe_buffers_match(
-        "replayed MC-202 mutation -> committed MC-202 mutation",
+    assert_recipe_buffers_differ(
+        "action-log replay missing source plan -> committed source-derived mutation",
         &replayed_mutation,
         &committed_mutation,
-        0.00001,
+        0.005,
     );
-    assert_recipe_buffers_differ("follower -> committed answer intent silence", &follower, &committed_answer, 0.005);
+    assert_recipe_buffers_differ(
+        "follower -> committed source-derived answer",
+        &follower,
+        &committed_answer,
+        0.005,
+    );
     assert_recipe_buffers_differ("answer -> pressure", &committed_answer, &pressure, 0.004);
     assert_recipe_buffers_differ("pressure -> instigator", &pressure, &instigator, 0.004);
     assert_recipe_buffers_differ(
-        "instigator -> replayed mutation",
+        "instigator -> degraded replayed mutation",
         &instigator,
         &replayed_mutation,
         0.004,
@@ -578,8 +583,8 @@ fn undo_mc202_phrase_move_restores_lane_state_and_audio_path() {
     );
     commit_mc202_recipe_step(&mut state, 2, 600);
     assert_eq!(state.runtime.mc202_render.mode, Mc202RenderMode::Answer);
-    let answer = render_mc202_recipe_silent_buffer(&state.runtime.mc202_render);
-    assert_recipe_buffers_differ("follower -> answer intent silence", &follower, &answer, 0.005);
+    let answer = render_mc202_recipe_buffer(&state.runtime.mc202_render);
+    assert_recipe_buffers_differ("follower -> source-derived answer", &follower, &answer, 0.005);
 
     let undo = state
         .undo_last_action(700)
@@ -636,6 +641,7 @@ fn undo_mc202_phrase_move_without_snapshot_does_not_claim_success() {
 }
 
 fn commit_mc202_recipe_step(state: &mut JamAppState, phrase_index: u64, committed_at: u64) {
+    prepare_mc202_recipe_source_fixture(state, phrase_index as u32);
     let committed = state.commit_ready_actions(
         CommitBoundaryState {
             kind: CommitBoundary::Phrase,
@@ -649,24 +655,107 @@ fn commit_mc202_recipe_step(state: &mut JamAppState, phrase_index: u64, committe
     assert_eq!(committed.len(), 1);
 }
 
+fn prepare_mc202_recipe_source_fixture(state: &mut JamAppState, phrase_index: u32) {
+    let Some(graph) = state.source_graph.as_mut() else {
+        return;
+    };
+    let source_id = graph.source.source_id.clone();
+    let start_bar = phrase_index * 4;
+    graph.timing.phrase_grid = vec![riotbox_core::source_graph::PhraseSpan {
+        phrase_index,
+        start_bar,
+        end_bar: start_bar + 3,
+        confidence: 0.91,
+    }];
+    add_phrase_audio_features(
+        graph,
+        phrase_index,
+        0.34,
+        0.82,
+        0.88,
+        0.34,
+        0.20,
+        0.42,
+        0.18,
+        0.12,
+    );
+    state.session.runtime_state.source_timing.confirmed_grid =
+        Some(SourceTimingGridConfirmationState {
+            source_id: source_id.clone(),
+            hypothesis_id: None,
+            confirmed_by_action: ActionId(77),
+            confirmed_at: 1_771_156_800_000,
+        });
+    if let Some(source_ref) = state.session.source_refs.first_mut() {
+        source_ref.source_id = source_id.clone();
+        source_ref.path_hint = graph.source.path.clone();
+        source_ref.content_hash = graph.source.content_hash.clone();
+    }
+    if let Some(graph_ref) = state.session.source_graph_refs.first_mut() {
+        graph_ref.source_id = source_id;
+        graph_ref.embedded_graph = Some(graph.clone());
+        graph_ref.graph_hash =
+            crate::jam_app::persistence::source_graph_hash(graph).expect("hash MC-202 fixture graph");
+        graph_ref.provenance = graph.provenance.clone();
+    }
+}
+
 fn render_mc202_recipe_buffer(render_state: &Mc202RenderState) -> Vec<f32> {
-    let mut buffer = vec![0.0; 44_100 * 2];
+    let mut buffer = vec![0.0; 44_100 * 2 * 2];
     render_mc202_buffer(&mut buffer, 44_100, 2, render_state);
     assert!(
         buffer.iter().any(|sample| sample.abs() > 0.0001),
-        "MC-202 recipe step rendered silence"
+        "MC-202 recipe step rendered silence: {render_state:?}"
     );
     buffer
 }
 
 fn render_mc202_recipe_silent_buffer(render_state: &Mc202RenderState) -> Vec<f32> {
-    let mut buffer = vec![0.0; 44_100 * 2];
+    let mut buffer = vec![0.0; 44_100 * 2 * 2];
     render_mc202_buffer(&mut buffer, 44_100, 2, render_state);
     assert!(
         buffer.iter().all(|sample| sample.abs() <= 0.0001),
         "MC-202 answer intent should not render a synthetic phrase"
     );
     buffer
+}
+
+fn assert_mc202_replay_degrades_without_source_plan(
+    label: &str,
+    replayed_state: &JamAppState,
+    committed_state: &JamAppState,
+) -> Vec<f32> {
+    assert_eq!(
+        replayed_state.session.runtime_state.lane_state.mc202.role,
+        committed_state.session.runtime_state.lane_state.mc202.role
+    );
+    assert_eq!(
+        replayed_state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .phrase_ref,
+        committed_state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .phrase_ref
+    );
+    assert!(
+        replayed_state
+            .session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .is_none(),
+        "{label} unexpectedly replayed a source phrase plan"
+    );
+    assert_eq!(replayed_state.runtime.mc202_render.routing, Mc202RenderRouting::Silent);
+    assert!(replayed_state.runtime.mc202_render.source_phrase_plan.is_none());
+    render_mc202_recipe_silent_buffer(&replayed_state.runtime.mc202_render)
 }
 
 fn render_scene_recipe_mix_buffer(state: &JamAppState) -> Vec<f32> {

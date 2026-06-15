@@ -52,7 +52,7 @@ fn source_monitor_blend_keeps_generated_and_source_energy() {
 }
 
 #[test]
-fn source_monitor_falls_back_to_riotbox_when_source_cache_is_absent() {
+fn source_monitor_source_mode_mutes_when_source_cache_is_absent() {
     let generated = vec![0.25, -0.25, 0.5, -0.5];
     let render = SourceMonitorRenderState {
         mode: SourceMonitorMode::Source,
@@ -65,7 +65,7 @@ fn source_monitor_falls_back_to_riotbox_when_source_cache_is_absent() {
 
     let output = render_source_monitor_mix_offline(&generated, 44_100, 2, &render);
 
-    assert_eq!(output, generated);
+    assert!(output.iter().all(|sample| sample.abs() <= f32::EPSILON));
 }
 
 #[test]

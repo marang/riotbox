@@ -32,6 +32,13 @@ scaffolds, or architecture proofs. They are not product-quality source-derived
 behavior until source evidence changes the musical decision and the audible
 output.
 
+Do not implement hardcoded musical/audio fallback output as a Riotbox product
+path. If source-backed generation cannot produce trusted material, surface
+unavailable / degraded state to the musician instead of playing synthetic
+replacement music. Diagnostic comparisons may use silence or explicitly labeled
+non-product controls, but fallback sound must not exist on playable Riotbox
+output paths.
+
 For any feature that claims source-derived or intelligent behavior, prove all
 five surfaces:
 

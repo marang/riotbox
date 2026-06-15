@@ -12,44 +12,47 @@ mod tests {
         (active, peak, rms)
     }
 
+    fn source_plan() -> Mc202SourcePhraseRenderPlan {
+        Mc202SourcePhraseRenderPlan {
+            active_mask: 0b0001_0001_0010_0101,
+            semitones: [-12, 0, -7, 0, 0, -5, 0, 0, -10, 0, 0, 0, -3, 0, 0, 0],
+            accent_mask: 0b0001_0000_0000_0001,
+            destructive_mask: 0b0000_0000_0001_0000,
+            pressure: 0.68,
+            contrast: 0.52,
+            bass_weight: 0.70,
+            stab_bite: 0.24,
+            gate_snap: 0.20,
+        }
+    }
+
     #[test]
-    fn answer_mode_does_not_render_synthetic_phrase() {
-        let mut follower = vec![0.0; 44_100 * 2];
-        let mut answer = vec![0.0; 44_100 * 2];
+    fn renderer_stays_silent_without_source_phrase_plan_for_all_modes() {
+        for mode in [
+            Mc202RenderMode::Follower,
+            Mc202RenderMode::Answer,
+            Mc202RenderMode::Pressure,
+            Mc202RenderMode::Instigator,
+        ] {
+            let mut rendered = vec![0.0; 44_100 * 2];
+            render_mc202_buffer(
+                &mut rendered,
+                44_100,
+                2,
+                &Mc202RenderState {
+                    mode,
+                    routing: Mc202RenderRouting::MusicBusBass,
+                    phrase_shape: Mc202PhraseShape::FollowerDrive,
+                    touch: 0.78,
+                    is_transport_running: true,
+                    ..Mc202RenderState::default()
+                },
+            );
 
-        render_mc202_buffer(
-            &mut follower,
-            44_100,
-            2,
-            &Mc202RenderState {
-                mode: Mc202RenderMode::Follower,
-                routing: Mc202RenderRouting::MusicBusBass,
-                phrase_shape: Mc202PhraseShape::FollowerDrive,
-                touch: 0.62,
-                is_transport_running: true,
-                ..Mc202RenderState::default()
-            },
-        );
-        render_mc202_buffer(
-            &mut answer,
-            44_100,
-            2,
-            &Mc202RenderState {
-                mode: Mc202RenderMode::Answer,
-                routing: Mc202RenderRouting::MusicBusBass,
-                phrase_shape: Mc202PhraseShape::RootPulse,
-                touch: 0.78,
-                is_transport_running: true,
-                ..Mc202RenderState::default()
-            },
-        );
-
-        let follower_metrics = metrics(&follower);
-        let answer_metrics = metrics(&answer);
-
-        assert!(follower_metrics.0 > 10_000);
-        assert_eq!(answer_metrics.0, 0);
-        assert_eq!(answer_metrics.2, 0.0);
+            let rendered_metrics = metrics(&rendered);
+            assert_eq!(rendered_metrics.0, 0, "{mode:?} leaked hardcoded fallback");
+            assert_eq!(rendered_metrics.2, 0.0, "{mode:?} leaked hardcoded fallback");
+        }
     }
 
     #[test]
@@ -60,6 +63,7 @@ mod tests {
             mode: Mc202RenderMode::Follower,
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::FollowerDrive,
+            source_phrase_plan: Some(source_plan()),
             is_transport_running: true,
             tempo_bpm: 128.0,
             position_beats: 32.0,
@@ -105,9 +109,9 @@ mod tests {
     }
 
     #[test]
-    fn mutated_phrase_differs_from_follower_drive() {
-        let mut follower = vec![0.0; 44_100 * 2];
-        let mut mutated = vec![0.0; 44_100 * 2];
+    fn source_phrase_plan_changes_render_output() {
+        let mut sparse = vec![0.0; 44_100 * 2];
+        let mut pushed = vec![0.0; 44_100 * 2];
         let base = Mc202RenderState {
             mode: Mc202RenderMode::Follower,
             routing: Mc202RenderRouting::MusicBusBass,
@@ -119,52 +123,63 @@ mod tests {
         };
 
         render_mc202_buffer(
-            &mut follower,
+            &mut sparse,
             44_100,
             2,
             &Mc202RenderState {
-                phrase_shape: Mc202PhraseShape::FollowerDrive,
+                source_phrase_plan: Some(source_plan()),
                 ..base
             },
         );
         render_mc202_buffer(
-            &mut mutated,
+            &mut pushed,
             44_100,
             2,
             &Mc202RenderState {
-                phrase_shape: Mc202PhraseShape::MutatedDrive,
+                source_phrase_plan: Some(Mc202SourcePhraseRenderPlan {
+                    active_mask: 0b1010_0101_0010_1001,
+                    semitones: [-19, 0, 4, 0, 7, 0, -12, 0, 0, 0, -5, 0, 9, 0, 0, -7],
+                    accent_mask: 0b1000_0001_0010_0001,
+                    pressure: 0.88,
+                    contrast: 0.74,
+                    bass_weight: 0.90,
+                    stab_bite: 0.34,
+                    gate_snap: 0.28,
+                    ..source_plan()
+                }),
                 ..base
             },
         );
 
-        let follower_metrics = metrics(&follower);
-        let mutated_metrics = metrics(&mutated);
-        let delta_rms = (follower
+        let sparse_metrics = metrics(&sparse);
+        let pushed_metrics = metrics(&pushed);
+        let delta_rms = (sparse
             .iter()
-            .zip(mutated.iter())
-            .map(|(follower, mutated)| (follower - mutated).powi(2))
+            .zip(pushed.iter())
+            .map(|(sparse, pushed)| (sparse - pushed).powi(2))
             .sum::<f32>()
-            / follower.len() as f32)
+            / sparse.len() as f32)
             .sqrt();
-        let max_delta = follower
+        let max_delta = sparse
             .iter()
-            .zip(mutated.iter())
-            .map(|(follower, mutated)| (follower - mutated).abs())
+            .zip(pushed.iter())
+            .map(|(sparse, pushed)| (sparse - pushed).abs())
             .fold(0.0_f32, f32::max);
 
-        assert!(follower_metrics.0 > 10_000);
-        assert!(mutated_metrics.0 > 10_000);
-        assert!(delta_rms > 0.005, "mutated phrase delta RMS {delta_rms}");
-        assert!(max_delta > 0.02, "mutated phrase max delta {max_delta}");
+        assert!(sparse_metrics.0 > 10_000);
+        assert!(pushed_metrics.0 > 10_000);
+        assert!(delta_rms > 0.005, "source phrase delta RMS {delta_rms}");
+        assert!(max_delta > 0.02, "source phrase max delta {max_delta}");
     }
 
     #[test]
-    fn pressure_cell_differs_from_follower_drive() {
+    fn pressure_source_plan_differs_from_follower_source_plan() {
         let mut follower = vec![0.0; 44_100 * 2];
         let mut pressure = vec![0.0; 44_100 * 2];
         let base = Mc202RenderState {
             routing: Mc202RenderRouting::MusicBusBass,
             touch: 0.84,
+            source_phrase_plan: Some(source_plan()),
             is_transport_running: true,
             tempo_bpm: 128.0,
             position_beats: 32.0,
@@ -188,6 +203,17 @@ mod tests {
             &Mc202RenderState {
                 mode: Mc202RenderMode::Pressure,
                 phrase_shape: Mc202PhraseShape::PressureCell,
+                source_phrase_plan: Some(Mc202SourcePhraseRenderPlan {
+                    active_mask: 0b0001_0001_0001_0001,
+                    semitones: [-19, 0, 0, 0, -17, 0, 0, 0, -22, 0, 0, 0, -14, 0, 0, 0],
+                    accent_mask: 0b0001_0001_0001_0001,
+                    pressure: 0.92,
+                    contrast: 0.60,
+                    bass_weight: 0.96,
+                    stab_bite: 0.10,
+                    gate_snap: 0.12,
+                    ..source_plan()
+                }),
                 ..base
             },
         );
@@ -214,58 +240,31 @@ mod tests {
     }
 
     #[test]
-    fn note_budget_reduces_density_without_silencing_phrase() {
-        let mut wide = vec![0.0; 44_100 * 2 * 2];
-        let mut balanced = vec![0.0; 44_100 * 2 * 2];
-        let base = Mc202RenderState {
-            mode: Mc202RenderMode::Follower,
-            routing: Mc202RenderRouting::MusicBusBass,
-            phrase_shape: Mc202PhraseShape::FollowerDrive,
-            touch: 0.78,
-            is_transport_running: true,
-            tempo_bpm: 128.0,
-            position_beats: 32.0,
-            ..Mc202RenderState::default()
-        };
+    fn empty_source_phrase_plan_is_silent() {
+        let mut rendered = vec![0.0; 44_100 * 2 * 2];
 
         render_mc202_buffer(
-            &mut wide,
+            &mut rendered,
             44_100,
             2,
             &Mc202RenderState {
-                note_budget: Mc202NoteBudget::Wide,
-                ..base
-            },
-        );
-        render_mc202_buffer(
-            &mut balanced,
-            44_100,
-            2,
-            &Mc202RenderState {
-                note_budget: Mc202NoteBudget::Balanced,
-                ..base
+                mode: Mc202RenderMode::Follower,
+                routing: Mc202RenderRouting::MusicBusBass,
+                source_phrase_plan: Some(Mc202SourcePhraseRenderPlan {
+                    active_mask: 0,
+                    ..source_plan()
+                }),
+                touch: 0.78,
+                is_transport_running: true,
+                tempo_bpm: 128.0,
+                position_beats: 32.0,
+                ..Mc202RenderState::default()
             },
         );
 
-        let wide_metrics = metrics(&wide);
-        let balanced_metrics = metrics(&balanced);
-        let delta_rms = (wide
-            .iter()
-            .zip(balanced.iter())
-            .map(|(wide, balanced)| (wide - balanced).powi(2))
-            .sum::<f32>()
-            / wide.len() as f32)
-            .sqrt();
-
-        assert!(wide_metrics.0 > 10_000);
-        assert!(balanced_metrics.0 > 10_000);
-        assert!(
-            balanced_metrics.2 < wide_metrics.2,
-            "balanced RMS {} should stay below wide RMS {}",
-            balanced_metrics.2,
-            wide_metrics.2
-        );
-        assert!(delta_rms > 0.001, "note-budget delta RMS {delta_rms}");
+        let rendered_metrics = metrics(&rendered);
+        assert_eq!(rendered_metrics.0, 0);
+        assert_eq!(rendered_metrics.2, 0.0);
     }
 
     #[test]
@@ -277,6 +276,7 @@ mod tests {
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::FollowerDrive,
             note_budget: Mc202NoteBudget::Balanced,
+            source_phrase_plan: Some(source_plan()),
             touch: 0.78,
             is_transport_running: true,
             tempo_bpm: 128.0,
@@ -320,6 +320,7 @@ mod tests {
             phrase_shape: Mc202PhraseShape::FollowerDrive,
             note_budget: Mc202NoteBudget::Balanced,
             contour_hint: Mc202ContourHint::Neutral,
+            source_phrase_plan: Some(source_plan()),
             touch: 0.78,
             is_transport_running: true,
             tempo_bpm: 128.0,
@@ -363,6 +364,7 @@ mod tests {
         let base = Mc202RenderState {
             routing: Mc202RenderRouting::MusicBusBass,
             touch: 0.90,
+            source_phrase_plan: Some(source_plan()),
             is_transport_running: true,
             tempo_bpm: 128.0,
             position_beats: 32.0,
@@ -417,6 +419,7 @@ mod tests {
             mode: Mc202RenderMode::Follower,
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::FollowerDrive,
+            source_phrase_plan: Some(source_plan()),
             touch: 0.78,
             is_transport_running: true,
             tempo_bpm: 128.0,

@@ -79,14 +79,6 @@ impl Mc202NoteBudget {
         }
     }
 
-    const fn max_active_steps(self) -> usize {
-        match self {
-            Self::Sparse => 7,
-            Self::Balanced => 10,
-            Self::Push => 8,
-            Self::Wide => 12,
-        }
-    }
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq)]
@@ -184,16 +176,17 @@ pub fn render_mc202_buffer(
     channel_count: usize,
     render: &Mc202RenderState,
 ) {
-    let source_phrase_plan = render.source_phrase_plan.filter(|plan| !plan.is_empty());
     if channel_count == 0
         || matches!(render.mode, Mc202RenderMode::Idle)
-        || (matches!(render.mode, Mc202RenderMode::Answer) && source_phrase_plan.is_none())
         || matches!(render.routing, Mc202RenderRouting::Silent)
         || !render.is_transport_running
         || render.music_bus_level <= 0.0
     {
         return;
     }
+    let Some(source_phrase_plan) = render.source_phrase_plan.filter(|plan| !plan.is_empty()) else {
+        return;
+    };
 
     let sample_rate = sample_rate.max(1) as f64;
     let tempo_bpm = render.tempo_bpm.max(1.0) as f64;
@@ -203,28 +196,19 @@ pub fn render_mc202_buffer(
         let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
         let sixteenth = (beat * 4.0).floor() as usize;
         let step_phase = (beat * 4.0).fract() as f32;
-        let Some(semitone) = source_phrase_plan
-            .and_then(|plan| source_plan_step_semitone(plan, sixteenth))
-            .or_else(|| step_semitone(render.phrase_shape, sixteenth))
-        else {
+        let Some(semitone) = source_plan_step_semitone(source_phrase_plan, sixteenth) else {
             continue;
         };
-        if source_phrase_plan.is_none()
-            && !within_note_budget(render.phrase_shape, render.note_budget, sixteenth)
-        {
-            continue;
-        }
         if !within_hook_response(render.hook_response, sixteenth) {
             continue;
         }
-        let destructive_step = source_phrase_plan.is_some_and(|plan| {
-            plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0
-        });
+        let destructive_step = source_phrase_plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0;
         let semitone = semitone
             + contour_offset(render.contour_hint, sixteenth)
             + hook_response_offset(render.hook_response, sixteenth);
 
-        let sound_design = mc202_source_phrase_sound_design(render, source_phrase_plan, destructive_step);
+        let sound_design =
+            mc202_source_phrase_sound_design(render, source_phrase_plan, destructive_step);
         let destructive_pitch_dive = sound_design.destructive_dive * f64::from(step_phase);
         let frequency = 110.0_f64
             * 2.0_f64.powf(
@@ -234,13 +218,9 @@ pub fn render_mc202_buffer(
             continue;
         }
 
-        let source_accent = source_phrase_plan.is_some_and(|plan| {
-            plan.accent_mask & (1_u16 << (sixteenth % 16)) != 0
-        });
+        let source_accent = source_phrase_plan.accent_mask & (1_u16 << (sixteenth % 16)) != 0;
         let accent = if source_accent {
-            1.18
-                + touch * 0.45
-                + source_phrase_plan.map_or(0.0, |plan| plan.pressure.clamp(0.0, 1.0)) * 0.45
+            1.18 + touch * 0.45 + source_phrase_plan.pressure.clamp(0.0, 1.0) * 0.45
         } else if sixteenth.is_multiple_of(8) {
             1.0 + touch * 0.55
         } else if sixteenth % 4 == 2 {
@@ -258,11 +238,6 @@ pub fn render_mc202_buffer(
     }
 }
 
-fn step_semitone(shape: Mc202PhraseShape, sixteenth: usize) -> Option<i8> {
-    let pattern = pattern_for_shape(shape);
-    pattern[sixteenth % pattern.len()]
-}
-
 fn source_plan_step_semitone(plan: Mc202SourcePhraseRenderPlan, sixteenth: usize) -> Option<i8> {
     let step = sixteenth % 16;
     if plan.active_mask & (1_u16 << step) == 0 {
@@ -270,114 +245,6 @@ fn source_plan_step_semitone(plan: Mc202SourcePhraseRenderPlan, sixteenth: usize
     }
 
     Some(plan.semitones[step])
-}
-
-fn pattern_for_shape(shape: Mc202PhraseShape) -> &'static [Option<i8>; 16] {
-    match shape {
-        Mc202PhraseShape::RootPulse => &[
-            Some(0),
-            None,
-            Some(0),
-            None,
-            Some(7),
-            None,
-            Some(0),
-            None,
-            Some(0),
-            None,
-            Some(5),
-            None,
-            Some(7),
-            None,
-            Some(0),
-            None,
-        ],
-        Mc202PhraseShape::FollowerDrive => &[
-            Some(0),
-            Some(0),
-            None,
-            Some(3),
-            Some(5),
-            None,
-            Some(7),
-            Some(5),
-            Some(0),
-            None,
-            Some(3),
-            Some(5),
-            Some(7),
-            Some(10),
-            Some(7),
-            None,
-        ],
-        Mc202PhraseShape::MutatedDrive => &[
-            Some(0),
-            Some(7),
-            Some(3),
-            None,
-            Some(10),
-            Some(7),
-            None,
-            Some(5),
-            Some(12),
-            None,
-            Some(10),
-            Some(3),
-            Some(7),
-            Some(5),
-            Some(0),
-            Some(15),
-        ],
-        Mc202PhraseShape::PressureCell => &[
-            None,
-            Some(0),
-            None,
-            Some(0),
-            None,
-            Some(7),
-            None,
-            Some(0),
-            Some(10),
-            None,
-            Some(7),
-            None,
-            None,
-            Some(5),
-            Some(7),
-            None,
-        ],
-        Mc202PhraseShape::InstigatorSpike => &[
-            Some(12),
-            None,
-            Some(15),
-            Some(19),
-            None,
-            Some(12),
-            None,
-            Some(22),
-            Some(24),
-            Some(19),
-            None,
-            Some(15),
-            Some(12),
-            None,
-            Some(27),
-            None,
-        ],
-    }
-}
-
-fn within_note_budget(shape: Mc202PhraseShape, budget: Mc202NoteBudget, sixteenth: usize) -> bool {
-    let pattern = pattern_for_shape(shape);
-    let step = sixteenth % pattern.len();
-    let active_index = pattern
-        .iter()
-        .take(step + 1)
-        .filter(|semitone| semitone.is_some())
-        .count()
-        .saturating_sub(1);
-
-    active_index < budget.max_active_steps()
 }
 
 fn contour_offset(hint: Mc202ContourHint, sixteenth: usize) -> i8 {

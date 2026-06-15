@@ -67,9 +67,9 @@ fn derive_source_audio_warnings(runtime: &AppRuntimeState, session: &SessionFile
             channel_count,
             frame_count,
             ..
-        } if runtime.source_monitor_audio_route == "fallback_riotbox" => {
+        } if runtime.source_monitor_audio_route == "source_unavailable" => {
             vec![format!(
-                "source monitor fell back to riotbox output: source audio format is {sample_rate} Hz, {channel_count} ch, {frame_count} frames"
+                "source monitor unavailable: source audio format is {sample_rate} Hz, {channel_count} ch, {frame_count} frames"
             )]
         }
         SourceAudioStatus::NotRequested | SourceAudioStatus::Loaded { .. } => Vec::new(),
@@ -153,7 +153,26 @@ fn derive_mc202_render_warnings(render: &Mc202RenderState, session: &SessionFile
     let mut warnings = Vec::new();
 
     if !matches!(render.routing, Mc202RenderRouting::MusicBusBass) {
-        warnings.push("MC-202 render is active but not routed to music_bus_bass".into());
+        let source_plan = session
+            .runtime_state
+            .lane_state
+            .mc202
+            .source_phrase_plan
+            .as_ref();
+        if let Some(plan) = source_plan.filter(|plan| !plan.is_source_derived()) {
+            let reason = plan
+                .fallback_reason
+                .as_deref()
+                .unwrap_or("source phrase plan was not source-derived");
+            warnings.push(format!(
+                "MC-202 source phrase degraded and is not routed to music_bus_bass: {reason}"
+            ));
+        } else {
+            warnings.push(
+                "MC-202 source phrase unavailable; primitive fallback is not routed to music_bus_bass"
+                    .into(),
+            );
+        }
     }
 
     if render.music_bus_level <= 0.0 {

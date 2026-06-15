@@ -41,6 +41,31 @@ state, or Ghost-only composer. It must extend the existing Source Graph,
 Session, Action Lexicon, queue / commit, replay, app projection, and audio
 render seams.
 
+## No Hidden Fallback Product Rule
+
+MC-202 must not silently fall back to a hardcoded question / answer or primitive
+pressure pattern in the musician-facing product path.
+
+If a source-backed MC-202 gesture cannot produce a trusted source-derived
+`source_phrase_plan`, Riotbox must degrade honestly:
+
+- do not route primitive MC-202 shapes to the music bus as replacement musical
+  output
+- keep `stay_out` / `fallback_control` as observable non-audible diagnostic
+  states only
+- surface the state to the musician as unavailable / degraded, not as a normal
+  bass or answer part
+- show why it degraded when possible: untrusted timing, missing source graph,
+  no phrase slot, neutralized / weak source features, static-collapse rejection,
+  or explicit `fallback_reason`
+- keep source-derived quality proof, demo promotion, and listening-review
+  candidate claims blocked unless a source-derived render plan exists and the
+  rendered output passes source-vs-silence / source-vs-rejected-state gates
+
+This means silence is acceptable when the alternative would be fake
+intelligence. It is better for the musician to know "MC-202 has no source phrase
+yet" than to hear a reusable fallback phrase that appears to be product output.
+
 ## Implementation Slices
 
 1. Add a typed `Mc202SourcePhrasePlan` contract.
@@ -119,9 +144,13 @@ render seams.
    - Project a committed source phrase plan into `Mc202RenderState`.
    - Render a bounded step plan instead of fixed primitive shapes when the plan
      is trusted.
-   - Keep primitive MC-202 shapes as explicit fallback and A/B control only.
+   - Keep primitive MC-202 shape labels only as historical compatibility /
+     diagnostic state while removing their hardcoded audible pattern output
+     from product rendering. The musician-facing app projection must not route
+     them as fallback musical output when no source-derived plan exists.
    - Route weak or untrusted candidates to an explicit `stay_out` /
-     `fallback_reason` path instead of filling silence with fake intelligence.
+     `fallback_reason` path and visible unavailable / degraded status instead
+     of filling silence with fake intelligence.
    - RIOTBOX-1268 projects selected scorecards into the source render plan as
      accent/destructive masks plus pressure and contrast scalars. The existing
      MC-202 render seam uses those values for source-only gain, gate, drive,
@@ -140,7 +169,12 @@ render seams.
      makes no phrase-composition decisions.
 
 6. Prove the output path.
-   - Add primitive-vs-source-derived A/B render evidence.
+   - Add rejected-state-vs-source-derived render evidence without generating
+     hardcoded fallback music.
+   - Add no-hidden-fallback gates: if a queued source-backed MC-202 gesture
+     lacks a trusted source-derived render plan, the app projection must be
+     silent or explicitly diagnostic, the runtime view must expose unavailable /
+     degraded status, and QA must not count it as musical output.
    - Gate source phrase-slot alignment, signal delta, static distance,
      cross-source uniqueness, low-band pressure, phrase variation, and
      hook-response restraint.
@@ -248,8 +282,11 @@ neutralized-source, automated, and human listening checks.
 
 - `a`, `P`, and `G` can produce source-derived MC-202 behavior when source
   timing is trusted.
-- Jam / diagnostics distinguish `source-derived`, `primitive fallback`,
+- Jam / diagnostics distinguish `source-derived`, `unavailable / degraded`,
   `timing untrusted`, `stay out`, and `static-collapse rejected`.
+- A musician must be able to tell immediately when MC-202 did not produce a
+  source-derived phrase. The UI/runtime summary must not present primitive
+  fallback as a playable product result.
 - Different sources produce materially different MC-202 phrase plans.
 - The result sounds like source-specific bass pressure or answer motion, not a
   reused midrange question/answer loop.
@@ -285,8 +322,9 @@ not separate product-completion claims:
   winner is selected for impact, source-grid lock, hook restraint, variation,
   and live usefulness.
 - RIOTBOX-1268: source-composed render pressure and destructive contrast on
-  the existing MC-202 audio seam, with primitive shapes kept as fallback /
-  A-B controls only.
+  the existing MC-202 audio seam, with primitive shape labels kept only as
+  compatibility / diagnostic state and hardcoded primitive audio fallback
+  removed from the product render path.
 - RIOTBOX-1269: cross-source diversity and template-collapse QA gates that
   reject identical source-derived claims and feature-independent winners.
 - RIOTBOX-1270: structured listening review and demo-bank promotion gate. This
@@ -299,3 +337,28 @@ not separate product-completion claims:
 - RIOTBOX-1278: real-source corpus listening pack for dense and non-dense
   MC-202 proof.
 - RIOTBOX-1279: producer-grade closeout review and demo-bank promotion gate.
+
+## Global No-Hardcoded-Fallback Follow-ups
+
+The no-hidden-fallback rule applies beyond MC-202. Follow-up slices must remove
+or downgrade these remaining musical fallback surfaces:
+
+- RIOTBOX-1280: W-30 synthetic preview fallback: remove musician-facing fallback preview
+  output and keep unavailable / degraded state unless a committed capture,
+  source window, or artifact-backed pad is available. RIOTBOX-1277 removes the
+  renderer fallback; RIOTBOX-1280 should finish UI copy, observer labels, and
+  any remaining pack/report language. Keep source-vs-control QA comparisons
+  non-product and explicitly labeled.
+- RIOTBOX-1281: Feral-grid / lane-recipe `primitive_renderer` packs: stop treating primitive
+  renderer cases as positive musical output; keep them as non-product regression
+  controls or convert them to source-derived render plans.
+- RIOTBOX-1282: TR-909 primitive support cases: audit kick-pressure / support patterns that
+  report `primitive_renderer` and require source-derived support evidence before
+  they can count as product output.
+- RIOTBOX-1283: scripted professional-output generators: replace `fallback-*` selection
+  strategies with source-derived unavailable / degraded handling, or keep the
+  scripts diagnostic with `quality_proof: false`.
+- RIOTBOX-1284: replay / restore source-plan continuity: action-log-only replay currently
+  degrades MC-202 to silence when it cannot reconstruct a source phrase plan.
+  A later slice must persist or reconstruct source-derived plans through replay
+  instead of relying on any replacement audio.

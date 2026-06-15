@@ -166,9 +166,10 @@ Rules:
 
 - lane ownership of sound generation is clear
 - cross-lane influence happens through explicit control or bus routing, not hidden coupling
-- MC-202 primitive phrase shapes remain the fallback renderer; when Session
-  projects a trusted `source_phrase_plan`, the audio seam renders that bounded
-  step plan instead of leaking a silent or fixed primitive answer shape
+- MC-202 renders only trusted `source_phrase_plan` material on the music bus.
+  Primitive phrase-shape labels may remain compatibility / diagnostic state,
+  but they must not produce hardcoded musical fallback output when no
+  source-derived plan exists.
 
 ---
 

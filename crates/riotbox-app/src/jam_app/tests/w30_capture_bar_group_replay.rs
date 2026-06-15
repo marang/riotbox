@@ -149,7 +149,7 @@ fn snapshot_payload_restore_hydrates_capture_bar_group_artifact_preview_output()
         replayed_pad_playback.sample_count,
     );
     assert_w30_replay_buffers_differ(
-        "capture.bar_group artifact playback -> fallback oscillator",
+        "capture.bar_group artifact playback -> missing-material silence",
         &replayed_buffer,
         &fallback_buffer,
         0.0005,

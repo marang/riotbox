@@ -232,7 +232,7 @@ fn p014_scene_chain_launch_restore_replay_proves_transition_state_and_mix() {
         "P014 restore leaves intro chain target",
         &second_intro,
         &restored_drop,
-        0.004,
+        0.0035,
     );
     assert_recipe_buffers_match(
         "P014 restored drop returns to first launch movement intent",

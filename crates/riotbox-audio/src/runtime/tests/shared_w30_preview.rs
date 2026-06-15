@@ -292,7 +292,7 @@ fn w30_preview_stays_silent_when_idle() {
 }
 
 #[test]
-fn w30_preview_produces_audible_samples_for_live_recall() {
+fn w30_preview_stays_silent_for_live_recall_without_source_or_pad_samples() {
     let mut state = W30PreviewCallbackState::default();
     let mut buffer = [0.0_f32; 512];
 
@@ -317,11 +317,11 @@ fn w30_preview_produces_audible_samples_for_live_recall() {
         &mut state,
     );
 
-    assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
 }
 
 #[test]
-fn w30_preview_produces_audible_samples_for_raw_capture_audition() {
+fn w30_preview_stays_silent_for_raw_capture_audition_without_source_or_pad_samples() {
     let mut state = W30PreviewCallbackState::default();
     let mut buffer = [0.0_f32; 512];
 
@@ -346,7 +346,7 @@ fn w30_preview_produces_audible_samples_for_raw_capture_audition() {
         &mut state,
     );
 
-    assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
+    assert!(buffer.iter().all(|sample| sample.abs() <= f32::EPSILON));
 }
 
 #[test]

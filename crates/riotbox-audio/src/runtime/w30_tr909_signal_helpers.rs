@@ -1,58 +1,5 @@
 use super::*;
 
-pub(super) fn w30_preview_frequency(render: &RealtimeW30PreviewRenderState, step: i64) -> f32 {
-    let base = match render.source_profile {
-        Some(W30PreviewSourceProfile::PinnedRecall) => 196.0,
-        Some(W30PreviewSourceProfile::PromotedRecall) | None => 261.63,
-        Some(W30PreviewSourceProfile::SlicePoolBrowse) => 293.66,
-        Some(W30PreviewSourceProfile::RawCaptureAudition) => 220.0,
-        Some(W30PreviewSourceProfile::PromotedAudition) => 329.63,
-    };
-    let step_offset = match render.source_profile {
-        Some(W30PreviewSourceProfile::PinnedRecall) => {
-            if step.rem_euclid(2) == 0 {
-                -8.0
-            } else {
-                0.0
-            }
-        }
-        Some(W30PreviewSourceProfile::PromotedRecall) | None => match step.rem_euclid(4) {
-            0 => 0.0,
-            1 => 7.0,
-            2 => 12.0,
-            _ => 7.0,
-        },
-        Some(W30PreviewSourceProfile::SlicePoolBrowse) => match step.rem_euclid(3) {
-            0 => 0.0,
-            1 => 5.0,
-            _ => 10.0,
-        },
-        Some(W30PreviewSourceProfile::RawCaptureAudition) => match step.rem_euclid(4) {
-            0 => 0.0,
-            1 => 3.0,
-            2 => 10.0,
-            _ => 5.0,
-        },
-        Some(W30PreviewSourceProfile::PromotedAudition) => match step.rem_euclid(4) {
-            0 => 0.0,
-            1 => 12.0,
-            2 => 19.0,
-            _ => 7.0,
-        },
-    };
-    let grit_offset = render.grit_level.clamp(0.0, 1.0) * 28.0;
-    base + step_offset + grit_offset
-}
-
-pub(super) fn w30_preview_waveform(phase: f32, grit_level: f32) -> f32 {
-    let sine = (std::f32::consts::TAU * phase).sin();
-    let overtone = (std::f32::consts::TAU * phase * 2.0).sin();
-    let grit = grit_level.clamp(0.0, 1.0);
-    let blended = sine * (1.0 - grit * 0.45) + overtone * (0.18 + grit * 0.3);
-    let quant_steps = (24.0 - grit * 18.0).max(4.0);
-    ((blended * quant_steps).round() / quant_steps).clamp(-1.0, 1.0)
-}
-
 pub(super) fn w30_render_gain(
     render: &RealtimeW30PreviewRenderState,
     transport_running: bool,

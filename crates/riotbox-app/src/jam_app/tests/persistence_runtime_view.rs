@@ -84,7 +84,7 @@ fn source_audio_load_failure_surfaces_runtime_warning() {
     assert!(state.source_audio_cache.is_none());
     assert_eq!(
         state.runtime_view.source_monitor_audio_route,
-        "fallback_riotbox"
+        "source_unavailable"
     );
     assert!(
         state
@@ -243,7 +243,10 @@ fn runtime_view_updates_from_audio_and_sidecar_state() {
     assert_eq!(state.runtime_view.sidecar_status, "ready");
     assert_eq!(state.runtime_view.sidecar_version.as_deref(), Some("0.1.0"));
     assert_eq!(state.runtime_view.source_monitor_mode, "blend");
-    assert!(state.runtime_view.runtime_warnings.is_empty());
+    assert!(state.runtime_view.runtime_warnings.iter().any(
+        |warning| warning
+            == "MC-202 source phrase unavailable; primitive fallback is not routed to music_bus_bass"
+    ));
 }
 
 #[test]
@@ -253,7 +256,7 @@ fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
     session.runtime_state.source_monitor.mode = SourceMonitorMode::Source;
     let mut state = JamAppState::from_parts(session, Some(graph), ActionQueue::new());
 
-    assert_eq!(state.runtime_view.source_monitor_audio_route, "fallback_riotbox");
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_unavailable");
 
     state.source_audio_cache = Some(
         SourceAudioCache::from_interleaved_samples(
@@ -278,13 +281,13 @@ fn source_monitor_audio_route_tracks_source_cache_and_output_format() {
         .sample_rate = 48_000;
     state.refresh_view();
 
-    assert_eq!(state.runtime_view.source_monitor_audio_route, "fallback_riotbox");
+    assert_eq!(state.runtime_view.source_monitor_audio_route, "source_unavailable");
     assert!(
         state
             .runtime_view
             .runtime_warnings
             .iter()
-            .any(|warning| warning.contains("source monitor fell back to riotbox output")
+            .any(|warning| warning.contains("source monitor unavailable")
                 && warning.contains("48000 Hz"))
     );
 }
@@ -460,7 +463,8 @@ fn runtime_view_surfaces_mc202_render_diagnostics() {
     );
     assert!(
         state.runtime_view.runtime_warnings.iter().any(
-            |warning| warning == "MC-202 render is active but not routed to music_bus_bass"
+            |warning| warning
+                == "MC-202 source phrase unavailable; primitive fallback is not routed to music_bus_bass"
         )
     );
 }

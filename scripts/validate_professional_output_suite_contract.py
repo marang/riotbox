@@ -210,11 +210,7 @@ def validate_mutation_fixtures(report: dict[str, Any], output: Path) -> list[str
         ),
         (
             "template_only_mc202_case",
-            lambda data: set_first_listening_case_gate_field(
-                data,
-                "primitive_or_template_only",
-                True,
-            ),
+            mark_first_listening_case_template_only_unblocked,
             "mc202_template_only_not_blocked",
         ),
     ]
@@ -305,13 +301,19 @@ def validate_listening_metrics(
             failures,
         )
         gate = object_or_empty(case.get("mc202_source_composed_review_gate"))
+        source_composed = gate.get("source_composed_evidence") is True
+        template_only = gate.get("primitive_or_template_only") is True
+        template_blocked = (
+            gate.get("promotion_blocked_until_human_pass") is True
+            and gate.get("template_only_blocks_promotion") is True
+        )
         require(
-            gate.get("source_composed_evidence") is True,
+            source_composed or (template_only and template_blocked),
             f"{case_id}_mc202_source_composed_evidence_missing",
             failures,
         )
         require(
-            gate.get("primitive_or_template_only") is False,
+            not template_only or template_blocked,
             f"{case_id}_mc202_template_only_not_blocked",
             failures,
         )
@@ -705,6 +707,22 @@ def set_first_listening_case_gate_field(report: dict[str, Any], field: str, valu
     if not isinstance(gate, dict):
         return False
     gate[field] = value
+    return True
+
+
+def mark_first_listening_case_template_only_unblocked(report: dict[str, Any]) -> bool:
+    identity = report.get("listening_identity")
+    if not isinstance(identity, dict):
+        return False
+    cases = identity.get("cases")
+    if not isinstance(cases, list) or not cases or not isinstance(cases[0], dict):
+        return False
+    gate = cases[0].get("mc202_source_composed_review_gate")
+    if not isinstance(gate, dict):
+        return False
+    gate["source_composed_evidence"] = False
+    gate["primitive_or_template_only"] = True
+    gate["template_only_blocks_promotion"] = False
     return True
 
 

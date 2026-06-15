@@ -190,22 +190,15 @@ fn mc202_source_phrase_status(
         .as_ref()
         .is_some_and(|plan| !plan.is_source_derived())
     {
-        return "fallback_rejected";
+        return "source_degraded";
     }
 
-    let Some(role) = session.runtime_state.lane_state.mc202.role else {
-        return "primitive";
+    if session.runtime_state.lane_state.mc202.role.is_none() {
+        return "source_unavailable";
     };
-    if !matches!(
-        role,
-        riotbox_core::session::Mc202RoleState::Answer
-            | riotbox_core::session::Mc202RoleState::Pressure
-    ) {
-        return "primitive";
-    }
 
     let Some(graph) = source_graph else {
-        return "primitive";
+        return "source_unavailable";
     };
     let timing_trusted = session
         .runtime_state
@@ -214,7 +207,7 @@ fn mc202_source_phrase_status(
         .as_ref()
         .is_some_and(|confirmed| confirmed.source_id == graph.source.source_id);
     if timing_trusted {
-        "primitive"
+        "source_unavailable"
     } else {
         "timing_untrusted"
     }
