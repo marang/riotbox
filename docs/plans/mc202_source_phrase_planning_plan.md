@@ -85,6 +85,12 @@ render seams.
      transient / backbeat pressure, offbeat answer space, phrase density,
      hook-restraint pressure, stab bite, stay-out pressure, confidence, and
      provenance as the next composer input contract.
+   - RIOTBOX-1275 moves the candidate-family composer onto that Session
+     source-expression vector. Candidate construction, rejection, scoring,
+     scorecards, groove fallback placement, contour, note-budget, and accent
+     behavior now use bass / answer / transient / hook / bite / stay-out axes
+     instead of each step reinterpreting raw feature heuristics. Static fallback
+     remains an explicit control path, not source-derived musical proof.
    - RIOTBOX-1271 adds source-phrase groove spacing inside the existing
      candidate-family layer: pressure, answer, callback, hook-safe, and pickup
      steps are derived from source timing anchors and phrase evidence before a

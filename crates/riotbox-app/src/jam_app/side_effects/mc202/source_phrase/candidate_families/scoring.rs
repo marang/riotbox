@@ -1,9 +1,6 @@
-use riotbox_core::{
-    session::{
-        Mc202RoleState, Mc202SourcePhraseCandidateFamilyState,
-        Mc202SourcePhraseCandidateScoreState, Mc202SourcePhrasePlanState,
-    },
-    source_graph::Mc202SourcePhraseFeatureVector,
+use riotbox_core::session::{
+    Mc202RoleState, Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseCandidateScoreState,
+    Mc202SourcePhraseExpressionState, Mc202SourcePhrasePlanState,
 };
 
 use super::Mc202SourcePhraseCandidate;
@@ -11,7 +8,7 @@ use super::Mc202SourcePhraseCandidate;
 pub(super) fn candidate_score(
     family: Mc202SourcePhraseCandidateFamilyState,
     role: Mc202RoleState,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
     phrase_memory: f32,
     rejection_reason: Option<&'static str>,
 ) -> f32 {
@@ -21,38 +18,42 @@ pub(super) fn candidate_score(
 
     let base = match family {
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            features.low_band_pressure * 0.52
-                + features.source_strength * 0.28
-                + (1.0 - features.hook_restraint) * 0.10
+            expression.bass_pressure * 0.50
+                + expression.low_pressure_contour * 0.16
+                + expression.phrase_density * 0.16
+                + (1.0 - expression.stay_out_pressure) * 0.10
         }
         Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer => {
-            features.offbeat_density * 0.48
-                + features.transient_density * 0.18
-                + (1.0 - features.hook_restraint).min(0.55) * 0.16
+            expression.offbeat_answer_space * 0.50
+                + expression.transient_backbeat * 0.14
+                + (1.0 - expression.hook_restraint).min(0.55) * 0.14
         }
         Mc202SourcePhraseCandidateFamilyState::CallBackStab => {
-            features.transient_density * 0.42
-                + features.source_strength * 0.26
-                + features.offbeat_density * 0.14
+            expression.transient_backbeat * 0.34
+                + expression.stab_bite * 0.30
+                + expression.offbeat_answer_space * 0.12
         }
         Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer => {
-            features.hook_restraint * 0.44
-                + features.transient_density * 0.14
-                + (1.0 - features.low_band_pressure).max(0.0) * 0.08
+            expression.hook_restraint * 0.42
+                + expression.stab_bite * 0.14
+                + (1.0 - expression.bass_pressure).max(0.0) * 0.08
         }
         Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
-            features.transient_density * 0.44
-                + features.offbeat_density * 0.24
-                + features.source_strength * 0.12
+            expression.transient_backbeat * 0.24
+                + expression.offbeat_answer_space * 0.26
+                + expression.phrase_density * 0.14
+                + expression.stab_bite * 0.08
         }
-        Mc202SourcePhraseCandidateFamilyState::StayOut => 0.10 + features.hook_restraint * 0.30,
+        Mc202SourcePhraseCandidateFamilyState::StayOut => {
+            0.10 + expression.stay_out_pressure * 0.26 + expression.hook_restraint * 0.16
+        }
         Mc202SourcePhraseCandidateFamilyState::FallbackControl => -1.0,
     };
 
     (base
         + role_family_bias(role, family)
         + phrase_memory.clamp(0.0, 1.0) * 0.12
-        + features.confidence.clamp(0.0, 1.0) * 0.08)
+        + expression.confidence.clamp(0.0, 1.0) * 0.08)
         .clamp(0.0, 1.0)
 }
 
@@ -106,7 +107,7 @@ pub(super) fn phrase_memory_rejection_reason(
 
 pub(super) fn candidate_scorecards(
     role: Mc202RoleState,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
     candidates: &[Mc202SourcePhraseCandidate],
     selected_index: usize,
 ) -> Vec<Mc202SourcePhraseCandidateScoreState> {
@@ -119,12 +120,12 @@ pub(super) fn candidate_scorecards(
                 family,
                 selected: index == selected_index,
                 total_score: candidate.score.clamp(0.0, 1.0),
-                low_end_impact: low_end_impact_score(family, features),
-                source_grid_lock: features.confidence.clamp(0.0, 1.0),
-                answer_contrast: answer_contrast_score(family, features),
-                hook_avoidance: hook_avoidance_score(family, features),
+                low_end_impact: low_end_impact_score(family, expression),
+                source_grid_lock: expression.confidence.clamp(0.0, 1.0),
+                answer_contrast: answer_contrast_score(family, expression),
+                hook_avoidance: hook_avoidance_score(family, expression),
                 phrase_memory: candidate.phrase_memory.clamp(0.0, 1.0),
-                destructive_usefulness: destructive_usefulness_score(family, features),
+                destructive_usefulness: destructive_usefulness_score(family, expression),
                 role_fit: (0.50 + role_family_bias(role, family)).clamp(0.0, 1.0),
                 rejection_reason: candidate.rejection_reason.map(str::to_owned),
             }
@@ -157,75 +158,77 @@ fn role_family_bias(role: Mc202RoleState, family: Mc202SourcePhraseCandidateFami
 
 fn low_end_impact_score(
     family: Mc202SourcePhraseCandidateFamilyState,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
 ) -> f32 {
     match family {
-        Mc202SourcePhraseCandidateFamilyState::SubPressureShove => features.low_band_pressure,
+        Mc202SourcePhraseCandidateFamilyState::SubPressureShove => expression.bass_pressure,
         Mc202SourcePhraseCandidateFamilyState::CallBackStab
         | Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
-            features.low_band_pressure * 0.45
+            expression.bass_pressure * 0.45
         }
         Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer
         | Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer
         | Mc202SourcePhraseCandidateFamilyState::StayOut
-        | Mc202SourcePhraseCandidateFamilyState::FallbackControl => {
-            features.low_band_pressure * 0.20
-        }
+        | Mc202SourcePhraseCandidateFamilyState::FallbackControl => expression.bass_pressure * 0.20,
     }
     .clamp(0.0, 1.0)
 }
 
 fn answer_contrast_score(
     family: Mc202SourcePhraseCandidateFamilyState,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
 ) -> f32 {
     match family {
         Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer => {
-            features.offbeat_density * (1.0 - features.hook_restraint * 0.45)
+            expression.offbeat_answer_space * (1.0 - expression.hook_restraint * 0.35)
         }
         Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer => {
-            features.hook_restraint * 0.70 + features.transient_density * 0.15
+            expression.hook_restraint * 0.70 + expression.stab_bite * 0.15
         }
         Mc202SourcePhraseCandidateFamilyState::CallBackStab => {
-            features.transient_density * 0.45 + features.offbeat_density * 0.25
+            expression.transient_backbeat * 0.36 + expression.offbeat_answer_space * 0.25
         }
-        Mc202SourcePhraseCandidateFamilyState::StayOut => features.hook_restraint,
-        _ => features.offbeat_density * 0.20,
+        Mc202SourcePhraseCandidateFamilyState::StayOut => expression.stay_out_pressure,
+        _ => expression.offbeat_answer_space * 0.20,
     }
     .clamp(0.0, 1.0)
 }
 
 fn hook_avoidance_score(
     family: Mc202SourcePhraseCandidateFamilyState,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
 ) -> f32 {
     match family {
         Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer
-        | Mc202SourcePhraseCandidateFamilyState::StayOut => features.hook_restraint,
+        | Mc202SourcePhraseCandidateFamilyState::StayOut => expression.hook_restraint,
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            (1.0 - features.hook_restraint * 0.55).clamp(0.0, 1.0)
+            (1.0 - expression.hook_restraint * 0.55).clamp(0.0, 1.0)
         }
-        _ => (1.0 - features.hook_restraint * 0.35).clamp(0.0, 1.0),
+        _ => (1.0 - expression.hook_restraint * 0.35).clamp(0.0, 1.0),
     }
 }
 
 fn destructive_usefulness_score(
     family: Mc202SourcePhraseCandidateFamilyState,
-    features: &Mc202SourcePhraseFeatureVector,
+    expression: &Mc202SourcePhraseExpressionState,
 ) -> f32 {
     match family {
         Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
-            features.transient_density * 0.70 + features.offbeat_density * 0.20
+            expression.transient_backbeat * 0.56
+                + expression.offbeat_answer_space * 0.18
+                + expression.stab_bite * 0.16
         }
         Mc202SourcePhraseCandidateFamilyState::CallBackStab => {
-            features.transient_density * 0.45 + features.source_strength * 0.25
+            expression.transient_backbeat * 0.40 + expression.stab_bite * 0.26
         }
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            features.low_band_pressure * 0.35 + features.source_strength * 0.20
+            expression.bass_pressure * 0.30 + expression.low_pressure_contour * 0.18
         }
         Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer
         | Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer => {
-            features.offbeat_density * 0.25 + features.transient_density * 0.25
+            expression.offbeat_answer_space * 0.45
+                + expression.stab_bite * 0.24
+                + expression.transient_backbeat * 0.10
         }
         Mc202SourcePhraseCandidateFamilyState::StayOut
         | Mc202SourcePhraseCandidateFamilyState::FallbackControl => 0.0,
