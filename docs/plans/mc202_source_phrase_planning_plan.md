@@ -125,6 +125,12 @@ render seams.
      and rendered buffers, and a neutralized low/transient/hook source must
      downgrade to non-source-derived silence instead of reusing the measured
      phrase template.
+   - RIOTBOX-1270 wires MC-202 source-composed review-gate metadata into the
+     professional output listening pack and demo-bank promotion path. Dense and
+     non-dense MC-202 candidates can enter human listening queues, but
+     `human_verdict: unverified` / `quality_proof: false` remains until a
+     structured review records a verdict, and primitive/template-only MC-202
+     evidence is blocked from demo-bank promotion.
    - Keep scripted or diagnostic artifacts marked `quality_proof: false` and
      `human_verdict: unverified` until structured listening review approves
      them.

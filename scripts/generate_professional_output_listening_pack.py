@@ -13,6 +13,11 @@ from datetime import date
 from pathlib import Path
 
 from audio_qa_evidence_boundary import apply_evidence_boundary
+from mc202_source_composed_review_gate import (
+    MC202_GATE_FIELD,
+    case_gate as mc202_source_composed_case_gate,
+    pack_gate as mc202_source_composed_pack_gate,
+)
 
 
 SCHEMA = "riotbox.professional_output_listening_pack.v1"
@@ -56,6 +61,7 @@ def main() -> int:
         create_review_pack(repo, output, args.ticket, case, label_created_at)
         for case in cases
     ]
+    mc202_gate = mc202_source_composed_pack_gate(review_cases)
     report = {
         "schema": SCHEMA,
         "schema_version": 1,
@@ -63,6 +69,7 @@ def main() -> int:
         "agent_verdict": "agent_promising",
         "human_verdict": "unverified",
         "case_count": len(review_cases),
+        MC202_GATE_FIELD: mc202_gate,
         "cases": review_cases,
     }
     apply_evidence_boundary(
@@ -219,10 +226,14 @@ def create_review_pack(
     review = read_json(review_path)
     source_report_data = read_json(Path(case["source_report"]))
     demo_readiness = demo_readiness_reasons(case, source_report_data)
+    mc202_gate = mc202_source_composed_case_gate(case, source_report_data)
     review["demo_readiness"] = demo_readiness["demo_readiness"]
     review["demo_worthy_reason"] = demo_readiness["demo_worthy_reason"]
     review["not_demo_worthy_reason"] = demo_readiness["not_demo_worthy_reason"]
-    review["audio_judge_label"] = build_audio_judge_label(output, case, label_created_at)
+    review[MC202_GATE_FIELD] = mc202_gate
+    review["audio_judge_label"] = build_audio_judge_label(
+        output, case, label_created_at, mc202_gate
+    )
     review_path.write_text(json.dumps(review, indent=2) + "\n")
     append_demo_readiness_to_prompt(review_dir / "prompt.md", demo_readiness)
     case_summary = {
@@ -233,6 +244,7 @@ def create_review_pack(
         "candidate_sha256": sha256_file(Path(case["candidate"])),
         "human_verdict": review["human_verdict"],
         "review_artifacts": review["artifacts"],
+        MC202_GATE_FIELD: mc202_gate,
     }
     return apply_evidence_boundary(
         case_summary,
@@ -285,7 +297,12 @@ def append_demo_readiness_to_prompt(path: Path, reasons: dict[str, str]) -> None
         handle.write(f"- {reasons['not_demo_worthy_reason']}\n")
 
 
-def build_audio_judge_label(output: Path, case: dict, label_created_at: str) -> dict:
+def build_audio_judge_label(
+    output: Path,
+    case: dict,
+    label_created_at: str,
+    mc202_gate: dict,
+) -> dict:
     source_report = Path(case["source_report"])
     source_report_data = read_json(source_report)
     files = source_report_data["files"]
@@ -320,6 +337,7 @@ def build_audio_judge_label(output: Path, case: dict, label_created_at: str) -> 
             },
         },
         "reason_tags": tags,
+        MC202_GATE_FIELD: mc202_gate,
         "summary": default_label_summary(case["source_family"]),
     }
 

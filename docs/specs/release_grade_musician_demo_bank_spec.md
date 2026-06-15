@@ -99,6 +99,8 @@ Promotion requires:
 
 - artifact identity for the performance report, agent review, source window,
   full-performance WAV, and review prompt
+- MC-202 source-composed review-gate metadata from the professional listening
+  pack when promoting MC-202-backed professional-output candidates
 - source family and source path
 - rendered WAV path and SHA-256
 - metrics/report path and SHA-256
@@ -112,6 +114,14 @@ preserved only as `not_demo_ready` entries with concrete fix categories.
 `unverified` and `inconclusive` reviews must not be promoted into demo-ready
 entries. When `--require-artifact-hashes` is used, stale or missing artifact
 hashes block promotion.
+
+For MC-202-backed professional-output candidates, promotion also requires
+`mc202_source_composed_review_gate.source_composed_evidence == true` and
+`primitive_or_template_only == false`. This prevents a structured review from
+accidentally promoting hardcoded, primitive-renderer, or template-only MC-202
+support as source-composed bass / answer behavior. The gate remains
+`quality_proof: false` inside the listening pack; only a structured human
+verdict can decide demo readiness.
 
 ---
 
