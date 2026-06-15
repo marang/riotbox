@@ -127,6 +127,10 @@ impl Mc202HookResponse {
 pub struct Mc202SourcePhraseRenderPlan {
     pub active_mask: u16,
     pub semitones: [i8; 16],
+    pub accent_mask: u16,
+    pub destructive_mask: u16,
+    pub pressure: f32,
+    pub contrast: f32,
 }
 
 impl Mc202SourcePhraseRenderPlan {
@@ -191,7 +195,10 @@ pub fn render_mc202_buffer(
     let sample_rate = sample_rate.max(1) as f64;
     let tempo_bpm = render.tempo_bpm.max(1.0) as f64;
     let touch = render.touch.clamp(0.0, 1.0);
-    let gain = render.music_bus_level.clamp(0.0, 1.0) * (0.08 + touch * 0.08);
+    let source_pressure = source_phrase_plan.map_or(0.0, |plan| plan.pressure.clamp(0.0, 1.0));
+    let source_contrast = source_phrase_plan.map_or(0.0, |plan| plan.contrast.clamp(0.0, 1.0));
+    let source_gain = 1.0 + source_pressure * 0.55 + source_contrast * 0.20;
+    let gain = render.music_bus_level.clamp(0.0, 1.0) * (0.08 + touch * 0.08) * source_gain;
 
     for frame in 0..buffer.len() / channel_count {
         let beat = render.position_beats + frame as f64 * tempo_bpm / 60.0 / sample_rate;
@@ -211,6 +218,9 @@ pub fn render_mc202_buffer(
         if !within_hook_response(render.hook_response, sixteenth) {
             continue;
         }
+        let destructive_step = source_phrase_plan.is_some_and(|plan| {
+            plan.destructive_mask & (1_u16 << (sixteenth % 16)) != 0
+        });
         let semitone = semitone
             + contour_offset(render.contour_hint, sixteenth)
             + hook_response_offset(render.hook_response, sixteenth);
@@ -220,12 +230,18 @@ pub fn render_mc202_buffer(
             Mc202RenderMode::Instigator => -2.0,
             _ => -5.0,
         };
-        let frequency = 110.0_f64 * 2.0_f64.powf((semitone as f64 + octave_drop) / 12.0);
+        let destructive_pitch_dive = if destructive_step {
+            -10.0 * f64::from(step_phase)
+        } else {
+            0.0
+        };
+        let frequency = 110.0_f64
+            * 2.0_f64.powf((semitone as f64 + octave_drop + destructive_pitch_dive) / 12.0);
 
         let gate_len = match render.phrase_shape {
             Mc202PhraseShape::PressureCell => 0.50,
             Mc202PhraseShape::InstigatorSpike => 0.30,
-            _ if source_phrase_plan.is_some() => 0.56,
+            _ if source_phrase_plan.is_some() => 0.42 + source_contrast * 0.20,
             _ => 0.62,
         };
         if step_phase > gate_len {
@@ -233,7 +249,12 @@ pub fn render_mc202_buffer(
         }
 
         let env = (1.0 - step_phase / gate_len).powf(1.8);
-        let accent = if sixteenth.is_multiple_of(8) {
+        let source_accent = source_phrase_plan.is_some_and(|plan| {
+            plan.accent_mask & (1_u16 << (sixteenth % 16)) != 0
+        });
+        let accent = if source_accent {
+            1.18 + touch * 0.45 + source_pressure * 0.45
+        } else if sixteenth.is_multiple_of(8) {
             1.0 + touch * 0.55
         } else if sixteenth % 4 == 2 {
             1.0 + touch * 0.25
@@ -245,7 +266,13 @@ pub fn render_mc202_buffer(
         let saw = (phase as f32 * 2.0) - 1.0;
         let pulse = if phase < 0.42 { 1.0 } else { -1.0 };
         let bite = (saw * (0.58 + touch * 0.25)) + (pulse * (0.24 + touch * 0.18));
-        let sample = (bite * env * accent * gain).tanh();
+        let drive = 1.0 + source_pressure * 1.15 + source_contrast * 0.55;
+        let cut = if destructive_step && step_phase > 0.70 {
+            (1.0 - (step_phase - 0.70) / 0.30).clamp(0.0, 1.0)
+        } else {
+            1.0
+        };
+        let sample = (bite * drive * env * accent * gain * cut).tanh();
 
         for channel in 0..channel_count {
             buffer[frame * channel_count + channel] += sample;

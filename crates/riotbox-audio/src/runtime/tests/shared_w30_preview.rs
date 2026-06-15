@@ -118,6 +118,10 @@ fn shared_mc202_render_state_clears_source_phrase_plan() {
         source_phrase_plan: Some(Mc202SourcePhraseRenderPlan {
             active_mask: 0b0000_0000_0000_1010,
             semitones: [0, 7, 0, -5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            accent_mask: 0b0000_0000_0000_0010,
+            destructive_mask: 0b0000_0000_0000_1000,
+            pressure: 0.72,
+            contrast: 0.48,
         }),
         ..Mc202RenderState::default()
     };

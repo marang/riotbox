@@ -3,7 +3,7 @@ use std::collections::BTreeMap;
 use riotbox_audio::{
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202NoteBudget, Mc202PhraseShape, Mc202RenderMode,
-        Mc202RenderRouting, Mc202RenderState, Mc202SourcePhraseRenderPlan,
+        Mc202RenderRouting, Mc202RenderState,
     },
     source_audio::{SourceAudioCache, SourceAudioWindow},
     tr909::{
@@ -36,6 +36,10 @@ use riotbox_core::{
     },
     transport::TransportClockState,
 };
+
+mod source_phrase_render;
+
+use source_phrase_render::mc202_source_phrase_render_plan;
 
 fn audio_tr909_render_mode(mode: Tr909RenderModePolicy) -> Tr909RenderMode {
     match mode {
@@ -271,26 +275,6 @@ fn mc202_routing_for_role_and_source_plan(
     }
 
     mc202_routing_for_role(role)
-}
-
-fn mc202_source_phrase_render_plan(
-    source_plan: Option<&riotbox_core::session::Mc202SourcePhrasePlanState>,
-) -> Option<Mc202SourcePhraseRenderPlan> {
-    let source_plan = source_plan.filter(|plan| plan.is_source_derived())?;
-    let mut active_mask = 0_u16;
-    let mut semitones = [0_i8; 16];
-    for (index, cell) in source_plan.rhythm_cells.iter().enumerate() {
-        let Some(semitone) = cell else {
-            continue;
-        };
-        active_mask |= 1_u16 << index;
-        semitones[index] = *semitone;
-    }
-
-    (active_mask != 0).then_some(Mc202SourcePhraseRenderPlan {
-        active_mask,
-        semitones,
-    })
 }
 
 fn mc202_note_budget_from_source_plan(
