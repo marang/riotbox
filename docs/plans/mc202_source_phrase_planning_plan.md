@@ -80,6 +80,11 @@ render seams.
      generated count, selected family, rejected count, and provenance are stored
      in `lane_state.mc202.source_phrase_plan`. `fallback_control` remains
      labeled as a rejected control and cannot satisfy source-derived proof.
+   - RIOTBOX-1271 adds source-phrase groove spacing inside the existing
+     candidate-family layer: pressure, answer, callback, hook-safe, and pickup
+     steps are derived from source timing anchors and phrase evidence before a
+     family writes its 16-step cell plan. This keeps MC-202 placement tied to
+     Source Graph evidence instead of only fixed offsets plus feature buckets.
 
 4. Score and commit one plan through the existing action path.
    - Prefer source-grid lock, low-end impact, answer contrast, hook avoidance,
