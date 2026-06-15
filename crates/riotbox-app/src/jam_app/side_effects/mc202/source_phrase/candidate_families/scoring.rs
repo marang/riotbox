@@ -98,7 +98,10 @@ pub(super) fn phrase_memory_rejection_reason(
     {
         return None;
     }
-    (candidate.phrase_memory < 0.12).then_some("phrase_memory_static_repeat")
+    if candidate.phrase_memory < 0.12 {
+        return Some("phrase_memory_static_repeat");
+    }
+    (candidate.phrase_memory < 0.35).then_some("phrase_memory_too_close_to_previous")
 }
 
 pub(super) fn candidate_scorecards(

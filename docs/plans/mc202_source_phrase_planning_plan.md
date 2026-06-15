@@ -98,6 +98,11 @@ render seams.
      destructive usefulness, role fit, selected flag, and rejection reason, so
      QA can explain why a source-backed phrase won or why stay-out/control
      material was rejected.
+   - RIOTBOX-1272 tightens phrase-memory selection for repeated live triggers:
+     candidates that are too close to the previous source-derived plan are
+     rejected with explicit phrase-memory reasons, selected memory distance is
+     stored in provenance, and repeated commits must produce a changed plan /
+     render or an explicit fallback/stay-out reason.
 
 5. Render source-derived plans on the existing MC-202 audio seam.
    - Project a committed source phrase plan into `Mc202RenderState`.

@@ -285,6 +285,10 @@ fn candidate_provenance_refs(
         selected.score.clamp(0.0, 1.0)
     ));
     refs.push(format!(
+        "phrase_memory_selected_distance:{:.3}",
+        selected.phrase_memory.clamp(0.0, 1.0)
+    ));
+    refs.push(format!(
         "candidate_source_features:low={:.3}:transient={:.3}:offbeat={:.3}:hook={:.3}:strength={:.3}",
         features.low_band_pressure,
         features.transient_density,
