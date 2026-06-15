@@ -1178,4 +1178,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 Level 2 source feature vector for phrase planning
 - [RIOTBOX-1265.md](./RIOTBOX-1265.md)
   MC-202 measured source phrase evidence from real audio
+- [RIOTBOX-1266.md](./RIOTBOX-1266.md)
+  MC-202 source-backed candidate families
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
