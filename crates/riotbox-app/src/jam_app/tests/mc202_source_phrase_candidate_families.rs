@@ -243,6 +243,133 @@ fn committed_mc202_answer_changes_or_rejects_candidates_when_measured_audio_is_r
     );
 }
 
+#[test]
+fn committed_mc202_answer_places_sparse_answer_from_source_answer_slot() {
+    let mut early_answer_graph =
+        source_phrase_test_graph("src-answer-early", "hash-answer-groove", 132.0, 53, 2);
+    add_phrase_audio_features(
+        &mut early_answer_graph,
+        2,
+        0.12,
+        0.20,
+        0.18,
+        0.36,
+        0.78,
+        0.30,
+        0.18,
+        0.15,
+    );
+    set_source_phrase_anchors(
+        &mut early_answer_graph,
+        &[
+            (SourceTimingAnchorType::Kick, 8, 32, 0.94),
+            (SourceTimingAnchorType::Backbeat, 8, 34, 0.88),
+            (SourceTimingAnchorType::AnswerSlot, 8, 33, 0.97),
+        ],
+    );
+    let mut late_answer_graph = early_answer_graph.clone();
+    late_answer_graph.source.source_id = SourceId::from("src-answer-late");
+    late_answer_graph.source.content_hash = "hash-answer-groove-late".into();
+    late_answer_graph.provenance.source_hash = "hash-answer-groove-late".into();
+    set_source_phrase_anchors(
+        &mut late_answer_graph,
+        &[
+            (SourceTimingAnchorType::Kick, 8, 32, 0.94),
+            (SourceTimingAnchorType::Backbeat, 8, 34, 0.88),
+            (SourceTimingAnchorType::AnswerSlot, 8, 35, 0.97),
+        ],
+    );
+    let mut early_state = confirmed_source_phrase_state(early_answer_graph);
+    let mut late_state = confirmed_source_phrase_state(late_answer_graph);
+
+    commit_source_derived_answer(&mut early_state);
+    commit_source_derived_answer(&mut late_state);
+    let early_plan = early_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("early source-answer plan");
+    let late_plan = late_state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("late source-answer plan");
+
+    assert_eq!(
+        early_plan.candidate_family,
+        Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer)
+    );
+    assert_eq!(
+        late_plan.candidate_family,
+        Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer)
+    );
+    assert_eq!(provenance_step(early_plan, "groove_answer_step"), 4);
+    assert_eq!(provenance_step(late_plan, "groove_answer_step"), 12);
+    assert_eq!(early_plan.rhythm_cells[4], Some(5), "{early_plan:?}");
+    assert_eq!(late_plan.rhythm_cells[12], Some(5), "{late_plan:?}");
+    assert_ne!(early_plan.rhythm_cells, late_plan.rhythm_cells);
+}
+
+#[test]
+fn committed_mc202_hook_restraint_ghost_answer_avoids_downbeat_template_slots() {
+    let mut graph = source_phrase_test_graph("src-hook-restraint", "hash-hook-restraint", 134.0, 59, 2);
+    graph.sections[0].label_hint = SectionLabelHint::Chorus;
+    graph.sections[0].tags = vec!["hook".into(), "vocal".into()];
+    add_phrase_audio_features(
+        &mut graph,
+        2,
+        0.07,
+        0.12,
+        0.05,
+        0.62,
+        0.22,
+        0.34,
+        0.50,
+        0.86,
+    );
+    set_source_phrase_anchors(
+        &mut graph,
+        &[
+            (SourceTimingAnchorType::Kick, 8, 32, 0.96),
+            (SourceTimingAnchorType::Backbeat, 8, 34, 0.92),
+        ],
+    );
+    let mut state = confirmed_source_phrase_state(graph);
+
+    commit_source_derived_answer(&mut state);
+    let plan = state
+        .session
+        .runtime_state
+        .lane_state
+        .mc202
+        .source_phrase_plan
+        .as_ref()
+        .expect("hook-restraint source-answer plan");
+    let hook_safe_step = provenance_step(plan, "groove_hook_safe_step");
+
+    assert_eq!(
+        plan.candidate_family,
+        Some(Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer)
+    );
+    assert_ne!(hook_safe_step, 0, "{plan:?}");
+    assert_ne!(hook_safe_step, 8, "{plan:?}");
+    assert!(plan.rhythm_cells[0].is_none(), "{plan:?}");
+    assert!(plan.rhythm_cells[8].is_none(), "{plan:?}");
+    assert!(
+        plan.rhythm_cells
+            .iter()
+            .enumerate()
+            .any(|(step, cell)| step == hook_safe_step && cell.is_some()),
+        "{plan:?}"
+    );
+}
+
 #[allow(clippy::too_many_arguments)]
 fn add_phrase_audio_features(
     graph: &mut SourceGraph,
@@ -273,4 +400,61 @@ fn add_phrase_audio_features(
         confidence: 0.92,
         provenance_refs: vec!["mc202.test.phrase-audio-features".into()],
     }];
+}
+
+fn set_source_phrase_anchors(
+    graph: &mut SourceGraph,
+    anchors: &[(SourceTimingAnchorType, u32, u32, f32)],
+) {
+    graph.timing.primary_hypothesis_id = Some("primary-mc202-groove".into());
+    graph.timing.hypotheses = vec![TimingHypothesis {
+        hypothesis_id: "primary-mc202-groove".into(),
+        kind: TimingHypothesisKind::Primary,
+        bpm: graph.timing.bpm_estimate.unwrap_or(132.0),
+        meter: MeterHint {
+            beats_per_bar: 4,
+            beat_unit: 4,
+        },
+        confidence: 0.94,
+        score: 0.94,
+        beat_grid: Vec::new(),
+        bar_grid: Vec::new(),
+        phrase_grid: graph.timing.phrase_grid.clone(),
+        anchors: anchors
+            .iter()
+            .enumerate()
+            .map(|(index, (anchor_type, bar_index, beat_index, strength))| {
+                riotbox_core::source_graph::SourceTimingAnchor {
+                    anchor_id: format!("mc202-groove-anchor-{index}"),
+                    anchor_type: *anchor_type,
+                    time_seconds: *beat_index as f32 * 0.45,
+                    bar_index: Some(*bar_index),
+                    beat_index: Some(*beat_index),
+                    confidence: 0.94,
+                    strength: *strength,
+                    tags: vec!["mc202_groove_test".into()],
+                }
+            })
+            .collect(),
+        drift: Vec::new(),
+        groove: Vec::new(),
+        quality: TimingQuality::High,
+        warnings: Vec::new(),
+        provenance: vec!["mc202.test.groove-anchors".into()],
+    }];
+}
+
+fn provenance_step(
+    plan: &riotbox_core::session::Mc202SourcePhrasePlanState,
+    prefix: &str,
+) -> usize {
+    plan.candidate_provenance_refs
+        .iter()
+        .find_map(|reference| {
+            reference
+                .strip_prefix(prefix)
+                .and_then(|value| value.strip_prefix(':'))
+                .and_then(|value| value.parse::<usize>().ok())
+        })
+        .unwrap_or_else(|| panic!("missing {prefix} provenance in {plan:?}"))
 }

@@ -68,8 +68,8 @@ use riotbox_core::{
         AnalysisSummary, AnalysisWarning, Asset, AssetType, Candidate, CandidateType,
         DecodeProfile, EnergyClass, GraphProvenance, MeterHint, QualityClass, Relationship,
         PhraseAudioFeatures, RelationshipType, Section, SectionLabelHint, SourceDescriptor, SourceGraph,
-        SourceGraphVersion, TimingDegradedPolicy, TimingHypothesis, TimingHypothesisKind,
-        TimingQuality,
+        SourceGraphVersion, SourceTimingAnchorType, TimingDegradedPolicy, TimingHypothesis,
+        TimingHypothesisKind, TimingQuality,
     },
     transport::{CommitBoundaryState, TransportClockState},
     view::jam::{

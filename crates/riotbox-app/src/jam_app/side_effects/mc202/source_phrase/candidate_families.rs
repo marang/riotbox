@@ -8,12 +8,14 @@ use riotbox_core::{
 };
 
 use super::{
-    Mc202SourcePhraseFingerprint, add_source_phrase_accent, feature_step,
-    source_phrase_contour_offset, source_phrase_fingerprint, source_phrase_note_budget,
+    add_source_phrase_accent, source_phrase_contour_offset, source_phrase_fingerprint,
+    source_phrase_note_budget,
 };
 
+mod groove_map;
 mod scoring;
 
+use groove_map::SourcePhraseGrooveMap;
 use scoring::{
     candidate_score, candidate_scorecards, phrase_memory_distance, phrase_memory_rejection_reason,
 };
@@ -48,41 +50,42 @@ pub(super) fn choose_source_phrase_candidate(
 ) -> Mc202SourcePhraseCandidateSelection {
     let contour = source_phrase_contour_offset(section, features);
     let fingerprint = source_phrase_fingerprint(graph, section, phrase_slot);
+    let groove = SourcePhraseGrooveMap::from_graph(graph, phrase_slot, features, fingerprint);
     let mut candidates = [
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::SubPressureShove,
             features,
-            fingerprint,
+            groove,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer,
             features,
-            fingerprint,
+            groove,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::CallBackStab,
             features,
-            fingerprint,
+            groove,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer,
             features,
-            fingerprint,
+            groove,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator,
             features,
-            fingerprint,
+            groove,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::StayOut,
             features,
-            fingerprint,
+            groove,
         ),
         build_candidate(
             Mc202SourcePhraseCandidateFamilyState::FallbackControl,
             features,
-            fingerprint,
+            groove,
         ),
     ];
 
@@ -139,7 +142,7 @@ pub(super) fn choose_source_phrase_candidate(
         candidate_family: family,
         candidate_count,
         rejected_candidate_count,
-        provenance_refs: candidate_provenance_refs(features, &candidates, selected_index),
+        provenance_refs: candidate_provenance_refs(features, groove, &candidates, selected_index),
         scorecards: candidate_scorecards(role, features, &candidates, selected_index),
         phrase_memory_distance: candidates[selected_index].phrase_memory,
         fallback_reason: candidate_fallback_reason(family, selected_rejection_reason),
@@ -149,62 +152,50 @@ pub(super) fn choose_source_phrase_candidate(
 fn build_candidate(
     family: Mc202SourcePhraseCandidateFamilyState,
     features: &Mc202SourcePhraseFeatureVector,
-    fingerprint: Mc202SourcePhraseFingerprint,
+    groove: SourcePhraseGrooveMap,
 ) -> Mc202SourcePhraseCandidate {
     let rejection_reason = candidate_rejection_reason(family, features);
     let mut cells = [None; 16];
 
     match family {
         Mc202SourcePhraseCandidateFamilyState::SubPressureShove => {
-            cells[feature_step(features.low_band_pressure, fingerprint.step_rotation, 0)] =
-                Some(-12);
-            cells[feature_step(features.source_strength, fingerprint.accent_step, 8)] =
-                Some(if features.low_band_pressure > 0.72 {
-                    -15
-                } else {
-                    -10
-                });
+            cells[groove.pressure_step] = Some(-12);
+            cells[groove.secondary_pressure_step()] = Some(if features.low_band_pressure > 0.72 {
+                -15
+            } else {
+                -10
+            });
             if features.offbeat_density > 0.38 {
-                cells[feature_step(features.offbeat_density, fingerprint.accent_step, 5)] =
-                    Some(-7);
+                cells[groove.answer_step] = Some(-7);
             }
         }
         Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer => {
-            cells[feature_step(
-                features.offbeat_density.max(0.25),
-                fingerprint.accent_step,
-                3,
-            )] = Some(if features.hook_restraint > 0.62 { 7 } else { 5 });
+            cells[groove.answer_step] = Some(if features.hook_restraint > 0.62 { 7 } else { 5 });
             if features.transient_density > 0.35 {
-                cells[feature_step(features.transient_density, fingerprint.step_rotation, 10)] =
-                    Some(3);
+                cells[groove.backbeat_answer_step()] = Some(3);
             }
             if features.low_band_pressure > 0.64 && features.hook_restraint < 0.70 {
-                cells[feature_step(features.low_band_pressure, fingerprint.accent_step, 13)] =
-                    Some(0);
+                cells[groove.secondary_pressure_step()] = Some(0);
             }
         }
         Mc202SourcePhraseCandidateFamilyState::CallBackStab => {
-            cells[feature_step(features.transient_density, fingerprint.accent_step, 2)] = Some(0);
-            cells[feature_step(features.source_strength, fingerprint.step_rotation, 9)] = Some(5);
+            cells[groove.callback_step] = Some(0);
+            cells[groove.callback_tail_step()] = Some(5);
             if features.offbeat_density > 0.32 {
-                cells[feature_step(features.offbeat_density, fingerprint.accent_step, 12)] =
-                    Some(7);
+                cells[groove.answer_tail_step()] = Some(7);
             }
         }
         Mc202SourcePhraseCandidateFamilyState::HookRestraintGhostAnswer => {
-            cells[feature_step(features.hook_restraint, fingerprint.accent_step, 11)] = Some(7);
+            cells[groove.hook_safe_step] = Some(7);
             if features.transient_density > 0.52 {
-                cells[feature_step(features.transient_density, fingerprint.step_rotation, 15)] =
-                    Some(12);
+                cells[groove.hook_safe_step.wrapping_add(3) % 16] = Some(12);
             }
         }
         Mc202SourcePhraseCandidateFamilyState::FillPickupInstigator => {
-            cells[feature_step(features.transient_density, fingerprint.accent_step, 14)] = Some(19);
-            cells[feature_step(features.offbeat_density, fingerprint.step_rotation, 6)] = Some(24);
+            cells[groove.fill_pickup_step] = Some(19);
+            cells[groove.answer_step] = Some(24);
             if features.low_band_pressure > 0.55 {
-                cells[feature_step(features.low_band_pressure, fingerprint.accent_step, 0)] =
-                    Some(12);
+                cells[groove.pressure_step] = Some(12);
             }
         }
         Mc202SourcePhraseCandidateFamilyState::StayOut => {}
@@ -282,6 +273,7 @@ fn candidate_note_budget(
 
 fn candidate_provenance_refs(
     features: &Mc202SourcePhraseFeatureVector,
+    groove: SourcePhraseGrooveMap,
     candidates: &[Mc202SourcePhraseCandidate],
     selected_index: usize,
 ) -> Vec<String> {
@@ -300,6 +292,7 @@ fn candidate_provenance_refs(
         features.hook_restraint,
         features.source_strength
     ));
+    refs.extend(groove.provenance_refs());
 
     refs.extend(
         features
