@@ -33,6 +33,10 @@ pub struct Mc202SourcePhrasePlanState {
     #[serde(default)]
     pub candidate_provenance_refs: Vec<String>,
     #[serde(default)]
+    pub candidate_scorecards: Vec<Mc202SourcePhraseCandidateScoreState>,
+    #[serde(default)]
+    pub phrase_memory_distance: f32,
+    #[serde(default)]
     pub fallback_reason: Option<String>,
 }
 
@@ -44,6 +48,22 @@ impl Mc202SourcePhrasePlanState {
             .is_none_or(Mc202SourcePhraseCandidateFamilyState::is_source_derived);
         self.fallback_reason.is_none() && family_is_source_derived
     }
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct Mc202SourcePhraseCandidateScoreState {
+    pub family: Mc202SourcePhraseCandidateFamilyState,
+    pub selected: bool,
+    pub total_score: f32,
+    pub low_end_impact: f32,
+    pub source_grid_lock: f32,
+    pub answer_contrast: f32,
+    pub hook_avoidance: f32,
+    pub phrase_memory: f32,
+    pub destructive_usefulness: f32,
+    pub role_fit: f32,
+    #[serde(default)]
+    pub rejection_reason: Option<String>,
 }
 
 #[derive(Copy, Clone, Debug, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

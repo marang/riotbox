@@ -88,6 +88,11 @@ render seams.
      low-band pressure, source-grid drift, hook-doubling downbeats, and polite
      midrange question/answer loops that do not change the room.
    - Commit the chosen plan through current MC-202 queue / commit semantics.
+   - RIOTBOX-1267 stores candidate scorecards in Session with low-end impact,
+     source-grid lock, answer contrast, hook avoidance, phrase-memory distance,
+     destructive usefulness, role fit, selected flag, and rejection reason, so
+     QA can explain why a source-backed phrase won or why stay-out/control
+     material was rejected.
 
 5. Render source-derived plans on the existing MC-202 audio seam.
    - Project a committed source phrase plan into `Mc202RenderState`.
