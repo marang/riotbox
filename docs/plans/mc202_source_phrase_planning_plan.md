@@ -76,6 +76,10 @@ render seams.
    - Treat static templates as seed material only. A candidate that can be
      reproduced without the source feature vector is a fallback/control, not a
      source-derived phrase.
+   - RIOTBOX-1266 implements the first replayable candidate-family layer:
+     generated count, selected family, rejected count, and provenance are stored
+     in `lane_state.mc202.source_phrase_plan`. `fallback_control` remains
+     labeled as a rejected control and cannot satisfy source-derived proof.
 
 4. Score and commit one plan through the existing action path.
    - Prefer source-grid lock, low-end impact, answer contrast, hook avoidance,

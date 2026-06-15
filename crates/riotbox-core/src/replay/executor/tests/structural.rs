@@ -3,8 +3,8 @@ use crate::{
     action::{ActionReplayCoverage, CaptureLengthIntent, GhostMode, SourceMonitorMode},
     replay::{build_committed_replay_plan, build_replay_target_plan},
     session::{
-        Mc202RoleState, Mc202SourcePhraseNoteBudgetState, Mc202SourcePhrasePlanState,
-        Mc202SourcePhraseSlotState, SessionFile,
+        Mc202RoleState, Mc202SourcePhraseCandidateFamilyState, Mc202SourcePhraseNoteBudgetState,
+        Mc202SourcePhrasePlanState, Mc202SourcePhraseSlotState, SessionFile,
     },
 };
 
@@ -154,6 +154,10 @@ fn source_phrase_plan(source_id: &str) -> Mc202SourcePhrasePlanState {
         note_budget: Mc202SourcePhraseNoteBudgetState::Sparse,
         touch: 0.82,
         confidence: 0.86,
+        candidate_family: Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer),
+        candidate_count: 3,
+        rejected_candidate_count: 1,
+        candidate_provenance_refs: vec!["candidate_family:sparse_offbeat_answer".into()],
         fallback_reason: None,
     }
 }
