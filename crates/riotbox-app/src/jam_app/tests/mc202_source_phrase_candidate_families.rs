@@ -85,8 +85,8 @@ fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() 
     );
     let mut state = confirmed_source_phrase_state(graph);
 
-    commit_source_derived_answer(&mut state);
-    let first_memory = state
+    let first_render = commit_source_derived_answer(&mut state);
+    let first_plan = state
         .session
         .runtime_state
         .lane_state
@@ -94,8 +94,9 @@ fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() 
         .source_phrase_plan
         .as_ref()
         .expect("first candidate plan")
-        .phrase_memory_distance;
-    commit_source_derived_answer(&mut state);
+        .clone();
+    let first_memory = first_plan.phrase_memory_distance;
+    let second_render = commit_source_derived_answer(&mut state);
     let second_plan = state
         .session
         .runtime_state
@@ -112,9 +113,37 @@ fn committed_mc202_answer_scorecards_record_phrase_memory_after_previous_plan() 
 
     assert!(first_memory > 0.90, "{first_memory}");
     assert!(second_plan.phrase_memory_distance < 1.0, "{second_plan:?}");
+    assert!(
+        second_plan.candidate_family != first_plan.candidate_family
+            || second_plan.rhythm_cells != first_plan.rhythm_cells
+            || second_plan.fallback_reason.is_some(),
+        "repeated live trigger reused the previous MC-202 source phrase without variation: first={first_plan:?} second={second_plan:?}"
+    );
     assert_eq!(
         selected_score.phrase_memory,
         second_plan.phrase_memory_distance
+    );
+    assert!(
+        second_plan
+            .candidate_provenance_refs
+            .iter()
+            .any(|reference| reference.starts_with("phrase_memory_selected_distance:")),
+        "{second_plan:?}"
+    );
+    assert!(
+        second_plan.candidate_scorecards.iter().any(|score| {
+            matches!(
+                score.rejection_reason.as_deref(),
+                Some("phrase_memory_static_repeat")
+                    | Some("phrase_memory_too_close_to_previous")
+            )
+        }),
+        "{second_plan:?}"
+    );
+    let render_delta = signal_delta_metrics(&first_render, &second_render);
+    assert!(
+        render_delta.rms > 0.0005,
+        "repeated live trigger did not materially change MC-202 render: {render_delta:?}"
     );
 }
 
