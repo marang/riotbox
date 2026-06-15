@@ -1192,4 +1192,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 source phrase groove spacing from transient and hook evidence
 - [RIOTBOX-1272.md](./RIOTBOX-1272.md)
   MC-202 phrase memory variation for repeated live triggers
+- [RIOTBOX-1273.md](./RIOTBOX-1273.md)
+  MC-202 source phrase render articulation for bass pressure vs answer stabs
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
