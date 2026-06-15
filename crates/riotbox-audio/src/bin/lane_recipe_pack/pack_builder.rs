@@ -12,7 +12,7 @@ use riotbox_audio::{
     },
     mc202::{
         Mc202ContourHint, Mc202HookResponse, Mc202PhraseShape, Mc202RenderMode, Mc202RenderRouting,
-        Mc202RenderState,
+        Mc202RenderState, Mc202SourcePhraseRenderPlan,
     },
     runtime::{
         OfflineAudioMetrics, render_mc202_offline, render_tr909_offline, signal_metrics,
@@ -328,7 +328,7 @@ fn pack_cases() -> Vec<PackCase> {
             },
             min_rms_delta: 0.0001,
             min_signal_delta_rms: 0.004,
-            note: "This proves the `P` pressure gesture renders a sparse offbeat pressure cell instead of the follower drive pattern.",
+            note: "This proves the `P` pressure gesture changes a source-backed MC-202 render plan instead of relying on a primitive pattern.",
         },
         PackCase {
             id: "mc202-follower-to-instigator",
@@ -350,7 +350,7 @@ fn pack_cases() -> Vec<PackCase> {
             },
             min_rms_delta: 0.0001,
             min_signal_delta_rms: 0.008,
-            note: "This proves the `I` instigate gesture renders a sharper high-register shove instead of the follower drive pattern.",
+            note: "This proves the `I` instigate gesture changes a source-backed MC-202 render plan toward a sharper high-register shove.",
         },
         PackCase {
             id: "mc202-follower-to-mutated-drive",
@@ -372,7 +372,7 @@ fn pack_cases() -> Vec<PackCase> {
             },
             min_rms_delta: 0.0001,
             min_signal_delta_rms: 0.005,
-            note: "This proves the `G` phrase mutation gesture produces a different rendered phrase, not an identical fallback tone at similar loudness.",
+            note: "This proves the `G` phrase mutation gesture produces a different source-backed rendered phrase, not an identical placeholder tone.",
         },
         PackCase {
             id: "mc202-neutral-to-lift-contour",

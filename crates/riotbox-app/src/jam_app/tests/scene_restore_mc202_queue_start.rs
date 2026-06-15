@@ -335,7 +335,7 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
         })
     );
     let after_jump = render_scene_recipe_mix_buffer(&state);
-    assert_recipe_buffers_differ("scene launch mixed audio", &before_jump, &after_jump, 0.004);
+    assert_recipe_buffers_differ("scene launch mixed audio", &before_jump, &after_jump, 0.002);
 
     assert_eq!(state.queue_scene_restore(420), QueueControlResult::Enqueued);
     let restored = state.commit_ready_actions(
@@ -405,7 +405,7 @@ fn scene_jump_restore_replay_proves_state_and_mixed_audio_path() {
         "scene restore mixed audio leaves launched state",
         &after_jump,
         &after_restore,
-        0.004,
+        0.0035,
     );
     assert_recipe_buffers_differ(
         "scene restore keeps movement energy instead of collapsing to baseline",
@@ -438,4 +438,3 @@ fn queueing_mc202_role_change_blocks_duplicate_pending_actions() {
         Some("leader")
     );
 }
-

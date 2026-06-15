@@ -233,7 +233,7 @@ fn focused_w30_pad_trigger_uses_capture_artifact_preview_when_source_cache_unava
     let fallback_buffer =
         render_w30_preview_offline(&fallback_preview, 48_000, 2, pad_playback.sample_count);
     assert_recipe_buffers_differ(
-        "artifact-backed W-30 pad playback vs fallback preview",
+        "artifact-backed W-30 pad playback vs missing-material silence",
         &artifact_buffer,
         &fallback_buffer,
         0.001,

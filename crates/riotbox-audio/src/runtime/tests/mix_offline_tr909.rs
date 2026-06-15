@@ -30,7 +30,7 @@ fn render_mix_buffer_includes_live_mc202_bass_seam() {
             note_budget: Mc202NoteBudget::Balanced,
             contour_hint: Mc202ContourHint::Neutral,
             hook_response: Mc202HookResponse::Direct,
-            source_phrase_plan: None,
+            source_phrase_plan: Some(mc202_source_plan()),
             touch: 0.78,
             music_bus_level: 0.64,
             is_transport_running: true,
@@ -100,7 +100,7 @@ fn offline_tr909_render_produces_reviewable_metrics_for_fill() {
 }
 
 #[test]
-fn offline_mc202_render_keeps_answer_intent_silent_until_source_phrase_exists() {
+fn offline_mc202_render_stays_silent_until_source_phrase_exists() {
     let follower = render_mc202_offline(
         &Mc202RenderState {
             mode: Mc202RenderMode::Follower,
@@ -134,18 +134,20 @@ fn offline_mc202_render_keeps_answer_intent_silent_until_source_phrase_exists() 
     let follower_metrics = signal_metrics(&follower);
     let answer_metrics = signal_metrics(&answer);
 
-    assert!(follower_metrics.active_samples > 10_000);
+    assert_eq!(follower_metrics.active_samples, 0);
+    assert_eq!(follower_metrics.rms, 0.0);
     assert_eq!(answer_metrics.active_samples, 0);
     assert_eq!(answer_metrics.rms, 0.0);
 }
 
 #[test]
-fn offline_mc202_render_produces_distinct_instigator_metrics() {
+fn offline_mc202_render_produces_distinct_source_backed_instigator_metrics() {
     let follower = render_mc202_offline(
         &Mc202RenderState {
             mode: Mc202RenderMode::Follower,
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::FollowerDrive,
+            source_phrase_plan: Some(mc202_source_plan()),
             touch: 0.78,
             is_transport_running: true,
             tempo_bpm: 128.0,
@@ -161,6 +163,7 @@ fn offline_mc202_render_produces_distinct_instigator_metrics() {
             mode: Mc202RenderMode::Instigator,
             routing: Mc202RenderRouting::MusicBusBass,
             phrase_shape: Mc202PhraseShape::InstigatorSpike,
+            source_phrase_plan: Some(mc202_source_plan()),
             touch: 0.90,
             is_transport_running: true,
             tempo_bpm: 128.0,
@@ -187,6 +190,20 @@ fn offline_mc202_render_produces_distinct_instigator_metrics() {
         delta_rms > 0.010,
         "instigator offline delta RMS {delta_rms}"
     );
+}
+
+fn mc202_source_plan() -> Mc202SourcePhraseRenderPlan {
+    Mc202SourcePhraseRenderPlan {
+        active_mask: 0b0001_0001_0010_0101,
+        semitones: [-12, 0, -7, 0, 0, -5, 0, 0, -10, 0, 0, 0, -3, 0, 0, 0],
+        accent_mask: 0b0001_0000_0000_0001,
+        destructive_mask: 0b0000_0000_0001_0000,
+        pressure: 0.70,
+        contrast: 0.56,
+        bass_weight: 0.72,
+        stab_bite: 0.26,
+        gate_snap: 0.22,
+    }
 }
 
 #[test]

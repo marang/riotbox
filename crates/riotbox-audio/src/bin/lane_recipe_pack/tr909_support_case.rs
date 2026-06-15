@@ -48,12 +48,62 @@ fn mc202_state_with_policy(
         note_budget: mc202_note_budget_for_shape_and_hook_response(shape, hook_response),
         contour_hint,
         hook_response,
-        source_phrase_plan: None,
+        source_phrase_plan: Some(mc202_source_phrase_fixture(shape)),
         touch,
         music_bus_level: 0.74,
         is_transport_running: true,
         tempo_bpm: 128.0,
         position_beats: 32.0,
+    }
+}
+
+fn mc202_source_phrase_fixture(shape: Mc202PhraseShape) -> Mc202SourcePhraseRenderPlan {
+    let base = Mc202SourcePhraseRenderPlan {
+        active_mask: 0b0001_0001_0010_0101,
+        semitones: [-12, 0, -7, 0, 0, -5, 0, 0, -10, 0, 0, 0, -3, 0, 0, 0],
+        accent_mask: 0b0001_0000_0000_0001,
+        destructive_mask: 0b0000_0000_0001_0000,
+        pressure: 0.68,
+        contrast: 0.52,
+        bass_weight: 0.70,
+        stab_bite: 0.24,
+        gate_snap: 0.20,
+    };
+    match shape {
+        Mc202PhraseShape::PressureCell => Mc202SourcePhraseRenderPlan {
+            active_mask: 0b0001_0001_0001_0001,
+            semitones: [-19, 0, 0, 0, -17, 0, 0, 0, -22, 0, 0, 0, -14, 0, 0, 0],
+            accent_mask: 0b0001_0001_0001_0001,
+            pressure: 0.92,
+            contrast: 0.60,
+            bass_weight: 0.96,
+            stab_bite: 0.10,
+            gate_snap: 0.12,
+            ..base
+        },
+        Mc202PhraseShape::InstigatorSpike => Mc202SourcePhraseRenderPlan {
+            active_mask: 0b1001_0100_0010_1001,
+            semitones: [-7, 0, 5, 0, 0, 12, 0, 0, -5, 0, 15, 0, 0, 0, 0, 19],
+            accent_mask: 0b1000_0000_0010_0001,
+            destructive_mask: 0b1000_0000_0000_0000,
+            pressure: 0.56,
+            contrast: 0.86,
+            bass_weight: 0.22,
+            stab_bite: 0.82,
+            gate_snap: 0.78,
+        },
+        Mc202PhraseShape::MutatedDrive => Mc202SourcePhraseRenderPlan {
+            active_mask: 0b1010_0101_0010_1001,
+            semitones: [-12, 0, 4, 0, 7, 0, -10, 0, 0, 0, -5, 0, 9, 0, 0, -7],
+            accent_mask: 0b1000_0001_0010_0001,
+            pressure: 0.76,
+            contrast: 0.74,
+            bass_weight: 0.62,
+            stab_bite: 0.40,
+            gate_snap: 0.34,
+            ..base
+        },
+        Mc202PhraseShape::RootPulse | Mc202PhraseShape::FollowerDrive => base,
     }
 }
 

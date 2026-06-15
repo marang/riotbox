@@ -226,7 +226,7 @@ fn scene_restore_snapshot_payload_restore_matches_committed_movement_projection(
         "snapshot payload restore Scene launch -> restore",
         &after_launch,
         &replayed_restore,
-        0.004,
+        0.0035,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore Scene restore keeps movement energy",

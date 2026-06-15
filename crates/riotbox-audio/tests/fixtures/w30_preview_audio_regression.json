@@ -14,10 +14,10 @@
       "position_beats": 32.0
     },
     "expected": {
-      "min_active_samples": 300,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.01,
-      "max_peak_abs": 0.12
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   },
   {
@@ -35,10 +35,10 @@
       "position_beats": 32.0
     },
     "expected": {
-      "min_active_samples": 300,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.015,
-      "max_peak_abs": 0.16
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   },
   {
@@ -56,10 +56,10 @@
       "position_beats": 32.0
     },
     "expected": {
-      "min_active_samples": 300,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.012,
-      "max_peak_abs": 0.16
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   },
   {
@@ -108,10 +108,10 @@
       "position_beats": 0.0
     },
     "expected": {
-      "min_active_samples": 300,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.015,
-      "max_peak_abs": 0.18
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   },
   {
@@ -150,10 +150,10 @@
       "position_beats": 32.0
     },
     "expected": {
-      "min_active_samples": 300,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.012,
-      "max_peak_abs": 0.16
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   },
   {
@@ -171,10 +171,10 @@
       "position_beats": 32.0
     },
     "expected": {
-      "min_active_samples": 300,
-      "max_active_samples": 512,
-      "min_peak_abs": 0.01,
-      "max_peak_abs": 0.16
+      "min_active_samples": 0,
+      "max_active_samples": 0,
+      "min_peak_abs": 0.0,
+      "max_peak_abs": 0.0
     }
   }
 ]

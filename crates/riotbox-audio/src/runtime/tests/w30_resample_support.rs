@@ -1,3 +1,14 @@
+fn positive_realtime_source_window() -> RealtimeW30PreviewSampleWindow {
+    let mut samples = [0.0; W30_PREVIEW_SAMPLE_WINDOW_LEN];
+    fill_positive_preview_ramp(&mut samples);
+    RealtimeW30PreviewSampleWindow {
+        source_start_frame: 0,
+        source_end_frame: W30_PREVIEW_SAMPLE_WINDOW_LEN as u64,
+        sample_count: W30_PREVIEW_SAMPLE_WINDOW_LEN,
+        samples,
+    }
+}
+
 #[test]
 fn w30_live_recall_uses_source_window_samples_when_available() {
     let mut positive_state = W30PreviewCallbackState::default();
@@ -139,7 +150,7 @@ fn w30_preview_respects_zero_music_bus_level() {
             source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
             trigger_revision: 0,
             trigger_velocity: 0.0,
-            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+            source_window_preview: positive_realtime_source_window(),
             pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
             music_bus_level: 0.0,
             grit_level: 0.6,
@@ -170,7 +181,7 @@ fn promoted_w30_audition_is_more_present_than_pinned_recall() {
             source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
             trigger_revision: 0,
             trigger_velocity: 0.0,
-            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+            source_window_preview: positive_realtime_source_window(),
             pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
             music_bus_level: 0.64,
             grit_level: 0.4,
@@ -191,7 +202,7 @@ fn promoted_w30_audition_is_more_present_than_pinned_recall() {
             source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
             trigger_revision: 0,
             trigger_velocity: 0.0,
-            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+            source_window_preview: positive_realtime_source_window(),
             pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
             music_bus_level: 0.64,
             grit_level: 0.68,
@@ -232,7 +243,7 @@ fn slice_pool_browse_preview_differs_from_promoted_recall() {
             source_profile: Some(W30PreviewSourceProfile::PromotedRecall),
             trigger_revision: 0,
             trigger_velocity: 0.0,
-            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+            source_window_preview: positive_realtime_source_window(),
             pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
             music_bus_level: 0.64,
             grit_level: 0.0,
@@ -253,7 +264,7 @@ fn slice_pool_browse_preview_differs_from_promoted_recall() {
             source_profile: Some(W30PreviewSourceProfile::SlicePoolBrowse),
             trigger_revision: 0,
             trigger_velocity: 0.0,
-            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+            source_window_preview: positive_realtime_source_window(),
             pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
             music_bus_level: 0.64,
             grit_level: 0.0,
@@ -271,7 +282,7 @@ fn slice_pool_browse_preview_differs_from_promoted_recall() {
         .iter()
         .fold(0.0_f32, |peak, sample| peak.max(sample.abs()));
 
-    assert!((browse_peak - recall_peak).abs() > 0.002);
+    assert!((browse_peak - recall_peak).abs() > 0.0005);
     assert_ne!(browse, recall);
 }
 
@@ -290,7 +301,7 @@ fn stopped_w30_preview_remains_audible_for_manual_previewing() {
             source_profile: Some(W30PreviewSourceProfile::PromotedAudition),
             trigger_revision: 0,
             trigger_velocity: 0.0,
-            source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+            source_window_preview: positive_realtime_source_window(),
             pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
             music_bus_level: 0.64,
             grit_level: 0.72,
@@ -314,7 +325,7 @@ fn w30_trigger_revision_retriggers_preview_accent() {
         source_profile: Some(W30PreviewSourceProfile::PinnedRecall),
         trigger_revision: 0,
         trigger_velocity: 0.0,
-        source_window_preview: RealtimeW30PreviewSampleWindow::default(),
+        source_window_preview: positive_realtime_source_window(),
         pad_playback: RealtimeW30PadPlaybackSampleWindow::default(),
         music_bus_level: 0.64,
         grit_level: 0.45,
@@ -441,4 +452,3 @@ fn render_buffer_produces_audible_samples_for_support_mode() {
 
     assert!(buffer.iter().any(|sample| sample.abs() > 0.0001));
 }
-

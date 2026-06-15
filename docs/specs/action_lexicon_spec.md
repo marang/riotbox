@@ -250,8 +250,9 @@ existing actions remain the queue / commit surface; `mc202.generate_answer`,
 `mc202.generate_instigator`, `mc202.mutate_phrase`, and `mc202.set_role`
 write the source phrase plan as session state when source-derived material is
 available. If timing is untrusted or no phrase slot exists, the field remains
-`None` and render projection must treat the lane as primitive fallback, not as
-source-derived MC-202 phrase intelligence.
+`None` and render projection must treat the lane as unavailable / degraded,
+not as primitive fallback or source-derived MC-202 phrase intelligence. It must
+not route hardcoded MC-202 replacement audio to the music bus.
 
 `source_timing.revert_grid` has an MC-202 consequence: reverting the confirmed
 grid for a source also clears any MC-202 source phrase plan tied to that source.

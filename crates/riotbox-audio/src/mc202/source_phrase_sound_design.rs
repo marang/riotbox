@@ -17,25 +17,20 @@ struct Mc202SourcePhraseSoundDesign {
 
 fn mc202_source_phrase_sound_design(
     render: &Mc202RenderState,
-    plan: Option<Mc202SourcePhraseRenderPlan>,
+    plan: Mc202SourcePhraseRenderPlan,
     destructive_step: bool,
 ) -> Mc202SourcePhraseSoundDesign {
     let touch = render.touch.clamp(0.0, 1.0);
-    let pressure = plan.map_or(0.0, |plan| plan.pressure.clamp(0.0, 1.0));
-    let contrast = plan.map_or(0.0, |plan| plan.contrast.clamp(0.0, 1.0));
-    let bass_weight = plan.map_or(0.0, |plan| plan.bass_weight.clamp(0.0, 1.0));
-    let stab_bite = plan.map_or(0.0, |plan| plan.stab_bite.clamp(0.0, 1.0));
-    let gate_snap = plan.map_or(0.0, |plan| plan.gate_snap.clamp(0.0, 1.0));
+    let pressure = plan.pressure.clamp(0.0, 1.0);
+    let contrast = plan.contrast.clamp(0.0, 1.0);
+    let bass_weight = plan.bass_weight.clamp(0.0, 1.0);
+    let stab_bite = plan.stab_bite.clamp(0.0, 1.0);
+    let gate_snap = plan.gate_snap.clamp(0.0, 1.0);
     let source_gain = 1.0
         + pressure * 0.62
         + contrast * 0.20
         + bass_weight * 0.28
         + stab_bite * 0.12;
-    let primitive_gate: f32 = match render.phrase_shape {
-        Mc202PhraseShape::PressureCell => 0.50,
-        Mc202PhraseShape::InstigatorSpike => 0.30,
-        _ => 0.62,
-    };
     let source_gate = (0.34 + bass_weight * 0.34 + pressure * 0.08 + contrast * 0.10)
         * (1.0 - gate_snap * 0.48)
         * (1.0 - stab_bite * 0.18);
@@ -44,23 +39,6 @@ fn mc202_source_phrase_sound_design(
         Mc202RenderMode::Instigator => -2.0,
         _ => -5.0,
     };
-    if plan.is_none() {
-        return Mc202SourcePhraseSoundDesign {
-            gain: render.music_bus_level.clamp(0.0, 1.0) * (0.08 + touch * 0.08),
-            drive: 1.0,
-            gate_len: primitive_gate.clamp(0.18, 0.68),
-            env_curve: 1.8,
-            sub_mix: 0.0,
-            saw_mix: 0.58 + touch * 0.25,
-            pulse_mix: 0.24 + touch * 0.18,
-            bite_mix: 0.0,
-            transient_click: 0.0,
-            attack_len: 0.001,
-            octave_drop: mode_octave,
-            destructive_dive: if destructive_step { -10.0 } else { 0.0 },
-            cut_start: 0.70,
-        };
-    }
 
     Mc202SourcePhraseSoundDesign {
         gain: render.music_bus_level.clamp(0.0, 1.0) * (0.075 + touch * 0.085) * source_gain,
@@ -69,24 +47,16 @@ fn mc202_source_phrase_sound_design(
             + contrast * 0.45
             + bass_weight * 1.05
             + stab_bite * 0.72,
-        gate_len: if plan.is_some() {
-            source_gate
-        } else {
-            primitive_gate
-        }
-        .clamp(0.12, 0.72),
+        gate_len: source_gate.clamp(0.12, 0.72),
         env_curve: (1.18 + gate_snap * 1.65 + stab_bite * 0.95 - bass_weight * 0.45)
             .clamp(0.85, 3.4),
         sub_mix: 0.16 + bass_weight * 0.72 + pressure * 0.20,
         saw_mix: 0.46 + touch * 0.22 + stab_bite * 0.20 - bass_weight * 0.08,
         pulse_mix: 0.22 + touch * 0.16 + stab_bite * 0.30 + contrast * 0.08,
         bite_mix: 0.08 + stab_bite * 0.58 + gate_snap * 0.18,
-        transient_click: if plan.is_some() {
-            0.04 + stab_bite * 0.42 + gate_snap * 0.24 + contrast * 0.08
-        } else {
-            0.0
-        },
-        attack_len: 0.045,
+        transient_click: 0.07 + stab_bite * 0.78 + gate_snap * 0.36 + contrast * 0.08,
+        attack_len: (0.045 - stab_bite * 0.034 - gate_snap * 0.006 + bass_weight * 0.018)
+            .clamp(0.006, 0.060),
         octave_drop: mode_octave - f64::from(bass_weight * 7.0) + f64::from(stab_bite * 2.5),
         destructive_dive: if destructive_step {
             -10.0 - f64::from(contrast * 5.0 + stab_bite * 3.0)

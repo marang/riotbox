@@ -71,8 +71,7 @@ use tr909_tail_telemetry::{
 };
 use w30_tr909_signal_helpers::{
     render_gain, render_subdivision, should_trigger_step, trigger_envelope, trigger_frequency,
-    w30_envelope_decay, w30_preview_frequency, w30_preview_idle_bpm, w30_preview_waveform,
-    w30_render_gain,
+    w30_envelope_decay, w30_preview_idle_bpm, w30_render_gain,
 };
 
 #[cfg(test)]

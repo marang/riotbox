@@ -49,7 +49,11 @@ When generating or reviewing patterns, slices, demos, or presets:
 
 - favor short, forceful loops with a clear riff or drum identity
 - create at least one destructive variation: choke, reverse, retrigger, pitch dive, filter slam, bitcrush, or silence cut
-- make fallback sounds obviously inferior or clearly labeled; never let fallback become the main musical identity by accident
+- do not make fallback sounds part of the product path; absence of trusted
+  material must become visible unavailable / degraded state or silence
+- do not use hardcoded musical fallback sounds as product output; when a lane
+  cannot create trusted source-derived material, make the unavailable /
+  degraded state visible instead of filling the space with replacement music
 - prefer few strong lanes over many weak lanes
 - make mutes and triggers musically dramatic, not merely state toggles
 - treat repeated "ding ding ding" output as a failed placeholder unless explicitly requested as a metronome or diagnostic

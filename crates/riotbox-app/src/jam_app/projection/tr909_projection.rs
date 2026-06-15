@@ -220,7 +220,7 @@ pub(super) fn build_mc202_render_state(
 
     Mc202RenderState {
         mode,
-        routing: mc202_routing_for_role_and_source_plan(role, mc202.source_phrase_plan.as_ref()),
+        routing: mc202_routing_for_source_plan(mc202.source_phrase_plan.as_ref()),
         phrase_shape,
         note_budget: mc202
             .source_phrase_plan
@@ -258,15 +258,7 @@ fn mc202_render_mode_and_shape(role: Mc202RoleState) -> (Mc202RenderMode, Mc202P
     }
 }
 
-fn mc202_routing_for_role(role: Mc202RoleState) -> Mc202RenderRouting {
-    match role {
-        Mc202RoleState::Answer => Mc202RenderRouting::Silent,
-        _ => Mc202RenderRouting::MusicBusBass,
-    }
-}
-
-fn mc202_routing_for_role_and_source_plan(
-    role: Mc202RoleState,
+fn mc202_routing_for_source_plan(
     source_plan: Option<&riotbox_core::session::Mc202SourcePhrasePlanState>,
 ) -> Mc202RenderRouting {
     if source_plan.is_some_and(riotbox_core::session::Mc202SourcePhrasePlanState::is_source_derived)
@@ -274,7 +266,7 @@ fn mc202_routing_for_role_and_source_plan(
         return Mc202RenderRouting::MusicBusBass;
     }
 
-    mc202_routing_for_role(role)
+    Mc202RenderRouting::Silent
 }
 
 fn mc202_note_budget_from_source_plan(

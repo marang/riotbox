@@ -17,7 +17,7 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
-    let committed_answer = render_mc202_recipe_silent_buffer(&committed_state.runtime.mc202_render);
+    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     let replayed_state = run_snapshot_payload_restore_probe(
         base_session,
@@ -36,25 +36,23 @@ fn mc202_snapshot_payload_restore_hydrates_answer_projection() {
         },
         |_| {},
     );
-    let replayed_answer = render_mc202_recipe_silent_buffer(&replayed_state.runtime.mc202_render);
-
-    assert_eq!(
-        replayed_state.session.runtime_state.lane_state.mc202,
-        committed_state.session.runtime_state.lane_state.mc202
+    let replayed_answer = assert_mc202_replay_degrades_without_source_plan(
+        "snapshot payload answer restore",
+        &replayed_state,
+        &committed_state,
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_eq!(replayed_state.runtime.mc202_render, committed_state.runtime.mc202_render);
-    assert_recipe_buffers_match(
-        "snapshot payload restore MC-202 answer -> committed answer",
+    assert_recipe_buffers_differ(
+        "snapshot payload answer restore without source plan -> committed answer",
         &replayed_answer,
         &committed_answer,
-        0.00001,
+        0.005,
     );
     assert_recipe_buffers_differ(
-        "snapshot payload restore MC-202 follower -> answer intent silence",
+        "snapshot payload restore MC-202 follower -> source-derived answer",
         &committed_follower,
         &replayed_answer,
         0.005,
@@ -79,7 +77,7 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
         QueueControlResult::Enqueued
     );
     commit_mc202_recipe_step(&mut committed_state, 2, 600);
-    let committed_answer = render_mc202_recipe_silent_buffer(&committed_state.runtime.mc202_render);
+    let committed_answer = render_mc202_recipe_buffer(&committed_state.runtime.mc202_render);
 
     assert_eq!(
         committed_state.queue_mc202_generate_pressure(700),
@@ -105,25 +103,20 @@ fn mc202_snapshot_payload_restore_hydrates_pressure_projection() {
         },
         |_| {},
     );
-    let replayed_pressure = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
-
-    assert_eq!(
-        replayed_state.session.runtime_state.lane_state.mc202,
-        committed_state.session.runtime_state.lane_state.mc202
+    let replayed_pressure = assert_mc202_replay_degrades_without_source_plan(
+        "snapshot payload pressure restore",
+        &replayed_state,
+        &committed_state,
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_eq!(
-        replayed_state.runtime.mc202_render,
-        committed_state.runtime.mc202_render
-    );
-    assert_recipe_buffers_match(
-        "snapshot payload restore MC-202 pressure -> committed pressure",
+    assert_recipe_buffers_differ(
+        "snapshot payload pressure restore without source plan -> committed pressure",
         &replayed_pressure,
         &committed_pressure,
-        0.00001,
+        0.005,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 answer -> pressure",
@@ -183,25 +176,20 @@ fn mc202_snapshot_payload_restore_hydrates_instigator_projection() {
         },
         |_| {},
     );
-    let replayed_instigator = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
-
-    assert_eq!(
-        replayed_state.session.runtime_state.lane_state.mc202,
-        committed_state.session.runtime_state.lane_state.mc202
+    let replayed_instigator = assert_mc202_replay_degrades_without_source_plan(
+        "snapshot payload instigator restore",
+        &replayed_state,
+        &committed_state,
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_eq!(
-        replayed_state.runtime.mc202_render,
-        committed_state.runtime.mc202_render
-    );
-    assert_recipe_buffers_match(
-        "snapshot payload restore MC-202 instigator -> committed instigator",
+    assert_recipe_buffers_differ(
+        "snapshot payload instigator restore without source plan -> committed instigator",
         &replayed_instigator,
         &committed_instigator,
-        0.00001,
+        0.005,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 pressure -> instigator",
@@ -267,25 +255,20 @@ fn mc202_snapshot_payload_restore_hydrates_phrase_mutation_projection() {
         },
         |_| {},
     );
-    let replayed_mutation = render_mc202_recipe_buffer(&replayed_state.runtime.mc202_render);
-
-    assert_eq!(
-        replayed_state.session.runtime_state.lane_state.mc202,
-        committed_state.session.runtime_state.lane_state.mc202
+    let replayed_mutation = assert_mc202_replay_degrades_without_source_plan(
+        "snapshot payload mutation restore",
+        &replayed_state,
+        &committed_state,
     );
     assert_eq!(
         replayed_state.session.runtime_state.macro_state.mc202_touch,
         committed_state.session.runtime_state.macro_state.mc202_touch
     );
-    assert_eq!(
-        replayed_state.runtime.mc202_render,
-        committed_state.runtime.mc202_render
-    );
-    assert_recipe_buffers_match(
-        "snapshot payload restore MC-202 phrase mutation -> committed mutation",
+    assert_recipe_buffers_differ(
+        "snapshot payload mutation restore without source plan -> committed mutation",
         &replayed_mutation,
         &committed_mutation,
-        0.00001,
+        0.005,
     );
     assert_recipe_buffers_differ(
         "snapshot payload restore MC-202 instigator -> phrase mutation",

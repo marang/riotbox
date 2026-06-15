@@ -100,18 +100,10 @@ fn feral_break_support_no_longer_injects_mc202_hook_response_output() {
     let control_metrics = signal_metrics(&control_buffer);
     let feral_metrics = signal_metrics(&feral_buffer);
 
-    assert!(
-        control_metrics.rms > 0.001,
-        "control MC-202 follower rendered silence: {}",
-        control_metrics.rms
-    );
-    assert!(
-        feral_metrics.rms > 0.001,
-        "Feral MC-202 direct render collapsed to silence: {}",
-        feral_metrics.rms
-    );
+    assert_eq!(control_metrics.active_samples, 0);
+    assert_eq!(feral_metrics.active_samples, 0);
     assert_recipe_buffers_match(
-        "Feral MC-202 direct response",
+        "Feral MC-202 no-source unavailable response",
         &control_buffer,
         &feral_buffer,
         0.000001,
@@ -398,12 +390,12 @@ fn adjusting_mc202_touch_updates_session_and_runtime_view() {
     );
     assert_eq!(
         state.runtime.mc202_render.routing,
-        Mc202RenderRouting::MusicBusBass
+        Mc202RenderRouting::Silent
     );
     assert!((state.runtime.mc202_render.touch - 0.64).abs() < f32::EPSILON);
     assert_eq!(
         state.runtime_view.mc202_render_mix_summary,
-        "music bus 0.64 | touch 0.64 | budget balanced | contour drop | hook direct | source plan primitive"
+        "music bus 0.64 | touch 0.64 | budget balanced | contour drop | hook direct | source plan timing_untrusted"
     );
 
     let lowered = state.adjust_mc202_touch(-1.5);
@@ -412,6 +404,6 @@ fn adjusting_mc202_touch_updates_session_and_runtime_view() {
     assert_eq!(state.runtime.mc202_render.touch, 0.0);
     assert_eq!(
         state.runtime_view.mc202_render_mix_summary,
-        "music bus 0.64 | touch 0.00 | budget balanced | contour drop | hook direct | source plan primitive"
+        "music bus 0.64 | touch 0.00 | budget balanced | contour drop | hook direct | source plan timing_untrusted"
     );
 }

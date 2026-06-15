@@ -35,7 +35,7 @@ pub enum SourceMonitorAudioRoute {
     RiotboxOnly,
     SourceOnly,
     Blend,
-    FallbackRiotbox,
+    SourceUnavailable,
 }
 
 impl SourceMonitorAudioRoute {
@@ -45,7 +45,7 @@ impl SourceMonitorAudioRoute {
             Self::RiotboxOnly => "riotbox_only",
             Self::SourceOnly => "source_only",
             Self::Blend => "blend",
-            Self::FallbackRiotbox => "fallback_riotbox",
+            Self::SourceUnavailable => "source_unavailable",
         }
     }
 }
@@ -257,7 +257,7 @@ fn source_monitor_route(
         (SourceMonitorMode::Source, true) => SourceMonitorAudioRoute::SourceOnly,
         (SourceMonitorMode::Blend, true) => SourceMonitorAudioRoute::Blend,
         (SourceMonitorMode::Source | SourceMonitorMode::Blend, false) => {
-            SourceMonitorAudioRoute::FallbackRiotbox
+            SourceMonitorAudioRoute::SourceUnavailable
         }
     }
 }
@@ -281,7 +281,7 @@ fn source_monitor_route_for_metadata(
         (SourceMonitorMode::Source, true) => SourceMonitorAudioRoute::SourceOnly,
         (SourceMonitorMode::Blend, true) => SourceMonitorAudioRoute::Blend,
         (SourceMonitorMode::Source | SourceMonitorMode::Blend, false) => {
-            SourceMonitorAudioRoute::FallbackRiotbox
+            SourceMonitorAudioRoute::SourceUnavailable
         }
     }
 }
@@ -298,6 +298,10 @@ pub fn apply_source_monitor_policy(
         sample_rate,
         channel_count,
     );
+    if matches!(route, SourceMonitorAudioRoute::SourceUnavailable) {
+        data.fill(0.0);
+        return route;
+    }
     let Some(source) = render.source.as_ref() else {
         return route;
     };
@@ -326,9 +330,8 @@ pub fn apply_source_monitor_policy(
                 SourceMonitorAudioRoute::Blend => ((data[output_index] * render.riotbox_gain)
                     + (source_sample * render.source_gain))
                     .clamp(-1.0, 1.0),
-                SourceMonitorAudioRoute::RiotboxOnly | SourceMonitorAudioRoute::FallbackRiotbox => {
-                    data[output_index]
-                }
+                SourceMonitorAudioRoute::RiotboxOnly
+                | SourceMonitorAudioRoute::SourceUnavailable => data[output_index],
             };
         }
     }

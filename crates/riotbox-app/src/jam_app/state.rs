@@ -118,7 +118,7 @@ impl Default for AppRuntimeState {
             w30_preview: W30PreviewRenderState::default(),
             w30_resample_tap: W30ResampleTapState::default(),
             source_audio: SourceAudioRuntimeState::default(),
-            source_monitor_audio_route: "fallback_riotbox".into(),
+            source_monitor_audio_route: "source_unavailable".into(),
             current_ghost_suggestion: None,
             last_commit_boundary: None,
         }

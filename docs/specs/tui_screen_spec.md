@@ -153,12 +153,12 @@ It must expose:
   existing bounded Feral paths such as W-30 browse, TR-909 fill, MC-202
   follow / answer, and capture; this must not create new controls or bypass
   action semantics
-- W-30 perform-card preview cues must distinguish source-backed and fallback-backed
+- W-30 perform-card preview cues must distinguish source-backed and unavailable
   playback affordances: `src:` cues such as `src: [o] raw source | 4 Capture`
   mean the next audition / hit uses decoded source-window material, while
-  `fallback:` cues such as `fallback: [o] raw safe | 4 Capture` mean the
-  action is safe to try but still uses the synthetic preview fallback; these
-  cue families are mutually exclusive
+  `unavailable:` cues such as `unavailable: [o] raw needs source | 4 Capture`
+  mean no trusted source-window or pad material exists yet; these cues must not
+  route or imply synthetic preview audio
 
 ### 5.1 Jam goals
 
@@ -217,7 +217,7 @@ Show:
   `unavailable`) so Jam, Source, and QA evidence do not drift apart.
 - shared actionability language from the Jam source timing summary, so Source
   can explain whether the musician should trust the grid, confirm it, listen
-  first, or treat it as unavailable / fallback-backed without decoding internal
+  first, or treat it as unavailable without decoding internal
   policy labels.
 - user-confirmed grid state from session runtime truth, not by rewriting Source
   Graph evidence. The Source timing panel may compact this to `ready grid
@@ -283,7 +283,7 @@ Show:
 - promotion results
 - favorite or pinned captures
 - the audible handoff path from stored capture to raw audition, promoted pad, hit, promoted audition, or recall
-- compact `src` / `fallback` readiness on W-30 hit handoffs so the user can tell whether the path is source-backed or on the safe preview fallback
+- compact `src` / `unavailable` readiness on W-30 hit handoffs so the user can tell whether the path is source-backed or has no playable source material yet
 - a primary next-step cue for capture, promote, hit, and audition before lower-level routing diagnostics
 - current capture length and target boundary, such as `4 bars @ next bar` or
   compact phrase fallback `phrase->4bar @ next bar`, so the musician

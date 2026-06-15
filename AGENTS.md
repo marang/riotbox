@@ -118,7 +118,13 @@ If a surface is intentionally not applicable, say why in the PR or working notes
 - Shape Riotbox toward aggressive sample-based rave/punk and breakbeat instrument behavior, not generic EDM preset browsing.
 - Prefer short, forceful loops with a memorable hook, stab, riff, break, bass gesture, vocal hit, or silence cut.
 - Make live gestures audibly dramatic: trigger, mute, choke, retrigger, reverse, pitch dive, filter slam, bitcrush, fill, and dropout should change the room immediately.
-- Treat repeated placeholder tones, fallback-only output, polite loops, and technically correct but hookless demos as product failures unless they are explicitly diagnostic.
+- Do not implement hardcoded musical/audio fallback output as a product path.
+  When source-backed generation cannot produce trusted material, surface
+  unavailable / degraded state to the musician instead of playing synthetic
+  replacement music. Diagnostic controls may compare against silence or
+  explicitly labeled non-product controls, but fallback sound must not exist on
+  Riotbox product output paths.
+- Treat repeated placeholder tones, fallback-only output, polite loops, and technically correct but hookless demos as product failures unless they are explicitly non-product diagnostic controls.
 - For every lane or product surface that claims to be source-derived, require
   evidence that Riotbox listened to source features, made a musical decision,
   stored that decision in the product spine, rendered audible output, and proved
