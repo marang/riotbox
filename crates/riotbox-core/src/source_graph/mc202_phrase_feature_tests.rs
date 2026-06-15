@@ -13,7 +13,9 @@ mod mc202_phrase_feature_tests {
         assert_eq!(first, second);
         assert!(first.has_musical_evidence());
         assert!(first.low_band_pressure > 0.7);
+        assert!(first.low_band_movement > 0.4);
         assert!(first.transient_density > 0.5);
+        assert!(first.backbeat_density < first.transient_density);
         assert!(
             first
                 .provenance_refs
@@ -46,8 +48,10 @@ mod mc202_phrase_feature_tests {
             mc202_source_phrase_feature_vector(&hook_graph, &hook_graph.timing.phrase_grid[0]);
 
         assert!(pressure.low_band_pressure > hook.low_band_pressure);
+        assert!(pressure.low_band_movement > hook.low_band_movement);
         assert!(pressure.transient_density > hook.transient_density);
         assert!(hook.hook_restraint > pressure.hook_restraint);
+        assert!(hook.spectral_brightness > pressure.spectral_brightness);
         assert_ne!(pressure, hook);
     }
 
@@ -76,7 +80,19 @@ mod mc202_phrase_feature_tests {
 
         assert!(features.low_band_pressure > 0.85, "{features:?}");
         assert!(
+            (features.low_band_movement - 0.88).abs() < 0.001,
+            "{features:?}"
+        );
+        assert!(
             (features.transient_density - 0.22).abs() < 0.001,
+            "{features:?}"
+        );
+        assert!(
+            (features.spectral_roughness - 0.41).abs() < 0.001,
+            "{features:?}"
+        );
+        assert!(
+            (features.spectral_brightness - 0.24).abs() < 0.001,
             "{features:?}"
         );
         assert!(

@@ -2,9 +2,13 @@
 pub struct Mc202SourcePhraseFeatureVector {
     pub phrase_index: u32,
     pub low_band_pressure: f32,
+    pub low_band_movement: f32,
     pub transient_density: f32,
+    pub backbeat_density: f32,
     pub offbeat_density: f32,
     pub hook_restraint: f32,
+    pub spectral_roughness: f32,
+    pub spectral_brightness: f32,
     pub source_strength: f32,
     pub stay_out: bool,
     pub confidence: Confidence,
@@ -83,6 +87,22 @@ pub fn mc202_source_phrase_feature_vector(
                 &["bass", "low", "pressure"],
             ) * 0.15,
     );
+    let mut low_band_movement = clamp01(
+        low_band_pressure * 0.45
+            + average_anchor_strength(
+                &phrase_anchors,
+                &[
+                    SourceTimingAnchorType::Kick,
+                    SourceTimingAnchorType::TransientCluster,
+                ],
+            ) * 0.25
+            + tag_presence_in_phrase(
+                section,
+                &phrase_assets,
+                &phrase_candidates,
+                &["rise", "drop", "shove", "movement"],
+            ) * 0.16,
+    );
     let mut transient_density = clamp01(
         weighted_anchor_presence(
             &phrase_anchors,
@@ -96,6 +116,14 @@ pub fn mc202_source_phrase_feature_vector(
         ) + asset_type_presence(&phrase_assets, AssetType::DrumAnchor) * 0.20
             + candidate_type_presence(&phrase_candidates, CandidateType::GhostHit) * 0.12
             + candidate_type_presence(&phrase_candidates, CandidateType::FillFragment) * 0.16,
+    );
+    let mut backbeat_density = clamp01(
+        average_anchor_strength(
+            &phrase_anchors,
+            &[SourceTimingAnchorType::Snare, SourceTimingAnchorType::Backbeat],
+        ) * 0.75
+            + candidate_type_presence(&phrase_candidates, CandidateType::SnareAnchor) * 0.18
+            + candidate_type_presence(&phrase_candidates, CandidateType::GhostHit) * 0.08,
     );
     let mut offbeat_density = clamp01(
         offbeat_anchor_presence(&phrase_anchors, graph.timing.meter_hint) * 0.75
@@ -125,10 +153,30 @@ pub fn mc202_source_phrase_feature_vector(
                 &["hook", "vocal", "lead"],
             ) * 0.16,
     );
+    let mut spectral_roughness = clamp01(
+        tag_presence_in_phrase(
+            section,
+            &phrase_assets,
+            &phrase_candidates,
+            &["rough", "noise", "distort", "grit", "bite"],
+        ) * 0.42
+            + transient_density * 0.12,
+    );
+    let mut spectral_brightness = clamp01(
+        tag_presence_in_phrase(
+            section,
+            &phrase_assets,
+            &phrase_candidates,
+            &["bright", "lead", "vocal", "hook", "stab"],
+        ) * 0.34
+            + hook_restraint * 0.10,
+    );
     let mut source_strength = clamp01(
         low_band_pressure * 0.38
             + transient_density * 0.30
             + offbeat_density * 0.12
+            + low_band_movement * 0.06
+            + backbeat_density * 0.04
             + graph.analysis_summary.overall_confidence.clamp(0.0, 1.0) * 0.10
             + phrase.confidence.clamp(0.0, 1.0) * 0.10,
     );
@@ -144,8 +192,12 @@ pub fn mc202_source_phrase_feature_vector(
                 + audio.low_mid_ratio * 0.22
                 + audio.low_band_movement * 0.34,
         );
+        low_band_movement = clamp01(audio.low_band_movement);
         transient_density = clamp01(audio.transient_density);
+        backbeat_density = clamp01(audio.transient_density * 0.55 + audio.spectral_roughness * 0.12);
         offbeat_density = clamp01(audio.offbeat_onset_density);
+        spectral_roughness = clamp01(audio.spectral_roughness);
+        spectral_brightness = clamp01(audio.spectral_brightness);
         hook_restraint = clamp01(
             audio.hook_restraint_hint * 0.70
                 + audio.spectral_brightness * 0.12
@@ -156,7 +208,8 @@ pub fn mc202_source_phrase_feature_vector(
             low_band_pressure * 0.42
                 + transient_density * 0.24
                 + offbeat_density * 0.12
-                + audio.low_band_movement * 0.10
+                + low_band_movement * 0.10
+                + backbeat_density * 0.04
                 + audio.confidence * 0.12,
         );
         confidence = clamp01(
@@ -189,9 +242,13 @@ pub fn mc202_source_phrase_feature_vector(
     Mc202SourcePhraseFeatureVector {
         phrase_index: phrase.phrase_index,
         low_band_pressure,
+        low_band_movement,
         transient_density,
+        backbeat_density,
         offbeat_density,
         hook_restraint,
+        spectral_roughness,
+        spectral_brightness,
         source_strength,
         stay_out,
         confidence,

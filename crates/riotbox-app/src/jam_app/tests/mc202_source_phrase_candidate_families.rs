@@ -17,6 +17,21 @@ fn committed_mc202_answer_records_source_backed_candidate_family_metadata() {
         .expect("candidate-backed MC-202 source phrase plan");
 
     assert!(plan.is_source_derived(), "{plan:?}");
+    let expression = plan
+        .source_expression
+        .as_ref()
+        .expect("candidate-backed source expression");
+    assert!(
+        expression.offbeat_answer_space > expression.bass_pressure,
+        "{expression:?}"
+    );
+    assert!(
+        expression
+            .provenance_refs
+            .iter()
+            .any(|reference| reference.starts_with("expression:offbeat_answer_space:")),
+        "{expression:?}"
+    );
     assert_eq!(
         plan.candidate_family,
         Some(Mc202SourcePhraseCandidateFamilyState::SparseOffbeatAnswer)

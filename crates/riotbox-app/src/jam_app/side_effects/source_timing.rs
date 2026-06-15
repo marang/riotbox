@@ -212,6 +212,7 @@ mod tests {
                 start_bar: 0,
                 end_bar: 7,
             },
+            source_expression: None,
             role: Mc202RoleState::Answer,
             rhythm_cells: [
                 None,
