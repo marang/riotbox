@@ -1196,4 +1196,6 @@ This index tracks archived Linear ticket history that has been removed from the 
   MC-202 source phrase render articulation for bass pressure vs answer stabs
 - [RIOTBOX-1274.md](./RIOTBOX-1274.md)
   MC-202 source expression vector for producer-grade phrase decisions
+- [RIOTBOX-1275.md](./RIOTBOX-1275.md)
+  MC-202 composer chooses bass and answer motifs from source expression
 - Use [TEMPLATE.md](./TEMPLATE.md) for one-file ticket entries.
